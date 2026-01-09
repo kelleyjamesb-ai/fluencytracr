@@ -9,6 +9,7 @@ class EventsTests(unittest.TestCase):
         event = EnablementEvent(
             event_type="assessment_pre",
             occurred_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            org_id="org-1",
             team_id="team-1",
             role_id="role-1",
         )
@@ -18,6 +19,7 @@ class EventsTests(unittest.TestCase):
         event = EnablementEvent(
             event_type="unknown",  # type: ignore[arg-type]
             occurred_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            org_id="org-1",
             team_id="team-1",
             role_id="role-1",
         )
@@ -28,6 +30,7 @@ class EventsTests(unittest.TestCase):
         event = EnablementEvent(
             event_type="session_attended",
             occurred_at=datetime(2024, 1, 1),
+            org_id="org-1",
             team_id="team-1",
             role_id="role-1",
         )
@@ -38,6 +41,7 @@ class EventsTests(unittest.TestCase):
         payload = {
             "event_type": "assessment_post",
             "occurred_at": "2024-01-01T00:00:00",
+            "org_id": "org-1",
             "team_id": "team-1",
             "role_id": "role-1",
         }
