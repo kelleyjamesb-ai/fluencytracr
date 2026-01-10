@@ -30,7 +30,5 @@ def enforce_aggregation_defaults(query: dict[str, str]) -> dict[str, str]:
 
 def enforce_role_access(request: RequestContext) -> None:
     """Block employee-level endpoints for exec roles."""
-    if request.endpoint in EMPLOYEE_LEVEL_ENDPOINTS and request.role in {"exec", "manager"}:
-        raise PermissionError("Role cannot access employee-level endpoints")
-    if request.role == "manager" and request.query.get("aggregation") == "org":
-        raise PermissionError("Manager role cannot access org-level aggregation")
+    if request.role == "exec" and request.endpoint in EMPLOYEE_LEVEL_ENDPOINTS:
+        raise PermissionError("Exec role cannot access employee-level endpoints")

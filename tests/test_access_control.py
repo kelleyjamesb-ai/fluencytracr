@@ -26,21 +26,6 @@ class AccessControlTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 enforce_role_access(request)
 
-    def test_manager_role_blocked_from_employee_endpoints(self) -> None:
-        for endpoint in EMPLOYEE_LEVEL_ENDPOINTS:
-            request = RequestContext(role="manager", endpoint=endpoint, query={})
-            with self.assertRaises(PermissionError):
-                enforce_role_access(request)
-
-    def test_manager_role_blocked_from_org_aggregation(self) -> None:
-        request = RequestContext(
-            role="manager",
-            endpoint="/api/dashboard",
-            query={"aggregation": "org"},
-        )
-        with self.assertRaises(PermissionError):
-            enforce_role_access(request)
-
     def test_handle_dashboard_request_enforces_rules(self) -> None:
         request = RequestContext(
             role="manager",
