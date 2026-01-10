@@ -1,0 +1,16 @@
+{
+  "name": "learnaire-fluency",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces && npm run lint:vocab",
+    "lint:vocab": "node tools/check_vocabulary.js",
+    "migrate": "npm run migrate --workspace backend"
+  }
+}
