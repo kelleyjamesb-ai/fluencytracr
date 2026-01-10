@@ -20,6 +20,10 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Scope guardrails check**
+- [ ] This bug report does not request or imply individual surveillance or scope creep.
+- [ ] Any data involved is aggregated and opt-in.
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
