@@ -7,6 +7,7 @@ from src.access_control import (
     enforce_role_access,
 )
 from src.api import handle_dashboard_request
+from src.exceptions import AccessDeniedError, ValidationError
 
 
 class AccessControlTests(unittest.TestCase):
@@ -17,13 +18,13 @@ class AccessControlTests(unittest.TestCase):
         )
 
     def test_aggregation_rejects_employee_level(self) -> None:
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValidationError):
             enforce_aggregation_defaults({"aggregation": "employee"})
 
     def test_exec_role_blocked_from_employee_endpoints(self) -> None:
         for endpoint in EMPLOYEE_LEVEL_ENDPOINTS:
             request = RequestContext(role="exec", endpoint=endpoint, query={})
-            with self.assertRaises(PermissionError):
+            with self.assertRaises(AccessDeniedError):
                 enforce_role_access(request)
 
     def test_handle_dashboard_request_enforces_rules(self) -> None:
