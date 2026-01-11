@@ -103,14 +103,6 @@ export const Dashboard = () => {
   const [range, setRange] = useState<(typeof ranges)[number]["value"]>("12w");
   const [data, setData] = useState<DashboardOverview>(fallbackData);
   const [transparency, setTransparency] = useState<TransparencyReport>(fallbackTransparency);
-  const [showOpportunities, setShowOpportunities] = useState(false);
-  const [view, setView] = useState<"dashboard" | "transparency">("dashboard");
-  const exportParams = new URLSearchParams({
-    range,
-    vendor: "all",
-    groupType: "org"
-  }).toString();
-  const exportBase = `/orgs/${data.org_id}/dashboard/export`;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -169,82 +161,31 @@ export const Dashboard = () => {
     ["Habitual", frequencyBands.usage_frequency_band_habitual_count]
   ] as const;
 
-  const opportunities = [
-    {
-      title: "Prep account briefs with AI copilots",
-      summary: "Examples other organizations explore at this stage include concise account briefs.",
-      guidance: "Common patterns seen at this level of fluency focus on shared templates."
-    },
-    {
-      title: "Standardize call follow-ups",
-      summary: "Examples other organizations explore at this stage include consistent recap drafts.",
-      guidance: "Common patterns seen at this level of fluency include shared recap formats."
-    },
-    {
-      title: "Improve code review readiness",
-      summary: "Examples other organizations explore at this stage include pre-review checklists.",
-      guidance: "Common patterns seen at this level of fluency include shared review checklists."
-    }
-  ];
-
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div className="sidebar-brand">learnaire</div>
-        <nav className="sidebar-nav">
-          <span className="sidebar-label">Executive Dashboard</span>
-          <button className="sidebar-link" type="button" onClick={() => setView("dashboard")}>
-            Dashboard Overview
-          </button>
-          <button className="sidebar-link" type="button" onClick={() => setView("transparency")}>
-            Transparency Page
-          </button>
-        </nav>
-      </aside>
-      <main className="page">
-        <header className="header">
-          <div>
-            <h1>learnaire-fluency</h1>
-            <p>Executive-safe fluency snapshot.</p>
-          </div>
-          {view === "dashboard" && (
-            <div className="header-controls">
-              <div className="toggle">
-                {ranges.map((option) => (
-                  <button
-                    key={option.value}
-                    className={range === option.value ? "toggle-button active" : "toggle-button"}
-                    onClick={() => setRange(option.value)}
-                    type="button"
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div className="export-buttons">
-                <button
-                  className="export-button"
-                  type="button"
-                  onClick={() => setShowOpportunities((current) => !current)}
-                >
-                  Explore Opportunities
-                </button>
-                <a className="export-button" href={`${exportBase}.pdf?${exportParams}`} download>
-                  Export PDF
-                </a>
-                <a className="export-button" href={`${exportBase}.csv?${exportParams}`} download>
-                  Export CSV
-                </a>
-              </div>
-            </div>
-          )}
-        </header>
+    <div className="page">
+      <header className="header">
+        <div>
+          <h1>learnaire-fluency</h1>
+          <p>Executive-safe fluency snapshot.</p>
+        </div>
+        <div className="toggle">
+          {ranges.map((option) => (
+            <button
+              key={option.value}
+              className={range === option.value ? "toggle-button active" : "toggle-button"}
+              onClick={() => setRange(option.value)}
+              type="button"
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </header>
 
-        {view === "dashboard" && (
-        <section className="grid">
+      <section className="grid">
         <div className="card">
           <div className="card-header">
-            <h2 id="fluency">AI Fluency Index</h2>
+            <h2>AI Fluency Index</h2>
             <span className="metric">{data.fluency_index.current ?? "--"}</span>
           </div>
           <LineChart points={fluencyTrend} />
@@ -253,7 +194,7 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card" id="coverage">
+        <div className="card">
           <h2>Enablement Coverage</h2>
           <div className="metric">
             {coverageLatest !== null
@@ -265,7 +206,7 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card" id="adoption">
+        <div className="card">
           <h2>Adoption Shape</h2>
           <ul className="list">
             {bandEntries.map(([label, value]) => (
@@ -277,7 +218,7 @@ export const Dashboard = () => {
           </ul>
         </div>
 
-        <div className="card" id="spread">
+        <div className="card">
           <h2>Spread & Risk Drift</h2>
           <div className="submetric">
             Teams with AI usage: {formatPercent(data.spread.teams_with_any_ai_usage_percent)}
@@ -289,68 +230,47 @@ export const Dashboard = () => {
             Compliance posture: {data.risk_drift_controls.compliance_posture_flag ?? "--"}
           </div>
         </div>
-        </section>
-        )}
- 
-        {view === "dashboard" && showOpportunities && (
-          <section className="card opportunities" id="opportunities">
-            <h2>Explore Opportunities</h2>
-            <p className="submetric">Examples other organizations explore at this stage.</p>
-            <div className="opportunity-list">
-              {opportunities.map((item) => (
-                <div className="opportunity" key={item.title}>
-                  <h3>{item.title}</h3>
-                  <p>{item.summary}</p>
-                  <p className="meta">{item.guidance}</p>
-                </div>
+      </section>
+
+      <section className="card transparency">
+        <h2>Transparency</h2>
+        <div className="transparency-grid">
+          <div>
+            <h3>What data is collected</h3>
+            <ul className="list">
+              {transparency.collected_data.map((item) => (
+                <li key={item}>{item}</li>
               ))}
-            </div>
-          </section>
-        )}
+            </ul>
+          </div>
+          <div>
+            <h3>What data is never collected</h3>
+            <ul className="list">
+              {transparency.never_collected.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3>Aggregation rules</h3>
+            <ul className="list">
+              {transparency.aggregation_rules.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3>Enabled signal sources</h3>
+            <ul className="list">
+              {transparency.enabled_signal_sources.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-        {view === "transparency" && (
-          <section className="card transparency" id="transparency">
-            <h2>Transparency</h2>
-            <p className="submetric">Auto-generated from live system configuration.</p>
-            <div className="transparency-grid">
-              <div>
-                <h3>Data collected</h3>
-                <ul className="list">
-                  {transparency.collected_data.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3>Data never collected</h3>
-                <ul className="list">
-                  {transparency.never_collected.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3>Aggregation rules</h3>
-                <ul className="list">
-                  {transparency.aggregation_rules.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3>Enabled signal sources</h3>
-                <ul className="list">
-                  {transparency.enabled_signal_sources.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
-        )}
-
-      <footer className="footer">All data shown is aggregated.</footer>
-      </main>
+      <footer className="footer">All data shown is aggregated. No individual-level tracking.</footer>
     </div>
   );
 };

@@ -25,7 +25,6 @@ import { runEnablementRollupsForEvents } from "./enablement_rollups";
 import { ToolClass, TOOL_CLASSES, normalizeSeenTimestamp } from "./tool_inventory";
 import { ensureToolClass, ensureUsageShape, normalizeUsageTimestamp } from "./usage_shape";
 import { runSpreadRollupForOrg } from "./spread_metrics";
-import { logAuditEvent, listAuditLogs } from "./audit_log";
 import { importRoster } from "./roster";
 import { suppressAndRollup } from "./suppression";
 import { runFluencyIndexJob } from "./fluency_service";
@@ -180,178 +179,6 @@ const latestControls = (controlNames: string[], controls: typeof store.controls)
   return { bucket_start: latestBucket, values };
 };
 
-const buildDashboardOverview = (org: { id: string }, query: express.Request["query"]) => {
-  const range = typeof query.range === "string" ? query.range : "12w";
-  const vendor = typeof query.vendor === "string" ? query.vendor : "all";
-  const groupType = typeof query.groupType === "string" ? query.groupType : "org";
-  const groupKey = typeof query.group_key === "string" ? query.group_key : "all";
-
-  const metrics = new Map(
-    Array.from(store.metrics.entries()).filter(([_, metric]) =>
-      filterByQuery(groupKey, groupType, vendor)(metric)
-    )
-  );
-  const controls = new Map(
-    Array.from(store.controls.entries()).filter(([_, control]) =>
-      filterByQuery(groupKey, groupType, vendor)(control)
-    )
-  );
-
-  const weeks = rangeToWeeks(range);
-  const fluencySeries = buildTimeseries("fluency_index", metrics, weeks);
-  const coverageActive = buildTimeseries("weekly_active_users", metrics, weeks);
-  const coverageAssigned = buildTimeseries("active_users_percent_of_assigned", metrics, weeks);
-
-  const frequencyBands = latestSnapshot(
-    [
-      "usage_frequency_band_rare_count",
-      "usage_frequency_band_occasional_count",
-      "usage_frequency_band_regular_count",
-      "usage_frequency_band_habitual_count"
-    ],
-    metrics
-  );
-
-  const spreadSnapshot = latestSnapshot(
-    ["teams_with_any_ai_usage_percent", "usage_concentration_index"],
-    metrics
-  );
-
-  const riskControls = latestControls(
-    [
-      "ai_enabled_status",
-      "data_retention_policy_status",
-      "model_training_opt_out_status",
-      "external_sharing_disabled_status",
-      "compliance_posture_flag"
-    ],
-    controls
-  );
-
-  const appUsage = latestSnapshot(
-    [
-      "usage_share_app_word_percent",
-      "usage_share_app_outlook_percent",
-      "usage_share_app_excel_percent",
-      "usage_share_app_powerpoint_percent",
-      "usage_share_app_teams_percent",
-      "usage_share_app_docs_percent",
-      "usage_share_app_gmail_percent",
-      "usage_share_app_sheets_percent",
-      "usage_share_app_slides_percent"
-    ],
-    metrics
-  );
-
-  const fluencyMetaKey = `${org.id}:${fluencySeries[fluencySeries.length - 1]?.week_start ?? ""}`;
-  const fluencyMeta = store.fluencyMeta.get(fluencyMetaKey);
-
-  return {
-    org_id: org.id,
-    range,
-    vendor,
-    group_type: groupType,
-    group_key: groupKey,
-    fluency_index: {
-      current: fluencySeries[fluencySeries.length - 1]?.value ?? null,
-      timeseries: fluencySeries,
-      data_completeness: fluencyMeta?.dataCompleteness ?? 0,
-      confidence: fluencyMeta?.confidence ?? 0
-    },
-    coverage: {
-      weekly_active_users: coverageActive,
-      active_users_percent_of_assigned: coverageAssigned
-    },
-    sessions_shape: {
-      bucket_start: frequencyBands.bucket_start,
-      frequency_bands: frequencyBands.values
-    },
-    spread: {
-      bucket_start: spreadSnapshot.bucket_start,
-      teams_with_any_ai_usage_percent: spreadSnapshot.values.teams_with_any_ai_usage_percent ?? null,
-      usage_concentration_index: spreadSnapshot.values.usage_concentration_index ?? null
-    },
-    risk_drift_controls: {
-      bucket_start: riskControls.bucket_start,
-      ai_enabled_status: riskControls.values.ai_enabled_status ?? null,
-      data_retention_policy_status: riskControls.values.data_retention_policy_status ?? null,
-      model_training_opt_out_status: riskControls.values.model_training_opt_out_status ?? null,
-      external_sharing_disabled_status: riskControls.values.external_sharing_disabled_status ?? null,
-      compliance_posture_flag: riskControls.values.compliance_posture_flag ?? null
-    },
-    app_usage_share: {
-      bucket_start: appUsage.bucket_start,
-      distribution: appUsage.values
-    }
-  };
-};
-
-const escapePdfText = (value: string) => value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
-
-const buildPdfBuffer = (lines: string[]) => {
-  const content = lines
-    .map((line, index) => {
-      const y = 760 - index * 16;
-      return `BT /F1 12 Tf 50 ${y} Td (${escapePdfText(line)}) Tj ET`;
-    })
-    .join("\n");
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
-    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-  ];
-  let offset = 9;
-  const xrefOffsets: number[] = [];
-  objects.forEach((obj, index) => {
-    const current = offset;
-    const header = `${index + 1} 0 obj\n`;
-    offset += header.length + `${obj}\nendobj\n`.length;
-    xrefOffsets.push(current);
-  });
-  const body = objects
-    .map((obj, index) => `${index + 1} 0 obj\n${obj}\nendobj\n`)
-    .join("");
-  const xrefStart = offset;
-  const xrefEntries = xrefOffsets
-    .map((pos) => pos.toString().padStart(10, "0") + " 00000 n ")
-    .join("\n");
-  const pdf = `%PDF-1.4\n${body}xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${xrefEntries}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-  return Buffer.from(pdf, "utf8");
-};
-
-const buildDashboardCsv = (overview: ReturnType<typeof buildDashboardOverview>) => {
-  const lines = [
-    "section,key,value",
-    `fluency_index,current,${overview.fluency_index.current ?? ""}`,
-    `fluency_index,confidence,${overview.fluency_index.confidence}`,
-    `fluency_index,data_completeness,${overview.fluency_index.data_completeness}`,
-    "fluency_trend,week_start,value"
-  ];
-  overview.fluency_index.timeseries.forEach((point) => {
-    lines.push(`fluency_trend,${point.week_start},${point.value ?? ""}`);
-  });
-  lines.push("enablement_coverage,week_start,weekly_active_users,active_users_percent_of_assigned");
-  overview.coverage.weekly_active_users.forEach((point, index) => {
-    const assigned = overview.coverage.active_users_percent_of_assigned[index]?.value ?? "";
-    lines.push(`enablement_coverage,${point.week_start},${point.value ?? ""},${assigned}`);
-  });
-  lines.push("adoption_shape,band,value");
-  Object.entries(overview.sessions_shape.frequency_bands).forEach(([band, value]) => {
-    lines.push(`adoption_shape,${band},${value ?? ""}`);
-  });
-  lines.push("spread_and_risk,teams_with_any_ai_usage_percent,usage_concentration_index,compliance_posture_flag");
-  lines.push(
-    `spread_and_risk,${overview.spread.teams_with_any_ai_usage_percent ?? ""},` +
-      `${overview.spread.usage_concentration_index ?? ""},` +
-      `${overview.risk_drift_controls.compliance_posture_flag ?? ""}`
-  );
-  return lines.join("\n");
-};
-
-const getActorRole = (req: express.Request) => req.header("x-role") ?? "exec";
-
 const enforceScopeQuery = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     enforceScopeWhitelist(typeof req.query.scope === "string" ? req.query.scope : undefined);
@@ -462,12 +289,6 @@ app.post("/orgs/:orgId/roles", (req, res) => {
   const roleId = `role-${crypto.randomUUID()}`;
   const record = { id: roleId, orgId: org.id, name: parsed.data.name };
   store.roles.set(roleId, record);
-  logAuditEvent({
-    orgId: org.id,
-    action: "role_change",
-    actorRole: getActorRole(req),
-    metadata: { change: "created", role_id: roleId }
-  });
   return res.status(201).json(record);
 });
 
@@ -482,12 +303,6 @@ app.patch("/orgs/:orgId/roles/:roleId", (req, res) => {
   }
   const updated = { ...role, name: parsed.data.name ?? role.name };
   store.roles.set(role.id, updated);
-  logAuditEvent({
-    orgId: role.orgId,
-    action: "role_change",
-    actorRole: getActorRole(req),
-    metadata: { change: "updated", role_id: role.id }
-  });
   return res.json(updated);
 });
 
@@ -499,12 +314,6 @@ app.delete("/orgs/:orgId/roles/:roleId", (req, res) => {
   store.roles.delete(role.id);
   store.employees.forEach((record) => {
     record.roleIds.delete(role.id);
-  });
-  logAuditEvent({
-    orgId: role.orgId,
-    action: "role_change",
-    actorRole: getActorRole(req),
-    metadata: { change: "deleted", role_id: role.id }
   });
   return res.status(204).send();
 });
@@ -520,12 +329,6 @@ app.post("/orgs/:orgId/roster/import", (req, res) => {
   }
   try {
     const result = importRoster(org.id, parsed.data.csv);
-    logAuditEvent({
-      orgId: org.id,
-      action: "data_import",
-      actorRole: getActorRole(req),
-      metadata: { import: "roster", imported: result.imported, rejected: result.rejected }
-    });
     return res.json(result);
   } catch (error) {
     return res.status(400).json({ error: "Invalid roster CSV" });
@@ -613,18 +416,6 @@ app.post("/enablement/import", express.text({ type: "text/csv" }), rejectForbidd
     });
   }
 
-  if (stored.length > 0 || errors.length > 0) {
-    const orgId = stored[0]?.orgId ?? rows[0]?.org_id;
-    if (orgId && store.orgs.has(orgId)) {
-      logAuditEvent({
-        orgId,
-        action: "data_import",
-        actorRole: getActorRole(req),
-        metadata: { import: "enablement_events", imported: stored.length, rejected: errors.length }
-      });
-    }
-  }
-
   return res.json({ imported: stored.length, rejected: errors.length, errors });
 });
 
@@ -665,12 +456,6 @@ app.post(
     };
     store.toolInventory.set(key, record);
     runSpreadRollupForOrg(org.id, record.lastSeen);
-    logAuditEvent({
-      orgId: org.id,
-      action: "data_import",
-      actorRole: getActorRole(req),
-      metadata: { import: "tool_inventory", team_id: team.id, tool_class: toolClass }
-    });
     return res.status(201).json(record);
   }
 );
@@ -727,17 +512,6 @@ app.post(
       recordedAt
     };
     store.usageShapes.set(key, record);
-    logAuditEvent({
-      orgId: org.id,
-      action: "data_import",
-      actorRole: getActorRole(req),
-      metadata: {
-        import: "usage_shape",
-        scope: teamId ? "team" : "role",
-        tool_class: parsed.data.tool_class,
-        usage_shape: parsed.data.category
-      }
-    });
     return res.status(201).json(record);
   }
 );
@@ -809,12 +583,6 @@ app.post("/orgs/:orgId/metrics/import", rejectForbiddenFields, (req, res) => {
   });
 
   runFluencyIndexJob(org.id);
-  logAuditEvent({
-    orgId: org.id,
-    action: "data_import",
-    actorRole: getActorRole(req),
-    metadata: { import: "metrics", imported: inserted, rejected: rejected.length }
-  });
   return res.json({ inserted, updated, rejected });
 });
 
@@ -835,12 +603,6 @@ app.post("/orgs/:orgId/controls/import", rejectForbiddenFields, (req, res) => {
       updated += 1;
     }
   });
-  logAuditEvent({
-    orgId: org.id,
-    action: "data_import",
-    actorRole: getActorRole(req),
-    metadata: { import: "controls", imported: inserted, rejected: rejected.length }
-  });
   return res.json({ inserted, updated, rejected });
 });
 
@@ -860,12 +622,6 @@ app.post("/orgs/:orgId/enablement/import", rejectForbiddenFields, (req, res) => 
     } else {
       updated += 1;
     }
-  });
-  logAuditEvent({
-    orgId: org.id,
-    action: "data_import",
-    actorRole: getActorRole(req),
-    metadata: { import: "enablement_rollups", imported: inserted, rejected: rejected.length }
   });
   return res.json({ inserted, updated, rejected });
 });
@@ -896,90 +652,110 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const overview = buildDashboardOverview(org, req.query);
-    logAuditEvent({
-      orgId: org.id,
-      action: "dashboard_access",
-      actorRole: getActorRole(req),
-      metadata: {
-        endpoint: "dashboard_overview",
-        range: overview.range,
-        group_type: overview.group_type,
-        group_key: overview.group_key
+
+    const range = typeof req.query.range === "string" ? req.query.range : "12w";
+    const vendor = typeof req.query.vendor === "string" ? req.query.vendor : "all";
+    const groupType = typeof req.query.groupType === "string" ? req.query.groupType : "org";
+    const groupKey = typeof req.query.group_key === "string" ? req.query.group_key : "all";
+
+    const metrics = new Map(
+      Array.from(store.metrics.entries()).filter(([_, metric]) =>
+        filterByQuery(groupKey, groupType, vendor)(metric)
+      )
+    );
+    const controls = new Map(
+      Array.from(store.controls.entries()).filter(([_, control]) =>
+        filterByQuery(groupKey, groupType, vendor)(control)
+      )
+    );
+
+    const weeks = rangeToWeeks(range);
+    const fluencySeries = buildTimeseries("fluency_index", metrics, weeks);
+    const coverageActive = buildTimeseries("weekly_active_users", metrics, weeks);
+    const coverageAssigned = buildTimeseries("active_users_percent_of_assigned", metrics, weeks);
+
+    const frequencyBands = latestSnapshot(
+      [
+        "usage_frequency_band_rare_count",
+        "usage_frequency_band_occasional_count",
+        "usage_frequency_band_regular_count",
+        "usage_frequency_band_habitual_count"
+      ],
+      metrics
+    );
+
+    const spreadSnapshot = latestSnapshot(
+      ["teams_with_any_ai_usage_percent", "usage_concentration_index"],
+      metrics
+    );
+
+    const riskControls = latestControls(
+      [
+        "ai_enabled_status",
+        "data_retention_policy_status",
+        "model_training_opt_out_status",
+        "external_sharing_disabled_status",
+        "compliance_posture_flag"
+      ],
+      controls
+    );
+
+    const appUsage = latestSnapshot(
+      [
+        "usage_share_app_word_percent",
+        "usage_share_app_outlook_percent",
+        "usage_share_app_excel_percent",
+        "usage_share_app_powerpoint_percent",
+        "usage_share_app_teams_percent",
+        "usage_share_app_docs_percent",
+        "usage_share_app_gmail_percent",
+        "usage_share_app_sheets_percent",
+        "usage_share_app_slides_percent"
+      ],
+      metrics
+    );
+
+    const fluencyMetaKey = `${org.id}:${fluencySeries[fluencySeries.length - 1]?.week_start ?? ""}`;
+    const fluencyMeta = store.fluencyMeta.get(fluencyMetaKey);
+
+    return res.json({
+      org_id: org.id,
+      range,
+      vendor,
+      group_type: groupType,
+      group_key: groupKey,
+      fluency_index: {
+        current: fluencySeries[fluencySeries.length - 1]?.value ?? null,
+        timeseries: fluencySeries,
+        data_completeness: fluencyMeta?.dataCompleteness ?? 0,
+        confidence: fluencyMeta?.confidence ?? 0
+      },
+      coverage: {
+        weekly_active_users: coverageActive,
+        active_users_percent_of_assigned: coverageAssigned
+      },
+      sessions_shape: {
+        bucket_start: frequencyBands.bucket_start,
+        frequency_bands: frequencyBands.values
+      },
+      spread: {
+        bucket_start: spreadSnapshot.bucket_start,
+        teams_with_any_ai_usage_percent: spreadSnapshot.values.teams_with_any_ai_usage_percent ?? null,
+        usage_concentration_index: spreadSnapshot.values.usage_concentration_index ?? null
+      },
+      risk_drift_controls: {
+        bucket_start: riskControls.bucket_start,
+        ai_enabled_status: riskControls.values.ai_enabled_status ?? null,
+        data_retention_policy_status: riskControls.values.data_retention_policy_status ?? null,
+        model_training_opt_out_status: riskControls.values.model_training_opt_out_status ?? null,
+        external_sharing_disabled_status: riskControls.values.external_sharing_disabled_status ?? null,
+        compliance_posture_flag: riskControls.values.compliance_posture_flag ?? null
+      },
+      app_usage_share: {
+        bucket_start: appUsage.bucket_start,
+        distribution: appUsage.values
       }
     });
-    return res.json(overview);
-  }
-);
-
-app.get(
-  "/orgs/:orgId/dashboard/export.csv",
-  rbacMiddleware(["admin", "exec", "enablement_lead"]),
-  enforceAggregation,
-  enforceScopeQuery,
-  (req, res) => {
-    const org = store.orgs.get(req.params.orgId);
-    if (!org) {
-      return res.status(404).json({ error: "Org not found" });
-    }
-    const overview = buildDashboardOverview(org, req.query);
-    logAuditEvent({
-      orgId: org.id,
-      action: "dashboard_access",
-      actorRole: getActorRole(req),
-      metadata: { endpoint: "dashboard_export_csv", range: overview.range }
-    });
-    const csv = buildDashboardCsv(overview);
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", "attachment; filename=\"dashboard-export.csv\"");
-    return res.send(csv);
-  }
-);
-
-app.get(
-  "/orgs/:orgId/dashboard/export.pdf",
-  rbacMiddleware(["admin", "exec", "enablement_lead"]),
-  enforceAggregation,
-  enforceScopeQuery,
-  (req, res) => {
-    const org = store.orgs.get(req.params.orgId);
-    if (!org) {
-      return res.status(404).json({ error: "Org not found" });
-    }
-    const overview = buildDashboardOverview(org, req.query);
-    logAuditEvent({
-      orgId: org.id,
-      action: "dashboard_access",
-      actorRole: getActorRole(req),
-      metadata: { endpoint: "dashboard_export_pdf", range: overview.range }
-    });
-    const lines = [
-      `Organization: ${overview.org_id}`,
-      `Range: ${overview.range}`,
-      `Fluency Index: ${overview.fluency_index.current ?? "--"}`,
-      `Coverage (active of assigned): ${overview.coverage.active_users_percent_of_assigned.at(-1)?.value ?? "--"}`,
-      `Adoption Shape (habitual): ${overview.sessions_shape.frequency_bands.usage_frequency_band_habitual_count ?? "--"}`,
-      `Spread (teams with AI usage): ${overview.spread.teams_with_any_ai_usage_percent ?? "--"}`,
-      `Risk Drift (compliance posture): ${overview.risk_drift_controls.compliance_posture_flag ?? "--"}`,
-      "All data shown is aggregated."
-    ];
-    const pdf = buildPdfBuffer(lines);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "attachment; filename=\"dashboard-export.pdf\"");
-    return res.send(pdf);
-  }
-);
-
-app.get(
-  "/orgs/:orgId/audit-log",
-  rbacMiddleware(["admin"]),
-  (req, res) => {
-    const org = store.orgs.get(req.params.orgId);
-    if (!org) {
-      return res.status(404).json({ error: "Org not found" });
-    }
-    const logs = listAuditLogs(org.id);
-    return res.json({ logs });
   }
 );
 

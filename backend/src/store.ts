@@ -130,15 +130,6 @@ export type FluencySnapshotRecord = {
   dataCompleteness: number;
 };
 
-export type AuditLogRecord = {
-  id: string;
-  orgId: string;
-  action: "data_import" | "role_change" | "dashboard_access";
-  actorRole: string;
-  metadata: Record<string, string | number | boolean | null>;
-  timestamp: string;
-};
-
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -156,7 +147,6 @@ class MemoryStore {
   fluencyMeta = new Map<string, FluencyMetaRecord>();
   fluencyDimensions = new Map<string, FluencyDimensionRecord>();
   fluencySnapshots = new Map<string, FluencySnapshotRecord>();
-  auditLogs = new Map<string, AuditLogRecord>();
 
   reset() {
     this.orgs.clear();
@@ -175,7 +165,6 @@ class MemoryStore {
     this.fluencyMeta.clear();
     this.fluencyDimensions.clear();
     this.fluencySnapshots.clear();
-    this.auditLogs.clear();
   }
 }
 
