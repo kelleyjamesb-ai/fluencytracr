@@ -96,14 +96,14 @@ const UsageShapeSchema = z
 
 const validateRows = <T>(
   rows: unknown[],
-  schema: { safeParse: (input: unknown) => { success: boolean; data?: T; error?: { message: string } } }
+  schema: z.ZodType<T>
 ) => {
   const accepted: T[] = [];
   const rejected: { index: number; error: string }[] = [];
   rows.forEach((row, index) => {
     const result = schema.safeParse(row);
     if (result.success) {
-      accepted.push(result.data as T);
+      accepted.push(result.data);
     } else {
       rejected.push({ index, error: result.error?.message ?? "Invalid row" });
     }

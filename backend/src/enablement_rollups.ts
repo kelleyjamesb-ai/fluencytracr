@@ -30,7 +30,9 @@ export const runDailyEnablementRollup = (orgId: string, day: string): Enablement
     const key = `${event.orgId}:${event.teamId}:${event.roleId}`;
     const current = grouped.get(key) ?? { counts: emptyCounts(), total: 0 };
     const eventType = event.eventType as EnablementEventType;
-    current.counts[eventType] += 1;
+    if (eventType in current.counts) {
+      current.counts[eventType] += 1;
+    }
     current.total += 1;
     grouped.set(key, current);
   });
