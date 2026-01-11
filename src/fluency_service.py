@@ -1,13 +1,19 @@
 """LearnAIR Fluency Index - Privacy-first AI maturity scoring.
 
 Mathematical Framework:
-    F = 0.20C + 0.40D + 0.25J + 0.15V
+    F = (0.20C + 0.40D + 0.25J + 0.15V) × E
 
 Where:
     C (Coverage): Ratio of weekly active users to roster size
     D (Depth): Weighted interaction score normalized against power user baseline
     J (Judgment): Compliance score with Shadow AI penalties
     V (Velocity): Delta of Depth in 14 days post-enablement vs 14 days pre-enablement
+    E (Environmental): Vision-based confidence modifier (0.7-1.0) based on detected distractions
+
+Environmental Penalty Integration:
+    The vision module monitors for bright spots (glare, laser pointers, reflections)
+    that may indicate environmental distractions affecting user focus. High distraction
+    applies a confidence penalty (E) to the fluency score, capped at 30% reduction.
 """
 
 from __future__ import annotations
@@ -62,6 +68,7 @@ class FluencyScore:
     judgment: float
     velocity: float
     suppressed: bool = False
+    environmental_penalty: float = 1.0  # Vision-based confidence modifier (0.7-1.0)
 
 
 def _validate_weights() -> None:
@@ -230,6 +237,7 @@ def calculate_fluency_index(
     all_enablement_events: list[EnablementEvent],
     policy_acknowledgment_rate: float,
     reference_date: datetime | None = None,
+    environmental_penalty: float = 1.0,
 ) -> FluencyScore:
     """Calculate comprehensive fluency index for a team.
 
@@ -240,9 +248,17 @@ def calculate_fluency_index(
         all_enablement_events: All enablement events (will be filtered by team_id)
         policy_acknowledgment_rate: % of team that completed AI Policy (0.0-1.0)
         reference_date: Date to calculate from (defaults to now)
+        environmental_penalty: Vision-based confidence modifier (0.7-1.0, default 1.0)
+            Applied from LearnAIR_Bridge based on detected visual distractions
 
     Returns:
         FluencyScore with composite index and component scores
+
+    Note:
+        The environmental_penalty is applied as a final multiplier to the fluency index:
+            Adjusted_Fluency = Base_Fluency × Environmental_Penalty
+        This allows the vision module to reduce confidence in metrics when environmental
+        distractions (glare, bright spots) are detected.
     """
     _validate_weights()
 
@@ -277,22 +293,33 @@ def calculate_fluency_index(
     else:
         velocity = 0.0
 
-    # Composite Fluency Index
-    fluency_index = (
+    # Composite Fluency Index (before environmental adjustment)
+    base_fluency = (
         WEIGHT_COVERAGE * coverage
         + WEIGHT_DEPTH * depth
         + WEIGHT_JUDGMENT * judgment
         + WEIGHT_VELOCITY * velocity
     )
 
+    # Apply environmental penalty from vision module
+    # Formula: Adjusted_Fluency = Base_Fluency × Environmental_Penalty
+    # Penalty ranges from 0.7 (30% reduction) to 1.0 (no reduction)
+    if not 0.7 <= environmental_penalty <= 1.0:
+        raise ValidationError(
+            f"Environmental penalty must be between 0.7 and 1.0, got {environmental_penalty}"
+        )
+
+    adjusted_fluency = base_fluency * environmental_penalty
+
     return FluencyScore(
         team_id=team_id,
-        fluency_index=fluency_index,
+        fluency_index=adjusted_fluency,
         coverage=coverage,
         depth=depth,
         judgment=judgment,
         velocity=velocity,
         suppressed=False,
+        environmental_penalty=environmental_penalty,
     )
 
 
@@ -304,6 +331,7 @@ def calculate_fluency_with_suppression(
     all_enablement_events: list[EnablementEvent],
     policy_acknowledgment_rate: float,
     reference_date: datetime | None = None,
+    environmental_penalty: float = 1.0,
 ) -> FluencyScore | SuppressedMetric:
     """Calculate fluency index with privacy suppression.
 
@@ -317,6 +345,7 @@ def calculate_fluency_with_suppression(
         all_enablement_events: All enablement events
         policy_acknowledgment_rate: % of team that completed AI Policy
         reference_date: Date to calculate from (defaults to now)
+        environmental_penalty: Vision-based confidence modifier (0.7-1.0, default 1.0)
 
     Returns:
         FluencyScore if team is large enough, otherwise SuppressedMetric
@@ -334,4 +363,5 @@ def calculate_fluency_with_suppression(
         all_enablement_events=all_enablement_events,
         policy_acknowledgment_rate=policy_acknowledgment_rate,
         reference_date=reference_date,
+        environmental_penalty=environmental_penalty,
     )
