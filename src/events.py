@@ -12,6 +12,7 @@ EventType = Literal[
     "assessment_post",
     "session_attended",
     "everboarding_touch",
+    "workshop",
 ]
 
 
@@ -30,6 +31,7 @@ def validate_event(event: EnablementEvent) -> None:
         "assessment_post",
         "session_attended",
         "everboarding_touch",
+        "workshop",
     }:
         raise ValueError("Invalid event type")
     if event.occurred_at.tzinfo is None:
