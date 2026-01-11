@@ -8,6 +8,7 @@ import {
   MetricObservationSchema,
   OrgCreateSchema,
   PolicyControlObservationSchema,
+  ToolClassSchema,
   TrainingEventRollupSchema
 } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
@@ -18,7 +19,8 @@ import {
   upsertEnablement,
   upsertGroup,
   upsertMetric,
-  EnablementEventRecord
+  EnablementEventRecord,
+  MetricRecord
 } from "./store";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
 import { runEnablementRollupsForEvents } from "./enablement_rollups";
@@ -73,7 +75,7 @@ const EnablementEventSchema = z
 const ToolInventorySchema = z
   .object({
     team_id: z.string().min(1),
-    tool_class: z.enum(TOOL_CLASSES),
+    tool_class: ToolClassSchema,
     first_seen: z.string().optional(),
     last_seen: z.string().optional()
   })
@@ -83,7 +85,7 @@ const UsageShapeSchema = z
   .object({
     team_id: z.string().min(1).optional(),
     role_id: z.string().min(1).optional(),
-    tool_class: z.enum(TOOL_CLASSES),
+    tool_class: ToolClassSchema,
     category: z.enum(["rare", "occasional", "regular", "habitual"]),
     recorded_at: z.string().optional()
   })
@@ -157,7 +159,7 @@ const latestSnapshot = (metricNames: string[], metrics: typeof store.metrics) =>
   const values: Record<string, number | null> = {};
   metricNames.forEach((name) => {
     const match = relevant.find((metric) => metric.bucket_start === latestBucket && metric.metric_name === name);
-    values[name] = match?.suppressed || match?.metric_value === null ? null : match.metric_value ?? null;
+    values[name] = match?.suppressed || match?.metric_value === null ? null : (match?.metric_value ?? null);
   });
   return { bucket_start: latestBucket, values };
 };
@@ -171,10 +173,10 @@ const latestControls = (controlNames: string[], controls: typeof store.controls)
     (latest, control) => (control.bucket_start > latest ? control.bucket_start : latest),
     ""
   );
-  const values: Record<string, string | null> = {};
+  const values: Record<string, boolean | null> = {};
   controlNames.forEach((name) => {
     const match = relevant.find((control) => control.bucket_start === latestBucket && control.control_name === name);
-    values[name] = match?.status ?? null;
+    values[name] = match?.control_value ?? null;
   });
   return { bucket_start: latestBucket, values };
 };
@@ -201,7 +203,7 @@ app.post("/orgs", (req, res) => {
   store.orgs.set(id, {
     id,
     name: parsed.data.name,
-    minGroupSize: parsed.data.min_group_size ?? 10,
+    minGroupSize: parsed.data.minGroupSize ?? 10,
     createdAt
   });
   const defaultRoles = ["Admin", "Exec Viewer", "Enablement Lead"];
@@ -213,7 +215,7 @@ app.post("/orgs", (req, res) => {
     org_id: id,
     name: parsed.data.name,
     created_at: createdAt,
-    min_group_size: parsed.data.min_group_size ?? 10
+    min_group_size: parsed.data.minGroupSize ?? 10
   });
 });
 
@@ -421,7 +423,7 @@ app.post("/enablement/import", express.text({ type: "text/csv" }), rejectForbidd
 
 app.post(
   "/orgs/:orgId/tools",
-  rbacMiddleware(["admin"]),
+  rbacMiddleware(["ADMIN"]),
   rejectForbiddenFields,
   (req, res) => {
     const org = store.orgs.get(req.params.orgId);
@@ -462,7 +464,7 @@ app.post(
 
 app.post(
   "/orgs/:orgId/usage-shape",
-  rbacMiddleware(["admin", "enablement_lead"]),
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   rejectForbiddenFields,
   (req, res) => {
     const org = store.orgs.get(req.params.orgId);
@@ -552,7 +554,7 @@ app.post("/orgs/:orgId/metrics/import", rejectForbiddenFields, (req, res) => {
       bucketEnd: row.bucket_end,
       metricName: row.metric_name,
       metricValue: row.metric_value,
-      isUserCount: row.is_user_count,
+      isUserCount: row.is_user_count ?? false,
       suppressed: false
     })),
     org.minGroupSize
@@ -561,15 +563,14 @@ app.post("/orgs/:orgId/metrics/import", rejectForbiddenFields, (req, res) => {
   let inserted = 0;
   let updated = 0;
   suppressed.forEach((metric) => {
-    const record = {
+    const record: MetricRecord = {
       orgId: org.id,
       group_key: metric.groupKey,
-      group_type: metric.groupType,
+      group_type: (metric.groupType ?? "org") as "org" | "team" | "role",
       vendor: metric.vendor,
       bucket_start: metric.bucketStart,
       bucket_end: metric.bucketEnd,
       metric_name: metric.metricName,
-      metric_unit: metric.metricName === "fluency_index" ? "percent" : undefined,
       metric_value: metric.metricValue,
       is_user_count: metric.isUserCount,
       suppressed: metric.suppressed
@@ -632,7 +633,7 @@ app.post("/api/ingest", rejectForbiddenFields, (_req, res) => {
 
 app.get(
   "/orgs/:orgId/transparency",
-  rbacMiddleware(["admin", "exec", "enablement_lead"]),
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   (req, res) => {
     const report = buildTransparencyReport(req.params.orgId);
     if (!report) {
@@ -644,7 +645,7 @@ app.get(
 
 app.get(
   "/orgs/:orgId/dashboard/overview",
-  rbacMiddleware(["admin", "exec", "enablement_lead"]),
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   enforceAggregation,
   enforceScopeQuery,
   (req, res) => {
@@ -761,13 +762,13 @@ app.get(
 
 app.get(
   "/api/dashboard",
-  rbacMiddleware(["admin", "exec", "enablement_lead"]),
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   enforceAggregation,
   (req, res) => {
     const parsed = DashboardRequestSchema.safeParse({
-      range: req.query.range ?? "4w",
-      team: req.query.team ?? "all",
-      aggregation: req.query.aggregation ?? "org"
+      orgId: req.query.orgId,
+      aggregation: req.query.aggregation,
+      metricNames: req.query.metricNames ? (req.query.metricNames as string).split(",") : undefined
     });
 
     if (!parsed.success) {
@@ -775,31 +776,9 @@ app.get(
     }
 
     const response: DashboardResponse = {
-      range: parsed.data.range,
-      aggregation: parsed.data.aggregation,
-      teams: ["All teams", "Sales", "Support", "Engineering"],
-      fluencyTrend: [
-        { date: "2024-01-01", score: 48 },
-        { date: "2024-01-08", score: 52 },
-        { date: "2024-01-15", score: 55 },
-        { date: "2024-01-22", score: 59 },
-        { date: "2024-01-29", score: 62 }
-      ],
-      coverage: [
-        { label: "Sales", value: 0.64 },
-        { label: "Support", value: 0.58 },
-        { label: "Engineering", value: 0.72 }
-      ],
-      adoptionShape: [
-        { date: "2024-01-01", rare: 12, occasional: 26, regular: 44, habitual: 18 },
-        { date: "2024-01-15", rare: 10, occasional: 24, regular: 46, habitual: 20 },
-        { date: "2024-01-29", rare: 8, occasional: 22, regular: 48, habitual: 22 }
-      ],
-      spreadRisk: [
-        { date: "2024-01-01", presence: 0.4, concentration: 0.62 },
-        { date: "2024-01-15", presence: 0.55, concentration: 0.54 },
-        { date: "2024-01-29", presence: 0.68, concentration: 0.42 }
-      ]
+      metrics: [],
+      controls: [],
+      enablement: []
     };
 
     return res.json(response);

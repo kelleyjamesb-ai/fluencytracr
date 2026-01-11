@@ -8,7 +8,7 @@ import {
 
 it("does not assign forbidden capabilities", () => {
   expect(() => validateCapabilities()).not.toThrow();
-  const forbidden = new Set(FORBIDDEN_CAPABILITIES);
+  const forbidden = new Set(FORBIDDEN_CAPABILITIES as readonly string[]);
   Object.values(ROLE_CAPABILITIES).forEach((caps) => {
     caps.forEach((capability) => {
       expect(forbidden.has(capability)).toBe(false);
@@ -26,6 +26,6 @@ it("all capabilities are from allowlist", () => {
 });
 
 it("role capability checks", () => {
-  expect(roleHasCapability("exec", "VIEW_ORG_AGGREGATES")).toBe(true);
-  expect(roleHasCapability("exec", "INGEST_DATA")).toBe(false);
+  expect(roleHasCapability("EXEC_VIEWER", "VIEW_ORG_AGGREGATES")).toBe(true);
+  expect(roleHasCapability("EXEC_VIEWER", "INGEST_DATA")).toBe(false);
 });

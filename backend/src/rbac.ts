@@ -3,11 +3,11 @@ import { Role, RoleSchema } from "@learnaire/shared";
 
 export type RequestWithRole = Request & { role?: Role };
 
-const ROLE_ORDER: Role[] = ["admin", "exec", "enablement_lead"];
+const ROLE_ORDER: Role[] = ["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"];
 
 export const rbacMiddleware = (allowed: Role[]) => {
   return (req: RequestWithRole, _res: Response, next: NextFunction) => {
-    const rawRole = req.header("x-role") ?? "exec";
+    const rawRole = req.header("x-role") ?? "EXEC_VIEWER";
     const role = RoleSchema.parse(rawRole);
     if (!allowed.includes(role)) {
       const err = new Error("Forbidden");
@@ -24,7 +24,7 @@ export const enforceAggregation = (req: RequestWithRole, _res: Response, next: N
     const err = new Error("Invalid aggregation");
     return next(err);
   }
-  if (req.role === "exec" && aggregation === "team") {
+  if (req.role === "EXEC_VIEWER" && aggregation === "team") {
     const err = new Error("Exec cannot access team-level aggregation");
     return next(err);
   }

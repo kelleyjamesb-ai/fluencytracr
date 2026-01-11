@@ -25,7 +25,7 @@ it("rejects disallowed scopes in query", async () => {
   const server = await startServer();
   const response = await fetch(
     `${server.url}/orgs/org-1/dashboard/overview?scope=employee&range=12w`,
-    { headers: { "x-role": "exec" } }
+    { headers: { "x-role": "EXEC_VIEWER" } }
   );
   const payload = await response.json();
   server.close();

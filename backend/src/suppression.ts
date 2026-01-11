@@ -61,7 +61,7 @@ const buildOrgRollups = (metrics: Metric[], minGroupSize: number): Metric[] => {
 
 export const rollupSuppressedToOrg = (metrics: Metric[], minGroupSize: number): Metric[] => {
   const hasSuppressed = metrics.some(
-    (metric) => metric.isUserCount && metric.metricValue === null && metric.suppressed
+    (metric) => metric.isUserCount && metric.suppressed
   );
 
   if (!hasSuppressed) {
@@ -73,6 +73,7 @@ export const rollupSuppressedToOrg = (metrics: Metric[], minGroupSize: number): 
 };
 
 export const suppressAndRollup = (metrics: Metric[], minGroupSize: number): Metric[] => {
+  const orgRollups = buildOrgRollups(metrics, minGroupSize);
   const suppressed = applySuppression(metrics, minGroupSize);
-  return rollupSuppressedToOrg(suppressed, minGroupSize);
+  return [...suppressed, ...orgRollups];
 };

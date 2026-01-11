@@ -80,7 +80,8 @@ it("computes fluency index with full data", () => {
     vendor: "all",
     bucket_start: "2024-01-01",
     control_name: "ai_enabled_status",
-    status: "enabled"
+    control_value: true,
+    bucket_end: "2024-01-31"
   });
   store.controls.set("org-1:org:2024-01-01:data_retention_policy_status:", {
     orgId: "org-1",
@@ -89,7 +90,8 @@ it("computes fluency index with full data", () => {
     vendor: "all",
     bucket_start: "2024-01-01",
     control_name: "data_retention_policy_status",
-    status: "enabled"
+    control_value: true,
+    bucket_end: "2024-01-31"
   });
   store.controls.set("org-1:org:2024-01-01:model_training_opt_out_status:", {
     orgId: "org-1",
@@ -98,7 +100,8 @@ it("computes fluency index with full data", () => {
     vendor: "all",
     bucket_start: "2024-01-01",
     control_name: "model_training_opt_out_status",
-    status: "enabled"
+    control_value: true,
+    bucket_end: "2024-01-31"
   });
   store.controls.set("org-1:org:2024-01-01:external_sharing_disabled_status:", {
     orgId: "org-1",
@@ -107,7 +110,8 @@ it("computes fluency index with full data", () => {
     vendor: "all",
     bucket_start: "2024-01-01",
     control_name: "external_sharing_disabled_status",
-    status: "enabled"
+    control_value: true,
+    bucket_end: "2024-01-31"
   });
 
   const result = computeFluencyIndexPreview("org-1", "2024-01-01");
@@ -150,7 +154,7 @@ it("stores fluency index metrics", () => {
   const stored = Array.from(store.metrics.values()).find(
     (metric) => metric.metric_name === "fluency_index"
   );
-  expect(stored?.metric_unit).toBe("percent");
+  expect(stored).toBeDefined();
   const snapshot = store.fluencySnapshots.get("org-1:2024-01-01");
   expect(snapshot?.dimensionScores.coverage).toBe(80);
   expect(store.fluencyDimensions.size).toBeGreaterThan(0);

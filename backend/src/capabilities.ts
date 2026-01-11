@@ -12,17 +12,17 @@ export const FORBIDDEN_CAPABILITIES = [
 
 export type Capability = (typeof ALLOWED_CAPABILITIES)[number];
 
-export type Role = "admin" | "exec" | "enablement_lead";
+export type Role = "ADMIN" | "EXEC_VIEWER" | "ENABLEMENT_LEAD";
 
 export const ROLE_CAPABILITIES: Record<Role, Capability[]> = {
-  admin: [
+  ADMIN: [
     "VIEW_ORG_AGGREGATES",
     "VIEW_TEAM_AGGREGATES",
     "MANAGE_ORG_CONFIG",
     "INGEST_DATA"
   ],
-  exec: ["VIEW_ORG_AGGREGATES"],
-  enablement_lead: ["VIEW_ORG_AGGREGATES", "VIEW_TEAM_AGGREGATES", "INGEST_DATA"]
+  EXEC_VIEWER: ["VIEW_ORG_AGGREGATES"],
+  ENABLEMENT_LEAD: ["VIEW_ORG_AGGREGATES", "VIEW_TEAM_AGGREGATES", "INGEST_DATA"]
 };
 
 export const roleHasCapability = (role: Role, capability: Capability) => {
@@ -30,7 +30,7 @@ export const roleHasCapability = (role: Role, capability: Capability) => {
 };
 
 export const validateCapabilities = () => {
-  const forbidden = new Set(FORBIDDEN_CAPABILITIES);
+  const forbidden = new Set(FORBIDDEN_CAPABILITIES as readonly string[]);
   Object.values(ROLE_CAPABILITIES).forEach((caps) => {
     caps.forEach((capability) => {
       if (forbidden.has(capability)) {
