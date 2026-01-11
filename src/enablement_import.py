@@ -15,11 +15,14 @@ from src.events import EnablementEvent, parse_event
 class EnablementStore:
     events: list[EnablementEvent] = field(default_factory=list)
     by_org: dict[str, list[EnablementEvent]] = field(default_factory=dict)
+    by_team: dict[str, list[EnablementEvent]] = field(default_factory=dict)
     by_role: dict[str, list[EnablementEvent]] = field(default_factory=dict)
 
     def add(self, event: EnablementEvent) -> None:
         self.events.append(event)
         self.by_org.setdefault(event.org_id, []).append(event)
+        if event.team_id:
+            self.by_team.setdefault(event.team_id, []).append(event)
         self.by_role.setdefault(event.role_id, []).append(event)
 
 

@@ -15,6 +15,16 @@ class EventsTests(unittest.TestCase):
         )
         validate_event(event)
 
+    def test_validate_event_accepts_training_workshop(self) -> None:
+        event = EnablementEvent(
+            event_type="workshop",
+            occurred_at=datetime(2024, 1, 2, tzinfo=timezone.utc),
+            org_id="org-1",
+            team_id="team-2",
+            role_id="role-1",
+        )
+        validate_event(event)
+
     def test_validate_event_rejects_unknown_type(self) -> None:
         event = EnablementEvent(
             event_type="unknown",  # type: ignore[arg-type]
