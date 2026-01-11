@@ -9,6 +9,7 @@ import json
 from typing import Iterable
 
 from src.events import EnablementEvent, parse_event
+from src.exceptions import ValidationError
 
 
 @dataclass
@@ -60,7 +61,7 @@ def import_enablement(
     for index, row in enumerate(rows, start=1):
         try:
             event = parse_event(row)
-        except ValueError as exc:
+        except (ValueError, ValidationError) as exc:
             errors.append(f"row {index}: {exc}")
             continue
         store.add(event)
