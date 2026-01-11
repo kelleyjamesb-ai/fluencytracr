@@ -9,7 +9,9 @@ import {
   OrgCreateSchema,
   PolicyControlObservationSchema,
   ToolClassSchema,
-  TrainingEventRollupSchema
+  TrainingEventRollupSchema,
+  BehavioralSignalAggregateSchema,
+  BehavioralSignalImportSchema
 } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
 import { rejectForbiddenFields } from "./ingest";
@@ -19,9 +21,12 @@ import {
   upsertEnablement,
   upsertGroup,
   upsertMetric,
+  upsertBehavioralSignal,
   EnablementEventRecord,
   MetricRecord
 } from "./store";
+import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
+import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
 import { runEnablementRollupsForEvents } from "./enablement_rollups";
 import { ToolClass, TOOL_CLASSES, normalizeSeenTimestamp } from "./tool_inventory";
@@ -782,6 +787,217 @@ app.get(
     };
 
     return res.json(response);
+  }
+);
+
+app.post(
+  "/orgs/:orgId/behavior/import",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  rejectForbiddenFields,
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const parsed = BehavioralSignalImportSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+
+    const errors: { index: number; error: string }[] = [];
+    let imported = 0;
+    let suppressed = 0;
+    let rolledUp = 0;
+
+    // Validate that all org_ids match the route parameter
+    parsed.data.aggregates.forEach((agg, index) => {
+      if (agg.org_id !== org.id) {
+        errors.push({ index, error: `org_id mismatch: expected ${org.id}, got ${agg.org_id}` });
+      }
+    });
+
+    // Filter out errors
+    const validAggregates = parsed.data.aggregates.filter((_, index) =>
+      !errors.some((e) => e.index === index)
+    );
+
+    // Apply suppression and rollup (k=5 for behavioral signals)
+    const processedSignals = suppressAndRollupBehavioral(validAggregates, 5);
+
+    // Count suppressed and rolled up
+    processedSignals.forEach((signal) => {
+      const result = upsertBehavioralSignal(signal);
+      if (result.inserted) {
+        imported += 1;
+      }
+      if (signal.suppressed) {
+        suppressed += 1;
+      }
+      if (signal.includesRollup) {
+        rolledUp += 1;
+      }
+    });
+
+    return res.json({
+      imported,
+      suppressed,
+      rolled_up: rolledUp,
+      rejected: errors.length,
+      errors
+    });
+  }
+);
+
+app.get(
+  "/orgs/:orgId/behavior/signals",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const bucketStart = typeof req.query.bucket_start === "string" ? req.query.bucket_start : undefined;
+    const groupType = typeof req.query.group_type === "string" ? req.query.group_type : undefined;
+    const groupId = typeof req.query.group_id === "string" ? req.query.group_id : undefined;
+    const signalName = typeof req.query.signal_name === "string" ? req.query.signal_name : undefined;
+    const includeSuppressed = req.query.include_suppressed === "true";
+
+    // Filter signals
+    let signals = Array.from(store.behavioralSignals.values()).filter(
+      (signal) => signal.org_id === org.id
+    );
+
+    if (bucketStart) {
+      signals = signals.filter((s) => s.bucket_start === bucketStart);
+    }
+
+    if (groupType) {
+      signals = signals.filter((s) => s.group_type === groupType);
+    }
+
+    if (groupId) {
+      signals = signals.filter((s) => s.group_id === groupId);
+    }
+
+    if (signalName) {
+      signals = signals.filter((s) => s.signal_name === signalName);
+    }
+
+    // Exclude suppressed by default
+    if (!includeSuppressed) {
+      signals = signals.filter((s) => !s.suppressed);
+    }
+
+    const suppressedCount = signals.filter((s) => s.suppressed).length;
+
+    return res.json({
+      org_id: org.id,
+      signals: signals.map((s) => ({
+        group_id: s.group_id,
+        group_type: s.group_type,
+        function_id: s.function_id,
+        bucket_start: s.bucket_start,
+        signal_name: s.signal_name,
+        count: s.count,
+        tool_class: s.tool_class,
+        suppressed: s.suppressed,
+        includes_rollup: s.includesRollup,
+        metadata: s.metadata
+      })),
+      total_count: signals.length,
+      suppressed_count: suppressedCount
+    });
+  }
+);
+
+app.get(
+  "/orgs/:orgId/behavior/patterns",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const bucketStart = typeof req.query.bucket_start === "string"
+      ? req.query.bucket_start
+      : undefined;
+    const groupType = typeof req.query.group_type === "string"
+      ? req.query.group_type
+      : "function";
+    const groupId = typeof req.query.group_id === "string"
+      ? req.query.group_id
+      : undefined;
+
+    // Get signals for current week
+    let currentSignals = Array.from(store.behavioralSignals.values()).filter(
+      (signal) => signal.org_id === org.id
+    );
+
+    // Default to latest bucket_start if not specified
+    let targetBucket = bucketStart;
+    if (!targetBucket) {
+      const buckets = currentSignals.map((s) => s.bucket_start).sort();
+      targetBucket = buckets[buckets.length - 1];
+    }
+
+    if (!targetBucket) {
+      return res.json({ org_id: org.id, bucket_start: null, patterns: [] });
+    }
+
+    currentSignals = currentSignals.filter((s) => s.bucket_start === targetBucket);
+
+    if (groupType) {
+      currentSignals = currentSignals.filter((s) => s.group_type === groupType);
+    }
+
+    if (groupId) {
+      currentSignals = currentSignals.filter((s) => s.group_id === groupId);
+    }
+
+    // Get previous week signals for trend detection
+    const previousBucket = getPreviousWeekBucket(targetBucket);
+    const previousSignals = Array.from(store.behavioralSignals.values()).filter(
+      (signal) =>
+        signal.org_id === org.id &&
+        signal.bucket_start === previousBucket &&
+        (!groupType || signal.group_type === groupType) &&
+        (!groupId || signal.group_id === groupId)
+    );
+
+    // Group signals by group_id
+    const signalsByGroup: Record<string, typeof currentSignals> = {};
+    const previousByGroup: Record<string, typeof previousSignals> = {};
+
+    currentSignals.forEach((signal) => {
+      if (!signalsByGroup[signal.group_id]) {
+        signalsByGroup[signal.group_id] = [];
+      }
+      signalsByGroup[signal.group_id].push(signal);
+    });
+
+    previousSignals.forEach((signal) => {
+      if (!previousByGroup[signal.group_id]) {
+        previousByGroup[signal.group_id] = [];
+      }
+      previousByGroup[signal.group_id].push(signal);
+    });
+
+    // Detect patterns for each group
+    const allPatterns: any[] = [];
+    Object.entries(signalsByGroup).forEach(([gid, signals]) => {
+      const prev = previousByGroup[gid] ?? [];
+      const patterns = detectPatterns(signals, prev, gid, targetBucket);
+      allPatterns.push(...patterns);
+    });
+
+    return res.json({
+      org_id: org.id,
+      bucket_start: targetBucket,
+      patterns: allPatterns
+    });
   }
 );
 
