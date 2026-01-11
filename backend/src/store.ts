@@ -2,7 +2,8 @@ import {
   GroupUpsert,
   MetricObservation,
   PolicyControlObservation,
-  TrainingEventRollup
+  TrainingEventRollup,
+  BehavioralSignalAggregate
 } from "@learnaire/shared";
 
 export type OrgRecord = {
@@ -130,6 +131,17 @@ export type FluencySnapshotRecord = {
   dataCompleteness: number;
 };
 
+export type BehavioralSignalRecord = BehavioralSignalAggregate & {
+  originalCount?: number;  // Store original count before suppression for rollups
+  includesRollup?: boolean;  // Indicates this record includes rolled-up small teams
+};
+
+export type FunctionRecord = {
+  id: string;
+  orgId: string;
+  name: string;
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -147,6 +159,8 @@ class MemoryStore {
   fluencyMeta = new Map<string, FluencyMetaRecord>();
   fluencyDimensions = new Map<string, FluencyDimensionRecord>();
   fluencySnapshots = new Map<string, FluencySnapshotRecord>();
+  functions = new Map<string, FunctionRecord>();
+  behavioralSignals = new Map<string, BehavioralSignalRecord>();
 
   reset() {
     this.orgs.clear();
@@ -165,6 +179,8 @@ class MemoryStore {
     this.fluencyMeta.clear();
     this.fluencyDimensions.clear();
     this.fluencySnapshots.clear();
+    this.functions.clear();
+    this.behavioralSignals.clear();
   }
 }
 
@@ -202,5 +218,18 @@ export const upsertEnablement = (record: TrainingEventRecord): { inserted: boole
   const key = `${record.orgId}:${record.group_key}:${record.bucket_start}:${record.event_type}:${record.vendor ?? ""}`;
   const existing = store.enablement.get(key);
   store.enablement.set(key, record);
+  return { inserted: !existing };
+};
+
+export const upsertBehavioralSignal = (record: BehavioralSignalRecord): { inserted: boolean } => {
+  const key = `${record.org_id}:${record.group_id}:${record.bucket_start}:${record.signal_name}:${record.tool_class ?? ""}`;
+  const existing = store.behavioralSignals.get(key);
+  store.behavioralSignals.set(key, record);
+  return { inserted: !existing };
+};
+
+export const upsertFunction = (orgId: string, id: string, name: string): { inserted: boolean } => {
+  const existing = store.functions.get(id);
+  store.functions.set(id, { id, orgId, name });
   return { inserted: !existing };
 };

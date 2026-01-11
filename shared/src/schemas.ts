@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TOOL_CLASSES } from "./types";
+import { TOOL_CLASSES, SIGNAL_NAMES, GROUP_TYPES, PATTERN_TYPES } from "./types";
 
 export const ToolClassSchema = z.enum(TOOL_CLASSES);
 
@@ -67,3 +67,70 @@ export type DashboardResponse = {
   controls: PolicyControlObservation[];
   enablement: TrainingEventRollup[];
 };
+
+export const SignalNameSchema = z.enum(SIGNAL_NAMES);
+
+export const GroupTypeSchema = z.enum(GROUP_TYPES);
+
+export const PatternTypeSchema = z.enum(PATTERN_TYPES);
+
+export const BehavioralSignalMetadataSchema = z.object({
+  has_human_review: z.boolean().optional(),
+  is_cross_system: z.boolean().optional(),
+  requires_approval: z.boolean().optional()
+}).strict().optional();
+
+export const BehavioralSignalAggregateSchema = z.object({
+  org_id: z.string().min(1),
+  group_id: z.string().min(1),
+  group_type: GroupTypeSchema,
+  function_id: z.string().min(1).optional(),
+  bucket_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // ISO date format YYYY-MM-DD
+  signal_name: SignalNameSchema,
+  count: z.number().int().nonnegative(),
+  tool_class: ToolClassSchema.optional(),
+  suppressed: z.boolean().optional(),
+  metadata: BehavioralSignalMetadataSchema
+}).strict().refine(
+  (data) => {
+    // Require function_id for team and role group types
+    if ((data.group_type === "team" || data.group_type === "role") && !data.function_id) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "function_id is required when group_type is 'team' or 'role'"
+  }
+);
+
+export type BehavioralSignalAggregate = z.infer<typeof BehavioralSignalAggregateSchema>;
+
+export const BehavioralSignalImportSchema = z.object({
+  aggregates: z.array(BehavioralSignalAggregateSchema).min(1)
+}).strict();
+
+export type BehavioralSignalImport = z.infer<typeof BehavioralSignalImportSchema>;
+
+export const BehavioralPatternSignalSchema = z.object({
+  signal_name: SignalNameSchema,
+  count: z.number().int().nonnegative()
+});
+
+export const BehavioralPatternTrendSchema = z.object({
+  direction: z.enum(["increasing", "stable", "decreasing"]),
+  magnitude: z.enum(["slight", "moderate", "significant"])
+}).strict().optional();
+
+export const BehavioralPatternSchema = z.object({
+  pattern_type: PatternTypeSchema,
+  group_id: z.string().min(1),
+  group_type: z.enum(["function", "org"]), // Patterns only at function+ level
+  bucket_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  description: z.string().min(1),
+  confidence: z.enum(["low", "medium", "high"]),
+  signals: z.array(BehavioralPatternSignalSchema),
+  trends: BehavioralPatternTrendSchema
+}).strict();
+
+export type BehavioralPattern = z.infer<typeof BehavioralPatternSchema>;
