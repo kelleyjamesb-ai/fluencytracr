@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  teams     Team[]
+}
+
+model Team {
+  id             String        @id @default(uuid())
+  name           String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt      DateTime      @default(now())
+  fluencyScores  FluencyScore[]
+}
+
+model FluencyScore {
+  id             String   @id @default(uuid())
+  organizationId String
+  teamId         String?
+  day            DateTime
+  score          Float
+  coverage       Float
+  depth          Float
+  judgment       Float
+  velocity       Float
+  dataComplete   Boolean
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, day])
+}
+
+model AuditEvent {
+  id        String   @id @default(uuid())
+  orgId     String
+  eventType String
+  metadata  Json
+  createdAt DateTime @default(now())
+}

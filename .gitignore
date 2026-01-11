@@ -40,3 +40,16 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node
+node_modules/
+package-lock.json
+*.log
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Jest compiled tests
+backend/tests/*.js
+frontend/tests/*.js
