@@ -104,3 +104,10 @@ class Directory:
 
     def list_employee_roles(self, employee_id: str) -> set[str]:
         return set(self._employee_roles.get(employee_id, set()))
+
+    def team_member_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {team_id: 0 for team_id in self._teams}
+        for teams in self._employee_teams.values():
+            for team_id in teams:
+                counts[team_id] = counts.get(team_id, 0) + 1
+        return counts

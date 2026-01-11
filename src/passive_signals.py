@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Literal, get_args
 
@@ -44,6 +44,19 @@ def validate_signal_event(event: SignalEvent) -> None:
             "Signal metadata includes non-collectable fields: "
             + ", ".join(sorted(prohibited))
         )
+
+
+def is_shadow_ai_signal(event: SignalEvent, approved_ai_list: set[str]) -> bool:
+    flag = event.metadata.get("is_shadow_ai")
+    if flag is not None:
+        return str(flag).strip().lower() in {"true", "1", "yes"}
+    tool_id = event.metadata.get("tool_id")
+    destination_domain = event.metadata.get("destination_domain")
+    if tool_id and tool_id not in approved_ai_list:
+        return True
+    if destination_domain and destination_domain not in approved_ai_list:
+        return True
+    return False
 
 
 def parse_signal_event(payload: dict[str, str]) -> SignalEvent:
