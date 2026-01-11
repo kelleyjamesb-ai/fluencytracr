@@ -33,6 +33,20 @@ def _validate_signal_source(value: str) -> SignalSource:
     return value  # type: ignore[return-value]  # Safe after validation
 
 
+@dataclass
+class PassiveSignalStore:
+    events: list[SignalEvent] = field(default_factory=list)
+    by_org: dict[str, list[SignalEvent]] = field(default_factory=dict)
+    by_team: dict[str, list[SignalEvent]] = field(default_factory=dict)
+
+    def add(self, event: SignalEvent) -> None:
+        validate_signal_event(event)
+        self.events.append(event)
+        self.by_org.setdefault(event.org_id, []).append(event)
+        if event.team_id:
+            self.by_team.setdefault(event.team_id, []).append(event)
+
+
 def validate_signal_event(event: SignalEvent) -> None:
     if event.source not in {"training_platform", "support_ticketing", "code_review"}:
         raise ValidationError("Unsupported signal source")
