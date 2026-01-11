@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 
+from src.exceptions import PrivacyViolationError
+
 
 NON_COLLECTABLE_FIELDS = frozenset(
     {
@@ -21,7 +23,7 @@ def validate_schema_fields(fields: Iterable[str]) -> None:
     """Reject schemas that include any non-collectable fields."""
     prohibited = NON_COLLECTABLE_FIELDS.intersection(fields)
     if prohibited:
-        raise ValueError(
+        raise PrivacyViolationError(
             "Schema includes non-collectable fields: "
             + ", ".join(sorted(prohibited))
         )
@@ -44,7 +46,7 @@ def validate_payload(payload: Mapping[str, object]) -> None:
     """Reject payloads containing non-collectable fields."""
     prohibited = _find_prohibited_fields(payload)
     if prohibited:
-        raise ValueError(
+        raise PrivacyViolationError(
             "Payload includes non-collectable fields: "
             + ", ".join(sorted(prohibited))
         )

@@ -7,6 +7,8 @@ export const NON_COLLECTABLE_FIELDS = [
   "raw_logs"
 ] as const;
 
+export const FORBIDDEN_FIELDS = NON_COLLECTABLE_FIELDS;
+
 export function containsForbiddenFields(payload: unknown): boolean {
   if (!payload || typeof payload !== "object") return false;
   const stack: unknown[] = [payload];

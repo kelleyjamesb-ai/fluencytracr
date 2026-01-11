@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime, timezone
 
 from src.events import EnablementEvent, parse_event, validate_event
+from src.exceptions import ValidationError
 
 
 class EventsTests(unittest.TestCase):
@@ -33,7 +34,7 @@ class EventsTests(unittest.TestCase):
             team_id="team-1",
             role_id="role-1",
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValidationError):
             validate_event(event)
 
     def test_validate_event_requires_timezone(self) -> None:
@@ -44,7 +45,7 @@ class EventsTests(unittest.TestCase):
             team_id="team-1",
             role_id="role-1",
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValidationError):
             validate_event(event)
 
     def test_parse_event_defaults_timezone(self) -> None:
@@ -57,6 +58,19 @@ class EventsTests(unittest.TestCase):
         }
         event = parse_event(payload)
         self.assertEqual(event.occurred_at.tzinfo, timezone.utc)
+
+    def test_parse_event_rejects_invalid_event_type(self) -> None:
+        """parse_event should reject invalid event types."""
+        payload = {
+            "event_type": "invalid_type",
+            "occurred_at": "2024-01-01T00:00:00Z",
+            "org_id": "org-1",
+            "role_id": "role-1",
+        }
+        with self.assertRaises(ValidationError) as ctx:
+            parse_event(payload)
+        self.assertIn("Invalid event_type", str(ctx.exception))
+        self.assertIn("invalid_type", str(ctx.exception))
 
 
 if __name__ == "__main__":
