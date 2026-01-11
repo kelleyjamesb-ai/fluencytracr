@@ -6,13 +6,14 @@ const mockResponse = {} as Response;
 const makeRequest = (role: string, aggregation?: string) => {
   return {
     header: () => role,
-    query: aggregation ? { aggregation } : {}
+    query: aggregation ? { aggregation } : {},
+    role
   } as unknown as Request;
 };
 
 it("blocks disallowed roles", () => {
-  const middleware = rbacMiddleware(["admin"]);
-  const request = makeRequest("exec");
+  const middleware = rbacMiddleware(["ADMIN"]);
+  const request = makeRequest("EXEC_VIEWER");
   const next = jest.fn();
   middleware(request as any, mockResponse, next);
   expect(next).toHaveBeenCalled();
@@ -20,8 +21,8 @@ it("blocks disallowed roles", () => {
   expect(err).toBeInstanceOf(Error);
 });
 
-it("blocks exec team aggregation", () => {
-  const request = makeRequest("exec", "team");
+it("blocks EXEC_VIEWER team aggregation", () => {
+  const request = makeRequest("EXEC_VIEWER", "team");
   const next = jest.fn();
   enforceAggregation(request as any, mockResponse, next);
   const err = next.mock.calls[0][0];

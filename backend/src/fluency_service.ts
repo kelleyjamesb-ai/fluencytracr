@@ -21,7 +21,7 @@ const computeHabitualShare = (metrics: MetricRecord[], bucketStart: string) => {
   if (values.every((value) => value === null)) {
     return { share: null, completeness: 0 };
   }
-  const total = values.reduce((sum, value) => sum + (value ?? 0), 0);
+  const total = values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
   const habitual = values[3] ?? 0;
   const share = total > 0 ? clamp((habitual / total) * 100) : 0;
   const completeness = values.filter((value) => value !== null).length / values.length;
@@ -41,7 +41,7 @@ const computeJudgment = (metrics: MetricRecord[], bucketStart: string) => {
   if (controlRecords.length === 0) {
     return { score: null, completeness: 0 };
   }
-  const enabledCount = controlRecords.filter((control) => control.status === "enabled").length;
+  const enabledCount = controlRecords.filter((control) => control.control_value === true).length;
   const completeness = controlRecords.length / requiredControls.length;
   const score = clamp((enabledCount / requiredControls.length) * 100);
   return { score, completeness };
@@ -60,7 +60,7 @@ const computeBucketScore = (orgId: string, bucketStart: string) => {
   );
   const coverageScore = coverageMetric?.suppressed || coverageMetric?.metric_value === null
     ? null
-    : clamp(coverageMetric?.metric_value * 100);
+    : clamp((coverageMetric?.metric_value ?? 0) * 100);
   const coverageCompleteness = coverageScore === null ? 0 : 1;
 
   const sessionsMetric = metrics.find(
@@ -68,7 +68,7 @@ const computeBucketScore = (orgId: string, bucketStart: string) => {
   );
   const sessionsScore = sessionsMetric?.suppressed || sessionsMetric?.metric_value === null
     ? null
-    : normalizeSessions(sessionsMetric.metric_value);
+    : normalizeSessions(sessionsMetric?.metric_value ?? 0);
   const sessionsCompleteness = sessionsScore === null ? 0 : 1;
 
   const habitual = computeHabitualShare(metrics, bucketStart);
@@ -88,10 +88,10 @@ const computeBucketScore = (orgId: string, bucketStart: string) => {
   );
   const growthScore = growthMetric?.suppressed || growthMetric?.metric_value === null
     ? null
-    : clamp(growthMetric.metric_value);
+    : clamp(growthMetric?.metric_value ?? 0);
   const adoptionScore = adoptionMetric?.suppressed || adoptionMetric?.metric_value === null
     ? null
-    : clamp(adoptionMetric.metric_value);
+    : clamp(adoptionMetric?.metric_value ?? 0);
   const velocityComponents = [growthScore, adoptionScore].filter(
     (value): value is number => value !== null
   );
@@ -155,7 +155,6 @@ export const runFluencyIndexJob = (orgId: string) => {
       vendor: "all",
       bucket_start: bucketStart,
       metric_name: "fluency_index",
-      metric_unit: "percent",
       metric_value: result.score,
       is_user_count: false,
       suppressed: false

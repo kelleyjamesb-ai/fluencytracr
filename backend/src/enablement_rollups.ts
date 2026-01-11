@@ -29,7 +29,10 @@ export const runDailyEnablementRollup = (orgId: string, day: string): Enablement
   relevant.forEach((event) => {
     const key = `${event.orgId}:${event.teamId}:${event.roleId}`;
     const current = grouped.get(key) ?? { counts: emptyCounts(), total: 0 };
-    current.counts[event.eventType] += 1;
+    const eventType = event.eventType as EnablementEventType;
+    if (eventType in current.counts) {
+      current.counts[eventType] += 1;
+    }
     current.total += 1;
     grouped.set(key, current);
   });
@@ -38,7 +41,7 @@ export const runDailyEnablementRollup = (orgId: string, day: string): Enablement
   grouped.forEach((value, key) => {
     const [orgKey, teamId, roleId] = key.split(":");
     const suppressed = value.total < org.minGroupSize;
-    const assessmentDelta = value.counts.assessment_post - value.counts.assessment_pre;
+    const assessmentDelta = Math.min(value.counts.assessment_post, value.counts.assessment_pre);
     const everboardingCadence = value.counts.everboarding_touch;
     const enabled = value.counts.assessment_post + value.counts.session_attended > 0;
     const record: EnablementRollupRecord = {

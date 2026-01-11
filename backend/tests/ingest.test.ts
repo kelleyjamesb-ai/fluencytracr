@@ -11,7 +11,7 @@ const makeResponse = () => {
 it("detects forbidden fields deep in payload", () => {
   const payload = {
     metadata: {
-      nested: [{ prompt_text: "secret" }]
+      nested: [{ prompt_content: "secret" }]
     }
   };
   expect(containsForbiddenFields(payload)).toBe(true);
@@ -27,7 +27,7 @@ it("allows payloads without forbidden fields", () => {
 });
 
 it("rejects requests containing forbidden fields", () => {
-  const req: any = { body: { details: { email: "nope" } } };
+  const req: any = { body: { details: { keystrokes: "nope" } } };
   const res = makeResponse();
   const next = jest.fn();
   rejectForbiddenFields(req, res as any, next);

@@ -22,6 +22,7 @@ class SignalEvent:
     role_id: str
     signal_type: str
     metadata: dict[str, str]
+    is_shadow_ai: bool = False
 
 
 def _validate_signal_source(value: str) -> SignalSource:
@@ -66,10 +67,13 @@ def parse_signal_event(payload: dict[str, str]) -> SignalEvent:
     occurred_at = datetime.fromisoformat(payload["occurred_at"])
     if occurred_at.tzinfo is None:
         occurred_at = occurred_at.replace(tzinfo=timezone.utc)
-    metadata = {key: value for key, value in payload.items() if key not in required | {"team_id"}}
+    metadata = {key: value for key, value in payload.items() if key not in required | {"team_id", "is_shadow_ai"}}
 
     # Validate signal source before construction
     source = _validate_signal_source(payload["source"])
+
+    # Parse is_shadow_ai boolean (default False)
+    is_shadow_ai = payload.get("is_shadow_ai", "false").lower() in ("true", "1", "yes")
 
     event = SignalEvent(
         source=source,
@@ -79,6 +83,7 @@ def parse_signal_event(payload: dict[str, str]) -> SignalEvent:
         role_id=payload["role_id"],
         signal_type=payload["signal_type"],
         metadata=metadata,
+        is_shadow_ai=is_shadow_ai,
     )
     validate_signal_event(event)
     return event

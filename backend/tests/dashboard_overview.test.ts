@@ -62,7 +62,7 @@ it("returns 12 points for 12w range", async () => {
   const server = await startServer();
   const response = await fetch(
     `${server.url}/orgs/org-1/dashboard/overview?range=12w&vendor=all&groupType=org`,
-    { headers: { "x-role": "exec" } }
+    { headers: { "x-role": "EXEC_VIEWER" } }
   );
   const payload = await response.json();
   server.close();
@@ -98,7 +98,7 @@ it("returns suppressed values as null", async () => {
   const server = await startServer();
   const response = await fetch(
     `${server.url}/orgs/org-1/dashboard/overview?range=12w&vendor=all&groupType=team&group_key=team-1`,
-    { headers: { "x-role": "exec" } }
+    { headers: { "x-role": "EXEC_VIEWER" } }
   );
   const payload = await response.json();
   server.close();
