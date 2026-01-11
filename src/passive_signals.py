@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Literal, get_args
 
 from src.data_contract import NON_COLLECTABLE_FIELDS
+from src.exceptions import PrivacyViolationError, ValidationError
 
 
 SignalSource = Literal["training_platform", "support_ticketing", "code_review"]
@@ -23,28 +24,22 @@ class SignalEvent:
     metadata: dict[str, str]
 
 
-@dataclass
-class PassiveSignalStore:
-    events: list[SignalEvent] = field(default_factory=list)
-    by_org: dict[str, list[SignalEvent]] = field(default_factory=dict)
-    by_team: dict[str, list[SignalEvent]] = field(default_factory=dict)
-
-    def add(self, event: SignalEvent) -> None:
-        validate_signal_event(event)
-        self.events.append(event)
-        self.by_org.setdefault(event.org_id, []).append(event)
-        if event.team_id:
-            self.by_team.setdefault(event.team_id, []).append(event)
+def _validate_signal_source(value: str) -> SignalSource:
+    """Validate and narrow signal source to literal union."""
+    valid_sources = get_args(SignalSource)
+    if value not in valid_sources:
+        raise ValidationError(f"Invalid signal_source: '{value}'. Must be one of {valid_sources}")
+    return value  # type: ignore[return-value]  # Safe after validation
 
 
 def validate_signal_event(event: SignalEvent) -> None:
     if event.source not in {"training_platform", "support_ticketing", "code_review"}:
-        raise ValueError("Unsupported signal source")
+        raise ValidationError("Unsupported signal source")
     if event.occurred_at.tzinfo is None:
-        raise ValueError("Signal timestamp must be timezone-aware")
+        raise ValidationError("Signal timestamp must be timezone-aware")
     prohibited = NON_COLLECTABLE_FIELDS.intersection(event.metadata.keys())
     if prohibited:
-        raise ValueError(
+        raise PrivacyViolationError(
             "Signal metadata includes non-collectable fields: "
             + ", ".join(sorted(prohibited))
         )
@@ -67,13 +62,17 @@ def parse_signal_event(payload: dict[str, str]) -> SignalEvent:
     required = {"source", "occurred_at", "org_id", "role_id", "signal_type"}
     missing = required.difference(payload.keys())
     if missing:
-        raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+        raise ValidationError(f"Missing required fields: {', '.join(sorted(missing))}")
     occurred_at = datetime.fromisoformat(payload["occurred_at"])
     if occurred_at.tzinfo is None:
         occurred_at = occurred_at.replace(tzinfo=timezone.utc)
     metadata = {key: value for key, value in payload.items() if key not in required | {"team_id"}}
+
+    # Validate signal source before construction
+    source = _validate_signal_source(payload["source"])
+
     event = SignalEvent(
-        source=payload["source"],  # type: ignore[arg-type]
+        source=source,
         occurred_at=occurred_at,
         org_id=payload["org_id"],
         team_id=payload.get("team_id", ""),

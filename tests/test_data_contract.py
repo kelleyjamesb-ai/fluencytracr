@@ -5,6 +5,7 @@ from src.data_contract import (
     validate_payload,
     validate_schema_fields,
 )
+from src.exceptions import PrivacyViolationError
 
 
 class DataContractTests(unittest.TestCase):
@@ -20,7 +21,7 @@ class DataContractTests(unittest.TestCase):
         self.assertEqual(NON_COLLECTABLE_FIELDS, expected)
 
     def test_validate_schema_fields_rejects_prohibited(self) -> None:
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PrivacyViolationError):
             validate_schema_fields({"event_name", "prompt_content"})
 
     def test_validate_payload_rejects_nested_prohibited(self) -> None:
@@ -31,7 +32,7 @@ class DataContractTests(unittest.TestCase):
                 ]
             }
         }
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PrivacyViolationError):
             validate_payload(payload)
 
     def test_validate_payload_allows_safe_fields(self) -> None:

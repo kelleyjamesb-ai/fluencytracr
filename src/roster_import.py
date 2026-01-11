@@ -7,6 +7,7 @@ import csv
 import hashlib
 import io
 
+from src.exceptions import NotFoundError, ValidationError
 from src.teams_roles import Directory
 
 
@@ -45,7 +46,23 @@ def parse_roster_csv(csv_content: str) -> list[RosterRecord]:
 def import_roster(csv_content: str, directory: Directory) -> list[RosterRecord]:
     """Import roster entries idempotently into the directory."""
     records = parse_roster_csv(csv_content)
-    for record in records:
-        directory.map_employee_to_team(record.employee_id, record.team_id)
-        directory.map_employee_to_role(record.employee_id, record.role_id)
+    errors: list[str] = []
+
+    for idx, record in enumerate(records, start=1):
+        # Try to map to team
+        try:
+            directory.map_employee_to_team(record.employee_id, record.team_id)
+        except NotFoundError:
+            errors.append(f"Row {idx}: team_id '{record.team_id}' not found")
+
+        # Try to map to role
+        try:
+            directory.map_employee_to_role(record.employee_id, record.role_id)
+        except NotFoundError:
+            errors.append(f"Row {idx}: role_id '{record.role_id}' not found")
+
+    if errors:
+        error_summary = "\n".join(errors)
+        raise ValidationError(f"Roster import failed with {len(errors)} error(s):\n{error_summary}")
+
     return records
