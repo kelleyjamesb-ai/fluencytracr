@@ -11,7 +11,8 @@ import {
   ToolClassSchema,
   TrainingEventRollupSchema,
   BehavioralSignalAggregateSchema,
-  BehavioralSignalImportSchema
+  BehavioralSignalImportSchema,
+  ConnectorEventImportSchema
 } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
 import { rejectForbiddenFields } from "./ingest";
@@ -37,9 +38,21 @@ import { suppressAndRollup } from "./suppression";
 import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
+import { ConnectorService } from "./connectors";
+import * as path from "path";
 
 const app = express();
 app.use(express.json());
+
+// Initialize connector service and load connector mappings
+const connectorService = new ConnectorService();
+const mappingsPath = path.join(__dirname, "connectors", "mappings");
+try {
+  connectorService.loadConnectors(mappingsPath);
+  console.log(`Loaded ${connectorService.getLoadedConnectors().length} connectors`);
+} catch (error) {
+  console.warn("Failed to load connector mappings:", error);
+}
 
 const TeamSchema = z
   .object({
@@ -846,6 +859,78 @@ app.post(
       rejected: errors.length,
       errors
     });
+  }
+);
+
+// Connector-based event import endpoint
+app.post(
+  "/orgs/:orgId/behavior/connector/import",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  rejectForbiddenFields,
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const parsed = ConnectorEventImportSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+
+    // Validate org_id matches route parameter
+    if (parsed.data.org_id !== org.id) {
+      return res.status(400).json({ error: `org_id mismatch: expected ${org.id}, got ${parsed.data.org_id}` });
+    }
+
+    // Transform external events using connector
+    const transformResult = connectorService.transformEvents(parsed.data);
+
+    if (!transformResult.success || !transformResult.aggregates) {
+      return res.status(400).json({
+        error: "Connector transformation failed",
+        details: transformResult.errors
+      });
+    }
+
+    // Apply suppression and rollup (k=5 for behavioral signals)
+    const processedSignals = suppressAndRollupBehavioral(transformResult.aggregates as any, 5);
+
+    let imported = 0;
+    let suppressed = 0;
+    let rolledUp = 0;
+
+    // Store signals
+    processedSignals.forEach((signal) => {
+      const result = upsertBehavioralSignal(signal);
+      if (result.inserted) {
+        imported += 1;
+      }
+      if (signal.suppressed) {
+        suppressed += 1;
+      }
+      if (signal.includesRollup) {
+        rolledUp += 1;
+      }
+    });
+
+    return res.json({
+      imported,
+      suppressed,
+      rolled_up: rolledUp,
+      events_processed: parsed.data.events.length,
+      signals_generated: transformResult.aggregates.length
+    });
+  }
+);
+
+// List loaded connectors
+app.get(
+  "/connectors",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const connectors = connectorService.getLoadedConnectors();
+    return res.json({ connectors });
   }
 );
 
