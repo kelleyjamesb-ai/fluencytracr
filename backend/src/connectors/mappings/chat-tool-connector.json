@@ -1,0 +1,151 @@
+{
+  "connector_metadata": {
+    "connector_name": "chat-tool-connector",
+    "connector_version": "1.0.0",
+    "vendor": "example-chat-vendor",
+    "tool_class": "llm_chat"
+  },
+  "signal_mappings": [
+    {
+      "external_event_type": "chat.session.started",
+      "internal_signal_name": "invoke_ai",
+      "requires_side_effect": false,
+      "validation_rules": [
+        {
+          "rule_type": "field_exists",
+          "field_path": "session_id"
+        },
+        {
+          "rule_type": "field_exists",
+          "field_path": "user_id"
+        }
+      ],
+      "metadata_extraction": {
+        "has_human_review": "session.human_review_enabled",
+        "is_cross_system": "session.cross_system"
+      }
+    },
+    {
+      "external_event_type": "chat.action.executed",
+      "internal_signal_name": "delegate_to_agent",
+      "requires_side_effect": true,
+      "validation_rules": [
+        {
+          "rule_type": "field_equals",
+          "field_path": "action.type",
+          "expected_value": "execute_external"
+        },
+        {
+          "rule_type": "field_exists",
+          "field_path": "action.side_effect_occurred"
+        }
+      ],
+      "metadata_extraction": {
+        "external_side_effect": "action.side_effect_occurred",
+        "is_cross_system": "action.is_cross_system",
+        "requires_approval": "action.requires_approval"
+      }
+    },
+    {
+      "external_event_type": "chat.action.cancelled",
+      "internal_signal_name": "revoke_agent",
+      "requires_side_effect": false,
+      "validation_rules": [
+        {
+          "rule_type": "field_exists",
+          "field_path": "action_id"
+        },
+        {
+          "rule_type": "field_equals",
+          "field_path": "cancelled_by",
+          "expected_value": "user"
+        }
+      ]
+    },
+    {
+      "external_event_type": "chat.prompt.edited",
+      "internal_signal_name": "refine_request",
+      "requires_side_effect": false,
+      "validation_rules": [
+        {
+          "rule_type": "field_exists",
+          "field_path": "edit_count"
+        },
+        {
+          "rule_type": "value_in_range",
+          "field_path": "edit_count",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "external_event_type": "chat.output.accepted",
+      "internal_signal_name": "accept_output",
+      "requires_side_effect": false,
+      "validation_rules": [
+        {
+          "rule_type": "field_equals",
+          "field_path": "acceptance.status",
+          "expected_value": "accepted"
+        }
+      ],
+      "metadata_extraction": {
+        "has_human_review": "acceptance.human_reviewed"
+      }
+    },
+    {
+      "external_event_type": "chat.retry.initiated",
+      "internal_signal_name": "retry_after_mismatch",
+      "requires_side_effect": false,
+      "validation_rules": [
+        {
+          "rule_type": "field_exists",
+          "field_path": "retry_reason"
+        },
+        {
+          "rule_type": "field_matches",
+          "field_path": "retry_reason",
+          "pattern": "(mismatch|incorrect|failed)"
+        }
+      ]
+    },
+    {
+      "external_event_type": "chat.manual.override",
+      "internal_signal_name": "override_to_manual",
+      "requires_side_effect": false,
+      "validation_rules": [
+        {
+          "rule_type": "field_equals",
+          "field_path": "override.type",
+          "expected_value": "manual"
+        }
+      ]
+    }
+  ],
+  "forbidden_fields": [
+    {
+      "field_name": "prompt_content",
+      "reason": "Privacy: Never collect prompt text"
+    },
+    {
+      "field_name": "output_content",
+      "reason": "Privacy: Never collect output text"
+    },
+    {
+      "field_name": "message_text",
+      "reason": "Privacy: Never collect message content"
+    },
+    {
+      "field_name": "keystrokes",
+      "reason": "Privacy: Never collect keystroke data"
+    },
+    {
+      "field_name": "file_names",
+      "reason": "Privacy: Never collect file names"
+    },
+    {
+      "field_name": "raw_logs",
+      "reason": "Privacy: Never collect raw logs"
+    }
+  ]
+}

@@ -44,6 +44,22 @@ export const SIGNAL_NAMES = [
 
 export type SignalName = (typeof SIGNAL_NAMES)[number];
 
+// v0 Agentic Behavioral Signals - Universal signal set for connector layer
+export const V0_SIGNAL_NAMES = [
+  "invoke_ai",
+  "delegate_to_agent",
+  "revoke_agent",
+  "refine_request",
+  "accept_output",
+  "retry_after_mismatch",
+  "override_to_manual"
+] as const;
+
+export type V0SignalName = (typeof V0_SIGNAL_NAMES)[number];
+
+// Combined signal names type for compatibility
+export type AnySignalName = SignalName | V0SignalName;
+
 export const GROUP_TYPES = ["team", "role", "function", "org"] as const;
 
 export type GroupType = (typeof GROUP_TYPES)[number];
