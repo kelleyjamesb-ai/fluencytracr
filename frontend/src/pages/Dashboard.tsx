@@ -7,11 +7,6 @@ import type {
   FluencyWindow
 } from "@learnaire/shared";
 import { Sidebar } from "../components/Sidebar";
-import { ConfidenceChip } from "../components/ConfidenceChip";
-import { PatternDot } from "../components/PatternDot";
-import { SectionTint } from "../components/SectionTint";
-import { ExecutiveBrief } from "../components/ExecutiveBrief";
-import type { PatternName } from "@/lib/visualTokens";
 
 type PatternResponse = {
   window: FluencyWindow;
@@ -153,16 +148,13 @@ export const Dashboard = () => {
 
   const posture = useMemo(() => {
     if (patterns.length === 0) {
-      return "Study" as const;
+      return "Study";
     }
     const counts = patterns.reduce<Record<string, number>>((acc, pattern) => {
       acc[pattern.recommended_posture] = (acc[pattern.recommended_posture] ?? 0) + 1;
       return acc;
     }, {});
-    return (Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Study") as
-      | "Scale"
-      | "Stabilize"
-      | "Study";
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Study";
   }, [patterns]);
 
   const topSignals = patterns.slice(0, 3).map((pattern) => pattern.what_we_see);
@@ -175,9 +167,6 @@ export const Dashboard = () => {
         ? "Medium"
         : "Withheld"
     : "Withheld";
-  const confidenceChip = confidenceLabel === "Medium" || confidenceLabel === "High"
-    ? confidenceLabel
-    : undefined;
 
   const selectedLedger = ledgerEntries.find((entry) => entry.ledger_id === openLedgerId) ?? null;
 
@@ -219,148 +208,144 @@ export const Dashboard = () => {
         </header>
 
         {activePage === "overview" && (
-          <SectionTint section="overview">
-            <section className="section stack">
-              <ExecutiveBrief posture={posture} confidence={confidenceChip} />
-
-              <div className="card hero">
-                <div className="hero-grid">
-                  <div>
-                    <div className="metric-label">Top signals</div>
-                    <ul className="list">
-                      {topSignals.length > 0 ? (
-                        topSignals.map((signal) => <li key={signal}>{signal}</li>)
-                      ) : (
-                        <li>Insight withheld due to low confidence.</li>
-                      )}
-                    </ul>
-                  </div>
-                  <div>
-                    <div className="metric-label">Window</div>
-                    <div className="metric-value">{window}</div>
-                    <div className="meta">Rolling windows are defaulted to 60 days.</div>
-                  </div>
-                  <div>
-                    <div className="metric-label">Coverage</div>
-                    <div className="metric-value">{formatPercent(coverage?.coverage)}</div>
-                    <div className="meta">Cohort size: {coverage?.cohort_size ?? "--"}</div>
-                  </div>
-                </div>
-                <p className="meta">
-                  What this does NOT mean: This does NOT mean outcomes are guaranteed or that any
-                  group is ahead of another.
+          <section className="stack">
+            <div className="card hero">
+              <div>
+                <div className="eyebrow">Executive Brief</div>
+                <h3>Posture: {posture}</h3>
+                <p className="hero-copy">
+                  Signals suggest where to focus attention. Silence is valid when confidence is not
+                  sufficient.
                 </p>
               </div>
-
-              <div className="grid">
-                <div className="card">
-                  <h3>Pattern prevalence</h3>
-                  <p className="meta">Directional signals over time (confidence gated).</p>
-                  <DirectionalChart series={prevalenceSeries} />
-                </div>
-                <div className="card">
-                  <h3>Decision timeline</h3>
-                  <p className="meta">Markers show logged decisions within the window.</p>
-                  <TimelineLane entries={ledgerEntries} isLoading={isLoadingLedger} />
-                </div>
-                <div className="card">
-                  <h3>Coverage signal mix</h3>
+              <div className="hero-grid">
+                <div>
+                  <div className="metric-label">Top signals</div>
                   <ul className="list">
-                    <li>Verification rate: {formatPercent(coverage?.verification_rate)}</li>
-                    <li>Risk mix (High): {formatPercent(coverage?.risk_mix.high)}</li>
-                    <li>Risk mix (Medium): {formatPercent(coverage?.risk_mix.medium)}</li>
+                    {topSignals.length > 0 ? (
+                      topSignals.map((signal) => <li key={signal}>{signal}</li>)
+                    ) : (
+                      <li>Insight withheld due to low confidence.</li>
+                    )}
                   </ul>
-                  <p className="meta">
-                    What this does NOT mean: This does NOT mean any team is singled out.
-                  </p>
+                </div>
+                <div>
+                  <div className="metric-label">Window</div>
+                  <div className="metric-value">{window}</div>
+                  <div className="meta">Rolling windows are defaulted to 60 days.</div>
+                </div>
+                <div>
+                  <div className="metric-label">Coverage</div>
+                  <div className="metric-value">{formatPercent(coverage?.coverage)}</div>
+                  <div className="meta">Cohort size: {coverage?.cohort_size ?? "--"}</div>
                 </div>
               </div>
-            </section>
-          </SectionTint>
+              <p className="meta">
+                What this does NOT mean: This does NOT mean outcomes are guaranteed or that any
+                group is ahead of another.
+              </p>
+            </div>
+
+            <div className="grid">
+              <div className="card">
+                <h3>Pattern prevalence</h3>
+                <p className="meta">Directional signals over time (confidence gated).</p>
+                <DirectionalChart series={prevalenceSeries} />
+              </div>
+              <div className="card">
+                <h3>Decision timeline</h3>
+                <p className="meta">Markers show logged decisions within the window.</p>
+                <TimelineLane entries={ledgerEntries} isLoading={isLoadingLedger} />
+              </div>
+              <div className="card">
+                <h3>Coverage signal mix</h3>
+                <ul className="list">
+                  <li>Verification rate: {formatPercent(coverage?.verification_rate)}</li>
+                  <li>Risk mix (High): {formatPercent(coverage?.risk_mix.high)}</li>
+                  <li>Risk mix (Medium): {formatPercent(coverage?.risk_mix.medium)}</li>
+                </ul>
+                <p className="meta">
+                  What this does NOT mean: This does NOT mean any team is singled out.
+                </p>
+              </div>
+            </div>
+          </section>
         )}
 
         {activePage === "patterns" && (
-          <SectionTint section="patterns">
-            <section className="section stack">
-              <div className="card banner">
+          <section className="stack">
+            <div className="card banner">
+              <div>
+                <h3>Pattern briefing</h3>
+                <p>
+                  Signals indicate directional movement across aggregated workflows. Confidence gating
+                  suppresses low confidence insights.
+                </p>
+              </div>
+              <div className="banner-metrics">
                 <div>
-                  <h3>Pattern briefing</h3>
-                  <p>
-                    Signals indicate directional movement across aggregated workflows. Confidence gating
-                    suppresses low confidence insights.
-                  </p>
-                </div>
-                <div className="banner-metrics">
-                  <div>
-                    <div className="metric-label">Cohort guardrail</div>
-                    <div className="metric-value">n ≥ 5 enforced</div>
-                  </div>
+                  <div className="metric-label">Cohort guardrail</div>
+                  <div className="metric-value">n ≥ 5 enforced</div>
                 </div>
               </div>
+            </div>
 
-              {cohortMessage ? (
-                <div className="card empty">
-                  <h3>Signals are quiet</h3>
-                  <p>{cohortMessage}</p>
-                  <p className="meta">What this does NOT mean: This does NOT mean activity is absent.</p>
-                </div>
-              ) : isLoadingPatterns ? (
-                <div className="grid">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div className="card skeleton" key={`skeleton-${index}`} aria-hidden="true">
-                      <div className="skeleton-line" />
-                      <div className="skeleton-line short" />
-                      <div className="skeleton-block" />
-                    </div>
-                  ))}
-                </div>
-              ) : patterns.length === 0 ? (
-                <div className="card empty">
-                  <h3>No patterns above Medium confidence</h3>
-                  <p>Silence is valid when signal confidence is not sufficient.</p>
-                  <p className="meta">What this does NOT mean: This does NOT mean activity is absent.</p>
-                </div>
-              ) : (
-                <div className="grid">
-                  {patterns.map((pattern) => (
-                    <details className="card accordion" key={`${pattern.pattern_name}-${pattern.window}`}>
-                      <summary>
-                        <div>
-                          <div className="pattern-title">
-                            <PatternDot pattern={pattern.pattern_name as PatternName} />
-                            <h4>{pattern.pattern_name}</h4>
-                          </div>
-                          <p className="meta">
-                            {pattern.signal_status} signal with {Math.round(pattern.coverage * 100)}% coverage.
-                          </p>
-                        </div>
-                        <div className="chip-row">
-                          <span className="chip">{pattern.signal_status}</span>
-                          <ConfidenceChip confidence={pattern.confidence} />
-                        </div>
-                      </summary>
-                      <div className="divider" />
-                      <div className="copy-block">
-                        <h4>What we're seeing</h4>
-                        <p>{pattern.what_we_see}</p>
-                        <h4>What this might suggest</h4>
-                        <p>{pattern.might_suggest}</p>
-                        <h4>What this does NOT mean</h4>
-                        <p>{pattern.does_not_mean}</p>
-                        <h4>Recommended posture</h4>
-                        <p>{pattern.recommended_posture}</p>
+            {cohortMessage ? (
+              <div className="card empty">
+                <h3>Signals are quiet</h3>
+                <p>{cohortMessage}</p>
+                <p className="meta">What this does NOT mean: This does NOT mean activity is absent.</p>
+              </div>
+            ) : isLoadingPatterns ? (
+              <div className="grid">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div className="card skeleton" key={`skeleton-${index}`} aria-hidden="true">
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line short" />
+                    <div className="skeleton-block" />
+                  </div>
+                ))}
+              </div>
+            ) : patterns.length === 0 ? (
+              <div className="card empty">
+                <h3>No patterns above Medium confidence</h3>
+                <p>Silence is valid when signal confidence is not sufficient.</p>
+                <p className="meta">What this does NOT mean: This does NOT mean activity is absent.</p>
+              </div>
+            ) : (
+              <div className="grid">
+                {patterns.map((pattern) => (
+                  <details className="card accordion" key={`${pattern.pattern_name}-${pattern.window}`}>
+                    <summary>
+                      <div>
+                        <h4>{pattern.pattern_name}</h4>
+                        <p className="meta">{pattern.signal_status} signal with {Math.round(pattern.coverage * 100)}% coverage.</p>
                       </div>
-                    </details>
-                  ))}
-                </div>
-              )}
-            </section>
-          </SectionTint>
+                      <div className="chip-row">
+                        <span className="chip">{pattern.signal_status}</span>
+                        <span className="chip">Confidence: {pattern.confidence}</span>
+                      </div>
+                    </summary>
+                    <div className="divider" />
+                    <div className="copy-block">
+                      <h4>What we're seeing</h4>
+                      <p>{pattern.what_we_see}</p>
+                      <h4>What this might suggest</h4>
+                      <p>{pattern.might_suggest}</p>
+                      <h4>What this does NOT mean</h4>
+                      <p>{pattern.does_not_mean}</p>
+                      <h4>Recommended posture</h4>
+                      <p>{pattern.recommended_posture}</p>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         {activePage === "decisions" && (
-          <SectionTint section="decisions">
-            <section className="section stack">
+          <section className="stack">
             <div className="card banner">
               <h3>Decision-to-Impact Ledger</h3>
               <p>
@@ -413,13 +398,11 @@ export const Dashboard = () => {
                 ))}
               </div>
             )}
-            </section>
-          </SectionTint>
+          </section>
         )}
 
         {activePage === "implications" && (
-          <SectionTint section="implications">
-            <section className="section stack">
+          <section className="stack">
             <div className="card banner">
               <h3>Pattern Implications</h3>
               <p>
@@ -471,13 +454,11 @@ export const Dashboard = () => {
               </p>
               <p className="meta">What this does NOT mean: This does NOT mean any team is singled out.</p>
             </div>
-            </section>
-          </SectionTint>
+          </section>
         )}
 
         {activePage === "evidence" && (
-          <SectionTint section="evidence">
-            <section className="section stack">
+          <section className="stack">
             <div className="card banner">
               <h3>Confidence & Coverage</h3>
               <p>
@@ -517,8 +498,7 @@ export const Dashboard = () => {
                 directional signals meant for executive-level calibration.
               </p>
             </div>
-            </section>
-          </SectionTint>
+          </section>
         )}
       </main>
 
@@ -550,18 +530,12 @@ export const Dashboard = () => {
               </section>
               <section>
                 <h4>Rationale</h4>
-                <div className="pattern-title">
-                  <PatternDot pattern={selectedLedger.rationale.primary_pattern as PatternName} />
-                  <p>Primary pattern: {selectedLedger.rationale.primary_pattern}</p>
-                </div>
+                <p>Primary pattern: {selectedLedger.rationale.primary_pattern}</p>
                 {selectedLedger.rationale.secondary_pattern && (
-                  <div className="pattern-title">
-                    <PatternDot pattern={selectedLedger.rationale.secondary_pattern as PatternName} />
-                    <p>Secondary pattern: {selectedLedger.rationale.secondary_pattern}</p>
-                  </div>
+                  <p>Secondary pattern: {selectedLedger.rationale.secondary_pattern}</p>
                 )}
                 <p>Signal status: {selectedLedger.rationale.signal_status_at_decision}</p>
-                <ConfidenceChip confidence={selectedLedger.rationale.confidence_at_decision} />
+                <p>Confidence: {selectedLedger.rationale.confidence_at_decision}</p>
               </section>
               <section>
                 <h4>Observation</h4>
