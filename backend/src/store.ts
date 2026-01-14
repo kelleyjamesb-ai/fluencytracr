@@ -22,6 +22,7 @@ export type TeamRecord = {
   orgId: string;
   name: string;
   parentTeamId?: string;
+  functionId?: string;  // Links team to a business function for rollup grouping
 };
 
 export type RoleRecord = {
@@ -165,6 +166,15 @@ export type DecisionLedgerEvaluationRecord = {
   };
 };
 
+export type AuditLogRecord = {
+  id: string;
+  orgId: string;
+  action: "create" | "update" | "delete" | "import" | "export" | "access";
+  actorRole: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -188,6 +198,7 @@ class MemoryStore {
   fluencyPatterns = new Map<string, FluencyPatternRecord>();
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
+  auditLogs = new Map<string, AuditLogRecord>();
 
   reset() {
     this.orgs.clear();
@@ -212,6 +223,7 @@ class MemoryStore {
     this.fluencyPatterns.clear();
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
+    this.auditLogs.clear();
   }
 }
 

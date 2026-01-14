@@ -40,6 +40,28 @@ it("computes fluency index with full data", () => {
     is_user_count: true,
     suppressed: false
   });
+  store.metrics.set("org-1:org:2024-01-01:usage_frequency_band_occasional_count:", {
+    orgId: "org-1",
+    group_key: "org",
+    group_type: "org",
+    vendor: "all",
+    bucket_start: "2024-01-01",
+    metric_name: "usage_frequency_band_occasional_count",
+    metric_value: 20,
+    is_user_count: true,
+    suppressed: false
+  });
+  store.metrics.set("org-1:org:2024-01-01:usage_frequency_band_regular_count:", {
+    orgId: "org-1",
+    group_key: "org",
+    group_type: "org",
+    vendor: "all",
+    bucket_start: "2024-01-01",
+    metric_name: "usage_frequency_band_regular_count",
+    metric_value: 25,
+    is_user_count: true,
+    suppressed: false
+  });
   store.metrics.set("org-1:org:2024-01-01:usage_frequency_band_habitual_count:", {
     orgId: "org-1",
     group_key: "org",

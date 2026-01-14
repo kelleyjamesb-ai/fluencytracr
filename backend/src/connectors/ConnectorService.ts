@@ -1,6 +1,6 @@
 import { ConnectorRegistry } from "./base/ConnectorRegistry";
 import { ExternalEvent, InternalSignal } from "./base/ConnectorBase";
-import { BehavioralSignalAggregate } from "@learnaire/shared";
+import { ConnectorSignalAggregate, AnySignalNameSchema, ToolClassSchema } from "@learnaire/shared";
 
 export interface ConnectorEventImport {
   vendor: string;
@@ -15,7 +15,7 @@ export interface ConnectorEventImport {
 
 export interface ConnectorTransformResult {
   success: boolean;
-  aggregates?: BehavioralSignalAggregate[];
+  aggregates?: ConnectorSignalAggregate[];
   errors?: string[];
 }
 
@@ -59,26 +59,48 @@ export class ConnectorService {
       }
     }
 
-    // Convert to BehavioralSignalAggregate format
-    const aggregates: BehavioralSignalAggregate[] = [];
+    // Convert to ConnectorSignalAggregate format with proper validation
+    const aggregates: ConnectorSignalAggregate[] = [];
+    const validationErrors: string[] = [];
 
     for (const { signal, count } of signalCounts.values()) {
+      // Validate signal_name against allowed values (both legacy and v0)
+      const signalNameResult = AnySignalNameSchema.safeParse(signal.signal_name);
+      if (!signalNameResult.success) {
+        validationErrors.push(`Invalid signal_name "${signal.signal_name}": must be a valid signal name`);
+        continue;
+      }
+
+      // Validate tool_class if provided
+      let validatedToolClass: typeof ToolClassSchema._type | undefined;
+      if (signal.tool_class) {
+        const toolClassResult = ToolClassSchema.safeParse(signal.tool_class);
+        if (!toolClassResult.success) {
+          validationErrors.push(`Invalid tool_class "${signal.tool_class}": must be one of llm_chat, research, coding, workflow_automation, embedded_ai`);
+          continue;
+        }
+        validatedToolClass = toolClassResult.data;
+      }
+
       aggregates.push({
         org_id: importData.org_id,
         group_id: importData.group_id,
         group_type: importData.group_type,
         function_id: importData.function_id,
         bucket_start: importData.bucket_start,
-        signal_name: signal.signal_name as any, // v0 signal names
+        signal_name: signalNameResult.data,
         count: count,
-        tool_class: signal.tool_class as any,
+        tool_class: validatedToolClass,
         metadata: signal.metadata
       });
     }
 
+    // Return success even with some validation errors if we have valid aggregates
+    // Include validation errors for logging/debugging
     return {
-      success: true,
-      aggregates
+      success: aggregates.length > 0 || validationErrors.length === 0,
+      aggregates,
+      errors: validationErrors.length > 0 ? validationErrors : undefined
     };
   }
 

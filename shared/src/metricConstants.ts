@@ -47,3 +47,25 @@ export const ALLOWED_METRIC_NAMES = [
 ] as const;
 
 export type AllowedMetricName = (typeof ALLOWED_METRIC_NAMES)[number];
+
+/**
+ * Suppression thresholds for k-anonymity privacy protection.
+ * Groups with fewer members than these thresholds have their data suppressed.
+ *
+ * Note: Different thresholds are used in different contexts:
+ * - MIN_GROUP_SIZE_TEAM: Used for team-level aggregations
+ * - MIN_GROUP_SIZE_BEHAVIORAL: Used for behavioral signal suppression (k=5)
+ * - MIN_GROUP_SIZE_DEFAULT: Default org-level suppression (k=10)
+ */
+export const SUPPRESSION_THRESHOLDS = {
+  /** Minimum team size for privacy (matches Python src/fluency_service.py:15) */
+  MIN_GROUP_SIZE_TEAM: 3,
+
+  /** Behavioral signals suppression threshold (k=5) */
+  MIN_GROUP_SIZE_BEHAVIORAL: 5,
+
+  /** Default org-level suppression threshold (k=10) */
+  MIN_GROUP_SIZE_DEFAULT: 10
+} as const;
+
+export type SuppressionThreshold = typeof SUPPRESSION_THRESHOLDS[keyof typeof SUPPRESSION_THRESHOLDS];

@@ -30,6 +30,7 @@ import {
   upsertBehavioralSignal,
   EnablementEventRecord,
   MetricRecord,
+  FluencyEventRecord,
   insertFluencyEvent,
   insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation,
@@ -76,7 +77,8 @@ try {
 const TeamSchema = z
   .object({
     name: z.string().min(1),
-    parent_team_id: z.string().min(1).optional()
+    parent_team_id: z.string().min(1).optional(),
+    function_id: z.string().min(1).optional()  // Links team to a business function
   })
   .strict();
 
@@ -286,7 +288,8 @@ app.post("/orgs/:orgId/teams", (req, res) => {
     id: teamId,
     orgId: org.id,
     name: parsed.data.name,
-    parentTeamId: parsed.data.parent_team_id
+    parentTeamId: parsed.data.parent_team_id,
+    functionId: parsed.data.function_id
   };
   store.teams.set(teamId, record);
   return res.status(201).json(record);
@@ -304,7 +307,8 @@ app.patch("/orgs/:orgId/teams/:teamId", (req, res) => {
   const updated = {
     ...team,
     name: parsed.data.name ?? team.name,
-    parentTeamId: parsed.data.parent_team_id ?? team.parentTeamId
+    parentTeamId: parsed.data.parent_team_id ?? team.parentTeamId,
+    functionId: parsed.data.function_id ?? team.functionId
   };
   store.teams.set(team.id, updated);
   return res.json(updated);
@@ -1093,7 +1097,7 @@ app.post(
 
     const now = new Date();
     const workflows = Array.from({ length: 8 }, (_, index) => `workflow-${index + 1}`);
-    const seededEvents = [];
+    const seededEvents: FluencyEventRecord[] = [];
 
     for (let dayOffset = 0; dayOffset < 70; dayOffset += 1) {
       const day = new Date(now);
@@ -1472,6 +1476,20 @@ app.get(
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
+});
+
+// Global error handler middleware - must be defined last
+// Catches any unhandled errors from route handlers and middleware
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(`[${new Date().toISOString()}] Unhandled error: ${err.message}`);
+
+  // Handle Zod validation errors
+  if (err.name === "ZodError") {
+    return res.status(400).json({ error: "Validation error", message: err.message });
+  }
+
+  // Default to 500 for unhandled errors
+  return res.status(500).json({ error: "Internal server error" });
 });
 
 export { app };
