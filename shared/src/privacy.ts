@@ -9,6 +9,21 @@ export const NON_COLLECTABLE_FIELDS = [
 
 export const FORBIDDEN_FIELDS = NON_COLLECTABLE_FIELDS;
 
+export const PERSON_IDENTIFIER_FIELDS = [
+  "user_id",
+  "userid",
+  "userId",
+  "email",
+  "name",
+  "full_name",
+  "first_name",
+  "last_name",
+  "employee_id",
+  "employeeId",
+  "person_id",
+  "username"
+] as const;
+
 export function containsForbiddenFields(payload: unknown): boolean {
   if (!payload || typeof payload !== "object") return false;
   const stack: unknown[] = [payload];
@@ -19,6 +34,23 @@ export function containsForbiddenFields(payload: unknown): boolean {
 
     for (const [k, v] of Object.entries(cur as Record<string, unknown>)) {
       if ((NON_COLLECTABLE_FIELDS as readonly string[]).includes(k)) return true;
+      if (v && typeof v === "object") stack.push(v);
+    }
+  }
+  return false;
+}
+
+export function containsPersonIdentifiers(payload: unknown): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  const normalized = new Set(PERSON_IDENTIFIER_FIELDS.map((field) => field.toLowerCase()));
+  const stack: unknown[] = [payload];
+
+  while (stack.length) {
+    const cur = stack.pop();
+    if (!cur || typeof cur !== "object") continue;
+
+    for (const [k, v] of Object.entries(cur as Record<string, unknown>)) {
+      if (normalized.has(k.toLowerCase())) return true;
       if (v && typeof v === "object") stack.push(v);
     }
   }

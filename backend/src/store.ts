@@ -3,7 +3,11 @@ import {
   MetricObservation,
   PolicyControlObservation,
   TrainingEventRollup,
-  BehavioralSignalAggregate
+  BehavioralSignalAggregate,
+  FluencyEvent,
+  FluencyPattern,
+  DecisionLedgerEntry,
+  DecisionLedgerEvaluationInput
 } from "@learnaire/shared";
 
 export type OrgRecord = {
@@ -142,6 +146,25 @@ export type FunctionRecord = {
   name: string;
 };
 
+export type FluencyEventRecord = FluencyEvent & {
+  event_id: string;
+};
+
+export type FluencyPatternRecord = FluencyPattern;
+
+export type DecisionLedgerEntryRecord = DecisionLedgerEntry;
+
+export type DecisionLedgerEvaluationRecord = {
+  evaluation_id: string;
+  ledger_id: string;
+  evaluation: DecisionLedgerEvaluationInput["evaluation"];
+  meta: {
+    coverage_at_evaluation: number;
+    created_at: string;
+    locked_at: string;
+  };
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -161,6 +184,10 @@ class MemoryStore {
   fluencySnapshots = new Map<string, FluencySnapshotRecord>();
   functions = new Map<string, FunctionRecord>();
   behavioralSignals = new Map<string, BehavioralSignalRecord>();
+  fluencyEvents = new Map<string, FluencyEventRecord>();
+  fluencyPatterns = new Map<string, FluencyPatternRecord>();
+  decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
+  decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
 
   reset() {
     this.orgs.clear();
@@ -181,6 +208,10 @@ class MemoryStore {
     this.fluencySnapshots.clear();
     this.functions.clear();
     this.behavioralSignals.clear();
+    this.fluencyEvents.clear();
+    this.fluencyPatterns.clear();
+    this.decisionLedgerEntries.clear();
+    this.decisionLedgerEvaluations.clear();
   }
 }
 
@@ -198,6 +229,22 @@ export const upsertGroup = (orgId: string, group: GroupUpsert): { inserted: bool
   };
   store.groups.set(key, record);
   return { inserted: !existing };
+};
+
+export const insertFluencyEvent = (event: FluencyEventRecord) => {
+  store.fluencyEvents.set(event.event_id, event);
+};
+
+export const upsertFluencyPattern = (key: string, pattern: FluencyPatternRecord) => {
+  store.fluencyPatterns.set(key, pattern);
+};
+
+export const insertDecisionLedgerEntry = (entry: DecisionLedgerEntryRecord) => {
+  store.decisionLedgerEntries.set(entry.ledger_id, entry);
+};
+
+export const insertDecisionLedgerEvaluation = (evaluation: DecisionLedgerEvaluationRecord) => {
+  store.decisionLedgerEvaluations.set(evaluation.evaluation_id, evaluation);
 };
 
 export const upsertMetric = (record: MetricRecord): { inserted: boolean } => {
