@@ -1,302 +1,659 @@
 import { useEffect, useMemo, useState } from "react";
+import type {
+  CoverageSummary,
+  DecisionLedgerEntry,
+  FluencyPattern,
+  FluencyScope,
+  FluencyWindow
+} from "@learnaire/shared";
+import { Sidebar } from "../components/Sidebar";
+import { ConfidenceChip } from "../components/ConfidenceChip";
+import { PatternDot } from "../components/PatternDot";
+import { SectionTint } from "../components/SectionTint";
+import { ExecutiveBrief } from "../components/ExecutiveBrief";
+import type { PatternName } from "@/lib/visualTokens";
 
-const ranges = [
-  { label: "4w", value: "4w" },
-  { label: "12w", value: "12w" },
-  { label: "6m", value: "6m" }
+type PatternResponse = {
+  window: FluencyWindow;
+  scope: FluencyScope;
+  cohort_size: number;
+  patterns: FluencyPattern[];
+};
+
+type LedgerResponse = {
+  window: FluencyWindow;
+  entries: DecisionLedgerEntry[];
+};
+
+const windows = [
+  { label: "Rolling 60d", value: "60d" },
+  { label: "3 months", value: "3m" },
+  { label: "6 months", value: "6m" },
+  { label: "12 months", value: "12m" }
 ] as const;
 
-type TimeseriesPoint = {
-  week_start: string;
-  value: number | null;
-  suppressed: boolean;
-};
+const navItems = [
+  { key: "overview", label: "Overview" },
+  { key: "patterns", label: "Patterns" },
+  { key: "decisions", label: "Decisions" },
+  { key: "implications", label: "Implications" },
+  { key: "evidence", label: "Evidence" }
+] as const;
 
-type DashboardOverview = {
-  org_id: string;
-  range: string;
-  fluency_index: {
-    current: number | null;
-    timeseries: TimeseriesPoint[];
-    data_completeness: number;
-    confidence: number;
-  };
-  coverage: {
-    weekly_active_users: TimeseriesPoint[];
-    active_users_percent_of_assigned: TimeseriesPoint[];
-  };
-  sessions_shape: {
-    bucket_start: string | null;
-    frequency_bands: Record<string, number | null>;
-  };
-  spread: {
-    bucket_start: string | null;
-    teams_with_any_ai_usage_percent: number | null;
-    usage_concentration_index: number | null;
-  };
-  risk_drift_controls: {
-    compliance_posture_flag: string | null;
-  };
-};
-
-type TransparencyReport = {
-  org_id: string;
-  collected_data: string[];
-  never_collected: string[];
-  aggregation_rules: string[];
-  enabled_signal_sources: string[];
-};
-
-const fallbackData: DashboardOverview = {
-  org_id: "org-1",
-  range: "12w",
-  fluency_index: {
-    current: 58,
-    timeseries: Array.from({ length: 12 }, (_, index) => ({
-      week_start: `2024-W${index + 1}`,
-      value: 50 + index,
-      suppressed: false
-    })),
-    data_completeness: 0.85,
-    confidence: 0.85
-  },
-  coverage: {
-    weekly_active_users: Array.from({ length: 12 }, (_, index) => ({
-      week_start: `2024-W${index + 1}`,
-      value: 300 + index * 8,
-      suppressed: false
-    })),
-    active_users_percent_of_assigned: Array.from({ length: 12 }, (_, index) => ({
-      week_start: `2024-W${index + 1}`,
-      value: 0.45 + index * 0.01,
-      suppressed: false
-    }))
-  },
-  sessions_shape: {
-    bucket_start: "2024-W12",
-    frequency_bands: {
-      usage_frequency_band_rare_count: 20,
-      usage_frequency_band_occasional_count: 45,
-      usage_frequency_band_regular_count: 80,
-      usage_frequency_band_habitual_count: 55
-    }
-  },
-  spread: {
-    bucket_start: "2024-W12",
-    teams_with_any_ai_usage_percent: 0.72,
-    usage_concentration_index: 0.38
-  },
-  risk_drift_controls: {
-    compliance_posture_flag: "enabled"
+const altitudeExamples = {
+  exec: [
+    "Review verification capacity planning with executive sponsors.",
+    "Align on guardrail visibility for higher-risk workflows.",
+    "Confirm support coverage for recovery loops that persist."
+  ],
+  hooks: {
+    function: "Mapped examples for functional views will land here.",
+    enablement: "Mapped examples for enablement views will land here."
   }
 };
 
-const fallbackTransparency: TransparencyReport = {
-  org_id: "org-1",
-  collected_data: ["aggregated_metrics", "policy_controls", "enablement_rollups"],
-  never_collected: ["prompt_content", "output_content", "keystrokes", "file_names", "message_text", "raw_logs"],
-  aggregation_rules: ["org", "team", "role", "time_bucket"],
-  enabled_signal_sources: ["training_platform", "support_ticketing", "code_review"]
+const buildDirectionalSeries = (patterns: FluencyPattern[]) => {
+  const base = Math.max(patterns.length, 1);
+  return [0.7, 0.85, 0.8, 0.9].map((scale, index) => ({
+    label: `W${index + 1}`,
+    value: Math.min(1, (base / 6) * scale)
+  }));
+};
+
+const formatPercent = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "--";
+  }
+  return `${Math.round(value * 100)}%`;
 };
 
 export const Dashboard = () => {
-  const [range, setRange] = useState<(typeof ranges)[number]["value"]>("12w");
-  const [data, setData] = useState<DashboardOverview>(fallbackData);
-  const [transparency, setTransparency] = useState<TransparencyReport>(fallbackTransparency);
+  const [window, setWindow] = useState<FluencyWindow>("60d");
+  const [activePage, setActivePage] = useState<(typeof navItems)[number]["key"]>("overview");
+  const [patterns, setPatterns] = useState<FluencyPattern[]>([]);
+  const [ledgerEntries, setLedgerEntries] = useState<DecisionLedgerEntry[]>([]);
+  const [coverage, setCoverage] = useState<CoverageSummary | null>(null);
+  const [cohortMessage, setCohortMessage] = useState<string | null>(null);
+  const [isLoadingPatterns, setIsLoadingPatterns] = useState(true);
+  const [isLoadingCoverage, setIsLoadingCoverage] = useState(true);
+  const [isLoadingLedger, setIsLoadingLedger] = useState(true);
+  const [openLedgerId, setOpenLedgerId] = useState<string | null>(null);
+
+  const scope: FluencyScope = "org";
 
   useEffect(() => {
     const controller = new AbortController();
-    const fetchData = async () => {
+    const fetchPatterns = async () => {
+      setIsLoadingPatterns(true);
       try {
-        const response = await fetch(
-          `/orgs/${fallbackData.org_id}/dashboard/overview?range=${range}&vendor=all&groupType=org`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(`/api/patterns?window=${window}&scope=${scope}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch");
+          const payload = await response.json();
+          setPatterns([]);
+          setCohortMessage(payload?.error ?? "Signals are not available for this cohort size.");
+          return;
         }
-        const payload = (await response.json()) as DashboardOverview;
-        setData(payload);
+        const payload = (await response.json()) as PatternResponse;
+        setPatterns(payload.patterns);
+        setCohortMessage(null);
       } catch (error) {
-        setData({ ...fallbackData, range });
+        setPatterns([]);
+        setCohortMessage("Signals are not available for this cohort size.");
+      } finally {
+        setIsLoadingPatterns(false);
       }
     };
-    fetchData();
+    fetchPatterns();
     return () => controller.abort();
-  }, [range]);
+  }, [window, scope]);
 
   useEffect(() => {
     const controller = new AbortController();
-    const fetchTransparency = async () => {
+    const fetchLedger = async () => {
+      setIsLoadingLedger(true);
       try {
-        const response = await fetch(`/orgs/${fallbackData.org_id}/transparency`, {
-          signal: controller.signal
-        });
+        const response = await fetch(`/api/ledger?window=${window}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch");
+          setLedgerEntries([]);
+          return;
         }
-        const payload = (await response.json()) as TransparencyReport;
-        setTransparency(payload);
+        const payload = (await response.json()) as LedgerResponse;
+        setLedgerEntries(payload.entries ?? []);
       } catch (error) {
-        setTransparency(fallbackTransparency);
+        setLedgerEntries([]);
+      } finally {
+        setIsLoadingLedger(false);
       }
     };
-    fetchTransparency();
+    fetchLedger();
     return () => controller.abort();
-  }, []);
+  }, [window]);
 
-  const fluencyTrend = useMemo(
-    () => data.fluency_index.timeseries.map((point) => point.value ?? 0),
-    [data]
-  );
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchCoverage = async () => {
+      setIsLoadingCoverage(true);
+      try {
+        const response = await fetch(`/api/coverage?window=${window}&scope=${scope}`);
+        if (!response.ok) {
+          setCoverage(null);
+          return;
+        }
+        const payload = (await response.json()) as CoverageSummary;
+        setCoverage(payload);
+      } catch (error) {
+        setCoverage(null);
+      } finally {
+        setIsLoadingCoverage(false);
+      }
+    };
+    fetchCoverage();
+    return () => controller.abort();
+  }, [window, scope]);
 
-  const coverageLatest = data.coverage.active_users_percent_of_assigned.at(-1)?.value ?? null;
-  const wauLatest = data.coverage.weekly_active_users.at(-1)?.value ?? null;
+  const posture = useMemo(() => {
+    if (patterns.length === 0) {
+      return "Study" as const;
+    }
+    const counts = patterns.reduce<Record<string, number>>((acc, pattern) => {
+      acc[pattern.recommended_posture] = (acc[pattern.recommended_posture] ?? 0) + 1;
+      return acc;
+    }, {});
+    return (Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Study") as
+      | "Scale"
+      | "Stabilize"
+      | "Study";
+  }, [patterns]);
 
-  const frequencyBands = data.sessions_shape.frequency_bands;
-  const bandEntries = [
-    ["Rare", frequencyBands.usage_frequency_band_rare_count],
-    ["Occasional", frequencyBands.usage_frequency_band_occasional_count],
-    ["Regular", frequencyBands.usage_frequency_band_regular_count],
-    ["Habitual", frequencyBands.usage_frequency_band_habitual_count]
-  ] as const;
+  const topSignals = patterns.slice(0, 3).map((pattern) => pattern.what_we_see);
+  const prevalenceSeries = buildDirectionalSeries(patterns);
+
+  const confidenceLabel = coverage?.coverage
+    ? coverage.coverage >= 0.7
+      ? "High"
+      : coverage.coverage >= 0.4
+        ? "Medium"
+        : "Withheld"
+    : "Withheld";
+  const confidenceChip = confidenceLabel === "Medium" || confidenceLabel === "High"
+    ? confidenceLabel
+    : undefined;
+
+  const selectedLedger = ledgerEntries.find((entry) => entry.ledger_id === openLedgerId) ?? null;
 
   return (
-    <div className="page">
-      <header className="header">
-        <div>
-          <h1>learnaire-fluency</h1>
-          <p>Executive-safe fluency snapshot.</p>
-        </div>
-        <div className="toggle">
-          {ranges.map((option) => (
-            <button
-              key={option.value}
-              className={range === option.value ? "toggle-button active" : "toggle-button"}
-              onClick={() => setRange(option.value)}
-              type="button"
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      <section className="grid">
-        <div className="card">
-          <div className="card-header">
-            <h2>AI Fluency Index</h2>
-            <span className="metric">{data.fluency_index.current ?? "--"}</span>
-          </div>
-          <LineChart points={fluencyTrend} />
-          <div className="meta">
-            Confidence {Math.round(data.fluency_index.confidence * 100)}%
-          </div>
-        </div>
-
-        <div className="card">
-          <h2>Enablement Coverage</h2>
-          <div className="metric">
-            {coverageLatest !== null
-              ? `${Math.round(coverageLatest * 100)}% active of assigned`
-              : "--"}
-          </div>
-          <div className="submetric">
-            WAU {wauLatest !== null ? Math.round(wauLatest) : "--"}
-          </div>
-        </div>
-
-        <div className="card">
-          <h2>Adoption Shape</h2>
-          <ul className="list">
-            {bandEntries.map(([label, value]) => (
-              <li key={label}>
-                <span>{label}</span>
-                <span>{value ?? "--"}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="card">
-          <h2>Spread & Risk Drift</h2>
-          <div className="submetric">
-            Teams with AI usage: {formatPercent(data.spread.teams_with_any_ai_usage_percent)}
-          </div>
-          <div className="submetric">
-            Usage concentration: {formatPercent(data.spread.usage_concentration_index)}
-          </div>
-          <div className="submetric">
-            Compliance posture: {data.risk_drift_controls.compliance_posture_flag ?? "--"}
-          </div>
-        </div>
-      </section>
-
-      <section className="card transparency">
-        <h2>Transparency</h2>
-        <div className="transparency-grid">
+    <div className="app-shell">
+      <Sidebar items={navItems} activeKey={activePage} onSelect={setActivePage} />
+      <main className="main">
+        <header className="topbar">
           <div>
-            <h3>What data is collected</h3>
-            <ul className="list">
-              {transparency.collected_data.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+            <h2>{navItems.find((item) => item.key === activePage)?.label}</h2>
+            <p>Signals indicate directional movement across aggregated workflows.</p>
           </div>
-          <div>
-            <h3>What data is never collected</h3>
-            <ul className="list">
-              {transparency.never_collected.map((item) => (
-                <li key={item}>{item}</li>
+          <div className="window-controls">
+            <div className="meta-block">
+              <span className="meta-label">Coverage</span>
+              <span className={isLoadingCoverage ? "meta-value skeleton" : "meta-value"}>
+                {isLoadingCoverage ? "--" : formatPercent(coverage?.coverage)}
+              </span>
+            </div>
+            <div className="meta-block">
+              <span className="meta-label">Confidence</span>
+              <span className={isLoadingCoverage ? "meta-value skeleton" : "meta-value"}>
+                {isLoadingCoverage ? "--" : confidenceLabel}
+              </span>
+            </div>
+            <div className="toggle">
+              {windows.map((option) => (
+                <button
+                  key={option.value}
+                  className={window === option.value ? "toggle-button active" : "toggle-button"}
+                  onClick={() => setWindow(option.value)}
+                  type="button"
+                >
+                  {option.label}
+                </button>
               ))}
-            </ul>
+            </div>
           </div>
-          <div>
-            <h3>Aggregation rules</h3>
-            <ul className="list">
-              {transparency.aggregation_rules.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3>Enabled signal sources</h3>
-            <ul className="list">
-              {transparency.enabled_signal_sources.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+        </header>
 
-      <footer className="footer">All data shown is aggregated. No individual-level tracking.</footer>
+        {activePage === "overview" && (
+          <SectionTint section="overview">
+            <section className="section stack">
+              <ExecutiveBrief posture={posture} confidence={confidenceChip} />
+
+              <div className="card hero">
+                <div className="hero-grid">
+                  <div>
+                    <div className="metric-label">Top signals</div>
+                    <ul className="list">
+                      {topSignals.length > 0 ? (
+                        topSignals.map((signal) => <li key={signal}>{signal}</li>)
+                      ) : (
+                        <li>Insight withheld due to low confidence.</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="metric-label">Window</div>
+                    <div className="metric-value">{window}</div>
+                    <div className="meta">Rolling windows are defaulted to 60 days.</div>
+                  </div>
+                  <div>
+                    <div className="metric-label">Coverage</div>
+                    <div className="metric-value">{formatPercent(coverage?.coverage)}</div>
+                    <div className="meta">Cohort size: {coverage?.cohort_size ?? "--"}</div>
+                  </div>
+                </div>
+                <p className="meta">
+                  What this does NOT mean: This does NOT mean outcomes are guaranteed or that any
+                  group is ahead of another.
+                </p>
+              </div>
+
+              <div className="grid">
+                <div className="card">
+                  <h3>Pattern prevalence</h3>
+                  <p className="meta">Directional signals over time (confidence gated).</p>
+                  <DirectionalChart series={prevalenceSeries} />
+                </div>
+                <div className="card">
+                  <h3>Decision timeline</h3>
+                  <p className="meta">Markers show logged decisions within the window.</p>
+                  <TimelineLane entries={ledgerEntries} isLoading={isLoadingLedger} />
+                </div>
+                <div className="card">
+                  <h3>Coverage signal mix</h3>
+                  <ul className="list">
+                    <li>Verification rate: {formatPercent(coverage?.verification_rate)}</li>
+                    <li>Risk mix (High): {formatPercent(coverage?.risk_mix.high)}</li>
+                    <li>Risk mix (Medium): {formatPercent(coverage?.risk_mix.medium)}</li>
+                  </ul>
+                  <p className="meta">
+                    What this does NOT mean: This does NOT mean any team is singled out.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </SectionTint>
+        )}
+
+        {activePage === "patterns" && (
+          <SectionTint section="patterns">
+            <section className="section stack">
+              <div className="card banner">
+                <div>
+                  <h3>Pattern briefing</h3>
+                  <p>
+                    Signals indicate directional movement across aggregated workflows. Confidence gating
+                    suppresses low confidence insights.
+                  </p>
+                </div>
+                <div className="banner-metrics">
+                  <div>
+                    <div className="metric-label">Cohort guardrail</div>
+                    <div className="metric-value">n ≥ 5 enforced</div>
+                  </div>
+                </div>
+              </div>
+
+              {cohortMessage ? (
+                <div className="card empty">
+                  <h3>Signals are quiet</h3>
+                  <p>{cohortMessage}</p>
+                  <p className="meta">What this does NOT mean: This does NOT mean activity is absent.</p>
+                </div>
+              ) : isLoadingPatterns ? (
+                <div className="grid">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div className="card skeleton" key={`skeleton-${index}`} aria-hidden="true">
+                      <div className="skeleton-line" />
+                      <div className="skeleton-line short" />
+                      <div className="skeleton-block" />
+                    </div>
+                  ))}
+                </div>
+              ) : patterns.length === 0 ? (
+                <div className="card empty">
+                  <h3>No patterns above Medium confidence</h3>
+                  <p>Silence is valid when signal confidence is not sufficient.</p>
+                  <p className="meta">What this does NOT mean: This does NOT mean activity is absent.</p>
+                </div>
+              ) : (
+                <div className="grid">
+                  {patterns.map((pattern) => (
+                    <details className="card accordion" key={`${pattern.pattern_name}-${pattern.window}`}>
+                      <summary>
+                        <div>
+                          <div className="pattern-title">
+                            <PatternDot pattern={pattern.pattern_name as PatternName} />
+                            <h4>{pattern.pattern_name}</h4>
+                          </div>
+                          <p className="meta">
+                            {pattern.signal_status} signal with {Math.round(pattern.coverage * 100)}% coverage.
+                          </p>
+                        </div>
+                        <div className="chip-row">
+                          <span className="chip">{pattern.signal_status}</span>
+                          <ConfidenceChip confidence={pattern.confidence} />
+                        </div>
+                      </summary>
+                      <div className="divider" />
+                      <div className="copy-block">
+                        <h4>What we're seeing</h4>
+                        <p>{pattern.what_we_see}</p>
+                        <h4>What this might suggest</h4>
+                        <p>{pattern.might_suggest}</p>
+                        <h4>What this does NOT mean</h4>
+                        <p>{pattern.does_not_mean}</p>
+                        <h4>Recommended posture</h4>
+                        <p>{pattern.recommended_posture}</p>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              )}
+            </section>
+          </SectionTint>
+        )}
+
+        {activePage === "decisions" && (
+          <SectionTint section="decisions">
+            <section className="section stack">
+            <div className="card banner">
+              <h3>Decision-to-Impact Ledger</h3>
+              <p>
+                Decisions are immutable. Evaluations append after the full observation window completes.
+              </p>
+            </div>
+            {isLoadingLedger ? (
+              <div className="card skeleton" aria-hidden="true">
+                <div className="skeleton-line" />
+                <div className="skeleton-line short" />
+                <div className="skeleton-block" />
+              </div>
+            ) : ledgerEntries.length === 0 ? (
+              <div className="card empty">
+                <h3>No ledger entries yet</h3>
+                <p>Use the ledger to log decisions tied to directional signals.</p>
+                <p className="meta">What this does NOT mean: This does NOT mean no decisions exist.</p>
+              </div>
+            ) : (
+              <div className="timeline">
+                {ledgerEntries.map((entry) => (
+                  <div className="timeline-item" key={entry.ledger_id}>
+                    <div className="timeline-marker" />
+                    <div className="timeline-content">
+                      <div className="card">
+                        <div className="card-header">
+                          <div>
+                            <h4>{entry.decision.title}</h4>
+                            <p className="meta">{entry.decision.description}</p>
+                          </div>
+                          <div className="metric">
+                            {entry.evaluation?.signal_movement ?? "Observing"}
+                            <span className="metric-sub">signal movement</span>
+                          </div>
+                        </div>
+                        <div className="divider" />
+                        <div className="timeline-actions">
+                          <div className="meta">Decision date: {entry.decision.decision_date}</div>
+                          <button
+                            className="secondary"
+                            type="button"
+                            onClick={() => setOpenLedgerId(entry.ledger_id)}
+                          >
+                            View details
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            </section>
+          </SectionTint>
+        )}
+
+        {activePage === "implications" && (
+          <SectionTint section="implications">
+            <section className="section stack">
+            <div className="card banner">
+              <h3>Pattern Implications</h3>
+              <p>
+                Implications group signals into risk, opportunity, stability, and coverage gaps. These
+                are directional cues, not causal claims.
+              </p>
+            </div>
+
+            <div className="grid">
+              <div className="card">
+                <h4>Risk</h4>
+                <ul className="list">
+                  <li>Verification load may reflect concentrated exposure.</li>
+                  <li>Recovery loops indicate workflows that may benefit from guidance refreshes.</li>
+                </ul>
+              </div>
+              <div className="card">
+                <h4>Opportunity</h4>
+                <ul className="list">
+                  <li>Stable acceptance patterns may reflect readiness to scale verified flows.</li>
+                  <li>Consistent recovery resolution indicates resilient operating habits.</li>
+                </ul>
+              </div>
+              <div className="card">
+                <h4>Stability</h4>
+                <ul className="list">
+                  <li>Directional signals appear steady when confidence holds at Medium or High.</li>
+                  <li>Silence indicates coverage or confidence gaps, not absence of activity.</li>
+                </ul>
+              </div>
+              <div className="card">
+                <h4>Coverage gaps</h4>
+                <ul className="list">
+                  <li>Low verification rate indicates a coverage gap for high-risk workflows.</li>
+                  <li>Abandonment signals may reflect friction in early-stage handoffs.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="card">
+              <h4>Altitude-aware examples (executive view)</h4>
+              <ul className="list">
+                {altitudeExamples.exec.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <p className="meta">
+                Mapping hooks: {altitudeExamples.hooks.function} {altitudeExamples.hooks.enablement}
+              </p>
+              <p className="meta">What this does NOT mean: This does NOT mean any team is singled out.</p>
+            </div>
+            </section>
+          </SectionTint>
+        )}
+
+        {activePage === "evidence" && (
+          <SectionTint section="evidence">
+            <section className="section stack">
+            <div className="card banner">
+              <h3>Confidence & Coverage</h3>
+              <p>
+                Confidence reflects signal density and coverage, not outcomes. Low confidence insights
+                remain suppressed.
+              </p>
+            </div>
+
+            <div className="grid">
+              <div className="card">
+                <h4>Coverage</h4>
+                <div className="metric">
+                  {isLoadingCoverage ? "--" : formatPercent(coverage?.coverage)}
+                  <span className="metric-sub">window coverage</span>
+                </div>
+                <p className="meta">Cohort size: {coverage?.cohort_size ?? "--"}</p>
+              </div>
+              <div className="card">
+                <h4>Verification rate</h4>
+                <div className="metric">
+                  {isLoadingCoverage ? "--" : formatPercent(coverage?.verification_rate)}
+                  <span className="metric-sub">verification rate</span>
+                </div>
+                <p className="meta">Signals remain aggregated at org scope only.</p>
+              </div>
+              <div className="card">
+                <h4>Withheld states</h4>
+                <p>Insight withheld due to low confidence.</p>
+                <p className="meta">Silence is valid when coverage is insufficient.</p>
+              </div>
+            </div>
+
+            <div className="card">
+              <h4>What this does NOT mean</h4>
+              <p>
+                Coverage and confidence do NOT mean any team or workflow is ahead or behind. These are
+                directional signals meant for executive-level calibration.
+              </p>
+            </div>
+            </section>
+          </SectionTint>
+        )}
+      </main>
+
+      {selectedLedger && (
+        <div className="drawer-backdrop" role="presentation" onClick={() => setOpenLedgerId(null)}>
+          <aside
+            className="drawer"
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="drawer-header">
+              <div>
+                <h3>{selectedLedger.decision.title}</h3>
+                <p className="meta">{selectedLedger.decision.description}</p>
+              </div>
+              <button className="secondary" type="button" onClick={() => setOpenLedgerId(null)}>
+                Close
+              </button>
+            </div>
+            <div className="divider" />
+            <div className="drawer-body">
+              <section>
+                <h4>Decision</h4>
+                <p>Type: {selectedLedger.decision.decision_type}</p>
+                <p>Scope: {selectedLedger.decision.scope}</p>
+                <p>Date: {selectedLedger.decision.decision_date}</p>
+                <p>Logged by: {selectedLedger.decision.logged_by_role}</p>
+              </section>
+              <section>
+                <h4>Rationale</h4>
+                <div className="pattern-title">
+                  <PatternDot pattern={selectedLedger.rationale.primary_pattern as PatternName} />
+                  <p>Primary pattern: {selectedLedger.rationale.primary_pattern}</p>
+                </div>
+                {selectedLedger.rationale.secondary_pattern && (
+                  <div className="pattern-title">
+                    <PatternDot pattern={selectedLedger.rationale.secondary_pattern as PatternName} />
+                    <p>Secondary pattern: {selectedLedger.rationale.secondary_pattern}</p>
+                  </div>
+                )}
+                <p>Signal status: {selectedLedger.rationale.signal_status_at_decision}</p>
+                <ConfidenceChip confidence={selectedLedger.rationale.confidence_at_decision} />
+              </section>
+              <section>
+                <h4>Observation</h4>
+                <p>
+                  Window: {selectedLedger.observation.window_length_days}d {selectedLedger.observation.window_type}
+                </p>
+                <p>
+                  Start: {selectedLedger.observation.observation_start}
+                  <br />
+                  End: {selectedLedger.observation.observation_end}
+                </p>
+                <p>Status: {selectedLedger.observation.status}</p>
+              </section>
+              <section>
+                <h4>Evaluation</h4>
+                {selectedLedger.evaluation ? (
+                  <>
+                    <p>Signal movement: {selectedLedger.evaluation.signal_movement}</p>
+                    <ul className="list">
+                      {selectedLedger.evaluation.observed_patterns.map((pattern) => (
+                        <li key={`${pattern.pattern}-${pattern.direction}`}>
+                          {pattern.pattern}: {pattern.direction}
+                        </li>
+                      ))}
+                    </ul>
+                    <p>Confidence: {selectedLedger.evaluation.confidence}</p>
+                    <p>{selectedLedger.evaluation.interpretation}</p>
+                    {selectedLedger.evaluation.confounds.length > 0 && (
+                      <p>Confounds: {selectedLedger.evaluation.confounds.join(", ")}</p>
+                    )}
+                  </>
+                ) : (
+                  <p>Observing. Evaluation will append after the window completes.</p>
+                )}
+                <p className="meta">
+                  What this does NOT mean: This does NOT mean the decision outcome is final.
+                </p>
+              </section>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 };
 
-const LineChart = ({ points }: { points: number[] }) => {
-  if (points.length === 0) {
-    return <div className="chart-placeholder" />;
-  }
-  const max = Math.max(...points, 1);
-  const path = points
-    .map((value, index) => {
-      const x = (index / (points.length - 1 || 1)) * 100;
-      const y = 100 - (value / max) * 100;
+const DirectionalChart = ({
+  series
+}: {
+  series: { label: string; value: number }[];
+}) => {
+  const max = Math.max(...series.map((point) => point.value), 1);
+  const path = series
+    .map((point, index) => {
+      const x = (index / (series.length - 1 || 1)) * 100;
+      const y = 100 - (point.value / max) * 100;
       return `${index === 0 ? "M" : "L"} ${x} ${y}`;
     })
     .join(" ");
+
   return (
-    <svg viewBox="0 0 100 40" className="chart">
-      <path d={path} fill="none" stroke="#2563eb" strokeWidth="2" />
-    </svg>
+    <div className="chart">
+      <svg viewBox="0 0 100 40" aria-hidden="true">
+        <path d={path} fill="none" stroke="#2563eb" strokeWidth="2" />
+      </svg>
+      <div className="chart-labels">
+        {series.map((point) => (
+          <span key={point.label}>{point.label}</span>
+        ))}
+      </div>
+    </div>
   );
 };
 
-const formatPercent = (value: number | null) => {
-  if (value === null || Number.isNaN(value)) {
-    return "--";
+const TimelineLane = ({
+  entries,
+  isLoading
+}: {
+  entries: DecisionLedgerEntry[];
+  isLoading: boolean;
+}) => {
+  if (isLoading) {
+    return <div className="skeleton-line" aria-hidden="true" />;
   }
-  return `${Math.round(value * 100)}%`;
+  if (entries.length === 0) {
+    return <p className="meta">No decisions logged in this window.</p>;
+  }
+  return (
+    <div className="lane">
+      {entries.map((entry) => (
+        <span key={entry.ledger_id} className="lane-marker" aria-label={entry.decision.title} />
+      ))}
+    </div>
+  );
 };
