@@ -1,2 +1,2 @@
 # FluencyTracr Harness dependencies
-filelock>=3.12.0
+# No external dependencies - uses only Python stdlib
