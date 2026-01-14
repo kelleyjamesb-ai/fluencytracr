@@ -12,10 +12,15 @@ import {
   TrainingEventRollupSchema,
   BehavioralSignalAggregateSchema,
   BehavioralSignalImportSchema,
-  ConnectorEventImportSchema
+  ConnectorEventImportSchema,
+  FluencyEventIngestSchema,
+  FluencyScopeSchema,
+  FluencyWindowSchema,
+  DecisionLedgerCreateSchema,
+  DecisionLedgerEvaluationInputSchema
 } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
-import { rejectForbiddenFields } from "./ingest";
+import { rejectForbiddenFields, rejectPersonIdentifiers } from "./ingest";
 import {
   store,
   upsertControl,
@@ -24,8 +29,13 @@ import {
   upsertMetric,
   upsertBehavioralSignal,
   EnablementEventRecord,
-  MetricRecord
+  MetricRecord,
+  insertFluencyEvent,
+  insertDecisionLedgerEntry,
+  insertDecisionLedgerEvaluation,
+  upsertFluencyPattern
 } from "./store";
+import type { DecisionLedgerEvaluationRecord } from "./store";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -39,6 +49,15 @@ import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
+import {
+  buildCoverageSummary,
+  COVERAGE_THRESHOLD,
+  derivePatterns,
+  filterEventsByScope,
+  filterEventsByWindow,
+  MIN_COHORT_SIZE,
+  WINDOW_DAYS
+} from "./fluencytracr";
 import * as path from "path";
 
 const app = express();
@@ -198,6 +217,17 @@ const latestControls = (controlNames: string[], controls: typeof store.controls)
   });
   return { bucket_start: latestBucket, values };
 };
+
+const addDays = (start: string, days: number) => {
+  const date = new Date(start);
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString();
+  }
+  date.setDate(date.getDate() + days);
+  return date.toISOString();
+};
+
+const nowIso = () => new Date().toISOString();
 
 const enforceScopeQuery = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
@@ -800,6 +830,360 @@ app.get(
     };
 
     return res.json(response);
+  }
+);
+
+app.post(
+  "/api/events",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  rejectForbiddenFields,
+  rejectPersonIdentifiers,
+  (req, res) => {
+    const parsed = FluencyEventIngestSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+
+    const eventIds = parsed.data.events.map((event) => {
+      const eventId = crypto.randomUUID();
+      insertFluencyEvent({ ...event, event_id: eventId });
+      return eventId;
+    });
+
+    return res.json({ ingested: eventIds.length, event_ids: eventIds });
+  }
+);
+
+app.get(
+  "/api/patterns",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const windowParsed = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    const scopeParsed = FluencyScopeSchema.safeParse(req.query.scope ?? "org");
+
+    if (!windowParsed.success || !scopeParsed.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+
+    const events = Array.from(store.fluencyEvents.values());
+    const scoped = filterEventsByScope(events, scopeParsed.data);
+    const windowed = filterEventsByWindow(scoped, windowParsed.data);
+    const cohortSize = new Set(windowed.map((event) => event.workflow_id)).size;
+
+    if (cohortSize < MIN_COHORT_SIZE) {
+      return res.status(400).json({
+        error: "Cohort below minimum size",
+        cohort_size: cohortSize,
+        min_cohort_size: MIN_COHORT_SIZE
+      });
+    }
+
+    const patterns = derivePatterns(windowed, windowParsed.data);
+    patterns.forEach((pattern) => {
+      const key = `${scopeParsed.data}:${windowParsed.data}:${pattern.pattern_name}`;
+      upsertFluencyPattern(key, pattern);
+    });
+
+    return res.json({
+      window: windowParsed.data,
+      scope: scopeParsed.data,
+      cohort_size: cohortSize,
+      patterns
+    });
+  }
+);
+
+app.get(
+  "/api/coverage",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const windowParsed = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    const scopeParsed = FluencyScopeSchema.safeParse(req.query.scope ?? "org");
+
+    if (!windowParsed.success || !scopeParsed.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+
+    const events = Array.from(store.fluencyEvents.values());
+    const scoped = filterEventsByScope(events, scopeParsed.data);
+    const windowed = filterEventsByWindow(scoped, windowParsed.data);
+    const cohortSize = new Set(windowed.map((event) => event.workflow_id)).size;
+
+    if (cohortSize < MIN_COHORT_SIZE) {
+      return res.status(400).json({
+        error: "Cohort below minimum size",
+        cohort_size: cohortSize,
+        min_cohort_size: MIN_COHORT_SIZE
+      });
+    }
+
+    const summary = buildCoverageSummary(windowed, windowParsed.data);
+    return res.json(summary);
+  }
+);
+
+app.post(
+  "/api/ledger",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const parsed = DecisionLedgerCreateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+
+    const createdAt = nowIso();
+    const decisionDate = parsed.data.decision.decision_date || createdAt;
+    const observationStart = parsed.data.observation?.observation_start ?? decisionDate;
+    const observationEnd =
+      parsed.data.observation?.observation_end ?? addDays(observationStart, 60);
+
+    const entry = {
+      ledger_id: crypto.randomUUID(),
+      decision: parsed.data.decision,
+      rationale: parsed.data.rationale,
+      observation: {
+        window_type: "rolling" as const,
+        window_length_days: parsed.data.observation?.window_length_days ?? 60,
+        observation_start: observationStart,
+        observation_end: observationEnd,
+        status: "observing" as const
+      },
+      meta: {
+        created_at: createdAt,
+        locked_at: createdAt
+      }
+    };
+
+    insertDecisionLedgerEntry(entry);
+    return res.json(entry);
+  }
+);
+
+app.post(
+  "/api/ledger/:id/evaluate",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const entry = store.decisionLedgerEntries.get(req.params.id);
+    if (!entry) {
+      return res.status(404).json({ error: "Ledger entry not found" });
+    }
+
+    const parsed = DecisionLedgerEvaluationInputSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+
+    const observationEnd = new Date(entry.observation.observation_end);
+    const observationStart = new Date(entry.observation.observation_start);
+    const now = new Date();
+
+    if (Number.isNaN(observationEnd.getTime()) || now < observationEnd) {
+      return res.json({
+        ledger_id: entry.ledger_id,
+        status: "observing",
+        observation_end: entry.observation.observation_end
+      });
+    }
+
+    if (entry.observation.window_length_days < 60) {
+      return res.status(400).json({ error: "Observation window too short" });
+    }
+
+    const events = Array.from(store.fluencyEvents.values());
+    const scoped = filterEventsByScope(events, entry.decision.scope);
+    const observationEvents = scoped.filter((event) => {
+      const ts = new Date(event.timestamp);
+      return !Number.isNaN(ts.getTime()) && ts >= observationStart && ts <= observationEnd;
+    });
+
+    const coverage = buildCoverageSummary(observationEvents, "60d").coverage;
+    if (coverage < COVERAGE_THRESHOLD) {
+      return res.status(400).json({
+        error: "Coverage below threshold",
+        coverage,
+        coverage_threshold: COVERAGE_THRESHOLD
+      });
+    }
+
+    const evaluationId = crypto.randomUUID();
+    const createdAt = nowIso();
+    const evaluationRecord = {
+      evaluation_id: evaluationId,
+      ledger_id: entry.ledger_id,
+      evaluation: parsed.data.evaluation,
+      meta: {
+        coverage_at_evaluation: coverage,
+        created_at: createdAt,
+        locked_at: createdAt
+      }
+    };
+
+    insertDecisionLedgerEvaluation(evaluationRecord);
+
+    return res.json({
+      ledger_id: entry.ledger_id,
+      evaluation_id: evaluationId,
+      status: "complete",
+      evaluation: evaluationRecord.evaluation,
+      meta: evaluationRecord.meta
+    });
+  }
+);
+
+app.get(
+  "/api/ledger",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const windowParsed = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!windowParsed.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+
+    const start = addDays(nowIso(), -WINDOW_DAYS[windowParsed.data]);
+    const startDate = new Date(start);
+    const evaluationsByLedger = Array.from(store.decisionLedgerEvaluations.values()).reduce(
+      (acc, evaluation) => {
+        const list = acc.get(evaluation.ledger_id) ?? [];
+        list.push(evaluation);
+        acc.set(evaluation.ledger_id, list);
+        return acc;
+      },
+      new Map<string, DecisionLedgerEvaluationRecord[]>()
+    );
+
+    const entries = Array.from(store.decisionLedgerEntries.values()).filter((entry) => {
+      const decisionDate = new Date(entry.decision.decision_date);
+      if (Number.isNaN(decisionDate.getTime())) {
+        return true;
+      }
+      return decisionDate >= startDate;
+    });
+
+    const responseEntries = entries.map((entry) => {
+      const evaluations = evaluationsByLedger.get(entry.ledger_id) ?? [];
+      const latestEvaluation = evaluations.sort((a, b) =>
+        a.meta.created_at.localeCompare(b.meta.created_at)
+      )[evaluations.length - 1];
+
+      return {
+        ...entry,
+        evaluation: latestEvaluation?.evaluation ?? entry.evaluation,
+        meta: {
+          ...entry.meta,
+          coverage_at_evaluation: latestEvaluation?.meta.coverage_at_evaluation ?? entry.meta.coverage_at_evaluation
+        }
+      };
+    });
+
+    return res.json({
+      window: windowParsed.data,
+      entries: responseEntries
+    });
+  }
+);
+
+app.post(
+  "/api/seed",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  (_req, res) => {
+    store.fluencyEvents.clear();
+    store.fluencyPatterns.clear();
+    store.decisionLedgerEntries.clear();
+    store.decisionLedgerEvaluations.clear();
+
+    const now = new Date();
+    const workflows = Array.from({ length: 8 }, (_, index) => `workflow-${index + 1}`);
+    const seededEvents = [];
+
+    for (let dayOffset = 0; dayOffset < 70; dayOffset += 1) {
+      const day = new Date(now);
+      day.setDate(now.getDate() - dayOffset);
+      const timestamp = day.toISOString();
+      workflows.forEach((workflowId, index) => {
+        seededEvents.push({
+          event_id: crypto.randomUUID(),
+          event_type: "ai_output_disposition" as const,
+          timestamp,
+          risk_class: index % 3 === 0 ? "high" : index % 2 === 0 ? "medium" : "low",
+          org_unit: "org:executive",
+          workflow_id: workflowId,
+          disposition: dayOffset % 5 === 0 ? "edited" : "accepted",
+          edit_distance_bucket: dayOffset % 7 === 0 ? "light" : "none",
+          verification_present: dayOffset % 3 !== 0,
+          time_to_action_ms: 120000
+        });
+        if (dayOffset % 6 === 0) {
+          seededEvents.push({
+            event_id: crypto.randomUUID(),
+            event_type: "ai_recovery_loop" as const,
+            timestamp,
+            risk_class: "medium" as const,
+            org_unit: "org:executive",
+            workflow_id: workflowId,
+            recovery_type: "re_prompt" as const,
+            cycles: 2,
+            resolution_time_ms: 240000
+          });
+        }
+        if (dayOffset % 4 === 0) {
+          seededEvents.push({
+            event_id: crypto.randomUUID(),
+            event_type: "verification_signal" as const,
+            timestamp,
+            risk_class: "medium" as const,
+            org_unit: "org:executive",
+            workflow_id: workflowId,
+            verification_type: "policy_check" as const,
+            verification_latency_ms: 90000
+          });
+        }
+        if (dayOffset % 9 === 0) {
+          seededEvents.push({
+            event_id: crypto.randomUUID(),
+            event_type: "ai_abandonment" as const,
+            timestamp,
+            risk_class: "high" as const,
+            org_unit: "org:executive",
+            workflow_id: workflowId,
+            abandonment_stage: "reviewed" as const,
+            reason_bucket: "low_trust" as const
+          });
+        }
+      });
+    }
+
+    seededEvents.forEach((event) => insertFluencyEvent(event));
+
+    const entry = {
+      ledger_id: crypto.randomUUID(),
+      decision: {
+        title: "Verification guidance refresh",
+        description: "Updated guidance to keep verification steps visible in high-risk workflows.",
+        decision_type: "guidance" as const,
+        scope: "org" as const,
+        decision_date: addDays(nowIso(), -75),
+        logged_by_role: "executive" as const
+      },
+      rationale: {
+        primary_pattern: "Calibrated Fluency" as const,
+        signal_status_at_decision: "Emerging Pattern" as const,
+        confidence_at_decision: "Medium" as const
+      },
+      observation: {
+        window_type: "rolling" as const,
+        window_length_days: 60,
+        observation_start: addDays(nowIso(), -75),
+        observation_end: addDays(nowIso(), -15),
+        status: "observing" as const
+      },
+      meta: {
+        created_at: nowIso(),
+        locked_at: nowIso()
+      }
+    };
+    insertDecisionLedgerEntry(entry);
+
+    return res.json({ seeded_events: seededEvents.length, seeded_ledger_entries: 1 });
   }
 );
 
