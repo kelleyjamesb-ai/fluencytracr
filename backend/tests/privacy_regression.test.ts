@@ -7,8 +7,8 @@ const mockResponse = {} as any;
 it("rejects forbidden prompt/output content in payloads", () => {
   const payload = {
     metadata: {
-      prompt_text: "secret",
-      output_text: "secret"
+      prompt_content: "secret",
+      output_content: "secret"
     }
   };
   expect(containsForbiddenFields(payload)).toBe(true);

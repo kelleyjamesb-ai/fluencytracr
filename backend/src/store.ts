@@ -165,6 +165,15 @@ export type DecisionLedgerEvaluationRecord = {
   };
 };
 
+export type AuditLogRecord = {
+  id: string;
+  orgId: string;
+  action: "dashboard_access" | "dashboard_export";
+  actorRole: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -188,6 +197,7 @@ class MemoryStore {
   fluencyPatterns = new Map<string, FluencyPatternRecord>();
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
+  auditLogs = new Map<string, AuditLogRecord>();
 
   reset() {
     this.orgs.clear();
@@ -212,6 +222,7 @@ class MemoryStore {
     this.fluencyPatterns.clear();
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
+    this.auditLogs.clear();
   }
 }
 

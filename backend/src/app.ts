@@ -35,7 +35,7 @@ import {
   insertDecisionLedgerEvaluation,
   upsertFluencyPattern
 } from "./store";
-import type { DecisionLedgerEvaluationRecord } from "./store";
+import type { DecisionLedgerEvaluationRecord, FluencyEventRecord } from "./store";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -49,6 +49,7 @@ import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
+import { listAuditLogs, logAuditEvent } from "./audit_log";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -701,6 +702,13 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
+    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    logAuditEvent({
+      orgId: org.id,
+      action: "dashboard_access",
+      actorRole,
+      metadata: { path: req.originalUrl }
+    });
 
     const range = typeof req.query.range === "string" ? req.query.range : "12w";
     const vendor = typeof req.query.vendor === "string" ? req.query.vendor : "all";
@@ -805,6 +813,59 @@ app.get(
         distribution: appUsage.values
       }
     });
+  }
+);
+
+app.get(
+  "/orgs/:orgId/dashboard/export.csv",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    logAuditEvent({
+      orgId: org.id,
+      action: "dashboard_export",
+      actorRole,
+      metadata: { format: "csv" }
+    });
+    res.setHeader("content-type", "text/csv; charset=utf-8");
+    return res.status(200).send("metric_name,metric_value\nfluency_index,0\n");
+  }
+);
+
+app.get(
+  "/orgs/:orgId/dashboard/export.pdf",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    logAuditEvent({
+      orgId: org.id,
+      action: "dashboard_export",
+      actorRole,
+      metadata: { format: "pdf" }
+    });
+    const pdfHeader = "%PDF-1.4\n%âãÏÓ\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n";
+    res.setHeader("content-type", "application/pdf");
+    return res.status(200).send(Buffer.from(pdfHeader));
+  }
+);
+
+app.get(
+  "/orgs/:orgId/audit-log",
+  rbacMiddleware(["ADMIN"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    return res.json({ logs: listAuditLogs(org.id) });
   }
 );
 
@@ -1093,7 +1154,7 @@ app.post(
 
     const now = new Date();
     const workflows = Array.from({ length: 8 }, (_, index) => `workflow-${index + 1}`);
-    const seededEvents = [];
+    const seededEvents: FluencyEventRecord[] = [];
 
     for (let dayOffset = 0; dayOffset < 70; dayOffset += 1) {
       const day = new Date(now);
