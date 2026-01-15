@@ -24,10 +24,10 @@ beforeEach(() => {
 it("records dashboard access in audit log", async () => {
   const server = await startServer();
   await fetch(`${server.url}/orgs/org-1/dashboard/overview`, {
-    headers: { "x-role": "exec" }
+    headers: { "x-role": "EXEC_VIEWER" }
   });
   const response = await fetch(`${server.url}/orgs/org-1/audit-log`, {
-    headers: { "x-role": "admin" }
+    headers: { "x-role": "ADMIN" }
   });
   const payload = await response.json();
   server.close();

@@ -55,7 +55,13 @@ def parse_event(payload: dict[str, str]) -> EnablementEvent:
         raise ValidationError("Missing org_id")
     if not payload.get("role_id"):
         raise ValidationError("Missing role_id")
-    occurred_at = datetime.fromisoformat(payload["occurred_at"])
+    occurred_at_raw = payload["occurred_at"]
+    if occurred_at_raw.endswith("Z"):
+        occurred_at_raw = occurred_at_raw.replace("Z", "+00:00")
+    try:
+        occurred_at = datetime.fromisoformat(occurred_at_raw)
+    except ValueError as exc:
+        raise ValidationError(f"Invalid occurred_at: {payload['occurred_at']}") from exc
     if occurred_at.tzinfo is None:
         occurred_at = occurred_at.replace(tzinfo=timezone.utc)
 
