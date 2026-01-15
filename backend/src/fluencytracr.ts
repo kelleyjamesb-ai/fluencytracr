@@ -8,6 +8,14 @@ import {
   RiskClass
 } from "@learnaire/shared";
 
+/**
+ * Safe division utility to prevent division by zero.
+ * Returns fallback value (default 0) when denominator is zero.
+ */
+const safeDivide = (numerator: number, denominator: number, fallback = 0): number => {
+  return denominator === 0 ? fallback : numerator / denominator;
+};
+
 export const WINDOW_DAYS: Record<FluencyWindow, number> = {
   "60d": 60,
   "3m": 90,
@@ -230,9 +238,9 @@ export const buildCoverageSummary = (events: FluencyEvent[], window: FluencyWind
     coverage,
     verification_rate: metrics.verificationRate,
     risk_mix: {
-      low: riskCounts.low / total,
-      medium: riskCounts.medium / total,
-      high: riskCounts.high / total
+      low: safeDivide(riskCounts.low, total),
+      medium: safeDivide(riskCounts.medium, total),
+      high: safeDivide(riskCounts.high, total)
     }
   };
 };

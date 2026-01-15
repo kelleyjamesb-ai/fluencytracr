@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import {
   DashboardRequestSchema,
@@ -63,6 +64,28 @@ import * as path from "path";
 
 const app = express();
 app.use(express.json());
+
+// Rate limiting configuration
+// General limiter: 100 requests per 15 minutes per IP
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  message: { error: "Too many requests", message: "Please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Stricter limiter for sensitive/write operations: 20 requests per 15 minutes
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many requests", message: "Rate limit exceeded for this operation" },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply general rate limiting to all routes
+app.use(generalLimiter);
 
 // Initialize connector service and load connector mappings
 const connectorService = new ConnectorService();
@@ -243,7 +266,7 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
   }
 };
 
-app.post("/orgs", (req, res) => {
+app.post("/orgs", strictLimiter, (req, res) => {
   const parsed = OrgCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
@@ -590,7 +613,7 @@ app.post("/orgs/:orgId/groups", rejectForbiddenFields, (req, res) => {
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/orgs/:orgId/metrics/import", rejectForbiddenFields, (req, res) => {
+app.post("/orgs/:orgId/metrics/import", strictLimiter, rejectForbiddenFields, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -679,7 +702,7 @@ app.post("/orgs/:orgId/enablement/import", rejectForbiddenFields, (req, res) => 
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/api/ingest", rejectForbiddenFields, (_req, res) => {
+app.post("/api/ingest", strictLimiter, rejectForbiddenFields, (_req, res) => {
   res.status(202).json({ status: "accepted" });
 });
 
@@ -1088,6 +1111,7 @@ app.get(
 
 app.post(
   "/api/seed",
+  strictLimiter,
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   (_req, res) => {
     store.fluencyEvents.clear();
