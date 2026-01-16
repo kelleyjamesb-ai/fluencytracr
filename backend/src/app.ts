@@ -52,13 +52,17 @@ import { listAuditLogs, logAuditEvent } from "./audit_log";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
+  filterEventsByScope,
   MIN_COHORT_SIZE,
   WINDOW_DAYS
 } from "./fluencytracr";
+import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import * as path from "path";
 
 const app = express();
 app.use(express.json());
+
+const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
 
 // Initialize connector service and load connector mappings
 const connectorService = new ConnectorService();
@@ -873,6 +877,70 @@ app.get(
 );
 
 app.get(
+  "/orgs/:orgId/telemetry/index",
+  rbacMiddleware(["ADMIN"]),
+  (req, res) => {
+    const windowParsed = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!windowParsed.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
+      return res.status(400).json({ error: "Unsupported window" });
+    }
+
+    const window = windowParsed.data;
+    const records = store.patternInferenceRecords.filter((record) =>
+      matchesWindow(record, window)
+    );
+
+    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
+    const cohortSize = workflowIds.size;
+
+    if (cohortSize < MIN_COHORT_SIZE) {
+      return res.status(400).json({
+        error: "Cohort below minimum size",
+        cohort_size: cohortSize,
+        min_cohort_size: MIN_COHORT_SIZE
+      });
+    }
+
+    const confidentRecords = records.filter((record) => ["MEDIUM", "HIGH"].includes(record.confidence_level));
+    const confidentWorkflows = new Set(
+      confidentRecords.map((record) => workflowIdFromScopeKey(record.scope_key))
+    ).size;
+
+    const workflowCoverage = cohortSize === 0 ? 0 : confidentWorkflows / cohortSize;
+    const patternConfidence = records.length === 0 ? 0 : confidentRecords.length / records.length;
+    const value = workflowCoverage * 0.67 + patternConfidence * 0.33;
+    const confidence = records.length === 0 ? 0 : Math.min(1, 0.5 + 0.5 * patternConfidence);
+    const latestRecord = records.reduce(
+      (latest, record) => (record.generated_at > latest.generated_at ? record : latest),
+      records[0]
+    );
+
+    return res.json({
+      org_id: req.params.orgId,
+      window,
+      operational_telemetry_index: {
+        value,
+        confidence,
+        components: {
+          workflow_coverage: workflowCoverage,
+          pattern_confidence: patternConfidence
+        },
+        does_not_mean: [
+          "This index does not measure individual performance.",
+          "This index does not guarantee outcome quality."
+        ],
+        inference_version: latestRecord?.inference_version ?? INFERENCE_VERSION,
+        parameter_hash: latestRecord?.parameter_hash ?? parameterHash(),
+        generated_at: latestRecord?.generated_at ?? nowIso()
+      }
+    });
+  }
+);
+
+app.get(
   "/api/dashboard",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   enforceAggregation,
@@ -929,7 +997,19 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
 
-    const window = windowParsed.data === "60d" ? "60d" : "30d";
+    if (scopeParsed.data !== "org") {
+      return res.status(400).json({
+        error: "Unsupported scope for inference records",
+        supported_scopes: ["org"],
+        requested_scope: scopeParsed.data
+      });
+    }
+
+    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
+      return res.status(400).json({ error: "Unsupported window" });
+    }
+
+    const window = windowParsed.data;
     const records = store.patternInferenceRecords.filter((record) =>
       matchesWindow(record, window)
     );
@@ -1041,7 +1121,11 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
 
-    const window = windowParsed.data === "60d" ? "60d" : "30d";
+    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
+      return res.status(400).json({ error: "Unsupported window" });
+    }
+
+    const window = windowParsed.data;
     const records = store.patternInferenceRecords.filter((record) =>
       matchesWindow(record, window)
     );
@@ -1146,7 +1230,7 @@ app.post(
       return res.status(400).json({ error: "Observation window too short" });
     }
 
-    const events = Array.from(store.fluencyEvents.values());
+    const events: FluencyEventRecord[] = Array.from(store.fluencyEvents.values());
     const scoped = filterEventsByScope(events, entry.decision.scope);
     const observationEvents = scoped.filter((event) => {
       const ts = new Date(event.timestamp);

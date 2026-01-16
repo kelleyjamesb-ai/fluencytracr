@@ -9,6 +9,7 @@ import {
 } from "@learnaire/shared";
 
 export const WINDOW_DAYS: Record<FluencyWindow, number> = {
+  "30d": 30,
   "60d": 60,
   "3m": 90,
   "6m": 180,
