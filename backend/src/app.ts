@@ -49,7 +49,6 @@ import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
-import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -870,88 +869,6 @@ app.get(
       return res.status(404).json({ error: "Org not found" });
     }
     return res.json({ logs: listAuditLogs(org.id) });
-  }
-);
-
-app.get(
-  "/orgs/:orgId/telemetry/index",
-  rbacMiddleware(["ADMIN"]),
-  (req, res) => {
-    const org = store.orgs.get(req.params.orgId);
-    if (!org) {
-      return res.status(404).json({ error: "Org not found" });
-    }
-    const windowParam = typeof req.query.window === "string" ? req.query.window : "60d";
-    const window = windowParam === "30d" ? "30d" : "60d";
-    const records = store.patternInferenceRecords.filter((record) =>
-      matchesWindow(record, window)
-    );
-
-    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
-    const totalWorkflows = workflowIds.size;
-    if (totalWorkflows === 0) {
-      return res.json({
-        org_id: org.id,
-        window,
-        operational_telemetry_index: {
-          value: 0,
-          confidence: 0,
-          components: {
-            workflow_coverage: 0,
-            pattern_confidence: 0
-          },
-          does_not_mean: [
-            "This is not an AI fluency score.",
-            "This is not a performance measure.",
-            "This does not indicate correctness or business impact."
-          ],
-          inference_version: INFERENCE_VERSION,
-          parameter_hash: parameterHash(),
-          generated_at: new Date().toISOString()
-        }
-      });
-    }
-
-    const confidenceScores = {
-      WITHHOLD: 0,
-      LOW: 0.33,
-      MEDIUM: 0.66,
-      HIGH: 1
-    } as const;
-
-    const workflowsWithSignal = new Set(
-      records
-        .filter((record) => record.pattern !== "NO_PATTERN" && ["MEDIUM", "HIGH"].includes(record.confidence_level))
-        .map((record) => workflowIdFromScopeKey(record.scope_key))
-    ).size;
-
-    const workflowCoverage = workflowsWithSignal / totalWorkflows;
-    const patternConfidence = records.reduce((sum, record) => {
-      return sum + confidenceScores[record.confidence_level];
-    }, 0) / records.length;
-
-    const value = 100 * (0.67 * workflowCoverage + 0.33 * patternConfidence);
-
-    return res.json({
-      org_id: org.id,
-      window,
-      operational_telemetry_index: {
-        value: Number(value.toFixed(2)),
-        confidence: Number(patternConfidence.toFixed(2)),
-        components: {
-          workflow_coverage: Number(workflowCoverage.toFixed(2)),
-          pattern_confidence: Number(patternConfidence.toFixed(2))
-        },
-        does_not_mean: [
-          "This is not an AI fluency score.",
-          "This is not a performance measure.",
-          "This does not indicate correctness or business impact."
-        ],
-        inference_version: INFERENCE_VERSION,
-        parameter_hash: parameterHash(),
-        generated_at: new Date().toISOString()
-      }
-    });
   }
 );
 
