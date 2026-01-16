@@ -60,4 +60,24 @@ describe("/api/patterns", () => {
     expect(response.status).toBe(200);
     expect(payload.patterns.length).toBeGreaterThan(0);
   });
+
+  it("rejects non-org scopes", async () => {
+    store.patternInferenceRecords.push(buildInferenceRecord("workflow-1"));
+    store.patternInferenceRecords.push(buildInferenceRecord("workflow-2"));
+    store.patternInferenceRecords.push(buildInferenceRecord("workflow-3"));
+    store.patternInferenceRecords.push(buildInferenceRecord("workflow-4"));
+    store.patternInferenceRecords.push(buildInferenceRecord("workflow-5"));
+
+    const server = await startServer();
+    const response = await fetch(`${server.url}/api/patterns?window=60d&scope=function`, {
+      headers: { "x-role": "EXEC_VIEWER" }
+    });
+    const payload = await response.json();
+    server.close();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe("Unsupported scope for inference records");
+    expect(payload.supported_scopes).toEqual(["org"]);
+    expect(payload.requested_scope).toBe("function");
+  });
 });

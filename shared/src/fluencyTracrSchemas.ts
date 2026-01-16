@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const FluencyWindowSchema = z.enum(["60d", "3m", "6m", "12m"]);
+export const FluencyWindowSchema = z.enum(["30d", "60d", "3m", "6m", "12m"]);
 export type FluencyWindow = z.infer<typeof FluencyWindowSchema>;
 
 export const FluencyScopeSchema = z.enum(["org", "function", "workflow"]);
