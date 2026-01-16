@@ -4,6 +4,7 @@ from dataclasses import fields
 from src.api import handle_dashboard_request
 from src.access_control import RequestContext
 from src.data_contract import NON_COLLECTABLE_FIELDS, validate_payload
+from src.exceptions import PrivacyViolationError, ValidationError
 from src.events import EnablementEvent
 from src.organization import Signal, aggregate_signals
 from src.passive_signals import SignalEvent
@@ -46,6 +47,7 @@ FIELD_CLASSIFICATIONS = {
         "role_id": "role_identifier",
         "signal_type": "signal_type",
         "metadata": "aggregated_metadata",
+        "is_shadow_ai": "shadow_ai_flag",
     },
     "ToolRecord": {
         "org_id": "org_identifier",
@@ -90,7 +92,7 @@ class SurveillanceRegressionTests(unittest.TestCase):
                 }
             }
         }
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PrivacyViolationError):
             validate_payload(payload)
 
     def test_aggregation_rules_cannot_be_bypassed(self) -> None:
@@ -99,7 +101,7 @@ class SurveillanceRegressionTests(unittest.TestCase):
             endpoint="/dashboard",
             query={"aggregation": "employee"},
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValidationError):
             handle_dashboard_request(request)
         with self.assertRaises(ValueError):
             aggregate_signals([Signal(team_id="team-1", value=1.0)], scope="employee")
