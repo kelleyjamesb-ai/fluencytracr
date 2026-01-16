@@ -7,7 +7,6 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-
     "baseUrl": ".",
     "paths": {
       "@learnaire/shared": ["../shared/src"],
@@ -17,3 +16,4 @@
   "include": ["src", "tests"],
   "exclude": ["node_modules", "dist"]
 }
+
