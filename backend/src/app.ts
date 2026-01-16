@@ -19,6 +19,7 @@ import {
   DecisionLedgerCreateSchema,
   DecisionLedgerEvaluationInputSchema
 } from "@learnaire/shared";
+import type { FluencyEvent } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
 import { rejectForbiddenFields, rejectPersonIdentifiers } from "./ingest";
 import {
