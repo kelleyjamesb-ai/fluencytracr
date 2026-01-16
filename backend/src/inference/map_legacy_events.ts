@@ -78,6 +78,9 @@ export const mapLegacyEvents = (events: FluencyEvent[]): JudgmentEvent[] => {
     surface_type: surfaceTypeFromEvent(event),
     event_type: eventTypeFromFluency(event),
     human_action_timestamp: event.timestamp,
-    latency_bucket: latencyBucketFromMs(event.time_to_action_ms)
+    latency_bucket: (() => {
+      const ms = event.event_type === "ai_output_disposition" ? event.time_to_action_ms : undefined;
+      return ms !== undefined ? latencyBucketFromMs(ms) : "SHORT_DELAY";
+    })()
   }));
 };
