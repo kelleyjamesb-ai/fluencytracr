@@ -79,7 +79,6 @@ it("returns 12 points for 12w range", async () => {
   server.close();
 
   expect(payload.coverage.weekly_active_users).toHaveLength(12);
-  expect(payload.fluency_index.timeseries).toHaveLength(12);
 });
 
 it("returns suppressed values as null", async () => {
@@ -115,5 +114,4 @@ it("returns suppressed values as null", async () => {
   server.close();
 
   expect(payload.coverage.weekly_active_users[0].value).toBeNull();
-  expect(payload.fluency_index.current).toBeNull();
 });

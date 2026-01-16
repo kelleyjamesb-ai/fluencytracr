@@ -29,6 +29,38 @@ const buildEvent = (workflowId: string, overrides: Partial<Record<string, unknow
   ...overrides
 });
 
+const buildInferenceRecord = (
+  workflowId: string,
+  confidenceLevel: "WITHHOLD" | "LOW" | "MEDIUM" | "HIGH",
+  pattern:
+    | "CALIBRATED_FLUENCY"
+    | "BLIND_EFFICIENCY"
+    | "RECOVERY_MATURITY"
+    | "FRICTION_LOOP"
+    | "UNDERTRUST_AVOIDANCE"
+    | "NO_PATTERN"
+) => {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 60);
+  return {
+    scope_key: `${workflowId}:MEDIUM`,
+    scope_type: "WORKFLOW_RISK" as const,
+    window_start: start.toISOString(),
+    window_end: end.toISOString(),
+    pattern,
+    confidence_level: confidenceLevel,
+    evidence_count: 40,
+    coverage_days: 14,
+    surface_mix: { CHAT: 10, DOC_BLOCK: 0, CODE_BLOCK: 0, SUMMARY: 0 },
+    top_drivers: ["Driver A", "Driver B"],
+    inference_version: "v0.1.0",
+    parameter_hash: "hash",
+    code_commit_hash: "hash",
+    generated_at: end.toISOString()
+  };
+};
+
 beforeEach(() => {
   store.reset();
 });
@@ -55,17 +87,11 @@ it("rejects event payloads containing person identifiers", async () => {
 
 it("rejects pattern queries when cohort size is below minimum", async () => {
   const server = await startServer();
-  const response = await fetch(`${server.url}/api/events`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-role": "ADMIN"
-    },
-    body: JSON.stringify({
-      events: ["workflow-1", "workflow-2", "workflow-3"].map((id) => buildEvent(id))
-    })
-  });
-  expect(response.status).toBe(200);
+  store.patternInferenceRecords.push(
+    buildInferenceRecord("workflow-1", "MEDIUM", "CALIBRATED_FLUENCY"),
+    buildInferenceRecord("workflow-2", "MEDIUM", "CALIBRATED_FLUENCY"),
+    buildInferenceRecord("workflow-3", "MEDIUM", "CALIBRATED_FLUENCY")
+  );
 
   const patternsResponse = await fetch(`${server.url}/api/patterns?window=60d&scope=org`, {
     headers: { "x-role": "EXEC_VIEWER" }
@@ -76,18 +102,13 @@ it("rejects pattern queries when cohort size is below minimum", async () => {
 
 it("suppresses patterns below Medium confidence", async () => {
   const server = await startServer();
-  await fetch(`${server.url}/api/events`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-role": "ADMIN"
-    },
-    body: JSON.stringify({
-      events: ["workflow-1", "workflow-2", "workflow-3", "workflow-4", "workflow-5"].map((id) =>
-        buildEvent(id)
-      )
-    })
-  });
+  store.patternInferenceRecords.push(
+    buildInferenceRecord("workflow-1", "LOW", "CALIBRATED_FLUENCY"),
+    buildInferenceRecord("workflow-2", "LOW", "CALIBRATED_FLUENCY"),
+    buildInferenceRecord("workflow-3", "LOW", "CALIBRATED_FLUENCY"),
+    buildInferenceRecord("workflow-4", "LOW", "CALIBRATED_FLUENCY"),
+    buildInferenceRecord("workflow-5", "LOW", "CALIBRATED_FLUENCY")
+  );
 
   const patternsResponse = await fetch(`${server.url}/api/patterns?window=60d&scope=org`, {
     headers: { "x-role": "EXEC_VIEWER" }
