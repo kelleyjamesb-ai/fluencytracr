@@ -8,9 +8,17 @@ Tests cover:
 """
 
 from datetime import datetime, timezone
+import ctypes.util
+import unittest
 from unittest.mock import MagicMock, patch
 
-import pytest
+try:
+    import pytest
+except ModuleNotFoundError as exc:
+    raise unittest.SkipTest("pytest is required for vision tests") from exc
+
+if ctypes.util.find_library("GL") is None:
+    raise unittest.SkipTest("libGL is required for OpenCV tests")
 
 from vision.fluency_bridge import ConfidencePenalty, LearnAIR_Bridge
 from vision.visual_engine import BrightSpot, SpotDetectionResult, SpotTracker

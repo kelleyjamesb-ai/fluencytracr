@@ -24,7 +24,7 @@ beforeEach(() => {
 it("exports dashboard CSV", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/dashboard/export.csv`, {
-    headers: { "x-role": "exec" }
+    headers: { "x-role": "EXEC_VIEWER" }
   });
   const body = await response.text();
   server.close();
@@ -37,7 +37,7 @@ it("exports dashboard CSV", async () => {
 it("exports dashboard PDF", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/dashboard/export.pdf`, {
-    headers: { "x-role": "exec" }
+    headers: { "x-role": "EXEC_VIEWER" }
   });
   const buffer = await response.arrayBuffer();
   server.close();

@@ -13,7 +13,8 @@
     "team_id",
     "role_id",
     "signal_type",
-    "metadata"
+    "metadata",
+    "is_shadow_ai"
   ],
   "ToolRecord": [
     "org_id",

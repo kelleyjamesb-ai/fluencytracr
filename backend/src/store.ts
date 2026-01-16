@@ -165,6 +165,51 @@ export type DecisionLedgerEvaluationRecord = {
   };
 };
 
+export type AuditLogRecord = {
+  id: string;
+  orgId: string;
+  action: "dashboard_access" | "dashboard_export";
+  actorRole: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+};
+
+export type PatternInferenceRecord = {
+  scope_key: string;
+  scope_type: "WORKFLOW_ROLE_RISK" | "WORKFLOW_RISK" | "ROLE_RISK";
+  window_start: string;
+  window_end: string;
+  pattern:
+    | "CALIBRATED_FLUENCY"
+    | "BLIND_EFFICIENCY"
+    | "RECOVERY_MATURITY"
+    | "FRICTION_LOOP"
+    | "UNDERTRUST_AVOIDANCE"
+    | "NO_PATTERN";
+  confidence_level: "WITHHOLD" | "LOW" | "MEDIUM" | "HIGH";
+  evidence_count: number;
+  coverage_days: number;
+  surface_mix: {
+    CHAT: number;
+    DOC_BLOCK: number;
+    CODE_BLOCK: number;
+    SUMMARY: number;
+  };
+  top_drivers: string[];
+  inference_version: string;
+  parameter_hash: string;
+  code_commit_hash: string;
+  generated_at: string;
+};
+
+export type InferenceAuditLog = {
+  inference_version: string;
+  parameter_hash: string;
+  generated_at: string;
+  scopes_processed: number;
+  withheld_count: number;
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -188,6 +233,9 @@ class MemoryStore {
   fluencyPatterns = new Map<string, FluencyPatternRecord>();
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
+  auditLogs = new Map<string, AuditLogRecord>();
+  patternInferenceRecords: PatternInferenceRecord[] = [];
+  inferenceAuditLogs: InferenceAuditLog[] = [];
 
   reset() {
     this.orgs.clear();
@@ -212,6 +260,9 @@ class MemoryStore {
     this.fluencyPatterns.clear();
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
+    this.auditLogs.clear();
+    this.patternInferenceRecords = [];
+    this.inferenceAuditLogs = [];
   }
 }
 
