@@ -6,8 +6,14 @@
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@learnaire/shared": ["../shared/src"],
+      "@learnaire/shared/*": ["../shared/src/*"]
+    }
   },
-  "include": ["src"],
-  "exclude": ["tests", "node_modules", "dist"]
+  "include": ["src", "tests"],
+  "exclude": ["node_modules", "dist"]
 }
+

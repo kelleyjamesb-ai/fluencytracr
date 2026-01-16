@@ -15,26 +15,6 @@ const latencyBucketFromMs = (value?: number) => {
   return "LONG_DELAY" as const;
 };
 
-const msFromEvent = (event: unknown): number | undefined => {
-  if (
-    event &&
-    typeof event === "object" &&
-    "time_to_action_ms" in event &&
-    typeof (event as { time_to_action_ms?: unknown }).time_to_action_ms === "number"
-  ) {
-    return (event as { time_to_action_ms: number }).time_to_action_ms;
-  }
-  if (
-    event &&
-    typeof event === "object" &&
-    "resolution_time_ms" in event &&
-    typeof (event as { resolution_time_ms?: unknown }).resolution_time_ms === "number"
-  ) {
-    return (event as { resolution_time_ms: number }).resolution_time_ms;
-  }
-  return undefined;
-};
-
 const roleContextFromOrgUnit = (orgUnit?: string) => {
   if (!orgUnit) {
     return "UNKNOWN" as const;
@@ -88,19 +68,16 @@ const eventTypeFromFluency = (event: FluencyEvent) => {
 };
 
 export const mapLegacyEvents = (events: FluencyEvent[]): JudgmentEvent[] => {
-  return events.map((event) => {
-    const ms = msFromEvent(event);
-    return {
-      event_id: crypto.randomUUID(),
-      schema_version: "v0.2",
-      source_system: "legacy_fluency",
-      workflow_id: event.workflow_id,
-      role_context: roleContextFromOrgUnit(event.org_unit),
-      workflow_risk_level: riskLevelFromEvent(event),
-      surface_type: surfaceTypeFromEvent(event),
-      event_type: eventTypeFromFluency(event),
-      human_action_timestamp: event.timestamp,
-      latency_bucket: ms ? latencyBucketFromMs(ms) : "SHORT_DELAY"
-    };
-  });
+  return events.map((event) => ({
+    event_id: crypto.randomUUID(),
+    schema_version: "v0.2",
+    source_system: "legacy_fluency",
+    workflow_id: event.workflow_id,
+    role_context: roleContextFromOrgUnit(event.org_unit),
+    workflow_risk_level: riskLevelFromEvent(event),
+    surface_type: surfaceTypeFromEvent(event),
+    event_type: eventTypeFromFluency(event),
+    human_action_timestamp: event.timestamp,
+    latency_bucket: latencyBucketFromMs(event.time_to_action_ms)
+  }));
 };
