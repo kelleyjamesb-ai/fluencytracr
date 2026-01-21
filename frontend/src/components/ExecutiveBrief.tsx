@@ -15,11 +15,11 @@ type ExecutiveBriefProps = {
 
 export function ExecutiveBrief({ posture, confidence }: ExecutiveBriefProps) {
   return (
-    <div className="rounded-2xl border bg-background/70 p-6 shadow-sm">
+    <div className="rounded-2xl border bg-background/70 p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/20 cursor-pointer group">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <div className="text-sm text-muted-foreground">Executive brief</div>
-          <div className="mt-1 text-2xl font-semibold tracking-tight">
+          <div className="text-sm text-muted-foreground font-sans">Executive brief</div>
+          <div className="mt-1 text-2xl font-semibold tracking-tight font-sans group-hover:text-primary transition-colors">
             {postureHeadline(posture)}
           </div>
         </div>
@@ -28,7 +28,7 @@ export function ExecutiveBrief({ posture, confidence }: ExecutiveBriefProps) {
           {confidence && <ConfidenceChip confidence={confidence} />}
         </div>
       </div>
-      <div className="mt-4 text-sm text-muted-foreground">
+      <div className="mt-4 text-sm text-muted-foreground font-sans">
         These are behavioral signals, not facts or performance metrics.
       </div>
     </div>

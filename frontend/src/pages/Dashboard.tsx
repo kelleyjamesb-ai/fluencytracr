@@ -35,6 +35,10 @@ const navItems = [
   { key: "evidence", label: "Evidence" }
 ] as const;
 
+const secondaryNavItems = [
+  { key: "admin", label: "Admin" }
+] as const;
+
 const altitudeExamples = {
   exec: [
     "Review verification capacity planning with executive sponsors.",
@@ -172,7 +176,12 @@ export const Dashboard = () => {
 
   return (
     <div className="app-shell">
-      <Sidebar items={navItems} activeKey={activePage} onSelect={setActivePage} />
+      <Sidebar
+        items={navItems}
+        secondaryItems={secondaryNavItems}
+        activeKey={activePage}
+        onSelect={setActivePage}
+      />
       <main className="main">
         <header className="topbar">
           <div>
