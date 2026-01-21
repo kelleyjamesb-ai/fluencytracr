@@ -52,6 +52,16 @@ class Settings(BaseSettings):
         description="Default model name for OpenAI-compatible chat completions.",
     )
 
+    # Anthropic Configuration
+    ANTHROPIC_API_KEY: str = Field(
+        default="",
+        description="API key for Anthropic (Claude).",
+    )
+    ANTHROPIC_MODEL: str = Field(
+        default="claude-3-5-sonnet-20241022",
+        description="Default model name for Anthropic.",
+    )
+
     # Memory Configuration
     MEMORY_FILE: str = "agent_memory.json"
 
