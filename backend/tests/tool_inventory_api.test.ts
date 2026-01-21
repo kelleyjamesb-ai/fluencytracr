@@ -26,7 +26,7 @@ it("stores tool inventory for a team", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/tools`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-role": "admin" },
+    headers: { "content-type": "application/json", "x-role": "ADMIN" },
     body: JSON.stringify({ team_id: "team-1", tool_class: "llm_chat" })
   });
   const payload = await response.json();

@@ -57,6 +57,17 @@ it("returns 12 points for 12w range", async () => {
       is_user_count: false,
       suppressed: false
     });
+    store.metrics.set(`org-1:org:${bucket}:fluency_index:`, {
+      orgId: "org-1",
+      group_key: "org",
+      group_type: "org",
+      vendor: "all",
+      bucket_start: bucket,
+      metric_name: "fluency_index",
+      metric_value: 75,
+      is_user_count: false,
+      suppressed: false
+    });
   }
 
   const server = await startServer();
@@ -68,7 +79,6 @@ it("returns 12 points for 12w range", async () => {
   server.close();
 
   expect(payload.coverage.weekly_active_users).toHaveLength(12);
-  expect(payload.fluency_index.timeseries).toHaveLength(12);
 });
 
 it("returns suppressed values as null", async () => {
@@ -104,5 +114,4 @@ it("returns suppressed values as null", async () => {
   server.close();
 
   expect(payload.coverage.weekly_active_users[0].value).toBeNull();
-  expect(payload.fluency_index.current).toBeNull();
 });

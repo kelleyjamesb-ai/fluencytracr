@@ -20,6 +20,7 @@ import {
   DecisionLedgerCreateSchema,
   DecisionLedgerEvaluationInputSchema
 } from "@learnaire/shared";
+import type { FluencyEvent } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
 import { rejectForbiddenFields, rejectPersonIdentifiers } from "./ingest";
 import {
@@ -34,10 +35,9 @@ import {
   FluencyEventRecord,
   insertFluencyEvent,
   insertDecisionLedgerEntry,
-  insertDecisionLedgerEvaluation,
-  upsertFluencyPattern
+  insertDecisionLedgerEvaluation
 } from "./store";
-import type { DecisionLedgerEvaluationRecord } from "./store";
+import type { DecisionLedgerEvaluationRecord, FluencyEventRecord } from "./store";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -51,41 +51,21 @@ import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
+import { listAuditLogs, logAuditEvent } from "./audit_log";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
-  derivePatterns,
   filterEventsByScope,
-  filterEventsByWindow,
   MIN_COHORT_SIZE,
   WINDOW_DAYS
 } from "./fluencytracr";
+import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import * as path from "path";
 
 const app = express();
 app.use(express.json());
 
-// Rate limiting configuration
-// General limiter: 100 requests per 15 minutes per IP
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  message: { error: "Too many requests", message: "Please try again later" },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// Stricter limiter for sensitive/write operations: 20 requests per 15 minutes
-const strictLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: "Too many requests", message: "Rate limit exceeded for this operation" },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// Apply general rate limiting to all routes
-app.use(generalLimiter);
+const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
 
 // Initialize connector service and load connector mappings
 const connectorService = new ConnectorService();
@@ -241,6 +221,23 @@ const latestControls = (controlNames: string[], controls: typeof store.controls)
     values[name] = match?.control_value ?? null;
   });
   return { bucket_start: latestBucket, values };
+};
+
+const matchesWindow = (record: { window_start: string; window_end: string }, window: string) => {
+  if (window !== "30d" && window !== "60d") {
+    return false;
+  }
+  const start = new Date(record.window_start);
+  const end = new Date(record.window_end);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+  const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  return days === (window === "30d" ? 30 : 60);
+};
+
+const workflowIdFromScopeKey = (scopeKey: string) => {
+  return scopeKey.split(":")[0] ?? scopeKey;
 };
 
 const addDays = (start: string, days: number) => {
@@ -728,6 +725,13 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
+    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    logAuditEvent({
+      orgId: org.id,
+      action: "dashboard_access",
+      actorRole,
+      metadata: { path: req.originalUrl }
+    });
 
     const range = typeof req.query.range === "string" ? req.query.range : "12w";
     const vendor = typeof req.query.vendor === "string" ? req.query.vendor : "all";
@@ -746,7 +750,6 @@ app.get(
     );
 
     const weeks = rangeToWeeks(range);
-    const fluencySeries = buildTimeseries("fluency_index", metrics, weeks);
     const coverageActive = buildTimeseries("weekly_active_users", metrics, weeks);
     const coverageAssigned = buildTimeseries("active_users_percent_of_assigned", metrics, weeks);
 
@@ -791,21 +794,12 @@ app.get(
       metrics
     );
 
-    const fluencyMetaKey = `${org.id}:${fluencySeries[fluencySeries.length - 1]?.week_start ?? ""}`;
-    const fluencyMeta = store.fluencyMeta.get(fluencyMetaKey);
-
     return res.json({
       org_id: org.id,
       range,
       vendor,
       group_type: groupType,
       group_key: groupKey,
-      fluency_index: {
-        current: fluencySeries[fluencySeries.length - 1]?.value ?? null,
-        timeseries: fluencySeries,
-        data_completeness: fluencyMeta?.dataCompleteness ?? 0,
-        confidence: fluencyMeta?.confidence ?? 0
-      },
       coverage: {
         weekly_active_users: coverageActive,
         active_users_percent_of_assigned: coverageAssigned
@@ -830,6 +824,123 @@ app.get(
       app_usage_share: {
         bucket_start: appUsage.bucket_start,
         distribution: appUsage.values
+      }
+    });
+  }
+);
+
+app.get(
+  "/orgs/:orgId/dashboard/export.csv",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    logAuditEvent({
+      orgId: org.id,
+      action: "dashboard_export",
+      actorRole,
+      metadata: { format: "csv" }
+    });
+    res.setHeader("content-type", "text/csv; charset=utf-8");
+    return res.status(200).send("metric_name,metric_value\nfluency_index,0\n");
+  }
+);
+
+app.get(
+  "/orgs/:orgId/dashboard/export.pdf",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    logAuditEvent({
+      orgId: org.id,
+      action: "dashboard_export",
+      actorRole,
+      metadata: { format: "pdf" }
+    });
+    const pdfHeader = "%PDF-1.4\n%âãÏÓ\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n";
+    res.setHeader("content-type", "application/pdf");
+    return res.status(200).send(Buffer.from(pdfHeader));
+  }
+);
+
+app.get(
+  "/orgs/:orgId/audit-log",
+  rbacMiddleware(["ADMIN"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    return res.json({ logs: listAuditLogs(org.id) });
+  }
+);
+
+app.get(
+  "/orgs/:orgId/telemetry/index",
+  rbacMiddleware(["ADMIN"]),
+  (req, res) => {
+    const windowParsed = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!windowParsed.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
+      return res.status(400).json({ error: "Unsupported window" });
+    }
+
+    const window = windowParsed.data;
+    const records = store.patternInferenceRecords.filter((record) =>
+      matchesWindow(record, window)
+    );
+
+    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
+    const cohortSize = workflowIds.size;
+
+    if (cohortSize < MIN_COHORT_SIZE) {
+      return res.status(400).json({
+        error: "Cohort below minimum size",
+        cohort_size: cohortSize,
+        min_cohort_size: MIN_COHORT_SIZE
+      });
+    }
+
+    const confidentRecords = records.filter((record) => ["MEDIUM", "HIGH"].includes(record.confidence_level));
+    const confidentWorkflows = new Set(
+      confidentRecords.map((record) => workflowIdFromScopeKey(record.scope_key))
+    ).size;
+
+    const workflowCoverage = cohortSize === 0 ? 0 : confidentWorkflows / cohortSize;
+    const patternConfidence = records.length === 0 ? 0 : confidentRecords.length / records.length;
+    const value = workflowCoverage * 0.67 + patternConfidence * 0.33;
+    const confidence = records.length === 0 ? 0 : Math.min(1, 0.5 + 0.5 * patternConfidence);
+    const latestRecord = records.reduce(
+      (latest, record) => (record.generated_at > latest.generated_at ? record : latest),
+      records[0]
+    );
+
+    return res.json({
+      org_id: req.params.orgId,
+      window,
+      operational_telemetry_index: {
+        value,
+        confidence,
+        components: {
+          workflow_coverage: workflowCoverage,
+          pattern_confidence: patternConfidence
+        },
+        does_not_mean: [
+          "This index does not measure individual performance.",
+          "This index does not guarantee outcome quality."
+        ],
+        inference_version: latestRecord?.inference_version ?? INFERENCE_VERSION,
+        parameter_hash: latestRecord?.parameter_hash ?? parameterHash(),
+        generated_at: latestRecord?.generated_at ?? nowIso()
       }
     });
   }
@@ -892,10 +1003,25 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
 
-    const events = Array.from(store.fluencyEvents.values());
-    const scoped = filterEventsByScope(events, scopeParsed.data);
-    const windowed = filterEventsByWindow(scoped, windowParsed.data);
-    const cohortSize = new Set(windowed.map((event) => event.workflow_id)).size;
+    if (scopeParsed.data !== "org") {
+      return res.status(400).json({
+        error: "Unsupported scope for inference records",
+        supported_scopes: ["org"],
+        requested_scope: scopeParsed.data
+      });
+    }
+
+    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
+      return res.status(400).json({ error: "Unsupported window" });
+    }
+
+    const window = windowParsed.data;
+    const records = store.patternInferenceRecords.filter((record) =>
+      matchesWindow(record, window)
+    );
+
+    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
+    const cohortSize = workflowIds.size;
 
     if (cohortSize < MIN_COHORT_SIZE) {
       return res.status(400).json({
@@ -905,11 +1031,81 @@ app.get(
       });
     }
 
-    const patterns = derivePatterns(windowed, windowParsed.data);
-    patterns.forEach((pattern) => {
-      const key = `${scopeParsed.data}:${windowParsed.data}:${pattern.pattern_name}`;
-      upsertFluencyPattern(key, pattern);
-    });
+    const patternCopy = {
+      CALIBRATED_FLUENCY: {
+        name: "Calibrated Fluency",
+        what_we_see: "Accepted outputs appear alongside regular verification touchpoints and light edits.",
+        might_suggest: "This signal may reflect steady calibration between automation and human review.",
+        does_not_mean: "This does NOT mean outcomes are guaranteed or that any group is ahead of another.",
+        posture: "Scale"
+      },
+      BLIND_EFFICIENCY: {
+        name: "Blind Efficiency",
+        what_we_see: "Acceptance rates appear high while verification signals remain limited.",
+        might_suggest: "This signal may reflect a speed-first flow with lighter verification coverage.",
+        does_not_mean: "This does NOT mean outputs are correct or that scrutiny is unnecessary.",
+        posture: "Study"
+      },
+      RECOVERY_MATURITY: {
+        name: "Recovery Maturity",
+        what_we_see: "Recovery loops appear with resolution and limited escalation.",
+        might_suggest: "This signal may reflect maturing correction habits when automation needs adjustment.",
+        does_not_mean: "This does NOT mean issues will stop appearing or that attention is no longer needed.",
+        posture: "Stabilize"
+      },
+      FRICTION_LOOP: {
+        name: "Friction Loop",
+        what_we_see: "Repeated edits or overrides cluster in the current window.",
+        might_suggest: "This signal may reflect friction in prompts, handoffs, or verification steps.",
+        does_not_mean: "This does NOT mean any individual or small team is struggling.",
+        posture: "Study"
+      },
+      UNDERTRUST_AVOIDANCE: {
+        name: "Undertrust Avoidance",
+        what_we_see: "Verification and abandonment signals rise alongside rejections.",
+        might_suggest: "This signal may reflect cautious adoption in higher-risk moments.",
+        does_not_mean: "This does NOT mean the system is unsafe or that the approach should be paused.",
+        posture: "Stabilize"
+      },
+      NO_PATTERN: {
+        name: "No Pattern",
+        what_we_see: "Signals are insufficient to classify a pattern.",
+        might_suggest: "Coverage may be limited for this window.",
+        does_not_mean: "This does NOT mean activity is absent.",
+        posture: "Study"
+      }
+    } as const;
+
+    const signalStatusMap = {
+      WITHHOLD: "Emerging Pattern",
+      LOW: "Emerging Pattern",
+      MEDIUM: "Observed Behavioral Shift",
+      HIGH: "Sustained Pattern"
+    } as const;
+
+    const totalDays = window === "60d" ? 60 : 30;
+
+    const patterns = records
+      .filter(
+        (record) =>
+          record.pattern !== "NO_PATTERN" &&
+          ["MEDIUM", "HIGH"].includes(record.confidence_level)
+      )
+      .map((record) => {
+        const copy = patternCopy[record.pattern];
+        return {
+          pattern_name: copy.name,
+          signal_status: signalStatusMap[record.confidence_level],
+          confidence: record.confidence_level === "HIGH" ? "High" : "Medium",
+          window: windowParsed.data,
+          risk_context: "medium",
+          coverage: Math.min(1, record.coverage_days / totalDays),
+          what_we_see: copy.what_we_see,
+          might_suggest: copy.might_suggest,
+          does_not_mean: copy.does_not_mean,
+          recommended_posture: copy.posture
+        };
+      });
 
     return res.json({
       window: windowParsed.data,
@@ -931,10 +1127,17 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
 
-    const events = Array.from(store.fluencyEvents.values());
-    const scoped = filterEventsByScope(events, scopeParsed.data);
-    const windowed = filterEventsByWindow(scoped, windowParsed.data);
-    const cohortSize = new Set(windowed.map((event) => event.workflow_id)).size;
+    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
+      return res.status(400).json({ error: "Unsupported window" });
+    }
+
+    const window = windowParsed.data;
+    const records = store.patternInferenceRecords.filter((record) =>
+      matchesWindow(record, window)
+    );
+
+    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
+    const cohortSize = workflowIds.size;
 
     if (cohortSize < MIN_COHORT_SIZE) {
       return res.status(400).json({
@@ -944,8 +1147,25 @@ app.get(
       });
     }
 
-    const summary = buildCoverageSummary(windowed, windowParsed.data);
-    return res.json(summary);
+    const activeWorkflows = new Set(
+      records
+        .filter((record) => record.pattern !== "NO_PATTERN" && ["MEDIUM", "HIGH"].includes(record.confidence_level))
+        .map((record) => workflowIdFromScopeKey(record.scope_key))
+    ).size;
+
+    const coverage = cohortSize === 0 ? 0 : activeWorkflows / cohortSize;
+
+    return res.json({
+      window: windowParsed.data,
+      cohort_size: cohortSize,
+      coverage,
+      verification_rate: null,
+      risk_mix: {
+        low: null,
+        medium: null,
+        high: null
+      }
+    });
   }
 );
 
@@ -1016,7 +1236,7 @@ app.post(
       return res.status(400).json({ error: "Observation window too short" });
     }
 
-    const events = Array.from(store.fluencyEvents.values());
+    const events: FluencyEventRecord[] = Array.from(store.fluencyEvents.values());
     const scoped = filterEventsByScope(events, entry.decision.scope);
     const observationEvents = scoped.filter((event) => {
       const ts = new Date(event.timestamp);

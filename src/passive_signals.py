@@ -78,7 +78,15 @@ def parse_signal_event(payload: dict[str, str]) -> SignalEvent:
     missing = required.difference(payload.keys())
     if missing:
         raise ValidationError(f"Missing required fields: {', '.join(sorted(missing))}")
-    occurred_at = datetime.fromisoformat(payload["occurred_at"])
+    occurred_at_raw = payload["occurred_at"]
+    if occurred_at_raw.endswith("Z"):
+        occurred_at_raw = occurred_at_raw.replace("Z", "+00:00")
+    try:
+        occurred_at = datetime.fromisoformat(occurred_at_raw)
+    except ValueError as exc:
+        raise ValidationError(
+            f"Invalid occurred_at: {payload['occurred_at']}"
+        ) from exc
     if occurred_at.tzinfo is None:
         occurred_at = occurred_at.replace(tzinfo=timezone.utc)
     metadata = {key: value for key, value in payload.items() if key not in required | {"team_id", "is_shadow_ai"}}

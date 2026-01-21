@@ -9,6 +9,7 @@ import {
   DecisionLedgerEntry,
   DecisionLedgerEvaluationInput
 } from "@learnaire/shared";
+import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
 export type OrgRecord = {
   id: string;
@@ -169,7 +170,7 @@ export type DecisionLedgerEvaluationRecord = {
 export type AuditLogRecord = {
   id: string;
   orgId: string;
-  action: "create" | "update" | "delete" | "import" | "export" | "access";
+  action: "dashboard_access" | "dashboard_export";
   actorRole: string;
   metadata: Record<string, unknown>;
   timestamp: string;
@@ -196,6 +197,8 @@ class MemoryStore {
   behavioralSignals = new Map<string, BehavioralSignalRecord>();
   fluencyEvents = new Map<string, FluencyEventRecord>();
   fluencyPatterns = new Map<string, FluencyPatternRecord>();
+  patternInferenceRecords: PatternInferenceRecord[] = [];
+  inferenceAuditLogs: InferenceAuditRecord[] = [];
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
   auditLogs = new Map<string, AuditLogRecord>();
@@ -221,6 +224,8 @@ class MemoryStore {
     this.behavioralSignals.clear();
     this.fluencyEvents.clear();
     this.fluencyPatterns.clear();
+    this.patternInferenceRecords = [];
+    this.inferenceAuditLogs = [];
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
     this.auditLogs.clear();
