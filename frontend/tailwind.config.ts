@@ -4,7 +4,16 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Fira Sans", "Inter", "sans-serif"],
+        mono: ["Fira Code", "monospace"],
+      },
       colors: {
+        primary: {
+          DEFAULT: "var(--primary)",
+          hover: "var(--primary-hover)"
+        },
+        cta: "var(--cta)",
         posture: {
           scale: "hsl(var(--posture-scale))",
           stabilize: "hsl(var(--posture-stabilize))",
