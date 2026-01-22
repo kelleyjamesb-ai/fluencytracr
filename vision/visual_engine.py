@@ -7,9 +7,11 @@ blocking the main application.
 
 from __future__ import annotations
 
+import atexit
 import json
 import threading
 import time
+import weakref
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +20,21 @@ from typing import Any
 
 import cv2
 import numpy as np
+
+# Track all SpotTracker instances for cleanup on exit
+_active_trackers: weakref.WeakSet["SpotTracker"] = weakref.WeakSet()
+
+
+def _cleanup_all_trackers() -> None:
+    """Release all camera resources on program exit."""
+    for tracker in list(_active_trackers):
+        try:
+            tracker._release_camera()
+        except Exception:
+            pass  # Ignore errors during cleanup
+
+
+atexit.register(_cleanup_all_trackers)
 
 
 @dataclass(frozen=True)
@@ -64,6 +81,12 @@ class SpotTracker:
     Detects environmental distractions (bright spots) that may reduce user focus
     during AI tool usage. Runs in a daemon thread to prevent blocking.
 
+    Supports context manager protocol for automatic resource cleanup:
+        with SpotTracker(threshold=200) as tracker:
+            tracker.start_monitoring(camera_index=0)
+            result = tracker.get_latest_result()
+        # Camera automatically released
+
     Example:
         tracker = SpotTracker(threshold=200, min_area=10)
         tracker.start_monitoring(camera_index=0)
@@ -101,6 +124,32 @@ class SpotTracker:
         self._result_queue: Queue[SpotDetectionResult] = Queue(maxsize=10)
         self._latest_result: SpotDetectionResult | None = None
         self._camera: cv2.VideoCapture | None = None
+
+        # Register this tracker for cleanup on exit
+        _active_trackers.add(self)
+
+    def __enter__(self) -> "SpotTracker":
+        """Context manager entry - returns self for use in with statement."""
+        return self
+
+    def __exit__(self, exc_type: type | None, exc_val: Exception | None, exc_tb: Any) -> None:
+        """Context manager exit - ensures camera is released."""
+        self.stop_monitoring()
+
+    def __del__(self) -> None:
+        """Destructor - release camera if not already released."""
+        self._release_camera()
+
+    def _release_camera(self) -> None:
+        """Internal method to release camera resources safely."""
+        with self._lock:
+            if self._camera is not None:
+                try:
+                    self._camera.release()
+                except Exception:
+                    pass  # Ignore errors during cleanup
+                finally:
+                    self._camera = None
 
     def detect_spots_from_image(self, image_path: str | Path) -> SpotDetectionResult:
         """Detect bright spots in a static image file.
@@ -230,10 +279,8 @@ class SpotTracker:
         if self._monitor_thread and self._monitor_thread.is_alive():
             self._monitor_thread.join(timeout=2.0)
 
-        # Release camera
-        if self._camera:
-            self._camera.release()
-            self._camera = None
+        # Release camera using safe cleanup method
+        self._release_camera()
 
     def _monitoring_loop(self, poll_interval: float) -> None:
         """Daemon thread loop for continuous monitoring.

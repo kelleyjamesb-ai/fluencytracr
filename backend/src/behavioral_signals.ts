@@ -1,4 +1,4 @@
-import { BehavioralSignalAggregate, GroupType, SignalName } from "@learnaire/shared";
+import { BehavioralSignalAggregate, GroupType, SignalName, SUPPRESSION_THRESHOLDS } from "@learnaire/shared";
 import { store } from "./store";
 
 export type BehavioralSignal = BehavioralSignalAggregate & {
@@ -42,10 +42,13 @@ const getGroupSize = (orgId: string, groupId: string, groupType: GroupType): num
 };
 
 /**
- * Apply k=5 suppression to team and role level signals.
+ * Apply k-anonymity suppression to team and role level signals.
  * Function and org level signals are never suppressed by group size.
  */
-export const applySuppression = (signals: BehavioralSignal[], minGroupSize = 5): BehavioralSignal[] => {
+export const applySuppression = (
+  signals: BehavioralSignal[],
+  minGroupSize = SUPPRESSION_THRESHOLDS.MIN_GROUP_SIZE_BEHAVIORAL
+): BehavioralSignal[] => {
   return signals.map((signal) => {
     // Only suppress team and role levels
     if (signal.group_type !== "team" && signal.group_type !== "role") {
@@ -76,7 +79,7 @@ export const applySuppression = (signals: BehavioralSignal[], minGroupSize = 5):
  */
 const buildFunctionRollups = (
   signals: BehavioralSignal[],
-  minGroupSize = 5
+  minGroupSize = SUPPRESSION_THRESHOLDS.MIN_GROUP_SIZE_BEHAVIORAL
 ): BehavioralSignal[] => {
   const rollupMap: Record<string, BehavioralSignal> = {};
 
@@ -184,7 +187,7 @@ const buildOrgRollups = (
  * Apply suppression and create rollups for behavioral signals.
  *
  * Algorithm:
- * 1. Apply k=5 suppression to team/role signals
+ * 1. Apply k-anonymity suppression to team/role signals
  * 2. Create function rollups (including suppressed team/role counts)
  * 3. Apply suppression to function rollups
  * 4. Create org rollups (including suppressed function counts)
@@ -193,7 +196,7 @@ const buildOrgRollups = (
  */
 export const suppressAndRollup = (
   signals: BehavioralSignal[],
-  minGroupSize = 5
+  minGroupSize = SUPPRESSION_THRESHOLDS.MIN_GROUP_SIZE_BEHAVIORAL
 ): BehavioralSignal[] => {
   // Step 1: Apply suppression to team/role signals
   const suppressed = applySuppression(signals, minGroupSize);
@@ -210,10 +213,11 @@ export const suppressAndRollup = (
 
 /**
  * Get team count for a function (used for suppression checks).
+ * Counts all teams that belong to the specified function.
  */
 export const getTeamCountInFunction = (orgId: string, functionId: string): number => {
   return Array.from(store.teams.values()).filter(
-    (team) => team.orgId === orgId && team.id === functionId
+    (team) => team.orgId === orgId && team.functionId === functionId
   ).length;
 };
 

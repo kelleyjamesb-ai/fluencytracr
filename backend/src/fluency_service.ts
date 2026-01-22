@@ -102,11 +102,13 @@ const computeBucketScore = (orgId: string, bucketStart: string) => {
 
   const judgment = computeJudgment(metrics, bucketStart);
 
+  // Weights must match Python implementation (src/fluency_service.py:83-88)
+  // coverage=20%, depth=40%, judgment=25%, velocity=15%
   const subscores = [
-    { score: coverageScore, weight: 0.25, completeness: coverageCompleteness },
-    { score: depthScore, weight: 0.25, completeness: depthCompleteness },
-    { score: velocityScore, weight: 0.25, completeness: velocityCompleteness },
-    { score: judgment.score, weight: 0.25, completeness: judgment.completeness }
+    { score: coverageScore, weight: 0.20, completeness: coverageCompleteness },
+    { score: depthScore, weight: 0.40, completeness: depthCompleteness },
+    { score: judgment.score, weight: 0.25, completeness: judgment.completeness },
+    { score: velocityScore, weight: 0.15, completeness: velocityCompleteness }
   ];
 
   const available = subscores.filter((item) => item.score !== null);

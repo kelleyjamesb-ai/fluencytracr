@@ -23,6 +23,7 @@ export type TeamRecord = {
   orgId: string;
   name: string;
   parentTeamId?: string;
+  functionId?: string;  // Links team to a business function for rollup grouping
 };
 
 export type RoleRecord = {

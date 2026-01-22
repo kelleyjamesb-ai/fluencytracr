@@ -13,9 +13,10 @@
     "generate": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^5.18.0",
     "@learnaire/shared": "0.1.0",
+    "@prisma/client": "^5.18.0",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.2.1",
     "js-yaml": "^4.1.0",
     "zod": "^3.23.8"
   },
