@@ -1,5 +1,6 @@
 import { ConnectorRegistry } from "./base/ConnectorRegistry";
 import { ExternalEvent, InternalSignal } from "./base/ConnectorBase";
+import { DeclarativeConnector } from "./base/DeclarativeConnector";
 import { ConnectorSignalAggregate, AnySignalNameSchema, ToolClassSchema } from "@learnaire/shared";
 
 export interface ConnectorEventImport {
@@ -19,11 +20,60 @@ export interface ConnectorTransformResult {
   errors?: string[];
 }
 
+export interface ConnectorUnknownEventResult {
+  unknown_event_types: string[];
+  unknown_event_count: number;
+  sample_events: Array<{ event_type: string; timestamp: string }>;
+}
+
+export interface ConnectorInvalidEventResult {
+  invalid_event_types: string[];
+  invalid_event_count: number;
+  sample_events: Array<{ event_type: string; timestamp: string; reason: string }>;
+}
+
 export class ConnectorService {
   private registry: ConnectorRegistry;
 
   constructor() {
     this.registry = ConnectorRegistry.getInstance();
+  }
+
+  findUnknownEvents(importData: ConnectorEventImport): ConnectorUnknownEventResult {
+    const connector = this.registry.getConnector(importData.vendor, importData.connector_name);
+    if (!connector) {
+      return { unknown_event_types: [], unknown_event_count: 0, sample_events: [] };
+    }
+
+    const knownEventTypes = new Set(connector.getMappedEventTypes());
+    const unknownEvents = importData.events.filter((event) => !knownEventTypes.has(event.event_type));
+    const unknownEventTypes = Array.from(new Set(unknownEvents.map((event) => event.event_type)));
+
+    const sampleEvents = unknownEvents.slice(0, 5).map((event) => ({
+      event_type: event.event_type,
+      timestamp: event.timestamp
+    }));
+
+    return {
+      unknown_event_types: unknownEventTypes,
+      unknown_event_count: unknownEvents.length,
+      sample_events: sampleEvents
+    };
+  }
+
+  findInvalidMappedEvents(importData: ConnectorEventImport): ConnectorInvalidEventResult {
+    const connector = this.registry.getConnector(importData.vendor, importData.connector_name);
+    if (!connector || !(connector instanceof DeclarativeConnector)) {
+      return { invalid_event_types: [], invalid_event_count: 0, sample_events: [] };
+    }
+
+    const invalidEvents = connector.getInvalidMappedEvents(importData.events);
+    const invalidEventTypes = Array.from(new Set(invalidEvents.map((event) => event.event_type)));
+    return {
+      invalid_event_types: invalidEventTypes,
+      invalid_event_count: invalidEvents.length,
+      sample_events: invalidEvents.slice(0, 5)
+    };
   }
 
   transformEvents(importData: ConnectorEventImport): ConnectorTransformResult {

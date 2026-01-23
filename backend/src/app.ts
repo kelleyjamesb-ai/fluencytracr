@@ -22,7 +22,8 @@ import {
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
-import { rejectForbiddenFields, rejectPersonIdentifiers } from "./ingest";
+import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
+import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
   store,
   upsertControl,
@@ -32,7 +33,6 @@ import {
   upsertBehavioralSignal,
   EnablementEventRecord,
   MetricRecord,
-  FluencyEventRecord,
   insertFluencyEvent,
   insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
@@ -52,6 +52,7 @@ import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
+import { findForbiddenField } from "./validation/forbiddenFields";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -64,6 +65,11 @@ import * as path from "path";
 
 const app = express();
 app.use(express.json());
+
+const strictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60
+});
 
 const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
 
@@ -392,111 +398,132 @@ app.delete("/orgs/:orgId/roles/:roleId", (req, res) => {
   return res.status(204).send();
 });
 
-app.post("/orgs/:orgId/roster/import", (req, res) => {
-  const org = store.orgs.get(req.params.orgId);
-  if (!org) {
-    return res.status(404).json({ error: "Org not found" });
-  }
-  const parsed = RosterImportSchema.safeParse(req.body ?? {});
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid roster payload" });
-  }
-  try {
-    const result = importRoster(org.id, parsed.data.csv);
-    return res.json(result);
-  } catch (error) {
-    return res.status(400).json({ error: "Invalid roster CSV" });
-  }
-});
-
-app.post("/enablement/import", express.text({ type: "text/csv" }), rejectForbiddenFields, (req, res) => {
-  const errors: { index: number; error: string }[] = [];
-  let rows: EnablementEventInput[] = [];
-  if (typeof req.body === "string") {
-    try {
-      rows = parseEnablementCsv(req.body).map((row) => row as EnablementEventInput);
-    } catch (error) {
-      return res.status(400).json({ error: "Invalid CSV payload" });
-    }
-  } else if (Array.isArray(req.body)) {
-    rows = req.body as EnablementEventInput[];
-  } else if (req.body?.events && Array.isArray(req.body.events)) {
-    rows = req.body.events as EnablementEventInput[];
-  } else {
-    return res.status(400).json({ error: "Unsupported enablement payload" });
-  }
-
-  const stored: EnablementEventRecord[] = [];
-
-  rows.forEach((row, index) => {
-    const parsed = EnablementEventSchema.safeParse(row);
-    if (!parsed.success) {
-      errors.push({ index: index + 1, error: parsed.error.message });
-      return;
-    }
-    const org = store.orgs.get(parsed.data.org_id);
+app.post(
+  "/orgs/:orgId/roster/import",
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
     if (!org) {
-      errors.push({ index: index + 1, error: "Unknown org_id" });
-      return;
+      return res.status(404).json({ error: "Org not found" });
     }
-    const team = store.teams.get(parsed.data.team_id);
-    if (!team || team.orgId !== org.id) {
-      errors.push({ index: index + 1, error: "Unknown team_id" });
-      return;
+    const parsed = RosterImportSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid roster payload" });
     }
-    const role = store.roles.get(parsed.data.role_id);
-    if (!role || role.orgId !== org.id) {
-      errors.push({ index: index + 1, error: "Unknown role_id" });
-      return;
-    }
-    const timestamp = new Date(parsed.data.timestamp);
-    if (Number.isNaN(timestamp.getTime())) {
-      errors.push({ index: index + 1, error: "Invalid timestamp" });
-      return;
-    }
-    let payload: Record<string, unknown>;
     try {
-      payload = parsePayload(parsed.data.payload);
+      const result = importRoster(org.id, parsed.data.csv);
+      return res.json(result);
     } catch (error) {
-      errors.push({ index: index + 1, error: "Invalid payload" });
-      return;
+      return res.status(400).json({ error: "Invalid roster CSV" });
     }
-    const eventId = parsed.data.event_id ?? generateEventId();
-    if (store.enablementEvents.has(eventId)) {
-      errors.push({ index: index + 1, error: "Duplicate event_id" });
-      return;
-    }
-    const record = {
-      eventId,
-      orgId: org.id,
-      teamId: team.id,
-      roleId: role.id,
-      timestamp: timestamp.toISOString(),
-      eventType: parsed.data.event_type as EnablementEventType,
-      payload
-    };
-    store.enablementEvents.set(eventId, record);
-    stored.push(record);
-  });
-
-  if (stored.length > 0) {
-    const byOrg = stored.reduce<Record<string, EnablementEventRecord[]>>((acc, event) => {
-      acc[event.orgId] = acc[event.orgId] ?? [];
-      acc[event.orgId].push(event);
-      return acc;
-    }, {});
-    Object.entries(byOrg).forEach(([orgId, events]) => {
-      runEnablementRollupsForEvents(orgId, events);
-    });
   }
+);
 
-  return res.json({ imported: stored.length, rejected: errors.length, errors });
-});
+app.post(
+  "/enablement/import",
+  express.text({ type: "text/csv" }),
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
+  (req, res) => {
+    const errors: { index: number; error: string }[] = [];
+    let rows: EnablementEventInput[] = [];
+    if (typeof req.body === "string") {
+      try {
+        rows = parseEnablementCsv(req.body).map((row) => row as EnablementEventInput);
+      } catch (error) {
+        return res.status(400).json({ error: "Invalid CSV payload" });
+      }
+    } else if (Array.isArray(req.body)) {
+      rows = req.body as EnablementEventInput[];
+    } else if (req.body?.events && Array.isArray(req.body.events)) {
+      rows = req.body.events as EnablementEventInput[];
+    } else {
+      return res.status(400).json({ error: "Unsupported enablement payload" });
+    }
+
+    const forbiddenMatch = findForbiddenField(rows);
+    if (forbiddenMatch) {
+      return res.status(400).json({
+        error: "Forbidden field",
+        field_path: forbiddenMatch.path,
+        rule: "no_raw_content_or_direct_identifiers"
+      });
+    }
+
+    const stored: EnablementEventRecord[] = [];
+
+    rows.forEach((row, index) => {
+      const parsed = EnablementEventSchema.safeParse(row);
+      if (!parsed.success) {
+        errors.push({ index: index + 1, error: parsed.error.message });
+        return;
+      }
+      const org = store.orgs.get(parsed.data.org_id);
+      if (!org) {
+        errors.push({ index: index + 1, error: "Unknown org_id" });
+        return;
+      }
+      const team = store.teams.get(parsed.data.team_id);
+      if (!team || team.orgId !== org.id) {
+        errors.push({ index: index + 1, error: "Unknown team_id" });
+        return;
+      }
+      const role = store.roles.get(parsed.data.role_id);
+      if (!role || role.orgId !== org.id) {
+        errors.push({ index: index + 1, error: "Unknown role_id" });
+        return;
+      }
+      const timestamp = new Date(parsed.data.timestamp);
+      if (Number.isNaN(timestamp.getTime())) {
+        errors.push({ index: index + 1, error: "Invalid timestamp" });
+        return;
+      }
+      let payload: Record<string, unknown>;
+      try {
+        payload = parsePayload(parsed.data.payload);
+      } catch (error) {
+        errors.push({ index: index + 1, error: "Invalid payload" });
+        return;
+      }
+      const eventId = parsed.data.event_id ?? generateEventId();
+      if (store.enablementEvents.has(eventId)) {
+        errors.push({ index: index + 1, error: "Duplicate event_id" });
+        return;
+      }
+      const record = {
+        eventId,
+        orgId: org.id,
+        teamId: team.id,
+        roleId: role.id,
+        timestamp: timestamp.toISOString(),
+        eventType: parsed.data.event_type as EnablementEventType,
+        payload
+      };
+      store.enablementEvents.set(eventId, record);
+      stored.push(record);
+    });
+
+    if (stored.length > 0) {
+      const byOrg = stored.reduce<Record<string, EnablementEventRecord[]>>((acc, event) => {
+        acc[event.orgId] = acc[event.orgId] ?? [];
+        acc[event.orgId].push(event);
+        return acc;
+      }, {});
+      Object.entries(byOrg).forEach(([orgId, events]) => {
+        runEnablementRollupsForEvents(orgId, events);
+      });
+    }
+
+    return res.json({ imported: stored.length, rejected: errors.length, errors });
+  }
+);
 
 app.post(
   "/orgs/:orgId/tools",
   rbacMiddleware(["ADMIN"]),
-  rejectForbiddenFields,
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
   (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
@@ -537,7 +564,8 @@ app.post(
 app.post(
   "/orgs/:orgId/usage-shape",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  rejectForbiddenFields,
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
   (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
@@ -590,7 +618,7 @@ app.post(
   }
 );
 
-app.post("/orgs/:orgId/groups", rejectForbiddenFields, (req, res) => {
+app.post("/orgs/:orgId/groups", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -610,7 +638,7 @@ app.post("/orgs/:orgId/groups", rejectForbiddenFields, (req, res) => {
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/orgs/:orgId/metrics/import", strictLimiter, rejectForbiddenFields, (req, res) => {
+app.post("/orgs/:orgId/metrics/import", strictLimiter, schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -659,7 +687,7 @@ app.post("/orgs/:orgId/metrics/import", strictLimiter, rejectForbiddenFields, (r
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/orgs/:orgId/controls/import", rejectForbiddenFields, (req, res) => {
+app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -679,7 +707,7 @@ app.post("/orgs/:orgId/controls/import", rejectForbiddenFields, (req, res) => {
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/orgs/:orgId/enablement/import", rejectForbiddenFields, (req, res) => {
+app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -699,7 +727,7 @@ app.post("/orgs/:orgId/enablement/import", rejectForbiddenFields, (req, res) => 
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/api/ingest", strictLimiter, rejectForbiddenFields, (_req, res) => {
+app.post("/api/ingest", strictLimiter, schemaVersionMiddleware, forbiddenFieldsMiddleware, (_req, res) => {
   res.status(202).json({ status: "accepted" });
 });
 
@@ -974,8 +1002,8 @@ app.get(
 app.post(
   "/api/events",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  rejectForbiddenFields,
-  rejectPersonIdentifiers,
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
   (req, res) => {
     const parsed = FluencyEventIngestSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
@@ -1438,7 +1466,8 @@ app.post(
 app.post(
   "/orgs/:orgId/behavior/import",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  rejectForbiddenFields,
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
   (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
@@ -1498,7 +1527,8 @@ app.post(
 app.post(
   "/orgs/:orgId/behavior/connector/import",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  rejectForbiddenFields,
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
   (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
@@ -1513,6 +1543,50 @@ app.post(
     // Validate org_id matches route parameter
     if (parsed.data.org_id !== org.id) {
       return res.status(400).json({ error: `org_id mismatch: expected ${org.id}, got ${parsed.data.org_id}` });
+    }
+
+    const unknownEvents = connectorService.findUnknownEvents(parsed.data);
+    if (unknownEvents.unknown_event_types.length > 0) {
+      const recordId = `quarantine-${crypto.randomUUID()}`;
+      store.connectorEventQuarantine.set(recordId, {
+        vendor: parsed.data.vendor,
+        connector_name: parsed.data.connector_name,
+        org_id: parsed.data.org_id,
+        group_id: parsed.data.group_id,
+        bucket_start: parsed.data.bucket_start,
+        unknown_event_types: unknownEvents.unknown_event_types,
+        sample_events: unknownEvents.sample_events,
+        received_at: new Date().toISOString()
+      });
+      return res.status(202).json({
+        status: "quarantined",
+        quarantined_count: unknownEvents.unknown_event_count,
+        unknown_event_types: unknownEvents.unknown_event_types
+      });
+    }
+
+    const invalidEvents = connectorService.findInvalidMappedEvents(parsed.data);
+    if (invalidEvents.invalid_event_types.length > 0) {
+      const recordId = `quarantine-${crypto.randomUUID()}`;
+      store.connectorEventQuarantine.set(recordId, {
+        vendor: parsed.data.vendor,
+        connector_name: parsed.data.connector_name,
+        org_id: parsed.data.org_id,
+        group_id: parsed.data.group_id,
+        bucket_start: parsed.data.bucket_start,
+        unknown_event_types: [],
+        invalid_event_types: invalidEvents.invalid_event_types,
+        invalid_event_count: invalidEvents.invalid_event_count,
+        invalid_sample_events: invalidEvents.sample_events,
+        sample_events: [],
+        received_at: new Date().toISOString()
+      });
+      return res.status(202).json({
+        status: "quarantined",
+        quarantined_count: invalidEvents.invalid_event_count,
+        unknown_event_types: [],
+        invalid_event_types: invalidEvents.invalid_event_types
+      });
     }
 
     // Transform external events using connector

@@ -176,6 +176,20 @@ export type AuditLogRecord = {
   timestamp: string;
 };
 
+export type ConnectorEventQuarantineRecord = {
+  vendor: string;
+  connector_name: string;
+  org_id: string;
+  group_id: string;
+  bucket_start: string;
+  unknown_event_types: string[];
+  invalid_event_types?: string[];
+  invalid_event_count?: number;
+  invalid_sample_events?: Array<{ event_type: string; timestamp: string; reason: string }>;
+  sample_events: Array<{ event_type: string; timestamp: string }>;
+  received_at: string;
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -202,6 +216,7 @@ class MemoryStore {
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
   auditLogs = new Map<string, AuditLogRecord>();
+  connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
 
   reset() {
     this.orgs.clear();
@@ -229,6 +244,7 @@ class MemoryStore {
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
     this.auditLogs.clear();
+    this.connectorEventQuarantine.clear();
   }
 }
 

@@ -223,4 +223,8 @@ export abstract class ConnectorBase {
   getToolClass(): string {
     return this.mapping.connector_metadata.tool_class;
   }
+
+  getMappedEventTypes(): string[] {
+    return this.mapping.signal_mappings.map((mapping) => mapping.external_event_type);
+  }
 }

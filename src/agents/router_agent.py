@@ -31,6 +31,11 @@ Available specialist agents:
 - coder: Writes and refactors code, creates files, implements features
 - reviewer: Reviews code quality, checks for security issues, analyzes logs
 - researcher: Gathers information, performs web searches, analyzes data
+- backend: Implements APIs, data models, error handling, performance fixes
+- qa: Creates test plans, defines coverage, validates behavior
+- integration: Wires MCP tools and external integrations
+- devops: Manages deployment, Docker, CI/CD, infra configs
+- security: Performs threat modeling, secrets handling, secure defaults
 
 When analyzing a task, respond with a delegation plan in this format:
 DELEGATION:
@@ -92,14 +97,34 @@ You may delegate to multiple agents in sequence or parallel."""
         # Check for code-related keywords
         if any(word in task_lower for word in ['code', 'implement', 'build', 'create', 'write', 'function']):
             delegations.append({'agent': 'coder', 'task': task})
-        
+
+        # Check for backend-related keywords
+        if any(word in task_lower for word in ['backend', 'api', 'endpoint', 'service', 'schema', 'migration', 'database', 'db']):
+            delegations.append({'agent': 'backend', 'task': task})
+
         # Check for review-related keywords
         if any(word in task_lower for word in ['review', 'check', 'security', 'quality', 'analyze']):
             delegations.append({'agent': 'reviewer', 'task': task})
-        
+
+        # Check for QA/testing-related keywords
+        if any(word in task_lower for word in ['test', 'qa', 'coverage', 'regression', 'verify', 'validation', 'pytest']):
+            delegations.append({'agent': 'qa', 'task': task})
+
         # Check for research-related keywords
         if any(word in task_lower for word in ['research', 'search', 'find', 'information', 'learn']):
             delegations.append({'agent': 'researcher', 'task': task})
+
+        # Check for integration/MCP-related keywords
+        if any(word in task_lower for word in ['mcp', 'integration', 'tooling', 'mcp_servers', 'mcp server', 'mcp servers']):
+            delegations.append({'agent': 'integration', 'task': task})
+
+        # Check for devops-related keywords
+        if any(word in task_lower for word in ['devops', 'deploy', 'deployment', 'docker', 'ci', 'cd', 'pipeline', 'release', 'infra']):
+            delegations.append({'agent': 'devops', 'task': task})
+
+        # Check for security-related keywords
+        if any(word in task_lower for word in ['security', 'threat', 'vulnerability', 'secret', 'secrets', 'encryption', 'authorization', 'auth']):
+            delegations.append({'agent': 'security', 'task': task})
         
         # Default to coder if no matches
         if not delegations:

@@ -11,6 +11,11 @@ from src.agents.router_agent import RouterAgent
 from src.agents.coder_agent import CoderAgent
 from src.agents.reviewer_agent import ReviewerAgent
 from src.agents.researcher_agent import ResearcherAgent
+from src.agents.backend_agent import BackendEngineerAgent
+from src.agents.qa_agent import QAAgent
+from src.agents.integration_agent import IntegrationAgent
+from src.agents.devops_agent import DevOpsAgent
+from src.agents.security_agent import SecurityAgent
 
 
 class MessageBus:
@@ -88,10 +93,20 @@ class SwarmOrchestrator:
         print("   💻 Creating Coder agent...")
         print("   🔍 Creating Reviewer agent...")
         print("   📚 Creating Researcher agent...")
+        print("   🧱 Creating Backend agent...")
+        print("   🧪 Creating QA agent...")
+        print("   🔌 Creating Integration agent...")
+        print("   🚀 Creating DevOps agent...")
+        print("   🛡️ Creating Security agent...")
         self.workers = {
             "coder": CoderAgent(),
             "reviewer": ReviewerAgent(),
-            "researcher": ResearcherAgent()
+            "researcher": ResearcherAgent(),
+            "backend": BackendEngineerAgent(),
+            "qa": QAAgent(),
+            "integration": IntegrationAgent(),
+            "devops": DevOpsAgent(),
+            "security": SecurityAgent(),
         }
         
         print(f"✅ Swarm initialized with {len(self.workers)} specialist agents!\n")

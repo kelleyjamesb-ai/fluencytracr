@@ -10,9 +10,19 @@ graph TD
     Router --> Coder[💻 Coder Agent]
     Router --> Reviewer[🔍 Reviewer Agent]
     Router --> Researcher[📚 Researcher Agent]
+    Router --> Backend[🧱 Backend Agent]
+    Router --> QA[🧪 QA Agent]
+    Router --> Integration[🔌 Integration Agent]
+    Router --> DevOps[🚀 DevOps Agent]
+    Router --> Security[🛡️ Security Agent]
     Coder --> Router
     Reviewer --> Router
     Researcher --> Router
+    Backend --> Router
+    QA --> Router
+    Integration --> Router
+    DevOps --> Router
+    Security --> Router
     Router --> Result[📊 Synthesized Result]
 ```
 
@@ -61,6 +71,61 @@ Researches solutions, gathers context, and provides foundational knowledge for c
 - 📚 Information synthesis
 - 🧠 Context gathering
 - 💡 Insight generation
+
+### 🧱 Backend Agent
+**Role**: Backend implementation specialist
+
+Owns API design, data models, migrations, error handling, and performance fixes.
+
+**Specialties:**
+- 🧩 API contracts and service logic
+- 🗄️ Data modeling and migrations
+- 🧯 Error handling and resilience
+- ⚡ Backend performance tuning
+
+### 🧪 QA Agent
+**Role**: Testing and validation specialist
+
+Creates test plans, coverage maps, and verification summaries.
+
+**Specialties:**
+- ✅ Test planning and coverage
+- 🧪 Unit/integration/regression design
+- 🔁 Repro steps and diagnostics
+- 📋 Verification summaries
+
+### 🔌 Integration Agent
+**Role**: MCP and tooling integration specialist
+
+Maintains external tool wiring and MCP server configuration.
+
+**Specialties:**
+- 🔧 MCP server configuration
+- 🔍 Tool discovery consistency
+- 🔗 External integration wiring
+- 🧾 Integration change summaries
+
+### 🚀 DevOps Agent
+**Role**: Deployment and CI/CD specialist
+
+Maintains release workflows, Docker, and operational guidance.
+
+**Specialties:**
+- 🐳 Docker and container workflows
+- 🔁 CI/CD pipeline changes
+- 🧭 Release notes and rollbacks
+- 📈 Operational health checks
+
+### 🛡️ Security Agent
+**Role**: Threat modeling and secure defaults specialist
+
+Provides security guidance, threat scenarios, and mitigation steps.
+
+**Specialties:**
+- 🧠 Threat modeling
+- 🔐 Secrets handling
+- 🧰 Secure defaults
+- 🛡️ Risk mitigation summaries
 
 ## 🚀 Using the Swarm
 
@@ -211,6 +276,25 @@ artifacts/
 │   └── test_calculator.py # Generated tests
 └── reviews/
     └── calculator_review.md # Review report
+```
+
+### Role-Specific Artifacts
+
+Specialist agents may produce focused outputs under role-specific paths:
+
+```
+artifacts/
+├── backend/
+│   └── change_summary.md  # API/schema/migration summary
+├── qa/
+│   ├── test_plan.md       # Test plan and coverage mapping
+│   └── test_results.md    # Verification summary
+├── integration/
+│   └── wiring_summary.md  # MCP/tool configuration changes
+├── devops/
+│   └── release_notes.md   # Deployment guidance and rollbacks
+└── security/
+    └── assessment.md      # Threat model and mitigations
 ```
 
 ## ⚡ Performance Tips

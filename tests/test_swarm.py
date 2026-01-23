@@ -6,6 +6,11 @@ from src.agents.router_agent import RouterAgent
 from src.agents.coder_agent import CoderAgent
 from src.agents.reviewer_agent import ReviewerAgent
 from src.agents.researcher_agent import ResearcherAgent
+from src.agents.backend_agent import BackendEngineerAgent
+from src.agents.qa_agent import QAAgent
+from src.agents.integration_agent import IntegrationAgent
+from src.agents.devops_agent import DevOpsAgent
+from src.agents.security_agent import SecurityAgent
 
 
 class TestMessageBus:
@@ -59,10 +64,15 @@ class TestSwarmOrchestrator:
         
         assert swarm.router is not None
         assert isinstance(swarm.router, RouterAgent)
-        assert len(swarm.workers) == 3
+        assert len(swarm.workers) == 8
         assert "coder" in swarm.workers
         assert "reviewer" in swarm.workers
         assert "researcher" in swarm.workers
+        assert "backend" in swarm.workers
+        assert "qa" in swarm.workers
+        assert "integration" in swarm.workers
+        assert "devops" in swarm.workers
+        assert "security" in swarm.workers
     
     def test_swarm_execute(self):
         """Test basic swarm execution."""
@@ -110,6 +120,21 @@ class TestAgents:
         
         delegations = router._simple_delegate("Research JWT authentication")
         assert any(d["agent"] == "researcher" for d in delegations)
+
+        delegations = router._simple_delegate("Add a backend API endpoint")
+        assert any(d["agent"] == "backend" for d in delegations)
+
+        delegations = router._simple_delegate("Create a QA test plan for regression")
+        assert any(d["agent"] == "qa" for d in delegations)
+
+        delegations = router._simple_delegate("Update MCP integration configuration")
+        assert any(d["agent"] == "integration" for d in delegations)
+
+        delegations = router._simple_delegate("Improve Docker deployment pipeline")
+        assert any(d["agent"] == "devops" for d in delegations)
+
+        delegations = router._simple_delegate("Threat model the auth flow")
+        assert any(d["agent"] == "security" for d in delegations)
     
     def test_coder_agent_init(self):
         """Test CoderAgent initialization."""
@@ -128,3 +153,33 @@ class TestAgents:
         researcher = ResearcherAgent()
         assert researcher.role == "researcher"
         assert "research" in researcher.system_prompt.lower() or "information" in researcher.system_prompt.lower()
+
+    def test_backend_agent_init(self):
+        """Test BackendEngineerAgent initialization."""
+        backend = BackendEngineerAgent()
+        assert backend.role == "backend"
+        assert "backend" in backend.system_prompt.lower()
+
+    def test_qa_agent_init(self):
+        """Test QAAgent initialization."""
+        qa = QAAgent()
+        assert qa.role == "qa"
+        assert "test" in qa.system_prompt.lower()
+
+    def test_integration_agent_init(self):
+        """Test IntegrationAgent initialization."""
+        integration = IntegrationAgent()
+        assert integration.role == "integration"
+        assert "integration" in integration.system_prompt.lower() or "mcp" in integration.system_prompt.lower()
+
+    def test_devops_agent_init(self):
+        """Test DevOpsAgent initialization."""
+        devops = DevOpsAgent()
+        assert devops.role == "devops"
+        assert "deploy" in devops.system_prompt.lower() or "ci/cd" in devops.system_prompt.lower()
+
+    def test_security_agent_init(self):
+        """Test SecurityAgent initialization."""
+        security = SecurityAgent()
+        assert security.role == "security"
+        assert "security" in security.system_prompt.lower()
