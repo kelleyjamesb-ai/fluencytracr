@@ -23,11 +23,17 @@ beforeEach(() => {
   store.roles.set("role-1", { id: "role-1", orgId: "org-1", name: "Role" });
 });
 
+const schemaVersion = "0.1";
+
 it("stores usage shape signals", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/usage-shape`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-role": "ENABLEMENT_LEAD" },
+    headers: {
+      "content-type": "application/json",
+      "x-role": "ENABLEMENT_LEAD",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body: JSON.stringify({ team_id: "team-1", tool_class: "coding", category: "regular" })
   });
   const payload = await response.json();
@@ -42,7 +48,11 @@ it("stores usage shape at role level", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/usage-shape`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-role": "ENABLEMENT_LEAD" },
+    headers: {
+      "content-type": "application/json",
+      "x-role": "ENABLEMENT_LEAD",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body: JSON.stringify({ role_id: "role-1", tool_class: "llm_chat", category: "rare" })
   });
   const payload = await response.json();
@@ -56,7 +66,11 @@ it("rejects usage shape linked to individuals", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/usage-shape`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-role": "ENABLEMENT_LEAD" },
+    headers: {
+      "content-type": "application/json",
+      "x-role": "ENABLEMENT_LEAD",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body: JSON.stringify({
       team_id: "team-1",
       tool_class: "embedded_ai",

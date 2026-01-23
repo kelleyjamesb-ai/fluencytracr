@@ -23,11 +23,16 @@ beforeEach(() => {
   store.roles.set("role-1", { id: "role-1", orgId: "org-1", name: "Role" });
 });
 
+const schemaVersion = "0.1";
+
 it("imports enablement events from JSON and returns structured errors", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/enablement/import`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body: JSON.stringify({
       events: [
         {
@@ -62,7 +67,10 @@ it("imports enablement events from CSV", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/enablement/import`, {
     method: "POST",
-    headers: { "content-type": "text/csv" },
+    headers: {
+      "content-type": "text/csv",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body:
       "org_id,team_id,role_id,timestamp,event_type,payload\n" +
       "org-1,team-1,role-1,2024-01-02T00:00:00Z,session_attended,{\"source\":\"training\"}\n"
@@ -79,7 +87,10 @@ it("rejects duplicate event ids", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/enablement/import`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body: JSON.stringify({
       events: [
         {

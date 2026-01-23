@@ -50,7 +50,7 @@ describe("/orgs/:orgId/telemetry/index", () => {
       headers: { "x-role": "EXEC_VIEWER" }
     });
     server.close();
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(403);
   });
 
   it("returns telemetry index for admins", async () => {

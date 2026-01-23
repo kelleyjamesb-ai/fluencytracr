@@ -65,13 +65,16 @@ beforeEach(() => {
   store.reset();
 });
 
+const schemaVersion = "0.1";
+
 it("rejects event payloads containing person identifiers", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/api/events`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-role": "ADMIN"
+      "x-role": "ADMIN",
+      "X-FluencyTracr-Schema-Version": schemaVersion
     },
     body: JSON.stringify({
       events: [
@@ -346,7 +349,8 @@ it("keeps ledger entries append-only when evaluations are added", async () => {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-role": "ADMIN"
+      "x-role": "ADMIN",
+      "X-FluencyTracr-Schema-Version": schemaVersion
     },
     body: JSON.stringify({
       events: Array.from({ length: 25 }, (_, index) =>

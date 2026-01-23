@@ -22,11 +22,17 @@ beforeEach(() => {
   store.teams.set("team-1", { id: "team-1", orgId: "org-1", name: "Team" });
 });
 
+const schemaVersion = "0.1";
+
 it("stores tool inventory for a team", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/orgs/org-1/tools`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-role": "ADMIN" },
+    headers: {
+      "content-type": "application/json",
+      "x-role": "ADMIN",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    },
     body: JSON.stringify({ team_id: "team-1", tool_class: "llm_chat" })
   });
   const payload = await response.json();
