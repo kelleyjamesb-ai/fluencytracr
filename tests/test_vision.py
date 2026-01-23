@@ -17,6 +17,11 @@ try:
 except ModuleNotFoundError as exc:
     raise unittest.SkipTest("pytest is required for vision tests") from exc
 
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError as exc:
+    raise unittest.SkipTest("OpenCV (cv2) is required for vision tests") from exc
+
 if ctypes.util.find_library("GL") is None:
     raise unittest.SkipTest("libGL is required for OpenCV tests")
 
