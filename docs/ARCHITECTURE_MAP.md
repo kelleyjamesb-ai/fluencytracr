@@ -60,6 +60,9 @@ LearnAIR_Engable_Tool/
 ├── examples/             # Example integrations
 │   └── vision_integration_example.py
 │
+├── schemas/              # FluencyTracr V1 JSON schemas
+│   └── ft_v1_*.schema.json
+│
 └── docs/                 # Documentation
     ├── SCOPE_GUARDRAILS.md
     └── ARCHITECTURE_MAP.md (this file)
