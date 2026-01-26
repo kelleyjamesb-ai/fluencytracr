@@ -52,9 +52,6 @@ export const enforceV1EvaluationDecision = (
   } else if (input.behavioral_classes_present < 2) {
     decision = "SUPPRESS";
     suppress_reason_code = "SUPP_LT_2_BEHAVIOR_CLASSES";
-  } else if (input.ghost_use_candidate && input.positive_evidence_present) {
-    decision = "SUPPRESS";
-    suppress_reason_code = "SUPP_INTERNAL_INVARIANT_FAIL";
   } else if (decision === "SUPPRESS") {
     suppress_reason_code = input.suppress_reason_code ?? DEFAULT_SUPPRESS_REASON;
   }

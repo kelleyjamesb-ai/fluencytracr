@@ -60,15 +60,15 @@ it("drops suppress reason codes on SURFACE decisions", () => {
   expect(result.suppress_reason_code).toBeUndefined();
 });
 
-it("fails closed when ghost-use is evaluated with positive evidence", () => {
+it("bypasses ghost-use evaluation when positive evidence is present", () => {
   const result = enforceV1EvaluationDecision({
     ...baseInput,
     ghost_use_candidate: true,
     positive_evidence_present: true,
     candidate_decision: "SURFACE"
   });
-  expect(result.decision).toBe("SUPPRESS");
-  expect(result.suppress_reason_code).toBe("SUPP_INTERNAL_INVARIANT_FAIL");
+  expect(result.decision).toBe("SURFACE");
+  expect(result.suppress_reason_code).toBeUndefined();
 });
 
 describe("TG3 property tests", () => {
@@ -106,15 +106,15 @@ describe("TG3 property tests", () => {
     }
   });
 
-  it("fails closed when ghost-use has positive evidence", () => {
+  it("bypasses ghost-use evaluation when positive evidence is present", () => {
     const result = enforceV1EvaluationDecision({
       ...baseInput,
       ghost_use_candidate: true,
       positive_evidence_present: true,
       candidate_decision: "SURFACE"
     });
-    expect(result.decision).toBe("SUPPRESS");
-    expect(result.suppress_reason_code).toBe("SUPP_INTERNAL_INVARIANT_FAIL");
+    expect(result.decision).toBe("SURFACE");
+    expect(result.suppress_reason_code).toBeUndefined();
   });
 
   it("fails closed under sparse data, noisy instrumentation, and partial adoption", () => {
