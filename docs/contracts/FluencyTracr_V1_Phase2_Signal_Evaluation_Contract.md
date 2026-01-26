@@ -180,3 +180,34 @@ Ambiguity suppression takes precedence over all other inference logic, including
 7) Apply confidence gating as defined in Phase 2.
 8) Emit a binary decision only: SURFACE or SUPPRESS.
 9) If SUPPRESS, emit exactly one suppress_reason_code; if SURFACE, emit no reason code.
+
+**Provenance**
+This section is added verbatim from Sentinel-approved V1 acceptance criteria and Astra clarification previously approved in-project. This content was not derived from existing in-repo text and is included to close explicit Phase 2 governance requirements.
+
+#### Decision Model
+
+* The evaluation decision model is binary: `SURFACE | SUPPRESS`
+* The default decision is **SUPPRESS**
+* In the absence of qualifying evidence under V1 gating rules, the system must remain suppressed
+
+#### Minimum Evidence Requirement
+
+* Signals require **≥ 2 independent behavioral classes** to qualify for surfacing consideration
+* This requirement is a **hard gate**
+* If fewer than two independent behavioral classes are present, the decision must remain `SUPPRESS`, regardless of other signals
+* This requirement does not relax ambiguity, windowing, or persistence constraints
+
+#### Ghost-Use Residual Policy
+
+* Ghost-use is evaluated as a **residual-only pattern**
+* Ghost-use evaluation is considered **only if**:
+
+  * AI exposure exists
+  * Work activity is observed
+  * **No positive evidence is present**
+  * Ambiguity does not dominate the evaluation window
+  * The pattern persists across required windows
+* The presence of **any positive evidence hard-bypasses ghost-use evaluation**
+* Ghost-use is not labeled as lack of fluency, resistance, or underperformance
+* Ghost-use is framed strictly as an **observability pattern**, not a human judgment
+* Positive evidence is defined by existing V1 positive evidence categories referenced elsewhere in governing specifications
