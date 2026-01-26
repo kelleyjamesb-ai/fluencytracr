@@ -126,6 +126,7 @@ describe("TG3 property tests", () => {
           behavioral_classes_present: 0,
           candidate_decision: "SURFACE" as const
         },
+        expectedDecision: "SUPPRESS",
         expectedReason: "SUPP_LT_2_BEHAVIOR_CLASSES"
       },
       {
@@ -134,6 +135,7 @@ describe("TG3 property tests", () => {
           ambiguity_flag: true,
           candidate_decision: "SURFACE" as const
         },
+        expectedDecision: "SUPPRESS",
         expectedReason: "SUPP_AMBIGUITY_PRESENT"
       },
       {
@@ -143,7 +145,19 @@ describe("TG3 property tests", () => {
           behavioral_classes_present: 1,
           candidate_decision: "SURFACE" as const
         },
+        expectedDecision: "SUPPRESS",
         expectedReason: "SUPP_WINDOW_LT_60D"
+      },
+      {
+        name: "eligible with positive evidence",
+        input: {
+          window_length_days: 60,
+          ambiguity_flag: false,
+          behavioral_classes_present: 2,
+          positive_evidence_present: true,
+          candidate_decision: "SURFACE" as const
+        },
+        expectedDecision: "SURFACE"
       }
     ];
 
@@ -152,8 +166,12 @@ describe("TG3 property tests", () => {
         ...baseInput,
         ...testCase.input
       });
-      expect(result.decision).toBe("SUPPRESS");
-      expect(result.suppress_reason_code).toBe(testCase.expectedReason);
+      expect(result.decision).toBe(testCase.expectedDecision);
+      if (testCase.expectedDecision === "SUPPRESS") {
+        expect(result.suppress_reason_code).toBe(testCase.expectedReason);
+      } else {
+        expect(result.suppress_reason_code).toBeUndefined();
+      }
     }
   });
 });
