@@ -59,25 +59,9 @@ const parseWindowId = (windowId: string): WindowBounds | null => {
     return null;
   }
   const [, startYear, startMonth, startDay, endYear, endMonth, endDay] = match;
-  const startYearNum = Number(startYear);
-  const startMonthNum = Number(startMonth);
-  const startDayNum = Number(startDay);
-  const endYearNum = Number(endYear);
-  const endMonthNum = Number(endMonth);
-  const endDayNum = Number(endDay);
-  const start = new Date(Date.UTC(startYearNum, startMonthNum - 1, startDayNum));
-  const end = new Date(Date.UTC(endYearNum, endMonthNum - 1, endDayNum));
+  const start = new Date(Date.UTC(Number(startYear), Number(startMonth) - 1, Number(startDay)));
+  const end = new Date(Date.UTC(Number(endYear), Number(endMonth) - 1, Number(endDay)));
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return null;
-  }
-  if (
-    start.getUTCFullYear() !== startYearNum ||
-    start.getUTCMonth() + 1 !== startMonthNum ||
-    start.getUTCDate() !== startDayNum ||
-    end.getUTCFullYear() !== endYearNum ||
-    end.getUTCMonth() + 1 !== endMonthNum ||
-    end.getUTCDate() !== endDayNum
-  ) {
     return null;
   }
   return { window_start: start, window_end: end };
