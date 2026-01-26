@@ -70,3 +70,90 @@ it("fails closed when ghost-use is evaluated with positive evidence", () => {
   expect(result.decision).toBe("SUPPRESS");
   expect(result.suppress_reason_code).toBe("SUPP_INTERNAL_INVARIANT_FAIL");
 });
+
+describe("TG3 property tests", () => {
+  it("always suppresses when ambiguity is present", () => {
+    const result = enforceV1EvaluationDecision({
+      ...baseInput,
+      ambiguity_flag: true,
+      candidate_decision: "SURFACE"
+    });
+    expect(result.decision).toBe("SUPPRESS");
+    expect(result.suppress_reason_code).toBe("SUPP_AMBIGUITY_PRESENT");
+  });
+
+  it("never surfaces 30-59 day windows", () => {
+    for (let days = 30; days <= 59; days += 1) {
+      const result = enforceV1EvaluationDecision({
+        ...baseInput,
+        window_length_days: days,
+        candidate_decision: "SURFACE"
+      });
+      expect(result.decision).toBe("SUPPRESS");
+      expect(result.suppress_reason_code).toBe("SUPP_WINDOW_LT_60D");
+    }
+  });
+
+  it("never surfaces when fewer than two behavioral classes are present", () => {
+    for (const classes of [0, 1]) {
+      const result = enforceV1EvaluationDecision({
+        ...baseInput,
+        behavioral_classes_present: classes,
+        candidate_decision: "SURFACE"
+      });
+      expect(result.decision).toBe("SUPPRESS");
+      expect(result.suppress_reason_code).toBe("SUPP_LT_2_BEHAVIOR_CLASSES");
+    }
+  });
+
+  it("fails closed when ghost-use has positive evidence", () => {
+    const result = enforceV1EvaluationDecision({
+      ...baseInput,
+      ghost_use_candidate: true,
+      positive_evidence_present: true,
+      candidate_decision: "SURFACE"
+    });
+    expect(result.decision).toBe("SUPPRESS");
+    expect(result.suppress_reason_code).toBe("SUPP_INTERNAL_INVARIANT_FAIL");
+  });
+
+  it("fails closed under sparse data, noisy instrumentation, and partial adoption", () => {
+    const cases = [
+      {
+        name: "sparse data",
+        input: {
+          window_length_days: 60,
+          behavioral_classes_present: 0,
+          candidate_decision: "SURFACE" as const
+        },
+        expectedReason: "SUPP_LT_2_BEHAVIOR_CLASSES"
+      },
+      {
+        name: "noisy instrumentation",
+        input: {
+          ambiguity_flag: true,
+          candidate_decision: "SURFACE" as const
+        },
+        expectedReason: "SUPP_AMBIGUITY_PRESENT"
+      },
+      {
+        name: "partial adoption",
+        input: {
+          window_length_days: 45,
+          behavioral_classes_present: 1,
+          candidate_decision: "SURFACE" as const
+        },
+        expectedReason: "SUPP_WINDOW_LT_60D"
+      }
+    ];
+
+    for (const testCase of cases) {
+      const result = enforceV1EvaluationDecision({
+        ...baseInput,
+        ...testCase.input
+      });
+      expect(result.decision).toBe("SUPPRESS");
+      expect(result.suppress_reason_code).toBe(testCase.expectedReason);
+    }
+  });
+});
