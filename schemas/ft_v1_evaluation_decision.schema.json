@@ -35,6 +35,10 @@
         "SUPPRESS"
       ]
     },
+    "renderable": {
+      "type": "boolean",
+      "description": "Whether this evaluation decision meets the minimum thresholds for UI rendering"
+    },
     "suppress_reason_code": {
       "type": "string",
       "enum": [
@@ -56,7 +60,8 @@
     "function_id",
     "role_class",
     "window_id",
-    "decision"
+    "decision",
+    "renderable"
   ],
   "allOf": [
     {
