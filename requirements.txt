@@ -4,6 +4,8 @@ pydantic-settings
 python-dotenv
 pytest
 requests
+opencv-python>=4.8.0
+numpy>=1.24.0
 
 # MCP (Model Context Protocol) Integration
 # Install with: pip install 'mcp[cli]'

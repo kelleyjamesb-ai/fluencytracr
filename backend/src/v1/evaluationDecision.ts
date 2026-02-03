@@ -6,6 +6,7 @@ export type EvaluationDecision = {
   role_class: string;
   window_id: string;
   decision: "SURFACE" | "SUPPRESS";
+  renderable: boolean;
   suppress_reason_code?: SuppressReasonCode;
 };
 
@@ -60,6 +61,8 @@ export const enforceV1EvaluationDecision = (
     suppress_reason_code = "SUPP_INTERNAL_INVARIANT_FAIL";
   }
 
+  const renderable = input.window_length_days >= 60 && decision === "SURFACE";
+
   return {
     schema_version: input.schema_version,
     artifact_name: input.artifact_name,
@@ -68,6 +71,7 @@ export const enforceV1EvaluationDecision = (
     role_class: input.role_class,
     window_id: input.window_id,
     decision,
+    renderable,
     ...(decision === "SUPPRESS" ? { suppress_reason_code } : {})
   };
 };

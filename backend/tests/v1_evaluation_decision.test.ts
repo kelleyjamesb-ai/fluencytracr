@@ -71,6 +71,29 @@ it("bypasses ghost-use evaluation when positive evidence is present", () => {
   expect(result.suppress_reason_code).toBeUndefined();
 });
 
+it("gates renderability when window_length_days < 60", () => {
+  const result = enforceV1EvaluationDecision({
+    ...baseInput,
+    window_length_days: 45,
+    candidate_decision: "SURFACE"
+  });
+  expect(result.renderable).toBe(false);
+  expect(result.decision).toBe("SUPPRESS");
+  expect(result.suppress_reason_code).toBe("SUPP_WINDOW_LT_60D");
+});
+
+it("sets renderable to true when window >= 60 and decision is SURFACE", () => {
+  const result = enforceV1EvaluationDecision({
+    ...baseInput,
+    window_length_days: 60,
+    behavioral_classes_present: 3,
+    candidate_decision: "SURFACE"
+  });
+  expect(result.renderable).toBe(true);
+  expect(result.decision).toBe("SURFACE");
+  expect(result.suppress_reason_code).toBeUndefined();
+});
+
 describe("TG3 property tests", () => {
   it("always suppresses when ambiguity is present", () => {
     const result = enforceV1EvaluationDecision({
