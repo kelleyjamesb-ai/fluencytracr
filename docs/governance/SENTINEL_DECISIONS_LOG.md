@@ -1,2 +1,5 @@
-TG4-B Executive Decision Boundary approved: PASS
-Reference: docs/governance/tg4/TG4B_Executive_Decisions_Boundary.md
+
+## TG4A_Executive_Observability_Boundary
+
+TG4-A Executive Observability Boundary submitted and approved: PASS
+Reference: docs/governance/tg4/TG4A_Executive_Observability_Boundary.md
