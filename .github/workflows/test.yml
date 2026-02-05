@@ -25,6 +25,8 @@ jobs:
 
     - name: Run V1 governance gates
       run: python scripts/ci_v1_governance_gates.py
+    - name: Run TG5 forbidden key gates
+      run: python scripts/ci_tg5_forbidden_schema_keys.py
         
     - name: Run Tests
       run: |
