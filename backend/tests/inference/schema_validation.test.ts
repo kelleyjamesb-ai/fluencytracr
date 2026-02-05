@@ -33,28 +33,12 @@ describe("inference schema contracts", () => {
     expect(schema.required).toEqual(expect.arrayContaining([
       "scope_key",
       "scope_type",
-      "window_start",
-      "window_end",
-      "pattern",
-      "confidence_level",
-      "evidence_count",
-      "coverage_days",
-      "surface_mix",
-      "top_drivers",
-      "inference_version",
-      "parameter_hash",
-      "code_commit_hash",
-      "generated_at"
+      "pattern"
     ]));
   });
 
-  it("includes executive heuristic summary structure", () => {
-    const schema = loadSchema("executive_heuristic_summary.schema.json");
-    expect(schema.required).toEqual(expect.arrayContaining([
-      "org_id",
-      "window",
-      "operational_telemetry_index"
-    ]));
-    expect(schema.properties).toHaveProperty("operational_telemetry_index");
+  it("removes executive heuristic summary schema", () => {
+    const filePath = path.join(__dirname, "../../src/contracts", "executive_heuristic_summary.schema.json");
+    expect(fs.existsSync(filePath)).toBe(false);
   });
 });

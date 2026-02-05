@@ -1,12 +1,12 @@
-import { store } from "../../src/store";
-import { runInference } from "../../src/inference/run_inference";
+import { runInference } from "../src/inference/run_inference";
+import { store } from "../src/store";
 
-describe("runInference", () => {
+describe("window isolation", () => {
   beforeEach(() => {
     store.reset();
   });
 
-  it("clears inference records and does not accumulate across runs", () => {
+  it("does not accumulate across consecutive runs", () => {
     store.patternInferenceRecords.push({
       scope_key: "old",
       scope_type: "WORKFLOW_RISK",
@@ -18,7 +18,7 @@ describe("runInference", () => {
     runInference("60d");
     expect(store.patternInferenceRecords).toHaveLength(0);
 
-    runInference("60d");
+    runInference("30d");
     expect(store.patternInferenceRecords).toHaveLength(0);
   });
 });

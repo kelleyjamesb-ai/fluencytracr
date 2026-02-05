@@ -7,7 +7,31 @@ export const NON_COLLECTABLE_FIELDS = [
   "raw_logs"
 ] as const;
 
-export const FORBIDDEN_FIELDS = NON_COLLECTABLE_FIELDS;
+export const GOVERNANCE_FORBIDDEN_FIELDS = [
+  "rank",
+  "index",
+  "position",
+  "percentile",
+  "count",
+  "sum",
+  "avg",
+  "average",
+  "total",
+  "rate",
+  "ratio",
+  "score",
+  "points",
+  "window_start",
+  "window_end",
+  "previous_window",
+  "trend",
+  "delta",
+  "change",
+  "top_k",
+  "histogram",
+  "distribution",
+  "leaderboard"
+] as const;
 
 export const PERSON_IDENTIFIER_FIELDS = [
   "user_id",
@@ -24,8 +48,17 @@ export const PERSON_IDENTIFIER_FIELDS = [
   "username"
 ] as const;
 
+export const FORBIDDEN_FIELDS = [
+  ...NON_COLLECTABLE_FIELDS,
+  ...GOVERNANCE_FORBIDDEN_FIELDS,
+  ...PERSON_IDENTIFIER_FIELDS
+] as const;
+
 export function containsForbiddenFields(payload: unknown): boolean {
   if (!payload || typeof payload !== "object") return false;
+  const forbidden = new Set(
+    (FORBIDDEN_FIELDS as readonly string[]).map((field) => field.toLowerCase())
+  );
   const stack: unknown[] = [payload];
 
   while (stack.length) {
@@ -33,7 +66,7 @@ export function containsForbiddenFields(payload: unknown): boolean {
     if (!cur || typeof cur !== "object") continue;
 
     for (const [k, v] of Object.entries(cur as Record<string, unknown>)) {
-      if ((NON_COLLECTABLE_FIELDS as readonly string[]).includes(k)) return true;
+      if (forbidden.has(k.toLowerCase())) return true;
       if (v && typeof v === "object") stack.push(v);
     }
   }
