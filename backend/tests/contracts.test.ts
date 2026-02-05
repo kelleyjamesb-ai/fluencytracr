@@ -1,7 +1,6 @@
-import request from "supertest";
-
 import { app } from "../src/app";
 import { store } from "../src/store";
+import { requestApp } from "./test_helpers";
 
 const schemaHeaders = {
   "x-role": "ADMIN",
@@ -38,11 +37,13 @@ it("rejects forbidden fields nested in payload", async () => {
       }
     ]
   };
-  const response = await request(app)
-    .post("/api/events")
-    .set(schemaHeaders)
-    .send(payload);
-  const body = response.body;
+  const response = await requestApp(app, {
+    method: "POST",
+    path: "/api/events",
+    headers: schemaHeaders,
+    body: payload
+  });
+  const body = response.body as { error?: string; field_path?: string; rule?: string };
 
   expect(response.status).toBe(400);
   expect(body.error).toBe("Forbidden field");
@@ -55,11 +56,13 @@ it("rejects forbidden identifiers in payload", async () => {
     email: "user@example.com",
     ...validEventPayload
   };
-  const response = await request(app)
-    .post("/api/events")
-    .set(schemaHeaders)
-    .send(payload);
-  const body = response.body;
+  const response = await requestApp(app, {
+    method: "POST",
+    path: "/api/events",
+    headers: schemaHeaders,
+    body: payload
+  });
+  const body = response.body as { error?: string; field_path?: string };
 
   expect(response.status).toBe(400);
   expect(body.error).toBe("Forbidden field");
@@ -67,17 +70,21 @@ it("rejects forbidden identifiers in payload", async () => {
 });
 
 it("rejects missing or invalid schema version headers", async () => {
-  const missingResponse = await request(app)
-    .post("/api/events")
-    .set({ "x-role": "ADMIN", "Content-Type": "application/json" })
-    .send(validEventPayload);
-  const missingBody = missingResponse.body;
+  const missingResponse = await requestApp(app, {
+    method: "POST",
+    path: "/api/events",
+    headers: { "x-role": "ADMIN", "Content-Type": "application/json" },
+    body: validEventPayload
+  });
+  const missingBody = missingResponse.body as { error?: string };
 
-  const invalidResponse = await request(app)
-    .post("/api/events")
-    .set({ ...schemaHeaders, "X-FluencyTracr-Schema-Version": "0.2" })
-    .send(validEventPayload);
-  const invalidBody = invalidResponse.body;
+  const invalidResponse = await requestApp(app, {
+    method: "POST",
+    path: "/api/events",
+    headers: { ...schemaHeaders, "X-FluencyTracr-Schema-Version": "0.2" },
+    body: validEventPayload
+  });
+  const invalidBody = invalidResponse.body as { expected?: string[] };
 
   expect(missingResponse.status).toBe(400);
   expect(missingBody.error).toBe("Invalid schema version");
@@ -86,17 +93,20 @@ it("rejects missing or invalid schema version headers", async () => {
 });
 
 it("accepts valid payloads with schema version", async () => {
-  const response = await request(app)
-    .post("/api/events")
-    .set(schemaHeaders)
-    .send(validEventPayload);
-  const body = response.body;
+  const response = await requestApp(app, {
+    method: "POST",
+    path: "/api/events",
+    headers: schemaHeaders,
+    body: validEventPayload
+  });
+  const body = response.body as { status?: string; event_ids?: unknown[] };
 
   expect(response.status).toBe(200);
-  expect(body.ingested).toBe(1);
+  expect(body.status).toBe("accepted");
+  expect(Array.isArray(body.event_ids)).toBe(true);
 });
 
-it("quarantines connector events with unknown event types", async () => {
+it("suppresses connector imports under TG5", async () => {
   const payload = {
     vendor: "example-chat-vendor",
     connector_name: "chat-tool-connector",
@@ -112,55 +122,12 @@ it("quarantines connector events with unknown event types", async () => {
     ]
   };
 
-  const response = await request(app)
-    .post("/orgs/org-1/behavior/connector/import")
-    .set(schemaHeaders)
-    .send(payload);
-  const body = response.body;
+  const response = await requestApp(app, {
+    method: "POST",
+    path: "/orgs/org-1/behavior/connector/import",
+    headers: schemaHeaders,
+    body: payload
+  });
 
-  expect(response.status).toBe(202);
-  expect(body.status).toBe("quarantined");
-  expect(body.quarantined_count).toBe(1);
-  expect(body.unknown_event_types).toEqual(["chat.unknown"]);
-
-  const quarantines = Array.from(store.connectorEventQuarantine.values());
-  expect(quarantines.length).toBe(1);
-  expect(quarantines[0].unknown_event_types).toEqual(["chat.unknown"]);
-  expect(quarantines[0].sample_events[0].event_type).toBe("chat.unknown");
-});
-
-it("quarantines connector events that fail mapping validation", async () => {
-  const payload = {
-    vendor: "example-chat-vendor",
-    connector_name: "chat-tool-connector",
-    org_id: "org-1",
-    group_id: "org-1",
-    group_type: "org",
-    bucket_start: "2024-01-01",
-    events: [
-      {
-        event_type: "chat.action.executed",
-        timestamp: "2024-01-01T00:00:00.000Z",
-        action: {
-          type: "execute_external",
-          side_effect_occurred: false
-        }
-      }
-    ]
-  };
-
-  const response = await request(app)
-    .post("/orgs/org-1/behavior/connector/import")
-    .set(schemaHeaders)
-    .send(payload);
-  const body = response.body;
-
-  expect(response.status).toBe(202);
-  expect(body.status).toBe("quarantined");
-  expect(body.invalid_event_types).toEqual(["chat.action.executed"]);
-
-  const quarantines = Array.from(store.connectorEventQuarantine.values());
-  expect(quarantines.length).toBe(1);
-  expect(quarantines[0].invalid_event_types).toEqual(["chat.action.executed"]);
-  expect(quarantines[0].invalid_sample_events?.[0].reason).toBe("missing_external_side_effect");
+  expect(response.status).toBe(404);
 });

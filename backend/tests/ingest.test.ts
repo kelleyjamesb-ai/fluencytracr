@@ -17,6 +17,15 @@ it("detects forbidden fields deep in payload", () => {
   expect(containsForbiddenFields(payload)).toBe(true);
 });
 
+it("detects governance forbidden keys", () => {
+  const payload = {
+    metrics: {
+      count: 3
+    }
+  };
+  expect(containsForbiddenFields(payload)).toBe(true);
+});
+
 it("allows payloads without forbidden fields", () => {
   const payload = {
     metadata: {

@@ -110,6 +110,68 @@ export const FluencyPatternSchema = z.object({
 
 export type FluencyPattern = z.infer<typeof FluencyPatternSchema>;
 
+// -----------------------------
+// Phase 2: Human Orientation Signals (OSS)
+// Orientation only. No evaluation, narrative, or progress inference.
+// -----------------------------
+
+export const OrientationObservationDetectedStateSchema = z.enum([
+  "DETECTED",
+  "NONE",
+  "SUPPRESSED"
+]);
+export type OrientationObservationDetectedState = z.infer<
+  typeof OrientationObservationDetectedStateSchema
+>;
+
+export const OrientationSuppressionStateSchema = z.enum([
+  "IN_EFFECT",
+  "SUPPRESSED"
+]);
+export type OrientationSuppressionState = z.infer<
+  typeof OrientationSuppressionStateSchema
+>;
+
+export const OrientationObservationDetectedSchema = z
+  .object({
+    state: OrientationObservationDetectedStateSchema,
+    /**
+     * Session Scope Note:
+     * “Session” refers to a bounded, transient interaction context and carries no temporal continuity across sessions.
+     */
+    session_scope_note: z.string().min(1),
+    does_not_mean: z.array(z.string().min(1)).min(1)
+  })
+  .strict();
+
+export type OrientationObservationDetected = z.infer<
+  typeof OrientationObservationDetectedSchema
+>;
+
+export const OrientationSuppressionInEffectSchema = z
+  .object({
+    state: OrientationSuppressionStateSchema,
+    does_not_mean: z.array(z.string().min(1)).min(1)
+  })
+  .strict();
+
+export type OrientationSuppressionInEffect = z.infer<
+  typeof OrientationSuppressionInEffectSchema
+>;
+
+export const OrientationSignalResponseSchema = z
+  .object({
+    org_id: z.string().min(1),
+    observation_detected: OrientationObservationDetectedSchema,
+    suppression_in_effect: OrientationSuppressionInEffectSchema,
+    generated_at: z.string().min(1)
+  })
+  .strict();
+
+export type OrientationSignalResponse = z.infer<
+  typeof OrientationSignalResponseSchema
+>;
+
 export const DecisionTypeSchema = z.enum(["process_change", "guidance", "enablement", "pilot", "pause"]);
 export const DecisionScopeSchema = z.enum(["org", "function", "workflow"]);
 export const LoggedByRoleSchema = z.enum(["executive", "exec_staff"]);

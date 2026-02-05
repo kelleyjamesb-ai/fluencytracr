@@ -62,41 +62,27 @@ def main() -> None:
         )
 
     decision_schema = _load_json(EVAL_DECISION_SCHEMA)
-    reason_codes = set(
+    decision_enum = (
         decision_schema.get("properties", {})
-        .get("suppress_reason_code", {})
+        .get("decision", {})
         .get("enum", [])
     )
-    if not reason_codes:
-        _fail("no suppress_reason_code enum found in evaluation decision schema")
+    if decision_enum != ["SURFACE"]:
+        _fail("evaluation decision schema must allow only SURFACE decisions")
 
-    suppress_tokens = set()
-    for path in ROOT.rglob("*"):
-        if path.is_dir():
-            continue
-        if any(part in path.parts for part in (".git", "node_modules", ".venv", "__pycache__")):
-            continue
-        if path.suffix not in {".ts", ".js", ".py", ".md", ".json"}:
-            continue
-        try:
-            content = path.read_text(encoding="utf-8")
-        except Exception:
-            continue
-        suppress_tokens.update(re.findall(r"SUPP_[A-Z0-9_]+", content))
+    if "renderable" in decision_schema.get("properties", {}):
+        _fail("evaluation decision schema must not include renderable")
 
-    if not suppress_tokens.issubset(reason_codes):
-        unknown = sorted(suppress_tokens.difference(reason_codes))
-        _fail(f"unknown suppress reason codes detected: {unknown}")
+    if "suppress_reason_code" in decision_schema.get("properties", {}):
+        _fail("evaluation decision schema must not include suppress_reason_code")
 
     code_text = _read_text(EVAL_DECISION_CODE)
     if "FT_V1_2026_01" not in code_text or "FT_V1_EVALUATION_DECISION" not in code_text:
         _fail("evaluationDecision.ts does not include required schema_version/artifact_name")
 
     test_text = _read_text(DEFAULT_SUPPRESS_TEST)
-    if "defaults to SUPPRESS" not in test_text:
-        _fail("default SUPPRESS test missing in v1_evaluation_decision.test.ts")
-    if "SUPP_NO_QUALIFYING_EVIDENCE" not in test_text:
-        _fail("default SUPPRESS reason code assertion missing in v1_evaluation_decision.test.ts")
+    if "suppresses ambiguous inputs" not in test_text:
+        _fail("ambiguity suppression test missing in v1_evaluation_decision.test.ts")
 
 
 if __name__ == "__main__":

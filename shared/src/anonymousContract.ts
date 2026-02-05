@@ -1,23 +1,12 @@
-export const FORBIDDEN_FIELDS = [
-  "user_id",
-  "email",
-  "name",
-  "employee_id",
-  "device_id",
-  "session_id",
-  "prompt",
-  "prompt_text",
-  "output",
-  "output_text",
-  "message_text",
-  "file_name",
-  "file_contents",
-  "transcript"
-] as const;
+import { FORBIDDEN_FIELDS as SHARED_FORBIDDEN_FIELDS } from "./privacy";
+
+export const FORBIDDEN_FIELDS = SHARED_FORBIDDEN_FIELDS;
 
 export type ForbiddenField = (typeof FORBIDDEN_FIELDS)[number];
 
-const forbiddenSet = new Set<string>(FORBIDDEN_FIELDS);
+const forbiddenSet = new Set<string>(
+  (FORBIDDEN_FIELDS as readonly string[]).map((field) => field.toLowerCase())
+);
 
 export const containsForbiddenFields = (input: unknown): boolean => {
   if (!input) {
@@ -28,7 +17,7 @@ export const containsForbiddenFields = (input: unknown): boolean => {
   }
   if (typeof input === "object") {
     for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-      if (forbiddenSet.has(key)) {
+      if (forbiddenSet.has(key.toLowerCase())) {
         return true;
       }
       if (containsForbiddenFields(value)) {

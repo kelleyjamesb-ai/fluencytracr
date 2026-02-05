@@ -30,27 +30,7 @@
     },
     "decision": {
       "type": "string",
-      "enum": [
-        "SURFACE",
-        "SUPPRESS"
-      ]
-    },
-    "renderable": {
-      "type": "boolean",
-      "description": "Whether this evaluation decision meets the minimum thresholds for UI rendering"
-    },
-    "suppress_reason_code": {
-      "type": "string",
-      "enum": [
-        "SUPP_INTERNAL_INVARIANT_FAIL",
-        "SUPP_AMBIGUITY_PRESENT",
-        "SUPP_SMALL_TEAM_LT_5",
-        "SUPP_WINDOW_LT_60D",
-        "SUPP_NOT_ADJACENT_WINDOWS",
-        "SUPP_LT_2_BEHAVIOR_CLASSES",
-        "SUPP_NO_QUALIFYING_EVIDENCE",
-        "SUPP_SPARSE_DATA"
-      ]
+      "enum": ["SURFACE"]
     }
   },
   "required": [
@@ -60,33 +40,6 @@
     "function_id",
     "role_class",
     "window_id",
-    "decision",
-    "renderable"
-  ],
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "decision": {
-            "const": "SUPPRESS"
-          }
-        },
-        "required": [
-          "decision"
-        ]
-      },
-      "then": {
-        "required": [
-          "suppress_reason_code"
-        ]
-      },
-      "else": {
-        "not": {
-          "required": [
-            "suppress_reason_code"
-          ]
-        }
-      }
-    }
+    "decision"
   ]
 }

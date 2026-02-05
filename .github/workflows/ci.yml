@@ -22,6 +22,8 @@ jobs:
           pip install -r requirements.txt
       - name: Run V1 governance gates
         run: python scripts/ci_v1_governance_gates.py
+      - name: Run TG5 forbidden key gates
+        run: python scripts/ci_tg5_forbidden_schema_keys.py
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test_*.py"
   node-tests:

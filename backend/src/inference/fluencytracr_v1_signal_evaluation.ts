@@ -1,35 +1,16 @@
 import {
   FluencyTracrV1EventSchema,
   FluencyTracrV1Event,
-  FluencyTracrV1EvaluationDecision,
-  FluencyTracrV1SuppressReasonCode,
-  FluencyTracrV1EventName
+  FluencyTracrV1EvaluationDecision
 } from "@learnaire/shared";
 
-const MIN_COHORT_SIZE = 5;
-const MIN_SURFACING_WINDOW_DAYS = 60;
+import { enforceV1EvaluationDecision } from "../v1/evaluationDecision";
 
-const OPERATIONAL_EVENT_NAMES = new Set<FluencyTracrV1EventName>([
-  "FT_V1_DISPOSITION_OBSERVED",
-  "FT_V1_ITERATION_DEPTH_OBSERVED",
-  "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
-  "FT_V1_RECOVERY_OBSERVED",
-  "FT_V1_ABANDONMENT_OBSERVED"
-]);
-
-type CohortKey = {
+type WindowedCohortKey = {
   org_id: string;
   function_id: string;
   role_class: string;
-};
-
-type WindowedCohortKey = CohortKey & {
   window_id: string;
-};
-
-type WindowBounds = {
-  window_start: Date;
-  window_end: Date;
 };
 
 type WindowEvaluationContext = {
@@ -37,8 +18,6 @@ type WindowEvaluationContext = {
   events: FluencyTracrV1Event[];
   schema_valid: boolean;
   ambiguity_present: boolean;
-  cohort_size: number | null;
-  window_bounds: WindowBounds | null;
 };
 
 export const buildCohortWindowKey = (key: WindowedCohortKey): string => {
@@ -53,131 +32,25 @@ export const parseCohortWindowKey = (value: string): WindowedCohortKey | null =>
   return { org_id, function_id, role_class, window_id };
 };
 
-const parseWindowId = (windowId: string): WindowBounds | null => {
-  const match = windowId.match(/^(\d{4})-(\d{2})-(\d{2})__(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) {
+const buildDecision = (context: WindowEvaluationContext): FluencyTracrV1EvaluationDecision | null => {
+  if (!context.schema_valid) {
     return null;
   }
-  const [, startYear, startMonth, startDay, endYear, endMonth, endDay] = match;
-  const start = new Date(Date.UTC(Number(startYear), Number(startMonth) - 1, Number(startDay)));
-  const end = new Date(Date.UTC(Number(endYear), Number(endMonth) - 1, Number(endDay)));
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return null;
-  }
-  return { window_start: start, window_end: end };
-};
 
-const windowLengthDays = (bounds: WindowBounds): number => {
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const diffMs = bounds.window_end.getTime() - bounds.window_start.getTime();
-  if (diffMs < 0) {
-    return 0;
-  }
-  return Math.floor(diffMs / msPerDay) + 1;
-};
-
-const isAdjacentWindow = (previous: WindowBounds, current: WindowBounds): boolean => {
-  const msPerDay = 1000 * 60 * 60 * 24;
-  return previous.window_end.getTime() + msPerDay === current.window_start.getTime();
-};
-
-const deriveBehaviorClasses = (events: FluencyTracrV1Event[]): Set<FluencyTracrV1EventName> => {
-  return new Set(events.map((event) => event.event_name));
-};
-
-const hasOperationalEvidence = (events: FluencyTracrV1Event[]): boolean => {
-  return events.some((event) => OPERATIONAL_EVENT_NAMES.has(event.event_name));
-};
-
-const failClosed = (
-  context: WindowEvaluationContext
-): FluencyTracrV1EvaluationDecision => {
-  return {
+  return enforceV1EvaluationDecision({
     schema_version: "FT_V1_2026_01",
+    artifact_name: "FT_V1_EVALUATION_DECISION",
     org_id: context.cohort.org_id,
     function_id: context.cohort.function_id,
     role_class: context.cohort.role_class,
     window_id: context.cohort.window_id,
-    decision: "SUPPRESS",
-    suppress_reason_code: "SUPP_INTERNAL_INVARIANT_FAIL"
-  };
-};
-
-const suppressWith = (
-  context: WindowEvaluationContext,
-  reason: FluencyTracrV1SuppressReasonCode
-): FluencyTracrV1EvaluationDecision => {
-  return {
-    schema_version: "FT_V1_2026_01",
-    org_id: context.cohort.org_id,
-    function_id: context.cohort.function_id,
-    role_class: context.cohort.role_class,
-    window_id: context.cohort.window_id,
-    decision: "SUPPRESS",
-    suppress_reason_code: reason
-  };
-};
-
-const surface = (context: WindowEvaluationContext): FluencyTracrV1EvaluationDecision => {
-  return {
-    schema_version: "FT_V1_2026_01",
-    org_id: context.cohort.org_id,
-    function_id: context.cohort.function_id,
-    role_class: context.cohort.role_class,
-    window_id: context.cohort.window_id,
-    decision: "SURFACE"
-  };
-};
-
-const evaluateWindow = (
-  context: WindowEvaluationContext,
-  previous: WindowEvaluationContext | null,
-  previousQualifying: boolean
-): FluencyTracrV1EvaluationDecision => {
-  if (!context.schema_valid || !context.window_bounds || context.cohort_size === null) {
-    return failClosed(context);
-  }
-  if (context.ambiguity_present) {
-    return suppressWith(context, "SUPP_AMBIGUITY_PRESENT");
-  }
-  if (context.cohort_size < MIN_COHORT_SIZE) {
-    return suppressWith(context, "SUPP_SMALL_TEAM_LT_5");
-  }
-  const windowDays = windowLengthDays(context.window_bounds);
-  if (windowDays < MIN_SURFACING_WINDOW_DAYS) {
-    return suppressWith(context, "SUPP_WINDOW_LT_60D");
-  }
-  if (!previous || !previous.window_bounds || !previousQualifying) {
-    return suppressWith(context, "SUPP_NOT_ADJACENT_WINDOWS");
-  }
-  if (!isAdjacentWindow(previous.window_bounds, context.window_bounds)) {
-    return suppressWith(context, "SUPP_NOT_ADJACENT_WINDOWS");
-  }
-
-  const previousClasses = deriveBehaviorClasses(previous.events);
-  const currentClasses = deriveBehaviorClasses(context.events);
-  const combinedClasses = new Set([...previousClasses, ...currentClasses]);
-  if (combinedClasses.size < 2) {
-    return suppressWith(context, "SUPP_LT_2_BEHAVIOR_CLASSES");
-  }
-
-  if (context.events.length === 0 || previous.events.length === 0) {
-    return suppressWith(context, "SUPP_SPARSE_DATA");
-  }
-
-  const currentOperational = hasOperationalEvidence(context.events);
-  const previousOperational = hasOperationalEvidence(previous.events);
-  if (!currentOperational || !previousOperational) {
-    return suppressWith(context, "SUPP_NO_QUALIFYING_EVIDENCE");
-  }
-
-  // Gate 8: Ghost-use residual handling (never causal, never overrides ambiguity).
-  return surface(context);
+    ambiguity_flag: context.ambiguity_present,
+    evidence_present: context.events.length > 0
+  });
 };
 
 export const evaluateV1SignalDecisions = (
-  rawEvents: unknown[],
-  cohortSizesByWindow: Map<string, number>
+  rawEvents: unknown[]
 ): FluencyTracrV1EvaluationDecision[] => {
   const contexts = new Map<string, WindowEvaluationContext>();
 
@@ -187,14 +60,11 @@ export const evaluateV1SignalDecisions = (
     if (existing) {
       return existing;
     }
-    const window_bounds = parseWindowId(key.window_id);
     const context: WindowEvaluationContext = {
       cohort: key,
       events: [],
       schema_valid: true,
-      ambiguity_present: false,
-      cohort_size: null,
-      window_bounds
+      ambiguity_present: false
     };
     contexts.set(mapKey, context);
     return context;
@@ -237,61 +107,12 @@ export const evaluateV1SignalDecisions = (
     }
   });
 
-  contexts.forEach((context) => {
-    const key = buildCohortWindowKey(context.cohort);
-    const size = cohortSizesByWindow.get(key);
-    if (typeof size === "number") {
-      context.cohort_size = size;
-    }
-  });
-
-  cohortSizesByWindow.forEach((cohort_size, key) => {
-    const parsed = parseCohortWindowKey(key);
-    if (!parsed) {
-      return;
-    }
-    const context = ensureContext(parsed);
-    context.cohort_size = cohort_size;
-  });
-
-  const byCohort = new Map<string, WindowEvaluationContext[]>();
-  contexts.forEach((context) => {
-    const cohortKey = [context.cohort.org_id, context.cohort.function_id, context.cohort.role_class].join(
-      "::"
-    );
-    const list = byCohort.get(cohortKey) ?? [];
-    list.push(context);
-    byCohort.set(cohortKey, list);
-  });
-
   const decisions: FluencyTracrV1EvaluationDecision[] = [];
-
-  byCohort.forEach((cohortContexts) => {
-    const sorted = [...cohortContexts].sort((a, b) => {
-      const aStart = a.window_bounds?.window_start.getTime() ?? 0;
-      const bStart = b.window_bounds?.window_start.getTime() ?? 0;
-      return aStart - bStart;
-    });
-
-    const qualifyingFlags = new Map<string, boolean>();
-    sorted.forEach((context) => {
-      const qualifies =
-        context.schema_valid &&
-        !context.ambiguity_present &&
-        context.cohort_size !== null &&
-        context.cohort_size >= MIN_COHORT_SIZE &&
-        context.window_bounds !== null &&
-        windowLengthDays(context.window_bounds) >= MIN_SURFACING_WINDOW_DAYS;
-      qualifyingFlags.set(buildCohortWindowKey(context.cohort), qualifies);
-    });
-
-    sorted.forEach((context, index) => {
-      const previous = index > 0 ? sorted[index - 1] : null;
-      const previousQualifying = previous
-        ? qualifyingFlags.get(buildCohortWindowKey(previous.cohort)) ?? false
-        : false;
-      decisions.push(evaluateWindow(context, previous, previousQualifying));
-    });
+  contexts.forEach((context) => {
+    const decision = buildDecision(context);
+    if (decision) {
+      decisions.push(decision);
+    }
   });
 
   return decisions;

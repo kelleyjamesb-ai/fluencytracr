@@ -1,8 +1,6 @@
-import { NON_COLLECTABLE_FIELDS, PERSON_IDENTIFIER_FIELDS } from "@learnaire/shared";
+import { FORBIDDEN_FIELDS } from "@learnaire/shared";
 
-export const FORBIDDEN_KEYS: string[] = Array.from(
-  new Set([...NON_COLLECTABLE_FIELDS, ...PERSON_IDENTIFIER_FIELDS])
-);
+export const FORBIDDEN_KEYS: string[] = Array.from(new Set([...FORBIDDEN_FIELDS]));
 
 const FORBIDDEN_KEY_SET = new Set(FORBIDDEN_KEYS.map((key) => key.toLowerCase()));
 
