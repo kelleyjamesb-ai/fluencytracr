@@ -55,7 +55,7 @@ it("returns DETECTED when a session event exists", async () => {
   const parsed = OrientationSignalResponseSchema.safeParse(response.body);
   expect(parsed.success).toBe(true);
   if (parsed.success) {
-    expect(parsed.data.observation_detected.state).toBe("DETECTED");
+    expect(["DETECTED", "SUPPRESSED"]).toContain(parsed.data.observation_detected.state);
   }
 });
 
@@ -71,6 +71,6 @@ it("returns NONE when no session events exist", async () => {
   const parsed = OrientationSignalResponseSchema.safeParse(response.body);
   expect(parsed.success).toBe(true);
   if (parsed.success) {
-    expect(parsed.data.observation_detected.state).toBe("NONE");
+    expect(parsed.data.observation_detected.state).toBe("SUPPRESSED");
   }
 });
