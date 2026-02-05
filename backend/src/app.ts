@@ -18,7 +18,8 @@ import {
   FluencyScopeSchema,
   FluencyWindowSchema,
   DecisionLedgerCreateSchema,
-  DecisionLedgerEvaluationInputSchema
+  DecisionLedgerEvaluationInputSchema,
+  OrientationSignalResponseSchema
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
@@ -65,6 +66,8 @@ import { Phase1IngestPayloadSchema } from "./phase1/contract";
 import { appendPhase1Events } from "./phase1/eventStore";
 import { evaluateDecision } from "./phase1/evaluateDecision";
 import { surfaceDecision } from "./phase1/surfaceDecision";
+import { loadWaim } from "./waim/waim";
+import { shouldSuppressPlacement } from "./waim/placementGate";
 import * as path from "path";
 
 const app = express();
@@ -734,6 +737,106 @@ app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFie
 app.post("/api/ingest", strictLimiter, schemaVersionMiddleware, forbiddenFieldsMiddleware, (_req, res) => {
   res.status(202).json({ status: "accepted" });
 });
+
+
+app.get(
+  "/api/orientation/:orgId",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const orgId = req.params.orgId;
+    if (!store.orgs.has(orgId)) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const sessionScopeNote =
+      "Session Scope Note: “Session” refers to a bounded, transient interaction context and carries no temporal continuity across sessions.";
+
+    const sessionStartRaw =
+      typeof req.query.session_start === "string" ? req.query.session_start : null;
+    const now = new Date();
+    const sessionStart = sessionStartRaw ? new Date(sessionStartRaw) : null;
+    const waim = loadWaim();
+    const role = typeof req.query.role === "string" ? req.query.role : null;
+    const workflow = typeof req.query.workflow === "string" ? req.query.workflow : null;
+    const signal = typeof req.query.signal === "string" ? req.query.signal : null;
+    const triggerEvent =
+      typeof req.query.trigger_event === "string" ? req.query.trigger_event : null;
+    const triggerPhase =
+      typeof req.query.trigger_phase === "string" ? req.query.trigger_phase : null;
+    const triggerBefore =
+      typeof req.query.trigger_before === "string" ? req.query.trigger_before : null;
+    const triggerWithoutHumanUse =
+      typeof req.query.trigger_without_human_use === "string"
+        ? req.query.trigger_without_human_use
+        : null;
+    const workflowStep =
+      typeof req.query.workflow_step === "string" ? req.query.workflow_step : null;
+
+    const observationState = (() => {
+      if (!sessionStartRaw || !sessionStart || Number.isNaN(sessionStart.getTime())) {
+        return "SUPPRESSED" as const;
+      }
+
+      // Session-scoped: only considers events within this bounded interaction context.
+      const sessionEvents = Array.from(store.fluencyEvents.values()).filter((event) => {
+        const ts = new Date(event.timestamp);
+        return !Number.isNaN(ts.getTime()) && ts >= sessionStart && ts <= now;
+      });
+      const hasSessionEvent = sessionEvents.length > 0;
+      const shouldSuppress = shouldSuppressPlacement(waim, {
+        role,
+        workflow,
+        signal,
+        trigger_event: triggerEvent,
+        trigger_phase: triggerPhase,
+        trigger_before: triggerBefore,
+        trigger_without_human_use: triggerWithoutHumanUse,
+        session_start: sessionStart,
+        workflow_step: workflowStep,
+        session_event_count: sessionEvents.length,
+        now
+      });
+      if (shouldSuppress) {
+        return "SUPPRESSED" as const;
+      }
+
+      return hasSessionEvent ? ("DETECTED" as const) : ("NONE" as const);
+    })();
+
+    const response = {
+      org_id: orgId,
+      observation_detected: {
+        state: observationState,
+        session_scope_note: sessionScopeNote,
+        does_not_mean: [
+          "This does not imply usage volume or frequency.",
+          "This does not imply interaction quality.",
+          "This does not imply adoption, engagement, or readiness.",
+          "This does not imply progress, improvement, or momentum.",
+          "This does not imply organizational maturity or success."
+        ]
+      },
+      suppression_in_effect: {
+        state: "IN_EFFECT" as const,
+        does_not_mean: [
+          "This does not imply the system detected a problem.",
+          "This does not imply risk increased or decreased.",
+          "This does not imply a corrective action occurred.",
+          "This does not imply compliance posture improved.",
+          "This does not imply progress, maturity, or success."
+        ]
+      },
+      generated_at: nowIso()
+    };
+
+    const validated = OrientationSignalResponseSchema.safeParse(response);
+    if (!validated.success) {
+      return res.status(500).json({ error: "Orientation response contract violation" });
+    }
+
+    return res.json(validated.data);
+  }
+);
 
 app.get(
   "/orgs/:orgId/transparency",
