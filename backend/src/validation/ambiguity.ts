@@ -1,10 +1,4 @@
-import { FORBIDDEN_FIELDS } from "@learnaire/shared";
-
-export const FORBIDDEN_KEYS: string[] = Array.from(new Set([...FORBIDDEN_FIELDS]));
-
-const FORBIDDEN_KEY_SET = new Set(FORBIDDEN_KEYS.map((key) => key.toLowerCase()));
-
-export type ForbiddenFieldMatch = {
+export type AmbiguityMatch = {
   path: string;
   key: string;
 };
@@ -16,7 +10,7 @@ const formatPath = (base: string, segment: string | number) => {
   return base ? `${base}.${segment}` : segment;
 };
 
-export const findForbiddenField = (payload: unknown): ForbiddenFieldMatch | null => {
+export const findAmbiguitySignal = (payload: unknown): AmbiguityMatch | null => {
   if (!payload || typeof payload !== "object") {
     return null;
   }
@@ -37,11 +31,11 @@ export const findForbiddenField = (payload: unknown): ForbiddenFieldMatch | null
     }
 
     for (const [key, value] of Object.entries(current.value as Record<string, unknown>)) {
-      if (FORBIDDEN_KEY_SET.has(key.toLowerCase())) {
-        return {
-          path: formatPath(current.path, key),
-          key
-        };
+      if (key === "ambiguity_flag" && value === true) {
+        return { path: formatPath(current.path, key), key };
+      }
+      if (key === "ambiguity_reason_code") {
+        return { path: formatPath(current.path, key), key };
       }
       if (value && typeof value === "object") {
         stack.push({ value, path: formatPath(current.path, key) });
