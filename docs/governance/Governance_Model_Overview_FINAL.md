@@ -181,6 +181,8 @@ Sentinel Decisions Log
 
 This document does not override, reinterpret, or extend any of the above.
 
+WAIM is descriptive-only, has `execution_authority: NONE`, and must not be imported, parsed, or referenced by runtime code, configuration, CI, or tests.
+
 6. Governance Status and Change Policy
 
 Governance is closed

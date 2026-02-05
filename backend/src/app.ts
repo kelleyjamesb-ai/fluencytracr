@@ -68,8 +68,6 @@ import { Phase1IngestPayloadSchema } from "./phase1/contract";
 import { appendPhase1Events } from "./phase1/eventStore";
 import { evaluateDecision } from "./phase1/evaluateDecision";
 import { surfaceDecision } from "./phase1/surfaceDecision";
-import { loadWaim } from "./waim/waim";
-import { shouldSuppressPlacement } from "./waim/placementGate";
 import * as path from "path";
 
 const app = express();
@@ -543,7 +541,6 @@ app.get(
       typeof req.query.session_start === "string" ? req.query.session_start : null;
     const now = new Date();
     const sessionStart = sessionStartRaw ? new Date(sessionStartRaw) : null;
-    const waim = loadWaim();
     const role = typeof req.query.role === "string" ? req.query.role : null;
     const workflow = typeof req.query.workflow === "string" ? req.query.workflow : null;
     const signal = typeof req.query.signal === "string" ? req.query.signal : null;
@@ -565,30 +562,8 @@ app.get(
         return "SUPPRESSED" as const;
       }
 
-      // Session-scoped: only considers events within this bounded interaction context.
-      const sessionEvents = Array.from(store.fluencyEvents.values()).filter((event) => {
-        const ts = new Date(event.timestamp);
-        return !Number.isNaN(ts.getTime()) && ts >= sessionStart && ts <= now;
-      });
-      const hasSessionEvent = sessionEvents.length > 0;
-      const shouldSuppress = shouldSuppressPlacement(waim, {
-        role,
-        workflow,
-        signal,
-        trigger_event: triggerEvent,
-        trigger_phase: triggerPhase,
-        trigger_before: triggerBefore,
-        trigger_without_human_use: triggerWithoutHumanUse,
-        session_start: sessionStart,
-        workflow_step: workflowStep,
-        session_event_count: sessionEvents.length,
-        now
-      });
-      if (shouldSuppress) {
-        return "SUPPRESSED" as const;
-      }
-
-      return hasSessionEvent ? ("DETECTED" as const) : ("NONE" as const);
+      // Phase 3 reconciliation: descriptive-only WAIM. Fail closed regardless of context.
+      return "SUPPRESSED" as const;
     })();
 
     const response = {

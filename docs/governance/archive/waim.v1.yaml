@@ -1,3 +1,7 @@
+SUPERSEDED: Archived because it could be misread as executable authorization.
+Must not be imported, parsed, referenced, or used by runtime code, configuration, CI, or tests.
+See docs/governance/phase3/WAIM_v2_DESCRIPTIVE.md
+
 version: v1
 
 placements:
