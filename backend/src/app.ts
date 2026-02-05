@@ -61,6 +61,10 @@ import {
   WINDOW_DAYS
 } from "./fluencytracr";
 import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
+import { Phase1IngestPayloadSchema } from "./phase1/contract";
+import { appendPhase1Events } from "./phase1/eventStore";
+import { evaluateDecision } from "./phase1/evaluateDecision";
+import { surfaceDecision } from "./phase1/surfaceDecision";
 import * as path from "path";
 
 const app = express();

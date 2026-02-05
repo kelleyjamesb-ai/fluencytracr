@@ -1,0 +1,26 @@
+{
+  "events": [
+    {
+      "schema_version": "FT_V1_2026_01",
+      "event_name": "FT_V1_ITERATION_DEPTH_OBSERVED",
+      "org_id": "org-3",
+      "function_id": "func-3",
+      "role_class": "role-3",
+      "tool_surface": "SEARCH",
+      "event_timestamp": "2025-01-05T08:00:00Z",
+      "window_id": "2025-01-01__2025-03-15",
+      "ambiguity_flag": false
+    },
+    {
+      "schema_version": "FT_V1_2026_01",
+      "event_name": "FT_V1_ABANDONMENT_OBSERVED",
+      "org_id": "org-3",
+      "function_id": "func-3",
+      "role_class": "role-3",
+      "tool_surface": "SEARCH",
+      "event_timestamp": "2025-01-12T08:00:00Z",
+      "window_id": "2025-01-01__2025-03-15",
+      "ambiguity_flag": false
+    }
+  ]
+}
