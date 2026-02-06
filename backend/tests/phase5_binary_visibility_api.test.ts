@@ -1,5 +1,10 @@
 import { app } from "../src/app";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
+
+let viewerCookie: string;
+beforeEach(async () => {
+  viewerCookie = await loginAs(app, "EXEC_VIEWER");
+});
 
 describe("Phase 5A binary executive visibility", () => {
   it("returns only decision fields for v1 decision endpoint", async () => {
@@ -33,7 +38,7 @@ describe("Phase 5A binary executive visibility", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "EXEC_VIEWER" },
+      headers: withAuth(viewerCookie),
       body: payload
     });
 

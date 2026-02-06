@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import express from "express";
+import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import {
@@ -22,7 +23,10 @@ import {
   OrientationSignalResponseSchema
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
-import { assertGovernanceEnforcement } from "./config/enforcement";
+import { assertGovernanceEnforcement, assertJwtSecretConfigured } from "./config/enforcement";
+import { authMiddleware } from "./auth/authMiddleware";
+import { signJwt } from "./auth/jwt";
+import { findUser, verifyPassword } from "./auth/users";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { ambiguityMiddleware } from "./middleware/ambiguityMiddleware";
@@ -73,7 +77,10 @@ import * as path from "path";
 const app = express();
 
 assertGovernanceEnforcement();
+assertJwtSecretConfigured();
 app.use(express.json());
+app.use(cookieParser());
+app.use(authMiddleware);
 
 const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -282,7 +289,42 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
   }
 };
 
-app.post("/orgs", strictLimiter, (req, res) => {
+// --- Auth endpoints ---
+// POST /auth/login is allowlisted in authMiddleware (unauthenticated access)
+app.post("/auth/login", async (req, res) => {
+  const { username, password } = req.body ?? {};
+  if (typeof username !== "string" || typeof password !== "string") {
+    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+  }
+
+  const user = findUser(username);
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+  }
+
+  const valid = await verifyPassword(password, user.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+  }
+
+  const token = await signJwt({ sub: user.username, role: user.role });
+  const isProduction = process.env.NODE_ENV === "production";
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: isProduction,
+    maxAge: 15 * 60 * 1000
+  });
+  return res.json({ status: "authenticated", role: user.role });
+});
+
+// GET /auth/me is NOT allowlisted — requires valid JWT
+app.get("/auth/me", (req, res) => {
+  return res.json({ sub: req.sub, role: req.role });
+});
+
+// --- Application routes ---
+app.post("/orgs", strictLimiter, rbacMiddleware(["ADMIN"]), (req, res) => {
   const parsed = OrgCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
@@ -308,12 +350,12 @@ app.post("/orgs", strictLimiter, (req, res) => {
   });
 });
 
-app.get("/orgs/:orgId/teams", (req, res) => {
+app.get("/orgs/:orgId/teams", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), (req, res) => {
   const teams = Array.from(store.teams.values()).filter((team) => team.orgId === req.params.orgId);
   return res.json({ teams });
 });
 
-app.post("/orgs/:orgId/teams", (req, res) => {
+app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -334,7 +376,7 @@ app.post("/orgs/:orgId/teams", (req, res) => {
   return res.status(201).json(record);
 });
 
-app.patch("/orgs/:orgId/teams/:teamId", (req, res) => {
+app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const team = store.teams.get(req.params.teamId);
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
@@ -353,7 +395,7 @@ app.patch("/orgs/:orgId/teams/:teamId", (req, res) => {
   return res.json(updated);
 });
 
-app.delete("/orgs/:orgId/teams/:teamId", (req, res) => {
+app.delete("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const team = store.teams.get(req.params.teamId);
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
@@ -365,12 +407,12 @@ app.delete("/orgs/:orgId/teams/:teamId", (req, res) => {
   return res.status(204).send();
 });
 
-app.get("/orgs/:orgId/roles", (req, res) => {
+app.get("/orgs/:orgId/roles", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), (req, res) => {
   const roles = Array.from(store.roles.values()).filter((role) => role.orgId === req.params.orgId);
   return res.json({ roles });
 });
 
-app.post("/orgs/:orgId/roles", (req, res) => {
+app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -385,7 +427,7 @@ app.post("/orgs/:orgId/roles", (req, res) => {
   return res.status(201).json(record);
 });
 
-app.patch("/orgs/:orgId/roles/:roleId", (req, res) => {
+app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const role = store.roles.get(req.params.roleId);
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
@@ -399,7 +441,7 @@ app.patch("/orgs/:orgId/roles/:roleId", (req, res) => {
   return res.json(updated);
 });
 
-app.delete("/orgs/:orgId/roles/:roleId", (req, res) => {
+app.delete("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const role = store.roles.get(req.params.roleId);
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
@@ -413,6 +455,7 @@ app.delete("/orgs/:orgId/roles/:roleId", (req, res) => {
 
 app.post(
   "/orgs/:orgId/roster/import",
+  rbacMiddleware(["ADMIN"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   (_req, res) => respondGovernanceSuppressed(res)
@@ -420,6 +463,7 @@ app.post(
 
 app.post(
   "/enablement/import",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   express.text({ type: "text/csv" }),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
@@ -442,7 +486,7 @@ app.post(
   (_req, res) => respondGovernanceSuppressed(res)
 );
 
-app.post("/orgs/:orgId/groups", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -465,6 +509,7 @@ app.post("/orgs/:orgId/groups", schemaVersionMiddleware, forbiddenFieldsMiddlewa
 app.post(
   "/orgs/:orgId/metrics/import",
   strictLimiter,
+  rbacMiddleware(["ADMIN"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   (_req, res) => respondGovernanceSuppressed(res)
@@ -472,6 +517,7 @@ app.post(
 
 app.post(
   "/orgs/:orgId/controls/import",
+  rbacMiddleware(["ADMIN"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   (_req, res) => respondGovernanceSuppressed(res)
@@ -479,6 +525,7 @@ app.post(
 
 app.post(
   "/orgs/:orgId/enablement/import",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   (_req, res) => respondGovernanceSuppressed(res)
@@ -517,6 +564,7 @@ app.post(
 app.post(
   "/api/ingest",
   strictLimiter,
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   ambiguityMiddleware,

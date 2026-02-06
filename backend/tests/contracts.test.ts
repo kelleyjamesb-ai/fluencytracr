@@ -1,12 +1,6 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
-
-const schemaHeaders = {
-  "x-role": "ADMIN",
-  "X-FluencyTracr-Schema-Version": "0.1",
-  "Content-Type": "application/json"
-};
+import { requestApp, loginAs, withAuth, withSchemaVersion } from "./test_helpers";
 
 const validEventPayload = {
   events: [
@@ -23,9 +17,11 @@ const validEventPayload = {
   ]
 };
 
-beforeEach(() => {
+let adminCookie: string;
+beforeEach(async () => {
   store.reset();
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 1, createdAt: "now" });
+  adminCookie = await loginAs(app, "ADMIN");
 });
 
 it("rejects forbidden fields nested in payload", async () => {
@@ -40,7 +36,7 @@ it("rejects forbidden fields nested in payload", async () => {
   const response = await requestApp(app, {
     method: "POST",
     path: "/api/events",
-    headers: schemaHeaders,
+    headers: withAuth(adminCookie, withSchemaVersion()),
     body: payload
   });
   const body = response.body as { error?: string; field_path?: string; rule?: string };
@@ -59,7 +55,7 @@ it("rejects forbidden identifiers in payload", async () => {
   const response = await requestApp(app, {
     method: "POST",
     path: "/api/events",
-    headers: schemaHeaders,
+    headers: withAuth(adminCookie, withSchemaVersion()),
     body: payload
   });
   const body = response.body as { error?: string; field_path?: string };
@@ -73,7 +69,7 @@ it("rejects missing or invalid schema version headers", async () => {
   const missingResponse = await requestApp(app, {
     method: "POST",
     path: "/api/events",
-    headers: { "x-role": "ADMIN", "Content-Type": "application/json" },
+    headers: withAuth(adminCookie),
     body: validEventPayload
   });
   const missingBody = missingResponse.body as { error?: string };
@@ -81,7 +77,7 @@ it("rejects missing or invalid schema version headers", async () => {
   const invalidResponse = await requestApp(app, {
     method: "POST",
     path: "/api/events",
-    headers: { ...schemaHeaders, "X-FluencyTracr-Schema-Version": "0.2" },
+    headers: withAuth(adminCookie, { "X-FluencyTracr-Schema-Version": "0.2" }),
     body: validEventPayload
   });
   const invalidBody = invalidResponse.body as { expected?: string[] };
@@ -96,7 +92,7 @@ it("accepts valid payloads with schema version", async () => {
   const response = await requestApp(app, {
     method: "POST",
     path: "/api/events",
-    headers: schemaHeaders,
+    headers: withAuth(adminCookie, withSchemaVersion()),
     body: validEventPayload
   });
   const body = response.body as { status?: string; event_ids?: unknown[] };
@@ -125,7 +121,7 @@ it("suppresses connector imports under TG5", async () => {
   const response = await requestApp(app, {
     method: "POST",
     path: "/orgs/org-1/behavior/connector/import",
-    headers: schemaHeaders,
+    headers: withAuth(adminCookie, withSchemaVersion()),
     body: payload
   });
 

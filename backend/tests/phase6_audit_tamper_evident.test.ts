@@ -12,11 +12,12 @@
 import { store } from "../src/store";
 import { logAuditEvent, listAuditLogs } from "../src/audit_log";
 import { app } from "../src/app";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 
 const ORG_ID = "org-audit-test";
 
-beforeEach(() => {
+let adminCookie: string;
+beforeEach(async () => {
   store.reset();
   store.orgs.set(ORG_ID, {
     id: ORG_ID,
@@ -24,6 +25,7 @@ beforeEach(() => {
     minGroupSize: 10,
     createdAt: new Date().toISOString()
   });
+  adminCookie = await loginAs(app, "ADMIN");
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -229,7 +231,7 @@ describe("Log repurposability — CURRENT STATE", () => {
     const response = await requestApp(app, {
       method: "GET",
       path: `/orgs/${ORG_ID}/audit-log`,
-      headers: { "x-role": "ADMIN" }
+      headers: withAuth(adminCookie)
     });
 
     expect(response.status).toBe(200);

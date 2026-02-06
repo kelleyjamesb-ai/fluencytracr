@@ -51,3 +51,13 @@ const readEnforcementConfig = (): EnforcementConfig => {
 export const GOVERNANCE_ENFORCEMENT = readEnforcementConfig();
 
 export const assertGovernanceEnforcement = (): EnforcementConfig => GOVERNANCE_ENFORCEMENT;
+
+export const assertJwtSecretConfigured = (): void => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error(
+      "[AUTH] JWT_SECRET must be explicitly set. " +
+      "Application cannot start without a signing key. " +
+      "Fail-closed per Phase 6B-A."
+    );
+  }
+};

@@ -1,12 +1,9 @@
 import { OrientationSignalResponseSchema } from "@learnaire/shared";
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 
-const baseHeaders = {
-  "content-type": "application/json",
-  "x-role": "ADMIN"
-};
+let adminCookie: string;
 
 const seedOrg = () => {
   store.reset();
@@ -27,12 +24,16 @@ const seedEvent = (timestamp: string) => {
   } as any);
 };
 
+beforeEach(async () => {
+  adminCookie = await loginAs(app, "ADMIN");
+});
+
 it("defaults to SUPPRESSED without session_start", async () => {
   seedOrg();
   const response = await requestApp(app, {
     method: "GET",
     path: "/api/orientation/org-1",
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   expect(response.status).toBe(200);
   const parsed = OrientationSignalResponseSchema.safeParse(response.body);
@@ -49,7 +50,7 @@ it("returns DETECTED when a session event exists", async () => {
   const response = await requestApp(app, {
     method: "GET",
     path: `/api/orientation/org-1?session_start=${encodeURIComponent(sessionStart)}`,
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   expect(response.status).toBe(200);
   const parsed = OrientationSignalResponseSchema.safeParse(response.body);
@@ -65,7 +66,7 @@ it("returns NONE when no session events exist", async () => {
   const response = await requestApp(app, {
     method: "GET",
     path: `/api/orientation/org-1?session_start=${encodeURIComponent(sessionStart)}`,
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   expect(response.status).toBe(200);
   const parsed = OrientationSignalResponseSchema.safeParse(response.body);

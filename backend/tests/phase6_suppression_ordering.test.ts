@@ -10,7 +10,7 @@
  */
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp, withSchemaVersion } from "./test_helpers";
+import { requestApp, loginAs, withAuth, withSchemaVersion } from "./test_helpers";
 import { evaluateDecision, SUPPRESSION_REASONS } from "../src/phase1/evaluateDecision";
 import { surfaceDecision } from "../src/phase1/surfaceDecision";
 import { appendPhase1Events, listPhase1Events, clearPhase1Events } from "../src/phase1/eventStore";
@@ -31,7 +31,9 @@ const buildEvent = (overrides: Partial<Phase1Event> = {}): Phase1Event => ({
   ...overrides
 });
 
-beforeEach(() => {
+let adminCookie: string;
+let viewerCookie: string;
+beforeEach(async () => {
   store.reset();
   clearPhase1Events();
   store.orgs.set(ORG_ID, {
@@ -40,6 +42,8 @@ beforeEach(() => {
     minGroupSize: 10,
     createdAt: new Date().toISOString()
   });
+  adminCookie = await loginAs(app, "ADMIN");
+  viewerCookie = await loginAs(app, "EXEC_VIEWER");
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,7 +66,7 @@ describe("Path 1: /api/v1/decision — suppression before response", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "ADMIN" },
+      headers: withAuth(adminCookie),
       body: payload
     });
 
@@ -86,7 +90,7 @@ describe("Path 1: /api/v1/decision — suppression before response", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "ADMIN" },
+      headers: withAuth(adminCookie),
       body: payload
     });
 
@@ -114,7 +118,7 @@ describe("Path 1: /api/v1/decision — suppression before response", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "ADMIN" },
+      headers: withAuth(adminCookie),
       body: payload
     });
 
@@ -136,7 +140,7 @@ describe("Path 1: /api/v1/decision — suppression before response", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "EXEC_VIEWER" },
+      headers: withAuth(viewerCookie),
       body: payload
     });
 
@@ -170,7 +174,7 @@ describe("Path 2: /api/v1/ingest — suppression ordering verification", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/ingest",
-      headers: { "x-role": "ADMIN" },
+      headers: withAuth(adminCookie),
       body: payload
     });
 
@@ -203,7 +207,7 @@ describe("Path 3: /api/ingest — ambiguity middleware gate", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/ingest",
-      headers: withSchemaVersion({ "x-role": "ADMIN" }),
+      headers: withAuth(adminCookie, withSchemaVersion()),
       body: payload
     });
 
@@ -221,7 +225,7 @@ describe("Path 3: /api/ingest — ambiguity middleware gate", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/ingest",
-      headers: withSchemaVersion({ "x-role": "ADMIN" }),
+      headers: withAuth(adminCookie, withSchemaVersion()),
       body: payload
     });
 
@@ -244,7 +248,7 @@ describe("Path 4: /api/events — middleware ordering", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/events",
-      headers: withSchemaVersion({ "x-role": "ADMIN" }),
+      headers: withAuth(adminCookie, withSchemaVersion()),
       body: payload
     });
 
@@ -260,7 +264,7 @@ describe("Path 4: /api/events — middleware ordering", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/events",
-      headers: withSchemaVersion({ "x-role": "ADMIN" }),
+      headers: withAuth(adminCookie, withSchemaVersion()),
       body: payload
     });
 
@@ -294,7 +298,7 @@ describe("Path 5: Governance-suppressed endpoints — no data path exists", () =
       const response = await requestApp(app, {
         method,
         path,
-        headers: withSchemaVersion({ "x-role": "ADMIN" }),
+        headers: withAuth(adminCookie, withSchemaVersion()),
         body: method === "POST" ? { test: "data" } : undefined
       });
 
