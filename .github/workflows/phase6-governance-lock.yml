@@ -74,6 +74,8 @@ jobs:
   governance-regression:
     name: "Phase 6: Governance regression tests (REQUIRED)"
     runs-on: ubuntu-latest
+    env:
+      GOVERNANCE_ENFORCEMENT: "ON"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

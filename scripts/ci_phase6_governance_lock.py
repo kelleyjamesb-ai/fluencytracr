@@ -105,10 +105,16 @@ def categorize(path: str) -> str:
 def main() -> None:
     base = git_diff_base()
 
-    # If we cannot determine a base, fail closed — ambiguity defaults to FAIL
+    # Fail closed: if we cannot determine a merge base, we cannot verify that
+    # governance-controlled files are unchanged. Ambiguity defaults to FAIL.
     if not base:
-        print("Phase 6 governance lock: no merge base detected (likely default branch). PASS.")
-        return
+        fail(
+            "Cannot determine merge base. "
+            "Ensure the checkout has full git history (fetch-depth: 0) "
+            "and origin/main is available, or set GITHUB_BASE_REF.\n"
+            "Governance lock requires a verifiable base to diff against. "
+            "Ambiguity defaults to FAIL per Phase 6 rules."
+        )
 
     changed = git_changed_files(base)
     if not changed:
