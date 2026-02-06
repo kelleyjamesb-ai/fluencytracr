@@ -104,10 +104,10 @@ jobs:
       - name: Run Phase 6 auth, suppression, audit, and adversarial tests (REQUIRED - blocking)
         run: |
           npm test --workspace backend -- --runTestsByPath \
-            backend/tests/phase6_auth_threat_model.test.ts \
-            backend/tests/phase6_suppression_ordering.test.ts \
-            backend/tests/phase6_audit_tamper_evident.test.ts \
-            backend/tests/phase6_adversarial_extraction.test.ts \
+            tests/phase6_auth_threat_model.test.ts \
+            tests/phase6_suppression_ordering.test.ts \
+            tests/phase6_audit_tamper_evident.test.ts \
+            tests/phase6_adversarial_extraction.test.ts \
             --watchman=false
 
       - name: Run V1 governance gates
