@@ -69,7 +69,6 @@ import {
 } from "./fluencytracr";
 import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import { Phase1IngestPayloadSchema } from "./phase1/contract";
-import { appendPhase1Events } from "./phase1/eventStore";
 import { evaluateDecision } from "./phase1/evaluateDecision";
 import { surfaceDecision } from "./phase1/surfaceDecision";
 import * as path from "path";
@@ -531,20 +530,11 @@ app.post(
   (_req, res) => respondGovernanceSuppressed(res)
 );
 
-app.post(
-  "/api/v1/ingest",
-  strictLimiter,
-  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  forbiddenFieldsMiddleware,
-  (req, res) => {
-    const parsed = Phase1IngestPayloadSchema.safeParse(req.body ?? {});
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
-    }
-    appendPhase1Events(parsed.data.events);
-    return res.status(202).json({ status: "accepted" });
-  }
-);
+// WP-09 DELETED: POST /api/v1/ingest
+// Phase 6B-B enforcement ordering audit found this route persists events
+// (appendPhase1Events) BEFORE evaluation or suppression. No ambiguityMiddleware,
+// no evaluateDecision() call. Ambiguous events were stored without any gate.
+// Directive: "DELETE the path. Do not patch or buffer."
 
 app.post(
   "/api/v1/decision",
