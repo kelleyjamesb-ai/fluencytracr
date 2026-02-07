@@ -133,24 +133,24 @@ describe("Phase 6B-A Auth Enforcement — Privileges Cannot Be Escalated", () =>
     // Authenticate as ENABLEMENT_LEAD
     const leadCookie = await loginAs(app, "ENABLEMENT_LEAD");
 
-    // ENABLEMENT_LEAD can ingest (authorized role)
+    // ENABLEMENT_LEAD can evaluate decisions (authorized role)
     const asLead = await requestApp(app, {
       method: "POST",
-      path: "/api/v1/ingest",
+      path: "/api/v1/decision",
       headers: withAuth(leadCookie),
       body: payload
     });
-    expect(asLead.status).toBe(202);
+    expect(asLead.status).toBe(200);
 
     // Adding x-role: ADMIN header does not change effective role
     const withFakeEscalation = await requestApp(app, {
       method: "POST",
-      path: "/api/v1/ingest",
+      path: "/api/v1/decision",
       headers: withAuth(leadCookie, { "x-role": "ADMIN" }),
       body: payload
     });
     // Still succeeds because ENABLEMENT_LEAD is authorized, not because of x-role
-    expect(withFakeEscalation.status).toBe(202);
+    expect(withFakeEscalation.status).toBe(200);
   });
 
   it("RBAC correctly blocks unauthorized roles with valid JWT", async () => {

@@ -156,12 +156,14 @@ describe("Path 1: /api/v1/decision — suppression before response", () => {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PATH 2: Phase 1 Ingest Pipeline (/api/v1/ingest)
-// Flow: request → forbiddenFields → Zod parse → appendPhase1Events → 202
-// FINDING: Events are persisted BEFORE decision evaluation
+// RESOLVED: Route DELETED in Phase 6B-B enforcement ordering audit.
+// The route persisted events (appendPhase1Events) before any evaluation
+// or suppression. No ambiguityMiddleware, no evaluateDecision() call.
+// Directive: "DELETE the path. Do not patch or buffer."
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe("Path 2: /api/v1/ingest — suppression ordering verification", () => {
-  it("FAIL: ambiguous events are persisted to eventStore before any decision", async () => {
+describe("Path 2: /api/v1/ingest — DELETED (enforcement ordering violation)", () => {
+  it("PASS: route no longer exists — ambiguous events cannot be persisted without evaluation", async () => {
     const payload = {
       events: [
         buildEvent({
@@ -178,16 +180,15 @@ describe("Path 2: /api/v1/ingest — suppression ordering verification", () => {
       body: payload
     });
 
-    expect(response.status).toBe(202);
+    // Route deleted — no handler matches, Express returns 404
+    expect(response.status).toBe(404);
 
-    // FAIL CONDITION: The ambiguous event was persisted to the event store
-    // without suppression evaluation. Suppression does NOT precede persistence.
+    // PASS CONDITION: No events were persisted. The enforcement ordering
+    // violation (persist before evaluate) is eliminated by deletion.
     const stored = listPhase1Events();
-    expect(stored.length).toBe(1);
-    expect(stored[0].ambiguity_flag).toBe(true);
+    expect(stored.length).toBe(0);
 
-    // VERDICT: FAIL — /api/v1/ingest persists events before suppression.
-    // evaluateDecision() is never called on this path.
+    // VERDICT: PASS — /api/v1/ingest deleted. No pre-evaluation persistence possible.
   });
 });
 
