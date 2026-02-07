@@ -167,13 +167,18 @@ export type DecisionLedgerEvaluationRecord = {
   };
 };
 
+/** @deprecated — Audit records are now persisted to Postgres via Prisma. See audit_log.ts. */
 export type AuditLogRecord = {
   id: string;
   orgId: string;
-  action: "dashboard_access" | "dashboard_export";
+  seq: number;
+  actorSub: string;
   actorRole: string;
+  eventType: string;
   metadata: Record<string, unknown>;
-  timestamp: string;
+  prevHash: string;
+  hash: string;
+  createdAt: string;
 };
 
 export type ConnectorEventQuarantineRecord = {

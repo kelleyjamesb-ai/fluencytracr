@@ -15,7 +15,7 @@ declare global {
 
 // Exact-match allowlist: (method, path) tuples only.
 // No prefix matching. No wildcards. No /auth/* broad patterns.
-const UNAUTHENTICATED_ALLOWLIST: ReadonlyArray<Readonly<{ method: string; path: string }>> = [
+export const UNAUTHENTICATED_ALLOWLIST: ReadonlyArray<Readonly<{ method: string; path: string }>> = [
   { method: "GET", path: "/health" },
   { method: "POST", path: "/auth/login" },
 ];

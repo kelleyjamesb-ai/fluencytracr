@@ -108,7 +108,15 @@ jobs:
             "$GITHUB_WORKSPACE/backend/tests/phase6_suppression_ordering.test.ts" \
             "$GITHUB_WORKSPACE/backend/tests/phase6_audit_tamper_evident.test.ts" \
             "$GITHUB_WORKSPACE/backend/tests/phase6_adversarial_extraction.test.ts" \
-            --watchman=false
+            --watchman=false --runInBand
+
+      - name: Run Phase 7 security route-auth audit tests (REQUIRED - blocking)
+        run: |
+          npm test --workspace backend -- --runTestsByPath \
+            "$GITHUB_WORKSPACE/backend/tests/phase7_route_auth_coverage.test.ts" \
+            "$GITHUB_WORKSPACE/backend/tests/phase7_audit_wiring.test.ts" \
+            "$GITHUB_WORKSPACE/backend/tests/phase7_audit_concurrency.test.ts" \
+            --watchman=false --runInBand
 
       - name: Run V1 governance gates
         run: |
