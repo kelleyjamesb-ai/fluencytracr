@@ -39,6 +39,8 @@ model FluencyScore {
   @@index([organizationId, day])
 }
 
+// Audit logging is implemented via append-only audit_log table and pg driver.
+// This Prisma model is NOT authoritative for audit writes. See backend/src/audit/.
 model AuditEvent {
   id        String   @id @default(uuid())
   orgId     String
