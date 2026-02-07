@@ -23,6 +23,7 @@ import {
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
 import { assertGovernanceEnforcement } from "./config/enforcement";
+import { assertAuthSeedUsersConfigured, findUser } from "./config/authSeedUsers";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { ambiguityMiddleware } from "./middleware/ambiguityMiddleware";
@@ -73,6 +74,7 @@ import * as path from "path";
 const app = express();
 
 assertGovernanceEnforcement();
+assertAuthSeedUsersConfigured();
 app.use(express.json());
 
 const strictLimiter = rateLimit({
@@ -281,6 +283,22 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
     return res.status(400).json({ error: "Invalid scope requested" });
   }
 };
+
+app.post("/auth/login", strictLimiter, (req, res) => {
+  const { username, password } = req.body ?? {};
+  if (typeof username !== "string" || typeof password !== "string") {
+    return res.status(400).json({ error: "Username and password are required" });
+  }
+  try {
+    const user = findUser(username, password);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    return res.json({ status: "authenticated", username: user.username });
+  } catch {
+    return res.status(503).json({ error: "Authentication service unavailable" });
+  }
+});
 
 app.post("/orgs", strictLimiter, (req, res) => {
   const parsed = OrgCreateSchema.safeParse(req.body ?? {});
