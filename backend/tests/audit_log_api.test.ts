@@ -1,22 +1,26 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 
-beforeEach(() => {
+let viewerCookie: string;
+let adminCookie: string;
+beforeEach(async () => {
   store.reset();
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 1, createdAt: "now" });
+  viewerCookie = await loginAs(app, "EXEC_VIEWER");
+  adminCookie = await loginAs(app, "ADMIN");
 });
 
 it("does not record suppressed dashboard access", async () => {
   const dashboardResponse = await requestApp(app, {
     method: "GET",
     path: "/orgs/org-1/dashboard/overview",
-    headers: { "x-role": "EXEC_VIEWER" }
+    headers: withAuth(viewerCookie)
   });
   const response = await requestApp(app, {
     method: "GET",
     path: "/orgs/org-1/audit-log",
-    headers: { "x-role": "ADMIN" }
+    headers: withAuth(adminCookie)
   });
   const payload = response.body as { logs: unknown[] };
 

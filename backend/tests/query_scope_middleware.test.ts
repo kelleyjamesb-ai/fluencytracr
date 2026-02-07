@@ -1,17 +1,19 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 
-beforeEach(() => {
+let viewerCookie: string;
+beforeEach(async () => {
   store.reset();
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 10, createdAt: "now" });
+  viewerCookie = await loginAs(app, "EXEC_VIEWER");
 });
 
 it("rejects disallowed scopes in query", async () => {
   const response = await requestApp(app, {
     method: "GET",
     path: "/orgs/org-1/dashboard/overview?scope=employee&range=12w",
-    headers: { "x-role": "EXEC_VIEWER" }
+    headers: withAuth(viewerCookie)
   });
   const payload = response.body as { error?: string };
 

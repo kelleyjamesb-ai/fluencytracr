@@ -10,7 +10,7 @@
  */
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp, withSchemaVersion } from "./test_helpers";
+import { requestApp, loginAs, withAuth, withSchemaVersion } from "./test_helpers";
 import { evaluateDecision } from "../src/phase1/evaluateDecision";
 import { surfaceDecision } from "../src/phase1/surfaceDecision";
 import { appendPhase1Events, listPhase1Events, clearPhase1Events } from "../src/phase1/eventStore";
@@ -32,7 +32,9 @@ const buildEvent = (overrides: Partial<Phase1Event> = {}): Phase1Event => ({
   ...overrides
 });
 
-beforeEach(() => {
+let adminCookie: string;
+let viewerCookie: string;
+beforeEach(async () => {
   store.reset();
   clearPhase1Events();
   store.orgs.set(ORG_ID, {
@@ -41,6 +43,8 @@ beforeEach(() => {
     minGroupSize: 10,
     createdAt: new Date().toISOString()
   });
+  adminCookie = await loginAs(app, "ADMIN");
+  viewerCookie = await loginAs(app, "EXEC_VIEWER");
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -100,7 +104,7 @@ describe("Attack 1: Trend Inference", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "ADMIN" },
+      headers: withAuth(adminCookie),
       body: payload
     });
 
@@ -146,7 +150,7 @@ describe("Attack 2: Temporal Correlation", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/v1/decision",
-      headers: { "x-role": "EXEC_VIEWER" },
+      headers: withAuth(viewerCookie),
       body: payload
     });
 
@@ -249,7 +253,7 @@ describe("Attack 3: Suppressed Data Reconstruction", () => {
     const response = await requestApp(app, {
       method: "GET",
       path: `/orgs/${ORG_ID}/dashboard/overview?aggregation=org`,
-      headers: { "x-role": "ADMIN" }
+      headers: withAuth(adminCookie)
     });
 
     expect(response.status).toBe(404);
@@ -267,7 +271,7 @@ describe("Attack 3: Suppressed Data Reconstruction", () => {
     const response = await requestApp(app, {
       method: "GET",
       path: `/api/orientation/${ORG_ID}?session_start=2025-01-01T00:00:00Z`,
-      headers: { "x-role": "EXEC_VIEWER" }
+      headers: withAuth(viewerCookie)
     });
 
     expect(response.status).toBe(200);
@@ -374,7 +378,7 @@ describe("Attack 5: Audit Log Misuse", () => {
     const response = await requestApp(app, {
       method: "GET",
       path: `/orgs/${ORG_ID}/audit-log`,
-      headers: { "x-role": "ADMIN" }
+      headers: withAuth(adminCookie)
     });
 
     expect(response.status).toBe(200);
@@ -398,7 +402,7 @@ describe("Attack 6: Progress Narrative Extraction", () => {
     const response = await requestApp(app, {
       method: "GET",
       path: `/api/orientation/${ORG_ID}?session_start=2025-01-01T00:00:00Z`,
-      headers: { "x-role": "EXEC_VIEWER" }
+      headers: withAuth(viewerCookie)
     });
 
     const body = response.body as any;

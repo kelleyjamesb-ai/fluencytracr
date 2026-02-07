@@ -1,12 +1,9 @@
 import { OrientationSignalResponseSchema } from "@learnaire/shared";
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 
-const baseHeaders = {
-  "content-type": "application/json",
-  "x-role": "ADMIN"
-};
+let adminCookie: string;
 
 const seedOrg = () => {
   store.reset();
@@ -36,6 +33,10 @@ const parse = (body: unknown) => {
   return parsed.data;
 };
 
+beforeEach(async () => {
+  adminCookie = await loginAs(app, "ADMIN");
+});
+
 it("cannot be checked reliably for repeated workflow", async () => {
   seedOrg();
   const now = new Date();
@@ -47,8 +48,8 @@ it("cannot be checked reliably for repeated workflow", async () => {
     sessionStart
   )}&role=individual_contributor&workflow=document_editing&signal=verification_presence&trigger_event=HUMAN_CORRECTION&trigger_phase=post_ai_insertion&trigger_before=content_share&workflow_step=step-1`;
 
-  const first = await requestApp(app, { method: "GET", path, headers: baseHeaders });
-  const second = await requestApp(app, { method: "GET", path, headers: baseHeaders });
+  const first = await requestApp(app, { method: "GET", path, headers: withAuth(adminCookie) });
+  const second = await requestApp(app, { method: "GET", path, headers: withAuth(adminCookie) });
 
   const firstState = parse(first.body).observation_detected.state;
   const secondState = parse(second.body).observation_detected.state;
@@ -61,7 +62,7 @@ it("absence is uninterpretable when suppressed", async () => {
   const response = await requestApp(app, {
     method: "GET",
     path: "/api/orientation/org-1",
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   const data = parse(response.body);
   expect(data.observation_detected.state).toBe("SUPPRESSED");
@@ -77,7 +78,7 @@ it("no destination surfaces without WAIM context", async () => {
   const response = await requestApp(app, {
     method: "GET",
     path: `/api/orientation/org-1?session_start=${encodeURIComponent(sessionStart)}`,
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   const data = parse(response.body);
   expect(data.observation_detected.state).toBe("SUPPRESSED");
@@ -94,7 +95,7 @@ it("suppresses any WAIM-like context parameters", async () => {
     path: `/api/orientation/org-1?session_start=${encodeURIComponent(
       sessionStart
     )}&role=individual_contributor&workflow=document_editing&signal=verification_presence&trigger_event=HUMAN_CORRECTION&trigger_phase=post_ai_insertion&trigger_before=content_share&workflow_step=step-1`,
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   const data = parse(response.body);
   expect(data.observation_detected.state).toBe("SUPPRESSED");
@@ -106,7 +107,7 @@ it("does not persist orientation state", async () => {
   const response = await requestApp(app, {
     method: "GET",
     path: "/api/orientation/org-1",
-    headers: baseHeaders
+    headers: withAuth(adminCookie)
   });
   parse(response.body);
   const countAfter = store.fluencyEvents.size;
