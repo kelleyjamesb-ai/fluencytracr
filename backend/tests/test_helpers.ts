@@ -1,5 +1,6 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { Socket } from "net";
+import type { Role } from "@learnaire/shared";
 
 export const SCHEMA_VERSION_HEADER = "X-FluencyTracr-Schema-Version";
 export const SCHEMA_VERSION = "0.1";
@@ -111,3 +112,44 @@ export const requestApp = (app: any, options: RequestOptions): Promise<TestRespo
     });
   });
 };
+
+// Test credentials matching setup_env.ts seed users
+const TEST_CREDENTIALS: Record<string, { username: string; password: string }> = {
+  ADMIN: { username: "admin", password: "admin-test" },
+  ENABLEMENT_LEAD: { username: "enablement", password: "enablement-test" },
+  EXEC_VIEWER: { username: "viewer", password: "viewer-test" }
+};
+
+/**
+ * Authenticate as a specific role and return the cookie header value.
+ * Usage: const cookie = await loginAs(app, "ADMIN");
+ *        requestApp(app, { ..., headers: { cookie } });
+ */
+export const loginAs = async (app: any, role: Role): Promise<string> => {
+  const cred = TEST_CREDENTIALS[role];
+  if (!cred) {
+    throw new Error(`No test credentials for role: ${role}`);
+  }
+  const response = await requestApp(app, {
+    method: "POST",
+    path: "/auth/login",
+    body: { username: cred.username, password: cred.password }
+  });
+  if (response.status !== 200) {
+    throw new Error(`loginAs(${role}) failed: ${response.status} ${response.text}`);
+  }
+  const setCookie = response.headers["set-cookie"] ?? "";
+  const match = setCookie.match(/token=([^;]+)/);
+  if (!match) {
+    throw new Error(`loginAs(${role}) failed: no token in set-cookie header`);
+  }
+  return `token=${match[1]}`;
+};
+
+/**
+ * Merge auth cookie into a headers object.
+ */
+export const withAuth = (cookie: string, headers: Record<string, string> = {}): Record<string, string> => ({
+  ...headers,
+  cookie
+});

@@ -2,17 +2,30 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function Login() {
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password === "admin") {
-            localStorage.setItem("isAuthenticated", "true");
-            navigate("/");
-        } else {
-            setError("Invalid password");
+        setError("");
+
+        try {
+            const response = await fetch("/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password }),
+                credentials: "same-origin"
+            });
+
+            if (response.ok) {
+                navigate("/");
+            } else {
+                setError("Invalid credentials");
+            }
+        } catch {
+            setError("Unable to connect to server");
         }
     };
 
@@ -49,11 +62,29 @@ export function Login() {
                     <div className="text-center lg:text-left">
                         <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-sans">Welcome back</h2>
                         <p className="mt-2 text-slate-600 font-sans">
-                            Enter your password to access the dashboard.
+                            Sign in to access the dashboard.
                         </p>
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-6">
+                        <div>
+                            <label htmlFor="username" className="block text-sm font-medium text-slate-700 font-sans">
+                                Username
+                            </label>
+                            <div className="mt-2">
+                                <input
+                                    id="username"
+                                    name="username"
+                                    type="text"
+                                    required
+                                    autoComplete="username"
+                                    className="block w-full rounded-md border-0 py-3 px-4 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 font-sans"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-slate-700 font-sans">
                                 Password
@@ -64,6 +95,7 @@ export function Login() {
                                     name="password"
                                     type="password"
                                     required
+                                    autoComplete="current-password"
                                     className="block w-full rounded-md border-0 py-3 px-4 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 font-sans"
                                     placeholder="••••••••"
                                     value={password}

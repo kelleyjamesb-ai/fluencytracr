@@ -1,6 +1,6 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 import { GOVERNANCE_FORBIDDEN_FIELDS } from "@learnaire/shared";
 
 type UnknownRecord = Record<string, unknown>;
@@ -18,16 +18,18 @@ const collectKeys = (value: unknown, keys: Set<string>) => {
 };
 
 describe("Phase 5A absence-is-neutral", () => {
-  beforeEach(() => {
+  let viewerCookie: string;
+  beforeEach(async () => {
     store.reset();
     store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 10, createdAt: "now" });
+    viewerCookie = await loginAs(app, "EXEC_VIEWER");
   });
 
   it("returns only neutral, non-quantified language", async () => {
     const response = await requestApp(app, {
       method: "GET",
       path: "/api/orientation/org-1?session_start=2025-01-01T00:00:00Z",
-      headers: { "x-role": "EXEC_VIEWER" }
+      headers: withAuth(viewerCookie)
     });
 
     expect(response.status).toBe(200);

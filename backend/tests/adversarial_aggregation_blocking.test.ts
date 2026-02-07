@@ -1,10 +1,12 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth } from "./test_helpers";
 
-beforeEach(() => {
+let adminCookie: string;
+beforeEach(async () => {
   store.reset();
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 5, createdAt: "now" });
+  adminCookie = await loginAs(app, "ADMIN");
 });
 
 describe("aggregation blocking", () => {
@@ -21,7 +23,7 @@ describe("aggregation blocking", () => {
       const response = await requestApp(app, {
         method: "GET",
         path,
-        headers: { "x-role": "ADMIN" }
+        headers: withAuth(adminCookie)
       });
       expect(response.status).toBe(404);
     }

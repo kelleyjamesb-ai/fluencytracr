@@ -1,11 +1,10 @@
 import { app } from "../src/app";
-import { requestApp } from "./test_helpers";
+import { requestApp, loginAs, withAuth, withSchemaVersion } from "./test_helpers";
 
-const schemaHeaders = {
-  "x-role": "ADMIN",
-  "X-FluencyTracr-Schema-Version": "0.1",
-  "Content-Type": "application/json"
-};
+let adminCookie: string;
+beforeEach(async () => {
+  adminCookie = await loginAs(app, "ADMIN");
+});
 
 describe("ambiguity fail-closed", () => {
   it("rejects ambiguous inputs at ingestion", async () => {
@@ -28,7 +27,7 @@ describe("ambiguity fail-closed", () => {
     const response = await requestApp(app, {
       method: "POST",
       path: "/api/events",
-      headers: schemaHeaders,
+      headers: withAuth(adminCookie, withSchemaVersion()),
       body: payload
     });
 
