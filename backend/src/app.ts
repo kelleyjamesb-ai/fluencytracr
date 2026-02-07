@@ -291,8 +291,8 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
 // --- Auth endpoints ---
 // POST /auth/login is allowlisted in authMiddleware (unauthenticated access)
 app.post("/auth/login", async (req, res) => {
-  const { username, password } = req.body ?? {};
-  if (typeof username !== "string" || typeof password !== "string") {
+  const { username, password: credential } = req.body ?? {};
+  if (typeof username !== "string" || typeof credential !== "string") {
     return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
   }
 
@@ -301,7 +301,7 @@ app.post("/auth/login", async (req, res) => {
     return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
   }
 
-  const valid = await verifyPassword(password, user.passwordHash);
+  const valid = await verifyPassword(credential, user.passwordHash);
   if (!valid) {
     return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
   }
