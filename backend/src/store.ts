@@ -167,19 +167,8 @@ export type DecisionLedgerEvaluationRecord = {
   };
 };
 
-/** @deprecated — Audit records are now persisted to Postgres via Prisma. See audit_log.ts. */
-export type AuditLogRecord = {
-  id: string;
-  orgId: string;
-  seq: number;
-  actorSub: string;
-  actorRole: string;
-  eventType: string;
-  metadata: Record<string, unknown>;
-  prevHash: string;
-  hash: string;
-  createdAt: string;
-};
+// AuditLogRecord removed: audit logging is now via append-only PostgreSQL table.
+// See backend/src/audit/ for the authoritative AuditStore interface.
 
 export type ConnectorEventQuarantineRecord = {
   vendor: string;
@@ -220,7 +209,7 @@ class MemoryStore {
   inferenceAuditLogs: InferenceAuditRecord[] = [];
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
-  auditLogs = new Map<string, AuditLogRecord>();
+  // auditLogs removed: audit logging is now via append-only PostgreSQL table.
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
 
   reset() {
@@ -248,7 +237,7 @@ class MemoryStore {
     this.inferenceAuditLogs = [];
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
-    this.auditLogs.clear();
+    // auditLogs.clear() removed: audit logging is now via append-only PostgreSQL table.
     this.connectorEventQuarantine.clear();
   }
 }

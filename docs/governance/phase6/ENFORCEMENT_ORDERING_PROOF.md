@@ -195,75 +195,42 @@ Verified in test (`phase6_suppression_ordering.test.ts:282-316`): all suppressed
 
 ## 2. Audit Immutability Proof
 
-### Current State: FAIL — Documented Deficiencies
+### Current State: PASS — PostgreSQL Append-Only with Hash Chain
 
-The audit subsystem does NOT currently meet immutability requirements. This section documents the specific failures as evidence.
+Audit storage has been migrated from in-memory `Map` to a PostgreSQL append-only table with SHA-256 hash chain, restricted database role, and metadata allowlist.
 
-### 2a. Persistence Across Restarts: FAIL
+### Architecture
 
-Audit storage is in-memory only (`backend/src/store.ts:193-249`). The `MemoryStore` class uses JavaScript `Map` objects:
+- **Store**: PostgreSQL `audit_log` table (`backend/sql/001_create_audit_log.sql`)
+- **Interface**: `AuditStore` — `append()`, `list()`, `verifyChain()` only (`backend/src/audit/types.ts`)
+- **Implementation**: `PostgresAuditStore` via `pg` driver as `audit_writer` role (`backend/src/audit/postgresAuditStore.ts`)
+- **Hash chain**: `entry_hash = SHA256(previous_entry_hash || "||" || canonicalized_payload)` (`backend/src/audit/hashChain.ts`)
+- **Concurrency**: `pg_advisory_xact_lock` per org prevents chain forks
+- **Ordering**: Deterministic `(created_at ASC, id ASC)` with `UNIQUE(org_id, entry_hash)` constraint
 
-```typescript
-// store.ts:218
-auditLogs = new Map<string, AuditLogRecord>();
-```
+### 2a. Persistence Across Restarts: PASS
 
-The `store.reset()` method (`store.ts:221-248`) calls `this.auditLogs.clear()`, simulating the effect of a server restart.
+Audit data is stored in PostgreSQL. Connection close and reconnect does not lose data.
 
-**Failing test** (`backend/tests/phase6_audit_tamper_evident.test.ts:90-99`):
-```typescript
-it("FAIL: audit logs do not survive server restart (in-memory only)", () => {
-    logAuditEvent({ orgId: ORG_ID, action: "dashboard_access", actorRole: "ADMIN", metadata: {} });
-    expect(store.auditLogs.size).toBe(1);
-    store.reset(); // simulates restart
-    expect(store.auditLogs.size).toBe(0);
-    // VERDICT: FAIL — No persistence. All audit evidence is volatile.
-});
-```
+**Test** (`phase6_audit_tamper_evident.test.ts: "audit logs survive connection close and reconnect"`):
+Insert record → close store → create fresh store → verify record exists → PASS
 
-### 2b. Application Role Cannot Delete/Update/Clear: FAIL
+### 2b. Application Role Cannot Delete/Update/Clear: PASS
 
-The application role has unrestricted access to the underlying `Map` object. All three mutation types succeed:
+Three layers of defense:
+1. **Interface**: `AuditStore` has no mutation methods
+2. **Code**: `PostgresAuditStore` constructs no UPDATE/DELETE SQL
+3. **Database**: `audit_writer` role has INSERT + SELECT only
 
-**Delete** (`phase6_audit_tamper_evident.test.ts:36-52`):
-```typescript
-it("FAIL: audit log entries can be deleted from store", () => {
-    const record = logAuditEvent({ ... });
-    expect(store.auditLogs.has(record.id)).toBe(true);
-    store.auditLogs.delete(record.id);  // ATTACK
-    expect(store.auditLogs.has(record.id)).toBe(false);
-    // VERDICT: FAIL — Audit log is NOT append-only.
-});
-```
+**Tests** (`phase6_audit_tamper_evident.test.ts`):
+- `"audit_writer cannot DELETE"` → `expect(DELETE).rejects.toThrow(/permission denied/)` → PASS
+- `"audit_writer cannot UPDATE"` → `expect(UPDATE).rejects.toThrow(/permission denied/)` → PASS
+- `"audit_writer cannot TRUNCATE"` → `expect(TRUNCATE).rejects.toThrow(/permission denied/)` → PASS
+- `"AuditStore has no update/delete/clear methods"` → prototype inspection → PASS
 
-**Update** (`phase6_audit_tamper_evident.test.ts:54-75`):
-```typescript
-it("FAIL: audit log entries can be modified in place", () => {
-    const record = logAuditEvent({ ... });
-    const storedRecord = store.auditLogs.get(record.id);
-    storedRecord.actorRole = "TAMPERED";      // ATTACK
-    storedRecord.metadata = { tampered: true }; // ATTACK
-    const retrieved = store.auditLogs.get(record.id);
-    expect(retrieved?.actorRole).toBe("TAMPERED");
-    // VERDICT: FAIL — Audit records are mutable.
-});
-```
+### 2c. Tamper Detection: PASS
 
-**Clear** (`phase6_audit_tamper_evident.test.ts:77-88`):
-```typescript
-it("FAIL: entire audit log can be cleared", () => {
-    logAuditEvent({ ... });
-    logAuditEvent({ ... });
-    expect(store.auditLogs.size).toBe(2);
-    store.auditLogs.clear();  // ATTACK
-    expect(store.auditLogs.size).toBe(0);
-    // VERDICT: FAIL — Complete audit log destruction is trivial.
-});
-```
-
-### 2c. Tamper Detection: FAIL
-
-No hash chain, HMAC, or equivalent exists. The `AuditLogRecord` type (`store.ts:170-177`) contains only:
+Every record has `entry_hash` (SHA-256 hex, 64 chars) and `previous_entry_hash`. First record links to `SHA256("GENESIS")`. Previously:
 
 ```typescript
 export type AuditLogRecord = {
@@ -276,46 +243,32 @@ export type AuditLogRecord = {
 };
 ```
 
-No `hash`, `hmac`, `signature`, `checksum`, `previous`, or `chain` field.
+Now resolved with hash chain. **Tests** (`phase6_audit_tamper_evident.test.ts`):
+- `"every record has entry_hash and previous_entry_hash"` → PASS
+- `"chain links correctly across multiple records"` → r2.previous = r1.hash → PASS
+- `"tampered record is detectable via verifyChain"` → superuser tampers, `verifyChain()` returns `{ valid: false }` → PASS
+- `"empty chain is valid"` → `{ valid: true, entries_checked: 0 }` → PASS
 
-**Failing test** (`phase6_audit_tamper_evident.test.ts:107-132`):
-```typescript
-it("FAIL: no cryptographic integrity (no hash chain, no HMAC)", () => {
-    const record = logAuditEvent({ ... });
-    const fields = Object.keys(record);
-    const integrityFields = fields.filter(
-      (f) => f.includes("hash") || f.includes("hmac") || f.includes("signature") ||
-             f.includes("checksum") || f.includes("previous") || f.includes("chain")
-    );
-    expect(integrityFields).toEqual([]);
-    // VERDICT: FAIL — No tamper-detection mechanism exists.
-});
-```
+### 2d. Metadata Allowlist: PASS
 
-**Undetectable tamper** (`phase6_audit_tamper_evident.test.ts:134-155`):
-```typescript
-it("FAIL: modified records are indistinguishable from originals", () => {
-    const record = logAuditEvent({ ... metadata: { decision: "SUPPRESS", reason: "AMB_EVIDENCE" } });
-    const stored = store.auditLogs.get(record.id)!;
-    stored.metadata = { decision: "SURFACE", reason: "legitimate" };  // ATTACK
-    const retrieved = store.auditLogs.get(record.id)!;
-    expect(retrieved.metadata).toEqual({ decision: "SURFACE", reason: "legitimate" });
-    // VERDICT: FAIL — Tampering is undetectable.
-});
-```
+Zod strict schema rejects forbidden fields (`backend/src/audit/auditMetadataSchema.ts`).
+
+### 2e. No Product Surface: PASS
+
+`GET /orgs/:orgId/audit-log` removed from `app.ts`. Returns 404.
 
 ### Audit Immutability Summary
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Persistent across restarts | FAIL | `phase6_audit_tamper_evident.test.ts:90-99` |
-| Cannot delete | FAIL | `phase6_audit_tamper_evident.test.ts:36-52` |
-| Cannot update | FAIL | `phase6_audit_tamper_evident.test.ts:54-75` |
-| Cannot clear | FAIL | `phase6_audit_tamper_evident.test.ts:77-88` |
-| Tamper detection (hash-chain) | FAIL | `phase6_audit_tamper_evident.test.ts:107-132` |
-| Tamper is detectable | FAIL | `phase6_audit_tamper_evident.test.ts:134-155` |
-
-All six tests pass (they document FAIL conditions). The audit subsystem requires remediation.
+| Persistent across restarts | PASS | PostgreSQL storage survives reconnect |
+| Cannot delete | PASS | `audit_writer` role: no DELETE grant |
+| Cannot update | PASS | `audit_writer` role: no UPDATE grant |
+| Cannot clear | PASS | `audit_writer` role: no TRUNCATE grant |
+| Hash-chain tamper detection | PASS | `entry_hash` + `previous_entry_hash` on every record |
+| Tamper is detectable | PASS | `verifyChain()` detects superuser-level tampering |
+| Metadata allowlist | PASS | Zod strict schema rejects forbidden fields |
+| No product surface | PASS | Endpoint removed, returns 404 |
 
 ---
 

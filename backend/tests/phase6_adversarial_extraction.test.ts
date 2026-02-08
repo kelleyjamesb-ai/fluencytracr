@@ -370,38 +370,18 @@ describe("Attack 4: Performance Signal Extraction", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Attack 5: Audit Log Misuse", () => {
-  it("FAIL: audit logs can be counted for usage metrics", async () => {
-    // Generate audit events
-    const { logAuditEvent } = await import("../src/audit_log");
-    for (let i = 0; i < 5; i++) {
-      await logAuditEvent({
-        orgId: ORG_ID,
-        actorSub: "viewer",
-        actorRole: "EXEC_VIEWER",
-        eventType: "dashboard_access",
-        metadata: {}
-      });
-    }
-
+  it("PASS: audit log read endpoint removed — no product surface for log analytics", async () => {
     const response = await requestApp(app, {
       method: "GET",
       path: `/orgs/${ORG_ID}/audit-log`,
       headers: withAuth(adminCookie)
     });
 
-    expect(response.status).toBe(200);
-    const logs = (response.body as any).logs;
+    // Endpoint removed per Sentinel directive. No route matches → 404.
+    expect(response.status).toBe(404);
 
-    // ATTACK: count and group logs
-    // GET /audit-log self-audits (audit_log_read), so total is 6
-    const count = logs.length;
-    expect(count).toBe(6);
-    // The 5 dashboard_access records are still present
-    const dashboardLogs = logs.filter((l: any) => l.eventType === "dashboard_access");
-    expect(dashboardLogs.length).toBe(5);
-
-    // VERDICT: FAIL — Audit logs are countable and groupable.
-    // They can be repurposed as usage metrics.
+    // VERDICT: PASS — No HTTP surface exists to query, count, or group audit logs.
+    // Audit logs are evidence-only, accessed via admin tooling outside the product surface.
   });
 });
 

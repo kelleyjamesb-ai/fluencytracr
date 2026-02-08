@@ -58,7 +58,8 @@ import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
-import { listAuditLogs, logAuditEvent } from "./audit_log";
+// Audit log read endpoint removed per Sentinel directive.
+// Audit logs are evidence, not a product surface.
 import { findForbiddenField } from "./validation/forbiddenFields";
 import {
   buildCoverageSummary,
@@ -292,29 +293,36 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
 // POST /auth/login is allowlisted in authMiddleware (unauthenticated access)
 app.post("/auth/login", async (req, res) => {
   const { username, password: credential } = req.body ?? {};
-  if (typeof username !== "string" || typeof credential !== "string") {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+  if (typeof username !== "string" || !username) {
+    return res.status(400).json({ error: "Bad request", message: "username is required" });
+  }
+  if (typeof credential !== "string" || !credential) {
+    return res.status(400).json({ error: "Bad request", message: "password is required" });
   }
 
-  const user = findUser(username);
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
-  }
+  try {
+    const user = findUser(username);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  const valid = await verifyPassword(credential, user.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
-  }
+    const valid = await verifyPassword(credential, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  const token = await signJwt({ sub: user.username, role: user.role });
-  const isProduction = process.env.NODE_ENV === "production";
-  res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: isProduction,
-    maxAge: 15 * 60 * 1000
-  });
-  return res.json({ status: "authenticated", role: user.role });
+    const token = await signJwt({ sub: user.username, role: user.role });
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: isProduction,
+      maxAge: 15 * 60 * 1000
+    });
+    return res.json({ status: "authenticated", role: user.role });
+  } catch {
+    return res.status(503).json({ error: "Authentication service unavailable" });
+  }
 });
 
 // GET /auth/me is NOT allowlisted — requires valid JWT
@@ -681,19 +689,9 @@ app.get(
   (_req, res) => respondGovernanceSuppressed(res)
 );
 
-app.get(
-  "/orgs/:orgId/audit-log",
-  rbacMiddleware(["ADMIN"]),
-  async (req, res) => {
-    const org = store.orgs.get(req.params.orgId);
-    if (!org) {
-      return res.status(404).json({ error: "Org not found" });
-    }
-    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "audit_log_read", metadata: {} });
-    const logs = await listAuditLogs(org.id);
-    return res.json({ logs });
-  }
-);
+// Audit log read endpoint removed per Sentinel directive.
+// Audit logs are evidence-only, accessed via admin tooling outside the product surface.
+// Reintroduce only with Sentinel approval and governed surface design.
 
 app.get(
   "/orgs/:orgId/telemetry/index",

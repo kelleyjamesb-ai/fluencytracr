@@ -63,3 +63,8 @@ export const findUser = (username: string): SeedUser | undefined => {
 export const verifyPassword = (password: string, hash: string): Promise<boolean> => {
   return bcrypt.compare(password, hash);
 };
+
+/** @internal Test-only: reset cached users to force reload from env on next call. */
+export const _resetUsersForTesting = (): void => {
+  users = null;
+};
