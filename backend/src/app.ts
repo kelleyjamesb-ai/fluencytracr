@@ -343,12 +343,20 @@ app.post("/orgs", strictLimiter, rbacMiddleware(["ADMIN"]), async (req, res) => 
     minGroupSize: parsed.data.minGroupSize ?? 10,
     createdAt
   });
+  const createdRoleIds: string[] = [];
   const defaultRoles = ["Admin", "Exec Viewer", "Enablement Lead"];
   defaultRoles.forEach((roleName) => {
     const roleId = `role-${crypto.randomUUID()}`;
     store.roles.set(roleId, { id: roleId, orgId: id, name: roleName });
+    createdRoleIds.push(roleId);
   });
-  await logAuditEvent({ orgId: id, actorSub: req.sub!, actorRole: req.role!, eventType: "org_create", metadata: { name: parsed.data.name } });
+  try {
+    await logAuditEvent({ orgId: id, actorSub: req.sub!, actorRole: req.role!, eventType: "org_create", metadata: { name: parsed.data.name } });
+  } catch (err) {
+    store.orgs.delete(id);
+    createdRoleIds.forEach((rid) => store.roles.delete(rid));
+    throw err;
+  }
   return res.status(201).json({
     org_id: id,
     name: parsed.data.name,
@@ -380,7 +388,12 @@ app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), async (req, res) => {
     functionId: parsed.data.function_id
   };
   store.teams.set(teamId, record);
-  await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "team_create", metadata: { teamId } });
+  try {
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "team_create", metadata: { teamId } });
+  } catch (err) {
+    store.teams.delete(teamId);
+    throw err;
+  }
   return res.status(201).json(record);
 });
 
@@ -399,8 +412,14 @@ app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), async (req, r
     parentTeamId: parsed.data.parent_team_id ?? team.parentTeamId,
     functionId: parsed.data.function_id ?? team.functionId
   };
+  const prevTeam = { ...team };
   store.teams.set(team.id, updated);
-  await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_update", metadata: { teamId: team.id } });
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_update", metadata: { teamId: team.id } });
+  } catch (err) {
+    store.teams.set(team.id, prevTeam);
+    throw err;
+  }
   return res.json(updated);
 });
 
@@ -409,11 +428,27 @@ app.delete("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), async (req, 
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
   }
+  const deletedTeam = { ...team };
+  const affectedEmployees = new Map<string, Set<string>>();
+  store.employees.forEach((record, empId) => {
+    if (record.teamIds.has(team.id)) {
+      affectedEmployees.set(empId, new Set(record.teamIds));
+    }
+  });
   store.teams.delete(team.id);
   store.employees.forEach((record) => {
     record.teamIds.delete(team.id);
   });
-  await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_delete", metadata: { teamId: team.id } });
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_delete", metadata: { teamId: team.id } });
+  } catch (err) {
+    store.teams.set(team.id, deletedTeam);
+    affectedEmployees.forEach((teamIds, empId) => {
+      const emp = store.employees.get(empId);
+      if (emp) emp.teamIds = teamIds;
+    });
+    throw err;
+  }
   return res.status(204).send();
 });
 
@@ -434,7 +469,12 @@ app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const roleId = `role-${crypto.randomUUID()}`;
   const record = { id: roleId, orgId: org.id, name: parsed.data.name };
   store.roles.set(roleId, record);
-  await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "role_create", metadata: { roleId } });
+  try {
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "role_create", metadata: { roleId } });
+  } catch (err) {
+    store.roles.delete(roleId);
+    throw err;
+  }
   return res.status(201).json(record);
 });
 
@@ -447,9 +487,15 @@ app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), async (req, r
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid role payload" });
   }
+  const prevRole = { ...role };
   const updated = { ...role, name: parsed.data.name ?? role.name };
   store.roles.set(role.id, updated);
-  await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_update", metadata: { roleId: role.id } });
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_update", metadata: { roleId: role.id } });
+  } catch (err) {
+    store.roles.set(role.id, prevRole);
+    throw err;
+  }
   return res.json(updated);
 });
 
@@ -458,11 +504,27 @@ app.delete("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), async (req, 
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
   }
+  const deletedRole = { ...role };
+  const affectedByRoleDel = new Map<string, Set<string>>();
+  store.employees.forEach((record, empId) => {
+    if (record.roleIds.has(role.id)) {
+      affectedByRoleDel.set(empId, new Set(record.roleIds));
+    }
+  });
   store.roles.delete(role.id);
   store.employees.forEach((record) => {
     record.roleIds.delete(role.id);
   });
-  await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_delete", metadata: { roleId: role.id } });
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_delete", metadata: { roleId: role.id } });
+  } catch (err) {
+    store.roles.set(role.id, deletedRole);
+    affectedByRoleDel.forEach((roleIds, empId) => {
+      const emp = store.employees.get(empId);
+      if (emp) emp.roleIds = roleIds;
+    });
+    throw err;
+  }
   return res.status(204).send();
 });
 
@@ -508,7 +570,10 @@ app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), sc
   const { accepted, rejected } = validateRows(rows, GroupUpsertSchema);
   let inserted = 0;
   let updated = 0;
+  const groupSnapshots = new Map<string, { key: string; prev: ReturnType<typeof store.groups.get> }>();
   accepted.forEach((group) => {
+    const key = `${org.id}:${group.group_key}`;
+    groupSnapshots.set(key, { key, prev: store.groups.get(key) });
     const result = upsertGroup(org.id, group);
     if (result.inserted) {
       inserted += 1;
@@ -516,7 +581,18 @@ app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), sc
       updated += 1;
     }
   });
-  await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "group_upsert", metadata: { inserted, updated } });
+  try {
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "group_upsert", metadata: { inserted, updated } });
+  } catch (err) {
+    groupSnapshots.forEach(({ key, prev }) => {
+      if (prev) {
+        store.groups.set(key, prev);
+      } else {
+        store.groups.delete(key);
+      }
+    });
+    throw err;
+  }
   return res.json({ inserted, updated, rejected });
 });
 
@@ -733,7 +809,12 @@ app.post(
       return eventId;
     });
 
-    await logAuditEvent({ orgId: "global", actorSub: req.sub!, actorRole: req.role!, eventType: "event_create", metadata: { count: eventIds.length } });
+    try {
+      await logAuditEvent({ orgId: "global", actorSub: req.sub!, actorRole: req.role!, eventType: "event_create", metadata: { count: eventIds.length } });
+    } catch (err) {
+      eventIds.forEach((eid) => store.fluencyEvents.delete(eid));
+      throw err;
+    }
     return res.json({ status: "accepted", event_ids: eventIds });
   }
 );
