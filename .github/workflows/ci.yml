@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_USER: fluency
           POSTGRES_PASSWORD: fluency
@@ -50,9 +50,7 @@ jobs:
           --health-retries 5
     env:
       GOVERNANCE_ENFORCEMENT: "ON"
-      DATABASE_URL: "postgresql://fluency:fluency@localhost:5432/fluency_test"
-      AUDIT_WRITER_PASSWORD: "audit-ci-test-only"
-      AUDIT_DATABASE_URL: "postgresql://audit_writer:audit-ci-test-only@localhost:5432/fluency_test"
+      DATABASE_URL: "postgresql://fluency:fluency@localhost:5432/fluency_test?schema=public"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,8 +64,10 @@ jobs:
         run: npm install
       - name: Build shared workspace
         run: npm run build --workspace shared
-      - name: Bootstrap audit database
-        run: bash scripts/ci_bootstrap_audit_db.sh
+      - name: Apply Prisma migrations
+        run: npx prisma@5.18.0 migrate deploy --schema=backend/prisma/schema.prisma
+      - name: Generate Prisma client
+        run: npx prisma@5.18.0 generate --schema=backend/prisma/schema.prisma
       - name: Run backend tests
         run: npm test --workspace backend
       - name: Run Phase 5 required test guardrail

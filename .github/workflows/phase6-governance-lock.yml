@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_USER: fluency
           POSTGRES_PASSWORD: fluency
@@ -90,9 +90,7 @@ jobs:
           --health-retries 5
     env:
       GOVERNANCE_ENFORCEMENT: "ON"
-      DATABASE_URL: "postgresql://fluency:fluency@localhost:5432/fluency_test"
-      AUDIT_WRITER_PASSWORD: "audit-ci-test-only"
-      AUDIT_DATABASE_URL: "postgresql://audit_writer:audit-ci-test-only@localhost:5432/fluency_test"
+      DATABASE_URL: "postgresql://fluency:fluency@localhost:5432/fluency_test?schema=public"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -115,8 +113,11 @@ jobs:
       - name: Build shared workspace
         run: npm run build --workspace shared
 
-      - name: Bootstrap audit database
-        run: bash scripts/ci_bootstrap_audit_db.sh
+      - name: Apply Prisma migrations
+        run: npx prisma@5.18.0 migrate deploy --schema=backend/prisma/schema.prisma
+
+      - name: Generate Prisma client
+        run: npx prisma@5.18.0 generate --schema=backend/prisma/schema.prisma
 
       - name: Run Phase 5 governance regression tests (REQUIRED - blocking)
         run: python3 scripts/ci_phase5_required_tests.py
@@ -128,7 +129,15 @@ jobs:
             "$GITHUB_WORKSPACE/backend/tests/phase6_suppression_ordering.test.ts" \
             "$GITHUB_WORKSPACE/backend/tests/phase6_audit_tamper_evident.test.ts" \
             "$GITHUB_WORKSPACE/backend/tests/phase6_adversarial_extraction.test.ts" \
-            --watchman=false
+            --watchman=false --runInBand
+
+      - name: Run Phase 7 security route-auth audit tests (REQUIRED - blocking)
+        run: |
+          npm test --workspace backend -- --runTestsByPath \
+            "$GITHUB_WORKSPACE/backend/tests/phase7_route_auth_coverage.test.ts" \
+            "$GITHUB_WORKSPACE/backend/tests/phase7_audit_wiring.test.ts" \
+            "$GITHUB_WORKSPACE/backend/tests/phase7_audit_concurrency.test.ts" \
+            --watchman=false --runInBand
 
       - name: Run V1 governance gates
         run: |

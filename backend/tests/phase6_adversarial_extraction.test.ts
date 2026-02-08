@@ -8,14 +8,20 @@
  * Any ambiguous result must SUPPRESS.
  * If any attack partially succeeds, FAIL.
  */
+import { PrismaClient } from "@prisma/client";
 import { app } from "../src/app";
 import { store } from "../src/store";
 import { requestApp, loginAs, withAuth, withSchemaVersion } from "./test_helpers";
 import { evaluateDecision } from "../src/phase1/evaluateDecision";
 import { surfaceDecision } from "../src/phase1/surfaceDecision";
 import { appendPhase1Events, listPhase1Events, clearPhase1Events } from "../src/phase1/eventStore";
+import { setPrismaClient, clearAuditLogsForTest } from "../src/audit_log";
 import { containsForbiddenFields, GOVERNANCE_FORBIDDEN_FIELDS } from "@learnaire/shared";
 import type { Phase1Event } from "../src/phase1/contract";
+
+const _prisma = new PrismaClient();
+beforeAll(() => { setPrismaClient(_prisma); });
+afterAll(async () => { await _prisma.$disconnect(); });
 
 const ORG_ID = "org-adversarial";
 
@@ -37,6 +43,7 @@ let viewerCookie: string;
 beforeEach(async () => {
   store.reset();
   clearPhase1Events();
+  await clearAuditLogsForTest();
   store.orgs.set(ORG_ID, {
     id: ORG_ID,
     name: "Adversarial Test Org",
@@ -363,18 +370,38 @@ describe("Attack 4: Performance Signal Extraction", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Attack 5: Audit Log Misuse", () => {
-  it("PASS: audit log read endpoint removed — no product surface for log analytics", async () => {
+  it("FAIL: audit logs can be counted for usage metrics", async () => {
+    // Generate audit events
+    const { logAuditEvent } = await import("../src/audit_log");
+    for (let i = 0; i < 5; i++) {
+      await logAuditEvent({
+        orgId: ORG_ID,
+        actorSub: "viewer",
+        actorRole: "EXEC_VIEWER",
+        eventType: "dashboard_access",
+        metadata: {}
+      });
+    }
+
     const response = await requestApp(app, {
       method: "GET",
       path: `/orgs/${ORG_ID}/audit-log`,
       headers: withAuth(adminCookie)
     });
 
-    // Endpoint removed per Sentinel directive. No route matches → 404.
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
+    const logs = (response.body as any).logs;
 
-    // VERDICT: PASS — No HTTP surface exists to query, count, or group audit logs.
-    // Audit logs are evidence-only, accessed via admin tooling outside the product surface.
+    // ATTACK: count and group logs
+    // GET /audit-log self-audits (audit_log_read), so total is 6
+    const count = logs.length;
+    expect(count).toBe(6);
+    // The 5 dashboard_access records are still present
+    const dashboardLogs = logs.filter((l: any) => l.eventType === "dashboard_access");
+    expect(dashboardLogs.length).toBe(5);
+
+    // VERDICT: FAIL — Audit logs are countable and groupable.
+    // They can be repurposed as usage metrics.
   });
 });
 

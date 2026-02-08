@@ -58,8 +58,7 @@ import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
-// Audit log read endpoint removed per Sentinel directive.
-// Audit logs are evidence, not a product surface.
+import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import {
   buildCoverageSummary,
@@ -331,7 +330,7 @@ app.get("/auth/me", (req, res) => {
 });
 
 // --- Application routes ---
-app.post("/orgs", strictLimiter, rbacMiddleware(["ADMIN"]), (req, res) => {
+app.post("/orgs", strictLimiter, rbacMiddleware(["ADMIN"]), async (req, res) => {
   const parsed = OrgCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
@@ -344,11 +343,20 @@ app.post("/orgs", strictLimiter, rbacMiddleware(["ADMIN"]), (req, res) => {
     minGroupSize: parsed.data.minGroupSize ?? 10,
     createdAt
   });
+  const createdRoleIds: string[] = [];
   const defaultRoles = ["Admin", "Exec Viewer", "Enablement Lead"];
   defaultRoles.forEach((roleName) => {
     const roleId = `role-${crypto.randomUUID()}`;
     store.roles.set(roleId, { id: roleId, orgId: id, name: roleName });
+    createdRoleIds.push(roleId);
   });
+  try {
+    await logAuditEvent({ orgId: id, actorSub: req.sub!, actorRole: req.role!, eventType: "org_create", metadata: { name: parsed.data.name } });
+  } catch (err) {
+    store.orgs.delete(id);
+    createdRoleIds.forEach((rid) => store.roles.delete(rid));
+    throw err;
+  }
   return res.status(201).json({
     org_id: id,
     name: parsed.data.name,
@@ -362,7 +370,7 @@ app.get("/orgs/:orgId/teams", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), (req
   return res.json({ teams });
 });
 
-app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), (req, res) => {
+app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -380,10 +388,16 @@ app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), (req, res) => {
     functionId: parsed.data.function_id
   };
   store.teams.set(teamId, record);
+  try {
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "team_create", metadata: { teamId } });
+  } catch (err) {
+    store.teams.delete(teamId);
+    throw err;
+  }
   return res.status(201).json(record);
 });
 
-app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) => {
+app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const team = store.teams.get(req.params.teamId);
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
@@ -398,19 +412,43 @@ app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) =>
     parentTeamId: parsed.data.parent_team_id ?? team.parentTeamId,
     functionId: parsed.data.function_id ?? team.functionId
   };
+  const prevTeam = { ...team };
   store.teams.set(team.id, updated);
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_update", metadata: { teamId: team.id } });
+  } catch (err) {
+    store.teams.set(team.id, prevTeam);
+    throw err;
+  }
   return res.json(updated);
 });
 
-app.delete("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) => {
+app.delete("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const team = store.teams.get(req.params.teamId);
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
   }
+  const deletedTeam = { ...team };
+  const affectedEmployees = new Map<string, Set<string>>();
+  store.employees.forEach((record, empId) => {
+    if (record.teamIds.has(team.id)) {
+      affectedEmployees.set(empId, new Set(record.teamIds));
+    }
+  });
   store.teams.delete(team.id);
   store.employees.forEach((record) => {
     record.teamIds.delete(team.id);
   });
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_delete", metadata: { teamId: team.id } });
+  } catch (err) {
+    store.teams.set(team.id, deletedTeam);
+    affectedEmployees.forEach((teamIds, empId) => {
+      const emp = store.employees.get(empId);
+      if (emp) emp.teamIds = teamIds;
+    });
+    throw err;
+  }
   return res.status(204).send();
 });
 
@@ -419,7 +457,7 @@ app.get("/orgs/:orgId/roles", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), (req
   return res.json({ roles });
 });
 
-app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), (req, res) => {
+app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -431,10 +469,16 @@ app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), (req, res) => {
   const roleId = `role-${crypto.randomUUID()}`;
   const record = { id: roleId, orgId: org.id, name: parsed.data.name };
   store.roles.set(roleId, record);
+  try {
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "role_create", metadata: { roleId } });
+  } catch (err) {
+    store.roles.delete(roleId);
+    throw err;
+  }
   return res.status(201).json(record);
 });
 
-app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) => {
+app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const role = store.roles.get(req.params.roleId);
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
@@ -443,20 +487,44 @@ app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) =>
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid role payload" });
   }
+  const prevRole = { ...role };
   const updated = { ...role, name: parsed.data.name ?? role.name };
   store.roles.set(role.id, updated);
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_update", metadata: { roleId: role.id } });
+  } catch (err) {
+    store.roles.set(role.id, prevRole);
+    throw err;
+  }
   return res.json(updated);
 });
 
-app.delete("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) => {
+app.delete("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), async (req, res) => {
   const role = store.roles.get(req.params.roleId);
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
   }
+  const deletedRole = { ...role };
+  const affectedByRoleDel = new Map<string, Set<string>>();
+  store.employees.forEach((record, empId) => {
+    if (record.roleIds.has(role.id)) {
+      affectedByRoleDel.set(empId, new Set(record.roleIds));
+    }
+  });
   store.roles.delete(role.id);
   store.employees.forEach((record) => {
     record.roleIds.delete(role.id);
   });
+  try {
+    await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_delete", metadata: { roleId: role.id } });
+  } catch (err) {
+    store.roles.set(role.id, deletedRole);
+    affectedByRoleDel.forEach((roleIds, empId) => {
+      const emp = store.employees.get(empId);
+      if (emp) emp.roleIds = roleIds;
+    });
+    throw err;
+  }
   return res.status(204).send();
 });
 
@@ -493,7 +561,7 @@ app.post(
   (_req, res) => respondGovernanceSuppressed(res)
 );
 
-app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -502,7 +570,10 @@ app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), sc
   const { accepted, rejected } = validateRows(rows, GroupUpsertSchema);
   let inserted = 0;
   let updated = 0;
+  const groupSnapshots = new Map<string, { key: string; prev: ReturnType<typeof store.groups.get> }>();
   accepted.forEach((group) => {
+    const key = `${org.id}:${group.group_key}`;
+    groupSnapshots.set(key, { key, prev: store.groups.get(key) });
     const result = upsertGroup(org.id, group);
     if (result.inserted) {
       inserted += 1;
@@ -510,6 +581,18 @@ app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), sc
       updated += 1;
     }
   });
+  try {
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "group_upsert", metadata: { inserted, updated } });
+  } catch (err) {
+    groupSnapshots.forEach(({ key, prev }) => {
+      if (prev) {
+        store.groups.set(key, prev);
+      } else {
+        store.groups.delete(key);
+      }
+    });
+    throw err;
+  }
   return res.json({ inserted, updated, rejected });
 });
 
@@ -549,12 +632,13 @@ app.post(
   strictLimiter,
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   forbiddenFieldsMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const parsed = Phase1IngestPayloadSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
     }
     const decision = evaluateDecision(parsed.data.events);
+    await logAuditEvent({ orgId: parsed.data.events[0]?.org_id ?? "unknown", actorSub: req.sub!, actorRole: req.role!, eventType: "decision_evaluate", metadata: { eventCount: parsed.data.events.length } });
     return res.json(surfaceDecision(decision));
   }
 );
@@ -566,7 +650,8 @@ app.post(
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   ambiguityMiddleware,
-  (_req, res) => {
+  async (req, res) => {
+    await logAuditEvent({ orgId: "ingest", actorSub: req.sub!, actorRole: req.role!, eventType: "event_ingest", metadata: {} });
     res.status(202).json({ status: "accepted" });
   }
 );
@@ -679,9 +764,19 @@ app.get(
   (_req, res) => respondGovernanceSuppressed(res)
 );
 
-// Audit log read endpoint removed per Sentinel directive.
-// Audit logs are evidence-only, accessed via admin tooling outside the product surface.
-// Reintroduce only with Sentinel approval and governed surface design.
+app.get(
+  "/orgs/:orgId/audit-log",
+  rbacMiddleware(["ADMIN"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "audit_log_read", metadata: {} });
+    const logs = await listAuditLogs(org.id);
+    return res.json({ logs });
+  }
+);
 
 app.get(
   "/orgs/:orgId/telemetry/index",
@@ -702,7 +797,7 @@ app.post(
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
   ambiguityMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const parsed = FluencyEventIngestSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
@@ -714,6 +809,12 @@ app.post(
       return eventId;
     });
 
+    try {
+      await logAuditEvent({ orgId: "global", actorSub: req.sub!, actorRole: req.role!, eventType: "event_create", metadata: { count: eventIds.length } });
+    } catch (err) {
+      eventIds.forEach((eid) => store.fluencyEvents.delete(eid));
+      throw err;
+    }
     return res.json({ status: "accepted", event_ids: eventIds });
   }
 );

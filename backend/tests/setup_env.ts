@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 process.env.GOVERNANCE_ENFORCEMENT = "ON";
 process.env.JWT_SECRET = "test-jwt-secret-phase6b-not-for-production";
 process.env.NODE_ENV = "test";
+process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://fluency:fluency@localhost:5432/fluency_test?schema=public";
 
 // Audit database env vars. DATABASE_URL is set in CI; empty locally skips audit tests.
 process.env.DATABASE_URL = process.env.DATABASE_URL ?? "";
