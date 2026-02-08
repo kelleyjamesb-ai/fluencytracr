@@ -293,29 +293,36 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
 // POST /auth/login is allowlisted in authMiddleware (unauthenticated access)
 app.post("/auth/login", async (req, res) => {
   const { username, password: credential } = req.body ?? {};
-  if (typeof username !== "string" || typeof credential !== "string") {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+  if (typeof username !== "string" || !username) {
+    return res.status(400).json({ error: "Bad request", message: "username is required" });
+  }
+  if (typeof credential !== "string" || !credential) {
+    return res.status(400).json({ error: "Bad request", message: "password is required" });
   }
 
-  const user = findUser(username);
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
-  }
+  try {
+    const user = findUser(username);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  const valid = await verifyPassword(credential, user.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
-  }
+    const valid = await verifyPassword(credential, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  const token = await signJwt({ sub: user.username, role: user.role });
-  const isProduction = process.env.NODE_ENV === "production";
-  res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: isProduction,
-    maxAge: 15 * 60 * 1000
-  });
-  return res.json({ status: "authenticated", role: user.role });
+    const token = await signJwt({ sub: user.username, role: user.role });
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: isProduction,
+      maxAge: 15 * 60 * 1000
+    });
+    return res.json({ status: "authenticated", role: user.role });
+  } catch {
+    return res.status(503).json({ error: "Authentication service unavailable" });
+  }
 });
 
 // GET /auth/me is NOT allowlisted — requires valid JWT
