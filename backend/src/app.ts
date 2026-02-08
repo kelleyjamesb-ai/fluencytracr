@@ -355,7 +355,7 @@ app.post("/orgs", strictLimiter, rbacMiddleware(["ADMIN"]), async (req, res) => 
   } catch (err) {
     store.orgs.delete(id);
     createdRoleIds.forEach((rid) => store.roles.delete(rid));
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.status(201).json({
     org_id: id,
@@ -392,7 +392,7 @@ app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), async (req, res) => {
     await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "team_create", metadata: { teamId } });
   } catch (err) {
     store.teams.delete(teamId);
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.status(201).json(record);
 });
@@ -418,7 +418,7 @@ app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), async (req, r
     await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "team_update", metadata: { teamId: team.id } });
   } catch (err) {
     store.teams.set(team.id, prevTeam);
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.json(updated);
 });
@@ -447,7 +447,7 @@ app.delete("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), async (req, 
       const emp = store.employees.get(empId);
       if (emp) emp.teamIds = teamIds;
     });
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.status(204).send();
 });
@@ -473,7 +473,7 @@ app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), async (req, res) => {
     await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "role_create", metadata: { roleId } });
   } catch (err) {
     store.roles.delete(roleId);
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.status(201).json(record);
 });
@@ -494,7 +494,7 @@ app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), async (req, r
     await logAuditEvent({ orgId: req.params.orgId, actorSub: req.sub!, actorRole: req.role!, eventType: "role_update", metadata: { roleId: role.id } });
   } catch (err) {
     store.roles.set(role.id, prevRole);
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.json(updated);
 });
@@ -523,7 +523,7 @@ app.delete("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), async (req, 
       const emp = store.employees.get(empId);
       if (emp) emp.roleIds = roleIds;
     });
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.status(204).send();
 });
@@ -591,7 +591,7 @@ app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]), sc
         store.groups.delete(key);
       }
     });
-    throw err;
+    return res.status(500).json({ error: "Internal server error" });
   }
   return res.json({ inserted, updated, rejected });
 });
@@ -813,7 +813,7 @@ app.post(
       await logAuditEvent({ orgId: "global", actorSub: req.sub!, actorRole: req.role!, eventType: "event_create", metadata: { count: eventIds.length } });
     } catch (err) {
       eventIds.forEach((eid) => store.fluencyEvents.delete(eid));
-      throw err;
+      return res.status(500).json({ error: "Internal server error" });
     }
     return res.json({ status: "accepted", event_ids: eventIds });
   }
