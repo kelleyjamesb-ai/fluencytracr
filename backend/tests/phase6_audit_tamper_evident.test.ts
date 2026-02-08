@@ -247,6 +247,36 @@ describe("Tamper detection — ENFORCED", () => {
     expect(sha256(canonical1)).toBe(sha256(canonical2));
   });
 
+  it("PASS: nested metadata tamper is detected by verifyChain", async () => {
+    // Create entry with deeply nested metadata
+    const nested = {
+      user: { name: "Alice", roles: ["admin", "editor"] },
+      action: { target: "doc-1", details: { changed: true, depth: 3 } },
+    };
+    await logAuditEvent({
+      orgId: ORG_ID,
+      actorSub: "admin",
+      actorRole: "ADMIN",
+      eventType: "nested_meta_event",
+      metadata: nested,
+    });
+
+    // Chain is valid before tampering
+    const logs = await listAuditLogs(ORG_ID);
+    expect(verifyChain(logs).valid).toBe(true);
+
+    // Tamper with a deeply nested metadata field (records are frozen, so clone)
+    const tampered = logs.map((r) => ({ ...r }));
+    const meta = JSON.parse(JSON.stringify(tampered[0].metadata)) as Record<string, any>;
+    meta.action.details.changed = false; // flip nested boolean
+    tampered[0].metadata = meta;
+
+    // verifyChain must detect the tamper
+    const result = verifyChain(tampered);
+    expect(result.valid).toBe(false);
+    expect(result.brokenAt).toBe(tampered[0].id);
+  });
+
   it("PASS: separate orgs have independent chains", async () => {
     const ORG_B = "org-audit-test-b";
     store.orgs.set(ORG_B, {

@@ -17,30 +17,45 @@ export const setPrismaClient = (client: PrismaClient): void => {
 };
 
 // ---------------------------------------------------------------------------
-// Canonical serialization (deterministic, no raw JSON.stringify reliance)
+// Canonical serialization — stable recursive stringify
 // ---------------------------------------------------------------------------
 
 /**
- * Deep-sort all object keys recursively, producing a deterministic structure.
- * Arrays preserve element order; object keys are sorted lexicographically.
+ * Stable recursive JSON stringify.
+ * - Sorts object keys lexicographically at EVERY depth
+ * - Preserves array element order
+ * - Deterministic handling of null, booleans, numbers, strings
+ * - Never relies on JSON.stringify key ordering
  */
-const deepSortKeys = (value: unknown): unknown => {
-  if (value === null || value === undefined) return value;
-  if (Array.isArray(value)) return value.map(deepSortKeys);
-  if (typeof value === "object") {
-    const sorted: Record<string, unknown> = {};
-    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
-      sorted[key] = deepSortKeys((value as Record<string, unknown>)[key]);
-    }
-    return sorted;
+export const stableStringify = (value: unknown): string => {
+  if (value === null || value === undefined) return "null";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") {
+    if (!isFinite(value)) return "null";
+    return String(value);
   }
-  return value;
+  if (typeof value === "string") {
+    // Use JSON.stringify only for string escaping (quotes, backslashes, control chars)
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return "[" + value.map(stableStringify).join(",") + "]";
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const pairs = Object.keys(obj)
+      .sort()
+      .filter((k) => obj[k] !== undefined)
+      .map((k) => JSON.stringify(k) + ":" + stableStringify(obj[k]));
+    return "{" + pairs.join(",") + "}";
+  }
+  return "null";
 };
 
 /**
  * Canonical serialization for hash computation.
- * Fixed field order: seq, orgId, actorSub, actorRole, eventType, metadata, createdAt, prevHash
- * Metadata keys are deep-sorted. Output is deterministic.
+ * Fixed field order enforced by explicit array of keys.
+ * All depths get sorted keys via stableStringify.
  */
 export const canonicalize = (record: {
   seq: number;
@@ -52,17 +67,18 @@ export const canonicalize = (record: {
   createdAt: string;
   prevHash: string;
 }): string => {
-  const canonical = {
-    seq: record.seq,
-    orgId: record.orgId,
-    actorSub: record.actorSub,
-    actorRole: record.actorRole,
-    eventType: record.eventType,
-    metadata: deepSortKeys(record.metadata),
-    createdAt: record.createdAt,
-    prevHash: record.prevHash,
-  };
-  return JSON.stringify(canonical);
+  // Enforce top-level field order explicitly (not relying on object insertion order)
+  const fields: [string, unknown][] = [
+    ["seq", record.seq],
+    ["orgId", record.orgId],
+    ["actorSub", record.actorSub],
+    ["actorRole", record.actorRole],
+    ["eventType", record.eventType],
+    ["metadata", record.metadata],
+    ["createdAt", record.createdAt],
+    ["prevHash", record.prevHash],
+  ];
+  return "{" + fields.map(([k, v]) => JSON.stringify(k) + ":" + stableStringify(v)).join(",") + "}";
 };
 
 /**
