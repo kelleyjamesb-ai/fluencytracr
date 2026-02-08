@@ -139,6 +139,6 @@ describe("Route enumeration — auth coverage", () => {
     });
     // 401 from invalid credentials is expected — the point is it's not blocked by authMiddleware
     expect(loginRes.status).toBe(401);
-    expect((loginRes.body as any).message).toBe("Invalid credentials");
+    expect((loginRes.body as any).error).toBe("Invalid credentials");
   });
 });

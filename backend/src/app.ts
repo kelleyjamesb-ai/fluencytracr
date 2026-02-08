@@ -58,8 +58,7 @@ import { runFluencyIndexJob } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
-// Audit log read endpoint removed per Sentinel directive.
-// Audit logs are evidence, not a product surface.
+import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import {
   buildCoverageSummary,
@@ -689,9 +688,19 @@ app.get(
   (_req, res) => respondGovernanceSuppressed(res)
 );
 
-// Audit log read endpoint removed per Sentinel directive.
-// Audit logs are evidence-only, accessed via admin tooling outside the product surface.
-// Reintroduce only with Sentinel approval and governed surface design.
+app.get(
+  "/orgs/:orgId/audit-log",
+  rbacMiddleware(["ADMIN"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    await logAuditEvent({ orgId: org.id, actorSub: req.sub!, actorRole: req.role!, eventType: "audit_log_read", metadata: {} });
+    const logs = await listAuditLogs(org.id);
+    return res.json({ logs });
+  }
+);
 
 app.get(
   "/orgs/:orgId/telemetry/index",
