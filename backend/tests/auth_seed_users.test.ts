@@ -77,13 +77,14 @@ describe("assertAuthSeedUsersConfigured — boot assertion", () => {
 
 import { app } from "../src/app";
 import { requestApp } from "./test_helpers";
+import { _resetUsersForTesting } from "../src/auth/users";
 
 describe("/auth/login handler", () => {
   it("returns 400 when username is missing", async () => {
     const res = await requestApp(app, {
       method: "POST",
       path: "/auth/login",
-      body: { password: "admin" }
+      body: { password: "admin-test" }
     });
     expect(res.status).toBe(400);
   });
@@ -111,20 +112,21 @@ describe("/auth/login handler", () => {
     const res = await requestApp(app, {
       method: "POST",
       path: "/auth/login",
-      body: { username: "admin", password: "admin" }
+      body: { username: "admin", password: "admin-test" }
     });
     expect(res.status).toBe(200);
-    expect((res.body as Record<string, unknown>).username).toBe("admin");
+    expect((res.body as Record<string, unknown>).role).toBe("ADMIN");
   });
 
   it("returns 503 when AUTH_SEED_USERS becomes corrupted at runtime", async () => {
     const original = process.env.AUTH_SEED_USERS;
     process.env.AUTH_SEED_USERS = "corrupted";
+    _resetUsersForTesting();
     try {
       const res = await requestApp(app, {
         method: "POST",
         path: "/auth/login",
-        body: { username: "admin", password: "admin" }
+        body: { username: "admin", password: "admin-test" }
       });
       expect(res.status).toBe(503);
       const body = res.body as Record<string, unknown>;
@@ -134,23 +136,26 @@ describe("/auth/login handler", () => {
       expect(res.text).not.toContain("corrupted");
     } finally {
       process.env.AUTH_SEED_USERS = original;
+      _resetUsersForTesting();
     }
   });
 
   it("does not leak stack traces on error", async () => {
     const original = process.env.AUTH_SEED_USERS;
     delete process.env.AUTH_SEED_USERS;
+    _resetUsersForTesting();
     try {
       const res = await requestApp(app, {
         method: "POST",
         path: "/auth/login",
-        body: { username: "admin", password: "admin" }
+        body: { username: "admin", password: "admin-test" }
       });
       expect(res.status).toBe(503);
       expect(res.text).not.toContain("Error");
       expect(res.text).not.toContain("stack");
     } finally {
       process.env.AUTH_SEED_USERS = original;
+      _resetUsersForTesting();
     }
   });
 });

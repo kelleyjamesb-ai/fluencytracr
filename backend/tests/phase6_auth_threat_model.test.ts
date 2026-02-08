@@ -31,7 +31,7 @@ describe("Phase 6B-A Auth Enforcement — Identity Is Verified", () => {
     // An unauthenticated request with only x-role header is rejected
     const response = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: { "x-role": "ADMIN" }
     });
 
@@ -43,7 +43,7 @@ describe("Phase 6B-A Auth Enforcement — Identity Is Verified", () => {
     // Request with x-role but no auth token
     const response = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: { "x-role": "ADMIN" }
     });
 
@@ -56,11 +56,12 @@ describe("Phase 6B-A Auth Enforcement — Identity Is Verified", () => {
     const cookie = await loginAs(app, "ADMIN");
     const response = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: withAuth(cookie)
     });
 
-    expect(response.status).toBe(200);
+    // ADMIN passes auth + RBAC, governance suppressed → 404 (not 401/403)
+    expect(response.status).toBe(404);
   });
 });
 
@@ -81,7 +82,7 @@ describe("Phase 6B-A Auth Enforcement — Tokens Cannot Be Bypassed", () => {
     // Attacker sends role header — rejected because no JWT
     const response = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: { "x-role": "ADMIN" }
     });
 
@@ -94,10 +95,10 @@ describe("Phase 6B-A Auth Enforcement — Privileges Cannot Be Escalated", () =>
     // Authenticate as EXEC_VIEWER via JWT
     const viewerCookie = await loginAs(app, "EXEC_VIEWER");
 
-    // Step 1: As EXEC_VIEWER with valid JWT, audit-log is forbidden (RBAC)
+    // Step 1: As EXEC_VIEWER with valid JWT, telemetry/index is forbidden (RBAC: ADMIN only)
     const asViewer = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: withAuth(viewerCookie, { "x-role": "ADMIN" })
     });
     // Even with x-role: ADMIN header, JWT role (EXEC_VIEWER) governs → 403
@@ -107,10 +108,11 @@ describe("Phase 6B-A Auth Enforcement — Privileges Cannot Be Escalated", () =>
     const adminCookie = await loginAs(app, "ADMIN");
     const asAdmin = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: withAuth(adminCookie)
     });
-    expect(asAdmin.status).toBe(200);
+    // Governance suppressed returns 404, but RBAC passed
+    expect(asAdmin.status).toBe(404);
   });
 
   it("PASS: role escalation via header is impossible with JWT auth", async () => {
@@ -157,10 +159,10 @@ describe("Phase 6B-A Auth Enforcement — Privileges Cannot Be Escalated", () =>
     const leadCookie = await loginAs(app, "ENABLEMENT_LEAD");
     const response = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: withAuth(leadCookie)
     });
-    // ENABLEMENT_LEAD is not in ["ADMIN"] for audit-log → 403
+    // ENABLEMENT_LEAD is not in ["ADMIN"] for telemetry/index → 403
     expect(response.status).toBe(403);
   });
 
@@ -168,7 +170,7 @@ describe("Phase 6B-A Auth Enforcement — Privileges Cannot Be Escalated", () =>
     // Request with x-role: SUPERADMIN and no JWT → 401 (not 400)
     const response = await requestApp(app, {
       method: "GET",
-      path: `/orgs/${ORG_ID}/audit-log`,
+      path: `/orgs/${ORG_ID}/telemetry/index`,
       headers: { "x-role": "SUPERADMIN" }
     });
     expect(response.status).toBe(401);
