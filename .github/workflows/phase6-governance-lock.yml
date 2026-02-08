@@ -116,6 +116,9 @@ jobs:
       - name: Apply Prisma migrations
         run: npx prisma@5.18.0 migrate deploy --schema=backend/prisma/schema.prisma
 
+      - name: Generate Prisma client
+        run: npx prisma@5.18.0 generate --schema=backend/prisma/schema.prisma
+
       - name: Run Phase 5 governance regression tests (REQUIRED - blocking)
         run: python3 scripts/ci_phase5_required_tests.py
 

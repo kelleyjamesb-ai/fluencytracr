@@ -66,6 +66,8 @@ jobs:
         run: npm run build --workspace shared
       - name: Apply Prisma migrations
         run: npx prisma@5.18.0 migrate deploy --schema=backend/prisma/schema.prisma
+      - name: Generate Prisma client
+        run: npx prisma@5.18.0 generate --schema=backend/prisma/schema.prisma
       - name: Run backend tests
         run: npm test --workspace backend
       - name: Run Phase 5 required test guardrail
