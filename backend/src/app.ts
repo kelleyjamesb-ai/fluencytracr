@@ -60,6 +60,7 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
+import { Prisma } from "@prisma/client";
 import { getPrisma } from "./db";
 import {
   buildCoverageSummary,
@@ -811,7 +812,7 @@ app.post(
       return {
         event_id: eventId,
         schema_version: schemaVersion,
-        payload: { ...event, event_id: eventId } as unknown as Record<string, unknown>,
+        payload: { ...event, event_id: eventId } as unknown as Prisma.InputJsonValue,
       };
     });
 
