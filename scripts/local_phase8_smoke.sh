@@ -63,7 +63,7 @@ cleanup() {
   set +e
   if [[ -n "${BACKEND_PID:-}" ]]; then kill "$BACKEND_PID" 2>/dev/null; wait "$BACKEND_PID" 2>/dev/null; fi
   if [[ "${LEAVE_PG_RUNNING:-0}" == "0" ]]; then docker stop "$PG_CONTAINER" >/dev/null 2>&1; fi
-  rm -f "${COOKIE_JAR:-}" /tmp/phase8_resp.json
+  rm -f "${COOKIE_JAR:-}" "${BACKEND_LOG:-}" /tmp/phase8_resp.json
 }
 trap cleanup EXIT
 
@@ -135,19 +135,32 @@ fi
 # Use ts-node (not ts-node-dev) — no file watcher needed for a smoke test.
 # ts-node-dev --respawn restarts on ANY file touch, which iCloud Desktop
 # sync triggers constantly, causing infinite restart loops.
+BACKEND_LOG="$(mktemp)"
 log "Starting backend (port ${PORT})..."
-(cd "$BACKEND_DIR" && npx ts-node --transpile-only src/index.ts 2>&1) &
+log "Backend log: ${BACKEND_LOG}"
+(cd "$BACKEND_DIR" && npx ts-node --transpile-only src/index.ts 2>&1) > "$BACKEND_LOG" &
 BACKEND_PID=$!
 
-log "Waiting for backend at ${API_BASE}${HEALTH_PATH}..."
-for i in $(seq 1 45); do
+BACKEND_TIMEOUT="${BACKEND_TIMEOUT:-180}"
+log "Waiting up to ${BACKEND_TIMEOUT}s for backend at ${API_BASE}${HEALTH_PATH}..."
+for i in $(seq 1 "$BACKEND_TIMEOUT"); do
   if curl -sf "${API_BASE}${HEALTH_PATH}" >/dev/null 2>&1; then
     break
   fi
   if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
-    die "Backend process exited. Check error output above."
+    log "--- Backend output ---"
+    cat "$BACKEND_LOG" >&2
+    log "--- End backend output ---"
+    die "Backend process exited. See output above."
   fi
-  if [[ "$i" == "45" ]]; then die "Backend not ready within 45s"; fi
+  if [[ "$i" == "$BACKEND_TIMEOUT" ]]; then
+    log "--- Backend output (timeout) ---"
+    cat "$BACKEND_LOG" >&2
+    log "--- End backend output ---"
+    die "Backend not ready within ${BACKEND_TIMEOUT}s"
+  fi
+  # Progress indicator every 15s
+  if (( i % 15 == 0 )); then log "  ...still waiting (${i}s)"; fi
   sleep 1
 done
 log "Backend is ready."
