@@ -132,10 +132,11 @@ if [[ -f "$ROOT_DIR/shared/package.json" ]]; then
 fi
 
 # ---- 5) Start backend ----
+# Use ts-node (not ts-node-dev) — no file watcher needed for a smoke test.
+# ts-node-dev --respawn restarts on ANY file touch, which iCloud Desktop
+# sync triggers constantly, causing infinite restart loops.
 log "Starting backend (port ${PORT})..."
-(cd "$BACKEND_DIR" && npx ts-node-dev --respawn --transpile-only \
-  --ignore-watch ../shared --ignore-watch node_modules \
-  src/index.ts 2>&1) &
+(cd "$BACKEND_DIR" && npx ts-node --transpile-only src/index.ts 2>&1) &
 BACKEND_PID=$!
 
 log "Waiting for backend at ${API_BASE}${HEALTH_PATH}..."
