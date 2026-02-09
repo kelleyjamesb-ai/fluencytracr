@@ -60,6 +60,7 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
+import { Prisma } from "@prisma/client";
 import { getPrisma } from "./db";
 import { Prisma } from "@prisma/client";
 import {
