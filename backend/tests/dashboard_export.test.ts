@@ -2,7 +2,7 @@ import { app } from "../src/app";
 import { store } from "../src/store";
 
 const startServer = () => {
-  return new Promise<{ url: string; close: () => void }>((resolve) => {
+  return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     const server = app.listen(0, () => {
       const address = server.address();
       if (typeof address === "string" || address === null) {
@@ -10,7 +10,7 @@ const startServer = () => {
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => server.close()
+        close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
       });
     });
   });
@@ -27,7 +27,7 @@ it("exports dashboard CSV", async () => {
     headers: { "x-role": "EXEC_VIEWER" }
   });
   const body = await response.text();
-  server.close();
+  await server.close();
 
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toMatch(/text\/csv/);
@@ -40,7 +40,7 @@ it("exports dashboard PDF", async () => {
     headers: { "x-role": "EXEC_VIEWER" }
   });
   const buffer = await response.arrayBuffer();
-  server.close();
+  await server.close();
 
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toMatch(/application\/pdf/);

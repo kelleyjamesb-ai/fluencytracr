@@ -3,7 +3,7 @@ import { store } from "../src/store";
 import { withSchemaVersion } from "./test_helpers";
 
 const startServer = () => {
-  return new Promise<{ url: string; close: () => void }>((resolve) => {
+  return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     const server = app.listen(0, () => {
       const address = server.address();
       if (typeof address === "string" || address === null) {
@@ -11,7 +11,7 @@ const startServer = () => {
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => server.close()
+        close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
       });
     });
   });
@@ -35,7 +35,7 @@ it("stores usage shape signals", async () => {
     body: JSON.stringify({ team_id: "team-1", tool_class: "coding", category: "regular" })
   });
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(response.status).toBe(201);
   expect(payload.category).toBe("regular");
@@ -53,7 +53,7 @@ it("stores usage shape at role level", async () => {
     body: JSON.stringify({ role_id: "role-1", tool_class: "llm_chat", category: "rare" })
   });
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(response.status).toBe(201);
   expect(payload.roleId).toBe("role-1");
@@ -75,7 +75,7 @@ it("rejects usage shape linked to individuals", async () => {
     })
   });
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(response.status).toBe(400);
   expect(payload.error).toMatch(/invalid|forbidden/i);

@@ -1,12 +1,15 @@
 module.exports = {
-  preset: "ts-jest",
   testEnvironment: "node",
+  roots: ["<rootDir>/src", "<rootDir>/tests"],
   testMatch: ["**/tests/**/*.test.ts"],
-  globals: {
-    "ts-jest": {
-      tsconfig: "<rootDir>/tsconfig.json"
-    }
+  transform: {
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.json", diagnostics: false }]
   },
+  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+  maxWorkers: 2,
+  testTimeout: 30000,
+  detectOpenHandles: true,
+  forceExit: false,
   moduleNameMapper: {
     "^@learnaire/shared$": "<rootDir>/../shared/src",
     "^@learnaire/shared/(.*)$": "<rootDir>/../shared/src/$1"

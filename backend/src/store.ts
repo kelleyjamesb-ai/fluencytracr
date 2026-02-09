@@ -16,6 +16,7 @@ export type OrgRecord = {
   name: string;
   minGroupSize: number;
   createdAt: string;
+  complianceMode?: "shadow" | "enforced";
 };
 
 export type TeamRecord = {
@@ -131,6 +132,11 @@ export type PolicyUnresolvedClauseRecord = {
   clause_id: string;
   text: string;
   reason: string;
+  decision?: "map" | "ignore" | "defer";
+  decision_rationale?: string;
+  mapped_control_name?: string;
+  mapped_status?: CanonicalControlState;
+  decided_at?: string;
 };
 
 export type PolicyMappingRecord = {
@@ -155,7 +161,7 @@ export type CanonicalControlSnapshotRecord = {
 export type ComplianceEventRecord = {
   eventId: string;
   orgId: string;
-  eventType: "policy_uploaded" | "policy_mapped" | "control_state_updated" | "compliance_status_refreshed";
+  eventType: "policy_uploaded" | "policy_mapped" | "control_state_updated" | "compliance_status_refreshed" | "unresolved_clause_decided";
   policyId?: string;
   controlName?: string;
   status?: CanonicalControlState;

@@ -2,7 +2,7 @@ import { app } from "../src/app";
 import { store } from "../src/store";
 
 const startServer = () => {
-  return new Promise<{ url: string; close: () => void }>((resolve) => {
+  return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     const server = app.listen(0, () => {
       const address = server.address();
       if (typeof address === "string" || address === null) {
@@ -10,7 +10,7 @@ const startServer = () => {
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => server.close()
+        close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
       });
     });
   });
@@ -76,7 +76,7 @@ it("returns 12 points for 12w range", async () => {
     { headers: { "x-role": "EXEC_VIEWER" } }
   );
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(payload.coverage.weekly_active_users).toHaveLength(12);
 });
@@ -111,7 +111,7 @@ it("returns suppressed values as null", async () => {
     { headers: { "x-role": "EXEC_VIEWER" } }
   );
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(payload.coverage.weekly_active_users[0].value).toBeNull();
 });
