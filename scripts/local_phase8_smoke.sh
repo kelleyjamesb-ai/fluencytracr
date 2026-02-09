@@ -120,9 +120,16 @@ if command -v lsof >/dev/null 2>&1 && lsof -i :"$PORT" >/dev/null 2>&1; then
   exit 1
 fi
 
-# ---- 4) Start backend ----
+# ---- 4) Build shared package (prevents ts-node-dev restart loop) ----
+if [[ -f "$ROOT_DIR/shared/package.json" ]]; then
+  log "Building shared package..."
+  (cd "$ROOT_DIR/shared" && npm run build 2>&1) || log "WARNING: shared build failed (may be OK)"
+fi
+
+# ---- 5) Start backend ----
 log "Starting backend from ${BACKEND_DIR}..."
-(cd "$BACKEND_DIR" && npm run dev) &
+export PORT
+(cd "$BACKEND_DIR" && npx ts-node-dev --respawn --transpile-only --ignore-watch ../shared src/index.ts) &
 BACKEND_PID=$!
 
 log "Waiting for backend readiness at ${API_BASE}${HEALTH_PATH}..."
