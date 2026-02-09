@@ -124,21 +124,35 @@ if command -v lsof >/dev/null 2>&1 && lsof -i :"$PORT" >/dev/null 2>&1; then
   die "Port $PORT already in use. Run: kill -9 \$(lsof -ti :${PORT})"
 fi
 
-# ---- 4) Build shared (prevents ts-node-dev restart loop) ----
+# ---- 4) Pre-compile shared + backend ----
+# On iCloud-synced machines, ts-node transpilation at runtime takes minutes
+# due to filesystem I/O contention. Pre-compile everything with tsc, then
+# run with plain `node` which starts in <2s.
 if [[ -f "$ROOT_DIR/shared/package.json" ]]; then
-  log "Building shared package..."
+  log "Building shared..."
   (cd "$ROOT_DIR/shared" && npm run build 2>&1) || log "WARNING: shared build had errors (may be OK)"
-  sleep 1
 fi
 
+log "Building backend..."
+# Main tsconfig includes "tests" which causes TS6059 (tests outside rootDir).
+# Use a temporary tsconfig that only compiles src/.
+cat > "$BACKEND_DIR/tsconfig.smoke.json" <<'TSCONF'
+{
+  "extends": "./tsconfig.json",
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "tests"]
+}
+TSCONF
+(cd "$BACKEND_DIR" && npx tsc -p tsconfig.smoke.json 2>&1) || die "Backend build failed. Check TypeScript errors above."
+rm -f "$BACKEND_DIR/tsconfig.smoke.json"
+log "Build complete."
+
 # ---- 5) Start backend ----
-# Use ts-node (not ts-node-dev) — no file watcher needed for a smoke test.
-# ts-node-dev --respawn restarts on ANY file touch, which iCloud Desktop
-# sync triggers constantly, causing infinite restart loops.
+# Run pre-compiled JS — no transpilation, no file watcher. Instant startup.
 BACKEND_LOG="$(mktemp)"
 log "Starting backend (port ${PORT})..."
 log "Backend log: ${BACKEND_LOG}"
-(cd "$BACKEND_DIR" && npx ts-node --transpile-only src/index.ts 2>&1) > "$BACKEND_LOG" &
+(cd "$BACKEND_DIR" && node dist/index.js 2>&1) > "$BACKEND_LOG" &
 BACKEND_PID=$!
 
 BACKEND_TIMEOUT="${BACKEND_TIMEOUT:-180}"
