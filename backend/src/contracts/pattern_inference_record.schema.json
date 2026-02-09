@@ -7,7 +7,18 @@
   "required": [
     "scope_key",
     "scope_type",
-    "pattern"
+    "window_start",
+    "window_end",
+    "pattern",
+    "confidence_level",
+    "evidence_count",
+    "coverage_days",
+    "surface_mix",
+    "top_drivers",
+    "inference_version",
+    "parameter_hash",
+    "code_commit_hash",
+    "generated_at"
   ],
   "properties": {
     "scope_key": { "type": "string" },
@@ -15,6 +26,8 @@
       "type": "string",
       "enum": ["WORKFLOW_ROLE_RISK", "WORKFLOW_RISK", "ROLE_RISK"]
     },
+    "window_start": { "type": "string", "format": "date-time" },
+    "window_end": { "type": "string", "format": "date-time" },
     "pattern": {
       "type": "string",
       "enum": [
@@ -22,8 +35,33 @@
         "BLIND_EFFICIENCY",
         "RECOVERY_MATURITY",
         "FRICTION_LOOP",
-        "UNDERTRUST_AVOIDANCE"
+        "UNDERTRUST_AVOIDANCE",
+        "NO_PATTERN"
       ]
-    }
+    },
+    "confidence_level": { "type": "string", "enum": ["WITHHOLD", "LOW", "MEDIUM", "HIGH"] },
+    "evidence_count": { "type": "integer", "minimum": 0 },
+    "coverage_days": { "type": "integer", "minimum": 0 },
+    "surface_mix": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "CHAT": { "type": "integer", "minimum": 0 },
+        "DOC_BLOCK": { "type": "integer", "minimum": 0 },
+        "CODE_BLOCK": { "type": "integer", "minimum": 0 },
+        "SUMMARY": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["CHAT", "DOC_BLOCK", "CODE_BLOCK", "SUMMARY"]
+    },
+    "top_drivers": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": { "type": "string" }
+    },
+    "inference_version": { "type": "string" },
+    "parameter_hash": { "type": "string" },
+    "code_commit_hash": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" }
   }
 }
