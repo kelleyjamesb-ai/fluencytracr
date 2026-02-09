@@ -106,6 +106,63 @@ export type PolicyControlRecord = PolicyControlObservation & {
   orgId: string;
 };
 
+export type CanonicalControlState = "enabled" | "disabled" | "partial" | "unknown";
+
+export type PolicyDocumentRecord = {
+  policyId: string;
+  orgId: string;
+  fileName: string;
+  contentType: string;
+  rawText: string;
+  sourceFormat: "text" | "json" | "base64";
+  clauseCount: number;
+  createdAt: string;
+};
+
+export type PolicyControlMappingRecord = {
+  control_name: string;
+  status: CanonicalControlState;
+  confidence: number;
+  matched_clause_ids: string[];
+  rationale: string;
+};
+
+export type PolicyUnresolvedClauseRecord = {
+  clause_id: string;
+  text: string;
+  reason: string;
+};
+
+export type PolicyMappingRecord = {
+  mappingId: string;
+  policyId: string;
+  orgId: string;
+  controls: PolicyControlMappingRecord[];
+  unresolvedClauses: PolicyUnresolvedClauseRecord[];
+  generatedAt: string;
+};
+
+export type CanonicalControlSnapshotRecord = {
+  orgId: string;
+  control_name: string;
+  status: CanonicalControlState;
+  source: "legacy_import" | "policy_mapping";
+  bucket_start: string;
+  bucket_end: string;
+  updatedAt: string;
+};
+
+export type ComplianceEventRecord = {
+  eventId: string;
+  orgId: string;
+  eventType: "policy_uploaded" | "policy_mapped" | "control_state_updated" | "compliance_status_refreshed";
+  policyId?: string;
+  controlName?: string;
+  status?: CanonicalControlState;
+  createdAt: string;
+  metadata: Record<string, unknown>;
+};
+
 export type TrainingEventRecord = TrainingEventRollup & {
   orgId: string;
 };
@@ -203,6 +260,10 @@ class MemoryStore {
   groups = new Map<string, GroupRecord>();
   metrics = new Map<string, MetricRecord>();
   controls = new Map<string, PolicyControlRecord>();
+  policyDocuments = new Map<string, PolicyDocumentRecord>();
+  policyMappings = new Map<string, PolicyMappingRecord>();
+  canonicalControlSnapshots = new Map<string, CanonicalControlSnapshotRecord>();
+  complianceEvents = new Map<string, ComplianceEventRecord>();
   enablement = new Map<string, TrainingEventRecord>();
   fluencyMeta = new Map<string, FluencyMetaRecord>();
   fluencyDimensions = new Map<string, FluencyDimensionRecord>();
@@ -231,6 +292,10 @@ class MemoryStore {
     this.groups.clear();
     this.metrics.clear();
     this.controls.clear();
+    this.policyDocuments.clear();
+    this.policyMappings.clear();
+    this.canonicalControlSnapshots.clear();
+    this.complianceEvents.clear();
     this.enablement.clear();
     this.fluencyMeta.clear();
     this.fluencyDimensions.clear();
@@ -292,6 +357,17 @@ export const upsertControl = (record: PolicyControlRecord): { inserted: boolean 
   const existing = store.controls.get(key);
   store.controls.set(key, record);
   return { inserted: !existing };
+};
+
+export const upsertCanonicalControl = (record: CanonicalControlSnapshotRecord): { inserted: boolean } => {
+  const key = `${record.orgId}:${record.control_name}:${record.bucket_start}`;
+  const existing = store.canonicalControlSnapshots.get(key);
+  store.canonicalControlSnapshots.set(key, record);
+  return { inserted: !existing };
+};
+
+export const insertComplianceEvent = (record: ComplianceEventRecord) => {
+  store.complianceEvents.set(record.eventId, record);
 };
 
 export const upsertEnablement = (record: TrainingEventRecord): { inserted: boolean } => {

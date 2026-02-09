@@ -27,6 +27,8 @@ import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
   store,
   upsertControl,
+  upsertCanonicalControl,
+  insertComplianceEvent,
   upsertEnablement,
   upsertGroup,
   upsertMetric,
@@ -37,7 +39,7 @@ import {
   insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
 } from "./store";
-import type { DecisionLedgerEvaluationRecord, FluencyEventRecord } from "./store";
+import type { CanonicalControlSnapshotRecord, DecisionLedgerEvaluationRecord, FluencyEventRecord } from "./store";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -62,6 +64,16 @@ import {
 } from "./fluencytracr";
 import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import * as path from "path";
+import {
+  PolicyUploadSchema,
+  buildCanonicalSnapshots,
+  buildComplianceSummary,
+  canonicalStatusFromLegacyBoolean,
+  extractPolicyClauses,
+  mapPolicyToControls,
+  normalizePolicyContent,
+  sortComplianceEvents
+} from "./policy_compliance";
 
 const app = express();
 app.use(express.json());
@@ -698,6 +710,27 @@ app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenField
   let updated = 0;
   accepted.forEach((row) => {
     const result = upsertControl({ ...row, orgId: org.id });
+    const now = new Date().toISOString();
+    upsertCanonicalControl({
+      orgId: org.id,
+      control_name: row.control_name,
+      status: canonicalStatusFromLegacyBoolean(row.control_value),
+      source: "legacy_import",
+      bucket_start: row.bucket_start,
+      bucket_end: row.bucket_end,
+      updatedAt: now
+    });
+    insertComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "control_state_updated",
+      controlName: row.control_name,
+      status: canonicalStatusFromLegacyBoolean(row.control_value),
+      createdAt: now,
+      metadata: {
+        source: "legacy_import"
+      }
+    });
     if (result.inserted) {
       inserted += 1;
     } else {
@@ -705,6 +738,207 @@ app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenField
     }
   });
   return res.json({ inserted, updated, rejected });
+});
+
+app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+
+  const parsed = PolicyUploadSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid policy payload", details: parsed.error.message });
+  }
+
+  const normalized = normalizePolicyContent(parsed.data);
+  const clauses = extractPolicyClauses(normalized.rawText);
+  const policyId = `policy-${crypto.randomUUID()}`;
+  const createdAt = new Date().toISOString();
+
+  store.policyDocuments.set(policyId, {
+    policyId,
+    orgId: org.id,
+    fileName: parsed.data.file_name,
+    contentType: normalized.contentType,
+    rawText: normalized.rawText,
+    sourceFormat: normalized.sourceFormat,
+    clauseCount: clauses.length,
+    createdAt
+  });
+
+  insertComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "policy_uploaded",
+    policyId,
+    createdAt,
+    metadata: {
+      file_name: parsed.data.file_name,
+      content_type: normalized.contentType,
+      clause_count: clauses.length
+    }
+  });
+
+  return res.status(201).json({
+    policy_id: policyId,
+    parse_status: "normalized",
+    clause_count: clauses.length,
+    source_format: normalized.sourceFormat
+  });
+});
+
+app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+
+  const policy = store.policyDocuments.get(req.params.policyId);
+  if (!policy || policy.orgId !== org.id) {
+    return res.status(404).json({ error: "Policy not found" });
+  }
+
+  const clauses = extractPolicyClauses(policy.rawText);
+  const mapped = mapPolicyToControls(policy.rawText, clauses);
+  const generatedAt = new Date().toISOString();
+  const mappingId = `mapping-${crypto.randomUUID()}`;
+
+  store.policyMappings.set(mappingId, {
+    mappingId,
+    policyId: policy.policyId,
+    orgId: org.id,
+    controls: mapped.controls,
+    unresolvedClauses: mapped.unresolvedClauses,
+    generatedAt
+  });
+
+  const snapshots = buildCanonicalSnapshots(org.id, mapped.controls, generatedAt);
+  snapshots.forEach((snapshot) => {
+    upsertCanonicalControl(snapshot);
+    insertComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "control_state_updated",
+      policyId: policy.policyId,
+      controlName: snapshot.control_name,
+      status: snapshot.status,
+      createdAt: generatedAt,
+      metadata: {
+        source: "policy_mapping"
+      }
+    });
+  });
+
+  insertComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "policy_mapped",
+    policyId: policy.policyId,
+    createdAt: generatedAt,
+    metadata: {
+      mapping_id: mappingId,
+      controls_mapped: mapped.controls.length,
+      unresolved_clauses: mapped.unresolvedClauses.length
+    }
+  });
+
+  const summary = buildComplianceSummary(
+    mapped.controls.map((control) => ({
+      control_name: control.control_name,
+      status: control.status
+    }))
+  );
+  insertComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "compliance_status_refreshed",
+    policyId: policy.policyId,
+    createdAt: generatedAt,
+    status: summary.overall_status,
+    metadata: summary.counts
+  });
+
+  return res.json({
+    mapping_id: mappingId,
+    policy_id: policy.policyId,
+    generated_at: generatedAt,
+    controls: mapped.controls,
+    unresolved_clauses: mapped.unresolvedClauses
+  });
+});
+
+app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+
+  const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
+  Array.from(store.canonicalControlSnapshots.values())
+    .filter((record) => record.orgId === org.id)
+    .forEach((record) => {
+      const existing = latestByControl.get(record.control_name);
+      if (!existing || record.updatedAt > existing.updatedAt) {
+        latestByControl.set(record.control_name, record);
+      }
+    });
+
+  const controls = Array.from(latestByControl.values()).map((record) => ({
+    control_name: record.control_name,
+    status: record.status,
+    source: record.source,
+    updated_at: record.updatedAt
+  }));
+  const summary = buildComplianceSummary(
+    controls.map((control) => ({ control_name: control.control_name, status: control.status }))
+  );
+
+  return res.json({
+    org_id: org.id,
+    overall_status: summary.overall_status,
+    counts: summary.counts,
+    controls
+  });
+});
+
+app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+
+  const since = typeof req.query.since === "string" ? req.query.since : undefined;
+  const sinceDate = since ? new Date(since) : null;
+  if (since && (!sinceDate || Number.isNaN(sinceDate.getTime()))) {
+    return res.status(400).json({ error: "Invalid since query parameter" });
+  }
+
+  const events = sortComplianceEvents(
+    Array.from(store.complianceEvents.values()).filter((event) => {
+      if (event.orgId !== org.id) {
+        return false;
+      }
+      if (!sinceDate) {
+        return true;
+      }
+      return new Date(event.createdAt) >= sinceDate;
+    })
+  );
+
+  return res.json({
+    org_id: org.id,
+    total_count: events.length,
+    events: events.map((event) => ({
+      event_id: event.eventId,
+      event_type: event.eventType,
+      policy_id: event.policyId ?? null,
+      control_name: event.controlName ?? null,
+      status: event.status ?? null,
+      created_at: event.createdAt,
+      metadata: event.metadata
+    }))
+  });
 });
 
 app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
