@@ -53,6 +53,9 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
+import { Prisma } from "@prisma/client";
+import { getPrisma } from "./db";
+import { Prisma } from "@prisma/client";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -1012,8 +1015,11 @@ app.post(
 
     const eventIds = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
-      insertFluencyEvent({ ...event, event_id: eventId });
-      return eventId;
+      return {
+        event_id: eventId,
+        schema_version: schemaVersion,
+        payload: { ...event, event_id: eventId } as unknown as Prisma.InputJsonValue,
+      };
     });
 
     return res.json({ ingested: eventIds.length, event_ids: eventIds });
