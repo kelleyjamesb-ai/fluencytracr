@@ -6,12 +6,12 @@ set -euo pipefail
 #
 # Validates:
 #   - Postgres container boots
-#   - Prisma migration applies
+#   - Prisma migration applies (FluencyEventIngest table created)
 #   - Backend boots with GOVERNANCE_ENFORCEMENT=ON
-#   - Cookie auth can be issued via POST /auth/login
+#   - Cookie auth via POST /auth/login
 #   - POST /api/events returns 200 {status:"accepted", event_ids:[...]}
-#   - FluencyEventIngest row exists in Postgres after acceptance
-#   - Fail-closed: if DB is down, /api/events returns non-200 (503)
+#   - (REQUIRE_DB_WRITE=1) Row exists in Postgres after acceptance
+#   - (REQUIRE_DB_WRITE=1) Fail-closed: DB down → non-200
 #
 # Usage:
 #   PORT=4000 ./scripts/local_phase8_smoke.sh
@@ -22,40 +22,46 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # ---- Helpers ----
 log() { echo "[$(date +%H:%M:%S)] $*"; }
-require() { command -v "$1" >/dev/null 2>&1 || { echo "Missing dependency: $1" >&2; exit 1; }; }
+die() { echo "FAIL: $*" >&2; exit 1; }
+require() { command -v "$1" >/dev/null 2>&1 || die "Missing dependency: $1"; }
 
 # ---- Config ----
 BACKEND_DIR="${BACKEND_DIR:-$ROOT_DIR/backend}"
 PORT="${PORT:-4000}"
 API_BASE="http://localhost:${PORT}"
-HEALTH_PATH="${HEALTH_PATH:-/health}"
+HEALTH_PATH="/health"
 LOGIN_PATH="/auth/login"
 EVENTS_PATH="/api/events"
 
-# DB (local docker Postgres)
+# DB — Docker Postgres.
+# IMPORTANT: Force-set DATABASE_URL so Prisma, backend, and psql all
+# talk to the SAME database (the Docker container we start below).
+# Any pre-existing DATABASE_URL in your shell is intentionally overridden.
 PG_CONTAINER="${PG_CONTAINER:-fluencytracr-pg}"
 PG_PORT="${PG_PORT:-5433}"
 PG_USER="${PG_USER:-fluency}"
 PG_PASS="${PG_PASS:-fluency}"
 PG_DB="${PG_DB:-fluencytracr}"
-export DATABASE_URL="${DATABASE_URL:-postgres://${PG_USER}:${PG_PASS}@localhost:${PG_PORT}/${PG_DB}}"
+export DATABASE_URL="postgres://${PG_USER}:${PG_PASS}@localhost:${PG_PORT}/${PG_DB}"
+log "DATABASE_URL -> localhost:${PG_PORT}/${PG_DB} (Docker container)"
 
 # Auth + governance
 export JWT_SECRET="${JWT_SECRET:-dev_secret_change_me}"
 export NODE_ENV="${NODE_ENV:-development}"
 export GOVERNANCE_ENFORCEMENT="${GOVERNANCE_ENFORCEMENT:-ON}"
+export PORT
 
-# Seed user setup
+# Seed user
 LOGIN_USERNAME="${LOGIN_USERNAME:-admin}"
 LOGIN_PASSWORD="${LOGIN_PASSWORD:-admin}"
 LOGIN_ROLE="${LOGIN_ROLE:-ADMIN}"
 
-# Controls whether we enforce DB persistence + fail-closed checks
 REQUIRE_DB_WRITE="${REQUIRE_DB_WRITE:-0}"
 
+# ---- Cleanup ----
 cleanup() {
   set +e
-  if [[ -n "${BACKEND_PID:-}" ]]; then kill "$BACKEND_PID" >/dev/null 2>&1; fi
+  if [[ -n "${BACKEND_PID:-}" ]]; then kill "$BACKEND_PID" 2>/dev/null; wait "$BACKEND_PID" 2>/dev/null; fi
   if [[ "${LEAVE_PG_RUNNING:-0}" == "0" ]]; then docker stop "$PG_CONTAINER" >/dev/null 2>&1; fi
   rm -f "${COOKIE_JAR:-}" /tmp/phase8_resp.json
 }
@@ -67,14 +73,11 @@ require curl
 require node
 
 # ---- 0) Prepare AUTH_SEED_USERS ----
-log "Preparing AUTH_SEED_USERS (username:bcrypt_hash:ROLE)..."
-PASSWORD_HASH="$(cd "$BACKEND_DIR" && node -e "const bcrypt=require('bcryptjs'); process.stdout.write(bcrypt.hashSync('${LOGIN_PASSWORD}',4));")"
-if [[ -z "${PASSWORD_HASH}" ]]; then
-  echo "FAIL: could not generate bcrypt hash (bcryptjs missing?)" >&2
-  exit 1
-fi
+log "Hashing seed password..."
+PASSWORD_HASH="$(cd "$BACKEND_DIR" && node -e "process.stdout.write(require('bcryptjs').hashSync('${LOGIN_PASSWORD}',4))")"
+[[ -n "$PASSWORD_HASH" ]] || die "bcrypt hash failed (run: cd backend && npm install)"
 export AUTH_SEED_USERS="${LOGIN_USERNAME}:${PASSWORD_HASH}:${LOGIN_ROLE}"
-log "AUTH_SEED_USERS prepared for user=${LOGIN_USERNAME} role=${LOGIN_ROLE}"
+log "Seed user ready: ${LOGIN_USERNAME} / ${LOGIN_ROLE}"
 
 # ---- 1) Start Postgres ----
 log "Starting Postgres container ${PG_CONTAINER} on port ${PG_PORT}..."
@@ -86,181 +89,166 @@ docker run -d --name "$PG_CONTAINER" \
   -p "${PG_PORT}:5432" \
   postgres:16 >/dev/null
 
-log "Waiting for Postgres..."
-for _ in $(seq 1 30); do
+log "Waiting for Postgres to accept connections..."
+for i in $(seq 1 30); do
   if PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -c "select 1" >/dev/null 2>&1; then
     break
   fi
+  if [[ "$i" == "30" ]]; then die "Postgres did not start within 30s"; fi
   sleep 1
 done
+log "Postgres ready."
 
-# ---- 2) Run Prisma migration ----
-log "Running Prisma migrations..."
-(cd "$BACKEND_DIR" && npx prisma migrate deploy 2>&1) || {
-  echo "FAIL: Prisma migration failed" >&2
-  exit 1
-}
+# ---- 2) Prisma generate + migrate ----
+log "Running prisma generate..."
+(cd "$BACKEND_DIR" && npx prisma generate 2>&1) || die "prisma generate failed"
+
+log "Running prisma migrate deploy..."
+(cd "$BACKEND_DIR" && npx prisma migrate deploy 2>&1) || die "prisma migrate deploy failed"
 log "Migrations applied."
 
-# ---- 3) Baseline DB count ----
-BASE_COUNT="0"
-if PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -tAc \
-  "select 1 from information_schema.tables where table_name = 'FluencyEventIngest';" | grep -q 1; then
-  BASE_COUNT="$(PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -tAc \
-    'select count(*) from "FluencyEventIngest";' | tr -d '[:space:]')"
-  log "Baseline FluencyEventIngest count: ${BASE_COUNT}"
-else
-  log "WARNING: FluencyEventIngest table not found after migration."
+# Verify the table exists
+TABLE_EXISTS="$(PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -tAc \
+  "select count(*) from information_schema.tables where table_name = 'FluencyEventIngest';" | tr -d '[:space:]')"
+if [[ "$TABLE_EXISTS" != "1" ]]; then
+  die "FluencyEventIngest table not found after migration. Check schema.prisma and migrations/."
 fi
+log "FluencyEventIngest table confirmed."
 
-# ---- Port guard ----
+BASE_COUNT="$(PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -tAc \
+  'select count(*) from "FluencyEventIngest";' | tr -d '[:space:]')"
+log "Baseline row count: ${BASE_COUNT}"
+
+# ---- 3) Port guard ----
 if command -v lsof >/dev/null 2>&1 && lsof -i :"$PORT" >/dev/null 2>&1; then
-  echo "FAIL: port $PORT already in use. Stop existing backend first." >&2
-  lsof -i :"$PORT"
-  exit 1
+  die "Port $PORT already in use. Run: kill -9 \$(lsof -ti :${PORT})"
 fi
 
-# ---- 4) Build shared package (prevents ts-node-dev restart loop) ----
+# ---- 4) Build shared (prevents ts-node-dev restart loop) ----
 if [[ -f "$ROOT_DIR/shared/package.json" ]]; then
   log "Building shared package..."
-  (cd "$ROOT_DIR/shared" && npm run build 2>&1) || log "WARNING: shared build failed (may be OK)"
+  (cd "$ROOT_DIR/shared" && npm run build 2>&1) || log "WARNING: shared build had errors (may be OK)"
+  sleep 1
 fi
 
 # ---- 5) Start backend ----
-log "Starting backend from ${BACKEND_DIR}..."
-export PORT
-(cd "$BACKEND_DIR" && npx ts-node-dev --respawn --transpile-only --ignore-watch ../shared src/index.ts) &
+log "Starting backend (port ${PORT})..."
+(cd "$BACKEND_DIR" && npx ts-node-dev --respawn --transpile-only \
+  --ignore-watch ../shared --ignore-watch node_modules \
+  src/index.ts 2>&1) &
 BACKEND_PID=$!
 
-log "Waiting for backend readiness at ${API_BASE}${HEALTH_PATH}..."
-for _ in $(seq 1 30); do
-  if curl -sS "${API_BASE}${HEALTH_PATH}" >/dev/null 2>&1; then
+log "Waiting for backend at ${API_BASE}${HEALTH_PATH}..."
+for i in $(seq 1 45); do
+  if curl -sf "${API_BASE}${HEALTH_PATH}" >/dev/null 2>&1; then
     break
   fi
+  if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+    die "Backend process exited. Check error output above."
+  fi
+  if [[ "$i" == "45" ]]; then die "Backend not ready within 45s"; fi
   sleep 1
 done
-
-# Verify it's actually up
-if ! curl -sS "${API_BASE}${HEALTH_PATH}" >/dev/null 2>&1; then
-  echo "FAIL: backend did not become ready within 30s" >&2
-  exit 1
-fi
 log "Backend is ready."
 
-# ---- 5) Login and capture cookie ----
-log "Logging in to obtain auth cookie..."
+# ---- 6) Login ----
+log "Logging in as ${LOGIN_USERNAME}..."
 COOKIE_JAR="$(mktemp)"
-
 LOGIN_RESP="$(curl -sS -c "$COOKIE_JAR" -X POST "${API_BASE}${LOGIN_PATH}" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"${LOGIN_USERNAME}\",\"password\":\"${LOGIN_PASSWORD}\"}")"
 
 if ! grep -q "token" "$COOKIE_JAR"; then
-  echo "FAIL: login did not set token cookie. Response: ${LOGIN_RESP}" >&2
-  exit 1
+  die "Login did not set token cookie. Response: ${LOGIN_RESP}"
 fi
 log "Login cookie acquired."
 
-# ---- 6) POST to /api/events using cookie jar ----
+# ---- 7) POST /api/events ----
 EVENT_TS="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
-log "Posting event to ${API_BASE}${EVENTS_PATH}..."
+log "Posting event to ${EVENTS_PATH}..."
 
 HTTP_CODE="$(curl -sS -o /tmp/phase8_resp.json -w "%{http_code}" \
   -X POST "${API_BASE}${EVENTS_PATH}" \
   -H "Content-Type: application/json" \
   -H "X-FluencyTracr-Schema-Version: 0.1" \
   -b "$COOKIE_JAR" \
-  -d "{
-    \"events\": [
+  -d '{
+    "events": [
       {
-        \"event_type\": \"ai_output_disposition\",
-        \"timestamp\": \"${EVENT_TS}\",
-        \"risk_class\": \"low\",
-        \"workflow_id\": \"wf-smoke-test\",
-        \"disposition\": \"accepted\",
-        \"edit_distance_bucket\": \"none\",
-        \"verification_present\": false,
-        \"time_to_action_ms\": 500
+        "event_type": "ai_output_disposition",
+        "timestamp": "'"${EVENT_TS}"'",
+        "risk_class": "low",
+        "workflow_id": "wf-smoke-test",
+        "disposition": "accepted",
+        "edit_distance_bucket": "none",
+        "verification_present": false,
+        "time_to_action_ms": 500
       }
     ]
-  }")"
+  }')"
 
 RESP="$(cat /tmp/phase8_resp.json)"
 log "Response (HTTP ${HTTP_CODE}): ${RESP}"
 
-if [[ "$HTTP_CODE" != "200" ]]; then
-  echo "FAIL: /api/events HTTP ${HTTP_CODE}. Response: ${RESP}" >&2
-  exit 1
-fi
+[[ "$HTTP_CODE" == "200" ]] || die "/api/events HTTP ${HTTP_CODE}. Response: ${RESP}"
 
-# Validate response shape: {status:"accepted", event_ids:[...]}
 node -e "
-const resp = JSON.parse(process.argv[1]);
-if (resp.status !== 'accepted') { console.error('status != accepted'); process.exit(2); }
-if (!Array.isArray(resp.event_ids) || resp.event_ids.length === 0) { console.error('missing event_ids'); process.exit(2); }
-console.log('event_id=' + resp.event_ids[0]);
-" "$RESP" || { echo "FAIL: response shape mismatch. Response: ${RESP}" >&2; exit 1; }
+  var r = JSON.parse(process.argv[1]);
+  if (r.status !== 'accepted') process.exit(2);
+  if (!Array.isArray(r.event_ids) || r.event_ids.length === 0) process.exit(2);
+" "$RESP" || die "Response shape mismatch: ${RESP}"
 
-EVENT_ID="$(node -e "console.log(JSON.parse(process.argv[1]).event_ids[0]);" "$RESP")"
-log "Ingest returned accepted. event_id=${EVENT_ID}"
+EVENT_ID="$(node -e "console.log(JSON.parse(process.argv[1]).event_ids[0])" "$RESP")"
+log "PASS: event accepted. event_id=${EVENT_ID}"
 
-# ---- 7) DB persistence check ----
-if [[ "${REQUIRE_DB_WRITE}" != "1" ]]; then
-  log "SKIP: DB persistence check (set REQUIRE_DB_WRITE=1 to enable)."
-  log "Phase 8 smoke test PASSED (ingest-only mode)."
+# ---- 8) DB persistence check (opt-in) ----
+if [[ "$REQUIRE_DB_WRITE" != "1" ]]; then
+  log "SKIP: DB checks (set REQUIRE_DB_WRITE=1 to enable)."
+  log ""
+  log "=== Phase 8 smoke test PASSED (ingest-only mode) ==="
   exit 0
 fi
 
-log "Checking DB row count increased..."
+log "Checking DB persistence..."
 NEW_COUNT="$(PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -tAc \
   'select count(*) from "FluencyEventIngest";' | tr -d '[:space:]')"
-log "New count: ${NEW_COUNT} (was: ${BASE_COUNT})"
-
-if [[ "$NEW_COUNT" -le "$BASE_COUNT" ]]; then
-  echo "FAIL: DB row count did not increase (base=$BASE_COUNT new=$NEW_COUNT)" >&2
-  exit 1
-fi
+log "Row count: ${BASE_COUNT} -> ${NEW_COUNT}"
+[[ "$NEW_COUNT" -gt "$BASE_COUNT" ]] || die "Row count did not increase (${BASE_COUNT} -> ${NEW_COUNT})"
 log "PASS: DB write verified."
 
-# Verify specific event_id
 ROW_EXISTS="$(PGPASSWORD="$PG_PASS" psql -h localhost -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -tAc \
   "select count(*) from \"FluencyEventIngest\" where event_id = '${EVENT_ID}';" | tr -d '[:space:]')"
-if [[ "$ROW_EXISTS" != "1" ]]; then
-  echo "FAIL: event_id=${EVENT_ID} not found in FluencyEventIngest" >&2
-  exit 1
-fi
+[[ "$ROW_EXISTS" == "1" ]] || die "event_id=${EVENT_ID} not found in DB"
 log "PASS: event_id=${EVENT_ID} found in DB."
 
-# ---- 8) Fail-closed check ----
-log "Fail-closed check: stopping DB and retrying ingest..."
+# ---- 9) Fail-closed check ----
+log "Fail-closed: stopping Postgres..."
 docker stop "$PG_CONTAINER" >/dev/null
-sleep 1
+LEAVE_PG_RUNNING=1
+sleep 2
 
 HTTP_CODE_DOWN="$(curl -sS -o /dev/null -w "%{http_code}" \
   -X POST "${API_BASE}${EVENTS_PATH}" \
   -H "Content-Type: application/json" \
   -H "X-FluencyTracr-Schema-Version: 0.1" \
   -b "$COOKIE_JAR" \
-  -d "{
-    \"events\": [
+  -d '{
+    "events": [
       {
-        \"event_type\": \"ai_output_disposition\",
-        \"timestamp\": \"${EVENT_TS}\",
-        \"risk_class\": \"low\",
-        \"workflow_id\": \"wf-smoke-failclosed\",
-        \"disposition\": \"accepted\",
-        \"edit_distance_bucket\": \"none\",
-        \"verification_present\": false,
-        \"time_to_action_ms\": 100
+        "event_type": "ai_output_disposition",
+        "timestamp": "'"${EVENT_TS}"'",
+        "risk_class": "low",
+        "workflow_id": "wf-smoke-failclosed",
+        "disposition": "accepted",
+        "edit_distance_bucket": "none",
+        "verification_present": false,
+        "time_to_action_ms": 100
       }
     ]
-  }")"
+  }')"
 
-if [[ "$HTTP_CODE_DOWN" == "200" ]]; then
-  echo "FAIL: returned 200 accepted even though DB is down. Must fail-closed." >&2
-  exit 1
-fi
-log "PASS: fail-closed observed (HTTP ${HTTP_CODE_DOWN})."
+[[ "$HTTP_CODE_DOWN" != "200" ]] || die "Returned 200 with DB down — fail-closed violated."
+log "PASS: fail-closed (HTTP ${HTTP_CODE_DOWN})."
 
-log "Phase 8 smoke test COMPLETE. All checks passed."
+log ""
+log "=== Phase 8 smoke test COMPLETE. All checks passed. ==="
