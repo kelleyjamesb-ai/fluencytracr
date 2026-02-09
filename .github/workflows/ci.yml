@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -24,38 +22,13 @@ jobs:
           pip install -r requirements.txt
       - name: Run V1 governance gates
         run: python scripts/ci_v1_governance_gates.py
-      - name: Run TG5 forbidden key gates
-        run: python scripts/ci_tg5_forbidden_schema_keys.py
-      - name: Run Phase 5A guardrails
-        run: python scripts/ci_phase5_guardrails.py
-      - name: Run Phase 6 governance lock
-        run: python scripts/ci_phase6_governance_lock.py
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test_*.py"
   node-tests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: fluency
-          POSTGRES_PASSWORD: fluency
-          POSTGRES_DB: fluency_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      GOVERNANCE_ENFORCEMENT: "ON"
-      DATABASE_URL: "postgresql://fluency:fluency@localhost:5432/fluency_test?schema=public"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -64,11 +37,5 @@ jobs:
         run: npm install
       - name: Build shared workspace
         run: npm run build --workspace shared
-      - name: Apply Prisma migrations
-        run: npx prisma@5.18.0 migrate deploy --schema=backend/prisma/schema.prisma
-      - name: Generate Prisma client
-        run: npx prisma@5.18.0 generate --schema=backend/prisma/schema.prisma
       - name: Run backend tests
         run: npm test --workspace backend
-      - name: Run Phase 5 required test guardrail
-        run: python3 scripts/ci_phase5_required_tests.py

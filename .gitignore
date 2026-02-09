@@ -55,11 +55,8 @@ dist/
 *.tsbuildinfo
 
 # Jest compiled tests
-backend/tests/**/*.js
-frontend/tests/**/*.js
-
-# Shared compiled output
-shared/src/**/*.js
+backend/tests/*.js
+frontend/tests/*.js
 # Python
 __pycache__/
 *.py[cod]

@@ -26,7 +26,6 @@ model Team {
 model FluencyScore {
   id             String   @id @default(uuid())
   organizationId String
-  team           Team?    @relation(fields: [teamId], references: [id])
   teamId         String?
   day            DateTime
   score          Float
@@ -40,26 +39,10 @@ model FluencyScore {
   @@index([organizationId, day])
 }
 
-// Audit logging is implemented via append-only audit_log table and pg driver.
-// This Prisma model is NOT authoritative for audit writes. See backend/src/audit/.
 model AuditEvent {
   id        String   @id @default(uuid())
   orgId     String
-  seq       Int
-  actorSub  String
-  actorRole String
   eventType String
   metadata  Json
-  prevHash  String
-  hash      String
   createdAt DateTime @default(now())
-
-  @@unique([orgId, seq])
-}
-
-model FluencyEventIngest {
-  event_id       String   @id
-  received_at    DateTime @default(now())
-  schema_version String
-  payload        Json
 }
