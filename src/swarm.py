@@ -3,6 +3,9 @@ Multi-Agent Swarm Orchestration System.
 
 Implements a lightweight Router-Worker pattern for coordinating multiple
 specialist agents to solve complex tasks collaboratively.
+
+Deprecated: This module is retained to avoid breaking legacy Antigravity
+workflows. FluencyTracr backend/frontend contracts are the primary product path.
 """
 
 from typing import Any, Dict, List

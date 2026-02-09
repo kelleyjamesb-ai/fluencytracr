@@ -1,3 +1,6 @@
+# Deprecation Notice
+This document is retained for backwards compatibility only. FluencyTracr is now the primary product surface, and new implementation work should target FluencyTracr contracts and workflows.
+
 # 🪐 Google Antigravity Workspace Template
 
 **Production-grade starter kit for autonomous AI agents on Google Antigravity.**
