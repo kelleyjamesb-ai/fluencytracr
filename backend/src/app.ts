@@ -60,6 +60,7 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
+import { getPrisma } from "./db";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -803,11 +804,26 @@ app.post(
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
     }
 
-    const eventIds = parsed.data.events.map((event) => {
+    const schemaVersion = req.headers["x-fluencytracr-schema-version"] as string ?? "0.1";
+
+    const rows = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
-      insertFluencyEvent({ ...event, event_id: eventId });
-      return eventId;
+      return {
+        event_id: eventId,
+        schema_version: schemaVersion,
+        payload: { ...event, event_id: eventId } as unknown as Record<string, unknown>,
+      };
     });
+
+    const eventIds = rows.map((r) => r.event_id);
+
+    try {
+      await getPrisma().fluencyEventIngest.createMany({ data: rows });
+    } catch {
+      return res.status(503).json({ error: "Persistence unavailable" });
+    }
+
+    rows.forEach((r) => insertFluencyEvent({ ...(r.payload as unknown as FluencyEvent), event_id: r.event_id }));
 
     try {
       await logAuditEvent({ orgId: "global", actorSub: req.sub!, actorRole: req.role!, eventType: "event_create", metadata: { count: eventIds.length } });

@@ -56,3 +56,10 @@ model AuditEvent {
 
   @@unique([orgId, seq])
 }
+
+model FluencyEventIngest {
+  event_id       String   @id
+  received_at    DateTime @default(now())
+  schema_version String
+  payload        Json
+}
