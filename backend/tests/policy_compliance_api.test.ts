@@ -294,6 +294,59 @@ it("rejects compliance mode update for non-admin role", async () => {
   expect(response.status).toBe(403);
 });
 
+it("emits an auditable event chain for upload, map, unresolved decision, and mode update", async () => {
+  const upload = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "audit-chain-policy.txt",
+      content: [
+        "AI enabled for approved workflows.",
+        "Teams should keep facilitator notes for weekly operating rhythm."
+      ].join(" ")
+    });
+  expect(upload.status).toBe(201);
+  const policyId = upload.body.policy_id as string;
+
+  const mapped = await request(app)
+    .post(`/orgs/org-1/policies/${policyId}/map`)
+    .set(schemaHeaders)
+    .send({});
+  expect(mapped.status).toBe(200);
+  const unresolved = mapped.body.unresolved_clauses.find((clause: any) => clause.clause_id);
+  expect(unresolved).toBeTruthy();
+
+  const decision = await request(app)
+    .patch(`/orgs/org-1/policies/${policyId}/mapping/unresolved/${unresolved.clause_id}`)
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      action: "ignore",
+      rationale: "Governance review marked this informational for phase 2."
+    });
+  expect(decision.status).toBe(200);
+
+  const mode = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "enforced",
+      rationale: "Audit trail validation for test coverage."
+    });
+  expect(mode.status).toBe(200);
+
+  const events = await request(app)
+    .get("/orgs/org-1/compliance/events")
+    .set({ "x-role": "ADMIN" });
+  expect(events.status).toBe(200);
+
+  const eventTypes = events.body.events.map((event: any) => event.event_type);
+  expect(eventTypes).toContain("policy_uploaded");
+  expect(eventTypes).toContain("policy_mapped");
+  expect(eventTypes).toContain("unresolved_clause_decided");
+  expect(eventTypes).toContain("compliance_mode_updated");
+  expect(eventTypes).toContain("compliance_status_refreshed");
+});
+
 it("validates compliance mode payload", async () => {
   const response = await request(app)
     .patch("/orgs/org-1/compliance/mode")

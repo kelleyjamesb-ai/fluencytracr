@@ -27,3 +27,38 @@ it("includes required pattern card sections", () => {
   expect(content).toContain("What this does NOT mean");
   expect(content).toContain("Recommended posture");
 });
+
+it("includes compliance timeline filters for event type, policy, and since", () => {
+  const content = readDashboard();
+  expect(content).toContain("Compliance Event Timeline");
+  expect(content).toContain("complianceEventTypeFilter");
+  expect(content).toContain("complianceEventPolicyFilter");
+  expect(content).toContain("complianceEventSinceFilter");
+  expect(content).toContain("datetime-local");
+});
+
+it("includes quick since presets for governance review", () => {
+  const content = readDashboard();
+  expect(content).toContain("Last 24h");
+  expect(content).toContain("Last 7d");
+  expect(content).toContain("Last 30d");
+  expect(content).toContain("Clear Since");
+  expect(content).toContain("setSincePreset");
+});
+
+it("exports compliance events as filtered csv", () => {
+  const content = readDashboard();
+  expect(content).toContain("exportComplianceEventsCsv");
+  expect(content).toContain("Export CSV");
+  expect(content).toContain("compliance-events-${orgId}.csv");
+  expect(content).toContain("URL.createObjectURL");
+});
+
+it("includes admin mode controls for shadow and enforced states", () => {
+  const content = readDashboard();
+  expect(content).toContain("PATCH");
+  expect(content).toContain("/orgs/${orgId}/compliance/mode");
+  expect(content).toContain("Set Shadow");
+  expect(content).toContain("Set Enforced");
+  expect(content).toContain("isAdminRole");
+});
