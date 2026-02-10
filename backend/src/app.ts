@@ -2379,3 +2379,4 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 export { app };
+export default app;
