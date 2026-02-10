@@ -5,6 +5,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
+    "isolatedModules": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
@@ -16,4 +17,3 @@
   "include": ["src", "tests"],
   "exclude": ["node_modules", "dist"]
 }
-

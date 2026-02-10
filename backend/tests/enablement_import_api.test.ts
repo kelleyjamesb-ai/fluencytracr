@@ -3,7 +3,7 @@ import { store } from "../src/store";
 import { withSchemaVersion } from "./test_helpers";
 
 const startServer = () => {
-  return new Promise<{ url: string; close: () => void }>((resolve) => {
+  return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     const server = app.listen(0, () => {
       const address = server.address();
       if (typeof address === "string" || address === null) {
@@ -11,7 +11,7 @@ const startServer = () => {
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => server.close()
+        close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
       });
     });
   });
@@ -51,7 +51,7 @@ it("imports enablement events from JSON and returns structured errors", async ()
     })
   });
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(payload.imported).toBe(1);
   expect(payload.rejected).toBe(1);
@@ -69,7 +69,7 @@ it("imports enablement events from CSV", async () => {
       "org-1,team-1,role-1,2024-01-02T00:00:00Z,session_attended,{\"source\":\"training\"}\n"
   });
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(payload.imported).toBe(1);
   expect(payload.rejected).toBe(0);
@@ -105,7 +105,7 @@ it("rejects duplicate event ids", async () => {
     })
   });
   const payload = await response.json();
-  server.close();
+  await server.close();
 
   expect(payload.imported).toBe(1);
   expect(payload.rejected).toBe(1);

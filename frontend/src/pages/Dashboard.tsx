@@ -20,6 +20,64 @@ type LedgerResponse = {
   entries: DecisionLedgerEntry[];
 };
 
+type PolicySummary = {
+  policy_id: string;
+  file_name: string;
+  content_type: string;
+  source_format: string;
+  clause_count: number;
+  created_at: string;
+  latest_mapping: {
+    mapping_id: string;
+    generated_at: string;
+    controls_mapped: number;
+    unresolved_clauses: number;
+  } | null;
+};
+
+type PoliciesResponse = {
+  org_id: string;
+  mode: "shadow" | "enforced";
+  policies: PolicySummary[];
+};
+
+type MappingResponse = {
+  org_id: string;
+  policy_id: string;
+  mapping_id: string;
+  generated_at: string;
+  controls: Array<{
+    control_name: string;
+    status: "enabled" | "disabled" | "partial" | "unknown";
+    confidence: number;
+    rationale: string;
+  }>;
+  unresolved_clauses: Array<{
+    clause_id: string;
+    text: string;
+    reason: string;
+    decision?: "map" | "ignore" | "defer";
+  }>;
+};
+
+type ComplianceStatusResponse = {
+  org_id: string;
+  mode: "shadow" | "enforced";
+  as_of: string;
+  freshness: {
+    last_event_at: string | null;
+    stale: boolean;
+  };
+  overall_status: "enabled" | "disabled" | "partial" | "unknown";
+  counts: Record<"enabled" | "disabled" | "partial" | "unknown", number>;
+  controls: Array<{
+    control_name: string;
+    status: "enabled" | "disabled" | "partial" | "unknown";
+    source: "legacy_import" | "policy_mapping";
+    updated_at: string;
+  }>;
+};
+
 const windows = [
   { label: "Rolling 60d", value: "60d" },
   { label: "3 months", value: "3m" },
@@ -38,6 +96,8 @@ const navItems = [
 const secondaryNavItems = [
   { key: "admin", label: "Admin" }
 ] as const;
+
+type ActivePage = (typeof navItems)[number]["key"] | (typeof secondaryNavItems)[number]["key"];
 
 const altitudeExamples = {
   exec: [
@@ -67,8 +127,16 @@ const formatPercent = (value?: number | null) => {
 };
 
 export const Dashboard = () => {
+  const orgId = localStorage.getItem("orgId") ?? "org-1";
+  const role = localStorage.getItem("role") ?? "ADMIN";
+
+  const governanceHeaders = {
+    "content-type": "application/json",
+    "x-role": role,
+    "X-FluencyTracr-Schema-Version": "0.1"
+  };
   const [window, setWindow] = useState<FluencyWindow>("60d");
-  const [activePage, setActivePage] = useState<(typeof navItems)[number]["key"]>("overview");
+  const [activePage, setActivePage] = useState<ActivePage>("overview");
   const [patterns, setPatterns] = useState<FluencyPattern[]>([]);
   const [ledgerEntries, setLedgerEntries] = useState<DecisionLedgerEntry[]>([]);
   const [coverage, setCoverage] = useState<CoverageSummary | null>(null);
@@ -77,6 +145,15 @@ export const Dashboard = () => {
   const [isLoadingCoverage, setIsLoadingCoverage] = useState(true);
   const [isLoadingLedger, setIsLoadingLedger] = useState(true);
   const [openLedgerId, setOpenLedgerId] = useState<string | null>(null);
+  const [policies, setPolicies] = useState<PolicySummary[]>([]);
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [mapping, setMapping] = useState<MappingResponse | null>(null);
+  const [complianceStatus, setComplianceStatus] = useState<ComplianceStatusResponse | null>(null);
+  const [policyFileName, setPolicyFileName] = useState("ai-policy.txt");
+  const [policyContent, setPolicyContent] = useState("");
+  const [adminMessage, setAdminMessage] = useState<string | null>(null);
+  const [isSavingPolicy, setIsSavingPolicy] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
 
   const scope: FluencyScope = "org";
 
@@ -105,6 +182,168 @@ export const Dashboard = () => {
     fetchPatterns();
     return () => controller.abort();
   }, [window, scope]);
+
+  const loadPolicies = async () => {
+    const response = await fetch(`/orgs/${orgId}/policies`, {
+      headers: { "x-role": role }
+    });
+    if (!response.ok) {
+      throw new Error("Unable to load policies");
+    }
+    const payload = (await response.json()) as PoliciesResponse;
+    setPolicies(payload.policies ?? []);
+    if (!selectedPolicyId && payload.policies.length > 0) {
+      setSelectedPolicyId(payload.policies[0].policy_id);
+    }
+  };
+
+  const loadCompliance = async () => {
+    const response = await fetch(`/orgs/${orgId}/compliance/status`, {
+      headers: { "x-role": role }
+    });
+    if (!response.ok) {
+      throw new Error("Unable to load compliance status");
+    }
+    const payload = (await response.json()) as ComplianceStatusResponse;
+    setComplianceStatus(payload);
+  };
+
+  const loadMapping = async (policyId: string) => {
+    const response = await fetch(`/orgs/${orgId}/policies/${policyId}/mapping`, {
+      headers: { "x-role": role }
+    });
+    if (!response.ok) {
+      setMapping(null);
+      return;
+    }
+    const payload = (await response.json()) as MappingResponse;
+    setMapping(payload);
+  };
+
+  useEffect(() => {
+    if (activePage !== "admin") {
+      return;
+    }
+    let cancelled = false;
+    const loadAdminData = async () => {
+      setIsAdminLoading(true);
+      try {
+        await Promise.all([loadPolicies(), loadCompliance()]);
+        if (!cancelled) {
+          setAdminMessage(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAdminMessage("Admin data could not be loaded. Confirm org access and role permissions.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsAdminLoading(false);
+        }
+      }
+    };
+    loadAdminData();
+    return () => {
+      cancelled = true;
+    };
+  }, [activePage]);
+
+  useEffect(() => {
+    if (activePage === "admin" && selectedPolicyId) {
+      loadMapping(selectedPolicyId).catch(() => {
+        setMapping(null);
+      });
+    }
+  }, [activePage, selectedPolicyId]);
+
+  const uploadPolicy = async () => {
+    if (!policyContent.trim()) {
+      setAdminMessage("Policy text is required before upload.");
+      return;
+    }
+    setIsSavingPolicy(true);
+    setAdminMessage(null);
+    try {
+      const response = await fetch(`/orgs/${orgId}/policies/upload`, {
+        method: "POST",
+        headers: governanceHeaders,
+        body: JSON.stringify({
+          file_name: policyFileName,
+          content_type: "text/plain",
+          content: policyContent
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Policy upload failed");
+      }
+      const payload = await response.json();
+      setSelectedPolicyId(payload.policy_id);
+      await Promise.all([loadPolicies(), loadCompliance()]);
+      setAdminMessage("Policy uploaded. Run mapping to generate compliance controls.");
+    } catch (error) {
+      setAdminMessage("Upload failed. Verify schema headers, role, and policy content.");
+    } finally {
+      setIsSavingPolicy(false);
+    }
+  };
+
+  const mapSelectedPolicy = async () => {
+    if (!selectedPolicyId) {
+      setAdminMessage("Select a policy to map.");
+      return;
+    }
+    setAdminMessage(null);
+    try {
+      const response = await fetch(`/orgs/${orgId}/policies/${selectedPolicyId}/map`, {
+        method: "POST",
+        headers: governanceHeaders,
+        body: JSON.stringify({})
+      });
+      if (!response.ok) {
+        throw new Error("Mapping failed");
+      }
+      await Promise.all([loadPolicies(), loadCompliance(), loadMapping(selectedPolicyId)]);
+      setAdminMessage("Policy mapped. Review unresolved clauses to improve coverage.");
+    } catch (error) {
+      setAdminMessage("Mapping failed. Check policy content and endpoint permissions.");
+    }
+  };
+
+  const resolveClause = async (
+    clauseId: string,
+    action: "map" | "ignore" | "defer",
+    controlName?: string,
+    status?: "enabled" | "disabled" | "partial" | "unknown"
+  ) => {
+    if (!selectedPolicyId) {
+      return;
+    }
+    try {
+      const body: Record<string, unknown> = {
+        action,
+        rationale: action === "map" ? "Admin mapped unresolved clause during beta review." : `Admin marked clause as ${action}.`
+      };
+      if (action === "map") {
+        body.control_name = controlName ?? "compliance_posture_flag";
+        body.status = status ?? "partial";
+      }
+      const response = await fetch(
+        `/orgs/${orgId}/policies/${selectedPolicyId}/mapping/unresolved/${clauseId}`,
+        {
+          method: "PATCH",
+          headers: governanceHeaders,
+          body: JSON.stringify(body)
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Clause resolution failed");
+      }
+      await Promise.all([loadCompliance(), loadMapping(selectedPolicyId), loadPolicies()]);
+      setAdminMessage("Unresolved clause decision saved.");
+    } catch (error) {
+      setAdminMessage("Unable to save unresolved clause decision.");
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -173,6 +412,9 @@ export const Dashboard = () => {
     : "Withheld";
 
   const selectedLedger = ledgerEntries.find((entry) => entry.ledger_id === openLedgerId) ?? null;
+  const activeLabel = [...navItems, ...secondaryNavItems].find((item) => item.key === activePage)?.label ?? "Overview";
+  const isAdminPage = activePage === "admin";
+  const isBetaHost = typeof window !== "undefined" && window.location.hostname === "www.fluencytracr.com";
 
   return (
     <div className="app-shell">
@@ -180,40 +422,49 @@ export const Dashboard = () => {
         items={navItems}
         secondaryItems={secondaryNavItems}
         activeKey={activePage}
-        onSelect={setActivePage}
+        onSelect={(key) => setActivePage(key as ActivePage)}
       />
       <main className="main">
         <header className="topbar">
           <div>
-            <h2>{navItems.find((item) => item.key === activePage)?.label}</h2>
-            <p>Signals indicate directional movement across aggregated workflows.</p>
+            <h2>{activeLabel}</h2>
+            <p>
+              {isAdminPage
+                ? "Internal admin beta for policy mapping and shadow-mode compliance."
+                : "Signals indicate directional movement across aggregated workflows."}
+            </p>
+            {!isBetaHost && isAdminPage && (
+              <p className="meta">Beta host check: expected deployment target is www.fluencytracr.com.</p>
+            )}
           </div>
-          <div className="window-controls">
-            <div className="meta-block">
-              <span className="meta-label">Coverage</span>
-              <span className={isLoadingCoverage ? "meta-value skeleton" : "meta-value"}>
-                {isLoadingCoverage ? "--" : formatPercent(coverage?.coverage)}
-              </span>
+          {!isAdminPage && (
+            <div className="window-controls">
+              <div className="meta-block">
+                <span className="meta-label">Coverage</span>
+                <span className={isLoadingCoverage ? "meta-value skeleton" : "meta-value"}>
+                  {isLoadingCoverage ? "--" : formatPercent(coverage?.coverage)}
+                </span>
+              </div>
+              <div className="meta-block">
+                <span className="meta-label">Confidence</span>
+                <span className={isLoadingCoverage ? "meta-value skeleton" : "meta-value"}>
+                  {isLoadingCoverage ? "--" : confidenceLabel}
+                </span>
+              </div>
+              <div className="toggle">
+                {windows.map((option) => (
+                  <button
+                    key={option.value}
+                    className={window === option.value ? "toggle-button active" : "toggle-button"}
+                    onClick={() => setWindow(option.value)}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="meta-block">
-              <span className="meta-label">Confidence</span>
-              <span className={isLoadingCoverage ? "meta-value skeleton" : "meta-value"}>
-                {isLoadingCoverage ? "--" : confidenceLabel}
-              </span>
-            </div>
-            <div className="toggle">
-              {windows.map((option) => (
-                <button
-                  key={option.value}
-                  className={window === option.value ? "toggle-button active" : "toggle-button"}
-                  onClick={() => setWindow(option.value)}
-                  type="button"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </header>
 
         {activePage === "overview" && (
@@ -506,6 +757,159 @@ export const Dashboard = () => {
                 Coverage and confidence do NOT mean any team or workflow is ahead or behind. These are
                 directional signals meant for executive-level calibration.
               </p>
+            </div>
+          </section>
+        )}
+
+        {activePage === "admin" && (
+          <section className="stack">
+            <div className="card banner">
+              <h3>Policy Governance Admin</h3>
+              <p>
+                Compliance is running in <strong>shadow mode</strong>. Signals are advisory and non-blocking during beta.
+              </p>
+            </div>
+
+            <div className="grid">
+              <div className="card">
+                <h4>Upload Policy</h4>
+                <p className="meta">Supports text payloads now. PDF/DOCX extraction will route through this flow.</p>
+                <div className="form-grid">
+                  <label>
+                    File Name
+                    <input
+                      type="text"
+                      value={policyFileName}
+                      onChange={(event) => setPolicyFileName(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Policy Content
+                    <textarea
+                      rows={8}
+                      value={policyContent}
+                      onChange={(event) => setPolicyContent(event.target.value)}
+                      placeholder="Paste governance/policy text..."
+                    />
+                  </label>
+                </div>
+                <button className="primary" type="button" onClick={uploadPolicy} disabled={isSavingPolicy}>
+                  {isSavingPolicy ? "Uploading..." : "Upload Policy"}
+                </button>
+              </div>
+
+              <div className="card">
+                <h4>Compliance Snapshot</h4>
+                {isAdminLoading ? (
+                  <p className="meta">Loading compliance status...</p>
+                ) : complianceStatus ? (
+                  <>
+                    <p><strong>Mode:</strong> {complianceStatus.mode}</p>
+                    <p><strong>Overall status:</strong> {complianceStatus.overall_status}</p>
+                    <p className="meta">As of {complianceStatus.as_of}</p>
+                    <ul className="list">
+                      <li>Enabled: {complianceStatus.counts.enabled}</li>
+                      <li>Disabled: {complianceStatus.counts.disabled}</li>
+                      <li>Partial: {complianceStatus.counts.partial}</li>
+                      <li>Unknown: {complianceStatus.counts.unknown}</li>
+                    </ul>
+                    <p className="meta">Freshness: {complianceStatus.freshness.last_event_at ?? "No events yet"}</p>
+                  </>
+                ) : (
+                  <p className="meta">No compliance status available yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="row-between">
+                <h4>Policy Mapping Review</h4>
+                <div className="inline-actions">
+                  <select
+                    value={selectedPolicyId ?? ""}
+                    onChange={(event) => setSelectedPolicyId(event.target.value || null)}
+                  >
+                    <option value="">Select policy</option>
+                    {policies.map((policy) => (
+                      <option key={policy.policy_id} value={policy.policy_id}>
+                        {policy.file_name}
+                      </option>
+                    ))}
+                  </select>
+                  <button className="secondary" type="button" onClick={mapSelectedPolicy}>
+                    Run Mapping
+                  </button>
+                </div>
+              </div>
+
+              {mapping ? (
+                <>
+                  <p className="meta">Mapping generated: {mapping.generated_at}</p>
+                  <div className="table-wrap">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Control</th>
+                          <th>Status</th>
+                          <th>Confidence</th>
+                          <th>Rationale</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {mapping.controls.map((control) => (
+                          <tr key={control.control_name}>
+                            <td>{control.control_name}</td>
+                            <td>{control.status}</td>
+                            <td>{Math.round(control.confidence * 100)}%</td>
+                            <td>{control.rationale}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h4>Unresolved Clauses</h4>
+                  {mapping.unresolved_clauses.length === 0 ? (
+                    <p className="meta">No unresolved clauses.</p>
+                  ) : (
+                    <div className="stack">
+                      {mapping.unresolved_clauses.map((clause) => (
+                        <div className="card nested" key={clause.clause_id}>
+                          <p><strong>{clause.clause_id}</strong> {clause.text}</p>
+                          <p className="meta">{clause.reason}</p>
+                          <div className="inline-actions">
+                            <button
+                              className="secondary"
+                              type="button"
+                              onClick={() => resolveClause(clause.clause_id, "map", "compliance_posture_flag", "partial")}
+                            >
+                              Map as Partial
+                            </button>
+                            <button
+                              className="secondary"
+                              type="button"
+                              onClick={() => resolveClause(clause.clause_id, "ignore")}
+                            >
+                              Ignore
+                            </button>
+                            <button
+                              className="secondary"
+                              type="button"
+                              onClick={() => resolveClause(clause.clause_id, "defer")}
+                            >
+                              Defer
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="meta">Select a policy and run mapping to review controls.</p>
+              )}
+
+              {adminMessage && <p className="meta">{adminMessage}</p>}
             </div>
           </section>
         )}

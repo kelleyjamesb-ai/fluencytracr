@@ -74,8 +74,10 @@ import {
   canonicalStatusFromLegacyBoolean,
   extractPolicyClauses,
   mapPolicyToControls,
+  normalizeComplianceMode,
   normalizePolicyContent,
-  sortComplianceEvents
+  sortComplianceEvents,
+  UnresolvedClauseDecisionSchema
 } from "./policy_compliance";
 
 const app = express();
@@ -272,6 +274,60 @@ const addDays = (start: string, days: number) => {
 
 const nowIso = () => new Date().toISOString();
 
+const getOrgComplianceMode = (orgId: string) => {
+  const org = store.orgs.get(orgId);
+  return normalizeComplianceMode(org?.complianceMode ?? process.env.COMPLIANCE_MODE);
+};
+
+const getLatestPolicyMapping = (orgId: string, policyId: string) => {
+  return Array.from(store.policyMappings.values())
+    .filter((mapping) => mapping.orgId === orgId && mapping.policyId === policyId)
+    .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0];
+};
+
+const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
+  const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
+  Array.from(store.canonicalControlSnapshots.values())
+    .filter((record) => record.orgId === orgId && record.control_name !== "compliance_posture_flag")
+    .forEach((record) => {
+      const existing = latestByControl.get(record.control_name);
+      if (!existing || record.updatedAt > existing.updatedAt) {
+        latestByControl.set(record.control_name, record);
+      }
+    });
+
+  const summary = buildComplianceSummary(
+    Array.from(latestByControl.values()).map((record) => ({
+      control_name: record.control_name,
+      status: record.status
+    }))
+  );
+
+  upsertCanonicalControl({
+    orgId,
+    control_name: "compliance_posture_flag",
+    status: summary.overall_status,
+    source: "policy_mapping",
+    bucket_start: updatedAt.slice(0, 10),
+    bucket_end: updatedAt.slice(0, 10),
+    updatedAt
+  });
+
+  return summary;
+};
+
+const isOrgAllowedForBeta = (orgId: string) => {
+  const raw = process.env.BETA_ORG_ALLOWLIST;
+  if (!raw || raw.trim().length === 0) {
+    return true;
+  }
+  const allow = raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return allow.includes(orgId);
+};
+
 const enforceScopeQuery = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     enforceScopeWhitelist(typeof req.query.scope === "string" ? req.query.scope : undefined);
@@ -295,7 +351,8 @@ app.post("/orgs", strictLimiter, (req, res) => {
     id,
     name: parsed.data.name,
     minGroupSize: parsed.data.minGroupSize ?? 10,
-    createdAt
+    createdAt,
+    complianceMode: "shadow"
   });
   const defaultRoles = ["Admin", "Exec Viewer", "Enablement Lead"];
   defaultRoles.forEach((roleName) => {
@@ -748,6 +805,9 @@ app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenField
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
 
   const parsed = PolicyUploadSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -791,10 +851,52 @@ app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenField
   });
 });
 
+app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+
+  const policies = Array.from(store.policyDocuments.values())
+    .filter((policy) => policy.orgId === org.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((policy) => {
+      const latestMapping = getLatestPolicyMapping(org.id, policy.policyId);
+      return {
+        policy_id: policy.policyId,
+        file_name: policy.fileName,
+        content_type: policy.contentType,
+        source_format: policy.sourceFormat,
+        clause_count: policy.clauseCount,
+        created_at: policy.createdAt,
+        latest_mapping: latestMapping
+          ? {
+            mapping_id: latestMapping.mappingId,
+            generated_at: latestMapping.generatedAt,
+            controls_mapped: latestMapping.controls.length,
+            unresolved_clauses: latestMapping.unresolvedClauses.filter((clause) => !clause.decision).length
+          }
+          : null
+      };
+    });
+
+  return res.json({
+    org_id: org.id,
+    mode: getOrgComplianceMode(org.id),
+    policies
+  });
+});
+
 app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
   }
 
   const policy = store.policyDocuments.get(req.params.policyId);
@@ -871,10 +973,159 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
   });
 });
 
+app.get("/orgs/:orgId/policies/:policyId/mapping", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+
+  const policy = store.policyDocuments.get(req.params.policyId);
+  if (!policy || policy.orgId !== org.id) {
+    return res.status(404).json({ error: "Policy not found" });
+  }
+
+  const latestMapping = getLatestPolicyMapping(org.id, policy.policyId);
+  if (!latestMapping) {
+    return res.status(404).json({ error: "Mapping not found" });
+  }
+
+  return res.json({
+    org_id: org.id,
+    policy_id: policy.policyId,
+    mapping_id: latestMapping.mappingId,
+    generated_at: latestMapping.generatedAt,
+    controls: latestMapping.controls,
+    unresolved_clauses: latestMapping.unresolvedClauses
+  });
+});
+
+app.patch(
+  "/orgs/:orgId/policies/:policyId/mapping/unresolved/:clauseId",
+  rbacMiddleware(["ADMIN"]),
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    if (!isOrgAllowedForBeta(org.id)) {
+      return res.status(403).json({ error: "Org not enabled for internal beta" });
+    }
+
+    const policy = store.policyDocuments.get(req.params.policyId);
+    if (!policy || policy.orgId !== org.id) {
+      return res.status(404).json({ error: "Policy not found" });
+    }
+
+    const parsed = UnresolvedClauseDecisionSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid unresolved clause decision payload", details: parsed.error.message });
+    }
+
+    const latestMapping = getLatestPolicyMapping(org.id, policy.policyId);
+    if (!latestMapping) {
+      return res.status(404).json({ error: "Mapping not found" });
+    }
+
+    const clause = latestMapping.unresolvedClauses.find((entry) => entry.clause_id === req.params.clauseId);
+    if (!clause) {
+      return res.status(404).json({ error: "Unresolved clause not found" });
+    }
+
+    const now = new Date().toISOString();
+    clause.decision = parsed.data.action;
+    clause.decision_rationale = parsed.data.rationale;
+    clause.decided_at = now;
+    if (parsed.data.action === "map") {
+      clause.mapped_control_name = parsed.data.control_name;
+      clause.mapped_status = parsed.data.status;
+
+      const mappedControl = latestMapping.controls.find((control) => control.control_name === parsed.data.control_name);
+      if (mappedControl) {
+        mappedControl.status = parsed.data.status!;
+        mappedControl.rationale = `${mappedControl.rationale} | Admin override from unresolved clause ${clause.clause_id}.`;
+      } else {
+        latestMapping.controls.push({
+          control_name: parsed.data.control_name!,
+          status: parsed.data.status!,
+          confidence: 0.7,
+          matched_clause_ids: [clause.clause_id],
+          rationale: "Admin decision from unresolved clause."
+        });
+      }
+
+      upsertCanonicalControl({
+        orgId: org.id,
+        control_name: parsed.data.control_name!,
+        status: parsed.data.status!,
+        source: "policy_mapping",
+        bucket_start: now.slice(0, 10),
+        bucket_end: now.slice(0, 10),
+        updatedAt: now
+      });
+      insertComplianceEvent({
+        eventId: `event-${crypto.randomUUID()}`,
+        orgId: org.id,
+        eventType: "control_state_updated",
+        policyId: policy.policyId,
+        controlName: parsed.data.control_name!,
+        status: parsed.data.status!,
+        createdAt: now,
+        metadata: {
+          source: "unresolved_clause_decision",
+          clause_id: clause.clause_id
+        }
+      });
+    }
+
+    insertComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "unresolved_clause_decided",
+      policyId: policy.policyId,
+      createdAt: now,
+      metadata: {
+        clause_id: clause.clause_id,
+        action: parsed.data.action
+      }
+    });
+
+    const summary = recomputeCompliancePostureForOrg(org.id, now);
+    insertComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "compliance_status_refreshed",
+      policyId: policy.policyId,
+      status: summary.overall_status,
+      createdAt: now,
+      metadata: {
+        trigger: "unresolved_clause_decision",
+        clause_id: clause.clause_id,
+        action: parsed.data.action
+      }
+    });
+
+    return res.json({
+      policy_id: policy.policyId,
+      mapping_id: latestMapping.mappingId,
+      clause_id: clause.clause_id,
+      decision: clause.decision,
+      overall_status: summary.overall_status
+    });
+  }
+);
+
 app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
   }
 
   const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
@@ -896,9 +1147,19 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   const summary = buildComplianceSummary(
     controls.map((control) => ({ control_name: control.control_name, status: control.status }))
   );
+  const orgEvents = Array.from(store.complianceEvents.values())
+    .filter((event) => event.orgId === org.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const asOf = new Date().toISOString();
 
   return res.json({
     org_id: org.id,
+    mode: getOrgComplianceMode(org.id),
+    as_of: asOf,
+    freshness: {
+      last_event_at: orgEvents[0]?.createdAt ?? null,
+      stale: orgEvents.length === 0
+    },
     overall_status: summary.overall_status,
     counts: summary.counts,
     controls
@@ -910,11 +1171,24 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
 
   const since = typeof req.query.since === "string" ? req.query.since : undefined;
   const sinceDate = since ? new Date(since) : null;
+  const policyId = typeof req.query.policy_id === "string" ? req.query.policy_id : undefined;
+  const eventType = typeof req.query.event_type === "string" ? req.query.event_type : undefined;
+  const cursorRaw = typeof req.query.cursor === "string" ? req.query.cursor : "0";
+  const limitRaw = typeof req.query.limit === "string" ? req.query.limit : "50";
+  const cursor = Number.parseInt(cursorRaw, 10);
+  const requestedLimit = Number.parseInt(limitRaw, 10);
+  const limit = Number.isNaN(requestedLimit) ? 50 : Math.min(200, Math.max(1, requestedLimit));
   if (since && (!sinceDate || Number.isNaN(sinceDate.getTime()))) {
     return res.status(400).json({ error: "Invalid since query parameter" });
+  }
+  if (Number.isNaN(cursor) || cursor < 0) {
+    return res.status(400).json({ error: "Invalid cursor query parameter" });
   }
 
   const events = sortComplianceEvents(
@@ -922,17 +1196,29 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
       if (event.orgId !== org.id) {
         return false;
       }
-      if (!sinceDate) {
-        return true;
+      if (sinceDate && new Date(event.createdAt) < sinceDate) {
+        return false;
       }
-      return new Date(event.createdAt) >= sinceDate;
+      if (policyId && event.policyId !== policyId) {
+        return false;
+      }
+      if (eventType && event.eventType !== eventType) {
+        return false;
+      }
+      return true;
     })
-  );
+  ).reverse();
+  const page = events.slice(cursor, cursor + limit);
+  const nextCursor = cursor + limit < events.length ? String(cursor + limit) : null;
 
   return res.json({
     org_id: org.id,
+    mode: getOrgComplianceMode(org.id),
     total_count: events.length,
-    events: events.map((event) => ({
+    limit,
+    cursor: String(cursor),
+    next_cursor: nextCursor,
+    events: page.map((event) => ({
       event_id: event.eventId,
       event_type: event.eventType,
       policy_id: event.policyId ?? null,
@@ -1247,6 +1533,7 @@ app.post(
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
     }
 
+    const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
       return {
@@ -1256,7 +1543,11 @@ app.post(
       };
     });
 
-    return res.json({ ingested: eventIds.length, event_ids: eventIds });
+    return res.json({
+      ingested: eventIds.length,
+      event_ids: eventIds,
+      schema_version: schemaVersion
+    });
   }
 );
 

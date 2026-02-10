@@ -22,6 +22,33 @@ export const PolicyUploadSchema = z
 
 export type PolicyUploadInput = z.infer<typeof PolicyUploadSchema>;
 
+export const UnresolvedClauseDecisionSchema = z
+  .object({
+    action: z.enum(["map", "ignore", "defer"]),
+    rationale: z.string().min(1),
+    control_name: z.string().min(1).optional(),
+    status: z.enum(["enabled", "disabled", "partial", "unknown"]).optional()
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.action === "map") {
+      if (!value.control_name) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "control_name is required when action is map"
+        });
+      }
+      if (!value.status) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "status is required when action is map"
+        });
+      }
+    }
+  });
+
+export type UnresolvedClauseDecisionInput = z.infer<typeof UnresolvedClauseDecisionSchema>;
+
 export const canonicalStatusFromLegacyBoolean = (value: boolean): CanonicalControlState => {
   return value ? "enabled" : "disabled";
 };
@@ -298,3 +325,7 @@ export const buildComplianceSummary = (
 
 export const sortComplianceEvents = (events: ComplianceEventRecord[]) =>
   [...events].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+export const normalizeComplianceMode = (mode?: string): "shadow" | "enforced" => {
+  return mode === "enforced" ? "enforced" : "shadow";
+};
