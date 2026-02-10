@@ -62,3 +62,9 @@ it("includes admin mode controls for shadow and enforced states", () => {
   expect(content).toContain("Set Enforced");
   expect(content).toContain("isAdminRole");
 });
+
+it("handles compliance timeline refresh and load-more errors", () => {
+  const content = readDashboard();
+  expect(content).toContain("Unable to refresh compliance events.");
+  expect(content).toContain("Unable to load more compliance events.");
+});

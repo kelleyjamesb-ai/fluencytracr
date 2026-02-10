@@ -1181,7 +1181,11 @@ export const Dashboard = () => {
                   <button
                     className="secondary"
                     type="button"
-                    onClick={() => loadComplianceEvents("0", false)}
+                    onClick={() => {
+                      loadComplianceEvents("0", false).catch(() => {
+                        setAdminMessage("Unable to refresh compliance events.");
+                      });
+                    }}
                     disabled={isLoadingComplianceEvents}
                   >
                     Refresh
@@ -1225,7 +1229,11 @@ export const Dashboard = () => {
                   <button
                     className="secondary"
                     type="button"
-                    onClick={() => loadComplianceEvents(complianceEventsNextCursor, true)}
+                    onClick={() => {
+                      loadComplianceEvents(complianceEventsNextCursor, true).catch(() => {
+                        setAdminMessage("Unable to load more compliance events.");
+                      });
+                    }}
                     disabled={isLoadingComplianceEvents}
                   >
                     {isLoadingComplianceEvents ? "Loading..." : "Load More"}
