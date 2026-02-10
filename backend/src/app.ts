@@ -55,9 +55,6 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
-import { Prisma } from "@prisma/client";
-import { getPrisma } from "./db";
-import { Prisma } from "@prisma/client";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -68,6 +65,7 @@ import {
 import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import * as path from "path";
 import {
+  ComplianceModeUpdateSchema,
   PolicyUploadSchema,
   buildCanonicalSnapshots,
   buildComplianceSummary,
@@ -1003,6 +1001,48 @@ app.get("/orgs/:orgId/policies/:policyId/mapping", rbacMiddleware(["ADMIN", "EXE
 });
 
 app.patch(
+  "/orgs/:orgId/compliance/mode",
+  rbacMiddleware(["ADMIN"]),
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    if (!isOrgAllowedForBeta(org.id)) {
+      return res.status(403).json({ error: "Org not enabled for internal beta" });
+    }
+
+    const parsed = ComplianceModeUpdateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid compliance mode payload", details: parsed.error.message });
+    }
+
+    const previousMode = getOrgComplianceMode(org.id);
+    org.complianceMode = parsed.data.mode;
+    const now = new Date().toISOString();
+    insertComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "compliance_mode_updated",
+      createdAt: now,
+      metadata: {
+        previous_mode: previousMode,
+        next_mode: parsed.data.mode,
+        rationale: parsed.data.rationale ?? null
+      }
+    });
+
+    return res.json({
+      org_id: org.id,
+      mode: org.complianceMode,
+      updated_at: now
+    });
+  }
+);
+
+app.patch(
   "/orgs/:orgId/policies/:policyId/mapping/unresolved/:clauseId",
   rbacMiddleware(["ADMIN"]),
   schemaVersionMiddleware,
@@ -1536,11 +1576,8 @@ app.post(
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
-      return {
-        event_id: eventId,
-        schema_version: schemaVersion,
-        payload: { ...event, event_id: eventId } as unknown as Prisma.InputJsonValue,
-      };
+      insertFluencyEvent({ ...event, event_id: eventId });
+      return eventId;
     });
 
     return res.json({

@@ -49,6 +49,15 @@ export const UnresolvedClauseDecisionSchema = z
 
 export type UnresolvedClauseDecisionInput = z.infer<typeof UnresolvedClauseDecisionSchema>;
 
+export const ComplianceModeUpdateSchema = z
+  .object({
+    mode: z.enum(["shadow", "enforced"]),
+    rationale: z.string().min(1).optional()
+  })
+  .strict();
+
+export type ComplianceModeUpdateInput = z.infer<typeof ComplianceModeUpdateSchema>;
+
 export const canonicalStatusFromLegacyBoolean = (value: boolean): CanonicalControlState => {
   return value ? "enabled" : "disabled";
 };

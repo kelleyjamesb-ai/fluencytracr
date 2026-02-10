@@ -344,7 +344,7 @@ it("keeps ledger entries append-only when evaluations are added", async () => {
 
   const eventTimestamp = new Date(pastStart);
   eventTimestamp.setDate(eventTimestamp.getDate() + 5);
-  await fetch(`${server.url}/api/events`, {
+  const ingestResponse = await fetch(`${server.url}/api/events`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -357,6 +357,9 @@ it("keeps ledger entries append-only when evaluations are added", async () => {
       )
     })
   });
+  const ingestPayload = await ingestResponse.json();
+  expect(ingestResponse.status).toBe(200);
+  expect(ingestPayload.ingested).toBe(25);
 
   const createResponse = await fetch(`${server.url}/api/ledger`, {
     method: "POST",

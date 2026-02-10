@@ -1,10 +1,37 @@
 import {
   FluencyTracrV1EventSchema,
   FluencyTracrV1Event,
-  FluencyTracrV1EvaluationDecision,
-  FluencyTracrV1SuppressReasonCode,
   FluencyTracrV1EventName
 } from "@learnaire/shared";
+
+type FluencyTracrV1SuppressReasonCode =
+  | "SUPP_INTERNAL_INVARIANT_FAIL"
+  | "SUPP_AMBIGUITY_PRESENT"
+  | "SUPP_SMALL_TEAM_LT_5"
+  | "SUPP_WINDOW_LT_60D"
+  | "SUPP_NOT_ADJACENT_WINDOWS"
+  | "SUPP_LT_2_BEHAVIOR_CLASSES"
+  | "SUPP_SPARSE_DATA"
+  | "SUPP_NO_QUALIFYING_EVIDENCE";
+
+type FluencyTracrV1EvaluationDecision =
+  | {
+      schema_version: "FT_V1_2026_01";
+      org_id: string;
+      function_id: string;
+      role_class: string;
+      window_id: string;
+      decision: "SURFACE";
+    }
+  | {
+      schema_version: "FT_V1_2026_01";
+      org_id: string;
+      function_id: string;
+      role_class: string;
+      window_id: string;
+      decision: "SUPPRESS";
+      suppress_reason_code: FluencyTracrV1SuppressReasonCode;
+    };
 
 const MIN_COHORT_SIZE = 5;
 const MIN_SURFACING_WINDOW_DAYS = 60;
