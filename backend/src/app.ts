@@ -327,6 +327,47 @@ const isOrgAllowedForBeta = (orgId: string) => {
   return allow.includes(orgId);
 };
 
+const parseEnvAllowlist = (raw: string | undefined) => {
+  if (!raw || raw.trim().length === 0) {
+    return [];
+  }
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+};
+
+const isOrgAllowedForEnforcementPilot = (orgId: string) => {
+  const allow = parseEnvAllowlist(process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST);
+  return allow.includes(orgId);
+};
+
+const getUnresolvedDecisionThreshold = () => {
+  const raw = process.env.ENFORCEMENT_MAX_UNRESOLVED_CLAUSES;
+  if (!raw || raw.trim().length === 0) {
+    return 0;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return parsed;
+};
+
+const countOutstandingUnresolvedClauses = (orgId: string) => {
+  const latestByPolicy = new Map<string, { generatedAt: string; unresolved: number }>();
+  Array.from(store.policyMappings.values())
+    .filter((mapping) => mapping.orgId === orgId)
+    .forEach((mapping) => {
+      const unresolved = mapping.unresolvedClauses.filter((clause) => !clause.decision).length;
+      const existing = latestByPolicy.get(mapping.policyId);
+      if (!existing || mapping.generatedAt > existing.generatedAt) {
+        latestByPolicy.set(mapping.policyId, { generatedAt: mapping.generatedAt, unresolved });
+      }
+    });
+  return Array.from(latestByPolicy.values()).reduce((sum, entry) => sum + entry.unresolved, 0);
+};
+
 const parsePersistedOrgConfig = (metadata: unknown) => {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return {
@@ -1174,6 +1215,23 @@ app.patch(
       return res.status(400).json({ error: "Invalid compliance mode payload", details: parsed.error.message });
     }
 
+    const unresolvedThreshold = getUnresolvedDecisionThreshold();
+    const outstandingUnresolved = countOutstandingUnresolvedClauses(org.id);
+    if (parsed.data.mode === "enforced") {
+      if (!isOrgAllowedForEnforcementPilot(org.id)) {
+        return res.status(403).json({
+          error: "Org not eligible for enforcement pilot",
+          details: "Org is not listed in ENFORCEMENT_PILOT_ORG_ALLOWLIST."
+        });
+      }
+      if (outstandingUnresolved > unresolvedThreshold) {
+        return res.status(409).json({
+          error: "Unresolved policy clauses exceed enforcement threshold",
+          details: `Outstanding unresolved clauses (${outstandingUnresolved}) exceed threshold (${unresolvedThreshold}).`
+        });
+      }
+    }
+
     const previousMode = getOrgComplianceMode(org.id);
     org.complianceMode = parsed.data.mode;
     const now = new Date().toISOString();
@@ -1186,7 +1244,12 @@ app.patch(
       metadata: {
         previous_mode: previousMode,
         next_mode: parsed.data.mode,
-        rationale: parsed.data.rationale ?? null
+        rationale: parsed.data.rationale ?? null,
+        enforcement_guardrail: {
+          pilot_eligible: isOrgAllowedForEnforcementPilot(org.id),
+          unresolved_threshold: unresolvedThreshold,
+          unresolved_outstanding: outstandingUnresolved
+        }
       }
     });
     persistOrgConfigEvent({

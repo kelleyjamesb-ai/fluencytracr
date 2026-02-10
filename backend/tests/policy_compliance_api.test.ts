@@ -9,6 +9,8 @@ const schemaHeaders = withSchemaVersion({
 
 beforeEach(() => {
   delete process.env.BETA_ORG_ALLOWLIST;
+  delete process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST;
+  delete process.env.ENFORCEMENT_MAX_UNRESOLVED_CLAUSES;
   process.env.COMPLIANCE_MODE = "shadow";
   store.reset();
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 2, createdAt: "now" });
@@ -271,6 +273,9 @@ it("paginates and filters compliance events", async () => {
 });
 
 it("updates org compliance mode with admin role and records an event", async () => {
+  process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST = "org-1";
+  process.env.ENFORCEMENT_MAX_UNRESOLVED_CLAUSES = "0";
+
   const response = await request(app)
     .patch("/orgs/org-1/compliance/mode")
     .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
@@ -339,7 +344,64 @@ it("rejects compliance mode update for non-admin role", async () => {
   expect(response.status).toBe(403);
 });
 
+it("blocks enforced mode for orgs outside enforcement pilot allowlist", async () => {
+  process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST = "org-allowlisted";
+
+  const denied = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "enforced",
+      rationale: "Should fail because org is not pilot-eligible."
+    });
+
+  expect(denied.status).toBe(403);
+
+  const rollback = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "shadow",
+      rationale: "Rollback to shadow must remain available."
+    });
+  expect(rollback.status).toBe(200);
+  expect(rollback.body.mode).toBe("shadow");
+});
+
+it("blocks enforced mode when unresolved clauses exceed threshold", async () => {
+  process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST = "org-1";
+  process.env.ENFORCEMENT_MAX_UNRESOLVED_CLAUSES = "0";
+
+  const upload = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "threshold-policy.txt",
+      content: "Document quarterly office hours and facilitator reflections for operating cadence."
+    });
+  const policyId = upload.body.policy_id as string;
+  const mapped = await request(app)
+    .post(`/orgs/org-1/policies/${policyId}/map`)
+    .set(schemaHeaders)
+    .send({});
+  expect(mapped.status).toBe(200);
+  expect(mapped.body.unresolved_clauses.length).toBeGreaterThan(0);
+
+  const denied = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "enforced",
+      rationale: "Should fail because unresolved clauses are outstanding."
+    });
+
+  expect(denied.status).toBe(409);
+});
+
 it("emits an auditable event chain for upload, map, unresolved decision, and mode update", async () => {
+  process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST = "org-1";
+  process.env.ENFORCEMENT_MAX_UNRESOLVED_CLAUSES = "0";
+
   const upload = await request(app)
     .post("/orgs/org-1/policies/upload")
     .set(schemaHeaders)
