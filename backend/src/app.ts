@@ -1536,11 +1536,8 @@ app.post(
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
-      return {
-        event_id: eventId,
-        schema_version: schemaVersion,
-        payload: { ...event, event_id: eventId } as unknown as Prisma.InputJsonValue,
-      };
+      insertFluencyEvent({ ...event, event_id: eventId });
+      return eventId;
     });
 
     return res.json({
