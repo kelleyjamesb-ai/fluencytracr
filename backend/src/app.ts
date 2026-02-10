@@ -458,8 +458,23 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
   }
 };
 
+const parseOrgCreatePayload = (body: unknown) => {
+  const raw = (body ?? {}) as Record<string, unknown>;
+  const candidateMinGroupSize =
+    typeof raw.minGroupSize === "number"
+      ? raw.minGroupSize
+      : typeof raw.min_group_size === "number"
+        ? raw.min_group_size
+        : undefined;
+  const normalized = {
+    name: raw.name,
+    ...(candidateMinGroupSize !== undefined ? { minGroupSize: candidateMinGroupSize } : {})
+  };
+  return OrgCreateSchema.safeParse(normalized);
+};
+
 app.post("/orgs", strictLimiter, (req, res) => {
-  const parsed = OrgCreateSchema.safeParse(req.body ?? {});
+  const parsed = parseOrgCreatePayload(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
   }
@@ -1067,8 +1082,9 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
     });
   });
 
+  const policyMappedEventId = `event-${crypto.randomUUID()}`;
   insertComplianceEvent({
-    eventId: `event-${crypto.randomUUID()}`,
+    eventId: policyMappedEventId,
     orgId: org.id,
     eventType: "policy_mapped",
     policyId: policy.policyId,
@@ -1093,7 +1109,12 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
     policyId: policy.policyId,
     createdAt: generatedAt,
     status: summary.overall_status,
-    metadata: summary.counts
+    metadata: {
+      ...summary.counts,
+      source_event_id: policyMappedEventId,
+      source_event_type: "policy_mapped",
+      recomputed_at: generatedAt
+    }
   });
 
   return res.json({
@@ -1156,8 +1177,9 @@ app.patch(
     const previousMode = getOrgComplianceMode(org.id);
     org.complianceMode = parsed.data.mode;
     const now = new Date().toISOString();
+    const complianceModeEventId = `event-${crypto.randomUUID()}`;
     insertComplianceEvent({
-      eventId: `event-${crypto.randomUUID()}`,
+      eventId: complianceModeEventId,
       orgId: org.id,
       eventType: "compliance_mode_updated",
       createdAt: now,
@@ -1179,7 +1201,8 @@ app.patch(
     return res.json({
       org_id: org.id,
       mode: org.complianceMode,
-      updated_at: now
+      updated_at: now,
+      source_event_id: complianceModeEventId
     });
   }
 );
@@ -1407,6 +1430,64 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
       control_name: event.controlName ?? null,
       status: event.status ?? null,
       created_at: event.createdAt,
+      metadata: event.metadata
+    }))
+  });
+});
+
+app.get("/orgs/:orgId/compliance/export", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+
+  const format = typeof req.query.format === "string" ? req.query.format : "json";
+  const events = sortComplianceEvents(
+    Array.from(store.complianceEvents.values()).filter((event) => event.orgId === org.id)
+  );
+
+  if (format === "csv") {
+    const escapeCsv = (value: unknown) => {
+      const serialized = typeof value === "string" ? value : JSON.stringify(value ?? "");
+      return `"${serialized.replace(/"/g, "\"\"")}"`;
+    };
+
+    const rows = [
+      ["org_id", "event_id", "event_type", "policy_id", "control_name", "status", "created_at_utc", "metadata"].join(","),
+      ...events.map((event) =>
+        [
+          escapeCsv(org.id),
+          escapeCsv(event.eventId),
+          escapeCsv(event.eventType),
+          escapeCsv(event.policyId ?? ""),
+          escapeCsv(event.controlName ?? ""),
+          escapeCsv(event.status ?? ""),
+          escapeCsv(new Date(event.createdAt).toISOString()),
+          escapeCsv(event.metadata)
+        ].join(",")
+      )
+    ].join("\n");
+
+    res.setHeader("content-type", "text/csv; charset=utf-8");
+    res.setHeader("content-disposition", `attachment; filename=\"compliance-export-${org.id}.csv\"`);
+    return res.status(200).send(rows);
+  }
+
+  return res.json({
+    org_id: org.id,
+    mode: getOrgComplianceMode(org.id),
+    generated_at_utc: new Date().toISOString(),
+    total_count: events.length,
+    events: events.map((event) => ({
+      event_id: event.eventId,
+      event_type: event.eventType,
+      policy_id: event.policyId ?? null,
+      control_name: event.controlName ?? null,
+      status: event.status ?? null,
+      created_at_utc: new Date(event.createdAt).toISOString(),
       metadata: event.metadata
     }))
   });

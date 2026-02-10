@@ -14,6 +14,19 @@ beforeEach(() => {
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 2, createdAt: "now" });
 });
 
+it("accepts snake_case org create payload for min_group_size", async () => {
+  const response = await request(app)
+    .post("/orgs")
+    .set(schemaHeaders)
+    .send({
+      name: "Snake Case Org",
+      min_group_size: 3
+    });
+
+  expect(response.status).toBe(201);
+  expect(response.body.min_group_size).toBe(3);
+});
+
 it("uploads and normalizes policy text", async () => {
   const response = await request(app)
     .post("/orgs/org-1/policies/upload")
@@ -268,6 +281,7 @@ it("updates org compliance mode with admin role and records an event", async () 
 
   expect(response.status).toBe(200);
   expect(response.body.mode).toBe("enforced");
+  expect(response.body.source_event_id).toMatch(/^event-/);
 
   const status = await request(app)
     .get("/orgs/org-1/compliance/status")
@@ -280,6 +294,37 @@ it("updates org compliance mode with admin role and records an event", async () 
     .set({ "x-role": "ADMIN" });
   expect(events.status).toBe(200);
   expect(events.body.total_count).toBeGreaterThanOrEqual(1);
+});
+
+it("exports deterministic compliance events as json and csv", async () => {
+  const upload = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "export-policy.txt",
+      content: "AI enabled for approved workflows. External sharing disabled."
+    });
+  expect(upload.status).toBe(201);
+  const policyId = upload.body.policy_id as string;
+
+  await request(app)
+    .post(`/orgs/org-1/policies/${policyId}/map`)
+    .set(schemaHeaders)
+    .send({});
+
+  const jsonExport = await request(app)
+    .get("/orgs/org-1/compliance/export")
+    .set({ "x-role": "ADMIN" });
+  expect(jsonExport.status).toBe(200);
+  expect(jsonExport.body.total_count).toBeGreaterThan(0);
+  expect(jsonExport.body.events[0]).toHaveProperty("created_at_utc");
+
+  const csvExport = await request(app)
+    .get("/orgs/org-1/compliance/export?format=csv")
+    .set({ "x-role": "ADMIN" });
+  expect(csvExport.status).toBe(200);
+  expect(csvExport.headers["content-type"]).toContain("text/csv");
+  expect(csvExport.text).toContain("created_at_utc");
 });
 
 it("rejects compliance mode update for non-admin role", async () => {
