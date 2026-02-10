@@ -284,6 +284,16 @@ export const Dashboard = () => {
     }
   };
 
+  const setSincePreset = (hoursBack: number) => {
+    const date = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    setComplianceEventSinceFilter(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
+  };
+
   const exportComplianceEventsCsv = async () => {
     setIsExportingComplianceEvents(true);
     setAdminMessage(null);
@@ -1140,6 +1150,34 @@ export const Dashboard = () => {
                     onChange={(event) => setComplianceEventSinceFilter(event.target.value)}
                     aria-label="Events since"
                   />
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => setSincePreset(24)}
+                  >
+                    Last 24h
+                  </button>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => setSincePreset(24 * 7)}
+                  >
+                    Last 7d
+                  </button>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => setSincePreset(24 * 30)}
+                  >
+                    Last 30d
+                  </button>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => setComplianceEventSinceFilter("")}
+                  >
+                    Clear Since
+                  </button>
                   <button
                     className="secondary"
                     type="button"
