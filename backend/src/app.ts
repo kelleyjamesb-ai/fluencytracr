@@ -55,6 +55,7 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
+import { getPrisma } from "./db";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -326,6 +327,32 @@ const isOrgAllowedForBeta = (orgId: string) => {
   return allow.includes(orgId);
 };
 
+const hydrateOrgFromDatabase = async (orgId: string) => {
+  if (store.orgs.has(orgId)) {
+    return store.orgs.get(orgId) ?? null;
+  }
+  try {
+    const prisma = getPrisma();
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId }
+    });
+    if (!org) {
+      return null;
+    }
+    const hydrated = {
+      id: org.id,
+      name: org.name,
+      minGroupSize: 10,
+      createdAt: org.createdAt.toISOString(),
+      complianceMode: normalizeComplianceMode(process.env.COMPLIANCE_MODE)
+    };
+    store.orgs.set(org.id, hydrated);
+    return hydrated;
+  } catch (error) {
+    return null;
+  }
+};
+
 const enforceScopeQuery = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     enforceScopeWhitelist(typeof req.query.scope === "string" ? req.query.scope : undefined);
@@ -357,12 +384,31 @@ app.post("/orgs", strictLimiter, (req, res) => {
     const roleId = `role-${crypto.randomUUID()}`;
     store.roles.set(roleId, { id: roleId, orgId: id, name: roleName });
   });
+  // Best effort persistence for serverless runtimes where in-memory state is ephemeral.
+  getPrisma()
+    .organization
+    .create({
+      data: {
+        id,
+        name: parsed.data.name
+      }
+    })
+    .catch(() => {
+      // Keep request successful even if DB persistence is unavailable.
+    });
   return res.status(201).json({
     org_id: id,
     name: parsed.data.name,
     created_at: createdAt,
     min_group_size: parsed.data.minGroupSize ?? 10
   });
+});
+
+app.use("/orgs/:orgId", async (req, _res, next) => {
+  if (!store.orgs.has(req.params.orgId)) {
+    await hydrateOrgFromDatabase(req.params.orgId);
+  }
+  return next();
 });
 
 app.get("/orgs/:orgId/teams", (req, res) => {
