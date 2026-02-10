@@ -185,6 +185,7 @@ export const Dashboard = () => {
   const [complianceEventsNextCursor, setComplianceEventsNextCursor] = useState<string | null>(null);
   const [complianceEventTypeFilter, setComplianceEventTypeFilter] = useState<ComplianceEventType | "all">("all");
   const [complianceEventPolicyFilter, setComplianceEventPolicyFilter] = useState<string | "all">("all");
+  const [complianceEventSinceFilter, setComplianceEventSinceFilter] = useState("");
   const [isLoadingComplianceEvents, setIsLoadingComplianceEvents] = useState(false);
   const [isExportingComplianceEvents, setIsExportingComplianceEvents] = useState(false);
 
@@ -266,6 +267,9 @@ export const Dashboard = () => {
       if (complianceEventPolicyFilter !== "all") {
         params.set("policy_id", complianceEventPolicyFilter);
       }
+      if (complianceEventSinceFilter) {
+        params.set("since", new Date(complianceEventSinceFilter).toISOString());
+      }
       const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
         headers: { "x-role": role }
       });
@@ -296,6 +300,9 @@ export const Dashboard = () => {
         }
         if (complianceEventPolicyFilter !== "all") {
           params.set("policy_id", complianceEventPolicyFilter);
+        }
+        if (complianceEventSinceFilter) {
+          params.set("since", new Date(complianceEventSinceFilter).toISOString());
         }
         const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
           headers: { "x-role": role }
@@ -381,7 +388,7 @@ export const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [activePage, complianceEventTypeFilter, complianceEventPolicyFilter]);
+  }, [activePage, complianceEventTypeFilter, complianceEventPolicyFilter, complianceEventSinceFilter]);
 
   useEffect(() => {
     if (activePage === "admin" && selectedPolicyId) {
@@ -1127,6 +1134,12 @@ export const Dashboard = () => {
                       </option>
                     ))}
                   </select>
+                  <input
+                    type="datetime-local"
+                    value={complianceEventSinceFilter}
+                    onChange={(event) => setComplianceEventSinceFilter(event.target.value)}
+                    aria-label="Events since"
+                  />
                   <button
                     className="secondary"
                     type="button"
@@ -1161,6 +1174,10 @@ export const Dashboard = () => {
                         Policy: {event.policy_id ?? "n/a"} | Control: {event.control_name ?? "n/a"} | Status:{" "}
                         {event.status ?? "n/a"}
                       </p>
+                      <details>
+                        <summary className="meta">Show event details</summary>
+                        <pre className="meta">{JSON.stringify(event.metadata, null, 2)}</pre>
+                      </details>
                     </div>
                   ))}
                 </div>
