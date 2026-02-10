@@ -327,6 +327,25 @@ const isOrgAllowedForBeta = (orgId: string) => {
   return allow.includes(orgId);
 };
 
+const parsePersistedOrgConfig = (metadata: unknown) => {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return {
+      minGroupSize: null as number | null,
+      complianceMode: null as "shadow" | "enforced" | null
+    };
+  }
+  const payload = metadata as Record<string, unknown>;
+  const minGroupSize =
+    typeof payload.min_group_size === "number" && Number.isFinite(payload.min_group_size)
+      ? Math.max(1, Math.trunc(payload.min_group_size))
+      : null;
+  const complianceMode =
+    payload.compliance_mode === "shadow" || payload.compliance_mode === "enforced"
+      ? payload.compliance_mode
+      : null;
+  return { minGroupSize, complianceMode };
+};
+
 const hydrateOrgFromDatabase = async (orgId: string) => {
   if (store.orgs.has(orgId)) {
     return store.orgs.get(orgId) ?? null;
@@ -339,17 +358,77 @@ const hydrateOrgFromDatabase = async (orgId: string) => {
     if (!org) {
       return null;
     }
+    const latestConfig = await prisma.auditEvent.findFirst({
+      where: {
+        orgId: org.id,
+        eventType: "org_config"
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+    const persistedConfig = parsePersistedOrgConfig(latestConfig?.metadata);
     const hydrated = {
       id: org.id,
       name: org.name,
-      minGroupSize: 10,
+      minGroupSize: persistedConfig.minGroupSize ?? 10,
       createdAt: org.createdAt.toISOString(),
-      complianceMode: normalizeComplianceMode(process.env.COMPLIANCE_MODE)
+      complianceMode: normalizeComplianceMode(persistedConfig.complianceMode ?? process.env.COMPLIANCE_MODE)
     };
     store.orgs.set(org.id, hydrated);
     return hydrated;
   } catch (error) {
     return null;
+  }
+};
+
+const persistOrgConfigEvent = async (params: {
+  orgId: string;
+  minGroupSize: number;
+  complianceMode: "shadow" | "enforced";
+  source: "org_create" | "compliance_mode_update";
+  rationale?: string | null;
+}) => {
+  try {
+    const prisma = getPrisma();
+    const previous = await prisma.auditEvent.findFirst({
+      where: { orgId: params.orgId },
+      orderBy: { seq: "desc" }
+    });
+    const seq = (previous?.seq ?? 0) + 1;
+    const prevHash = previous?.hash ?? "GENESIS";
+    const hashPayload = JSON.stringify({
+      org_id: params.orgId,
+      seq,
+      event_type: "org_config",
+      metadata: {
+        min_group_size: params.minGroupSize,
+        compliance_mode: params.complianceMode,
+        source: params.source,
+        rationale: params.rationale ?? null
+      },
+      prev_hash: prevHash
+    });
+    const hash = crypto.createHash("sha256").update(hashPayload).digest("hex");
+    await prisma.auditEvent.create({
+      data: {
+        orgId: params.orgId,
+        seq,
+        actorSub: "system",
+        actorRole: "SYSTEM",
+        eventType: "org_config",
+        metadata: {
+          min_group_size: params.minGroupSize,
+          compliance_mode: params.complianceMode,
+          source: params.source,
+          rationale: params.rationale ?? null
+        },
+        prevHash,
+        hash
+      }
+    });
+  } catch (error) {
+    // Best effort only.
   }
 };
 
@@ -396,6 +475,12 @@ app.post("/orgs", strictLimiter, (req, res) => {
     .catch(() => {
       // Keep request successful even if DB persistence is unavailable.
     });
+  persistOrgConfigEvent({
+    orgId: id,
+    minGroupSize: parsed.data.minGroupSize ?? 10,
+    complianceMode: "shadow",
+    source: "org_create"
+  });
   return res.status(201).json({
     org_id: id,
     name: parsed.data.name,
@@ -1078,6 +1163,13 @@ app.patch(
         next_mode: parsed.data.mode,
         rationale: parsed.data.rationale ?? null
       }
+    });
+    persistOrgConfigEvent({
+      orgId: org.id,
+      minGroupSize: org.minGroupSize,
+      complianceMode: parsed.data.mode,
+      source: "compliance_mode_update",
+      rationale: parsed.data.rationale ?? null
     });
 
     return res.json({
