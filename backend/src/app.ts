@@ -80,11 +80,19 @@ import {
 } from "./policy_compliance";
 
 const app = express();
+// Vercel/edge deployments sit behind reverse proxies.
+// Trust proxy headers so req.ip is derived correctly for rate limiting.
+app.set("trust proxy", 1);
 app.use(express.json());
 
 const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 60
+  max: 60,
+  // Express does not natively parse RFC7239 Forwarded header.
+  // We rely on trusted X-Forwarded-For for client identity.
+  validate: {
+    forwardedHeader: false
+  }
 });
 
 const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
