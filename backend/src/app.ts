@@ -55,6 +55,9 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
+import { Prisma } from "@prisma/client";
+import { getPrisma } from "./db";
+import { Prisma } from "@prisma/client";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -1533,9 +1536,11 @@ app.post(
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
-      // Preserve schema-version traceability while keeping in-memory ingest deterministic.
-      insertFluencyEvent({ ...event, event_id: eventId });
-      return eventId;
+      return {
+        event_id: eventId,
+        schema_version: schemaVersion,
+        payload: { ...event, event_id: eventId } as unknown as Prisma.InputJsonValue,
+      };
     });
 
     return res.json({
