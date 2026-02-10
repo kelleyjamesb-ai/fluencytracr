@@ -1530,13 +1530,19 @@ app.post(
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
     }
 
+    const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds = parsed.data.events.map((event) => {
       const eventId = crypto.randomUUID();
+      // Preserve schema-version traceability while keeping in-memory ingest deterministic.
       insertFluencyEvent({ ...event, event_id: eventId });
       return eventId;
     });
 
-    return res.json({ ingested: eventIds.length, event_ids: eventIds });
+    return res.json({
+      ingested: eventIds.length,
+      event_ids: eventIds,
+      schema_version: schemaVersion
+    });
   }
 );
 
