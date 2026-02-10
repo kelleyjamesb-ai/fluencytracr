@@ -27,6 +27,7 @@ model FluencyScore {
   id             String   @id @default(uuid())
   organizationId String
   teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id])
   day            DateTime
   score          Float
   coverage       Float
@@ -42,7 +43,12 @@ model FluencyScore {
 model AuditEvent {
   id        String   @id @default(uuid())
   orgId     String
+  seq       Int      @default(0)
+  actorSub  String?
+  actorRole String?
   eventType String
   metadata  Json
+  prevHash  String?
+  hash      String?
   createdAt DateTime @default(now())
 }
