@@ -254,8 +254,13 @@ export const Dashboard = () => {
     setMapping(payload);
   };
 
-  const loadComplianceEvents = async (cursor = "0", append = false) => {
+  const loadComplianceEvents = async (
+    cursor = "0",
+    append = false,
+    options?: { throwOnError?: boolean; errorMessage?: string }
+  ) => {
     setIsLoadingComplianceEvents(true);
+    const throwOnError = options?.throwOnError ?? true;
     try {
       const params = new URLSearchParams({
         cursor,
@@ -279,6 +284,18 @@ export const Dashboard = () => {
       const payload = (await response.json()) as ComplianceEventsResponse;
       setComplianceEvents((current) => (append ? [...current, ...payload.events] : payload.events));
       setComplianceEventsNextCursor(payload.next_cursor);
+      return true;
+    } catch (error) {
+      if (!append) {
+        // Avoid stale timeline state after a failed refresh.
+        setComplianceEvents([]);
+        setComplianceEventsNextCursor(null);
+      }
+      setAdminMessage(options?.errorMessage ?? "Unable to load compliance events.");
+      if (throwOnError) {
+        throw error;
+      }
+      return false;
     } finally {
       setIsLoadingComplianceEvents(false);
     }
@@ -1182,8 +1199,9 @@ export const Dashboard = () => {
                     className="secondary"
                     type="button"
                     onClick={() => {
-                      loadComplianceEvents("0", false).catch(() => {
-                        setAdminMessage("Unable to refresh compliance events.");
+                      void loadComplianceEvents("0", false, {
+                        throwOnError: false,
+                        errorMessage: "Unable to refresh compliance events."
                       });
                     }}
                     disabled={isLoadingComplianceEvents}
@@ -1230,8 +1248,9 @@ export const Dashboard = () => {
                     className="secondary"
                     type="button"
                     onClick={() => {
-                      loadComplianceEvents(complianceEventsNextCursor, true).catch(() => {
-                        setAdminMessage("Unable to load more compliance events.");
+                      void loadComplianceEvents(complianceEventsNextCursor, true, {
+                        throwOnError: false,
+                        errorMessage: "Unable to load more compliance events."
                       });
                     }}
                     disabled={isLoadingComplianceEvents}
