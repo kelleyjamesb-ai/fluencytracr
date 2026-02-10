@@ -331,7 +331,8 @@ const parsePersistedOrgConfig = (metadata: unknown) => {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return {
       minGroupSize: null as number | null,
-      complianceMode: null as "shadow" | "enforced" | null
+      complianceMode: null as "shadow" | "enforced" | null,
+      orgName: null as string | null
     };
   }
   const payload = metadata as Record<string, unknown>;
@@ -343,7 +344,11 @@ const parsePersistedOrgConfig = (metadata: unknown) => {
     payload.compliance_mode === "shadow" || payload.compliance_mode === "enforced"
       ? payload.compliance_mode
       : null;
-  return { minGroupSize, complianceMode };
+  const orgName =
+    typeof payload.org_name === "string" && payload.org_name.trim().length > 0
+      ? payload.org_name.trim()
+      : null;
+  return { minGroupSize, complianceMode, orgName };
 };
 
 const hydrateOrgFromDatabase = async (orgId: string) => {
@@ -352,30 +357,27 @@ const hydrateOrgFromDatabase = async (orgId: string) => {
   }
   try {
     const prisma = getPrisma();
-    const org = await prisma.organization.findUnique({
-      where: { id: orgId }
-    });
-    if (!org) {
-      return null;
-    }
     const latestConfig = await prisma.auditEvent.findFirst({
       where: {
-        orgId: org.id,
+        orgId,
         eventType: "org_config"
       },
       orderBy: {
         createdAt: "desc"
       }
     });
+    if (!latestConfig) {
+      return null;
+    }
     const persistedConfig = parsePersistedOrgConfig(latestConfig?.metadata);
     const hydrated = {
-      id: org.id,
-      name: org.name,
+      id: orgId,
+      name: persistedConfig.orgName ?? `Org ${orgId.slice(0, 8)}`,
       minGroupSize: persistedConfig.minGroupSize ?? 10,
-      createdAt: org.createdAt.toISOString(),
+      createdAt: latestConfig.createdAt.toISOString(),
       complianceMode: normalizeComplianceMode(persistedConfig.complianceMode ?? process.env.COMPLIANCE_MODE)
     };
-    store.orgs.set(org.id, hydrated);
+    store.orgs.set(orgId, hydrated);
     return hydrated;
   } catch (error) {
     return null;
@@ -387,6 +389,7 @@ const persistOrgConfigEvent = async (params: {
   minGroupSize: number;
   complianceMode: "shadow" | "enforced";
   source: "org_create" | "compliance_mode_update";
+  orgName?: string;
   rationale?: string | null;
 }) => {
   try {
@@ -404,6 +407,7 @@ const persistOrgConfigEvent = async (params: {
       metadata: {
         min_group_size: params.minGroupSize,
         compliance_mode: params.complianceMode,
+        org_name: params.orgName ?? null,
         source: params.source,
         rationale: params.rationale ?? null
       },
@@ -420,6 +424,7 @@ const persistOrgConfigEvent = async (params: {
         metadata: {
           min_group_size: params.minGroupSize,
           compliance_mode: params.complianceMode,
+          org_name: params.orgName ?? null,
           source: params.source,
           rationale: params.rationale ?? null
         },
@@ -463,23 +468,12 @@ app.post("/orgs", strictLimiter, (req, res) => {
     const roleId = `role-${crypto.randomUUID()}`;
     store.roles.set(roleId, { id: roleId, orgId: id, name: roleName });
   });
-  // Best effort persistence for serverless runtimes where in-memory state is ephemeral.
-  getPrisma()
-    .organization
-    .create({
-      data: {
-        id,
-        name: parsed.data.name
-      }
-    })
-    .catch(() => {
-      // Keep request successful even if DB persistence is unavailable.
-    });
   persistOrgConfigEvent({
     orgId: id,
     minGroupSize: parsed.data.minGroupSize ?? 10,
     complianceMode: "shadow",
-    source: "org_create"
+    source: "org_create",
+    orgName: parsed.data.name
   });
   return res.status(201).json({
     org_id: id,
@@ -1169,6 +1163,7 @@ app.patch(
       minGroupSize: org.minGroupSize,
       complianceMode: parsed.data.mode,
       source: "compliance_mode_update",
+      orgName: org.name,
       rationale: parsed.data.rationale ?? null
     });
 
