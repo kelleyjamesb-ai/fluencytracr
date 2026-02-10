@@ -68,6 +68,7 @@ import {
 import { INFERENCE_VERSION, parameterHash } from "./inference/versioning";
 import * as path from "path";
 import {
+  ComplianceModeUpdateSchema,
   PolicyUploadSchema,
   buildCanonicalSnapshots,
   buildComplianceSummary,
@@ -1001,6 +1002,48 @@ app.get("/orgs/:orgId/policies/:policyId/mapping", rbacMiddleware(["ADMIN", "EXE
     unresolved_clauses: latestMapping.unresolvedClauses
   });
 });
+
+app.patch(
+  "/orgs/:orgId/compliance/mode",
+  rbacMiddleware(["ADMIN"]),
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    if (!isOrgAllowedForBeta(org.id)) {
+      return res.status(403).json({ error: "Org not enabled for internal beta" });
+    }
+
+    const parsed = ComplianceModeUpdateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid compliance mode payload", details: parsed.error.message });
+    }
+
+    const previousMode = getOrgComplianceMode(org.id);
+    org.complianceMode = parsed.data.mode;
+    const now = new Date().toISOString();
+    insertComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "compliance_mode_updated",
+      createdAt: now,
+      metadata: {
+        previous_mode: previousMode,
+        next_mode: parsed.data.mode,
+        rationale: parsed.data.rationale ?? null
+      }
+    });
+
+    return res.json({
+      org_id: org.id,
+      mode: org.complianceMode,
+      updated_at: now
+    });
+  }
+);
 
 app.patch(
   "/orgs/:orgId/policies/:policyId/mapping/unresolved/:clauseId",

@@ -154,6 +154,7 @@ export const Dashboard = () => {
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [isSavingPolicy, setIsSavingPolicy] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [isUpdatingComplianceMode, setIsUpdatingComplianceMode] = useState(false);
 
   const scope: FluencyScope = "org";
 
@@ -309,6 +310,33 @@ export const Dashboard = () => {
     }
   };
 
+  const updateComplianceMode = async (mode: "shadow" | "enforced") => {
+    setIsUpdatingComplianceMode(true);
+    setAdminMessage(null);
+    try {
+      const response = await fetch(`/orgs/${orgId}/compliance/mode`, {
+        method: "PATCH",
+        headers: governanceHeaders,
+        body: JSON.stringify({
+          mode,
+          rationale:
+            mode === "enforced"
+              ? "Internal admin promoted org to enforcement mode."
+              : "Internal admin returned org to shadow mode."
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Compliance mode update failed");
+      }
+      await loadCompliance();
+      setAdminMessage(`Compliance mode updated to ${mode}.`);
+    } catch (_error) {
+      setAdminMessage("Unable to update compliance mode.");
+    } finally {
+      setIsUpdatingComplianceMode(false);
+    }
+  };
+
   const resolveClause = async (
     clauseId: string,
     action: "map" | "ignore" | "defer",
@@ -415,6 +443,7 @@ export const Dashboard = () => {
   const activeLabel = [...navItems, ...secondaryNavItems].find((item) => item.key === activePage)?.label ?? "Overview";
   const isAdminPage = activePage === "admin";
   const isBetaHost = typeof window !== "undefined" && window.location.hostname === "www.fluencytracr.com";
+  const isAdminRole = role === "ADMIN";
 
   return (
     <div className="app-shell">
@@ -766,7 +795,8 @@ export const Dashboard = () => {
             <div className="card banner">
               <h3>Policy Governance Admin</h3>
               <p>
-                Compliance is running in <strong>shadow mode</strong>. Signals are advisory and non-blocking during beta.
+                Compliance is running in{" "}
+                <strong>{complianceStatus?.mode ?? "shadow"} mode</strong>. Signals are advisory and non-blocking during beta.
               </p>
             </div>
 
@@ -814,6 +844,26 @@ export const Dashboard = () => {
                       <li>Unknown: {complianceStatus.counts.unknown}</li>
                     </ul>
                     <p className="meta">Freshness: {complianceStatus.freshness.last_event_at ?? "No events yet"}</p>
+                    {isAdminRole && (
+                      <div className="inline-actions">
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => updateComplianceMode("shadow")}
+                          disabled={isUpdatingComplianceMode || complianceStatus.mode === "shadow"}
+                        >
+                          Set Shadow
+                        </button>
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => updateComplianceMode("enforced")}
+                          disabled={isUpdatingComplianceMode || complianceStatus.mode === "enforced"}
+                        >
+                          Set Enforced
+                        </button>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <p className="meta">No compliance status available yet.</p>

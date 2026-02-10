@@ -256,3 +256,46 @@ it("paginates and filters compliance events", async () => {
   expect(filtered.status).toBe(200);
   expect(filtered.body.events.every((event: any) => event.event_type === "policy_uploaded")).toBe(true);
 });
+
+it("updates org compliance mode with admin role and records an event", async () => {
+  const response = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "enforced",
+      rationale: "Pilot org is ready for controlled enforcement."
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body.mode).toBe("enforced");
+
+  const status = await request(app)
+    .get("/orgs/org-1/compliance/status")
+    .set({ "x-role": "ADMIN" });
+  expect(status.status).toBe(200);
+  expect(status.body.mode).toBe("enforced");
+
+  const events = await request(app)
+    .get("/orgs/org-1/compliance/events?event_type=compliance_mode_updated")
+    .set({ "x-role": "ADMIN" });
+  expect(events.status).toBe(200);
+  expect(events.body.total_count).toBeGreaterThanOrEqual(1);
+});
+
+it("enforces beta allowlist for policy and compliance endpoints", async () => {
+  process.env.BETA_ORG_ALLOWLIST = "org-allowlisted";
+
+  const uploadDenied = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "policy.txt",
+      content: "AI enabled for approved workflows."
+    });
+  expect(uploadDenied.status).toBe(403);
+
+  const statusDenied = await request(app)
+    .get("/orgs/org-1/compliance/status")
+    .set({ "x-role": "ADMIN" });
+  expect(statusDenied.status).toBe(403);
+});

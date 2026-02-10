@@ -161,7 +161,13 @@ export type CanonicalControlSnapshotRecord = {
 export type ComplianceEventRecord = {
   eventId: string;
   orgId: string;
-  eventType: "policy_uploaded" | "policy_mapped" | "control_state_updated" | "compliance_status_refreshed" | "unresolved_clause_decided";
+  eventType:
+    | "policy_uploaded"
+    | "policy_mapped"
+    | "control_state_updated"
+    | "compliance_status_refreshed"
+    | "unresolved_clause_decided"
+    | "compliance_mode_updated";
   policyId?: string;
   controlName?: string;
   status?: CanonicalControlState;
