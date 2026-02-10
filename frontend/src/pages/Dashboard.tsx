@@ -184,7 +184,9 @@ export const Dashboard = () => {
   const [complianceEvents, setComplianceEvents] = useState<ComplianceEventsResponse["events"]>([]);
   const [complianceEventsNextCursor, setComplianceEventsNextCursor] = useState<string | null>(null);
   const [complianceEventTypeFilter, setComplianceEventTypeFilter] = useState<ComplianceEventType | "all">("all");
+  const [complianceEventPolicyFilter, setComplianceEventPolicyFilter] = useState<string | "all">("all");
   const [isLoadingComplianceEvents, setIsLoadingComplianceEvents] = useState(false);
+  const [isExportingComplianceEvents, setIsExportingComplianceEvents] = useState(false);
 
   const scope: FluencyScope = "org";
 
@@ -261,6 +263,9 @@ export const Dashboard = () => {
       if (complianceEventTypeFilter !== "all") {
         params.set("event_type", complianceEventTypeFilter);
       }
+      if (complianceEventPolicyFilter !== "all") {
+        params.set("policy_id", complianceEventPolicyFilter);
+      }
       const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
         headers: { "x-role": role }
       });
@@ -272,6 +277,81 @@ export const Dashboard = () => {
       setComplianceEventsNextCursor(payload.next_cursor);
     } finally {
       setIsLoadingComplianceEvents(false);
+    }
+  };
+
+  const exportComplianceEventsCsv = async () => {
+    setIsExportingComplianceEvents(true);
+    setAdminMessage(null);
+    try {
+      let cursor = "0";
+      const rows: ComplianceEventsResponse["events"] = [];
+      while (true) {
+        const params = new URLSearchParams({
+          cursor,
+          limit: "200"
+        });
+        if (complianceEventTypeFilter !== "all") {
+          params.set("event_type", complianceEventTypeFilter);
+        }
+        if (complianceEventPolicyFilter !== "all") {
+          params.set("policy_id", complianceEventPolicyFilter);
+        }
+        const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
+          headers: { "x-role": role }
+        });
+        if (!response.ok) {
+          throw new Error("Unable to export compliance events");
+        }
+        const payload = (await response.json()) as ComplianceEventsResponse;
+        rows.push(...payload.events);
+        if (!payload.next_cursor) {
+          break;
+        }
+        cursor = payload.next_cursor;
+      }
+
+      const escapeCsv = (value: unknown) => {
+        const serialized = typeof value === "string" ? value : JSON.stringify(value ?? "");
+        return `"${serialized.replace(/"/g, '""')}"`;
+      };
+      const csv = [
+        [
+          "event_id",
+          "event_type",
+          "policy_id",
+          "control_name",
+          "status",
+          "created_at",
+          "metadata"
+        ].join(","),
+        ...rows.map((event) =>
+          [
+            escapeCsv(event.event_id),
+            escapeCsv(event.event_type),
+            escapeCsv(event.policy_id ?? ""),
+            escapeCsv(event.control_name ?? ""),
+            escapeCsv(event.status ?? ""),
+            escapeCsv(event.created_at),
+            escapeCsv(event.metadata)
+          ].join(",")
+        )
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `compliance-events-${orgId}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setAdminMessage(`Exported ${rows.length} compliance event rows.`);
+    } catch (_error) {
+      setAdminMessage("Unable to export compliance events.");
+    } finally {
+      setIsExportingComplianceEvents(false);
     }
   };
 
@@ -301,7 +381,7 @@ export const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [activePage, complianceEventTypeFilter]);
+  }, [activePage, complianceEventTypeFilter, complianceEventPolicyFilter]);
 
   useEffect(() => {
     if (activePage === "admin" && selectedPolicyId) {
@@ -1036,6 +1116,17 @@ export const Dashboard = () => {
                     <option value="unresolved_clause_decided">Unresolved decided</option>
                     <option value="compliance_mode_updated">Mode updated</option>
                   </select>
+                  <select
+                    value={complianceEventPolicyFilter}
+                    onChange={(event) => setComplianceEventPolicyFilter(event.target.value || "all")}
+                  >
+                    <option value="all">All policies</option>
+                    {policies.map((policy) => (
+                      <option key={`event-policy-${policy.policy_id}`} value={policy.policy_id}>
+                        {policy.file_name}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     className="secondary"
                     type="button"
@@ -1043,6 +1134,14 @@ export const Dashboard = () => {
                     disabled={isLoadingComplianceEvents}
                   >
                     Refresh
+                  </button>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={exportComplianceEventsCsv}
+                    disabled={isExportingComplianceEvents}
+                  >
+                    {isExportingComplianceEvents ? "Exporting..." : "Export CSV"}
                   </button>
                 </div>
               </div>
