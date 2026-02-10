@@ -487,6 +487,24 @@ const persistOrgConfigEvent = async (params: {
   }
 };
 
+const persistOrganizationRecord = async (params: { orgId: string; name: string; createdAt: string }) => {
+  try {
+    const prisma = getPrisma();
+    await prisma.organization.upsert({
+      where: { id: params.orgId },
+      update: { name: params.name },
+      create: {
+        id: params.orgId,
+        name: params.name,
+        createdAt: new Date(params.createdAt)
+      }
+    });
+    return true;
+  } catch (_error) {
+    return false;
+  }
+};
+
 const enforceScopeQuery = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     enforceScopeWhitelist(typeof req.query.scope === "string" ? req.query.scope : undefined);
@@ -514,13 +532,23 @@ const parseOrgCreatePayload = (body: unknown) => {
   return OrgCreateSchema.safeParse(normalized);
 };
 
-app.post("/orgs", strictLimiter, (req, res) => {
+app.post("/orgs", strictLimiter, async (req, res) => {
   const parsed = parseOrgCreatePayload(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
   }
   const id = `org-${crypto.randomUUID()}`;
   const createdAt = new Date().toISOString();
+  const persistedDurably = await persistOrganizationRecord({
+    orgId: id,
+    name: parsed.data.name,
+    createdAt
+  });
+  const mustPersistDurably =
+    process.env.VERCEL_ENV === "production" || process.env.REQUIRE_DURABLE_ORG_CREATE === "1";
+  if (mustPersistDurably && !persistedDurably) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
   store.orgs.set(id, {
     id,
     name: parsed.data.name,
