@@ -282,6 +282,29 @@ it("updates org compliance mode with admin role and records an event", async () 
   expect(events.body.total_count).toBeGreaterThanOrEqual(1);
 });
 
+it("rejects compliance mode update for non-admin role", async () => {
+  const response = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "EXEC_VIEWER" }))
+    .send({
+      mode: "enforced",
+      rationale: "Unauthorized attempt."
+    });
+
+  expect(response.status).toBe(403);
+});
+
+it("validates compliance mode payload", async () => {
+  const response = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "invalid-mode"
+    });
+
+  expect(response.status).toBe(400);
+});
+
 it("enforces beta allowlist for policy and compliance endpoints", async () => {
   process.env.BETA_ORG_ALLOWLIST = "org-allowlisted";
 

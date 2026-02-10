@@ -78,6 +78,32 @@ type ComplianceStatusResponse = {
   }>;
 };
 
+type ComplianceEventType =
+  | "policy_uploaded"
+  | "policy_mapped"
+  | "control_state_updated"
+  | "compliance_status_refreshed"
+  | "unresolved_clause_decided"
+  | "compliance_mode_updated";
+
+type ComplianceEventsResponse = {
+  org_id: string;
+  mode: "shadow" | "enforced";
+  total_count: number;
+  limit: number;
+  cursor: string;
+  next_cursor: string | null;
+  events: Array<{
+    event_id: string;
+    event_type: ComplianceEventType;
+    policy_id: string | null;
+    control_name: string | null;
+    status: "enabled" | "disabled" | "partial" | "unknown" | null;
+    created_at: string;
+    metadata: Record<string, unknown>;
+  }>;
+};
+
 const windows = [
   { label: "Rolling 60d", value: "60d" },
   { label: "3 months", value: "3m" },
@@ -155,6 +181,10 @@ export const Dashboard = () => {
   const [isSavingPolicy, setIsSavingPolicy] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [isUpdatingComplianceMode, setIsUpdatingComplianceMode] = useState(false);
+  const [complianceEvents, setComplianceEvents] = useState<ComplianceEventsResponse["events"]>([]);
+  const [complianceEventsNextCursor, setComplianceEventsNextCursor] = useState<string | null>(null);
+  const [complianceEventTypeFilter, setComplianceEventTypeFilter] = useState<ComplianceEventType | "all">("all");
+  const [isLoadingComplianceEvents, setIsLoadingComplianceEvents] = useState(false);
 
   const scope: FluencyScope = "org";
 
@@ -221,6 +251,30 @@ export const Dashboard = () => {
     setMapping(payload);
   };
 
+  const loadComplianceEvents = async (cursor = "0", append = false) => {
+    setIsLoadingComplianceEvents(true);
+    try {
+      const params = new URLSearchParams({
+        cursor,
+        limit: "10"
+      });
+      if (complianceEventTypeFilter !== "all") {
+        params.set("event_type", complianceEventTypeFilter);
+      }
+      const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
+        headers: { "x-role": role }
+      });
+      if (!response.ok) {
+        throw new Error("Unable to load compliance events");
+      }
+      const payload = (await response.json()) as ComplianceEventsResponse;
+      setComplianceEvents((current) => (append ? [...current, ...payload.events] : payload.events));
+      setComplianceEventsNextCursor(payload.next_cursor);
+    } finally {
+      setIsLoadingComplianceEvents(false);
+    }
+  };
+
   useEffect(() => {
     if (activePage !== "admin") {
       return;
@@ -229,7 +283,7 @@ export const Dashboard = () => {
     const loadAdminData = async () => {
       setIsAdminLoading(true);
       try {
-        await Promise.all([loadPolicies(), loadCompliance()]);
+        await Promise.all([loadPolicies(), loadCompliance(), loadComplianceEvents("0", false)]);
         if (!cancelled) {
           setAdminMessage(null);
         }
@@ -247,7 +301,7 @@ export const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [activePage]);
+  }, [activePage, complianceEventTypeFilter]);
 
   useEffect(() => {
     if (activePage === "admin" && selectedPolicyId) {
@@ -280,6 +334,7 @@ export const Dashboard = () => {
       const payload = await response.json();
       setSelectedPolicyId(payload.policy_id);
       await Promise.all([loadPolicies(), loadCompliance()]);
+      await loadComplianceEvents("0", false);
       setAdminMessage("Policy uploaded. Run mapping to generate compliance controls.");
     } catch (error) {
       setAdminMessage("Upload failed. Verify schema headers, role, and policy content.");
@@ -304,6 +359,7 @@ export const Dashboard = () => {
         throw new Error("Mapping failed");
       }
       await Promise.all([loadPolicies(), loadCompliance(), loadMapping(selectedPolicyId)]);
+      await loadComplianceEvents("0", false);
       setAdminMessage("Policy mapped. Review unresolved clauses to improve coverage.");
     } catch (error) {
       setAdminMessage("Mapping failed. Check policy content and endpoint permissions.");
@@ -329,6 +385,7 @@ export const Dashboard = () => {
         throw new Error("Compliance mode update failed");
       }
       await loadCompliance();
+      await loadComplianceEvents("0", false);
       setAdminMessage(`Compliance mode updated to ${mode}.`);
     } catch (_error) {
       setAdminMessage("Unable to update compliance mode.");
@@ -367,6 +424,7 @@ export const Dashboard = () => {
         throw new Error("Clause resolution failed");
       }
       await Promise.all([loadCompliance(), loadMapping(selectedPolicyId), loadPolicies()]);
+      await loadComplianceEvents("0", false);
       setAdminMessage("Unresolved clause decision saved.");
     } catch (error) {
       setAdminMessage("Unable to save unresolved clause decision.");
@@ -960,6 +1018,66 @@ export const Dashboard = () => {
               )}
 
               {adminMessage && <p className="meta">{adminMessage}</p>}
+            </div>
+
+            <div className="card">
+              <div className="row-between">
+                <h4>Compliance Event Timeline</h4>
+                <div className="inline-actions">
+                  <select
+                    value={complianceEventTypeFilter}
+                    onChange={(event) => setComplianceEventTypeFilter(event.target.value as ComplianceEventType | "all")}
+                  >
+                    <option value="all">All events</option>
+                    <option value="policy_uploaded">Policy uploaded</option>
+                    <option value="policy_mapped">Policy mapped</option>
+                    <option value="control_state_updated">Control state updated</option>
+                    <option value="compliance_status_refreshed">Status refreshed</option>
+                    <option value="unresolved_clause_decided">Unresolved decided</option>
+                    <option value="compliance_mode_updated">Mode updated</option>
+                  </select>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => loadComplianceEvents("0", false)}
+                    disabled={isLoadingComplianceEvents}
+                  >
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {isLoadingComplianceEvents && complianceEvents.length === 0 ? (
+                <p className="meta">Loading events...</p>
+              ) : complianceEvents.length === 0 ? (
+                <p className="meta">No compliance events yet.</p>
+              ) : (
+                <div className="stack">
+                  {complianceEvents.map((event) => (
+                    <div className="card nested" key={event.event_id}>
+                      <p>
+                        <strong>{event.event_type}</strong> at {event.created_at}
+                      </p>
+                      <p className="meta">
+                        Policy: {event.policy_id ?? "n/a"} | Control: {event.control_name ?? "n/a"} | Status:{" "}
+                        {event.status ?? "n/a"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {complianceEventsNextCursor && (
+                <div className="inline-actions">
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => loadComplianceEvents(complianceEventsNextCursor, true)}
+                    disabled={isLoadingComplianceEvents}
+                  >
+                    {isLoadingComplianceEvents ? "Loading..." : "Load More"}
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         )}
