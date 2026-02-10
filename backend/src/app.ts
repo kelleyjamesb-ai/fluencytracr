@@ -508,7 +508,11 @@ const persistOrganizationRecord = async (params: { orgId: string; name: string; 
       }
     });
     return true;
-  } catch (_error) {
+  } catch (error) {
+    console.error("[org_create] Failed to persist organization record", {
+      org_id: params.orgId,
+      error: error instanceof Error ? error.message : String(error)
+    });
     return false;
   }
 };
