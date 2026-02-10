@@ -357,6 +357,9 @@ const hydrateOrgFromDatabase = async (orgId: string) => {
   }
   try {
     const prisma = getPrisma();
+    const orgRecord = await prisma.organization.findUnique({
+      where: { id: orgId }
+    });
     const latestConfig = await prisma.auditEvent.findFirst({
       where: {
         orgId,
@@ -366,15 +369,21 @@ const hydrateOrgFromDatabase = async (orgId: string) => {
         createdAt: "desc"
       }
     });
-    if (!latestConfig) {
+    const latestAnyEvent = await prisma.auditEvent.findFirst({
+      where: { orgId },
+      orderBy: { createdAt: "desc" }
+    });
+    // Keep legacy orgs/addressability intact even when org_config is missing.
+    if (!latestConfig && !orgRecord && !latestAnyEvent) {
       return null;
     }
     const persistedConfig = parsePersistedOrgConfig(latestConfig?.metadata);
+    const hydratedCreatedAt = latestAnyEvent?.createdAt ?? orgRecord?.createdAt ?? new Date();
     const hydrated = {
       id: orgId,
-      name: persistedConfig.orgName ?? `Org ${orgId.slice(0, 8)}`,
+      name: persistedConfig.orgName ?? orgRecord?.name ?? `Org ${orgId.slice(0, 8)}`,
       minGroupSize: persistedConfig.minGroupSize ?? 10,
-      createdAt: latestConfig.createdAt.toISOString(),
+      createdAt: hydratedCreatedAt.toISOString(),
       complianceMode: normalizeComplianceMode(persistedConfig.complianceMode ?? process.env.COMPLIANCE_MODE)
     };
     store.orgs.set(orgId, hydrated);
