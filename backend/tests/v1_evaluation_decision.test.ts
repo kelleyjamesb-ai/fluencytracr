@@ -20,7 +20,7 @@ it("defaults to SUPPRESS with a reason code", () => {
   expect(result.suppress_reason_code).toBe("SUPP_NO_QUALIFYING_EVIDENCE");
 });
 
-it("suppresses when ambiguity is present", () => {
+it("suppresses ambiguous inputs when ambiguity is present", () => {
   const result = enforceV1EvaluationDecision({
     ...baseInput,
     ambiguity_flag: true,

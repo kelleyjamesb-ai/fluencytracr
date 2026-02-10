@@ -38,4 +38,4 @@ jobs:
       - name: Build shared workspace
         run: npm run build --workspace shared
       - name: Run backend tests
-        run: npm test --workspace backend
+        run: npm run test:ci --workspace backend
