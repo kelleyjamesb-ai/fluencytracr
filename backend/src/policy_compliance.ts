@@ -1,4 +1,5 @@
 import { z } from "zod";
+import crypto from "crypto";
 import type {
   CanonicalControlSnapshotRecord,
   CanonicalControlState,
@@ -337,4 +338,39 @@ export const sortComplianceEvents = (events: ComplianceEventRecord[]) =>
 
 export const normalizeComplianceMode = (mode?: string): "shadow" | "enforced" => {
   return mode === "enforced" ? "enforced" : "shadow";
+};
+
+type DeterministicDecisionIdInput = {
+  orgId: string;
+  policyId: string;
+  mappingId: string;
+  clauseId: string;
+  action: "map" | "ignore" | "defer";
+  rationale: string;
+  status?: "enabled" | "disabled" | "partial" | "unknown";
+  decidedAt: string;
+};
+
+const normalizeToSecondIso = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  const normalizedMs = Math.floor(date.getTime() / 1000) * 1000;
+  return new Date(normalizedMs).toISOString();
+};
+
+export const buildDeterministicDecisionId = (input: DeterministicDecisionIdInput) => {
+  const payload = [
+    input.orgId,
+    input.policyId,
+    input.mappingId,
+    input.clauseId,
+    input.action,
+    input.rationale.trim(),
+    input.status ?? "",
+    normalizeToSecondIso(input.decidedAt)
+  ].join("|");
+  const hash = crypto.createHash("sha256").update(payload).digest("hex").slice(0, 32);
+  return `decision-${hash}`;
 };

@@ -2,6 +2,7 @@ import request from "supertest";
 import { app } from "../src/app";
 import { store } from "../src/store";
 import { withSchemaVersion } from "./test_helpers";
+import { buildDeterministicDecisionId } from "../src/policy_compliance";
 
 const schemaHeaders = withSchemaVersion({
   "Content-Type": "application/json"
@@ -264,6 +265,26 @@ it("supports unresolved clause decisions and updates compliance status", async (
   expect(decision.status).toBe(200);
   expect(decision.body.decision).toBe("map");
 
+  const events = await request(app)
+    .get(`/orgs/org-1/compliance/events?policy_id=${policyId}&event_type=unresolved_clause_decided`)
+    .set({ "x-role": "ADMIN" });
+  expect(events.status).toBe(200);
+  expect(events.body.events.length).toBeGreaterThanOrEqual(1);
+  const decisionEvent = events.body.events[events.body.events.length - 1];
+  const expectedDecisionId = buildDeterministicDecisionId({
+    orgId: "org-1",
+    policyId,
+    mappingId: mapped.body.mapping_id,
+    clauseId: unresolved.clause_id,
+    action: "map",
+    rationale: "Map this governance clause in beta.",
+    status: "partial",
+    decidedAt: decisionEvent.created_at
+  });
+  expect(decisionEvent.metadata.decision_id).toBe(expectedDecisionId);
+  expect(decisionEvent.metadata.clause_id).toBe(unresolved.clause_id);
+  expect(decisionEvent.metadata.action).toBe("map");
+
   const statusResponse = await request(app)
     .get("/orgs/org-1/compliance/status")
     .set({ "x-role": "ADMIN" });
@@ -303,6 +324,79 @@ it("blocks unresolved clause decisions for non-admin roles", async () => {
     });
 
   expect(denied.status).toBe(403);
+});
+
+it("replays unresolved clause decisions idempotently with deterministic decision IDs", async () => {
+  const upload = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "idempotent-decision-policy.txt",
+      content: [
+        "AI enabled for approved workflows.",
+        "Document quarterly office hours and facilitator reflections for operating cadence."
+      ].join(" ")
+    });
+  const policyId = upload.body.policy_id as string;
+
+  const mapped = await request(app)
+    .post(`/orgs/org-1/policies/${policyId}/map`)
+    .set(schemaHeaders)
+    .send({});
+  expect(mapped.status).toBe(200);
+  const unresolved = mapped.body.unresolved_clauses.find((clause: any) => clause.clause_id);
+  expect(unresolved).toBeTruthy();
+
+  const payload = {
+    action: "ignore",
+    rationale: "Governance determined this is informational only."
+  };
+
+  const first = await request(app)
+    .patch(`/orgs/org-1/policies/${policyId}/mapping/unresolved/${unresolved.clause_id}`)
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send(payload);
+  expect(first.status).toBe(200);
+
+  const firstMapping = await request(app)
+    .get(`/orgs/org-1/policies/${policyId}/mapping`)
+    .set({ "x-role": "ADMIN" });
+  expect(firstMapping.status).toBe(200);
+  const firstClause = firstMapping.body.unresolved_clauses.find((clause: any) => clause.clause_id === unresolved.clause_id);
+  expect(firstClause).toBeTruthy();
+  const firstDecidedAt = firstClause.decided_at as string;
+
+  const replay = await request(app)
+    .patch(`/orgs/org-1/policies/${policyId}/mapping/unresolved/${unresolved.clause_id}`)
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send(payload);
+  expect(replay.status).toBe(200);
+
+  const replayMapping = await request(app)
+    .get(`/orgs/org-1/policies/${policyId}/mapping`)
+    .set({ "x-role": "ADMIN" });
+  expect(replayMapping.status).toBe(200);
+  const replayClause = replayMapping.body.unresolved_clauses.find((clause: any) => clause.clause_id === unresolved.clause_id);
+  expect(replayClause).toBeTruthy();
+  expect(replayClause.decided_at).toBe(firstDecidedAt);
+
+  const events = await request(app)
+    .get(`/orgs/org-1/compliance/events?policy_id=${policyId}&event_type=unresolved_clause_decided`)
+    .set({ "x-role": "ADMIN" });
+  expect(events.status).toBe(200);
+  const expectedDecisionId = buildDeterministicDecisionId({
+    orgId: "org-1",
+    policyId,
+    mappingId: mapped.body.mapping_id,
+    clauseId: unresolved.clause_id,
+    action: "ignore",
+    rationale: payload.rationale,
+    decidedAt: firstDecidedAt
+  });
+  expect(events.body.events.length).toBeGreaterThanOrEqual(2);
+  const matching = events.body.events.filter((event: any) => event.metadata?.clause_id === unresolved.clause_id);
+  expect(matching.length).toBeGreaterThanOrEqual(2);
+  expect(matching.every((event: any) => event.metadata?.decision_id === expectedDecisionId)).toBe(true);
 });
 
 it("paginates and filters compliance events", async () => {
