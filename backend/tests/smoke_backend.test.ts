@@ -22,6 +22,7 @@ it("smoke: fail-closed ops endpoint responds for authorized roles", async () => 
   expect(response.status).toBe(200);
   expect(typeof response.body.total).toBe("number");
   expect(Array.isArray(response.body.by_route)).toBe(true);
+  expect(Array.isArray(response.body.by_reason)).toBe(true);
   expect(Array.isArray(response.body.recent)).toBe(true);
 });
 
@@ -33,6 +34,19 @@ it("smoke: db readiness endpoint responds when db is not configured", async () =
   expect(response.status).toBe(200);
   expect(response.body.status).toBe("not_configured");
   expect(Array.isArray(response.body.required_tables)).toBe(true);
+});
+
+it("smoke: ops metrics endpoint exposes sli payload", async () => {
+  const response = await request(app)
+    .get("/ops/metrics")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(typeof response.body.as_of).toBe("string");
+  expect(typeof response.body.uptime_seconds).toBe("number");
+  expect(typeof response.body.counters).toBe("object");
+  expect(typeof response.body.sli).toBe("object");
+  expect(typeof response.body.sli.compliance_status_availability.value).toBe("number");
 });
 
 it("smoke: policy upload and compliance status flow", async () => {
