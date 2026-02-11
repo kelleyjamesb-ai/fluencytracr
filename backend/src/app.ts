@@ -407,9 +407,14 @@ const parsePersistedOrgConfig = (metadata: unknown) => {
   return { minGroupSize, complianceMode, orgName };
 };
 
-const hydrateOrgFromDatabase = async (orgId: string) => {
+type HydrationResult =
+  | { status: "found"; org: NonNullable<ReturnType<typeof store.orgs.get>> }
+  | { status: "not_found" }
+  | { status: "error"; message: string };
+
+const hydrateOrgFromDatabase = async (orgId: string): Promise<HydrationResult> => {
   if (store.orgs.has(orgId)) {
-    return store.orgs.get(orgId) ?? null;
+    return { status: "found", org: store.orgs.get(orgId)! };
   }
   try {
     const prisma = getPrisma();
@@ -431,7 +436,7 @@ const hydrateOrgFromDatabase = async (orgId: string) => {
     });
     // Keep legacy orgs/addressability intact even when org_config is missing.
     if (!latestConfig && !orgRecord && !latestAnyEvent) {
-      return null;
+      return { status: "not_found" };
     }
     const persistedConfig = parsePersistedOrgConfig(latestConfig?.metadata);
     const hydratedCreatedAt = latestAnyEvent?.createdAt ?? orgRecord?.createdAt ?? new Date();
@@ -443,9 +448,14 @@ const hydrateOrgFromDatabase = async (orgId: string) => {
       complianceMode: normalizeComplianceMode(persistedConfig.complianceMode ?? process.env.COMPLIANCE_MODE)
     };
     store.orgs.set(orgId, hydrated);
-    return hydrated;
+    return { status: "found", org: hydrated };
   } catch (error) {
-    return null;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[hydrate_org] Failed to hydrate org from database", {
+      org_id: orgId,
+      error: message
+    });
+    return { status: "error", message };
   }
 };
 
@@ -514,6 +524,7 @@ const persistOrganizationRecord = async (params: { orgId: string; name: string; 
         createdAt: new Date(params.createdAt)
       }
     });
+    console.log("[org_create] Persisted organization record", { org_id: params.orgId });
     return true;
   } catch (error) {
     console.error("[org_create] Failed to persist organization record", {
@@ -598,9 +609,23 @@ app.post("/orgs", strictLimiter, async (req, res) => {
   });
 });
 
-app.use("/orgs/:orgId", async (req, _res, next) => {
+app.use("/orgs/:orgId", async (req, res, next) => {
   if (!store.orgs.has(req.params.orgId)) {
-    await hydrateOrgFromDatabase(req.params.orgId);
+    const result = await hydrateOrgFromDatabase(req.params.orgId);
+    if (result.status === "error") {
+      const isDurableEnv =
+        process.env.VERCEL === "1" ||
+        process.env.VERCEL_ENV === "production" ||
+        process.env.VERCEL_ENV === "preview" ||
+        process.env.REQUIRE_DURABLE_ORG_CREATE === "1";
+      if (isDurableEnv) {
+        console.error("[hydrate_middleware] Returning 503 due to DB hydration failure", {
+          org_id: req.params.orgId,
+          error: result.message
+        });
+        return res.status(503).json({ error: "Service temporarily unavailable" });
+      }
+    }
   }
   return next();
 });
