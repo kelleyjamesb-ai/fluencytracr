@@ -15,6 +15,16 @@ Generate governance-ready evidence for Phase 3 exit gates:
 - Script: `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_enforcement_rollback_drill.sh`
 - Output: `artifacts/phase3/rollback/rollback_drill_<org>_<timestamp>.json`
 
+3. Rollback drill evidence capture (recommended)
+- Script: `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_rollback_evidence_capture.sh`
+- Output directory:
+  - rollback drill report
+  - compliance mode events snapshot
+  - `/ops/metrics` snapshot
+  - `/ops/failclosed` snapshot
+  - final compliance status snapshot
+  - evidence index JSON
+
 ## Prerequisites
 1. Org is internal beta allowlisted for compliance endpoints.
 2. Org is in enforcement pilot allowlist for rollback drill.
@@ -43,6 +53,14 @@ cd /Users/jkelley/Desktop/FluencyTracr
 BASE_URL="https://www.fluencytracr.com" \
 ORG_ID="org-<pilot-org-id>" \
 ./scripts/prod_enforcement_rollback_drill.sh
+```
+
+### Rollback Drill With Full Evidence Capture
+```bash
+cd /Users/jkelley/Desktop/FluencyTracr
+BASE_URL="https://www.fluencytracr.com" \
+ORG_ID="org-<pilot-org-id>" \
+./scripts/prod_rollback_evidence_capture.sh
 ```
 
 Pass criteria:
