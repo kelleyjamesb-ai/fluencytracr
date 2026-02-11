@@ -311,6 +311,7 @@ const failClosedMetrics = {
 };
 
 const recordFailClosed = (params: { route: string; reason: string; orgId?: string }) => {
+  const timestamp = nowIso();
   failClosedMetrics.total += 1;
   const current = failClosedMetrics.byRoute.get(params.route) ?? 0;
   failClosedMetrics.byRoute.set(params.route, current + 1);
@@ -318,11 +319,17 @@ const recordFailClosed = (params: { route: string; reason: string; orgId?: strin
     route: params.route,
     orgId: params.orgId,
     reason: params.reason,
-    timestamp: nowIso()
+    timestamp
   });
   if (failClosedMetrics.recent.length > 50) {
     failClosedMetrics.recent.length = 50;
   }
+  void persistFailClosedAuditEvent({
+    route: params.route,
+    reason: params.reason,
+    orgId: params.orgId,
+    timestamp
+  });
 };
 
 const REQUIRED_COMPLIANCE_TABLES = [
@@ -659,6 +666,66 @@ const persistOrgConfigEvent = async (params: {
     });
   } catch (error) {
     // Best effort only.
+  }
+};
+
+const persistFailClosedAuditEvent = async (params: {
+  route: string;
+  reason: string;
+  orgId?: string;
+  timestamp: string;
+}) => {
+  if (!process.env.DATABASE_URL) {
+    return;
+  }
+  try {
+    const prisma = getPrisma();
+    const eventOrgId = params.orgId ?? "system";
+    const previous = await prisma.auditEvent.findFirst({
+      where: { orgId: eventOrgId },
+      orderBy: { seq: "desc" }
+    });
+    const seq = (previous?.seq ?? 0) + 1;
+    const prevHash = previous?.hash ?? "GENESIS";
+    const hashPayload = JSON.stringify({
+      org_id: eventOrgId,
+      seq,
+      event_type: "fail_closed",
+      metadata: {
+        route: params.route,
+        reason: params.reason,
+        org_id: params.orgId ?? null,
+        timestamp: params.timestamp
+      },
+      prev_hash: prevHash
+    });
+    const hash = crypto.createHash("sha256").update(hashPayload).digest("hex");
+    await prisma.auditEvent.create({
+      data: {
+        orgId: eventOrgId,
+        seq,
+        actorSub: "system",
+        actorRole: "SYSTEM",
+        eventType: "fail_closed",
+        metadata: {
+          route: params.route,
+          reason: params.reason,
+          org_id: params.orgId ?? null,
+          timestamp: params.timestamp
+        },
+        prevHash,
+        hash,
+        createdAt: new Date(params.timestamp)
+      }
+    });
+  } catch (error) {
+    // Best effort only.
+    console.error("[fail_closed] Failed to persist audit event", {
+      route: params.route,
+      reason: params.reason,
+      org_id: params.orgId ?? null,
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 };
 

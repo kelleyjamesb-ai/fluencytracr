@@ -2,6 +2,7 @@
 
 ## Purpose
 Apply Phase 3 compliance persistence tables before enabling durable-read paths in production.
+This also enables durable `fail_closed` audit traces in `AuditEvent`.
 
 ## Migration Included
 - `backend/prisma/migrations/20260211_phase3_compliance_persistence/migration.sql`
@@ -43,6 +44,14 @@ Expected after migration:
 - `status: "ready"`
 - `required_tables` populated
 - no `missing_tables`
+
+3. Fail-closed traceability check
+```bash
+curl -s https://www.fluencytracr.com/ops/failclosed -H "x-role: ADMIN" | jq
+```
+Expected:
+- in-memory fail-closed counters present
+- matching durable `AuditEvent` entries are written with `eventType = "fail_closed"` when failures occur
 
 ## Failure Modes
 1. `database_schema_incomplete`
