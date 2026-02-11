@@ -40,7 +40,7 @@ Status: Draft for PM + Governance Review
 - report indicates `pass = true`
 
 7. Enforcement rollback drill
-- Run `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_enforcement_rollback_drill.sh`
+- Run `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_rollback_evidence_capture.sh`
 - verify `shadow -> enforced -> shadow`
 - verify rollback metadata (`rollback = true`, `mode_transition = enforced->shadow`)
 
