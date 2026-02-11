@@ -78,6 +78,16 @@ import {
   sortComplianceEvents,
   UnresolvedClauseDecisionSchema
 } from "./policy_compliance";
+import {
+  listComplianceEventsByOrg,
+  listLatestCanonicalControlsByOrg,
+  listPolicyDocumentsByOrg,
+  listPolicyMappingsByOrg,
+  persistCanonicalControlHistory,
+  persistComplianceEvent,
+  persistPolicyDocument,
+  persistPolicyMapping
+} from "./compliance_persistence";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -299,6 +309,58 @@ const getLatestPolicyMapping = (orgId: string, policyId: string) => {
     .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0];
 };
 
+const hydrateComplianceDomainForOrg = async (orgId: string) => {
+  if (!process.env.DATABASE_URL) {
+    return;
+  }
+  const [documents, mappings, controls, events] = await Promise.all([
+    listPolicyDocumentsByOrg(orgId),
+    listPolicyMappingsByOrg(orgId),
+    listLatestCanonicalControlsByOrg(orgId),
+    listComplianceEventsByOrg(orgId, {})
+  ]);
+
+  documents.forEach((record) => {
+    store.policyDocuments.set(record.policyId, record);
+  });
+  mappings.forEach((record) => {
+    store.policyMappings.set(record.mappingId, record);
+  });
+  controls.forEach((record) => {
+    upsertCanonicalControl(record);
+  });
+  events.forEach((record) => {
+    insertComplianceEvent(record);
+  });
+};
+
+const recordCanonicalControlSnapshot = async (record: CanonicalControlSnapshotRecord) => {
+  upsertCanonicalControl(record);
+  try {
+    await persistCanonicalControlHistory(record);
+  } catch (error) {
+    console.error("[compliance_persistence] failed to persist canonical control snapshot", {
+      org_id: record.orgId,
+      control_name: record.control_name,
+      error: String(error)
+    });
+  }
+};
+
+const recordComplianceEvent = async (record: Parameters<typeof insertComplianceEvent>[0]) => {
+  insertComplianceEvent(record);
+  try {
+    await persistComplianceEvent(record);
+  } catch (error) {
+    console.error("[compliance_persistence] failed to persist compliance event", {
+      org_id: record.orgId,
+      event_id: record.eventId,
+      event_type: record.eventType,
+      error: String(error)
+    });
+  }
+};
+
 const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
   const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
   Array.from(store.canonicalControlSnapshots.values())
@@ -317,7 +379,7 @@ const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
     }))
   );
 
-  upsertCanonicalControl({
+  const posture: CanonicalControlSnapshotRecord = {
     orgId,
     control_name: "compliance_posture_flag",
     status: summary.overall_status,
@@ -325,7 +387,8 @@ const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
     bucket_start: updatedAt.slice(0, 10),
     bucket_end: updatedAt.slice(0, 10),
     updatedAt
-  });
+  };
+  void recordCanonicalControlSnapshot(posture);
 
   return summary;
 };
@@ -1022,19 +1085,24 @@ app.post("/orgs/:orgId/metrics/import", strictLimiter, schemaVersionMiddleware, 
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
   }
   const rows = Array.isArray(req.body?.observations) ? req.body.observations : [];
   const { accepted, rejected } = validateRows(rows, PolicyControlObservationSchema);
   let inserted = 0;
   let updated = 0;
-  accepted.forEach((row) => {
+  for (const row of accepted) {
     const result = upsertControl({ ...row, orgId: org.id });
     const now = new Date().toISOString();
-    upsertCanonicalControl({
+    await recordCanonicalControlSnapshot({
       orgId: org.id,
       control_name: row.control_name,
       status: canonicalStatusFromLegacyBoolean(row.control_value),
@@ -1043,7 +1111,7 @@ app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenField
       bucket_end: row.bucket_end,
       updatedAt: now
     });
-    insertComplianceEvent({
+    await recordComplianceEvent({
       eventId: `event-${crypto.randomUUID()}`,
       orgId: org.id,
       eventType: "control_state_updated",
@@ -1059,11 +1127,11 @@ app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenField
     } else {
       updated += 1;
     }
-  });
+  }
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -1082,7 +1150,7 @@ app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenField
   const policyId = `policy-${crypto.randomUUID()}`;
   const createdAt = new Date().toISOString();
 
-  store.policyDocuments.set(policyId, {
+  const policyRecord = {
     policyId,
     orgId: org.id,
     fileName: parsed.data.file_name,
@@ -1091,9 +1159,17 @@ app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenField
     sourceFormat: normalized.sourceFormat,
     clauseCount: clauses.length,
     createdAt
+  } as const;
+  store.policyDocuments.set(policyId, policyRecord);
+  await persistPolicyDocument(policyRecord).catch((error) => {
+    console.error("[compliance_persistence] failed to persist policy document", {
+      org_id: org.id,
+      policy_id: policyId,
+      error: String(error)
+    });
   });
 
-  insertComplianceEvent({
+  await recordComplianceEvent({
     eventId: `event-${crypto.randomUUID()}`,
     orgId: org.id,
     eventType: "policy_uploaded",
@@ -1114,13 +1190,18 @@ app.post("/orgs/:orgId/policies/upload", schemaVersionMiddleware, forbiddenField
   });
 });
 
-app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
   if (!isOrgAllowedForBeta(org.id)) {
     return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
   }
 
   const policies = Array.from(store.policyDocuments.values())
@@ -1153,13 +1234,18 @@ app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLE
   });
 });
 
-app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
   if (!isOrgAllowedForBeta(org.id)) {
     return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
   }
 
   const policy = store.policyDocuments.get(req.params.policyId);
@@ -1172,19 +1258,27 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
   const generatedAt = new Date().toISOString();
   const mappingId = `mapping-${crypto.randomUUID()}`;
 
-  store.policyMappings.set(mappingId, {
+  const mappingRecord = {
     mappingId,
     policyId: policy.policyId,
     orgId: org.id,
     controls: mapped.controls,
     unresolvedClauses: mapped.unresolvedClauses,
     generatedAt
+  };
+  store.policyMappings.set(mappingId, mappingRecord);
+  await persistPolicyMapping(mappingRecord).catch((error) => {
+    console.error("[compliance_persistence] failed to persist policy mapping", {
+      org_id: org.id,
+      mapping_id: mappingId,
+      error: String(error)
+    });
   });
 
   const snapshots = buildCanonicalSnapshots(org.id, mapped.controls, generatedAt);
-  snapshots.forEach((snapshot) => {
-    upsertCanonicalControl(snapshot);
-    insertComplianceEvent({
+  for (const snapshot of snapshots) {
+    await recordCanonicalControlSnapshot(snapshot);
+    await recordComplianceEvent({
       eventId: `event-${crypto.randomUUID()}`,
       orgId: org.id,
       eventType: "control_state_updated",
@@ -1196,10 +1290,10 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
         source: "policy_mapping"
       }
     });
-  });
+  }
 
   const policyMappedEventId = `event-${crypto.randomUUID()}`;
-  insertComplianceEvent({
+  await recordComplianceEvent({
     eventId: policyMappedEventId,
     orgId: org.id,
     eventType: "policy_mapped",
@@ -1218,7 +1312,7 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
       status: control.status
     }))
   );
-  insertComplianceEvent({
+  await recordComplianceEvent({
     eventId: `event-${crypto.randomUUID()}`,
     orgId: org.id,
     eventType: "compliance_status_refreshed",
@@ -1242,13 +1336,18 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
   });
 });
 
-app.get("/orgs/:orgId/policies/:policyId/mapping", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+app.get("/orgs/:orgId/policies/:policyId/mapping", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
   if (!isOrgAllowedForBeta(org.id)) {
     return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
   }
 
   const policy = store.policyDocuments.get(req.params.policyId);
@@ -1276,13 +1375,18 @@ app.patch(
   rbacMiddleware(["ADMIN"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
     if (!isOrgAllowedForBeta(org.id)) {
       return res.status(403).json({ error: "Org not enabled for internal beta" });
+    }
+    try {
+      await hydrateComplianceDomainForOrg(org.id);
+    } catch (error) {
+      return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
     }
 
     const parsed = ComplianceModeUpdateSchema.safeParse(req.body ?? {});
@@ -1311,7 +1415,7 @@ app.patch(
     org.complianceMode = parsed.data.mode;
     const now = new Date().toISOString();
     const complianceModeEventId = `event-${crypto.randomUUID()}`;
-    insertComplianceEvent({
+    await recordComplianceEvent({
       eventId: complianceModeEventId,
       orgId: org.id,
       eventType: "compliance_mode_updated",
@@ -1350,13 +1454,18 @@ app.patch(
   rbacMiddleware(["ADMIN"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
     if (!isOrgAllowedForBeta(org.id)) {
       return res.status(403).json({ error: "Org not enabled for internal beta" });
+    }
+    try {
+      await hydrateComplianceDomainForOrg(org.id);
+    } catch (error) {
+      return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
     }
 
     const policy = store.policyDocuments.get(req.params.policyId);
@@ -1401,7 +1510,7 @@ app.patch(
         });
       }
 
-      upsertCanonicalControl({
+      await recordCanonicalControlSnapshot({
         orgId: org.id,
         control_name: parsed.data.control_name!,
         status: parsed.data.status!,
@@ -1410,7 +1519,7 @@ app.patch(
         bucket_end: now.slice(0, 10),
         updatedAt: now
       });
-      insertComplianceEvent({
+      await recordComplianceEvent({
         eventId: `event-${crypto.randomUUID()}`,
         orgId: org.id,
         eventType: "control_state_updated",
@@ -1425,7 +1534,15 @@ app.patch(
       });
     }
 
-    insertComplianceEvent({
+    await persistPolicyMapping(latestMapping).catch((error) => {
+      console.error("[compliance_persistence] failed to persist unresolved mapping decision", {
+        org_id: org.id,
+        mapping_id: latestMapping.mappingId,
+        error: String(error)
+      });
+    });
+
+    await recordComplianceEvent({
       eventId: `event-${crypto.randomUUID()}`,
       orgId: org.id,
       eventType: "unresolved_clause_decided",
@@ -1438,7 +1555,7 @@ app.patch(
     });
 
     const summary = recomputeCompliancePostureForOrg(org.id, now);
-    insertComplianceEvent({
+    await recordComplianceEvent({
       eventId: `event-${crypto.randomUUID()}`,
       orgId: org.id,
       eventType: "compliance_status_refreshed",
@@ -1462,7 +1579,7 @@ app.patch(
   }
 );
 
-app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -1470,10 +1587,20 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   if (!isOrgAllowedForBeta(org.id)) {
     return res.status(403).json({ error: "Org not enabled for internal beta" });
   }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+  }
+
+  const asOf = typeof req.query.as_of === "string" ? req.query.as_of : undefined;
+  if (asOf && Number.isNaN(new Date(asOf).getTime())) {
+    return res.status(400).json({ error: "Invalid as_of query parameter" });
+  }
 
   const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
   Array.from(store.canonicalControlSnapshots.values())
-    .filter((record) => record.orgId === org.id)
+    .filter((record) => record.orgId === org.id && (!asOf || record.updatedAt <= asOf))
     .forEach((record) => {
       const existing = latestByControl.get(record.control_name);
       if (!existing || record.updatedAt > existing.updatedAt) {
@@ -1491,14 +1618,14 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
     controls.map((control) => ({ control_name: control.control_name, status: control.status }))
   );
   const orgEvents = Array.from(store.complianceEvents.values())
-    .filter((event) => event.orgId === org.id)
+    .filter((event) => event.orgId === org.id && (!asOf || event.createdAt <= asOf))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const asOf = new Date().toISOString();
+  const effectiveAsOf = asOf ?? new Date().toISOString();
 
   return res.json({
     org_id: org.id,
     mode: getOrgComplianceMode(org.id),
-    as_of: asOf,
+    as_of: effectiveAsOf,
     freshness: {
       last_event_at: orgEvents[0]?.createdAt ?? null,
       stale: orgEvents.length === 0
@@ -1509,13 +1636,18 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   });
 });
 
-app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
   if (!isOrgAllowedForBeta(org.id)) {
     return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
   }
 
   const since = typeof req.query.since === "string" ? req.query.since : undefined;
@@ -1573,13 +1705,18 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   });
 });
 
-app.get("/orgs/:orgId/compliance/export", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (req, res) => {
+app.get("/orgs/:orgId/compliance/export", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
   }
   if (!isOrgAllowedForBeta(org.id)) {
     return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
   }
 
   const format = typeof req.query.format === "string" ? req.query.format : "json";
