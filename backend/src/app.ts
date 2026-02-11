@@ -1635,6 +1635,7 @@ app.patch(
     }
 
     const previousMode = getOrgComplianceMode(org.id);
+    const isRollbackTransition = previousMode === "enforced" && parsed.data.mode === "shadow";
     org.complianceMode = parsed.data.mode;
     const now = new Date().toISOString();
     const complianceModeEventId = `event-${crypto.randomUUID()}`;
@@ -1646,6 +1647,8 @@ app.patch(
       metadata: {
         previous_mode: previousMode,
         next_mode: parsed.data.mode,
+        mode_transition: `${previousMode}->${parsed.data.mode}`,
+        rollback: isRollbackTransition,
         rationale: parsed.data.rationale ?? null,
         enforcement_guardrail: {
           pilot_eligible: isOrgAllowedForEnforcementPilot(org.id),
@@ -1666,6 +1669,7 @@ app.patch(
     return res.json({
       org_id: org.id,
       mode: org.complianceMode,
+      rollback: isRollbackTransition,
       updated_at: now,
       source_event_id: complianceModeEventId
     });
