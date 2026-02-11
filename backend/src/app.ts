@@ -84,6 +84,7 @@ import {
   listPolicyDocumentsByOrg,
   listPolicyMappingsByOrg,
   persistCanonicalControlHistory,
+  persistComplianceDecision,
   persistComplianceEvent,
   persistPolicyDocument,
   persistPolicyMapping
@@ -1541,6 +1542,25 @@ app.patch(
         error: String(error)
       });
     });
+    await persistComplianceDecision({
+      decisionId: `decision-${crypto.randomUUID()}`,
+      orgId: org.id,
+      policyId: policy.policyId,
+      mappingId: latestMapping.mappingId,
+      clauseId: clause.clause_id,
+      action: parsed.data.action,
+      rationale: parsed.data.rationale,
+      controlName: parsed.data.control_name,
+      status: parsed.data.status,
+      decidedAt: now
+    }).catch((error) => {
+      console.error("[compliance_persistence] failed to persist compliance decision", {
+        org_id: org.id,
+        mapping_id: latestMapping.mappingId,
+        clause_id: clause.clause_id,
+        error: String(error)
+      });
+    });
 
     await recordComplianceEvent({
       eventId: `event-${crypto.randomUUID()}`,
@@ -1700,6 +1720,9 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
       control_name: event.controlName ?? null,
       status: event.status ?? null,
       created_at: event.createdAt,
+      source_event_id: typeof event.metadata.source_event_id === "string" ? event.metadata.source_event_id : null,
+      source_event_type: typeof event.metadata.source_event_type === "string" ? event.metadata.source_event_type : null,
+      recomputed_at: typeof event.metadata.recomputed_at === "string" ? event.metadata.recomputed_at : null,
       metadata: event.metadata
     }))
   });
@@ -1763,6 +1786,9 @@ app.get("/orgs/:orgId/compliance/export", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
       control_name: event.controlName ?? null,
       status: event.status ?? null,
       created_at_utc: new Date(event.createdAt).toISOString(),
+      source_event_id: typeof event.metadata.source_event_id === "string" ? event.metadata.source_event_id : null,
+      source_event_type: typeof event.metadata.source_event_type === "string" ? event.metadata.source_event_type : null,
+      recomputed_at: typeof event.metadata.recomputed_at === "string" ? event.metadata.recomputed_at : null,
       metadata: event.metadata
     }))
   });

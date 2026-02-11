@@ -59,6 +59,19 @@ type EventFilters = {
   asOf?: string;
 };
 
+type PersistComplianceDecisionParams = {
+  decisionId: string;
+  orgId: string;
+  policyId: string;
+  mappingId: string;
+  clauseId: string;
+  action: "map" | "ignore" | "defer";
+  rationale: string;
+  controlName?: string;
+  status?: string;
+  decidedAt: string;
+};
+
 const maybePrisma = () => {
   if (!process.env.DATABASE_URL) {
     return null;
@@ -288,4 +301,21 @@ export const listComplianceEventsByOrg = async (
       metadata
     };
   });
+};
+
+export const persistComplianceDecision = async (params: PersistComplianceDecisionParams) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    INSERT INTO "ComplianceDecision"
+      ("id", "orgId", "policyId", "mappingId", "clauseId", "action", "rationale",
+       "controlName", "status", "decidedAt")
+    VALUES
+      (${params.decisionId}, ${params.orgId}, ${params.policyId}, ${params.mappingId},
+       ${params.clauseId}, ${params.action}, ${params.rationale},
+       ${params.controlName ?? null}, ${params.status ?? null}, ${new Date(params.decidedAt)})
+    ON CONFLICT ("id") DO NOTHING
+  `;
 };
