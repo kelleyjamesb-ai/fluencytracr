@@ -302,6 +302,7 @@ const nowIso = () => new Date().toISOString();
 const failClosedMetrics = {
   total: 0,
   byRoute: new Map<string, number>(),
+  byReason: new Map<string, number>(),
   recent: [] as Array<{
     route: string;
     orgId?: string;
@@ -310,11 +311,40 @@ const failClosedMetrics = {
   }>
 };
 
+const opsMetrics = {
+  startedAt: Date.now(),
+  counters: new Map<string, number>()
+};
+
+const incrementOpsCounter = (counter: string, amount = 1) => {
+  const current = opsMetrics.counters.get(counter) ?? 0;
+  opsMetrics.counters.set(counter, current + amount);
+};
+
+const getOpsCounter = (counter: string) => {
+  return opsMetrics.counters.get(counter) ?? 0;
+};
+
+const getAvailabilityTarget = () => {
+  const raw = process.env.SLO_COMPLIANCE_STATUS_AVAILABILITY;
+  if (!raw || raw.trim().length === 0) {
+    return 0.999;
+  }
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 1) {
+    return 0.999;
+  }
+  return parsed;
+};
+
 const recordFailClosed = (params: { route: string; reason: string; orgId?: string }) => {
   const timestamp = nowIso();
   failClosedMetrics.total += 1;
   const current = failClosedMetrics.byRoute.get(params.route) ?? 0;
   failClosedMetrics.byRoute.set(params.route, current + 1);
+  const reasonCount = failClosedMetrics.byReason.get(params.reason) ?? 0;
+  failClosedMetrics.byReason.set(params.reason, reasonCount + 1);
+  incrementOpsCounter("fail_closed_total");
   failClosedMetrics.recent.unshift({
     route: params.route,
     orgId: params.orgId,
@@ -385,6 +415,15 @@ const respondFailClosed = (
   params: { route: string; reason: string; orgId?: string; details?: string }
 ) => {
   recordFailClosed({ route: params.route, reason: params.reason, orgId: params.orgId });
+  console.error(
+    JSON.stringify({
+      type: "fail_closed",
+      route: params.route,
+      org_id: params.orgId ?? null,
+      reason: params.reason,
+      timestamp: nowIso()
+    })
+  );
   const payload: Record<string, unknown> = { error: "Service temporarily unavailable" };
   if (process.env.NODE_ENV !== "production" && params.details) {
     payload.details = params.details;
@@ -1788,6 +1827,7 @@ app.patch(
 );
 
 app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
+  incrementOpsCounter("compliance_status_requests");
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -1798,6 +1838,7 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
+    incrementOpsCounter("compliance_status_fail_closed");
     return respondFailClosed(res, {
       route: "/orgs/:orgId/compliance/status",
       orgId: org.id,
@@ -1844,6 +1885,7 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const effectiveAsOf = asOf ?? new Date().toISOString();
 
+  incrementOpsCounter("compliance_status_success");
   return res.json({
     org_id: org.id,
     mode: getOrgComplianceMode(org.id),
@@ -3110,10 +3152,61 @@ app.get("/ops/failclosed", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_L
   const byRoute = Array.from(failClosedMetrics.byRoute.entries())
     .sort((a, b) => b[1] - a[1])
     .map(([route, count]) => ({ route, count }));
+  const byReason = Array.from(failClosedMetrics.byReason.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, count]) => ({ reason, count }));
   return res.json({
     total: failClosedMetrics.total,
     by_route: byRoute,
+    by_reason: byReason,
     recent: failClosedMetrics.recent
+  });
+});
+
+app.get("/ops/metrics", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (_req, res) => {
+  incrementOpsCounter("ops_metrics_requests");
+  const readiness = await getDatabaseReadiness();
+  const complianceStatusRequests = getOpsCounter("compliance_status_requests");
+  const complianceStatusSuccess = getOpsCounter("compliance_status_success");
+  const complianceStatusFailClosed = getOpsCounter("compliance_status_fail_closed");
+  const availabilityTarget = getAvailabilityTarget();
+  const availabilityRatio =
+    complianceStatusRequests > 0 ? complianceStatusSuccess / complianceStatusRequests : 1;
+  const failClosedRate =
+    complianceStatusRequests > 0 ? complianceStatusFailClosed / complianceStatusRequests : 0;
+
+  return res.json({
+    as_of: nowIso(),
+    uptime_seconds: Math.floor((Date.now() - opsMetrics.startedAt) / 1000),
+    db_readiness: readiness.status,
+    counters: {
+      compliance_status_requests: complianceStatusRequests,
+      compliance_status_success: complianceStatusSuccess,
+      compliance_status_fail_closed: complianceStatusFailClosed,
+      fail_closed_total: failClosedMetrics.total,
+      health_requests: getOpsCounter("health_requests"),
+      health_ok: getOpsCounter("health_ok"),
+      health_degraded: getOpsCounter("health_degraded")
+    },
+    sli: {
+      compliance_status_availability: {
+        value: Number(availabilityRatio.toFixed(6)),
+        target: availabilityTarget,
+        breached: availabilityRatio < availabilityTarget
+      },
+      compliance_status_fail_closed_rate: {
+        value: Number(failClosedRate.toFixed(6)),
+        target_max: Number((1 - availabilityTarget).toFixed(6)),
+        breached: failClosedRate > 1 - availabilityTarget
+      }
+    },
+    alert_context: {
+      severity: availabilityRatio < availabilityTarget ? "critical" : failClosedRate > 0 ? "warning" : "ok",
+      top_fail_closed_routes: Array.from(failClosedMetrics.byRoute.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([route, count]) => ({ route, count }))
+    }
   });
 });
 
@@ -3148,11 +3241,14 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
 });
 
 app.get("/health", async (_req, res) => {
+  incrementOpsCounter("health_requests");
   const readiness = await getDatabaseReadiness();
   if (readiness.status === "not_configured") {
+    incrementOpsCounter("health_ok");
     return res.json({ status: "ok", db: "not_configured" });
   }
   if (readiness.status === "ready") {
+    incrementOpsCounter("health_ok");
     return res.json({
       status: "ok",
       db: "ok",
@@ -3161,6 +3257,7 @@ app.get("/health", async (_req, res) => {
     });
   }
   if (readiness.status === "schema_incomplete") {
+    incrementOpsCounter("health_degraded");
     recordFailClosed({
       route: "/health",
       reason: "database_schema_incomplete"
@@ -3178,6 +3275,7 @@ app.get("/health", async (_req, res) => {
     route: "/health",
     reason: "db_connectivity_check_failed"
   });
+  incrementOpsCounter("health_degraded");
   return res.status(503).json({
     status: "degraded",
     error: "database_unavailable",
