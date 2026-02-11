@@ -316,6 +316,11 @@ export const persistComplianceDecision = async (params: PersistComplianceDecisio
       (${params.decisionId}, ${params.orgId}, ${params.policyId}, ${params.mappingId},
        ${params.clauseId}, ${params.action}, ${params.rationale},
        ${params.controlName ?? null}, ${params.status ?? null}, ${new Date(params.decidedAt)})
-    ON CONFLICT ("id") DO NOTHING
+    ON CONFLICT ("id") DO UPDATE SET
+      "action" = EXCLUDED."action",
+      "rationale" = EXCLUDED."rationale",
+      "controlName" = EXCLUDED."controlName",
+      "status" = EXCLUDED."status",
+      "decidedAt" = EXCLUDED."decidedAt"
   `;
 };

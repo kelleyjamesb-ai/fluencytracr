@@ -70,6 +70,7 @@ import {
   PolicyUploadSchema,
   buildCanonicalSnapshots,
   buildComplianceSummary,
+  buildDeterministicDecisionId,
   canonicalStatusFromLegacyBoolean,
   extractPolicyClauses,
   mapPolicyToControls,
@@ -1721,9 +1722,23 @@ app.patch(
     }
 
     const now = new Date().toISOString();
+    const previousDecision = {
+      action: clause.decision,
+      rationale: clause.decision_rationale,
+      controlName: clause.mapped_control_name,
+      status: clause.mapped_status,
+      decidedAt: clause.decided_at
+    };
+    const isExactReplay =
+      previousDecision.action === parsed.data.action &&
+      previousDecision.rationale === parsed.data.rationale &&
+      (parsed.data.control_name ?? undefined) === previousDecision.controlName &&
+      (parsed.data.status ?? undefined) === previousDecision.status;
+    const decidedAt = isExactReplay && previousDecision.decidedAt ? previousDecision.decidedAt : now;
+
     clause.decision = parsed.data.action;
     clause.decision_rationale = parsed.data.rationale;
-    clause.decided_at = now;
+    clause.decided_at = decidedAt;
     if (parsed.data.action === "map") {
       clause.mapped_control_name = parsed.data.control_name;
       clause.mapped_status = parsed.data.status;
@@ -1747,9 +1762,9 @@ app.patch(
         control_name: parsed.data.control_name!,
         status: parsed.data.status!,
         source: "policy_mapping",
-        bucket_start: now.slice(0, 10),
-        bucket_end: now.slice(0, 10),
-        updatedAt: now
+        bucket_start: decidedAt.slice(0, 10),
+        bucket_end: decidedAt.slice(0, 10),
+        updatedAt: decidedAt
       });
       await recordComplianceEvent({
         eventId: `event-${crypto.randomUUID()}`,
@@ -1758,7 +1773,7 @@ app.patch(
         policyId: policy.policyId,
         controlName: parsed.data.control_name!,
         status: parsed.data.status!,
-        createdAt: now,
+        createdAt: decidedAt,
         metadata: {
           source: "unresolved_clause_decision",
           clause_id: clause.clause_id
@@ -1773,8 +1788,18 @@ app.patch(
         error: String(error)
       });
     });
+    const decisionId = buildDeterministicDecisionId({
+      orgId: org.id,
+      policyId: policy.policyId,
+      mappingId: latestMapping.mappingId,
+      clauseId: clause.clause_id,
+      action: parsed.data.action,
+      rationale: parsed.data.rationale,
+      status: parsed.data.status,
+      decidedAt
+    });
     await persistComplianceDecision({
-      decisionId: `decision-${crypto.randomUUID()}`,
+      decisionId,
       orgId: org.id,
       policyId: policy.policyId,
       mappingId: latestMapping.mappingId,
@@ -1783,7 +1808,7 @@ app.patch(
       rationale: parsed.data.rationale,
       controlName: parsed.data.control_name,
       status: parsed.data.status,
-      decidedAt: now
+      decidedAt
     }).catch((error) => {
       console.error("[compliance_persistence] failed to persist compliance decision", {
         org_id: org.id,
@@ -1798,21 +1823,22 @@ app.patch(
       orgId: org.id,
       eventType: "unresolved_clause_decided",
       policyId: policy.policyId,
-      createdAt: now,
+      createdAt: decidedAt,
       metadata: {
         clause_id: clause.clause_id,
-        action: parsed.data.action
+        action: parsed.data.action,
+        decision_id: decisionId
       }
     });
 
-    const summary = recomputeCompliancePostureForOrg(org.id, now);
+    const summary = recomputeCompliancePostureForOrg(org.id, decidedAt);
     await recordComplianceEvent({
       eventId: `event-${crypto.randomUUID()}`,
       orgId: org.id,
       eventType: "compliance_status_refreshed",
       policyId: policy.policyId,
       status: summary.overall_status,
-      createdAt: now,
+      createdAt: decidedAt,
       metadata: {
         trigger: "unresolved_clause_decision",
         clause_id: clause.clause_id,
