@@ -138,6 +138,66 @@ it("filters compliance events by since timestamp", async () => {
   expect(filtered.body.total_count).toBe(0);
 });
 
+it("supports as_of status reconstruction without mutating current state", async () => {
+  const controlsImport = await request(app)
+    .post("/orgs/org-1/controls/import")
+    .set(schemaHeaders)
+    .send({
+      observations: [
+        {
+          group_key: "org",
+          group_type: "org",
+          control_name: "external_sharing_disabled_status",
+          control_value: true,
+          bucket_start: "2026-01-01",
+          bucket_end: "2026-01-01"
+        }
+      ]
+    });
+  expect(controlsImport.status).toBe(200);
+
+  const beforeUpdate = await request(app)
+    .get("/orgs/org-1/compliance/status")
+    .set({ "x-role": "ADMIN" });
+  expect(beforeUpdate.status).toBe(200);
+  const beforeAsOf = beforeUpdate.body.as_of as string;
+
+  await new Promise((resolve) => setTimeout(resolve, 5));
+
+  const secondImport = await request(app)
+    .post("/orgs/org-1/controls/import")
+    .set(schemaHeaders)
+    .send({
+      observations: [
+        {
+          group_key: "org",
+          group_type: "org",
+          control_name: "external_sharing_disabled_status",
+          control_value: false,
+          bucket_start: "2026-01-02",
+          bucket_end: "2026-01-02"
+        }
+      ]
+    });
+  expect(secondImport.status).toBe(200);
+
+  const reconstructed = await request(app)
+    .get(`/orgs/org-1/compliance/status?as_of=${encodeURIComponent(beforeAsOf)}`)
+    .set({ "x-role": "ADMIN" });
+  expect(reconstructed.status).toBe(200);
+  expect(reconstructed.body.controls.find((c: any) => c.control_name === "external_sharing_disabled_status")?.status).toBe(
+    "enabled"
+  );
+
+  const current = await request(app)
+    .get("/orgs/org-1/compliance/status")
+    .set({ "x-role": "ADMIN" });
+  expect(current.status).toBe(200);
+  expect(current.body.controls.find((c: any) => c.control_name === "external_sharing_disabled_status")?.status).toBe(
+    "disabled"
+  );
+});
+
 it("lists policies and fetches latest mapping for a policy", async () => {
   const upload = await request(app)
     .post("/orgs/org-1/policies/upload")
@@ -270,6 +330,7 @@ it("paginates and filters compliance events", async () => {
     .set({ "x-role": "ADMIN" });
   expect(filtered.status).toBe(200);
   expect(filtered.body.events.every((event: any) => event.event_type === "policy_uploaded")).toBe(true);
+  expect(filtered.body.events.every((event: any) => "source_event_id" in event)).toBe(true);
 });
 
 it("updates org compliance mode with admin role and records an event", async () => {
@@ -452,6 +513,25 @@ it("emits an auditable event chain for upload, map, unresolved decision, and mod
   expect(eventTypes).toContain("unresolved_clause_decided");
   expect(eventTypes).toContain("compliance_mode_updated");
   expect(eventTypes).toContain("compliance_status_refreshed");
+
+  const refreshed = events.body.events.find(
+    (event: any) => event.event_type === "compliance_status_refreshed" && event.source_event_id
+  );
+  expect(refreshed).toBeTruthy();
+  expect(refreshed.source_event_id).toBeTruthy();
+  expect(refreshed.source_event_type).toBeTruthy();
+  expect(refreshed.recomputed_at).toBeTruthy();
+
+  const exported = await request(app)
+    .get("/orgs/org-1/compliance/export")
+    .set({ "x-role": "ADMIN" });
+  expect(exported.status).toBe(200);
+  const exportedRefreshed = exported.body.events.find(
+    (event: any) => event.event_type === "compliance_status_refreshed" && event.source_event_id
+  );
+  expect(exportedRefreshed).toBeTruthy();
+  expect(exportedRefreshed.source_event_id).toBeTruthy();
+  expect(exportedRefreshed.source_event_type).toBeTruthy();
 });
 
 it("validates compliance mode payload", async () => {
