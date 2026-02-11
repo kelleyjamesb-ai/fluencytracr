@@ -311,6 +311,7 @@ const failClosedMetrics = {
 };
 
 const recordFailClosed = (params: { route: string; reason: string; orgId?: string }) => {
+  const timestamp = nowIso();
   failClosedMetrics.total += 1;
   const current = failClosedMetrics.byRoute.get(params.route) ?? 0;
   failClosedMetrics.byRoute.set(params.route, current + 1);
@@ -318,10 +319,64 @@ const recordFailClosed = (params: { route: string; reason: string; orgId?: strin
     route: params.route,
     orgId: params.orgId,
     reason: params.reason,
-    timestamp: nowIso()
+    timestamp
   });
   if (failClosedMetrics.recent.length > 50) {
     failClosedMetrics.recent.length = 50;
+  }
+  void persistFailClosedAuditEvent({
+    route: params.route,
+    reason: params.reason,
+    orgId: params.orgId,
+    timestamp
+  });
+};
+
+const REQUIRED_COMPLIANCE_TABLES = [
+  "Organization",
+  "AuditEvent",
+  "PolicyDocument",
+  "PolicyMapping",
+  "CanonicalControlStateHistory",
+  "ComplianceEvent",
+  "ComplianceDecision"
+] as const;
+
+type DatabaseReadinessResult =
+  | { status: "not_configured" }
+  | { status: "ready"; missingTables: []; tableCount: number }
+  | { status: "schema_incomplete"; missingTables: string[]; tableCount: number }
+  | { status: "unavailable"; error: string };
+
+const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
+  if (!process.env.DATABASE_URL) {
+    return { status: "not_configured" };
+  }
+
+  try {
+    const prisma = getPrisma();
+    const rows = (await prisma.$queryRawUnsafe(
+      "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
+    )) as Array<{ tablename: string }>;
+    const tableNames = new Set(rows.map((row) => row.tablename));
+    const missingTables = REQUIRED_COMPLIANCE_TABLES.filter((tableName) => !tableNames.has(tableName));
+    if (missingTables.length > 0) {
+      return {
+        status: "schema_incomplete",
+        missingTables: [...missingTables],
+        tableCount: tableNames.size
+      };
+    }
+    return {
+      status: "ready",
+      missingTables: [],
+      tableCount: tableNames.size
+    };
+  } catch (error) {
+    return {
+      status: "unavailable",
+      error: String(error)
+    };
   }
 };
 
@@ -611,6 +666,66 @@ const persistOrgConfigEvent = async (params: {
     });
   } catch (error) {
     // Best effort only.
+  }
+};
+
+const persistFailClosedAuditEvent = async (params: {
+  route: string;
+  reason: string;
+  orgId?: string;
+  timestamp: string;
+}) => {
+  if (!process.env.DATABASE_URL) {
+    return;
+  }
+  try {
+    const prisma = getPrisma();
+    const eventOrgId = params.orgId ?? "system";
+    const previous = await prisma.auditEvent.findFirst({
+      where: { orgId: eventOrgId },
+      orderBy: { seq: "desc" }
+    });
+    const seq = (previous?.seq ?? 0) + 1;
+    const prevHash = previous?.hash ?? "GENESIS";
+    const hashPayload = JSON.stringify({
+      org_id: eventOrgId,
+      seq,
+      event_type: "fail_closed",
+      metadata: {
+        route: params.route,
+        reason: params.reason,
+        org_id: params.orgId ?? null,
+        timestamp: params.timestamp
+      },
+      prev_hash: prevHash
+    });
+    const hash = crypto.createHash("sha256").update(hashPayload).digest("hex");
+    await prisma.auditEvent.create({
+      data: {
+        orgId: eventOrgId,
+        seq,
+        actorSub: "system",
+        actorRole: "SYSTEM",
+        eventType: "fail_closed",
+        metadata: {
+          route: params.route,
+          reason: params.reason,
+          org_id: params.orgId ?? null,
+          timestamp: params.timestamp
+        },
+        prevHash,
+        hash,
+        createdAt: new Date(params.timestamp)
+      }
+    });
+  } catch (error) {
+    // Best effort only.
+    console.error("[fail_closed] Failed to persist audit event", {
+      route: params.route,
+      reason: params.reason,
+      org_id: params.orgId ?? null,
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 };
 
@@ -3002,31 +3117,73 @@ app.get("/ops/failclosed", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_L
   });
 });
 
+app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (_req, res) => {
+  const readiness = await getDatabaseReadiness();
+  if (readiness.status === "not_configured") {
+    return res.json({
+      status: "not_configured",
+      required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+    });
+  }
+  if (readiness.status === "unavailable") {
+    return res.status(503).json({
+      status: "unavailable",
+      error: "database_unavailable",
+      details: process.env.NODE_ENV === "production" ? undefined : readiness.error
+    });
+  }
+  if (readiness.status === "schema_incomplete") {
+    return res.status(503).json({
+      status: "schema_incomplete",
+      table_count: readiness.tableCount,
+      missing_tables: readiness.missingTables,
+      required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+    });
+  }
+  return res.json({
+    status: "ready",
+    table_count: readiness.tableCount,
+    required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+  });
+});
+
 app.get("/health", async (_req, res) => {
-  if (!process.env.DATABASE_URL) {
+  const readiness = await getDatabaseReadiness();
+  if (readiness.status === "not_configured") {
     return res.json({ status: "ok", db: "not_configured" });
   }
-
-  try {
-    const prisma = getPrisma();
-    await prisma.$queryRaw`SELECT 1`;
+  if (readiness.status === "ready") {
     return res.json({
       status: "ok",
       db: "ok",
+      db_tables: readiness.tableCount,
       fail_closed_total: failClosedMetrics.total
     });
-  } catch (error) {
+  }
+  if (readiness.status === "schema_incomplete") {
     recordFailClosed({
       route: "/health",
-      reason: "db_connectivity_check_failed"
+      reason: "database_schema_incomplete"
     });
     return res.status(503).json({
       status: "degraded",
-      error: "database_unavailable",
+      error: "database_schema_incomplete",
+      missing_tables: readiness.missingTables,
       fail_closed_total: failClosedMetrics.total,
-      details: process.env.NODE_ENV === "production" ? undefined : String(error)
+      details: "Apply pending Prisma migration for compliance persistence models."
     });
   }
+
+  recordFailClosed({
+    route: "/health",
+    reason: "db_connectivity_check_failed"
+  });
+  return res.status(503).json({
+    status: "degraded",
+    error: "database_unavailable",
+    fail_closed_total: failClosedMetrics.total,
+    details: process.env.NODE_ENV === "production" ? undefined : readiness.error
+  });
 });
 
 // Global error handler middleware - must be defined last
