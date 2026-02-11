@@ -25,6 +25,16 @@ it("smoke: fail-closed ops endpoint responds for authorized roles", async () => 
   expect(Array.isArray(response.body.recent)).toBe(true);
 });
 
+it("smoke: db readiness endpoint responds when db is not configured", async () => {
+  const response = await request(app)
+    .get("/ops/db/readiness")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.status).toBe("not_configured");
+  expect(Array.isArray(response.body.required_tables)).toBe(true);
+});
+
 it("smoke: policy upload and compliance status flow", async () => {
   const headers = withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" });
   const upload = await request(app)
