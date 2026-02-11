@@ -80,9 +80,16 @@ import {
 } from "./policy_compliance";
 
 const app = express();
-// Vercel/edge deployments sit behind reverse proxies.
-// Trust proxy headers so req.ip is derived correctly for rate limiting.
-app.set("trust proxy", 1);
+// Trust proxy only in known reverse-proxy environments to avoid spoofable
+// X-Forwarded-For behavior for direct connections in local/self-hosted setups.
+const shouldTrustProxy =
+  process.env.TRUST_PROXY === "1" ||
+  process.env.VERCEL === "1" ||
+  process.env.VERCEL_ENV === "production" ||
+  process.env.VERCEL_ENV === "preview";
+if (shouldTrustProxy) {
+  app.set("trust proxy", 1);
+}
 app.use(express.json());
 
 const strictLimiter = rateLimit({
@@ -557,7 +564,10 @@ app.post("/orgs", strictLimiter, async (req, res) => {
     createdAt
   });
   const mustPersistDurably =
-    process.env.VERCEL_ENV === "production" || process.env.REQUIRE_DURABLE_ORG_CREATE === "1";
+    process.env.VERCEL === "1" ||
+    process.env.VERCEL_ENV === "production" ||
+    process.env.VERCEL_ENV === "preview" ||
+    process.env.REQUIRE_DURABLE_ORG_CREATE === "1";
   if (mustPersistDurably && !persistedDurably) {
     return res.status(500).json({ error: "Internal server error" });
   }
