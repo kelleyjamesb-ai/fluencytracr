@@ -13,6 +13,11 @@ model Organization {
   name      String
   createdAt DateTime @default(now())
   teams     Team[]
+  policyDocuments               PolicyDocument[]
+  policyMappings                PolicyMapping[]
+  canonicalControlStateHistory  CanonicalControlStateHistory[]
+  complianceEvents              ComplianceEvent[]
+  complianceDecisions           ComplianceDecision[]
 }
 
 model Team {
@@ -52,4 +57,87 @@ model AuditEvent {
   prevHash  String?
   hash      String?
   createdAt DateTime @default(now())
+}
+
+model PolicyDocument {
+  id          String   @id
+  orgId       String
+  fileName    String
+  contentType String
+  rawText     String
+  sourceFormat String
+  clauseCount Int
+  createdAt   DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  mappings     PolicyMapping[]
+
+  @@index([orgId, createdAt])
+}
+
+model PolicyMapping {
+  id               String   @id
+  policyId         String
+  orgId            String
+  controlsJson     Json
+  unresolvedJson   Json
+  generatedAt      DateTime
+
+  organization     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  policyDocument   PolicyDocument @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  decisions        ComplianceDecision[]
+
+  @@index([orgId, policyId, generatedAt])
+}
+
+model CanonicalControlStateHistory {
+  id          String   @id
+  orgId       String
+  controlName String
+  status      String
+  source      String
+  bucketStart String
+  bucketEnd   String
+  updatedAt   DateTime
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, controlName, updatedAt])
+}
+
+model ComplianceEvent {
+  id              String   @id
+  orgId           String
+  eventType       String
+  policyId        String?
+  controlName     String?
+  status          String?
+  createdAt       DateTime
+  metadata        Json
+  sourceEventId   String?
+  sourceEventType String?
+  recomputedAt    DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([orgId, eventType, createdAt])
+}
+
+model ComplianceDecision {
+  id             String   @id
+  orgId          String
+  policyId       String
+  mappingId      String
+  clauseId       String
+  action         String
+  rationale      String
+  controlName    String?
+  status         String?
+  decidedAt      DateTime
+
+  organization   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  policyMapping  PolicyMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, policyId, decidedAt])
 }
