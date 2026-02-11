@@ -299,6 +299,44 @@ const addDays = (start: string, days: number) => {
 
 const nowIso = () => new Date().toISOString();
 
+const failClosedMetrics = {
+  total: 0,
+  byRoute: new Map<string, number>(),
+  recent: [] as Array<{
+    route: string;
+    orgId?: string;
+    reason: string;
+    timestamp: string;
+  }>
+};
+
+const recordFailClosed = (params: { route: string; reason: string; orgId?: string }) => {
+  failClosedMetrics.total += 1;
+  const current = failClosedMetrics.byRoute.get(params.route) ?? 0;
+  failClosedMetrics.byRoute.set(params.route, current + 1);
+  failClosedMetrics.recent.unshift({
+    route: params.route,
+    orgId: params.orgId,
+    reason: params.reason,
+    timestamp: nowIso()
+  });
+  if (failClosedMetrics.recent.length > 50) {
+    failClosedMetrics.recent.length = 50;
+  }
+};
+
+const respondFailClosed = (
+  res: express.Response,
+  params: { route: string; reason: string; orgId?: string; details?: string }
+) => {
+  recordFailClosed({ route: params.route, reason: params.reason, orgId: params.orgId });
+  const payload: Record<string, unknown> = { error: "Service temporarily unavailable" };
+  if (process.env.NODE_ENV !== "production" && params.details) {
+    payload.details = params.details;
+  }
+  return res.status(503).json(payload);
+};
+
 const getOrgComplianceMode = (orgId: string) => {
   const org = store.orgs.get(orgId);
   return normalizeComplianceMode(org?.complianceMode ?? process.env.COMPLIANCE_MODE);
@@ -687,7 +725,12 @@ app.use("/orgs/:orgId", async (req, res, next) => {
           org_id: req.params.orgId,
           error: result.message
         });
-        return res.status(503).json({ error: "Service temporarily unavailable" });
+        return respondFailClosed(res, {
+          route: "/orgs/:orgId/*",
+          orgId: req.params.orgId,
+          reason: "hydrate_org_failed",
+          details: result.message
+        });
       }
     }
   }
@@ -1094,7 +1137,12 @@ app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenField
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/controls/import",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
   const rows = Array.isArray(req.body?.observations) ? req.body.observations : [];
   const { accepted, rejected } = validateRows(rows, PolicyControlObservationSchema);
@@ -1202,7 +1250,12 @@ app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLE
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
 
   const policies = Array.from(store.policyDocuments.values())
@@ -1246,7 +1299,12 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies/:policyId/map",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
 
   const policy = store.policyDocuments.get(req.params.policyId);
@@ -1348,7 +1406,12 @@ app.get("/orgs/:orgId/policies/:policyId/mapping", rbacMiddleware(["ADMIN", "EXE
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies/:policyId/mapping",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
 
   const policy = store.policyDocuments.get(req.params.policyId);
@@ -1387,7 +1450,12 @@ app.patch(
     try {
       await hydrateComplianceDomainForOrg(org.id);
     } catch (error) {
-      return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+      return respondFailClosed(res, {
+        route: "/orgs/:orgId/compliance/mode",
+        orgId: org.id,
+        reason: "hydrate_compliance_domain_failed",
+        details: String(error)
+      });
     }
 
     const parsed = ComplianceModeUpdateSchema.safeParse(req.body ?? {});
@@ -1466,7 +1534,12 @@ app.patch(
     try {
       await hydrateComplianceDomainForOrg(org.id);
     } catch (error) {
-      return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+      return respondFailClosed(res, {
+        route: "/orgs/:orgId/policies/:policyId/mapping/unresolved/:clauseId",
+        orgId: org.id,
+        reason: "hydrate_compliance_domain_failed",
+        details: String(error)
+      });
     }
 
     const policy = store.policyDocuments.get(req.params.policyId);
@@ -1610,7 +1683,12 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/compliance/status",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
 
   const asOf = typeof req.query.as_of === "string" ? req.query.as_of : undefined;
@@ -1676,7 +1754,12 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/compliance/events",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
 
   const since = typeof req.query.since === "string" ? req.query.since : undefined;
@@ -1756,7 +1839,12 @@ app.get("/orgs/:orgId/compliance/export", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   try {
     await hydrateComplianceDomainForOrg(org.id);
   } catch (error) {
-    return res.status(503).json({ error: "Service temporarily unavailable", details: String(error) });
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/compliance/export",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
   }
 
   const format = typeof req.query.format === "string" ? req.query.format : "json";
@@ -2903,8 +2991,42 @@ app.get(
   }
 );
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/ops/failclosed", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), (_req, res) => {
+  const byRoute = Array.from(failClosedMetrics.byRoute.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([route, count]) => ({ route, count }));
+  return res.json({
+    total: failClosedMetrics.total,
+    by_route: byRoute,
+    recent: failClosedMetrics.recent
+  });
+});
+
+app.get("/health", async (_req, res) => {
+  if (!process.env.DATABASE_URL) {
+    return res.json({ status: "ok", db: "not_configured" });
+  }
+
+  try {
+    const prisma = getPrisma();
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({
+      status: "ok",
+      db: "ok",
+      fail_closed_total: failClosedMetrics.total
+    });
+  } catch (error) {
+    recordFailClosed({
+      route: "/health",
+      reason: "db_connectivity_check_failed"
+    });
+    return res.status(503).json({
+      status: "degraded",
+      error: "database_unavailable",
+      fail_closed_total: failClosedMetrics.total,
+      details: process.env.NODE_ENV === "production" ? undefined : String(error)
+    });
+  }
 });
 
 // Global error handler middleware - must be defined last

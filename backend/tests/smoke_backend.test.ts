@@ -14,6 +14,17 @@ it("smoke: health endpoint responds", async () => {
   expect(response.body.status).toBe("ok");
 });
 
+it("smoke: fail-closed ops endpoint responds for authorized roles", async () => {
+  const response = await request(app)
+    .get("/ops/failclosed")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(typeof response.body.total).toBe("number");
+  expect(Array.isArray(response.body.by_route)).toBe(true);
+  expect(Array.isArray(response.body.recent)).toBe(true);
+});
+
 it("smoke: policy upload and compliance status flow", async () => {
   const headers = withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" });
   const upload = await request(app)
