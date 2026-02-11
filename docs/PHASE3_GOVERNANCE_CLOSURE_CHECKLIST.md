@@ -24,15 +24,22 @@ Status: Draft for PM + Governance Review
 - includes `compliance_status_fail_closed_rate`
 - severity mapping resolves (`ok|warning|critical`)
 
-4. Replay determinism
+4. Suppression regression evidence
+- Run `/Users/jkelley/Desktop/FluencyTracr/scripts/ci_suppression_evidence.sh`
+- archive:
+  - `artifacts/phase3/suppression/suppression_evidence_manifest.json`
+  - `artifacts/phase3/suppression/suppression_test_output.log`
+- require `pass = true` in manifest
+
+5. Replay determinism
 - Run `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_replay_determinism_validation.sh`
 - report indicates `pass = true`
 
-5. Export reproducibility
+6. Export reproducibility
 - Run `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_export_reproducibility_cert.sh`
 - report indicates `pass = true`
 
-6. Enforcement rollback drill
+7. Enforcement rollback drill
 - Run `/Users/jkelley/Desktop/FluencyTracr/scripts/prod_enforcement_rollback_drill.sh`
 - verify `shadow -> enforced -> shadow`
 - verify rollback metadata (`rollback = true`, `mode_transition = enforced->shadow`)
