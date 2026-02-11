@@ -513,6 +513,25 @@ it("emits an auditable event chain for upload, map, unresolved decision, and mod
   expect(eventTypes).toContain("unresolved_clause_decided");
   expect(eventTypes).toContain("compliance_mode_updated");
   expect(eventTypes).toContain("compliance_status_refreshed");
+
+  const refreshed = events.body.events.find(
+    (event: any) => event.event_type === "compliance_status_refreshed" && event.source_event_id
+  );
+  expect(refreshed).toBeTruthy();
+  expect(refreshed.source_event_id).toBeTruthy();
+  expect(refreshed.source_event_type).toBeTruthy();
+  expect(refreshed.recomputed_at).toBeTruthy();
+
+  const exported = await request(app)
+    .get("/orgs/org-1/compliance/export")
+    .set({ "x-role": "ADMIN" });
+  expect(exported.status).toBe(200);
+  const exportedRefreshed = exported.body.events.find(
+    (event: any) => event.event_type === "compliance_status_refreshed" && event.source_event_id
+  );
+  expect(exportedRefreshed).toBeTruthy();
+  expect(exportedRefreshed.source_event_id).toBeTruthy();
+  expect(exportedRefreshed.source_event_type).toBeTruthy();
 });
 
 it("validates compliance mode payload", async () => {

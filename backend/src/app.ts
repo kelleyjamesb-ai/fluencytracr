@@ -1618,17 +1618,23 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
     return res.status(400).json({ error: "Invalid as_of query parameter" });
   }
 
-  const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
-  Array.from(store.canonicalControlSnapshots.values())
-    .filter((record) => record.orgId === org.id && (!asOf || record.updatedAt <= asOf))
-    .forEach((record) => {
-      const existing = latestByControl.get(record.control_name);
-      if (!existing || record.updatedAt > existing.updatedAt) {
-        latestByControl.set(record.control_name, record);
-      }
-    });
+  const latestRecords =
+    process.env.DATABASE_URL
+      ? await listLatestCanonicalControlsByOrg(org.id, asOf)
+      : (() => {
+        const latestByControl = new Map<string, CanonicalControlSnapshotRecord>();
+        Array.from(store.canonicalControlSnapshots.values())
+          .filter((record) => record.orgId === org.id && (!asOf || record.updatedAt <= asOf))
+          .forEach((record) => {
+            const existing = latestByControl.get(record.control_name);
+            if (!existing || record.updatedAt > existing.updatedAt) {
+              latestByControl.set(record.control_name, record);
+            }
+          });
+        return Array.from(latestByControl.values());
+      })();
 
-  const controls = Array.from(latestByControl.values()).map((record) => ({
+  const controls = latestRecords.map((record) => ({
     control_name: record.control_name,
     status: record.status,
     source: record.source,
@@ -1637,9 +1643,12 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   const summary = buildComplianceSummary(
     controls.map((control) => ({ control_name: control.control_name, status: control.status }))
   );
-  const orgEvents = Array.from(store.complianceEvents.values())
-    .filter((event) => event.orgId === org.id && (!asOf || event.createdAt <= asOf))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const orgEvents =
+    process.env.DATABASE_URL
+      ? (await listComplianceEventsByOrg(org.id, { asOf })).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      : Array.from(store.complianceEvents.values())
+        .filter((event) => event.orgId === org.id && (!asOf || event.createdAt <= asOf))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const effectiveAsOf = asOf ?? new Date().toISOString();
 
   return res.json({
@@ -1686,23 +1695,31 @@ app.get("/orgs/:orgId/compliance/events", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
     return res.status(400).json({ error: "Invalid cursor query parameter" });
   }
 
-  const events = sortComplianceEvents(
-    Array.from(store.complianceEvents.values()).filter((event) => {
-      if (event.orgId !== org.id) {
-        return false;
-      }
-      if (sinceDate && new Date(event.createdAt) < sinceDate) {
-        return false;
-      }
-      if (policyId && event.policyId !== policyId) {
-        return false;
-      }
-      if (eventType && event.eventType !== eventType) {
-        return false;
-      }
-      return true;
-    })
-  ).reverse();
+  const events = process.env.DATABASE_URL
+    ? sortComplianceEvents(
+      await listComplianceEventsByOrg(org.id, {
+        since,
+        policyId,
+        eventType
+      })
+    ).reverse()
+    : sortComplianceEvents(
+      Array.from(store.complianceEvents.values()).filter((event) => {
+        if (event.orgId !== org.id) {
+          return false;
+        }
+        if (sinceDate && new Date(event.createdAt) < sinceDate) {
+          return false;
+        }
+        if (policyId && event.policyId !== policyId) {
+          return false;
+        }
+        if (eventType && event.eventType !== eventType) {
+          return false;
+        }
+        return true;
+      })
+    ).reverse();
   const page = events.slice(cursor, cursor + limit);
   const nextCursor = cursor + limit < events.length ? String(cursor + limit) : null;
 
@@ -1743,9 +1760,11 @@ app.get("/orgs/:orgId/compliance/export", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
   }
 
   const format = typeof req.query.format === "string" ? req.query.format : "json";
-  const events = sortComplianceEvents(
-    Array.from(store.complianceEvents.values()).filter((event) => event.orgId === org.id)
-  );
+  const events = process.env.DATABASE_URL
+    ? sortComplianceEvents(await listComplianceEventsByOrg(org.id, {}))
+    : sortComplianceEvents(
+      Array.from(store.complianceEvents.values()).filter((event) => event.orgId === org.id)
+    );
 
   if (format === "csv") {
     const escapeCsv = (value: unknown) => {
