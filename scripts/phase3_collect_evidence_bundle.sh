@@ -14,6 +14,7 @@ set -euo pipefail
 #   OUT_DIR                default: artifacts/phase3/bundle
 #   RUN_ACCESS_CONTROL     default: 1
 #   RUN_ROLLBACK_DRILL     default: 1
+#   RUN_SUPPRESSION_EVIDENCE default: 1
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -33,6 +34,7 @@ ADMIN_ROLE="${ADMIN_ROLE:-ADMIN}"
 OUT_DIR="${OUT_DIR:-artifacts/phase3/bundle}"
 RUN_ACCESS_CONTROL="${RUN_ACCESS_CONTROL:-1}"
 RUN_ROLLBACK_DRILL="${RUN_ROLLBACK_DRILL:-1}"
+RUN_SUPPRESSION_EVIDENCE="${RUN_SUPPRESSION_EVIDENCE:-1}"
 
 if [[ -z "$BASE_URL" || -z "$ORG_ID" ]]; then
   echo "BASE_URL and ORG_ID are required." >&2
@@ -89,14 +91,27 @@ if [[ "$RUN_ROLLBACK_DRILL" == "1" ]]; then
   rollback_report="$(ls -t "$bundle_dir"/rollback_drill_*.json 2>/dev/null | head -n 1 || true)"
 fi
 
+suppression_status="skipped"
+if [[ "$RUN_SUPPRESSION_EVIDENCE" == "1" ]]; then
+  if SUPPRESSION_EVIDENCE_DIR="$bundle_dir/suppression" ./scripts/ci_suppression_evidence.sh > "$bundle_dir/suppression.log" 2>&1; then
+    suppression_status="pass"
+  else
+    suppression_status="fail"
+  fi
+fi
+
 overall_pass=false
 if [[ "$replay_status" == "pass" && "$export_status" == "pass" ]]; then
+  if [[ "$RUN_SUPPRESSION_EVIDENCE" == "1" && "$suppression_status" != "pass" ]]; then
+    overall_pass=false
+  else
   if [[ "$RUN_ROLLBACK_DRILL" == "1" ]]; then
     if [[ "$rollback_status" == "pass" ]]; then
       overall_pass=true
     fi
   else
     overall_pass=true
+  fi
   fi
 fi
 
@@ -109,6 +124,7 @@ jq -n \
   --arg replay "$replay_status" \
   --arg export "$export_status" \
   --arg rollback "$rollback_status" \
+  --arg suppression "$suppression_status" \
   --arg replay_report "$replay_report" \
   --arg export_report "$export_report" \
   --arg rollback_report "$rollback_report" \
@@ -122,7 +138,8 @@ jq -n \
       access_control_validation: $access_control,
       replay_determinism: $replay,
       export_reproducibility: $export,
-      rollback_drill: $rollback
+      rollback_drill: $rollback,
+      suppression_regression: $suppression
     },
     reports: {
       replay_report: $replay_report,
