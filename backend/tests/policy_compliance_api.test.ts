@@ -362,6 +362,45 @@ it("updates org compliance mode with admin role and records an event", async () 
   expect(events.body.total_count).toBeGreaterThanOrEqual(1);
 });
 
+it("records explicit rollback metadata when mode transitions from enforced to shadow", async () => {
+  process.env.ENFORCEMENT_PILOT_ORG_ALLOWLIST = "org-1";
+  process.env.ENFORCEMENT_MAX_UNRESOLVED_CLAUSES = "0";
+
+  const enforce = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "enforced",
+      rationale: "Enable pilot for rollback drill."
+    });
+  expect(enforce.status).toBe(200);
+  expect(enforce.body.rollback).toBe(false);
+
+  const rollback = await request(app)
+    .patch("/orgs/org-1/compliance/mode")
+    .set(withSchemaVersion({ "Content-Type": "application/json", "x-role": "ADMIN" }))
+    .send({
+      mode: "shadow",
+      rationale: "Rollback drill execution."
+    });
+  expect(rollback.status).toBe(200);
+  expect(rollback.body.mode).toBe("shadow");
+  expect(rollback.body.rollback).toBe(true);
+
+  const events = await request(app)
+    .get("/orgs/org-1/compliance/events?event_type=compliance_mode_updated")
+    .set({ "x-role": "ADMIN" });
+  expect(events.status).toBe(200);
+
+  const rollbackEvent = events.body.events.find((event: any) =>
+    event.metadata?.previous_mode === "enforced" &&
+    event.metadata?.next_mode === "shadow"
+  );
+  expect(rollbackEvent).toBeTruthy();
+  expect(rollbackEvent.metadata.rollback).toBe(true);
+  expect(rollbackEvent.metadata.mode_transition).toBe("enforced->shadow");
+});
+
 it("exports deterministic compliance events as json and csv", async () => {
   const upload = await request(app)
     .post("/orgs/org-1/policies/upload")
@@ -391,6 +430,43 @@ it("exports deterministic compliance events as json and csv", async () => {
   expect(csvExport.status).toBe(200);
   expect(csvExport.headers["content-type"]).toContain("text/csv");
   expect(csvExport.text).toContain("created_at_utc");
+});
+
+it("replays deterministic export payload when normalized", async () => {
+  const upload = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "determinism-policy.txt",
+      content: "AI enabled for approved workflows. External sharing disabled."
+    });
+  expect(upload.status).toBe(201);
+  const policyId = upload.body.policy_id as string;
+
+  const map = await request(app)
+    .post(`/orgs/org-1/policies/${policyId}/map`)
+    .set(schemaHeaders)
+    .send({});
+  expect(map.status).toBe(200);
+
+  const exportA = await request(app)
+    .get("/orgs/org-1/compliance/export")
+    .set({ "x-role": "ADMIN" });
+  const exportB = await request(app)
+    .get("/orgs/org-1/compliance/export")
+    .set({ "x-role": "ADMIN" });
+
+  expect(exportA.status).toBe(200);
+  expect(exportB.status).toBe(200);
+
+  const normalize = (payload: any) => ({
+    org_id: payload.org_id,
+    mode: payload.mode,
+    total_count: payload.total_count,
+    events: payload.events
+  });
+
+  expect(normalize(exportA.body)).toEqual(normalize(exportB.body));
 });
 
 it("rejects compliance mode update for non-admin role", async () => {
