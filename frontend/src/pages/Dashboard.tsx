@@ -152,6 +152,44 @@ const formatPercent = (value?: number | null) => {
   return `${Math.round(value * 100)}%`;
 };
 
+const REQUEST_TIMEOUT_MS = 20000;
+
+const isAbortLikeError = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return error.name === "AbortError" || error.name === "TimeoutError";
+};
+
+const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+  const timeoutController = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => {
+    timeoutController.abort(new DOMException("Request timed out", "TimeoutError"));
+  }, REQUEST_TIMEOUT_MS);
+  const callerSignal = init.signal;
+  const relayAbort = () => timeoutController.abort();
+
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      timeoutController.abort();
+    } else {
+      callerSignal.addEventListener("abort", relayAbort, { once: true });
+    }
+  }
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: timeoutController.signal
+    });
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+    if (callerSignal) {
+      callerSignal.removeEventListener("abort", relayAbort);
+    }
+  }
+};
+
 export const Dashboard = () => {
   const orgId = localStorage.getItem("orgId") ?? "org-1";
   const role = localStorage.getItem("role") ?? "ADMIN";
@@ -196,7 +234,9 @@ export const Dashboard = () => {
     const fetchPatterns = async () => {
       setIsLoadingPatterns(true);
       try {
-        const response = await fetch(`/api/patterns?window=${window}&scope=${scope}`);
+        const response = await fetchWithTimeout(`/api/patterns?window=${window}&scope=${scope}`, {
+          signal: controller.signal
+        });
         if (!response.ok) {
           const payload = await response.json();
           setPatterns([]);
@@ -207,6 +247,9 @@ export const Dashboard = () => {
         setPatterns(payload.patterns);
         setCohortMessage(null);
       } catch (error) {
+        if (isAbortLikeError(error)) {
+          return;
+        }
         setPatterns([]);
         setCohortMessage("Signals are not available for this cohort size.");
       } finally {
@@ -218,7 +261,7 @@ export const Dashboard = () => {
   }, [window, scope]);
 
   const loadPolicies = async () => {
-    const response = await fetch(`/orgs/${orgId}/policies`, {
+    const response = await fetchWithTimeout(`/orgs/${orgId}/policies`, {
       headers: { "x-role": role }
     });
     if (!response.ok) {
@@ -232,7 +275,7 @@ export const Dashboard = () => {
   };
 
   const loadCompliance = async () => {
-    const response = await fetch(`/orgs/${orgId}/compliance/status`, {
+    const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/status`, {
       headers: { "x-role": role }
     });
     if (!response.ok) {
@@ -243,7 +286,7 @@ export const Dashboard = () => {
   };
 
   const loadMapping = async (policyId: string) => {
-    const response = await fetch(`/orgs/${orgId}/policies/${policyId}/mapping`, {
+    const response = await fetchWithTimeout(`/orgs/${orgId}/policies/${policyId}/mapping`, {
       headers: { "x-role": role }
     });
     if (!response.ok) {
@@ -275,7 +318,7 @@ export const Dashboard = () => {
       if (complianceEventSinceFilter) {
         params.set("since", new Date(complianceEventSinceFilter).toISOString());
       }
-      const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
+      const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
         headers: { "x-role": role }
       });
       if (!response.ok) {
@@ -331,7 +374,7 @@ export const Dashboard = () => {
         if (complianceEventSinceFilter) {
           params.set("since", new Date(complianceEventSinceFilter).toISOString());
         }
-        const response = await fetch(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
+        const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
           headers: { "x-role": role }
         });
         if (!response.ok) {
@@ -433,7 +476,7 @@ export const Dashboard = () => {
     setIsSavingPolicy(true);
     setAdminMessage(null);
     try {
-      const response = await fetch(`/orgs/${orgId}/policies/upload`, {
+      const response = await fetchWithTimeout(`/orgs/${orgId}/policies/upload`, {
         method: "POST",
         headers: governanceHeaders,
         body: JSON.stringify({
@@ -464,7 +507,7 @@ export const Dashboard = () => {
     }
     setAdminMessage(null);
     try {
-      const response = await fetch(`/orgs/${orgId}/policies/${selectedPolicyId}/map`, {
+      const response = await fetchWithTimeout(`/orgs/${orgId}/policies/${selectedPolicyId}/map`, {
         method: "POST",
         headers: governanceHeaders,
         body: JSON.stringify({})
@@ -484,7 +527,7 @@ export const Dashboard = () => {
     setIsUpdatingComplianceMode(true);
     setAdminMessage(null);
     try {
-      const response = await fetch(`/orgs/${orgId}/compliance/mode`, {
+      const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/mode`, {
         method: "PATCH",
         headers: governanceHeaders,
         body: JSON.stringify({
@@ -526,7 +569,7 @@ export const Dashboard = () => {
         body.control_name = controlName ?? "compliance_posture_flag";
         body.status = status ?? "partial";
       }
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `/orgs/${orgId}/policies/${selectedPolicyId}/mapping/unresolved/${clauseId}`,
         {
           method: "PATCH",
@@ -550,7 +593,9 @@ export const Dashboard = () => {
     const fetchLedger = async () => {
       setIsLoadingLedger(true);
       try {
-        const response = await fetch(`/api/ledger?window=${window}`);
+        const response = await fetchWithTimeout(`/api/ledger?window=${window}`, {
+          signal: controller.signal
+        });
         if (!response.ok) {
           setLedgerEntries([]);
           return;
@@ -558,6 +603,9 @@ export const Dashboard = () => {
         const payload = (await response.json()) as LedgerResponse;
         setLedgerEntries(payload.entries ?? []);
       } catch (error) {
+        if (isAbortLikeError(error)) {
+          return;
+        }
         setLedgerEntries([]);
       } finally {
         setIsLoadingLedger(false);
@@ -572,7 +620,9 @@ export const Dashboard = () => {
     const fetchCoverage = async () => {
       setIsLoadingCoverage(true);
       try {
-        const response = await fetch(`/api/coverage?window=${window}&scope=${scope}`);
+        const response = await fetchWithTimeout(`/api/coverage?window=${window}&scope=${scope}`, {
+          signal: controller.signal
+        });
         if (!response.ok) {
           setCoverage(null);
           return;
@@ -580,6 +630,9 @@ export const Dashboard = () => {
         const payload = (await response.json()) as CoverageSummary;
         setCoverage(payload);
       } catch (error) {
+        if (isAbortLikeError(error)) {
+          return;
+        }
         setCoverage(null);
       } finally {
         setIsLoadingCoverage(false);

@@ -5,7 +5,7 @@ import tempfile
 import subprocess
 from typing import Tuple
 
-from .base import CodeSandbox, ExecutionResult
+from .base import CodeSandbox, ExecutionResult, normalize_timeout
 
 
 def _truncate_output(text: str, max_bytes: int) -> Tuple[str, bool]:
@@ -26,6 +26,8 @@ class LocalSandbox(CodeSandbox):
     """
 
     def execute(self, code: str, language: str = "python", timeout: int = 30) -> ExecutionResult:
+        effective_timeout = normalize_timeout(timeout)
+
         if language.lower() != "python":
             return ExecutionResult(
                 stdout="",
@@ -55,7 +57,7 @@ class LocalSandbox(CodeSandbox):
                     cwd=tmpdir,
                     capture_output=True,
                     text=True,
-                    timeout=timeout,
+                    timeout=effective_timeout,
                 )
                 stdout = proc.stdout or ""
                 stderr = proc.stderr or ""
@@ -63,7 +65,7 @@ class LocalSandbox(CodeSandbox):
             except subprocess.TimeoutExpired:
                 timed_out = True
                 exit_code = -1
-                stderr = f"Execution timed out after {timeout}s"
+                stderr = f"Execution timed out after {effective_timeout}s"
             except Exception as exc:
                 exit_code = 1
                 stderr = f"Unexpected execution error: {exc}"
@@ -83,7 +85,7 @@ class LocalSandbox(CodeSandbox):
                 "truncated": bool(trunc_out or trunc_err),
                 "timed_out": timed_out,
                 "resource_limits": {
-                    "timeout_sec": timeout,
+                    "timeout_sec": effective_timeout,
                     "max_output_kb": max_output_kb,
                 },
             },
