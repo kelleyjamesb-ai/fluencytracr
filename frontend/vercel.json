@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!api(?:/|$)|auth(?:/|$)|health(?:/|$)|assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
