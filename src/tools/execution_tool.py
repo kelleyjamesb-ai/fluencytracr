@@ -1,6 +1,7 @@
 from typing import Optional
 import os
 
+from src.sandbox.base import normalize_timeout
 from src.sandbox.factory import get_sandbox
 
 
@@ -17,12 +18,8 @@ def run_python_code(code: str, timeout: Optional[int] = None) -> str:
     """
     sandbox = get_sandbox()
 
-    try:
-        effective_timeout = (
-            int(timeout) if timeout is not None else int(os.getenv("SANDBOX_TIMEOUT_SEC", "30"))
-        )
-    except Exception:
-        effective_timeout = 30
+    configured_timeout = timeout if timeout is not None else os.getenv("SANDBOX_TIMEOUT_SEC", "30")
+    effective_timeout = normalize_timeout(configured_timeout)
 
     result = sandbox.execute(code=code, language="python", timeout=effective_timeout)
 

@@ -18,6 +18,13 @@ def test_timeout_enforcement(monkeypatch):
     assert "timed out" in r.stderr.lower()
 
 
+def test_invalid_timeout_falls_back_to_default():
+    s = LocalSandbox()
+    r = s.execute("print('ok')", timeout=0)
+    assert r.exit_code == 0
+    assert r.meta.get("resource_limits", {}).get("timeout_sec") == 30
+
+
 def test_non_zero_exit_code():
     s = LocalSandbox()
     r = s.execute("raise ValueError('x')", timeout=5)

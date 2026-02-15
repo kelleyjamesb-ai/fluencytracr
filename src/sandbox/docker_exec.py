@@ -3,7 +3,7 @@ import tempfile
 import time
 from typing import Optional
 
-from .base import CodeSandbox, ExecutionResult
+from .base import CodeSandbox, ExecutionResult, normalize_timeout
 
 
 class DockerSandbox(CodeSandbox):
@@ -29,6 +29,7 @@ class DockerSandbox(CodeSandbox):
             return False, f"Docker SDK not installed: {exc}"
 
     def execute(self, code: str, language: str = "python", timeout: int = 30) -> ExecutionResult:
+        effective_timeout = normalize_timeout(timeout)
         ok, reason = self._docker_available()
         start = time.time()
         if not ok:
@@ -89,7 +90,7 @@ class DockerSandbox(CodeSandbox):
                 )
 
                 try:
-                    exit_code = container.wait(timeout=timeout)["StatusCode"]
+                    exit_code = container.wait(timeout=effective_timeout)["StatusCode"]
                 except Exception:
                     # timeout enforcement: kill the container
                     try:
@@ -101,7 +102,7 @@ class DockerSandbox(CodeSandbox):
                         pass
                     return ExecutionResult(
                         stdout="",
-                        stderr=f"Execution timed out after {timeout}s",
+                        stderr=f"Execution timed out after {effective_timeout}s",
                         exit_code=-1,
                         duration=time.time() - start,
                         meta={
