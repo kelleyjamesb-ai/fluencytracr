@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://learn-air-engable-tool-backend.vercel.app/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://learn-air-engable-tool-backend.vercel.app/auth/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://learn-air-engable-tool-backend.vercel.app/health"
+    },
+    {
       "source": "/((?!api(?:/|$)|auth(?:/|$)|health(?:/|$)|assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
