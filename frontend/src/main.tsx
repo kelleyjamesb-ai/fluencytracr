@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -27,5 +28,6 @@ createRoot(container).render(
         />
       </Routes>
     </BrowserRouter>
+    <SpeedInsights />
   </React.StrictMode>
 );
