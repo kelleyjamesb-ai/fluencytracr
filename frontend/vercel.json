@@ -13,7 +13,11 @@
       "destination": "https://learn-air-engable-tool-backend.vercel.app/health"
     },
     {
-      "source": "/((?!api(?:/|$)|auth(?:/|$)|health(?:/|$)|assets/|.*\\..*).*)",
+      "source": "/orgs/:path*",
+      "destination": "https://learn-air-engable-tool-backend.vercel.app/orgs/:path*"
+    },
+    {
+      "source": "/((?!api(?:/|$)|auth(?:/|$)|health(?:/|$)|orgs(?:/|$)|assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
