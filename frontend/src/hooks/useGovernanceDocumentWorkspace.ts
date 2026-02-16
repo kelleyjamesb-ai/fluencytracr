@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { governanceApi } from "../lib/governanceApi";
 import { useGovernanceContext } from "./useGovernanceContext";
 import type { MappingResponse, PolicySummary } from "../types/governance";
@@ -15,24 +15,27 @@ export function useGovernanceDocumentWorkspace() {
   const [isSaving, setIsSaving] = useState(false);
   const [isMapping, setIsMapping] = useState(false);
 
-  const ctx = { orgId, role };
+  const ctx = useMemo(() => ({ orgId, role }), [orgId, role]);
 
-  const loadPolicies = async () => {
+  const loadPolicies = useCallback(async () => {
     const payload = await governanceApi.listPolicies(ctx);
     setPolicies(payload.policies ?? []);
-    if (!selectedPolicyId && payload.policies.length > 0) {
-      setSelectedPolicyId(payload.policies[0].policy_id);
-    }
-  };
+    setSelectedPolicyId((currentPolicyId) => {
+      if (currentPolicyId || payload.policies.length === 0) {
+        return currentPolicyId;
+      }
+      return payload.policies[0].policy_id;
+    });
+  }, [ctx]);
 
-  const loadMapping = async (policyId: string) => {
+  const loadMapping = useCallback(async (policyId: string) => {
     try {
       const payload = await governanceApi.getPolicyMapping(ctx, policyId);
       setMapping(payload);
     } catch {
       setMapping(null);
     }
-  };
+  }, [ctx]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -57,9 +60,7 @@ export function useGovernanceDocumentWorkspace() {
     return () => {
       isCancelled = true;
     };
-    // Initial hydration only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadPolicies]);
 
   useEffect(() => {
     if (!selectedPolicyId) {
@@ -67,9 +68,7 @@ export function useGovernanceDocumentWorkspace() {
       return;
     }
     void loadMapping(selectedPolicyId);
-    // Selected policy changes should refresh mapping.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPolicyId]);
+  }, [selectedPolicyId, loadMapping]);
 
   const uploadPolicy = async () => {
     if (!policyContent.trim()) {
@@ -126,4 +125,3 @@ export function useGovernanceDocumentWorkspace() {
     mapSelectedPolicy
   };
 }
-
