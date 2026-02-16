@@ -12,8 +12,12 @@ export function GovernanceDocumentWorkspace() {
     policyContent,
     setPolicyContent,
     policyContentType,
+    parsedUploads,
+    maxUploadFiles,
+    maxFileSizeMb,
     isParsingFile,
-    parseSelectedFile,
+    parseSelectedFiles,
+    clearParsedUploads,
     message,
     isLoading,
     isSaving,
@@ -44,21 +48,44 @@ export function GovernanceDocumentWorkspace() {
           <h3>1. Upload document</h3>
           <div className="gc-form-grid">
             <label>
-              Upload file (.pdf or .docx)
+              Upload files (.pdf or .docx)
               <input
                 className="gc-input"
                 type="file"
                 accept=".pdf,.doc,.docx"
+                multiple
                 onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void parseSelectedFile(file);
+                  const files = event.target.files;
+                  if (files && files.length > 0) {
+                    void parseSelectedFiles(files);
                   }
                   event.currentTarget.value = "";
                 }}
                 disabled={!isAdmin || isSaving || isParsingFile}
               />
             </label>
+            <p className="gc-subtle">Limit: up to {maxUploadFiles} files, {maxFileSizeMb}MB each.</p>
+            {parsedUploads.length > 0 && (
+              <>
+                <p className="gc-subtle">{parsedUploads.length} documents ready for upload:</p>
+                <ul className="gc-policy-list">
+                  {parsedUploads.map((upload) => (
+                    <li key={upload.fileName}>
+                      <span>{upload.fileName}</span>
+                      <span className="gc-mono">{upload.contentType}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="gc-btn gc-btn-outline"
+                  onClick={clearParsedUploads}
+                  disabled={!isAdmin || isSaving || isParsingFile}
+                >
+                  Clear Selected Files
+                </button>
+              </>
+            )}
             <label>
               File name
               <input
@@ -87,7 +114,13 @@ export function GovernanceDocumentWorkspace() {
             onClick={uploadPolicy}
             disabled={!isAdmin || isSaving || isParsingFile}
           >
-            {isParsingFile ? "Parsing..." : isSaving ? "Uploading..." : "Upload Document"}
+            {isParsingFile
+              ? "Parsing..."
+              : isSaving
+                ? "Uploading..."
+                : parsedUploads.length > 0
+                  ? "Upload Documents"
+                  : "Upload Document"}
           </button>
         </article>
 
