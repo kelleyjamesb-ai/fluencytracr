@@ -979,6 +979,92 @@ body {
   margin-top: 14px;
 }
 
+.gc-workspace {
+  margin-top: 18px;
+}
+
+.gc-workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.gc-workspace-pane {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.gc-workspace-pane h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.gc-form-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.gc-input {
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  background: #fff;
+  color: #111111;
+}
+
+.gc-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.gc-mapping-summary {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.gc-mapping-summary p {
+  margin: 4px 0;
+}
+
+.gc-policy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.gc-policy-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.gc-readonly-note {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #f7dfaf;
+  border-radius: 10px;
+  background: #fff8eb;
+}
+
+.gc-workspace-message {
+  margin-top: 12px;
+  font-weight: 600;
+}
+
 @media (max-width: 960px) {
   .gc-hero,
   .gc-grid {
@@ -994,6 +1080,10 @@ body {
   }
 
   .gc-exec-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-workspace-grid {
     grid-template-columns: 1fr;
   }
 }
