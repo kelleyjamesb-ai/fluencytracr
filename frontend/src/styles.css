@@ -910,6 +910,75 @@ body {
   margin-top: 18px;
 }
 
+.gc-exec-section {
+  margin-top: 18px;
+}
+
+.gc-exec-header h2 {
+  margin: 0 0 8px;
+  font-size: 26px;
+}
+
+.gc-exec-header p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.gc-exec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.gc-exec-col {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.gc-exec-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gc-exec-col-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.gc-exec-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.gc-exec-list li {
+  color: var(--ink-soft);
+}
+
+.gc-exec-meanings {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.gc-exec-meanings p {
+  margin: 0;
+}
+
+.gc-exec-forbidden {
+  margin-top: 14px;
+}
+
 @media (max-width: 960px) {
   .gc-hero,
   .gc-grid {
@@ -922,5 +991,9 @@ body {
 
   .gc-title {
     font-size: 30px;
+  }
+
+  .gc-exec-grid {
+    grid-template-columns: 1fr;
   }
 }

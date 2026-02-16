@@ -1,5 +1,6 @@
 import { ConceptHero } from "../components/governanceConcept/ConceptHero";
 import { DesignStanceList } from "../components/governanceConcept/DesignStanceList";
+import { ExecutiveSignalHealth } from "../components/governanceConcept/ExecutiveSignalHealth";
 import { OrgHealthSnapshot } from "../components/governanceConcept/OrgHealthSnapshot";
 import { RoleAwareActions } from "../components/governanceConcept/RoleAwareActions";
 
@@ -16,10 +17,11 @@ export function GovernanceConcept() {
         <RoleAwareActions />
       </section>
 
+      <ExecutiveSignalHealth />
+
       <section className="gc-bottom-actions">
         <a className="gc-btn gc-btn-secondary" href="/legacy-dashboard">Open Legacy Dashboard</a>
       </section>
     </main>
   );
 }
-
