@@ -16,6 +16,11 @@ export type GovernanceTimelineItem = {
   detail: string;
 };
 
+export type GovernanceHeroAction = {
+  label: string;
+  tone: "primary" | "secondary" | "outline";
+};
+
 export const DESIGN_STANCE_ITEMS: GovernanceTaggedItem[] = [
   { label: "No user-level drilldowns", state: "ENFORCED", stateClass: "good" },
   { label: "Ambiguity defaults to suppress", state: "ENFORCED", stateClass: "good" },
@@ -51,3 +56,11 @@ export const GOVERNANCE_TIMELINE_ITEMS: GovernanceTimelineItem[] = [
   }
 ];
 
+export const GOVERNANCE_HERO_ACTIONS: GovernanceHeroAction[] = [
+  { label: "View Org Signal Board", tone: "primary" },
+  { label: "Open Governance Timeline", tone: "secondary" },
+  { label: "Admin: Request Mode Change", tone: "outline" }
+];
+
+export const GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY =
+  "Intent-aligned UI rules: directional language, auditable actions, safe defaults, and visible suppression semantics.";

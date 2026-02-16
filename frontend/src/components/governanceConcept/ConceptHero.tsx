@@ -1,3 +1,5 @@
+import { GOVERNANCE_HERO_ACTIONS } from "../../constants/governanceConcept";
+
 export function ConceptHero() {
   return (
     <article className="gc-card">
@@ -8,12 +10,17 @@ export function ConceptHero() {
         confidence is directional, and all state-changing actions are audit-aware.
       </p>
       <div className="gc-actions">
-        <button type="button" className="gc-btn gc-btn-primary">View Org Signal Board</button>
-        <button type="button" className="gc-btn gc-btn-secondary">Open Governance Timeline</button>
-        <button type="button" className="gc-btn gc-btn-outline">Admin: Request Mode Change</button>
+        {GOVERNANCE_HERO_ACTIONS.map((action) => (
+          <button
+            key={action.label}
+            type="button"
+            className={`gc-btn gc-btn-${action.tone}`}
+          >
+            {action.label}
+          </button>
+        ))}
       </div>
       <div className="gc-pulse" aria-hidden="true" />
     </article>
   );
 }
-

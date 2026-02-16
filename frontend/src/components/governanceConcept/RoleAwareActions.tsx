@@ -1,4 +1,7 @@
-import { ROLE_AWARE_ACTION_ITEMS } from "../../constants/governanceConcept";
+import {
+  GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY,
+  ROLE_AWARE_ACTION_ITEMS
+} from "../../constants/governanceConcept";
 
 export function RoleAwareActions() {
   return (
@@ -12,9 +15,7 @@ export function RoleAwareActions() {
           </li>
         ))}
       </ul>
-      <div className="gc-foot">
-        Intent-aligned UI rules: directional language, auditable actions, safe defaults, and visible suppression semantics.
-      </div>
+      <div className="gc-foot">{GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY}</div>
     </article>
   );
 }
