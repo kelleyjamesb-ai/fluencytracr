@@ -1,178 +1,23 @@
-import { useEffect, useState } from "react";
-
-type PolicySummary = {
-  policy_id: string;
-  file_name: string;
-  content_type: string;
-  source_format: string;
-  clause_count: number;
-  created_at: string;
-  latest_mapping: {
-    mapping_id: string;
-    generated_at: string;
-    controls_mapped: number;
-    unresolved_clauses: number;
-  } | null;
-};
-
-type PoliciesResponse = {
-  policies: PolicySummary[];
-};
-
-type MappingResponse = {
-  policy_id: string;
-  mapping_id: string;
-  generated_at: string;
-  controls: Array<{
-    control_name: string;
-    status: "enabled" | "disabled" | "partial" | "unknown";
-    confidence: number;
-  }>;
-  unresolved_clauses: Array<{
-    clause_id: string;
-    reason: string;
-  }>;
-};
+import { useGovernanceDocumentWorkspace } from "../../hooks/useGovernanceDocumentWorkspace";
 
 export function GovernanceDocumentWorkspace() {
-  const orgId = localStorage.getItem("orgId") ?? "org-1";
-  const role = localStorage.getItem("role") ?? "ADMIN";
-  const isAdmin = role === "ADMIN";
-
-  const governanceHeaders = {
-    "content-type": "application/json",
-    "x-role": role,
-    "X-FluencyTracr-Schema-Version": "0.1"
-  };
-
-  const [policies, setPolicies] = useState<PolicySummary[]>([]);
-  const [selectedPolicyId, setSelectedPolicyId] = useState<string>("");
-  const [mapping, setMapping] = useState<MappingResponse | null>(null);
-  const [policyFileName, setPolicyFileName] = useState("governance-policy.txt");
-  const [policyContent, setPolicyContent] = useState("");
-  const [message, setMessage] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isMapping, setIsMapping] = useState(false);
-
-  const loadPolicies = async () => {
-    const response = await fetch(`/orgs/${orgId}/policies`, {
-      headers: { "x-role": role }
-    });
-    if (!response.ok) {
-      throw new Error("Unable to load policies");
-    }
-    const payload = (await response.json()) as PoliciesResponse;
-    setPolicies(payload.policies ?? []);
-    if (!selectedPolicyId && payload.policies.length > 0) {
-      setSelectedPolicyId(payload.policies[0].policy_id);
-    }
-  };
-
-  const loadMapping = async (policyId: string) => {
-    const response = await fetch(`/orgs/${orgId}/policies/${policyId}/mapping`, {
-      headers: { "x-role": role }
-    });
-    if (!response.ok) {
-      setMapping(null);
-      return;
-    }
-    const payload = (await response.json()) as MappingResponse;
-    setMapping(payload);
-  };
-
-  useEffect(() => {
-    let isCancelled = false;
-    const bootstrap = async () => {
-      setIsLoading(true);
-      try {
-        await loadPolicies();
-        if (!isCancelled) {
-          setMessage("");
-        }
-      } catch (_error) {
-        if (!isCancelled) {
-          setMessage("Unable to load policy workspace. Check org access and role permissions.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-    bootstrap();
-    return () => {
-      isCancelled = true;
-    };
-    // Intentionally run once for initial hydration.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!selectedPolicyId) {
-      setMapping(null);
-      return;
-    }
-    loadMapping(selectedPolicyId).catch(() => setMapping(null));
-    // Selected policy changes should refresh mapping.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPolicyId]);
-
-  const uploadPolicy = async () => {
-    if (!policyContent.trim()) {
-      setMessage("Policy text is required before upload.");
-      return;
-    }
-    setIsSaving(true);
-    setMessage("");
-    try {
-      const response = await fetch(`/orgs/${orgId}/policies/upload`, {
-        method: "POST",
-        headers: governanceHeaders,
-        body: JSON.stringify({
-          file_name: policyFileName,
-          content_type: "text/plain",
-          content: policyContent
-        })
-      });
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-      const payload = (await response.json()) as { policy_id: string };
-      await loadPolicies();
-      setSelectedPolicyId(payload.policy_id);
-      setMessage("Policy uploaded. You can now map controls.");
-    } catch (_error) {
-      setMessage("Upload failed. Verify schema headers, role, and policy content.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const mapSelectedPolicy = async () => {
-    if (!selectedPolicyId) {
-      setMessage("Select a policy before mapping.");
-      return;
-    }
-    setIsMapping(true);
-    setMessage("");
-    try {
-      const response = await fetch(`/orgs/${orgId}/policies/${selectedPolicyId}/map`, {
-        method: "POST",
-        headers: governanceHeaders,
-        body: JSON.stringify({})
-      });
-      if (!response.ok) {
-        throw new Error("Mapping failed");
-      }
-      await Promise.all([loadPolicies(), loadMapping(selectedPolicyId)]);
-      setMessage("Mapping complete. Review controls and unresolved clauses.");
-    } catch (_error) {
-      setMessage("Mapping failed. Check policy content and endpoint permissions.");
-    } finally {
-      setIsMapping(false);
-    }
-  };
+  const {
+    isAdmin,
+    policies,
+    selectedPolicyId,
+    setSelectedPolicyId,
+    mapping,
+    policyFileName,
+    setPolicyFileName,
+    policyContent,
+    setPolicyContent,
+    message,
+    isLoading,
+    isSaving,
+    isMapping,
+    uploadPolicy,
+    mapSelectedPolicy
+  } = useGovernanceDocumentWorkspace();
 
   return (
     <section className="gc-card gc-workspace">

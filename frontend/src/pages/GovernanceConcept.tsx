@@ -4,7 +4,7 @@ import { DesignStanceList } from "../components/governanceConcept/DesignStanceLi
 import { ExecutiveSignalHealth } from "../components/governanceConcept/ExecutiveSignalHealth";
 import { GovernanceDocumentWorkspace } from "../components/governanceConcept/GovernanceDocumentWorkspace";
 import { HeroActionWorkspace } from "../components/governanceConcept/HeroActionWorkspace";
-import { GovernanceHeroActionId } from "../constants/governanceConcept";
+import { GOVERNANCE_PAGE_COPY, GovernanceHeroActionId } from "../constants/governanceConcept";
 
 export function GovernanceConcept() {
   const [activeHeroAction, setActiveHeroAction] = useState<GovernanceHeroActionId>("org_signals");
@@ -25,21 +25,23 @@ export function GovernanceConcept() {
           className={`gc-btn gc-btn-secondary ${activeLowerPanel === "signals" ? "gc-btn-active" : ""}`}
           onClick={() => setActiveLowerPanel("signals")}
         >
-          Signals Summary
+          {GOVERNANCE_PAGE_COPY.lowerPanelSignalsLabel}
         </button>
         <button
           type="button"
           className={`gc-btn gc-btn-secondary ${activeLowerPanel === "documents" ? "gc-btn-active" : ""}`}
           onClick={() => setActiveLowerPanel("documents")}
         >
-          Document Workspace
+          {GOVERNANCE_PAGE_COPY.lowerPanelDocumentsLabel}
         </button>
       </section>
 
       {activeLowerPanel === "signals" ? <ExecutiveSignalHealth /> : <GovernanceDocumentWorkspace />}
 
       <section className="gc-bottom-actions">
-        <a className="gc-btn gc-btn-secondary" href="/legacy-dashboard">Open Legacy Dashboard</a>
+        <a className="gc-btn gc-btn-secondary" href="/legacy-dashboard">
+          {GOVERNANCE_PAGE_COPY.legacyDashboardLabel}
+        </a>
       </section>
     </main>
   );

@@ -1,110 +1,25 @@
-import { useEffect, useState } from "react";
 import { GovernanceHeroActionId } from "../../constants/governanceConcept";
-
-type ComplianceStatusResponse = {
-  mode: "shadow" | "enforced";
-  as_of: string;
-  overall_status: "enabled" | "disabled" | "partial" | "unknown";
-  counts: Record<"enabled" | "disabled" | "partial" | "unknown", number>;
-};
-
-type ComplianceEventsResponse = {
-  events: Array<{
-    event_id: string;
-    event_type: string;
-    created_at: string;
-    policy_id: string | null;
-    status: string | null;
-  }>;
-};
+import { useHeroActionWorkspace } from "../../hooks/useHeroActionWorkspace";
 
 type HeroActionWorkspaceProps = {
   activeAction: GovernanceHeroActionId;
 };
 
 export function HeroActionWorkspace({ activeAction }: HeroActionWorkspaceProps) {
-  const orgId = localStorage.getItem("orgId") ?? "org-1";
-  const role = localStorage.getItem("role") ?? "ADMIN";
-  const isAdmin = role === "ADMIN";
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [status, setStatus] = useState<ComplianceStatusResponse | null>(null);
-  const [events, setEvents] = useState<ComplianceEventsResponse["events"]>([]);
-  const [mode, setMode] = useState<"shadow" | "enforced">("shadow");
-  const [rationale, setRationale] = useState("Governance review requested mode transition.");
-  const [modeMessage, setModeMessage] = useState("");
-  const [isUpdatingMode, setIsUpdatingMode] = useState(false);
-
-  useEffect(() => {
-    let isCancelled = false;
-    const load = async () => {
-      setIsLoading(true);
-      setErrorMessage("");
-      try {
-        if (activeAction === "org_signals" || activeAction === "mode_change") {
-          const response = await fetch(`/orgs/${orgId}/compliance/status`, {
-            headers: { "x-role": role }
-          });
-          if (!response.ok) {
-            throw new Error("Unable to load compliance status");
-          }
-          const payload = (await response.json()) as ComplianceStatusResponse;
-          if (!isCancelled) {
-            setStatus(payload);
-            setMode(payload.mode);
-          }
-        } else if (activeAction === "timeline") {
-          const response = await fetch(`/orgs/${orgId}/compliance/events?limit=8`, {
-            headers: { "x-role": role }
-          });
-          if (!response.ok) {
-            throw new Error("Unable to load governance timeline");
-          }
-          const payload = (await response.json()) as ComplianceEventsResponse;
-          if (!isCancelled) {
-            setEvents(payload.events ?? []);
-          }
-        }
-      } catch (error) {
-        if (!isCancelled) {
-          setErrorMessage(error instanceof Error ? error.message : "Unable to load section data.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-    void load();
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeAction, orgId, role]);
-
-  const updateMode = async () => {
-    setIsUpdatingMode(true);
-    setModeMessage("");
-    try {
-      const response = await fetch(`/orgs/${orgId}/compliance/mode`, {
-        method: "PATCH",
-        headers: {
-          "content-type": "application/json",
-          "x-role": role,
-          "X-FluencyTracr-Schema-Version": "0.1"
-        },
-        body: JSON.stringify({ mode, rationale })
-      });
-      if (!response.ok) {
-        throw new Error("Mode update blocked by preconditions or role policy.");
-      }
-      setModeMessage(`Mode update submitted: ${mode}`);
-    } catch (error) {
-      setModeMessage(error instanceof Error ? error.message : "Unable to update mode.");
-    } finally {
-      setIsUpdatingMode(false);
-    }
-  };
+  const {
+    isAdmin,
+    isLoading,
+    errorMessage,
+    status,
+    events,
+    mode,
+    setMode,
+    rationale,
+    setRationale,
+    modeMessage,
+    isUpdatingMode,
+    updateMode
+  } = useHeroActionWorkspace(activeAction);
 
   return (
     <section className="gc-card gc-workspace">
@@ -208,4 +123,3 @@ export function HeroActionWorkspace({ activeAction }: HeroActionWorkspaceProps) 
     </section>
   );
 }
-

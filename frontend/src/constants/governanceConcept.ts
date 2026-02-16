@@ -71,8 +71,21 @@ export const GOVERNANCE_HERO_ACTIONS: GovernanceHeroAction[] = [
   { id: "mode_change", label: "Admin: Request Mode Change", tone: "outline" }
 ];
 
+export const GOVERNANCE_HERO_COPY = {
+  badge: "Product Intent Locked",
+  title: "Fluency signals, not surveillance.",
+  subtitle:
+    "This governance-first concept prioritizes organizational evidence operations. Suppressed states are explicit, confidence is directional, and all state-changing actions are audit-aware."
+} as const;
+
 export const GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY =
   "Intent-aligned UI rules: directional language, auditable actions, safe defaults, and visible suppression semantics.";
+
+export const GOVERNANCE_PAGE_COPY = {
+  lowerPanelSignalsLabel: "Signals Summary",
+  lowerPanelDocumentsLabel: "Document Workspace",
+  legacyDashboardLabel: "Open Legacy Dashboard"
+} as const;
 
 export const GOVERNANCE_EXEC_SIGNAL_SECTION = {
   title: "Organizational Signal Health",
