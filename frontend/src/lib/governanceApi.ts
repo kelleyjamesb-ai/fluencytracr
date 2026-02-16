@@ -50,7 +50,12 @@ export const governanceApi = {
       headers: { "x-role": ctx.role }
     }),
 
-  uploadPolicy: (ctx: GovernanceContext, fileName: string, content: string) =>
+  uploadPolicy: (
+    ctx: GovernanceContext,
+    fileName: string,
+    content: string,
+    contentType = "text/plain"
+  ) =>
     fetchJson<{ policy_id: string }>(`/orgs/${ctx.orgId}/policies/upload`, {
       method: "POST",
       headers: {
@@ -60,7 +65,7 @@ export const governanceApi = {
       },
       body: JSON.stringify({
         file_name: fileName,
-        content_type: "text/plain",
+        content_type: contentType,
         content
       })
     }),
@@ -76,4 +81,3 @@ export const governanceApi = {
       body: JSON.stringify({})
     })
 };
-
