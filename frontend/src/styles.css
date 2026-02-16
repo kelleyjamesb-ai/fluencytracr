@@ -1,17 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap');
 
 :root {
-  font-family: "Fira Sans", "Inter", "Segoe UI", system-ui, sans-serif;
-  color: #1E293B;
-  /* Slate-900 */
-  background: #F8FAFC;
-  /* Slate-50 */
+  font-family: "DM Sans", "Fira Sans", "Inter", "Segoe UI", system-ui, sans-serif;
+  color: #000000;
+  background: #F6F3EB;
 
-  /* SaaS Analytics Palette */
-  --primary: #3B82F6;
-  --primary-hover: #2563EB;
-  --secondary: #60A5FA;
-  --cta: #F97316;
+  /* Governance + Glean-inspired brand direction */
+  --primary: #343CED;
+  --primary-hover: #262CC4;
+  --secondary: #555CF0;
+  --cta: #D8FD49;
+  --bg: #F6F3EB;
+  --surface: #FFFFFF;
+  --surface-alt: #F0EFFF;
+  --ink: #000000;
+  --ink-soft: #1F1F1F;
+  --line: #DFDDD6;
   --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
@@ -25,11 +29,11 @@
   /* Slate-500 HSL approx */
 
   /* Tints */
-  --tint-overview: 210 40% 98%;
-  --tint-patterns: 205 55% 96%;
-  --tint-decisions: 35 60% 96%;
-  --tint-implications: 260 35% 96%;
-  --tint-evidence: 220 10% 96%;
+  --tint-overview: 45 30% 95%;
+  --tint-patterns: 250 45% 95%;
+  --tint-decisions: 55 80% 93%;
+  --tint-implications: 250 50% 94%;
+  --tint-evidence: 45 25% 93%;
 }
 
 .cursor-pointer {
@@ -42,6 +46,8 @@
 
 body {
   margin: 0;
+  color: var(--ink);
+  background: radial-gradient(1000px 500px at 88% -5%, #ECEBFF 0%, var(--bg) 65%);
 }
 
 .app-shell {
@@ -51,8 +57,8 @@ body {
 }
 
 .sidebar {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #151515;
+  color: #F4F4F4;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -61,13 +67,13 @@ body {
 
 .sidebar-brand h1 {
   margin: 6px 0 8px;
-  color: #f8fafc;
+  color: #FFFFFF;
   font-size: 24px;
 }
 
 .sidebar-brand p {
   margin: 0;
-  color: #cbd5f5;
+  color: #D9D9D9;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -79,8 +85,8 @@ body {
 
 .nav-item {
   background: transparent;
-  border: 1px solid transparent;
-  color: #cbd5f5;
+  border: 1px solid #2C2C2C;
+  color: #E9E9E9;
   padding: 10px 12px;
   border-radius: 12px;
   text-align: left;
@@ -91,23 +97,22 @@ body {
 
 .nav-item:hover,
 .nav-item:focus {
-  background: rgba(59, 130, 246, 0.1);
-  /* Primary Blue/10 */
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #fff;
+  background: rgba(216, 253, 73, 0.13);
+  border-color: rgba(216, 253, 73, 0.35);
+  color: #FFFFFF;
 }
 
 .nav-item.active {
   background: var(--primary);
   color: #fff;
   border-color: var(--primary-hover);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 15px rgba(52, 60, 237, 0.4);
 }
 
 .sidebar-footer {
   margin-top: auto;
   font-size: 12px;
-  color: #94a3b8;
+  color: #BEBEBE;
 }
 
 .main {
@@ -134,7 +139,7 @@ body {
 
 .topbar p {
   margin: 0;
-  color: #52606d;
+  color: var(--ink-soft);
 }
 
 .window-controls {
@@ -152,7 +157,7 @@ body {
 
 .meta-label {
   font-size: 12px;
-  color: #7b8794;
+  color: #474747;
 }
 
 .meta-value {
@@ -190,9 +195,9 @@ body {
 }
 
 .toggle-button {
-  border: 1px solid #d5d8de;
-  background: #fff;
-  color: #52606d;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: #222222;
   padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
@@ -202,16 +207,16 @@ body {
 
 .toggle-button.active,
 .toggle-button:hover {
-  border-color: #2563eb;
-  color: #1f2933;
-  background: #f0f4f8;
+  border-color: var(--primary);
+  color: #111111;
+  background: #F0EFFF;
 }
 
 .eyebrow {
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: #7b8794;
+  color: #4D4D4D;
   font-weight: 600;
 }
 
@@ -242,16 +247,17 @@ body {
 }
 
 .card {
-  background: #fff;
+  background: var(--surface);
   padding: 20px;
   border-radius: 16px;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.1);
 }
 
 .card h3,
@@ -268,7 +274,7 @@ body {
 }
 
 .hero {
-  background: linear-gradient(135deg, #eef2ff 0%, #ffffff 50%, #f8fafc 100%);
+  background: linear-gradient(135deg, #ECEBFF 0%, #FFFFFF 52%, #F6F3EB 100%);
 }
 
 .hero-grid {
@@ -279,7 +285,7 @@ body {
 }
 
 .hero-copy {
-  color: #52606d;
+  color: var(--ink-soft);
   margin-top: 8px;
 }
 
@@ -306,7 +312,7 @@ body {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #7b8794;
+  color: #4D4D4D;
 }
 
 .metric-value {
@@ -315,14 +321,14 @@ body {
 
 .metric-label {
   font-size: 12px;
-  color: #7b8794;
+  color: #4D4D4D;
   margin-bottom: 6px;
 }
 
 .meta {
   margin-top: 8px;
   font-size: 12px;
-  color: #7b8794;
+  color: #4D4D4D;
 }
 
 .list {
@@ -331,7 +337,7 @@ body {
   padding: 0;
   display: grid;
   gap: 8px;
-  color: #52606d;
+  color: var(--ink-soft);
 }
 
 .chip-row {
@@ -344,26 +350,27 @@ body {
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #1f2933;
+  background: #F0EFFF;
+  color: #111111;
+  border: 1px solid #CFCDF7;
   font-weight: 600;
 }
 
 .divider {
   height: 1px;
-  background: #e4e7eb;
+  background: var(--line);
   margin: 16px 0;
 }
 
 .copy-block h4 {
   margin: 12px 0 6px;
   font-size: 14px;
-  color: #52606d;
+  color: var(--ink-soft);
 }
 
 .copy-block p {
   margin: 0;
-  color: #1f2933;
+  color: #111111;
 }
 
 .accordion summary {
@@ -392,7 +399,7 @@ body {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #9aa5b1;
+  color: #5A5A5A;
   margin-top: 4px;
 }
 
@@ -412,9 +419,9 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: #6366f1;
+  background: var(--cta);
   margin-top: 18px;
-  box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 6px rgba(216, 253, 73, 0.35);
 }
 
 .timeline-actions {
@@ -435,13 +442,14 @@ body {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+  background: var(--primary);
+  box-shadow: 0 0 0 4px rgba(52, 60, 237, 0.2);
 }
 
 .secondary {
-  border: 1px solid #cbd2d9;
+  border: 1px solid #000000;
   background: #fff;
+  color: #111111;
   padding: 6px 12px;
   border-radius: 10px;
   font-weight: 600;
@@ -449,8 +457,8 @@ body {
 }
 
 .primary {
-  border: 1px solid #1d4ed8;
-  background: #2563eb;
+  border: 1px solid var(--primary-hover);
+  background: var(--primary);
   color: #fff;
   padding: 8px 14px;
   border-radius: 10px;
@@ -468,14 +476,15 @@ body {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: radial-gradient(circle at 20% 20%, #e0e7ff 0%, #f8fafc 45%, #eef2ff 100%);
+  background: radial-gradient(circle at 20% 20%, #ECEBFF 0%, #F6F3EB 45%, #F0EFFF 100%);
 }
 
 .auth-card {
   width: min(460px, 100%);
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.15);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
   padding: 24px;
 }
 
@@ -493,14 +502,16 @@ body {
   display: grid;
   gap: 6px;
   font-size: 13px;
-  color: #334155;
+  color: #222222;
 }
 
 .auth-form input,
 .auth-form select,
 .form-grid input,
 .form-grid textarea {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #111111;
   border-radius: 10px;
   padding: 8px 10px;
   font: inherit;
@@ -516,7 +527,7 @@ body {
   display: grid;
   gap: 6px;
   font-size: 13px;
-  color: #334155;
+  color: #222222;
 }
 
 .row-between {
@@ -547,15 +558,15 @@ body {
 
 .data-table th,
 .data-table td {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--line);
   padding: 8px;
   text-align: left;
   vertical-align: top;
 }
 
 .nested {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #faf8f2;
+  border: 1px solid var(--line);
 }
 
 .error-text {
