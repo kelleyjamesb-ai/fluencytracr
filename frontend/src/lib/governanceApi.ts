@@ -10,13 +10,37 @@ type GovernanceContext = {
   role: string;
 };
 
+export class GovernanceApiError extends Error {
+  status: number;
+  payload?: unknown;
+  constructor(message: string, status: number, payload?: unknown) {
+    super(message);
+    this.name = "GovernanceApiError";
+    this.status = status;
+    this.payload = payload;
+  }
+}
+
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 const withApiBase = (path: string) => (apiBaseUrl ? `${apiBaseUrl}${path}` : path);
 
 const fetchJson = async <T>(input: RequestInfo | URL, init: RequestInit = {}) => {
   const response = await fetch(input, init);
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    let payload: unknown = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+    const errorMessage =
+      typeof payload === "object" &&
+      payload !== null &&
+      "error" in payload &&
+      typeof (payload as Record<string, unknown>).error === "string"
+        ? ((payload as Record<string, unknown>).error as string)
+        : `Request failed: ${response.status}`;
+    throw new GovernanceApiError(errorMessage, response.status, payload);
   }
   return (await response.json()) as T;
 };
@@ -85,5 +109,20 @@ export const governanceApi = {
         "X-FluencyTracr-Schema-Version": "0.1"
       },
       body: JSON.stringify({})
-    })
+    }),
+
+  createOrg: (name: string) =>
+    fetchJson<{ org_id: string; name: string; created_at: string; min_group_size: number }>(
+      withApiBase("/orgs"),
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          minGroupSize: 10
+        })
+      }
+    )
 };

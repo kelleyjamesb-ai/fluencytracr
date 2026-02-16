@@ -16,8 +16,11 @@ export function GovernanceDocumentWorkspace() {
     maxUploadFiles,
     maxFileSizeMb,
     isParsingFile,
+    isCreatingOrg,
+    orgBootstrapNeeded,
     parseSelectedFiles,
     clearParsedUploads,
+    initializeOrg,
     message,
     isLoading,
     isSaving,
@@ -158,6 +161,20 @@ export function GovernanceDocumentWorkspace() {
 
       <article className="gc-workspace-pane">
         <h3>3. Policy inventory</h3>
+        {orgBootstrapNeeded && (
+          <div className="gc-mapping-summary">
+            <p><strong>Organization setup required</strong></p>
+            <p>No org record was found for this session org id. Initialize one to enable policy listing and mapping.</p>
+            <button
+              type="button"
+              className="gc-btn gc-btn-secondary"
+              onClick={initializeOrg}
+              disabled={!isAdmin || isCreatingOrg}
+            >
+              {isCreatingOrg ? "Initializing..." : "Initialize Organization"}
+            </button>
+          </div>
+        )}
         {isLoading ? (
           <p>Loading policies...</p>
         ) : policies.length === 0 ? (
