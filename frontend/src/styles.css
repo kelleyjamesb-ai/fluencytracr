@@ -766,6 +766,10 @@ body {
   transform: translateY(-1px);
 }
 
+.gc-btn-active {
+  box-shadow: 0 0 0 3px rgba(52, 60, 237, 0.18);
+}
+
 .gc-btn-primary {
   background: var(--primary);
   color: #fff;
@@ -868,6 +872,10 @@ body {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+.gc-kpi-small {
+  font-size: 16px;
 }
 
 .gc-timeline {
@@ -981,6 +989,15 @@ body {
 
 .gc-workspace {
   margin-top: 18px;
+}
+
+.gc-panel-block h3 {
+  margin: 0;
+}
+
+.gc-subtle {
+  margin: 6px 0 12px;
+  color: var(--ink-soft);
 }
 
 .gc-workspace-grid {

@@ -17,9 +17,12 @@ export type GovernanceTimelineItem = {
 };
 
 export type GovernanceHeroAction = {
+  id: GovernanceHeroActionId;
   label: string;
   tone: "primary" | "secondary" | "outline";
 };
+
+export type GovernanceHeroActionId = "org_signals" | "timeline" | "mode_change";
 
 export type GovernanceSignalGroup = {
   heading: string;
@@ -63,9 +66,9 @@ export const GOVERNANCE_TIMELINE_ITEMS: GovernanceTimelineItem[] = [
 ];
 
 export const GOVERNANCE_HERO_ACTIONS: GovernanceHeroAction[] = [
-  { label: "View Org Signal Board", tone: "primary" },
-  { label: "Open Governance Timeline", tone: "secondary" },
-  { label: "Admin: Request Mode Change", tone: "outline" }
+  { id: "org_signals", label: "View Org Signal Board", tone: "primary" },
+  { id: "timeline", label: "Open Governance Timeline", tone: "secondary" },
+  { id: "mode_change", label: "Admin: Request Mode Change", tone: "outline" }
 ];
 
 export const GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY =

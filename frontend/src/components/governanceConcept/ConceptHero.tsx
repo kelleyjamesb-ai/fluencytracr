@@ -1,6 +1,11 @@
-import { GOVERNANCE_HERO_ACTIONS } from "../../constants/governanceConcept";
+import { GOVERNANCE_HERO_ACTIONS, GovernanceHeroActionId } from "../../constants/governanceConcept";
 
-export function ConceptHero() {
+type ConceptHeroProps = {
+  activeAction: GovernanceHeroActionId;
+  onSelectAction: (actionId: GovernanceHeroActionId) => void;
+};
+
+export function ConceptHero({ activeAction, onSelectAction }: ConceptHeroProps) {
   return (
     <article className="gc-card">
       <div className="gc-badge">Product Intent Locked</div>
@@ -12,9 +17,11 @@ export function ConceptHero() {
       <div className="gc-actions">
         {GOVERNANCE_HERO_ACTIONS.map((action) => (
           <button
-            key={action.label}
+            key={action.id}
             type="button"
-            className={`gc-btn gc-btn-${action.tone}`}
+            className={`gc-btn gc-btn-${action.tone} ${activeAction === action.id ? "gc-btn-active" : ""}`}
+            onClick={() => onSelectAction(action.id)}
+            aria-pressed={activeAction === action.id}
           >
             {action.label}
           </button>
