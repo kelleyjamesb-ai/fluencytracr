@@ -806,17 +806,36 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
 
 const parseOrgCreatePayload = (body: unknown) => {
   const raw = (body ?? {}) as Record<string, unknown>;
+  const candidateOrgId =
+    typeof raw.orgId === "string"
+      ? raw.orgId
+      : typeof raw.org_id === "string"
+        ? raw.org_id
+        : undefined;
   const candidateMinGroupSize =
     typeof raw.minGroupSize === "number"
       ? raw.minGroupSize
       : typeof raw.min_group_size === "number"
         ? raw.min_group_size
         : undefined;
-  const normalized = {
+  const base = {
     name: raw.name,
     ...(candidateMinGroupSize !== undefined ? { minGroupSize: candidateMinGroupSize } : {})
   };
-  return OrgCreateSchema.safeParse(normalized);
+  const parsedBase = OrgCreateSchema.safeParse(base);
+  if (!parsedBase.success) {
+    return parsedBase;
+  }
+  const OrgCreateWithOptionalIdSchema = OrgCreateSchema.extend({
+    orgId: z
+      .string()
+      .regex(/^[a-zA-Z0-9._-]+$/)
+      .optional()
+  });
+  return OrgCreateWithOptionalIdSchema.safeParse({
+    ...parsedBase.data,
+    ...(candidateOrgId ? { orgId: candidateOrgId.trim() } : {})
+  });
 };
 
 app.post("/orgs", strictLimiter, async (req, res) => {
@@ -824,7 +843,9 @@ app.post("/orgs", strictLimiter, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
   }
-  const id = `org-${crypto.randomUUID()}`;
+  const id = parsed.data.orgId && parsed.data.orgId.length > 0
+    ? parsed.data.orgId
+    : `org-${crypto.randomUUID()}`;
   const createdAt = new Date().toISOString();
   const persistedDurably = await persistOrganizationRecord({
     orgId: id,

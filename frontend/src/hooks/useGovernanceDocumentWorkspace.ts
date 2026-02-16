@@ -319,7 +319,10 @@ export function useGovernanceDocumentWorkspace() {
     setIsCreatingOrg(true);
     setMessage("");
     try {
-      const created = await governanceApi.createOrg(`Governance Org ${new Date().toLocaleDateString()}`);
+      const created = await governanceApi.createOrg(
+        `Governance Org ${new Date().toLocaleDateString()}`,
+        orgId
+      );
       localStorage.setItem("orgId", created.org_id);
       setMessage(
         `Created org ${created.org_id}. Reloading workspace so Policy version reflects the new org context.`
