@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { governanceApi } from "../lib/governanceApi";
+import { parsePolicyDocument } from "../lib/policyDocumentParser";
 import { useGovernanceContext } from "./useGovernanceContext";
 import type { MappingResponse, PolicySummary } from "../types/governance";
 
@@ -10,10 +11,12 @@ export function useGovernanceDocumentWorkspace() {
   const [mapping, setMapping] = useState<MappingResponse | null>(null);
   const [policyFileName, setPolicyFileName] = useState("governance-policy.txt");
   const [policyContent, setPolicyContent] = useState("");
+  const [policyContentType, setPolicyContentType] = useState("text/plain");
   const [message, setMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMapping, setIsMapping] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
 
   const ctx = useMemo(() => ({ orgId, role }), [orgId, role]);
 
@@ -78,7 +81,12 @@ export function useGovernanceDocumentWorkspace() {
     setIsSaving(true);
     setMessage("");
     try {
-      const payload = await governanceApi.uploadPolicy(ctx, policyFileName, policyContent);
+      const payload = await governanceApi.uploadPolicy(
+        ctx,
+        policyFileName,
+        policyContent,
+        policyContentType
+      );
       await loadPolicies();
       setSelectedPolicyId(payload.policy_id);
       setMessage("Policy uploaded. You can now map controls.");
@@ -107,6 +115,25 @@ export function useGovernanceDocumentWorkspace() {
     }
   };
 
+  const parseSelectedFile = async (file: File) => {
+    setIsParsingFile(true);
+    setMessage("");
+    try {
+      const result = await parsePolicyDocument(file);
+      if (!result.text) {
+        throw new Error("No text could be extracted from this document.");
+      }
+      setPolicyFileName(file.name);
+      setPolicyContent(result.text);
+      setPolicyContentType(result.contentType);
+      setMessage(`Parsed ${file.name}. Review extracted text, then upload.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to parse selected file.");
+    } finally {
+      setIsParsingFile(false);
+    }
+  };
+
   return {
     isAdmin,
     policies,
@@ -117,6 +144,9 @@ export function useGovernanceDocumentWorkspace() {
     setPolicyFileName,
     policyContent,
     setPolicyContent,
+    policyContentType,
+    isParsingFile,
+    parseSelectedFile,
     message,
     isLoading,
     isSaving,

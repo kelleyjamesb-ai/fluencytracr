@@ -11,6 +11,9 @@ export function GovernanceDocumentWorkspace() {
     setPolicyFileName,
     policyContent,
     setPolicyContent,
+    policyContentType,
+    isParsingFile,
+    parseSelectedFile,
     message,
     isLoading,
     isSaving,
@@ -41,6 +44,22 @@ export function GovernanceDocumentWorkspace() {
           <h3>1. Upload document</h3>
           <div className="gc-form-grid">
             <label>
+              Upload file (.pdf or .docx)
+              <input
+                className="gc-input"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    void parseSelectedFile(file);
+                  }
+                  event.currentTarget.value = "";
+                }}
+                disabled={!isAdmin || isSaving || isParsingFile}
+              />
+            </label>
+            <label>
               File name
               <input
                 className="gc-input"
@@ -60,9 +79,15 @@ export function GovernanceDocumentWorkspace() {
                 disabled={!isAdmin || isSaving}
               />
             </label>
+            <p className="gc-subtle">Detected content type: {policyContentType}</p>
           </div>
-          <button type="button" className="gc-btn gc-btn-primary" onClick={uploadPolicy} disabled={!isAdmin || isSaving}>
-            {isSaving ? "Uploading..." : "Upload Document"}
+          <button
+            type="button"
+            className="gc-btn gc-btn-primary"
+            onClick={uploadPolicy}
+            disabled={!isAdmin || isSaving || isParsingFile}
+          >
+            {isParsingFile ? "Parsing..." : isSaving ? "Uploading..." : "Upload Document"}
           </button>
         </article>
 
