@@ -14,6 +14,12 @@ type ParsedPolicyUpload = {
   contentType: string;
 };
 
+type UploadedPolicyRecord = {
+  policyId: string;
+  fileName: string;
+  contentType: string;
+};
+
 export function useGovernanceDocumentWorkspace() {
   const { orgId, role, isAdmin } = useGovernanceContext();
   const [policies, setPolicies] = useState<PolicySummary[]>([]);
@@ -50,6 +56,30 @@ export function useGovernanceDocumentWorkspace() {
       setMapping(null);
     }
   }, [ctx]);
+
+  const appendOptimisticPolicies = (uploaded: UploadedPolicyRecord[]) => {
+    if (uploaded.length === 0) {
+      return;
+    }
+    const now = new Date().toISOString();
+    setPolicies((current) => {
+      const byId = new Map(current.map((policy) => [policy.policy_id, policy]));
+      for (const item of uploaded) {
+        if (!byId.has(item.policyId)) {
+          byId.set(item.policyId, {
+            policy_id: item.policyId,
+            file_name: item.fileName,
+            content_type: item.contentType,
+            source_format: "text",
+            clause_count: 0,
+            created_at: now,
+            latest_mapping: null
+          });
+        }
+      }
+      return Array.from(byId.values()).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    });
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -91,6 +121,7 @@ export function useGovernanceDocumentWorkspace() {
       let successCount = 0;
       let failedCount = 0;
       let lastPolicyId = "";
+      const uploaded: UploadedPolicyRecord[] = [];
 
       for (const upload of parsedUploads) {
         try {
@@ -102,13 +133,22 @@ export function useGovernanceDocumentWorkspace() {
           );
           successCount += 1;
           lastPolicyId = payload.policy_id;
+          uploaded.push({
+            policyId: payload.policy_id,
+            fileName: upload.fileName,
+            contentType: upload.contentType
+          });
         } catch {
           failedCount += 1;
         }
       }
 
       try {
-        await loadPolicies();
+        try {
+          await loadPolicies();
+        } catch {
+          appendOptimisticPolicies(uploaded);
+        }
         if (lastPolicyId) {
           setSelectedPolicyId(lastPolicyId);
         }
@@ -140,7 +180,17 @@ export function useGovernanceDocumentWorkspace() {
         policyContent,
         policyContentType
       );
-      await loadPolicies();
+      try {
+        await loadPolicies();
+      } catch {
+        appendOptimisticPolicies([
+          {
+            policyId: payload.policy_id,
+            fileName: policyFileName,
+            contentType: policyContentType
+          }
+        ]);
+      }
       setSelectedPolicyId(payload.policy_id);
       setMessage("Policy uploaded. You can now map controls.");
     } catch {
