@@ -4,6 +4,16 @@ import { parsePolicyDocument } from "../lib/policyDocumentParser";
 import { useGovernanceContext } from "./useGovernanceContext";
 import type { MappingResponse, PolicySummary } from "../types/governance";
 
+const MAX_UPLOAD_FILES = 8;
+const MAX_FILE_SIZE_MB = 15;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+type ParsedPolicyUpload = {
+  fileName: string;
+  content: string;
+  contentType: string;
+};
+
 export function useGovernanceDocumentWorkspace() {
   const { orgId, role, isAdmin } = useGovernanceContext();
   const [policies, setPolicies] = useState<PolicySummary[]>([]);
@@ -12,6 +22,7 @@ export function useGovernanceDocumentWorkspace() {
   const [policyFileName, setPolicyFileName] = useState("governance-policy.txt");
   const [policyContent, setPolicyContent] = useState("");
   const [policyContentType, setPolicyContentType] = useState("text/plain");
+  const [parsedUploads, setParsedUploads] = useState<ParsedPolicyUpload[]>([]);
   const [message, setMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -74,8 +85,50 @@ export function useGovernanceDocumentWorkspace() {
   }, [selectedPolicyId, loadMapping]);
 
   const uploadPolicy = async () => {
+    if (parsedUploads.length > 0) {
+      setIsSaving(true);
+      setMessage("");
+      let successCount = 0;
+      let failedCount = 0;
+      let lastPolicyId = "";
+
+      for (const upload of parsedUploads) {
+        try {
+          const payload = await governanceApi.uploadPolicy(
+            ctx,
+            upload.fileName,
+            upload.content,
+            upload.contentType
+          );
+          successCount += 1;
+          lastPolicyId = payload.policy_id;
+        } catch {
+          failedCount += 1;
+        }
+      }
+
+      try {
+        await loadPolicies();
+        if (lastPolicyId) {
+          setSelectedPolicyId(lastPolicyId);
+        }
+      } finally {
+        setIsSaving(false);
+      }
+
+      if (successCount > 0 && failedCount === 0) {
+        setParsedUploads([]);
+        setMessage(`Uploaded ${successCount} documents. You can now run mapping.`);
+      } else if (successCount > 0) {
+        setMessage(`Uploaded ${successCount} documents. ${failedCount} failed.`);
+      } else {
+        setMessage("Batch upload failed. Verify headers, role, and document content.");
+      }
+      return;
+    }
+
     if (!policyContent.trim()) {
-      setMessage("Policy text is required before upload.");
+      setMessage("Policy text is required before upload, or select files for batch upload.");
       return;
     }
     setIsSaving(true);
@@ -115,23 +168,67 @@ export function useGovernanceDocumentWorkspace() {
     }
   };
 
-  const parseSelectedFile = async (file: File) => {
+  const parseSelectedFiles = async (files: FileList | File[]) => {
+    const candidates = Array.from(files);
+    if (candidates.length === 0) {
+      return;
+    }
+    if (candidates.length > MAX_UPLOAD_FILES) {
+      setMessage(`Select up to ${MAX_UPLOAD_FILES} files at once.`);
+      return;
+    }
+
     setIsParsingFile(true);
     setMessage("");
+    const parsed: ParsedPolicyUpload[] = [];
+    const errors: string[] = [];
+
     try {
-      const result = await parsePolicyDocument(file);
-      if (!result.text) {
-        throw new Error("No text could be extracted from this document.");
+      for (const file of candidates) {
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          errors.push(`${file.name}: exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+          continue;
+        }
+        try {
+          const result = await parsePolicyDocument(file);
+          if (!result.text) {
+            errors.push(`${file.name}: no text extracted.`);
+            continue;
+          }
+          parsed.push({
+            fileName: file.name,
+            content: result.text,
+            contentType: result.contentType
+          });
+        } catch (error) {
+          errors.push(
+            error instanceof Error ? `${file.name}: ${error.message}` : `${file.name}: parse failed.`
+          );
+        }
       }
-      setPolicyFileName(file.name);
-      setPolicyContent(result.text);
-      setPolicyContentType(result.contentType);
-      setMessage(`Parsed ${file.name}. Review extracted text, then upload.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to parse selected file.");
+
+      setParsedUploads(parsed);
+      if (parsed.length > 0) {
+        setPolicyFileName(parsed[0].fileName);
+        setPolicyContent(parsed[0].content);
+        setPolicyContentType(parsed[0].contentType);
+      }
+
+      if (parsed.length > 0 && errors.length === 0) {
+        setMessage(`Parsed ${parsed.length} documents. Click Upload Document to batch upload.`);
+      } else if (parsed.length > 0) {
+        setMessage(`Parsed ${parsed.length} documents. ${errors.length} skipped.`);
+      } else {
+        setMessage(errors[0] ?? "Unable to parse selected files.");
+      }
     } finally {
       setIsParsingFile(false);
     }
+  };
+
+  const clearParsedUploads = () => {
+    setParsedUploads([]);
+    setMessage("Cleared selected documents.");
   };
 
   return {
@@ -145,8 +242,12 @@ export function useGovernanceDocumentWorkspace() {
     policyContent,
     setPolicyContent,
     policyContentType,
+    parsedUploads,
+    maxUploadFiles: MAX_UPLOAD_FILES,
+    maxFileSizeMb: MAX_FILE_SIZE_MB,
     isParsingFile,
-    parseSelectedFile,
+    parseSelectedFiles,
+    clearParsedUploads,
     message,
     isLoading,
     isSaving,
