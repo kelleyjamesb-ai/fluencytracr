@@ -4,12 +4,11 @@ import { DesignStanceList } from "../components/governanceConcept/DesignStanceLi
 import { ExecutiveSignalHealth } from "../components/governanceConcept/ExecutiveSignalHealth";
 import { GovernanceDocumentWorkspace } from "../components/governanceConcept/GovernanceDocumentWorkspace";
 import { HeroActionWorkspace } from "../components/governanceConcept/HeroActionWorkspace";
-import { OrgHealthSnapshot } from "../components/governanceConcept/OrgHealthSnapshot";
-import { RoleAwareActions } from "../components/governanceConcept/RoleAwareActions";
 import { GovernanceHeroActionId } from "../constants/governanceConcept";
 
 export function GovernanceConcept() {
   const [activeHeroAction, setActiveHeroAction] = useState<GovernanceHeroActionId>("org_signals");
+  const [activeLowerPanel, setActiveLowerPanel] = useState<"signals" | "documents">("signals");
 
   return (
     <main className="gc-wrap">
@@ -20,13 +19,24 @@ export function GovernanceConcept() {
 
       <HeroActionWorkspace activeAction={activeHeroAction} />
 
-      <section className="gc-grid">
-        <OrgHealthSnapshot />
-        <RoleAwareActions />
+      <section className="gc-lower-switch">
+        <button
+          type="button"
+          className={`gc-btn gc-btn-secondary ${activeLowerPanel === "signals" ? "gc-btn-active" : ""}`}
+          onClick={() => setActiveLowerPanel("signals")}
+        >
+          Signals Summary
+        </button>
+        <button
+          type="button"
+          className={`gc-btn gc-btn-secondary ${activeLowerPanel === "documents" ? "gc-btn-active" : ""}`}
+          onClick={() => setActiveLowerPanel("documents")}
+        >
+          Document Workspace
+        </button>
       </section>
 
-      <ExecutiveSignalHealth />
-      <GovernanceDocumentWorkspace />
+      {activeLowerPanel === "signals" ? <ExecutiveSignalHealth /> : <GovernanceDocumentWorkspace />}
 
       <section className="gc-bottom-actions">
         <a className="gc-btn gc-btn-secondary" href="/legacy-dashboard">Open Legacy Dashboard</a>

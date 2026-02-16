@@ -36,15 +36,14 @@ export function ExecutiveSignalHealth() {
         ))}
       </div>
 
-      <div className="gc-exec-forbidden">
-        <p className="gc-mono">Language guardrails (forbidden terms)</p>
+      <details className="gc-exec-forbidden">
+        <summary className="gc-mono">Language guardrails (forbidden terms)</summary>
         <div className="gc-chip-row">
           {GOVERNANCE_FORBIDDEN_TERMS.map((term) => (
             <span key={term} className="chip">{term}</span>
           ))}
         </div>
-      </div>
+      </details>
     </section>
   );
 }
-

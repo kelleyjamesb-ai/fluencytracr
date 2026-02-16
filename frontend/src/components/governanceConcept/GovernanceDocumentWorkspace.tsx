@@ -180,8 +180,7 @@ export function GovernanceDocumentWorkspace() {
         <p className="gc-mono">Compliance Officer and CISO Workspace</p>
         <h2>Governance Document Upload and Mapping</h2>
         <p>
-          Upload governance documents here, then map them into controls used by the platform&apos;s compliance status
-          and timeline flows.
+          Upload governance documents, map them to controls, and track mapping readiness.
         </p>
       </div>
 
@@ -194,7 +193,7 @@ export function GovernanceDocumentWorkspace() {
 
       <div className="gc-workspace-grid">
         <article className="gc-workspace-pane">
-          <h3>1. Upload governance document</h3>
+          <h3>1. Upload document</h3>
           <div className="gc-form-grid">
             <label>
               File name
@@ -223,7 +222,7 @@ export function GovernanceDocumentWorkspace() {
         </article>
 
         <article className="gc-workspace-pane">
-          <h3>2. Map to platform controls</h3>
+          <h3>2. Run mapping</h3>
           <label>
             Policy version
             <select
@@ -255,7 +254,7 @@ export function GovernanceDocumentWorkspace() {
       </div>
 
       <article className="gc-workspace-pane">
-        <h3>3. Current policy inventory</h3>
+        <h3>3. Policy inventory</h3>
         {isLoading ? (
           <p>Loading policies...</p>
         ) : policies.length === 0 ? (
@@ -276,4 +275,3 @@ export function GovernanceDocumentWorkspace() {
     </section>
   );
 }
-

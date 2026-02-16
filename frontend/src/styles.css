@@ -681,7 +681,7 @@ body {
 
 /* Governance concept page */
 .gc-wrap {
-  max-width: 1240px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 28px 20px 40px;
 }
@@ -732,8 +732,8 @@ body {
 .gc-sub {
   color: #1f1f1f;
   font-size: 16px;
-  line-height: 1.6;
-  max-width: 62ch;
+  line-height: 1.55;
+  max-width: 68ch;
   margin: 0 0 14px;
 }
 
@@ -741,6 +741,7 @@ body {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .gc-btn {
@@ -931,12 +932,13 @@ body {
   margin: 0;
   color: var(--ink-soft);
   line-height: 1.5;
+  max-width: 72ch;
 }
 
 .gc-exec-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
   margin-top: 16px;
 }
 
@@ -945,6 +947,7 @@ body {
   background: #fff;
   border-radius: 12px;
   padding: 12px;
+  min-height: 185px;
 }
 
 .gc-exec-col-head {
@@ -985,6 +988,17 @@ body {
 
 .gc-exec-forbidden {
   margin-top: 14px;
+}
+
+.gc-exec-forbidden summary {
+  cursor: pointer;
+}
+
+.gc-lower-switch {
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .gc-workspace {
@@ -1094,6 +1108,10 @@ body {
 
   .gc-title {
     font-size: 30px;
+  }
+
+  .gc-sub {
+    max-width: 100%;
   }
 
   .gc-exec-grid {
