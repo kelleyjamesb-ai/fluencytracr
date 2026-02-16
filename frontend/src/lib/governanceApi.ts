@@ -10,6 +10,9 @@ type GovernanceContext = {
   role: string;
 };
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+const withApiBase = (path: string) => (apiBaseUrl ? `${apiBaseUrl}${path}` : path);
+
 const fetchJson = async <T>(input: RequestInfo | URL, init: RequestInit = {}) => {
   const response = await fetch(input, init);
   if (!response.ok) {
@@ -20,17 +23,20 @@ const fetchJson = async <T>(input: RequestInfo | URL, init: RequestInit = {}) =>
 
 export const governanceApi = {
   getComplianceStatus: (ctx: GovernanceContext) =>
-    fetchJson<ComplianceStatusResponse>(`/orgs/${ctx.orgId}/compliance/status`, {
+    fetchJson<ComplianceStatusResponse>(withApiBase(`/orgs/${ctx.orgId}/compliance/status`), {
       headers: { "x-role": ctx.role }
     }),
 
   getComplianceEvents: (ctx: GovernanceContext, limit = 8) =>
-    fetchJson<ComplianceEventsResponse>(`/orgs/${ctx.orgId}/compliance/events?limit=${limit}`, {
+    fetchJson<ComplianceEventsResponse>(
+      withApiBase(`/orgs/${ctx.orgId}/compliance/events?limit=${limit}`),
+      {
       headers: { "x-role": ctx.role }
-    }),
+      }
+    ),
 
   patchComplianceMode: (ctx: GovernanceContext, mode: "shadow" | "enforced", rationale: string) =>
-    fetchJson<{ mode: "shadow" | "enforced" }>(`/orgs/${ctx.orgId}/compliance/mode`, {
+    fetchJson<{ mode: "shadow" | "enforced" }>(withApiBase(`/orgs/${ctx.orgId}/compliance/mode`), {
       method: "PATCH",
       headers: {
         "content-type": "application/json",
@@ -41,12 +47,12 @@ export const governanceApi = {
     }),
 
   listPolicies: (ctx: GovernanceContext) =>
-    fetchJson<PoliciesResponse>(`/orgs/${ctx.orgId}/policies`, {
+    fetchJson<PoliciesResponse>(withApiBase(`/orgs/${ctx.orgId}/policies`), {
       headers: { "x-role": ctx.role }
     }),
 
   getPolicyMapping: (ctx: GovernanceContext, policyId: string) =>
-    fetchJson<MappingResponse>(`/orgs/${ctx.orgId}/policies/${policyId}/mapping`, {
+    fetchJson<MappingResponse>(withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/mapping`), {
       headers: { "x-role": ctx.role }
     }),
 
@@ -56,7 +62,7 @@ export const governanceApi = {
     content: string,
     contentType = "text/plain"
   ) =>
-    fetchJson<{ policy_id: string }>(`/orgs/${ctx.orgId}/policies/upload`, {
+    fetchJson<{ policy_id: string }>(withApiBase(`/orgs/${ctx.orgId}/policies/upload`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -71,7 +77,7 @@ export const governanceApi = {
     }),
 
   mapPolicy: (ctx: GovernanceContext, policyId: string) =>
-    fetchJson<MappingResponse>(`/orgs/${ctx.orgId}/policies/${policyId}/map`, {
+    fetchJson<MappingResponse>(withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/map`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
