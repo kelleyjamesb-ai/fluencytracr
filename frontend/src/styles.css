@@ -678,3 +678,249 @@ body {
     top: 0;
   }
 }
+
+/* Governance concept page */
+.gc-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 20px 40px;
+}
+
+.gc-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.gc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.gc-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(21, 37, 63, 0.08);
+  padding: 18px;
+}
+
+.gc-card-tint {
+  background: var(--surface-alt);
+}
+
+.gc-badge {
+  display: inline-flex;
+  border: 1px solid #cfcdf7;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #20255f;
+  background: #f0efff;
+  margin-bottom: 10px;
+}
+
+.gc-title {
+  margin: 0 0 8px;
+  font-size: 38px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.gc-sub {
+  color: #1f1f1f;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 62ch;
+  margin: 0 0 14px;
+}
+
+.gc-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gc-btn {
+  min-height: 44px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  padding: 0 14px;
+  font-family: "DM Sans", "Fira Sans", sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gc-btn:focus-visible {
+  outline: 3px solid rgba(52, 60, 237, 0.35);
+  outline-offset: 2px;
+}
+
+.gc-btn:hover {
+  transform: translateY(-1px);
+}
+
+.gc-btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(52, 60, 237, 0.24);
+}
+
+.gc-btn-secondary {
+  background: #fff;
+  color: #171717;
+  border-color: #000;
+}
+
+.gc-btn-outline {
+  background: #f6f3eb;
+  color: #151515;
+  border-color: #000;
+}
+
+.gc-pulse {
+  height: 9px;
+  border-radius: 999px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, #343ced 0%, #555cf0 48%, #d8fd49 100%);
+}
+
+.gc-mono {
+  font-family: "Fira Code", monospace;
+  font-size: 12px;
+  color: #1e2268;
+}
+
+.gc-state-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.gc-state-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+}
+
+.gc-tag {
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 3px 8px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.gc-tag-good {
+  color: #111;
+  background: #f5ffd4;
+  border-color: #d8fd49;
+}
+
+.gc-tag-warn {
+  color: #8a5a07;
+  background: #fff8eb;
+  border-color: #f7dfaf;
+}
+
+.gc-tag-danger {
+  color: #8c1930;
+  background: #fff1f4;
+  border-color: #ffc5d1;
+}
+
+.gc-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.gc-kpi {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.gc-kpi-label {
+  color: #4d4d4d;
+  font-size: 12px;
+  margin: 0 0 4px;
+}
+
+.gc-kpi-value {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.gc-timeline {
+  margin-top: 12px;
+  border-left: 2px solid #cfcdf7;
+  padding-left: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.gc-event {
+  position: relative;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.gc-event::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--cta);
+  position: absolute;
+  left: -19px;
+  top: 14px;
+  border: 2px solid #000;
+}
+
+.gc-foot {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.gc-bottom-actions {
+  margin-top: 18px;
+}
+
+@media (max-width: 960px) {
+  .gc-hero,
+  .gc-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-kpi-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-title {
+    font-size: 30px;
+  }
+}
