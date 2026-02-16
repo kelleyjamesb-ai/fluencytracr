@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { governanceApi } from "../lib/governanceApi";
+import { GovernanceApiError, governanceApi } from "../lib/governanceApi";
 import { parsePolicyDocument } from "../lib/policyDocumentParser";
 import { useGovernanceContext } from "./useGovernanceContext";
 import type { MappingResponse, PolicySummary } from "../types/governance";
@@ -34,18 +34,28 @@ export function useGovernanceDocumentWorkspace() {
   const [isSaving, setIsSaving] = useState(false);
   const [isMapping, setIsMapping] = useState(false);
   const [isParsingFile, setIsParsingFile] = useState(false);
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [orgBootstrapNeeded, setOrgBootstrapNeeded] = useState(false);
 
   const ctx = useMemo(() => ({ orgId, role }), [orgId, role]);
 
   const loadPolicies = useCallback(async () => {
-    const payload = await governanceApi.listPolicies(ctx);
-    setPolicies(payload.policies ?? []);
-    setSelectedPolicyId((currentPolicyId) => {
-      if (currentPolicyId || payload.policies.length === 0) {
-        return currentPolicyId;
+    try {
+      const payload = await governanceApi.listPolicies(ctx);
+      setOrgBootstrapNeeded(false);
+      setPolicies(payload.policies ?? []);
+      setSelectedPolicyId((currentPolicyId) => {
+        if (currentPolicyId || payload.policies.length === 0) {
+          return currentPolicyId;
+        }
+        return payload.policies[0].policy_id;
+      });
+    } catch (error) {
+      if (error instanceof GovernanceApiError && error.status === 404) {
+        setOrgBootstrapNeeded(true);
       }
-      return payload.policies[0].policy_id;
-    });
+      throw error;
+    }
   }, [ctx]);
 
   const loadMapping = useCallback(async (policyId: string) => {
@@ -90,9 +100,17 @@ export function useGovernanceDocumentWorkspace() {
         if (!isCancelled) {
           setMessage("");
         }
-      } catch {
+      } catch (error) {
         if (!isCancelled) {
-          setMessage("Unable to load policy workspace. Check org access and role permissions.");
+          if (error instanceof GovernanceApiError && error.status === 404) {
+            setMessage(
+              `Organization ${orgId} was not found. Initialize an organization to start policy mapping.`
+            );
+          } else if (error instanceof GovernanceApiError && error.status === 403) {
+            setMessage(`Access blocked: ${error.message}`);
+          } else {
+            setMessage("Unable to load policy workspace. Check org access and role permissions.");
+          }
         }
       } finally {
         if (!isCancelled) {
@@ -211,8 +229,12 @@ export function useGovernanceDocumentWorkspace() {
       await governanceApi.mapPolicy(ctx, selectedPolicyId);
       await Promise.all([loadPolicies(), loadMapping(selectedPolicyId)]);
       setMessage("Mapping complete. Review controls and unresolved clauses.");
-    } catch {
-      setMessage("Mapping failed. Check policy content and endpoint permissions.");
+    } catch (error) {
+      if (error instanceof GovernanceApiError) {
+        setMessage(`Mapping failed: ${error.message}`);
+      } else {
+        setMessage("Mapping failed. Check policy content and endpoint permissions.");
+      }
     } finally {
       setIsMapping(false);
     }
@@ -281,6 +303,27 @@ export function useGovernanceDocumentWorkspace() {
     setMessage("Cleared selected documents.");
   };
 
+  const initializeOrg = async () => {
+    setIsCreatingOrg(true);
+    setMessage("");
+    try {
+      const created = await governanceApi.createOrg(`Governance Org ${new Date().toLocaleDateString()}`);
+      localStorage.setItem("orgId", created.org_id);
+      setMessage(
+        `Created org ${created.org_id}. Reloading workspace so Policy version reflects the new org context.`
+      );
+      window.location.reload();
+    } catch (error) {
+      if (error instanceof GovernanceApiError) {
+        setMessage(`Unable to initialize organization: ${error.message}`);
+      } else {
+        setMessage("Unable to initialize organization.");
+      }
+    } finally {
+      setIsCreatingOrg(false);
+    }
+  };
+
   return {
     isAdmin,
     policies,
@@ -296,8 +339,11 @@ export function useGovernanceDocumentWorkspace() {
     maxUploadFiles: MAX_UPLOAD_FILES,
     maxFileSizeMb: MAX_FILE_SIZE_MB,
     isParsingFile,
+    isCreatingOrg,
+    orgBootstrapNeeded,
     parseSelectedFiles,
     clearParsedUploads,
+    initializeOrg,
     message,
     isLoading,
     isSaving,
