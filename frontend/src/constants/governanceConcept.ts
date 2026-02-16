@@ -17,9 +17,12 @@ export type GovernanceTimelineItem = {
 };
 
 export type GovernanceHeroAction = {
+  id: GovernanceHeroActionId;
   label: string;
   tone: "primary" | "secondary" | "outline";
 };
+
+export type GovernanceHeroActionId = "org_signals" | "timeline" | "mode_change";
 
 export type GovernanceSignalGroup = {
   heading: string;
@@ -63,9 +66,9 @@ export const GOVERNANCE_TIMELINE_ITEMS: GovernanceTimelineItem[] = [
 ];
 
 export const GOVERNANCE_HERO_ACTIONS: GovernanceHeroAction[] = [
-  { label: "View Org Signal Board", tone: "primary" },
-  { label: "Open Governance Timeline", tone: "secondary" },
-  { label: "Admin: Request Mode Change", tone: "outline" }
+  { id: "org_signals", label: "View Org Signal Board", tone: "primary" },
+  { id: "timeline", label: "Open Governance Timeline", tone: "secondary" },
+  { id: "mode_change", label: "Admin: Request Mode Change", tone: "outline" }
 ];
 
 export const GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY =
@@ -74,7 +77,7 @@ export const GOVERNANCE_ROLE_ACTIONS_FOOTER_COPY =
 export const GOVERNANCE_EXEC_SIGNAL_SECTION = {
   title: "Organizational Signal Health",
   subtitle:
-    "Aggregated, hotspot-level trends that help leaders understand where language confidence is strengthening, where extra support may be needed, and where participation signals are muted. This view is not for individual evaluation."
+    "Aggregated hotspot trends for governance alignment. This view is directional and never used for individual evaluation."
 } as const;
 
 export const GOVERNANCE_EXEC_SIGNAL_GROUPS: GovernanceSignalGroup[] = [
@@ -83,8 +86,7 @@ export const GOVERNANCE_EXEC_SIGNAL_GROUPS: GovernanceSignalGroup[] = [
     tone: "good",
     items: [
       "Human review actions are consistently observed before external delegation.",
-      "Policy mapping refreshes are occurring with stable cadence.",
-      "Rollback readiness evidence is complete for pilot transitions."
+      "Policy mapping refreshes are occurring with stable cadence."
     ]
   },
   {
@@ -92,8 +94,7 @@ export const GOVERNANCE_EXEC_SIGNAL_GROUPS: GovernanceSignalGroup[] = [
     tone: "warn",
     items: [
       "Unresolved clause decisions are accumulating in selected policy areas.",
-      "Compliance timeline refresh intervals show intermittent gaps.",
-      "Some functions show inconsistent verification signals across windows."
+      "Compliance timeline refresh intervals show intermittent gaps."
     ]
   },
   {
@@ -101,19 +102,16 @@ export const GOVERNANCE_EXEC_SIGNAL_GROUPS: GovernanceSignalGroup[] = [
     tone: "danger",
     items: [
       "Signals withheld due to insufficient volume in protected slices.",
-      "Signals suppressed where ambiguity blocks safe interpretation.",
-      "Signals withheld during system-degraded windows until readiness recovers."
+      "Signals suppressed where ambiguity blocks safe interpretation."
     ]
   }
 ];
 
 export const GOVERNANCE_EXEC_MEANING_LINES = [
-  "Reflects: Group-level momentum in communication confidence across teams or functions.",
+  "Reflects: Group-level momentum across teams or functions.",
   "Does not mean: Any person is being rated, ranked, or scored.",
-  "Reflects: Emerging hotspots where support, enablement, or resources may improve outcomes.",
-  "Does not mean: A compliance breach, misconduct finding, or disciplinary trigger.",
   "Reflects: Aggregated patterns over time, not one-off events.",
-  "Does not mean: Productivity measurement or performance management data."
+  "Does not mean: A compliance breach or disciplinary trigger."
 ] as const;
 
 export const GOVERNANCE_FORBIDDEN_TERMS = [

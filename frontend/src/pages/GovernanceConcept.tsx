@@ -1,23 +1,42 @@
+import { useState } from "react";
 import { ConceptHero } from "../components/governanceConcept/ConceptHero";
 import { DesignStanceList } from "../components/governanceConcept/DesignStanceList";
 import { ExecutiveSignalHealth } from "../components/governanceConcept/ExecutiveSignalHealth";
-import { OrgHealthSnapshot } from "../components/governanceConcept/OrgHealthSnapshot";
-import { RoleAwareActions } from "../components/governanceConcept/RoleAwareActions";
+import { GovernanceDocumentWorkspace } from "../components/governanceConcept/GovernanceDocumentWorkspace";
+import { HeroActionWorkspace } from "../components/governanceConcept/HeroActionWorkspace";
+import { GovernanceHeroActionId } from "../constants/governanceConcept";
 
 export function GovernanceConcept() {
+  const [activeHeroAction, setActiveHeroAction] = useState<GovernanceHeroActionId>("org_signals");
+  const [activeLowerPanel, setActiveLowerPanel] = useState<"signals" | "documents">("signals");
+
   return (
     <main className="gc-wrap">
       <section className="gc-hero">
-        <ConceptHero />
+        <ConceptHero activeAction={activeHeroAction} onSelectAction={setActiveHeroAction} />
         <DesignStanceList />
       </section>
 
-      <section className="gc-grid">
-        <OrgHealthSnapshot />
-        <RoleAwareActions />
+      <HeroActionWorkspace activeAction={activeHeroAction} />
+
+      <section className="gc-lower-switch">
+        <button
+          type="button"
+          className={`gc-btn gc-btn-secondary ${activeLowerPanel === "signals" ? "gc-btn-active" : ""}`}
+          onClick={() => setActiveLowerPanel("signals")}
+        >
+          Signals Summary
+        </button>
+        <button
+          type="button"
+          className={`gc-btn gc-btn-secondary ${activeLowerPanel === "documents" ? "gc-btn-active" : ""}`}
+          onClick={() => setActiveLowerPanel("documents")}
+        >
+          Document Workspace
+        </button>
       </section>
 
-      <ExecutiveSignalHealth />
+      {activeLowerPanel === "signals" ? <ExecutiveSignalHealth /> : <GovernanceDocumentWorkspace />}
 
       <section className="gc-bottom-actions">
         <a className="gc-btn gc-btn-secondary" href="/legacy-dashboard">Open Legacy Dashboard</a>
