@@ -1035,6 +1035,132 @@ body {
   margin-top: 18px;
 }
 
+.gc-step-rail {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.gc-step-head p {
+  margin: 4px 0;
+}
+
+.gc-step-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.gc-step {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gc-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.gc-step-done {
+  background: #f5ffd4;
+  border-color: #d8fd49;
+}
+
+.gc-step-done .gc-step-dot {
+  background: #64a30f;
+}
+
+.gc-step-active {
+  background: #f0efff;
+  border-color: #b6b8ff;
+}
+
+.gc-step-active .gc-step-dot {
+  background: #343ced;
+}
+
+.gc-step-pending {
+  background: #fff;
+}
+
+.gc-step-pending .gc-step-dot {
+  background: #b6b6b6;
+}
+
+.gc-heatmap {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.gc-heatmap-head p {
+  margin: 4px 0;
+}
+
+.gc-heatmap-grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.gc-heatmap-row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.35fr) repeat(3, minmax(90px, 0.65fr)) minmax(220px, 1.5fr);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.gc-heatmap-header {
+  background: #fafafa;
+  font-weight: 700;
+}
+
+.gc-heat {
+  border-radius: 999px;
+  text-align: center;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gc-heat-aligned {
+  background: #f5ffd4;
+  border-color: #d8fd49;
+}
+
+.gc-heat-watch {
+  background: #fff8eb;
+  border-color: #f7dfaf;
+}
+
+.gc-heat-blocked {
+  background: #fff1f4;
+  border-color: #ffc5d1;
+}
+
+.gc-heat-unknown {
+  background: #f1f2f6;
+  border-color: #d8dbe4;
+}
+
 .gc-panel-block h3 {
   margin: 0;
 }
@@ -1153,6 +1279,14 @@ body {
   }
 
   .gc-session-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-heatmap-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-step-list {
     grid-template-columns: 1fr;
   }
 }
