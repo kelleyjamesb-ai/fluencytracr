@@ -5,6 +5,16 @@ export type ComplianceStatusResponse = {
   as_of: string;
   overall_status: ComplianceStatus;
   counts: Record<ComplianceStatus, number>;
+  freshness?: {
+    last_event_at: string | null;
+    stale: boolean;
+  };
+  controls?: Array<{
+    control_name: string;
+    status: ComplianceStatus;
+    source: "legacy_import" | "policy_mapping";
+    updated_at: string;
+  }>;
 };
 
 export type ComplianceEventsResponse = {
@@ -50,4 +60,3 @@ export type MappingResponse = {
     reason: string;
   }>;
 };
-

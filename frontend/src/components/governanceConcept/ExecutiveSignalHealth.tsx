@@ -4,6 +4,7 @@ import {
   GOVERNANCE_EXEC_SIGNAL_SECTION,
   GOVERNANCE_FORBIDDEN_TERMS
 } from "../../constants/governanceConcept";
+import { ExecutiveHeatmapV1 } from "./ExecutiveHeatmapV1";
 
 export function ExecutiveSignalHealth() {
   return (
@@ -13,6 +14,8 @@ export function ExecutiveSignalHealth() {
         <h2>{GOVERNANCE_EXEC_SIGNAL_SECTION.title}</h2>
         <p>{GOVERNANCE_EXEC_SIGNAL_SECTION.subtitle}</p>
       </div>
+
+      <ExecutiveHeatmapV1 />
 
       <div className="gc-exec-grid">
         {GOVERNANCE_EXEC_SIGNAL_GROUPS.map((group) => (

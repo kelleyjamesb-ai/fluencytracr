@@ -1,4 +1,5 @@
 import { useGovernanceDocumentWorkspace } from "../../hooks/useGovernanceDocumentWorkspace";
+import { WorkflowStepRail } from "./WorkflowStepRail";
 
 export function GovernanceDocumentWorkspace() {
   const {
@@ -18,6 +19,10 @@ export function GovernanceDocumentWorkspace() {
     isParsingFile,
     isCreatingOrg,
     orgBootstrapNeeded,
+    hasPendingParsedUploads,
+    hasPolicies,
+    hasSelectedPolicy,
+    hasMapping,
     canRunMapping,
     shouldHighlightRunMapping,
     nextStepText,
@@ -44,6 +49,14 @@ export function GovernanceDocumentWorkspace() {
           <strong>Workflow</strong> {nextStepText}
         </div>
       </div>
+
+      <WorkflowStepRail
+        nextStepText={nextStepText}
+        hasPendingParsedUploads={hasPendingParsedUploads}
+        hasPolicies={hasPolicies}
+        hasSelectedPolicy={hasSelectedPolicy}
+        hasMapping={hasMapping}
+      />
 
       {!isAdmin && (
         <p className="gc-readonly-note">
