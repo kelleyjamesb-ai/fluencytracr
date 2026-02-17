@@ -111,7 +111,7 @@ export const governanceApi = {
       body: JSON.stringify({})
     }),
 
-  createOrg: (name: string) =>
+  createOrg: (name: string, orgId?: string) =>
     fetchJson<{ org_id: string; name: string; created_at: string; min_group_size: number }>(
       withApiBase("/orgs"),
       {
@@ -121,7 +121,8 @@ export const governanceApi = {
         },
         body: JSON.stringify({
           name,
-          minGroupSize: 10
+          minGroupSize: 10,
+          ...(orgId ? { orgId } : {})
         })
       }
     )

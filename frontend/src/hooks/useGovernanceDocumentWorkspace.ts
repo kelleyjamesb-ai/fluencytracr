@@ -20,6 +20,13 @@ type UploadedPolicyRecord = {
   contentType: string;
 };
 
+const describeApiError = (error: unknown, fallback: string) => {
+  if (error instanceof GovernanceApiError) {
+    return `${fallback}: ${error.message} (HTTP ${error.status})`;
+  }
+  return fallback;
+};
+
 export function useGovernanceDocumentWorkspace() {
   const { orgId, role, isAdmin } = useGovernanceContext();
   const [policies, setPolicies] = useState<PolicySummary[]>([]);
@@ -180,7 +187,7 @@ export function useGovernanceDocumentWorkspace() {
       } else if (successCount > 0) {
         setMessage(`Uploaded ${successCount} documents. ${failedCount} failed.`);
       } else {
-        setMessage("Batch upload failed. Verify headers, role, and document content.");
+        setMessage("Batch upload failed. Check organization access and backend connectivity.");
       }
       return;
     }
@@ -211,8 +218,13 @@ export function useGovernanceDocumentWorkspace() {
       }
       setSelectedPolicyId(payload.policy_id);
       setMessage("Policy uploaded. You can now map controls.");
-    } catch {
-      setMessage("Upload failed. Verify schema headers, role, and policy content.");
+    } catch (error) {
+      setMessage(
+        describeApiError(
+          error,
+          "Upload failed"
+        )
+      );
     } finally {
       setIsSaving(false);
     }
@@ -307,7 +319,10 @@ export function useGovernanceDocumentWorkspace() {
     setIsCreatingOrg(true);
     setMessage("");
     try {
-      const created = await governanceApi.createOrg(`Governance Org ${new Date().toLocaleDateString()}`);
+      const created = await governanceApi.createOrg(
+        `Governance Org ${new Date().toLocaleDateString()}`,
+        orgId
+      );
       localStorage.setItem("orgId", created.org_id);
       setMessage(
         `Created org ${created.org_id}. Reloading workspace so Policy version reflects the new org context.`
