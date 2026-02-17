@@ -100,6 +100,42 @@ export const governanceApi = {
       })
     }),
 
+  updatePolicy: (
+    ctx: GovernanceContext,
+    policyId: string,
+    updates: { fileName?: string; contentType?: string; content?: string }
+  ) =>
+    fetchJson<{ policy_id: string; updated_at: string; mapping_invalidated: boolean; clause_count: number }>(
+      withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}`),
+      {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          "x-role": ctx.role,
+          "X-FluencyTracr-Schema-Version": "0.1"
+        },
+        body: JSON.stringify({
+          ...(updates.fileName ? { file_name: updates.fileName } : {}),
+          ...(updates.contentType ? { content_type: updates.contentType } : {}),
+          ...(updates.content ? { content: updates.content } : {})
+        })
+      }
+    ),
+
+  deletePolicy: (ctx: GovernanceContext, policyId: string) =>
+    fetchJson<{ policy_id: string; deleted: boolean; removed_mappings: number }>(
+      withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}`),
+      {
+        method: "DELETE",
+        headers: {
+          "content-type": "application/json",
+          "x-role": ctx.role,
+          "X-FluencyTracr-Schema-Version": "0.1"
+        },
+        body: JSON.stringify({})
+      }
+    ),
+
   mapPolicy: (ctx: GovernanceContext, policyId: string) =>
     fetchJson<MappingResponse>(withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/map`), {
       method: "POST",

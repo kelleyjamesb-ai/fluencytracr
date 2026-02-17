@@ -103,7 +103,7 @@ export const GOVERNANCE_EXEC_SIGNAL_GROUPS: GovernanceSignalGroup[] = [
     ]
   },
   {
-    heading: "Watchlist Signals",
+    heading: "Signals to Monitor",
     tone: "warn",
     items: [
       "Unresolved clause decisions are accumulating in selected policy areas.",
@@ -111,11 +111,11 @@ export const GOVERNANCE_EXEC_SIGNAL_GROUPS: GovernanceSignalGroup[] = [
     ]
   },
   {
-    heading: "Muted Signals",
+    heading: "Low-Volume Signals",
     tone: "danger",
     items: [
       "Signals withheld due to insufficient volume in protected slices.",
-      "Signals suppressed where ambiguity blocks safe interpretation."
+      "Signals held where ambiguity blocks safe interpretation."
     ]
   }
 ];

@@ -40,6 +40,8 @@ export function useGovernanceDocumentWorkspace() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMapping, setIsMapping] = useState(false);
+  const [isUpdatingPolicy, setIsUpdatingPolicy] = useState(false);
+  const [isDeletingPolicyId, setIsDeletingPolicyId] = useState<string | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [orgBootstrapNeeded, setOrgBootstrapNeeded] = useState(false);
@@ -260,6 +262,57 @@ export function useGovernanceDocumentWorkspace() {
     }
   };
 
+  const updateSelectedPolicy = async () => {
+    if (!selectedPolicyId) {
+      setMessage("Select a policy version before updating.");
+      return;
+    }
+    if (!policyContent.trim()) {
+      setMessage("Policy content is required to update a policy.");
+      return;
+    }
+    setIsUpdatingPolicy(true);
+    setMessage("");
+    try {
+      const updated = await governanceApi.updatePolicy(ctx, selectedPolicyId, {
+        fileName: policyFileName,
+        contentType: policyContentType,
+        content: policyContent
+      });
+      await loadPolicies();
+      setSelectedPolicyId(updated.policy_id);
+      setMessage(
+        updated.mapping_invalidated
+          ? "Policy updated. Existing mapping was invalidated. Run Mapping again."
+          : "Policy metadata updated."
+      );
+    } catch (error) {
+      setMessage(describeApiError(error, "Policy update failed"));
+    } finally {
+      setIsUpdatingPolicy(false);
+    }
+  };
+
+  const deletePolicy = async (policyId: string) => {
+    setIsDeletingPolicyId(policyId);
+    setMessage("");
+    try {
+      const deleted = await governanceApi.deletePolicy(ctx, policyId);
+      await loadPolicies();
+      setSelectedPolicyId((current) => (current === policyId ? "" : current));
+      if (selectedPolicyId === policyId) {
+        setMapping(null);
+      }
+      setMessage(
+        `Policy deleted. Removed ${deleted.removed_mappings} related mappings.`
+      );
+    } catch (error) {
+      setMessage(describeApiError(error, "Policy delete failed"));
+    } finally {
+      setIsDeletingPolicyId(null);
+    }
+  };
+
   const parseSelectedFiles = async (files: FileList | File[]) => {
     const candidates = Array.from(files);
     if (candidates.length === 0) {
@@ -380,6 +433,10 @@ export function useGovernanceDocumentWorkspace() {
     isParsingFile,
     isCreatingOrg,
     orgBootstrapNeeded,
+    hasPendingParsedUploads,
+    hasPolicies,
+    hasSelectedPolicy,
+    hasMapping: Boolean(mapping),
     canRunMapping,
     shouldHighlightRunMapping,
     nextStepText,
@@ -390,7 +447,11 @@ export function useGovernanceDocumentWorkspace() {
     isLoading,
     isSaving,
     isMapping,
+    isUpdatingPolicy,
+    isDeletingPolicyId,
     uploadPolicy,
-    mapSelectedPolicy
+    mapSelectedPolicy,
+    updateSelectedPolicy,
+    deletePolicy
   };
 }

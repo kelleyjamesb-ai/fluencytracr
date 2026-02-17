@@ -324,3 +324,25 @@ export const persistComplianceDecision = async (params: PersistComplianceDecisio
       "decidedAt" = EXCLUDED."decidedAt"
   `;
 };
+
+export const deletePolicyMappingsByPolicyId = async (policyId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "PolicyMapping"
+    WHERE "policyId" = ${policyId}
+  `;
+};
+
+export const deletePolicyDocumentById = async (policyId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "PolicyDocument"
+    WHERE "id" = ${policyId}
+  `;
+};

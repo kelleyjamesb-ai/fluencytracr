@@ -76,10 +76,13 @@ import {
   mapPolicyToControls,
   normalizeComplianceMode,
   normalizePolicyContent,
+  PolicyUpdateSchema,
   sortComplianceEvents,
   UnresolvedClauseDecisionSchema
 } from "./policy_compliance";
 import {
+  deletePolicyDocumentById,
+  deletePolicyMappingsByPolicyId,
   listComplianceEventsByOrg,
   listLatestCanonicalControlsByOrg,
   listPolicyDocumentsByOrg,
@@ -1461,6 +1464,166 @@ app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLE
     org_id: org.id,
     mode: getOrgComplianceMode(org.id),
     policies
+  });
+});
+
+app.patch("/orgs/:orgId/policies/:policyId", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies/:policyId",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  const policy = store.policyDocuments.get(req.params.policyId);
+  if (!policy || policy.orgId !== org.id) {
+    return res.status(404).json({ error: "Policy not found" });
+  }
+
+  const parsed = PolicyUpdateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid policy update payload", details: parsed.error.message });
+  }
+
+  const hasContentUpdate = Boolean(parsed.data.content || parsed.data.content_base64);
+  const normalized = hasContentUpdate
+    ? normalizePolicyContent({
+      file_name: parsed.data.file_name ?? policy.fileName,
+      content_type: parsed.data.content_type ?? policy.contentType,
+      content: parsed.data.content,
+      content_base64: parsed.data.content_base64
+    })
+    : {
+      rawText: policy.rawText,
+      sourceFormat: policy.sourceFormat,
+      contentType: parsed.data.content_type ?? policy.contentType
+    };
+
+  const clauses = extractPolicyClauses(normalized.rawText);
+  const updatedAt = new Date().toISOString();
+  const updatedPolicy = {
+    ...policy,
+    fileName: parsed.data.file_name ?? policy.fileName,
+    contentType: normalized.contentType,
+    rawText: normalized.rawText,
+    sourceFormat: normalized.sourceFormat,
+    clauseCount: clauses.length
+  };
+  store.policyDocuments.set(policy.policyId, updatedPolicy);
+
+  if (hasContentUpdate) {
+    Array.from(store.policyMappings.entries())
+      .filter(([, mapping]) => mapping.policyId === policy.policyId && mapping.orgId === org.id)
+      .forEach(([mappingId]) => {
+        store.policyMappings.delete(mappingId);
+      });
+    await deletePolicyMappingsByPolicyId(policy.policyId).catch((error) => {
+      console.error("[compliance_persistence] failed to delete policy mappings on policy update", {
+        org_id: org.id,
+        policy_id: policy.policyId,
+        error: String(error)
+      });
+    });
+  }
+
+  await persistPolicyDocument(updatedPolicy).catch((error) => {
+    console.error("[compliance_persistence] failed to persist updated policy document", {
+      org_id: org.id,
+      policy_id: policy.policyId,
+      error: String(error)
+    });
+  });
+
+  await recordComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "policy_uploaded",
+    policyId: policy.policyId,
+    createdAt: updatedAt,
+    metadata: {
+      action: "policy_updated",
+      file_name: updatedPolicy.fileName,
+      content_type: updatedPolicy.contentType,
+      clause_count: updatedPolicy.clauseCount,
+      mapping_invalidated: hasContentUpdate
+    }
+  });
+
+  return res.json({
+    policy_id: policy.policyId,
+    updated_at: updatedAt,
+    mapping_invalidated: hasContentUpdate,
+    clause_count: updatedPolicy.clauseCount
+  });
+});
+
+app.delete("/orgs/:orgId/policies/:policyId", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies/:policyId",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  const policy = store.policyDocuments.get(req.params.policyId);
+  if (!policy || policy.orgId !== org.id) {
+    return res.status(404).json({ error: "Policy not found" });
+  }
+
+  const removedMappings = Array.from(store.policyMappings.entries())
+    .filter(([, mapping]) => mapping.policyId === policy.policyId && mapping.orgId === org.id);
+  removedMappings.forEach(([mappingId]) => {
+    store.policyMappings.delete(mappingId);
+  });
+  store.policyDocuments.delete(policy.policyId);
+
+  await deletePolicyDocumentById(policy.policyId).catch((error) => {
+    console.error("[compliance_persistence] failed to delete policy document", {
+      org_id: org.id,
+      policy_id: policy.policyId,
+      error: String(error)
+    });
+  });
+
+  await recordComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "policy_uploaded",
+    policyId: policy.policyId,
+    createdAt: new Date().toISOString(),
+    metadata: {
+      action: "policy_deleted",
+      file_name: policy.fileName,
+      removed_mappings: removedMappings.length
+    }
+  });
+
+  return res.json({
+    policy_id: policy.policyId,
+    deleted: true,
+    removed_mappings: removedMappings.length
   });
 });
 
