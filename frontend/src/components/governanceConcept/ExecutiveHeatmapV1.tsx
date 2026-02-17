@@ -92,6 +92,18 @@ const chipLabel = (state: HeatState) => {
   return "Unknown";
 };
 
+const momentumLabel = (events: ComplianceEventsResponse["events"]) => {
+  if (events.length === 0) {
+    return "Stable";
+  }
+  const modeUpdates = events.filter((event) => event.event_type === "compliance_mode_updated").length;
+  const mapped = events.filter((event) => event.event_type === "policy_mapped").length;
+  if (mapped >= 2 || modeUpdates > 0) {
+    return "Improving";
+  }
+  return "Stable";
+};
+
 export function ExecutiveHeatmapV1() {
   const { orgId, role } = useGovernanceContext();
   const [status, setStatus] = useState<ComplianceStatusResponse | null>(null);
@@ -148,7 +160,7 @@ export function ExecutiveHeatmapV1() {
         posture,
         confidence,
         freshness,
-        nextAction: "Review blocked controls and unresolved mappings.",
+        nextAction: "Review controls flagged for follow-up and unresolved mappings.",
         explainability:
           "Derived from aggregate canonical control states and policy mapping outcomes. Unknown indicates insufficient safe evidence."
       },
@@ -173,12 +185,61 @@ export function ExecutiveHeatmapV1() {
     ];
   }, [status, policies]);
 
+  const ceoSummary = useMemo(() => {
+    if (!status) {
+      return null;
+    }
+    const mappedPolicies = policies.filter((policy) => policy.latest_mapping).length;
+    const unresolvedTotal = policies.reduce(
+      (acc, policy) => acc + (policy.latest_mapping?.unresolved_clauses ?? 0),
+      0
+    );
+    const focusAreas = [
+      status.counts.disabled > 0 ? "Disabled controls are scheduled for remediation." : null,
+      unresolvedTotal > 0 ? "Unresolved clauses are accumulating." : null,
+      status.freshness?.stale ? "Signal freshness needs attention." : null
+    ].filter(Boolean) as string[];
+
+    return {
+      posture: chipLabel(toHeatState(status.overall_status)),
+      momentum: momentumLabel(recentEvents),
+      focusAreas: focusAreas.length > 0 ? focusAreas.slice(0, 3).join(" ") : "No critical focus areas identified.",
+      mappingProgress: `${mappedPolicies}/${policies.length || 0} policy versions mapped`
+    };
+  }, [status, policies, recentEvents]);
+
   return (
     <section className="gc-heatmap">
       <div className="gc-heatmap-head">
-        <p className="gc-mono">Executive Heatmap V1</p>
-        <p>Aggregate-only posture by control confidence, freshness, and mapping readiness.</p>
+        <h3>Executive Heatmap V1</h3>
+        <p className="gc-subtle">Aggregate-only posture by control confidence, freshness, and mapping readiness.</p>
       </div>
+      {ceoSummary && (
+        <section className="gc-ceo-summary-wrap" aria-label="CEO summary">
+          <p className="gc-mono">CEO Summary</p>
+          <div className="gc-ceo-summary-grid">
+          <article className="gc-ceo-card">
+            <p className="gc-mono">Enterprise Posture</p>
+            <h3>{ceoSummary.posture}</h3>
+            <p className="gc-subtle">Reflects aggregate control posture.</p>
+          </article>
+          <article className="gc-ceo-card">
+            <p className="gc-mono">Momentum (30-60d)</p>
+            <h3>{ceoSummary.momentum}</h3>
+            <p className="gc-subtle">Trend in governance movement.</p>
+          </article>
+          <article className="gc-ceo-card">
+            <p className="gc-mono">Critical Focus Areas</p>
+            <p>{ceoSummary.focusAreas}</p>
+          </article>
+          <article className="gc-ceo-card">
+            <p className="gc-mono">Mapping Progress</p>
+            <h3>{ceoSummary.mappingProgress}</h3>
+            <p className="gc-subtle">Coverage across uploaded policies.</p>
+          </article>
+          </div>
+        </section>
+      )}
       {isLoading ? (
         <p>Loading heatmap...</p>
       ) : error ? (
