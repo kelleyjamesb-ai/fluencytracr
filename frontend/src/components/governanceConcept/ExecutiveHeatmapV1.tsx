@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { governanceApi } from "../../lib/governanceApi";
 import { useGovernanceContext } from "../../hooks/useGovernanceContext";
-import type { ComplianceStatus, ComplianceStatusResponse, PolicySummary } from "../../types/governance";
+import type {
+  ComplianceEventsResponse,
+  ComplianceStatus,
+  ComplianceStatusResponse,
+  PolicySummary
+} from "../../types/governance";
 
 type HeatState = "aligned" | "watch" | "blocked" | "unknown";
 
@@ -11,6 +16,7 @@ type HeatRow = {
   confidence: HeatState;
   freshness: HeatState;
   nextAction: string;
+  explainability: string;
 };
 
 const toHeatState = (status: ComplianceStatus): HeatState => {
@@ -90,6 +96,8 @@ export function ExecutiveHeatmapV1() {
   const { orgId, role } = useGovernanceContext();
   const [status, setStatus] = useState<ComplianceStatusResponse | null>(null);
   const [policies, setPolicies] = useState<PolicySummary[]>([]);
+  const [recentEvents, setRecentEvents] = useState<ComplianceEventsResponse["events"]>([]);
+  const [activeExplainability, setActiveExplainability] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -100,13 +108,15 @@ export function ExecutiveHeatmapV1() {
       setError("");
       try {
         const ctx = { orgId, role };
-        const [compliance, policyPayload] = await Promise.all([
+        const [compliance, policyPayload, eventsPayload] = await Promise.all([
           governanceApi.getComplianceStatus(ctx),
-          governanceApi.listPolicies(ctx)
+          governanceApi.listPolicies(ctx),
+          governanceApi.getComplianceEvents(ctx, 6)
         ]);
         if (!isCancelled) {
           setStatus(compliance);
           setPolicies(policyPayload.policies ?? []);
+          setRecentEvents(eventsPayload.events ?? []);
         }
       } catch (loadError) {
         if (!isCancelled) {
@@ -138,21 +148,27 @@ export function ExecutiveHeatmapV1() {
         posture,
         confidence,
         freshness,
-        nextAction: "Review blocked controls and unresolved mappings."
+        nextAction: "Review blocked controls and unresolved mappings.",
+        explainability:
+          "Derived from aggregate canonical control states and policy mapping outcomes. Unknown indicates insufficient safe evidence."
       },
       {
         area: "Policy Mapping Reliability",
         posture: mapping,
         confidence: mapping === "aligned" ? confidence : "watch",
         freshness,
-        nextAction: "Complete mapping coverage across uploaded policy versions."
+        nextAction: "Complete mapping coverage across uploaded policy versions.",
+        explainability:
+          "Computed from policy inventory coverage and unresolved clause backlog. Partial mapping keeps this in watch state."
       },
       {
         area: "Operational Freshness",
         posture: freshness === "aligned" ? "aligned" : "watch",
         confidence,
         freshness,
-        nextAction: "Resolve stale feeds before leadership review."
+        nextAction: "Resolve stale feeds before leadership review.",
+        explainability:
+          "Based on latest governance event timestamp and stale signal. Stale or missing recency reduces trust for executive decisions."
       }
     ];
   }, [status, policies]);
@@ -175,19 +191,52 @@ export function ExecutiveHeatmapV1() {
             <span role="columnheader">Focus Area</span>
             <span role="columnheader">Posture</span>
             <span role="columnheader">Confidence</span>
-            <span role="columnheader">Freshness</span>
-            <span role="columnheader">Next Action</span>
-          </div>
-          {rows.map((row) => (
-            <div className="gc-heatmap-row" role="row" key={row.area}>
-              <span role="cell">{row.area}</span>
-              <span role="cell" className={`gc-heat gc-heat-${row.posture}`}>{chipLabel(row.posture)}</span>
-              <span role="cell" className={`gc-heat gc-heat-${row.confidence}`}>{chipLabel(row.confidence)}</span>
-              <span role="cell" className={`gc-heat gc-heat-${row.freshness}`}>{chipLabel(row.freshness)}</span>
-              <span role="cell">{row.nextAction}</span>
+              <span role="columnheader">Freshness</span>
+              <span role="columnheader">Next Action</span>
             </div>
-          ))}
+            {rows.map((row) => (
+              <div className="gc-heatmap-row" role="row" key={row.area}>
+                <span role="cell">{row.area}</span>
+                <span role="cell" className={`gc-heat gc-heat-${row.posture}`}>{chipLabel(row.posture)}</span>
+                <span role="cell" className={`gc-heat gc-heat-${row.confidence}`}>{chipLabel(row.confidence)}</span>
+                <span role="cell" className={`gc-heat gc-heat-${row.freshness}`}>{chipLabel(row.freshness)}</span>
+                <span role="cell" className="gc-heatmap-action-cell">
+                  {row.nextAction}
+                  <button
+                    type="button"
+                    className="gc-btn gc-btn-outline"
+                    onClick={() => setActiveExplainability(activeExplainability === row.area ? null : row.area)}
+                  >
+                    {activeExplainability === row.area ? "Hide Why" : "Explain Why"}
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+      )}
+      {activeExplainability && (
+        <div className="gc-heatmap-explain">
+          <p className="gc-mono">Explainability</p>
+          <p>{rows.find((row) => row.area === activeExplainability)?.explainability}</p>
         </div>
+      )}
+      <div className="gc-heatmap-timeline">
+        <p className="gc-mono">What Changed Since Last Review</p>
+        {recentEvents.length === 0 ? (
+          <p className="gc-subtle">No recent governance events available.</p>
+        ) : (
+          <ul className="gc-policy-list">
+            {recentEvents.map((event) => (
+              <li key={event.event_id}>
+                <span>{event.event_type.replace(/_/g, " ")}</span>
+                <span className="gc-mono">{new Date(event.created_at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {status?.freshness?.stale && (
+        <p className="gc-workspace-message">Data freshness warning: signals may be stale for executive decisions.</p>
       )}
       <p className="gc-subtle">
         Interpretation: these cells reflect aggregate governance evidence and never person-level performance.
