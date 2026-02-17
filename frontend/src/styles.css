@@ -783,6 +783,10 @@ body {
   border-color: #000;
 }
 
+.gc-btn-next-action {
+  box-shadow: 0 0 0 3px rgba(216, 253, 73, 0.45), 0 8px 18px rgba(52, 60, 237, 0.24);
+}
+
 .gc-btn-outline {
   background: #f6f3eb;
   color: #151515;
@@ -946,6 +950,19 @@ body {
   color: var(--ink-soft);
   line-height: 1.5;
   max-width: 72ch;
+}
+
+.gc-next-step {
+  margin-top: 12px;
+  border: 1px solid #d8fd49;
+  background: #f8ffd9;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.gc-next-step strong {
+  margin-right: 6px;
 }
 
 .gc-exec-grid {

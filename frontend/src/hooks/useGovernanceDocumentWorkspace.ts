@@ -43,6 +43,7 @@ export function useGovernanceDocumentWorkspace() {
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [orgBootstrapNeeded, setOrgBootstrapNeeded] = useState(false);
+  const [lastBatchError, setLastBatchError] = useState("");
 
   const ctx = useMemo(() => ({ orgId, role }), [orgId, role]);
 
@@ -143,10 +144,12 @@ export function useGovernanceDocumentWorkspace() {
     if (parsedUploads.length > 0) {
       setIsSaving(true);
       setMessage("");
+      setLastBatchError("");
       let successCount = 0;
       let failedCount = 0;
       let lastPolicyId = "";
       const uploaded: UploadedPolicyRecord[] = [];
+      let firstBatchError = "";
 
       for (const upload of parsedUploads) {
         try {
@@ -163,8 +166,11 @@ export function useGovernanceDocumentWorkspace() {
             fileName: upload.fileName,
             contentType: upload.contentType
           });
-        } catch {
+        } catch (error) {
           failedCount += 1;
+          if (!firstBatchError) {
+            firstBatchError = describeApiError(error, `Upload failed for ${upload.fileName}`);
+          }
         }
       }
 
@@ -185,9 +191,11 @@ export function useGovernanceDocumentWorkspace() {
         setParsedUploads([]);
         setMessage(`Uploaded ${successCount} documents. You can now run mapping.`);
       } else if (successCount > 0) {
-        setMessage(`Uploaded ${successCount} documents. ${failedCount} failed.`);
+        setLastBatchError(firstBatchError);
+        setMessage(`Uploaded ${successCount} documents. ${failedCount} failed.${firstBatchError ? ` ${firstBatchError}` : ""}`);
       } else {
-        setMessage("Batch upload failed. Check organization access and backend connectivity.");
+        setLastBatchError(firstBatchError);
+        setMessage(firstBatchError || "Batch upload failed. Check organization access and backend connectivity.");
       }
       return;
     }
@@ -339,6 +347,22 @@ export function useGovernanceDocumentWorkspace() {
     }
   };
 
+  const hasPolicies = policies.length > 0;
+  const hasSelectedPolicy = Boolean(selectedPolicyId);
+  const hasPendingParsedUploads = parsedUploads.length > 0;
+  const canRunMapping = isAdmin && hasSelectedPolicy && !isMapping;
+  const shouldHighlightRunMapping = canRunMapping && !hasPendingParsedUploads;
+
+  const nextStepText = orgBootstrapNeeded
+    ? "Initialize organization to enable upload and mapping."
+    : hasPendingParsedUploads
+      ? "Next step: click Upload Documents to save parsed files."
+      : !hasPolicies
+        ? "Next step: upload at least one document."
+        : !hasSelectedPolicy
+          ? "Next step: select a Policy version."
+          : "Next step: click Run Mapping.";
+
   return {
     isAdmin,
     policies,
@@ -356,6 +380,9 @@ export function useGovernanceDocumentWorkspace() {
     isParsingFile,
     isCreatingOrg,
     orgBootstrapNeeded,
+    canRunMapping,
+    shouldHighlightRunMapping,
+    nextStepText,
     parseSelectedFiles,
     clearParsedUploads,
     initializeOrg,

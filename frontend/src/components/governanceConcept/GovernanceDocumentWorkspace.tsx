@@ -18,6 +18,9 @@ export function GovernanceDocumentWorkspace() {
     isParsingFile,
     isCreatingOrg,
     orgBootstrapNeeded,
+    canRunMapping,
+    shouldHighlightRunMapping,
+    nextStepText,
     parseSelectedFiles,
     clearParsedUploads,
     initializeOrg,
@@ -37,6 +40,9 @@ export function GovernanceDocumentWorkspace() {
         <p>
           Upload governance documents, map them to controls, and track mapping readiness.
         </p>
+        <div className="gc-next-step">
+          <strong>Workflow</strong> {nextStepText}
+        </div>
       </div>
 
       {!isAdmin && (
@@ -145,9 +151,15 @@ export function GovernanceDocumentWorkspace() {
               ))}
             </select>
           </label>
-          <button type="button" className="gc-btn gc-btn-secondary" onClick={mapSelectedPolicy} disabled={!isAdmin || !selectedPolicyId || isMapping}>
+          <button
+            type="button"
+            className={`gc-btn ${shouldHighlightRunMapping ? "gc-btn-primary gc-btn-next-action" : "gc-btn-secondary"}`}
+            onClick={mapSelectedPolicy}
+            disabled={!canRunMapping}
+          >
             {isMapping ? "Mapping..." : "Run Mapping"}
           </button>
+          {!selectedPolicyId && <p className="gc-subtle">Upload documents first, then choose a policy version.</p>}
 
           {mapping && (
             <div className="gc-mapping-summary">
