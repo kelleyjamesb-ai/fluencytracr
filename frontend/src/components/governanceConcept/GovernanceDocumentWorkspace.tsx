@@ -33,8 +33,12 @@ export function GovernanceDocumentWorkspace() {
     isLoading,
     isSaving,
     isMapping,
+    isUpdatingPolicy,
+    isDeletingPolicyId,
     uploadPolicy,
-    mapSelectedPolicy
+    mapSelectedPolicy,
+    updateSelectedPolicy,
+    deletePolicy
   } = useGovernanceDocumentWorkspace();
 
   return (
@@ -144,6 +148,14 @@ export function GovernanceDocumentWorkspace() {
                   ? "Upload Documents"
                   : "Upload Document"}
           </button>
+          <button
+            type="button"
+            className="gc-btn gc-btn-secondary"
+            onClick={updateSelectedPolicy}
+            disabled={!isAdmin || !selectedPolicyId || isSaving || isParsingFile || isUpdatingPolicy}
+          >
+            {isUpdatingPolicy ? "Updating..." : "Update Selected Policy"}
+          </button>
         </article>
 
         <article className="gc-workspace-pane">
@@ -209,7 +221,35 @@ export function GovernanceDocumentWorkspace() {
             {policies.map((policy) => (
               <li key={policy.policy_id}>
                 <span>{policy.file_name}</span>
-                <span className="gc-mono">{policy.latest_mapping ? "mapped" : "not mapped"}</span>
+                <span className="gc-policy-row-actions">
+                  <span className="gc-mono">{policy.latest_mapping ? "mapped" : "not mapped"}</span>
+                  {isAdmin && (
+                    <>
+                      <button
+                        type="button"
+                        className="gc-btn gc-btn-outline"
+                        onClick={() => setSelectedPolicyId(policy.policy_id)}
+                      >
+                        Select
+                      </button>
+                      <button
+                        type="button"
+                        className="gc-btn gc-btn-outline"
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            `Delete ${policy.file_name}? This removes the policy and its mappings.`
+                          );
+                          if (confirmed) {
+                            void deletePolicy(policy.policy_id);
+                          }
+                        }}
+                        disabled={isDeletingPolicyId === policy.policy_id}
+                      >
+                        {isDeletingPolicyId === policy.policy_id ? "Deleting..." : "Delete"}
+                      </button>
+                    </>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

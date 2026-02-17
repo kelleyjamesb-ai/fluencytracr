@@ -1319,6 +1319,14 @@ body {
   padding: 8px 10px;
 }
 
+.gc-policy-row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .gc-readonly-note {
   margin-top: 10px;
   padding: 10px;
