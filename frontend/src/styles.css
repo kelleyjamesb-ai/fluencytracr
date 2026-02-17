@@ -919,6 +919,19 @@ body {
   margin-top: 18px;
 }
 
+.gc-session {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gc-session-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
 .gc-exec-section {
   margin-top: 18px;
 }
@@ -1119,6 +1132,10 @@ body {
   }
 
   .gc-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-session-grid {
     grid-template-columns: 1fr;
   }
 }
