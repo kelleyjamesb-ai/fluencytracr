@@ -6,6 +6,12 @@ import {
 } from "../../constants/governanceConcept";
 import { ExecutiveHeatmapV1 } from "./ExecutiveHeatmapV1";
 
+const toneMeaning: Record<"good" | "warn" | "danger", string> = {
+  good: "Why it matters: indicates healthy governance momentum.",
+  warn: "Why it matters: signals requiring follow-up planning.",
+  danger: "Why it matters: indicates low-confidence or blocked evidence flow."
+};
+
 export function ExecutiveSignalHealth() {
   return (
     <section className="gc-card gc-exec-section">
@@ -24,6 +30,7 @@ export function ExecutiveSignalHealth() {
               <h3>{group.heading}</h3>
               <span className={`gc-tag gc-tag-${group.tone}`}>{group.tone.toUpperCase()}</span>
             </div>
+            <p className="gc-exec-col-why">{toneMeaning[group.tone]}</p>
             <ul className="gc-exec-list">
               {group.items.map((item) => (
                 <li key={item}>{item}</li>

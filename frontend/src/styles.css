@@ -1004,12 +1004,27 @@ body {
   color: var(--ink-soft);
 }
 
+.gc-exec-col-why {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #444;
+  background: #f8f8ff;
+  border: 1px solid #e4e6ff;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
 .gc-exec-meanings {
   margin-top: 14px;
   border-top: 1px solid var(--line);
   padding-top: 12px;
   display: grid;
-  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  background: #fafafa;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
 }
 
 .gc-exec-meanings p {
@@ -1111,6 +1126,41 @@ body {
   margin: 4px 0;
 }
 
+.gc-heatmap-head h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.gc-ceo-summary-wrap {
+  margin-top: 10px;
+}
+
+.gc-ceo-summary-wrap > p {
+  margin: 0 0 6px;
+}
+
+.gc-ceo-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gc-ceo-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.gc-ceo-card h3 {
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+
+.gc-ceo-card p {
+  margin: 6px 0 0;
+}
+
 .gc-heatmap-grid {
   margin-top: 10px;
   display: grid;
@@ -1119,10 +1169,10 @@ body {
 
 .gc-heatmap-row {
   display: grid;
-  grid-template-columns: minmax(190px, 1.35fr) repeat(3, minmax(90px, 0.65fr)) minmax(220px, 1.5fr);
+  grid-template-columns: minmax(180px, 1.5fr) repeat(3, minmax(100px, 0.9fr)) minmax(240px, 2fr);
   gap: 8px;
   align-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid #d4d4d4;
   border-radius: 10px;
   padding: 8px;
 }
@@ -1164,6 +1214,10 @@ body {
 .gc-heatmap-action-cell {
   display: grid;
   gap: 6px;
+  background: #fbfbfb;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  padding: 6px;
 }
 
 .gc-heatmap-explain {
@@ -1176,12 +1230,15 @@ body {
 
 .gc-heatmap-explain p {
   margin: 4px 0;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .gc-heatmap-timeline {
   margin-top: 12px;
   border-top: 1px solid var(--line);
   padding-top: 10px;
+  color: rgba(0, 0, 0, 0.68);
 }
 
 .gc-panel-block h3 {
@@ -1310,6 +1367,14 @@ body {
   }
 
   .gc-step-list {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-ceo-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-exec-meanings {
     grid-template-columns: 1fr;
   }
 }
