@@ -23,6 +23,23 @@ export const PolicyUploadSchema = z
 
 export type PolicyUploadInput = z.infer<typeof PolicyUploadSchema>;
 
+export const PolicyUpdateSchema = z
+  .object({
+    file_name: z.string().min(1).optional(),
+    content_type: z.string().min(1).optional(),
+    content: z.string().min(1).optional(),
+    content_base64: z.string().min(1).optional()
+  })
+  .strict()
+  .refine(
+    (value) => Boolean(value.file_name) || Boolean(value.content) || Boolean(value.content_base64) || Boolean(value.content_type),
+    {
+      message: "Provide at least one update field."
+    }
+  );
+
+export type PolicyUpdateInput = z.infer<typeof PolicyUpdateSchema>;
+
 export const UnresolvedClauseDecisionSchema = z
   .object({
     action: z.enum(["map", "ignore", "defer"]),
