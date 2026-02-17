@@ -42,6 +42,8 @@ export function useGovernanceDocumentWorkspace() {
   const [isMapping, setIsMapping] = useState(false);
   const [isUpdatingPolicy, setIsUpdatingPolicy] = useState(false);
   const [isDeletingPolicyId, setIsDeletingPolicyId] = useState<string | null>(null);
+  const [isSeedingSynthetic, setIsSeedingSynthetic] = useState(false);
+  const [isResettingSandbox, setIsResettingSandbox] = useState(false);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [orgBootstrapNeeded, setOrgBootstrapNeeded] = useState(false);
@@ -55,7 +57,10 @@ export function useGovernanceDocumentWorkspace() {
       setOrgBootstrapNeeded(false);
       setPolicies(payload.policies ?? []);
       setSelectedPolicyId((currentPolicyId) => {
-        if (currentPolicyId || payload.policies.length === 0) {
+        if (payload.policies.length === 0) {
+          return "";
+        }
+        if (currentPolicyId && payload.policies.some((policy) => policy.policy_id === currentPolicyId)) {
           return currentPolicyId;
         }
         return payload.policies[0].policy_id;
@@ -313,6 +318,42 @@ export function useGovernanceDocumentWorkspace() {
     }
   };
 
+  const seedSyntheticData = async () => {
+    setIsSeedingSynthetic(true);
+    setMessage("");
+    try {
+      const seeded = await governanceApi.seedSyntheticPolicies(ctx);
+      await loadPolicies();
+      const unresolvedCount = seeded.seeded.reduce((sum, item) => sum + item.unresolved_clauses, 0);
+      setMessage(
+        `Synthetic pack seeded: ${seeded.created_policies}/${seeded.synthetic_pack_size} policies mapped. Unresolved clauses: ${unresolvedCount}.`
+      );
+    } catch (error) {
+      setMessage(describeApiError(error, "Synthetic data seed failed"));
+    } finally {
+      setIsSeedingSynthetic(false);
+    }
+  };
+
+  const resetSandbox = async () => {
+    setIsResettingSandbox(true);
+    setMessage("");
+    try {
+      const reset = await governanceApi.resetSandbox(ctx);
+      setSelectedPolicyId("");
+      setMapping(null);
+      setParsedUploads([]);
+      await loadPolicies();
+      setMessage(
+        `Sandbox reset complete. Cleared ${reset.cleared.policies} policies and ${reset.cleared.mappings} mappings.`
+      );
+    } catch (error) {
+      setMessage(describeApiError(error, "Sandbox reset failed"));
+    } finally {
+      setIsResettingSandbox(false);
+    }
+  };
+
   const parseSelectedFiles = async (files: FileList | File[]) => {
     const candidates = Array.from(files);
     if (candidates.length === 0) {
@@ -449,9 +490,13 @@ export function useGovernanceDocumentWorkspace() {
     isMapping,
     isUpdatingPolicy,
     isDeletingPolicyId,
+    isSeedingSynthetic,
+    isResettingSandbox,
     uploadPolicy,
     mapSelectedPolicy,
     updateSelectedPolicy,
-    deletePolicy
+    deletePolicy,
+    seedSyntheticData,
+    resetSandbox
   };
 }
