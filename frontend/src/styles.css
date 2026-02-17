@@ -1161,6 +1161,29 @@ body {
   border-color: #d8dbe4;
 }
 
+.gc-heatmap-action-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.gc-heatmap-explain {
+  margin-top: 10px;
+  border: 1px solid #d8fd49;
+  background: #f8ffd9;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.gc-heatmap-explain p {
+  margin: 4px 0;
+}
+
+.gc-heatmap-timeline {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
 .gc-panel-block h3 {
   margin: 0;
 }
