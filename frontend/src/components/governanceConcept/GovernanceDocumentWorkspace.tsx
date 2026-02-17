@@ -35,10 +35,14 @@ export function GovernanceDocumentWorkspace() {
     isMapping,
     isUpdatingPolicy,
     isDeletingPolicyId,
+    isSeedingSynthetic,
+    isResettingSandbox,
     uploadPolicy,
     mapSelectedPolicy,
     updateSelectedPolicy,
-    deletePolicy
+    deletePolicy,
+    seedSyntheticData,
+    resetSandbox
   } = useGovernanceDocumentWorkspace();
 
   return (
@@ -254,6 +258,39 @@ export function GovernanceDocumentWorkspace() {
             ))}
           </ul>
         )}
+      </article>
+
+      <article className="gc-workspace-pane">
+        <h3>4. Sandbox test tools</h3>
+        <p className="gc-subtle">
+          Use these controls for rapid testing loops. Seed data creates mapped policies. Reset clears governance upload
+          and mapping artifacts for this org.
+        </p>
+        <div className="gc-workspace-actions">
+          <button
+            type="button"
+            className="gc-btn gc-btn-secondary"
+            onClick={seedSyntheticData}
+            disabled={!isAdmin || isSeedingSynthetic || isResettingSandbox}
+          >
+            {isSeedingSynthetic ? "Seeding..." : "Seed Synthetic Test Pack"}
+          </button>
+          <button
+            type="button"
+            className="gc-btn gc-btn-outline"
+            onClick={() => {
+              const confirmed = window.confirm(
+                "Reset sandbox for this org? This removes uploaded policies, mappings, and governance event history."
+              );
+              if (confirmed) {
+                void resetSandbox();
+              }
+            }}
+            disabled={!isAdmin || isResettingSandbox || isSeedingSynthetic}
+          >
+            {isResettingSandbox ? "Resetting..." : "Reset Sandbox"}
+          </button>
+        </div>
       </article>
 
       {message && <p className="gc-workspace-message">{message}</p>}

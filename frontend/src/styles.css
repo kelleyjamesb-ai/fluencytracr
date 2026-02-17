@@ -1335,6 +1335,12 @@ body {
   background: #fff8eb;
 }
 
+.gc-workspace-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .gc-workspace-message {
   margin-top: 12px;
   font-weight: 600;

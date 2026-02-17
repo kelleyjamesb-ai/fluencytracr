@@ -81,7 +81,12 @@ import {
   UnresolvedClauseDecisionSchema
 } from "./policy_compliance";
 import {
+  deleteCanonicalControlHistoryByOrgId,
+  deleteComplianceDecisionsByOrgId,
+  deleteComplianceEventsByOrgId,
+  deletePolicyDocumentsByOrgId,
   deletePolicyDocumentById,
+  deletePolicyMappingsByOrgId,
   deletePolicyMappingsByPolicyId,
   listComplianceEventsByOrg,
   listLatestCanonicalControlsByOrg,
@@ -582,6 +587,172 @@ const countOutstandingUnresolvedClauses = (orgId: string) => {
     });
   return Array.from(latestByPolicy.values()).reduce((sum, entry) => sum + entry.unresolved, 0);
 };
+
+const runPolicyMappingForOrg = async (orgId: string, policyId: string, generatedAt = new Date().toISOString()) => {
+  const policy = store.policyDocuments.get(policyId);
+  if (!policy || policy.orgId !== orgId) {
+    return null;
+  }
+
+  const clauses = extractPolicyClauses(policy.rawText);
+  const mapped = mapPolicyToControls(policy.rawText, clauses);
+  const mappingId = `mapping-${crypto.randomUUID()}`;
+  const mappingRecord = {
+    mappingId,
+    policyId: policy.policyId,
+    orgId,
+    controls: mapped.controls,
+    unresolvedClauses: mapped.unresolvedClauses,
+    generatedAt
+  };
+  store.policyMappings.set(mappingId, mappingRecord);
+  await persistPolicyMapping(mappingRecord).catch((error) => {
+    console.error("[compliance_persistence] failed to persist policy mapping", {
+      org_id: orgId,
+      mapping_id: mappingId,
+      error: String(error)
+    });
+  });
+
+  const snapshots = buildCanonicalSnapshots(orgId, mapped.controls, generatedAt);
+  for (const snapshot of snapshots) {
+    await recordCanonicalControlSnapshot(snapshot);
+    await recordComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId,
+      eventType: "control_state_updated",
+      policyId: policy.policyId,
+      controlName: snapshot.control_name,
+      status: snapshot.status,
+      createdAt: generatedAt,
+      metadata: {
+        source: "policy_mapping"
+      }
+    });
+  }
+
+  const policyMappedEventId = `event-${crypto.randomUUID()}`;
+  await recordComplianceEvent({
+    eventId: policyMappedEventId,
+    orgId,
+    eventType: "policy_mapped",
+    policyId: policy.policyId,
+    createdAt: generatedAt,
+    metadata: {
+      mapping_id: mappingId,
+      controls_mapped: mapped.controls.length,
+      unresolved_clauses: mapped.unresolvedClauses.length
+    }
+  });
+
+  const summary = buildComplianceSummary(
+    mapped.controls.map((control) => ({
+      control_name: control.control_name,
+      status: control.status
+    }))
+  );
+  await recordComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId,
+    eventType: "compliance_status_refreshed",
+    policyId: policy.policyId,
+    createdAt: generatedAt,
+    status: summary.overall_status,
+    metadata: {
+      ...summary.counts,
+      source_event_id: policyMappedEventId,
+      source_event_type: "policy_mapped",
+      recomputed_at: generatedAt
+    }
+  });
+
+  return {
+    mappingId,
+    policyId: policy.policyId,
+    generatedAt,
+    controls: mapped.controls,
+    unresolvedClauses: mapped.unresolvedClauses
+  };
+};
+
+const clearComplianceSandboxForOrg = async (orgId: string) => {
+  const policyIds = Array.from(store.policyDocuments.values())
+    .filter((policy) => policy.orgId === orgId)
+    .map((policy) => policy.policyId);
+  const mappingIds = Array.from(store.policyMappings.values())
+    .filter((mapping) => mapping.orgId === orgId)
+    .map((mapping) => mapping.mappingId);
+  const eventIds = Array.from(store.complianceEvents.values())
+    .filter((event) => event.orgId === orgId)
+    .map((event) => event.eventId);
+  const snapshotKeys = Array.from(store.canonicalControlSnapshots.entries())
+    .filter(([, snapshot]) => snapshot.orgId === orgId)
+    .map(([key]) => key);
+
+  policyIds.forEach((policyId) => {
+    store.policyDocuments.delete(policyId);
+  });
+  mappingIds.forEach((mappingId) => {
+    store.policyMappings.delete(mappingId);
+  });
+  eventIds.forEach((eventId) => {
+    store.complianceEvents.delete(eventId);
+  });
+  snapshotKeys.forEach((snapshotKey) => {
+    store.canonicalControlSnapshots.delete(snapshotKey);
+  });
+
+  await Promise.all([
+    deleteComplianceDecisionsByOrgId(orgId),
+    deleteComplianceEventsByOrgId(orgId),
+    deleteCanonicalControlHistoryByOrgId(orgId),
+    deletePolicyMappingsByOrgId(orgId),
+    deletePolicyDocumentsByOrgId(orgId)
+  ]);
+
+  return {
+    policies: policyIds.length,
+    mappings: mappingIds.length,
+    events: eventIds.length,
+    control_snapshots: snapshotKeys.length
+  };
+};
+
+const SYNTHETIC_POLICY_PACK: Array<{ fileName: string; contentType: string; content: string }> = [
+  {
+    fileName: "Synthetic_Governance_Policy_01_Access_Sharing.txt",
+    contentType: "text/plain",
+    content: [
+      "AI is permitted for approved internal workflows.",
+      "External sharing disabled outside company systems.",
+      "Customer data should not be used for model training."
+    ].join(" ")
+  },
+  {
+    fileName: "Synthetic_Governance_Policy_02_Retention_Training.txt",
+    contentType: "text/plain",
+    content: [
+      "Data retention policy is required with a defined retention period.",
+      "All teams must opt out of model training by default."
+    ].join(" ")
+  },
+  {
+    fileName: "Synthetic_Governance_Policy_03_Mixed_Signals.txt",
+    contentType: "text/plain",
+    content: [
+      "AI enabled for approved business use cases.",
+      "External sharing allowed only for approved external audits."
+    ].join(" ")
+  },
+  {
+    fileName: "Synthetic_Governance_Policy_04_Unresolved_Example.txt",
+    contentType: "text/plain",
+    content: [
+      "Teams review prompt quality weekly and maintain facilitator notes.",
+      "Escalation paths should be documented by policy owners."
+    ].join(" ")
+  }
+];
 
 const parsePersistedOrgConfig = (metadata: unknown) => {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
@@ -1627,6 +1798,121 @@ app.delete("/orgs/:orgId/policies/:policyId", rbacMiddleware(["ADMIN"]), schemaV
   });
 });
 
+app.post("/orgs/:orgId/sandbox/reset", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/sandbox/reset",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  try {
+    const cleared = await clearComplianceSandboxForOrg(org.id);
+    return res.json({
+      org_id: org.id,
+      reset_at: new Date().toISOString(),
+      cleared
+    });
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/sandbox/reset",
+      orgId: org.id,
+      reason: "sandbox_reset_failed",
+      details: String(error)
+    });
+  }
+});
+
+app.post("/orgs/:orgId/sandbox/seed-synthetic", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/sandbox/seed-synthetic",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  const createdAt = new Date().toISOString();
+  const seeded: Array<{ policy_id: string; mapping_id: string; unresolved_clauses: number }> = [];
+  for (const spec of SYNTHETIC_POLICY_PACK) {
+    const normalized = normalizePolicyContent({
+      file_name: spec.fileName,
+      content_type: spec.contentType,
+      content: spec.content
+    });
+    const policyId = `policy-${crypto.randomUUID()}`;
+    const clauses = extractPolicyClauses(normalized.rawText);
+    const policyRecord = {
+      policyId,
+      orgId: org.id,
+      fileName: spec.fileName,
+      contentType: normalized.contentType,
+      rawText: normalized.rawText,
+      sourceFormat: normalized.sourceFormat,
+      clauseCount: clauses.length,
+      createdAt
+    } as const;
+    store.policyDocuments.set(policyId, policyRecord);
+    await persistPolicyDocument(policyRecord).catch((error) => {
+      console.error("[compliance_persistence] failed to persist seeded policy document", {
+        org_id: org.id,
+        policy_id: policyId,
+        error: String(error)
+      });
+    });
+    await recordComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "policy_uploaded",
+      policyId,
+      createdAt,
+      metadata: {
+        action: "synthetic_seed",
+        file_name: spec.fileName,
+        content_type: normalized.contentType,
+        clause_count: clauses.length
+      }
+    });
+    const mapped = await runPolicyMappingForOrg(org.id, policyId, createdAt);
+    if (mapped) {
+      seeded.push({
+        policy_id: mapped.policyId,
+        mapping_id: mapped.mappingId,
+        unresolved_clauses: mapped.unresolvedClauses.length
+      });
+    }
+  }
+
+  return res.status(201).json({
+    org_id: org.id,
+    seeded_at: createdAt,
+    synthetic_pack_size: SYNTHETIC_POLICY_PACK.length,
+    created_policies: seeded.length,
+    seeded
+  });
+});
+
 app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
@@ -1651,84 +1937,15 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
     return res.status(404).json({ error: "Policy not found" });
   }
 
-  const clauses = extractPolicyClauses(policy.rawText);
-  const mapped = mapPolicyToControls(policy.rawText, clauses);
-  const generatedAt = new Date().toISOString();
-  const mappingId = `mapping-${crypto.randomUUID()}`;
-
-  const mappingRecord = {
-    mappingId,
-    policyId: policy.policyId,
-    orgId: org.id,
-    controls: mapped.controls,
-    unresolvedClauses: mapped.unresolvedClauses,
-    generatedAt
-  };
-  store.policyMappings.set(mappingId, mappingRecord);
-  await persistPolicyMapping(mappingRecord).catch((error) => {
-    console.error("[compliance_persistence] failed to persist policy mapping", {
-      org_id: org.id,
-      mapping_id: mappingId,
-      error: String(error)
-    });
-  });
-
-  const snapshots = buildCanonicalSnapshots(org.id, mapped.controls, generatedAt);
-  for (const snapshot of snapshots) {
-    await recordCanonicalControlSnapshot(snapshot);
-    await recordComplianceEvent({
-      eventId: `event-${crypto.randomUUID()}`,
-      orgId: org.id,
-      eventType: "control_state_updated",
-      policyId: policy.policyId,
-      controlName: snapshot.control_name,
-      status: snapshot.status,
-      createdAt: generatedAt,
-      metadata: {
-        source: "policy_mapping"
-      }
-    });
+  const mapped = await runPolicyMappingForOrg(org.id, policy.policyId);
+  if (!mapped) {
+    return res.status(404).json({ error: "Policy not found" });
   }
 
-  const policyMappedEventId = `event-${crypto.randomUUID()}`;
-  await recordComplianceEvent({
-    eventId: policyMappedEventId,
-    orgId: org.id,
-    eventType: "policy_mapped",
-    policyId: policy.policyId,
-    createdAt: generatedAt,
-    metadata: {
-      mapping_id: mappingId,
-      controls_mapped: mapped.controls.length,
-      unresolved_clauses: mapped.unresolvedClauses.length
-    }
-  });
-
-  const summary = buildComplianceSummary(
-    mapped.controls.map((control) => ({
-      control_name: control.control_name,
-      status: control.status
-    }))
-  );
-  await recordComplianceEvent({
-    eventId: `event-${crypto.randomUUID()}`,
-    orgId: org.id,
-    eventType: "compliance_status_refreshed",
-    policyId: policy.policyId,
-    createdAt: generatedAt,
-    status: summary.overall_status,
-    metadata: {
-      ...summary.counts,
-      source_event_id: policyMappedEventId,
-      source_event_type: "policy_mapped",
-      recomputed_at: generatedAt
-    }
-  });
-
   return res.json({
-    mapping_id: mappingId,
-    policy_id: policy.policyId,
-    generated_at: generatedAt,
+    mapping_id: mapped.mappingId,
+    policy_id: mapped.policyId,
+    generated_at: mapped.generatedAt,
     controls: mapped.controls,
     unresolved_clauses: mapped.unresolvedClauses
   });
