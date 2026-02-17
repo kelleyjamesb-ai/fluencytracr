@@ -60,3 +60,26 @@ export type MappingResponse = {
     reason: string;
   }>;
 };
+
+export type SandboxSeedResponse = {
+  org_id: string;
+  seeded_at: string;
+  synthetic_pack_size: number;
+  created_policies: number;
+  seeded: Array<{
+    policy_id: string;
+    mapping_id: string;
+    unresolved_clauses: number;
+  }>;
+};
+
+export type SandboxResetResponse = {
+  org_id: string;
+  reset_at: string;
+  cleared: {
+    policies: number;
+    mappings: number;
+    events: number;
+    control_snapshots: number;
+  };
+};

@@ -346,3 +346,58 @@ export const deletePolicyDocumentById = async (policyId: string) => {
     WHERE "id" = ${policyId}
   `;
 };
+
+export const deletePolicyDocumentsByOrgId = async (orgId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "PolicyDocument"
+    WHERE "orgId" = ${orgId}
+  `;
+};
+
+export const deletePolicyMappingsByOrgId = async (orgId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "PolicyMapping"
+    WHERE "orgId" = ${orgId}
+  `;
+};
+
+export const deleteComplianceEventsByOrgId = async (orgId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "ComplianceEvent"
+    WHERE "orgId" = ${orgId}
+  `;
+};
+
+export const deleteCanonicalControlHistoryByOrgId = async (orgId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "CanonicalControlStateHistory"
+    WHERE "orgId" = ${orgId}
+  `;
+};
+
+export const deleteComplianceDecisionsByOrgId = async (orgId: string) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "ComplianceDecision"
+    WHERE "orgId" = ${orgId}
+  `;
+};

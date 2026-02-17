@@ -2,7 +2,9 @@ import type {
   ComplianceEventsResponse,
   ComplianceStatusResponse,
   MappingResponse,
-  PoliciesResponse
+  PoliciesResponse,
+  SandboxResetResponse,
+  SandboxSeedResponse
 } from "../types/governance";
 
 type GovernanceContext = {
@@ -138,6 +140,28 @@ export const governanceApi = {
 
   mapPolicy: (ctx: GovernanceContext, policyId: string) =>
     fetchJson<MappingResponse>(withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/map`), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-role": ctx.role,
+        "X-FluencyTracr-Schema-Version": "0.1"
+      },
+      body: JSON.stringify({})
+    }),
+
+  seedSyntheticPolicies: (ctx: GovernanceContext) =>
+    fetchJson<SandboxSeedResponse>(withApiBase(`/orgs/${ctx.orgId}/sandbox/seed-synthetic`), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-role": ctx.role,
+        "X-FluencyTracr-Schema-Version": "0.1"
+      },
+      body: JSON.stringify({})
+    }),
+
+  resetSandbox: (ctx: GovernanceContext) =>
+    fetchJson<SandboxResetResponse>(withApiBase(`/orgs/${ctx.orgId}/sandbox/reset`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
