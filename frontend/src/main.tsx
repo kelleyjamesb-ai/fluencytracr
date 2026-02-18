@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
+import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import "./styles.css";
@@ -20,6 +21,14 @@ createRoot(container).render(
         <Route path="/login" element={<Login />} />
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <GovernanceConcept />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/legacy-dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
