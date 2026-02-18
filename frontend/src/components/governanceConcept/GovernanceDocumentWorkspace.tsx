@@ -38,6 +38,7 @@ export function GovernanceDocumentWorkspace() {
     isSeedingSynthetic,
     isResettingSandbox,
     uploadPolicy,
+    uploadAndMapPolicy,
     mapSelectedPolicy,
     updateSelectedPolicy,
     deletePolicy,
@@ -152,6 +153,14 @@ export function GovernanceDocumentWorkspace() {
                 : parsedUploads.length > 0
                   ? "Upload Documents"
                   : "Upload Document"}
+          </button>
+          <button
+            type="button"
+            className="gc-btn gc-btn-secondary"
+            onClick={uploadAndMapPolicy}
+            disabled={!isAdmin || isSaving || isMapping || isParsingFile}
+          >
+            {isSaving || isMapping ? "Processing..." : "Upload and Run Mapping"}
           </button>
           <button
             type="button"
