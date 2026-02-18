@@ -104,6 +104,7 @@ import {
 import {
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
+  listBaselineResetsByOrg,
   listRegistryAudit,
   listRegistryEntriesByOrg,
   listRegistryEntriesByWorkflow,
@@ -2423,21 +2424,21 @@ app.get(
         version: version.version,
         risk_class: version.riskClass,
         change_reason: version.changeReason ?? null,
-        actor_sub: version.actorSub ?? null,
-        actor_role: version.actorRole ?? null,
+        actor_sub: version.changedByUser ?? null,
+        actor_role: version.changedByRole ?? null,
         policy_config: (() => {
           const policy = getPolicyConfigForRegistryVersion(policyConfigs, version);
           if (!policy) {
             return null;
           }
           return {
-            policy_version: policy.policyVersion,
-            low_min_events: policy.lowMinEvents,
-            medium_min_events: policy.mediumMinEvents,
-            high_min_events: policy.highMinEvents,
-            min_window_days: policy.minWindowDays,
-            high_sparse_min_events: policy.highSparseMinEvents,
-            high_sparse_min_window_days: policy.highSparseMinWindowDays
+            policy_version: policy.versionName,
+            low_min_events: policy.minEventsLow,
+            medium_min_events: policy.minEventsMedium,
+            high_min_events: policy.minEventsHigh,
+            min_window_days: Math.min(policy.windowDaysLow, policy.windowDaysMedium),
+            high_sparse_min_events: Math.max(policy.minEventsHigh + 4, 12),
+            high_sparse_min_window_days: policy.windowDaysHigh
           };
         })(),
         created_at: version.createdAt
@@ -2578,11 +2579,11 @@ app.get(
 
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
-    const registryAudit = await listRegistryAudit(org.id);
+    const baselineResets = await listBaselineResetsByOrg(org.id);
     const baselineResetsByWorkflowVersion = entries.reduce<Record<string, string | null>>(
       (acc, entry) => {
         acc[`${entry.workflowId}:${entry.version}`] = getBaselineResetAtForRegistryVersion(
-          registryAudit,
+          baselineResets,
           entry
         );
         return acc;
@@ -2629,7 +2630,7 @@ app.get(
     const window = parsedWindow.data;
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
-    const registryAudit = await listRegistryAudit(org.id);
+    const baselineResets = await listBaselineResetsByOrg(org.id);
 
     const latestByWorkflow = entries
       .slice()
@@ -2650,7 +2651,7 @@ app.get(
     const workflows = Array.from(latestByWorkflow.values())
       .map((entry) => {
         const policyConfig = getPolicyConfigForRegistryVersion(policyConfigs, entry);
-        const baselineResetAt = getBaselineResetAtForRegistryVersion(registryAudit, entry);
+        const baselineResetAt = getBaselineResetAtForRegistryVersion(baselineResets, entry);
         const visibilityState = computeWorkflowVisibility(entry.workflowId, window, {
           registryEntry: entry,
           policyConfig,

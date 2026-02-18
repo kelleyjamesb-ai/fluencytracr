@@ -199,33 +199,35 @@ export const computeWorkflowVisibility = (
   const evidenceCount = sumSignalCount(filteredSignals) + filteredEvents.length;
   const policy = input.policyConfig;
   const windowDays = WINDOW_DAYS[window];
+  const requiredWindowDays = (() => {
+    if (input.registryEntry.riskClass === "low") {
+      return policy.windowDaysLow;
+    }
+    if (input.registryEntry.riskClass === "high") {
+      return policy.windowDaysHigh;
+    }
+    return policy.windowDaysMedium;
+  })();
 
-  if (windowDays < policy.minWindowDays) {
-    return "NOT_ENOUGH_DATA_YET";
-  }
-  if (
-    input.registryEntry.riskClass === "high" &&
-    evidenceCount < policy.highSparseMinEvents &&
-    windowDays < policy.highSparseMinWindowDays
-  ) {
+  if (windowDays < requiredWindowDays) {
     return "NOT_ENOUGH_DATA_YET";
   }
 
   const minEventsByRisk = (() => {
     if (input.registryEntry.riskClass === "low") {
-      return policy.lowMinEvents;
+      return policy.minEventsLow;
     }
     if (input.registryEntry.riskClass === "high") {
-      return policy.highMinEvents;
+      return policy.minEventsHigh;
     }
-    return policy.mediumMinEvents;
+    return policy.minEventsMedium;
   })();
 
   if (evidenceCount < minEventsByRisk) {
     return "NOT_ENOUGH_DATA_YET";
   }
 
-  if (input.registryEntry.riskClass === "high" && !hasVerificationEvidence(filteredEvents)) {
+  if (input.registryEntry.riskClass === "high" && policy.requireVerificationHigh && !hasVerificationEvidence(filteredEvents)) {
     return "NOT_ENOUGH_DATA_YET";
   }
 
@@ -245,6 +247,21 @@ export const computeWorkflowVisibilitySummary = (
   }
 ) => {
   const latest = latestRegistryByWorkflow(entries);
+  const latestPolicyByOrg = input.policyConfigs
+    .slice()
+    .sort((a, b) => {
+      if (a.orgId !== b.orgId) {
+        return a.orgId.localeCompare(b.orgId);
+      }
+      if (a.createdAt !== b.createdAt) {
+        return a.createdAt.localeCompare(b.createdAt);
+      }
+      return a.id.localeCompare(b.id);
+    })
+    .reduce((acc, config) => {
+      acc.set(config.orgId, config);
+      return acc;
+    }, new Map<string, WorkflowVisibilityPolicyConfigRecord>());
   const summary: Record<WorkflowVisibilityState, number> = {
     VISIBLE: 0,
     NOT_ENOUGH_DATA_YET: 0,
@@ -257,12 +274,7 @@ export const computeWorkflowVisibilitySummary = (
       const state = computeWorkflowVisibility(entry.workflowId, window, {
         now: input.now,
         registryEntry: entry,
-        policyConfig: input.policyConfigs.find(
-          (config) =>
-            config.orgId === entry.orgId &&
-            config.workflowId === entry.workflowId &&
-            config.registryVersion === entry.version
-        ) ?? null,
+        policyConfig: latestPolicyByOrg.get(entry.orgId) ?? null,
         baselineResetAt:
           input.baselineResetsByWorkflowVersion?.[`${entry.workflowId}:${entry.version}`] ?? null,
         fluencyEvents: input.fluencyEvents,

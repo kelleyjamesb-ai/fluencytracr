@@ -1,5 +1,7 @@
 import { getPrisma } from "./db";
 import type {
+  BaselineResetEventRecord,
+  WorkflowRegistryCurrentRecord,
   WorkflowRegistryAuditRecord,
   WorkflowRegistryRecord,
   WorkflowVisibilityPolicyConfigRecord
@@ -9,12 +11,13 @@ type PersistedRegistryRow = {
   id: string;
   orgId: string;
   workflowId: string;
-  version: number;
+  displayName: string;
   riskClass: string;
   changeReason: string | null;
-  actorSub: string | null;
-  actorRole: string | null;
+  changedByUser: string;
+  changedByRole: string;
   createdAt: Date;
+  versionNumber: number;
 };
 
 type PersistedAuditRow = {
@@ -32,16 +35,28 @@ type PersistedAuditRow = {
 type PersistedPolicyConfigRow = {
   id: string;
   orgId: string;
-  workflowId: string;
-  registryVersion: number;
-  policyVersion: string;
-  lowMinEvents: number;
-  mediumMinEvents: number;
-  highMinEvents: number;
-  minWindowDays: number;
-  highSparseMinEvents: number;
-  highSparseMinWindowDays: number;
+  versionName: string;
+  changeReason: string;
+  changedByUser: string;
+  changedByRole: string;
+  windowDaysLow: number;
+  windowDaysMedium: number;
+  windowDaysHigh: number;
+  minEventsLow: number;
+  minEventsMedium: number;
+  minEventsHigh: number;
+  requireVerificationHigh: boolean;
   createdAt: Date;
+};
+
+type PersistedBaselineResetRow = {
+  id: string;
+  orgId: string;
+  controlConfigVersionId: string;
+  resetAt: Date;
+  reason: string;
+  triggeredByUser: string;
+  triggeredByRole: string;
 };
 
 const maybePrisma = () => {
@@ -65,12 +80,32 @@ export const persistWorkflowRegistryEntry = async (record: WorkflowRegistryRecor
   }
 
   await prisma.$executeRaw`
-    INSERT INTO "WorkflowRegistryEntry"
-      ("id", "orgId", "workflowId", "version", "riskClass", "changeReason", "actorSub", "actorRole", "createdAt")
+    INSERT INTO "WorkflowRegistryVersion"
+      ("id", "orgId", "workflowId", "displayName", "riskClass", "changeReason", "changedByUser", "changedByRole", "createdAt")
     VALUES
-      (${record.id}, ${record.orgId}, ${record.workflowId}, ${record.version}, ${record.riskClass},
-       ${record.changeReason ?? null}, ${record.actorSub ?? null}, ${record.actorRole ?? null}, ${new Date(record.createdAt)})
-    ON CONFLICT ("orgId", "workflowId", "version") DO NOTHING
+      (${record.id}, ${record.orgId}, ${record.workflowId}, ${record.displayName}, ${record.riskClass}::"RiskClass",
+       ${record.changeReason ?? ""}, ${record.changedByUser}, ${record.changedByRole}, ${new Date(record.createdAt)})
+    ON CONFLICT ("id") DO NOTHING
+  `;
+};
+
+export const upsertWorkflowRegistryCurrent = async (record: WorkflowRegistryCurrentRecord) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+
+  await prisma.$executeRaw`
+    INSERT INTO "WorkflowRegistryCurrent"
+      ("id", "orgId", "workflowId", "displayName", "riskClass", "effectiveVersionId", "updatedAt")
+    VALUES
+      (${record.id}, ${record.orgId}, ${record.workflowId}, ${record.displayName},
+       ${record.riskClass}::"RiskClass", ${record.effectiveVersionId}, ${new Date(record.updatedAt)})
+    ON CONFLICT ("orgId", "workflowId") DO UPDATE SET
+      "displayName" = EXCLUDED."displayName",
+      "riskClass" = EXCLUDED."riskClass",
+      "effectiveVersionId" = EXCLUDED."effectiveVersionId",
+      "updatedAt" = EXCLUDED."updatedAt"
   `;
 };
 
@@ -81,21 +116,32 @@ export const listWorkflowRegistryEntriesByOrg = async (orgId: string): Promise<W
   }
 
   const rows = await prisma.$queryRaw<PersistedRegistryRow[]>`
-    SELECT "id", "orgId", "workflowId", "version", "riskClass", "changeReason", "actorSub", "actorRole", "createdAt"
-    FROM "WorkflowRegistryEntry"
+    SELECT
+      "id",
+      "orgId",
+      "workflowId",
+      "displayName",
+      "riskClass",
+      "changeReason",
+      "changedByUser",
+      "changedByRole",
+      "createdAt",
+      ROW_NUMBER() OVER (PARTITION BY "workflowId" ORDER BY "createdAt", "id")::int AS "versionNumber"
+    FROM "WorkflowRegistryVersion"
     WHERE "orgId" = ${orgId}
-    ORDER BY "workflowId" ASC, "version" ASC, "createdAt" ASC
+    ORDER BY "workflowId" ASC, "createdAt" ASC, "id" ASC
   `;
 
   return rows.map((row) => ({
     id: row.id,
     orgId: row.orgId,
     workflowId: row.workflowId,
-    version: Number(row.version),
+    displayName: row.displayName,
+    version: Number(row.versionNumber),
     riskClass: row.riskClass as WorkflowRegistryRecord["riskClass"],
-    changeReason: row.changeReason ?? undefined,
-    actorSub: row.actorSub ?? undefined,
-    actorRole: row.actorRole ?? undefined,
+    changeReason: row.changeReason ?? "",
+    changedByUser: row.changedByUser,
+    changedByRole: row.changedByRole,
     createdAt: row.createdAt.toISOString()
   }));
 };
@@ -155,23 +201,15 @@ export const persistWorkflowVisibilityPolicyConfig = async (
   }
 
   await prisma.$executeRaw`
-    INSERT INTO "WorkflowVisibilityPolicyConfig"
-      ("id", "orgId", "workflowId", "registryVersion", "policyVersion",
-       "lowMinEvents", "mediumMinEvents", "highMinEvents", "minWindowDays",
-       "highSparseMinEvents", "highSparseMinWindowDays", "createdAt")
+    INSERT INTO "ControlConfigVersion"
+      ("id", "orgId", "versionName", "changeReason", "changedByUser", "changedByRole", "createdAt",
+       "windowDaysLow", "windowDaysMedium", "windowDaysHigh",
+       "minEventsLow", "minEventsMedium", "minEventsHigh", "requireVerificationHigh")
     VALUES
-      (${record.id}, ${record.orgId}, ${record.workflowId}, ${record.registryVersion},
-       ${record.policyVersion}, ${record.lowMinEvents}, ${record.mediumMinEvents},
-       ${record.highMinEvents}, ${record.minWindowDays}, ${record.highSparseMinEvents},
-       ${record.highSparseMinWindowDays}, ${new Date(record.createdAt)})
-    ON CONFLICT ("orgId", "workflowId", "registryVersion") DO UPDATE SET
-      "policyVersion" = EXCLUDED."policyVersion",
-      "lowMinEvents" = EXCLUDED."lowMinEvents",
-      "mediumMinEvents" = EXCLUDED."mediumMinEvents",
-      "highMinEvents" = EXCLUDED."highMinEvents",
-      "minWindowDays" = EXCLUDED."minWindowDays",
-      "highSparseMinEvents" = EXCLUDED."highSparseMinEvents",
-      "highSparseMinWindowDays" = EXCLUDED."highSparseMinWindowDays"
+      (${record.id}, ${record.orgId}, ${record.versionName}, ${record.changeReason}, ${record.changedByUser}, ${record.changedByRole},
+       ${new Date(record.createdAt)}, ${record.windowDaysLow}, ${record.windowDaysMedium}, ${record.windowDaysHigh},
+       ${record.minEventsLow}, ${record.minEventsMedium}, ${record.minEventsHigh}, ${record.requireVerificationHigh})
+    ON CONFLICT ("id") DO NOTHING
   `;
 };
 
@@ -184,26 +222,70 @@ export const listWorkflowVisibilityPolicyConfigsByOrg = async (
   }
 
   const rows = await prisma.$queryRaw<PersistedPolicyConfigRow[]>`
-    SELECT "id", "orgId", "workflowId", "registryVersion", "policyVersion",
-           "lowMinEvents", "mediumMinEvents", "highMinEvents", "minWindowDays",
-           "highSparseMinEvents", "highSparseMinWindowDays", "createdAt"
-    FROM "WorkflowVisibilityPolicyConfig"
+    SELECT "id", "orgId", "versionName", "changeReason", "changedByUser", "changedByRole",
+           "windowDaysLow", "windowDaysMedium", "windowDaysHigh",
+           "minEventsLow", "minEventsMedium", "minEventsHigh", "requireVerificationHigh", "createdAt"
+    FROM "ControlConfigVersion"
     WHERE "orgId" = ${orgId}
-    ORDER BY "workflowId" ASC, "registryVersion" ASC, "createdAt" ASC
+    ORDER BY "createdAt" ASC, "id" ASC
   `;
 
   return rows.map((row) => ({
     id: row.id,
     orgId: row.orgId,
-    workflowId: row.workflowId,
-    registryVersion: Number(row.registryVersion),
-    policyVersion: row.policyVersion,
-    lowMinEvents: Number(row.lowMinEvents),
-    mediumMinEvents: Number(row.mediumMinEvents),
-    highMinEvents: Number(row.highMinEvents),
-    minWindowDays: Number(row.minWindowDays),
-    highSparseMinEvents: Number(row.highSparseMinEvents),
-    highSparseMinWindowDays: Number(row.highSparseMinWindowDays),
+    versionName: row.versionName,
+    changeReason: row.changeReason,
+    changedByUser: row.changedByUser,
+    changedByRole: row.changedByRole,
+    windowDaysLow: Number(row.windowDaysLow),
+    windowDaysMedium: Number(row.windowDaysMedium),
+    windowDaysHigh: Number(row.windowDaysHigh),
+    minEventsLow: Number(row.minEventsLow),
+    minEventsMedium: Number(row.minEventsMedium),
+    minEventsHigh: Number(row.minEventsHigh),
+    requireVerificationHigh: Boolean(row.requireVerificationHigh),
     createdAt: row.createdAt.toISOString()
+  }));
+};
+
+export const persistBaselineResetEvent = async (record: BaselineResetEventRecord) => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return;
+  }
+
+  await prisma.$executeRaw`
+    INSERT INTO "BaselineResetEvent"
+      ("id", "orgId", "controlConfigVersionId", "resetAt", "reason", "triggeredByUser", "triggeredByRole")
+    VALUES
+      (${record.id}, ${record.orgId}, ${record.controlConfigVersionId}, ${new Date(record.resetAt)},
+       ${record.reason}, ${record.triggeredByUser}, ${record.triggeredByRole})
+    ON CONFLICT ("id") DO NOTHING
+  `;
+};
+
+export const listBaselineResetEventsByOrg = async (
+  orgId: string
+): Promise<BaselineResetEventRecord[]> => {
+  const prisma = maybePrisma();
+  if (!prisma) {
+    return [];
+  }
+
+  const rows = await prisma.$queryRaw<PersistedBaselineResetRow[]>`
+    SELECT "id", "orgId", "controlConfigVersionId", "resetAt", "reason", "triggeredByUser", "triggeredByRole"
+    FROM "BaselineResetEvent"
+    WHERE "orgId" = ${orgId}
+    ORDER BY "resetAt" ASC, "id" ASC
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    orgId: row.orgId,
+    controlConfigVersionId: row.controlConfigVersionId,
+    resetAt: row.resetAt.toISOString(),
+    reason: row.reason,
+    triggeredByUser: row.triggeredByUser,
+    triggeredByRole: row.triggeredByRole
   }));
 };

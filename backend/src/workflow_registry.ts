@@ -1,25 +1,32 @@
 import crypto from "crypto";
 import {
+  insertBaselineResetEvent,
   insertWorkflowRegistryAudit,
   insertWorkflowRegistryEntry,
   insertWorkflowVisibilityPolicyConfig,
   store,
+  upsertWorkflowRegistryCurrent,
+  type BaselineResetEventRecord,
   type WorkflowRegistryAuditRecord,
+  type WorkflowRegistryCurrentRecord,
   type WorkflowRegistryRecord,
-  type WorkflowVisibilityPolicyConfigRecord,
-  type WorkflowRiskClass
+  type WorkflowRiskClass,
+  type WorkflowVisibilityPolicyConfigRecord
 } from "./store";
 import {
+  listBaselineResetEventsByOrg,
   listWorkflowRegistryAuditByOrg,
   listWorkflowRegistryEntriesByOrg,
   listWorkflowVisibilityPolicyConfigsByOrg,
+  persistBaselineResetEvent,
   persistWorkflowRegistryAuditEvent,
   persistWorkflowRegistryEntry,
-  persistWorkflowVisibilityPolicyConfig
+  persistWorkflowVisibilityPolicyConfig,
+  upsertWorkflowRegistryCurrent as persistWorkflowRegistryCurrent
 } from "./workflow_registry_persistence";
 import {
   defaultWorkflowVisibilityPolicyConfig,
-  resolvePolicyForRegistryVersion
+  resolveLatestPolicyConfig
 } from "./workflow_visibility_policy";
 
 const sortRegistry = (records: WorkflowRegistryRecord[]) => {
@@ -59,6 +66,38 @@ export const listRegistryEntriesByWorkflow = async (orgId: string, workflowId: s
   return rows.filter((row) => row.workflowId === workflowId);
 };
 
+const toControlConfig = (
+  orgId: string,
+  createdAt: string,
+  actorSub: string | undefined,
+  actorRole: string | undefined,
+  changeReason: string | undefined,
+  policyConfig: {
+    policyVersion: string;
+    lowMinEvents: number;
+    mediumMinEvents: number;
+    highMinEvents: number;
+    minWindowDays: number;
+    highSparseMinEvents: number;
+    highSparseMinWindowDays: number;
+  }
+): WorkflowVisibilityPolicyConfigRecord => ({
+  id: crypto.randomUUID(),
+  orgId,
+  versionName: policyConfig.policyVersion,
+  changeReason: changeReason ?? "policy update",
+  changedByUser: actorSub ?? "system",
+  changedByRole: actorRole ?? "SYSTEM",
+  windowDaysLow: policyConfig.minWindowDays,
+  windowDaysMedium: policyConfig.minWindowDays,
+  windowDaysHigh: policyConfig.highSparseMinWindowDays,
+  minEventsLow: policyConfig.lowMinEvents,
+  minEventsMedium: policyConfig.mediumMinEvents,
+  minEventsHigh: policyConfig.highMinEvents,
+  requireVerificationHigh: true,
+  createdAt
+});
+
 export const registerWorkflowVersion = async (params: {
   orgId: string;
   workflowId: string;
@@ -79,17 +118,54 @@ export const registerWorkflowVersion = async (params: {
   const versions = await listRegistryEntriesByWorkflow(params.orgId, params.workflowId);
   const version = versions.length === 0 ? 1 : versions[versions.length - 1].version + 1;
   const createdAt = new Date().toISOString();
+  const changedByUser = params.actorSub ?? "system";
+  const changedByRole = params.actorRole ?? "SYSTEM";
 
   const record: WorkflowRegistryRecord = {
     id: crypto.randomUUID(),
     orgId: params.orgId,
     workflowId: params.workflowId,
+    displayName: params.workflowId,
     version,
     riskClass: params.riskClass,
-    changeReason: params.changeReason,
-    actorSub: params.actorSub,
-    actorRole: params.actorRole,
+    changeReason: params.changeReason ?? "",
+    changedByUser,
+    changedByRole,
     createdAt
+  };
+
+  const existingPolicyConfigs = await listRegistryPolicyConfigsByOrg(params.orgId);
+  const selectedPolicyConfig =
+    (params.policyConfig
+      ? toControlConfig(
+          params.orgId,
+          createdAt,
+          params.actorSub,
+          params.actorRole,
+          params.changeReason,
+          params.policyConfig
+        )
+      : resolveLatestPolicyConfig(existingPolicyConfigs, params.orgId)) ??
+    defaultWorkflowVisibilityPolicyConfig(params.orgId);
+
+  const currentRecord: WorkflowRegistryCurrentRecord = {
+    id: `current-${params.orgId}-${params.workflowId}`,
+    orgId: params.orgId,
+    workflowId: params.workflowId,
+    displayName: params.workflowId,
+    riskClass: params.riskClass,
+    effectiveVersionId: record.id,
+    updatedAt: createdAt
+  };
+
+  const baselineResetRecord: BaselineResetEventRecord = {
+    id: crypto.randomUUID(),
+    orgId: params.orgId,
+    controlConfigVersionId: selectedPolicyConfig.id,
+    resetAt: createdAt,
+    reason: params.changeReason ?? "workflow registry update",
+    triggeredByUser: changedByUser,
+    triggeredByRole: changedByRole
   };
 
   const audit: WorkflowRegistryAuditRecord = {
@@ -106,25 +182,6 @@ export const registerWorkflowVersion = async (params: {
     },
     createdAt
   };
-  const policyConfig: WorkflowVisibilityPolicyConfigRecord = {
-    ...(params.policyConfig
-      ? {
-          id: crypto.randomUUID(),
-          orgId: params.orgId,
-          workflowId: params.workflowId,
-          registryVersion: version,
-          policyVersion: params.policyConfig.policyVersion,
-          lowMinEvents: params.policyConfig.lowMinEvents,
-          mediumMinEvents: params.policyConfig.mediumMinEvents,
-          highMinEvents: params.policyConfig.highMinEvents,
-          minWindowDays: params.policyConfig.minWindowDays,
-          highSparseMinEvents: params.policyConfig.highSparseMinEvents,
-          highSparseMinWindowDays: params.policyConfig.highSparseMinWindowDays,
-          createdAt
-        }
-      : defaultWorkflowVisibilityPolicyConfig(params.orgId, params.workflowId, version))
-  };
-  const baselineResetAt = createdAt;
   const baselineResetAudit: WorkflowRegistryAuditRecord = {
     id: crypto.randomUUID(),
     orgId: params.orgId,
@@ -134,20 +191,25 @@ export const registerWorkflowVersion = async (params: {
     actorSub: params.actorSub,
     actorRole: params.actorRole,
     metadata: {
-      reset_at: baselineResetAt,
-      policy_version: policyConfig.policyVersion
+      reset_at: baselineResetRecord.resetAt,
+      policy_version: selectedPolicyConfig.versionName
     },
     createdAt
   };
 
   insertWorkflowRegistryEntry(record);
+  upsertWorkflowRegistryCurrent(currentRecord);
+  insertWorkflowVisibilityPolicyConfig(selectedPolicyConfig);
+  insertBaselineResetEvent(baselineResetRecord);
   insertWorkflowRegistryAudit(audit);
   insertWorkflowRegistryAudit(baselineResetAudit);
-  insertWorkflowVisibilityPolicyConfig(policyConfig);
+
   await persistWorkflowRegistryEntry(record);
+  await persistWorkflowRegistryCurrent(currentRecord);
+  await persistWorkflowVisibilityPolicyConfig(selectedPolicyConfig);
+  await persistBaselineResetEvent(baselineResetRecord);
   await persistWorkflowRegistryAuditEvent(audit);
   await persistWorkflowRegistryAuditEvent(baselineResetAudit);
-  await persistWorkflowVisibilityPolicyConfig(policyConfig);
 
   return record;
 };
@@ -170,13 +232,24 @@ export const listRegistryPolicyConfigsByOrg = async (orgId: string) => {
   return Array.from(store.workflowVisibilityPolicyConfigs.values())
     .filter((config) => config.orgId === orgId)
     .sort((a, b) => {
-      if (a.workflowId !== b.workflowId) {
-        return a.workflowId.localeCompare(b.workflowId);
+      if (a.createdAt !== b.createdAt) {
+        return a.createdAt.localeCompare(b.createdAt);
       }
-      if (a.registryVersion !== b.registryVersion) {
-        return a.registryVersion - b.registryVersion;
+      return a.id.localeCompare(b.id);
+    });
+};
+
+export const listBaselineResetsByOrg = async (orgId: string) => {
+  if (process.env.DATABASE_URL) {
+    return await listBaselineResetEventsByOrg(orgId);
+  }
+  return Array.from(store.baselineResetEvents.values())
+    .filter((event) => event.orgId === orgId)
+    .sort((a, b) => {
+      if (a.resetAt !== b.resetAt) {
+        return a.resetAt.localeCompare(b.resetAt);
       }
-      return a.createdAt.localeCompare(b.createdAt);
+      return a.id.localeCompare(b.id);
     });
 };
 
@@ -184,36 +257,36 @@ export const getPolicyConfigForRegistryVersion = (
   configs: WorkflowVisibilityPolicyConfigRecord[],
   registry: WorkflowRegistryRecord
 ) => {
-  return resolvePolicyForRegistryVersion(
-    configs,
-    registry.orgId,
-    registry.workflowId,
-    registry.version
-  );
-};
-
-export const getBaselineResetAtForRegistryVersion = (
-  audits: WorkflowRegistryAuditRecord[],
-  registry: WorkflowRegistryRecord
-) => {
-  const resetEvents = audits
-    .filter(
-      (event) =>
-        event.orgId === registry.orgId &&
-        event.workflowId === registry.workflowId &&
-        event.version === registry.version &&
-        event.action === "BASELINE_RESET"
-    )
+  const candidates = configs
+    .filter((config) => config.orgId === registry.orgId)
+    .filter((config) => config.createdAt <= registry.createdAt)
     .sort((a, b) => {
       if (a.createdAt !== b.createdAt) {
         return a.createdAt.localeCompare(b.createdAt);
       }
       return a.id.localeCompare(b.id);
     });
-  const latest = resetEvents[resetEvents.length - 1];
-  if (!latest) {
-    return null;
+  if (candidates.length > 0) {
+    return candidates[candidates.length - 1];
   }
-  const raw = latest.metadata.reset_at;
-  return typeof raw === "string" ? raw : latest.createdAt;
+  return resolveLatestPolicyConfig(configs, registry.orgId);
+};
+
+export const getBaselineResetAtForRegistryVersion = (
+  baselineResets: BaselineResetEventRecord[],
+  registry: WorkflowRegistryRecord
+) => {
+  const candidates = baselineResets
+    .filter((event) => event.orgId === registry.orgId)
+    .filter((event) => event.resetAt <= registry.createdAt)
+    .sort((a, b) => {
+      if (a.resetAt !== b.resetAt) {
+        return a.resetAt.localeCompare(b.resetAt);
+      }
+      return a.id.localeCompare(b.id);
+    });
+  if (candidates.length > 0) {
+    return candidates[candidates.length - 1].resetAt;
+  }
+  return null;
 };

@@ -8,6 +8,26 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum RiskClass {
+  low
+  medium
+  high
+}
+
+enum VisibilityState {
+  VISIBLE
+  NOT_ENOUGH_DATA_YET
+  NOT_SHOWN_SAFETY
+}
+
+enum DominantPattern {
+  CALIBRATED_FLUENCY
+  BLIND_EFFICIENCY
+  RECOVERY_MATURITY
+  FRICTION_LOOP
+  UNDERTRUST_AVOIDANCE
+}
+
 model Organization {
   id        String   @id @default(uuid())
   name      String
@@ -196,4 +216,70 @@ model WorkflowVisibilityPolicyConfig {
 
   @@unique([orgId, workflowId, registryVersion])
   @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowRegistryVersion {
+  id            String   @id @default(cuid())
+  orgId         String
+  workflowId    String
+  displayName   String
+  riskClass     RiskClass
+  changeReason  String
+  changedByUser String
+  changedByRole String
+  createdAt     DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowRegistryCurrent {
+  id                 String   @id @default(cuid())
+  orgId              String
+  workflowId         String
+  displayName        String
+  riskClass          RiskClass
+  effectiveVersionId String
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, workflowId])
+  @@index([orgId])
+}
+
+model ControlConfigVersion {
+  id                      String   @id @default(cuid())
+  orgId                   String
+  versionName             String
+  changeReason            String
+  changedByUser           String
+  changedByRole           String
+  createdAt               DateTime @default(now())
+  windowDaysLow           Int
+  windowDaysMedium        Int
+  windowDaysHigh          Int
+  minEventsLow            Int
+  minEventsMedium         Int
+  minEventsHigh           Int
+  requireVerificationHigh Boolean
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+}
+
+model BaselineResetEvent {
+  id                     String   @id @default(cuid())
+  orgId                  String
+  controlConfigVersionId String
+  resetAt                DateTime @default(now())
+  reason                 String
+  triggeredByUser        String
+  triggeredByRole        String
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, resetAt])
 }
