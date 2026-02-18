@@ -1,29 +1,140 @@
+import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { Role, RoleSchema } from "@learnaire/shared";
 
-export type RequestWithRole = Request & { role?: Role; authWarning?: string };
+declare global {
+  namespace Express {
+    interface Request {
+      role?: Role;
+      authWarning?: string;
+      authSub?: string;
+      authOrgId?: string;
+    }
+  }
+}
+
+export type RequestWithRole = Request & {
+  role?: Role;
+  authWarning?: string;
+  authSub?: string;
+  authOrgId?: string;
+};
 
 const ROLE_ORDER: Role[] = ["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"];
 
-/**
- * SECURITY WARNING: The x-role header is currently trusted without verification.
- * In production, this should be replaced with proper authentication (JWT, session, etc.)
- * that validates role claims from a trusted source.
- *
- * This middleware logs warnings for audit purposes when privileged roles are claimed.
- */
+const decodeBase64Url = (value: string) => {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  return Buffer.from(padded, "base64");
+};
+
+const verifyHs256Jwt = (token: string, secret: string) => {
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
+  }
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const signedContent = `${headerB64}.${payloadB64}`;
+  const expectedSig = crypto.createHmac("sha256", secret).update(signedContent).digest();
+  const providedSig = decodeBase64Url(signatureB64);
+  if (expectedSig.length !== providedSig.length) {
+    return null;
+  }
+  if (!crypto.timingSafeEqual(expectedSig, providedSig)) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(decodeBase64Url(payloadB64).toString("utf8")) as Record<string, unknown>;
+    const exp = typeof payload.exp === "number" ? payload.exp : null;
+    if (exp !== null && Date.now() >= exp * 1000) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
+  const isTestEnv = process.env.NODE_ENV === "test";
+  const authHeader = req.header("authorization") ?? "";
+  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
+
+  if (bearer) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: "Server auth misconfigured" });
+    }
+    const payload = verifyHs256Jwt(bearer, secret);
+    if (!payload) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    const roleParsed = RoleSchema.safeParse(payload.role);
+    if (!roleParsed.success) {
+      return res.status(401).json({ error: "Invalid token role" });
+    }
+    const orgId = typeof payload.org_id === "string" ? payload.org_id : null;
+    if (!orgId) {
+      return res.status(401).json({ error: "Invalid token org_id" });
+    }
+    req.role = roleParsed.data;
+    if (typeof payload.sub === "string" && payload.sub.length > 0) {
+      req.authSub = payload.sub;
+    }
+    req.authOrgId = orgId;
+    return next();
+  }
+
+  if (isTestEnv) {
+    const rawRole = req.header("x-role");
+    if (rawRole) {
+      const parseResult = RoleSchema.safeParse(rawRole);
+      if (parseResult.success) {
+        req.role = parseResult.data;
+        req.authSub = req.header("x-sub") ?? undefined;
+        req.authOrgId = req.header("x-org-id") ?? undefined;
+        req.authWarning = "Test-only header auth";
+      }
+    }
+    return next();
+  }
+
+  return res.status(401).json({ error: "Authentication required" });
+};
+
+const getRequestedOrgId = (req: RequestWithRole): string | null => {
+  const fromParams = (req.params?.orgId ?? req.params?.org_id) as string | undefined;
+  const fromQueryRaw = req.query?.org_id ?? req.query?.orgId;
+  const fromQuery = typeof fromQueryRaw === "string" ? fromQueryRaw : undefined;
+  const body = req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : null;
+  const fromBodyOrgId = body && typeof body.org_id === "string" ? body.org_id : undefined;
+  const fromBodyOrgCamel = body && typeof body.orgId === "string" ? body.orgId : undefined;
+  return fromParams ?? fromQuery ?? fromBodyOrgId ?? fromBodyOrgCamel ?? null;
+};
+
+export const orgScopeMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
+  const isTestEnv = process.env.NODE_ENV === "test";
+  if (isTestEnv && !req.authOrgId) {
+    return next();
+  }
+  if (!req.authOrgId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  const requestedOrgId = getRequestedOrgId(req);
+  if (requestedOrgId && requestedOrgId !== req.authOrgId) {
+    return res.status(403).json({ error: "Forbidden", message: "Token org scope does not match request org" });
+  }
+  return next();
+};
+
 export const rbacMiddleware = (allowed: Role[]) => {
   return (req: RequestWithRole, res: Response, next: NextFunction) => {
-    const rawRole = req.header("x-role") ?? "EXEC_VIEWER";
-    const parseResult = RoleSchema.safeParse(rawRole);
-    if (!parseResult.success) {
-      return res.status(400).json({ error: "Invalid role", message: `Role must be one of: ${allowed.join(", ")}` });
+    const role = req.role;
+    if (!role) {
+      return res.status(401).json({ error: "Authentication required" });
     }
-    const role = parseResult.data;
 
-    // SECURITY: Log warning for unverified privileged role claims
-    // TODO: Replace with proper JWT/session-based authentication
-    if (role === "ADMIN" || role === "GOV_OPERATOR") {
+    if ((role === "ADMIN" || role === "GOV_OPERATOR") && req.authWarning) {
       console.warn(
         `[SECURITY] Unverified privileged role claim (${role}) from IP: ${req.ip}, ` +
         `endpoint: ${req.method} ${req.path}, ` +
@@ -35,7 +146,6 @@ export const rbacMiddleware = (allowed: Role[]) => {
     if (!allowed.includes(role)) {
       return res.status(403).json({ error: "Forbidden", message: "Insufficient permissions for this endpoint" });
     }
-    req.role = role;
     return next();
   };
 };
