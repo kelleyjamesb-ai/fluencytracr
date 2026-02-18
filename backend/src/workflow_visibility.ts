@@ -44,7 +44,9 @@ const PHASE1_EVENT_SET = new Set([
   "workflow_stage_transition"
 ]);
 
-const CONFIDENT_PATTERN_LEVELS = new Set(["MEDIUM", "HIGH"] as const);
+const isConfidentPatternLevel = (
+  level: PatternInferenceRecord["confidence_level"]
+) => level === "MEDIUM" || level === "HIGH";
 
 const toDate = (raw: string) => {
   const date = new Date(raw);
@@ -106,7 +108,7 @@ const hasPatternAmbiguity = (workflowId: string, records: PatternInferenceRecord
     records
       .filter((record) => record.scope_key.split(":")[0] === workflowId)
       .filter((record) => record.pattern !== "NO_PATTERN")
-      .filter((record) => CONFIDENT_PATTERN_LEVELS.has(record.confidence_level))
+      .filter((record) => isConfidentPatternLevel(record.confidence_level))
       .map((record) => record.pattern)
   );
   return candidates.size > 1;
