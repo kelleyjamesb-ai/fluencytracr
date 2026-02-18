@@ -6,7 +6,7 @@ export function GovernanceDocumentWorkspace() {
     isAdmin,
     policies,
     selectedPolicyId,
-    setSelectedPolicyId,
+    selectedPolicy,
     mapping,
     policyFileName,
     setPolicyFileName,
@@ -38,9 +38,11 @@ export function GovernanceDocumentWorkspace() {
     isSeedingSynthetic,
     isResettingSandbox,
     uploadPolicy,
+    uploadAndMapPolicy,
     mapSelectedPolicy,
     updateSelectedPolicy,
     deletePolicy,
+    selectPolicyForMapping,
     seedSyntheticData,
     resetSandbox
   } = useGovernanceDocumentWorkspace();
@@ -75,7 +77,7 @@ export function GovernanceDocumentWorkspace() {
 
       <div className="gc-workspace-grid">
         <article className="gc-workspace-pane">
-          <h3>1. Upload document</h3>
+          <h3>1. Upload and manage policies</h3>
           <div className="gc-form-grid">
             <label>
               Upload files (.pdf or .docx)
@@ -155,31 +157,91 @@ export function GovernanceDocumentWorkspace() {
           <button
             type="button"
             className="gc-btn gc-btn-secondary"
+            onClick={uploadAndMapPolicy}
+            disabled={!isAdmin || isSaving || isMapping || isParsingFile}
+          >
+            {isSaving || isMapping ? "Processing..." : "Upload and Run Mapping"}
+          </button>
+          <button
+            type="button"
+            className="gc-btn gc-btn-secondary"
             onClick={updateSelectedPolicy}
             disabled={!isAdmin || !selectedPolicyId || isSaving || isParsingFile || isUpdatingPolicy}
           >
             {isUpdatingPolicy ? "Updating..." : "Update Selected Policy"}
           </button>
+
+          <div className="gc-mapping-summary">
+            <h4>Policy inventory</h4>
+            {orgBootstrapNeeded && (
+              <div className="gc-mapping-summary">
+                <p><strong>Organization setup required</strong></p>
+                <p>No org record was found for this session org id. Initialize one to enable policy listing and mapping.</p>
+                <button
+                  type="button"
+                  className="gc-btn gc-btn-secondary"
+                  onClick={initializeOrg}
+                  disabled={!isAdmin || isCreatingOrg}
+                >
+                  {isCreatingOrg ? "Initializing..." : "Initialize Organization"}
+                </button>
+              </div>
+            )}
+            {isLoading ? (
+              <p>Loading policies...</p>
+            ) : policies.length === 0 ? (
+              <p>No governance policies uploaded yet.</p>
+            ) : (
+              <ul className="gc-policy-list">
+                {policies.map((policy) => {
+                  const isSelected = policy.policy_id === selectedPolicyId;
+                  return (
+                    <li key={policy.policy_id} className={isSelected ? "gc-policy-selected" : ""}>
+                      <span>{policy.file_name}</span>
+                      <span className="gc-policy-row-actions">
+                        <span className="gc-mono">{policy.latest_mapping ? "mapped" : "not mapped"}</span>
+                        {isAdmin && (
+                          <>
+                            <button
+                              type="button"
+                              className={`gc-btn ${isSelected ? "gc-btn-primary" : "gc-btn-outline"}`}
+                              onClick={() => selectPolicyForMapping(policy.policy_id)}
+                            >
+                              {isSelected ? "Selected" : "Select"}
+                            </button>
+                            <button
+                              type="button"
+                              className="gc-btn gc-btn-outline"
+                              onClick={() => {
+                                const confirmed = window.confirm(
+                                  `Delete ${policy.file_name}? This removes the policy and its mappings.`
+                                );
+                                if (confirmed) {
+                                  void deletePolicy(policy.policy_id);
+                                }
+                              }}
+                              disabled={isDeletingPolicyId === policy.policy_id}
+                            >
+                              {isDeletingPolicyId === policy.policy_id ? "Deleting..." : "Delete"}
+                            </button>
+                          </>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </article>
 
         <article className="gc-workspace-pane">
-          <h3>2. Run mapping</h3>
-          <label>
-            Policy version
-            <select
-              className="gc-input"
-              value={selectedPolicyId}
-              onChange={(event) => setSelectedPolicyId(event.target.value)}
-              disabled={policies.length === 0 || isMapping}
-            >
-              <option value="">Select policy</option>
-              {policies.map((policy) => (
-                <option key={policy.policy_id} value={policy.policy_id}>
-                  {policy.file_name} ({new Date(policy.created_at).toLocaleDateString()})
-                </option>
-              ))}
-            </select>
-          </label>
+          <h3>2. Map selected policy</h3>
+          <p className="gc-subtle">
+            {selectedPolicy
+              ? `Selected: ${selectedPolicy.file_name}`
+              : "Select a policy in Step 1, then run mapping."}
+          </p>
           <button
             type="button"
             className={`gc-btn ${shouldHighlightRunMapping ? "gc-btn-primary gc-btn-next-action" : "gc-btn-secondary"}`}
@@ -188,7 +250,7 @@ export function GovernanceDocumentWorkspace() {
           >
             {isMapping ? "Mapping..." : "Run Mapping"}
           </button>
-          {!selectedPolicyId && <p className="gc-subtle">Upload documents first, then choose a policy version.</p>}
+          {!selectedPolicyId && <p className="gc-subtle">No policy selected yet.</p>}
 
           {mapping && (
             <div className="gc-mapping-summary">
@@ -201,67 +263,7 @@ export function GovernanceDocumentWorkspace() {
       </div>
 
       <article className="gc-workspace-pane">
-        <h3>3. Policy inventory</h3>
-        {orgBootstrapNeeded && (
-          <div className="gc-mapping-summary">
-            <p><strong>Organization setup required</strong></p>
-            <p>No org record was found for this session org id. Initialize one to enable policy listing and mapping.</p>
-            <button
-              type="button"
-              className="gc-btn gc-btn-secondary"
-              onClick={initializeOrg}
-              disabled={!isAdmin || isCreatingOrg}
-            >
-              {isCreatingOrg ? "Initializing..." : "Initialize Organization"}
-            </button>
-          </div>
-        )}
-        {isLoading ? (
-          <p>Loading policies...</p>
-        ) : policies.length === 0 ? (
-          <p>No governance policies uploaded yet.</p>
-        ) : (
-          <ul className="gc-policy-list">
-            {policies.map((policy) => (
-              <li key={policy.policy_id}>
-                <span>{policy.file_name}</span>
-                <span className="gc-policy-row-actions">
-                  <span className="gc-mono">{policy.latest_mapping ? "mapped" : "not mapped"}</span>
-                  {isAdmin && (
-                    <>
-                      <button
-                        type="button"
-                        className="gc-btn gc-btn-outline"
-                        onClick={() => setSelectedPolicyId(policy.policy_id)}
-                      >
-                        Select
-                      </button>
-                      <button
-                        type="button"
-                        className="gc-btn gc-btn-outline"
-                        onClick={() => {
-                          const confirmed = window.confirm(
-                            `Delete ${policy.file_name}? This removes the policy and its mappings.`
-                          );
-                          if (confirmed) {
-                            void deletePolicy(policy.policy_id);
-                          }
-                        }}
-                        disabled={isDeletingPolicyId === policy.policy_id}
-                      >
-                        {isDeletingPolicyId === policy.policy_id ? "Deleting..." : "Delete"}
-                      </button>
-                    </>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </article>
-
-      <article className="gc-workspace-pane">
-        <h3>4. Sandbox test tools</h3>
+        <h3>Sandbox test tools</h3>
         <p className="gc-subtle">
           Use these controls for rapid testing loops. Seed data creates mapped policies. Reset clears governance upload
           and mapping artifacts for this org.

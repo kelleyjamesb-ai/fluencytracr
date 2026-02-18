@@ -147,7 +147,7 @@ export function useGovernanceDocumentWorkspace() {
     void loadMapping(selectedPolicyId);
   }, [selectedPolicyId, loadMapping]);
 
-  const uploadPolicy = async () => {
+  const uploadPolicy = async (): Promise<string | null> => {
     if (parsedUploads.length > 0) {
       setIsSaving(true);
       setMessage("");
@@ -204,7 +204,7 @@ export function useGovernanceDocumentWorkspace() {
         setLastBatchError(firstBatchError);
         setMessage(firstBatchError || "Batch upload failed. Check organization access and backend connectivity.");
       }
-      return;
+      return lastPolicyId || null;
     }
 
     if (!policyContent.trim()) {
@@ -233,6 +233,7 @@ export function useGovernanceDocumentWorkspace() {
       }
       setSelectedPolicyId(payload.policy_id);
       setMessage("Policy uploaded. You can now map controls.");
+      return payload.policy_id;
     } catch (error) {
       setMessage(
         describeApiError(
@@ -240,21 +241,18 @@ export function useGovernanceDocumentWorkspace() {
           "Upload failed"
         )
       );
+      return null;
     } finally {
       setIsSaving(false);
     }
   };
 
-  const mapSelectedPolicy = async () => {
-    if (!selectedPolicyId) {
-      setMessage("Select a policy before mapping.");
-      return;
-    }
+  const mapPolicyById = async (policyId: string) => {
     setIsMapping(true);
     setMessage("");
     try {
-      await governanceApi.mapPolicy(ctx, selectedPolicyId);
-      await Promise.all([loadPolicies(), loadMapping(selectedPolicyId)]);
+      await governanceApi.mapPolicy(ctx, policyId);
+      await Promise.all([loadPolicies(), loadMapping(policyId)]);
       setMessage("Mapping complete. Review controls and unresolved clauses.");
     } catch (error) {
       if (error instanceof GovernanceApiError) {
@@ -265,6 +263,14 @@ export function useGovernanceDocumentWorkspace() {
     } finally {
       setIsMapping(false);
     }
+  };
+
+  const mapSelectedPolicy = async () => {
+    if (!selectedPolicyId) {
+      setMessage("Select a policy before mapping.");
+      return;
+    }
+    await mapPolicyById(selectedPolicyId);
   };
 
   const updateSelectedPolicy = async () => {
@@ -316,6 +322,19 @@ export function useGovernanceDocumentWorkspace() {
     } finally {
       setIsDeletingPolicyId(null);
     }
+  };
+
+  const selectPolicyForMapping = (policyId: string) => {
+    setSelectedPolicyId(policyId);
+    setMessage(`Selected policy for mapping.`);
+  };
+
+  const uploadAndMapPolicy = async () => {
+    const uploadedPolicyId = await uploadPolicy();
+    if (!uploadedPolicyId) {
+      return;
+    }
+    await mapPolicyById(uploadedPolicyId);
   };
 
   const seedSyntheticData = async () => {
@@ -443,6 +462,7 @@ export function useGovernanceDocumentWorkspace() {
 
   const hasPolicies = policies.length > 0;
   const hasSelectedPolicy = Boolean(selectedPolicyId);
+  const selectedPolicy = policies.find((policy) => policy.policy_id === selectedPolicyId) ?? null;
   const hasPendingParsedUploads = parsedUploads.length > 0;
   const canRunMapping = isAdmin && hasSelectedPolicy && !isMapping;
   const shouldHighlightRunMapping = canRunMapping && !hasPendingParsedUploads;
@@ -450,12 +470,12 @@ export function useGovernanceDocumentWorkspace() {
   const nextStepText = orgBootstrapNeeded
     ? "Initialize organization to enable upload and mapping."
     : hasPendingParsedUploads
-      ? "Next step: click Upload Documents to save parsed files."
+      ? "Step 1: click Upload Documents to save parsed files."
       : !hasPolicies
-        ? "Next step: upload at least one document."
+        ? "Step 1: upload at least one document."
         : !hasSelectedPolicy
-          ? "Next step: select a Policy version."
-          : "Next step: click Run Mapping.";
+          ? "Step 2: select a policy in inventory, then run mapping."
+          : "Step 2: click Run Mapping.";
 
   return {
     isAdmin,
@@ -477,6 +497,7 @@ export function useGovernanceDocumentWorkspace() {
     hasPendingParsedUploads,
     hasPolicies,
     hasSelectedPolicy,
+    selectedPolicy,
     hasMapping: Boolean(mapping),
     canRunMapping,
     shouldHighlightRunMapping,
@@ -493,9 +514,11 @@ export function useGovernanceDocumentWorkspace() {
     isSeedingSynthetic,
     isResettingSandbox,
     uploadPolicy,
+    uploadAndMapPolicy,
     mapSelectedPolicy,
     updateSelectedPolicy,
     deletePolicy,
+    selectPolicyForMapping,
     seedSyntheticData,
     resetSandbox
   };

@@ -1319,6 +1319,11 @@ body {
   padding: 8px 10px;
 }
 
+.gc-policy-selected {
+  border-color: #7d9bff !important;
+  background: #f7f9ff;
+}
+
 .gc-policy-row-actions {
   display: flex;
   gap: 6px;
