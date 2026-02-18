@@ -318,6 +318,11 @@ export function useGovernanceDocumentWorkspace() {
     }
   };
 
+  const selectPolicyForMapping = (policyId: string) => {
+    setSelectedPolicyId(policyId);
+    setMessage(`Selected policy for mapping.`);
+  };
+
   const seedSyntheticData = async () => {
     setIsSeedingSynthetic(true);
     setMessage("");
@@ -443,6 +448,7 @@ export function useGovernanceDocumentWorkspace() {
 
   const hasPolicies = policies.length > 0;
   const hasSelectedPolicy = Boolean(selectedPolicyId);
+  const selectedPolicy = policies.find((policy) => policy.policy_id === selectedPolicyId) ?? null;
   const hasPendingParsedUploads = parsedUploads.length > 0;
   const canRunMapping = isAdmin && hasSelectedPolicy && !isMapping;
   const shouldHighlightRunMapping = canRunMapping && !hasPendingParsedUploads;
@@ -450,12 +456,12 @@ export function useGovernanceDocumentWorkspace() {
   const nextStepText = orgBootstrapNeeded
     ? "Initialize organization to enable upload and mapping."
     : hasPendingParsedUploads
-      ? "Next step: click Upload Documents to save parsed files."
+      ? "Step 1: click Upload Documents to save parsed files."
       : !hasPolicies
-        ? "Next step: upload at least one document."
+        ? "Step 1: upload at least one document."
         : !hasSelectedPolicy
-          ? "Next step: select a Policy version."
-          : "Next step: click Run Mapping.";
+          ? "Step 2: select a policy in inventory, then run mapping."
+          : "Step 2: click Run Mapping.";
 
   return {
     isAdmin,
@@ -477,6 +483,7 @@ export function useGovernanceDocumentWorkspace() {
     hasPendingParsedUploads,
     hasPolicies,
     hasSelectedPolicy,
+    selectedPolicy,
     hasMapping: Boolean(mapping),
     canRunMapping,
     shouldHighlightRunMapping,
@@ -496,6 +503,7 @@ export function useGovernanceDocumentWorkspace() {
     mapSelectedPolicy,
     updateSelectedPolicy,
     deletePolicy,
+    selectPolicyForMapping,
     seedSyntheticData,
     resetSandbox
   };

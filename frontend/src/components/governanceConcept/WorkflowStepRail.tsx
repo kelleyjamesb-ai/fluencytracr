@@ -6,32 +6,17 @@ type WorkflowStepRailProps = {
   hasMapping: boolean;
 };
 
-const stepState = (
-  step: "parse" | "upload" | "select" | "map" | "review",
-  flags: Omit<WorkflowStepRailProps, "nextStepText">
-) => {
-  if (step === "parse") {
-    return flags.hasPendingParsedUploads || flags.hasPolicies ? "done" : "active";
-  }
+const stepState = (step: "upload" | "map", flags: Omit<WorkflowStepRailProps, "nextStepText">) => {
   if (step === "upload") {
-    return flags.hasPendingParsedUploads ? "active" : flags.hasPolicies ? "done" : "pending";
-  }
-  if (step === "select") {
-    if (!flags.hasPolicies) {
-      return "pending";
+    if (flags.hasPendingParsedUploads) {
+      return "active";
     }
-    return flags.hasSelectedPolicy ? "done" : "active";
+    return flags.hasPolicies ? "done" : "active";
   }
-  if (step === "map") {
-    if (!flags.hasSelectedPolicy) {
-      return "pending";
-    }
-    return flags.hasMapping ? "done" : "active";
-  }
-  if (!flags.hasMapping) {
+  if (!flags.hasPolicies || !flags.hasSelectedPolicy) {
     return "pending";
   }
-  return "active";
+  return flags.hasMapping ? "done" : "active";
 };
 
 export function WorkflowStepRail({
@@ -43,11 +28,8 @@ export function WorkflowStepRail({
 }: WorkflowStepRailProps) {
   const flags = { hasPendingParsedUploads, hasPolicies, hasSelectedPolicy, hasMapping };
   const steps = [
-    { id: "parse", label: "Parse Documents" },
-    { id: "upload", label: "Upload Policies" },
-    { id: "select", label: "Select Version" },
-    { id: "map", label: "Run Mapping" },
-    { id: "review", label: "Review Hotspots" }
+    { id: "upload", label: "Upload and Manage Policies" },
+    { id: "map", label: "Map Selected Policy" }
   ] as const;
 
   return (
