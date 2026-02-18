@@ -1,0 +1,29 @@
+name: governance-gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  governance-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run generate --workspace backend
+
+      - name: Run governance enforcement gate
+        run: npm test --workspace backend -- tests/dashboard_v1_governance.test.ts tests/workflow_phase_a_api.test.ts

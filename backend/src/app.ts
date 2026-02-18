@@ -28,7 +28,7 @@ import {
   WorkflowRegistryAuditResponse
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
-import { rbacMiddleware, enforceAggregation } from "./rbac";
+import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
@@ -110,16 +110,20 @@ import {
   persistPolicyMapping
 } from "./compliance_persistence";
 import {
+  createControlConfigVersion,
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
   listBaselineResetsByOrg,
+  listRegistryCurrentByOrg,
   listRegistryAudit,
   listRegistryEntriesByOrg,
   listRegistryEntriesByWorkflow,
   listRegistryPolicyConfigsByOrg,
-  registerWorkflowVersion
+  registerWorkflowVersion,
+  resetBaseline
 } from "./workflow_registry";
 import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
+import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -133,6 +137,8 @@ if (shouldTrustProxy) {
   app.set("trust proxy", 1);
 }
 app.use(express.json());
+app.use(authMiddleware);
+app.use(orgScopeMiddleware);
 
 const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -214,6 +220,33 @@ const UsageShapeSchema = z
   .refine((data) => Boolean(data.team_id) !== Boolean(data.role_id), {
     message: "Provide exactly one of team_id or role_id"
   });
+
+const WorkflowRegisterSchema = z.object({
+  org_id: z.string().min(1),
+  workflow_id: z.string().min(1),
+  display_name: z.string().min(1).optional(),
+  risk_class: z.enum(["low", "medium", "high"]),
+  change_reason: z.string().min(1).optional()
+}).strict();
+
+const ControlConfigVersionCreateSchema = z.object({
+  org_id: z.string().min(1),
+  version_name: z.string().min(1),
+  change_reason: z.string().min(1),
+  window_days_low: z.number().int().positive(),
+  window_days_medium: z.number().int().positive(),
+  window_days_high: z.number().int().positive(),
+  min_events_low: z.number().int().positive(),
+  min_events_medium: z.number().int().positive(),
+  min_events_high: z.number().int().positive(),
+  require_verification_high: z.boolean()
+}).strict();
+
+const BaselineResetSchema = z.object({
+  org_id: z.string().min(1),
+  control_config_version_id: z.string().min(1),
+  reason: z.string().min(1)
+}).strict();
 
 const validateRows = <T>(
   rows: unknown[],
@@ -336,16 +369,6 @@ const patternToExecutiveWorkingStyle = (pattern: string | null) => {
     return "AI started but not used" as const;
   }
   return null;
-};
-
-const visibilityStateLabel = (state: "VISIBLE" | "NOT_ENOUGH_DATA_YET" | "NOT_SHOWN_SAFETY") => {
-  if (state === "VISIBLE") {
-    return "Clear enough to show" as const;
-  }
-  if (state === "NOT_ENOUGH_DATA_YET") {
-    return "Not enough data yet" as const;
-  }
-  return "Not shown (safety)" as const;
 };
 
 const addDays = (start: string, days: number) => {
@@ -2586,7 +2609,7 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    const actorRole = req.role ?? "EXEC_VIEWER";
     logAuditEvent({
       orgId: org.id,
       action: "dashboard_access",
@@ -2698,7 +2721,7 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    const actorRole = req.role ?? "EXEC_VIEWER";
     logAuditEvent({
       orgId: org.id,
       action: "dashboard_export",
@@ -2718,7 +2741,7 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    const actorRole = req.role ?? "EXEC_VIEWER";
     logAuditEvent({
       orgId: org.id,
       action: "dashboard_export",
@@ -2803,6 +2826,190 @@ app.get(
         parameter_hash: latestRecord?.parameter_hash ?? parameterHash(),
         generated_at: latestRecord?.generated_at ?? nowIso()
       }
+    });
+  }
+);
+
+app.get(
+  "/api/workflows",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const orgId = typeof req.query.org_id === "string" ? req.query.org_id : "";
+    if (!orgId) {
+      return res.status(400).json({ error: "org_id is required" });
+    }
+    const org = store.orgs.get(orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const entries = await listRegistryEntriesByOrg(org.id);
+    const latestByWorkflow = entries
+      .slice()
+      .sort((a, b) => {
+        if (a.workflowId !== b.workflowId) {
+          return a.workflowId.localeCompare(b.workflowId);
+        }
+        if (a.version !== b.version) {
+          return a.version - b.version;
+        }
+        return a.createdAt.localeCompare(b.createdAt);
+      })
+      .reduce((acc, entry) => {
+        acc.set(entry.workflowId, entry);
+        return acc;
+      }, new Map<string, (typeof entries)[number]>());
+
+    const workflows = await Promise.all(
+      Array.from(latestByWorkflow.values())
+        .sort((a, b) => a.workflowId.localeCompare(b.workflowId))
+        .map(async (entry) => {
+          const visibility = await computeWorkflowVisibilityService(org.id, entry.workflowId, new Date());
+          return {
+            workflow_id: entry.workflowId,
+            display_name: entry.displayName,
+            risk_class: entry.riskClass,
+            version: entry.version,
+            visibility_state: visibility.visibilityState,
+            dominant_pattern: visibility.dominantPattern,
+            updated_at: entry.createdAt
+          };
+        })
+    );
+
+    return res.json({ org_id: org.id, workflows });
+  }
+);
+
+app.post(
+  "/api/workflows/register",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR"]),
+  async (req, res) => {
+    const parsed = WorkflowRegisterSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+    const org = store.orgs.get(parsed.data.org_id);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const created = await registerWorkflowVersion({
+      orgId: org.id,
+      workflowId: parsed.data.workflow_id,
+      displayName: parsed.data.display_name,
+      riskClass: parsed.data.risk_class,
+      changeReason: parsed.data.change_reason,
+      actorSub: req.authSub ?? undefined,
+      actorRole: req.role ?? undefined
+    });
+    return res.status(201).json({
+      org_id: org.id,
+      workflow_id: created.workflowId,
+      display_name: created.displayName,
+      version: created.version,
+      risk_class: created.riskClass,
+      created_at: created.createdAt
+    });
+  }
+);
+
+app.post(
+  "/api/workflows/update-risk-class",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR"]),
+  async (req, res) => {
+    const parsed = WorkflowRegisterSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+    const org = store.orgs.get(parsed.data.org_id);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const created = await registerWorkflowVersion({
+      orgId: org.id,
+      workflowId: parsed.data.workflow_id,
+      displayName: parsed.data.display_name,
+      riskClass: parsed.data.risk_class,
+      changeReason: parsed.data.change_reason ?? "risk class update",
+      actorSub: req.authSub ?? undefined,
+      actorRole: req.role ?? undefined
+    });
+    return res.status(201).json({
+      org_id: org.id,
+      workflow_id: created.workflowId,
+      display_name: created.displayName,
+      version: created.version,
+      risk_class: created.riskClass,
+      created_at: created.createdAt
+    });
+  }
+);
+
+app.post(
+  "/api/control-config/create-version",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR"]),
+  async (req, res) => {
+    const parsed = ControlConfigVersionCreateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+    const org = store.orgs.get(parsed.data.org_id);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const created = await createControlConfigVersion({
+      orgId: org.id,
+      versionName: parsed.data.version_name,
+      changeReason: parsed.data.change_reason,
+      changedByUser: req.authSub ?? undefined,
+      changedByRole: req.role ?? undefined,
+      windowDaysLow: parsed.data.window_days_low,
+      windowDaysMedium: parsed.data.window_days_medium,
+      windowDaysHigh: parsed.data.window_days_high,
+      minEventsLow: parsed.data.min_events_low,
+      minEventsMedium: parsed.data.min_events_medium,
+      minEventsHigh: parsed.data.min_events_high,
+      requireVerificationHigh: parsed.data.require_verification_high
+    });
+    return res.status(201).json({
+      org_id: org.id,
+      control_config_version_id: created.id,
+      version_name: created.versionName,
+      created_at: created.createdAt
+    });
+  }
+);
+
+app.post(
+  "/api/control-config/reset-baseline",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR"]),
+  async (req, res) => {
+    const parsed = BaselineResetSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+    const org = store.orgs.get(parsed.data.org_id);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const config = (await listRegistryPolicyConfigsByOrg(org.id)).find(
+      (row) => row.id === parsed.data.control_config_version_id
+    );
+    if (!config) {
+      return res.status(404).json({ error: "Control config version not found" });
+    }
+    const reset = await resetBaseline({
+      orgId: org.id,
+      controlConfigVersionId: parsed.data.control_config_version_id,
+      reason: parsed.data.reason,
+      triggeredByUser: req.authSub ?? undefined,
+      triggeredByRole: req.role ?? undefined
+    });
+    return res.status(201).json({
+      org_id: org.id,
+      baseline_reset_event_id: reset.id,
+      control_config_version_id: reset.controlConfigVersionId,
+      reset_at: reset.resetAt
     });
   }
 );
@@ -2909,8 +3116,8 @@ app.post(
       workflowId: req.params.workflowId,
       riskClass: parsed.data.risk_class,
       changeReason: parsed.data.change_reason,
-      actorSub: req.header("x-sub") ?? undefined,
-      actorRole: req.header("x-role") ?? undefined,
+      actorSub: req.authSub ?? undefined,
+      actorRole: req.role ?? undefined,
       policyConfig: parsed.data.policy_config
         ? {
             policyVersion: parsed.data.policy_config.policy_version,
@@ -3014,88 +3221,42 @@ app.get(
 
 app.get(
   "/api/board-snapshot/:orgId",
-  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
 
-    const parsedWindow = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
-    if (!parsedWindow.success) {
-      return res.status(400).json({ error: "Invalid query" });
-    }
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-    const window = parsedWindow.data;
-    const entries = await listRegistryEntriesByOrg(org.id);
-    const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
-    const baselineResets = await listBaselineResetsByOrg(org.id);
-
-    const latestByWorkflow = entries
-      .slice()
-      .sort((a, b) => {
-        if (a.workflowId !== b.workflowId) {
+    const window = "30d" as const;
+    const currentWorkflows = await listRegistryCurrentByOrg(org.id);
+    const now = new Date();
+    const workflows = await Promise.all(
+      currentWorkflows
+        .slice()
+        .sort((a, b) => {
+          if (a.displayName !== b.displayName) {
+            return a.displayName.localeCompare(b.displayName);
+          }
           return a.workflowId.localeCompare(b.workflowId);
-        }
-        if (a.version !== b.version) {
-          return a.version - b.version;
-        }
-        return a.createdAt.localeCompare(b.createdAt);
-      })
-      .reduce((acc, entry) => {
-        acc.set(entry.workflowId, entry);
-        return acc;
-      }, new Map<string, (typeof entries)[number]>());
-
-    const workflows = Array.from(latestByWorkflow.values())
-      .map((entry) => {
-        const policyConfig = getPolicyConfigForRegistryVersion(policyConfigs, entry);
-        const baselineResetAt = getBaselineResetAtForRegistryVersion(baselineResets, entry);
-        const visibilityState = computeWorkflowVisibility(entry.workflowId, window, {
-          registryEntry: entry,
-          policyConfig,
-          baselineResetAt,
-          fluencyEvents: Array.from(store.fluencyEvents.values()),
-          v0Signals: Array.from(store.behavioralSignals.values()),
-          patternInferenceRecords: store.patternInferenceRecords
-        });
-
-        const dominantPatterns = new Set(
-          store.patternInferenceRecords
-            .filter((record) => workflowIdFromScopeKey(record.scope_key) === entry.workflowId)
-            .filter((record) => ["MEDIUM", "HIGH"].includes(record.confidence_level))
-            .filter((record) => record.pattern !== "NO_PATTERN")
-            .map((record) => record.pattern)
-        );
-
-        const dominantPattern = dominantPatterns.size === 1 ? Array.from(dominantPatterns)[0] : null;
-        const workingStyle =
-          visibilityState === "VISIBLE" ? patternToExecutiveWorkingStyle(dominantPattern) : null;
-
-        return {
-          workflow_id: entry.workflowId,
-          workflow_display_name: entry.workflowId,
-          working_style: workingStyle,
-          visibility_state: visibilityState,
-          visibility_label: visibilityStateLabel(visibilityState),
-          observation_window: window
-        };
-      })
-      .sort((a, b) => a.workflow_display_name.localeCompare(b.workflow_display_name));
+        })
+        .map(async (workflow) => {
+          const visibility = await computeWorkflowVisibilityService(org.id, workflow.workflowId, now);
+          const workingStyle =
+            visibility.visibilityState === "VISIBLE"
+              ? patternToExecutiveWorkingStyle(visibility.dominantPattern)
+              : null;
+          return {
+            workflow_id: workflow.workflowId,
+            display_name: workflow.displayName,
+            visibility_state: visibility.visibilityState,
+            working_style: workingStyle
+          };
+        })
+    );
 
     const payload: BoardSnapshotResponse = {
-      org_id: org.id,
-      header: {
-        observation_window: window,
-        visible: workflows.filter((row) => row.visibility_state === "VISIBLE").length,
-        not_enough_data_yet: workflows.filter(
-          (row) => row.visibility_state === "NOT_ENOUGH_DATA_YET"
-        ).length,
-        not_shown_safety: workflows.filter((row) => row.visibility_state === "NOT_SHOWN_SAFETY")
-          .length
-      },
+      observation_window: "last_30_days",
       workflows
     };
     return res.json(payload);

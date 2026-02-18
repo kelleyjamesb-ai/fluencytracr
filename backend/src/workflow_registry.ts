@@ -101,6 +101,7 @@ const toControlConfig = (
 export const registerWorkflowVersion = async (params: {
   orgId: string;
   workflowId: string;
+  displayName?: string;
   riskClass: WorkflowRiskClass;
   changeReason?: string;
   actorSub?: string;
@@ -125,7 +126,7 @@ export const registerWorkflowVersion = async (params: {
     id: crypto.randomUUID(),
     orgId: params.orgId,
     workflowId: params.workflowId,
-    displayName: params.workflowId,
+    displayName: params.displayName ?? params.workflowId,
     version,
     riskClass: params.riskClass,
     changeReason: params.changeReason ?? "",
@@ -152,7 +153,7 @@ export const registerWorkflowVersion = async (params: {
     id: `current-${params.orgId}-${params.workflowId}`,
     orgId: params.orgId,
     workflowId: params.workflowId,
-    displayName: params.workflowId,
+    displayName: params.displayName ?? params.workflowId,
     riskClass: params.riskClass,
     effectiveVersionId: record.id,
     updatedAt: createdAt
@@ -212,6 +213,63 @@ export const registerWorkflowVersion = async (params: {
   await persistWorkflowRegistryAuditEvent(baselineResetAudit);
 
   return record;
+};
+
+export const createControlConfigVersion = async (params: {
+  orgId: string;
+  versionName: string;
+  changeReason: string;
+  changedByUser?: string;
+  changedByRole?: string;
+  windowDaysLow: number;
+  windowDaysMedium: number;
+  windowDaysHigh: number;
+  minEventsLow: number;
+  minEventsMedium: number;
+  minEventsHigh: number;
+  requireVerificationHigh: boolean;
+}) => {
+  const createdAt = new Date().toISOString();
+  const record: WorkflowVisibilityPolicyConfigRecord = {
+    id: crypto.randomUUID(),
+    orgId: params.orgId,
+    versionName: params.versionName,
+    changeReason: params.changeReason,
+    changedByUser: params.changedByUser ?? "system",
+    changedByRole: params.changedByRole ?? "SYSTEM",
+    windowDaysLow: params.windowDaysLow,
+    windowDaysMedium: params.windowDaysMedium,
+    windowDaysHigh: params.windowDaysHigh,
+    minEventsLow: params.minEventsLow,
+    minEventsMedium: params.minEventsMedium,
+    minEventsHigh: params.minEventsHigh,
+    requireVerificationHigh: params.requireVerificationHigh,
+    createdAt
+  };
+  insertWorkflowVisibilityPolicyConfig(record);
+  await persistWorkflowVisibilityPolicyConfig(record);
+  return record;
+};
+
+export const resetBaseline = async (params: {
+  orgId: string;
+  controlConfigVersionId: string;
+  reason: string;
+  triggeredByUser?: string;
+  triggeredByRole?: string;
+}) => {
+  const event: BaselineResetEventRecord = {
+    id: crypto.randomUUID(),
+    orgId: params.orgId,
+    controlConfigVersionId: params.controlConfigVersionId,
+    resetAt: new Date().toISOString(),
+    reason: params.reason,
+    triggeredByUser: params.triggeredByUser ?? "system",
+    triggeredByRole: params.triggeredByRole ?? "SYSTEM"
+  };
+  insertBaselineResetEvent(event);
+  await persistBaselineResetEvent(event);
+  return event;
 };
 
 export const listRegistryAudit = async (orgId: string, workflowId?: string) => {
