@@ -265,11 +265,12 @@ export type WorkflowRegistryRecord = {
   id: string;
   orgId: string;
   workflowId: string;
+  displayName: string;
   version: number;
   riskClass: WorkflowRiskClass;
   changeReason?: string;
-  actorSub?: string;
-  actorRole?: string;
+  changedByUser: string;
+  changedByRole: string;
   createdAt: string;
 };
 
@@ -286,6 +287,43 @@ export type WorkflowRegistryAuditRecord = {
 };
 
 export type WorkflowVisibilityPolicyConfigRecord = {
+  id: string;
+  orgId: string;
+  versionName: string;
+  changeReason: string;
+  changedByUser: string;
+  changedByRole: string;
+  windowDaysLow: number;
+  windowDaysMedium: number;
+  windowDaysHigh: number;
+  minEventsLow: number;
+  minEventsMedium: number;
+  minEventsHigh: number;
+  requireVerificationHigh: boolean;
+  createdAt: string;
+};
+
+export type WorkflowRegistryCurrentRecord = {
+  id: string;
+  orgId: string;
+  workflowId: string;
+  displayName: string;
+  riskClass: WorkflowRiskClass;
+  effectiveVersionId: string;
+  updatedAt: string;
+};
+
+export type BaselineResetEventRecord = {
+  id: string;
+  orgId: string;
+  controlConfigVersionId: string;
+  resetAt: string;
+  reason: string;
+  triggeredByUser: string;
+  triggeredByRole: string;
+};
+
+export type DerivedWorkflowPolicyConfigRecord = {
   id: string;
   orgId: string;
   workflowId: string;
@@ -332,8 +370,10 @@ class MemoryStore {
   auditLogs = new Map<string, AuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
+  workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
   workflowRegistryAudit = new Map<string, WorkflowRegistryAuditRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
+  baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
   reset() {
     this.orgs.clear();
@@ -367,8 +407,10 @@ class MemoryStore {
     this.auditLogs.clear();
     this.connectorEventQuarantine.clear();
     this.workflowRegistry.clear();
+    this.workflowRegistryCurrent.clear();
     this.workflowRegistryAudit.clear();
     this.workflowVisibilityPolicyConfigs.clear();
+    this.baselineResetEvents.clear();
   }
 }
 
@@ -450,8 +492,12 @@ export const upsertFunction = (orgId: string, id: string, name: string): { inser
 };
 
 export const insertWorkflowRegistryEntry = (record: WorkflowRegistryRecord) => {
-  const key = `${record.orgId}:${record.workflowId}:${record.version}`;
-  store.workflowRegistry.set(key, record);
+  store.workflowRegistry.set(record.id, record);
+};
+
+export const upsertWorkflowRegistryCurrent = (record: WorkflowRegistryCurrentRecord) => {
+  const key = `${record.orgId}:${record.workflowId}`;
+  store.workflowRegistryCurrent.set(key, record);
 };
 
 export const insertWorkflowRegistryAudit = (record: WorkflowRegistryAuditRecord) => {
@@ -459,6 +505,9 @@ export const insertWorkflowRegistryAudit = (record: WorkflowRegistryAuditRecord)
 };
 
 export const insertWorkflowVisibilityPolicyConfig = (record: WorkflowVisibilityPolicyConfigRecord) => {
-  const key = `${record.orgId}:${record.workflowId}:${record.registryVersion}`;
-  store.workflowVisibilityPolicyConfigs.set(key, record);
+  store.workflowVisibilityPolicyConfigs.set(record.id, record);
+};
+
+export const insertBaselineResetEvent = (record: BaselineResetEventRecord) => {
+  store.baselineResetEvents.set(record.id, record);
 };

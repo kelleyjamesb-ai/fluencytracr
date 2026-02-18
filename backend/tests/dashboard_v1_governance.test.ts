@@ -15,6 +15,7 @@ const FORBIDDEN_FIELD_TOKENS = [
   "trend",
   "delta",
   "improvement",
+  "percent_change",
   "prior",
   "previous",
   "comparison"
@@ -110,6 +111,7 @@ describe("dashboard v1 governance enforcement", () => {
     const responses = await Promise.all([
       fetch(`${server.url}/api/orientation/org-1?window=60d`, { headers: { "x-role": "EXEC_VIEWER" } }),
       fetch(`${server.url}/api/board-snapshot/org-1?window=60d`, { headers: { "x-role": "EXEC_VIEWER" } }),
+      fetch(`${server.url}/api/workflows?org_id=org-1`, { headers: { "x-role": "EXEC_VIEWER" } }),
       fetch(`${server.url}/api/workflow-registry/org-1/workflows`, { headers: { "x-role": "EXEC_VIEWER" } }),
       fetch(`${server.url}/api/workflow-registry/org-1/workflows/wf-governance/versions`, { headers: { "x-role": "EXEC_VIEWER" } }),
       fetch(`${server.url}/api/workflow-registry/org-1/audit?workflow_id=wf-governance`, { headers: { "x-role": "EXEC_VIEWER" } })
@@ -121,9 +123,9 @@ describe("dashboard v1 governance enforcement", () => {
     responses.forEach((response) => expect(response.status).toBe(200));
     expect(OrientationWorkflowVisibilitySummaryResponseSchema.safeParse(payloads[0]).success).toBe(true);
     expect(BoardSnapshotResponseSchema.safeParse(payloads[1]).success).toBe(true);
-    expect(WorkflowRegistryWorkflowsResponseSchema.safeParse(payloads[2]).success).toBe(true);
-    expect(WorkflowRegistryVersionsResponseSchema.safeParse(payloads[3]).success).toBe(true);
-    expect(WorkflowRegistryAuditResponseSchema.safeParse(payloads[4]).success).toBe(true);
+    expect(WorkflowRegistryWorkflowsResponseSchema.safeParse(payloads[3]).success).toBe(true);
+    expect(WorkflowRegistryVersionsResponseSchema.safeParse(payloads[4]).success).toBe(true);
+    expect(WorkflowRegistryAuditResponseSchema.safeParse(payloads[5]).success).toBe(true);
 
     payloads.forEach((payload) => {
       const forbidden = collectForbiddenFieldPaths(payload, FORBIDDEN_FIELD_TOKENS);

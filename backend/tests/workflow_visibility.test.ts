@@ -13,8 +13,12 @@ const registry = (overrides: Partial<WorkflowRegistryRecord> = {}): WorkflowRegi
   id: "reg-1",
   orgId: "org-1",
   workflowId: "workflow-1",
+  displayName: "workflow-1",
   version: 1,
   riskClass: "medium",
+  changeReason: "seed",
+  changedByUser: "test-user",
+  changedByRole: "ADMIN",
   createdAt: "2026-02-01T00:00:00.000Z",
   ...overrides
 });
@@ -24,15 +28,17 @@ const policy = (
 ): WorkflowVisibilityPolicyConfigRecord => ({
   id: "pol-1",
   orgId: "org-1",
-  workflowId: "workflow-1",
-  registryVersion: 1,
-  policyVersion: "test-policy-v1",
-  lowMinEvents: 3,
-  mediumMinEvents: 5,
-  highMinEvents: 8,
-  minWindowDays: 30,
-  highSparseMinEvents: 12,
-  highSparseMinWindowDays: 60,
+  versionName: "test-policy-v1",
+  changeReason: "seed",
+  changedByUser: "test-user",
+  changedByRole: "ADMIN",
+  windowDaysLow: 30,
+  windowDaysMedium: 30,
+  windowDaysHigh: 60,
+  minEventsLow: 3,
+  minEventsMedium: 5,
+  minEventsHigh: 8,
+  requireVerificationHigh: true,
   createdAt: "2026-02-01T00:00:00.000Z",
   ...overrides
 });
@@ -221,9 +227,7 @@ describe("computeWorkflowVisibilitySummary", () => {
     const summary = computeWorkflowVisibilitySummary(entries, "60d", {
       now,
       policyConfigs: [
-        policy({ workflowId: "wf-visible", id: "p1" }),
-        policy({ workflowId: "wf-data", id: "p2" }),
-        policy({ workflowId: "wf-safe", id: "p3" })
+        policy({ id: "p1" })
       ],
       fluencyEvents: events,
       v0Signals: signals
