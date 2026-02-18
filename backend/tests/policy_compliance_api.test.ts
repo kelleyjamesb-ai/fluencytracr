@@ -7,6 +7,10 @@ import { buildDeterministicDecisionId } from "../src/policy_compliance";
 const schemaHeaders = withSchemaVersion({
   "Content-Type": "application/json"
 });
+const adminSchemaHeaders = withSchemaVersion({
+  "Content-Type": "application/json",
+  "x-role": "ADMIN"
+});
 
 beforeEach(() => {
   delete process.env.BETA_ORG_ALLOWLIST;
@@ -228,6 +232,38 @@ it("lists policies and fetches latest mapping for a policy", async () => {
   expect(mappingResponse.status).toBe(200);
   expect(mappingResponse.body.policy_id).toBe(policyId);
   expect(Array.isArray(mappingResponse.body.controls)).toBe(true);
+});
+
+it("seeds synthetic policy data and resets sandbox artifacts", async () => {
+  const seeded = await request(app)
+    .post("/orgs/org-1/sandbox/seed-synthetic")
+    .set(adminSchemaHeaders)
+    .send({});
+  expect(seeded.status).toBe(201);
+  expect(seeded.body.synthetic_pack_size).toBeGreaterThanOrEqual(1);
+  expect(seeded.body.created_policies).toBeGreaterThanOrEqual(1);
+  expect(Array.isArray(seeded.body.seeded)).toBe(true);
+
+  const listAfterSeed = await request(app)
+    .get("/orgs/org-1/policies")
+    .set({ "x-role": "ADMIN" });
+  expect(listAfterSeed.status).toBe(200);
+  expect(listAfterSeed.body.policies.length).toBeGreaterThanOrEqual(1);
+  expect(listAfterSeed.body.policies[0].latest_mapping).toBeTruthy();
+
+  const reset = await request(app)
+    .post("/orgs/org-1/sandbox/reset")
+    .set(adminSchemaHeaders)
+    .send({});
+  expect(reset.status).toBe(200);
+  expect(reset.body.cleared.policies).toBeGreaterThanOrEqual(1);
+  expect(reset.body.cleared.mappings).toBeGreaterThanOrEqual(1);
+
+  const listAfterReset = await request(app)
+    .get("/orgs/org-1/policies")
+    .set({ "x-role": "ADMIN" });
+  expect(listAfterReset.status).toBe(200);
+  expect(listAfterReset.body.policies).toHaveLength(0);
 });
 
 it("supports unresolved clause decisions and updates compliance status", async () => {
