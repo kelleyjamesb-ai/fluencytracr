@@ -3,7 +3,7 @@ import { Role, RoleSchema } from "@learnaire/shared";
 
 export type RequestWithRole = Request & { role?: Role; authWarning?: string };
 
-const ROLE_ORDER: Role[] = ["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"];
+const ROLE_ORDER: Role[] = ["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"];
 
 /**
  * SECURITY WARNING: The x-role header is currently trusted without verification.
@@ -23,9 +23,9 @@ export const rbacMiddleware = (allowed: Role[]) => {
 
     // SECURITY: Log warning for unverified privileged role claims
     // TODO: Replace with proper JWT/session-based authentication
-    if (role === "ADMIN") {
+    if (role === "ADMIN" || role === "GOV_OPERATOR") {
       console.warn(
-        `[SECURITY] Unverified ADMIN role claim from IP: ${req.ip}, ` +
+        `[SECURITY] Unverified privileged role claim (${role}) from IP: ${req.ip}, ` +
         `endpoint: ${req.method} ${req.path}, ` +
         `timestamp: ${new Date().toISOString()}`
       );

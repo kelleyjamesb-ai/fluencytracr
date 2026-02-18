@@ -8,6 +8,7 @@ module.exports = {
   testPathIgnorePatterns: ["/node_modules/", "/dist/"],
   maxWorkers: 2,
   testTimeout: 30000,
+  setupFilesAfterEnv: ["<rootDir>/tests/jest.setup.ts"],
   detectOpenHandles: true,
   forceExit: false,
   moduleNameMapper: {

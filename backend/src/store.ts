@@ -3,7 +3,7 @@ import {
   MetricObservation,
   PolicyControlObservation,
   TrainingEventRollup,
-  BehavioralSignalAggregate,
+  ConnectorSignalAggregate,
   FluencyEvent,
   FluencyPattern,
   DecisionLedgerEntry,
@@ -206,7 +206,7 @@ export type FluencySnapshotRecord = {
   dataCompleteness: number;
 };
 
-export type BehavioralSignalRecord = BehavioralSignalAggregate & {
+export type BehavioralSignalRecord = ConnectorSignalAggregate & {
   originalCount?: number;  // Store original count before suppression for rollups
   includesRollup?: boolean;  // Indicates this record includes rolled-up small teams
 };
@@ -259,6 +259,47 @@ export type ConnectorEventQuarantineRecord = {
   received_at: string;
 };
 
+export type WorkflowRiskClass = "low" | "medium" | "high";
+
+export type WorkflowRegistryRecord = {
+  id: string;
+  orgId: string;
+  workflowId: string;
+  version: number;
+  riskClass: WorkflowRiskClass;
+  changeReason?: string;
+  actorSub?: string;
+  actorRole?: string;
+  createdAt: string;
+};
+
+export type WorkflowRegistryAuditRecord = {
+  id: string;
+  orgId: string;
+  workflowId: string;
+  version: number;
+  action: "REGISTERED" | "BASELINE_RESET";
+  actorSub?: string;
+  actorRole?: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type WorkflowVisibilityPolicyConfigRecord = {
+  id: string;
+  orgId: string;
+  workflowId: string;
+  registryVersion: number;
+  policyVersion: string;
+  lowMinEvents: number;
+  mediumMinEvents: number;
+  highMinEvents: number;
+  minWindowDays: number;
+  highSparseMinEvents: number;
+  highSparseMinWindowDays: number;
+  createdAt: string;
+};
+
 class MemoryStore {
   orgs = new Map<string, OrgRecord>();
   teams = new Map<string, TeamRecord>();
@@ -290,6 +331,9 @@ class MemoryStore {
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
   auditLogs = new Map<string, AuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
+  workflowRegistry = new Map<string, WorkflowRegistryRecord>();
+  workflowRegistryAudit = new Map<string, WorkflowRegistryAuditRecord>();
+  workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
 
   reset() {
     this.orgs.clear();
@@ -322,6 +366,9 @@ class MemoryStore {
     this.decisionLedgerEvaluations.clear();
     this.auditLogs.clear();
     this.connectorEventQuarantine.clear();
+    this.workflowRegistry.clear();
+    this.workflowRegistryAudit.clear();
+    this.workflowVisibilityPolicyConfigs.clear();
   }
 }
 
@@ -400,4 +447,18 @@ export const upsertFunction = (orgId: string, id: string, name: string): { inser
   const existing = store.functions.get(id);
   store.functions.set(id, { id, orgId, name });
   return { inserted: !existing };
+};
+
+export const insertWorkflowRegistryEntry = (record: WorkflowRegistryRecord) => {
+  const key = `${record.orgId}:${record.workflowId}:${record.version}`;
+  store.workflowRegistry.set(key, record);
+};
+
+export const insertWorkflowRegistryAudit = (record: WorkflowRegistryAuditRecord) => {
+  store.workflowRegistryAudit.set(record.id, record);
+};
+
+export const insertWorkflowVisibilityPolicyConfig = (record: WorkflowVisibilityPolicyConfigRecord) => {
+  const key = `${record.orgId}:${record.workflowId}:${record.registryVersion}`;
+  store.workflowVisibilityPolicyConfigs.set(key, record);
 };

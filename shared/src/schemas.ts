@@ -5,7 +5,7 @@ export const ToolClassSchema = z.enum(TOOL_CLASSES);
 
 export const V0SignalNameSchema = z.enum(V0_SIGNAL_NAMES);
 
-export const RoleSchema = z.enum(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD", "MANAGER", "EMPLOYEE"]);
+export const RoleSchema = z.enum(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD", "MANAGER", "EMPLOYEE"]);
 
 export const GroupUpsertSchema = z.object({
   group_key: z.string(),

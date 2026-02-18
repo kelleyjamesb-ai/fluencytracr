@@ -18,7 +18,14 @@ import {
   FluencyScopeSchema,
   FluencyWindowSchema,
   DecisionLedgerCreateSchema,
-  DecisionLedgerEvaluationInputSchema
+  DecisionLedgerEvaluationInputSchema,
+  WorkflowRegistryVersionCreateSchema,
+  OrientationWorkflowVisibilitySummaryResponse,
+  BoardSnapshotResponse,
+  WorkflowRegistryVersionsResponse,
+  WorkflowRegistryWorkflowsResponse,
+  WorkflowRegistryCreateVersionResponse,
+  WorkflowRegistryAuditResponse
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
 import { rbacMiddleware, enforceAggregation } from "./rbac";
@@ -39,7 +46,11 @@ import {
   insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
 } from "./store";
-import type { CanonicalControlSnapshotRecord, DecisionLedgerEvaluationRecord, FluencyEventRecord } from "./store";
+import type {
+  CanonicalControlSnapshotRecord,
+  DecisionLedgerEvaluationRecord,
+  FluencyEventRecord
+} from "./store";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -98,6 +109,16 @@ import {
   persistPolicyDocument,
   persistPolicyMapping
 } from "./compliance_persistence";
+import {
+  getBaselineResetAtForRegistryVersion,
+  getPolicyConfigForRegistryVersion,
+  listRegistryAudit,
+  listRegistryEntriesByOrg,
+  listRegistryEntriesByWorkflow,
+  listRegistryPolicyConfigsByOrg,
+  registerWorkflowVersion
+} from "./workflow_registry";
+import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -295,6 +316,35 @@ const matchesWindow = (record: { window_start: string; window_end: string }, win
 
 const workflowIdFromScopeKey = (scopeKey: string) => {
   return scopeKey.split(":")[0] ?? scopeKey;
+};
+
+const patternToExecutiveWorkingStyle = (pattern: string | null) => {
+  if (pattern === "CALIBRATED_FLUENCY") {
+    return "Balanced AI use" as const;
+  }
+  if (pattern === "BLIND_EFFICIENCY") {
+    return "Fast AI use" as const;
+  }
+  if (pattern === "RECOVERY_MATURITY") {
+    return "Strong recovery behavior" as const;
+  }
+  if (pattern === "FRICTION_LOOP") {
+    return "High back-and-forth" as const;
+  }
+  if (pattern === "UNDERTRUST_AVOIDANCE") {
+    return "AI started but not used" as const;
+  }
+  return null;
+};
+
+const visibilityStateLabel = (state: "VISIBLE" | "NOT_ENOUGH_DATA_YET" | "NOT_SHOWN_SAFETY") => {
+  if (state === "VISIBLE") {
+    return "Clear enough to show" as const;
+  }
+  if (state === "NOT_ENOUGH_DATA_YET") {
+    return "Not enough data yet" as const;
+  }
+  return "Not shown (safety)" as const;
 };
 
 const addDays = (start: string, days: number) => {
@@ -2753,6 +2803,301 @@ app.get(
         generated_at: latestRecord?.generated_at ?? nowIso()
       }
     });
+  }
+);
+
+app.get(
+  "/api/workflow-registry/:orgId/workflows/:workflowId/versions",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const versions = await listRegistryEntriesByWorkflow(org.id, req.params.workflowId);
+    const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
+    const payload: WorkflowRegistryVersionsResponse = {
+      org_id: org.id,
+      workflow_id: req.params.workflowId,
+      versions: versions.map((version) => ({
+        version: version.version,
+        risk_class: version.riskClass,
+        change_reason: version.changeReason ?? null,
+        actor_sub: version.actorSub ?? null,
+        actor_role: version.actorRole ?? null,
+        policy_config: (() => {
+          const policy = getPolicyConfigForRegistryVersion(policyConfigs, version);
+          if (!policy) {
+            return null;
+          }
+          return {
+            policy_version: policy.policyVersion,
+            low_min_events: policy.lowMinEvents,
+            medium_min_events: policy.mediumMinEvents,
+            high_min_events: policy.highMinEvents,
+            min_window_days: policy.minWindowDays,
+            high_sparse_min_events: policy.highSparseMinEvents,
+            high_sparse_min_window_days: policy.highSparseMinWindowDays
+          };
+        })(),
+        created_at: version.createdAt
+      }))
+    };
+    return res.json(payload);
+  }
+);
+
+app.get(
+  "/api/workflow-registry/:orgId/workflows",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const entries = await listRegistryEntriesByOrg(org.id);
+    const latestByWorkflow = entries
+      .slice()
+      .sort((a, b) => {
+        if (a.workflowId !== b.workflowId) {
+          return a.workflowId.localeCompare(b.workflowId);
+        }
+        if (a.version !== b.version) {
+          return a.version - b.version;
+        }
+        return a.createdAt.localeCompare(b.createdAt);
+      })
+      .reduce((acc, entry) => {
+        acc.set(entry.workflowId, entry);
+        return acc;
+      }, new Map<string, (typeof entries)[number]>());
+
+    const payload: WorkflowRegistryWorkflowsResponse = {
+      org_id: org.id,
+      workflows: Array.from(latestByWorkflow.values())
+        .sort((a, b) => a.workflowId.localeCompare(b.workflowId))
+        .map((entry) => ({
+          workflow_id: entry.workflowId,
+          version: entry.version,
+          risk_class: entry.riskClass,
+          created_at: entry.createdAt
+        }))
+    };
+    return res.json(payload);
+  }
+);
+
+app.post(
+  "/api/workflow-registry/:orgId/workflows/:workflowId/versions",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const parsed = WorkflowRegistryVersionCreateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
+    }
+
+    const created = await registerWorkflowVersion({
+      orgId: org.id,
+      workflowId: req.params.workflowId,
+      riskClass: parsed.data.risk_class,
+      changeReason: parsed.data.change_reason,
+      actorSub: req.header("x-sub") ?? undefined,
+      actorRole: req.header("x-role") ?? undefined,
+      policyConfig: parsed.data.policy_config
+        ? {
+            policyVersion: parsed.data.policy_config.policy_version,
+            lowMinEvents: parsed.data.policy_config.low_min_events,
+            mediumMinEvents: parsed.data.policy_config.medium_min_events,
+            highMinEvents: parsed.data.policy_config.high_min_events,
+            minWindowDays: parsed.data.policy_config.min_window_days,
+            highSparseMinEvents: parsed.data.policy_config.high_sparse_min_events,
+            highSparseMinWindowDays: parsed.data.policy_config.high_sparse_min_window_days
+          }
+        : undefined
+    });
+
+    const payload: WorkflowRegistryCreateVersionResponse = {
+      workflow_id: created.workflowId,
+      version: created.version,
+      risk_class: created.riskClass,
+      change_reason: created.changeReason ?? null,
+      created_at: created.createdAt
+    };
+    return res.status(201).json(payload);
+  }
+);
+
+app.get(
+  "/api/workflow-registry/:orgId/audit",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    const workflowId = typeof req.query.workflow_id === "string" ? req.query.workflow_id : undefined;
+    const events = await listRegistryAudit(org.id, workflowId);
+    const payload: WorkflowRegistryAuditResponse = {
+      org_id: org.id,
+      events: events.map((event) => ({
+        workflow_id: event.workflowId,
+        version: event.version,
+        action: event.action,
+        actor_sub: event.actorSub ?? null,
+        actor_role: event.actorRole ?? null,
+        metadata: event.metadata,
+        created_at: event.createdAt
+      }))
+    };
+    return res.json(payload);
+  }
+);
+
+app.get(
+  "/api/orientation/:orgId",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const parsedWindow = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!parsedWindow.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+    if (parsedWindow.data !== "60d") {
+      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
+    }
+
+    const entries = await listRegistryEntriesByOrg(org.id);
+    const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
+    const registryAudit = await listRegistryAudit(org.id);
+    const baselineResetsByWorkflowVersion = entries.reduce<Record<string, string | null>>(
+      (acc, entry) => {
+        acc[`${entry.workflowId}:${entry.version}`] = getBaselineResetAtForRegistryVersion(
+          registryAudit,
+          entry
+        );
+        return acc;
+      },
+      {}
+    );
+    const summary = computeWorkflowVisibilitySummary(entries, parsedWindow.data, {
+      policyConfigs,
+      baselineResetsByWorkflowVersion,
+      fluencyEvents: Array.from(store.fluencyEvents.values()),
+      v0Signals: Array.from(store.behavioralSignals.values()),
+      patternInferenceRecords: store.patternInferenceRecords
+    });
+
+    const payload: OrientationWorkflowVisibilitySummaryResponse = {
+      org_id: org.id,
+      workflow_visibility_summary: {
+        visible: summary.VISIBLE,
+        not_enough_data_yet: summary.NOT_ENOUGH_DATA_YET,
+        not_shown_safety: summary.NOT_SHOWN_SAFETY
+      }
+    };
+
+    return res.json(payload);
+  }
+);
+
+app.get(
+  "/api/board-snapshot/:orgId",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const parsedWindow = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!parsedWindow.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+    if (parsedWindow.data !== "60d") {
+      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
+    }
+    const window = parsedWindow.data;
+    const entries = await listRegistryEntriesByOrg(org.id);
+    const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
+    const registryAudit = await listRegistryAudit(org.id);
+
+    const latestByWorkflow = entries
+      .slice()
+      .sort((a, b) => {
+        if (a.workflowId !== b.workflowId) {
+          return a.workflowId.localeCompare(b.workflowId);
+        }
+        if (a.version !== b.version) {
+          return a.version - b.version;
+        }
+        return a.createdAt.localeCompare(b.createdAt);
+      })
+      .reduce((acc, entry) => {
+        acc.set(entry.workflowId, entry);
+        return acc;
+      }, new Map<string, (typeof entries)[number]>());
+
+    const workflows = Array.from(latestByWorkflow.values())
+      .map((entry) => {
+        const policyConfig = getPolicyConfigForRegistryVersion(policyConfigs, entry);
+        const baselineResetAt = getBaselineResetAtForRegistryVersion(registryAudit, entry);
+        const visibilityState = computeWorkflowVisibility(entry.workflowId, window, {
+          registryEntry: entry,
+          policyConfig,
+          baselineResetAt,
+          fluencyEvents: Array.from(store.fluencyEvents.values()),
+          v0Signals: Array.from(store.behavioralSignals.values()),
+          patternInferenceRecords: store.patternInferenceRecords
+        });
+
+        const dominantPatterns = new Set(
+          store.patternInferenceRecords
+            .filter((record) => workflowIdFromScopeKey(record.scope_key) === entry.workflowId)
+            .filter((record) => ["MEDIUM", "HIGH"].includes(record.confidence_level))
+            .filter((record) => record.pattern !== "NO_PATTERN")
+            .map((record) => record.pattern)
+        );
+
+        const dominantPattern = dominantPatterns.size === 1 ? Array.from(dominantPatterns)[0] : null;
+        const workingStyle =
+          visibilityState === "VISIBLE" ? patternToExecutiveWorkingStyle(dominantPattern) : null;
+
+        return {
+          workflow_id: entry.workflowId,
+          workflow_display_name: entry.workflowId,
+          working_style: workingStyle,
+          visibility_state: visibilityState,
+          visibility_label: visibilityStateLabel(visibilityState),
+          observation_window: window
+        };
+      })
+      .sort((a, b) => a.workflow_display_name.localeCompare(b.workflow_display_name));
+
+    const payload: BoardSnapshotResponse = {
+      org_id: org.id,
+      header: {
+        observation_window: window,
+        visible: workflows.filter((row) => row.visibility_state === "VISIBLE").length,
+        not_enough_data_yet: workflows.filter(
+          (row) => row.visibility_state === "NOT_ENOUGH_DATA_YET"
+        ).length,
+        not_shown_safety: workflows.filter((row) => row.visibility_state === "NOT_SHOWN_SAFETY")
+          .length
+      },
+      workflows
+    };
+    return res.json(payload);
   }
 );
 

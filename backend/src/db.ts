@@ -9,3 +9,10 @@ export const getPrisma = () => {
   return prisma;
 };
 
+export const disconnectPrisma = async () => {
+  if (!prisma) {
+    return;
+  }
+  await prisma.$disconnect();
+  prisma = null;
+};

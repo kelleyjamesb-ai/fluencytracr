@@ -1,20 +1,26 @@
 import {
   BehavioralPattern,
+  SIGNAL_NAMES,
   SignalName,
-  PatternType,
   PatternConfidence,
-  TrendDirection,
-  TrendMagnitude
 } from "@learnaire/shared";
 import { BehavioralSignal } from "./behavioral_signals";
+
+const LEGACY_SIGNAL_SET = new Set<string>(SIGNAL_NAMES);
+
+type BehavioralSignalLegacy = BehavioralSignal & { signal_name: SignalName };
+
+const isLegacySignal = (signal: BehavioralSignal): signal is BehavioralSignalLegacy => {
+  return LEGACY_SIGNAL_SET.has(signal.signal_name);
+};
 
 /**
  * Detect "automation_emerging" pattern.
  * Triggers when delegation signals appear for the first time in a group.
  */
 const detectAutomationEmerging = (
-  currentWeek: BehavioralSignal[],
-  previousWeek: BehavioralSignal[],
+  currentWeek: BehavioralSignalLegacy[],
+  previousWeek: BehavioralSignalLegacy[],
   groupId: string,
   bucketStart: string
 ): BehavioralPattern | null => {
@@ -53,7 +59,7 @@ const detectAutomationEmerging = (
  * Triggers when majority of delegations include approval steps.
  */
 const detectApprovalWorkflowMature = (
-  signals: BehavioralSignal[],
+  signals: BehavioralSignalLegacy[],
   groupId: string,
   bucketStart: string
 ): BehavioralPattern | null => {
@@ -93,7 +99,7 @@ const detectApprovalWorkflowMature = (
  * Triggers when 3+ distinct signal types appear with cross-system metadata.
  */
 const detectCrossSystemIntegration = (
-  signals: BehavioralSignal[],
+  signals: BehavioralSignalLegacy[],
   groupId: string,
   bucketStart: string
 ): BehavioralPattern | null => {
@@ -133,7 +139,7 @@ const detectCrossSystemIntegration = (
  * Triggers when >75% of signals have human review metadata.
  */
 const detectHumanReviewDominant = (
-  signals: BehavioralSignal[],
+  signals: BehavioralSignalLegacy[],
   groupId: string,
   bucketStart: string
 ): BehavioralPattern | null => {
@@ -173,7 +179,7 @@ const detectHumanReviewDominant = (
  * Triggers when data_fetch > 2x all action signals.
  */
 const detectDataIntensive = (
-  signals: BehavioralSignal[],
+  signals: BehavioralSignalLegacy[],
   groupId: string,
   bucketStart: string
 ): BehavioralPattern | null => {
@@ -230,15 +236,17 @@ export const detectPatterns = (
   // Filter non-suppressed signals
   const validSignals = currentWeek.filter((s) => !s.suppressed && s.count > 0);
   const validPrevious = previousWeek.filter((s) => !s.suppressed && s.count > 0);
+  const validLegacySignals = validSignals.filter(isLegacySignal);
+  const validLegacyPrevious = validPrevious.filter(isLegacySignal);
 
-  if (validSignals.length === 0) {
+  if (validLegacySignals.length === 0) {
     return patterns;
   }
 
   // Detect each pattern type
   const automationEmerging = detectAutomationEmerging(
-    validSignals,
-    validPrevious,
+    validLegacySignals,
+    validLegacyPrevious,
     groupId,
     bucketStart
   );
@@ -246,22 +254,22 @@ export const detectPatterns = (
     patterns.push(automationEmerging);
   }
 
-  const approvalWorkflow = detectApprovalWorkflowMature(validSignals, groupId, bucketStart);
+  const approvalWorkflow = detectApprovalWorkflowMature(validLegacySignals, groupId, bucketStart);
   if (approvalWorkflow) {
     patterns.push(approvalWorkflow);
   }
 
-  const crossSystem = detectCrossSystemIntegration(validSignals, groupId, bucketStart);
+  const crossSystem = detectCrossSystemIntegration(validLegacySignals, groupId, bucketStart);
   if (crossSystem) {
     patterns.push(crossSystem);
   }
 
-  const humanReview = detectHumanReviewDominant(validSignals, groupId, bucketStart);
+  const humanReview = detectHumanReviewDominant(validLegacySignals, groupId, bucketStart);
   if (humanReview) {
     patterns.push(humanReview);
   }
 
-  const dataIntensive = detectDataIntensive(validSignals, groupId, bucketStart);
+  const dataIntensive = detectDataIntensive(validLegacySignals, groupId, bucketStart);
   if (dataIntensive) {
     patterns.push(dataIntensive);
   }

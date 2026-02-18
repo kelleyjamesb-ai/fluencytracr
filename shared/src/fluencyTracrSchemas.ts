@@ -258,3 +258,136 @@ export const CoverageSummarySchema = z.object({
 }).strict();
 
 export type CoverageSummary = z.infer<typeof CoverageSummarySchema>;
+
+export const WorkflowVisibilityPolicyConfigSchema = z.object({
+  policy_version: z.string().min(1),
+  low_min_events: z.number().int().positive(),
+  medium_min_events: z.number().int().positive(),
+  high_min_events: z.number().int().positive(),
+  min_window_days: z.number().int().positive(),
+  high_sparse_min_events: z.number().int().positive(),
+  high_sparse_min_window_days: z.number().int().positive()
+}).strict();
+export type WorkflowVisibilityPolicyConfig = z.infer<typeof WorkflowVisibilityPolicyConfigSchema>;
+
+export const WorkflowRegistryVersionCreateSchema = z.object({
+  risk_class: RiskClassSchema,
+  change_reason: z.string().min(1).optional(),
+  policy_config: WorkflowVisibilityPolicyConfigSchema.optional()
+}).strict();
+export type WorkflowRegistryVersionCreate = z.infer<typeof WorkflowRegistryVersionCreateSchema>;
+
+export const WorkflowRegistryVersionRecordSchema = z.object({
+  version: z.number().int().positive(),
+  risk_class: RiskClassSchema,
+  change_reason: z.string().nullable(),
+  actor_sub: z.string().nullable(),
+  actor_role: z.string().nullable(),
+  policy_config: WorkflowVisibilityPolicyConfigSchema.nullable(),
+  created_at: z.string().min(1)
+}).strict();
+export type WorkflowRegistryVersionRecord = z.infer<typeof WorkflowRegistryVersionRecordSchema>;
+
+export const WorkflowRegistryVersionsResponseSchema = z.object({
+  org_id: z.string().min(1),
+  workflow_id: z.string().min(1),
+  versions: z.array(WorkflowRegistryVersionRecordSchema)
+}).strict();
+export type WorkflowRegistryVersionsResponse = z.infer<typeof WorkflowRegistryVersionsResponseSchema>;
+
+export const WorkflowRegistryCreateVersionResponseSchema = z.object({
+  workflow_id: z.string().min(1),
+  version: z.number().int().positive(),
+  risk_class: RiskClassSchema,
+  change_reason: z.string().nullable(),
+  created_at: z.string().min(1)
+}).strict();
+export type WorkflowRegistryCreateVersionResponse = z.infer<
+  typeof WorkflowRegistryCreateVersionResponseSchema
+>;
+
+export const WorkflowRegistryWorkflowSummarySchema = z.object({
+  workflow_id: z.string().min(1),
+  version: z.number().int().positive(),
+  risk_class: RiskClassSchema,
+  created_at: z.string().min(1)
+}).strict();
+export type WorkflowRegistryWorkflowSummary = z.infer<typeof WorkflowRegistryWorkflowSummarySchema>;
+
+export const WorkflowRegistryWorkflowsResponseSchema = z.object({
+  org_id: z.string().min(1),
+  workflows: z.array(WorkflowRegistryWorkflowSummarySchema)
+}).strict();
+export type WorkflowRegistryWorkflowsResponse = z.infer<typeof WorkflowRegistryWorkflowsResponseSchema>;
+
+export const WorkflowRegistryAuditEventSchema = z.object({
+  workflow_id: z.string().min(1),
+  version: z.number().int().positive(),
+  action: z.enum(["REGISTERED", "BASELINE_RESET"]),
+  actor_sub: z.string().nullable(),
+  actor_role: z.string().nullable(),
+  metadata: z.record(z.unknown()),
+  created_at: z.string().min(1)
+}).strict();
+export type WorkflowRegistryAuditEvent = z.infer<typeof WorkflowRegistryAuditEventSchema>;
+
+export const WorkflowRegistryAuditResponseSchema = z.object({
+  org_id: z.string().min(1),
+  events: z.array(WorkflowRegistryAuditEventSchema)
+}).strict();
+export type WorkflowRegistryAuditResponse = z.infer<typeof WorkflowRegistryAuditResponseSchema>;
+
+export const OrientationWorkflowVisibilitySummarySchema = z.object({
+  visible: z.number().int().nonnegative(),
+  not_enough_data_yet: z.number().int().nonnegative(),
+  not_shown_safety: z.number().int().nonnegative()
+}).strict();
+export type OrientationWorkflowVisibilitySummary = z.infer<
+  typeof OrientationWorkflowVisibilitySummarySchema
+>;
+
+export const OrientationWorkflowVisibilitySummaryResponseSchema = z.object({
+  org_id: z.string().min(1),
+  workflow_visibility_summary: OrientationWorkflowVisibilitySummarySchema
+}).strict();
+export type OrientationWorkflowVisibilitySummaryResponse = z.infer<
+  typeof OrientationWorkflowVisibilitySummaryResponseSchema
+>;
+
+export const BoardSnapshotWorkingStyleSchema = z.enum([
+  "Balanced AI use",
+  "Fast AI use",
+  "Strong recovery behavior",
+  "High back-and-forth",
+  "AI started but not used"
+]);
+export type BoardSnapshotWorkingStyle = z.infer<typeof BoardSnapshotWorkingStyleSchema>;
+
+export const BoardSnapshotVisibilityLabelSchema = z.enum([
+  "Clear enough to show",
+  "Not enough data yet",
+  "Not shown (safety)"
+]);
+export type BoardSnapshotVisibilityLabel = z.infer<typeof BoardSnapshotVisibilityLabelSchema>;
+
+export const BoardSnapshotWorkflowRowSchema = z.object({
+  workflow_id: z.string().min(1),
+  workflow_display_name: z.string().min(1),
+  working_style: BoardSnapshotWorkingStyleSchema.nullable(),
+  visibility_state: z.enum(["VISIBLE", "NOT_ENOUGH_DATA_YET", "NOT_SHOWN_SAFETY"]),
+  visibility_label: BoardSnapshotVisibilityLabelSchema,
+  observation_window: FluencyWindowSchema
+}).strict();
+export type BoardSnapshotWorkflowRow = z.infer<typeof BoardSnapshotWorkflowRowSchema>;
+
+export const BoardSnapshotResponseSchema = z.object({
+  org_id: z.string().min(1),
+  header: z.object({
+    observation_window: FluencyWindowSchema,
+    visible: z.number().int().nonnegative(),
+    not_enough_data_yet: z.number().int().nonnegative(),
+    not_shown_safety: z.number().int().nonnegative()
+  }).strict(),
+  workflows: z.array(BoardSnapshotWorkflowRowSchema)
+}).strict();
+export type BoardSnapshotResponse = z.infer<typeof BoardSnapshotResponseSchema>;

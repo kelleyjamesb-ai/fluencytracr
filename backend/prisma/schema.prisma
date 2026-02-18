@@ -18,6 +18,9 @@ model Organization {
   canonicalControlStateHistory  CanonicalControlStateHistory[]
   complianceEvents              ComplianceEvent[]
   complianceDecisions           ComplianceDecision[]
+  workflowRegistryEntries       WorkflowRegistryEntry[]
+  workflowRegistryAuditEvents   WorkflowRegistryAuditEvent[]
+  workflowVisibilityPolicies    WorkflowVisibilityPolicyConfig[]
 }
 
 model Team {
@@ -140,4 +143,57 @@ model ComplianceDecision {
   policyMapping  PolicyMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
 
   @@index([orgId, policyId, decidedAt])
+}
+
+model WorkflowRegistryEntry {
+  id          String   @id @default(uuid())
+  orgId       String
+  workflowId  String
+  version     Int
+  riskClass   String
+  changeReason String?
+  actorSub    String?
+  actorRole   String?
+  createdAt   DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, workflowId, version])
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowRegistryAuditEvent {
+  id          String   @id @default(uuid())
+  orgId       String
+  workflowId  String
+  version     Int
+  action      String
+  actorSub    String?
+  actorRole   String?
+  metadata    Json
+  createdAt   DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowVisibilityPolicyConfig {
+  id                     String   @id @default(uuid())
+  orgId                  String
+  workflowId             String
+  registryVersion        Int
+  policyVersion          String
+  lowMinEvents           Int
+  mediumMinEvents        Int
+  highMinEvents          Int
+  minWindowDays          Int
+  highSparseMinEvents    Int
+  highSparseMinWindowDays Int
+  createdAt              DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, workflowId, registryVersion])
+  @@index([orgId, workflowId, createdAt])
 }
