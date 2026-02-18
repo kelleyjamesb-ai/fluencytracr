@@ -41,6 +41,10 @@ model Organization {
   workflowRegistryEntries       WorkflowRegistryEntry[]
   workflowRegistryAuditEvents   WorkflowRegistryAuditEvent[]
   workflowVisibilityPolicies    WorkflowVisibilityPolicyConfig[]
+  workflowRegistryVersions      WorkflowRegistryVersion[]
+  workflowRegistryCurrents      WorkflowRegistryCurrent[]
+  controlConfigVersions         ControlConfigVersion[]
+  baselineResetEvents           BaselineResetEvent[]
 }
 
 model Team {
