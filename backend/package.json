@@ -8,9 +8,9 @@
     "build": "npm run build --prefix ../shared && tsc -p tsconfig.build.json && npm run generate",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "test": "jest",
-    "test:ci": "jest --config jest.config.js --runInBand --watchman=false --detectOpenHandles",
-    "test:policy": "jest --config jest.config.js --runInBand --watchman=false --runTestsByPath tests/policy_compliance_api.test.ts",
+    "test": "DATABASE_URL= DIRECT_URL= jest --config jest.config.js --runInBand --watchman=false",
+    "test:ci": "DATABASE_URL= DIRECT_URL= jest --config jest.config.js --runInBand --watchman=false --detectOpenHandles",
+    "test:policy": "DATABASE_URL= DIRECT_URL= jest --config jest.config.js --runInBand --watchman=false --runTestsByPath tests/policy_compliance_api.test.ts",
     "test:clean": "pkill -f \"node .*FluencyTracr/node_modules/.bin/jest\" || true; pkill -f \"npm test --workspace backend\" || true; npm run test:ci",
     "migrate": "prisma migrate dev",
     "generate": "prisma generate"
