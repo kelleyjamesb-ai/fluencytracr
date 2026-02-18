@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CoverageSummarySchema = exports.DecisionLedgerEvaluationInputSchema = exports.DecisionLedgerCreateSchema = exports.DecisionLedgerEntrySchema = exports.LedgerMetaSchema = exports.LedgerEvaluationSchema = exports.LedgerObservationSchema = exports.LedgerRationaleSchema = exports.DecisionSchema = exports.SignalMovementSchema = exports.LoggedByRoleSchema = exports.DecisionScopeSchema = exports.DecisionTypeSchema = exports.OrientationSignalResponseSchema = exports.OrientationSuppressionInEffectSchema = exports.OrientationObservationDetectedSchema = exports.OrientationSuppressionStateSchema = exports.OrientationObservationDetectedStateSchema = exports.FluencyPatternSchema = exports.FluencyRecommendedPostureSchema = exports.FluencyConfidenceSchema = exports.FluencySignalStatusSchema = exports.FluencyPatternNameSchema = exports.FluencyEventIngestSchema = exports.FluencyEventSchema = exports.AiAbandonmentEventSchema = exports.VerificationSignalEventSchema = exports.WorkflowStageTransitionEventSchema = exports.AiRecoveryLoopEventSchema = exports.AiOutputDispositionEventSchema = exports.RiskClassSchema = exports.FluencyScopeSchema = exports.FluencyWindowSchema = void 0;
+exports.BoardSnapshotResponseSchema = exports.BoardSnapshotWorkflowRowSchema = exports.BoardSnapshotVisibilityLabelSchema = exports.BoardSnapshotWorkingStyleSchema = exports.OrientationWorkflowVisibilitySummaryResponseSchema = exports.OrientationWorkflowVisibilitySummarySchema = exports.WorkflowRegistryAuditResponseSchema = exports.WorkflowRegistryAuditEventSchema = exports.WorkflowRegistryWorkflowsResponseSchema = exports.WorkflowRegistryWorkflowSummarySchema = exports.WorkflowRegistryCreateVersionResponseSchema = exports.WorkflowRegistryVersionsResponseSchema = exports.WorkflowRegistryVersionRecordSchema = exports.WorkflowRegistryVersionCreateSchema = exports.WorkflowVisibilityPolicyConfigSchema = exports.CoverageSummarySchema = exports.DecisionLedgerEvaluationInputSchema = exports.DecisionLedgerCreateSchema = exports.DecisionLedgerEntrySchema = exports.LedgerMetaSchema = exports.LedgerEvaluationSchema = exports.LedgerObservationSchema = exports.LedgerRationaleSchema = exports.DecisionSchema = exports.SignalMovementSchema = exports.LoggedByRoleSchema = exports.DecisionScopeSchema = exports.DecisionTypeSchema = exports.OrientationSignalResponseSchema = exports.OrientationSuppressionInEffectSchema = exports.OrientationObservationDetectedSchema = exports.OrientationSuppressionStateSchema = exports.OrientationObservationDetectedStateSchema = exports.FluencyPatternSchema = exports.FluencyRecommendedPostureSchema = exports.FluencyConfidenceSchema = exports.FluencySignalStatusSchema = exports.FluencyPatternNameSchema = exports.FluencyEventIngestSchema = exports.FluencyEventSchema = exports.AiAbandonmentEventSchema = exports.VerificationSignalEventSchema = exports.WorkflowStageTransitionEventSchema = exports.AiRecoveryLoopEventSchema = exports.AiOutputDispositionEventSchema = exports.RiskClassSchema = exports.FluencyScopeSchema = exports.FluencyWindowSchema = void 0;
 const zod_1 = require("zod");
 exports.FluencyWindowSchema = zod_1.z.enum(["30d", "60d", "3m", "6m", "12m"]);
 exports.FluencyScopeSchema = zod_1.z.enum(["org", "function", "workflow"]);
@@ -187,4 +187,101 @@ exports.CoverageSummarySchema = zod_1.z.object({
         medium: zod_1.z.number().min(0).max(1),
         high: zod_1.z.number().min(0).max(1)
     })
+}).strict();
+exports.WorkflowVisibilityPolicyConfigSchema = zod_1.z.object({
+    policy_version: zod_1.z.string().min(1),
+    low_min_events: zod_1.z.number().int().positive(),
+    medium_min_events: zod_1.z.number().int().positive(),
+    high_min_events: zod_1.z.number().int().positive(),
+    min_window_days: zod_1.z.number().int().positive(),
+    high_sparse_min_events: zod_1.z.number().int().positive(),
+    high_sparse_min_window_days: zod_1.z.number().int().positive()
+}).strict();
+exports.WorkflowRegistryVersionCreateSchema = zod_1.z.object({
+    risk_class: exports.RiskClassSchema,
+    change_reason: zod_1.z.string().min(1).optional(),
+    policy_config: exports.WorkflowVisibilityPolicyConfigSchema.optional()
+}).strict();
+exports.WorkflowRegistryVersionRecordSchema = zod_1.z.object({
+    version: zod_1.z.number().int().positive(),
+    risk_class: exports.RiskClassSchema,
+    change_reason: zod_1.z.string().nullable(),
+    actor_sub: zod_1.z.string().nullable(),
+    actor_role: zod_1.z.string().nullable(),
+    policy_config: exports.WorkflowVisibilityPolicyConfigSchema.nullable(),
+    created_at: zod_1.z.string().min(1)
+}).strict();
+exports.WorkflowRegistryVersionsResponseSchema = zod_1.z.object({
+    org_id: zod_1.z.string().min(1),
+    workflow_id: zod_1.z.string().min(1),
+    versions: zod_1.z.array(exports.WorkflowRegistryVersionRecordSchema)
+}).strict();
+exports.WorkflowRegistryCreateVersionResponseSchema = zod_1.z.object({
+    workflow_id: zod_1.z.string().min(1),
+    version: zod_1.z.number().int().positive(),
+    risk_class: exports.RiskClassSchema,
+    change_reason: zod_1.z.string().nullable(),
+    created_at: zod_1.z.string().min(1)
+}).strict();
+exports.WorkflowRegistryWorkflowSummarySchema = zod_1.z.object({
+    workflow_id: zod_1.z.string().min(1),
+    version: zod_1.z.number().int().positive(),
+    risk_class: exports.RiskClassSchema,
+    created_at: zod_1.z.string().min(1)
+}).strict();
+exports.WorkflowRegistryWorkflowsResponseSchema = zod_1.z.object({
+    org_id: zod_1.z.string().min(1),
+    workflows: zod_1.z.array(exports.WorkflowRegistryWorkflowSummarySchema)
+}).strict();
+exports.WorkflowRegistryAuditEventSchema = zod_1.z.object({
+    workflow_id: zod_1.z.string().min(1),
+    version: zod_1.z.number().int().positive(),
+    action: zod_1.z.enum(["REGISTERED", "BASELINE_RESET"]),
+    actor_sub: zod_1.z.string().nullable(),
+    actor_role: zod_1.z.string().nullable(),
+    metadata: zod_1.z.record(zod_1.z.unknown()),
+    created_at: zod_1.z.string().min(1)
+}).strict();
+exports.WorkflowRegistryAuditResponseSchema = zod_1.z.object({
+    org_id: zod_1.z.string().min(1),
+    events: zod_1.z.array(exports.WorkflowRegistryAuditEventSchema)
+}).strict();
+exports.OrientationWorkflowVisibilitySummarySchema = zod_1.z.object({
+    visible: zod_1.z.number().int().nonnegative(),
+    not_enough_data_yet: zod_1.z.number().int().nonnegative(),
+    not_shown_safety: zod_1.z.number().int().nonnegative()
+}).strict();
+exports.OrientationWorkflowVisibilitySummaryResponseSchema = zod_1.z.object({
+    org_id: zod_1.z.string().min(1),
+    workflow_visibility_summary: exports.OrientationWorkflowVisibilitySummarySchema
+}).strict();
+exports.BoardSnapshotWorkingStyleSchema = zod_1.z.enum([
+    "Balanced AI use",
+    "Fast AI use",
+    "Strong recovery behavior",
+    "High back-and-forth",
+    "AI started but not used"
+]);
+exports.BoardSnapshotVisibilityLabelSchema = zod_1.z.enum([
+    "Clear enough to show",
+    "Not enough data yet",
+    "Not shown (safety)"
+]);
+exports.BoardSnapshotWorkflowRowSchema = zod_1.z.object({
+    workflow_id: zod_1.z.string().min(1),
+    workflow_display_name: zod_1.z.string().min(1),
+    working_style: exports.BoardSnapshotWorkingStyleSchema.nullable(),
+    visibility_state: zod_1.z.enum(["VISIBLE", "NOT_ENOUGH_DATA_YET", "NOT_SHOWN_SAFETY"]),
+    visibility_label: exports.BoardSnapshotVisibilityLabelSchema,
+    observation_window: exports.FluencyWindowSchema
+}).strict();
+exports.BoardSnapshotResponseSchema = zod_1.z.object({
+    org_id: zod_1.z.string().min(1),
+    header: zod_1.z.object({
+        observation_window: exports.FluencyWindowSchema,
+        visible: zod_1.z.number().int().nonnegative(),
+        not_enough_data_yet: zod_1.z.number().int().nonnegative(),
+        not_shown_safety: zod_1.z.number().int().nonnegative()
+    }).strict(),
+    workflows: zod_1.z.array(exports.BoardSnapshotWorkflowRowSchema)
 }).strict();

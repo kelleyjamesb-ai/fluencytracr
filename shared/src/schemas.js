@@ -5,7 +5,7 @@ const zod_1 = require("zod");
 const types_1 = require("./types");
 exports.ToolClassSchema = zod_1.z.enum(types_1.TOOL_CLASSES);
 exports.V0SignalNameSchema = zod_1.z.enum(types_1.V0_SIGNAL_NAMES);
-exports.RoleSchema = zod_1.z.enum(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD", "MANAGER", "EMPLOYEE"]);
+exports.RoleSchema = zod_1.z.enum(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD", "MANAGER", "EMPLOYEE"]);
 exports.GroupUpsertSchema = zod_1.z.object({
     group_key: zod_1.z.string(),
     name: zod_1.z.string().optional(),

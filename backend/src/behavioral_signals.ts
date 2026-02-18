@@ -1,7 +1,7 @@
-import { BehavioralSignalAggregate, GroupType, SignalName, SUPPRESSION_THRESHOLDS } from "@learnaire/shared";
+import { ConnectorSignalAggregate, GroupType, SUPPRESSION_THRESHOLDS } from "@learnaire/shared";
 import { store } from "./store";
 
-export type BehavioralSignal = BehavioralSignalAggregate & {
+export type BehavioralSignal = ConnectorSignalAggregate & {
   originalCount?: number;  // Preserved original count before suppression
   includesRollup?: boolean;  // Indicates this record includes rolled-up small teams
 };

@@ -10,6 +10,7 @@ export type ToolClass = (typeof TOOL_CLASSES)[number];
 
 export type Role =
   | "ADMIN"
+  | "GOV_OPERATOR"
   | "EXEC_VIEWER"
   | "ENABLEMENT_LEAD"
   | "MANAGER"
