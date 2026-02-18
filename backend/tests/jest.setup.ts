@@ -5,6 +5,20 @@ delete process.env.DATABASE_URL;
 delete process.env.DIRECT_URL;
 process.env.NODE_ENV = "test";
 
+const originalConsoleWarn = console.warn.bind(console);
+const RBAC_UNVERIFIED_ADMIN_WARNING_PREFIX = "[SECURITY] Unverified ADMIN role claim";
+
+beforeAll(() => {
+  jest.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+    const [firstArg] = args;
+    if (typeof firstArg === "string" && firstArg.startsWith(RBAC_UNVERIFIED_ADMIN_WARNING_PREFIX)) {
+      return;
+    }
+    originalConsoleWarn(...(args as Parameters<typeof console.warn>));
+  });
+});
+
 afterAll(async () => {
+  jest.restoreAllMocks();
   await disconnectPrisma();
 });
