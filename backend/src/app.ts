@@ -28,7 +28,7 @@ import {
   WorkflowRegistryAuditResponse
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
-import { rbacMiddleware, enforceAggregation } from "./rbac";
+import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
@@ -87,10 +87,18 @@ import {
   mapPolicyToControls,
   normalizeComplianceMode,
   normalizePolicyContent,
+  PolicyUpdateSchema,
   sortComplianceEvents,
   UnresolvedClauseDecisionSchema
 } from "./policy_compliance";
 import {
+  deleteCanonicalControlHistoryByOrgId,
+  deleteComplianceDecisionsByOrgId,
+  deleteComplianceEventsByOrgId,
+  deletePolicyDocumentsByOrgId,
+  deletePolicyDocumentById,
+  deletePolicyMappingsByOrgId,
+  deletePolicyMappingsByPolicyId,
   listComplianceEventsByOrg,
   listLatestCanonicalControlsByOrg,
   listPolicyDocumentsByOrg,
@@ -106,6 +114,7 @@ import {
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
   listBaselineResetsByOrg,
+  listRegistryCurrentByOrg,
   listRegistryAudit,
   listRegistryEntriesByOrg,
   listRegistryEntriesByWorkflow,
@@ -128,6 +137,8 @@ if (shouldTrustProxy) {
   app.set("trust proxy", 1);
 }
 app.use(express.json());
+app.use(authMiddleware);
+app.use(orgScopeMiddleware);
 
 const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -358,16 +369,6 @@ const patternToExecutiveWorkingStyle = (pattern: string | null) => {
     return "AI started but not used" as const;
   }
   return null;
-};
-
-const visibilityStateLabel = (state: "VISIBLE" | "NOT_ENOUGH_DATA_YET" | "NOT_SHOWN_SAFETY") => {
-  if (state === "VISIBLE") {
-    return "Clear enough to show" as const;
-  }
-  if (state === "NOT_ENOUGH_DATA_YET") {
-    return "Not enough data yet" as const;
-  }
-  return "Not shown (safety)" as const;
 };
 
 const addDays = (start: string, days: number) => {
@@ -661,6 +662,172 @@ const countOutstandingUnresolvedClauses = (orgId: string) => {
   return Array.from(latestByPolicy.values()).reduce((sum, entry) => sum + entry.unresolved, 0);
 };
 
+const runPolicyMappingForOrg = async (orgId: string, policyId: string, generatedAt = new Date().toISOString()) => {
+  const policy = store.policyDocuments.get(policyId);
+  if (!policy || policy.orgId !== orgId) {
+    return null;
+  }
+
+  const clauses = extractPolicyClauses(policy.rawText);
+  const mapped = mapPolicyToControls(policy.rawText, clauses);
+  const mappingId = `mapping-${crypto.randomUUID()}`;
+  const mappingRecord = {
+    mappingId,
+    policyId: policy.policyId,
+    orgId,
+    controls: mapped.controls,
+    unresolvedClauses: mapped.unresolvedClauses,
+    generatedAt
+  };
+  store.policyMappings.set(mappingId, mappingRecord);
+  await persistPolicyMapping(mappingRecord).catch((error) => {
+    console.error("[compliance_persistence] failed to persist policy mapping", {
+      org_id: orgId,
+      mapping_id: mappingId,
+      error: String(error)
+    });
+  });
+
+  const snapshots = buildCanonicalSnapshots(orgId, mapped.controls, generatedAt);
+  for (const snapshot of snapshots) {
+    await recordCanonicalControlSnapshot(snapshot);
+    await recordComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId,
+      eventType: "control_state_updated",
+      policyId: policy.policyId,
+      controlName: snapshot.control_name,
+      status: snapshot.status,
+      createdAt: generatedAt,
+      metadata: {
+        source: "policy_mapping"
+      }
+    });
+  }
+
+  const policyMappedEventId = `event-${crypto.randomUUID()}`;
+  await recordComplianceEvent({
+    eventId: policyMappedEventId,
+    orgId,
+    eventType: "policy_mapped",
+    policyId: policy.policyId,
+    createdAt: generatedAt,
+    metadata: {
+      mapping_id: mappingId,
+      controls_mapped: mapped.controls.length,
+      unresolved_clauses: mapped.unresolvedClauses.length
+    }
+  });
+
+  const summary = buildComplianceSummary(
+    mapped.controls.map((control) => ({
+      control_name: control.control_name,
+      status: control.status
+    }))
+  );
+  await recordComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId,
+    eventType: "compliance_status_refreshed",
+    policyId: policy.policyId,
+    createdAt: generatedAt,
+    status: summary.overall_status,
+    metadata: {
+      ...summary.counts,
+      source_event_id: policyMappedEventId,
+      source_event_type: "policy_mapped",
+      recomputed_at: generatedAt
+    }
+  });
+
+  return {
+    mappingId,
+    policyId: policy.policyId,
+    generatedAt,
+    controls: mapped.controls,
+    unresolvedClauses: mapped.unresolvedClauses
+  };
+};
+
+const clearComplianceSandboxForOrg = async (orgId: string) => {
+  const policyIds = Array.from(store.policyDocuments.values())
+    .filter((policy) => policy.orgId === orgId)
+    .map((policy) => policy.policyId);
+  const mappingIds = Array.from(store.policyMappings.values())
+    .filter((mapping) => mapping.orgId === orgId)
+    .map((mapping) => mapping.mappingId);
+  const eventIds = Array.from(store.complianceEvents.values())
+    .filter((event) => event.orgId === orgId)
+    .map((event) => event.eventId);
+  const snapshotKeys = Array.from(store.canonicalControlSnapshots.entries())
+    .filter(([, snapshot]) => snapshot.orgId === orgId)
+    .map(([key]) => key);
+
+  policyIds.forEach((policyId) => {
+    store.policyDocuments.delete(policyId);
+  });
+  mappingIds.forEach((mappingId) => {
+    store.policyMappings.delete(mappingId);
+  });
+  eventIds.forEach((eventId) => {
+    store.complianceEvents.delete(eventId);
+  });
+  snapshotKeys.forEach((snapshotKey) => {
+    store.canonicalControlSnapshots.delete(snapshotKey);
+  });
+
+  await Promise.all([
+    deleteComplianceDecisionsByOrgId(orgId),
+    deleteComplianceEventsByOrgId(orgId),
+    deleteCanonicalControlHistoryByOrgId(orgId),
+    deletePolicyMappingsByOrgId(orgId),
+    deletePolicyDocumentsByOrgId(orgId)
+  ]);
+
+  return {
+    policies: policyIds.length,
+    mappings: mappingIds.length,
+    events: eventIds.length,
+    control_snapshots: snapshotKeys.length
+  };
+};
+
+const SYNTHETIC_POLICY_PACK: Array<{ fileName: string; contentType: string; content: string }> = [
+  {
+    fileName: "Synthetic_Governance_Policy_01_Access_Sharing.txt",
+    contentType: "text/plain",
+    content: [
+      "AI is permitted for approved internal workflows.",
+      "External sharing disabled outside company systems.",
+      "Customer data should not be used for model training."
+    ].join(" ")
+  },
+  {
+    fileName: "Synthetic_Governance_Policy_02_Retention_Training.txt",
+    contentType: "text/plain",
+    content: [
+      "Data retention policy is required with a defined retention period.",
+      "All teams must opt out of model training by default."
+    ].join(" ")
+  },
+  {
+    fileName: "Synthetic_Governance_Policy_03_Mixed_Signals.txt",
+    contentType: "text/plain",
+    content: [
+      "AI enabled for approved business use cases.",
+      "External sharing allowed only for approved external audits."
+    ].join(" ")
+  },
+  {
+    fileName: "Synthetic_Governance_Policy_04_Unresolved_Example.txt",
+    contentType: "text/plain",
+    content: [
+      "Teams review prompt quality weekly and maintain facilitator notes.",
+      "Escalation paths should be documented by policy owners."
+    ].join(" ")
+  }
+];
+
 const parsePersistedOrgConfig = (metadata: unknown) => {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return {
@@ -887,17 +1054,36 @@ const enforceScopeQuery = (req: express.Request, res: express.Response, next: ex
 
 const parseOrgCreatePayload = (body: unknown) => {
   const raw = (body ?? {}) as Record<string, unknown>;
+  const candidateOrgId =
+    typeof raw.orgId === "string"
+      ? raw.orgId
+      : typeof raw.org_id === "string"
+        ? raw.org_id
+        : undefined;
   const candidateMinGroupSize =
     typeof raw.minGroupSize === "number"
       ? raw.minGroupSize
       : typeof raw.min_group_size === "number"
         ? raw.min_group_size
         : undefined;
-  const normalized = {
+  const base = {
     name: raw.name,
     ...(candidateMinGroupSize !== undefined ? { minGroupSize: candidateMinGroupSize } : {})
   };
-  return OrgCreateSchema.safeParse(normalized);
+  const parsedBase = OrgCreateSchema.safeParse(base);
+  if (!parsedBase.success) {
+    return parsedBase;
+  }
+  const OrgCreateWithOptionalIdSchema = OrgCreateSchema.extend({
+    orgId: z
+      .string()
+      .regex(/^[a-zA-Z0-9._-]+$/)
+      .optional()
+  });
+  return OrgCreateWithOptionalIdSchema.safeParse({
+    ...parsedBase.data,
+    ...(candidateOrgId ? { orgId: candidateOrgId.trim() } : {})
+  });
 };
 
 app.post("/orgs", strictLimiter, async (req, res) => {
@@ -905,7 +1091,9 @@ app.post("/orgs", strictLimiter, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid org payload" });
   }
-  const id = `org-${crypto.randomUUID()}`;
+  const id = parsed.data.orgId && parsed.data.orgId.length > 0
+    ? parsed.data.orgId
+    : `org-${crypto.randomUUID()}`;
   const createdAt = new Date().toISOString();
   const persistedDurably = await persistOrganizationRecord({
     orgId: id,
@@ -1524,6 +1712,281 @@ app.get("/orgs/:orgId/policies", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLE
   });
 });
 
+app.patch("/orgs/:orgId/policies/:policyId", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies/:policyId",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  const policy = store.policyDocuments.get(req.params.policyId);
+  if (!policy || policy.orgId !== org.id) {
+    return res.status(404).json({ error: "Policy not found" });
+  }
+
+  const parsed = PolicyUpdateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid policy update payload", details: parsed.error.message });
+  }
+
+  const hasContentUpdate = Boolean(parsed.data.content || parsed.data.content_base64);
+  const normalized = hasContentUpdate
+    ? normalizePolicyContent({
+      file_name: parsed.data.file_name ?? policy.fileName,
+      content_type: parsed.data.content_type ?? policy.contentType,
+      content: parsed.data.content,
+      content_base64: parsed.data.content_base64
+    })
+    : {
+      rawText: policy.rawText,
+      sourceFormat: policy.sourceFormat,
+      contentType: parsed.data.content_type ?? policy.contentType
+    };
+
+  const clauses = extractPolicyClauses(normalized.rawText);
+  const updatedAt = new Date().toISOString();
+  const updatedPolicy = {
+    ...policy,
+    fileName: parsed.data.file_name ?? policy.fileName,
+    contentType: normalized.contentType,
+    rawText: normalized.rawText,
+    sourceFormat: normalized.sourceFormat,
+    clauseCount: clauses.length
+  };
+  store.policyDocuments.set(policy.policyId, updatedPolicy);
+
+  if (hasContentUpdate) {
+    Array.from(store.policyMappings.entries())
+      .filter(([, mapping]) => mapping.policyId === policy.policyId && mapping.orgId === org.id)
+      .forEach(([mappingId]) => {
+        store.policyMappings.delete(mappingId);
+      });
+    await deletePolicyMappingsByPolicyId(policy.policyId).catch((error) => {
+      console.error("[compliance_persistence] failed to delete policy mappings on policy update", {
+        org_id: org.id,
+        policy_id: policy.policyId,
+        error: String(error)
+      });
+    });
+  }
+
+  await persistPolicyDocument(updatedPolicy).catch((error) => {
+    console.error("[compliance_persistence] failed to persist updated policy document", {
+      org_id: org.id,
+      policy_id: policy.policyId,
+      error: String(error)
+    });
+  });
+
+  await recordComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "policy_uploaded",
+    policyId: policy.policyId,
+    createdAt: updatedAt,
+    metadata: {
+      action: "policy_updated",
+      file_name: updatedPolicy.fileName,
+      content_type: updatedPolicy.contentType,
+      clause_count: updatedPolicy.clauseCount,
+      mapping_invalidated: hasContentUpdate
+    }
+  });
+
+  return res.json({
+    policy_id: policy.policyId,
+    updated_at: updatedAt,
+    mapping_invalidated: hasContentUpdate,
+    clause_count: updatedPolicy.clauseCount
+  });
+});
+
+app.delete("/orgs/:orgId/policies/:policyId", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/policies/:policyId",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  const policy = store.policyDocuments.get(req.params.policyId);
+  if (!policy || policy.orgId !== org.id) {
+    return res.status(404).json({ error: "Policy not found" });
+  }
+
+  const removedMappings = Array.from(store.policyMappings.entries())
+    .filter(([, mapping]) => mapping.policyId === policy.policyId && mapping.orgId === org.id);
+  removedMappings.forEach(([mappingId]) => {
+    store.policyMappings.delete(mappingId);
+  });
+  store.policyDocuments.delete(policy.policyId);
+
+  await deletePolicyDocumentById(policy.policyId).catch((error) => {
+    console.error("[compliance_persistence] failed to delete policy document", {
+      org_id: org.id,
+      policy_id: policy.policyId,
+      error: String(error)
+    });
+  });
+
+  await recordComplianceEvent({
+    eventId: `event-${crypto.randomUUID()}`,
+    orgId: org.id,
+    eventType: "policy_uploaded",
+    policyId: policy.policyId,
+    createdAt: new Date().toISOString(),
+    metadata: {
+      action: "policy_deleted",
+      file_name: policy.fileName,
+      removed_mappings: removedMappings.length
+    }
+  });
+
+  return res.json({
+    policy_id: policy.policyId,
+    deleted: true,
+    removed_mappings: removedMappings.length
+  });
+});
+
+app.post("/orgs/:orgId/sandbox/reset", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/sandbox/reset",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  try {
+    const cleared = await clearComplianceSandboxForOrg(org.id);
+    return res.json({
+      org_id: org.id,
+      reset_at: new Date().toISOString(),
+      cleared
+    });
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/sandbox/reset",
+      orgId: org.id,
+      reason: "sandbox_reset_failed",
+      details: String(error)
+    });
+  }
+});
+
+app.post("/orgs/:orgId/sandbox/seed-synthetic", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
+  const org = store.orgs.get(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ error: "Org not found" });
+  }
+  if (!isOrgAllowedForBeta(org.id)) {
+    return res.status(403).json({ error: "Org not enabled for internal beta" });
+  }
+  try {
+    await hydrateComplianceDomainForOrg(org.id);
+  } catch (error) {
+    return respondFailClosed(res, {
+      route: "/orgs/:orgId/sandbox/seed-synthetic",
+      orgId: org.id,
+      reason: "hydrate_compliance_domain_failed",
+      details: String(error)
+    });
+  }
+
+  const createdAt = new Date().toISOString();
+  const seeded: Array<{ policy_id: string; mapping_id: string; unresolved_clauses: number }> = [];
+  for (const spec of SYNTHETIC_POLICY_PACK) {
+    const normalized = normalizePolicyContent({
+      file_name: spec.fileName,
+      content_type: spec.contentType,
+      content: spec.content
+    });
+    const policyId = `policy-${crypto.randomUUID()}`;
+    const clauses = extractPolicyClauses(normalized.rawText);
+    const policyRecord = {
+      policyId,
+      orgId: org.id,
+      fileName: spec.fileName,
+      contentType: normalized.contentType,
+      rawText: normalized.rawText,
+      sourceFormat: normalized.sourceFormat,
+      clauseCount: clauses.length,
+      createdAt
+    } as const;
+    store.policyDocuments.set(policyId, policyRecord);
+    await persistPolicyDocument(policyRecord).catch((error) => {
+      console.error("[compliance_persistence] failed to persist seeded policy document", {
+        org_id: org.id,
+        policy_id: policyId,
+        error: String(error)
+      });
+    });
+    await recordComplianceEvent({
+      eventId: `event-${crypto.randomUUID()}`,
+      orgId: org.id,
+      eventType: "policy_uploaded",
+      policyId,
+      createdAt,
+      metadata: {
+        action: "synthetic_seed",
+        file_name: spec.fileName,
+        content_type: normalized.contentType,
+        clause_count: clauses.length
+      }
+    });
+    const mapped = await runPolicyMappingForOrg(org.id, policyId, createdAt);
+    if (mapped) {
+      seeded.push({
+        policy_id: mapped.policyId,
+        mapping_id: mapped.mappingId,
+        unresolved_clauses: mapped.unresolvedClauses.length
+      });
+    }
+  }
+
+  return res.status(201).json({
+    org_id: org.id,
+    seeded_at: createdAt,
+    synthetic_pack_size: SYNTHETIC_POLICY_PACK.length,
+    created_policies: seeded.length,
+    seeded
+  });
+});
+
 app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
@@ -1548,84 +2011,15 @@ app.post("/orgs/:orgId/policies/:policyId/map", schemaVersionMiddleware, forbidd
     return res.status(404).json({ error: "Policy not found" });
   }
 
-  const clauses = extractPolicyClauses(policy.rawText);
-  const mapped = mapPolicyToControls(policy.rawText, clauses);
-  const generatedAt = new Date().toISOString();
-  const mappingId = `mapping-${crypto.randomUUID()}`;
-
-  const mappingRecord = {
-    mappingId,
-    policyId: policy.policyId,
-    orgId: org.id,
-    controls: mapped.controls,
-    unresolvedClauses: mapped.unresolvedClauses,
-    generatedAt
-  };
-  store.policyMappings.set(mappingId, mappingRecord);
-  await persistPolicyMapping(mappingRecord).catch((error) => {
-    console.error("[compliance_persistence] failed to persist policy mapping", {
-      org_id: org.id,
-      mapping_id: mappingId,
-      error: String(error)
-    });
-  });
-
-  const snapshots = buildCanonicalSnapshots(org.id, mapped.controls, generatedAt);
-  for (const snapshot of snapshots) {
-    await recordCanonicalControlSnapshot(snapshot);
-    await recordComplianceEvent({
-      eventId: `event-${crypto.randomUUID()}`,
-      orgId: org.id,
-      eventType: "control_state_updated",
-      policyId: policy.policyId,
-      controlName: snapshot.control_name,
-      status: snapshot.status,
-      createdAt: generatedAt,
-      metadata: {
-        source: "policy_mapping"
-      }
-    });
+  const mapped = await runPolicyMappingForOrg(org.id, policy.policyId);
+  if (!mapped) {
+    return res.status(404).json({ error: "Policy not found" });
   }
 
-  const policyMappedEventId = `event-${crypto.randomUUID()}`;
-  await recordComplianceEvent({
-    eventId: policyMappedEventId,
-    orgId: org.id,
-    eventType: "policy_mapped",
-    policyId: policy.policyId,
-    createdAt: generatedAt,
-    metadata: {
-      mapping_id: mappingId,
-      controls_mapped: mapped.controls.length,
-      unresolved_clauses: mapped.unresolvedClauses.length
-    }
-  });
-
-  const summary = buildComplianceSummary(
-    mapped.controls.map((control) => ({
-      control_name: control.control_name,
-      status: control.status
-    }))
-  );
-  await recordComplianceEvent({
-    eventId: `event-${crypto.randomUUID()}`,
-    orgId: org.id,
-    eventType: "compliance_status_refreshed",
-    policyId: policy.policyId,
-    createdAt: generatedAt,
-    status: summary.overall_status,
-    metadata: {
-      ...summary.counts,
-      source_event_id: policyMappedEventId,
-      source_event_type: "policy_mapped",
-      recomputed_at: generatedAt
-    }
-  });
-
   return res.json({
-    mapping_id: mappingId,
-    policy_id: policy.policyId,
-    generated_at: generatedAt,
+    mapping_id: mapped.mappingId,
+    policy_id: mapped.policyId,
+    generated_at: mapped.generatedAt,
     controls: mapped.controls,
     unresolved_clauses: mapped.unresolvedClauses
   });
@@ -2215,7 +2609,7 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    const actorRole = req.role ?? "EXEC_VIEWER";
     logAuditEvent({
       orgId: org.id,
       action: "dashboard_access",
@@ -2327,7 +2721,7 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    const actorRole = req.role ?? "EXEC_VIEWER";
     logAuditEvent({
       orgId: org.id,
       action: "dashboard_export",
@@ -2347,7 +2741,7 @@ app.get(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const actorRole = req.header("x-role") ?? "EXEC_VIEWER";
+    const actorRole = req.role ?? "EXEC_VIEWER";
     logAuditEvent({
       orgId: org.id,
       action: "dashboard_export",
@@ -2505,8 +2899,8 @@ app.post(
       displayName: parsed.data.display_name,
       riskClass: parsed.data.risk_class,
       changeReason: parsed.data.change_reason,
-      actorSub: req.header("x-sub") ?? undefined,
-      actorRole: req.header("x-role") ?? undefined
+      actorSub: req.authSub ?? undefined,
+      actorRole: req.role ?? undefined
     });
     return res.status(201).json({
       org_id: org.id,
@@ -2537,8 +2931,8 @@ app.post(
       displayName: parsed.data.display_name,
       riskClass: parsed.data.risk_class,
       changeReason: parsed.data.change_reason ?? "risk class update",
-      actorSub: req.header("x-sub") ?? undefined,
-      actorRole: req.header("x-role") ?? undefined
+      actorSub: req.authSub ?? undefined,
+      actorRole: req.role ?? undefined
     });
     return res.status(201).json({
       org_id: org.id,
@@ -2567,8 +2961,8 @@ app.post(
       orgId: org.id,
       versionName: parsed.data.version_name,
       changeReason: parsed.data.change_reason,
-      changedByUser: req.header("x-sub") ?? undefined,
-      changedByRole: req.header("x-role") ?? undefined,
+      changedByUser: req.authSub ?? undefined,
+      changedByRole: req.role ?? undefined,
       windowDaysLow: parsed.data.window_days_low,
       windowDaysMedium: parsed.data.window_days_medium,
       windowDaysHigh: parsed.data.window_days_high,
@@ -2608,8 +3002,8 @@ app.post(
       orgId: org.id,
       controlConfigVersionId: parsed.data.control_config_version_id,
       reason: parsed.data.reason,
-      triggeredByUser: req.header("x-sub") ?? undefined,
-      triggeredByRole: req.header("x-role") ?? undefined
+      triggeredByUser: req.authSub ?? undefined,
+      triggeredByRole: req.role ?? undefined
     });
     return res.status(201).json({
       org_id: org.id,
@@ -2722,8 +3116,8 @@ app.post(
       workflowId: req.params.workflowId,
       riskClass: parsed.data.risk_class,
       changeReason: parsed.data.change_reason,
-      actorSub: req.header("x-sub") ?? undefined,
-      actorRole: req.header("x-role") ?? undefined,
+      actorSub: req.authSub ?? undefined,
+      actorRole: req.role ?? undefined,
       policyConfig: parsed.data.policy_config
         ? {
             policyVersion: parsed.data.policy_config.policy_version,
@@ -2827,88 +3221,42 @@ app.get(
 
 app.get(
   "/api/board-snapshot/:orgId",
-  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
   async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
 
-    const parsedWindow = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
-    if (!parsedWindow.success) {
-      return res.status(400).json({ error: "Invalid query" });
-    }
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-    const window = parsedWindow.data;
-    const entries = await listRegistryEntriesByOrg(org.id);
-    const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
-    const baselineResets = await listBaselineResetsByOrg(org.id);
-
-    const latestByWorkflow = entries
-      .slice()
-      .sort((a, b) => {
-        if (a.workflowId !== b.workflowId) {
+    const window = "30d" as const;
+    const currentWorkflows = await listRegistryCurrentByOrg(org.id);
+    const now = new Date();
+    const workflows = await Promise.all(
+      currentWorkflows
+        .slice()
+        .sort((a, b) => {
+          if (a.displayName !== b.displayName) {
+            return a.displayName.localeCompare(b.displayName);
+          }
           return a.workflowId.localeCompare(b.workflowId);
-        }
-        if (a.version !== b.version) {
-          return a.version - b.version;
-        }
-        return a.createdAt.localeCompare(b.createdAt);
-      })
-      .reduce((acc, entry) => {
-        acc.set(entry.workflowId, entry);
-        return acc;
-      }, new Map<string, (typeof entries)[number]>());
-
-    const workflows = Array.from(latestByWorkflow.values())
-      .map((entry) => {
-        const policyConfig = getPolicyConfigForRegistryVersion(policyConfigs, entry);
-        const baselineResetAt = getBaselineResetAtForRegistryVersion(baselineResets, entry);
-        const visibilityState = computeWorkflowVisibility(entry.workflowId, window, {
-          registryEntry: entry,
-          policyConfig,
-          baselineResetAt,
-          fluencyEvents: Array.from(store.fluencyEvents.values()),
-          v0Signals: Array.from(store.behavioralSignals.values()),
-          patternInferenceRecords: store.patternInferenceRecords
-        });
-
-        const dominantPatterns = new Set(
-          store.patternInferenceRecords
-            .filter((record) => workflowIdFromScopeKey(record.scope_key) === entry.workflowId)
-            .filter((record) => ["MEDIUM", "HIGH"].includes(record.confidence_level))
-            .filter((record) => record.pattern !== "NO_PATTERN")
-            .map((record) => record.pattern)
-        );
-
-        const dominantPattern = dominantPatterns.size === 1 ? Array.from(dominantPatterns)[0] : null;
-        const workingStyle =
-          visibilityState === "VISIBLE" ? patternToExecutiveWorkingStyle(dominantPattern) : null;
-
-        return {
-          workflow_id: entry.workflowId,
-          workflow_display_name: entry.workflowId,
-          working_style: workingStyle,
-          visibility_state: visibilityState,
-          visibility_label: visibilityStateLabel(visibilityState),
-          observation_window: window
-        };
-      })
-      .sort((a, b) => a.workflow_display_name.localeCompare(b.workflow_display_name));
+        })
+        .map(async (workflow) => {
+          const visibility = await computeWorkflowVisibilityService(org.id, workflow.workflowId, now);
+          const workingStyle =
+            visibility.visibilityState === "VISIBLE"
+              ? patternToExecutiveWorkingStyle(visibility.dominantPattern)
+              : null;
+          return {
+            workflow_id: workflow.workflowId,
+            display_name: workflow.displayName,
+            visibility_state: visibility.visibilityState,
+            working_style: workingStyle
+          };
+        })
+    );
 
     const payload: BoardSnapshotResponse = {
-      org_id: org.id,
-      header: {
-        observation_window: window,
-        visible: workflows.filter((row) => row.visibility_state === "VISIBLE").length,
-        not_enough_data_yet: workflows.filter(
-          (row) => row.visibility_state === "NOT_ENOUGH_DATA_YET"
-        ).length,
-        not_shown_safety: workflows.filter((row) => row.visibility_state === "NOT_SHOWN_SAFETY")
-          .length
-      },
+      observation_window: "last_30_days",
       workflows
     };
     return res.json(payload);
