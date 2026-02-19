@@ -1,6 +1,7 @@
 name: governance-gate
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -8,6 +9,7 @@ on:
 
 jobs:
   governance-gate:
+    name: governance-gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
