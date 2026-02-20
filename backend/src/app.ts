@@ -3288,7 +3288,15 @@ app.get(
       return res.status(404).json({ error: "Org not found" });
     }
 
-    const window = "30d" as const;
+    const parsedWindow = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!parsedWindow.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+    if (parsedWindow.data !== "60d") {
+      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
+    }
+
+    const window = parsedWindow.data;
     const entries = await listRegistryEntriesByOrg(org.id);
     const currentWorkflows = entries
       .slice()
