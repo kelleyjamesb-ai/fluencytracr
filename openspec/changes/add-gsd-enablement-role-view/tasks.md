@@ -4,26 +4,25 @@
 - [x] 1.1 Create proposal.md, tasks.md, design.md, spec delta
 
 ## 2. ReadinessCoverageCard
-- [ ] 2.1 Create `frontend/src/components/gsd/ReadinessCoverageCard.tsx`
-- [ ] 2.2 Fetch controls via existing endpoint; compute % with training attached
-- [ ] 2.3 Render coverage bar + fraction label (e.g. "14 of 20 controls covered")
+- [x] 2.1 Create `frontend/src/components/gsd/ReadinessCoverageCard.tsx`
+- [x] 2.2 Derive coverage from controls[].source === "policy_mapping" (training_attached absent from API)
+- [x] 2.3 Render coverage bar + fraction label + degraded empty state
 
 ## 3. EnablementFocusHotspots
-- [ ] 3.1 Create `frontend/src/components/gsd/EnablementFocusHotspots.tsx`
-- [ ] 3.2 Accept policies prop (passed from EnablementView); rank by unresolved count desc
-- [ ] 3.3 Render top-5 list: policy name (truncated), unresolved clause count, RAG chip
+- [x] 3.1 Create `frontend/src/components/gsd/EnablementFocusHotspots.tsx`
+- [x] 3.2 Accept policies prop; rank by unresolved_clauses desc
+- [x] 3.3 Render top-5 list: policy name (truncated), unresolved count, RAG chip
 
 ## 4. EnablementActionQueue
-- [ ] 4.1 Create `frontend/src/components/gsd/EnablementActionQueue.tsx`
-- [ ] 4.2 Filter policies where mapped_controls === 0
-- [ ] 4.3 Render count badge + list of unmapped policy names; empty state when clear
+- [x] 4.1 Create `frontend/src/components/gsd/EnablementActionQueue.tsx`
+- [x] 4.2 Filter policies where latest_mapping === null
+- [x] 4.3 Render count badge + list of unmapped policy names; empty state when clear
 
 ## 5. Wire EnablementView
-- [ ] 5.1 Fetch `listPolicies` + `listControls` on mount
-- [ ] 5.2 Replace stub card with ReadinessCoverageCard, EnablementFocusHotspots,
-       EnablementActionQueue
-- [ ] 5.3 Remove "Coming in V2" placeholder text
+- [x] 5.1 Fetch listPolicies + getComplianceStatus on mount (no listControls endpoint exists)
+- [x] 5.2 Replace stub card with ReadinessCoverageCard, EnablementFocusHotspots, EnablementActionQueue
+- [x] 5.3 Remove "Coming in V2" placeholder text
 
 ## 6. Build verification
-- [ ] 6.1 npm run build --workspace frontend — zero TS errors
-- [ ] 6.2 npm run test:ci --workspace backend — all pass
+- [x] 6.1 npm run build --workspace frontend — ✓ 499 modules, zero TS errors
+- [x] 6.2 npm run test:ci --workspace backend — ✓ 228/228 pass
