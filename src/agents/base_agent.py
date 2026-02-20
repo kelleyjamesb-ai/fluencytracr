@@ -7,7 +7,10 @@ and communication with the Gemini API.
 
 import os
 from typing import Any, Dict, List, Optional
-from google import genai
+try:
+    from google import genai
+except ImportError:
+    genai = None  # type: ignore[assignment]
 from src.config import settings
 
 
