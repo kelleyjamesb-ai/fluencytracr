@@ -22,6 +22,7 @@ import {
   WorkflowRegistryVersionCreateSchema,
   OrientationWorkflowVisibilitySummaryResponse,
   BoardSnapshotResponse,
+  type BoardSnapshotVisibilityLabel,
   WorkflowRegistryVersionsResponse,
   WorkflowRegistryWorkflowsResponse,
   WorkflowRegistryCreateVersionResponse,
@@ -122,7 +123,7 @@ import {
   registerWorkflowVersion,
   resetBaseline
 } from "./workflow_registry";
-import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
+import { computeWorkflowVisibility, computeWorkflowVisibilitySummary, WORKFLOW_VISIBILITY_COPY, type WorkflowVisibilityState } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
 
 const app = express();
@@ -3248,15 +3249,23 @@ app.get(
               : null;
           return {
             workflow_id: workflow.workflowId,
-            display_name: workflow.displayName,
+            workflow_display_name: workflow.displayName,
             visibility_state: visibility.visibilityState,
-            working_style: workingStyle
+            visibility_label: WORKFLOW_VISIBILITY_COPY[visibility.visibilityState as WorkflowVisibilityState] as BoardSnapshotVisibilityLabel,
+            working_style: workingStyle,
+            observation_window: window
           };
         })
     );
 
     const payload: BoardSnapshotResponse = {
-      observation_window: "last_30_days",
+      org_id: org.id,
+      header: {
+        observation_window: window,
+        visible: workflows.filter((w) => w.visibility_state === "VISIBLE").length,
+        not_enough_data_yet: workflows.filter((w) => w.visibility_state === "NOT_ENOUGH_DATA_YET").length,
+        not_shown_safety: workflows.filter((w) => w.visibility_state === "NOT_SHOWN_SAFETY").length
+      },
       workflows
     };
     return res.json(payload);
