@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "DEV_HEADER_AUTH=true ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "npm run build --prefix ../shared && tsc -p tsconfig.build.json && npm run generate",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",

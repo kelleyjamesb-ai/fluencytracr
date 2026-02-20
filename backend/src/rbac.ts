@@ -56,7 +56,7 @@ const verifyHs256Jwt = (token: string, secret: string) => {
 };
 
 export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
-  const isTestEnv = process.env.NODE_ENV === "test";
+  const isNonProdEnv = process.env.NODE_ENV === "test" || process.env.DEV_HEADER_AUTH === "true";
   const authHeader = req.header("authorization") ?? "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
 
@@ -85,7 +85,7 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
     return next();
   }
 
-  if (isTestEnv) {
+  if (isNonProdEnv) {
     const rawRole = req.header("x-role");
     if (rawRole) {
       const parseResult = RoleSchema.safeParse(rawRole);
@@ -93,7 +93,7 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
         req.role = parseResult.data;
         req.authSub = req.header("x-sub") ?? undefined;
         req.authOrgId = req.header("x-org-id") ?? undefined;
-        req.authWarning = "Test-only header auth";
+        req.authWarning = "Dev/test header auth";
       }
     }
     return next();
@@ -113,8 +113,8 @@ const getRequestedOrgId = (req: RequestWithRole): string | null => {
 };
 
 export const orgScopeMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
-  const isTestEnv = process.env.NODE_ENV === "test";
-  if (isTestEnv && !req.authOrgId) {
+  const isNonProdEnv = process.env.NODE_ENV === "test" || process.env.DEV_HEADER_AUTH === "true";
+  if (isNonProdEnv && !req.authOrgId) {
     return next();
   }
   if (!req.authOrgId) {
