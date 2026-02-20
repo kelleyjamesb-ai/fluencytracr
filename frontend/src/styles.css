@@ -1397,3 +1397,197 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── GSD Dashboard Shell ──────────────────────────────────────────────── */
+
+/* Sidebar nav grouping */
+.gsd-shell-nav-section {
+  display: grid;
+  gap: 4px;
+}
+
+.gsd-shell-section-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+  padding: 12px 12px 4px;
+  font-weight: 600;
+}
+
+/* Role badge in sidebar brand */
+.gsd-role-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(216, 253, 73, 0.15);
+  border: 1px solid rgba(216, 253, 73, 0.4);
+  color: #d8fd49;
+  margin-top: 6px;
+}
+
+/* Freshness chip */
+.gsd-freshness-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+}
+
+.gsd-freshness-ok {
+  background: #f5ffd4;
+  border-color: #d8fd49;
+  color: #3a6000;
+}
+
+.gsd-freshness-stale {
+  background: #fff1f4;
+  border-color: #ffc5d1;
+  color: #8c1930;
+}
+
+.gsd-freshness-unknown {
+  background: #f1f2f6;
+  border-color: #d8dbe4;
+  color: #555;
+}
+
+/* RAG posture chip */
+.gsd-rag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.gsd-rag-green {
+  background: #f5ffd4;
+  border-color: #d8fd49;
+  color: #3a6000;
+}
+
+.gsd-rag-amber {
+  background: #fff8eb;
+  border-color: #f7dfaf;
+  color: #8a5a07;
+}
+
+.gsd-rag-red {
+  background: #fff1f4;
+  border-color: #ffc5d1;
+  color: #8c1930;
+}
+
+.gsd-rag-unknown {
+  background: #f1f2f6;
+  border-color: #d8dbe4;
+  color: #555;
+}
+
+/* Stub card for deferred V1.1/V2 widgets */
+.gsd-stub-card {
+  border: 1.5px dashed var(--line, #e2e0d8);
+  border-radius: 14px;
+  padding: 20px;
+  background: #fafaf8;
+  color: #888;
+  font-size: 13px;
+}
+
+.gsd-stub-card h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Board layer posture card */
+.gsd-posture-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gsd-board-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.gsd-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.gsd-section-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.gsd-section-header p {
+  font-size: 13px;
+  color: #666;
+  margin: 4px 0 0;
+}
+
+/* Momentum chip */
+.gsd-momentum {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.gsd-momentum-improving { background: #f5ffd4; color: #3a6000; }
+.gsd-momentum-stable    { background: #f1f2f6; color: #555; }
+.gsd-momentum-declining { background: #fff1f4; color: #8c1930; }
+
+/* Focus areas list */
+.gsd-focus-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.gsd-focus-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.gsd-focus-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .gsd-board-grid {
+    grid-template-columns: 1fr;
+  }
+}
