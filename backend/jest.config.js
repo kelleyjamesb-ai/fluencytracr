@@ -10,7 +10,7 @@ module.exports = {
   testTimeout: 30000,
   setupFilesAfterEnv: ["<rootDir>/tests/jest.setup.ts"],
   detectOpenHandles: true,
-  forceExit: false,
+  forceExit: true,
   moduleNameMapper: {
     "^@learnaire/shared$": "<rootDir>/../shared/src",
     "^@learnaire/shared/(.*)$": "<rootDir>/../shared/src/$1"
