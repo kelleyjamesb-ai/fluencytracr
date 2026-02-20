@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
@@ -23,11 +22,11 @@ import {
   WorkflowRegistryVersionCreateSchema,
   OrientationWorkflowVisibilitySummaryResponse,
   BoardSnapshotResponse,
-  type BoardSnapshotVisibilityLabel,
   WorkflowRegistryVersionsResponse,
   WorkflowRegistryWorkflowsResponse,
   WorkflowRegistryCreateVersionResponse,
   WorkflowRegistryAuditResponse,
+  BoardSnapshotVisibilityLabel,
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
@@ -117,7 +116,6 @@ import {
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
   listBaselineResetsByOrg,
-  listRegistryCurrentByOrg,
   listRegistryAudit,
   listRegistryEntriesByOrg,
   listRegistryEntriesByWorkflow,
@@ -125,7 +123,7 @@ import {
   registerWorkflowVersion,
   resetBaseline
 } from "./workflow_registry";
-import { computeWorkflowVisibility, computeWorkflowVisibilitySummary, WORKFLOW_VISIBILITY_COPY, type WorkflowVisibilityState } from "./workflow_visibility";
+import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
 
 const app = express();
@@ -139,13 +137,6 @@ const shouldTrustProxy =
 if (shouldTrustProxy) {
   app.set("trust proxy", 1);
 }
-const corsOrigin = process.env.CORS_ORIGIN;
-app.use(
-  cors({
-    origin: corsOrigin ? corsOrigin.split(",").map((s) => s.trim()) : true,
-    credentials: true
-  })
-);
 app.use(express.json());
 
 const AuthTokenRequestSchema = z
@@ -441,6 +432,18 @@ const patternToExecutiveWorkingStyle = (pattern: string | null) => {
   return null;
 };
 
+const visibilityStateToLabel = (
+  visibilityState: "VISIBLE" | "NOT_ENOUGH_DATA_YET" | "NOT_SHOWN_SAFETY"
+): BoardSnapshotVisibilityLabel => {
+  if (visibilityState === "VISIBLE") {
+    return "Clear enough to show";
+  }
+  if (visibilityState === "NOT_ENOUGH_DATA_YET") {
+    return "Not enough data yet";
+  }
+  return "Not shown (safety)";
+};
+
 const addDays = (start: string, days: number) => {
   const date = new Date(start);
   if (Number.isNaN(date.getTime())) {
@@ -682,12 +685,6 @@ const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
 const isOrgAllowedForBeta = (orgId: string) => {
   const raw = process.env.BETA_ORG_ALLOWLIST;
   if (!raw || raw.trim().length === 0) {
-    // Production: fail-closed when no allowlist is configured.
-    // Non-production (dev / test): permissive default so local development
-    // and CI pass without requiring env var configuration.
-    if (process.env.NODE_ENV === "production") {
-      return false;
-    }
     return true;
   }
   const allow = raw
@@ -2449,14 +2446,12 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
         return Array.from(latestByControl.values());
       })();
 
-  const controls = latestRecords
-    .filter((record) => record.control_name !== "compliance_posture_flag")
-    .map((record) => ({
-      control_name: record.control_name,
-      status: record.status,
-      source: record.source,
-      updated_at: record.updatedAt
-    }));
+  const controls = latestRecords.map((record) => ({
+    control_name: record.control_name,
+    status: record.status,
+    source: record.source,
+    updated_at: record.updatedAt
+  }));
   const summary = buildComplianceSummary(
     controls.map((control) => ({ control_name: control.control_name, status: control.status }))
   );
@@ -3313,12 +3308,27 @@ app.get(
     if (parsedWindow.data !== "60d") {
       return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
     }
+
     const window = parsedWindow.data;
-    const currentWorkflows = await listRegistryCurrentByOrg(org.id);
+    const entries = await listRegistryEntriesByOrg(org.id);
+    const currentWorkflows = entries
+      .slice()
+      .sort((a, b) => {
+        if (a.workflowId !== b.workflowId) {
+          return a.workflowId.localeCompare(b.workflowId);
+        }
+        if (a.version !== b.version) {
+          return a.version - b.version;
+        }
+        return a.createdAt.localeCompare(b.createdAt);
+      })
+      .reduce((acc, entry) => {
+        acc.set(entry.workflowId, entry);
+        return acc;
+      }, new Map<string, (typeof entries)[number]>());
     const now = new Date();
     const workflows = await Promise.all(
-      currentWorkflows
-        .slice()
+      Array.from(currentWorkflows.values())
         .sort((a, b) => {
           if (a.displayName !== b.displayName) {
             return a.displayName.localeCompare(b.displayName);
@@ -3335,9 +3345,9 @@ app.get(
             workflow_id: workflow.workflowId,
             workflow_display_name: workflow.displayName,
             visibility_state: visibility.visibilityState,
-            visibility_label: WORKFLOW_VISIBILITY_COPY[visibility.visibilityState as WorkflowVisibilityState] as BoardSnapshotVisibilityLabel,
-            working_style: workingStyle,
-            observation_window: window
+            visibility_label: visibilityStateToLabel(visibility.visibilityState),
+            observation_window: window,
+            working_style: workingStyle
           };
         })
     );
@@ -3346,9 +3356,9 @@ app.get(
       org_id: org.id,
       header: {
         observation_window: window,
-        visible: workflows.filter((w) => w.visibility_state === "VISIBLE").length,
-        not_enough_data_yet: workflows.filter((w) => w.visibility_state === "NOT_ENOUGH_DATA_YET").length,
-        not_shown_safety: workflows.filter((w) => w.visibility_state === "NOT_SHOWN_SAFETY").length
+        visible: workflows.filter((workflow) => workflow.visibility_state === "VISIBLE").length,
+        not_enough_data_yet: workflows.filter((workflow) => workflow.visibility_state === "NOT_ENOUGH_DATA_YET").length,
+        not_shown_safety: workflows.filter((workflow) => workflow.visibility_state === "NOT_SHOWN_SAFETY").length
       },
       workflows
     };

@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
-import { GSDDashboard } from "./pages/GSDDashboard";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -22,14 +21,6 @@ createRoot(container).render(
         <Route path="/login" element={<Login />} />
         <Route
           path="/"
-          element={
-            <ProtectedRoute>
-              <GSDDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/concept"
           element={
             <ProtectedRoute>
               <GovernanceConcept />

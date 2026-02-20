@@ -114,42 +114,6 @@ it("adapts legacy controls import into canonical compliance status", async () =>
   expect(status.body.counts.disabled).toBeGreaterThanOrEqual(1);
 });
 
-it("excludes compliance_posture_flag from controls array and counts in compliance status", async () => {
-  // After a mapping run, recomputeCompliancePostureForOrg writes a
-  // compliance_posture_flag canonical control snapshot. This snapshot is
-  // a derived aggregate and must not appear in the controls[] response or
-  // inflate the counts object (both numerator and denominator).
-  const upload = await request(app)
-    .post("/orgs/org-1/policies/upload")
-    .set(schemaHeaders)
-    .send({
-      file_name: "posture-test.txt",
-      content: "AI usage is approved for all standard workflows."
-    });
-  expect(upload.status).toBe(201);
-  const policyId = upload.body.policy_id as string;
-
-  const mapped = await request(app)
-    .post(`/orgs/org-1/policies/${policyId}/map`)
-    .set(schemaHeaders)
-    .send({});
-  expect(mapped.status).toBe(200);
-
-  const status = await request(app)
-    .get("/orgs/org-1/compliance/status")
-    .set({ "x-role": "ADMIN" });
-  expect(status.status).toBe(200);
-
-  const controls: Array<{ control_name: string; status: string }> = status.body.controls;
-
-  // The synthetic flag must not appear in the returned controls array.
-  expect(controls.find((c) => c.control_name === "compliance_posture_flag")).toBeUndefined();
-
-  // Counts must equal the number of real controls, not be inflated by the flag.
-  const { enabled, disabled, partial, unknown } = status.body.counts as Record<string, number>;
-  expect(enabled + disabled + partial + unknown).toBe(controls.length);
-});
-
 it("filters compliance events by since timestamp", async () => {
   const upload = await request(app)
     .post("/orgs/org-1/policies/upload")
@@ -803,40 +767,4 @@ it("enforces beta allowlist for policy and compliance endpoints", async () => {
     .get("/orgs/org-1/compliance/status")
     .set({ "x-role": "ADMIN" });
   expect(statusDenied.status).toBe(403);
-});
-
-it("allows allowlisted org to access compliance status endpoint", async () => {
-  // task 2.2 — positive case: org in allowlist succeeds
-  process.env.BETA_ORG_ALLOWLIST = "org-1";
-
-  const statusAllowed = await request(app)
-    .get("/orgs/org-1/compliance/status")
-    .set({ "x-role": "ADMIN" });
-  expect(statusAllowed.status).toBe(200);
-});
-
-it("denies all orgs when BETA_ORG_ALLOWLIST is unset in production mode", async () => {
-  // task 2.1 — strict production gate: unset allowlist → fail-closed.
-  // DEV_HEADER_AUTH=true keeps x-role header auth working so the test can
-  // reach the allowlist gate (authMiddleware and orgScopeMiddleware are also
-  // prod-mode aware and would return 401 without this).
-  const originalNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = "production";
-  process.env.DEV_HEADER_AUTH = "true";
-  delete process.env.BETA_ORG_ALLOWLIST;
-
-  try {
-    const statusDenied = await request(app)
-      .get("/orgs/org-1/compliance/status")
-      .set({ "x-role": "ADMIN" });
-    expect(statusDenied.status).toBe(403);
-  } finally {
-    // Always restore env so subsequent tests use permissive dev mode
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
-    delete process.env.DEV_HEADER_AUTH;
-  }
 });
