@@ -19,7 +19,9 @@ function daysSince(iso: string): number {
 }
 
 export function FailClosedWarningFeed({ controls }: Props) {
-  const blockers = (controls ?? []).filter((c) => c.status === "disabled");
+  const blockers = (controls ?? []).filter(
+    (c) => c.status === "disabled" && c.control_name !== "compliance_posture_flag"
+  );
 
   if (blockers.length === 0) {
     return (
