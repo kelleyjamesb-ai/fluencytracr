@@ -621,6 +621,12 @@ const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
 const isOrgAllowedForBeta = (orgId: string) => {
   const raw = process.env.BETA_ORG_ALLOWLIST;
   if (!raw || raw.trim().length === 0) {
+    // Production: fail-closed when no allowlist is configured.
+    // Non-production (dev / test): permissive default so local development
+    // and CI pass without requiring env var configuration.
+    if (process.env.NODE_ENV === "production") {
+      return false;
+    }
     return true;
   }
   const allow = raw
