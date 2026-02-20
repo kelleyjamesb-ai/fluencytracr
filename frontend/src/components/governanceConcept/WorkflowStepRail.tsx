@@ -1,36 +1,46 @@
+type WorkflowStep = { id: string; label: string };
+
 type WorkflowStepRailProps = {
   nextStepText: string;
   hasPendingParsedUploads: boolean;
   hasPolicies: boolean;
   hasSelectedPolicy: boolean;
   hasMapping: boolean;
+  /** Optional override step list. When omitted the default 2-step list is used. */
+  steps?: readonly WorkflowStep[];
 };
 
-const stepState = (step: "upload" | "map", flags: Omit<WorkflowStepRailProps, "nextStepText">) => {
+const stepState = (step: string, flags: Omit<WorkflowStepRailProps, "nextStepText" | "steps">) => {
   if (step === "upload") {
     if (flags.hasPendingParsedUploads) {
       return "active";
     }
     return flags.hasPolicies ? "done" : "active";
   }
-  if (!flags.hasPolicies || !flags.hasSelectedPolicy) {
-    return "pending";
+  if (step === "map") {
+    if (!flags.hasPolicies || !flags.hasSelectedPolicy) {
+      return "pending";
+    }
+    return flags.hasMapping ? "done" : "active";
   }
-  return flags.hasMapping ? "done" : "active";
+  return "pending";
 };
+
+const DEFAULT_STEPS = [
+  { id: "upload", label: "Upload and Manage Policies" },
+  { id: "map", label: "Map Selected Policy" }
+] as const;
 
 export function WorkflowStepRail({
   nextStepText,
   hasPendingParsedUploads,
   hasPolicies,
   hasSelectedPolicy,
-  hasMapping
+  hasMapping,
+  steps
 }: WorkflowStepRailProps) {
   const flags = { hasPendingParsedUploads, hasPolicies, hasSelectedPolicy, hasMapping };
-  const steps = [
-    { id: "upload", label: "Upload and Manage Policies" },
-    { id: "map", label: "Map Selected Policy" }
-  ] as const;
+  const resolvedSteps: readonly WorkflowStep[] = steps ?? DEFAULT_STEPS;
 
   return (
     <section className="gc-step-rail">
@@ -39,7 +49,7 @@ export function WorkflowStepRail({
         <p>{nextStepText}</p>
       </div>
       <ol className="gc-step-list">
-        {steps.map((step) => {
+        {resolvedSteps.map((step) => {
           const state = stepState(step.id, flags);
           return (
             <li key={step.id} className={`gc-step gc-step-${state}`}>
