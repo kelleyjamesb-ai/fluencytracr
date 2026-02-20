@@ -26,6 +26,7 @@ import {
   WorkflowRegistryWorkflowsResponse,
   WorkflowRegistryCreateVersionResponse,
   WorkflowRegistryAuditResponse,
+  BoardSnapshotVisibilityLabel,
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
@@ -429,6 +430,18 @@ const patternToExecutiveWorkingStyle = (pattern: string | null) => {
     return "AI started but not used" as const;
   }
   return null;
+};
+
+const visibilityStateToLabel = (
+  visibilityState: "VISIBLE" | "NOT_ENOUGH_DATA_YET" | "NOT_SHOWN_SAFETY"
+): BoardSnapshotVisibilityLabel => {
+  if (visibilityState === "VISIBLE") {
+    return "Clear enough to show";
+  }
+  if (visibilityState === "NOT_ENOUGH_DATA_YET") {
+    return "Not enough data yet";
+  }
+  return "Not shown (safety)";
 };
 
 const addDays = (start: string, days: number) => {
@@ -3332,12 +3345,7 @@ app.get(
             workflow_id: workflow.workflowId,
             workflow_display_name: workflow.displayName,
             visibility_state: visibility.visibilityState,
-            visibility_label:
-              visibility.visibilityState === "VISIBLE"
-                ? "Clear enough to show"
-                : visibility.visibilityState === "NOT_ENOUGH_DATA_YET"
-                  ? "Not enough data yet"
-                  : "Not shown (safety)",
+            visibility_label: visibilityStateToLabel(visibility.visibilityState),
             observation_window: window,
             working_style: workingStyle
           };
