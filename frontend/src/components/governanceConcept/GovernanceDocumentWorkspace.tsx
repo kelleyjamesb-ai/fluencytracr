@@ -68,7 +68,30 @@ export function GovernanceDocumentWorkspace() {
         hasMapping={hasMapping}
       />
 
-      {!isAdmin && (
+      {orgBootstrapNeeded && (
+        <div className="gc-card" style={{ borderColor: "#f7dfaf", marginBottom: 20 }}>
+          <p className="gc-mono" style={{ marginBottom: 8 }}>Organization Setup Required</p>
+          <p style={{ fontSize: 13, color: "#666", marginBottom: 14 }}>
+            No organization record was found for this session. Initialize one to enable
+            policy upload and mapping.
+          </p>
+          <button
+            type="button"
+            className="gc-btn gc-btn-primary"
+            onClick={initializeOrg}
+            disabled={!isAdmin || isCreatingOrg}
+          >
+            {isCreatingOrg ? "Initializing…" : "Initialize Organization"}
+          </button>
+          {!isAdmin && (
+            <p style={{ fontSize: 12, color: "#888", marginTop: 8 }}>
+              Only an Admin can initialize the organization.
+            </p>
+          )}
+        </div>
+      )}
+
+      {!isAdmin && !orgBootstrapNeeded && (
         <p className="gc-readonly-note">
           Read-only mode: only `ADMIN` can upload or run mapping. You can still review existing policy and mapping
           summaries.
@@ -173,20 +196,6 @@ export function GovernanceDocumentWorkspace() {
 
           <div className="gc-mapping-summary">
             <h4>Policy inventory</h4>
-            {orgBootstrapNeeded && (
-              <div className="gc-mapping-summary">
-                <p><strong>Organization setup required</strong></p>
-                <p>No org record was found for this session org id. Initialize one to enable policy listing and mapping.</p>
-                <button
-                  type="button"
-                  className="gc-btn gc-btn-secondary"
-                  onClick={initializeOrg}
-                  disabled={!isAdmin || isCreatingOrg}
-                >
-                  {isCreatingOrg ? "Initializing..." : "Initialize Organization"}
-                </button>
-              </div>
-            )}
             {isLoading ? (
               <p>Loading policies...</p>
             ) : policies.length === 0 ? (
@@ -250,6 +259,11 @@ export function GovernanceDocumentWorkspace() {
           >
             {isMapping ? "Mapping..." : "Run Mapping"}
           </button>
+          {!isAdmin && hasSelectedPolicy && !orgBootstrapNeeded && (
+            <p className="gc-subtle" style={{ color: "#8a5a07" }}>
+              Mapping requires Admin role. Contact your Admin to run mapping for this policy.
+            </p>
+          )}
           {!selectedPolicyId && <p className="gc-subtle">No policy selected yet.</p>}
 
           {mapping && (

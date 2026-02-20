@@ -63,6 +63,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  align-self: start;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar-brand h1 {
@@ -1403,7 +1408,7 @@ body {
 /* Sidebar nav grouping */
 .gsd-shell-nav-section {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
 .gsd-shell-section-label {
@@ -1411,7 +1416,7 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #8a8a8a;
-  padding: 12px 12px 4px;
+  padding: 6px 12px 4px;
   font-weight: 600;
 }
 
