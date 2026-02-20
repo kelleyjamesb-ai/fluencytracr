@@ -108,6 +108,7 @@ export function OperatorView() {
         }
       } catch {
         if (!cancelled) setPolicies([]);
+        if (!cancelled) setComplianceStatus(null);
       } finally {
         if (!cancelled) setPoliciesLoading(false);
       }
