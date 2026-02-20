@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
@@ -137,6 +138,13 @@ const shouldTrustProxy =
 if (shouldTrustProxy) {
   app.set("trust proxy", 1);
 }
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(
+  cors({
+    origin: corsOrigin ? corsOrigin.split(",").map((s) => s.trim()) : true,
+    credentials: true
+  })
+);
 app.use(express.json());
 app.use(authMiddleware);
 app.use(orgScopeMiddleware);
