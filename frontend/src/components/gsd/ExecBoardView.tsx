@@ -5,6 +5,7 @@ import { governanceApi } from "../../lib/governanceApi";
 import { useGovernanceContext } from "../../hooks/useGovernanceContext";
 import { FreshnessChip } from "./FreshnessChip";
 import { RagChip } from "./RagChip";
+import { WhatChangedPanel } from "./WhatChangedPanel";
 import type {
   ComplianceEventsResponse,
   ComplianceStatusResponse,
@@ -41,8 +42,6 @@ const deriveFocusAreas = (
   return items.length > 0 ? items.slice(0, 3) : ["No critical focus areas identified."];
 };
 
-const formatEventType = (raw: string) =>
-  raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export function ExecBoardView() {
   const { orgId, role } = useGovernanceContext();
@@ -60,7 +59,7 @@ export function ExecBoardView() {
         const ctx = { orgId, role };
         const [compliance, eventsPayload] = await Promise.all([
           governanceApi.getComplianceStatus(ctx),
-          governanceApi.getComplianceEvents(ctx, 10),
+          governanceApi.getComplianceEvents(ctx, 30),
         ]);
         if (!cancelled) {
           setStatus(compliance);
@@ -140,36 +139,7 @@ export function ExecBoardView() {
 
           {/* What Changed Since Last Review */}
           <article className="gc-card" style={{ gridColumn: "span 1" }}>
-            <p className="gc-mono" style={{ marginBottom: 10 }}>What Changed Since Last Review</p>
-            {events.length === 0 ? (
-              <p style={{ color: "#888", fontSize: 13 }}>No recent governance events.</p>
-            ) : (
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}>
-                {events.slice(0, 6).map((ev) => (
-                  <li
-                    key={ev.event_id}
-                    style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start" }}
-                  >
-                    <span
-                      style={{
-                        width: 6, height: 6, borderRadius: "50%", background: "#d8dbe4",
-                        flexShrink: 0, marginTop: 5
-                      }}
-                    />
-                    <span>
-                      <strong>{formatEventType(ev.event_type)}</strong>
-                      {ev.policy_id && (
-                        <span style={{ color: "#888" }}> · policy {ev.policy_id.slice(0, 8)}</span>
-                      )}
-                      <br />
-                      <span style={{ color: "#aaa", fontSize: 11 }}>
-                        {new Date(ev.created_at).toLocaleDateString()}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <WhatChangedPanel events={events} isLoading={isLoading} />
           </article>
         </div>
       )}
