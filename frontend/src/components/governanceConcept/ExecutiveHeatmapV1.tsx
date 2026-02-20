@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { governanceApi } from "../../lib/governanceApi";
 import { useGovernanceContext } from "../../hooks/useGovernanceContext";
-import { ExplainabilityDrawer } from "../gsd/ExplainabilityDrawer";
-import { WhatChangedPanel } from "../gsd/WhatChangedPanel";
 import type {
   ComplianceEventsResponse,
   ComplianceStatus,
@@ -125,7 +123,7 @@ export function ExecutiveHeatmapV1() {
         const [compliance, policyPayload, eventsPayload] = await Promise.all([
           governanceApi.getComplianceStatus(ctx),
           governanceApi.listPolicies(ctx),
-          governanceApi.getComplianceEvents(ctx, 30)
+          governanceApi.getComplianceEvents(ctx, 6)
         ]);
         if (!isCancelled) {
           setStatus(compliance);
@@ -277,21 +275,26 @@ export function ExecutiveHeatmapV1() {
             ))}
           </div>
       )}
-      {activeExplainability && status && (() => {
-        const activeRow = rows.find((row) => row.area === activeExplainability);
-        return activeRow ? (
-          <ExplainabilityDrawer
-            row={activeRow}
-            counts={status.counts}
-            freshness={status.freshness}
-            policies={policies}
-            recentEvents={recentEvents}
-            onClose={() => setActiveExplainability(null)}
-          />
-        ) : null;
-      })()}
+      {activeExplainability && (
+        <div className="gc-heatmap-explain">
+          <p className="gc-mono">Explainability</p>
+          <p>{rows.find((row) => row.area === activeExplainability)?.explainability}</p>
+        </div>
+      )}
       <div className="gc-heatmap-timeline">
-        <WhatChangedPanel events={recentEvents} isLoading={isLoading} />
+        <p className="gc-mono">What Changed Since Last Review</p>
+        {recentEvents.length === 0 ? (
+          <p className="gc-subtle">No recent governance events available.</p>
+        ) : (
+          <ul className="gc-policy-list">
+            {recentEvents.map((event) => (
+              <li key={event.event_id}>
+                <span>{event.event_type.replace(/_/g, " ")}</span>
+                <span className="gc-mono">{new Date(event.created_at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       {status?.freshness?.stale && (
         <p className="gc-workspace-message">Data freshness warning: signals may be stale for executive decisions.</p>

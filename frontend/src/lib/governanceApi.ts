@@ -6,23 +6,7 @@ import type {
   SandboxResetResponse,
   SandboxSeedResponse
 } from "../types/governance";
-import type {
-  OrientationWorkflowVisibilitySummaryResponse,
-  BoardSnapshotResponse
-} from "@learnaire/shared";
-
-export type WorkflowsResponse = {
-  org_id: string;
-  workflows: {
-    workflow_id: string;
-    display_name: string;
-    risk_class: string;
-    version: number;
-    visibility_state: string;
-    dominant_pattern: string | null;
-    updated_at: string;
-  }[];
-};
+import { authFetch } from "../auth";
 
 type GovernanceContext = {
   orgId: string;
@@ -43,8 +27,8 @@ export class GovernanceApiError extends Error {
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 const withApiBase = (path: string) => (apiBaseUrl ? `${apiBaseUrl}${path}` : path);
 
-const fetchJson = async <T>(input: RequestInfo | URL, init: RequestInit = {}) => {
-  const response = await fetch(input, init);
+const fetchJson = async <T>(role: string, input: RequestInfo | URL, init: RequestInit = {}) => {
+  const response = await authFetch(role, input, init);
   if (!response.ok) {
     let payload: unknown = null;
     try {
@@ -66,38 +50,26 @@ const fetchJson = async <T>(input: RequestInfo | URL, init: RequestInit = {}) =>
 
 export const governanceApi = {
   getComplianceStatus: (ctx: GovernanceContext) =>
-    fetchJson<ComplianceStatusResponse>(withApiBase(`/orgs/${ctx.orgId}/compliance/status`), {
-      headers: { "x-role": ctx.role }
-    }),
+    fetchJson<ComplianceStatusResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/compliance/status`)),
 
-  getComplianceEvents: (ctx: GovernanceContext, limit = 8, options?: { eventType?: string }) =>
-    fetchJson<ComplianceEventsResponse>(
-      withApiBase(
-        `/orgs/${ctx.orgId}/compliance/events?limit=${limit}${options?.eventType ? `&event_type=${encodeURIComponent(options.eventType)}` : ""}`
-      ),
-      { headers: { "x-role": ctx.role } }
-    ),
+  getComplianceEvents: (ctx: GovernanceContext, limit = 8) =>
+    fetchJson<ComplianceEventsResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/compliance/events?limit=${limit}`)),
 
   patchComplianceMode: (ctx: GovernanceContext, mode: "shadow" | "enforced", rationale: string) =>
-    fetchJson<{ mode: "shadow" | "enforced" }>(withApiBase(`/orgs/${ctx.orgId}/compliance/mode`), {
+    fetchJson<{ mode: "shadow" | "enforced" }>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/compliance/mode`), {
       method: "PATCH",
       headers: {
         "content-type": "application/json",
-        "x-role": ctx.role,
         "X-FluencyTracr-Schema-Version": "0.1"
       },
       body: JSON.stringify({ mode, rationale })
     }),
 
   listPolicies: (ctx: GovernanceContext) =>
-    fetchJson<PoliciesResponse>(withApiBase(`/orgs/${ctx.orgId}/policies`), {
-      headers: { "x-role": ctx.role }
-    }),
+    fetchJson<PoliciesResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/policies`)),
 
   getPolicyMapping: (ctx: GovernanceContext, policyId: string) =>
-    fetchJson<MappingResponse>(withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/mapping`), {
-      headers: { "x-role": ctx.role }
-    }),
+    fetchJson<MappingResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/mapping`)),
 
   uploadPolicy: (
     ctx: GovernanceContext,
@@ -105,11 +77,10 @@ export const governanceApi = {
     content: string,
     contentType = "text/plain"
   ) =>
-    fetchJson<{ policy_id: string }>(withApiBase(`/orgs/${ctx.orgId}/policies/upload`), {
+    fetchJson<{ policy_id: string }>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/policies/upload`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-role": ctx.role,
         "X-FluencyTracr-Schema-Version": "0.1"
       },
       body: JSON.stringify({
@@ -125,12 +96,12 @@ export const governanceApi = {
     updates: { fileName?: string; contentType?: string; content?: string }
   ) =>
     fetchJson<{ policy_id: string; updated_at: string; mapping_invalidated: boolean; clause_count: number }>(
+      ctx.role,
       withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}`),
       {
         method: "PATCH",
         headers: {
           "content-type": "application/json",
-          "x-role": ctx.role,
           "X-FluencyTracr-Schema-Version": "0.1"
         },
         body: JSON.stringify({
@@ -143,12 +114,12 @@ export const governanceApi = {
 
   deletePolicy: (ctx: GovernanceContext, policyId: string) =>
     fetchJson<{ policy_id: string; deleted: boolean; removed_mappings: number }>(
+      ctx.role,
       withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}`),
       {
         method: "DELETE",
         headers: {
           "content-type": "application/json",
-          "x-role": ctx.role,
           "X-FluencyTracr-Schema-Version": "0.1"
         },
         body: JSON.stringify({})
@@ -156,69 +127,47 @@ export const governanceApi = {
     ),
 
   mapPolicy: (ctx: GovernanceContext, policyId: string) =>
-    fetchJson<MappingResponse>(withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/map`), {
+    fetchJson<MappingResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/policies/${policyId}/map`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-role": ctx.role,
         "X-FluencyTracr-Schema-Version": "0.1"
       },
       body: JSON.stringify({})
     }),
 
   seedSyntheticPolicies: (ctx: GovernanceContext) =>
-    fetchJson<SandboxSeedResponse>(withApiBase(`/orgs/${ctx.orgId}/sandbox/seed-synthetic`), {
+    fetchJson<SandboxSeedResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/sandbox/seed-synthetic`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-role": ctx.role,
         "X-FluencyTracr-Schema-Version": "0.1"
       },
       body: JSON.stringify({})
     }),
 
   resetSandbox: (ctx: GovernanceContext) =>
-    fetchJson<SandboxResetResponse>(withApiBase(`/orgs/${ctx.orgId}/sandbox/reset`), {
+    fetchJson<SandboxResetResponse>(ctx.role, withApiBase(`/orgs/${ctx.orgId}/sandbox/reset`), {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-role": ctx.role,
         "X-FluencyTracr-Schema-Version": "0.1"
       },
       body: JSON.stringify({})
     }),
 
-  createOrg: (name: string, orgId?: string) =>
+  createOrg: (ctx: GovernanceContext, name: string, orgId?: string) =>
     fetchJson<{ org_id: string; name: string; created_at: string; min_group_size: number }>(
+      ctx.role,
       withApiBase("/orgs"),
       {
         method: "POST",
-        headers: {
-          "content-type": "application/json"
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name,
           minGroupSize: 10,
           ...(orgId ? { orgId } : {})
         })
       }
-    ),
-
-  getOrientationSummary: (orgId: string, role: string) =>
-    fetchJson<OrientationWorkflowVisibilitySummaryResponse>(
-      withApiBase(`/api/orientation/${orgId}?window=60d`),
-      { headers: { "x-role": role } }
-    ),
-
-  getWorkflows: (orgId: string, role: string) =>
-    fetchJson<WorkflowsResponse>(
-      withApiBase(`/api/workflows?org_id=${orgId}`),
-      { headers: { "x-role": role } }
-    ),
-
-  getBoardSnapshot: (orgId: string, role: string) =>
-    fetchJson<BoardSnapshotResponse>(
-      withApiBase(`/api/board-snapshot/${orgId}?window=60d`),
-      { headers: { "x-role": role } }
     )
 };

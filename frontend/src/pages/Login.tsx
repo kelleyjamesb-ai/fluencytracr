@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AUTH_TOKEN_STORAGE_KEY } from "../auth";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -7,18 +8,43 @@ export const Login = () => {
   const [orgId, setOrgId] = useState(localStorage.getItem("orgId") ?? "org-1");
   const [role, setRole] = useState(localStorage.getItem("role") ?? "ADMIN");
   const [error, setError] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!orgId.trim()) {
       setError("Organization ID is required.");
       return;
     }
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userEmail", email.trim());
-    localStorage.setItem("orgId", orgId.trim());
-    localStorage.setItem("role", role);
-    navigate("/", { replace: true });
+    setError(null);
+    setIsSigningIn(true);
+    try {
+      const response = await fetch("/auth/token", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          org_id: orgId.trim(),
+          role
+        })
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        setError(payload?.error ?? "Unable to sign in.");
+        return;
+      }
+      const payload = (await response.json()) as { token: string };
+      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, payload.token);
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userEmail", email.trim());
+      localStorage.setItem("orgId", orgId.trim());
+      localStorage.setItem("role", role);
+      navigate("/", { replace: true });
+    } catch {
+      setError("Unable to sign in.");
+    } finally {
+      setIsSigningIn(false);
+    }
   };
 
   return (
@@ -55,7 +81,9 @@ export const Login = () => {
             </select>
           </label>
           {error && <p className="error-text">{error}</p>}
-          <button className="primary" type="submit">Sign in</button>
+          <button className="primary" type="submit" disabled={isSigningIn}>
+            {isSigningIn ? "Signing in..." : "Sign in"}
+          </button>
         </form>
       </section>
     </main>

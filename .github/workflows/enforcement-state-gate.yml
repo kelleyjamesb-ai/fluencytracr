@@ -8,7 +8,6 @@ on:
 jobs:
   enforcement_state_gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Validate CODEX enforcement state artifact

@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
@@ -23,11 +22,11 @@ import {
   WorkflowRegistryVersionCreateSchema,
   OrientationWorkflowVisibilitySummaryResponse,
   BoardSnapshotResponse,
-  type BoardSnapshotVisibilityLabel,
   WorkflowRegistryVersionsResponse,
   WorkflowRegistryWorkflowsResponse,
   WorkflowRegistryCreateVersionResponse,
-  WorkflowRegistryAuditResponse
+  WorkflowRegistryAuditResponse,
+  RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
 import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
@@ -124,7 +123,7 @@ import {
   registerWorkflowVersion,
   resetBaseline
 } from "./workflow_registry";
-import { computeWorkflowVisibility, computeWorkflowVisibilitySummary, WORKFLOW_VISIBILITY_COPY, type WorkflowVisibilityState } from "./workflow_visibility";
+import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
 
 const app = express();
@@ -138,14 +137,67 @@ const shouldTrustProxy =
 if (shouldTrustProxy) {
   app.set("trust proxy", 1);
 }
-const corsOrigin = process.env.CORS_ORIGIN;
-app.use(
-  cors({
-    origin: corsOrigin ? corsOrigin.split(",").map((s) => s.trim()) : true,
-    credentials: true
-  })
-);
 app.use(express.json());
+
+const AuthTokenRequestSchema = z
+  .object({
+    email: z.string().email().optional(),
+    sub: z.string().min(1).optional(),
+    org_id: z.string().min(1),
+    role: AuthRoleSchema,
+    ttl_seconds: z.number().int().positive().max(7 * 24 * 60 * 60).optional()
+  })
+  .strict();
+
+const base64Url = (value: Buffer | string) =>
+  Buffer.from(value)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const signHs256Jwt = (payload: Record<string, unknown>, secret: string) => {
+  const header = { alg: "HS256", typ: "JWT" };
+  const encodedHeader = base64Url(JSON.stringify(header));
+  const encodedPayload = base64Url(JSON.stringify(payload));
+  const signedContent = `${encodedHeader}.${encodedPayload}`;
+  const signature = crypto.createHmac("sha256", secret).update(signedContent).digest();
+  return `${signedContent}.${base64Url(signature)}`;
+};
+
+app.post("/auth/token", (req, res) => {
+  const parsed = AuthTokenRequestSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid auth token request" });
+  }
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: "Server auth misconfigured" });
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const defaultTtl = Number(process.env.JWT_TTL_SECONDS ?? 8 * 60 * 60);
+  const ttlSeconds = Number.isFinite(defaultTtl) && defaultTtl > 0
+    ? Math.floor(defaultTtl)
+    : 8 * 60 * 60;
+  const exp = now + (parsed.data.ttl_seconds ?? ttlSeconds);
+  const token = signHs256Jwt(
+    {
+      sub: parsed.data.sub ?? parsed.data.email ?? "dashboard-user",
+      role: parsed.data.role,
+      org_id: parsed.data.org_id,
+      exp
+    },
+    secret
+  );
+  return res.status(201).json({
+    token,
+    token_type: "Bearer",
+    expires_at: new Date(exp * 1000).toISOString(),
+    org_id: parsed.data.org_id,
+    role: parsed.data.role
+  });
+});
+
 app.use(authMiddleware);
 app.use(orgScopeMiddleware);
 
@@ -621,12 +673,6 @@ const recomputeCompliancePostureForOrg = (orgId: string, updatedAt: string) => {
 const isOrgAllowedForBeta = (orgId: string) => {
   const raw = process.env.BETA_ORG_ALLOWLIST;
   if (!raw || raw.trim().length === 0) {
-    // Production: fail-closed when no allowlist is configured.
-    // Non-production (dev / test): permissive default so local development
-    // and CI pass without requiring env var configuration.
-    if (process.env.NODE_ENV === "production") {
-      return false;
-    }
     return true;
   }
   const allow = raw
@@ -2388,14 +2434,12 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
         return Array.from(latestByControl.values());
       })();
 
-  const controls = latestRecords
-    .filter((record) => record.control_name !== "compliance_posture_flag")
-    .map((record) => ({
-      control_name: record.control_name,
-      status: record.status,
-      source: record.source,
-      updated_at: record.updatedAt
-    }));
+  const controls = latestRecords.map((record) => ({
+    control_name: record.control_name,
+    status: record.status,
+    source: record.source,
+    updated_at: record.updatedAt
+  }));
   const summary = buildComplianceSummary(
     controls.map((control) => ({ control_name: control.control_name, status: control.status }))
   );
@@ -3245,14 +3289,7 @@ app.get(
       return res.status(404).json({ error: "Org not found" });
     }
 
-    const parsedWindow = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
-    if (!parsedWindow.success) {
-      return res.status(400).json({ error: "Invalid query" });
-    }
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-    const window = parsedWindow.data;
+    const window = "30d" as const;
     const currentWorkflows = await listRegistryCurrentByOrg(org.id);
     const now = new Date();
     const workflows = await Promise.all(
@@ -3272,23 +3309,15 @@ app.get(
               : null;
           return {
             workflow_id: workflow.workflowId,
-            workflow_display_name: workflow.displayName,
+            display_name: workflow.displayName,
             visibility_state: visibility.visibilityState,
-            visibility_label: WORKFLOW_VISIBILITY_COPY[visibility.visibilityState as WorkflowVisibilityState] as BoardSnapshotVisibilityLabel,
-            working_style: workingStyle,
-            observation_window: window
+            working_style: workingStyle
           };
         })
     );
 
     const payload: BoardSnapshotResponse = {
-      org_id: org.id,
-      header: {
-        observation_window: window,
-        visible: workflows.filter((w) => w.visibility_state === "VISIBLE").length,
-        not_enough_data_yet: workflows.filter((w) => w.visibility_state === "NOT_ENOUGH_DATA_YET").length,
-        not_shown_safety: workflows.filter((w) => w.visibility_state === "NOT_SHOWN_SAFETY").length
-      },
+      observation_window: "last_30_days",
       workflows
     };
     return res.json(payload);

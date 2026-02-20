@@ -253,7 +253,7 @@ export function useGovernanceDocumentWorkspace() {
     try {
       await governanceApi.mapPolicy(ctx, policyId);
       await Promise.all([loadPolicies(), loadMapping(policyId)]);
-      setMessage("Mapping complete! Review the connected controls and any open clauses below.");
+      setMessage("Mapping complete. Review controls and unresolved clauses.");
     } catch (error) {
       if (error instanceof GovernanceApiError) {
         setMessage(`Mapping failed: ${error.message}`);
@@ -441,6 +441,7 @@ export function useGovernanceDocumentWorkspace() {
     setMessage("");
     try {
       const created = await governanceApi.createOrg(
+        ctx,
         `Governance Org ${new Date().toLocaleDateString()}`,
         orgId
       );
@@ -468,14 +469,14 @@ export function useGovernanceDocumentWorkspace() {
   const shouldHighlightRunMapping = canRunMapping && !hasPendingParsedUploads;
 
   const nextStepText = orgBootstrapNeeded
-    ? "Set up your organization first — click 'Initialize Organization' below."
+    ? "Initialize organization to enable upload and mapping."
     : hasPendingParsedUploads
-      ? "Your files are ready — click 'Upload Documents' to save them."
+      ? "Step 1: click Upload Documents to save parsed files."
       : !hasPolicies
-        ? "Start by uploading at least one policy document."
+        ? "Step 1: upload at least one document."
         : !hasSelectedPolicy
-          ? "Select a policy from 'Your policies', then click Run Mapping."
-          : "Click Run Mapping to connect this policy to controls.";
+          ? "Step 2: select a policy in inventory, then run mapping."
+          : "Step 2: click Run Mapping.";
 
   return {
     isAdmin,

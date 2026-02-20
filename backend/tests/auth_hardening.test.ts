@@ -41,7 +41,7 @@ const startServer = () => {
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => new Promise<void>((resolveClose, reject) => { server.closeAllConnections(); server.close((error) => (error ? reject(error) : resolveClose())); })
+        close: () => new Promise<void>((resolveClose, reject) => server.close((error) => (error ? reject(error) : resolveClose())))
       });
     });
   });

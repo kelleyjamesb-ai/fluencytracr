@@ -16,3 +16,7 @@ Use `@/openspec/AGENTS.md` to learn:
 Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
+
+# 🤖 Claude Code Entry Point
+
+**Read and follow only:** `.antigravity/rules.md`

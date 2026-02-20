@@ -5,6 +5,7 @@ import { ExecutiveSignalHealth } from "../components/governanceConcept/Executive
 import { GovernanceDocumentWorkspace } from "../components/governanceConcept/GovernanceDocumentWorkspace";
 import { HeroActionWorkspace } from "../components/governanceConcept/HeroActionWorkspace";
 import { GOVERNANCE_PAGE_COPY, GovernanceHeroActionId } from "../constants/governanceConcept";
+import { AUTH_TOKEN_STORAGE_KEY } from "../auth";
 
 export function GovernanceConcept() {
   const [activeHeroAction, setActiveHeroAction] = useState<GovernanceHeroActionId>("org_signals");
@@ -12,7 +13,23 @@ export function GovernanceConcept() {
   const [sessionOrgId, setSessionOrgId] = useState(localStorage.getItem("orgId") ?? "org-1");
   const [sessionRole, setSessionRole] = useState(localStorage.getItem("role") ?? "ADMIN");
 
-  const applySession = () => {
+  const applySession = async () => {
+    const nextOrgId = sessionOrgId.trim() || "org-1";
+    const email = localStorage.getItem("userEmail") ?? "admin@fluencytracr.com";
+    const response = await fetch("/auth/token", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email,
+        org_id: nextOrgId,
+        role: sessionRole
+      })
+    });
+    if (!response.ok) {
+      return;
+    }
+    const payload = (await response.json()) as { token: string };
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, payload.token);
     localStorage.setItem("orgId", sessionOrgId.trim() || "org-1");
     localStorage.setItem("role", sessionRole);
     window.location.reload();
@@ -20,6 +37,7 @@ export function GovernanceConcept() {
 
   const signOut = () => {
     localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
     window.location.assign("/login");
   };
 
