@@ -61,6 +61,10 @@ export const listRegistryEntriesByOrg = async (orgId: string) => {
   return listFromMemoryByOrg(orgId);
 };
 
+export const listRegistryCurrentByOrg = async (orgId: string) => {
+  return Array.from(store.workflowRegistryCurrent.values()).filter((record) => record.orgId === orgId);
+};
+
 export const listRegistryEntriesByWorkflow = async (orgId: string, workflowId: string) => {
   const rows = await listRegistryEntriesByOrg(orgId);
   return rows.filter((row) => row.workflowId === workflowId);
