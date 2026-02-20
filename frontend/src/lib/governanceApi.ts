@@ -6,6 +6,23 @@ import type {
   SandboxResetResponse,
   SandboxSeedResponse
 } from "../types/governance";
+import type {
+  OrientationWorkflowVisibilitySummaryResponse,
+  BoardSnapshotResponse
+} from "@learnaire/shared";
+
+export type WorkflowsResponse = {
+  org_id: string;
+  workflows: {
+    workflow_id: string;
+    display_name: string;
+    risk_class: string;
+    version: number;
+    visibility_state: string;
+    dominant_pattern: string | null;
+    updated_at: string;
+  }[];
+};
 
 type GovernanceContext = {
   orgId: string;
@@ -185,5 +202,23 @@ export const governanceApi = {
           ...(orgId ? { orgId } : {})
         })
       }
+    ),
+
+  getOrientationSummary: (orgId: string, role: string) =>
+    fetchJson<OrientationWorkflowVisibilitySummaryResponse>(
+      withApiBase(`/api/orientation/${orgId}?window=60d`),
+      { headers: { "x-role": role } }
+    ),
+
+  getWorkflows: (orgId: string, role: string) =>
+    fetchJson<WorkflowsResponse>(
+      withApiBase(`/api/workflows?org_id=${orgId}`),
+      { headers: { "x-role": role } }
+    ),
+
+  getBoardSnapshot: (orgId: string, role: string) =>
+    fetchJson<BoardSnapshotResponse>(
+      withApiBase(`/api/board-snapshot/${orgId}?window=60d`),
+      { headers: { "x-role": role } }
     )
 };

@@ -153,6 +153,7 @@ const formatPercent = (value?: number | null) => {
 };
 
 const REQUEST_TIMEOUT_MS = 20000;
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 
 const isAbortLikeError = (error: unknown) => {
   if (!(error instanceof Error)) {
@@ -234,7 +235,7 @@ export const Dashboard = () => {
     const fetchPatterns = async () => {
       setIsLoadingPatterns(true);
       try {
-        const response = await fetchWithTimeout(`/api/patterns?window=${window}&scope=${scope}`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/patterns?window=${window}&scope=${scope}`, {
           signal: controller.signal
         });
         if (!response.ok) {
@@ -261,7 +262,7 @@ export const Dashboard = () => {
   }, [window, scope]);
 
   const loadPolicies = async () => {
-    const response = await fetchWithTimeout(`/orgs/${orgId}/policies`, {
+    const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/policies`, {
       headers: { "x-role": role }
     });
     if (!response.ok) {
@@ -275,7 +276,7 @@ export const Dashboard = () => {
   };
 
   const loadCompliance = async () => {
-    const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/status`, {
+    const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/compliance/status`, {
       headers: { "x-role": role }
     });
     if (!response.ok) {
@@ -286,7 +287,7 @@ export const Dashboard = () => {
   };
 
   const loadMapping = async (policyId: string) => {
-    const response = await fetchWithTimeout(`/orgs/${orgId}/policies/${policyId}/mapping`, {
+    const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/policies/${policyId}/mapping`, {
       headers: { "x-role": role }
     });
     if (!response.ok) {
@@ -318,7 +319,7 @@ export const Dashboard = () => {
       if (complianceEventSinceFilter) {
         params.set("since", new Date(complianceEventSinceFilter).toISOString());
       }
-      const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
+      const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/compliance/events?${params.toString()}`, {
         headers: { "x-role": role }
       });
       if (!response.ok) {
@@ -374,7 +375,7 @@ export const Dashboard = () => {
         if (complianceEventSinceFilter) {
           params.set("since", new Date(complianceEventSinceFilter).toISOString());
         }
-        const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/events?${params.toString()}`, {
+        const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/compliance/events?${params.toString()}`, {
           headers: { "x-role": role }
         });
         if (!response.ok) {
@@ -476,7 +477,7 @@ export const Dashboard = () => {
     setIsSavingPolicy(true);
     setAdminMessage(null);
     try {
-      const response = await fetchWithTimeout(`/orgs/${orgId}/policies/upload`, {
+      const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/policies/upload`, {
         method: "POST",
         headers: governanceHeaders,
         body: JSON.stringify({
@@ -507,7 +508,7 @@ export const Dashboard = () => {
     }
     setAdminMessage(null);
     try {
-      const response = await fetchWithTimeout(`/orgs/${orgId}/policies/${selectedPolicyId}/map`, {
+      const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/policies/${selectedPolicyId}/map`, {
         method: "POST",
         headers: governanceHeaders,
         body: JSON.stringify({})
@@ -527,7 +528,7 @@ export const Dashboard = () => {
     setIsUpdatingComplianceMode(true);
     setAdminMessage(null);
     try {
-      const response = await fetchWithTimeout(`/orgs/${orgId}/compliance/mode`, {
+      const response = await fetchWithTimeout(`${API_BASE}/orgs/${orgId}/compliance/mode`, {
         method: "PATCH",
         headers: governanceHeaders,
         body: JSON.stringify({
@@ -570,7 +571,7 @@ export const Dashboard = () => {
         body.status = status ?? "partial";
       }
       const response = await fetchWithTimeout(
-        `/orgs/${orgId}/policies/${selectedPolicyId}/mapping/unresolved/${clauseId}`,
+        `${API_BASE}/orgs/${orgId}/policies/${selectedPolicyId}/mapping/unresolved/${clauseId}`,
         {
           method: "PATCH",
           headers: governanceHeaders,
@@ -593,7 +594,7 @@ export const Dashboard = () => {
     const fetchLedger = async () => {
       setIsLoadingLedger(true);
       try {
-        const response = await fetchWithTimeout(`/api/ledger?window=${window}`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/ledger?window=${window}`, {
           signal: controller.signal
         });
         if (!response.ok) {
@@ -620,7 +621,7 @@ export const Dashboard = () => {
     const fetchCoverage = async () => {
       setIsLoadingCoverage(true);
       try {
-        const response = await fetchWithTimeout(`/api/coverage?window=${window}&scope=${scope}`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/coverage?window=${window}&scope=${scope}`, {
           signal: controller.signal
         });
         if (!response.ok) {
