@@ -56,7 +56,7 @@ const verifyHs256Jwt = (token: string, secret: string) => {
 };
 
 export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
-  const isNonProdEnv = process.env.NODE_ENV !== "production";
+  const isNonProdEnv = process.env.NODE_ENV === "test" || process.env.DEV_HEADER_AUTH === "true";
   const authHeader = req.header("authorization") ?? "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
 
@@ -113,7 +113,7 @@ const getRequestedOrgId = (req: RequestWithRole): string | null => {
 };
 
 export const orgScopeMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
-  const isNonProdEnv = process.env.NODE_ENV !== "production";
+  const isNonProdEnv = process.env.NODE_ENV === "test" || process.env.DEV_HEADER_AUTH === "true";
   if (isNonProdEnv && !req.authOrgId) {
     return next();
   }
