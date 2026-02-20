@@ -5,6 +5,7 @@ import { governanceApi } from "../../lib/governanceApi";
 import { useGovernanceContext } from "../../hooks/useGovernanceContext";
 import { ExecutiveHeatmapV1 } from "../governanceConcept/ExecutiveHeatmapV1";
 import { PolicyMappingReliabilityCard } from "./PolicyMappingReliabilityCard";
+import { FailClosedWarningFeed } from "./FailClosedWarningFeed";
 import type { ComplianceStatusResponse, PolicySummary } from "../../types/governance";
 
 const CONTROL_LABELS: Record<string, string> = {
@@ -174,13 +175,7 @@ export function OperatorView() {
 
         <div style={{ display: "grid", gap: 16 }}>
           <ControlDriftPanel status={complianceStatus} />
-          <div className="gsd-stub-card">
-            <h4>Fail-Closed Warning Feed</h4>
-            <p>
-              Available in V1.1 — requires domain-level fail-closed event filtering
-              endpoint. Shows operational blockers and fail-closed reasons.
-            </p>
-          </div>
+          <FailClosedWarningFeed controls={complianceStatus?.controls} />
         </div>
       </div>
     </section>
