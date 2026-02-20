@@ -1516,6 +1516,52 @@ body {
 }
 
 /* Stub card for deferred V1.1/V2 widgets */
+/* Controls breakdown grid */
+.gsd-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.gsd-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: #f9f9f7;
+  border-radius: 8px;
+  border: 1px solid var(--line, #e2e0d8);
+}
+
+.gsd-control-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Compliance mode badge */
+.gsd-mode-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.gsd-mode-shadow {
+  background: #f1f2f6;
+  border-color: #d8dbe4;
+  color: #555;
+}
+
+.gsd-mode-enforced {
+  background: #f5ffd4;
+  border-color: #c6ef8a;
+  color: #2c5500;
+}
+
+/* Stub card for deferred V1.1/V2 widgets */
 .gsd-stub-card {
   border: 1.5px dashed var(--line, #e2e0d8);
   border-radius: 14px;

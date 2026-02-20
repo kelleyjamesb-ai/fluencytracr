@@ -70,12 +70,12 @@ export const governanceApi = {
       headers: { "x-role": ctx.role }
     }),
 
-  getComplianceEvents: (ctx: GovernanceContext, limit = 8) =>
+  getComplianceEvents: (ctx: GovernanceContext, limit = 8, options?: { eventType?: string }) =>
     fetchJson<ComplianceEventsResponse>(
-      withApiBase(`/orgs/${ctx.orgId}/compliance/events?limit=${limit}`),
-      {
-      headers: { "x-role": ctx.role }
-      }
+      withApiBase(
+        `/orgs/${ctx.orgId}/compliance/events?limit=${limit}${options?.eventType ? `&event_type=${encodeURIComponent(options.eventType)}` : ""}`
+      ),
+      { headers: { "x-role": ctx.role } }
     ),
 
   patchComplianceMode: (ctx: GovernanceContext, mode: "shadow" | "enforced", rationale: string) =>
