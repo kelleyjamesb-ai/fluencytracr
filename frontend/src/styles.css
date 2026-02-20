@@ -63,6 +63,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  align-self: start;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar-brand h1 {
@@ -1348,7 +1353,23 @@ body {
 
 .gc-workspace-message {
   margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.gc-workspace-message-ok {
+  background: #f5ffd4;
+  border-color: #c6ef8a;
+  color: #2c5500;
+}
+
+.gc-workspace-message-error {
+  background: #fff1f4;
+  border-color: #ffc5d1;
+  color: #8c1930;
 }
 
 @media (max-width: 960px) {
@@ -1403,7 +1424,7 @@ body {
 /* Sidebar nav grouping */
 .gsd-shell-nav-section {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
 .gsd-shell-section-label {
@@ -1411,7 +1432,7 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #8a8a8a;
-  padding: 12px 12px 4px;
+  padding: 6px 12px 4px;
   font-weight: 600;
 }
 

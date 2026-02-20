@@ -165,7 +165,9 @@ export function GSDDashboard() {
       </aside>
 
       <main className="main" style={{ padding: "32px 40px", overflowY: "auto" }}>
-        {activeSection === "board" && <ExecBoardView />}
+        {activeSection === "board" && (
+          <ExecBoardView onRequestSection={(s) => setActiveSection(s as GSDSection)} />
+        )}
         {activeSection === "operator" && isAdmin && <OperatorView />}
         {activeSection === "enablement" && (isAdmin || isEnablementLead) && <EnablementView />}
       </main>
