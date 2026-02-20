@@ -27,7 +27,8 @@ import {
   WorkflowRegistryVersionsResponse,
   WorkflowRegistryWorkflowsResponse,
   WorkflowRegistryCreateVersionResponse,
-  WorkflowRegistryAuditResponse
+  WorkflowRegistryAuditResponse,
+  RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent } from "@learnaire/shared";
 import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
@@ -146,6 +147,66 @@ app.use(
   })
 );
 app.use(express.json());
+
+const AuthTokenRequestSchema = z
+  .object({
+    email: z.string().email().optional(),
+    sub: z.string().min(1).optional(),
+    org_id: z.string().min(1),
+    role: AuthRoleSchema,
+    ttl_seconds: z.number().int().positive().max(7 * 24 * 60 * 60).optional()
+  })
+  .strict();
+
+const base64Url = (value: Buffer | string) =>
+  Buffer.from(value)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const signHs256Jwt = (payload: Record<string, unknown>, secret: string) => {
+  const header = { alg: "HS256", typ: "JWT" };
+  const encodedHeader = base64Url(JSON.stringify(header));
+  const encodedPayload = base64Url(JSON.stringify(payload));
+  const signedContent = `${encodedHeader}.${encodedPayload}`;
+  const signature = crypto.createHmac("sha256", secret).update(signedContent).digest();
+  return `${signedContent}.${base64Url(signature)}`;
+};
+
+app.post("/auth/token", (req, res) => {
+  const parsed = AuthTokenRequestSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid auth token request" });
+  }
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: "Server auth misconfigured" });
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const defaultTtl = Number(process.env.JWT_TTL_SECONDS ?? 8 * 60 * 60);
+  const ttlSeconds = Number.isFinite(defaultTtl) && defaultTtl > 0
+    ? Math.floor(defaultTtl)
+    : 8 * 60 * 60;
+  const exp = now + (parsed.data.ttl_seconds ?? ttlSeconds);
+  const token = signHs256Jwt(
+    {
+      sub: parsed.data.sub ?? parsed.data.email ?? "dashboard-user",
+      role: parsed.data.role,
+      org_id: parsed.data.org_id,
+      exp
+    },
+    secret
+  );
+  return res.status(201).json({
+    token,
+    token_type: "Bearer",
+    expires_at: new Date(exp * 1000).toISOString(),
+    org_id: parsed.data.org_id,
+    role: parsed.data.role
+  });
+});
+
 app.use(authMiddleware);
 app.use(orgScopeMiddleware);
 

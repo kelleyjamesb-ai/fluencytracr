@@ -441,6 +441,7 @@ export function useGovernanceDocumentWorkspace() {
     setMessage("");
     try {
       const created = await governanceApi.createOrg(
+        ctx,
         `Governance Org ${new Date().toLocaleDateString()}`,
         orgId
       );
