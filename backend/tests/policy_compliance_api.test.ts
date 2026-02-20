@@ -114,6 +114,42 @@ it("adapts legacy controls import into canonical compliance status", async () =>
   expect(status.body.counts.disabled).toBeGreaterThanOrEqual(1);
 });
 
+it("excludes compliance_posture_flag from controls array and counts in compliance status", async () => {
+  // After a mapping run, recomputeCompliancePostureForOrg writes a
+  // compliance_posture_flag canonical control snapshot. This snapshot is
+  // a derived aggregate and must not appear in the controls[] response or
+  // inflate the counts object (both numerator and denominator).
+  const upload = await request(app)
+    .post("/orgs/org-1/policies/upload")
+    .set(schemaHeaders)
+    .send({
+      file_name: "posture-test.txt",
+      content: "AI usage is approved for all standard workflows."
+    });
+  expect(upload.status).toBe(201);
+  const policyId = upload.body.policy_id as string;
+
+  const mapped = await request(app)
+    .post(`/orgs/org-1/policies/${policyId}/map`)
+    .set(schemaHeaders)
+    .send({});
+  expect(mapped.status).toBe(200);
+
+  const status = await request(app)
+    .get("/orgs/org-1/compliance/status")
+    .set({ "x-role": "ADMIN" });
+  expect(status.status).toBe(200);
+
+  const controls: Array<{ control_name: string; status: string }> = status.body.controls;
+
+  // The synthetic flag must not appear in the returned controls array.
+  expect(controls.find((c) => c.control_name === "compliance_posture_flag")).toBeUndefined();
+
+  // Counts must equal the number of real controls, not be inflated by the flag.
+  const { enabled, disabled, partial, unknown } = status.body.counts as Record<string, number>;
+  expect(enabled + disabled + partial + unknown).toBe(controls.length);
+});
+
 it("filters compliance events by since timestamp", async () => {
   const upload = await request(app)
     .post("/orgs/org-1/policies/upload")

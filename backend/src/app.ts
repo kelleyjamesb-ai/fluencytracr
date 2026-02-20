@@ -2382,12 +2382,14 @@ app.get("/orgs/:orgId/compliance/status", rbacMiddleware(["ADMIN", "EXEC_VIEWER"
         return Array.from(latestByControl.values());
       })();
 
-  const controls = latestRecords.map((record) => ({
-    control_name: record.control_name,
-    status: record.status,
-    source: record.source,
-    updated_at: record.updatedAt
-  }));
+  const controls = latestRecords
+    .filter((record) => record.control_name !== "compliance_posture_flag")
+    .map((record) => ({
+      control_name: record.control_name,
+      status: record.status,
+      source: record.source,
+      updated_at: record.updatedAt
+    }));
   const summary = buildComplianceSummary(
     controls.map((control) => ({ control_name: control.control_name, status: control.status }))
   );
