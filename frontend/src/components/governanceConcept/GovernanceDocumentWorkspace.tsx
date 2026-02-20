@@ -50,13 +50,13 @@ export function GovernanceDocumentWorkspace() {
   return (
     <section className="gc-card gc-workspace">
       <div className="gc-exec-header">
-        <p className="gc-mono">Compliance Officer and CISO Workspace</p>
-        <h2>Governance Document Upload and Mapping</h2>
+        <p className="gc-mono">Policy &amp; Compliance Workspace</p>
+        <h2>Upload Policies and Check Compliance</h2>
         <p>
-          Upload governance documents, map them to controls, and track mapping readiness.
+          Upload your policy documents, connect them to controls, and see what's ready.
         </p>
         <div className="gc-next-step">
-          <strong>Workflow</strong> {nextStepText}
+          <strong>Next step:</strong> {nextStepText}
         </div>
       </div>
 
@@ -67,6 +67,12 @@ export function GovernanceDocumentWorkspace() {
         hasSelectedPolicy={hasSelectedPolicy}
         hasMapping={hasMapping}
       />
+
+      {message && (
+        <p className={`gc-workspace-message ${message.toLowerCase().includes("fail") || message.toLowerCase().includes("error") || message.toLowerCase().includes("blocked") || message.toLowerCase().includes("unable") ? "gc-workspace-message-error" : "gc-workspace-message-ok"}`}>
+          {message}
+        </p>
+      )}
 
       {orgBootstrapNeeded && (
         <div className="gc-card" style={{ borderColor: "#f7dfaf", marginBottom: 20 }}>
@@ -93,14 +99,13 @@ export function GovernanceDocumentWorkspace() {
 
       {!isAdmin && !orgBootstrapNeeded && (
         <p className="gc-readonly-note">
-          Read-only mode: only `ADMIN` can upload or run mapping. You can still review existing policy and mapping
-          summaries.
+          View only — your role can see policies and results but cannot upload or run mapping.
         </p>
       )}
 
       <div className="gc-workspace-grid">
         <article className="gc-workspace-pane">
-          <h3>1. Upload and manage policies</h3>
+          <h3>1. Add and manage your policies</h3>
           <div className="gc-form-grid">
             <label>
               Upload files (.pdf or .docx)
@@ -195,7 +200,7 @@ export function GovernanceDocumentWorkspace() {
           </button>
 
           <div className="gc-mapping-summary">
-            <h4>Policy inventory</h4>
+            <h4>Your policies</h4>
             {isLoading ? (
               <p>Loading policies...</p>
             ) : policies.length === 0 ? (
@@ -245,7 +250,7 @@ export function GovernanceDocumentWorkspace() {
         </article>
 
         <article className="gc-workspace-pane">
-          <h3>2. Map selected policy</h3>
+          <h3>2. Connect your policy to controls</h3>
           <p className="gc-subtle">
             {selectedPolicy
               ? `Selected: ${selectedPolicy.file_name}`
@@ -277,16 +282,16 @@ export function GovernanceDocumentWorkspace() {
       </div>
 
       <article className="gc-workspace-pane">
-        <h3>Sandbox test tools</h3>
+        <h3>Testing Tools</h3>
         <p className="gc-subtle">
-          Use these controls for rapid testing loops. Seed data creates mapped policies. Reset clears governance upload
-          and mapping artifacts for this org.
+          Quick testing controls. "Seed" loads sample policies that are already connected to controls.
+          "Reset" clears all uploaded policies and mappings for this org — useful for starting fresh.
         </p>
         <div className="gc-workspace-actions">
           <button
             type="button"
             className="gc-btn gc-btn-secondary"
-            onClick={seedSyntheticData}
+            onClick={() => void seedSyntheticData()}
             disabled={!isAdmin || isSeedingSynthetic || isResettingSandbox}
           >
             {isSeedingSynthetic ? "Seeding..." : "Seed Synthetic Test Pack"}
@@ -309,7 +314,6 @@ export function GovernanceDocumentWorkspace() {
         </div>
       </article>
 
-      {message && <p className="gc-workspace-message">{message}</p>}
     </section>
   );
 }

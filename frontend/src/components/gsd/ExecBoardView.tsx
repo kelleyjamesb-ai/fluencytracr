@@ -98,7 +98,7 @@ export function ExecBoardView({ onRequestSection }: Props) {
       <div className="gsd-section-header">
         <div>
           <h2>Board View</h2>
-          <p>Enterprise governance posture — directional signals, not individual surveillance.</p>
+          <p>Your organization's AI governance health — high-level signals, not individual tracking.</p>
         </div>
       </div>
 
