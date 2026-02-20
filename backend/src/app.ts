@@ -115,7 +115,6 @@ import {
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
   listBaselineResetsByOrg,
-  listRegistryCurrentByOrg,
   listRegistryAudit,
   listRegistryEntriesByOrg,
   listRegistryEntriesByWorkflow,
@@ -3290,11 +3289,25 @@ app.get(
     }
 
     const window = "30d" as const;
-    const currentWorkflows = await listRegistryCurrentByOrg(org.id);
+    const entries = await listRegistryEntriesByOrg(org.id);
+    const currentWorkflows = entries
+      .slice()
+      .sort((a, b) => {
+        if (a.workflowId !== b.workflowId) {
+          return a.workflowId.localeCompare(b.workflowId);
+        }
+        if (a.version !== b.version) {
+          return a.version - b.version;
+        }
+        return a.createdAt.localeCompare(b.createdAt);
+      })
+      .reduce((acc, entry) => {
+        acc.set(entry.workflowId, entry);
+        return acc;
+      }, new Map<string, (typeof entries)[number]>());
     const now = new Date();
     const workflows = await Promise.all(
-      currentWorkflows
-        .slice()
+      Array.from(currentWorkflows.values())
         .sort((a, b) => {
           if (a.displayName !== b.displayName) {
             return a.displayName.localeCompare(b.displayName);
@@ -3309,15 +3322,28 @@ app.get(
               : null;
           return {
             workflow_id: workflow.workflowId,
-            display_name: workflow.displayName,
+            workflow_display_name: workflow.displayName,
             visibility_state: visibility.visibilityState,
+            visibility_label:
+              visibility.visibilityState === "VISIBLE"
+                ? "Clear enough to show"
+                : visibility.visibilityState === "NOT_ENOUGH_DATA_YET"
+                  ? "Not enough data yet"
+                  : "Not shown (safety)",
+            observation_window: window,
             working_style: workingStyle
           };
         })
     );
 
     const payload: BoardSnapshotResponse = {
-      observation_window: "last_30_days",
+      org_id: org.id,
+      header: {
+        observation_window: window,
+        visible: workflows.filter((workflow) => workflow.visibility_state === "VISIBLE").length,
+        not_enough_data_yet: workflows.filter((workflow) => workflow.visibility_state === "NOT_ENOUGH_DATA_YET").length,
+        not_shown_safety: workflows.filter((workflow) => workflow.visibility_state === "NOT_SHOWN_SAFETY").length
+      },
       workflows
     };
     return res.json(payload);
