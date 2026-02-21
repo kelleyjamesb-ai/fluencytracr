@@ -45,6 +45,14 @@ createRoot(container).render(
         />
         <Route
           path="/legacy-dashboard"
+          element={
+            <ProtectedRoute>
+              <GovernanceConcept />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/legacy-dashboard"
           element={<Navigate to="/governance" replace />}
         />
         <Route
