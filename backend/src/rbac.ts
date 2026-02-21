@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { Role, RoleSchema } from "@learnaire/shared";
+import { resolveJwtSecret } from "./auth_secret";
 
 declare global {
   namespace Express {
@@ -61,9 +62,12 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
 
   if (bearer) {
-    const secret = process.env.JWT_SECRET;
+    const { secret, isFallback } = resolveJwtSecret();
     if (!secret) {
       return res.status(500).json({ error: "Server auth misconfigured" });
+    }
+    if (isFallback) {
+      console.warn("[AUTH] JWT_SECRET missing; using preview/test fallback secret");
     }
     const payload = verifyHs256Jwt(bearer, secret);
     if (!payload) {
