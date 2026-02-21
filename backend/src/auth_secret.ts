@@ -4,7 +4,7 @@ const canUseFallbackSecret = () => {
   if (process.env.ALLOW_INSECURE_AUTH_FALLBACK === "1") {
     return true;
   }
-  return process.env.VERCEL_ENV === "preview";
+  return process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
 };
 
 export const resolveJwtSecret = () => {
@@ -16,4 +16,14 @@ export const resolveJwtSecret = () => {
     return { secret: PREVIEW_FALLBACK_SECRET, isFallback: true };
   }
   return { secret: null, isFallback: false };
+};
+
+export const assertJwtSecretConfigured = () => {
+  const { secret } = resolveJwtSecret();
+  if (secret) {
+    return;
+  }
+  throw new Error(
+    "JWT_SECRET must be configured for this runtime. Set JWT_SECRET or explicitly allow insecure fallback for local development."
+  );
 };
