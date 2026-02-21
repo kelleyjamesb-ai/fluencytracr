@@ -32,7 +32,7 @@ it("blocks EXEC_VIEWER from mutating team and role configuration", async () => {
     .post("/orgs/org-1/groups")
     .set(withSchemaVersion({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1", "Content-Type": "application/json" }))
     .send({
-      groups: [{ group_key: "team-a", group_type: "team", name: "Team A" }]
+      groups: [{ group_key: "team-a", group_type: "team" }]
     });
   expect(groupsImport.status).toBe(403);
 });
@@ -56,7 +56,7 @@ it("allows ADMIN to mutate team and role configuration", async () => {
     .post("/orgs/org-1/groups")
     .set(withSchemaVersion({ "x-role": "ADMIN", "x-org-id": "org-1", "Content-Type": "application/json" }))
     .send({
-      groups: [{ group_key: "team-a", group_type: "team", name: "Team A" }]
+      groups: [{ group_key: "team-a", group_type: "team" }]
     });
   expect(groupsImport.status).toBe(200);
 });
