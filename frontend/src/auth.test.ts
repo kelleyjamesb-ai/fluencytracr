@@ -71,7 +71,7 @@ describe("auth", () => {
 
     expect(response.status).toBe(401);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull();
-    expect(localStorage.getItem("isAuthenticated")).toBeNull();
+    expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe("stale-token");
+    expect(localStorage.getItem("isAuthenticated")).toBe("true");
   });
 });

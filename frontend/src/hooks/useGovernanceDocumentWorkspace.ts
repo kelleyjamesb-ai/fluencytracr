@@ -118,9 +118,15 @@ export function useGovernanceDocumentWorkspace() {
       } catch (error) {
         if (!isCancelled) {
           if (error instanceof GovernanceApiError && error.status === 404) {
-            setMessage(
-              `Organization ${orgId} was not found. Initialize an organization to start policy mapping.`
-            );
+            try {
+              await governanceApi.createOrg(ctx, `Governance Org ${new Date().toLocaleDateString()}`, orgId);
+              await loadPolicies();
+              setMessage(`Initialized organization ${orgId}. You can upload and map policies now.`);
+            } catch {
+              setMessage(
+                `Organization ${orgId} was not found. Initialize an organization to start policy mapping.`
+              );
+            }
           } else if (error instanceof GovernanceApiError && error.status === 403) {
             setMessage(`Access blocked: ${error.message}`);
           } else {
