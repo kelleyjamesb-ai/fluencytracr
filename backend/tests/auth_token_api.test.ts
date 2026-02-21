@@ -21,6 +21,7 @@ describe("auth token api", () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalJwtSecret = process.env.JWT_SECRET;
   const originalJwtTtl = process.env.JWT_TTL_SECONDS;
+  const originalRequireAuthLockdown = process.env.REQUIRE_AUTH_LOCKDOWN;
 
   beforeEach(() => {
     store.reset();
@@ -34,12 +35,14 @@ describe("auth token api", () => {
     process.env.NODE_ENV = "production";
     process.env.JWT_SECRET = "auth-token-test-secret";
     process.env.JWT_TTL_SECONDS = "900";
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
   });
 
   afterAll(() => {
     process.env.NODE_ENV = originalNodeEnv;
     process.env.JWT_SECRET = originalJwtSecret;
     process.env.JWT_TTL_SECONDS = originalJwtTtl;
+    process.env.REQUIRE_AUTH_LOCKDOWN = originalRequireAuthLockdown;
   });
 
   it("mints a token that can access protected endpoints", async () => {

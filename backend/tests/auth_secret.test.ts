@@ -4,17 +4,20 @@ describe("auth secret configuration", () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalJwtSecret = process.env.JWT_SECRET;
   const originalAllowInsecure = process.env.ALLOW_INSECURE_AUTH_FALLBACK;
+  const originalRequireAuthLockdown = process.env.REQUIRE_AUTH_LOCKDOWN;
 
   afterEach(() => {
     process.env.NODE_ENV = originalNodeEnv;
     process.env.JWT_SECRET = originalJwtSecret;
     process.env.ALLOW_INSECURE_AUTH_FALLBACK = originalAllowInsecure;
+    process.env.REQUIRE_AUTH_LOCKDOWN = originalRequireAuthLockdown;
   });
 
   it("requires JWT_SECRET in production", () => {
     process.env.NODE_ENV = "production";
     process.env.JWT_SECRET = "";
     process.env.ALLOW_INSECURE_AUTH_FALLBACK = "";
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
 
     expect(() => assertJwtSecretConfigured()).toThrow("JWT_SECRET must be configured");
   });
