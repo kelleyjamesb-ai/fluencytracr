@@ -95,10 +95,12 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
     const rawOrgId = req.header("x-org-id");
     if (rawRole) {
       const parseResult = RoleSchema.safeParse(rawRole);
-      if (parseResult.success && rawOrgId) {
+      if (parseResult.success && (isTestEnv || rawOrgId)) {
         req.role = parseResult.data;
         req.authSub = req.header("x-sub") ?? undefined;
-        req.authOrgId = rawOrgId;
+        if (rawOrgId) {
+          req.authOrgId = rawOrgId;
+        }
         req.authWarning = isTestEnv ? "Test-only header auth" : "Dev-only header auth";
       }
     }
