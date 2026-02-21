@@ -1,17 +1,33 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
 import { withSchemaVersion } from "./test_helpers";
+import type { Server } from "http";
+
+const openServers = new Set<Server>();
+
+const closeServer = (server: Server) =>
+  new Promise<void>((resolve, reject) => {
+    server.close((error) => {
+      openServers.delete(server);
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 
 const startServer = () => {
   return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     const server = app.listen(0, () => {
+      openServers.add(server);
       const address = server.address();
       if (typeof address === "string" || address === null) {
         throw new Error("Unexpected address");
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+        close: () => closeServer(server)
       });
     });
   });
@@ -64,6 +80,11 @@ const buildInferenceRecord = (
 
 beforeEach(() => {
   store.reset();
+});
+
+afterEach(async () => {
+  const servers = Array.from(openServers);
+  await Promise.allSettled(servers.map((server) => closeServer(server)));
 });
 
 it("rejects event payloads containing person identifiers", async () => {

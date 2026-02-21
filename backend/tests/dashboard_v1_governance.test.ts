@@ -1,5 +1,6 @@
 import { app } from "../src/app";
 import { store } from "../src/store";
+import type { Server } from "http";
 import {
   BoardSnapshotResponseSchema,
   OrientationWorkflowVisibilitySummaryResponseSchema,
@@ -22,17 +23,31 @@ const FORBIDDEN_FIELD_TOKENS = [
 ];
 
 const BOARD_METADATA_FORBIDDEN_TOKENS = ["sort", "order", "ranking"];
+const openServers = new Set<Server>();
+
+const closeServer = (server: Server) =>
+  new Promise<void>((resolve, reject) => {
+    server.close((error) => {
+      openServers.delete(server);
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 
 const startServer = () => {
   return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     const server = app.listen(0, () => {
+      openServers.add(server);
       const address = server.address();
       if (typeof address === "string" || address === null) {
         throw new Error("Unexpected address");
       }
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        close: () => new Promise<void>((resolveClose, reject) => server.close((error) => (error ? reject(error) : resolveClose())))
+        close: () => closeServer(server)
       });
     });
   });
@@ -98,6 +113,11 @@ beforeEach(() => {
     createdAt: new Date().toISOString(),
     complianceMode: "shadow"
   });
+});
+
+afterEach(async () => {
+  const servers = Array.from(openServers);
+  await Promise.allSettled(servers.map((server) => closeServer(server)));
 });
 
 describe("dashboard v1 governance enforcement", () => {
