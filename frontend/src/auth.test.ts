@@ -11,12 +11,14 @@ describe("auth", () => {
   });
 
   it("withAuth adds role and bearer token headers", () => {
+    localStorage.setItem("orgId", "org-1");
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "token-123");
 
     const init = withAuth("ADMIN");
     const headers = new Headers(init.headers);
 
     expect(headers.get("x-role")).toBe("ADMIN");
+    expect(headers.get("x-org-id")).toBe("org-1");
     expect(headers.get("authorization")).toBe("Bearer token-123");
   });
 

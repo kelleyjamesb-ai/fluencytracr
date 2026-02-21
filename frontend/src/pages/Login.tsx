@@ -19,22 +19,7 @@ export const Login = () => {
     setError(null);
     setIsSigningIn(true);
     try {
-      const response = await fetch("/auth/token", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          org_id: orgId.trim(),
-          role
-        })
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-        setError(payload?.error ?? "Unable to sign in.");
-        return;
-      }
-      const payload = (await response.json()) as { token: string };
-      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, payload.token);
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userEmail", email.trim());
       localStorage.setItem("orgId", orgId.trim());

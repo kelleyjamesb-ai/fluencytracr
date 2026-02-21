@@ -58,6 +58,7 @@ const verifyHs256Jwt = (token: string, secret: string) => {
 
 export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
   const isTestEnv = process.env.NODE_ENV === "test";
+  const isDevHeaderAuthEnabled = process.env.DEV_HEADER_AUTH === "1" || process.env.DEV_HEADER_AUTH === "true";
   const authHeader = req.header("authorization") ?? "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
 
@@ -89,15 +90,16 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
     return next();
   }
 
-  if (isTestEnv) {
+  if (isTestEnv || isDevHeaderAuthEnabled) {
     const rawRole = req.header("x-role");
+    const rawOrgId = req.header("x-org-id");
     if (rawRole) {
       const parseResult = RoleSchema.safeParse(rawRole);
-      if (parseResult.success) {
+      if (parseResult.success && rawOrgId) {
         req.role = parseResult.data;
         req.authSub = req.header("x-sub") ?? undefined;
-        req.authOrgId = req.header("x-org-id") ?? undefined;
-        req.authWarning = "Test-only header auth";
+        req.authOrgId = rawOrgId;
+        req.authWarning = isTestEnv ? "Test-only header auth" : "Dev-only header auth";
       }
     }
     return next();
