@@ -50,6 +50,7 @@ const startServer = () => {
 describe("auth hardening", () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalJwtSecret = process.env.JWT_SECRET;
+  const originalDevHeaderAuth = process.env.DEV_HEADER_AUTH;
   const jwtSecret = "auth-hardening-jwt-secret";
 
   beforeEach(() => {
@@ -75,6 +76,7 @@ describe("auth hardening", () => {
   afterAll(() => {
     process.env.NODE_ENV = originalNodeEnv;
     process.env.JWT_SECRET = originalJwtSecret;
+    process.env.DEV_HEADER_AUTH = originalDevHeaderAuth;
   });
 
   it("returns 401 when JWT is missing", async () => {
@@ -124,5 +126,16 @@ describe("auth hardening", () => {
     await server.close();
 
     expect(response.status).toBe(401);
+  });
+
+  it("allows header auth in non-test environments when DEV_HEADER_AUTH is enabled", async () => {
+    process.env.DEV_HEADER_AUTH = "true";
+    const server = await startServer();
+    const response = await fetch(`${server.url}/api/workflows?org_id=org-1`, {
+      headers: { "x-role": "ADMIN", "x-org-id": "org-1" }
+    });
+    await server.close();
+
+    expect(response.status).toBe(200);
   });
 });

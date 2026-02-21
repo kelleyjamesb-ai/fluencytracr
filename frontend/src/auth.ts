@@ -42,6 +42,10 @@ const mintAuthTokenFromSession = async () => {
 export const withAuth = (role: string, init: RequestInit = {}): RequestInit => {
   const headers = new Headers(init.headers ?? {});
   headers.set("x-role", role);
+  const orgId = (localStorage.getItem("orgId") ?? "").trim();
+  if (orgId) {
+    headers.set("x-org-id", orgId);
+  }
   const token = getStoredAuthToken();
   if (token) {
     headers.set("authorization", `Bearer ${token}`);

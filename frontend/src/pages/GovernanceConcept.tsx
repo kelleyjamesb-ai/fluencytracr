@@ -13,23 +13,8 @@ export function GovernanceConcept() {
   const [sessionOrgId, setSessionOrgId] = useState(localStorage.getItem("orgId") ?? "org-1");
   const [sessionRole, setSessionRole] = useState(localStorage.getItem("role") ?? "ADMIN");
 
-  const applySession = async () => {
-    const nextOrgId = sessionOrgId.trim() || "org-1";
-    const email = localStorage.getItem("userEmail") ?? "admin@fluencytracr.com";
-    const response = await fetch("/auth/token", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        email,
-        org_id: nextOrgId,
-        role: sessionRole
-      })
-    });
-    if (!response.ok) {
-      return;
-    }
-    const payload = (await response.json()) as { token: string };
-    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, payload.token);
+  const applySession = () => {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
     localStorage.setItem("orgId", sessionOrgId.trim() || "org-1");
     localStorage.setItem("role", sessionRole);
     window.location.reload();

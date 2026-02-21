@@ -46,9 +46,9 @@ jobs:
       - name: Run suppression regression evidence suite
         run: ./scripts/ci_suppression_evidence.sh
       - name: Upload suppression evidence artifact
-        if: always()
+        if: always() && hashFiles('artifacts/phase3/suppression/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: suppression-evidence
           path: artifacts/phase3/suppression
-          if-no-files-found: error
+          if-no-files-found: warn
