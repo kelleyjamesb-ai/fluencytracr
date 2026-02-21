@@ -125,6 +125,7 @@ import {
 } from "./workflow_registry";
 import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
+import { resolveJwtSecret } from "./auth_secret";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -170,9 +171,12 @@ app.post("/auth/token", (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid auth token request" });
   }
-  const secret = process.env.JWT_SECRET;
+  const { secret, isFallback } = resolveJwtSecret();
   if (!secret) {
     return res.status(500).json({ error: "Server auth misconfigured" });
+  }
+  if (isFallback) {
+    console.warn("[AUTH] JWT_SECRET missing; using preview/test fallback secret");
   }
   const now = Math.floor(Date.now() / 1000);
   const defaultTtl = Number(process.env.JWT_TTL_SECONDS ?? 8 * 60 * 60);
