@@ -26,6 +26,7 @@ export class GovernanceApiError extends Error {
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 const withApiBase = (path: string) => (apiBaseUrl ? `${apiBaseUrl}${path}` : path);
+const schemaVersion = (import.meta.env.VITE_SCHEMA_VERSION ?? "0.1").trim() || "0.1";
 
 const fetchJson = async <T>(role: string, input: RequestInfo | URL, init: RequestInit = {}) => {
   const response = await authFetch(role, input, init);
@@ -60,7 +61,7 @@ export const governanceApi = {
       method: "PATCH",
       headers: {
         "content-type": "application/json",
-        "X-FluencyTracr-Schema-Version": "0.1"
+        "X-FluencyTracr-Schema-Version": schemaVersion
       },
       body: JSON.stringify({ mode, rationale })
     }),
@@ -81,7 +82,7 @@ export const governanceApi = {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-FluencyTracr-Schema-Version": "0.1"
+        "X-FluencyTracr-Schema-Version": schemaVersion
       },
       body: JSON.stringify({
         file_name: fileName,
@@ -102,7 +103,7 @@ export const governanceApi = {
         method: "PATCH",
         headers: {
           "content-type": "application/json",
-          "X-FluencyTracr-Schema-Version": "0.1"
+          "X-FluencyTracr-Schema-Version": schemaVersion
         },
         body: JSON.stringify({
           ...(updates.fileName ? { file_name: updates.fileName } : {}),
@@ -120,7 +121,7 @@ export const governanceApi = {
         method: "DELETE",
         headers: {
           "content-type": "application/json",
-          "X-FluencyTracr-Schema-Version": "0.1"
+          "X-FluencyTracr-Schema-Version": schemaVersion
         },
         body: JSON.stringify({})
       }
@@ -131,7 +132,7 @@ export const governanceApi = {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-FluencyTracr-Schema-Version": "0.1"
+        "X-FluencyTracr-Schema-Version": schemaVersion
       },
       body: JSON.stringify({})
     }),
@@ -141,7 +142,7 @@ export const governanceApi = {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-FluencyTracr-Schema-Version": "0.1"
+        "X-FluencyTracr-Schema-Version": schemaVersion
       },
       body: JSON.stringify({})
     }),
@@ -151,7 +152,7 @@ export const governanceApi = {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-FluencyTracr-Schema-Version": "0.1"
+        "X-FluencyTracr-Schema-Version": schemaVersion
       },
       body: JSON.stringify({})
     }),
