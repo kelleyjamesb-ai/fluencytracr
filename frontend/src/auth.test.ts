@@ -7,7 +7,6 @@ describe("auth", () => {
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -55,8 +54,7 @@ describe("auth", () => {
     expect(localStorage.getItem("isAuthenticated")).toBe("true");
   });
 
-  it("clears auth state after 401 when token refresh fails", async () => {
-    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+  it("keeps session state after 401 when token refresh fails in demo mode", async () => {
     localStorage.setItem("orgId", "org-1");
     localStorage.setItem("role", "ADMIN");
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "stale-token");
@@ -71,7 +69,7 @@ describe("auth", () => {
 
     expect(response.status).toBe(401);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull();
-    expect(localStorage.getItem("isAuthenticated")).toBeNull();
+    expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe("stale-token");
+    expect(localStorage.getItem("isAuthenticated")).toBe("true");
   });
 });

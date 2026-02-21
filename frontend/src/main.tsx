@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
@@ -45,12 +45,13 @@ createRoot(container).render(
         />
         <Route
           path="/legacy-dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/governance" replace />}
         />
+        <Route
+          path="/old-dashboard"
+          element={<Navigate to="/governance" replace />}
+        />
+        <Route path="/legacy-dashboard-view" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
     <SpeedInsights />

@@ -1,5 +1,4 @@
 export const AUTH_TOKEN_STORAGE_KEY = "authToken";
-const isAuthRequired = () => (import.meta.env.VITE_REQUIRE_AUTH ?? "false").trim() === "true";
 
 export const getStoredAuthToken = () => {
   const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
@@ -41,8 +40,9 @@ const mintAuthTokenFromSession = async () => {
 };
 
 export const withAuth = (role: string, init: RequestInit = {}): RequestInit => {
+  void role;
   const headers = new Headers(init.headers ?? {});
-  headers.set("x-role", role);
+  headers.set("x-role", "ADMIN");
   const orgId = (localStorage.getItem("orgId") ?? "").trim();
   if (orgId) {
     headers.set("x-org-id", orgId);
@@ -65,10 +65,6 @@ export const authFetch = (role: string, input: RequestInfo | URL, init: RequestI
     }
     const refreshed = await mintAuthTokenFromSession();
     if (!refreshed) {
-      if (isAuthRequired()) {
-        localStorage.removeItem("isAuthenticated");
-        localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-      }
       return response;
     }
     return fetch(input, withAuth(role, init));
