@@ -194,12 +194,15 @@ const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}
 export const Dashboard = () => {
   const orgId = localStorage.getItem("orgId") ?? "org-1";
   const role = localStorage.getItem("role") ?? "ADMIN";
+  const schemaVersion = (import.meta.env.VITE_SCHEMA_VERSION ?? "0.1").trim() || "0.1";
   const fetchWithAuthTimeout = (input: RequestInfo | URL, init: RequestInit = {}) =>
     fetchWithTimeout(input, withAuth(role, init));
 
   const governanceHeaders = withAuth(role, {
-    "content-type": "application/json",
-    "X-FluencyTracr-Schema-Version": "0.1"
+    headers: {
+      "content-type": "application/json",
+      "X-FluencyTracr-Schema-Version": schemaVersion
+    }
   }).headers as HeadersInit;
   const [window, setWindow] = useState<FluencyWindow>("60d");
   const [activePage, setActivePage] = useState<ActivePage>("overview");
