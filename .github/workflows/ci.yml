@@ -41,6 +41,8 @@ jobs:
         run: npm run build --workspace shared
       - name: Run backend tests
         run: npm run test:ci --workspace backend
+      - name: Run frontend tests
+        run: npm test --workspace frontend
       - name: Run suppression regression evidence suite
         run: ./scripts/ci_suppression_evidence.sh
       - name: Upload suppression evidence artifact
