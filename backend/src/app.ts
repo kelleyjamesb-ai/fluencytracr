@@ -1243,7 +1243,7 @@ app.get("/orgs/:orgId/teams", (req, res) => {
   return res.json({ teams });
 });
 
-app.post("/orgs/:orgId/teams", (req, res) => {
+app.post("/orgs/:orgId/teams", rbacMiddleware(["ADMIN"]), (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -1264,7 +1264,7 @@ app.post("/orgs/:orgId/teams", (req, res) => {
   return res.status(201).json(record);
 });
 
-app.patch("/orgs/:orgId/teams/:teamId", (req, res) => {
+app.patch("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const team = store.teams.get(req.params.teamId);
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
@@ -1283,7 +1283,7 @@ app.patch("/orgs/:orgId/teams/:teamId", (req, res) => {
   return res.json(updated);
 });
 
-app.delete("/orgs/:orgId/teams/:teamId", (req, res) => {
+app.delete("/orgs/:orgId/teams/:teamId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const team = store.teams.get(req.params.teamId);
   if (!team || team.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Team not found" });
@@ -1300,7 +1300,7 @@ app.get("/orgs/:orgId/roles", (req, res) => {
   return res.json({ roles });
 });
 
-app.post("/orgs/:orgId/roles", (req, res) => {
+app.post("/orgs/:orgId/roles", rbacMiddleware(["ADMIN"]), (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });
@@ -1315,7 +1315,7 @@ app.post("/orgs/:orgId/roles", (req, res) => {
   return res.status(201).json(record);
 });
 
-app.patch("/orgs/:orgId/roles/:roleId", (req, res) => {
+app.patch("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const role = store.roles.get(req.params.roleId);
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
@@ -1329,7 +1329,7 @@ app.patch("/orgs/:orgId/roles/:roleId", (req, res) => {
   return res.json(updated);
 });
 
-app.delete("/orgs/:orgId/roles/:roleId", (req, res) => {
+app.delete("/orgs/:orgId/roles/:roleId", rbacMiddleware(["ADMIN"]), (req, res) => {
   const role = store.roles.get(req.params.roleId);
   if (!role || role.orgId !== req.params.orgId) {
     return res.status(404).json({ error: "Role not found" });
@@ -1392,6 +1392,20 @@ app.post(
         field_path: forbiddenMatch.path,
         rule: "no_raw_content_or_direct_identifiers"
       });
+    }
+
+    if (req.authOrgId) {
+      const mismatchedIndex = rows.findIndex((row) => {
+        const parsed = EnablementEventSchema.safeParse(row);
+        return parsed.success && parsed.data.org_id !== req.authOrgId;
+      });
+      if (mismatchedIndex >= 0) {
+        return res.status(403).json({
+          error: "Forbidden",
+          message: "Token org scope does not match request org",
+          index: mismatchedIndex + 1
+        });
+      }
     }
 
     const stored: EnablementEventRecord[] = [];
@@ -1561,7 +1575,7 @@ app.post(
   }
 );
 
-app.post("/orgs/:orgId/groups", schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
+app.post("/orgs/:orgId/groups", rbacMiddleware(["ADMIN"]), schemaVersionMiddleware, forbiddenFieldsMiddleware, (req, res) => {
   const org = store.orgs.get(req.params.orgId);
   if (!org) {
     return res.status(404).json({ error: "Org not found" });

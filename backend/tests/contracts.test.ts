@@ -27,6 +27,8 @@ const validEventPayload = {
 beforeEach(() => {
   store.reset();
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 1, createdAt: "now" });
+  delete process.env.SCHEMA_ACCEPTED_VERSIONS;
+  delete process.env.SCHEMA_DEPRECATED_VERSIONS;
 });
 
 it("rejects forbidden fields nested in payload", async () => {
@@ -94,6 +96,20 @@ it("accepts valid payloads with schema version", async () => {
 
   expect(response.status).toBe(200);
   expect(body.ingested).toBe(1);
+});
+
+it("accepts configured compatibility versions and marks deprecated versions", async () => {
+  process.env.SCHEMA_ACCEPTED_VERSIONS = "0.1,0.2";
+  process.env.SCHEMA_DEPRECATED_VERSIONS = "0.1";
+  const response = await request(app)
+    .post("/api/events")
+    .set({ ...schemaHeaders, "X-FluencyTracr-Schema-Version": "0.1" })
+    .send(validEventPayload);
+  const body = response.body;
+
+  expect(response.status).toBe(200);
+  expect(body.ingested).toBe(1);
+  expect(response.headers["x-fluencytracr-schema-deprecated"]).toBe("true");
 });
 
 it("quarantines connector events with unknown event types", async () => {
