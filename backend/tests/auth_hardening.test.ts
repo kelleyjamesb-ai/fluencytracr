@@ -71,6 +71,8 @@ describe("auth hardening", () => {
     });
     process.env.JWT_SECRET = jwtSecret;
     process.env.NODE_ENV = "production";
+    delete process.env.DEV_HEADER_AUTH;
+    delete process.env.REQUIRE_AUTH_LOCKDOWN;
   });
 
   afterAll(() => {
@@ -80,6 +82,7 @@ describe("auth hardening", () => {
   });
 
   it("returns 401 when JWT is missing", async () => {
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
     const server = await startServer();
     const response = await fetch(`${server.url}/api/workflows?org_id=org-1`);
     await server.close();
@@ -118,7 +121,8 @@ describe("auth hardening", () => {
     expect(response.status).toBe(403);
   });
 
-  it("ignores x-role in non-test environments", async () => {
+  it("requires JWT when auth lockdown is enabled", async () => {
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
     const server = await startServer();
     const response = await fetch(`${server.url}/api/workflows?org_id=org-1`, {
       headers: { "x-role": "ADMIN", "x-org-id": "org-1" }

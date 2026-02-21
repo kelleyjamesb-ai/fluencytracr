@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { Role, RoleSchema } from "@learnaire/shared";
-import { resolveJwtSecret } from "./auth_secret";
+import { isAuthLockdownRequired, resolveJwtSecret } from "./auth_secret";
 
 declare global {
   namespace Express {
@@ -103,6 +103,7 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
         }
         req.authWarning = isTestEnv ? "Test-only header auth" : "Dev-only header auth";
       }
+      req.authWarning = isTestEnv ? "Test-only header auth" : "Dev-only header auth";
     }
     return next();
   }
@@ -123,6 +124,9 @@ const getRequestedOrgId = (req: RequestWithRole): string | null => {
 export const orgScopeMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
   const isTestEnv = process.env.NODE_ENV === "test";
   if (isTestEnv && !req.authOrgId) {
+    return next();
+  }
+  if (!isTestEnv && !isAuthLockdownRequired() && !req.authOrgId) {
     return next();
   }
   if (!req.authOrgId) {
