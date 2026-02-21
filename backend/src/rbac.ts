@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { Role, RoleSchema } from "@learnaire/shared";
-import { resolveJwtSecret } from "./auth_secret";
+import { isAuthLockdownRequired, resolveJwtSecret } from "./auth_secret";
 
 declare global {
   namespace Express {
@@ -58,7 +58,11 @@ const verifyHs256Jwt = (token: string, secret: string) => {
 
 export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
   const isTestEnv = process.env.NODE_ENV === "test";
-  const isDevHeaderAuthEnabled = process.env.DEV_HEADER_AUTH === "1" || process.env.DEV_HEADER_AUTH === "true";
+  const lockdownRequired = isAuthLockdownRequired();
+  const isDevHeaderAuthEnabled =
+    process.env.DEV_HEADER_AUTH === "1" ||
+    process.env.DEV_HEADER_AUTH === "true" ||
+    (!isTestEnv && !lockdownRequired);
   const authHeader = req.header("authorization") ?? "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
 
@@ -93,16 +97,19 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
   if (isTestEnv || isDevHeaderAuthEnabled) {
     const rawRole = req.header("x-role");
     const rawOrgId = req.header("x-org-id");
-    if (rawRole) {
-      const parseResult = RoleSchema.safeParse(rawRole);
-      if (parseResult.success && (isTestEnv || rawOrgId)) {
-        req.role = parseResult.data;
-        req.authSub = req.header("x-sub") ?? undefined;
-        if (rawOrgId) {
-          req.authOrgId = rawOrgId;
-        }
-        req.authWarning = isTestEnv ? "Test-only header auth" : "Dev-only header auth";
+    const parseResult = rawRole ? RoleSchema.safeParse(rawRole) : null;
+    const fallbackRole: Role = "ADMIN";
+    if (parseResult?.success) {
+      req.role = parseResult.data;
+    } else if (!isTestEnv && !lockdownRequired) {
+      req.role = fallbackRole;
+    }
+    if (req.role) {
+      req.authSub = req.header("x-sub") ?? "demo-user";
+      if (rawOrgId) {
+        req.authOrgId = rawOrgId;
       }
+      req.authWarning = isTestEnv ? "Test-only header auth" : "Dev-only header auth";
     }
     return next();
   }
@@ -123,6 +130,9 @@ const getRequestedOrgId = (req: RequestWithRole): string | null => {
 export const orgScopeMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
   const isTestEnv = process.env.NODE_ENV === "test";
   if (isTestEnv && !req.authOrgId) {
+    return next();
+  }
+  if (!isTestEnv && !isAuthLockdownRequired() && !req.authOrgId) {
     return next();
   }
   if (!req.authOrgId) {

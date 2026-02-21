@@ -7,6 +7,7 @@ describe("auth", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -55,6 +56,7 @@ describe("auth", () => {
   });
 
   it("clears auth state after 401 when token refresh fails", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
     localStorage.setItem("orgId", "org-1");
     localStorage.setItem("role", "ADMIN");
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "stale-token");

@@ -28,6 +28,22 @@ createRoot(container).render(
           }
         />
         <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <GovernanceConcept />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/governance"
+          element={
+            <ProtectedRoute>
+              <GovernanceConcept />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/legacy-dashboard"
           element={
             <ProtectedRoute>

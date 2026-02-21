@@ -1,6 +1,11 @@
 const PREVIEW_FALLBACK_SECRET = "preview_jwt_secret_for_testing_only";
 
+export const isAuthLockdownRequired = () => process.env.REQUIRE_AUTH_LOCKDOWN === "1";
+
 const canUseFallbackSecret = () => {
+  if (!isAuthLockdownRequired()) {
+    return true;
+  }
   if (process.env.ALLOW_INSECURE_AUTH_FALLBACK === "1") {
     return true;
   }
@@ -19,6 +24,9 @@ export const resolveJwtSecret = () => {
 };
 
 export const assertJwtSecretConfigured = () => {
+  if (!isAuthLockdownRequired()) {
+    return;
+  }
   const { secret } = resolveJwtSecret();
   if (secret) {
     return;

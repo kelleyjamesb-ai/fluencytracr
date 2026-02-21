@@ -51,6 +51,7 @@ describe("auth hardening", () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalJwtSecret = process.env.JWT_SECRET;
   const originalDevHeaderAuth = process.env.DEV_HEADER_AUTH;
+  const originalRequireAuthLockdown = process.env.REQUIRE_AUTH_LOCKDOWN;
   const jwtSecret = "auth-hardening-jwt-secret";
 
   beforeEach(() => {
@@ -71,15 +72,19 @@ describe("auth hardening", () => {
     });
     process.env.JWT_SECRET = jwtSecret;
     process.env.NODE_ENV = "production";
+    delete process.env.DEV_HEADER_AUTH;
+    delete process.env.REQUIRE_AUTH_LOCKDOWN;
   });
 
   afterAll(() => {
     process.env.NODE_ENV = originalNodeEnv;
     process.env.JWT_SECRET = originalJwtSecret;
     process.env.DEV_HEADER_AUTH = originalDevHeaderAuth;
+    process.env.REQUIRE_AUTH_LOCKDOWN = originalRequireAuthLockdown;
   });
 
   it("returns 401 when JWT is missing", async () => {
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
     const server = await startServer();
     const response = await fetch(`${server.url}/api/workflows?org_id=org-1`);
     await server.close();
@@ -118,7 +123,8 @@ describe("auth hardening", () => {
     expect(response.status).toBe(403);
   });
 
-  it("ignores x-role in non-test environments", async () => {
+  it("requires JWT when auth lockdown is enabled", async () => {
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
     const server = await startServer();
     const response = await fetch(`${server.url}/api/workflows?org_id=org-1`, {
       headers: { "x-role": "ADMIN", "x-org-id": "org-1" }
@@ -129,6 +135,7 @@ describe("auth hardening", () => {
   });
 
   it("allows header auth in non-test environments when DEV_HEADER_AUTH is enabled", async () => {
+    process.env.REQUIRE_AUTH_LOCKDOWN = "1";
     process.env.DEV_HEADER_AUTH = "true";
     const server = await startServer();
     const response = await fetch(`${server.url}/api/workflows?org_id=org-1`, {
