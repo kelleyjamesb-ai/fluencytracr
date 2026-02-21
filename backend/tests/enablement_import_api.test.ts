@@ -110,3 +110,33 @@ it("rejects duplicate event ids", async () => {
   expect(payload.imported).toBe(1);
   expect(payload.rejected).toBe(1);
 });
+
+it("rejects cross-org rows when auth org scope is set", async () => {
+  const server = await startServer();
+  const response = await fetch(`${server.url}/enablement/import`, {
+    method: "POST",
+    headers: withSchemaVersion({
+      "content-type": "application/json",
+      "x-role": "ADMIN",
+      "x-org-id": "org-1"
+    }),
+    body: JSON.stringify({
+      events: [
+        {
+          org_id: "org-2",
+          team_id: "team-1",
+          role_id: "role-1",
+          timestamp: "2024-01-03T00:00:00Z",
+          event_type: "session_attended",
+          payload: {}
+        }
+      ]
+    })
+  });
+  const payload = await response.json();
+  await server.close();
+
+  expect(response.status).toBe(403);
+  expect(payload.error).toBe("Forbidden");
+  expect(store.enablementEvents.size).toBe(0);
+});

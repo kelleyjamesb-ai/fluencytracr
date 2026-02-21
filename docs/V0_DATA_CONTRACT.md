@@ -28,9 +28,20 @@ Payloads MUST NOT include raw content or direct identifiers. The following keys 
 ## Schema Version Header
 All ingest requests MUST include:
 
-- `X-FluencyTracr-Schema-Version: 0.1`
+- `X-FluencyTracr-Schema-Version: <version>`
 
-Requests missing the header or using any other value are rejected.
+Default accepted version is `0.1`.
+
+Compatibility rollout can be configured with:
+
+- `SCHEMA_ACCEPTED_VERSIONS=0.1,0.2` (comma-separated allow-list)
+- `SCHEMA_DEPRECATED_VERSIONS=0.1` (comma-separated subset that remains accepted but marked deprecated)
+
+Requests missing the header or using an unsupported version are rejected.
+
+When a deprecated but accepted version is used, responses include:
+
+- `X-FluencyTracr-Schema-Deprecated: true`
 
 ## Workflow Completion Semantics
 A workflow is complete when either:
