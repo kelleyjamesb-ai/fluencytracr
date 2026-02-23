@@ -116,6 +116,92 @@ Visual rules:
 - Unknown/suppressed never rendered as neutral success.
 - Heatmap legend and non-punitive interpretation guidance always present.
 
+## Executive Panels (fixed)
+
+### 1) Exposure
+- What fields are displayed (EvidenceBundle v1 mapping):
+  - `exposure.shadow_ai`
+  - `exposure.unsanctioned_tool_class`
+  - `suppression.suppression_applied`
+  - `suppression.suppression_reasons`
+  - `window`
+  - `generated_at`
+- What is forbidden:
+  - `team_id`
+  - `manager_id`
+  - ranking fields
+  - comparative rank lists
+- Decision levers supported:
+  - strengthen sanctioned tool policy controls
+  - prioritize org-level guardrail communications
+  - tune policy checks for unsanctioned exposure patterns
+- Suppression behavior and messaging:
+  - when suppressed, show `Suppressed due to privacy and safety constraints`
+  - display suppression reason codes only, never inferred substitute values
+
+### 2) Calibration posture
+- What fields are displayed (EvidenceBundle v1 mapping):
+  - `calibration.verification_presence`
+  - `calibration.recovery_presence`
+  - `calibration.escalation_to_safe_path_presence`
+  - `learning.trend_direction`
+  - `window`
+  - `generated_at`
+- What is forbidden:
+  - `team_id`
+  - `manager_id`
+  - ranking fields
+  - comparative rank lists
+- Decision levers supported:
+  - reinforce verification expectations in high-risk workflows
+  - invest in recovery and escalation enablement
+  - refine governance guardrails for safe-path routing
+- Suppression behavior and messaging:
+  - when suppression is active, render calibration state as suppressed
+  - include reason codes and hide subgroup comparisons
+
+### 3) Fragility indicators
+- What fields are displayed (EvidenceBundle v1 mapping):
+  - `fragility.friction_loops_elevated`
+  - `fragility.rapid_abandonment_elevated`
+  - `fragility.blind_acceptance_risk_elevated`
+  - `suppression.suppression_applied`
+  - `suppression.suppression_reasons`
+  - `window`
+- What is forbidden:
+  - `team_id`
+  - `manager_id`
+  - ranking fields
+  - comparative rank lists
+- Decision levers supported:
+  - prioritize workflow stabilization initiatives
+  - target verification interventions for blind-acceptance risk
+  - schedule governance reviews for recurring fragility patterns
+- Suppression behavior and messaging:
+  - show suppressed state when k-min or aggregation constraints apply
+  - message as `Insufficient safely reportable evidence for executive view`
+
+### 4) Coverage map
+- What fields are displayed (EvidenceBundle v1 mapping):
+  - `coverage.instrumented_sources`
+  - `coverage.missing_sources`
+  - `coverage.coverage_notes`
+  - `suppression.suppression_applied`
+  - `window`
+  - `generated_at`
+- What is forbidden:
+  - `team_id`
+  - `manager_id`
+  - ranking fields
+  - comparative rank lists
+- Decision levers supported:
+  - prioritize instrumentation gaps
+  - authorize integration work for missing sources
+  - validate org-level evidence sufficiency before policy changes
+- Suppression behavior and messaging:
+  - if suppression applies, keep coverage source classes visible but suppress sensitive aggregates
+  - explicitly state that missing-source visibility does not imply individual attribution
+
 ## 5) Acceptance Criteria by Role
 
 ### CEO
@@ -186,7 +272,7 @@ Potential V1.1/V2 additions:
 - Risk: stale/partial data interpreted as certainty
   - Guardrail: freshness and confidence badges mandatory
 - Risk: "source-of-truth" claim without traceability
-  - Guardrail: evidence linkage and event lineage in drilldown required
+  - Guardrail: evidence linkage and event lineage required in aggregated trace views
 
 ## 10) Immediate Next Implementation Slice
 1. Build `ExecutiveHeatmapV1` component under governance concept path.

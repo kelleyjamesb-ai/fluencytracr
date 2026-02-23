@@ -103,24 +103,26 @@ Enable what you need and add your API keys.
 
 Build your own MCP server using the [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) with FastMCP:
 
-### Example: Custom Analysis Server
+### Example: Custom Metadata Server
 
 ```python
 from mcp.server.fastmcp import FastMCP
-from mcp.types import Tool, TextContent
+from typing import Dict, Any
 
-mcp = FastMCP("My Analysis Server")
-
-@mcp.tool()
-def analyze_text(text: str) -> str:
-    """Analyzes text sentiment and extracts key insights."""
-    # Your analysis logic here
-    return f"Analysis of: {text}"
+mcp = FastMCP("My Metadata Server")
 
 @mcp.tool()
-def generate_summary(content: str, max_length: int = 100) -> str:
-    """Generates a summary of given content."""
-    return content[:max_length] + "..."
+def validate_event_metadata(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Validates metadata-only event envelope."""
+    required = {"event_type", "timestamp", "risk_class", "workflow_id"}
+    missing = [k for k in required if k not in event]
+    return {"valid": len(missing) == 0, "missing": missing}
+
+@mcp.tool()
+def map_window(window: str) -> Dict[str, str]:
+    """Maps supported evidence window values."""
+    allowed = {"daily", "weekly", "30d", "60d"}
+    return {"status": "ok" if window in allowed else "invalid"}
 
 if __name__ == "__main__":
     mcp.run()
@@ -164,6 +166,42 @@ For untrusted servers, consider:
 - Running in isolated Docker containers
 - Using restrictive file permissions
 - Monitoring tool calls for malicious patterns
+
+## FluencyTracr MCP Adapter Server
+
+References:
+- EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
+- `/api/ingest` contract: `docs/api/ingest.md`
+- MCP server architecture: `docs/mcp/fluencytracr-mcp-server.md`
+
+Tool list:
+- `fluency.ingest_events` forwards metadata/event envelopes to `/api/ingest`
+- `fluency.get_evidence_bundle`
+- `fluency.get_control_evidence`
+- `fluency.get_coverage_map`
+
+Tool input constraints:
+- Enumerations and bounded fields only
+- Reject free-form content fields
+- Enforce allowed windows: `daily`, `weekly`, `30d`, `60d`
+- Enforce bounded enums for `risk_class`, `workflow_category`, `tool_class`
+
+Auth and scoping:
+- Service identity tokens only
+- Org-bound scope required for every tool call
+- Cross-org access denied at adapter boundary
+
+Rate limits and idempotency:
+- `fluency.ingest_events` must include `Idempotency-Key`
+- Pass `X-FluencyTracr-Schema-Version` on ingest calls
+- Handle `429` with bounded exponential backoff
+- Preserve replay safety semantics for idempotent retries
+
+Forbidden content examples:
+- Prompt text payloads
+- Model output text payloads
+- Transcript content
+- Any free-form user-generated raw content
 
 ## 🧪 Testing MCP Integration
 

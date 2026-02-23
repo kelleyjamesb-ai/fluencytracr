@@ -1,4 +1,6 @@
 import { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
+import { AUTH_TOKEN_STORAGE_KEY } from "../auth";
 
 type ProtectedRouteProps = {
     children: ReactNode;

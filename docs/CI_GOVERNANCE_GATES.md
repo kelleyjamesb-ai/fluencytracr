@@ -33,6 +33,14 @@ Purpose: define CI gates Kiln will implement to enforce V1 governance requiremen
 ## Advisory checks (non-blocking, minimal)
 - Documentation link integrity for the three input contracts.
 
+## Contract Gates
+- EvidenceBundle v1 schema exists and examples validate
+- /api/ingest doc exists and is linked from README
+- Glean integration docs exist
+
+Contract validation command:
+- `bash scripts/validate_evidence_bundle_schema.sh`
+
 ## QA appendix (required invariants and test locations)
 These tests must exist and remain fail-closed. Proposed locations:
 - `backend/tests/v1_contract_invariants.test.ts`

@@ -15,6 +15,14 @@ Welcome to the comprehensive documentation for the **Antigravity Workspace Templ
 
 ### Planning & Vision
 - **[Development Roadmap](ROADMAP.md)** — Current progress and future plans through Phase 9
+- **[FluencyTracr Integration Update (2026-02-21)](../UPDATES_2026-02-21_GLEAN_EVIDENCE_MCP.md)** - Locked decisions for Glean, EvidenceBundle v1, `/api/ingest`, and MCP positioning
+- **[Glean Integration Overview](../integrations/glean/01-overview.md)** - Glean-first integration modes, suppression boundaries, and agent tooling references
+- **[EvidenceBundle v1 Contract](../contracts/evidence-bundle/v1/README.md)** - Stable partner evidence contract and suppression semantics
+- **[Ingest API (/api/ingest)](../api/ingest.md)** - Partner-facing async ingestion facade contract
+- **[Behavioral Signals Spec](../BEHAVIORAL_SIGNALS_SPEC.md)** - Human plus agentic signal families and surfacing constraints
+- **[MCP Adapter Server](../mcp/fluencytracr-mcp-server.md)** - FluencyTracr MCP tool surface architecture and constraints
+- **[API Reference](../api/API_REFERENCE.md)** - Canonical API surfaces for ingest and evidence
+- **[System Architecture Overview](../architecture/SYSTEM_ARCHITECTURE_OVERVIEW.md)** - Layered architecture, suppression points, and integration components
 
 ## 🌟 Key Features
 

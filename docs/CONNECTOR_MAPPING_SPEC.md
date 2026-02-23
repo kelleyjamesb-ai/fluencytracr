@@ -1,8 +1,8 @@
-# FluencyTracr Connector Mapping Spec - Reconnaissance Report
+# FluencyTracr Connector Mapping Spec
 
 **Date**: 2026-01-12
-**Status**: Discovery Phase (PROMPT 0)
-**Purpose**: Repo scan, connector discovery, mapping spec draft, automated test plan
+**Status**: Integration Baseline
+**Purpose**: Connector discovery, mapping specification, and validation plan for partner ingestion
 
 ---
 
@@ -61,7 +61,13 @@ LearnAIR_Engable_Tool/
 | `/orgs/:orgId/tools` | POST | Ingest tool inventory | `ToolInventorySchema` | 429 |
 | `/orgs/:orgId/usage-shape` | POST | Ingest usage frequency bands | `UsageShapeSchema` | 470 |
 | `/orgs/:orgId/behavior/import` | POST | Ingest behavioral signals | `BehavioralSignalImportSchema` | 793 |
-| `/api/ingest` | POST | Generic ingest stub | - | 635 |
+| `/api/ingest` | POST | Partner-facing asynchronous facade for intake acknowledgment, queue semantics, and dedupe | `FluencyEventIngestSchema` envelope (aligned with `/api/events`) | 635 |
+
+#### Connector Responsibilities for `/api/ingest`
+- Add `Idempotency-Key` per logical batch submission.
+- Handle `429` responses with bounded exponential backoff and retry.
+- Scope submissions by `org_id` and integration identity.
+- Do not send raw prompt content, model output content, transcripts, or direct identifiers.
 
 #### Request Validation Approach
 
@@ -1349,4 +1355,4 @@ describe("Connector Mapping Tests", () => {
 5. Integrate with behavioral signals ingest endpoint
 6. Add CI/CD validation
 
-**End of PROMPT 0 Reconnaissance Report**
+**End of connector mapping specification baseline**

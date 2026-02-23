@@ -132,7 +132,7 @@ export const listWorkflowRegistryEntriesByOrg = async (orgId: string): Promise<W
     ORDER BY "workflowId" ASC, "createdAt" ASC, "id" ASC
   `;
 
-  return rows.map((row) => ({
+  return rows.map((row: PersistedRegistryRow) => ({
     id: row.id,
     orgId: row.orgId,
     workflowId: row.workflowId,
@@ -179,7 +179,7 @@ export const listWorkflowRegistryAuditByOrg = async (
     ORDER BY "createdAt" ASC
   `;
 
-  return rows.map((row) => ({
+  return rows.map((row: PersistedAuditRow) => ({
     id: row.id,
     orgId: row.orgId,
     workflowId: row.workflowId,
@@ -230,7 +230,7 @@ export const listWorkflowVisibilityPolicyConfigsByOrg = async (
     ORDER BY "createdAt" ASC, "id" ASC
   `;
 
-  return rows.map((row) => ({
+  return rows.map((row: PersistedPolicyConfigRow) => ({
     id: row.id,
     orgId: row.orgId,
     versionName: row.versionName,
@@ -279,7 +279,7 @@ export const listBaselineResetEventsByOrg = async (
     ORDER BY "resetAt" ASC, "id" ASC
   `;
 
-  return rows.map((row) => ({
+  return rows.map((row: PersistedBaselineResetRow) => ({
     id: row.id,
     orgId: row.orgId,
     controlConfigVersionId: row.controlConfigVersionId,

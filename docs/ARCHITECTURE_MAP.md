@@ -114,7 +114,12 @@ LearnAIR_Engable_Tool/
 | `/enablement/import` | POST | Ingest raw enablement events (CSV or JSON) | `EnablementEventSchema[]` |
 | `/orgs/:orgId/tools` | POST | Ingest tool inventory | `ToolInventorySchema` |
 | `/orgs/:orgId/usage-shape` | POST | Ingest usage frequency bands | `UsageShapeSchema` |
-| `/api/ingest` | POST | Generic ingest (stub) | - |
+| `/api/ingest` | POST | Partner-facing asynchronous ingest facade with acknowledgment, queue intake, and dedupe semantics | `FluencyEventIngestSchema` envelope (aligned with `/api/events`) |
+
+### Canonical Ingestion Path Distinction
+
+- `/api/events`: strict canonical validator and direct event ingestion path.
+- `/api/ingest`: partner-facing asynchronous facade for intake acknowledgment, queue handling, and idempotent dedupe before canonical validation flow.
 
 ### Data Schemas (from `shared/src/schemas.ts`)
 

@@ -106,3 +106,22 @@ Approved language style:
 4. Test plan includes deny-path and fail-closed scenarios.
 5. Export contract validated for deterministic metadata presence.
 
+## 9) Executive Query Dimension Contract
+
+Forbidden query dimensions in exec mode:
+- `team_id`
+- `manager_id`
+- `role_id`
+- `user_id`
+- any ranking or sorting by performance proxy
+
+Allowed dimensions in exec mode:
+- `window`
+- `workflow_category`
+- `risk_class`
+- `tool_class`
+
+Rules:
+- Exec mode is irreducibly aggregated and org-level only.
+- Agentic oversight evidence is allowed only as aggregated org-level evidence.
+- Suppression must propagate end-to-end from backend responses to frontend rendering and export surfaces.

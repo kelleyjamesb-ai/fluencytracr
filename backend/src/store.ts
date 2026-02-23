@@ -259,6 +259,22 @@ export type ConnectorEventQuarantineRecord = {
   received_at: string;
 };
 
+export type IngestReceiptRecord = {
+  idempotencyKey: string;
+  payloadHash: string;
+  response: {
+    receipt_id: string;
+    accepted_count: number;
+    rejected_count: number;
+    rejections: Array<{
+      index: number;
+      reason_code: string;
+      field_path: string;
+    }>;
+  };
+  createdAt: string;
+};
+
 export type WorkflowRiskClass = "low" | "medium" | "high";
 
 export type WorkflowRegistryRecord = {
@@ -369,6 +385,7 @@ class MemoryStore {
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
   auditLogs = new Map<string, AuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
+  ingestReceipts = new Map<string, IngestReceiptRecord>();
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
   workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
   workflowRegistryAudit = new Map<string, WorkflowRegistryAuditRecord>();
@@ -406,6 +423,7 @@ class MemoryStore {
     this.decisionLedgerEvaluations.clear();
     this.auditLogs.clear();
     this.connectorEventQuarantine.clear();
+    this.ingestReceipts.clear();
     this.workflowRegistry.clear();
     this.workflowRegistryCurrent.clear();
     this.workflowRegistryAudit.clear();

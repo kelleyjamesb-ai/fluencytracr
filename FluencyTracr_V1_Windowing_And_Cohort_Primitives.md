@@ -62,3 +62,24 @@ If required event classes are missing due to incomplete telemetry such that suff
 
 ## 5) UTC rule (re-stated)
 All window parsing, adjacency, and length computations use UTC only. Local time is display-only.
+
+## 6) EvidenceBundle windows and suppression surfaces (required)
+
+### 6.1 EvidenceBundle windows
+EvidenceBundle v1 supports:
+- `daily`
+- `weekly`
+- `30d`
+- `60d`
+
+### 6.2 Learning trend surfacing rule
+Learning trend direction is surfaced only at `60d` unless a stricter policy explicitly allows additional windows.
+
+### 6.3 Executive aggregation rule
+Executive mode is irreducibly aggregated and forbids org-structure slicing.
+- No team-level slicing
+- No manager-level slicing
+- No role-level slicing for executive evidence views
+
+### 6.4 Suppression propagation
+Suppression state and suppression reasons must propagate end-to-end into EvidenceBundle outputs for all windows where suppression applies.
