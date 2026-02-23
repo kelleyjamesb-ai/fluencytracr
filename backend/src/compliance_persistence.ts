@@ -131,7 +131,7 @@ export const listPolicyDocumentsByOrg = async (orgId: string): Promise<PolicyDoc
     WHERE "orgId" = ${orgId}
     ORDER BY "createdAt" DESC
   `;
-  return rows.map((row) => ({
+  return rows.map((row: PersistedPolicyDocumentRow) => ({
     policyId: row.id,
     orgId: row.orgId,
     fileName: row.fileName,
@@ -172,7 +172,7 @@ export const listPolicyMappingsByOrg = async (orgId: string): Promise<PolicyMapp
     WHERE "orgId" = ${orgId}
     ORDER BY "generatedAt" DESC
   `;
-  return rows.map((row) => ({
+  return rows.map((row: PersistedPolicyMappingRow) => ({
     mappingId: row.id,
     policyId: row.policyId,
     orgId: row.orgId,
@@ -222,7 +222,7 @@ export const listLatestCanonicalControlsByOrg = async (
         ORDER BY "controlName", "updatedAt" DESC
       `;
 
-  return rows.map((row) => ({
+  return rows.map((row: PersistedControlHistoryRow) => ({
     orgId: row.orgId,
     control_name: row.controlName,
     status: row.status as CanonicalControlSnapshotRecord["status"],
@@ -279,7 +279,7 @@ export const listComplianceEventsByOrg = async (
     ORDER BY "createdAt" ASC
   `;
 
-  return rows.map((row) => {
+  return rows.map((row: PersistedComplianceEventRow) => {
     const metadata = asRecord(row.metadata);
     if (row.sourceEventId) {
       metadata.source_event_id = row.sourceEventId;

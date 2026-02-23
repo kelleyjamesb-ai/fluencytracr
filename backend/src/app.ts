@@ -510,11 +510,11 @@ const getAcceptedSchemaVersions = () => {
   return ["0.1"];
 };
 
-const formatIssuePath = (pathSegments: Array<string | number>) => {
+const formatIssuePath = (pathSegments: Array<string | number>): string => {
   if (pathSegments.length === 0) {
     return "/";
   }
-  return pathSegments.reduce((acc, segment) => {
+  return pathSegments.reduce<string>((acc, segment) => {
     if (typeof segment === "number") {
       return `${acc}[${segment}]`;
     }
@@ -2998,7 +2998,7 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
     field_path: string;
   }> = [];
 
-  events.forEach((event, index) => {
+  events.forEach((event: unknown, index: number) => {
     const parsed = FluencyEventSchema.safeParse(event);
     if (parsed.success) {
       acceptedEvents.push(parsed.data);
