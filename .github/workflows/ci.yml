@@ -45,6 +45,12 @@ jobs:
         run: npm test --workspace frontend
       - name: Run suppression regression evidence suite
         run: ./scripts/ci_suppression_evidence.sh
+      - name: Validate EvidenceBundle schema and examples
+        run: bash scripts/validate_evidence_bundle_schema.sh
+      - name: Run docs and contract sweep
+        run: bash scripts/ci_docs_contract_sweep.sh
+      - name: Run scoped FluencyTracr docs link check
+        run: bash scripts/ci_linkcheck_fluency_docs.sh
       - name: Upload suppression evidence artifact
         if: always() && hashFiles('artifacts/phase3/suppression/**') != ''
         uses: actions/upload-artifact@v4

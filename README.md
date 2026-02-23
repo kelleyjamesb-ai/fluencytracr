@@ -19,3 +19,14 @@ Suppression reason codes (one-hot, immutable):
 - `NO_CONVERGENCE`
 - `BASELINE_UNSTABLE`
 - `HIGH_AMBIGUITY`
+
+## Canonical docs
+- Partner ingestion facade: [docs/api/ingest.md](docs/api/ingest.md)
+- Architecture map: [docs/ARCHITECTURE_MAP.md](docs/ARCHITECTURE_MAP.md)
+- Connector mapping spec: [docs/CONNECTOR_MAPPING_SPEC.md](docs/CONNECTOR_MAPPING_SPEC.md)
+- EvidenceBundle v1 contract: [docs/contracts/evidence-bundle/v1/README.md](docs/contracts/evidence-bundle/v1/README.md)
+- Glean integration pack: [docs/integrations/glean/01-overview.md](docs/integrations/glean/01-overview.md)
+- Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
+- MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)
+- API reference: [docs/api/API_REFERENCE.md](docs/api/API_REFERENCE.md)
+- System architecture overview: [docs/architecture/SYSTEM_ARCHITECTURE_OVERVIEW.md](docs/architecture/SYSTEM_ARCHITECTURE_OVERVIEW.md)

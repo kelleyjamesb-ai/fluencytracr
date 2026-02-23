@@ -1,0 +1,33 @@
+{
+  "schema_version": "evidence_bundle.v1",
+  "org_id": "org_demo",
+  "window": "weekly",
+  "generated_at": "2026-02-21T12:00:00Z",
+  "suppression": {
+    "k_min": 20,
+    "suppression_applied": false,
+    "suppression_reasons": []
+  },
+  "coverage": {
+    "instrumented_sources": ["workspace_telemetry"],
+    "missing_sources": ["ticketing_system"],
+    "coverage_notes": "Baseline instrumentation includes workspace telemetry only."
+  },
+  "exposure": {
+    "shadow_ai": "not_computed",
+    "unsanctioned_tool_class": "not_computed"
+  },
+  "calibration": {
+    "verification_presence": "not_computed",
+    "recovery_presence": "not_computed",
+    "escalation_to_safe_path_presence": "not_computed"
+  },
+  "fragility": {
+    "friction_loops_elevated": "not_computed",
+    "rapid_abandonment_elevated": "not_computed",
+    "blind_acceptance_risk_elevated": "not_computed"
+  },
+  "learning": {
+    "trend_direction": "not_computed"
+  }
+}

@@ -98,13 +98,16 @@ Crea tu propio servidor MCP usando el [SDK de MCP Python](https://github.com/mod
 
 ```python
 from mcp.server.fastmcp import FastMCP
+from typing import Dict, Any
 
 mcp = FastMCP("Mi Servidor Personalizado")
 
 @mcp.tool()
-def mi_herramienta_personalizada(texto: str) -> str:
-    """Analiza texto personalizado."""
-    return f"Analizado: {texto}"
+def validar_metadatos_evento(evento: Dict[str, Any]) -> Dict[str, Any]:
+    """Valida un sobre de evento solo con metadatos."""
+    requeridos = {"event_type", "timestamp", "risk_class", "workflow_id"}
+    faltantes = [k for k in requeridos if k not in evento]
+    return {"valido": len(faltantes) == 0, "faltantes": faltantes}
 
 if __name__ == "__main__":
     mcp.run()
@@ -121,6 +124,42 @@ Regístralo en `mcp_servers.json`:
   "enabled": true
 }
 ```
+
+## FluencyTracr MCP Adapter Server
+
+Referencias:
+- EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
+- Contrato `/api/ingest`: `docs/api/ingest.md`
+- Arquitectura MCP: `docs/mcp/fluencytracr-mcp-server.md`
+
+Lista de herramientas:
+- `fluency.ingest_events` reenvia sobres de metadatos/eventos a `/api/ingest`
+- `fluency.get_evidence_bundle`
+- `fluency.get_control_evidence`
+- `fluency.get_coverage_map`
+
+Restricciones de entrada:
+- Solo enumeraciones y campos acotados
+- Rechazar campos de contenido libre
+- Ventanas permitidas: `daily`, `weekly`, `30d`, `60d`
+- Enums acotados para `risk_class`, `workflow_category`, `tool_class`
+
+Autenticacion y alcance:
+- Solo identidades de servicio
+- Alcance obligatorio por `org_id`
+- Acceso entre organizaciones denegado en el adaptador
+
+Limites de tasa e idempotencia:
+- `fluency.ingest_events` requiere `Idempotency-Key`
+- Enviar `X-FluencyTracr-Schema-Version` en ingest
+- Manejar `429` con retroceso exponencial acotado
+- Preservar seguridad de reintento idempotente
+
+Ejemplos de contenido prohibido:
+- Texto de prompts
+- Texto de salidas del modelo
+- Contenido de transcripciones
+- Cualquier contenido crudo libre generado por usuario
 
 ---
 

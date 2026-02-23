@@ -15,6 +15,7 @@ import {
   BehavioralSignalImportSchema,
   ConnectorEventImportSchema,
   FluencyEventIngestSchema,
+  FluencyEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
   DecisionLedgerCreateSchema,
@@ -215,7 +216,24 @@ const strictLimiter = rateLimit({
   }
 });
 
+const ingestLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  validate: {
+    forwardedHeader: false
+  },
+  handler: (_req, res) => {
+    return res.status(429).json({
+      error: "Rate limited",
+      reason_code: "rate_limited"
+    });
+  }
+});
+
 const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
+
+const EVIDENCE_WINDOWS = new Set(["daily", "weekly", "30d", "60d"]);
+const INGEST_RECEIPT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // Initialize connector service and load connector mappings
 const connectorService = new ConnectorService();
@@ -458,6 +476,250 @@ const addDays = (start: string, days: number) => {
 };
 
 const nowIso = () => new Date().toISOString();
+
+const toCanonicalJson = (value: unknown): string => {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => toCanonicalJson(item)).join(",")}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  return `{${entries
+    .map(([key, val]) => `${JSON.stringify(key)}:${toCanonicalJson(val)}`)
+    .join(",")}}`;
+};
+
+const payloadHash = (value: unknown) => {
+  return crypto.createHash("sha256").update(toCanonicalJson(value)).digest("hex");
+};
+
+const parseCsvEnvVersions = (raw: string | undefined) =>
+  (raw ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+
+const getAcceptedSchemaVersions = () => {
+  const configured = parseCsvEnvVersions(process.env.SCHEMA_ACCEPTED_VERSIONS);
+  if (configured.length > 0) {
+    return configured;
+  }
+  return ["0.1"];
+};
+
+const formatIssuePath = (pathSegments: Array<string | number>) => {
+  if (pathSegments.length === 0) {
+    return "/";
+  }
+  return pathSegments.reduce((acc, segment) => {
+    if (typeof segment === "number") {
+      return `${acc}[${segment}]`;
+    }
+    if (!acc) {
+      return segment;
+    }
+    return `${acc}.${segment}`;
+  }, "");
+};
+
+const pruneIngestReceipts = () => {
+  const cutoff = Date.now() - INGEST_RECEIPT_WINDOW_MS;
+  for (const [key, receipt] of store.ingestReceipts.entries()) {
+    const createdAtMs = new Date(receipt.createdAt).getTime();
+    if (!Number.isFinite(createdAtMs) || createdAtMs < cutoff) {
+      store.ingestReceipts.delete(key);
+    }
+  }
+};
+
+const evidenceStatusFromCondition = (
+  suppressed: boolean,
+  computed: boolean,
+  condition: boolean
+) => {
+  if (suppressed) {
+    return "suppressed";
+  }
+  if (!computed) {
+    return "not_computed";
+  }
+  return condition ? "present" : "not_present";
+};
+
+const evidenceWindowDays = (window: string) => {
+  if (window === "daily") {
+    return 1;
+  }
+  if (window === "weekly") {
+    return 7;
+  }
+  return window === "30d" ? 30 : 60;
+};
+
+const buildEvidenceBundle = (orgId: string, window: "daily" | "weekly" | "30d" | "60d") => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setUTCDate(start.getUTCDate() - evidenceWindowDays(window));
+
+  const scopedEvents = Array.from(store.fluencyEvents.values()).filter((event) => {
+    const timestamp = new Date(event.timestamp);
+    if (Number.isNaN(timestamp.getTime()) || timestamp < start || timestamp > now) {
+      return false;
+    }
+    if (typeof event.org_unit === "string" && event.org_unit.length > 0) {
+      return event.org_unit === `org:${orgId}` || event.org_unit.startsWith(`org:${orgId}:`);
+    }
+    return false;
+  });
+
+  const cohortSize = new Set(scopedEvents.map((event) => event.workflow_id)).size;
+  const hasComputableEvidence = scopedEvents.length > 0;
+  const suppressionApplied = hasComputableEvidence && cohortSize > 0 && cohortSize < MIN_COHORT_SIZE;
+  const suppressionReasons = suppressionApplied ? ["insufficient_population"] : [];
+
+  const outputEvents = scopedEvents.filter((event) => event.event_type === "ai_output_disposition");
+  const verificationSignals = scopedEvents.filter((event) => event.event_type === "verification_signal");
+  const recoveryEvents = scopedEvents.filter((event) => event.event_type === "ai_recovery_loop");
+  const abandonmentEvents = scopedEvents.filter(
+    (event) =>
+      event.event_type === "ai_abandonment" ||
+      (event.event_type === "ai_output_disposition" && event.disposition === "abandoned")
+  );
+  const highRiskEvents = scopedEvents.filter((event) => event.risk_class === "high");
+
+  const instrumentedSources: string[] = [];
+  if (outputEvents.length > 0) {
+    instrumentedSources.push("ai_output_disposition");
+  }
+  if (recoveryEvents.length > 0) {
+    instrumentedSources.push("ai_recovery_loop");
+  }
+  if (verificationSignals.length > 0) {
+    instrumentedSources.push("verification_signal");
+  }
+  if (abandonmentEvents.length > 0) {
+    instrumentedSources.push("ai_abandonment");
+  }
+  if (scopedEvents.some((event) => event.event_type === "workflow_stage_transition")) {
+    instrumentedSources.push("workflow_stage_transition");
+  }
+
+  const allSources = [
+    "ai_output_disposition",
+    "ai_recovery_loop",
+    "verification_signal",
+    "ai_abandonment",
+    "workflow_stage_transition"
+  ];
+  const missingSources = allSources.filter((source) => !instrumentedSources.includes(source));
+
+  const verificationPresentCount =
+    verificationSignals.length +
+    outputEvents.filter((event) => event.verification_present).length;
+  const acceptedCount = outputEvents.filter((event) => event.disposition === "accepted").length;
+  const acceptanceRate = outputEvents.length === 0 ? 0 : acceptedCount / outputEvents.length;
+  const verificationRate =
+    outputEvents.length === 0 ? 0 : verificationPresentCount / Math.max(outputEvents.length, 1);
+  const abandonmentRate =
+    scopedEvents.length === 0 ? 0 : abandonmentEvents.length / Math.max(scopedEvents.length, 1);
+
+  let trendDirection: "improving" | "stable" | "degrading" | "suppressed" | "not_computed" =
+    "not_computed";
+  if (suppressionApplied) {
+    trendDirection = "suppressed";
+  } else if (window === "60d" && hasComputableEvidence) {
+    const midpointMs = start.getTime() + (now.getTime() - start.getTime()) / 2;
+    const firstHalf = outputEvents.filter((event) => new Date(event.timestamp).getTime() < midpointMs);
+    const secondHalf = outputEvents.filter((event) => new Date(event.timestamp).getTime() >= midpointMs);
+    const firstAcceptanceRate =
+      firstHalf.length === 0
+        ? 0
+        : firstHalf.filter((event) => event.disposition === "accepted").length / firstHalf.length;
+    const secondAcceptanceRate =
+      secondHalf.length === 0
+        ? 0
+        : secondHalf.filter((event) => event.disposition === "accepted").length / secondHalf.length;
+    const delta = secondAcceptanceRate - firstAcceptanceRate;
+    if (delta > 0.1) {
+      trendDirection = "improving";
+    } else if (delta < -0.1) {
+      trendDirection = "degrading";
+    } else {
+      trendDirection = "stable";
+    }
+  }
+
+  return {
+    schema_version: "evidence_bundle.v1",
+    org_id: orgId,
+    window,
+    generated_at: nowIso(),
+    suppression: {
+      k_min: MIN_COHORT_SIZE,
+      suppression_applied: suppressionApplied,
+      suppression_reasons: suppressionReasons
+    },
+    coverage: {
+      instrumented_sources: instrumentedSources,
+      missing_sources: missingSources,
+      coverage_notes: hasComputableEvidence
+        ? "Coverage derived from metadata-only event streams."
+        : "No computable events observed for this org-window."
+    },
+    exposure: {
+      shadow_ai: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        highRiskEvents.length > 0
+      ),
+      unsanctioned_tool_class: evidenceStatusFromCondition(
+        suppressionApplied,
+        false,
+        false
+      )
+    },
+    calibration: {
+      verification_presence: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        verificationPresentCount > 0
+      ),
+      recovery_presence: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        recoveryEvents.length > 0
+      ),
+      escalation_to_safe_path_presence: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        recoveryEvents.some((event) => event.recovery_type === "escalation")
+      )
+    },
+    fragility: {
+      friction_loops_elevated: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        recoveryEvents.some((event) => event.cycles >= 3)
+      ),
+      rapid_abandonment_elevated: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        abandonmentRate >= 0.15
+      ),
+      blind_acceptance_risk_elevated: evidenceStatusFromCondition(
+        suppressionApplied,
+        hasComputableEvidence,
+        acceptanceRate >= 0.7 && verificationRate < 0.2
+      )
+    },
+    learning: {
+      trend_direction: trendDirection
+    }
+  };
+};
 
 const failClosedMetrics = {
   total: 0,
@@ -2674,8 +2936,104 @@ app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFie
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/api/ingest", strictLimiter, schemaVersionMiddleware, forbiddenFieldsMiddleware, (_req, res) => {
-  res.status(202).json({ status: "accepted" });
+app.post("/api/ingest", ingestLimiter, (req, res) => {
+  const schemaVersion = req.header("X-FluencyTracr-Schema-Version");
+  const acceptedVersions = getAcceptedSchemaVersions();
+  if (!schemaVersion || !acceptedVersions.includes(schemaVersion)) {
+    return res.status(400).json({
+      error: "Invalid schema version",
+      reason_code: "invalid_schema_version",
+      expected: acceptedVersions,
+      received: schemaVersion ?? null
+    });
+  }
+
+  const idempotencyKey = req.header("Idempotency-Key");
+  if (!idempotencyKey || idempotencyKey.trim().length === 0) {
+    return res.status(400).json({
+      error: "Missing required header",
+      reason_code: "invalid_payload",
+      field_path: "headers.Idempotency-Key"
+    });
+  }
+
+  const forbiddenField = findForbiddenField(req.body);
+  if (forbiddenField) {
+    return res.status(400).json({
+      error: "Forbidden field",
+      reason_code: "forbidden_field",
+      field_path: forbiddenField.path
+    });
+  }
+
+  const events = Array.isArray(req.body?.events) ? req.body.events : null;
+  if (!events || events.length === 0) {
+    return res.status(400).json({
+      error: "Invalid payload",
+      reason_code: "invalid_payload",
+      field_path: "events"
+    });
+  }
+
+  pruneIngestReceipts();
+
+  const trimmedKey = idempotencyKey.trim();
+  const normalizedHash = payloadHash(req.body);
+  const existingReceipt = store.ingestReceipts.get(trimmedKey);
+  if (existingReceipt) {
+    if (existingReceipt.payloadHash !== normalizedHash) {
+      return res.status(409).json({
+        error: "Idempotency conflict",
+        reason_code: "idempotency_conflict",
+        field_path: "headers.Idempotency-Key"
+      });
+    }
+    return res.status(202).json(existingReceipt.response);
+  }
+
+  const acceptedEvents: FluencyEvent[] = [];
+  const rejections: Array<{
+    index: number;
+    reason_code: string;
+    field_path: string;
+  }> = [];
+
+  events.forEach((event, index) => {
+    const parsed = FluencyEventSchema.safeParse(event);
+    if (parsed.success) {
+      acceptedEvents.push(parsed.data);
+      return;
+    }
+    const firstIssue = parsed.error.issues[0];
+    rejections.push({
+      index,
+      reason_code: "invalid_payload",
+      field_path: firstIssue ? formatIssuePath(["events", index, ...firstIssue.path]) : `events[${index}]`
+    });
+  });
+
+  acceptedEvents.forEach((event) => {
+    insertFluencyEvent({
+      ...event,
+      event_id: crypto.randomUUID()
+    });
+  });
+
+  const response = {
+    receipt_id: `rcpt_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`,
+    accepted_count: acceptedEvents.length,
+    rejected_count: rejections.length,
+    rejections
+  };
+
+  store.ingestReceipts.set(trimmedKey, {
+    idempotencyKey: trimmedKey,
+    payloadHash: normalizedHash,
+    response,
+    createdAt: nowIso()
+  });
+
+  return res.status(202).json(response);
 });
 
 app.get(
@@ -3608,6 +3966,95 @@ app.get(
         medium: null,
         high: null
       }
+    });
+  }
+);
+
+app.get(
+  "/api/evidence/bundles/:orgId",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const windowRaw = typeof req.query.window === "string" ? req.query.window : "weekly";
+    if (!EVIDENCE_WINDOWS.has(windowRaw)) {
+      return res.status(400).json({
+        error: "Invalid query",
+        reason_code: "invalid_payload",
+        field_path: "window",
+        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
+      });
+    }
+
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
+    return res.json(bundle);
+  }
+);
+
+app.get(
+  "/api/evidence/coverage/:orgId",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const windowRaw = typeof req.query.window === "string" ? req.query.window : "weekly";
+    if (!EVIDENCE_WINDOWS.has(windowRaw)) {
+      return res.status(400).json({
+        error: "Invalid query",
+        reason_code: "invalid_payload",
+        field_path: "window",
+        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
+      });
+    }
+
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
+    return res.json({
+      org_id: bundle.org_id,
+      schema_version: bundle.schema_version,
+      window: bundle.window,
+      generated_at: bundle.generated_at,
+      suppression: bundle.suppression,
+      coverage: bundle.coverage
+    });
+  }
+);
+
+app.get(
+  "/api/evidence/controls/:orgId",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+
+    const windowRaw = typeof req.query.window === "string" ? req.query.window : "weekly";
+    if (!EVIDENCE_WINDOWS.has(windowRaw)) {
+      return res.status(400).json({
+        error: "Invalid query",
+        reason_code: "invalid_payload",
+        field_path: "window",
+        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
+      });
+    }
+
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
+    return res.json({
+      org_id: bundle.org_id,
+      schema_version: bundle.schema_version,
+      window: bundle.window,
+      generated_at: bundle.generated_at,
+      suppression: bundle.suppression,
+      exposure: bundle.exposure,
+      calibration: bundle.calibration,
+      fragility: bundle.fragility,
+      learning: bundle.learning
     });
   }
 );
