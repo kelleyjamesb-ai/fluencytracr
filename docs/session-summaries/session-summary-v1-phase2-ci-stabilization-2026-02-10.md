@@ -101,7 +101,7 @@ Expected local status:
 - only untracked handoff doc remains unless new work is started.
 
 At handoff time this file is intentionally present:
-- `/Users/jkelley/Desktop/FluencyTracr/docs/HANDOFF_PHASE2_CI_STABILIZATION_2026-02-10.md`
+- `/docs/session-summaries/session-summary-v1-phase2-ci-stabilization-2026-02-10.md`
 
 ---
 
@@ -148,7 +148,7 @@ At handoff time this file is intentionally present:
 Continue from /Users/jkelley/Desktop/FluencyTracr on branch codex/fix-api-events-ledger-ci.
 
 Read handoff first:
-- /Users/jkelley/Desktop/FluencyTracr/docs/HANDOFF_PHASE2_CI_STABILIZATION_2026-02-10.md
+- /docs/session-summaries/session-summary-v1-phase2-ci-stabilization-2026-02-10.md
 
 Primary goals:
 1) Verify GitHub PR checks for this branch and fix any failures with minimal scope.

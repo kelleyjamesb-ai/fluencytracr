@@ -110,5 +110,5 @@ Result:
 
 Use this prompt in next context window:
 
-"Continue from `/Users/jkelley/Desktop/FluencyTracr/docs/HANDOFF_PHASE3_TRANCHE1_2026-02-11.md`. Start by creating the integration branch from `codex/p3-validation-suite`, generate Prisma migrations for new compliance persistence models, run backend CI, and prepare PR stack with migration rollout notes."
+"Continue from `/docs/session-summaries/session-summary-v3-phase3-tranche1-2026-02-11.md`. Start by creating the integration branch from `codex/p3-validation-suite`, generate Prisma migrations for new compliance persistence models, run backend CI, and prepare PR stack with migration rollout notes."
 
