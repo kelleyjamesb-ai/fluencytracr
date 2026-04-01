@@ -31,3 +31,17 @@
 - Harness: set `harness-006` `passes` to true.
 - Next focus: `harness-003` if touching frontend/shared; archive OpenSpec `add-unified-telemetry-ingest` after deploy; optional `harness-002` (Python verify).
 
+## 2026-03-31 (UTC) — Cursor (PRD v1 + harness)
+
+- Completed: Landed **PRD v1** as `artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md` (full product definition + execution FSM, signals, patterns, baselines, open questions). Added **Appendix A** (repo alignment: `/api/events`, `/api/ingest`, unified telemetry vs PRD observability API) and **Appendix B** (harness + OpenSpec gate). Cross-linked §4 data inputs to `artifacts/DATA_ACCESS_CONTRACT_RFI.md` and unified telemetry docs.
+- Harness: Added `prd-doc-001` (**passes: true**), `prd-phase-01`…`prd-phase-04` (**passes: false**) to `harness/feature_list.json`. Linked PRD from `docs/agent/README.md`. Ran `./harness/scripts/bootstrap.sh` (OK).
+- Verified: Artifact present; JSON valid; bootstrap exit 0.
+- Next focus: **`prd-phase-01`** when starting engine work (OpenSpec **`harness-004`** if ingest/schema/API contracts change); else continue **`harness-002`** / **`harness-003`** per touch surface.
+
+## 2026-04-01 (UTC) — Cursor (PRD Phase 1 implementation)
+
+- Completed: **PRD Phase 1 core engine** — optional correlation fields on fluency events (`run_id`, `workflow_run_id`, `agent_run_id`, `chat_id`); `resolveFluencyExecutionId` + `buildFluencyEventRecord`; `trace_engine` (sort, 15m retry pairs, stage groups, empty tool groups); `POST /api/events` returns `execution_ids`; `GET /api/traces/reconstructed` (ADMIN/ENABLEMENT_LEAD); `/api/ingest` fluency path uses builder; seed uses builder. OpenSpec change `openspec/changes/add-prd-phase1-core-engine/`. Doc `docs/api/traces-reconstructed.md`.
+- Verified: `npm run build --workspace shared` and `npm run test:ci --workspace backend` (full suite + contracts) pass locally.
+- Harness: `prd-phase-01` set **`passes: true`**.
+- Next focus: **`prd-phase-02`** (signal + pattern layer per PRD §14–15) behind governance review; archive OpenSpec change post-review/deploy.
+

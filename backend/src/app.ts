@@ -47,6 +47,7 @@ import {
   EnablementEventRecord,
   MetricRecord,
   insertFluencyEvent,
+  buildFluencyEventRecord,
   insertUnifiedTelemetryEvent,
   insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
@@ -56,6 +57,7 @@ import type {
   DecisionLedgerEvaluationRecord,
   FluencyEventRecord
 } from "./store";
+import { reconstructTracesForQuery } from "./trace_engine";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -3023,10 +3025,7 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
   });
 
   acceptedEvents.forEach((event) => {
-    insertFluencyEvent({
-      ...event,
-      event_id: crypto.randomUUID()
-    });
+    insertFluencyEvent(buildFluencyEventRecord(event, crypto.randomUUID()));
   });
 
   const response = {
@@ -3910,17 +3909,51 @@ app.post(
     }
 
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
-    const eventIds = parsed.data.events.map((event) => {
+    const eventIds: string[] = [];
+    const executionIds: string[] = [];
+    parsed.data.events.forEach((event) => {
       const eventId = crypto.randomUUID();
-      insertFluencyEvent({ ...event, event_id: eventId });
-      return eventId;
+      const record = buildFluencyEventRecord(event, eventId);
+      insertFluencyEvent(record);
+      eventIds.push(eventId);
+      executionIds.push(record.execution_id);
     });
 
     return res.json({
       ingested: eventIds.length,
       event_ids: eventIds,
+      execution_ids: executionIds,
       schema_version: schemaVersion
     });
+  }
+);
+
+const TraceReconstructedQuerySchema = z
+  .object({
+    workflow_id: z.string().min(1).optional(),
+    execution_id: z.string().min(1).optional()
+  })
+  .refine((q) => Boolean(q.workflow_id ?? q.execution_id), {
+    message: "Provide at least one of workflow_id, execution_id"
+  });
+
+app.get(
+  "/api/traces/reconstructed",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const parsed = TraceReconstructedQuerySchema.safeParse({
+      workflow_id: typeof req.query.workflow_id === "string" ? req.query.workflow_id : undefined,
+      execution_id: typeof req.query.execution_id === "string" ? req.query.execution_id : undefined
+    });
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid query",
+        details: parsed.error.flatten()
+      });
+    }
+    const events = Array.from(store.fluencyEvents.values());
+    const traces = reconstructTracesForQuery(events, parsed.data);
+    return res.json({ traces });
   }
 );
 
@@ -4369,9 +4402,14 @@ app.post(
       day.setDate(now.getDate() - dayOffset);
       const timestamp = day.toISOString();
       workflows.forEach((workflowId, index) => {
-        seededEvents.push({
-          event_id: crypto.randomUUID(),
-          event_type: "ai_output_disposition" as const,
+        const push = (payload: FluencyEvent) => {
+          const eventId = crypto.randomUUID();
+          const record = buildFluencyEventRecord(payload, eventId);
+          seededEvents.push(record);
+          insertFluencyEvent(record);
+        };
+        push({
+          event_type: "ai_output_disposition",
           timestamp,
           risk_class: index % 3 === 0 ? "high" : index % 2 === 0 ? "medium" : "low",
           org_unit: "org:executive",
@@ -4382,46 +4420,41 @@ app.post(
           time_to_action_ms: 120000
         });
         if (dayOffset % 6 === 0) {
-          seededEvents.push({
-            event_id: crypto.randomUUID(),
-            event_type: "ai_recovery_loop" as const,
+          push({
+            event_type: "ai_recovery_loop",
             timestamp,
-            risk_class: "medium" as const,
+            risk_class: "medium",
             org_unit: "org:executive",
             workflow_id: workflowId,
-            recovery_type: "re_prompt" as const,
+            recovery_type: "re_prompt",
             cycles: 2,
             resolution_time_ms: 240000
           });
         }
         if (dayOffset % 4 === 0) {
-          seededEvents.push({
-            event_id: crypto.randomUUID(),
-            event_type: "verification_signal" as const,
+          push({
+            event_type: "verification_signal",
             timestamp,
-            risk_class: "medium" as const,
+            risk_class: "medium",
             org_unit: "org:executive",
             workflow_id: workflowId,
-            verification_type: "policy_check" as const,
+            verification_type: "policy_check",
             verification_latency_ms: 90000
           });
         }
         if (dayOffset % 9 === 0) {
-          seededEvents.push({
-            event_id: crypto.randomUUID(),
-            event_type: "ai_abandonment" as const,
+          push({
+            event_type: "ai_abandonment",
             timestamp,
-            risk_class: "high" as const,
+            risk_class: "high",
             org_unit: "org:executive",
             workflow_id: workflowId,
-            abandonment_stage: "reviewed" as const,
-            reason_bucket: "low_trust" as const
+            abandonment_stage: "reviewed",
+            reason_bucket: "low_trust"
           });
         }
       });
     }
-
-    seededEvents.forEach((event) => insertFluencyEvent(event));
 
     const entry = {
       ledger_id: crypto.randomUUID(),

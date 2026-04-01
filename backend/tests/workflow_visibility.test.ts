@@ -5,6 +5,8 @@ import type {
   WorkflowRegistryRecord,
   WorkflowVisibilityPolicyConfigRecord
 } from "../src/store";
+import { buildFluencyEventRecord } from "../src/store";
+import type { FluencyEvent } from "@learnaire/shared";
 
 const now = new Date("2026-02-18T00:00:00.000Z");
 let eventCounter = 0;
@@ -43,19 +45,24 @@ const policy = (
   ...overrides
 });
 
-const event = (overrides: Partial<FluencyEventRecord> = {}): FluencyEventRecord => ({
-  event_id: `evt-auto-${eventCounter += 1}`,
-  event_type: "ai_output_disposition",
-  timestamp: "2026-02-10T00:00:00.000Z",
-  risk_class: "high",
-  org_unit: "org:executive",
-  workflow_id: "workflow-1",
-  disposition: "accepted",
-  edit_distance_bucket: "none",
-  verification_present: false,
-  time_to_action_ms: 1000,
-  ...overrides
-});
+const event = (overrides: Partial<FluencyEventRecord> = {}): FluencyEventRecord => {
+  const eventId = overrides.event_id ?? `evt-auto-${eventCounter += 1}`;
+  const merged: Record<string, unknown> = {
+    event_type: "ai_output_disposition",
+    timestamp: "2026-02-10T00:00:00.000Z",
+    risk_class: "high",
+    org_unit: "org:executive",
+    workflow_id: "workflow-1",
+    disposition: "accepted",
+    edit_distance_bucket: "none",
+    verification_present: false,
+    time_to_action_ms: 1000,
+    ...overrides
+  };
+  delete merged.event_id;
+  delete merged.execution_id;
+  return buildFluencyEventRecord(merged as FluencyEvent, eventId);
+};
 
 const v0Signal = (overrides: Partial<BehavioralSignalRecord> = {}): BehavioralSignalRecord => ({
   org_id: "org-1",

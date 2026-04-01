@@ -58,6 +58,58 @@
         "Mark passes only after backend tests pass (npm run test:ci --workspace backend)"
       ],
       "passes": true
+    },
+    {
+      "id": "prd-doc-001",
+      "category": "product",
+      "description": "PRD v1 behavioral observability canonical in artifacts + phased checklist hooks",
+      "steps": [
+        "Read artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md",
+        "Use prd-phase-01..04 for build sequencing; harness-004 (OpenSpec) before breaking API/schema work"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-phase-01",
+      "category": "functional",
+      "description": "PRD Phase 1 — Core engine: ingestion, normalization, execution_id resolution, trace reconstruction",
+      "steps": [
+        "Ingestion: strict canonical validation, append-only store (align POST /api/events and any parallel ingest paths)",
+        "Normalization: map workflow_run_id / run_id to execution_id; preserve agent_run_id, chat_id lineage",
+        "Trace reconstruction: order events per execution; retry, step, and tool-call grouping"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-phase-02",
+      "category": "functional",
+      "description": "PRD Phase 2 — Signal detection + deterministic pattern classification (PRD §14–§15)",
+      "steps": [
+        "Implement signals: iteration depth, verification, recovery, abandonment, latency, disposition",
+        "Implement mutually exclusive patterns with priority order and workflow-relative thresholds",
+        "Signal registry: declare required inputs per signal (PRD §17)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "prd-phase-03",
+      "category": "functional",
+      "description": "PRD Phase 3 — Governance enforcement: suppression defaults, no individual/rank/trend outputs",
+      "steps": [
+        "Suppress on ambiguity; ALLOWED vs SUPPRESSED with reason",
+        "Enforce baseline rules (PRD §16): no numeric baseline exposure, no cross-workflow comparison"
+      ],
+      "passes": false
+    },
+    {
+      "id": "prd-phase-04",
+      "category": "functional",
+      "description": "PRD Phase 4 — Observability surface: workflow-level aggregated API (GET /api/observability/:org_id)",
+      "steps": [
+        "Expose only workflow-level distributions and allowed interpretations (PRD §7–§8)",
+        "Verify no ranking, trends, or individual exposure at API boundary"
+      ],
+      "passes": false
     }
   ]
 }

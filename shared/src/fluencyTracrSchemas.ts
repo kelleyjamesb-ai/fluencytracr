@@ -12,7 +12,14 @@ export type RiskClass = z.infer<typeof RiskClassSchema>;
 const FluencyEventBaseSchema = z.object({
   timestamp: z.string().min(1),
   risk_class: RiskClassSchema,
-  org_unit: z.string().min(1).optional()
+  org_unit: z.string().min(1).optional(),
+  /** Platform agent/workflow run identifier (canonical when present). */
+  run_id: z.string().min(1).optional(),
+  /** Assistant/workflow run correlation (secondary to run_id). */
+  workflow_run_id: z.string().min(1).optional(),
+  /** Optional lineage; must not contain raw content (opaque IDs only). */
+  agent_run_id: z.string().min(1).optional(),
+  chat_id: z.string().min(1).optional()
 });
 
 export const AiOutputDispositionEventSchema = FluencyEventBaseSchema.extend({

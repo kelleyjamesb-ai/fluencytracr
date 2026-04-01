@@ -8,7 +8,8 @@ import {
   FluencyPattern,
   DecisionLedgerEntry,
   DecisionLedgerEvaluationInput,
-  UnifiedTelemetryEvent
+  UnifiedTelemetryEvent,
+  resolveFluencyExecutionId
 } from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
@@ -220,7 +221,19 @@ export type FunctionRecord = {
 
 export type FluencyEventRecord = FluencyEvent & {
   event_id: string;
+  /** Normalized execution boundary (PRD Phase 1). */
+  execution_id: string;
 };
+
+export const buildFluencyEventRecord = (event: FluencyEvent, eventId: string): FluencyEventRecord => ({
+  ...event,
+  event_id: eventId,
+  execution_id: resolveFluencyExecutionId(event.workflow_id, {
+    run_id: event.run_id,
+    workflow_run_id: event.workflow_run_id,
+    event_id: eventId
+  })
+});
 
 export type UnifiedTelemetryEventRecord = UnifiedTelemetryEvent;
 
