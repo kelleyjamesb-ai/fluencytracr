@@ -132,6 +132,18 @@
         "Tests: `backend/tests/execution_lifecycle.test.ts`, contracts assertions"
       ],
       "passes": true
+    },
+    {
+      "id": "prd-boundary-v1",
+      "category": "functional",
+      "description": "FluencyTracr v1 ingest boundary — actor mapping, execution identity, Zod DTOs, mapper, example wiring",
+      "steps": [
+        "`backend/src/boundary/actor-type.adapter.ts`, `execution-id.adapter.ts`, `boundary-schemas.ts`, `ingest-event.mapper.ts`",
+        "`backend/src/boundary/app-integration.example.ts` documents parse → map → validateCanonicalEvent → persist → pipeline",
+        "`v1-pipeline-types` uses `mapActorType` for optional inbound actor remapping",
+        "Tests: `backend/tests/boundary/*.test.ts`; verify `npm run test:ci --workspace backend`"
+      ],
+      "passes": true
     }
   ]
 }

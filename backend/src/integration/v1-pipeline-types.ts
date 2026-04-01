@@ -5,7 +5,7 @@
 
 import type { CanonicalEvent, ValidationResult } from "../domain/canonical-event.schema";
 import { validateCanonicalEvent } from "../domain/canonical-event.schema";
-import { mapUpstreamActorToCanonical } from "../services/ingest-actor-map";
+import { mapActorType } from "../boundary/actor-type.adapter";
 
 export type IngestNormalizeFailureReason =
   | "unknown_actor_label"
@@ -42,18 +42,30 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+function pickInboundActorLabel(raw: Record<string, unknown>): string | null {
+  const at = raw.actor_type;
+  const ac = raw.actor;
+  if (typeof at === "string" && at.trim().length > 0) {
+    return at;
+  }
+  if (typeof ac === "string" && ac.trim().length > 0) {
+    return ac;
+  }
+  return null;
+}
+
 /**
- * Maps upstream `actor_type` labels at the boundary only; does not validate the full event.
+ * Maps upstream `actor` / `actor_type` labels at the boundary only; does not validate the full event.
  */
 export function normalizeInboundActorType(raw: unknown): IngestNormalizeResult {
   if (!isPlainObject(raw)) {
     return { ok: false, reason: "invalid_payload" };
   }
-  const at = raw.actor_type;
-  if (typeof at !== "string") {
-    return { ok: false, reason: "invalid_payload", detail: "actor_type_must_be_string" };
+  const label = pickInboundActorLabel(raw);
+  if (label === null) {
+    return { ok: false, reason: "invalid_payload", detail: "actor_or_actor_type_required" };
   }
-  const mapped = mapUpstreamActorToCanonical(at);
+  const mapped = mapActorType(label);
   if (!mapped.ok) {
     return { ok: false, reason: "unknown_actor_label" };
   }

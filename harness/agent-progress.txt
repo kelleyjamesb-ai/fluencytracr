@@ -67,3 +67,10 @@
 - Harness: `prd-phase-04` **`passes: true`**.
 - Next focus: PRD §16 workflow-relative thresholds (no trend leakage), persistence beyond in-memory store, or product hardening.
 
+## 2026-04-01 (UTC) — Cursor (v1 boundary adaptation)
+
+- Completed: **Ingest boundary layer** — `backend/src/boundary/*` (actor-type adapter with explicit tables, execution-id resolver with opt-in composite `workflow_id::chat|agent`, Zod `upstreamIngestEventSchema` + `parseUpstreamIngestEvent`, `mapUpstreamEventToCanonical` with `upstream_lineage` metadata, `app-integration.example.ts`). `v1-pipeline-types` delegates actor mapping to `mapActorType` and supports `actor` / `actor_type` precedence. Plan: `artifacts/plan_boundary_adaptation_v1.md`.
+- Verified: `npm run test:ci --workspace backend` (75 suites, 429 tests).
+- Harness: **`prd-boundary-v1`** marked **`passes: true`**.
+- Next focus: Wire `exampleProcessIngestBody` (or equivalent) into production `POST /api/events` behind flag if desired; keep canonical validation strictly downstream of boundary.
+
