@@ -16,6 +16,7 @@ import {
   ConnectorEventImportSchema,
   FluencyEventIngestSchema,
   FluencyEventSchema,
+  UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
   DecisionLedgerCreateSchema,
@@ -30,7 +31,7 @@ import {
   BoardSnapshotVisibilityLabel,
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent, UnifiedTelemetryEvent } from "@learnaire/shared";
 import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
@@ -46,6 +47,7 @@ import {
   EnablementEventRecord,
   MetricRecord,
   insertFluencyEvent,
+  insertUnifiedTelemetryEvent,
   insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
 } from "./store";
@@ -508,6 +510,14 @@ const getAcceptedSchemaVersions = () => {
     return configured;
   }
   return ["0.1"];
+};
+
+const getAcceptedUnifiedTelemetrySchemaVersions = () => {
+  const configured = parseCsvEnvVersions(process.env.UNIFIED_TELEMETRY_SCHEMA_ACCEPTED_VERSIONS);
+  if (configured.length > 0) {
+    return configured;
+  }
+  return ["UT_2026_04"];
 };
 
 const formatIssuePath = (pathSegments: Array<string | number>): string => {
@@ -3028,6 +3038,127 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
 
   store.ingestReceipts.set(trimmedKey, {
     idempotencyKey: trimmedKey,
+    payloadHash: normalizedHash,
+    response,
+    createdAt: nowIso()
+  });
+
+  return res.status(202).json(response);
+});
+
+app.post("/api/ingest/unified-telemetry", ingestLimiter, (req, res) => {
+  if (process.env.FLUENCY_UNIFIED_TELEMETRY_INGEST !== "true") {
+    return res.status(403).json({
+      error: "Unified telemetry ingest is disabled",
+      reason_code: "feature_disabled",
+      field_path: "configuration.FLUENCY_UNIFIED_TELEMETRY_INGEST"
+    });
+  }
+
+  const schemaVersion = req.header("X-FluencyTracr-Schema-Version");
+  const acceptedUtVersions = getAcceptedUnifiedTelemetrySchemaVersions();
+  if (!schemaVersion || !acceptedUtVersions.includes(schemaVersion)) {
+    return res.status(400).json({
+      error: "Invalid schema version",
+      reason_code: "invalid_schema_version",
+      expected: acceptedUtVersions,
+      received: schemaVersion ?? null
+    });
+  }
+
+  const idempotencyKey = req.header("Idempotency-Key");
+  if (!idempotencyKey || idempotencyKey.trim().length === 0) {
+    return res.status(400).json({
+      error: "Missing required header",
+      reason_code: "invalid_payload",
+      field_path: "headers.Idempotency-Key"
+    });
+  }
+
+  const forbiddenField = findForbiddenField(req.body);
+  if (forbiddenField) {
+    return res.status(400).json({
+      error: "Forbidden field",
+      reason_code: "forbidden_field",
+      field_path: forbiddenField.path
+    });
+  }
+
+  const events = Array.isArray(req.body?.events) ? req.body.events : null;
+  if (!events || events.length === 0) {
+    return res.status(400).json({
+      error: "Invalid payload",
+      reason_code: "invalid_payload",
+      field_path: "events"
+    });
+  }
+
+  const seenEventIds = new Set<string>();
+  for (let index = 0; index < events.length; index += 1) {
+    const raw = events[index] as { event_id?: unknown };
+    if (typeof raw?.event_id === "string") {
+      if (seenEventIds.has(raw.event_id)) {
+        return res.status(400).json({
+          error: "Duplicate event_id in batch",
+          reason_code: "invalid_payload",
+          field_path: `events[${index}].event_id`
+        });
+      }
+      seenEventIds.add(raw.event_id);
+    }
+  }
+
+  pruneIngestReceipts();
+
+  const trimmedKey = idempotencyKey.trim();
+  const receiptKey = `unified-telemetry:${trimmedKey}`;
+  const normalizedHash = payloadHash(req.body);
+  const existingReceipt = store.ingestReceipts.get(receiptKey);
+  if (existingReceipt) {
+    if (existingReceipt.payloadHash !== normalizedHash) {
+      return res.status(409).json({
+        error: "Idempotency conflict",
+        reason_code: "idempotency_conflict",
+        field_path: "headers.Idempotency-Key"
+      });
+    }
+    return res.status(202).json(existingReceipt.response);
+  }
+
+  const acceptedEvents: UnifiedTelemetryEvent[] = [];
+  const rejections: Array<{
+    index: number;
+    reason_code: string;
+    field_path: string;
+  }> = [];
+
+  events.forEach((event: unknown, index: number) => {
+    const parsed = UnifiedTelemetryEventSchema.safeParse(event);
+    if (parsed.success) {
+      acceptedEvents.push(parsed.data);
+      return;
+    }
+    const firstIssue = parsed.error.issues[0];
+    rejections.push({
+      index,
+      reason_code: "invalid_payload",
+      field_path: firstIssue ? formatIssuePath(["events", index, ...firstIssue.path]) : `events[${index}]`
+    });
+  });
+
+  acceptedEvents.forEach((event) => {
+    insertUnifiedTelemetryEvent(event);
+  });
+
+  const response = {
+    receipt_id: `rcpt_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`,
+    accepted_count: acceptedEvents.length,
+    rejected_count: rejections.length,
+    rejections
+  };
+
+  store.ingestReceipts.set(receiptKey, {
+    idempotencyKey: receiptKey,
     payloadHash: normalizedHash,
     response,
     createdAt: nowIso()

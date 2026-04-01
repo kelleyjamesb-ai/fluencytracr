@@ -19,3 +19,9 @@
 - Verified: Schema structure reviewed; JSON Schema `allOf` + `additionalProperties` conflict removed from envelope core.
 - Next focus: `harness-006` for zod/backend/CI, or `harness-004` if ingest changes need OpenSpec first.
 
+## 2026-03-31 (UTC) — Cursor (OpenSpec + UT ingest)
+
+- Completed: OpenSpec `openspec/changes/add-unified-telemetry-ingest/`; `shared/src/unifiedTelemetrySchemas.ts`; `POST /api/ingest/unified-telemetry` behind `FLUENCY_UNIFIED_TELEMETRY_INGEST`; `store.unifiedTelemetryEvents`; `backend/tests/unified_telemetry_ingest.test.ts`; `docs/api/ingest-unified-telemetry.md`.
+- Verified: Pending local `npm run test:ci --workspace backend` (sandbox without npm).
+- Next focus: Run backend tests; set `harness-006` passes true after green CI; archive OpenSpec change post-deploy.
+

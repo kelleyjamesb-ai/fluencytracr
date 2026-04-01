@@ -7,7 +7,8 @@ import {
   FluencyEvent,
   FluencyPattern,
   DecisionLedgerEntry,
-  DecisionLedgerEvaluationInput
+  DecisionLedgerEvaluationInput,
+  UnifiedTelemetryEvent
 } from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
@@ -221,6 +222,8 @@ export type FluencyEventRecord = FluencyEvent & {
   event_id: string;
 };
 
+export type UnifiedTelemetryEventRecord = UnifiedTelemetryEvent;
+
 export type FluencyPatternRecord = FluencyPattern;
 
 export type DecisionLedgerEntryRecord = DecisionLedgerEntry;
@@ -378,6 +381,7 @@ class MemoryStore {
   functions = new Map<string, FunctionRecord>();
   behavioralSignals = new Map<string, BehavioralSignalRecord>();
   fluencyEvents = new Map<string, FluencyEventRecord>();
+  unifiedTelemetryEvents = new Map<string, UnifiedTelemetryEventRecord>();
   fluencyPatterns = new Map<string, FluencyPatternRecord>();
   patternInferenceRecords: PatternInferenceRecord[] = [];
   inferenceAuditLogs: InferenceAuditRecord[] = [];
@@ -416,6 +420,7 @@ class MemoryStore {
     this.functions.clear();
     this.behavioralSignals.clear();
     this.fluencyEvents.clear();
+    this.unifiedTelemetryEvents.clear();
     this.fluencyPatterns.clear();
     this.patternInferenceRecords = [];
     this.inferenceAuditLogs = [];
@@ -450,6 +455,10 @@ export const upsertGroup = (orgId: string, group: GroupUpsert): { inserted: bool
 
 export const insertFluencyEvent = (event: FluencyEventRecord) => {
   store.fluencyEvents.set(event.event_id, event);
+};
+
+export const insertUnifiedTelemetryEvent = (event: UnifiedTelemetryEventRecord) => {
+  store.unifiedTelemetryEvents.set(event.event_id, event);
 };
 
 export const upsertFluencyPattern = (key: string, pattern: FluencyPatternRecord) => {

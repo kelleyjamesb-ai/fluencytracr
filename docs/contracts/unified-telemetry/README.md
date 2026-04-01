@@ -224,8 +224,13 @@ Emitters MUST send `schema_version`. Consumers MUST reject unknown major version
 
 Machine-readable definitions: `schemas/unified_telemetry/` (`ut_event_union.schema.json` is the validation entrypoint).
 
-## Next steps (implementation)
+## Implementation status
 
-1. OpenSpec change if `/api/ingest` or EvidenceBundle derivation changes.  
-2. Add zod mirrors in `shared/` and backend validation.  
-3. Add CI: validate examples in this README against the union schema (optional script).
+- **Zod mirror:** `shared/src/unifiedTelemetrySchemas.ts` (exported from `@learnaire/shared`).
+- **Ingest route:** `POST /api/ingest/unified-telemetry` (see [`docs/api/ingest-unified-telemetry.md`](../../api/ingest-unified-telemetry.md)), enabled with `FLUENCY_UNIFIED_TELEMETRY_INGEST=true`.
+- **OpenSpec change:** `openspec/changes/add-unified-telemetry-ingest/` (proposal, tasks, ingestion spec delta).
+
+## Next steps
+
+1. Derive EvidenceBundle / fluency rollups from `store.unifiedTelemetryEvents` (separate change).  
+2. Optional CI: validate sample payloads with `ajv` against `ut_event_union.schema.json`.
