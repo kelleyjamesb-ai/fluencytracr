@@ -25,3 +25,9 @@
 - Verified: Pending local `npm run test:ci --workspace backend` (sandbox without npm).
 - Next focus: Run backend tests; set `harness-006` passes true after green CI; archive OpenSpec change post-deploy.
 
+## 2026-03-31 (UTC) — James (local)
+
+- Verified: `npm run test:ci --workspace backend` — 49 suites, 252 tests passed (includes unified telemetry ingest).
+- Harness: set `harness-006` `passes` to true.
+- Next focus: `harness-003` if touching frontend/shared; archive OpenSpec `add-unified-telemetry-ingest` after deploy; optional `harness-002` (Python verify).
+

@@ -57,7 +57,7 @@
         "Mirror schema in shared/ and reject invalid payloads at API boundary (done: /api/ingest/unified-telemetry)",
         "Mark passes only after backend tests pass (npm run test:ci --workspace backend)"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
