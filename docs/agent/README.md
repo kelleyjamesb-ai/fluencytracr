@@ -2,10 +2,15 @@
 
 **Local workspace files are the source of truth** until you commit and push. Prefer reading paths here over assuming GitHub’s default branch matches disk.
 
+## Start every session
+
+**[`SESSION_START.md`](SESSION_START.md)** — mandatory protocol: workspace check, git log, **queue vs harness** tracks, where to **write memory** (`PROGRESS.md`, `agent-progress.txt`, `feature_list.json`, commits), and verification.
+
 ## Where durable knowledge lives
 
 | Need | Location |
 | --- | --- |
+| **Every session protocol (read first)** | [`SESSION_START.md`](SESSION_START.md) |
 | Multi-session coding loop, checklist, handoff log | [`harness/README.md`](../../harness/README.md), [`harness/feature_list.json`](../../harness/feature_list.json), [`harness/agent-progress.txt`](../../harness/agent-progress.txt) |
 | Spec-driven proposals and capabilities | [`openspec/AGENTS.md`](../../openspec/AGENTS.md), [`openspec/specs/`](../../openspec/specs/), [`openspec/changes/`](../../openspec/changes/) |
 | Product architecture and APIs | [`docs/ARCHITECTURE_MAP.md`](../ARCHITECTURE_MAP.md), [`README.md`](../../README.md) canonical doc list |

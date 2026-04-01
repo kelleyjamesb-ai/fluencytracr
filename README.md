@@ -1,6 +1,10 @@
 # LearnAIR_Engable_Tool
 This is a way to capture organizational signals on AI Fluency using passive data.
 
+## AI assistants — start every session here
+
+Long-form or multi-session coding **must** begin with **[`docs/agent/SESSION_START.md`](docs/agent/SESSION_START.md)** so work stays bounded, verified, and grounded in repo memory (queue + harness + git), not chat context alone. That doc aligns with [Anthropic’s guidance on long-running agent harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) as implemented under [`harness/`](harness/README.md).
+
 ## Scope guardrails
 This project intentionally rejects surveillance and scope creep. Please read and follow
 the guardrails in [SCOPE_GUARDRAILS.md](SCOPE_GUARDRAILS.md) before proposing changes.
@@ -21,6 +25,7 @@ Suppression reason codes (one-hot, immutable):
 - `HIGH_AMBIGUITY`
 
 ## Canonical docs
+- **Every session (mandatory for agents):** [docs/agent/SESSION_START.md](docs/agent/SESSION_START.md)
 - AI / agent navigation (harness, evaluation, task contracts): [docs/agent/README.md](docs/agent/README.md)
 - Partner ingestion facade: [docs/api/ingest.md](docs/api/ingest.md)
 - Unified telemetry ingest (UT_2026_04, feature-flagged): [docs/api/ingest-unified-telemetry.md](docs/api/ingest-unified-telemetry.md)

@@ -2,6 +2,8 @@
 
 You are continuing **long-running work**. Treat each session as a shift handoff: the previous engineer left notes and git history; you have **no memory** of their chat.
 
+**Canonical protocol (read first):** [`docs/agent/SESSION_START.md`](../../docs/agent/SESSION_START.md) — queue + harness + memory + roles.
+
 ## Startup checklist
 
 1. Run `pwd` (or equivalent) and confirm you are at the **repository root**.

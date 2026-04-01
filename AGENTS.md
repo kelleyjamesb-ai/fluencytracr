@@ -1,3 +1,7 @@
+## Every coding session (mandatory)
+
+**Read [`docs/agent/SESSION_START.md`](docs/agent/SESSION_START.md) first** — how to start every time, where memory lives (queue, harness, git), and how queue + Anthropic-style harness fit together. Then continue with OpenSpec, queue, or harness sections below as applicable.
+
 <!-- OPENSPEC:START -->
 # OpenSpec Instructions
 

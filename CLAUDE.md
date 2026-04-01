@@ -1,3 +1,7 @@
+## Every coding session (mandatory)
+
+**Read [`docs/agent/SESSION_START.md`](docs/agent/SESSION_START.md) first** — start protocol, memory, and roles for long-running work (queue + harness).
+
 <!-- OPENSPEC:START -->
 # OpenSpec Instructions
 
@@ -19,7 +23,9 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 # 🤖 Claude Code Entry Point
 
-**START HERE (every session):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`.
+**Canonical every-session protocol:** [`docs/agent/SESSION_START.md`](docs/agent/SESSION_START.md).
+
+**Queue track (when executing the backlog):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`.
 
 **Then read and follow:** `.antigravity/rules.md`
 

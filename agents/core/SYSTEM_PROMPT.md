@@ -1,5 +1,7 @@
 # Agent system prompt (repository governance)
 
+**Full every-session protocol:** [`docs/agent/SESSION_START.md`](../../docs/agent/SESSION_START.md) (memory, harness + queue, verification).
+
 ## Startup order (mandatory)
 
 1. `agents/core/SYSTEM_PROMPT.md` (this file)

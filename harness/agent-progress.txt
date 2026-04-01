@@ -81,3 +81,8 @@
 - Harness: **`harness-001`–`harness-004`** set **`passes: true`** in `feature_list.json`.
 - Next focus: Optional CI speed (cache pip/npm); wire boundary example into production routes if product asks.
 
+## 2026-04-01 (UTC) — Cursor (session protocol doc)
+
+- Completed: Canonical **every-session** doc [`docs/agent/SESSION_START.md`](../docs/agent/SESSION_START.md) (Anthropic-style harness + `.project/` queue, memory table, roles, verification). Linked from root `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/agent/README.md`, `harness/README.md`, `harness/prompts/*`, `agents/core/SYSTEM_PROMPT.md`, `.cursorrules`.
+- Next focus: Human adds/curates `WORK_QUEUE.json` items; agents follow `SESSION_START` → one bounded unit per session.
+

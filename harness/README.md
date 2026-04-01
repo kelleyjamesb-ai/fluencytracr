@@ -1,6 +1,10 @@
 # Portable long-running agent harness (Codex, Claude, Cursor, etc.)
 
-This folder is the **single source of truth** for multi-session work. It follows patterns from [Anthropic’s guidance on long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents): external memory, incremental progress, and explicit completion criteria—without tying the repo to one vendor SDK.
+**Before this folder:** every coding session should begin with **[`docs/agent/SESSION_START.md`](../docs/agent/SESSION_START.md)** — it unifies **queue** (`.project/`) and **harness** (this folder), memory locations, and verification.
+
+This folder is the **single source of truth** for multi-session **checklist + handoff + mechanical verify** patterns. It follows [Anthropic’s guidance on long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents): external memory, incremental progress, and explicit completion criteria—without tying the repo to one vendor SDK.
+
+**Relation to `.project/`:** when both are in use, queue state and session narrative live in **`PROGRESS.md` / `WORK_QUEUE.json`** (see [`.project/GOVERNANCE.md`](../.project/GOVERNANCE.md)); this harness holds **`feature_list.json`** verification flags and optional **`agent-progress.txt`** mirroring — see `SESSION_START.md` for the full split.
 
 ## Files
 
