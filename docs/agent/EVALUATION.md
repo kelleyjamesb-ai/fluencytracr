@@ -12,7 +12,7 @@ pip install -r requirements.txt   # or your equivalent venv
 ./harness/scripts/verify.sh
 ```
 
-`verify.sh` runs the same **Python unittest** discovery as [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (`python -m unittest discover -s tests -p "test_*.py"`). Some tests may require optional deps (e.g. `pytest` for specific modules); fix imports or install dev extras as needed until the suite matches your environment.
+`verify.sh` installs `requirements.txt` and runs the same **pytest** suite as [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (`python -m pytest tests/ -q`). Pytest collects both `unittest.TestCase` subclasses and pytest-style tests.
 
 ## Governance gate (Python)
 

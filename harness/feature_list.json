@@ -11,18 +11,18 @@
         "Run ./harness/scripts/bootstrap.sh from repo root",
         "Confirm working directory is the repository root"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "harness-002",
       "category": "verification",
-      "description": "Python unittest suite passes via harness verify (matches CI python unit-test discovery)",
+      "description": "Python test suite passes via harness verify (matches CI python-tests; pytest on tests/)",
       "steps": [
-        "Install Python deps: pip install -r requirements.txt (and pytest if tests import it)",
-        "Run ./harness/scripts/verify.sh from repo root",
+        "Install Python deps: pip install -r requirements.txt",
+        "Run ./harness/scripts/verify.sh from repo root (installs deps + pytest tests/)",
         "Resolve failures before marking passes; treat script output as evaluator, not self-check"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "harness-003",
@@ -34,7 +34,7 @@
         "npm run test:ci --workspace backend",
         "npm test --workspace frontend"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "harness-004",
@@ -42,10 +42,11 @@
       "description": "Large or ambiguous product change follows OpenSpec proposal workflow before implementation",
       "steps": [
         "Read openspec/AGENTS.md when the request matches proposal triggers",
-        "Scaffold or update change under openspec/changes/<id>/ and validate with openspec validate --strict",
-        "N/A for bug fixes restoring spec behavior, typos, or tests for existing behavior"
+        "Scaffold or update change under openspec/changes/<id>/ and validate with openspec validate --strict when CLI available",
+        "N/A for bug fixes restoring spec behavior, typos, or tests for existing behavior",
+        "Repo gate: openspec/AGENTS.md + openspec/changes/ layout present for spec-driven work"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "harness-006",

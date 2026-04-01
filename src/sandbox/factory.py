@@ -53,7 +53,8 @@ def get_sandbox() -> CodeSandbox:
                     "SANDBOX_ALLOW_LOCAL=false, or SANDBOX_TYPE=docker) but Docker "
                     f"is not available: {exc}. Install the Docker SDK, start the "
                     "daemon, or set SANDBOX_TYPE=local only in trusted dev."
-                ) from exc            return LocalSandbox()
+                ) from exc
+            return LocalSandbox()
 
     if mode == "e2b":
         try:
@@ -65,6 +66,7 @@ def get_sandbox() -> CodeSandbox:
                 raise RuntimeError(
                     "SANDBOX_TYPE=e2b was requested but the E2B sandbox could not "
                     f"be loaded: {exc}"
-                ) from exc            return LocalSandbox()
+                ) from exc
+            return LocalSandbox()
 
     return LocalSandbox()

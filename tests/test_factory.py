@@ -7,7 +7,8 @@ def test_factory_default_local(monkeypatch):
     monkeypatch.delenv("SANDBOX_TYPE", raising=False)
     monkeypatch.delenv("ENVIRONMENT", raising=False)
     monkeypatch.delenv("APP_ENV", raising=False)
-    monkeypatch.delenv("SANDBOX_ALLOW_LOCAL", raising=False)    s = get_sandbox()
+    monkeypatch.delenv("SANDBOX_ALLOW_LOCAL", raising=False)
+    s = get_sandbox()
     assert isinstance(s, LocalSandbox)
 
 

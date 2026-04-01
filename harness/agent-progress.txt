@@ -74,3 +74,10 @@
 - Harness: **`prd-boundary-v1`** marked **`passes: true`**.
 - Next focus: Wire `exampleProcessIngestBody` (or equivalent) into production `POST /api/events` behind flag if desired; keep canonical validation strictly downstream of boundary.
 
+## 2026-04-01 (UTC) — Cursor (harness green)
+
+- Completed: **Full harness verification** — fixed merge-corrupted Python (`src/memory.py` import/save_memory, `src/sandbox/factory.py` except branches, `tests/test_factory.py`). `harness/scripts/verify.sh` now runs `pip install -r requirements.txt` + `python3 -m pytest tests/ -q` (mixed unittest + pytest modules). `.github/workflows/ci.yml` python-tests aligned. `docs/agent/EVALUATION.md` updated.
+- Verified: `./harness/scripts/verify.sh` (138 passed, 3 skipped); `python3 scripts/ci_v1_governance_gates.py`; `npm run build --workspace shared`; `npm run test:ci --workspace backend` (429 tests); `npm test --workspace frontend` (13 tests).
+- Harness: **`harness-001`–`harness-004`** set **`passes: true`** in `feature_list.json`.
+- Next focus: Optional CI speed (cache pip/npm); wire boundary example into production routes if product asks.
+
