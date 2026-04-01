@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FluencyTracr Product Intent Concept</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f3eb;
+      --surface: #ffffff;
+      --surface-2: #f0efff;
+      --ink: #000000;
+      --ink-soft: #1f1f1f;
+      --line: #dfddd6;
+      --primary: #343ced;
+      --primary-2: #555cf0;
+      --accent: #d8fd49;
+      --good: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --radius: 14px;
+      --shadow: 0 8px 28px rgba(21, 37, 63, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(1000px 500px at 88% -5%, #ecebff 0%, var(--bg) 65%);
+      color: var(--ink);
+      font-family: "DM Sans", "Fira Sans", system-ui, sans-serif;
+    }
+    .wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .badge {
+      display: inline-flex;
+      border: 1px solid #cfcdf7;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #20255f;
+      background: #f0efff;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 36px;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+    }
+    .sub {
+      color: var(--ink-soft);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 62ch;
+      margin: 0 0 14px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      min-height: 44px;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      padding: 0 14px;
+      font-family: "DM Sans", "Fira Sans", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+    button:focus-visible {
+      outline: 3px solid rgba(52, 60, 237, 0.35);
+      outline-offset: 2px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(52, 60, 237, 0.24);
+    }
+    .btn-secondary {
+      background: #fff;
+      color: #171717;
+      border-color: #000;
+    }
+    .btn-warn {
+      background: #f6f3eb;
+      color: #151515;
+      border-color: #000;
+    }
+    button:hover { transform: translateY(-1px); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+    .kpi .label {
+      color: var(--ink-soft);
+      font-size: 12px;
+      margin: 0 0 4px;
+    }
+    .kpi .value {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .mono {
+      font-family: "Fira Code", monospace;
+      font-size: 12px;
+      color: #1e2268;
+    }
+    .state-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+    .state-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #fff;
+    }
+    .tag {
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 3px 8px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .tag-good { color: #111; background: #f5ffd4; border-color: #d8fd49; }
+    .tag-warn { color: #8a5a07; background: #fff8eb; border-color: #f7dfaf; }
+    .tag-danger { color: #8c1930; background: #fff1f4; border-color: #ffc5d1; }
+    .timeline {
+      margin-top: 12px;
+      border-left: 2px solid #cfcdf7;
+      padding-left: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .event {
+      position: relative;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .event::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      position: absolute;
+      left: -19px;
+      top: 14px;
+      border: 2px solid #000;
+    }
+    .foot {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .pulse {
+      height: 9px;
+      border-radius: 999px;
+      margin-top: 12px;
+      background: linear-gradient(90deg, #343ced 0%, #555cf0 48%, #d8fd49 100%);
+    }
+    @media (max-width: 960px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: 1fr; }
+      h1 { font-size: 30px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <article class="card">
+        <div class="badge">Product Intent Locked</div>
+        <h1>Fluency signals, not surveillance.</h1>
+        <p class="sub">
+          This concept shows how FluencyTracr can surface organizational posture while preserving governance rules.
+          Suppressed states remain explicit, confidence is directional, and role-safe actions are prioritized.
+        </p>
+        <div class="actions">
+          <button class="btn-primary">View Org Signal Board</button>
+          <button class="btn-secondary">Open Governance Timeline</button>
+          <button class="btn-warn">Admin: Request Mode Change</button>
+        </div>
+        <div class="pulse" aria-hidden="true"></div>
+      </article>
+      <aside class="card" style="background: var(--surface-2);">
+        <p class="mono">Design stance</p>
+        <ul class="state-list">
+          <li class="state-item"><span>No user-level drilldowns</span><span class="tag tag-good">ENFORCED</span></li>
+          <li class="state-item"><span>Ambiguity defaults to suppress</span><span class="tag tag-good">ENFORCED</span></li>
+          <li class="state-item"><span>Role-gated admin actions</span><span class="tag tag-warn">REVIEWED</span></li>
+          <li class="state-item"><span>Raw content exposure risk</span><span class="tag tag-danger">BLOCKED</span></li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <p class="mono">Org Health Snapshot</p>
+        <div class="kpi-row">
+          <div class="kpi">
+            <p class="label">Signal Confidence</p>
+            <p class="value">74%</p>
+          </div>
+          <div class="kpi">
+            <p class="label">Suppression Rate</p>
+            <p class="value">19%</p>
+          </div>
+          <div class="kpi">
+            <p class="label">Governance Posture</p>
+            <p class="value">Shadow</p>
+          </div>
+        </div>
+        <div class="timeline">
+          <div class="event">
+            <strong>Pattern surfaced (org scope)</strong>
+            <div class="mono">Directional: delegation-with-review increased over last 60d</div>
+          </div>
+          <div class="event">
+            <strong>Suppression applied</strong>
+            <div class="mono">Reason: insufficient volume at team slice, rolled up safely</div>
+          </div>
+          <div class="event">
+            <strong>Mode update requested</strong>
+            <div class="mono">Pending admin confirmation and policy evidence check</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <p class="mono">Role-Aware Actions</p>
+        <ul class="state-list">
+          <li class="state-item">
+            <span>EXEC_VIEWER can read signal summaries</span>
+            <span class="tag tag-good">ALLOW</span>
+          </li>
+          <li class="state-item">
+            <span>ENABLEMENT_LEAD can inspect adoption trend</span>
+            <span class="tag tag-good">ALLOW</span>
+          </li>
+          <li class="state-item">
+            <span>EXEC_VIEWER toggles compliance mode</span>
+            <span class="tag tag-danger">DENY</span>
+          </li>
+          <li class="state-item">
+            <span>ADMIN exports governed event log</span>
+            <span class="tag tag-warn">CONFIRM</span>
+          </li>
+        </ul>
+        <div class="foot">
+          Intent-aligned UI rules: directional language, auditable actions, safe defaults, and visible suppression semantics.
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

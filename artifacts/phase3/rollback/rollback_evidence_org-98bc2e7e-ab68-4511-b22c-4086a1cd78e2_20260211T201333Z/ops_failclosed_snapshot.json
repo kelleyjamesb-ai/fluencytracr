@@ -1,0 +1,23 @@
+{
+  "total": 1,
+  "by_route": [
+    {
+      "route": "/orgs/:orgId/compliance/status",
+      "count": 1
+    }
+  ],
+  "by_reason": [
+    {
+      "reason": "hydrate_compliance_domain_failed",
+      "count": 1
+    }
+  ],
+  "recent": [
+    {
+      "route": "/orgs/:orgId/compliance/status",
+      "orgId": "org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2",
+      "reason": "hydrate_compliance_domain_failed",
+      "timestamp": "2026-02-11T20:07:57.894Z"
+    }
+  ]
+}

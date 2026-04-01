@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@learnaire/shared": ["../shared/dist"],
+      "@learnaire/shared/*": ["../shared/dist/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["tests", "node_modules", "dist"]
+}

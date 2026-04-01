@@ -1,0 +1,42 @@
+{
+  "EnablementEvent": [
+    "event_type",
+    "occurred_at",
+    "org_id",
+    "team_id",
+    "role_id"
+  ],
+  "SignalEvent": [
+    "source",
+    "occurred_at",
+    "org_id",
+    "team_id",
+    "role_id",
+    "signal_type",
+    "metadata",
+    "is_shadow_ai"
+  ],
+  "ToolRecord": [
+    "org_id",
+    "team_id",
+    "tool_class",
+    "tool_name",
+    "recorded_at"
+  ],
+  "UsageShapeRecord": [
+    "org_id",
+    "team_id",
+    "role_id",
+    "band",
+    "confirmed_by",
+    "recorded_at"
+  ],
+  "non_collectable_fields": [
+    "file_names",
+    "keystrokes",
+    "message_text",
+    "output_content",
+    "prompt_content",
+    "raw logs"
+  ]
+}

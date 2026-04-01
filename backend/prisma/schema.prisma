@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RiskClass {
+  low
+  medium
+  high
+}
+
+enum VisibilityState {
+  VISIBLE
+  NOT_ENOUGH_DATA_YET
+  NOT_SHOWN_SAFETY
+}
+
+enum DominantPattern {
+  CALIBRATED_FLUENCY
+  BLIND_EFFICIENCY
+  RECOVERY_MATURITY
+  FRICTION_LOOP
+  UNDERTRUST_AVOIDANCE
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  teams     Team[]
+  policyDocuments               PolicyDocument[]
+  policyMappings                PolicyMapping[]
+  canonicalControlStateHistory  CanonicalControlStateHistory[]
+  complianceEvents              ComplianceEvent[]
+  complianceDecisions           ComplianceDecision[]
+  workflowRegistryEntries       WorkflowRegistryEntry[]
+  workflowRegistryAuditEvents   WorkflowRegistryAuditEvent[]
+  workflowVisibilityPolicies    WorkflowVisibilityPolicyConfig[]
+  workflowRegistryVersions      WorkflowRegistryVersion[]
+  workflowRegistryCurrents      WorkflowRegistryCurrent[]
+  controlConfigVersions         ControlConfigVersion[]
+  baselineResetEvents           BaselineResetEvent[]
+}
+
+model Team {
+  id             String        @id @default(uuid())
+  name           String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt      DateTime      @default(now())
+  fluencyScores  FluencyScore[]
+}
+
+model FluencyScore {
+  id             String   @id @default(uuid())
+  organizationId String
+  teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id])
+  day            DateTime
+  score          Float
+  coverage       Float
+  depth          Float
+  judgment       Float
+  velocity       Float
+  dataComplete   Boolean
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, day])
+}
+
+model AuditEvent {
+  id        String   @id @default(uuid())
+  orgId     String
+  seq       Int      @default(0)
+  actorSub  String?
+  actorRole String?
+  eventType String
+  metadata  Json
+  prevHash  String?
+  hash      String?
+  createdAt DateTime @default(now())
+}
+
+model PolicyDocument {
+  id          String   @id
+  orgId       String
+  fileName    String
+  contentType String
+  rawText     String
+  sourceFormat String
+  clauseCount Int
+  createdAt   DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  mappings     PolicyMapping[]
+
+  @@index([orgId, createdAt])
+}
+
+model PolicyMapping {
+  id               String   @id
+  policyId         String
+  orgId            String
+  controlsJson     Json
+  unresolvedJson   Json
+  generatedAt      DateTime
+
+  organization     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  policyDocument   PolicyDocument @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  decisions        ComplianceDecision[]
+
+  @@index([orgId, policyId, generatedAt])
+}
+
+model CanonicalControlStateHistory {
+  id          String   @id
+  orgId       String
+  controlName String
+  status      String
+  source      String
+  bucketStart String
+  bucketEnd   String
+  updatedAt   DateTime
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, controlName, updatedAt])
+}
+
+model ComplianceEvent {
+  id              String   @id
+  orgId           String
+  eventType       String
+  policyId        String?
+  controlName     String?
+  status          String?
+  createdAt       DateTime
+  metadata        Json
+  sourceEventId   String?
+  sourceEventType String?
+  recomputedAt    DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([orgId, eventType, createdAt])
+}
+
+model ComplianceDecision {
+  id             String   @id
+  orgId          String
+  policyId       String
+  mappingId      String
+  clauseId       String
+  action         String
+  rationale      String
+  controlName    String?
+  status         String?
+  decidedAt      DateTime
+
+  organization   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  policyMapping  PolicyMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, policyId, decidedAt])
+}
+
+model WorkflowRegistryEntry {
+  id          String   @id @default(uuid())
+  orgId       String
+  workflowId  String
+  version     Int
+  riskClass   String
+  changeReason String?
+  actorSub    String?
+  actorRole   String?
+  createdAt   DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, workflowId, version])
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowRegistryAuditEvent {
+  id          String   @id @default(uuid())
+  orgId       String
+  workflowId  String
+  version     Int
+  action      String
+  actorSub    String?
+  actorRole   String?
+  metadata    Json
+  createdAt   DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowVisibilityPolicyConfig {
+  id                     String   @id @default(uuid())
+  orgId                  String
+  workflowId             String
+  registryVersion        Int
+  policyVersion          String
+  lowMinEvents           Int
+  mediumMinEvents        Int
+  highMinEvents          Int
+  minWindowDays          Int
+  highSparseMinEvents    Int
+  highSparseMinWindowDays Int
+  createdAt              DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, workflowId, registryVersion])
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowRegistryVersion {
+  id            String   @id @default(cuid())
+  orgId         String
+  workflowId    String
+  displayName   String
+  riskClass     RiskClass
+  changeReason  String
+  changedByUser String
+  changedByRole String
+  createdAt     DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, workflowId, createdAt])
+}
+
+model WorkflowRegistryCurrent {
+  id                 String   @id @default(cuid())
+  orgId              String
+  workflowId         String
+  displayName        String
+  riskClass          RiskClass
+  effectiveVersionId String
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, workflowId])
+  @@index([orgId])
+}
+
+model ControlConfigVersion {
+  id                      String   @id @default(cuid())
+  orgId                   String
+  versionName             String
+  changeReason            String
+  changedByUser           String
+  changedByRole           String
+  createdAt               DateTime @default(now())
+  windowDaysLow           Int
+  windowDaysMedium        Int
+  windowDaysHigh          Int
+  minEventsLow            Int
+  minEventsMedium         Int
+  minEventsHigh           Int
+  requireVerificationHigh Boolean
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+}
+
+model BaselineResetEvent {
+  id                     String   @id @default(cuid())
+  orgId                  String
+  controlConfigVersionId String
+  resetAt                DateTime @default(now())
+  reason                 String
+  triggeredByUser        String
+  triggeredByRole        String
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, resetAt])
+}

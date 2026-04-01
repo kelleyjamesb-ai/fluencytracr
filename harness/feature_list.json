@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "Long-running harness checklist. Agents must not delete entries or edit descriptions/steps except to fix obvious typos with human approval. Only the passes field may change from false to true after verification.",
+  "features": [
+    {
+      "id": "harness-001",
+      "category": "process",
+      "description": "Agent has read harness/README.md and run harness/scripts/bootstrap.sh at least once this session",
+      "steps": [
+        "Open harness/README.md",
+        "Run ./harness/scripts/bootstrap.sh from repo root",
+        "Confirm working directory is the repository root"
+      ],
+      "passes": false
+    },
+    {
+      "id": "harness-002",
+      "category": "functional",
+      "description": "Replace this template item with a real project outcome before starting serious multi-session work",
+      "steps": [
+        "Edit harness/feature_list.json with real features derived from the mission spec",
+        "Ensure each item is testable end-to-end where applicable"
+      ],
+      "passes": false
+    }
+  ]
+}

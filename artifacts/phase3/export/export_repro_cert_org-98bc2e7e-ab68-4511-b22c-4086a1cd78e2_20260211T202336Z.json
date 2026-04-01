@@ -1,0 +1,23 @@
+{
+  "generated_at_utc": "20260211T202336Z",
+  "org_id": "org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2",
+  "event_count": 2,
+  "checks": {
+    "export_json_normalized": {
+      "match": true,
+      "sha_a": "7963efc657272ae33fc085311c73e6038087600d8a317b2c389bb0df900ca876",
+      "sha_b": "7963efc657272ae33fc085311c73e6038087600d8a317b2c389bb0df900ca876"
+    },
+    "export_csv_byte_stable": {
+      "match": true,
+      "sha_a": "bf70944cf6d428a69f83daa320cebd400aa20345716b87e4c4d2bcb6e9f113cb",
+      "sha_b": "bf70944cf6d428a69f83daa320cebd400aa20345716b87e4c4d2bcb6e9f113cb"
+    },
+    "events_pagination_order": {
+      "match": true,
+      "sha_a": "983506fe2c5d186e14eefd91e04828ac802c631fd74d4923d87ee53377dbaa6d",
+      "sha_b": "983506fe2c5d186e14eefd91e04828ac802c631fd74d4923d87ee53377dbaa6d"
+    }
+  },
+  "pass": true
+}

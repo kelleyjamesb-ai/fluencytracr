@@ -1,0 +1,15 @@
+name: Enforcement State Gate
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  enforcement_state_gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate CODEX enforcement state artifact
+        run: python3 scripts/validate_enforcement_state.py

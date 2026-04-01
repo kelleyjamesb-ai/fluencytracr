@@ -1,0 +1,8 @@
+# Agent progress log (append only)
+#
+# Each session: add a new block with date (UTC), tool (Codex / Claude / other), and bullets:
+# - What you completed
+# - What you verified (tests, manual smoke)
+# - Next recommended focus (one feature id from feature_list.json)
+#
+# ---
