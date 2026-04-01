@@ -37,6 +37,8 @@ npm test --workspace frontend
 
 Optional deeper CI scripts (docs, evidence bundles, link checks) live under `scripts/ci_*.sh` and are invoked from `.github/workflows/ci.yml`.
 
+GitHub Actions Node jobs use **Node 24** with `actions/setup-node@v6` and `actions/checkout@v5` (see `.github/workflows/ci.yml`, `governance-gate.yml`).
+
 ## User-facing UI smoke
 
 If the change affects the dashboard or flows in `frontend/`:

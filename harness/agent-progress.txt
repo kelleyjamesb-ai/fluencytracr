@@ -86,3 +86,8 @@
 - Completed: Canonical **every-session** doc [`docs/agent/SESSION_START.md`](../docs/agent/SESSION_START.md) (Anthropic-style harness + `.project/` queue, memory table, roles, verification). Linked from root `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/agent/README.md`, `harness/README.md`, `harness/prompts/*`, `agents/core/SYSTEM_PROMPT.md`, `.cursorrules`.
 - Next focus: Human adds/curates `WORK_QUEUE.json` items; agents follow `SESSION_START` → one bounded unit per session.
 
+## 2026-04-01 (UTC) — Cursor (GitHub Actions Node 24 readiness)
+
+- Completed: Bumped workflows to `actions/checkout@v5`, `actions/setup-node@v6`, `actions/upload-artifact@v5` (ci node job); `setup-python@v5` + `checkout@v5` in `test.yml`; `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` on workflows using JS actions; **Node 24** for npm/Prisma in `ci.yml` / `governance-gate.yml`.
+- Note: Vercel deployment failures are project access / CLI config — not fixed by workflow YAML alone.
+
