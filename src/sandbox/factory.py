@@ -1,21 +1,8 @@
 import os
-<<<<<<< HEAD
-=======
-
->>>>>>> desktop-sync-20260401
 from .base import CodeSandbox
 from .local import LocalSandbox
 
 
-<<<<<<< HEAD
-def get_sandbox() -> CodeSandbox:
-    """Factory method to obtain the configured executor.
-
-    Supported types: local (default), docker (opt-in), e2b (future)
-    Falls back to local if the requested type module is unavailable.
-    """
-    mode = os.getenv("SANDBOX_TYPE", "local").lower()
-=======
 def _environment_is_production_like() -> bool:
     env = (os.getenv("ENVIRONMENT") or os.getenv("APP_ENV") or "").strip().lower()
     return env in ("production", "staging", "prod")
@@ -54,17 +41,11 @@ def get_sandbox() -> CodeSandbox:
 
     if mode == "local" and not allow_local:
         mode = "docker"
->>>>>>> desktop-sync-20260401
-
     if mode == "docker":
         try:
             from .docker_exec import DockerSandbox  # type: ignore
 
             return DockerSandbox()
-<<<<<<< HEAD
-        except Exception:
-            # If DockerSandbox module can't be imported, fallback to local
-=======
         except Exception as exc:
             if production_like or explicit == "docker" or not allow_local:
                 raise RuntimeError(
@@ -72,25 +53,18 @@ def get_sandbox() -> CodeSandbox:
                     "SANDBOX_ALLOW_LOCAL=false, or SANDBOX_TYPE=docker) but Docker "
                     f"is not available: {exc}. Install the Docker SDK, start the "
                     "daemon, or set SANDBOX_TYPE=local only in trusted dev."
-                ) from exc
->>>>>>> desktop-sync-20260401
-            return LocalSandbox()
+                ) from exc            return LocalSandbox()
 
     if mode == "e2b":
         try:
             from .e2b_exec import E2BSandbox  # type: ignore
 
             return E2BSandbox()
-<<<<<<< HEAD
-        except Exception:
-=======
         except Exception as exc:
             if production_like or not allow_local:
                 raise RuntimeError(
                     "SANDBOX_TYPE=e2b was requested but the E2B sandbox could not "
                     f"be loaded: {exc}"
-                ) from exc
->>>>>>> desktop-sync-20260401
-            return LocalSandbox()
+                ) from exc            return LocalSandbox()
 
     return LocalSandbox()

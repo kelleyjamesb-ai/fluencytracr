@@ -7,11 +7,7 @@ It uses EvidenceBundle v1 as the stable evidence contract and `/api/ingest` as t
 References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
-<<<<<<< HEAD
-=======
 - **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
->>>>>>> desktop-sync-20260401
-
 ## Two integration modes
 
 ### Mode 1: Publish EvidenceBundle documents via Glean Indexing API
@@ -26,17 +22,6 @@ References:
 
 ## Shipped now versus later
 
-<<<<<<< HEAD
-### Shipped now
-- EvidenceBundle v1 contract documentation.
-- `/api/ingest` partner facade contract documentation.
-- Glean indexing documentation and acceptance scenarios in this pack.
-
-### Later
-- MCP adapter rollout for direct tool orchestration by governance assistants.
-- Expanded agentic coverage for additional oversight and reliability evidence.
-- Automated publisher and agent guardrail enforcement in CI.
-=======
 ### Shipped now (v1-ready contracts and API parity)
 - EvidenceBundle v1 contract documentation and JSON schema (`window`: `daily`, `weekly`, and all **`FluencyWindow`** tokens: `30d`, `60d`, `90d`, `180d`, `360d`, `3m`, `6m`, `12m`).
 - Backend evidence routes accept the same window set as the executive dashboard rolling windows (`GET /api/evidence/bundles|coverage|controls/:orgId`).
@@ -48,8 +33,6 @@ References:
 - Deployed MCP server binary and hosted adapter rollout for production agent orchestration.
 - Automated EvidenceBundle publisher (scheduled jobs) and CI enforcement for indexing/guardrails.
 - Expanded agentic coverage for additional oversight and reliability evidence beyond the bounded question classes in `03-glean-agent-tooling.md`.
->>>>>>> desktop-sync-20260401
-
 ## Multi-agent readiness boundaries
 - Agentic emitters and human telemetry emitters are both in scope.
 - All published and queried outputs stay org-level and aggregate.
@@ -60,7 +43,3 @@ References:
 - No individual attribution.
 - No rankings or performance score proxies.
 - Suppression rules apply before indexing and before agent answer generation.
-<<<<<<< HEAD
-
-=======
->>>>>>> desktop-sync-20260401

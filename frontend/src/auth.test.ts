@@ -21,8 +21,6 @@ describe("auth", () => {
     expect(headers.get("authorization")).toBe("Bearer token-123");
   });
 
-<<<<<<< HEAD
-=======
   it("withAuth uses stored role when argument is empty", () => {
     localStorage.setItem("role", "EXEC_VIEWER");
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "token-456");
@@ -44,7 +42,6 @@ describe("auth", () => {
     expect(headers.get("x-role")).toBe("EXEC_VIEWER");
   });
 
->>>>>>> desktop-sync-20260401
   it("retries request after 401 when token refresh succeeds", async () => {
     localStorage.setItem("userEmail", "admin@fluencytracr.com");
     localStorage.setItem("orgId", "org-1");

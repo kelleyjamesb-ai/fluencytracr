@@ -102,8 +102,6 @@ data/
 .opencode/
 
 .keys/
-<<<<<<< HEAD
-=======
 
 # Agent runtime memory and harness checkpoints (generated)
 agent_memory.json
@@ -112,4 +110,3 @@ artifacts/runtime/*
 !artifacts/runtime/.gitkeep
 artifacts/harness/checkpoints/*
 !artifacts/harness/checkpoints/.gitkeep
->>>>>>> desktop-sync-20260401

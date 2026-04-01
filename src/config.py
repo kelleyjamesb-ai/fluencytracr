@@ -62,14 +62,8 @@ class Settings(BaseSettings):
         description="Default model name for Anthropic.",
     )
 
-<<<<<<< HEAD
-    # Memory Configuration
-    MEMORY_FILE: str = "agent_memory.json"
-=======
     # Memory Configuration (under artifacts/ so runtime state stays out of VCS by default)
     MEMORY_FILE: str = "artifacts/runtime/agent_memory.json"
->>>>>>> desktop-sync-20260401
-
     # MCP Configuration
     MCP_ENABLED: bool = Field(default=False, description="Enable MCP integration")
     MCP_SERVERS_CONFIG: str = Field(

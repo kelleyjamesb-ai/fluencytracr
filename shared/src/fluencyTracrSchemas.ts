@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-<<<<<<< HEAD
-export const FluencyWindowSchema = z.enum(["30d", "60d", "3m", "6m", "12m"]);
-export type FluencyWindow = z.infer<typeof FluencyWindowSchema>;
-
-=======
 export const FluencyWindowSchema = z.enum([
   "30d",
   "60d",
@@ -19,8 +14,6 @@ export type FluencyWindow = z.infer<typeof FluencyWindowSchema>;
 
 /** All tokens accepted for `window` / baseline-style query params (observability, traces, etc.). */
 export const FLUENCY_WINDOW_VALUES = FluencyWindowSchema.options as readonly FluencyWindow[];
-
->>>>>>> desktop-sync-20260401
 export const FluencyScopeSchema = z.enum(["org", "function", "workflow"]);
 export type FluencyScope = z.infer<typeof FluencyScopeSchema>;
 
@@ -30,9 +23,6 @@ export type RiskClass = z.infer<typeof RiskClassSchema>;
 const FluencyEventBaseSchema = z.object({
   timestamp: z.string().min(1),
   risk_class: RiskClassSchema,
-<<<<<<< HEAD
-  org_unit: z.string().min(1).optional()
-=======
   org_unit: z.string().min(1).optional(),
   /** Platform agent/workflow run identifier (canonical when present). */
   run_id: z.string().min(1).optional(),
@@ -41,7 +31,6 @@ const FluencyEventBaseSchema = z.object({
   /** Optional lineage; must not contain raw content (opaque IDs only). */
   agent_run_id: z.string().min(1).optional(),
   chat_id: z.string().min(1).optional()
->>>>>>> desktop-sync-20260401
 });
 
 export const AiOutputDispositionEventSchema = FluencyEventBaseSchema.extend({
@@ -420,8 +409,6 @@ export const BoardSnapshotResponseSchema = z.object({
   workflows: z.array(BoardSnapshotWorkflowRowSchema)
 }).strict();
 export type BoardSnapshotResponse = z.infer<typeof BoardSnapshotResponseSchema>;
-<<<<<<< HEAD
-=======
 
 /** PRD Phase 4 — fixed key order; counts are not ranks (no sorting by value in API). */
 export const ObservabilityPatternDistributionSchema = z
@@ -457,4 +444,3 @@ export const ObservabilityResponseSchema = z
   })
   .strict();
 export type ObservabilityResponse = z.infer<typeof ObservabilityResponseSchema>;
->>>>>>> desktop-sync-20260401

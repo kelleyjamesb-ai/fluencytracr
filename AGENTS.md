@@ -15,9 +15,6 @@ Use `@/openspec/AGENTS.md` to learn:
 
 Keep this managed block so 'openspec update' can refresh the instructions.
 
-<<<<<<< HEAD
-<!-- OPENSPEC:END -->
-=======
 <!-- OPENSPEC:END -->
 
 ## Agent execution (queue)
@@ -42,4 +39,3 @@ Treat **files in this Cursor workspace as source of truth** until you commit and
 ## Long-running agent harness (Codex, Claude, Cursor)
 
 For multi-session work, follow [`harness/README.md`](harness/README.md). First session: [`harness/prompts/initializer.md`](harness/prompts/initializer.md). Later sessions: [`harness/prompts/incremental_session.md`](harness/prompts/incremental_session.md). Checklist: [`harness/feature_list.json`](harness/feature_list.json); handoff log: [`harness/agent-progress.txt`](harness/agent-progress.txt). After substantive edits, run checks in [`docs/agent/EVALUATION.md`](docs/agent/EVALUATION.md) (includes `./harness/scripts/verify.sh`).
->>>>>>> desktop-sync-20260401

@@ -106,12 +106,6 @@ type ComplianceEventsResponse = {
 };
 
 const windows = [
-<<<<<<< HEAD
-  { label: "Rolling 60d", value: "60d" },
-  { label: "3 months", value: "3m" },
-  { label: "6 months", value: "6m" },
-  { label: "12 months", value: "12m" }
-=======
   { label: "Rolling 30d", value: "30d" },
   { label: "Rolling 60d", value: "60d" },
   { label: "Rolling 90d", value: "90d" },
@@ -120,7 +114,6 @@ const windows = [
   { label: "3 months (~90d)", value: "3m" },
   { label: "6 months (~180d)", value: "6m" },
   { label: "12 months (~365d)", value: "12m" }
->>>>>>> desktop-sync-20260401
 ] as const;
 
 const navItems = [

@@ -240,14 +240,9 @@ describe("MappingLoader", () => {
         JSON.stringify(invalidConnector, null, 2)
       );
 
-<<<<<<< HEAD
-      const connectors = MappingLoader.loadFromDirectory(testMappingsDir);
-=======
       const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       const connectors = MappingLoader.loadFromDirectory(testMappingsDir);
       errorSpy.mockRestore();
->>>>>>> desktop-sync-20260401
-
       expect(connectors).toHaveLength(1);
       expect(connectors[0].getConnectorName()).toBe("valid-connector");
     });

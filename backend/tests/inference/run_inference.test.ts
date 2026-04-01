@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-import { store } from "../../src/store";
-import { runInference } from "../../src/inference/run_inference";
-import * as versioning from "../../src/inference/versioning";
-
-const buildFluencyEvent = (workflowId: string) => ({
-  event_id: `evt-${workflowId}`,
-  event_type: "ai_output_disposition" as const,
-  timestamp: new Date().toISOString(),
-  risk_class: "medium" as const,
-  org_unit: "org:executive",
-  workflow_id: workflowId,
-  disposition: "accepted" as const,
-  edit_distance_bucket: "none" as const,
-  verification_present: true,
-  time_to_action_ms: 120000
-});
-=======
 import { store, buildFluencyEventRecord } from "../../src/store";
 import { runInference } from "../../src/inference/run_inference";
 import * as versioning from "../../src/inference/versioning";
@@ -37,8 +19,6 @@ const buildFluencyEvent = (workflowId: string) => {
     eventId
   );
 };
->>>>>>> desktop-sync-20260401
-
 describe("runInference", () => {
   beforeEach(() => {
     store.reset();

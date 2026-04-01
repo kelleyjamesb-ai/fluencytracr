@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 # Prefer Python 3.10+ (matches pyproject.toml and CI). Apple CLT python3 is often 3.9 — use `brew install python@3.11` then `python3.11 -m venv .venv`.
->>>>>>> desktop-sync-20260401
 google-genai
 pydantic
 pydantic-settings
@@ -11,13 +8,6 @@ requests
 opencv-python>=4.8.0
 numpy>=1.24.0
 
-<<<<<<< HEAD
-# MCP (Model Context Protocol) Integration
-# Install with: pip install 'mcp[cli]'
-# Or for just the core library: pip install mcp
-mcp[cli]>=1.0.0
-=======
 # MCP (Model Context Protocol) — only installed on Python 3.10+ (no compatible wheels for 3.9).
 # Manual: pip install 'mcp[cli]'
 mcp[cli]>=1.0.0; python_version >= "3.10"
->>>>>>> desktop-sync-20260401

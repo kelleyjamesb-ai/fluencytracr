@@ -16,16 +16,10 @@ import {
   ConnectorEventImportSchema,
   FluencyEventIngestSchema,
   FluencyEventSchema,
-<<<<<<< HEAD
-  FluencyScopeSchema,
-  FluencyWindowSchema,
-=======
   UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
-  FLUENCY_WINDOW_VALUES,
->>>>>>> desktop-sync-20260401
-  DecisionLedgerCreateSchema,
+  FLUENCY_WINDOW_VALUES,  DecisionLedgerCreateSchema,
   DecisionLedgerEvaluationInputSchema,
   WorkflowRegistryVersionCreateSchema,
   OrientationWorkflowVisibilitySummaryResponse,
@@ -35,17 +29,10 @@ import {
   WorkflowRegistryCreateVersionResponse,
   WorkflowRegistryAuditResponse,
   BoardSnapshotVisibilityLabel,
-<<<<<<< HEAD
-  RoleSchema as AuthRoleSchema
-} from "@learnaire/shared";
-import type { FluencyEvent } from "@learnaire/shared";
-=======
   ObservabilityResponseSchema,
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
-import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@learnaire/shared";
->>>>>>> desktop-sync-20260401
-import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
+import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@learnaire/shared";import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
@@ -60,12 +47,8 @@ import {
   EnablementEventRecord,
   MetricRecord,
   insertFluencyEvent,
-<<<<<<< HEAD
-=======
   buildFluencyEventRecord,
-  insertUnifiedTelemetryEvent,
->>>>>>> desktop-sync-20260401
-  insertDecisionLedgerEntry,
+  insertUnifiedTelemetryEvent,  insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
 } from "./store";
 import type {
@@ -73,14 +56,10 @@ import type {
   DecisionLedgerEvaluationRecord,
   FluencyEventRecord
 } from "./store";
-<<<<<<< HEAD
-=======
 import { reconstructTracesForQuery } from "./trace_engine";
 import { attachPhase2ToTraces } from "./execution_signals";
 import { applyDisclosureToTraces } from "./execution_disclosure";
-import { buildObservabilityRollup } from "./observability_aggregate";
->>>>>>> desktop-sync-20260401
-import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
+import { buildObservabilityRollup } from "./observability_aggregate";import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
 import { runEnablementRollupsForEvents } from "./enablement_rollups";
@@ -256,17 +235,10 @@ const ingestLimiter = rateLimit({
   }
 });
 
-<<<<<<< HEAD
-const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
-
-const EVIDENCE_WINDOWS = new Set(["daily", "weekly", "30d", "60d"]);
-=======
 /** Evidence routes: calendar buckets plus all `FluencyWindow` rolling tokens (aligned with dashboard). */
 const EVIDENCE_WINDOWS = new Set<string>(["daily", "weekly", ...FLUENCY_WINDOW_VALUES]);
 
-type EvidenceBundleWindow = FluencyWindow | "daily" | "weekly";
->>>>>>> desktop-sync-20260401
-const INGEST_RECEIPT_WINDOW_MS = 24 * 60 * 60 * 1000;
+type EvidenceBundleWindow = FluencyWindow | "daily" | "weekly";const INGEST_RECEIPT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // Initialize connector service and load connector mappings
 const connectorService = new ConnectorService();
@@ -451,30 +423,17 @@ const latestControls = (controlNames: string[], controls: typeof store.controls)
   return { bucket_start: latestBucket, values };
 };
 
-<<<<<<< HEAD
-const matchesWindow = (record: { window_start: string; window_end: string }, window: string) => {
-  if (window !== "30d" && window !== "60d") {
-    return false;
-  }
-=======
 const matchesWindow = (
   record: { window_start: string; window_end: string },
   window: FluencyWindow
 ): boolean => {
-  const expectedDays = WINDOW_DAYS[window];
->>>>>>> desktop-sync-20260401
-  const start = new Date(record.window_start);
+  const expectedDays = WINDOW_DAYS[window];  const start = new Date(record.window_start);
   const end = new Date(record.window_end);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return false;
   }
   const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-<<<<<<< HEAD
-  return days === (window === "30d" ? 30 : 60);
-=======
-  return days === expectedDays;
->>>>>>> desktop-sync-20260401
-};
+  return days === expectedDays;};
 
 const workflowIdFromScopeKey = (scopeKey: string) => {
   return scopeKey.split(":")[0] ?? scopeKey;
@@ -555,8 +514,6 @@ const getAcceptedSchemaVersions = () => {
   return ["0.1"];
 };
 
-<<<<<<< HEAD
-=======
 const getAcceptedUnifiedTelemetrySchemaVersions = () => {
   const configured = parseCsvEnvVersions(process.env.UNIFIED_TELEMETRY_SCHEMA_ACCEPTED_VERSIONS);
   if (configured.length > 0) {
@@ -564,8 +521,6 @@ const getAcceptedUnifiedTelemetrySchemaVersions = () => {
   }
   return ["UT_2026_04"];
 };
-
->>>>>>> desktop-sync-20260401
 const formatIssuePath = (pathSegments: Array<string | number>): string => {
   if (pathSegments.length === 0) {
     return "/";
@@ -605,29 +560,16 @@ const evidenceStatusFromCondition = (
   return condition ? "present" : "not_present";
 };
 
-<<<<<<< HEAD
-const evidenceWindowDays = (window: string) => {
-=======
-const evidenceWindowDays = (window: EvidenceBundleWindow): number => {
->>>>>>> desktop-sync-20260401
-  if (window === "daily") {
+const evidenceWindowDays = (window: EvidenceBundleWindow): number => {  if (window === "daily") {
     return 1;
   }
   if (window === "weekly") {
     return 7;
   }
-<<<<<<< HEAD
-  return window === "30d" ? 30 : 60;
-};
-
-const buildEvidenceBundle = (orgId: string, window: "daily" | "weekly" | "30d" | "60d") => {
-=======
   return WINDOW_DAYS[window];
 };
 
-const buildEvidenceBundle = (orgId: string, window: EvidenceBundleWindow) => {
->>>>>>> desktop-sync-20260401
-  const now = new Date();
+const buildEvidenceBundle = (orgId: string, window: EvidenceBundleWindow) => {  const now = new Date();
   const start = new Date(now);
   start.setUTCDate(start.getUTCDate() - evidenceWindowDays(window));
 
@@ -697,12 +639,7 @@ const buildEvidenceBundle = (orgId: string, window: EvidenceBundleWindow) => {
     "not_computed";
   if (suppressionApplied) {
     trendDirection = "suppressed";
-<<<<<<< HEAD
-  } else if (window === "60d" && hasComputableEvidence) {
-=======
-  } else if (evidenceWindowDays(window) >= 14 && hasComputableEvidence) {
->>>>>>> desktop-sync-20260401
-    const midpointMs = start.getTime() + (now.getTime() - start.getTime()) / 2;
+  } else if (evidenceWindowDays(window) >= 14 && hasComputableEvidence) {    const midpointMs = start.getTime() + (now.getTime() - start.getTime()) / 2;
     const firstHalf = outputEvents.filter((event) => new Date(event.timestamp).getTime() < midpointMs);
     const secondHalf = outputEvents.filter((event) => new Date(event.timestamp).getTime() >= midpointMs);
     const firstAcceptanceRate =
@@ -3084,15 +3021,7 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
   });
 
   acceptedEvents.forEach((event) => {
-<<<<<<< HEAD
-    insertFluencyEvent({
-      ...event,
-      event_id: crypto.randomUUID()
-    });
-=======
-    insertFluencyEvent(buildFluencyEventRecord(event, crypto.randomUUID()));
->>>>>>> desktop-sync-20260401
-  });
+    insertFluencyEvent(buildFluencyEventRecord(event, crypto.randomUUID()));  });
 
   const response = {
     receipt_id: `rcpt_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`,
@@ -3111,8 +3040,6 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
   return res.status(202).json(response);
 });
 
-<<<<<<< HEAD
-=======
 app.post("/api/ingest/unified-telemetry", ingestLimiter, (req, res) => {
   if (process.env.FLUENCY_UNIFIED_TELEMETRY_INGEST !== "true") {
     return res.status(403).json({
@@ -3233,8 +3160,6 @@ app.post("/api/ingest/unified-telemetry", ingestLimiter, (req, res) => {
 
   return res.status(202).json(response);
 });
-
->>>>>>> desktop-sync-20260401
 app.get(
   "/orgs/:orgId/transparency",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
@@ -3422,13 +3347,6 @@ app.get(
     if (!windowParsed.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-<<<<<<< HEAD
-    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
-      return res.status(400).json({ error: "Unsupported window" });
-    }
-
-=======
->>>>>>> desktop-sync-20260401
     const window = windowParsed.data;
     const records = store.patternInferenceRecords.filter((record) =>
       matchesWindow(record, window)
@@ -3832,13 +3750,6 @@ app.get(
     if (!parsedWindow.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-<<<<<<< HEAD
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-
-=======
->>>>>>> desktop-sync-20260401
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
     const baselineResets = await listBaselineResetsByOrg(org.id);
@@ -3886,13 +3797,6 @@ app.get(
     if (!parsedWindow.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-<<<<<<< HEAD
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-
-=======
->>>>>>> desktop-sync-20260401
     const window = parsedWindow.data;
     const entries = await listRegistryEntriesByOrg(org.id);
     const currentWorkflows = entries
@@ -3987,12 +3891,6 @@ app.post(
     }
 
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
-<<<<<<< HEAD
-    const eventIds = parsed.data.events.map((event) => {
-      const eventId = crypto.randomUUID();
-      insertFluencyEvent({ ...event, event_id: eventId });
-      return eventId;
-=======
     const eventIds: string[] = [];
     const executionIds: string[] = [];
     parsed.data.events.forEach((event) => {
@@ -4000,24 +3898,16 @@ app.post(
       const record = buildFluencyEventRecord(event, eventId);
       insertFluencyEvent(record);
       eventIds.push(eventId);
-      executionIds.push(record.execution_id);
->>>>>>> desktop-sync-20260401
-    });
+      executionIds.push(record.execution_id);    });
 
     return res.json({
       ingested: eventIds.length,
       event_ids: eventIds,
-<<<<<<< HEAD
-=======
-      execution_ids: executionIds,
->>>>>>> desktop-sync-20260401
-      schema_version: schemaVersion
+      execution_ids: executionIds,      schema_version: schemaVersion
     });
   }
 );
 
-<<<<<<< HEAD
-=======
 const TraceReconstructedQuerySchema = z
   .object({
     workflow_id: z.string().min(1).optional(),
@@ -4098,8 +3988,6 @@ app.get(
     return res.json(validated.data);
   }
 );
-
->>>>>>> desktop-sync-20260401
 app.get(
   "/api/patterns",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
@@ -4119,13 +4007,6 @@ app.get(
       });
     }
 
-<<<<<<< HEAD
-    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
-      return res.status(400).json({ error: "Unsupported window" });
-    }
-
-=======
->>>>>>> desktop-sync-20260401
     const window = windowParsed.data;
     const records = store.patternInferenceRecords.filter((record) =>
       matchesWindow(record, window)
@@ -4194,12 +4075,7 @@ app.get(
       HIGH: "Sustained Pattern"
     } as const;
 
-<<<<<<< HEAD
-    const totalDays = window === "60d" ? 60 : 30;
-=======
     const totalDays = WINDOW_DAYS[window];
->>>>>>> desktop-sync-20260401
-
     const patterns = records
       .filter(
         (record) =>
@@ -4242,13 +4118,6 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
 
-<<<<<<< HEAD
-    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
-      return res.status(400).json({ error: "Unsupported window" });
-    }
-
-=======
->>>>>>> desktop-sync-20260401
     const window = windowParsed.data;
     const records = store.patternInferenceRecords.filter((record) =>
       matchesWindow(record, window)
@@ -4302,20 +4171,11 @@ app.get(
         error: "Invalid query",
         reason_code: "invalid_payload",
         field_path: "window",
-<<<<<<< HEAD
-        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
-      });
-    }
-
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
-=======
         supported_windows: Array.from(EVIDENCE_WINDOWS)
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);
->>>>>>> desktop-sync-20260401
-    return res.json(bundle);
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json(bundle);
   }
 );
 
@@ -4334,20 +4194,11 @@ app.get(
         error: "Invalid query",
         reason_code: "invalid_payload",
         field_path: "window",
-<<<<<<< HEAD
-        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
-      });
-    }
-
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
-=======
         supported_windows: Array.from(EVIDENCE_WINDOWS)
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);
->>>>>>> desktop-sync-20260401
-    return res.json({
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
       window: bundle.window,
@@ -4373,20 +4224,11 @@ app.get(
         error: "Invalid query",
         reason_code: "invalid_payload",
         field_path: "window",
-<<<<<<< HEAD
-        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
-      });
-    }
-
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
-=======
         supported_windows: Array.from(EVIDENCE_WINDOWS)
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);
->>>>>>> desktop-sync-20260401
-    return res.json({
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
       window: bundle.window,
@@ -4579,11 +4421,6 @@ app.post(
       day.setDate(now.getDate() - dayOffset);
       const timestamp = day.toISOString();
       workflows.forEach((workflowId, index) => {
-<<<<<<< HEAD
-        seededEvents.push({
-          event_id: crypto.randomUUID(),
-          event_type: "ai_output_disposition" as const,
-=======
         const push = (payload: FluencyEvent) => {
           const eventId = crypto.randomUUID();
           const record = buildFluencyEventRecord(payload, eventId);
@@ -4591,9 +4428,7 @@ app.post(
           insertFluencyEvent(record);
         };
         push({
-          event_type: "ai_output_disposition",
->>>>>>> desktop-sync-20260401
-          timestamp,
+          event_type: "ai_output_disposition",          timestamp,
           risk_class: index % 3 === 0 ? "high" : index % 2 === 0 ? "medium" : "low",
           org_unit: "org:executive",
           workflow_id: workflowId,
@@ -4603,62 +4438,27 @@ app.post(
           time_to_action_ms: 120000
         });
         if (dayOffset % 6 === 0) {
-<<<<<<< HEAD
-          seededEvents.push({
-            event_id: crypto.randomUUID(),
-            event_type: "ai_recovery_loop" as const,
-            timestamp,
-            risk_class: "medium" as const,
-            org_unit: "org:executive",
-            workflow_id: workflowId,
-            recovery_type: "re_prompt" as const,
-=======
           push({
             event_type: "ai_recovery_loop",
             timestamp,
             risk_class: "medium",
             org_unit: "org:executive",
             workflow_id: workflowId,
-            recovery_type: "re_prompt",
->>>>>>> desktop-sync-20260401
-            cycles: 2,
+            recovery_type: "re_prompt",            cycles: 2,
             resolution_time_ms: 240000
           });
         }
         if (dayOffset % 4 === 0) {
-<<<<<<< HEAD
-          seededEvents.push({
-            event_id: crypto.randomUUID(),
-            event_type: "verification_signal" as const,
-            timestamp,
-            risk_class: "medium" as const,
-            org_unit: "org:executive",
-            workflow_id: workflowId,
-            verification_type: "policy_check" as const,
-=======
           push({
             event_type: "verification_signal",
             timestamp,
             risk_class: "medium",
             org_unit: "org:executive",
             workflow_id: workflowId,
-            verification_type: "policy_check",
->>>>>>> desktop-sync-20260401
-            verification_latency_ms: 90000
+            verification_type: "policy_check",            verification_latency_ms: 90000
           });
         }
         if (dayOffset % 9 === 0) {
-<<<<<<< HEAD
-          seededEvents.push({
-            event_id: crypto.randomUUID(),
-            event_type: "ai_abandonment" as const,
-            timestamp,
-            risk_class: "high" as const,
-            org_unit: "org:executive",
-            workflow_id: workflowId,
-            abandonment_stage: "reviewed" as const,
-            reason_bucket: "low_trust" as const
-=======
           push({
             event_type: "ai_abandonment",
             timestamp,
@@ -4666,18 +4466,11 @@ app.post(
             org_unit: "org:executive",
             workflow_id: workflowId,
             abandonment_stage: "reviewed",
-            reason_bucket: "low_trust"
->>>>>>> desktop-sync-20260401
-          });
+            reason_bucket: "low_trust"          });
         }
       });
     }
 
-<<<<<<< HEAD
-    seededEvents.forEach((event) => insertFluencyEvent(event));
-
-=======
->>>>>>> desktop-sync-20260401
     const entry = {
       ledger_id: crypto.randomUUID(),
       decision: {
