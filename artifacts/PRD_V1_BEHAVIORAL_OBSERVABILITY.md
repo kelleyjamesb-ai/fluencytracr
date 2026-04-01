@@ -475,7 +475,7 @@ verification:
 | `GET /api/observability/:org_id` | **PRD target** — not asserted implemented here; requires Phase 4 + governance review. |
 | `GET /api/traces/reconstructed` | **Phase 1–2 internal read** — add `include_signals=true` for per-execution signals + pattern (`docs/api/traces-reconstructed.md`). Not the Phase 4 observability surface. |
 
-Normalization, trace reconstruction, and **deterministic per-execution signals/patterns** (optional query param) are implemented for fluency events. Workflow-relative numeric baselines (PRD §16) for thresholds are **not** wired yet. Full execution state machine (§13) remains **future** work.
+Normalization, trace reconstruction, **per-execution signals/patterns** (`include_signals`), and **disclosure** (`ALLOWED` / `SUPPRESSED` with reasons; interpretive fields nulled when suppressed) are implemented for the internal trace route. Workflow-relative numeric baselines (PRD §16) for thresholds are **not** wired yet. Full execution state machine (§13) remains **future** work.
 
 ---
 

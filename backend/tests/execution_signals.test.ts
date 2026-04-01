@@ -1,4 +1,5 @@
 import { buildFluencyEventRecord } from "../src/store";
+import { applyDisclosureToTraces } from "../src/execution_disclosure";
 import {
   SIGNAL_REGISTRY,
   attachPhase2ToTraces,
@@ -128,7 +129,7 @@ describe("computeExecutionSignals + attachPhase2ToTraces", () => {
     expect(pattern).toBe("Recovery Maturity");
   });
 
-  it("attachPhase2ToTraces adds pattern to trace payload", () => {
+  it("attachPhase2ToTraces + disclosure allows pattern when enough events", () => {
     const e1 = buildFluencyEventRecord(
       {
         event_type: "ai_output_disposition",
@@ -143,12 +144,26 @@ describe("computeExecutionSignals + attachPhase2ToTraces", () => {
       },
       "p1"
     );
-    const trace = reconstructTrace([e1])!;
-    const enriched = attachPhase2ToTraces([trace], [e1]);
+    const e2 = buildFluencyEventRecord(
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2026-04-01T10:01:00.000Z",
+        risk_class: "low",
+        workflow_id: "wf-p",
+        disposition: "accepted",
+        edit_distance_bucket: "none",
+        verification_present: false,
+        time_to_action_ms: 100,
+        run_id: "r2"
+      },
+      "p2"
+    );
+    const trace = reconstructTrace([e1, e2])!;
+    const enriched = applyDisclosureToTraces(attachPhase2ToTraces([trace], [e1, e2]));
     expect(enriched).toHaveLength(1);
+    expect(enriched[0].disclosure.state).toBe("ALLOWED");
     expect(enriched[0].pattern).toBe("Calibrated Fluency");
-    expect(enriched[0].signals.event_count).toBe(1);
-    expect(enriched[0].pattern_confidence_tier).toBe("low");
+    expect(enriched[0].signals?.event_count).toBe(2);
   });
 
   it("stage-only execution is Undertrust Avoidance", () => {

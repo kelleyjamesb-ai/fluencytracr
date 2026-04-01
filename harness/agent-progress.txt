@@ -53,3 +53,10 @@
 - Harness: `prd-phase-02` **`passes: true`**.
 - Next focus: **`prd-phase-03`** (suppression + API constraints) or wire baselines per workflow without trend surfaces.
 
+## 2026-04-01 (UTC) — Cursor (PRD Phase 3)
+
+- Completed: **Execution disclosure** — `backend/src/execution_disclosure.ts` (`evaluateExecutionDisclosure`, `applyDisclosureToTraces`). Fail-closed: `insufficient_event_count`, `low_confidence_tier`, `invalid_timestamps`. `include_signals=true` responses include `disclosure`; when `SUPPRESSED`, `signals`/`pattern`/`pattern_confidence_tier` are null. Env `FLUENCY_MIN_EXECUTION_EVENTS_FOR_DISCLOSURE`. OpenSpec `add-prd-phase3-execution-disclosure`. `backend/.env.example` note.
+- Verified: `npm run test:ci --workspace backend` (281 tests).
+- Harness: `prd-phase-03` **`passes: true`**.
+- Next focus: **`prd-phase-04`** (workflow-level observability API) or workflow-relative thresholds (PRD §16) without trend leakage.
+

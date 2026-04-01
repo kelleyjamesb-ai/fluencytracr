@@ -59,6 +59,7 @@ import type {
 } from "./store";
 import { reconstructTracesForQuery } from "./trace_engine";
 import { attachPhase2ToTraces } from "./execution_signals";
+import { applyDisclosureToTraces } from "./execution_disclosure";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -3959,7 +3960,8 @@ app.get(
       req.query.include_signals === "1" ||
       req.query.include_signals === "yes";
     if (includeSignals) {
-      return res.json({ traces: attachPhase2ToTraces(traces, events) });
+      const withSignals = attachPhase2ToTraces(traces, events);
+      return res.json({ traces: applyDisclosureToTraces(withSignals) });
     }
     return res.json({ traces });
   }

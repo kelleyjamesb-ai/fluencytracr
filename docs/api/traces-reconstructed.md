@@ -34,15 +34,18 @@ At least one of `workflow_id` or `execution_id` must be provided.
 
 `execution_id` is assigned at ingest via `resolveFluencyExecutionId` (`shared/src/fluencyExecutionId.ts`): `run_id` → `workflow_run_id` → per-event singleton.
 
-### Phase 2 fields (`include_signals=true`)
+### Phase 2 + Phase 3 fields (`include_signals=true`)
 
 Each trace may include:
 
+- **`disclosure`** — `state`: `ALLOWED` | `SUPPRESSED`, `reasons`: string[] (PRD Phase 3). When `SUPPRESSED`, interpretive fields below are **`null`**; structural trace fields remain (`ordered_event_ids`, `retry_sequences`, etc.).
 - **`signals`** — `event_count`, `iteration_depth` (from retry sequences), `verification_present`, `recovery_present`, `abandonment_present`, `latency_ms`, `last_disposition`, `has_ai_usage`, `confidence_tier`.
 - **`pattern`** — one of `FluencyPatternName` (mutually exclusive, PRD §15 priority).
 - **`pattern_confidence_tier`** — `high` | `medium` | `low` from event count (not a product score).
 
-Default iteration/latency thresholds: `backend/src/execution_signals.ts` (`DEFAULT_PHASE2_THRESHOLDS`). Workflow-relative baselines (PRD §16) are not yet applied to thresholds.
+**Suppression reasons (non-exhaustive):** `insufficient_event_count`, `low_confidence_tier`, `invalid_timestamps`. Minimum event count for disclosure defaults to **2**; override with `FLUENCY_MIN_EXECUTION_EVENTS_FOR_DISCLOSURE`.
+
+Default iteration/latency thresholds: `backend/src/execution_signals.ts` (`DEFAULT_PHASE2_THRESHOLDS`). Workflow-relative baselines (PRD §16) are not yet applied to thresholds; numeric baselines are not returned on this route.
 
 ## Related
 

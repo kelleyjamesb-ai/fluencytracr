@@ -145,7 +145,7 @@ it("returns reconstructed traces for workflow_id", async () => {
   expect(response.body.traces[0].retry_sequences.length).toBeGreaterThanOrEqual(1);
 });
 
-it("returns signals and pattern when include_signals=true", async () => {
+it("returns signals and pattern when include_signals=true and disclosure ALLOWED (>=2 events)", async () => {
   await request(app).post("/api/events").set(schemaHeaders).send({
     events: [
       {
@@ -158,6 +158,15 @@ it("returns signals and pattern when include_signals=true", async () => {
         verification_present: true,
         time_to_action_ms: 100,
         run_id: "run-p2"
+      },
+      {
+        event_type: "verification_signal",
+        timestamp: "2024-01-02T00:01:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-phase2",
+        verification_type: "policy_check",
+        verification_latency_ms: 50,
+        run_id: "run-p2"
       }
     ]
   });
@@ -168,13 +177,45 @@ it("returns signals and pattern when include_signals=true", async () => {
 
   expect(response.status).toBe(200);
   expect(response.body.traces).toHaveLength(1);
+  expect(response.body.traces[0].disclosure.state).toBe("ALLOWED");
+  expect(response.body.traces[0].disclosure.reasons).toEqual([]);
   expect(response.body.traces[0].pattern).toBe("Calibrated Fluency");
   expect(response.body.traces[0].signals).toMatchObject({
-    event_count: 1,
-    iteration_depth: 0,
+    event_count: 2,
     verification_present: true
   });
-  expect(response.body.traces[0].pattern_confidence_tier).toBe("low");
+  expect(response.body.traces[0].pattern_confidence_tier).toBe("medium");
+});
+
+it("suppresses interpretive fields when include_signals=true and disclosure rules fail", async () => {
+  await request(app).post("/api/events").set(schemaHeaders).send({
+    events: [
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2024-01-03T00:00:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-phase3-suppress",
+        disposition: "accepted",
+        edit_distance_bucket: "none",
+        verification_present: true,
+        time_to_action_ms: 100,
+        run_id: "run-single"
+      }
+    ]
+  });
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-phase3-suppress&include_signals=true")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces[0].disclosure.state).toBe("SUPPRESSED");
+  expect(response.body.traces[0].disclosure.reasons).toContain("insufficient_event_count");
+  expect(response.body.traces[0].disclosure.reasons).toContain("low_confidence_tier");
+  expect(response.body.traces[0].pattern).toBeNull();
+  expect(response.body.traces[0].signals).toBeNull();
+  expect(response.body.traces[0].pattern_confidence_tier).toBeNull();
+  expect(response.body.traces[0].ordered_event_ids.length).toBe(1);
 });
 
 it("accepts configured compatibility versions and marks deprecated versions", async () => {

@@ -99,7 +99,7 @@
         "Suppress on ambiguity; ALLOWED vs SUPPRESSED with reason",
         "Enforce baseline rules (PRD §16): no numeric baseline exposure, no cross-workflow comparison"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "prd-phase-04",
