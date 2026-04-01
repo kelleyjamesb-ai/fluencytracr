@@ -6,16 +6,29 @@ References:
 - `/api/ingest` API doc: `docs/api/ingest.md`
 
 ## Document types by EvidenceBundle window
+<<<<<<< HEAD
 - `evidencebundle_daily`
 - `evidencebundle_weekly`
 - `evidencebundle_30d`
 - `evidencebundle_60d`
+=======
+Use one document type per bundle `window` value, e.g. `evidencebundle_<window>`:
+- `evidencebundle_daily`, `evidencebundle_weekly`
+- `evidencebundle_30d`, `evidencebundle_60d`, `evidencebundle_90d`, `evidencebundle_180d`, `evidencebundle_360d`
+- `evidencebundle_3m`, `evidencebundle_6m`, `evidencebundle_12m`
+
+(`360d` and `12m` both use a 365-day span in FluencyTracr `WINDOW_DAYS`; doc type names follow the bundle token.)
+>>>>>>> desktop-sync-20260401
 
 ## Required indexed fields
 - `doc_id` (stable deterministic id, example: `org_<org_id>_<window>_<generated_at_date>`)
 - `org_id`
 - `schema_version` (`evidence_bundle.v1`)
+<<<<<<< HEAD
 - `window` (`daily|weekly|30d|60d`)
+=======
+- `window` (see EvidenceBundle v1 schema enum: `daily`, `weekly`, and all `FluencyWindow` tokens)
+>>>>>>> desktop-sync-20260401
 - `generated_at`
 - `suppression_applied`
 - `suppression_reasons`
@@ -39,7 +52,11 @@ Title format:
 Metadata:
 - `source_system=fluencytracr`
 - `contract=evidence_bundle.v1`
+<<<<<<< HEAD
 - `window=<daily|weekly|30d|60d>`
+=======
+- `window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
+>>>>>>> desktop-sync-20260401
 - `suppression=<true|false>`
 - `classification=governance_evidence`
 
@@ -59,7 +76,11 @@ Metadata:
 ## Publishing cadence and backfill
 - Daily window: publish once per day after window close.
 - Weekly window: publish once per week at fixed UTC close.
+<<<<<<< HEAD
 - 30d and 60d windows: publish daily rolling updates.
+=======
+- Rolling fluency windows (`30d`–`360d`, `3m`, `6m`, `12m`): publish on your org’s chosen cadence (often daily rolling updates).
+>>>>>>> desktop-sync-20260401
 - Backfill:
   - Recompute requested windows from source evidence.
   - Re-publish with deterministic `doc_id` replacement behavior.

@@ -96,6 +96,132 @@ it("accepts valid payloads with schema version", async () => {
 
   expect(response.status).toBe(200);
   expect(body.ingested).toBe(1);
+<<<<<<< HEAD
+=======
+  expect(body.execution_ids).toHaveLength(1);
+  expect(typeof body.execution_ids[0]).toBe("string");
+});
+
+it("rejects traces reconstructed query without workflow_id or execution_id", async () => {
+  const response = await request(app)
+    .get("/api/traces/reconstructed")
+    .set({ "x-role": "ADMIN" });
+  expect(response.status).toBe(400);
+});
+
+it("returns reconstructed traces for workflow_id", async () => {
+  await request(app).post("/api/events").set(schemaHeaders).send({
+    events: [
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-trace-1",
+        disposition: "rejected",
+        edit_distance_bucket: "none",
+        verification_present: false,
+        time_to_action_ms: 100,
+        run_id: "run-xyz"
+      },
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2024-01-01T00:05:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-trace-1",
+        disposition: "accepted",
+        edit_distance_bucket: "none",
+        verification_present: false,
+        time_to_action_ms: 100,
+        run_id: "run-xyz"
+      }
+    ]
+  });
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-trace-1")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces).toHaveLength(1);
+  expect(response.body.traces[0].execution_id).toContain("run-xyz");
+  expect(response.body.traces[0].retry_sequences.length).toBeGreaterThanOrEqual(1);
+});
+
+it("returns signals and pattern when include_signals=true and disclosure ALLOWED (>=2 events)", async () => {
+  await request(app).post("/api/events").set(schemaHeaders).send({
+    events: [
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2024-01-02T00:00:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-phase2",
+        disposition: "accepted",
+        edit_distance_bucket: "none",
+        verification_present: true,
+        time_to_action_ms: 100,
+        run_id: "run-p2"
+      },
+      {
+        event_type: "verification_signal",
+        timestamp: "2024-01-02T00:01:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-phase2",
+        verification_type: "policy_check",
+        verification_latency_ms: 50,
+        run_id: "run-p2"
+      }
+    ]
+  });
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-phase2&include_signals=true")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces).toHaveLength(1);
+  expect(response.body.traces[0].disclosure.state).toBe("ALLOWED");
+  expect(response.body.traces[0].disclosure.reasons).toEqual([]);
+  expect(response.body.traces[0].pattern).toBe("Calibrated Fluency");
+  expect(response.body.traces[0].signals).toMatchObject({
+    event_count: 2,
+    verification_present: true
+  });
+  expect(response.body.traces[0].pattern_confidence_tier).toBe("medium");
+  expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");
+  expect(response.body.traces[0].lifecycle.retry_sequence_count).toBe(0);
+});
+
+it("suppresses interpretive fields when include_signals=true and disclosure rules fail", async () => {
+  await request(app).post("/api/events").set(schemaHeaders).send({
+    events: [
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2024-01-03T00:00:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-phase3-suppress",
+        disposition: "accepted",
+        edit_distance_bucket: "none",
+        verification_present: true,
+        time_to_action_ms: 100,
+        run_id: "run-single"
+      }
+    ]
+  });
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-phase3-suppress&include_signals=true")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces[0].disclosure.state).toBe("SUPPRESSED");
+  expect(response.body.traces[0].disclosure.reasons).toContain("insufficient_event_count");
+  expect(response.body.traces[0].disclosure.reasons).toContain("low_confidence_tier");
+  expect(response.body.traces[0].pattern).toBeNull();
+  expect(response.body.traces[0].signals).toBeNull();
+  expect(response.body.traces[0].pattern_confidence_tier).toBeNull();
+  expect(response.body.traces[0].ordered_event_ids.length).toBe(1);
+  expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");
+>>>>>>> desktop-sync-20260401
 });
 
 it("accepts configured compatibility versions and marks deprecated versions", async () => {

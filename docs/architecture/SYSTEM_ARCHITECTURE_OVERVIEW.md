@@ -48,7 +48,11 @@ References:
   - suppression metadata
 - Outputs:
   - `schema_version=evidence_bundle.v1`
+<<<<<<< HEAD
   - window-scoped evidence payload (`daily`, `weekly`, `30d`, `60d`)
+=======
+  - window-scoped evidence payload (`daily`, `weekly`, plus all shared `FluencyWindow` tokens)
+>>>>>>> desktop-sync-20260401
   - suppression state and reasons
 - Guarantees:
   - additive-compatible v1 behavior

@@ -15,4 +15,31 @@ Use `@/openspec/AGENTS.md` to learn:
 
 Keep this managed block so 'openspec update' can refresh the instructions.
 
+<<<<<<< HEAD
 <!-- OPENSPEC:END -->
+=======
+<!-- OPENSPEC:END -->
+
+## Agent execution (queue)
+
+**START HERE (queue-driven work):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`. Then `.antigravity/rules.md`.
+
+## Local workspace vs GitHub
+
+Treat **files in this Cursor workspace as source of truth** until you commit and push. Do not assume the remote default branch matches uncommitted local state.
+
+## Repo map (start here)
+
+| Area | Path |
+| --- | --- |
+| **Queue + session state** (one `in_progress` item) | [`.project/GOVERNANCE.md`](.project/GOVERNANCE.md), [`.project/WORK_QUEUE.json`](.project/WORK_QUEUE.json), [`.project/PROGRESS.md`](.project/PROGRESS.md) |
+| **Agent navigation hub** (maps, contracts, evaluation) | [`docs/agent/README.md`](docs/agent/README.md) |
+| **Long-running harness** (sessions, checklist, handoff) | [`harness/README.md`](harness/README.md) |
+| **OpenSpec** (proposals, specs, validate) | [`openspec/AGENTS.md`](openspec/AGENTS.md) |
+| **Architecture** | [`docs/ARCHITECTURE_MAP.md`](docs/ARCHITECTURE_MAP.md) |
+| **CI truth** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+
+## Long-running agent harness (Codex, Claude, Cursor)
+
+For multi-session work, follow [`harness/README.md`](harness/README.md). First session: [`harness/prompts/initializer.md`](harness/prompts/initializer.md). Later sessions: [`harness/prompts/incremental_session.md`](harness/prompts/incremental_session.md). Checklist: [`harness/feature_list.json`](harness/feature_list.json); handoff log: [`harness/agent-progress.txt`](harness/agent-progress.txt). After substantive edits, run checks in [`docs/agent/EVALUATION.md`](docs/agent/EVALUATION.md) (includes `./harness/scripts/verify.sh`).
+>>>>>>> desktop-sync-20260401

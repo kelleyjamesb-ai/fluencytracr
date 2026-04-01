@@ -7,7 +7,13 @@ import {
   FluencyEvent,
   FluencyPattern,
   DecisionLedgerEntry,
+<<<<<<< HEAD
   DecisionLedgerEvaluationInput
+=======
+  DecisionLedgerEvaluationInput,
+  UnifiedTelemetryEvent,
+  resolveFluencyExecutionId
+>>>>>>> desktop-sync-20260401
 } from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
@@ -219,8 +225,27 @@ export type FunctionRecord = {
 
 export type FluencyEventRecord = FluencyEvent & {
   event_id: string;
+<<<<<<< HEAD
 };
 
+=======
+  /** Normalized execution boundary (PRD Phase 1). */
+  execution_id: string;
+};
+
+export const buildFluencyEventRecord = (event: FluencyEvent, eventId: string): FluencyEventRecord => ({
+  ...event,
+  event_id: eventId,
+  execution_id: resolveFluencyExecutionId(event.workflow_id, {
+    run_id: event.run_id,
+    workflow_run_id: event.workflow_run_id,
+    event_id: eventId
+  })
+});
+
+export type UnifiedTelemetryEventRecord = UnifiedTelemetryEvent;
+
+>>>>>>> desktop-sync-20260401
 export type FluencyPatternRecord = FluencyPattern;
 
 export type DecisionLedgerEntryRecord = DecisionLedgerEntry;
@@ -378,6 +403,10 @@ class MemoryStore {
   functions = new Map<string, FunctionRecord>();
   behavioralSignals = new Map<string, BehavioralSignalRecord>();
   fluencyEvents = new Map<string, FluencyEventRecord>();
+<<<<<<< HEAD
+=======
+  unifiedTelemetryEvents = new Map<string, UnifiedTelemetryEventRecord>();
+>>>>>>> desktop-sync-20260401
   fluencyPatterns = new Map<string, FluencyPatternRecord>();
   patternInferenceRecords: PatternInferenceRecord[] = [];
   inferenceAuditLogs: InferenceAuditRecord[] = [];
@@ -416,6 +445,10 @@ class MemoryStore {
     this.functions.clear();
     this.behavioralSignals.clear();
     this.fluencyEvents.clear();
+<<<<<<< HEAD
+=======
+    this.unifiedTelemetryEvents.clear();
+>>>>>>> desktop-sync-20260401
     this.fluencyPatterns.clear();
     this.patternInferenceRecords = [];
     this.inferenceAuditLogs = [];
@@ -452,6 +485,13 @@ export const insertFluencyEvent = (event: FluencyEventRecord) => {
   store.fluencyEvents.set(event.event_id, event);
 };
 
+<<<<<<< HEAD
+=======
+export const insertUnifiedTelemetryEvent = (event: UnifiedTelemetryEventRecord) => {
+  store.unifiedTelemetryEvents.set(event.event_id, event);
+};
+
+>>>>>>> desktop-sync-20260401
 export const upsertFluencyPattern = (key: string, pattern: FluencyPatternRecord) => {
   store.fluencyPatterns.set(key, pattern);
 };

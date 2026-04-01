@@ -112,7 +112,11 @@ if __name__ == "__main__":
 工具输入约束:
 - 仅允许枚举值和有界字段
 - 拒绝自由文本内容字段
+<<<<<<< HEAD
 - 窗口枚举仅允许: `daily`, `weekly`, `30d`, `60d`
+=======
+- 窗口枚举仅允许: `daily`, `weekly`, `30d`, `60d`, `90d`, `180d`, `360d`, `3m`, `6m`, `12m`
+>>>>>>> desktop-sync-20260401
 - `risk_class`、`workflow_category`、`tool_class` 必须是受限枚举
 
 鉴权与范围:

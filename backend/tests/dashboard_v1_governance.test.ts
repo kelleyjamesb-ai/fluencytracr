@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 import { app } from "../src/app";
 import { store } from "../src/store";
+=======
+import type { FluencyEvent } from "@learnaire/shared";
+import { app } from "../src/app";
+import { store, buildFluencyEventRecord } from "../src/store";
+>>>>>>> desktop-sync-20260401
 import type { Server } from "http";
 import {
   BoardSnapshotResponseSchema,
@@ -53,6 +59,7 @@ const startServer = () => {
   });
 };
 
+<<<<<<< HEAD
 const baseEvent = (workflowId: string, id: string, overrides: Record<string, unknown> = {}) => ({
   event_id: id,
   event_type: "ai_output_disposition" as const,
@@ -66,6 +73,25 @@ const baseEvent = (workflowId: string, id: string, overrides: Record<string, unk
   time_to_action_ms: 1000,
   ...overrides
 });
+=======
+const baseEvent = (workflowId: string, id: string, overrides: Record<string, unknown> = {}) => {
+  const merged: Record<string, unknown> = {
+    event_type: "ai_output_disposition",
+    timestamp: new Date().toISOString(),
+    risk_class: "high",
+    org_unit: "org:executive",
+    workflow_id: workflowId,
+    disposition: "accepted",
+    edit_distance_bucket: "none",
+    verification_present: false,
+    time_to_action_ms: 1000,
+    ...overrides
+  };
+  delete merged.event_id;
+  delete merged.execution_id;
+  return buildFluencyEventRecord(merged as FluencyEvent, id);
+};
+>>>>>>> desktop-sync-20260401
 
 const collectForbiddenFieldPaths = (
   value: unknown,
@@ -189,10 +215,28 @@ describe("dashboard v1 governance enforcement", () => {
     const rowWithoutVerification = withoutVerificationPayload.workflows.find((row: any) => row.workflow_id === "wf-high-risk");
     expect(rowWithoutVerification.visibility_state).toBe("NOT_ENOUGH_DATA_YET");
 
+<<<<<<< HEAD
     store.fluencyEvents.set("high-verification-1", {
       ...baseEvent("wf-high-risk", "high-verification-1"),
       event_type: "verification_signal"
     });
+=======
+    store.fluencyEvents.set(
+      "high-verification-1",
+      buildFluencyEventRecord(
+        {
+          event_type: "verification_signal",
+          timestamp: new Date().toISOString(),
+          risk_class: "high",
+          org_unit: "org:executive",
+          workflow_id: "wf-high-risk",
+          verification_type: "policy_check",
+          verification_latency_ms: 1000
+        },
+        "high-verification-1"
+      )
+    );
+>>>>>>> desktop-sync-20260401
     const withVerification = await fetch(`${server.url}/api/board-snapshot/org-1?window=60d`, {
       headers: { "x-role": "EXEC_VIEWER" }
     });

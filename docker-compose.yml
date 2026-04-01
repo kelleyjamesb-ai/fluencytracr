@@ -8,6 +8,13 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - AGENT_NAME=ProductionAgent
       - DEBUG_MODE=true
+<<<<<<< HEAD
     volumes:
       - ./agent_memory.json:/app/agent_memory.json
+=======
+      - ENVIRONMENT=production
+      - MEMORY_FILE=/app/artifacts/runtime/agent_memory.json
+    volumes:
+      - ./artifacts/runtime:/app/artifacts/runtime
+>>>>>>> desktop-sync-20260401
     restart: unless-stopped

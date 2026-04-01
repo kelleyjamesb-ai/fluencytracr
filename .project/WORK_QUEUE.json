@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "schema": {
+    "document": "Root keys: version (number), schema (object, documentation only), blueprint_ref (string, optional pointer), items (array). Validators must allow blueprint_ref.",
+    "item": {
+      "id": "string, stable kebab-case",
+      "title": "string, bounded scope",
+      "bound": "string, files or acceptance criteria",
+      "status": "pending | in_progress | done",
+      "risk": "low | medium | high",
+      "last_note": "optional string, agent status-only"
+    }
+  },
+  "blueprint_ref": "artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md §17 Build Phases",
+  "items": [
+    {
+      "id": "phase-01-schemas-ingest",
+      "title": "Phase 1 — Schemas + ingestion (append-only POST /api/events)",
+      "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint §2 (services/ingest layout), §4 Event Schema, §14 API, §17 phase 1",
+      "status": "pending",
+      "risk": "medium",
+      "last_note": "Confirm vs existing app.ts + store; mark done only when blueprint Phase 1 criteria met"
+    },
+    {
+      "id": "phase-02-execution-trace",
+      "title": "Phase 2 — Execution + trace reconstruction",
+      "bound": "trace_engine + lifecycle reducer; ordering, retries, tool/step grouping; blueprint §5–6, §17 phase 2",
+      "status": "pending",
+      "risk": "medium",
+      "last_note": "Depends on phase-01 for event source; may be largely implemented — verify tests"
+    },
+    {
+      "id": "phase-03-fsc-min-signal",
+      "title": "Phase 3 — FSC eligibility + minimum signal gates (hard pre-classify)",
+      "bound": "PRD §18 FSC + §20 min signal + §21 steps 1–2 only (not full classify); map to INCOMPLETE_EXECUTION / INSUFFICIENT_SIGNAL; code: services/gates or execution_disclosure; blueprint §7 FSC, §8 Min Signal (§12 suppression wiring continues in phase-05)",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "Primary PRD gap; INCOMPLETE_EXECUTION vs INSUFFICIENT_SIGNAL before any pattern logic"
+    },
+    {
+      "id": "phase-04-signals-calibration",
+      "title": "Phase 4 — Signal detection + threshold calibration (internal numeric)",
+      "bound": "execution_signals + workflow_baseline: rolling N=200 per workflow, P25/P75; categories LOW/NORMAL/HIGH internal; no numeric API leak; blueprint §9–10",
+      "status": "pending",
+      "risk": "medium",
+      "last_note": "After phase-03 stable; supersedes calendar-only baseline if still present"
+    },
+    {
+      "id": "phase-05-classify-suppress",
+      "title": "Phase 5 — Deterministic pattern classification + suppression pipeline",
+      "bound": "behavioral_patterns + suppression: priority order, mutual exclusion, ambiguity → AMBIGUITY; no inference/ML on product path; blueprint §11–12",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Wire full §21 hierarchy; audit log optional per blueprint §15"
+    },
+    {
+      "id": "phase-06-aggregation-api",
+      "title": "Phase 6 — Workflow aggregation + observability API",
+      "bound": "observability_aggregate + GET /api/observability/:orgId; workflow-level only; cohort suppression; blueprint §13–14",
+      "status": "pending",
+      "risk": "medium",
+      "last_note": "No trends, ranks, scores, raw thresholds in responses"
+    },
+    {
+      "id": "phase-07-hardening-verify",
+      "title": "Phase 7 — Tests, harness verify, governance regression",
+      "bound": "harness/scripts/verify.sh; harness/feature_list.json passes per docs/agent/EVALUATION.md; blueprint §16 + forbidden-field API tests",
+      "status": "pending",
+      "risk": "low",
+      "last_note": "Gate before treating v1 blueprint as complete"
+    }
+  ]
+}

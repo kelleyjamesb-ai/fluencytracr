@@ -1,5 +1,9 @@
 import json
 import os
+<<<<<<< HEAD
+=======
+from pathlib import Path
+>>>>>>> desktop-sync-20260401
 from typing import Any, Callable, Dict, List, Optional
 from src.config import settings
 
@@ -38,11 +42,20 @@ class MemoryManager:
 
     def save_memory(self):
         """Saves the current memory state to the JSON file."""
+<<<<<<< HEAD
+=======
+        path = Path(self.memory_file)
+        path.parent.mkdir(parents=True, exist_ok=True)
+>>>>>>> desktop-sync-20260401
         payload = {
             "summary": self.summary,
             "history": self._memory,
         }
+<<<<<<< HEAD
         with open(self.memory_file, 'w', encoding='utf-8') as f:
+=======
+        with open(path, 'w', encoding='utf-8') as f:
+>>>>>>> desktop-sync-20260401
             json.dump(payload, f, indent=2, ensure_ascii=False)
 
     def add_entry(self, role: str, content: str, metadata: Optional[Dict[str, Any]] = None):
