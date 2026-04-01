@@ -6,7 +6,8 @@ env:
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches:
+      - "**"
 
 jobs:
   enforcement_state_gate:
