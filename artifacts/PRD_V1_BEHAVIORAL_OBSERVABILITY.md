@@ -472,10 +472,10 @@ verification:
 | `POST /api/events` | Implemented in `backend/src/app.ts` with `FluencyEventIngestSchema`, RBAC, schema version + forbidden-field middleware. |
 | Partner / fluency ingest | `POST /api/ingest` — see `docs/api/ingest.md`. |
 | Unified telemetry | `POST /api/ingest/unified-telemetry` (feature-flagged) — `docs/api/ingest-unified-telemetry.md`. |
-| `GET /api/observability/:org_id` | **PRD target** — not asserted implemented here; requires Phase 4 + governance review. |
+| `GET /api/observability/:orgId` | **Phase 4** — `docs/api/observability-org.md` (workflow-level aggregates; `30d`/`60d` windows). |
 | `GET /api/traces/reconstructed` | **Phase 1–2 internal read** — add `include_signals=true` for per-execution signals + pattern (`docs/api/traces-reconstructed.md`). Not the Phase 4 observability surface. |
 
-Normalization, trace reconstruction, **per-execution signals/patterns** (`include_signals`), and **disclosure** (`ALLOWED` / `SUPPRESSED` with reasons; interpretive fields nulled when suppressed) are implemented for the internal trace route. Workflow-relative numeric baselines (PRD §16) for thresholds are **not** wired yet. Full execution state machine (§13) remains **future** work.
+Normalization, trace reconstruction, **per-execution signals/patterns** (`include_signals`), **disclosure**, and **workflow-level observability** (`GET /api/observability/:orgId`) are implemented against the in-memory fluency event store. Workflow-relative numeric baselines (PRD §16) for thresholds are **not** wired yet. Full execution state machine (§13) remains **future** work.
 
 ---
 

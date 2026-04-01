@@ -29,6 +29,7 @@ import {
   WorkflowRegistryCreateVersionResponse,
   WorkflowRegistryAuditResponse,
   BoardSnapshotVisibilityLabel,
+  ObservabilityResponseSchema,
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent, UnifiedTelemetryEvent } from "@learnaire/shared";
@@ -60,6 +61,7 @@ import type {
 import { reconstructTracesForQuery } from "./trace_engine";
 import { attachPhase2ToTraces } from "./execution_signals";
 import { applyDisclosureToTraces } from "./execution_disclosure";
+import { buildObservabilityRollup } from "./observability_aggregate";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -3964,6 +3966,50 @@ app.get(
       return res.json({ traces: applyDisclosureToTraces(withSignals) });
     }
     return res.json({ traces });
+  }
+);
+
+app.get(
+  "/api/observability/:orgId",
+  rbacMiddleware(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    if (req.authOrgId && req.authOrgId !== req.params.orgId) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Org scope mismatch"
+      });
+    }
+    const windowParsed = FluencyWindowSchema.safeParse(req.query.window ?? "60d");
+    if (!windowParsed.success) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+    const observationWindow = windowParsed.data;
+    if (observationWindow !== "30d" && observationWindow !== "60d") {
+      return res.status(400).json({
+        error: "Unsupported window",
+        supported_windows: ["30d", "60d"]
+      });
+    }
+    const workflows = buildObservabilityRollup(
+      Array.from(store.fluencyEvents.values()),
+      org.id,
+      observationWindow,
+      { minDisclosedExecutions: MIN_COHORT_SIZE, now: new Date() }
+    );
+    const payload = {
+      org_id: org.id,
+      observation_window: observationWindow,
+      workflows
+    };
+    const validated = ObservabilityResponseSchema.safeParse(payload);
+    if (!validated.success) {
+      return res.status(500).json({ error: "Internal response shape error" });
+    }
+    return res.json(validated.data);
   }
 );
 

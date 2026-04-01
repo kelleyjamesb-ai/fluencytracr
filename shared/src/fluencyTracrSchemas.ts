@@ -398,3 +398,38 @@ export const BoardSnapshotResponseSchema = z.object({
   workflows: z.array(BoardSnapshotWorkflowRowSchema)
 }).strict();
 export type BoardSnapshotResponse = z.infer<typeof BoardSnapshotResponseSchema>;
+
+/** PRD Phase 4 — fixed key order; counts are not ranks (no sorting by value in API). */
+export const ObservabilityPatternDistributionSchema = z
+  .object({
+    "Calibrated Fluency": z.number().int().nonnegative(),
+    "Blind Efficiency": z.number().int().nonnegative(),
+    "Recovery Maturity": z.number().int().nonnegative(),
+    "Friction Loop": z.number().int().nonnegative(),
+    "Undertrust Avoidance": z.number().int().nonnegative()
+  })
+  .strict();
+export type ObservabilityPatternDistribution = z.infer<typeof ObservabilityPatternDistributionSchema>;
+
+export const ObservabilityWorkflowRowSchema = z
+  .object({
+    workflow_id: z.string().min(1),
+    executions_total: z.number().int().nonnegative(),
+    executions_disclosed: z.number().int().nonnegative(),
+    executions_suppressed: z.number().int().nonnegative(),
+    disclosure: z.enum(["ALLOWED", "SUPPRESSED"]),
+    suppression_reasons: z.array(z.string().min(1)),
+    pattern_distribution: ObservabilityPatternDistributionSchema.nullable(),
+    allowed_interpretation_hints: z.array(z.string().min(1))
+  })
+  .strict();
+export type ObservabilityWorkflowRow = z.infer<typeof ObservabilityWorkflowRowSchema>;
+
+export const ObservabilityResponseSchema = z
+  .object({
+    org_id: z.string().min(1),
+    observation_window: FluencyWindowSchema,
+    workflows: z.array(ObservabilityWorkflowRowSchema)
+  })
+  .strict();
+export type ObservabilityResponse = z.infer<typeof ObservabilityResponseSchema>;

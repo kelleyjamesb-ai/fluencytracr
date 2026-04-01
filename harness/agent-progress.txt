@@ -60,3 +60,10 @@
 - Harness: `prd-phase-03` **`passes: true`**.
 - Next focus: **`prd-phase-04`** (workflow-level observability API) or workflow-relative thresholds (PRD §16) without trend leakage.
 
+## 2026-04-01 (UTC) — Cursor (PRD Phase 4)
+
+- Completed: **`GET /api/observability/:orgId`** — `buildObservabilityRollup` (`observability_aggregate.ts`): org-scoped + windowed events, per-execution Phase 2/3 pipeline, workflow-level `pattern_distribution` (fixed keys), cohort suppression via `MIN_COHORT_SIZE`, `allowed_interpretation_hints` only when workflow `ALLOWED`. Shared Zod `ObservabilityResponseSchema`. Tests: `observability_aggregate.test.ts`, `observability_api.test.ts`. Doc `docs/api/observability-org.md`, README link. OpenSpec `add-prd-phase4-observability-api`.
+- Verified: `npm run test:ci --workspace backend` (290 tests).
+- Harness: `prd-phase-04` **`passes: true`**.
+- Next focus: PRD §16 workflow-relative thresholds (no trend leakage), persistence beyond in-memory store, or product hardening.
+

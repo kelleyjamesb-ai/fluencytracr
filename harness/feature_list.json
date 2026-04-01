@@ -109,7 +109,7 @@
         "Expose only workflow-level distributions and allowed interpretations (PRD §7–§8)",
         "Verify no ranking, trends, or individual exposure at API boundary"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
