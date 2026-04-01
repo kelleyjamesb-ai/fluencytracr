@@ -1,9 +1,14 @@
 import type { FluencyPatternName, FluencyWindow } from "@learnaire/shared";
-import { classifyExecutionPattern, computeExecutionSignals } from "./execution_signals";
+import {
+  classifyExecutionPattern,
+  computeExecutionSignals,
+  DEFAULT_PHASE2_THRESHOLDS
+} from "./execution_signals";
 import { evaluateExecutionDisclosure } from "./execution_disclosure";
 import type { FluencyEventRecord } from "./store";
 import { filterEventsByWindow, MIN_COHORT_SIZE } from "./fluencytracr";
 import { groupEventsByExecution, reconstructTrace } from "./trace_engine";
+import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
 
 export const PATTERN_ORDER: FluencyPatternName[] = [
   "Calibrated Fluency",
@@ -76,6 +81,7 @@ export const buildObservabilityRollup = (
 
   const scoped = allEvents.filter((e) => eventBelongsToOrg(e, orgId));
   const windowed = filterEventsByWindow(scoped, window, now) as FluencyEventRecord[];
+  const thresholdsByWorkflow = buildWorkflowPhase2ThresholdMap(windowed);
 
   const workflowIds = [...new Set(windowed.map((e) => e.workflow_id))].sort((a, b) =>
     a.localeCompare(b)
@@ -84,6 +90,8 @@ export const buildObservabilityRollup = (
   return workflowIds.map((workflowId) => {
     const wfEvents = windowed.filter((e) => e.workflow_id === workflowId);
     const byExec = groupEventsByExecution(wfEvents);
+    const workflowThresholds =
+      thresholdsByWorkflow.get(workflowId) ?? DEFAULT_PHASE2_THRESHOLDS;
     let executions_disclosed = 0;
     let executions_suppressed = 0;
     const dist = emptyPatternDistribution();
@@ -95,7 +103,7 @@ export const buildObservabilityRollup = (
       }
       const signals = computeExecutionSignals(group, trace);
       const disclosure = evaluateExecutionDisclosure(signals);
-      const pattern = classifyExecutionPattern(signals);
+      const pattern = classifyExecutionPattern(signals, workflowThresholds);
       if (disclosure.state === "ALLOWED") {
         executions_disclosed += 1;
         dist[pattern] += 1;

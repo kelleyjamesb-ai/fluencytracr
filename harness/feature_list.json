@@ -110,6 +110,28 @@
         "Verify no ranking, trends, or individual exposure at API boundary"
       ],
       "passes": true
+    },
+    {
+      "id": "prd-baseline-016",
+      "category": "functional",
+      "description": "PRD §16 — Workflow-scoped baseline percentiles for Phase 2 thresholds (no numeric baseline on APIs)",
+      "steps": [
+        "`backend/src/workflow_baseline.ts`: `buildWorkflowPhase2ThresholdMap`, env `WORKFLOW_BASELINE_MIN_EXECUTIONS`",
+        "Wired in `observability_aggregate.ts` and `attachPhase2ToTraces` (default `90d` baseline_window for traces; overridable)",
+        "Tests: `backend/tests/workflow_baseline.test.ts`"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-lifecycle-013",
+      "category": "functional",
+      "description": "PRD §13 — Execution lifecycle inference on traces (`lifecycle` when include_signals)",
+      "steps": [
+        "`backend/src/execution_lifecycle.ts`: `computeExecutionLifecycle`, timeouts/window constants",
+        "`TraceWithPhase2.lifecycle` populated in `attachPhase2ToTraces`; not stripped by disclosure",
+        "Tests: `backend/tests/execution_lifecycle.test.ts`, contracts assertions"
+      ],
+      "passes": true
     }
   ]
 }

@@ -66,10 +66,18 @@ it("returns observability payload with schema validation", async () => {
   expect(row?.pattern_distribution).not.toBeNull();
 });
 
-it("rejects unsupported window", async () => {
+it("rejects invalid window token", async () => {
   const res = await request(app)
-    .get("/api/observability/org-1?window=12m")
+    .get("/api/observability/org-1?window=not-a-window")
     .set({ "x-role": "EXEC_VIEWER" });
   expect(res.status).toBe(400);
-  expect(res.body.supported_windows).toEqual(["30d", "60d"]);
+  expect(res.body.error).toBe("Invalid query");
+});
+
+it("accepts extended day windows", async () => {
+  const res = await request(app)
+    .get("/api/observability/org-1?window=180d")
+    .set({ "x-role": "EXEC_VIEWER" });
+  expect(res.status).toBe(200);
+  expect(res.body.observation_window).toBe("180d");
 });

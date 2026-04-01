@@ -19,7 +19,9 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 # 🤖 Claude Code Entry Point
 
-**Read and follow only:** `.antigravity/rules.md`
+**START HERE (every session):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`.
+
+**Then read and follow:** `.antigravity/rules.md`
 
 ## Long-running agent harness (shared with Codex)
 

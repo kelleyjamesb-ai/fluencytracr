@@ -19,6 +19,10 @@ const safeDivide = (numerator: number, denominator: number, fallback = 0): numbe
 export const WINDOW_DAYS: Record<FluencyWindow, number> = {
   "30d": 30,
   "60d": 60,
+  "90d": 90,
+  "180d": 180,
+  /** Product token `360d`; span is 365 calendar days (aligned with `12m`). */
+  "360d": 365,
   "3m": 90,
   "6m": 180,
   "12m": 365

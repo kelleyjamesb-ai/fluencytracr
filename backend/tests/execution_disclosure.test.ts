@@ -73,5 +73,6 @@ describe("applyDisclosureToTrace", () => {
     expect(out.disclosure.state).toBe("SUPPRESSED");
     expect(out.pattern).toBeNull();
     expect(out.signals).toBeNull();
+    expect(out.lifecycle.state).toBe("COMPLETED");
   });
 });

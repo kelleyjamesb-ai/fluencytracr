@@ -17,6 +17,10 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
+## Agent execution (queue)
+
+**START HERE (queue-driven work):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`. Then `.antigravity/rules.md`.
+
 ## Local workspace vs GitHub
 
 Treat **files in this Cursor workspace as source of truth** until you commit and push. Do not assume the remote default branch matches uncommitted local state.
@@ -25,6 +29,7 @@ Treat **files in this Cursor workspace as source of truth** until you commit and
 
 | Area | Path |
 | --- | --- |
+| **Queue + session state** (one `in_progress` item) | [`.project/GOVERNANCE.md`](.project/GOVERNANCE.md), [`.project/WORK_QUEUE.json`](.project/WORK_QUEUE.json), [`.project/PROGRESS.md`](.project/PROGRESS.md) |
 | **Agent navigation hub** (maps, contracts, evaluation) | [`docs/agent/README.md`](docs/agent/README.md) |
 | **Long-running harness** (sessions, checklist, handoff) | [`harness/README.md`](harness/README.md) |
 | **OpenSpec** (proposals, specs, validate) | [`openspec/AGENTS.md`](openspec/AGENTS.md) |

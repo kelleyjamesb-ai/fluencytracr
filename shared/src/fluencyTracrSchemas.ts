@@ -1,7 +1,19 @@
 import { z } from "zod";
 
-export const FluencyWindowSchema = z.enum(["30d", "60d", "3m", "6m", "12m"]);
+export const FluencyWindowSchema = z.enum([
+  "30d",
+  "60d",
+  "90d",
+  "180d",
+  "360d",
+  "3m",
+  "6m",
+  "12m"
+]);
 export type FluencyWindow = z.infer<typeof FluencyWindowSchema>;
+
+/** All tokens accepted for `window` / baseline-style query params (observability, traces, etc.). */
+export const FLUENCY_WINDOW_VALUES = FluencyWindowSchema.options as readonly FluencyWindow[];
 
 export const FluencyScopeSchema = z.enum(["org", "function", "workflow"]);
 export type FluencyScope = z.infer<typeof FluencyScopeSchema>;

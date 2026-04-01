@@ -11,6 +11,7 @@
 | Product architecture and APIs | [`docs/ARCHITECTURE_MAP.md`](../ARCHITECTURE_MAP.md), [`README.md`](../../README.md) canonical doc list |
 | Scope and privacy guardrails | [`SCOPE_GUARDRAILS.md`](../../SCOPE_GUARDRAILS.md) |
 | Contracts / events | [`FluencyTracr_V1_Event_Contract.md`](../../FluencyTracr_V1_Event_Contract.md), [`docs/contracts/`](../contracts/) |
+| Product requirements (PRD v1) | [`artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md`](../../artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md) — harness phases: `prd-phase-01`…`04` in [`harness/feature_list.json`](../../harness/feature_list.json) |
 
 ## Task shape and verification
 

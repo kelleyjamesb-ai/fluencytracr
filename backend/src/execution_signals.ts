@@ -1,7 +1,10 @@
-import type { FluencyPatternName } from "@learnaire/shared";
+import type { FluencyPatternName, FluencyWindow } from "@learnaire/shared";
 import type { FluencyEventRecord } from "./store";
 import type { ReconstructedTrace } from "./trace_engine";
+import { computeExecutionLifecycle, type ExecutionLifecycle } from "./execution_lifecycle";
+import { filterEventsByWindow } from "./fluencytracr";
 import { sortEventsByTimestamp } from "./trace_engine";
+import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
 
 /**
  * PRD §17-style registry: which structural inputs each signal needs.
@@ -213,13 +216,31 @@ export type TraceWithPhase2 = ReconstructedTrace & {
   signals: ExecutionSignals;
   pattern: FluencyPatternName;
   pattern_confidence_tier: ExecutionSignals["confidence_tier"];
+  /** PRD §13 — structural lifecycle; not suppressed with signals/pattern. */
+  lifecycle: ExecutionLifecycle;
+};
+
+export type AttachPhase2Options = {
+  now?: Date;
+  /** PRD §16: when omitted, derived from `allEvents` in `baselineWindow`. */
+  thresholdsByWorkflow?: Map<string, Phase2Thresholds>;
+  baselineWindow?: FluencyWindow;
+  /** Use one threshold map for all workflows (tests / pinned behavior). */
+  flatThresholds?: Phase2Thresholds;
 };
 
 export const attachPhase2ToTraces = (
   traces: ReconstructedTrace[],
   allEvents: FluencyEventRecord[],
-  thresholds: Phase2Thresholds = DEFAULT_PHASE2_THRESHOLDS
+  options: AttachPhase2Options = {}
 ): TraceWithPhase2[] => {
+  const now = options.now ?? new Date();
+  const baselineWindow = options.baselineWindow ?? "90d";
+  const windowed = filterEventsByWindow(allEvents, baselineWindow, now) as FluencyEventRecord[];
+  const thresholdsByWorkflow: Map<string, Phase2Thresholds> | null = options.flatThresholds
+    ? null
+    : options.thresholdsByWorkflow ?? buildWorkflowPhase2ThresholdMap(windowed);
+
   const byExec = new Map<string, FluencyEventRecord[]>();
   for (const e of allEvents) {
     const list = byExec.get(e.execution_id) ?? [];
@@ -229,12 +250,19 @@ export const attachPhase2ToTraces = (
 
   return traces.map((trace) => {
     const group = byExec.get(trace.execution_id) ?? [];
+    const ordered = sortEventsByTimestamp(group);
     const signals = computeExecutionSignals(group, trace);
+    const thresholds =
+      options.flatThresholds ??
+      thresholdsByWorkflow?.get(trace.workflow_id) ??
+      DEFAULT_PHASE2_THRESHOLDS;
+    const lifecycle = computeExecutionLifecycle(ordered, trace, { now });
     return {
       ...trace,
       signals,
       pattern: classifyExecutionPattern(signals, thresholds),
-      pattern_confidence_tier: signals.confidence_tier
+      pattern_confidence_tier: signals.confidence_tier,
+      lifecycle
     };
   });
 };

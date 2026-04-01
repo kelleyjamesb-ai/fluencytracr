@@ -7,6 +7,7 @@ It uses EvidenceBundle v1 as the stable evidence contract and `/api/ingest` as t
 References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
+- **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
 
 ## Two integration modes
 
@@ -22,15 +23,17 @@ References:
 
 ## Shipped now versus later
 
-### Shipped now
-- EvidenceBundle v1 contract documentation.
-- `/api/ingest` partner facade contract documentation.
+### Shipped now (v1-ready contracts and API parity)
+- EvidenceBundle v1 contract documentation and JSON schema (`window`: `daily`, `weekly`, and all **`FluencyWindow`** tokens: `30d`, `60d`, `90d`, `180d`, `360d`, `3m`, `6m`, `12m`).
+- Backend evidence routes accept the same window set as the executive dashboard rolling windows (`GET /api/evidence/bundles|coverage|controls/:orgId`).
+- `/api/patterns`, `/api/coverage`, `/orgs/:orgId/telemetry/index`, `/api/orientation/:orgId`, and `/api/board-snapshot/:orgId` accept any valid **`FluencyWindow`** (schema-validated); inference record matching uses `WINDOW_DAYS` per token.
 - Glean indexing documentation and acceptance scenarios in this pack.
+- MCP adapter **contract** and tool surface specification: `docs/mcp/fluencytracr-mcp-server.md` (aligned window enums with evidence API).
 
-### Later
-- MCP adapter rollout for direct tool orchestration by governance assistants.
-- Expanded agentic coverage for additional oversight and reliability evidence.
-- Automated publisher and agent guardrail enforcement in CI.
+### Later (runtime and automation)
+- Deployed MCP server binary and hosted adapter rollout for production agent orchestration.
+- Automated EvidenceBundle publisher (scheduled jobs) and CI enforcement for indexing/guardrails.
+- Expanded agentic coverage for additional oversight and reliability evidence beyond the bounded question classes in `03-glean-agent-tooling.md`.
 
 ## Multi-agent readiness boundaries
 - Agentic emitters and human telemetry emitters are both in scope.
@@ -42,4 +45,3 @@ References:
 - No individual attribution.
 - No rankings or performance score proxies.
 - Suppression rules apply before indexing and before agent answer generation.
-

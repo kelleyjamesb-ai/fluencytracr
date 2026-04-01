@@ -316,19 +316,19 @@ describe("workflow registry and orientation API", () => {
     expect(payload.workflows[0]).not.toHaveProperty("performance");
   });
 
-  it("rejects non-60d window for orientation and board snapshot", async () => {
+  it("accepts extended FluencyWindow values for orientation and board snapshot", async () => {
     const server = await startServer();
 
-    const orientation = await fetch(`${server.url}/api/orientation/org-1?window=30d`, {
+    const orientation = await fetch(`${server.url}/api/orientation/org-1?window=90d`, {
       headers: { "x-role": "EXEC_VIEWER" }
     });
-    const board = await fetch(`${server.url}/api/board-snapshot/org-1?window=30d`, {
+    const board = await fetch(`${server.url}/api/board-snapshot/org-1?window=180d`, {
       headers: { "x-role": "EXEC_VIEWER" }
     });
 
     await server.close();
 
-    expect(orientation.status).toBe(400);
-    expect(board.status).toBe(400);
+    expect(orientation.status).toBe(200);
+    expect(board.status).toBe(200);
   });
 });

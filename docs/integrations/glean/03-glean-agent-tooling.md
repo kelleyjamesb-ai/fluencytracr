@@ -19,9 +19,9 @@ Out of scope question classes:
 
 ## Callable FluencyTracr endpoints
 Agent tools may call only bounded, read-only evidence routes plus ingestion facade where needed for partner relay:
-- `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d>`
-- `GET /api/evidence/coverage/:orgId?window=<daily|weekly|30d|60d>`
-- `GET /api/evidence/controls/:orgId?window=<daily|weekly|30d|60d>`
+- `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
+- `GET /api/evidence/coverage/:orgId?window=<...>` (same window enum as bundles)
+- `GET /api/evidence/controls/:orgId?window=<...>` (same window enum as bundles)
 - `POST /api/ingest` for metadata/event intake from approved integration pipelines
 
 ## Suppression propagation into agent responses

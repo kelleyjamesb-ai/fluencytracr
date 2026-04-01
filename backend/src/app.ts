@@ -19,6 +19,7 @@ import {
   UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
+  FLUENCY_WINDOW_VALUES,
   DecisionLedgerCreateSchema,
   DecisionLedgerEvaluationInputSchema,
   WorkflowRegistryVersionCreateSchema,
@@ -32,7 +33,7 @@ import {
   ObservabilityResponseSchema,
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
-import type { FluencyEvent, UnifiedTelemetryEvent } from "@learnaire/shared";
+import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@learnaire/shared";
 import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
@@ -238,9 +239,10 @@ const ingestLimiter = rateLimit({
   }
 });
 
-const SUPPORTED_INFERENCE_WINDOWS = new Set(["30d", "60d"]);
+/** Evidence routes: calendar buckets plus all `FluencyWindow` rolling tokens (aligned with dashboard). */
+const EVIDENCE_WINDOWS = new Set<string>(["daily", "weekly", ...FLUENCY_WINDOW_VALUES]);
 
-const EVIDENCE_WINDOWS = new Set(["daily", "weekly", "30d", "60d"]);
+type EvidenceBundleWindow = FluencyWindow | "daily" | "weekly";
 const INGEST_RECEIPT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // Initialize connector service and load connector mappings
@@ -426,17 +428,18 @@ const latestControls = (controlNames: string[], controls: typeof store.controls)
   return { bucket_start: latestBucket, values };
 };
 
-const matchesWindow = (record: { window_start: string; window_end: string }, window: string) => {
-  if (window !== "30d" && window !== "60d") {
-    return false;
-  }
+const matchesWindow = (
+  record: { window_start: string; window_end: string },
+  window: FluencyWindow
+): boolean => {
+  const expectedDays = WINDOW_DAYS[window];
   const start = new Date(record.window_start);
   const end = new Date(record.window_end);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return false;
   }
   const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return days === (window === "30d" ? 30 : 60);
+  return days === expectedDays;
 };
 
 const workflowIdFromScopeKey = (scopeKey: string) => {
@@ -565,17 +568,17 @@ const evidenceStatusFromCondition = (
   return condition ? "present" : "not_present";
 };
 
-const evidenceWindowDays = (window: string) => {
+const evidenceWindowDays = (window: EvidenceBundleWindow): number => {
   if (window === "daily") {
     return 1;
   }
   if (window === "weekly") {
     return 7;
   }
-  return window === "30d" ? 30 : 60;
+  return WINDOW_DAYS[window];
 };
 
-const buildEvidenceBundle = (orgId: string, window: "daily" | "weekly" | "30d" | "60d") => {
+const buildEvidenceBundle = (orgId: string, window: EvidenceBundleWindow) => {
   const now = new Date();
   const start = new Date(now);
   start.setUTCDate(start.getUTCDate() - evidenceWindowDays(window));
@@ -646,7 +649,7 @@ const buildEvidenceBundle = (orgId: string, window: "daily" | "weekly" | "30d" |
     "not_computed";
   if (suppressionApplied) {
     trendDirection = "suppressed";
-  } else if (window === "60d" && hasComputableEvidence) {
+  } else if (evidenceWindowDays(window) >= 14 && hasComputableEvidence) {
     const midpointMs = start.getTime() + (now.getTime() - start.getTime()) / 2;
     const firstHalf = outputEvents.filter((event) => new Date(event.timestamp).getTime() < midpointMs);
     const secondHalf = outputEvents.filter((event) => new Date(event.timestamp).getTime() >= midpointMs);
@@ -3357,10 +3360,6 @@ app.get(
     if (!windowParsed.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
-      return res.status(400).json({ error: "Unsupported window" });
-    }
-
     const window = windowParsed.data;
     const records = store.patternInferenceRecords.filter((record) =>
       matchesWindow(record, window)
@@ -3764,10 +3763,6 @@ app.get(
     if (!parsedWindow.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
     const baselineResets = await listBaselineResetsByOrg(org.id);
@@ -3815,10 +3810,6 @@ app.get(
     if (!parsedWindow.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-    if (parsedWindow.data !== "60d") {
-      return res.status(400).json({ error: "Unsupported window", supported_windows: ["60d"] });
-    }
-
     const window = parsedWindow.data;
     const entries = await listRegistryEntriesByOrg(org.id);
     const currentWorkflows = entries
@@ -3935,7 +3926,8 @@ app.post(
 const TraceReconstructedQuerySchema = z
   .object({
     workflow_id: z.string().min(1).optional(),
-    execution_id: z.string().min(1).optional()
+    execution_id: z.string().min(1).optional(),
+    baseline_window: FluencyWindowSchema.optional()
   })
   .refine((q) => Boolean(q.workflow_id ?? q.execution_id), {
     message: "Provide at least one of workflow_id, execution_id"
@@ -3947,7 +3939,9 @@ app.get(
   (req, res) => {
     const parsed = TraceReconstructedQuerySchema.safeParse({
       workflow_id: typeof req.query.workflow_id === "string" ? req.query.workflow_id : undefined,
-      execution_id: typeof req.query.execution_id === "string" ? req.query.execution_id : undefined
+      execution_id: typeof req.query.execution_id === "string" ? req.query.execution_id : undefined,
+      baseline_window:
+        typeof req.query.baseline_window === "string" ? req.query.baseline_window : undefined
     });
     if (!parsed.success) {
       return res.status(400).json({
@@ -3962,7 +3956,10 @@ app.get(
       req.query.include_signals === "1" ||
       req.query.include_signals === "yes";
     if (includeSignals) {
-      const withSignals = attachPhase2ToTraces(traces, events);
+      const withSignals = attachPhase2ToTraces(traces, events, {
+        baselineWindow: parsed.data.baseline_window ?? "90d",
+        now: new Date()
+      });
       return res.json({ traces: applyDisclosureToTraces(withSignals) });
     }
     return res.json({ traces });
@@ -3988,12 +3985,6 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
     const observationWindow = windowParsed.data;
-    if (observationWindow !== "30d" && observationWindow !== "60d") {
-      return res.status(400).json({
-        error: "Unsupported window",
-        supported_windows: ["30d", "60d"]
-      });
-    }
     const workflows = buildObservabilityRollup(
       Array.from(store.fluencyEvents.values()),
       org.id,
@@ -4030,10 +4021,6 @@ app.get(
         supported_scopes: ["org"],
         requested_scope: scopeParsed.data
       });
-    }
-
-    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
-      return res.status(400).json({ error: "Unsupported window" });
     }
 
     const window = windowParsed.data;
@@ -4104,7 +4091,7 @@ app.get(
       HIGH: "Sustained Pattern"
     } as const;
 
-    const totalDays = window === "60d" ? 60 : 30;
+    const totalDays = WINDOW_DAYS[window];
 
     const patterns = records
       .filter(
@@ -4146,10 +4133,6 @@ app.get(
 
     if (!windowParsed.success || !scopeParsed.success) {
       return res.status(400).json({ error: "Invalid query" });
-    }
-
-    if (!SUPPORTED_INFERENCE_WINDOWS.has(windowParsed.data)) {
-      return res.status(400).json({ error: "Unsupported window" });
     }
 
     const window = windowParsed.data;
@@ -4205,11 +4188,11 @@ app.get(
         error: "Invalid query",
         reason_code: "invalid_payload",
         field_path: "window",
-        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
+        supported_windows: Array.from(EVIDENCE_WINDOWS)
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);
     return res.json(bundle);
   }
 );
@@ -4229,11 +4212,11 @@ app.get(
         error: "Invalid query",
         reason_code: "invalid_payload",
         field_path: "window",
-        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
+        supported_windows: Array.from(EVIDENCE_WINDOWS)
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);
     return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
@@ -4260,11 +4243,11 @@ app.get(
         error: "Invalid query",
         reason_code: "invalid_payload",
         field_path: "window",
-        supported_windows: Array.from(EVIDENCE_WINDOWS.values())
+        supported_windows: Array.from(EVIDENCE_WINDOWS)
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as "daily" | "weekly" | "30d" | "60d");
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);
     return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
