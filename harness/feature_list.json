@@ -15,11 +15,35 @@
     },
     {
       "id": "harness-002",
-      "category": "functional",
-      "description": "Replace this template item with a real project outcome before starting serious multi-session work",
+      "category": "verification",
+      "description": "Python unittest suite passes via harness verify (matches CI python unit-test discovery)",
       "steps": [
-        "Edit harness/feature_list.json with real features derived from the mission spec",
-        "Ensure each item is testable end-to-end where applicable"
+        "Install Python deps: pip install -r requirements.txt (and pytest if tests import it)",
+        "Run ./harness/scripts/verify.sh from repo root",
+        "Resolve failures before marking passes; treat script output as evaluator, not self-check"
+      ],
+      "passes": false
+    },
+    {
+      "id": "harness-003",
+      "category": "verification",
+      "description": "Node workspaces build and tests pass when changing backend, frontend, or shared",
+      "steps": [
+        "npm install at repo root",
+        "npm run build --workspace shared",
+        "npm run test:ci --workspace backend",
+        "npm test --workspace frontend"
+      ],
+      "passes": false
+    },
+    {
+      "id": "harness-004",
+      "category": "process",
+      "description": "Large or ambiguous product change follows OpenSpec proposal workflow before implementation",
+      "steps": [
+        "Read openspec/AGENTS.md when the request matches proposal triggers",
+        "Scaffold or update change under openspec/changes/<id>/ and validate with openspec validate --strict",
+        "N/A for bug fixes restoring spec behavior, typos, or tests for existing behavior"
       ],
       "passes": false
     }

@@ -32,6 +32,16 @@ From repo root, use the same commands whether the session is Codex or Claude:
 
 Adjust that script as the project’s canonical dev entrypoint evolves.
 
+## Evaluation (separate from generation)
+
+After substantive code changes, run the **evaluator** script so verification is mechanical, not self-reported:
+
+```bash
+./harness/scripts/verify.sh
+```
+
+Requires Python deps from `requirements.txt` (see [`docs/agent/EVALUATION.md`](../docs/agent/EVALUATION.md) for CI parity, Node tests, and governance gates). Prefer marking a `feature_list.json` item `"passes": true` only after the relevant checks in that doc pass.
+
 ## Relationship to other agents
 
 - **`src/agent.py` / `MemoryManager`**: Python agent chat memory lives under `artifacts/runtime/` (see `MEMORY_FILE` in settings), separate from this harness.

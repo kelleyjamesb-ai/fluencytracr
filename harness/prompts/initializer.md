@@ -5,7 +5,7 @@ You are starting **long-running work** on this repository. Your job this session
 ## Objectives
 
 1. Read `harness/README.md` and internalize the session loop.
-2. Ensure `harness/scripts/bootstrap.sh` is executable and accurate for this repo (`chmod +x` if needed).
+2. Ensure `harness/scripts/bootstrap.sh` and `harness/scripts/verify.sh` are executable and accurate (`chmod +x` if needed). Wire verification commands into [`docs/agent/EVALUATION.md`](../../docs/agent/EVALUATION.md) if CI drifts.
 3. Expand `harness/feature_list.json` from the template into a **concrete** list of small, verifiable features derived from the user’s mission (JSON array entries; each item must have clear `steps` and start with `"passes": false`).
 4. Initialize `harness/agent-progress.txt` with a first entry describing what you scaffolded.
 5. If the codebase needs a standard dev command (install, test, lint), document it in `harness/README.md` or wire it into `harness/scripts/bootstrap.sh`.

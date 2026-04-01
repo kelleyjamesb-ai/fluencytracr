@@ -9,7 +9,8 @@ You are continuing **long-running work**. Treat each session as a shift handoff:
 3. Read `harness/agent-progress.txt` from the bottom up (latest handoff first).
 4. Read `harness/feature_list.json` and choose **one** item with `"passes": false` (highest priority / unblocked).
 5. Run `./harness/scripts/bootstrap.sh` and fix any immediate breakage before new edits.
-6. Perform a **minimal smoke** relevant to your item (e.g. targeted tests, or the app’s happy path).
+6. When your item touches Python under `tests/` or `src/`, run `./harness/scripts/verify.sh` (after `pip install -r requirements.txt` or equivalent). For backend/frontend/shared, follow [`docs/agent/EVALUATION.md`](../../docs/agent/EVALUATION.md).
+7. Perform any **minimal smoke** not covered by scripts (e.g. a specific UI path).
 
 ## During the session
 

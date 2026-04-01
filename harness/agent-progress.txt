@@ -6,3 +6,10 @@
 # - Next recommended focus (one feature id from feature_list.json)
 #
 # ---
+
+## 2026-03-31 (UTC) — Cursor agent session
+
+- Completed: Added `docs/agent/` hub (README, TASK_CONTRACT, EVALUATION), `harness/scripts/verify.sh` (Python unittest parity with CI), `artifacts/harness/checkpoints/.gitkeep`, expanded `AGENTS.md` / `CLAUDE.md` / root `README` pointers, updated harness prompts and `feature_list.json` with verification + OpenSpec items.
+- Verified: Repo inspection only; full `verify.sh` requires local `pip install -r requirements.txt` (and pytest where tests import it).
+- Next focus: `harness-002` after deps installed, or `harness-003` when touching TS workspaces.
+

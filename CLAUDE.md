@@ -24,3 +24,5 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## Long-running agent harness (shared with Codex)
 
 For work that spans multiple context windows, use [`harness/README.md`](harness/README.md). First session: [`harness/prompts/initializer.md`](harness/prompts/initializer.md). Later sessions: [`harness/prompts/incremental_session.md`](harness/prompts/incremental_session.md). State: [`harness/feature_list.json`](harness/feature_list.json), [`harness/agent-progress.txt`](harness/agent-progress.txt).
+
+**Navigation + evaluation:** [`docs/agent/README.md`](docs/agent/README.md) and [`docs/agent/EVALUATION.md`](docs/agent/EVALUATION.md). **Local workspace is source of truth** until pushed—same as [`AGENTS.md`](AGENTS.md).

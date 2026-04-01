@@ -21,6 +21,7 @@ Suppression reason codes (one-hot, immutable):
 - `HIGH_AMBIGUITY`
 
 ## Canonical docs
+- AI / agent navigation (harness, evaluation, task contracts): [docs/agent/README.md](docs/agent/README.md)
 - Partner ingestion facade: [docs/api/ingest.md](docs/api/ingest.md)
 - Architecture map: [docs/ARCHITECTURE_MAP.md](docs/ARCHITECTURE_MAP.md)
 - Connector mapping spec: [docs/CONNECTOR_MAPPING_SPEC.md](docs/CONNECTOR_MAPPING_SPEC.md)
