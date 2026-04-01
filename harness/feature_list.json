@@ -89,7 +89,7 @@
         "Implement mutually exclusive patterns with priority order and workflow-relative thresholds",
         "Signal registry: declare required inputs per signal (PRD §17)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "prd-phase-03",

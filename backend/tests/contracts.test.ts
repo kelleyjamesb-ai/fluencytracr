@@ -145,6 +145,38 @@ it("returns reconstructed traces for workflow_id", async () => {
   expect(response.body.traces[0].retry_sequences.length).toBeGreaterThanOrEqual(1);
 });
 
+it("returns signals and pattern when include_signals=true", async () => {
+  await request(app).post("/api/events").set(schemaHeaders).send({
+    events: [
+      {
+        event_type: "ai_output_disposition",
+        timestamp: "2024-01-02T00:00:00.000Z",
+        risk_class: "low",
+        workflow_id: "workflow-phase2",
+        disposition: "accepted",
+        edit_distance_bucket: "none",
+        verification_present: true,
+        time_to_action_ms: 100,
+        run_id: "run-p2"
+      }
+    ]
+  });
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-phase2&include_signals=true")
+    .set({ "x-role": "ADMIN" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces).toHaveLength(1);
+  expect(response.body.traces[0].pattern).toBe("Calibrated Fluency");
+  expect(response.body.traces[0].signals).toMatchObject({
+    event_count: 1,
+    iteration_depth: 0,
+    verification_present: true
+  });
+  expect(response.body.traces[0].pattern_confidence_tier).toBe("low");
+});
+
 it("accepts configured compatibility versions and marks deprecated versions", async () => {
   process.env.SCHEMA_ACCEPTED_VERSIONS = "0.1,0.2";
   process.env.SCHEMA_DEPRECATED_VERSIONS = "0.1";

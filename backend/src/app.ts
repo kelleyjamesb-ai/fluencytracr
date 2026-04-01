@@ -58,6 +58,7 @@ import type {
   FluencyEventRecord
 } from "./store";
 import { reconstructTracesForQuery } from "./trace_engine";
+import { attachPhase2ToTraces } from "./execution_signals";
 import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
@@ -3953,6 +3954,13 @@ app.get(
     }
     const events = Array.from(store.fluencyEvents.values());
     const traces = reconstructTracesForQuery(events, parsed.data);
+    const includeSignals =
+      req.query.include_signals === "true" ||
+      req.query.include_signals === "1" ||
+      req.query.include_signals === "yes";
+    if (includeSignals) {
+      return res.json({ traces: attachPhase2ToTraces(traces, events) });
+    }
     return res.json({ traces });
   }
 );

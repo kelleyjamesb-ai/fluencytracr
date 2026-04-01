@@ -45,3 +45,11 @@
 - Harness: `prd-phase-01` set **`passes: true`**.
 - Next focus: **`prd-phase-02`** (signal + pattern layer per PRD §14–15) behind governance review; archive OpenSpec change post-review/deploy.
 
+## 2026-04-01 (UTC) — Cursor (PRD Phase 2)
+
+- Completed: **Execution signals + pattern classification** — `backend/src/execution_signals.ts` (`SIGNAL_REGISTRY`, `computeExecutionSignals`, `classifyExecutionPattern`, default thresholds). `GET /api/traces/reconstructed?include_signals=true` returns `signals`, `pattern`, `pattern_confidence_tier`. OpenSpec `openspec/changes/add-prd-phase2-execution-signals/`. Tests: `execution_signals.test.ts`, contracts. Docs: `docs/api/traces-reconstructed.md`.
+- Verified: `npm run test:ci --workspace backend` (274 tests).
+- Note: Workflow-relative baselines (PRD §16) not yet applied to thresholds — defaults only.
+- Harness: `prd-phase-02` **`passes: true`**.
+- Next focus: **`prd-phase-03`** (suppression + API constraints) or wire baselines per workflow without trend surfaces.
+
