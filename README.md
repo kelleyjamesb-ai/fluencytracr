@@ -26,6 +26,7 @@ Suppression reason codes (one-hot, immutable):
 - Architecture map: [docs/ARCHITECTURE_MAP.md](docs/ARCHITECTURE_MAP.md)
 - Connector mapping spec: [docs/CONNECTOR_MAPPING_SPEC.md](docs/CONNECTOR_MAPPING_SPEC.md)
 - EvidenceBundle v1 contract: [docs/contracts/evidence-bundle/v1/README.md](docs/contracts/evidence-bundle/v1/README.md)
+- Unified cross-surface telemetry (UT_2026_04): [docs/contracts/unified-telemetry/README.md](docs/contracts/unified-telemetry/README.md)
 - Glean integration pack: [docs/integrations/glean/01-overview.md](docs/integrations/glean/01-overview.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)

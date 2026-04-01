@@ -13,3 +13,9 @@
 - Verified: Repo inspection only; full `verify.sh` requires local `pip install -r requirements.txt` (and pytest where tests import it).
 - Next focus: `harness-002` after deps installed, or `harness-003` when touching TS workspaces.
 
+## 2026-03-31 (UTC) — Cursor (principal architect + harness)
+
+- Completed: Defined **harness roles** (architect, schema evaluator, privacy reviewer, integration owner, implementation owner). Added unified telemetry contract `docs/contracts/unified-telemetry/README.md` (four categories, naming, versioning, streaming, FT_V1 mapping) and `schemas/unified_telemetry/ut_event_union.schema.json`. Added `harness-006` for downstream ingest wiring.
+- Verified: Schema structure reviewed; JSON Schema `allOf` + `additionalProperties` conflict removed from envelope core.
+- Next focus: `harness-006` for zod/backend/CI, or `harness-004` if ingest changes need OpenSpec first.
+

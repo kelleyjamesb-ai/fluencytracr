@@ -46,6 +46,18 @@
         "N/A for bug fixes restoring spec behavior, typos, or tests for existing behavior"
       ],
       "passes": false
+    },
+    {
+      "id": "harness-006",
+      "category": "functional",
+      "description": "Unified telemetry (UT_2026_04) wired to ingest: shared zod + backend validation + optional CI schema check",
+      "steps": [
+        "Read docs/contracts/unified-telemetry/README.md and schemas/unified_telemetry/ut_event_union.schema.json",
+        "OpenSpec change if /api/ingest or EvidenceBundle behavior changes",
+        "Mirror schema in shared/ and reject invalid payloads at API boundary",
+        "Mark passes only after tests or scripted validation pass"
+      ],
+      "passes": false
     }
   ]
 }
