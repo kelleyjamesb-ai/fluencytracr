@@ -25,9 +25,9 @@ function base(over: Partial<CanonicalEvent> & { context?: Record<string, unknown
     timestamp: TS.t0,
     actor_type: "human",
     context: {},
-    execution_id: executionId,
     ...over,
-    context: { ...over.context }
+    context: { ...over.context },
+    execution_id: executionId
   };
 }
 

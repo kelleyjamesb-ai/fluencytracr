@@ -1,0 +1,89 @@
+/**
+ * Governance regression: workflow-scoped aggregates only — no cross-workflow comparison artifacts.
+ */
+
+import { handleGetObservability } from "../../src/controllers/observability.controller";
+import { BehaviorPattern } from "../../src/services/pattern-classifier";
+import { runClassificationPipeline } from "../../src/services/classification-pipeline.service";
+import { createE2eInMemoryStack } from "../helpers/in-memory-dependencies";
+import { expectGovernanceSafeObservabilityBody, expectNoForbiddenKeys } from "./helpers/governance-matchers";
+import {
+  fixtureIds,
+  happyPathExecution,
+  happyPathWorkflowB
+} from "../fixtures/canonical-events.fixtures";
+import type { CanonicalEvent } from "../../src/domain/canonical-event.schema";
+
+describe("governance regression — aggregation safety", () => {
+  it("observability exposes per-workflow rows only; no cross-workflow comparison fields", async () => {
+    const { classificationRepository, workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
+    const eventsA: CanonicalEvent[] = happyPathExecution("gov-wf-a", fixtureIds.workflowA);
+    const eventsB: CanonicalEvent[] = happyPathWorkflowB("gov-wf-b");
+
+    await runClassificationPipeline(
+      {
+        org_id: fixtureIds.org,
+        workflow_id: fixtureIds.workflowA,
+        execution_id: "gov-wf-a",
+        events: eventsA
+      },
+      { classificationRepository, workflowAggregateRepository }
+    );
+    await runClassificationPipeline(
+      {
+        org_id: fixtureIds.org,
+        workflow_id: fixtureIds.workflowB,
+        execution_id: "gov-wf-b",
+        events: eventsB
+      },
+      { classificationRepository, workflowAggregateRepository }
+    );
+
+    const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
+    expect(res.status).toBe(200);
+    expectGovernanceSafeObservabilityBody(res.body);
+
+    const body = res.body as { workflows: ReadonlyArray<{ workflow_id: string }> };
+    expect(body.workflows.length).toBe(2);
+    const ids = body.workflows.map((w) => w.workflow_id).sort();
+    expect(ids).toEqual([fixtureIds.workflowA, fixtureIds.workflowB].sort());
+
+    const raw = JSON.stringify(res.body).toLowerCase();
+    expect(raw).not.toMatch(/cross_workflow|workflow_comparison|relative_performance|delta_vs/);
+  });
+
+  it("default prevalence mode from pipeline refresh remains categorical (executive-safe default)", async () => {
+    const { classificationRepository, workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
+    await runClassificationPipeline(
+      {
+        org_id: fixtureIds.org,
+        workflow_id: fixtureIds.workflowA,
+        execution_id: "gov-prev-default",
+        events: happyPathExecution("gov-prev-default")
+      },
+      { classificationRepository, workflowAggregateRepository }
+    );
+    const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
+    const w = (res.body as { workflows: ReadonlyArray<{ prevalence_mode: string }> }).workflows[0]!;
+    expect(w.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
+  });
+
+  it("numeric share mode in aggregate does not add rank/trend/diagnostic keys to API shape", async () => {
+    const { workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
+    await workflowAggregateRepository.upsertAggregate(
+      {
+        workflow_id: fixtureIds.workflowA,
+        classified_execution_count: 1,
+        suppressed_execution_count: 0,
+        prevalence_mode: "NUMERIC_SHARE",
+        pattern_distribution: [{ pattern: BehaviorPattern.BLIND_EFFICIENCY, count: 1, share: 1 }]
+      },
+      fixtureIds.org
+    );
+    const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
+    expect(res.status).toBe(200);
+    expectNoForbiddenKeys(res.body);
+    const raw = JSON.stringify(res.body).toLowerCase();
+    expect(raw).not.toMatch(/\brank\b|\btrend\b|diagnostic/);
+  });
+});
