@@ -1,39 +1,41 @@
 # Current Slice Contract
 
-- Work item id: `phase-03-fsc-min-signal`
-- Title: `Phase 3 — FSC eligibility + minimum signal gates (hard pre-classify)`
-- Status: `in_progress`
+- Work item id: `ci-frontend-test-toolchain-alignment`
+- Title: `Frontend test toolchain alignment for CI matcher regression`
+- Status: `completed`
 
 ## Summary
 
-Implement the current bounded slice for PRD phase 3: FSC eligibility and minimum-signal gating before any classification logic, with explicit reasons for incomplete execution and insufficient signal.
+Aligned the frontend workspace test toolchain with the checked-in lockfile so CI and local runs resolve the same Vitest/Vite stack, restoring jest-dom matcher registration for `ProtectedRoute.test.tsx` under CI.
 
 ## Scope Paths
 
-- `backend/`
-- `shared/`
-- `tests/`
-- `artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md`
+- `package.json`
+- `package-lock.json`
+- `frontend/package.json`
+- `frontend/vite.config.ts`
+- `frontend/src/test/setup.ts`
+- `frontend/src/components/ProtectedRoute.test.tsx`
 
 ## Key Risks
 
-- PRD mismatch between FSC gating and existing classification flow.
-- Incorrect boundary between `INCOMPLETE_EXECUTION` and `INSUFFICIENT_SIGNAL`.
-- Over-broad changes outside the current queue item.
+- Root and frontend toolchain versions can resolve different `vitest` / `vite` instances.
+- Lockfile refresh can introduce broader dependency churn than intended.
+- Fixing matcher symptoms without addressing toolchain skew would leave CI unstable.
 
 ## Planned Checks
 
-- Targeted backend/shared tests covering FSC and minimum-signal gating.
-- Governance-sensitive verification if contracts or disclosure behavior change.
-- Strict repo verify only if the slice crosses package boundaries broadly enough to justify it.
+- Reproduce the frontend failure mode with dependency tree inspection and targeted test runs.
+- Run the frontend Vitest suite after alignment.
+- Confirm the workspace resolves a single valid Vitest/Vite line for frontend.
 
 ## Evaluator Command Profile
 
 `targeted` by default:
 
-- `npm run build --workspace shared`
-- `npm run test:ci --workspace backend`
-- `python scripts/ci_v1_governance_gates.py` when governance-sensitive paths are touched
+- `npm ls vitest --all`
+- `npm ls vite --all`
+- `npm test --workspace frontend`
 
 Escalate to `strict` only if the slice becomes cross-cutting:
 
@@ -45,15 +47,15 @@ Escalate to `strict` only if the slice becomes cross-cutting:
 ## Evaluator Pass Criteria
 
 - Only declared scope paths are changed.
-- FSC and minimum-signal checks run before pattern classification.
-- Tests covering the affected slice pass.
+- `npm ls vitest --all` and `npm ls vite --all` no longer report frontend-invalid resolutions.
+- `npm test --workspace frontend` passes.
 - No blocker remains unrecorded in `.project/PROGRESS.md`.
 
 ## Specialists To Consult
 
-- Backend/domain specialist if PRD-to-code mapping is ambiguous.
-- Review specialist if evaluator results suggest a regression risk.
+- Frontend/build specialist if package alignment creates dependency ambiguity.
+- Review specialist if evaluator results suggest collateral CI risk.
 
 ## Next Handoff Note
 
-Stay inside phase 03 scope. If implementation reveals missing or conflicting queue scope, update this contract and `.project/PROGRESS.md` before expanding work.
+Completed by realigning `frontend/package.json` to the locked `vite`/`vitest` versions already used in the workspace. Next bounded unit should return to phase-03 backend work unless new CI failures appear.
