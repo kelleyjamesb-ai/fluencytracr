@@ -69,9 +69,11 @@ export function normalizeInboundActorType(raw: unknown): IngestNormalizeResult {
   if (!mapped.ok) {
     return { ok: false, reason: "unknown_actor_label" };
   }
+  const payload: Record<string, unknown> = { ...raw, actor_type: mapped.actor_type };
+  delete payload.actor;
   return {
     ok: true,
-    payload: { ...raw, actor_type: mapped.actor_type }
+    payload
   };
 }
 
