@@ -7,7 +7,7 @@ It uses EvidenceBundle v1 as the stable evidence contract and `/api/ingest` as t
 References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
-ou - **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
+- **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
 
 ## Two integration modes
 

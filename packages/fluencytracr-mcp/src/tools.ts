@@ -178,27 +178,9 @@ export function registerFluencyTools(server: McpServer, fetchImpl: FetchFn = fet
       name,
       {
         description,
-        inputSchema: {
-          org_id: z.string().min(1),
-          window: EvidenceWindowSchema
-        }
+        inputSchema: ReadInputSchema
       },
-      async (raw) => {
-        const parsed = ReadInputSchema.safeParse(raw);
-        if (!parsed.success) {
-          emitAudit({
-            org_id: typeof raw?.org_id === "string" ? raw.org_id : "",
-            tool_name: name,
-            operation: path,
-            schema_version: getSchemaVersionHeader(),
-            result: "rejected",
-            suppression_applied: false,
-            suppression_reasons: [],
-            reason_code: "invalid_payload"
-          });
-          return toolError("Invalid read tool input", { issues: parsed.error.issues });
-        }
-        const { org_id, window } = parsed.data;
+      async ({ org_id, window }) => {
         try {
           const body = await getEvidenceJson(org_id, path, window, fetchImpl);
           const { applied, reasons } = readSuppression(body);
