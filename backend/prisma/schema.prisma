@@ -287,3 +287,108 @@ model BaselineResetEvent {
 
   @@index([orgId, resetAt])
 }
+
+// --- FluencyTracr v1 pipeline persistence (canonical ingest → classification → aggregates).
+// org_id is a tenant string (not necessarily Organization.id). No FK to legacy models.
+
+model V1CanonicalEvent {
+  id                 String   @id @default(uuid()) @db.Uuid
+  orgId              String   @map("org_id")
+  workflowId         String   @map("workflow_id")
+  executionId        String   @map("execution_id")
+  eventName          String   @map("event_name")
+  eventVersion       String   @map("event_version")
+  actorType          String   @map("actor_type")
+  eventTimestamp     DateTime @map("event_timestamp")
+  ingestedAt         DateTime @default(now()) @map("ingested_at")
+  eventPayloadJson   Json     @map("event_payload_json")
+  sourceIdentityJson Json     @default("{}") @map("source_identity_json")
+  ingestSequence     BigInt   @unique @default(autoincrement()) @map("ingest_sequence")
+
+  @@index([orgId])
+  @@index([executionId])
+  @@index([workflowId])
+  @@index([orgId, workflowId])
+  @@index([executionId, eventTimestamp, ingestSequence])
+  @@map("canonical_events")
+}
+
+model V1ExecutionSnapshot {
+  orgId                  String   @map("org_id")
+  executionId            String   @map("execution_id")
+  workflowId             String   @map("workflow_id")
+  currentState           String   @map("current_state")
+  startedAt              DateTime? @map("started_at")
+  endedAt                DateTime? @map("ended_at")
+  traceCount             Int      @default(0) @map("trace_count")
+  retryCount             Int      @default(0) @map("retry_count")
+  fscEligible            Boolean  @map("fsc_eligible")
+  minimumSignalAllowed   Boolean  @map("minimum_signal_allowed")
+  lastProcessedAt        DateTime @map("last_processed_at")
+  sourceEventCount       Int      @map("source_event_count")
+  snapshotVersion        Int      @default(1) @map("snapshot_version")
+
+  @@id([orgId, executionId])
+  @@index([orgId, workflowId])
+  @@map("execution_snapshots")
+}
+
+model V1ClassificationOutcome {
+  orgId              String    @map("org_id")
+  executionId        String    @map("execution_id")
+  workflowId         String    @map("workflow_id")
+  status             String
+  pattern            String?
+  suppressionReason  String?   @map("suppression_reason")
+  diagnosticsJson    Json      @map("diagnostics_json")
+  signalProfileJson  Json?     @map("signal_profile_json")
+  processedAt        DateTime  @map("processed_at")
+
+  @@id([orgId, executionId])
+  @@index([orgId, workflowId, processedAt])
+  @@map("classification_outcomes")
+}
+
+model V1WorkflowAggregate {
+  id                         String   @id @default(uuid()) @db.Uuid
+  orgId                      String   @map("org_id")
+  workflowId                 String   @map("workflow_id")
+  prevalenceMode             String   @map("prevalence_mode")
+  classifiedExecutionCount   Int      @map("classified_execution_count")
+  suppressedExecutionCount   Int      @map("suppressed_execution_count")
+  patternDistributionJson    Json     @map("pattern_distribution_json")
+  recomputedAt               DateTime @map("recomputed_at")
+
+  @@unique([orgId, workflowId])
+  @@index([orgId])
+  @@map("workflow_aggregates")
+}
+
+model V1ThresholdCalibration {
+  id                    String   @id @default(uuid()) @db.Uuid
+  orgId                 String   @map("org_id")
+  workflowId            String   @map("workflow_id")
+  referenceWindowSize   Int      @map("reference_window_size")
+  iterationLowThreshold Int      @map("iteration_low_threshold")
+  iterationHighThreshold Int     @map("iteration_high_threshold")
+  latencyHighThreshold   Int      @map("latency_high_threshold")
+  computedAt            DateTime @map("computed_at")
+  calibrationVersion    Int      @default(1) @map("calibration_version")
+
+  @@index([orgId, workflowId, computedAt])
+  @@map("threshold_calibrations")
+}
+
+model V1SuppressionAuditLog {
+  id                 String   @id @default(uuid()) @db.Uuid
+  orgId              String   @map("org_id")
+  workflowId         String   @map("workflow_id")
+  executionId        String   @map("execution_id")
+  suppressionReason  String   @map("suppression_reason")
+  diagnosticsJson    Json     @map("diagnostics_json")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([orgId, workflowId, createdAt])
+  @@index([orgId, executionId])
+  @@map("suppression_audit_log")
+}

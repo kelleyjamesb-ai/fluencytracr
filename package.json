@@ -1,6 +1,6 @@
 {
   "private": true,
-  "workspaces": ["backend", "frontend", "shared"],
+  "workspaces": ["backend", "frontend", "shared", "packages/fluencytracr-mcp", "packages/glean-publisher"],
   "devDependencies": {
     "vitest": "^2.1.8"
   }

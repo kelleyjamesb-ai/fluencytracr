@@ -12,6 +12,14 @@ References:
 - "What source coverage is missing for this org?"
 - "Is learning trend improving, stable, degrading, suppressed, or not computed?"
 
+### Expanded org-level classes (still executive-safe)
+- "Which expected instrumentation sources are present versus missing for this org-window?" (coverage only; no team slice)
+- "Is suppression active and which reason codes apply?" (reason codes and flags only; no reconstruction of masked metrics)
+- "Is safe-path escalation signal present, absent, suppressed, or not computed for this org-window?"
+- "For this window, is verification presence signal present, absent, suppressed, or not computed?"
+
+Machine-checked template builder (strict JSON, no extra keys): `@learnaire/fluencytracr-mcp` exports `buildAgentEvidenceResponse` / `validateAgentEvidenceResponse`.
+
 Out of scope question classes:
 - Any team-level or manager-level comparison request
 - Any ranking, scoring, or individual attribution request
@@ -21,7 +29,8 @@ Out of scope question classes:
 Agent tools may call only bounded, read-only evidence routes plus ingestion facade where needed for partner relay:
 - `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
 - `GET /api/evidence/coverage/:orgId?window=<...>` (same window enum as bundles)
-- `GET /api/evidence/controls/:orgId?window=<...>` (same window enum as bundles)- `POST /api/ingest` for metadata/event intake from approved integration pipelines
+- `GET /api/evidence/controls/:orgId?window=<...>` (same window enum as bundles)
+- `POST /api/ingest` for metadata/event intake from approved integration pipelines
 
 ## Suppression propagation into agent responses
 - If bundle suppression is active, agent must return:

@@ -7,7 +7,8 @@ It uses EvidenceBundle v1 as the stable evidence contract and `/api/ingest` as t
 References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
-- **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
+ou - **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
+
 ## Two integration modes
 
 ### Mode 1: Publish EvidenceBundle documents via Glean Indexing API
@@ -33,6 +34,7 @@ References:
 - Deployed MCP server binary and hosted adapter rollout for production agent orchestration.
 - Automated EvidenceBundle publisher (scheduled jobs) and CI enforcement for indexing/guardrails.
 - Expanded agentic coverage for additional oversight and reliability evidence beyond the bounded question classes in `03-glean-agent-tooling.md`.
+
 ## Multi-agent readiness boundaries
 - Agentic emitters and human telemetry emitters are both in scope.
 - All published and queried outputs stay org-level and aggregate.

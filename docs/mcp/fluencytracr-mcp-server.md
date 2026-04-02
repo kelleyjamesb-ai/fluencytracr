@@ -92,13 +92,13 @@ FLUENCYTRACR_BASE_URL=http://localhost:3000
 FLUENCYTRACR_SERVICE_TOKEN=dev_token_value
 ```
 
-Sample MCP server config:
+Sample MCP server config (Node implementation in `packages/fluencytracr-mcp`):
 ```json
 {
   "name": "fluencytracr-mcp",
   "transport": "stdio",
-  "command": "python",
-  "args": ["src/tools/fluencytracr_mcp_server.py"],
+  "command": "node",
+  "args": ["packages/fluencytracr-mcp/dist/stdio-main.js"],
   "enabled": true,
   "env": {
     "FLUENCYTRACR_BASE_URL": "${FLUENCYTRACR_BASE_URL}",
@@ -106,6 +106,8 @@ Sample MCP server config:
   }
 }
 ```
+
+Streamable HTTP (remote): run `node packages/fluencytracr-mcp/dist/http-main.js` with `MCP_HTTP_PORT`, optional `MCP_HTTP_BEARER_TOKEN`, and `MCP_HTTP_HOST` (default `127.0.0.1`). Clients use the MCP Streamable HTTP session flow against `POST`/`GET` `/mcp`.
 
 Smoke checks:
 1. Call `fluency.ingest_events` with metadata-only sample and verify `/api/ingest` acceptance.

@@ -54,6 +54,16 @@ jobs:
         run: ./scripts/ci_suppression_evidence.sh
       - name: Validate EvidenceBundle schema and examples
         run: bash scripts/validate_evidence_bundle_schema.sh
+      - name: Build Glean MCP and publisher packages
+        run: |
+          npm run build --workspace @learnaire/fluencytracr-mcp
+          npm run build --workspace @learnaire/glean-publisher
+      - name: Test MCP and Glean publisher packages
+        run: |
+          npm run test --workspace @learnaire/fluencytracr-mcp
+          npm run test --workspace @learnaire/glean-publisher
+      - name: Validate Glean indexing fixture (required fields)
+        run: npm run validate:fixtures --workspace @learnaire/glean-publisher
       - name: Run docs and contract sweep
         run: bash scripts/ci_docs_contract_sweep.sh
       - name: Run scoped FluencyTracr docs link check
