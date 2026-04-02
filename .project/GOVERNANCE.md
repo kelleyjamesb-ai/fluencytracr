@@ -3,7 +3,7 @@
 ## Source-of-truth hierarchy
 
 1. **Signed product contract:** `artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md` (when the change affects product behavior).
-2. **Agent execution state:** `.project/WORK_QUEUE.json` + `.project/PROGRESS.md` only.
+2. **Agent execution state:** `.project/WORK_QUEUE.json` + `.project/PROGRESS.md` + `.project/CURRENT_SLICE.md` only.
 3. **Verification checklist:** `harness/feature_list.json` — flip `passes` only after mechanical verification (`harness/scripts/verify.sh`, per `docs/agent/EVALUATION.md`).
 4. **Workspace rules:** `.antigravity/rules.md`, root `AGENTS.md` / `CLAUDE.md`, Cursor rules.
 
@@ -11,7 +11,8 @@ If two sources conflict, **stop** and record the conflict in `PROGRESS.md` → `
 
 ## Active state location
 
-- **`.project/`** is the **only** location for **active** agent session state (`WORK_QUEUE.json`, `PROGRESS.md`).
+- **`.project/`** is the **only** location for **active** agent session state (`WORK_QUEUE.json`, `PROGRESS.md`, `CURRENT_SLICE.md`).
+- **`CURRENT_SLICE.md`** is the authoritative live slice contract for the single bounded unit currently being executed. Define or tighten it before implementation, and update it before expanding scope.
 - Do **not** use `harness/agent-progress.txt` as a substitute for `PROGRESS.md` in the same session; optionally **mirror** a one-line summary to harness after completing a queue item if humans rely on harness logs.
 
 ## WORK_QUEUE rules
@@ -24,13 +25,13 @@ If two sources conflict, **stop** and record the conflict in `PROGRESS.md` → `
 
 ## Session memory
 
-- Long-term intent lives in **queue + PROGRESS + git commits**.
+- Long-term intent lives in **queue + current slice contract + PROGRESS + git commits**.
 - Do **not** rely on chat history for scope; **re-read** the four startup files each session.
 
 ## Artifacts
 
 - Outputs required by workspace rules (e.g. `artifacts/` when `.cursorrules` applies) go **only** where those rules say.
-- Do **not** create parallel **live** queue state under `docs/` or `artifacts/` (no second `WORK_QUEUE` or `PROGRESS` substitute). **Meta** docs in `artifacts/` (e.g. how governance was wired) are fine—they document process; **authoritative** session state remains `.project/WORK_QUEUE.json` and `.project/PROGRESS.md`.
+- Do **not** create parallel **live** queue state under `docs/` or `artifacts/` (no second `WORK_QUEUE`, `PROGRESS`, or live slice contract substitute). **Meta** docs in `artifacts/` (e.g. how governance was wired) are fine—they document process; **authoritative** session state remains under `.project/`.
 
 ## Anti-drift
 
