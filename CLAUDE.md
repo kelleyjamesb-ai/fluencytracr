@@ -27,8 +27,6 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 **Queue track (when executing the backlog):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`.
 
-Before implementation, define or tighten the live slice contract in `.project/CURRENT_SLICE.md`. Treat it as the handoff artifact for context resets and do not work outside that declared scope unless you update the contract first.
-
 **Then read and follow:** `.antigravity/rules.md`
 
 ## Long-running agent harness (shared with Codex)
