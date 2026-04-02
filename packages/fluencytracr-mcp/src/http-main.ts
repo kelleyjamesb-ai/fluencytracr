@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
-import type { Request, Response, NextFunction } from "express";
+import type { RequestHandler } from "express";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
@@ -15,7 +15,7 @@ const app = createMcpExpressApp({ host: MCP_HOST });
 
 const transports: Record<string, StreamableHTTPServerTransport> = {};
 
-const authGate = (req: Request, res: Response, next: NextFunction) => {
+const authGate: RequestHandler = (req, res, next) => {
   if (!bearer) {
     next();
     return;
@@ -28,7 +28,7 @@ const authGate = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-const mcpPostHandler = async (req: Request, res: Response) => {
+const mcpPostHandler: RequestHandler = async (req, res) => {
   const sessionIdHeader = req.headers["mcp-session-id"];
   const sessionId = Array.isArray(sessionIdHeader) ? sessionIdHeader[0] : sessionIdHeader;
   try {
@@ -75,7 +75,7 @@ const mcpPostHandler = async (req: Request, res: Response) => {
   }
 };
 
-const mcpGetHandler = async (req: Request, res: Response) => {
+const mcpGetHandler: RequestHandler = async (req, res) => {
   const sessionIdHeader = req.headers["mcp-session-id"];
   const sessionId = Array.isArray(sessionIdHeader) ? sessionIdHeader[0] : sessionIdHeader;
   if (!sessionId || !transports[sessionId]) {
@@ -85,7 +85,7 @@ const mcpGetHandler = async (req: Request, res: Response) => {
   await transports[sessionId].handleRequest(req as never, res as never);
 };
 
-const mcpDeleteHandler = async (req: Request, res: Response) => {
+const mcpDeleteHandler: RequestHandler = async (req, res) => {
   const sessionIdHeader = req.headers["mcp-session-id"];
   const sessionId = Array.isArray(sessionIdHeader) ? sessionIdHeader[0] : sessionIdHeader;
   if (!sessionId || !transports[sessionId]) {

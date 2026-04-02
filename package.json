@@ -2,6 +2,7 @@
   "private": true,
   "workspaces": ["backend", "frontend", "shared", "packages/fluencytracr-mcp", "packages/glean-publisher"],
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "vitest": "^2.1.8"
   }
 }
