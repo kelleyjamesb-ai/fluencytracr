@@ -7,8 +7,9 @@ import {
   FluencyEvent,
   FluencyPattern,
   DecisionLedgerEntry,
-  DecisionLedgerEvaluationInput
-} from "@learnaire/shared";
+  DecisionLedgerEvaluationInput,
+  UnifiedTelemetryEvent,
+  resolveFluencyExecutionId} from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
 export type OrgRecord = {
@@ -219,8 +220,21 @@ export type FunctionRecord = {
 
 export type FluencyEventRecord = FluencyEvent & {
   event_id: string;
+  /** Normalized execution boundary (PRD Phase 1). */
+  execution_id: string;
 };
 
+export const buildFluencyEventRecord = (event: FluencyEvent, eventId: string): FluencyEventRecord => ({
+  ...event,
+  event_id: eventId,
+  execution_id: resolveFluencyExecutionId(event.workflow_id, {
+    run_id: event.run_id,
+    workflow_run_id: event.workflow_run_id,
+    event_id: eventId
+  })
+});
+
+export type UnifiedTelemetryEventRecord = UnifiedTelemetryEvent;
 export type FluencyPatternRecord = FluencyPattern;
 
 export type DecisionLedgerEntryRecord = DecisionLedgerEntry;
@@ -378,7 +392,7 @@ class MemoryStore {
   functions = new Map<string, FunctionRecord>();
   behavioralSignals = new Map<string, BehavioralSignalRecord>();
   fluencyEvents = new Map<string, FluencyEventRecord>();
-  fluencyPatterns = new Map<string, FluencyPatternRecord>();
+  unifiedTelemetryEvents = new Map<string, UnifiedTelemetryEventRecord>();  fluencyPatterns = new Map<string, FluencyPatternRecord>();
   patternInferenceRecords: PatternInferenceRecord[] = [];
   inferenceAuditLogs: InferenceAuditRecord[] = [];
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
@@ -416,7 +430,7 @@ class MemoryStore {
     this.functions.clear();
     this.behavioralSignals.clear();
     this.fluencyEvents.clear();
-    this.fluencyPatterns.clear();
+    this.unifiedTelemetryEvents.clear();    this.fluencyPatterns.clear();
     this.patternInferenceRecords = [];
     this.inferenceAuditLogs = [];
     this.decisionLedgerEntries.clear();
@@ -452,6 +466,9 @@ export const insertFluencyEvent = (event: FluencyEventRecord) => {
   store.fluencyEvents.set(event.event_id, event);
 };
 
+export const insertUnifiedTelemetryEvent = (event: UnifiedTelemetryEventRecord) => {
+  store.unifiedTelemetryEvents.set(event.event_id, event);
+};
 export const upsertFluencyPattern = (key: string, pattern: FluencyPatternRecord) => {
   store.fluencyPatterns.set(key, pattern);
 };

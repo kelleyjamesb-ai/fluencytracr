@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 from src.config import settings
 
@@ -38,11 +39,13 @@ class MemoryManager:
 
     def save_memory(self):
         """Saves the current memory state to the JSON file."""
+        path = Path(self.memory_file)
+        path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "summary": self.summary,
             "history": self._memory,
         }
-        with open(self.memory_file, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
 
     def add_entry(self, role: str, content: str, metadata: Optional[Dict[str, Any]] = None):

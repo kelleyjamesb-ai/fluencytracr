@@ -141,8 +141,7 @@ Lista de herramientas:
 Restricciones de entrada:
 - Solo enumeraciones y campos acotados
 - Rechazar campos de contenido libre
-- Ventanas permitidas: `daily`, `weekly`, `30d`, `60d`
-- Enums acotados para `risk_class`, `workflow_category`, `tool_class`
+- Ventanas permitidas: `daily`, `weekly`, `30d`, `60d`, `90d`, `180d`, `360d`, `3m`, `6m`, `12m`- Enums acotados para `risk_class`, `workflow_category`, `tool_class`
 
 Autenticacion y alcance:
 - Solo identidades de servicio

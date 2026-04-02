@@ -1,5 +1,9 @@
 name: governance-gate
 
+# JavaScript actions on Node 24 (runner transition); see GitHub changelog 2025-09-19.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
   pull_request:
@@ -14,7 +18,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
         uses: actions/setup-node@v6

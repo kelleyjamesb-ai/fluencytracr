@@ -1,0 +1,93 @@
+# Agent progress log (append only)
+#
+# Each session: add a new block with date (UTC), tool (Codex / Claude / other), and bullets:
+# - What you completed
+# - What you verified (tests, manual smoke)
+# - Next recommended focus (one feature id from feature_list.json)
+#
+# ---
+
+## 2026-03-31 (UTC) — Cursor agent session
+
+- Completed: Added `docs/agent/` hub (README, TASK_CONTRACT, EVALUATION), `harness/scripts/verify.sh` (Python unittest parity with CI), `artifacts/harness/checkpoints/.gitkeep`, expanded `AGENTS.md` / `CLAUDE.md` / root `README` pointers, updated harness prompts and `feature_list.json` with verification + OpenSpec items.
+- Verified: Repo inspection only; full `verify.sh` requires local `pip install -r requirements.txt` (and pytest where tests import it).
+- Next focus: `harness-002` after deps installed, or `harness-003` when touching TS workspaces.
+
+## 2026-03-31 (UTC) — Cursor (principal architect + harness)
+
+- Completed: Defined **harness roles** (architect, schema evaluator, privacy reviewer, integration owner, implementation owner). Added unified telemetry contract `docs/contracts/unified-telemetry/README.md` (four categories, naming, versioning, streaming, FT_V1 mapping) and `schemas/unified_telemetry/ut_event_union.schema.json`. Added `harness-006` for downstream ingest wiring.
+- Verified: Schema structure reviewed; JSON Schema `allOf` + `additionalProperties` conflict removed from envelope core.
+- Next focus: `harness-006` for zod/backend/CI, or `harness-004` if ingest changes need OpenSpec first.
+
+## 2026-03-31 (UTC) — Cursor (OpenSpec + UT ingest)
+
+- Completed: OpenSpec `openspec/changes/add-unified-telemetry-ingest/`; `shared/src/unifiedTelemetrySchemas.ts`; `POST /api/ingest/unified-telemetry` behind `FLUENCY_UNIFIED_TELEMETRY_INGEST`; `store.unifiedTelemetryEvents`; `backend/tests/unified_telemetry_ingest.test.ts`; `docs/api/ingest-unified-telemetry.md`.
+- Verified: Pending local `npm run test:ci --workspace backend` (sandbox without npm).
+- Next focus: Run backend tests; set `harness-006` passes true after green CI; archive OpenSpec change post-deploy.
+
+## 2026-03-31 (UTC) — James (local)
+
+- Verified: `npm run test:ci --workspace backend` — 49 suites, 252 tests passed (includes unified telemetry ingest).
+- Harness: set `harness-006` `passes` to true.
+- Next focus: `harness-003` if touching frontend/shared; archive OpenSpec `add-unified-telemetry-ingest` after deploy; optional `harness-002` (Python verify).
+
+## 2026-03-31 (UTC) — Cursor (PRD v1 + harness)
+
+- Completed: Landed **PRD v1** as `artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md` (full product definition + execution FSM, signals, patterns, baselines, open questions). Added **Appendix A** (repo alignment: `/api/events`, `/api/ingest`, unified telemetry vs PRD observability API) and **Appendix B** (harness + OpenSpec gate). Cross-linked §4 data inputs to `artifacts/DATA_ACCESS_CONTRACT_RFI.md` and unified telemetry docs.
+- Harness: Added `prd-doc-001` (**passes: true**), `prd-phase-01`…`prd-phase-04` (**passes: false**) to `harness/feature_list.json`. Linked PRD from `docs/agent/README.md`. Ran `./harness/scripts/bootstrap.sh` (OK).
+- Verified: Artifact present; JSON valid; bootstrap exit 0.
+- Next focus: **`prd-phase-01`** when starting engine work (OpenSpec **`harness-004`** if ingest/schema/API contracts change); else continue **`harness-002`** / **`harness-003`** per touch surface.
+
+## 2026-04-01 (UTC) — Cursor (PRD Phase 1 implementation)
+
+- Completed: **PRD Phase 1 core engine** — optional correlation fields on fluency events (`run_id`, `workflow_run_id`, `agent_run_id`, `chat_id`); `resolveFluencyExecutionId` + `buildFluencyEventRecord`; `trace_engine` (sort, 15m retry pairs, stage groups, empty tool groups); `POST /api/events` returns `execution_ids`; `GET /api/traces/reconstructed` (ADMIN/ENABLEMENT_LEAD); `/api/ingest` fluency path uses builder; seed uses builder. OpenSpec change `openspec/changes/add-prd-phase1-core-engine/`. Doc `docs/api/traces-reconstructed.md`.
+- Verified: `npm run build --workspace shared` and `npm run test:ci --workspace backend` (full suite + contracts) pass locally.
+- Harness: `prd-phase-01` set **`passes: true`**.
+- Next focus: **`prd-phase-02`** (signal + pattern layer per PRD §14–15) behind governance review; archive OpenSpec change post-review/deploy.
+
+## 2026-04-01 (UTC) — Cursor (PRD Phase 2)
+
+- Completed: **Execution signals + pattern classification** — `backend/src/execution_signals.ts` (`SIGNAL_REGISTRY`, `computeExecutionSignals`, `classifyExecutionPattern`, default thresholds). `GET /api/traces/reconstructed?include_signals=true` returns `signals`, `pattern`, `pattern_confidence_tier`. OpenSpec `openspec/changes/add-prd-phase2-execution-signals/`. Tests: `execution_signals.test.ts`, contracts. Docs: `docs/api/traces-reconstructed.md`.
+- Verified: `npm run test:ci --workspace backend` (274 tests).
+- Note: Workflow-relative baselines (PRD §16) not yet applied to thresholds — defaults only.
+- Harness: `prd-phase-02` **`passes: true`**.
+- Next focus: **`prd-phase-03`** (suppression + API constraints) or wire baselines per workflow without trend surfaces.
+
+## 2026-04-01 (UTC) — Cursor (PRD Phase 3)
+
+- Completed: **Execution disclosure** — `backend/src/execution_disclosure.ts` (`evaluateExecutionDisclosure`, `applyDisclosureToTraces`). Fail-closed: `insufficient_event_count`, `low_confidence_tier`, `invalid_timestamps`. `include_signals=true` responses include `disclosure`; when `SUPPRESSED`, `signals`/`pattern`/`pattern_confidence_tier` are null. Env `FLUENCY_MIN_EXECUTION_EVENTS_FOR_DISCLOSURE`. OpenSpec `add-prd-phase3-execution-disclosure`. `backend/.env.example` note.
+- Verified: `npm run test:ci --workspace backend` (281 tests).
+- Harness: `prd-phase-03` **`passes: true`**.
+- Next focus: **`prd-phase-04`** (workflow-level observability API) or workflow-relative thresholds (PRD §16) without trend leakage.
+
+## 2026-04-01 (UTC) — Cursor (PRD Phase 4)
+
+- Completed: **`GET /api/observability/:orgId`** — `buildObservabilityRollup` (`observability_aggregate.ts`): org-scoped + windowed events, per-execution Phase 2/3 pipeline, workflow-level `pattern_distribution` (fixed keys), cohort suppression via `MIN_COHORT_SIZE`, `allowed_interpretation_hints` only when workflow `ALLOWED`. Shared Zod `ObservabilityResponseSchema`. Tests: `observability_aggregate.test.ts`, `observability_api.test.ts`. Doc `docs/api/observability-org.md`, README link. OpenSpec `add-prd-phase4-observability-api`.
+- Verified: `npm run test:ci --workspace backend` (290 tests).
+- Harness: `prd-phase-04` **`passes: true`**.
+- Next focus: PRD §16 workflow-relative thresholds (no trend leakage), persistence beyond in-memory store, or product hardening.
+
+## 2026-04-01 (UTC) — Cursor (v1 boundary adaptation)
+
+- Completed: **Ingest boundary layer** — `backend/src/boundary/*` (actor-type adapter with explicit tables, execution-id resolver with opt-in composite `workflow_id::chat|agent`, Zod `upstreamIngestEventSchema` + `parseUpstreamIngestEvent`, `mapUpstreamEventToCanonical` with `upstream_lineage` metadata, `app-integration.example.ts`). `v1-pipeline-types` delegates actor mapping to `mapActorType` and supports `actor` / `actor_type` precedence. Plan: `artifacts/plan_boundary_adaptation_v1.md`.
+- Verified: `npm run test:ci --workspace backend` (75 suites, 429 tests).
+- Harness: **`prd-boundary-v1`** marked **`passes: true`**.
+- Next focus: Wire `exampleProcessIngestBody` (or equivalent) into production `POST /api/events` behind flag if desired; keep canonical validation strictly downstream of boundary.
+
+## 2026-04-01 (UTC) — Cursor (harness green)
+
+- Completed: **Full harness verification** — fixed merge-corrupted Python (`src/memory.py` import/save_memory, `src/sandbox/factory.py` except branches, `tests/test_factory.py`). `harness/scripts/verify.sh` now runs `pip install -r requirements.txt` + `python3 -m pytest tests/ -q` (mixed unittest + pytest modules). `.github/workflows/ci.yml` python-tests aligned. `docs/agent/EVALUATION.md` updated.
+- Verified: `./harness/scripts/verify.sh` (138 passed, 3 skipped); `python3 scripts/ci_v1_governance_gates.py`; `npm run build --workspace shared`; `npm run test:ci --workspace backend` (429 tests); `npm test --workspace frontend` (13 tests).
+- Harness: **`harness-001`–`harness-004`** set **`passes: true`** in `feature_list.json`.
+- Next focus: Optional CI speed (cache pip/npm); wire boundary example into production routes if product asks.
+
+## 2026-04-01 (UTC) — Cursor (session protocol doc)
+
+- Completed: Canonical **every-session** doc [`docs/agent/SESSION_START.md`](../docs/agent/SESSION_START.md) (Anthropic-style harness + `.project/` queue, memory table, roles, verification). Linked from root `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/agent/README.md`, `harness/README.md`, `harness/prompts/*`, `agents/core/SYSTEM_PROMPT.md`, `.cursorrules`.
+- Next focus: Human adds/curates `WORK_QUEUE.json` items; agents follow `SESSION_START` → one bounded unit per session.
+
+## 2026-04-01 (UTC) — Cursor (GitHub Actions Node 24 readiness)
+
+- Completed: Bumped workflows to `actions/checkout@v5`, `actions/setup-node@v6`, `actions/upload-artifact@v5` (ci node job); `setup-python@v5` + `checkout@v5` in `test.yml`; `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` on workflows using JS actions; **Node 24** for npm/Prisma in `ci.yml` / `governance-gate.yml`.
+- Note: Vercel deployment failures are project access / CLI config — not fixed by workflow YAML alone.
+

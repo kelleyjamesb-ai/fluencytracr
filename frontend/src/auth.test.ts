@@ -21,6 +21,27 @@ describe("auth", () => {
     expect(headers.get("authorization")).toBe("Bearer token-123");
   });
 
+  it("withAuth uses stored role when argument is empty", () => {
+    localStorage.setItem("role", "EXEC_VIEWER");
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "token-456");
+
+    const init = withAuth("");
+    const headers = new Headers(init.headers);
+
+    expect(headers.get("x-role")).toBe("EXEC_VIEWER");
+    expect(headers.get("authorization")).toBe("Bearer token-456");
+  });
+
+  it("withAuth prefers explicit role over localStorage", () => {
+    localStorage.setItem("role", "ADMIN");
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "token-789");
+
+    const init = withAuth("EXEC_VIEWER");
+    const headers = new Headers(init.headers);
+
+    expect(headers.get("x-role")).toBe("EXEC_VIEWER");
+  });
+
   it("retries request after 401 when token refresh succeeds", async () => {
     localStorage.setItem("userEmail", "admin@fluencytracr.com");
     localStorage.setItem("orgId", "org-1");

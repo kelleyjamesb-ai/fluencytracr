@@ -1,6 +1,5 @@
 import { app } from "../src/app";
-import { store } from "../src/store";
-import type { Server } from "http";
+import { store, buildFluencyEventRecord } from "../src/store";import type { Server } from "http";
 import {
   BoardSnapshotResponseSchema,
   OrientationWorkflowVisibilitySummaryResponseSchema,
@@ -40,19 +39,21 @@ const startServer = () => {
   });
 };
 
-const baseEvent = (workflowId: string, id: string, verificationPresent = false) => ({
-  event_id: id,
-  event_type: "ai_output_disposition" as const,
-  timestamp: new Date().toISOString(),
-  risk_class: "high" as const,
-  org_unit: "org:executive",
-  workflow_id: workflowId,
-  disposition: "accepted" as const,
-  edit_distance_bucket: "none" as const,
-  verification_present: verificationPresent,
-  time_to_action_ms: 1000
-});
-
+const baseEvent = (workflowId: string, id: string, verificationPresent = false) =>
+  buildFluencyEventRecord(
+    {
+      event_type: "ai_output_disposition",
+      timestamp: new Date().toISOString(),
+      risk_class: "high",
+      org_unit: "org:executive",
+      workflow_id: workflowId,
+      disposition: "accepted",
+      edit_distance_bucket: "none",
+      verification_present: verificationPresent,
+      time_to_action_ms: 1000
+    },
+    id
+  );
 const expectValidSchema = (result: ReturnType<typeof WorkflowRegistryVersionsResponseSchema.safeParse>) => {
   expect(result.success).toBe(true);
   if (!result.success) {
@@ -313,19 +314,17 @@ describe("workflow registry and orientation API", () => {
     expect(payload.workflows[0]).not.toHaveProperty("performance");
   });
 
-  it("rejects non-60d window for orientation and board snapshot", async () => {
+  it("accepts extended FluencyWindow values for orientation and board snapshot", async () => {
     const server = await startServer();
 
-    const orientation = await fetch(`${server.url}/api/orientation/org-1?window=30d`, {
+    const orientation = await fetch(`${server.url}/api/orientation/org-1?window=90d`, {
       headers: { "x-role": "EXEC_VIEWER" }
     });
-    const board = await fetch(`${server.url}/api/board-snapshot/org-1?window=30d`, {
-      headers: { "x-role": "EXEC_VIEWER" }
+    const board = await fetch(`${server.url}/api/board-snapshot/org-1?window=180d`, {      headers: { "x-role": "EXEC_VIEWER" }
     });
 
     await server.close();
 
-    expect(orientation.status).toBe(400);
-    expect(board.status).toBe(400);
-  });
+    expect(orientation.status).toBe(200);
+    expect(board.status).toBe(200);  });
 });

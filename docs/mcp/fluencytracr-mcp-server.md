@@ -29,15 +29,13 @@ Tool list:
 
 `fluency.ingest_events` input contract:
 - `org_id` (string, required)
-- `window` (enum: `daily|weekly|30d|60d`)
-- `events` (array of metadata events, required)
+- `window` (enum: `daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m`)- `events` (array of metadata events, required)
 - `idempotency_key` (string, required)
 - `schema_version` (string, required)
 
 Read tool input contract:
 - `org_id` (string, required)
-- `window` (enum: `daily|weekly|30d|60d`)
-- optional bounded filters:
+- `window` (enum: `daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m`)- optional bounded filters:
   - `workflow_category` (enum)
   - `risk_class` (enum)
   - `tool_class` (enum)

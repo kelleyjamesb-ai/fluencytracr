@@ -121,8 +121,7 @@ def validate_event_metadata(event: Dict[str, Any]) -> Dict[str, Any]:
 @mcp.tool()
 def map_window(window: str) -> Dict[str, str]:
     """Maps supported evidence window values."""
-    allowed = {"daily", "weekly", "30d", "60d"}
-    return {"status": "ok" if window in allowed else "invalid"}
+    allowed = {"daily", "weekly", "30d", "60d", "90d", "180d", "360d", "3m", "6m", "12m"}    return {"status": "ok" if window in allowed else "invalid"}
 
 if __name__ == "__main__":
     mcp.run()
@@ -183,8 +182,7 @@ Tool list:
 Tool input constraints:
 - Enumerations and bounded fields only
 - Reject free-form content fields
-- Enforce allowed windows: `daily`, `weekly`, `30d`, `60d`
-- Enforce bounded enums for `risk_class`, `workflow_category`, `tool_class`
+- Enforce allowed windows: `daily`, `weekly`, `30d`, `60d`, `90d`, `180d`, `360d`, `3m`, `6m`, `12m`- Enforce bounded enums for `risk_class`, `workflow_category`, `tool_class`
 
 Auth and scoping:
 - Service identity tokens only

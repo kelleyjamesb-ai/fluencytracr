@@ -240,8 +240,9 @@ describe("MappingLoader", () => {
         JSON.stringify(invalidConnector, null, 2)
       );
 
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       const connectors = MappingLoader.loadFromDirectory(testMappingsDir);
-
+      errorSpy.mockRestore();
       expect(connectors).toHaveLength(1);
       expect(connectors[0].getConnectorName()).toBe("valid-connector");
     });

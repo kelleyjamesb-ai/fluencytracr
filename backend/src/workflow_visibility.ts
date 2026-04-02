@@ -21,7 +21,9 @@ export const WORKFLOW_VISIBILITY_COPY: Record<WorkflowVisibilityState, string> =
 const WINDOW_DAYS: Record<FluencyWindow, number> = {
   "30d": 30,
   "60d": 60,
-  "3m": 90,
+  "90d": 90,
+  "180d": 180,
+  "360d": 365,  "3m": 90,
   "6m": 180,
   "12m": 365
 };

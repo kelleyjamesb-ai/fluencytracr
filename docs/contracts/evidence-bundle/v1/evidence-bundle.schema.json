@@ -27,8 +27,18 @@
     },
     "window": {
       "type": "string",
-      "enum": ["daily", "weekly", "30d", "60d"]
-    },
+      "enum": [
+        "daily",
+        "weekly",
+        "30d",
+        "60d",
+        "90d",
+        "180d",
+        "360d",
+        "3m",
+        "6m",
+        "12m"
+      ]    },
     "generated_at": {
       "type": "string",
       "format": "date-time"

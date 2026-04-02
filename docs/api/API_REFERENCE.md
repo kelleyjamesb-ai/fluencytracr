@@ -33,8 +33,7 @@ References:
 ### EvidenceBundle v1 contract and export
 - Canonical contract: `docs/contracts/evidence-bundle/v1/README.md`
 - Schema: `docs/contracts/evidence-bundle/v1/evidence-bundle.schema.json`
-- Window support: `daily`, `weekly`, `30d`, `60d`
-- Evidence semantics:
+- Window support: `daily`, `weekly`, and all shared **`FluencyWindow`** tokens (`30d`, `60d`, `90d`, `180d`, `360d`, `3m`, `6m`, `12m`; `360d` spans 365 days in `WINDOW_DAYS`)- Evidence semantics:
   - evidence presence states, not compliance scoring
   - suppression state and reason codes are first-class
 
@@ -45,10 +44,9 @@ Read-only evidence surfaces are expected to provide:
 - no individual attribution
 
 Representative read-only routes for integration planning:
-- `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d>`
-- `GET /api/evidence/coverage/:orgId?window=<daily|weekly|30d|60d>`
-- `GET /api/evidence/controls/:orgId?window=<daily|weekly|30d|60d>`
-
+- `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
+- `GET /api/evidence/coverage/:orgId?window=<...>` (same enum)
+- `GET /api/evidence/controls/:orgId?window=<...>` (same enum)
 Suppression semantics:
 - suppressed fields remain suppressed
 - clients must not reconstruct suppressed values

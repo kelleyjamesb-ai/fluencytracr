@@ -1,4 +1,7 @@
 {
   "private": true,
-  "workspaces": ["backend", "frontend", "shared"]
+  "workspaces": ["backend", "frontend", "shared"],
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
 }

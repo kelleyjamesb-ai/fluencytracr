@@ -40,9 +40,9 @@ const mintAuthTokenFromSession = async () => {
 };
 
 export const withAuth = (role: string, init: RequestInit = {}): RequestInit => {
-  void role;
   const headers = new Headers(init.headers ?? {});
-  headers.set("x-role", "ADMIN");
+  const resolvedRole = (role?.trim() || getStoredSession().role || "ADMIN").trim();
+  headers.set("x-role", resolvedRole);
   const orgId = (localStorage.getItem("orgId") ?? "").trim();
   if (orgId) {
     headers.set("x-org-id", orgId);
