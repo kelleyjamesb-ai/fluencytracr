@@ -14,7 +14,7 @@ const WORKFLOW_KEYS = new Set([
   "prevalence_mode"
 ]);
 
-const PATTERN_KEYS = new Set(["pattern", "count"]);
+const PATTERN_KEYS = new Set(["pattern", "count", "prevalence_band"]);
 
 function assertExecutiveSafeObservabilityPayload(body: unknown) {
   expect(body).not.toBeNull();
@@ -44,12 +44,15 @@ function assertExecutiveSafeObservabilityPayload(body: unknown) {
     expect(typeof w.prevalence_mode).toBe("string");
     expect(Array.isArray(w.pattern_distribution)).toBe(true);
 
+    expect(w.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
     for (const p of w.pattern_distribution as ReadonlyArray<Record<string, unknown>>) {
       for (const pk of Object.keys(p)) {
-        expect(PATTERN_KEYS.has(pk) || pk === "share" || pk === "prevalence_band").toBe(true);
+        expect(PATTERN_KEYS.has(pk)).toBe(true);
       }
       expect(typeof p.pattern).toBe("string");
       expect(typeof p.count).toBe("number");
+      expect(p).not.toHaveProperty("share");
+      expect(typeof p.prevalence_band).toBe("string");
     }
   }
 }

@@ -101,7 +101,8 @@ const ALLOWED_WORKFLOW_KEYS = new Set([
   "prevalence_mode"
 ]);
 
-const ALLOWED_PATTERN_ROW_KEYS = new Set(["pattern", "count", "share", "prevalence_band"]);
+/** Executive observability rows are categorical only (no numeric share at the API boundary). */
+const ALLOWED_PATTERN_ROW_KEYS = new Set(["pattern", "count", "prevalence_band"]);
 
 const ALLOWED_TOP_KEYS = new Set(["org_id", "workflows"]);
 

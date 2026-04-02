@@ -166,4 +166,53 @@ describe("runClassificationPipeline", () => {
     expect(agg).not.toBeNull();
     expect(agg!.classified_execution_count).toBeGreaterThanOrEqual(1);
   });
+
+  it("classifies RECOVERY_MATURITY when explicit error, retry, and success (pattern-specific, no global UNKNOWN suppression)", async () => {
+    const classRepo = new InMemoryClassificationRepository();
+    const aggRepo = new InMemoryWorkflowAggregateRepository();
+    const exId = "ex-pipe-recovery";
+    const events: CanonicalEvent[] = [
+      baseEvent(
+        {
+          event_name: "execution_start",
+          timestamp: "2026-01-01T12:00:00.000Z",
+          metadata: { event_id: "r0" }
+        },
+        exId
+      ),
+      baseEvent(
+        {
+          event_name: "execution_error",
+          timestamp: "2026-01-01T12:00:30.000Z",
+          metadata: { event_id: "r1" }
+        },
+        exId
+      ),
+      baseEvent(
+        {
+          event_name: "step",
+          timestamp: "2026-01-01T12:01:00.000Z",
+          metadata: { event_id: "r2" }
+        },
+        exId
+      ),
+      baseEvent(
+        {
+          event_name: "ai_output_disposition",
+          timestamp: "2026-01-01T12:01:30.000Z",
+          context: { disposition: "accepted" },
+          metadata: { event_id: "r3" }
+        },
+        exId
+      )
+    ];
+    const r = await runClassificationPipeline(
+      { org_id: "o1", workflow_id: "w1", execution_id: exId, events },
+      { classificationRepository: classRepo, workflowAggregateRepository: aggRepo }
+    );
+    expect(r.outcome.status).toBe("ALLOWED");
+    expect(r.outcome.pattern).toBe(BehaviorPattern.RECOVERY_MATURITY);
+    const profile = r.outcome.signal_profile as { recovery?: { recovery_present: boolean } } | undefined;
+    expect(profile?.recovery?.recovery_present).toBe(true);
+  });
 });

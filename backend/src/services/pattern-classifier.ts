@@ -12,13 +12,16 @@ export enum BehaviorPattern {
 
 export type SignalBucket = "LOW" | "NORMAL" | "HIGH";
 
+export type LatencyBucketForClassification = SignalBucket | "UNKNOWN";
+
 export interface PatternClassificationInput {
   readonly abandonment_present: boolean;
   readonly iteration_bucket: SignalBucket;
   readonly raw_iteration_count: number;
   readonly verification_present: boolean;
   readonly recovery_present: boolean;
-  readonly latency_bucket: SignalBucket;
+  /** UNKNOWN skips rules that require a known latency band (e.g. FRICTION_LOOP). */
+  readonly latency_bucket: LatencyBucketForClassification;
 }
 
 export interface PatternClassificationResult {
@@ -33,7 +36,11 @@ export function classifyBehaviorPattern(
   if (input.abandonment_present) {
     return { classified: true, pattern: BehaviorPattern.UNDERTRUST_AVOIDANCE };
   }
-  if (input.iteration_bucket === "HIGH" && input.latency_bucket === "HIGH") {
+  if (
+    input.iteration_bucket === "HIGH" &&
+    input.latency_bucket !== "UNKNOWN" &&
+    input.latency_bucket === "HIGH"
+  ) {
     return { classified: true, pattern: BehaviorPattern.FRICTION_LOOP };
   }
   if (input.recovery_present) {

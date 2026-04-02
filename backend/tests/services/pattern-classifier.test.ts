@@ -83,4 +83,28 @@ describe("classifyBehaviorPattern", () => {
     expect(r.classified).toBe(false);
     expect(r.reason).toBe("AMBIGUITY");
   });
+
+  it("Scenario F: RECOVERY_MATURITY allowed when latency bucket is UNKNOWN", () => {
+    const r = classifyBehaviorPattern({
+      ...base(),
+      recovery_present: true,
+      iteration_bucket: "NORMAL",
+      latency_bucket: "UNKNOWN",
+      raw_iteration_count: 1
+    });
+    expect(r.classified).toBe(true);
+    expect(r.pattern).toBe(BehaviorPattern.RECOVERY_MATURITY);
+  });
+
+  it("FRICTION_LOOP does not match when latency is UNKNOWN even if iteration is HIGH", () => {
+    const r = classifyBehaviorPattern({
+      ...base(),
+      iteration_bucket: "HIGH",
+      latency_bucket: "UNKNOWN",
+      raw_iteration_count: 2,
+      recovery_present: false
+    });
+    expect(r.classified).toBe(false);
+    expect(r.reason).toBe("AMBIGUITY");
+  });
 });

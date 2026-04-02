@@ -6,7 +6,7 @@ import { handleGetObservability } from "../../src/controllers/observability.cont
 import { BehaviorPattern } from "../../src/services/pattern-classifier";
 import { runClassificationPipeline } from "../../src/services/classification-pipeline.service";
 import { createE2eInMemoryStack } from "../helpers/in-memory-dependencies";
-import { expectGovernanceSafeObservabilityBody, expectNoForbiddenKeys } from "./helpers/governance-matchers";
+import { expectGovernanceSafeObservabilityBody } from "./helpers/governance-matchers";
 import {
   fixtureIds,
   happyPathExecution,
@@ -68,7 +68,7 @@ describe("governance regression — aggregation safety", () => {
     expect(w.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
   });
 
-  it("numeric share mode in aggregate does not add rank/trend/diagnostic keys to API shape", async () => {
+  it("numeric share stored in aggregate is converted at controller boundary — categorical mode and no share in JSON", async () => {
     const { workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
     await workflowAggregateRepository.upsertAggregate(
       {
@@ -82,8 +82,19 @@ describe("governance regression — aggregation safety", () => {
     );
     const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
     expect(res.status).toBe(200);
-    expectNoForbiddenKeys(res.body);
+    expectGovernanceSafeObservabilityBody(res.body);
+    const body = res.body as {
+      workflows: ReadonlyArray<{
+        prevalence_mode: string;
+        pattern_distribution: ReadonlyArray<{ prevalence_band?: string; share?: number }>;
+      }>;
+    };
+    expect(body.workflows[0]!.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
+    const row = body.workflows[0]!.pattern_distribution[0]!;
+    expect(row.prevalence_band).toBe("HIGH");
+    expect(row).not.toHaveProperty("share");
     const raw = JSON.stringify(res.body).toLowerCase();
     expect(raw).not.toMatch(/\brank\b|\btrend\b|diagnostic/);
+    expect(raw).not.toMatch(/"share"/);
   });
 });
