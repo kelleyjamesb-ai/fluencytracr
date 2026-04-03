@@ -3945,9 +3945,15 @@ app.get(
         details: parsed.error.flatten()
       });
     }
-    const events = Array.from(store.fluencyEvents.values()).filter(
-      (event) => !req.authOrgId || event.org_id === req.authOrgId
-    );
+    const events = Array.from(store.fluencyEvents.values()).filter((event) => {
+      if (!req.authOrgId) {
+        return true;
+      }
+      return (
+        typeof event.org_unit === "string" &&
+        (event.org_unit === `org:${req.authOrgId}` || event.org_unit.startsWith(`org:${req.authOrgId}:`))
+      );
+    });
     const traces = reconstructTracesForQuery(events, parsed.data);
     const includeSignals =
       req.query.include_signals === "true" ||
