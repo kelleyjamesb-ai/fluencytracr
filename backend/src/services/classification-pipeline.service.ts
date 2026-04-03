@@ -77,7 +77,7 @@ async function refreshWorkflowAggregate(
   classificationRepository: ClassificationRepository,
   workflowAggregateRepository: WorkflowAggregateRepository
 ): Promise<void> {
-  const outcomes = await classificationRepository.findByWorkflowId(workflowId);
+  const outcomes = await classificationRepository.findByOrgIdAndWorkflowId(orgId, workflowId);
   const records: ExecutionClassificationRecord[] = outcomes.map((o) => ({
     workflow_id: o.workflow_id,
     execution_id: o.execution_id,

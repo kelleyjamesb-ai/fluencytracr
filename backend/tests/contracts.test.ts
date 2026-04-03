@@ -1,7 +1,8 @@
 import request from "supertest";
+import type { FluencyEvent } from "@learnaire/shared";
 
 import { app } from "../src/app";
-import { store } from "../src/store";
+import { buildFluencyEventRecord, insertFluencyEvent, store } from "../src/store";
 
 const schemaHeaders = {
   "x-role": "ADMIN",
@@ -143,6 +144,51 @@ it("returns reconstructed traces for workflow_id", async () => {
   expect(response.body.traces).toHaveLength(1);
   expect(response.body.traces[0].execution_id).toContain("run-xyz");
   expect(response.body.traces[0].retry_sequences.length).toBeGreaterThanOrEqual(1);
+});
+
+it("scopes reconstructed traces to the authenticated org", async () => {
+  store.orgs.set("org-2", { id: "org-2", name: "Org 2", minGroupSize: 1, createdAt: "now" });
+
+  const org1Event = buildFluencyEventRecord(
+    {
+      event_type: "ai_output_disposition",
+      timestamp: "2024-01-04T00:00:00.000Z",
+      risk_class: "low",
+      workflow_id: "workflow-shared",
+      org_id: "org-1",
+      disposition: "accepted",
+      edit_distance_bucket: "none",
+      verification_present: false,
+      time_to_action_ms: 100,
+      run_id: "run-org-1"
+    } as FluencyEvent,
+    "trace-org-1"
+  );
+  const org2Event = buildFluencyEventRecord(
+    {
+      event_type: "ai_output_disposition",
+      timestamp: "2024-01-04T00:01:00.000Z",
+      risk_class: "low",
+      workflow_id: "workflow-shared",
+      org_id: "org-2",
+      disposition: "accepted",
+      edit_distance_bucket: "none",
+      verification_present: false,
+      time_to_action_ms: 100,
+      run_id: "run-org-2"
+    } as FluencyEvent,
+    "trace-org-2"
+  );
+  insertFluencyEvent(org1Event);
+  insertFluencyEvent(org2Event);
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-shared")
+    .set({ "x-role": "ADMIN", "x-org-id": "org-1" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces).toHaveLength(1);
+  expect(response.body.traces[0].execution_id).toContain("run-org-1");
 });
 
 it("returns signals and pattern when include_signals=true and disclosure ALLOWED (>=2 events)", async () => {

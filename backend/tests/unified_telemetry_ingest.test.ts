@@ -69,6 +69,32 @@ it("accepts a valid unified telemetry batch when enabled", async () => {
   );
 });
 
+it("rejects events whose nested org_id does not match the authenticated org", async () => {
+  process.env.FLUENCY_UNIFIED_TELEMETRY_INGEST = "true";
+  store.orgs.set("org-2", { id: "org-2", name: "Org 2", minGroupSize: 1, createdAt: "now" });
+
+  const response = await request(app)
+    .post("/api/ingest/unified-telemetry")
+    .set({
+      ...headersBase,
+      "Idempotency-Key": "ut-cross-org",
+      "x-org-id": "org-1"
+    })
+    .send({
+      events: [
+        {
+          ...validHumanEvent,
+          event_id: "d47ac10b-58cc-4372-a567-0e02b2c3d470",
+          org_id: "org-2"
+        }
+      ]
+    });
+
+  expect(response.status).toBe(403);
+  expect(response.body.message).toContain("Token org scope");
+  expect(store.unifiedTelemetryEvents.size).toBe(0);
+});
+
 it("rejects duplicate event_id within the same batch", async () => {
   process.env.FLUENCY_UNIFIED_TELEMETRY_INGEST = "true";
 

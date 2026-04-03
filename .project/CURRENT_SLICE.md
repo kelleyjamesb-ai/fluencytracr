@@ -1,41 +1,42 @@
 # Current Slice Contract
 
-- Work item id: `ci-frontend-test-toolchain-alignment`
-- Title: `Frontend test toolchain alignment for CI matcher regression`
+- Work item id: `backend-tenant-isolation-fixes`
+- Title: `Backend tenant isolation fixes for ingest, reconstructed traces, and aggregates`
 - Status: `completed`
 
 ## Summary
 
-Aligned the frontend workspace test toolchain with the checked-in lockfile so CI and local runs resolve the same Vitest/Vite stack, restoring jest-dom matcher registration for `ProtectedRoute.test.tsx` under CI.
+Fixed three tenant-boundary bugs validated from review feedback: unified telemetry ingest now fail-closes on nested `org_id` mismatch, reconstructed trace queries are scoped to `req.authOrgId`, and workflow aggregate refresh is org-scoped when workflow IDs overlap across tenants.
 
 ## Scope Paths
 
-- `package.json`
-- `package-lock.json`
-- `frontend/package.json`
-- `frontend/vite.config.ts`
-- `frontend/src/test/setup.ts`
-- `frontend/src/components/ProtectedRoute.test.tsx`
+- `backend/src/app.ts`
+- `backend/src/services/classification-pipeline.service.ts`
+- `backend/src/repositories/classification.repository.ts`
+- `backend/tests/unified_telemetry_ingest.test.ts`
+- `backend/tests/contracts.test.ts`
+- `backend/tests/services/classification-pipeline.service.test.ts`
+- `backend/tests/auth_hardening.test.ts`
 
 ## Key Risks
 
-- Root and frontend toolchain versions can resolve different `vitest` / `vite` instances.
-- Lockfile refresh can introduce broader dependency churn than intended.
-- Fixing matcher symptoms without addressing toolchain skew would leave CI unstable.
+- Route-level auth can appear correct while nested event payloads bypass org checks.
+- Reconstructed trace filtering must not break legitimate same-org access.
+- Aggregate refresh changes can regress classification persistence or repository behavior if interface updates are incomplete.
 
 ## Planned Checks
 
-- Reproduce the frontend failure mode with dependency tree inspection and targeted test runs.
-- Run the frontend Vitest suite after alignment.
-- Confirm the workspace resolves a single valid Vitest/Vite line for frontend.
+- Add failing tests for cross-org unified telemetry ingest rejection.
+- Add failing tests for reconstructed trace tenant scoping.
+- Add failing tests for workflow aggregate refresh with same workflow ID across orgs.
+- Run targeted backend Jest suites for the touched paths.
 
 ## Evaluator Command Profile
 
 `targeted` by default:
 
-- `npm ls vitest --all`
-- `npm ls vite --all`
-- `npm test --workspace frontend`
+- `npm run test:ci --workspace backend -- --runTestsByPath tests/unified_telemetry_ingest.test.ts tests/contracts.test.ts tests/services/classification-pipeline.service.test.ts`
+- `npm run test:ci --workspace backend -- --runTestsByPath tests/auth_hardening.test.ts`
 
 Escalate to `strict` only if the slice becomes cross-cutting:
 
@@ -47,15 +48,17 @@ Escalate to `strict` only if the slice becomes cross-cutting:
 ## Evaluator Pass Criteria
 
 - Only declared scope paths are changed.
-- `npm ls vitest --all` and `npm ls vite --all` no longer report frontend-invalid resolutions.
-- `npm test --workspace frontend` passes.
+- Unified telemetry ingest rejects nested `org_id` mismatches with no cross-org persistence.
+- `/api/traces/reconstructed` returns only traces for the authenticated org.
+- Workflow aggregate refresh excludes outcomes from other orgs that share the workflow ID.
+- Targeted backend tests pass.
 - No blocker remains unrecorded in `.project/PROGRESS.md`.
 
 ## Specialists To Consult
 
-- Frontend/build specialist if package alignment creates dependency ambiguity.
-- Review specialist if evaluator results suggest collateral CI risk.
+- Backend/auth specialist if RBAC scoping behavior is ambiguous.
+- Review specialist if evaluator results suggest collateral tenancy risk.
 
 ## Next Handoff Note
 
-Completed by realigning `frontend/package.json` to the locked `vite`/`vitest` versions already used in the workspace. Next bounded unit should return to phase-03 backend work unless new CI failures appear.
+Completed with targeted regression coverage and targeted backend verification. Next bounded unit should return to the declared phase-03 queue item unless new review findings justify another isolated repair slice.
