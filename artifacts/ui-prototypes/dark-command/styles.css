@@ -1,0 +1,279 @@
+@import url("../glean-brand.css");
+
+/* Glean dark — black shell, primary blue + lime accents (contrast variant for exec briefings) */
+
+:root {
+  --bg: #0a0a0b;
+  --bg-elevated: #12121a;
+  --bg-card: #16161f;
+  --ink: #f4f4f5;
+  --ink-dim: #a1a1b0;
+  --line: #2a2a36;
+  --primary-glow: rgba(52, 60, 237, 0.22);
+  --cta-glow: rgba(216, 253, 73, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  background-image: radial-gradient(ellipse 100% 55% at 80% -15%, var(--primary-glow) 0%, transparent 45%),
+    radial-gradient(ellipse 80% 40% at 10% 100%, var(--cta-glow) 0%, transparent 50%);
+  min-height: 100vh;
+}
+
+.co-brand {
+  color: var(--ink-dim);
+}
+
+.co-brand-glean {
+  color: var(--glean-cta);
+}
+
+.co-brand-product {
+  color: var(--ink);
+}
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 44px 28px 64px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--glean-cta);
+  margin: 0 0 14px;
+}
+
+.lede {
+  max-width: 62ch;
+  margin: 0 0 28px;
+  color: var(--ink-dim);
+  font-size: 1rem;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.kpi {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kpi-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kpi-meta {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.callout {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--glean-primary);
+  padding: 16px 20px;
+  background: rgba(52, 60, 237, 0.12);
+  border-radius: 0 10px 10px 0;
+  max-width: 62ch;
+}
+
+.callout strong {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  color: var(--glean-cta);
+  font-weight: 600;
+}
+
+.callout p {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+}
+
+.signal-strip {
+  margin-top: 44px;
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+}
+
+.strip-head h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+.strip-sub {
+  margin: 0 0 24px;
+  color: var(--ink-dim);
+  max-width: 56ch;
+  font-size: 0.92rem;
+}
+
+.signal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.signal-col {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  background: var(--bg-elevated);
+}
+
+.signal-col h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.why {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.signal-col ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+}
+
+.signal-col li + li {
+  margin-top: 6px;
+}
+
+.signal-good {
+  border-color: rgba(52, 60, 237, 0.45);
+}
+
+.signal-warn {
+  border-color: rgba(216, 253, 73, 0.35);
+}
+
+.timeline-block {
+  margin-top: 44px;
+}
+
+.timeline-block h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.timeline-sub {
+  margin: 0 0 18px;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+}
+
+.skeleton-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-list li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sk-line {
+  display: block;
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--line) 0%, #3d3d4d 50%, var(--line) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.2s ease-in-out infinite;
+}
+
+.sk-w-70 {
+  width: 70%;
+}
+.sk-w-40 {
+  width: 40%;
+}
+.sk-w-85 {
+  width: 85%;
+}
+.sk-w-55 {
+  width: 55%;
+}
+.sk-w-60 {
+  width: 60%;
+}
+.sk-w-45 {
+  width: 45%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+  .signal-grid {
+    grid-template-columns: 1fr;
+  }
+}

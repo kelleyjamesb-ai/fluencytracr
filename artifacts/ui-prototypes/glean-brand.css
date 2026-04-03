@@ -1,0 +1,53 @@
+/**
+ * Glean brand tokens for static prototypes.
+ * Palette matches Glean public brand resources (primary blue, bright green CTA, oatmeal).
+ * Typography: PolySans is the Glean product typeface; DM Sans is the documented fallback
+ * where PolySans is not licensed (e.g. Google Slides) — same as app shell in frontend/src/styles.css
+ *
+ * Reference: https://www.glean.com/brand-resources
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap");
+
+:root {
+  --glean-primary: #343ced;
+  --glean-primary-hover: #262cc4;
+  --glean-secondary: #555cf0;
+  --glean-cta: #d8fd49;
+  --glean-oatmeal: #f6f3eb;
+  --glean-black: #000000;
+  --glean-white: #ffffff;
+  --glean-surface-alt: #f0efff;
+  --glean-line: #dfddd6;
+  --glean-line-violet: #cfcdf7;
+  --glean-ink-soft: #1f1f1f;
+  --glean-violet-glow: #ecebff;
+}
+
+body.glean-ui {
+  font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+}
+
+.co-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 20px;
+}
+
+.co-brand-glean {
+  color: var(--glean-primary);
+}
+
+.co-brand-sep {
+  color: var(--glean-line);
+  font-weight: 400;
+}
+
+.co-brand-product {
+  color: var(--glean-ink-soft);
+}
