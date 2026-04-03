@@ -1,64 +1,66 @@
 # Current Slice Contract
 
-- Work item id: `backend-tenant-isolation-fixes`
-- Title: `Backend tenant isolation fixes for ingest, reconstructed traces, and aggregates`
+- Work item id: `openspec-cli-enable-and-publish-vercel-proposal`
+- Title: `Add OpenSpec CLI, validate the Vercel Services proposal, and publish the planning slice`
 - Status: `completed`
 
 ## Summary
 
-Fixed three tenant-boundary bugs validated from review feedback: unified telemetry ingest now fail-closes on nested `org_id` mismatch, reconstructed trace queries are scoped to `req.authOrgId`, and workflow aggregate refresh is org-scoped when workflow IDs overlap across tenants.
+Add the OpenSpec CLI as a durable repo tool, validate the new Vercel Services consolidation proposal, and publish the planning slice without starting implementation.
 
 ## Scope Paths
 
-- `backend/src/app.ts`
-- `backend/src/services/classification-pipeline.service.ts`
-- `backend/src/repositories/classification.repository.ts`
-- `backend/tests/unified_telemetry_ingest.test.ts`
-- `backend/tests/contracts.test.ts`
-- `backend/tests/services/classification-pipeline.service.test.ts`
-- `backend/tests/auth_hardening.test.ts`
+- `package.json`
+- `package-lock.json`
+- `openspec/changes/update-vercel-single-project-services/proposal.md`
+- `openspec/changes/update-vercel-single-project-services/design.md`
+- `openspec/changes/update-vercel-single-project-services/tasks.md`
+- `openspec/changes/update-vercel-single-project-services/specs/deployment/spec.md`
+- `.project/CURRENT_SLICE.md`
+- `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Route-level auth can appear correct while nested event payloads bypass org checks.
-- Reconstructed trace filtering must not break legitimate same-org access.
-- Aggregate refresh changes can regress classification persistence or repository behavior if interface updates are incomplete.
+- Adding the CLI could create unnecessary lockfile churn outside the planning scope.
+- OpenSpec validation may fail because the existing `deployment` spec is legacy and underspecified.
+- Proposal scope can still drift into implementation if validation feedback is handled too broadly.
 
 ## Planned Checks
 
-- Add failing tests for cross-org unified telemetry ingest rejection.
-- Add failing tests for reconstructed trace tenant scoping.
-- Add failing tests for workflow aggregate refresh with same workflow ID across orgs.
-- Run targeted backend Jest suites for the touched paths.
+- Install the same OpenSpec CLI already referenced elsewhere in the repo (`@fission-ai/openspec`).
+- Run strict validation for `update-vercel-single-project-services`.
+- Re-read any files changed to satisfy validation and confirm the scope remains planning-only.
 
 ## Evaluator Command Profile
 
-`targeted` by default:
+`targeted` for this tooling/planning slice:
 
-- `npm run test:ci --workspace backend -- --runTestsByPath tests/unified_telemetry_ingest.test.ts tests/contracts.test.ts tests/services/classification-pipeline.service.test.ts`
-- `npm run test:ci --workspace backend -- --runTestsByPath tests/auth_hardening.test.ts`
+- `source ~/.nvm/nvm.sh && npx openspec validate update-vercel-single-project-services --strict`
+- `sed -n '1,220p' openspec/changes/update-vercel-single-project-services/proposal.md`
+- `sed -n '1,260p' openspec/changes/update-vercel-single-project-services/design.md`
+- `sed -n '1,220p' openspec/changes/update-vercel-single-project-services/tasks.md`
+- `sed -n '1,220p' openspec/changes/update-vercel-single-project-services/specs/deployment/spec.md`
 
-Escalate to `strict` only if the slice becomes cross-cutting:
+Escalate to `strict` only when implementation begins:
 
-- `./harness/scripts/verify.sh`
-- `npm run build --workspace shared`
-- `npm run test:ci --workspace backend`
-- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run build --workspace backend`
+- Vercel preview deployment verification on the single canonical project
 
 ## Evaluator Pass Criteria
 
-- Only declared scope paths are changed.
-- Unified telemetry ingest rejects nested `org_id` mismatches with no cross-org persistence.
-- `/api/traces/reconstructed` returns only traces for the authenticated org.
-- Workflow aggregate refresh excludes outcomes from other orgs that share the workflow ID.
-- Targeted backend tests pass.
+- Only declared tooling/planning paths are changed.
+- Root package metadata cleanly includes the OpenSpec CLI.
+- Proposal states one canonical Vercel project and preserves current public routes.
+- Design identifies migration steps, risks, rollback shape, and dashboard cleanup.
+- `openspec validate ... --strict` passes for the new change.
+- Tasks are bounded to the future implementation slice rather than broad architecture theater.
 - No blocker remains unrecorded in `.project/PROGRESS.md`.
 
 ## Specialists To Consult
 
-- Backend/auth specialist if RBAC scoping behavior is ambiguous.
-- Review specialist if evaluator results suggest collateral tenancy risk.
+- Vercel/deployment specialist if validation reveals missing deployment-spec context.
 
 ## Next Handoff Note
 
-Completed with targeted regression coverage and targeted backend verification. Next bounded unit should return to the declared phase-03 queue item unless new review findings justify another isolated repair slice.
+Completed: `@fission-ai/openspec` was added at the repo root and `npx openspec validate update-vercel-single-project-services --strict` passed. The next slice should implement the root Vercel Services config and remove external backend rewrites without changing public URLs.
