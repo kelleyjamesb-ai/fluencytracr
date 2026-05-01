@@ -143,17 +143,18 @@ FluencyTracr should be able to:
 - Modify: `backend/src/app.ts` only if the current EvidenceBundle builder remains centralized there.
 - Prefer create: `backend/src/evidence/gleanReadinessEvidence.ts`
 - Test: `backend/tests/glean_readiness_evidence_bundle.test.ts`
+- Create: `docs/contracts/evidence-bundle/v1/examples/glean-readiness-derived.json`
 - Docs: `docs/contracts/evidence-bundle/v1/README.md`
 - OpenSpec: `openspec/changes/add-glean-readiness-evidence-derivation/`
 
 **Implementation steps:**
 
-- [ ] Write a failing test that present `workflow_run`, `agent_run`, and `search_document_retrieval` entries appear in EvidenceBundle coverage instrumentation.
-- [ ] Write a failing test that `mcp_usage` with `not_computed` remains in missing or not-computed coverage notes.
-- [ ] Write a failing test that suppressed `ai_security` does not produce exposure values but preserves suppression reasons.
-- [ ] Add a focused derivation module rather than expanding `backend/src/app.ts` unless unavoidable.
-- [ ] Wire the derivation into EvidenceBundle generation behind a fixture/demo path or explicit feature flag.
-- [ ] Verify EvidenceBundle v1 schema and suppression semantics.
+- [x] Write a failing test that present `workflow_run`, `agent_run`, and `search_document_retrieval` entries appear in EvidenceBundle coverage instrumentation.
+- [x] Write a failing test that `mcp_usage` with `not_computed` remains in missing or not-computed coverage notes.
+- [x] Write a failing test that suppressed `ai_security` does not produce exposure values but preserves suppression reasons.
+- [x] Add a focused derivation module rather than expanding `backend/src/app.ts` unless unavoidable.
+- [x] Wire the derivation into EvidenceBundle generation behind a fixture/demo path or explicit feature flag.
+- [x] Verify EvidenceBundle v1 schema and suppression semantics.
 
 **Done when:**
 
