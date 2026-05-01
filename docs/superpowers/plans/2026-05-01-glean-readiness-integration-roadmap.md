@@ -63,14 +63,14 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Write a failing test that maps WorkflowRun-like source metadata to `signal_family: "workflow_run"` with `readiness_status: "present"` after generation.
-- [ ] Write a failing test that maps MCP Usage with unknown scrub status to `signal_family: "mcp_usage"` and `readiness_status: "not_computed"`.
-- [ ] Write a failing test that maps AI Security with governance hold to `signal_family: "ai_security"` and `readiness_status: "suppressed"`.
-- [ ] Add strict Zod schemas for Glean-style source fixture records in `shared/src/gleanSourceReadinessAdapter.ts`.
-- [ ] Add `mapGleanSourcesToReadinessInventory(records)` that emits `GSR_INVENTORY_2026_05`.
-- [ ] Reject unsafe fields using strict schemas and forbidden key tests.
-- [ ] Export adapter functions from `shared/src/index.ts`.
-- [ ] Verify with targeted backend tests and `npm run build --workspace shared`.
+- [x] Write a failing test that maps WorkflowRun-like source metadata to `signal_family: "workflow_run"` with `readiness_status: "present"` after generation.
+- [x] Write a failing test that maps MCP Usage with unknown scrub status to `signal_family: "mcp_usage"` and `readiness_status: "not_computed"`.
+- [x] Write a failing test that maps AI Security with governance hold to `signal_family: "ai_security"` and `readiness_status: "suppressed"`.
+- [x] Add strict Zod schemas for Glean-style source fixture records in `shared/src/gleanSourceReadinessAdapter.ts`.
+- [x] Add `mapGleanSourcesToReadinessInventory(records)` that emits `GSR_INVENTORY_2026_05`.
+- [x] Reject unsafe fields using strict schemas and forbidden key tests.
+- [x] Export adapter functions from `shared/src/index.ts`.
+- [x] Verify with targeted backend tests and `npm run build --workspace shared`.
 
 **Done when:**
 
