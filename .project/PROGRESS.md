@@ -5,12 +5,14 @@
 - Agent governance wiring: `.project/*`, `agents/core`, `agents/review`, `agents/README.md`.
 - Implementation blueprint: `artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md` (v1 build plan §1–17).
 - Frontend CI matcher regression repair: realigned `frontend/package.json` with locked `vite`/`vitest` versions, eliminating invalid workspace resolutions and restoring `ProtectedRoute.test.tsx`.
+- Explicit user-requested Glean addition: added the Glean Signal Readiness Map contract, shared validation schema, strict `fluency.get_agent_evidence_summary` MCP tool, and OpenSpec change `add-glean-signal-readiness-map`.
 
 ## Current Status
 
 - Queue uses **7 phased items** aligned with blueprint **§17** (`WORK_QUEUE.json` → `blueprint_ref`).
 - **`phase-03-fsc-min-signal`** is **in_progress** (FSC + minimum signal gates before classification).
 - Temporary frontend CI repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
+- The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
 
 ## Blockers
 

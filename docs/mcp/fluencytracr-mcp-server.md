@@ -24,6 +24,7 @@ Data boundaries:
 Tool list:
 - `fluency.ingest_events`
 - `fluency.get_evidence_bundle`
+- `fluency.get_agent_evidence_summary`
 - `fluency.get_control_evidence`
 - `fluency.get_coverage_map`
 
@@ -44,6 +45,8 @@ Validation rules:
 - Reject free-form content fields.
 - Reject unknown enums and out-of-bound values.
 - Reject forbidden dimensions (`team_id`, `manager_id`, `role_id`, `user_id`) for executive-safe tools.
+
+`fluency.get_agent_evidence_summary` is the preferred Glean Agent read tool. It calls the EvidenceBundle endpoint, then returns only the strict agent-safe response template: `org_id`, `window`, `generated_at`, `suppression_applied`, `suppression_reasons`, `exposure`, `calibration`, `fragility`, `coverage_summary`, and `decision_safe_guidance`. Use `fluency.get_evidence_bundle` only for trusted systems that need the full EvidenceBundle contract.
 
 ## Forbidden fields enforcement
 
@@ -111,6 +114,6 @@ Streamable HTTP (remote): run `node packages/fluencytracr-mcp/dist/http-main.js`
 
 Smoke checks:
 1. Call `fluency.ingest_events` with metadata-only sample and verify `/api/ingest` acceptance.
-2. Call `fluency.get_evidence_bundle` and verify suppression-safe aggregate response.
-3. Submit a forbidden field sample and verify deterministic rejection plus audit event.
-
+2. Call `fluency.get_agent_evidence_summary` and verify the strict summary omits raw bundle-only fields.
+3. Call `fluency.get_evidence_bundle` only when the full EvidenceBundle is required.
+4. Submit a forbidden field sample and verify deterministic rejection plus audit event.

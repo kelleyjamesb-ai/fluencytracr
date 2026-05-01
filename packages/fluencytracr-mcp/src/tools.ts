@@ -5,6 +5,7 @@ import { EvidenceWindowSchema, getActorIdentity, getSchemaVersionHeader } from "
 import { findForbiddenField } from "./forbiddenScan.js";
 import { writeAudit, type AuditRecord } from "./audit.js";
 import { getEvidenceJson, postIngest, type FetchFn } from "./fluencyClient.js";
+import { buildAgentEvidenceResponse } from "./agentResponse.js";
 import { randomUUID } from "node:crypto";
 
 const IngestInputSchema = z.object({
@@ -226,6 +227,44 @@ export function registerFluencyTools(server: McpServer, fetchImpl: FetchFn = fet
     "fluency.get_control_evidence",
     "controls",
     "GET /api/evidence/controls — exposure/calibration/fragility/learning controls slice."
+  );
+
+  server.registerTool(
+    "fluency.get_agent_evidence_summary",
+    {
+      description:
+        "GET /api/evidence/bundles and return the strict agent-safe EvidenceBundle summary template for a Glean Agent.",
+      inputSchema: ReadInputSchema
+    },
+    async ({ org_id, window }) => {
+      try {
+        const body = await getEvidenceJson(org_id, "bundles", window, fetchImpl);
+        const summary = buildAgentEvidenceResponse(body);
+        emitAudit({
+          org_id,
+          tool_name: "fluency.get_agent_evidence_summary",
+          operation: "agent_summary",
+          schema_version: getSchemaVersionHeader(),
+          result: summary.suppression_applied ? "suppressed" : "success",
+          suppression_applied: summary.suppression_applied,
+          suppression_reasons: summary.suppression_reasons
+        });
+        return { content: [{ type: "text", text: JSON.stringify(summary, null, 2) }] };
+      } catch (e) {
+        emitAudit({
+          org_id,
+          tool_name: "fluency.get_agent_evidence_summary",
+          operation: "agent_summary",
+          schema_version: getSchemaVersionHeader(),
+          result: "error",
+          suppression_applied: false,
+          suppression_reasons: [],
+          reason_code: "upstream_error"
+        });
+        const msg = e instanceof Error ? e.message : String(e);
+        return toolError(msg);
+      }
+    }
   );
 }
 

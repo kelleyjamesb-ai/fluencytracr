@@ -2,6 +2,7 @@
 
 References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
+- Glean Signal Readiness Map: `docs/contracts/glean-signal-readiness/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
 - Glean integration overview: `docs/integrations/glean/01-overview.md`
 
@@ -19,6 +20,7 @@ References:
 - "For this window, is verification presence signal present, absent, suppressed, or not computed?"
 
 Machine-checked template builder (strict JSON, no extra keys): `@learnaire/fluencytracr-mcp` exports `buildAgentEvidenceResponse` / `validateAgentEvidenceResponse`.
+Preferred MCP read tool for Glean Agents: `fluency.get_agent_evidence_summary`.
 
 Out of scope question classes:
 - Any team-level or manager-level comparison request
@@ -27,6 +29,7 @@ Out of scope question classes:
 
 ## Callable FluencyTracr endpoints
 Agent tools may call only bounded, read-only evidence routes plus ingestion facade where needed for partner relay:
+- `fluency.get_agent_evidence_summary` for the strict agent-safe summary template
 - `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
 - `GET /api/evidence/coverage/:orgId?window=<...>` (same window enum as bundles)
 - `GET /api/evidence/controls/:orgId?window=<...>` (same window enum as bundles)
@@ -63,4 +66,3 @@ Required fields:
 - `fragility`
 - `coverage_summary`
 - `decision_safe_guidance`
-
