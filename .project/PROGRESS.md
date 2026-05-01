@@ -8,6 +8,7 @@
 - Explicit user-requested Glean addition: added the Glean Signal Readiness Map contract, shared validation schema, strict `fluency.get_agent_evidence_summary` MCP tool, and OpenSpec change `add-glean-signal-readiness-map`.
 - Explicit user-requested Glean addition: added seeded Glean readiness inventory, generator, CLI command, generated demo map, and stakeholder demo summary.
 - Glean readiness roadmap Phase 1: added strict Glean-style source fixture adapter for WorkflowRun, MCP Usage, and AI Security source records.
+- Glean readiness roadmap Phase 2: added source-to-readiness CLI and source-derived Northstar readiness map artifact.
 
 ## Current Status
 
@@ -16,7 +17,7 @@
 - Temporary frontend CI repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
 - The seeded readiness generator addition was completed as a bounded user-requested slice; queue status was not changed.
-- Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phase 1 is complete and harness-verified.
+- Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1-2 are complete and harness-verified.
 
 ## Blockers
 

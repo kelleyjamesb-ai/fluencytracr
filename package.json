@@ -4,6 +4,7 @@
   "scripts": {
     "agent:dev": "npm run build --workspace @learnaire/openai-agents-harness && npm run start --workspace @learnaire/openai-agents-harness --",
     "glean:readiness": "npm run build --workspace shared && node scripts/generate_glean_readiness_map.mjs",
+    "glean:readiness:sources": "npm run build --workspace shared && node scripts/generate_glean_readiness_from_sources.mjs",
     "validate:agents": "npm run build --workspace @learnaire/openai-agents-harness"
   },
   "devDependencies": {

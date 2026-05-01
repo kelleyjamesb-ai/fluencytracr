@@ -97,6 +97,18 @@ npm run glean:readiness
 
 The default output is `examples/org-northstar-weekly-readiness-map.json`.
 
+## Source Fixture Generator
+
+The source-fixture demo reads strict Glean-style source records from `examples/source-fixtures/`.
+
+Generate the source-derived readiness map:
+
+```bash
+npm run glean:readiness:sources
+```
+
+The default output is `examples/org-northstar-source-derived-readiness-map.json`.
+
 ## Example
 
 ```json

@@ -92,12 +92,12 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Write a failing test or script contract check that invokes source-to-inventory generation with the three source fixture files.
-- [ ] Add CLI arguments: `--workflow-run`, `--mcp-usage`, `--ai-security`, `--output`.
-- [ ] Default output to `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json`.
-- [ ] Add root script `glean:readiness:sources`.
-- [ ] Run the CLI and commit the generated output.
-- [ ] Compare generated output against expected readiness statuses in a test.
+- [x] Write a failing test or script contract check that invokes source-to-inventory generation with the three source fixture files.
+- [x] Add CLI arguments: `--workflow-run`, `--mcp-usage`, `--ai-security`, `--output`.
+- [x] Default output to `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json`.
+- [x] Add root script `glean:readiness:sources`.
+- [x] Run the CLI and commit the generated output.
+- [x] Compare generated output against expected readiness statuses in a test.
 
 **Done when:**
 
