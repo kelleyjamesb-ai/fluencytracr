@@ -96,3 +96,9 @@
 - Completed: Added optional `integrations/openai-agents/` sidecar using `@openai/agents`, repo harness document tools, manager/specialist agents-as-tools, `npm run agent:dev`, and `npm run validate:agents`. Linked docs from README, `docs/agent/README.md`, `docs/agent/EVALUATION.md`, and `harness/README.md`; added CI validation.
 - Verified: `npm run validate:agents`; `bash scripts/ci_docs_contract_sweep.sh`; `bash scripts/ci_linkcheck_fluency_docs.sh`. `npm audit --omit=dev` shows existing advisories in `@modelcontextprotocol/sdk`/`hono` and frontend `mammoth`/`xmldom`, not the new OpenAI sidecar.
 - Next focus: Keep OpenAI tooling as an optional development accelerator; do not promote it into the product runtime unless a future OpenSpec change explicitly approves that.
+
+## 2026-05-01 (UTC) — Codex (Cursor rules + agent-run contract)
+
+- Completed: Added Cursor project rules in `.cursor/rules/` for session startup, bounded harness slices, and provider boundaries. Added provider-neutral `AR_2026_05` agent-run schema in `shared/src/agentRunSchemas.ts`, JSON Schema under `schemas/agent_run/`, and docs under `docs/contracts/agent-run/` plus `docs/agent/cursor-agent-harness.md`.
+- Verified: Wrote failing test first, then passed `npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `bash scripts/ci_linkcheck_fluency_docs.sh`; `npm run validate:agents`.
+- Next focus: Add a Cursor CLI adapter only after `cursor-agent` is available locally and the desired event capture path is confirmed.

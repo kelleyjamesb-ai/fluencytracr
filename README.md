@@ -27,6 +27,7 @@ Suppression reason codes (one-hot, immutable):
 ## Canonical docs
 - **Every session (mandatory for agents):** [docs/agent/SESSION_START.md](docs/agent/SESSION_START.md)
 - AI / agent navigation (harness, evaluation, task contracts): [docs/agent/README.md](docs/agent/README.md)
+- Cursor agent harness rules: [docs/agent/cursor-agent-harness.md](docs/agent/cursor-agent-harness.md)
 - Optional OpenAI Agents SDK development harness: [docs/agent/openai-agents-harness.md](docs/agent/openai-agents-harness.md)
 - Partner ingestion facade: [docs/api/ingest.md](docs/api/ingest.md)
 - Unified telemetry ingest (UT_2026_04, feature-flagged): [docs/api/ingest-unified-telemetry.md](docs/api/ingest-unified-telemetry.md)
@@ -35,6 +36,7 @@ Suppression reason codes (one-hot, immutable):
 - Architecture map: [docs/ARCHITECTURE_MAP.md](docs/ARCHITECTURE_MAP.md)
 - Connector mapping spec: [docs/CONNECTOR_MAPPING_SPEC.md](docs/CONNECTOR_MAPPING_SPEC.md)
 - EvidenceBundle v1 contract: [docs/contracts/evidence-bundle/v1/README.md](docs/contracts/evidence-bundle/v1/README.md)
+- Agent-run development harness contract: [docs/contracts/agent-run/README.md](docs/contracts/agent-run/README.md)
 - Unified cross-surface telemetry (UT_2026_04): [docs/contracts/unified-telemetry/README.md](docs/contracts/unified-telemetry/README.md)
 - Glean integration pack: [docs/integrations/glean/01-overview.md](docs/integrations/glean/01-overview.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)

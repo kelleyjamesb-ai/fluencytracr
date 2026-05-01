@@ -50,6 +50,19 @@ npm run validate:agents
 
 This validates the optional development sidecar only. It does not replace the repo harness, OpenSpec gates, or backend/frontend/shared checks above.
 
+## Cursor rules and agent-run contract
+
+When changing `.cursor/rules/`, `shared/src/agentRunSchemas.ts`, `schemas/agent_run/`, or `docs/contracts/agent-run/`:
+
+```bash
+npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts
+npm run build --workspace shared
+bash scripts/ci_docs_contract_sweep.sh
+bash scripts/ci_linkcheck_fluency_docs.sh
+```
+
+This validates the provider-neutral development harness contract. It does not enable a Cursor runtime adapter by itself.
+
 ## User-facing UI smoke
 
 If the change affects the dashboard or flows in `frontend/`:

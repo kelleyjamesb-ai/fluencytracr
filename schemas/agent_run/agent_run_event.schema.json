@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/agent_run/agent_run_event.schema.json",
+  "title": "AgentRunEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_name",
+    "provider",
+    "harness_surface",
+    "event_kind",
+    "event_timestamp",
+    "repo_id",
+    "session_id",
+    "run_id",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": { "const": "AR_2026_05" },
+    "event_id": { "type": "string", "format": "uuid" },
+    "event_name": { "type": "string", "pattern": "^AR\\.[A-Z]+\\.[A-Z0-9_]+\\.V\\d+$" },
+    "provider": { "enum": ["CURSOR", "OPENAI_AGENTS", "CODEX", "CLAUDE", "OTHER"] },
+    "harness_surface": {
+      "enum": ["CURSOR_CLI", "CURSOR_EDITOR", "OPENAI_AGENTS_SDK", "CODEX_CLI", "CLAUDE_CODE", "OTHER"]
+    },
+    "event_kind": {
+      "enum": ["SESSION_START", "MESSAGE", "TOOL_START", "TOOL_END", "RESULT", "ERROR", "DELEGATION", "CHECKPOINT"]
+    },
+    "event_timestamp": { "type": "string", "minLength": 1 },
+    "repo_id": { "type": "string", "minLength": 1 },
+    "branch_name": { "type": "string", "minLength": 1 },
+    "session_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "parent_run_id": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "permission_mode": { "enum": ["READ_ONLY", "ASK_EVERY_TIME", "AUTO_RUN_SANDBOX", "FULL_ACCESS", "UNKNOWN"] },
+    "tool_call_id": { "type": "string", "minLength": 1 },
+    "tool_name": { "type": "string", "minLength": 1 },
+    "tool_status": { "enum": ["STARTED", "SUCCESS", "FAIL", "SKIPPED", "USER_ABORTED", "TIMEOUT"] },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cwd_present": { "type": "boolean" },
+        "git_status": { "enum": ["clean", "dirty", "unknown"] },
+        "harness_docs_loaded": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "document_key": { "type": "string", "minLength": 1 },
+        "output_ref": { "type": "string", "minLength": 1 },
+        "error_class": {
+          "enum": ["InvalidArguments", "UnexpectedEnvironment", "ProviderError", "UserAborted", "Timeout", "Unknown"]
+        },
+        "error_ref": { "type": "string", "minLength": 1 },
+        "delegation_target": { "type": "string", "minLength": 1 },
+        "checkpoint_ref": { "type": "string", "minLength": 1 },
+        "result_status": { "enum": ["SUCCESS", "FAILURE", "ABORTED", "SUPPRESSED"] }
+      }
+    }
+  }
+}

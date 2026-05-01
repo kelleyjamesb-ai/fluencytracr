@@ -1,0 +1,20 @@
+---
+description: Start every Cursor agent session from the FluencyTracr repo harness protocol.
+alwaysApply: true
+---
+
+# FluencyTracr Session Start
+
+Before planning or editing:
+
+1. Read `docs/agent/SESSION_START.md`.
+2. Confirm the workspace root and current git state.
+3. Treat local disk as source of truth until committed and pushed.
+4. Use the repo harness files for memory:
+   - `harness/feature_list.json`
+   - `harness/agent-progress.txt`
+   - `.project/WORK_QUEUE.json`
+   - `.project/PROGRESS.md`
+5. Read `openspec/AGENTS.md` before architecture, schema, product-contract, or ambiguous capability changes.
+
+Do not rely on chat history as durable state. Write handoff and verification evidence to repo files when work is substantive.
