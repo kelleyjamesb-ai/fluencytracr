@@ -29,11 +29,13 @@ References:
 - `/api/patterns`, `/api/coverage`, `/orgs/:orgId/telemetry/index`, `/api/orientation/:orgId`, and `/api/board-snapshot/:orgId` accept any valid **`FluencyWindow`** (schema-validated); inference record matching uses `WINDOW_DAYS` per token.
 - Glean indexing documentation and acceptance scenarios in this pack.
 - MCP adapter **contract** and tool surface specification: `docs/mcp/fluencytracr-mcp-server.md` (aligned window enums with evidence API).
+- Glean readiness demo and live-data decision gate: `docs/integrations/glean/06-readiness-demo-guide.md`, `docs/integrations/glean/07-live-data-access-decision-gate.md`.
 
 ### Later (runtime and automation)
 - Deployed MCP server binary and hosted adapter rollout for production agent orchestration.
 - Automated EvidenceBundle publisher (scheduled jobs) and CI enforcement for indexing/guardrails.
 - Expanded agentic coverage for additional oversight and reliability evidence beyond the bounded question classes in `03-glean-agent-tooling.md`.
+- Live Glean ingestion or Glean-hosted MCP/read access after the gate in `07-live-data-access-decision-gate.md` is satisfied.
 
 ## Multi-agent readiness boundaries
 - Agentic emitters and human telemetry emitters are both in scope.

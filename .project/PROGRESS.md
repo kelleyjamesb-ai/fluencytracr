@@ -14,6 +14,7 @@
 - Glean readiness roadmap Phase 4: added validated EvidenceBundle derivation from Glean readiness, including schema-checked demo fixture.
 - Glean readiness roadmap Phase 5: added MCP readiness map and summary tools for aggregate Glean readiness questions.
 - Glean readiness roadmap Phase 6: added stakeholder demo guide connecting maps, EvidenceBundle fixture, MCP summary tool, validation commands, and non-goals.
+- Glean readiness roadmap Phase 8: added live-data access decision gate; Path C is the current pilot default until Path A/B evidence is confirmed.
 
 ## Current Status
 
@@ -22,7 +23,7 @@
 - Temporary frontend CI repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
 - The seeded readiness generator addition was completed as a bounded user-requested slice; queue status was not changed.
-- Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1, 2, 3, 4, 5, 6, and 7 are complete and harness-verified.
+- Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
 
 ## Blockers
 
@@ -33,4 +34,4 @@
 - Finish **phase-03**: §18 FSC evaluator, §20 minimum signal gate, wire §21 steps 1–2 with reasons `INCOMPLETE_EXECUTION` / `INSUFFICIENT_SIGNAL`; tests.
 - Then **phase-04** → **phase-05** → **phase-06** → **phase-07** per `WORK_QUEUE.json` order.
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
-- Continue user-requested Glean readiness roadmap with Phase 8 live-data decision gate.
+- Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.

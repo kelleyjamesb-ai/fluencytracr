@@ -44,7 +44,7 @@ In the broader seeded demo, `agent_run` and `search_document_retrieval` are also
 
 ### Unlock next
 
-The safest pilot path is admin-exported aggregate inventory upload first, then customer event-log import once field availability, scrub status, join keys, retention, and data processing terms are confirmed.
+The safest pilot path is admin-exported aggregate inventory upload first, then customer event-log import once field availability, scrub status, join keys, retention, and data processing terms are confirmed. The live-data gate is documented in `docs/integrations/glean/07-live-data-access-decision-gate.md`.
 
 ## Demo Flow
 

@@ -242,6 +242,8 @@ FluencyTracr should be able to:
 
 **Outcome:** Decide whether to proceed to real Glean export ingestion, Glean MCP-hosted access, or keep the integration as a validated customer-supplied import path.
 
+**Decision artifact:** `docs/integrations/glean/07-live-data-access-decision-gate.md`
+
 **Decision inputs:**
 
 - Are WorkflowRun fields customer-accessible?
@@ -258,6 +260,12 @@ FluencyTracr should be able to:
 - Path C: Admin-exported aggregate inventory upload.
 
 **Recommended default:** Path C for pilot safety, then Path A once export terms are confirmed.
+
+**Implementation status:**
+
+- [x] Record Path C as the current pilot default.
+- [x] Document go/no-go evidence for Path A and Path B.
+- [x] Link the decision gate from Glean docs and README.
 
 ---
 
