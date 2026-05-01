@@ -27,6 +27,7 @@ Suppression reason codes (one-hot, immutable):
 ## Canonical docs
 - **Every session (mandatory for agents):** [docs/agent/SESSION_START.md](docs/agent/SESSION_START.md)
 - AI / agent navigation (harness, evaluation, task contracts): [docs/agent/README.md](docs/agent/README.md)
+- Optional OpenAI Agents SDK development harness: [docs/agent/openai-agents-harness.md](docs/agent/openai-agents-harness.md)
 - Partner ingestion facade: [docs/api/ingest.md](docs/api/ingest.md)
 - Unified telemetry ingest (UT_2026_04, feature-flagged): [docs/api/ingest-unified-telemetry.md](docs/api/ingest-unified-telemetry.md)
 - Trace reconstruction (PRD Phase 1, admin): [docs/api/traces-reconstructed.md](docs/api/traces-reconstructed.md)

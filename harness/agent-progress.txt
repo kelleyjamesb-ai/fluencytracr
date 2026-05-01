@@ -91,3 +91,8 @@
 - Completed: Bumped workflows to `actions/checkout@v5`, `actions/setup-node@v6`, `actions/upload-artifact@v5` (ci node job); `setup-python@v5` + `checkout@v5` in `test.yml`; `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` on workflows using JS actions; **Node 24** for npm/Prisma in `ci.yml` / `governance-gate.yml`.
 - Note: Vercel deployment failures are project access / CLI config — not fixed by workflow YAML alone.
 
+## 2026-05-01 (UTC) — Codex (OpenAI Agents SDK harness)
+
+- Completed: Added optional `integrations/openai-agents/` sidecar using `@openai/agents`, repo harness document tools, manager/specialist agents-as-tools, `npm run agent:dev`, and `npm run validate:agents`. Linked docs from README, `docs/agent/README.md`, `docs/agent/EVALUATION.md`, and `harness/README.md`; added CI validation.
+- Verified: `npm run validate:agents`; `bash scripts/ci_docs_contract_sweep.sh`; `bash scripts/ci_linkcheck_fluency_docs.sh`. `npm audit --omit=dev` shows existing advisories in `@modelcontextprotocol/sdk`/`hono` and frontend `mammoth`/`xmldom`, not the new OpenAI sidecar.
+- Next focus: Keep OpenAI tooling as an optional development accelerator; do not promote it into the product runtime unless a future OpenSpec change explicitly approves that.

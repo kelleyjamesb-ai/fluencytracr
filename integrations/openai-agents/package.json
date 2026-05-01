@@ -1,0 +1,23 @@
+{
+  "name": "@learnaire/openai-agents-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Optional OpenAI Agents SDK development harness for FluencyTracr",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/dev.js"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.8.5",
+    "zod": "^4.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.5"
+  }
+}

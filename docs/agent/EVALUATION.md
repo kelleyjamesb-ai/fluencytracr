@@ -39,6 +39,17 @@ Optional deeper CI scripts (docs, evidence bundles, link checks) live under `scr
 
 GitHub Actions Node jobs use **Node 24** with `actions/setup-node@v6` and `actions/checkout@v5` (see `.github/workflows/ci.yml`, `governance-gate.yml`).
 
+## Optional OpenAI Agents SDK harness
+
+When changing `integrations/openai-agents/` or the related docs/scripts:
+
+```bash
+npm install
+npm run validate:agents
+```
+
+This validates the optional development sidecar only. It does not replace the repo harness, OpenSpec gates, or backend/frontend/shared checks above.
+
 ## User-facing UI smoke
 
 If the change affects the dashboard or flows in `frontend/`:

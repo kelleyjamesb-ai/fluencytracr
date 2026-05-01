@@ -58,6 +58,7 @@ jobs:
         run: |
           npm run build --workspace @learnaire/fluencytracr-mcp
           npm run build --workspace @learnaire/glean-publisher
+          npm run validate:agents
       - name: Test MCP and Glean publisher packages
         run: |
           npm run test --workspace @learnaire/fluencytracr-mcp
