@@ -224,11 +224,11 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Add a validator that parses every JSON file under `docs/contracts/glean-signal-readiness/examples/`.
-- [ ] Validate inventories with `GleanSignalInventorySchema`.
-- [ ] Validate readiness maps with `GleanSignalReadinessMapSchema`.
-- [ ] Add the validator to docs contract sweep or CI.
-- [ ] Ensure validation does not require network access.
+- [x] Add a validator that parses every JSON file under `docs/contracts/glean-signal-readiness/examples/`.
+- [x] Validate inventories with `GleanSignalInventorySchema`.
+- [x] Validate readiness maps with `GleanSignalReadinessMapSchema`.
+- [x] Add the validator to docs contract sweep or CI.
+- [x] Ensure validation does not require network access.
 
 **Done when:**
 
