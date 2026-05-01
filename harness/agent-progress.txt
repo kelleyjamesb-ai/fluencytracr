@@ -102,3 +102,9 @@
 - Completed: Added Cursor project rules in `.cursor/rules/` for session startup, bounded harness slices, and provider boundaries. Added provider-neutral `AR_2026_05` agent-run schema in `shared/src/agentRunSchemas.ts`, JSON Schema under `schemas/agent_run/`, and docs under `docs/contracts/agent-run/` plus `docs/agent/cursor-agent-harness.md`.
 - Verified: Wrote failing test first, then passed `npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `bash scripts/ci_linkcheck_fluency_docs.sh`; `npm run validate:agents`.
 - Next focus: Add a Cursor CLI adapter only after `cursor-agent` is available locally and the desired event capture path is confirmed.
+
+## 2026-05-01 (UTC) — Codex (Glean readiness roadmap)
+
+- Completed: Executed the Glean readiness integration roadmap across phases 1-8 on `codex/OrgFluency-glean-readiness-execution`: source fixture adapter, source-to-readiness CLI, readiness-to-UT bridge, EvidenceBundle derivation, MCP readiness tools, stakeholder demo package, CI/example validation, and live-data decision gate.
+- Verified: Targeted backend and MCP tests, MCP build, shared build, EvidenceBundle schema validation, docs contract sweep, scoped docs linkcheck, OpenSpec validation for each new change, backend CI (`91` suites / `482` tests), and harness verify (`138` passed, `3` skipped).
+- Next focus: Review and archive approved Glean readiness OpenSpec changes; do not implement live Glean export ingestion or Glean-hosted MCP/read access until the Phase 8 gate evidence is confirmed.
