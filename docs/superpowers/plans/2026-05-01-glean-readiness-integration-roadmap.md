@@ -202,10 +202,10 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Add a demo guide with a one-page narrative: measurable now, blocked, suppressed, missing, unlock next.
-- [ ] Link seeded map, source-derived map, and strict MCP summary tool.
-- [ ] Include validation commands.
-- [ ] Include a “what this does not do” section covering surveillance/ranking/raw content.
+- [x] Add a demo guide with a one-page narrative: measurable now, blocked, suppressed, missing, unlock next.
+- [x] Link seeded map, source-derived map, and strict MCP summary tool.
+- [x] Include validation commands.
+- [x] Include a “what this does not do” section covering surveillance/ranking/raw content.
 
 **Done when:**
 
