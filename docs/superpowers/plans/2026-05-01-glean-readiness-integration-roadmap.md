@@ -120,12 +120,12 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Write a failing test that converts `present` readiness entries into UT coverage events.
-- [ ] Write a failing test that excludes `missing`, `suppressed`, and `not_computed` entries from computable UT events while preserving reason metadata in non-computable notes.
-- [ ] Implement `mapReadinessToUnifiedTelemetryCoverage(readinessMap)`.
-- [ ] Ensure generated UT events use `UT_2026_04` and org-window scope only.
-- [ ] Reject entries that imply user/team/manager/ranking dimensions.
-- [ ] Verify against `UnifiedTelemetryEventSchema`.
+- [x] Write a failing test that converts `present` readiness entries into UT coverage events.
+- [x] Write a failing test that excludes `missing`, `suppressed`, and `not_computed` entries from computable UT events while preserving reason metadata in non-computable notes.
+- [x] Implement `mapReadinessToUnifiedTelemetryCoverage(readinessMap)`.
+- [x] Ensure generated UT events use `UT_2026_04` and org-window scope only.
+- [x] Reject entries that imply user/team/manager/ranking dimensions.
+- [x] Verify against `UnifiedTelemetryEventSchema`.
 
 **Done when:**
 

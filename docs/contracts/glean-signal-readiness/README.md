@@ -109,6 +109,10 @@ npm run glean:readiness:sources
 
 The default output is `examples/org-northstar-source-derived-readiness-map.json`.
 
+## Unified Telemetry Bridge
+
+`mapReadinessToUnifiedTelemetryCoverage` converts only `present` readiness entries into valid aggregate `UT_2026_04` events. `missing`, `suppressed`, and `not_computed` entries are returned as `non_computable_signals` metadata and are not inferred into telemetry events.
+
 ## Example
 
 ```json

@@ -9,4 +9,5 @@ export * from "./unifiedTelemetrySchemas";
 export * from "./agentRunSchemas";
 export * from "./gleanSignalReadinessSchemas";
 export * from "./gleanSourceReadinessAdapter";
+export * from "./gleanReadinessToUnifiedTelemetry";
 export * from "./metricConstants";
