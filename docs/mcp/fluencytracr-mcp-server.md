@@ -25,6 +25,8 @@ Tool list:
 - `fluency.ingest_events`
 - `fluency.get_evidence_bundle`
 - `fluency.get_agent_evidence_summary`
+- `fluency.get_signal_readiness_map`
+- `fluency.get_signal_readiness_summary`
 - `fluency.get_control_evidence`
 - `fluency.get_coverage_map`
 
@@ -41,12 +43,20 @@ Read tool input contract:
   - `risk_class` (enum)
   - `tool_class` (enum)
 
+Signal readiness tool input contract:
+- `org_id` (string, required)
+- `window` (same bounded evidence window enum)
+
+`fluency.get_signal_readiness_map` returns a validated `GSR_2026_05` aggregate readiness map from the configured readiness snapshot path. Default local snapshot: `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json`. Override with `FLUENCYTRACR_GLEAN_READINESS_MAP_PATH`.
+
+`fluency.get_signal_readiness_summary` is the preferred Glean Agent readiness tool. It returns a strict summary with counts, ready families, non-computable families, suppression state, next actions, and decision-safe guidance. It omits readiness `entries`, validation evidence, join keys, and any raw source records.
+
 Validation rules:
 - Reject free-form content fields.
 - Reject unknown enums and out-of-bound values.
 - Reject forbidden dimensions (`team_id`, `manager_id`, `role_id`, `user_id`) for executive-safe tools.
 
-`fluency.get_agent_evidence_summary` is the preferred Glean Agent read tool. It calls the EvidenceBundle endpoint, then returns only the strict agent-safe response template: `org_id`, `window`, `generated_at`, `suppression_applied`, `suppression_reasons`, `exposure`, `calibration`, `fragility`, `coverage_summary`, and `decision_safe_guidance`. Use `fluency.get_evidence_bundle` only for trusted systems that need the full EvidenceBundle contract.
+`fluency.get_agent_evidence_summary` is the preferred Glean Agent evidence tool. It calls the EvidenceBundle endpoint, then returns only the strict agent-safe response template: `org_id`, `window`, `generated_at`, `suppression_applied`, `suppression_reasons`, `exposure`, `calibration`, `fragility`, `coverage_summary`, and `decision_safe_guidance`. Use `fluency.get_evidence_bundle` only for trusted systems that need the full EvidenceBundle contract.
 
 ## Forbidden fields enforcement
 
@@ -93,6 +103,7 @@ Environment:
 MCP_ENABLED=true
 FLUENCYTRACR_BASE_URL=http://localhost:3000
 FLUENCYTRACR_SERVICE_TOKEN=dev_token_value
+FLUENCYTRACR_GLEAN_READINESS_MAP_PATH=docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json
 ```
 
 Sample MCP server config (Node implementation in `packages/fluencytracr-mcp`):
@@ -115,5 +126,6 @@ Streamable HTTP (remote): run `node packages/fluencytracr-mcp/dist/http-main.js`
 Smoke checks:
 1. Call `fluency.ingest_events` with metadata-only sample and verify `/api/ingest` acceptance.
 2. Call `fluency.get_agent_evidence_summary` and verify the strict summary omits raw bundle-only fields.
-3. Call `fluency.get_evidence_bundle` only when the full EvidenceBundle is required.
-4. Submit a forbidden field sample and verify deterministic rejection plus audit event.
+3. Call `fluency.get_signal_readiness_summary` and verify it omits raw readiness entries and source records.
+4. Call `fluency.get_evidence_bundle` or `fluency.get_signal_readiness_map` only when the full trusted aggregate contract is required.
+5. Submit a forbidden field sample and verify deterministic rejection plus audit event.

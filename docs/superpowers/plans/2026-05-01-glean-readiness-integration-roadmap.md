@@ -171,17 +171,18 @@ FluencyTracr should be able to:
 
 - Modify: `packages/fluencytracr-mcp/src/tools.ts`
 - Modify: `packages/fluencytracr-mcp/src/agentResponse.ts` if a new response template is needed.
+- Create: `packages/fluencytracr-mcp/src/readinessResponse.ts`
 - Test: `packages/fluencytracr-mcp/src/tools.test.ts`
 - Docs: `docs/mcp/fluencytracr-mcp-server.md`
 - Docs: `docs/integrations/glean/03-glean-agent-tooling.md`
 
 **Implementation steps:**
 
-- [ ] Add `fluency.get_signal_readiness_map` for trusted aggregate readiness access.
-- [ ] Add `fluency.get_signal_readiness_summary` if the full map is too verbose for Glean Agent responses.
-- [ ] Ensure both tools return strict templates and reject extra top-level fields.
-- [ ] Audit every tool invocation without raw source records.
-- [ ] Update Glean Agent docs with allowed question classes.
+- [x] Add `fluency.get_signal_readiness_map` for trusted aggregate readiness access.
+- [x] Add `fluency.get_signal_readiness_summary` if the full map is too verbose for Glean Agent responses.
+- [x] Ensure both tools return strict templates and reject extra top-level fields.
+- [x] Audit every tool invocation without raw source records.
+- [x] Update Glean Agent docs with allowed question classes.
 
 **Done when:**
 
