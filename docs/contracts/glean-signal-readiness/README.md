@@ -85,6 +85,18 @@ Entries should describe availability and computability, not raw underlying recor
 
 Runtime validation lives in `shared/src/gleanSignalReadinessSchemas.ts` and is exported through `@learnaire/shared`.
 
+## Seeded Generator
+
+The seeded demo inventory lives at `examples/org-northstar-seeded-inventory.json`.
+
+Generate the validated readiness map:
+
+```bash
+npm run glean:readiness
+```
+
+The default output is `examples/org-northstar-weekly-readiness-map.json`.
+
 ## Example
 
 ```json
