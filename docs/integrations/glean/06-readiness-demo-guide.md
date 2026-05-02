@@ -19,6 +19,7 @@ The reviewer takeaway:
 | Seeded readiness map | `docs/contracts/glean-signal-readiness/examples/org-northstar-weekly-readiness-map.json` | Generated output from the seeded inventory |
 | Source-derived readiness map | `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json` | Realistic local fixture path from WorkflowRun, MCP Usage, and AI Security source records |
 | Derived EvidenceBundle fixture | `docs/contracts/evidence-bundle/v1/examples/glean-readiness-derived.json` | EvidenceBundle v1 output derived from validated readiness |
+| Executive clickable prototype | `docs/integrations/glean/prototypes/executive-readiness-demo.html` | Static HTML executive demo with synthetic data, top-level graphs, and drill-down click paths |
 | MCP readiness summary tool | `fluency.get_signal_readiness_summary` | Agent-safe answer path for readiness questions |
 | MCP trusted map tool | `fluency.get_signal_readiness_map` | Full aggregate readiness map for trusted systems only |
 
@@ -78,7 +79,19 @@ bash scripts/validate_evidence_bundle_schema.sh
 npm test --workspace @learnaire/fluencytracr-mcp -- --run src/tools.test.ts
 ```
 
-6. Run the full repository harness:
+6. Validate the executive clickable prototype:
+
+```bash
+node scripts/validate_glean_executive_prototype.mjs
+```
+
+7. Open the static HTML prototype directly in a browser:
+
+```text
+docs/integrations/glean/prototypes/executive-readiness-demo.html
+```
+
+8. Run the full repository harness:
 
 ```bash
 ./harness/scripts/verify.sh

@@ -15,6 +15,7 @@
 - Glean readiness roadmap Phase 5: added MCP readiness map and summary tools for aggregate Glean readiness questions.
 - Glean readiness roadmap Phase 6: added stakeholder demo guide connecting maps, EvidenceBundle fixture, MCP summary tool, validation commands, and non-goals.
 - Glean readiness roadmap Phase 8: added live-data access decision gate; Path C is the current pilot default until Path A/B evidence is confirmed.
+- Glean readiness executive prototype: added a static synthetic-data HTML demo with first-screen executive graphs, drill-down click paths, an Agent Brief view, docs links, and a dedicated validator.
 
 ## Current Status
 
@@ -24,6 +25,7 @@
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
 - The seeded readiness generator addition was completed as a bounded user-requested slice; queue status was not changed.
 - Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
+- The executive HTML prototype is complete as a bounded user-requested slice; queue status was not changed.
 
 ## Blockers
 
@@ -35,3 +37,4 @@
 - Then **phase-04** → **phase-05** → **phase-06** → **phase-07** per `WORK_QUEUE.json` order.
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
+- Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
