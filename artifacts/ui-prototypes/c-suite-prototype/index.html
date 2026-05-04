@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FluencyTracr — Hartwell Industries (demo)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="glean-ui">
+    <div class="wrap">
+      <header class="org-header">
+        <p class="org-name">Hartwell Industries</p>
+        <p class="org-meta">~5,000 employees · rolling 60-day window · illustrative data for design review</p>
+      </header>
+
+      <h1 class="page-title">What’s working — and what isn’t</h1>
+      <p class="product-line">FluencyTracr · leadership view</p>
+
+      <section class="pulse pulse--headline" aria-labelledby="pulse-title">
+        <h2 class="visually-hidden" id="pulse-title">Headline numbers</h2>
+
+        <div class="function-bar" role="group" aria-label="Organizational function">
+          <span class="function-bar-label">Function</span>
+          <div class="function-buttons">
+            <button type="button" class="function-btn is-active" data-fn="all">All org</button>
+            <button type="button" class="function-btn" data-fn="engineering">Engineering</button>
+            <button type="button" class="function-btn" data-fn="sales">Sales</button>
+            <button type="button" class="function-btn" data-fn="ga">G&amp;A</button>
+            <button type="button" class="function-btn" data-fn="operations">Operations</button>
+          </div>
+        </div>
+        <p class="function-context" id="function-context">Rollup: entire company after privacy rules.</p>
+
+        <p class="sub pulse-lead">
+          <strong>At a glance.</strong> Enough people in the bucket = we can show a number. Too small = we hide it so
+          nobody is singled out. Percentages are shares of what we <em>are</em> allowed to show, not a company grade.
+        </p>
+
+        <div class="pulse-grid pulse-grid--seven">
+          <div class="pulse-tile pulse-tile--emphasis">
+            <div class="val" id="m-raw">4.18M</div>
+            <div class="lbl">Raw inputs collected</div>
+            <p class="hint" id="h-raw">
+              Telemetry and metadata events ingested before grouping and privacy rules. This is the volume behind the
+              tiles below.
+            </p>
+          </div>
+          <div class="pulse-tile">
+            <div class="val" id="m-uses">201k</div>
+            <div class="lbl">AI uses we can discuss</div>
+            <p class="hint" id="h-uses">Counted uses in this function after rules (not headcount).</p>
+          </div>
+          <div class="pulse-tile">
+            <div class="val" id="m-share">77%</div>
+            <div class="lbl">Share we may surface</div>
+            <p class="hint" id="h-share">Versus withheld for small groups or safety — not “pass/fail.”</p>
+          </div>
+          <div class="pulse-tile">
+            <div class="val" id="m-careful">32%</div>
+            <div class="lbl">Careful-use pattern</div>
+            <p class="hint" id="h-careful">Of surfaced activity: looks like verify-then-trust (demo label).</p>
+          </div>
+          <div class="pulse-tile pulse-tile--warn">
+            <div class="val" id="m-shadow">11%</div>
+            <div class="lbl">Shadow AI signal</div>
+            <p class="hint" id="h-shadow">
+              Share of surfaced activity with an unsanctioned-tool-class signal — org level only, not who clicked what.
+            </p>
+          </div>
+          <div class="pulse-tile">
+            <div class="val" id="m-hidden">14</div>
+            <div class="lbl">Slices still withheld</div>
+            <p class="hint" id="h-hidden">Buckets too small or blocked by policy; we roll up or wait.</p>
+          </div>
+          <div class="pulse-tile">
+            <div class="val" id="m-blind">4</div>
+            <div class="lbl">Coverage gaps</div>
+            <p class="hint" id="h-blind">Systems or org units with little or no instrumentation yet.</p>
+          </div>
+        </div>
+
+        <p class="hero-note hero-note--tight">
+          Numbers are <strong>fabricated</strong> for Hartwell Industries to stress-test layout. A production screen
+          reads the same shapes from your APIs and contracts.
+        </p>
+      </section>
+
+      <section class="agent-strip" aria-labelledby="agent-title">
+        <h2 id="agent-title">Agents &amp; MCP tool health</h2>
+        <p class="agent-lead">
+          AI agents reach FluencyTracr through a standard <strong>adapter</strong>. One path sends in metadata events
+          only (no chat text). Three paths pull back evidence summaries: the full bundle, coverage, or controls view.
+          Every call is logged with an outcome — it succeeded, was rejected, came back suppressed, or hit an error —
+          so you can see if the channel is healthy and whether unsafe or malformed requests were stopped at the door.
+        </p>
+        <p class="agent-sub">
+          The same <strong>Function</strong> buttons above change these demo figures. In production you would tie
+          calls to a function when your org’s grouping labels include that slice and there is enough volume to do it
+          safely.
+        </p>
+        <div class="agent-grid">
+          <div class="pulse-tile agent-tile">
+            <div class="val" id="a-calls">18.2k</div>
+            <div class="lbl">MCP tool calls (7 days)</div>
+            <p class="hint" id="a-calls-hint">Ingest + all read tools. Demo mix: <span id="a-mix">61% reads · 39% ingest</span>.</p>
+          </div>
+          <div class="pulse-tile agent-tile agent-tile--ok">
+            <div class="val" id="a-ok">96.8%</div>
+            <div class="lbl">Completed successfully</div>
+            <p class="hint">Ingest accepted upstream; reads returned JSON (including “suppressed” evidence — still a clean run).</p>
+          </div>
+          <div class="pulse-tile agent-tile">
+            <div class="val" id="a-blocked">2.4%</div>
+            <div class="lbl">Stopped at boundary</div>
+            <p class="hint">Bad schema, forbidden fields (no raw prompts), or org mismatch — rejected before any partial write.</p>
+          </div>
+          <div class="pulse-tile agent-tile agent-tile--err">
+            <div class="val" id="a-err">0.8%</div>
+            <div class="lbl">System / upstream errors</div>
+            <p class="hint">Network, auth, or FluencyTracr API errors — worth an ops alert if this climbs.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="persona-block" aria-labelledby="persona-title">
+        <h2 id="persona-title">Same picture, different job</h2>
+        <p class="sub persona-lead">
+          Org tiles and <strong>agent/MCP</strong> tiles switch with <strong>function</strong>. Use these tabs for
+          <strong>role</strong> — what each leader usually asks next.
+        </p>
+
+        <input class="persona-input" type="radio" name="persona" id="tab-ceo" checked />
+        <input class="persona-input" type="radio" name="persona" id="tab-cfo" />
+        <input class="persona-input" type="radio" name="persona" id="tab-ciso" />
+        <input class="persona-input" type="radio" name="persona" id="tab-cto" />
+
+        <div class="persona-tabbar">
+          <label for="tab-ceo">CEO</label>
+          <label for="tab-cfo">CFO</label>
+          <label for="tab-ciso">CISO</label>
+          <label for="tab-cto">CTO</label>
+        </div>
+
+        <article class="panel panel-ceo">
+          <h3>CEO</h3>
+          <ul>
+            <li><strong>Narrative:</strong> mix of careful use vs friction vs shadow signal — by function, same tiles.</li>
+            <li><strong>Agents:</strong> “Are our governed assistants and automations actually talking to FluencyTracr without drama?” — success vs error rates at org level.</li>
+            <li><strong>Balance:</strong> how much is surfaced vs withheld; where we admit “we don’t know yet.”</li>
+            <li><strong>Board:</strong> no individual callouts; only cohorts large enough to be fair.</li>
+          </ul>
+          <p class="meta">Org rollups plus MCP audit aggregates (no per-user agent leaderboard).</p>
+        </article>
+
+        <article class="panel panel-cfo">
+          <h3>CFO</h3>
+          <ul>
+            <li><strong>Gaps:</strong> coverage holes = financial and operational risk you can’t see.</li>
+            <li><strong>Shadow %:</strong> where unsanctioned-tool signals concentrate by function (aggregate).</li>
+            <li><strong>Agent errors:</strong> sustained MCP <em>upstream error</em> rates flag operational risk (broken integrations), not “bad employees.”</li>
+            <li><strong>No productivity ROI line:</strong> we do not turn this into dollars-per-employee output claims.</li>
+          </ul>
+          <p class="meta">Ties to coverage maps, exposure fields, and MCP audit aggregates.</p>
+        </article>
+
+        <article class="panel panel-ciso">
+          <h3>CISO</h3>
+          <ul>
+            <li><strong>MCP audit:</strong> append-only log — tool name, org, result, reason codes (e.g. forbidden_field, org_mismatch).</li>
+            <li><strong>Boundary rejections:</strong> a rising “blocked” rate can mean misconfigured agents; a flat rate can mean the guardrails are doing their job.</li>
+            <li><strong>Withholding:</strong> count of withheld slices + reasons (audit-friendly).</li>
+            <li><strong>Shadow AI:</strong> org-level unsanctioned-class share; pairs with policy mode and mapping.</li>
+            <li><strong>Trail:</strong> who changed mode or policy, when.</li>
+          </ul>
+          <p class="meta">MCP package <code>fluencytracr-mcp</code> + compliance APIs; no raw content in audit paths.</p>
+        </article>
+
+        <article class="panel panel-cto">
+          <h3>CTO</h3>
+          <ul>
+            <li><strong>MCP server:</strong> stdio for local agents; streamable HTTP for remote — same four tools, Zod-validated inputs.</li>
+            <li><strong>Ingest vs reads:</strong> volume split shows whether agents mostly push events or pull evidence bundles.</li>
+            <li><strong>Raw vs rolled up:</strong> ingest volume vs what survives disclosure rules.</li>
+            <li><strong>By function:</strong> whether pipelines and min-group rules yield stable tiles per org slice.</li>
+            <li><strong>Workflow table:</strong> next layer down (neutral sort, no “worst team” default).</li>
+          </ul>
+          <p class="meta">Observability, <code>/api/ingest</code>, evidence routes, MCP audit log path (<code>FLUENCYTRACR_MCP_AUDIT_LOG</code>).</p>
+        </article>
+      </section>
+
+      <section class="deep-demo" aria-labelledby="deep-demo-title">
+        <h2 id="deep-demo-title">Deeper view — demo as if volume were already there</h2>
+        <p class="deep-demo-intro">
+          The blocks below are <strong>illustrative</strong> for Hartwell Industries. They show the kind of follow-on
+          leaders often want once the headline tiles feel trustworthy.
+        </p>
+
+        <div class="value-read" aria-labelledby="value-read-title">
+          <h3 id="value-read-title">How the program lands with leaders</h3>
+          <p class="value-read-lead">
+            Outside FluencyTracr, <em>perceived value</em> usually means what people feel they gain versus what they
+            give up (benefits vs. hassle, cost, or worry). We use that idea loosely here — not as a formal score, but
+            as four <strong>readings</strong> you could support with behavior evidence, coverage, and short anonymous
+            check-ins. Wording stays humble: these describe mood and fit at org level, not who is “good” or “bad.”
+          </p>
+          <div class="value-grid">
+            <article class="value-card">
+              <p class="value-band">Overall — feels useful</p>
+              <p class="value-body">
+                “Does this picture help us steer?” Mix optional pulse with whether disclosed coverage and MCP health
+                stayed steady.
+              </p>
+              <p class="value-stat">Demo pulse: <strong>74%</strong> of anonymous leadership check-ins said the view matched how AI use feels in their area.</p>
+            </article>
+            <article class="value-card">
+              <p class="value-band">Fit — worth the wiring</p>
+              <p class="value-body">
+                “Are we getting signal for the connectors we paid to turn on?” Tied to instrumented vs. missing sources,
+                not dollars-per-head output.
+              </p>
+              <p class="value-stat">Demo: <strong>88%</strong> of planned sources connected; four gaps still on the roadmap.</p>
+            </article>
+            <article class="value-card">
+              <p class="value-band">Quality — AI use looks steady</p>
+              <p class="value-body">
+                “Does aggregate behavior look careful enough vs. friction?” Drawn from pattern mix (disclosed cohort
+                only) — not model benchmarks.
+              </p>
+              <p class="value-stat">Demo: careful + recovery patterns together <strong>51%</strong> of disclosed mix org-wide; friction <strong>19%</strong>.</p>
+            </article>
+            <article class="value-card">
+              <p class="value-band">Trust — measurement feels fair</p>
+              <p class="value-body">
+                “Do people believe blanks mean privacy, not hiding?” Suppression reasons visible + optional ethics pulse.
+              </p>
+              <p class="value-stat">Demo pulse: <strong>81%</strong> said they understood why some numbers were withheld.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="demo-block">
+          <h3>Pattern mix by function</h3>
+          <p class="demo-caption">Share of <em>disclosed</em> activity only. Five org-level pattern labels (demo splits).</p>
+          <div class="pattern-legend" aria-hidden="true">
+            <span><span class="swatch sw-cal"></span> Calibrated fluency</span>
+            <span><span class="swatch sw-blind"></span> Blind efficiency</span>
+            <span><span class="swatch sw-rec"></span> Recovery maturity</span>
+            <span><span class="swatch sw-fric"></span> Friction loop</span>
+            <span><span class="swatch sw-under"></span> Undertrust avoidance</span>
+          </div>
+          <div class="pattern-rows">
+            <div class="pattern-row">
+              <span class="pr-fn">Engineering</span>
+              <div class="stack-bar" title="Calibrated 28%, Blind 18%, Recovery 22%, Friction 20%, Undertrust 12%">
+                <span class="seg seg-cal" style="width:28%"></span><span class="seg seg-blind" style="width:18%"></span><span class="seg seg-rec" style="width:22%"></span><span class="seg seg-fric" style="width:20%"></span><span class="seg seg-under" style="width:12%"></span>
+              </div>
+            </div>
+            <div class="pattern-row">
+              <span class="pr-fn">Sales</span>
+              <div class="stack-bar" title="22 / 24 / 18 / 26 / 10">
+                <span class="seg seg-cal" style="width:22%"></span><span class="seg seg-blind" style="width:24%"></span><span class="seg seg-rec" style="width:18%"></span><span class="seg seg-fric" style="width:26%"></span><span class="seg seg-under" style="width:10%"></span>
+              </div>
+            </div>
+            <div class="pattern-row">
+              <span class="pr-fn">G&amp;A</span>
+              <div class="stack-bar" title="35 / 15 / 20 / 15 / 15">
+                <span class="seg seg-cal" style="width:35%"></span><span class="seg seg-blind" style="width:15%"></span><span class="seg seg-rec" style="width:20%"></span><span class="seg seg-fric" style="width:15%"></span><span class="seg seg-under" style="width:15%"></span>
+              </div>
+            </div>
+            <div class="pattern-row">
+              <span class="pr-fn">Operations</span>
+              <div class="stack-bar" title="25 / 20 / 25 / 22 / 8">
+                <span class="seg seg-cal" style="width:25%"></span><span class="seg seg-blind" style="width:20%"></span><span class="seg seg-rec" style="width:25%"></span><span class="seg seg-fric" style="width:22%"></span><span class="seg seg-under" style="width:8%"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-block">
+          <h3>Workflow table</h3>
+          <p class="demo-caption">Alphabetical by name (not ranked). Demo rows.</p>
+          <div class="table-wrap">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Workflow</th>
+                  <th>Disclosed executions</th>
+                  <th>Suppressed</th>
+                  <th>Top suppression reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Contract review assistant</td>
+                  <td>28,400</td>
+                  <td>4,800</td>
+                  <td>Below minimum cohort</td>
+                </tr>
+                <tr>
+                  <td>Field service technician assistant</td>
+                  <td>19,200</td>
+                  <td>11,400</td>
+                  <td>Ambiguity / safety hold</td>
+                </tr>
+                <tr>
+                  <td>HR policy Q&amp;A</td>
+                  <td>8,900</td>
+                  <td>1,100</td>
+                  <td>Below minimum cohort</td>
+                </tr>
+                <tr>
+                  <td>IT help desk copilot</td>
+                  <td>42,100</td>
+                  <td>6,200</td>
+                  <td>Below minimum cohort</td>
+                </tr>
+                <tr>
+                  <td>Sales outreach drafting</td>
+                  <td>14,600</td>
+                  <td>9,100</td>
+                  <td>Below minimum cohort</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="demo-block demo-split">
+          <div>
+            <h3>Instrumented sources</h3>
+            <p class="demo-caption">Connected for Hartwell (demo).</p>
+            <ul class="demo-list demo-list--ok">
+              <li>Enterprise search &amp; assistants (approved)</li>
+              <li>IT service desk channel</li>
+              <li>Internal coding copilot telemetry</li>
+              <li>MCP agent ingest path</li>
+              <li>HR policy assistant (sandbox)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Missing or partial</h3>
+            <p class="demo-caption">Gaps to close (demo).</p>
+            <ul class="demo-list demo-list--gap">
+              <li>Legacy CRM sidebar (no event stream)</li>
+              <li>Field handheld batch — pilot only</li>
+              <li>Third-party research tool (unsanctioned class watch)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="demo-block">
+          <h3>Window compare</h3>
+          <p class="demo-caption">
+            Same metrics, prior 60 days vs. current 60 days. Describes the <strong>disclosed cohort</strong> only — not
+            speed, output, or individual performance.
+          </p>
+          <div class="compare-grid">
+            <div class="compare-card">
+              <p class="compare-label">Prior 60d</p>
+              <ul class="compare-list">
+                <li>Share we may surface: <strong>73%</strong></li>
+                <li>Careful-use pattern: <strong>29%</strong></li>
+                <li>Shadow AI signal: <strong>13%</strong></li>
+              </ul>
+            </div>
+            <div class="compare-card compare-card--now">
+              <p class="compare-label">Current 60d</p>
+              <ul class="compare-list">
+                <li>Share we may surface: <strong>77%</strong></li>
+                <li>Careful-use pattern: <strong>32%</strong></li>
+                <li>Shadow AI signal: <strong>11%</strong></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-block">
+          <h3>MCP tools — last 7 days (demo)</h3>
+          <p class="demo-caption">Call volume and outcomes per path. “Stopped” means rejected at validation before upstream work.</p>
+          <div class="table-wrap">
+            <table class="workflow-table mcp-tool-table">
+              <thead>
+                <tr>
+                  <th>Path</th>
+                  <th>Calls</th>
+                  <th>Completed OK</th>
+                  <th>Stopped at boundary</th>
+                  <th>System error</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Send metadata events</td>
+                  <td>7,080</td>
+                  <td>97.1%</td>
+                  <td>2.3%</td>
+                  <td>0.6%</td>
+                </tr>
+                <tr>
+                  <td>Read full evidence bundle</td>
+                  <td>4,320</td>
+                  <td>96.4%</td>
+                  <td>2.9%</td>
+                  <td>0.7%</td>
+                </tr>
+                <tr>
+                  <td>Read coverage slice</td>
+                  <td>4,010</td>
+                  <td>97.0%</td>
+                  <td>2.2%</td>
+                  <td>0.8%</td>
+                </tr>
+                <tr>
+                  <td>Read controls slice</td>
+                  <td>2,790</td>
+                  <td>96.1%</td>
+                  <td>3.1%</td>
+                  <td>0.8%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="context-section" aria-labelledby="context-title">
+        <h2 id="context-title">Scope</h2>
+        <p class="hero-plain">
+          We describe how the <strong>organization</strong> uses AI: verification habits, abandonment, friction patterns,
+          and sanctioned vs unsanctioned tool signals. We also show whether <strong>agents</strong> using the MCP
+          adapter are succeeding or hitting schema, safety, or upstream errors — still at org or function scope, not per
+          person. We do not rank people. Small teams roll up until the group is big enough to report safely.
+        </p>
+      </section>
+
+      <section class="feasibility-card" aria-labelledby="feas-title">
+        <h2 id="feas-title">Can this run on real data?</h2>
+        <p class="feas-lead"><strong>Yes.</strong> The product already defines the shapes; the UI wires them together.</p>
+        <ul class="feas-list">
+          <li>
+            <strong>Headline tiles:</strong> roll up <code>GET /api/observability/:orgId</code> (executions, disclosure,
+            pattern mix, suppression reasons) and coverage fields from evidence APIs — optionally filtered by org unit /
+            function when your ingest tags allow and k-min is met.
+          </li>
+          <li>
+            <strong>Raw input count:</strong> sum or disclose ingest volume from your event store or a dedicated counter,
+            with the same privacy boundary as aggregates (no raw prompts in UI).
+          </li>
+          <li>
+            <strong>Shadow AI %:</strong> aggregate “unsanctioned tool class” style signals from the evidence / indexing
+            model — still org- or function-level, not user-level.
+          </li>
+          <li>
+            <strong>Agent / MCP channel:</strong> aggregate the MCP adapter audit stream (<code>result</code>:
+            success · rejected · suppressed · error) by tool name (<code>fluency.ingest_events</code>,
+            <code>fluency.get_evidence_bundle</code>, etc.). Ship counts to metrics or log analytics; map
+            <code>org_unit</code> to function when tags support it.
+          </li>
+        </ul>
+      </section>
+
+      <section class="optional-card" aria-labelledby="opt-title">
+        <h2 id="opt-title">Ground rules</h2>
+        <p class="optional-lead">
+          The <strong>Deeper view</strong> section above is how these pieces look once each slice has enough volume and
+          your pipelines match. Perceived-value-style readings mix <strong>signals you already collect</strong> with
+          <strong>optional anonymous pulses</strong> — never a substitute for blaming a team.
+        </p>
+        <p class="optional-foot">
+          Anything that would identify a person or rank employees stays out — even if the raw warehouse could compute it.
+        </p>
+      </section>
+
+      <section class="delivery-card" aria-labelledby="del-title">
+        <h2 id="del-title">Where FluencyTracr results can show up</h2>
+        <ul>
+          <li>This executive view (or embedded analytics in your portal)</li>
+          <li>Search-indexed evidence summaries, when your org publishes bundles to its enterprise search stack</li>
+          <li>Governed assistants via the FluencyTracr MCP server (stdio or streamable HTTP) — same four tools, audited every call</li>
+        </ul>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        const METRICS = {
+          all: {
+            label: "Rollup: entire company after privacy rules.",
+            raw: 4_180_000,
+            uses: 201_400,
+            share: 77,
+            careful: 32,
+            shadow: 11,
+            hidden: 14,
+            blind: 4,
+            mcpCalls: 18_200,
+            mcpOk: 96.8,
+            mcpBlocked: 2.4,
+            mcpErr: 0.8,
+            readPct: 61
+          },
+          engineering: {
+            label: "Engineering · ~1,800 people in scope for this slice.",
+            raw: 1_920_000,
+            uses: 93_800,
+            share: 83,
+            careful: 29,
+            shadow: 7,
+            hidden: 4,
+            blind: 1,
+            mcpCalls: 9_400,
+            mcpOk: 97.1,
+            mcpBlocked: 2.1,
+            mcpErr: 0.8,
+            readPct: 58
+          },
+          sales: {
+            label: "Sales · ~1,200 people in scope for this slice.",
+            raw: 890_000,
+            uses: 48_200,
+            share: 72,
+            careful: 21,
+            shadow: 19,
+            hidden: 6,
+            blind: 1,
+            mcpCalls: 3_100,
+            mcpOk: 95.2,
+            mcpBlocked: 3.7,
+            mcpErr: 1.1,
+            readPct: 68
+          },
+          ga: {
+            label: "G&A · ~800 people in scope for this slice.",
+            raw: 610_000,
+            uses: 36_400,
+            share: 71,
+            careful: 38,
+            shadow: 10,
+            hidden: 5,
+            blind: 1,
+            mcpCalls: 2_600,
+            mcpOk: 96.4,
+            mcpBlocked: 2.6,
+            mcpErr: 1.0,
+            readPct: 72
+          },
+          operations: {
+            label: "Operations · ~1,200 people in scope for this slice.",
+            raw: 760_000,
+            uses: 23_000,
+            share: 74,
+            careful: 24,
+            shadow: 13,
+            hidden: 3,
+            blind: 1,
+            mcpCalls: 2_900,
+            mcpOk: 96.9,
+            mcpBlocked: 2.2,
+            mcpErr: 0.9,
+            readPct: 55
+          }
+        };
+
+        function fmtRaw(n) {
+          return (n / 1_000_000).toFixed(2) + "M";
+        }
+
+        function fmtUses(n) {
+          if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+          return (n / 1_000).toFixed(1) + "k";
+        }
+
+        function fmtMcpCalls(n) {
+          if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+          return (n / 1_000).toFixed(1) + "k";
+        }
+
+        function applyFn(key) {
+          const m = METRICS[key];
+          if (!m) return;
+          document.getElementById("function-context").textContent = m.label;
+          document.getElementById("m-raw").textContent = fmtRaw(m.raw);
+          document.getElementById("m-uses").textContent = fmtUses(m.uses);
+          document.getElementById("m-share").textContent = m.share + "%";
+          document.getElementById("m-careful").textContent = m.careful + "%";
+          document.getElementById("m-shadow").textContent = m.shadow + "%";
+          document.getElementById("m-hidden").textContent = String(m.hidden);
+          document.getElementById("m-blind").textContent = String(m.blind);
+          document.getElementById("a-calls").textContent = fmtMcpCalls(m.mcpCalls);
+          document.getElementById("a-ok").textContent = m.mcpOk + "%";
+          document.getElementById("a-blocked").textContent = m.mcpBlocked + "%";
+          document.getElementById("a-err").textContent = m.mcpErr + "%";
+          document.getElementById("a-mix").textContent =
+            m.readPct + "% reads · " + (100 - m.readPct) + "% ingest";
+        }
+
+        document.querySelectorAll(".function-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            document.querySelectorAll(".function-btn").forEach(function (b) {
+              b.classList.remove("is-active");
+            });
+            btn.classList.add("is-active");
+            applyFn(btn.getAttribute("data-fn"));
+          });
+        });
+
+        applyFn("all");
+      })();
+    </script>
+  </body>
+</html>

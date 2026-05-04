@@ -17,11 +17,16 @@
 | Scope and privacy guardrails | [`SCOPE_GUARDRAILS.md`](../../SCOPE_GUARDRAILS.md) |
 | Contracts / events | [`FluencyTracr_V1_Event_Contract.md`](../../FluencyTracr_V1_Event_Contract.md), [`docs/contracts/`](../contracts/) |
 | Product requirements (PRD v1) | [`artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md`](../../artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md) — harness phases: `prd-phase-01`…`04` in [`harness/feature_list.json`](../../harness/feature_list.json) |
+| Cursor agent harness | [`cursor-agent-harness.md`](cursor-agent-harness.md), [`.cursor/rules/`](../../.cursor/rules/) |
+| Optional OpenAI Agents SDK sidecar | [`openai-agents-harness.md`](openai-agents-harness.md), [`integrations/openai-agents/`](../../integrations/openai-agents/) |
+| Development harness event contract | [`docs/contracts/agent-run/README.md`](../contracts/agent-run/README.md), [`shared/src/agentRunSchemas.ts`](../../shared/src/agentRunSchemas.ts) |
 
 ## Task shape and verification
 
 - **Definition of done for a chunk of work:** [`TASK_CONTRACT.md`](TASK_CONTRACT.md)
 - **What to run to separate “built it” from “it works”:** [`EVALUATION.md`](EVALUATION.md)
+- **Cursor rules + agent-run schema validation:** `npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts`
+- **Optional OpenAI Agents SDK harness validation:** `npm run validate:agents`
 
 ## Root entrypoints for tools
 

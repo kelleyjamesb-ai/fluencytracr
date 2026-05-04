@@ -75,6 +75,33 @@ export function stableEventIdForSignals(e: CanonicalEvent, index: number): strin
   return `synthetic:${index}`;
 }
 
+function hasStructuralVerificationFlag(event: CanonicalEvent): boolean {
+  return (
+    event.context.verification_present === true ||
+    event.metadata?.verification_present === true ||
+    event.context.structural_verification === true ||
+    event.metadata?.structural_verification === true
+  );
+}
+
+/** Retrieval/search-shaped names need an explicit verification flag; no name-only inference. */
+function isRetrievalOrSearchEventName(name: string): boolean {
+  const n = name.toLowerCase();
+  if (n === "retrieval" || n === "search") {
+    return true;
+  }
+  if (n.startsWith("retrieval_") || n.startsWith("search_")) {
+    return true;
+  }
+  if (n.endsWith("_retrieval") || n.endsWith("_search")) {
+    return true;
+  }
+  if (n.includes("_retrieval_") || n.includes("_search_")) {
+    return true;
+  }
+  return false;
+}
+
 function isVerificationEvent(event: CanonicalEvent): boolean {
   if (event.event_name === "verification_signal") {
     return true;
@@ -82,24 +109,35 @@ function isVerificationEvent(event: CanonicalEvent): boolean {
   if (event.event_name === "validation_tool_call" || event.event_name === "validation_check") {
     return true;
   }
-  if (event.context.verification_present === true || event.metadata?.verification_present === true) {
+  if (hasStructuralVerificationFlag(event)) {
     return true;
   }
-  if (event.context.structural_verification === true) {
+  if (isRetrievalOrSearchEventName(event.event_name)) {
+    return hasStructuralVerificationFlag(event);
+  }
+  return false;
+}
+
+/** Structural explicit error only — rejection disposition is not an error signal for recovery. */
+export function isExplicitError(event: CanonicalEvent): boolean {
+  if (event.event_name === "execution_error") {
     return true;
   }
-  if (event.event_name === "retrieval_recheck" || event.event_name === "search_verification") {
+  if (event.context.error_signal === true || event.metadata?.error_signal === true) {
     return true;
   }
   return false;
 }
 
-function isErrorOrRejection(event: CanonicalEvent): boolean {
-  if (event.event_name === "ai_output_disposition") {
-    const d = event.context.disposition;
-    return d === "rejected" || d === "abandoned";
+/**
+ * Structural signals that can correlate with a retry window (rejection or explicit error).
+ * Recovery still requires {@link isExplicitError} at the anchor index.
+ */
+export function isRetryTrigger(event: CanonicalEvent): boolean {
+  if (isExplicitError(event)) {
+    return true;
   }
-  if (event.event_name === "execution_error" || event.context.error_signal === true) {
+  if (event.event_name === "ai_output_disposition" && event.context.disposition === "rejected") {
     return true;
   }
   return false;
@@ -159,7 +197,7 @@ export function detectRecoveryPresence(
 ): RecoveryDetectionResult {
   const ordered = input.ordered_events;
   for (let i = 0; i < ordered.length; i += 1) {
-    if (!isErrorOrRejection(ordered[i]!)) {
+    if (!isExplicitError(ordered[i]!)) {
       continue;
     }
     const hasRetry = input.retry_sequences.some(
@@ -197,23 +235,6 @@ export function detectAbandonment(
     )
   ) {
     return { abandonment_present: true };
-  }
-  if (input.ordered_events.length === 0) {
-    return { abandonment_present: false };
-  }
-  const hasSuccess = input.ordered_events.some(
-    (e) =>
-      (e.event_name === "ai_output_disposition" && e.context.disposition === "accepted") ||
-      e.context.success === true
-  );
-  const hasErrorTerminal =
-    input.execution_state?.state === "ERRORED" ||
-    input.execution_state?.state === "CANCELLED" ||
-    input.ordered_events.some(
-      (e) => e.event_name === "execution_error" || e.context.error_signal === true
-    );
-  if (hasSuccess || hasErrorTerminal) {
-    return { abandonment_present: false };
   }
   return { abandonment_present: false };
 }

@@ -39,6 +39,30 @@ Optional deeper CI scripts (docs, evidence bundles, link checks) live under `scr
 
 GitHub Actions Node jobs use **Node 24** with `actions/setup-node@v6` and `actions/checkout@v5` (see `.github/workflows/ci.yml`, `governance-gate.yml`).
 
+## Optional OpenAI Agents SDK harness
+
+When changing `integrations/openai-agents/` or the related docs/scripts:
+
+```bash
+npm install
+npm run validate:agents
+```
+
+This validates the optional development sidecar only. It does not replace the repo harness, OpenSpec gates, or backend/frontend/shared checks above.
+
+## Cursor rules and agent-run contract
+
+When changing `.cursor/rules/`, `shared/src/agentRunSchemas.ts`, `schemas/agent_run/`, or `docs/contracts/agent-run/`:
+
+```bash
+npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts
+npm run build --workspace shared
+bash scripts/ci_docs_contract_sweep.sh
+bash scripts/ci_linkcheck_fluency_docs.sh
+```
+
+This validates the provider-neutral development harness contract. It does not enable a Cursor runtime adapter by itself.
+
 ## User-facing UI smoke
 
 If the change affects the dashboard or flows in `frontend/`:

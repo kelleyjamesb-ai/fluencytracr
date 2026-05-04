@@ -8,6 +8,8 @@ import {
   detectRecoveryPresence,
   detectSignals,
   detectVerificationPresence,
+  isExplicitError,
+  isRetryTrigger,
   type SignalDetectionInput
 } from "../../src/services/signal-detectors";
 import type { RetrySequence } from "../../src/services/trace-reconstruction.service";
@@ -73,10 +75,65 @@ describe("detectVerificationPresence", () => {
     };
     expect(detectVerificationPresence(input).verification_present).toBe(false);
   });
+
+  it("Scenario C1: retrieval/search name alone does not count", () => {
+    const input: SignalDetectionInput = {
+      ordered_events: [
+        ev({ event_name: "retrieval_recheck" }),
+        ev({ event_name: "search", timestamp: "2026-01-01T12:00:01.000Z" })
+      ],
+      retry_sequences: []
+    };
+    expect(detectVerificationPresence(input).verification_present).toBe(false);
+  });
+
+  it("Scenario C2: retrieval with structural verification flag counts", () => {
+    const input: SignalDetectionInput = {
+      ordered_events: [
+        ev({
+          event_name: "retrieval_recheck",
+          timestamp: "2026-01-01T12:00:00.000Z",
+          context: { structural_verification: true }
+        })
+      ],
+      retry_sequences: []
+    };
+    expect(detectVerificationPresence(input).verification_present).toBe(true);
+  });
+
+  it("search_verification counts when metadata marks verification_present", () => {
+    const input: SignalDetectionInput = {
+      ordered_events: [
+        ev({
+          event_name: "search_verification",
+          metadata: { verification_present: true }
+        })
+      ],
+      retry_sequences: []
+    };
+    expect(detectVerificationPresence(input).verification_present).toBe(true);
+  });
+});
+
+describe("isExplicitError / isRetryTrigger", () => {
+  it("rejection disposition is retry trigger but not explicit error", () => {
+    const rej = ev({
+      event_name: "ai_output_disposition",
+      context: { disposition: "rejected" }
+    });
+    expect(isExplicitError(rej)).toBe(false);
+    expect(isRetryTrigger(rej)).toBe(true);
+  });
+
+  it("execution_error is explicit error", () => {
+    const err = ev({ event_name: "execution_error" });
+    expect(isExplicitError(err)).toBe(true);
+    expect(isRetryTrigger(err)).toBe(true);
+  });
 });
 
 describe("detectRecoveryPresence", () => {
-  it("true when error then retry then success", () => {
+  it("Scenario A: rejection + retry + success without explicit error → no recovery", () => {
     const fail = ev({
       timestamp: "2026-01-01T12:00:00.000Z",
       event_name: "ai_output_disposition",
@@ -96,6 +153,37 @@ describe("detectRecoveryPresence", () => {
           retry_id: "r1",
           trigger_event_id: "f",
           resumed_event_id: "ok",
+          event_indexes: Object.freeze([0, 1])
+        }
+      ]
+    };
+    expect(detectRecoveryPresence(input).recovery_present).toBe(false);
+  });
+
+  it("Scenario B: explicit error + retry + continuation → recovery", () => {
+    const errEv = ev({
+      timestamp: "2026-01-01T12:00:00.000Z",
+      event_name: "execution_error",
+      metadata: { event_id: "err1" }
+    });
+    const stepEv = ev({
+      timestamp: "2026-01-01T12:00:05.000Z",
+      event_name: "step",
+      metadata: { event_id: "s1" }
+    });
+    const ok = ev({
+      timestamp: "2026-01-01T12:00:10.000Z",
+      event_name: "ai_output_disposition",
+      context: { disposition: "accepted" },
+      metadata: { event_id: "ok" }
+    });
+    const input: SignalDetectionInput = {
+      ordered_events: [errEv, stepEv, ok],
+      retry_sequences: [
+        {
+          retry_id: "r1",
+          trigger_event_id: "err1",
+          resumed_event_id: "s1",
           event_indexes: Object.freeze([0, 1])
         }
       ]
@@ -126,6 +214,27 @@ describe("detectAbandonment", () => {
       ordered_events: [ev({})],
       retry_sequences: [],
       inactivity_abandonment: true
+    };
+    expect(detectAbandonment(input).abandonment_present).toBe(true);
+  });
+
+  it("Scenario D: no structural abandonment signals → false", () => {
+    const input: SignalDetectionInput = {
+      ordered_events: [
+        ev({
+          event_name: "ai_output_disposition",
+          context: { disposition: "accepted" }
+        })
+      ],
+      retry_sequences: []
+    };
+    expect(detectAbandonment(input).abandonment_present).toBe(false);
+  });
+
+  it("explicit ai_abandonment event → true", () => {
+    const input: SignalDetectionInput = {
+      ordered_events: [ev({ event_name: "ai_abandonment" })],
+      retry_sequences: []
     };
     expect(detectAbandonment(input).abandonment_present).toBe(true);
   });

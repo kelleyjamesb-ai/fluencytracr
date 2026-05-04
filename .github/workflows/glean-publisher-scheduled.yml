@@ -1,0 +1,33 @@
+# Optional: scheduled EvidenceBundle → Glean publish. Requires repo secrets:
+# FLUENCYTRACR_BASE_URL, GLEAN_PUBLISHER_ORG_IDS, GLEAN_INDEXING_URL,
+# plus either FLUENCYTRACR_SERVICE_TOKEN or (FLUENCYTRACR_DEV_HEADERS + FLUENCYTRACR_DEV_ROLE + per-org x-org-id via token claims).
+# GLEAN_INDEXING_TOKEN if the indexer requires Bearer auth.
+name: Glean publisher (scheduled)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Weekly Sunday 06:00 UTC — adjust as needed
+    - cron: "0 6 * * 0"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Skip silently when operators have not configured secrets yet
+    if: vars.GLEAN_PUBLISHER_ENABLED == 'true'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npm run build --workspace @learnaire/glean-publisher
+      - name: Publish bundles
+        env:
+          FLUENCYTRACR_BASE_URL: ${{ secrets.FLUENCYTRACR_BASE_URL }}
+          FLUENCYTRACR_SERVICE_TOKEN: ${{ secrets.FLUENCYTRACR_SERVICE_TOKEN }}
+          GLEAN_PUBLISHER_ORG_IDS: ${{ secrets.GLEAN_PUBLISHER_ORG_IDS }}
+          GLEAN_PUBLISHER_WINDOW: ${{ vars.GLEAN_PUBLISHER_WINDOW }}
+          GLEAN_INDEXING_URL: ${{ secrets.GLEAN_INDEXING_URL }}
+          GLEAN_INDEXING_TOKEN: ${{ secrets.GLEAN_INDEXING_TOKEN }}
+        run: node packages/glean-publisher/dist/cli.js publish

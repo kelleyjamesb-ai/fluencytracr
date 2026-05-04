@@ -161,29 +161,23 @@ export async function runClassificationPipeline(
 
   const itBucket = signals.iteration.iteration_bucket;
   const latBucket = resolveLatencyBucketForClassification(signals.latency);
+  const cr = classifyBehaviorPattern({
+    abandonment_present: signals.abandonment.abandonment_present,
+    iteration_bucket: itBucket,
+    raw_iteration_count: signals.iteration.raw_iteration_count,
+    verification_present: signals.verification.verification_present,
+    recovery_present: signals.recovery.recovery_present,
+    latency_bucket: latBucket
+  });
   let classification_possible = false;
   let classification_reason: string | undefined;
   let pattern: BehaviorPattern | undefined;
-
-  if (itBucket === "UNKNOWN" || latBucket === "UNKNOWN") {
-    classification_possible = false;
-    classification_reason = "AMBIGUITY";
+  if (cr.classified && cr.pattern !== undefined) {
+    classification_possible = true;
+    pattern = cr.pattern;
   } else {
-    const cr = classifyBehaviorPattern({
-      abandonment_present: signals.abandonment.abandonment_present,
-      iteration_bucket: itBucket,
-      raw_iteration_count: signals.iteration.raw_iteration_count,
-      verification_present: signals.verification.verification_present,
-      recovery_present: signals.recovery.recovery_present,
-      latency_bucket: latBucket
-    });
-    if (cr.classified && cr.pattern !== undefined) {
-      classification_possible = true;
-      pattern = cr.pattern;
-    } else {
-      classification_possible = false;
-      classification_reason = cr.reason ?? "AMBIGUITY";
-    }
+    classification_possible = false;
+    classification_reason = cr.reason ?? "AMBIGUITY";
   }
 
   const suppression = evaluateSuppression({

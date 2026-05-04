@@ -1,0 +1,196 @@
+{
+  "schema_version": "GSR_2026_05",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-01T12:00:00.000Z",
+  "source_system": "Glean",
+  "entries": [
+    {
+      "signal_family": "workflow_run",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "run_id",
+        "workflow_run_id",
+        "chat_session_id"
+      ],
+      "derived_dimensions": [
+        "usage_quality",
+        "behavior_change",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T12:30:00.000Z",
+          "evidence_type": "schema_review",
+          "note": "Seeded WorkflowRun fields model aggregate agent and workflow usage without raw content."
+        }
+      ]
+    },
+    {
+      "signal_family": "agent_run",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "run_id",
+        "trace_id",
+        "workflow_run_id"
+      ],
+      "derived_dimensions": [
+        "behavior_change",
+        "capability_growth",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T12:35:00.000Z",
+          "evidence_type": "schema_review",
+          "note": "Seeded AgentRun fields model aggregate agent-run adoption and execution posture."
+        }
+      ]
+    },
+    {
+      "signal_family": "mcp_usage",
+      "source_availability": "approved_pending_export",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "unknown",
+      "stable_join_keys": [
+        "trace_id",
+        "workflow_run_id",
+        "tool_id"
+      ],
+      "derived_dimensions": [
+        "capability_growth",
+        "calibration",
+        "coverage"
+      ],
+      "readiness_status": "not_computed",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "unknown",
+        "latency": "unknown",
+        "join_reliability": "partial"
+      },
+      "validation_evidence": []
+    },
+    {
+      "signal_family": "ai_security",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "workflow_run_id",
+        "event_timestamp"
+      ],
+      "derived_dimensions": [
+        "leadership_reinforcement",
+        "exposure"
+      ],
+      "readiness_status": "suppressed",
+      "suppression_applied": true,
+      "suppression_reasons": [
+        "policy_review_required"
+      ],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "partial"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T12:40:00.000Z",
+          "evidence_type": "admin_confirmation",
+          "note": "Seeded policy signal is available but withheld until governance review confirms approved use."
+        }
+      ]
+    },
+    {
+      "signal_family": "skill_lifecycle",
+      "source_availability": "unavailable",
+      "export_channel": "not_available",
+      "scrub_status": "unknown",
+      "stable_join_keys": [],
+      "derived_dimensions": [
+        "capability_growth"
+      ],
+      "readiness_status": "missing",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "unknown",
+        "latency": "unknown",
+        "join_reliability": "unknown"
+      },
+      "validation_evidence": []
+    },
+    {
+      "signal_family": "search_document_retrieval",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "workflow_run_id",
+        "action_run_id"
+      ],
+      "derived_dimensions": [
+        "usage_quality",
+        "calibration",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T12:45:00.000Z",
+          "evidence_type": "schema_review",
+          "note": "Seeded retrieval fields model aggregate evidence-seeking behavior without document content."
+        }
+      ]
+    }
+  ],
+  "next_actions": [
+    {
+      "signal_family": "mcp_usage",
+      "action": "Confirm MCP Usage export availability and scrubbed field set.",
+      "owner": "glean_admin",
+      "priority": "high"
+    },
+    {
+      "signal_family": "ai_security",
+      "action": "Approve which AI Security aggregate flags can support exposure and leadership reinforcement evidence.",
+      "owner": "data_governance",
+      "priority": "high"
+    },
+    {
+      "signal_family": "skill_lifecycle",
+      "action": "Identify whether Skill lifecycle events are available for customer export.",
+      "owner": "data_governance",
+      "priority": "medium"
+    }
+  ]
+}

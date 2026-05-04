@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FluencyTracr — Glean light (prototype)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="glean-ui">
+    <div class="page">
+      <div class="co-brand" aria-label="Product pairing">
+        <span class="co-brand-glean">Glean</span>
+        <span class="co-brand-sep">·</span>
+        <span class="co-brand-product">FluencyTracr</span>
+      </div>
+      <header class="hero">
+        <p class="eyebrow">Organizational fluency · Governance-safe signals</p>
+        <h1>FluencyTracr</h1>
+        <p class="lede">
+          Directional signals from passive, aggregate evidence—never individual surveillance. Suppression and
+          ambiguity are explicit; posture stays auditable.
+        </p>
+        <div class="kpi-row" role="group" aria-label="Aggregate snapshot">
+          <div class="kpi">
+            <span class="kpi-label">Governance mode</span>
+            <span class="kpi-value">Shadow</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">Control alignment</span>
+            <span class="kpi-value">Partial</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">As of</span>
+            <span class="kpi-value kpi-meta">Apr 2, 2026 · 09:00 UTC</span>
+          </div>
+        </div>
+        <aside class="callout" role="note">
+          <strong>Recommended focus</strong>
+          <p>Resolve outstanding policy clause decisions in mapped controls before moving to enforced mode.</p>
+        </aside>
+      </header>
+
+      <section class="signal-strip" aria-labelledby="signal-heading">
+        <div class="strip-head">
+          <h2 id="signal-heading">Organizational signal health</h2>
+          <p class="strip-sub">
+            Aggregated, directional view. Not used for ranking people or scoring performance.
+          </p>
+        </div>
+        <div class="signal-grid">
+          <article class="signal-col signal-good">
+            <h3>Strengthening signals</h3>
+            <p class="why">Healthy momentum in governance evidence flow.</p>
+            <ul>
+              <li>Human review observed before external delegation in aggregate patterns.</li>
+              <li>Policy mapping refreshes on a stable cadence.</li>
+            </ul>
+          </article>
+          <article class="signal-col signal-warn">
+            <h3>Signals to monitor</h3>
+            <p class="why">Worth planning follow-up; not a breach indicator.</p>
+            <ul>
+              <li>Unresolved clause decisions accumulating in selected policy areas.</li>
+              <li>Timeline refresh gaps in some intervals.</li>
+            </ul>
+          </article>
+          <article class="signal-col signal-muted">
+            <h3>Withheld (by design)</h3>
+            <p class="why">Low volume or ambiguity blocks safe surfacing.</p>
+            <ul>
+              <li>Signals suppressed where volume is insufficient in protected slices.</li>
+              <li>Signals held where ambiguity prevents safe interpretation.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="timeline-block" aria-labelledby="timeline-heading">
+        <h2 id="timeline-heading">Governance timeline</h2>
+        <p class="timeline-sub">Recent events · aggregate scope only</p>
+        <ul class="skeleton-list">
+          <li><span class="sk-line sk-w-70"></span><span class="sk-line sk-w-40"></span></li>
+          <li><span class="sk-line sk-w-85"></span><span class="sk-line sk-w-55"></span></li>
+          <li><span class="sk-line sk-w-60"></span><span class="sk-line sk-w-45"></span></li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

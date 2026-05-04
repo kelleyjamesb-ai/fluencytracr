@@ -1,7 +1,14 @@
 {
   "private": true,
-  "workspaces": ["backend", "frontend", "shared"],
+  "workspaces": ["backend", "frontend", "shared", "packages/fluencytracr-mcp", "packages/glean-publisher", "integrations/openai-agents"],
+  "scripts": {
+    "agent:dev": "npm run build --workspace @learnaire/openai-agents-harness && npm run start --workspace @learnaire/openai-agents-harness --",
+    "glean:readiness": "npm run build --workspace shared && node scripts/generate_glean_readiness_map.mjs",
+    "glean:readiness:sources": "npm run build --workspace shared && node scripts/generate_glean_readiness_from_sources.mjs",
+    "validate:agents": "npm run build --workspace @learnaire/openai-agents-harness"
+  },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "vitest": "^2.1.8"
   }
 }

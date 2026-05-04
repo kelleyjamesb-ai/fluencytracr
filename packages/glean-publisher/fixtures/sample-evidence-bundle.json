@@ -1,0 +1,32 @@
+{
+  "schema_version": "evidence_bundle.v1",
+  "org_id": "fixture-org",
+  "window": "30d",
+  "generated_at": "2026-03-31T12:00:00.000Z",
+  "suppression": {
+    "k_min": 5,
+    "suppression_applied": false,
+    "suppression_reasons": []
+  },
+  "coverage": {
+    "instrumented_sources": ["ai_output_disposition", "verification_signal"],
+    "missing_sources": ["ai_recovery_loop"]
+  },
+  "exposure": {
+    "shadow_ai": "not_present",
+    "unsanctioned_tool_class": "not_computed"
+  },
+  "calibration": {
+    "verification_presence": "present",
+    "recovery_presence": "not_present",
+    "escalation_to_safe_path_presence": "not_present"
+  },
+  "fragility": {
+    "friction_loops_elevated": "not_present",
+    "rapid_abandonment_elevated": "not_present",
+    "blind_acceptance_risk_elevated": "not_present"
+  },
+  "learning": {
+    "trend_direction": "not_computed"
+  }
+}

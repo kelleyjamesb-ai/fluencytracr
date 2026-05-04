@@ -8,6 +8,7 @@ References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
 - **Glean/platform data access RFI** (vendor questionnaire; join keys, export parity, governance logs): `artifacts/DATA_ACCESS_CONTRACT_RFI.md`
+
 ## Two integration modes
 
 ### Mode 1: Publish EvidenceBundle documents via Glean Indexing API
@@ -28,11 +29,14 @@ References:
 - `/api/patterns`, `/api/coverage`, `/orgs/:orgId/telemetry/index`, `/api/orientation/:orgId`, and `/api/board-snapshot/:orgId` accept any valid **`FluencyWindow`** (schema-validated); inference record matching uses `WINDOW_DAYS` per token.
 - Glean indexing documentation and acceptance scenarios in this pack.
 - MCP adapter **contract** and tool surface specification: `docs/mcp/fluencytracr-mcp-server.md` (aligned window enums with evidence API).
+- Glean readiness demo and live-data decision gate: `docs/integrations/glean/06-readiness-demo-guide.md`, `docs/integrations/glean/07-live-data-access-decision-gate.md`.
 
 ### Later (runtime and automation)
 - Deployed MCP server binary and hosted adapter rollout for production agent orchestration.
 - Automated EvidenceBundle publisher (scheduled jobs) and CI enforcement for indexing/guardrails.
 - Expanded agentic coverage for additional oversight and reliability evidence beyond the bounded question classes in `03-glean-agent-tooling.md`.
+- Live Glean ingestion or Glean-hosted MCP/read access after the gate in `07-live-data-access-decision-gate.md` is satisfied.
+
 ## Multi-agent readiness boundaries
 - Agentic emitters and human telemetry emitters are both in scope.
 - All published and queried outputs stay org-level and aggregate.
