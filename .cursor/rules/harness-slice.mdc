@@ -1,0 +1,22 @@
+---
+description: Keep Cursor agent work bounded to one verified FluencyTracr harness slice.
+alwaysApply: true
+---
+
+# Harness Slice Rule
+
+When implementing in FluencyTracr:
+
+1. Pick one bounded slice.
+2. Write or update the focused test before implementation when behavior changes.
+3. Run the smallest meaningful verification first, then broader checks from `docs/agent/EVALUATION.md`.
+4. Do not mark a harness item as passing unless the relevant mechanical check passed.
+5. Append a concise handoff to `harness/agent-progress.txt` after substantive work.
+6. Stage only files that belong to the slice. Leave unrelated local edits alone.
+
+Preferred completion shape:
+
+- What changed
+- What was verified
+- What remains open
+- Git branch or PR state when applicable

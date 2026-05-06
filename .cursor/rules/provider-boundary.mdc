@@ -1,0 +1,16 @@
+---
+description: Preserve provider-neutral FluencyTracr runtime boundaries while using Cursor or OpenAI as development accelerators.
+alwaysApply: true
+---
+
+# Provider Boundary
+
+Cursor, OpenAI Agents SDK, Codex, and Claude Code are optional authoring and development harnesses. They must not become the FluencyTracr product runtime unless a future approved OpenSpec change explicitly changes that boundary.
+
+Keep provider-specific code in integration folders:
+
+- Cursor-facing rules and docs: `.cursor/` and `docs/agent/`
+- OpenAI Agents SDK sidecar: `integrations/openai-agents/`
+- Future Cursor CLI adapter, if added: `integrations/cursor-agent/` or `scripts/`
+
+Shared contracts may describe normalized agent-run events, but they must avoid raw prompts, raw responses, file content, diffs, emails, direct user identifiers, and individual attribution.

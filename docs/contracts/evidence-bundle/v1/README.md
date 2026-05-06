@@ -35,6 +35,7 @@ Partners integrating against `evidence_bundle.v1` can rely on stable required fi
 - Every payload MUST include `coverage.instrumented_sources`.
 - Every payload MUST include `coverage.missing_sources`.
 - Coverage notes SHOULD describe known instrumentation gaps and evidence quality caveats.
+- When derived from a Glean Signal Readiness Map, only `present` readiness entries may contribute to `coverage.instrumented_sources`; `missing`, `suppressed`, and `not_computed` entries must remain visible in `coverage.missing_sources` and notes.
 
 ## Security and privacy: no raw prompt/output content, no user identifiers
 - No raw prompt text, model output text, or transcript content in this contract.

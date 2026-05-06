@@ -1,0 +1,16 @@
+{
+  "source_type": "workflow_run",
+  "source_availability": "available",
+  "export_channel": "customer_event_logs",
+  "scrub_status": "scrubbed",
+  "join_keys_present": ["run_id", "workflow_run_id", "chat_session_id"],
+  "derived_dimensions": ["usage_quality", "behavior_change", "coverage"],
+  "governance_hold": false,
+  "governance_hold_reasons": [],
+  "data_quality": {
+    "completeness": "verified",
+    "latency": "known",
+    "join_reliability": "stable"
+  },
+  "validation_note": "WorkflowRun aggregate fields are available without raw content."
+}

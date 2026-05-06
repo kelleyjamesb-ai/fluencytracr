@@ -2,6 +2,7 @@
 
 References:
 - EvidenceBundle v1: `docs/contracts/evidence-bundle/v1/README.md`
+- Glean Signal Readiness Map: `docs/contracts/glean-signal-readiness/README.md`
 - `/api/ingest` API doc: `docs/api/ingest.md`
 - Glean integration overview: `docs/integrations/glean/01-overview.md`
 
@@ -11,14 +12,19 @@ References:
 - "Which fragility indicators are elevated at org level?"
 - "What source coverage is missing for this org?"
 - "Is learning trend improving, stable, degrading, suppressed, or not computed?"
+- "Which Glean signal families are ready for evidence derivation?"
+- "Which Glean signal families are missing, suppressed, or not computed, and what needs to unlock them?"
 
 ### Expanded org-level classes (still executive-safe)
 - "Which expected instrumentation sources are present versus missing for this org-window?" (coverage only; no team slice)
 - "Is suppression active and which reason codes apply?" (reason codes and flags only; no reconstruction of masked metrics)
 - "Is safe-path escalation signal present, absent, suppressed, or not computed for this org-window?"
 - "For this window, is verification presence signal present, absent, suppressed, or not computed?"
+- "What is ready now versus blocked in the Glean Signal Readiness Map?" (readiness status only; no raw source records)
 
 Machine-checked template builder (strict JSON, no extra keys): `@learnaire/fluencytracr-mcp` exports `buildAgentEvidenceResponse` / `validateAgentEvidenceResponse`.
+Preferred MCP read tool for Glean Agents: `fluency.get_agent_evidence_summary`.
+Preferred MCP readiness tool for Glean Agents: `fluency.get_signal_readiness_summary`.
 
 Out of scope question classes:
 - Any team-level or manager-level comparison request
@@ -27,6 +33,9 @@ Out of scope question classes:
 
 ## Callable FluencyTracr endpoints
 Agent tools may call only bounded, read-only evidence routes plus ingestion facade where needed for partner relay:
+- `fluency.get_agent_evidence_summary` for the strict agent-safe summary template
+- `fluency.get_signal_readiness_summary` for agent-safe Glean readiness counts, non-computable families, suppression state, and next actions
+- `fluency.get_signal_readiness_map` for trusted aggregate readiness map access when the full `GSR_2026_05` contract is required
 - `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
 - `GET /api/evidence/coverage/:orgId?window=<...>` (same window enum as bundles)
 - `GET /api/evidence/controls/:orgId?window=<...>` (same window enum as bundles)
@@ -39,13 +48,15 @@ Agent tools may call only bounded, read-only evidence routes plus ingestion faca
   - allowed aggregate context only
 - Agent must not fabricate proxy values for suppressed fields.
 - Agent must preserve EvidenceBundle enum semantics (`present`, `not_present`, `suppressed`, `not_computed`).
+- For readiness responses, agent must preserve readiness enum semantics (`present`, `missing`, `suppressed`, `not_computed`) and must not convert blocked families into evidence claims.
 
 ## Prohibited outputs and safeguards
 - Prohibited:
   - person-level attribution
   - rank ordering by performance proxy
   - hidden-value reconstruction from suppressed fields
-  - raw prompt/output/transcript content
+- raw prompt/output/transcript content
+- raw Glean source records, validation samples, join-key expansion, or deployment-specific identifiers
 - Safeguards:
   - strict response template with allowed fields only
   - query guard that rejects forbidden dimensions
@@ -64,3 +75,16 @@ Required fields:
 - `coverage_summary`
 - `decision_safe_guidance`
 
+## Readiness response template
+Required fields:
+- `org_id`
+- `window`
+- `generated_at`
+- `source_system`
+- `readiness_counts`
+- `ready_signal_families`
+- `non_computable_signal_families`
+- `next_actions`
+- `suppression_applied`
+- `suppression_reasons`
+- `decision_safe_guidance`

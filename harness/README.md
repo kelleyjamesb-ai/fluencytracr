@@ -50,3 +50,5 @@ Requires Python deps from `requirements.txt` (see [`docs/agent/EVALUATION.md`](.
 
 - **`src/agent.py` / `MemoryManager`**: Python agent chat memory lives under `artifacts/runtime/` (see `MEMORY_FILE` in settings), separate from this harness.
 - **`fluencytracr-harness/`**: Domain-specific batch analytics with its own `StateStore`; keep orchestration separate unless you explicitly merge workflows.
+- **`.cursor/rules/`**: Cursor project rules that route Cursor Agent back to this harness and enforce bounded, verified slices.
+- **`integrations/openai-agents/`**: Optional OpenAI Agents SDK development sidecar that reads this harness and delegates bounded specialist analysis. It does not replace `feature_list.json`, `agent-progress.txt`, OpenSpec, or mechanical verification.
