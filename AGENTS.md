@@ -43,3 +43,37 @@ Treat **files in this Cursor workspace as source of truth** until you commit and
 ## Long-running agent harness (Codex, Claude, Cursor)
 
 For multi-session work, follow [`harness/README.md`](harness/README.md). First session: [`harness/prompts/initializer.md`](harness/prompts/initializer.md). Later sessions: [`harness/prompts/incremental_session.md`](harness/prompts/incremental_session.md). Checklist: [`harness/feature_list.json`](harness/feature_list.json); handoff log: [`harness/agent-progress.txt`](harness/agent-progress.txt). After substantive edits, run checks in [`docs/agent/EVALUATION.md`](docs/agent/EVALUATION.md) (includes `./harness/scripts/verify.sh`).
+
+## Cursor Cloud specific instructions
+
+### Services overview
+
+This is an npm workspaces monorepo with workspaces: `backend`, `frontend`, `shared`, `packages/fluencytracr-mcp`, `packages/glean-publisher`, `integrations/openai-agents`. It also has a Python component at the repo root (`requirements.txt`, `tests/`).
+
+### Build order (must be followed)
+
+1. `npm run build --workspace shared` — backend and frontend both depend on `@learnaire/shared`
+2. `npm run generate --workspace backend` — generates Prisma client (required even for in-memory tests)
+
+### Running tests
+
+- **Backend (Jest):** `npm run test:ci --workspace backend` — tests blank `DATABASE_URL` and `DIRECT_URL` so no DB needed
+- **Frontend (Vitest):** `npm test --workspace frontend`
+- **Python (pytest):** `python3 -m pytest tests/ -q` — use `python3` not `python`
+- **MCP package:** `npm run test --workspace @learnaire/fluencytracr-mcp`
+- **Glean publisher:** `npm run test --workspace @learnaire/glean-publisher`
+
+### Running dev servers
+
+The backend requires Docker + PostgreSQL. Start Postgres via `sudo docker compose -f infra/docker-compose.yml up -d` (user/pass/db: `fluency`, port 5432). Then sync schema with `prisma db push` (not `prisma migrate deploy` — migrations have a pre-existing ordering issue with the `Organization` table). Copy `backend/.env.example` to `backend/.env` for `DATABASE_URL` and `JWT_SECRET`.
+
+- **Backend:** `npm run dev --workspace backend` — Express on port 4000 (sets `DEV_HEADER_AUTH=true` for dev token generation)
+- **Frontend:** `npm run dev --workspace frontend` — Vite on port 5173 with proxy to backend for `/api`, `/auth`, `/health`, `/orgs`
+- **Auth:** `POST /auth/token` with `{"org_id": "...", "role": "ADMIN", "email": "..."}` — no real auth provider, JWT is self-issued
+
+### Gotchas
+
+- ESLint configs (`backend/.eslintrc.json`, `frontend/.eslintrc.json`) lack a TypeScript parser; `npm run lint` fails on all TS files. Lint is **not** part of CI.
+- Prisma schema requires both `DATABASE_URL` and `DIRECT_URL` env vars. Tests blank them intentionally. For dev/push operations set both.
+- The `version` key in `infra/docker-compose.yml` triggers a Docker Compose v2 deprecation warning — harmless.
+- CI uses Node 20 and Python 3.11; Node 22 and Python 3.12 work locally without issues.
