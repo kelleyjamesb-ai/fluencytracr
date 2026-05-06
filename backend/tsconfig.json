@@ -9,8 +9,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@learnaire/shared": ["../shared/src"],
-      "@learnaire/shared/*": ["../shared/src/*"]
+      "@learnaire/shared": ["../shared/dist"],
+      "@learnaire/shared/*": ["../shared/dist/*"]
     }
   },
   "include": ["src"],
