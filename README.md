@@ -36,6 +36,7 @@ Suppression reason codes (one-hot, immutable):
 - Architecture map: [docs/ARCHITECTURE_MAP.md](docs/ARCHITECTURE_MAP.md)
 - Connector mapping spec: [docs/CONNECTOR_MAPPING_SPEC.md](docs/CONNECTOR_MAPPING_SPEC.md)
 - EvidenceBundle v1 contract: [docs/contracts/evidence-bundle/v1/README.md](docs/contracts/evidence-bundle/v1/README.md)
+- Reportability contract: [docs/contracts/reportability/README.md](docs/contracts/reportability/README.md)
 - Agent-run development harness contract: [docs/contracts/agent-run/README.md](docs/contracts/agent-run/README.md)
 - Unified cross-surface telemetry (UT_2026_04): [docs/contracts/unified-telemetry/README.md](docs/contracts/unified-telemetry/README.md)
 - Glean integration pack: [docs/integrations/glean/01-overview.md](docs/integrations/glean/01-overview.md)

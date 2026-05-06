@@ -1,0 +1,11 @@
+{
+  "generated_at_utc": "20260211T201333Z",
+  "org_id": "org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2",
+  "artifacts": {
+    "rollback_report": "artifacts/phase3/rollback/rollback_evidence_org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2_20260211T201333Z/rollback_drill_org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2_20260211T201333Z.json",
+    "compliance_mode_events_snapshot": "artifacts/phase3/rollback/rollback_evidence_org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2_20260211T201333Z/compliance_mode_events_snapshot.json",
+    "ops_metrics_snapshot": "artifacts/phase3/rollback/rollback_evidence_org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2_20260211T201333Z/ops_metrics_snapshot.json",
+    "ops_failclosed_snapshot": "artifacts/phase3/rollback/rollback_evidence_org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2_20260211T201333Z/ops_failclosed_snapshot.json",
+    "final_compliance_status_snapshot": "artifacts/phase3/rollback/rollback_evidence_org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2_20260211T201333Z/final_compliance_status_snapshot.json"
+  }
+}

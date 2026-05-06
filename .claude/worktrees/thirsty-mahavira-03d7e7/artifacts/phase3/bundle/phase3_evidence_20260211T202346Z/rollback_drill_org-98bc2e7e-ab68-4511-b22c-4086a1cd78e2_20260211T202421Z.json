@@ -1,0 +1,14 @@
+{
+  "generated_at_utc": "20260211T202421Z",
+  "org_id": "org-98bc2e7e-ab68-4511-b22c-4086a1cd78e2",
+  "enforce_status_code": 200,
+  "rollback_status_code": 200,
+  "current_mode": "shadow",
+  "evidence": {
+    "has_enforced_transition": true,
+    "has_rollback_transition": true,
+    "enforced_event_id": "event-83e3ab22-d073-4ff4-9671-31c777a1e182",
+    "rollback_event_id": "event-bcad99a6-c911-43ad-91cf-3840ca8fef77"
+  },
+  "pass": true
+}

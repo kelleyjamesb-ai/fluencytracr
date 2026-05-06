@@ -1,0 +1,37 @@
+{
+  "schema_version": "evidence_bundle.v1",
+  "org_id": "org_small_pilot",
+  "window": "daily",
+  "generated_at": "2026-02-21T23:50:00Z",
+  "suppression": {
+    "k_min": 25,
+    "suppression_applied": true,
+    "suppression_reasons": [
+      "k_min_threshold",
+      "irreducible_aggregation",
+      "exec_mode_no_org_structure_slice"
+    ]
+  },
+  "coverage": {
+    "instrumented_sources": ["workspace_telemetry", "llm_gateway_events"],
+    "missing_sources": ["review_workflow_audit"],
+    "coverage_notes": "Suppressed due to privacy-preserving aggregation constraints."
+  },
+  "exposure": {
+    "shadow_ai": "suppressed",
+    "unsanctioned_tool_class": "suppressed"
+  },
+  "calibration": {
+    "verification_presence": "suppressed",
+    "recovery_presence": "suppressed",
+    "escalation_to_safe_path_presence": "suppressed"
+  },
+  "fragility": {
+    "friction_loops_elevated": "suppressed",
+    "rapid_abandonment_elevated": "suppressed",
+    "blind_acceptance_risk_elevated": "suppressed"
+  },
+  "learning": {
+    "trend_direction": "suppressed"
+  }
+}

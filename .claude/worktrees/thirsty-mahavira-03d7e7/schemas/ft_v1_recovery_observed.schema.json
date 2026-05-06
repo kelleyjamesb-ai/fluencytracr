@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FluencyTracr V1 Recovery Observed",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "FT_V1_2026_01"
+    },
+    "event_name": {
+      "type": "string",
+      "const": "FT_V1_RECOVERY_OBSERVED"
+    },
+    "org_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "function_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role_class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool_surface": {
+      "type": "string",
+      "enum": [
+        "ASSISTANT",
+        "AGENT",
+        "SEARCH"
+      ]
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "window_id": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}__\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "ambiguity_flag": {
+      "type": "boolean"
+    },
+    "ambiguity_reason_code": {
+      "type": "string",
+      "enum": [
+        "AMB_SCHEMA_MISSING_REQUIRED",
+        "AMB_SCHEMA_INVALID_TYPE",
+        "AMB_SCHEMA_OUT_OF_RANGE",
+        "AMB_TEMPORAL_WINDOW_UNKNOWN",
+        "AMB_TEMPORAL_EVENT_OUTSIDE_WINDOW",
+        "AMB_EVIDENCE_CONFLICT",
+        "AMB_EVIDENCE_INSUFFICIENT",
+        "AMB_SOURCE_UNTRUSTED",
+        "AMB_TOOL_SURFACE_UNKNOWN"
+      ]
+    },
+    "recovery_present": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_name",
+    "org_id",
+    "function_id",
+    "role_class",
+    "tool_surface",
+    "event_timestamp",
+    "window_id",
+    "ambiguity_flag",
+    "recovery_present"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ambiguity_flag": {
+            "const": true
+          }
+        },
+        "required": [
+          "ambiguity_flag"
+        ]
+      },
+      "then": {
+        "required": [
+          "ambiguity_reason_code"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "ambiguity_reason_code"
+          ]
+        }
+      }
+    }
+  ]
+}

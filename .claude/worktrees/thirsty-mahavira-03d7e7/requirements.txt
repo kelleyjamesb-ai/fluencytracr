@@ -1,0 +1,13 @@
+# Prefer Python 3.10+ (matches pyproject.toml and CI). Apple CLT python3 is often 3.9 — use `brew install python@3.11` then `python3.11 -m venv .venv`.
+google-genai
+pydantic
+pydantic-settings
+python-dotenv
+pytest
+requests
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# MCP (Model Context Protocol) — only installed on Python 3.10+ (no compatible wheels for 3.9).
+# Manual: pip install 'mcp[cli]'
+mcp[cli]>=1.0.0; python_version >= "3.10"

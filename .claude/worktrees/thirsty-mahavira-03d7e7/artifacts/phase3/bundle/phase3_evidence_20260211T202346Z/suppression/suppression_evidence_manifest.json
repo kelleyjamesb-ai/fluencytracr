@@ -1,0 +1,14 @@
+{
+  "generated_at_utc": "2026-02-11T20:24:29Z",
+  "commit_sha": "d2dd3adfc9f0f656705912c5d8aad1c682639eab",
+  "suite": "suppression-regression",
+  "test_paths": [
+    "tests/suppression.test.ts",
+    "tests/behavioral_signals.test.ts"
+  ],
+  "database_url_set": true,
+  "node_env": "",
+  "pass": true,
+  "exit_code": 0,
+  "log_file": "suppression_test_output.log"
+}
