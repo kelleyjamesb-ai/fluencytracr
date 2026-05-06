@@ -109,3 +109,6 @@ artifacts/runtime/*
 !artifacts/runtime/.gitkeep
 artifacts/harness/checkpoints/*
 !artifacts/harness/checkpoints/.gitkeep
+.vercel
+.env*.local
+supabase/.temp/

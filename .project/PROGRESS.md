@@ -5,6 +5,8 @@
 - Agent governance wiring: `.project/*`, `agents/core`, `agents/review`, `agents/README.md`.
 - Implementation blueprint: `artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md` (v1 build plan §1–17).
 - Frontend CI matcher regression repair: realigned `frontend/package.json` with locked `vite`/`vitest` versions, eliminating invalid workspace resolutions and restoring `ProtectedRoute.test.tsx`.
+- Backend tenant-isolation repair: fixed cross-org unified telemetry ingest, reconstructed trace leakage, and workflow aggregate mixing for shared workflow IDs.
+- OpenSpec tooling + Vercel planning slice: added root `@fission-ai/openspec`, created `openspec/changes/update-vercel-single-project-services/`, and passed `npx openspec validate update-vercel-single-project-services --strict`.
 - Explicit user-requested Glean addition: added the Glean Signal Readiness Map contract, shared validation schema, strict `fluency.get_agent_evidence_summary` MCP tool, and OpenSpec change `add-glean-signal-readiness-map`.
 - Explicit user-requested Glean addition: added seeded Glean readiness inventory, generator, CLI command, generated demo map, and stakeholder demo summary.
 - Glean readiness roadmap Phase 1: added strict Glean-style source fixture adapter for WorkflowRun, MCP Usage, and AI Security source records.
@@ -16,24 +18,26 @@
 - Glean readiness roadmap Phase 6: added stakeholder demo guide connecting maps, EvidenceBundle fixture, MCP summary tool, validation commands, and non-goals.
 - Glean readiness roadmap Phase 8: added live-data access decision gate; Path C is the current pilot default until Path A/B evidence is confirmed.
 - Glean readiness executive prototype: added a static synthetic-data HTML demo with first-screen executive graphs, drill-down click paths, an Agent Brief view, docs links, and a dedicated validator.
+- Vercel Services + Supabase RLS hardening: root Services config now owns frontend/backend deployment, old backend Vercel project is disconnected from GitHub, production Supabase envs are fixed, authenticated DB health is green, and the live Prisma RLS migration covers public application tables.
 
 ## Current Status
 
 - Queue uses **7 phased items** aligned with blueprint **§17** (`WORK_QUEUE.json` → `blueprint_ref`).
 - **`phase-03-fsc-min-signal`** is **in_progress** (FSC + minimum signal gates before classification).
 - Temporary frontend CI repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
+- Temporary backend tenant-isolation repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
 - The seeded readiness generator addition was completed as a bounded user-requested slice; queue status was not changed.
 - Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
 - The executive HTML prototype is complete as a bounded user-requested slice; queue status was not changed.
+- Out-of-band Vercel Services implementation is deployed to production at `https://learn-air-engable-tool-frontend.vercel.app`; authenticated `/health` returns `db: "ok"`.
 
 ## Blockers
 
-- None.
+- None for the completed Vercel/Supabase slice.
 
 ## Next Step
 
-- After approval, implement the root Vercel Services config in a separate bounded slice.
 - Finish **phase-03**: §18 FSC evaluator, §20 minimum signal gate, wire §21 steps 1–2 with reasons `INCOMPLETE_EXECUTION` / `INSUFFICIENT_SIGNAL`; tests.
 - Then **phase-04** → **phase-05** → **phase-06** → **phase-07** per `WORK_QUEUE.json` order.
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
