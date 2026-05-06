@@ -215,4 +215,26 @@ describe("runClassificationPipeline", () => {
     const profile = r.outcome.signal_profile as { recovery?: { recovery_present: boolean } } | undefined;
     expect(profile?.recovery?.recovery_present).toBe(true);
   });
+
+  it("keeps workflow aggregates scoped to the requested org when workflow ids overlap", async () => {
+    const classRepo = new InMemoryClassificationRepository();
+    const aggRepo = new InMemoryWorkflowAggregateRepository();
+
+    await runClassificationPipeline(
+      { org_id: "o1", workflow_id: "w-shared", execution_id: "ex-o1", events: goldenExecution("ex-o1") },
+      { classificationRepository: classRepo, workflowAggregateRepository: aggRepo }
+    );
+    await runClassificationPipeline(
+      { org_id: "o2", workflow_id: "w-shared", execution_id: "ex-o2", events: goldenExecution("ex-o2") },
+      { classificationRepository: classRepo, workflowAggregateRepository: aggRepo }
+    );
+
+    const org1Agg = await aggRepo.findByWorkflowId("o1", "w-shared");
+    const org2Agg = await aggRepo.findByWorkflowId("o2", "w-shared");
+
+    expect(org1Agg).not.toBeNull();
+    expect(org2Agg).not.toBeNull();
+    expect(org1Agg!.classified_execution_count).toBe(1);
+    expect(org2Agg!.classified_execution_count).toBe(1);
+  });
 });

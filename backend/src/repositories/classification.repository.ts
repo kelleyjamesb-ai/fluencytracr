@@ -23,6 +23,10 @@ export interface ClassificationRepository {
   upsertOutcome(outcome: ExecutionClassificationOutcome): Promise<void>;
   findByExecutionId(executionId: string): Promise<ExecutionClassificationOutcome | null>;
   findByWorkflowId(workflowId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>>;
+  findByOrgIdAndWorkflowId(
+    orgId: string,
+    workflowId: string
+  ): Promise<ReadonlyArray<ExecutionClassificationOutcome>>;
   findByOrgId(orgId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>>;
 }
 
@@ -39,6 +43,13 @@ export class InMemoryClassificationRepository implements ClassificationRepositor
 
   async findByWorkflowId(workflowId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>> {
     return [...this.byExecution.values()].filter((o) => o.workflow_id === workflowId);
+  }
+
+  async findByOrgIdAndWorkflowId(
+    orgId: string,
+    workflowId: string
+  ): Promise<ReadonlyArray<ExecutionClassificationOutcome>> {
+    return [...this.byExecution.values()].filter((o) => o.org_id === orgId && o.workflow_id === workflowId);
   }
 
   async findByOrgId(orgId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>> {

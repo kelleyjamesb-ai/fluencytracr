@@ -33,6 +33,7 @@
 
 ## Next Step
 
+- After approval, implement the root Vercel Services config in a separate bounded slice.
 - Finish **phase-03**: §18 FSC evaluator, §20 minimum signal gate, wire §21 steps 1–2 with reasons `INCOMPLETE_EXECUTION` / `INSUFFICIENT_SIGNAL`; tests.
 - Then **phase-04** → **phase-05** → **phase-06** → **phase-07** per `WORK_QUEUE.json` order.
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.

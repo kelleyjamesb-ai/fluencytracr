@@ -1,61 +1,66 @@
 # Current Slice Contract
 
-- Work item id: `ci-frontend-test-toolchain-alignment`
-- Title: `Frontend test toolchain alignment for CI matcher regression`
+- Work item id: `openspec-cli-enable-and-publish-vercel-proposal`
+- Title: `Add OpenSpec CLI, validate the Vercel Services proposal, and publish the planning slice`
 - Status: `completed`
 
 ## Summary
 
-Aligned the frontend workspace test toolchain with the checked-in lockfile so CI and local runs resolve the same Vitest/Vite stack, restoring jest-dom matcher registration for `ProtectedRoute.test.tsx` under CI.
+Add the OpenSpec CLI as a durable repo tool, validate the new Vercel Services consolidation proposal, and publish the planning slice without starting implementation.
 
 ## Scope Paths
 
 - `package.json`
 - `package-lock.json`
-- `frontend/package.json`
-- `frontend/vite.config.ts`
-- `frontend/src/test/setup.ts`
-- `frontend/src/components/ProtectedRoute.test.tsx`
+- `openspec/changes/update-vercel-single-project-services/proposal.md`
+- `openspec/changes/update-vercel-single-project-services/design.md`
+- `openspec/changes/update-vercel-single-project-services/tasks.md`
+- `openspec/changes/update-vercel-single-project-services/specs/deployment/spec.md`
+- `.project/CURRENT_SLICE.md`
+- `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Root and frontend toolchain versions can resolve different `vitest` / `vite` instances.
-- Lockfile refresh can introduce broader dependency churn than intended.
-- Fixing matcher symptoms without addressing toolchain skew would leave CI unstable.
+- Adding the CLI could create unnecessary lockfile churn outside the planning scope.
+- OpenSpec validation may fail because the existing `deployment` spec is legacy and underspecified.
+- Proposal scope can still drift into implementation if validation feedback is handled too broadly.
 
 ## Planned Checks
 
-- Reproduce the frontend failure mode with dependency tree inspection and targeted test runs.
-- Run the frontend Vitest suite after alignment.
-- Confirm the workspace resolves a single valid Vitest/Vite line for frontend.
+- Install the same OpenSpec CLI already referenced elsewhere in the repo (`@fission-ai/openspec`).
+- Run strict validation for `update-vercel-single-project-services`.
+- Re-read any files changed to satisfy validation and confirm the scope remains planning-only.
 
 ## Evaluator Command Profile
 
-`targeted` by default:
+`targeted` for this tooling/planning slice:
 
-- `npm ls vitest --all`
-- `npm ls vite --all`
-- `npm test --workspace frontend`
+- `source ~/.nvm/nvm.sh && npx openspec validate update-vercel-single-project-services --strict`
+- `sed -n '1,220p' openspec/changes/update-vercel-single-project-services/proposal.md`
+- `sed -n '1,260p' openspec/changes/update-vercel-single-project-services/design.md`
+- `sed -n '1,220p' openspec/changes/update-vercel-single-project-services/tasks.md`
+- `sed -n '1,220p' openspec/changes/update-vercel-single-project-services/specs/deployment/spec.md`
 
-Escalate to `strict` only if the slice becomes cross-cutting:
+Escalate to `strict` only when implementation begins:
 
-- `./harness/scripts/verify.sh`
-- `npm run build --workspace shared`
-- `npm run test:ci --workspace backend`
-- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run build --workspace backend`
+- Vercel preview deployment verification on the single canonical project
 
 ## Evaluator Pass Criteria
 
-- Only declared scope paths are changed.
-- `npm ls vitest --all` and `npm ls vite --all` no longer report frontend-invalid resolutions.
-- `npm test --workspace frontend` passes.
+- Only declared tooling/planning paths are changed.
+- Root package metadata cleanly includes the OpenSpec CLI.
+- Proposal states one canonical Vercel project and preserves current public routes.
+- Design identifies migration steps, risks, rollback shape, and dashboard cleanup.
+- `openspec validate ... --strict` passes for the new change.
+- Tasks are bounded to the future implementation slice rather than broad architecture theater.
 - No blocker remains unrecorded in `.project/PROGRESS.md`.
 
 ## Specialists To Consult
 
-- Frontend/build specialist if package alignment creates dependency ambiguity.
-- Review specialist if evaluator results suggest collateral CI risk.
+- Vercel/deployment specialist if validation reveals missing deployment-spec context.
 
 ## Next Handoff Note
 
-Completed by realigning `frontend/package.json` to the locked `vite`/`vitest` versions already used in the workspace. Next bounded unit should return to phase-03 backend work unless new CI failures appear.
+Completed: `@fission-ai/openspec` was added at the repo root and `npx openspec validate update-vercel-single-project-services --strict` passed. The next slice should implement the root Vercel Services config and remove external backend rewrites without changing public URLs.
