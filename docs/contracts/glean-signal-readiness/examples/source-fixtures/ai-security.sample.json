@@ -1,0 +1,16 @@
+{
+  "source_type": "ai_security",
+  "source_availability": "available",
+  "export_channel": "customer_event_logs",
+  "scrub_status": "scrubbed",
+  "join_keys_present": ["workflow_run_id", "event_timestamp"],
+  "derived_dimensions": ["leadership_reinforcement", "exposure"],
+  "governance_hold": true,
+  "governance_hold_reasons": ["policy_review_required"],
+  "data_quality": {
+    "completeness": "partial",
+    "latency": "known",
+    "join_reliability": "partial"
+  },
+  "validation_note": "AI Security aggregates require governance approval before use."
+}

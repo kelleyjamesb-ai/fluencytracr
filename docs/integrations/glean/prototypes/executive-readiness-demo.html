@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FluencyTracr Glean Readiness Executive Demo</title>
+  <style>
+    :root {
+      --ink: #15171a;
+      --muted: #616a73;
+      --line: #d9dde3;
+      --surface: #ffffff;
+      --wash: #f4f6f8;
+      --blue: #276ef1;
+      --green: #16885a;
+      --amber: #b96d10;
+      --red: #c2413a;
+      --steel: #68758a;
+      --teal: #0f766e;
+      --violet: #6d5bd0;
+      --shadow: 0 14px 38px rgba(21, 23, 26, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef1f4;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 264px 1fr;
+    }
+
+    .sidebar {
+      background: #1b2430;
+      color: #f8fafc;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 6px;
+      padding: 0 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .brand strong {
+      font-size: 17px;
+    }
+
+    .brand span {
+      color: #b8c2cf;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button,
+    .agent-prompts button,
+    .state-button,
+    .drill-button {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .nav button {
+      text-align: left;
+      padding: 11px 12px;
+      background: transparent;
+      color: #d8dee8;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: rgba(255, 255, 255, 0.11);
+      color: #ffffff;
+    }
+
+    .note {
+      margin-top: auto;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      padding: 12px;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    main {
+      padding: 26px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.12;
+      font-weight: 760;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      max-width: 780px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: #47515d;
+      font-size: 12px;
+      box-shadow: 0 6px 18px rgba(21, 23, 26, 0.06);
+    }
+
+    .badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .graph-grid {
+      display: grid;
+      grid-template-columns: 1.08fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 16px 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--steel);
+      font-size: 11px;
+      font-weight: 720;
+      text-transform: uppercase;
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .metric {
+      font-size: 36px;
+      font-weight: 780;
+      line-height: 1;
+      margin: 2px 0 6px;
+    }
+
+    .metric-sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .donut-wrap {
+      display: grid;
+      grid-template-columns: 142px 1fr;
+      align-items: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .donut {
+      width: 142px;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #fff 0 45%, transparent 46%),
+        conic-gradient(var(--green) 0 50%, var(--amber) 50% 66.6%, var(--red) 66.6% 83.3%, var(--steel) 83.3% 100%);
+      border: 1px solid var(--line);
+      padding: 0;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 780;
+    }
+
+    .donut:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(21, 23, 26, 0.12);
+    }
+
+    .legend {
+      display: grid;
+      gap: 9px;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 10px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #35404c;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .present { background: var(--green); }
+    .not-computed { background: var(--amber); }
+    .suppressed { background: var(--red); }
+    .missing { background: var(--steel); }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 40px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+      color: #35404c;
+    }
+
+    .bar-track {
+      height: 12px;
+      border-radius: 999px;
+      background: #e9edf2;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--blue);
+    }
+
+    .unlock-chart {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .unlock-row {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .unlock-label {
+      color: #35404c;
+      font-size: 13px;
+    }
+
+    .unlock-track {
+      height: 28px;
+      background: #e9edf2;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .unlock-fill {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: inherit;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .summary-item {
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .summary-item strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .summary-item span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .signal-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      min-height: 142px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      cursor: pointer;
+    }
+
+    .signal-card:hover,
+    .signal-card.active {
+      border-color: var(--blue);
+      box-shadow: 0 10px 24px rgba(39, 110, 241, 0.12);
+    }
+
+    .status-pill {
+      width: max-content;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 760;
+      color: #fff;
+    }
+
+    .status-pill.present { background: var(--green); }
+    .status-pill.not_computed { background: var(--amber); }
+    .status-pill.suppressed { background: var(--red); }
+    .status-pill.missing { background: var(--steel); }
+
+    .signal-card h3 {
+      font-size: 15px;
+    }
+
+    .signal-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.38;
+    }
+
+    .state-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .state-button,
+    .drill-button:not(.donut) {
+      padding: 9px 11px;
+      background: #fff;
+      border-color: var(--line);
+      color: #35404c;
+      font-size: 13px;
+    }
+
+    .state-button:hover,
+    .state-button.active,
+    .drill-button:not(.donut):hover {
+      border-color: var(--blue);
+      background: #edf4ff;
+      color: #174ea6;
+    }
+
+    .detail-copy {
+      color: #384553;
+      line-height: 1.52;
+      font-size: 14px;
+    }
+
+    .detail-copy ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+    }
+
+    .detail-copy li {
+      margin: 7px 0;
+    }
+
+    .agent-shell {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 16px;
+    }
+
+    .agent-prompts {
+      display: grid;
+      gap: 10px;
+    }
+
+    .agent-prompts button {
+      text-align: left;
+      padding: 12px;
+      background: #f8fafc;
+      border-color: var(--line);
+      color: #26313d;
+    }
+
+    .answer {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 16px;
+      min-height: 240px;
+    }
+
+    .answer p {
+      margin: 0 0 12px;
+      color: #35404c;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .answer strong {
+      color: var(--ink);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .timeline-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .rank {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #edf4ff;
+      color: #174ea6;
+      font-weight: 760;
+      font-size: 12px;
+    }
+
+    .owner {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+
+      .nav {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .graph-grid,
+      .content-grid,
+      .agent-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-strip,
+      .signal-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 18px;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      .nav,
+      .summary-strip,
+      .signal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .donut-wrap,
+      .bar-row,
+      .unlock-row,
+      .timeline-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <strong>FluencyTracr</strong>
+        <span>Glean readiness impact prototype for executive review.</span>
+      </div>
+      <nav class="nav" aria-label="Prototype views">
+        <button class="active" data-view="overview" type="button">Executive Overview</button>
+        <button data-view="readiness" type="button">Signal Readiness</button>
+        <button data-view="evidence" type="button">Evidence Impact</button>
+        <button data-view="unlocks" type="button">Unlock Plan</button>
+        <button data-view="agent" type="button">Agent Brief</button>
+      </nav>
+      <div class="note">
+        Synthetic executive demo data. Aggregate only. No person-level views, rankings, raw prompts, model outputs, or conversation content.
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h1>AI Fluency Readiness for Northstar Enterprise</h1>
+          <p class="subtitle">An executive product prototype showing what FluencyTracr can measure from Glean-ready signals, what is blocked, and which decisions unlock the next layer of organizational AI fluency evidence.</p>
+        </div>
+        <div class="badge">Synthetic executive demo data</div>
+      </div>
+
+      <section id="overview" class="view active" aria-label="Executive Overview">
+        <div class="graph-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">AI Fluency Readiness</p>
+                <h2>3 of 6 Glean signal families are measurable now</h2>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="metric">50%</div>
+              <p class="metric-sub">Ready signal coverage for this synthetic weekly org-window.</p>
+              <div class="donut-wrap">
+                <button class="donut drill-button" data-view="readiness" type="button" aria-label="Open signal readiness">50%</button>
+                <div class="legend">
+                  <div class="legend-row"><span class="dot present"></span><span>Present</span><strong>3</strong></div>
+                  <div class="legend-row"><span class="dot not-computed"></span><span>Not computed</span><strong>1</strong></div>
+                  <div class="legend-row"><span class="dot suppressed"></span><span>Suppressed</span><strong>1</strong></div>
+                  <div class="legend-row"><span class="dot missing"></span><span>Missing</span><strong>1</strong></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Evidence Coverage</p>
+                <h2>Coverage is strongest for usage and behavior change</h2>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="bar-list">
+                <div class="bar-row"><span>Usage quality</span><div class="bar-track"><div class="bar-fill" style="width: 78%; background: var(--teal)"></div></div><strong>78</strong></div>
+                <div class="bar-row"><span>Behavior change</span><div class="bar-track"><div class="bar-fill" style="width: 72%; background: var(--blue)"></div></div><strong>72</strong></div>
+                <div class="bar-row"><span>Capability growth</span><div class="bar-track"><div class="bar-fill" style="width: 42%; background: var(--violet)"></div></div><strong>42</strong></div>
+                <div class="bar-row"><span>Leadership signal</span><div class="bar-track"><div class="bar-fill" style="width: 20%; background: var(--amber)"></div></div><strong>20</strong></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Unlock Value</p>
+                <h2>Three decisions increase evidence depth</h2>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="unlock-chart">
+                <div class="unlock-row"><span class="unlock-label">MCP Usage</span><div class="unlock-track"><div class="unlock-fill" style="width: 84%; background: var(--blue)">High value</div></div></div>
+                <div class="unlock-row"><span class="unlock-label">AI Security</span><div class="unlock-track"><div class="unlock-fill" style="width: 68%; background: var(--red)">Approval needed</div></div></div>
+                <div class="unlock-row"><span class="unlock-label">Skill Lifecycle</span><div class="unlock-track"><div class="unlock-fill" style="width: 52%; background: var(--violet)">Data gap</div></div></div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="summary-strip">
+          <div class="summary-item"><strong>5</strong><span>AI fluency dimensions represented in the evidence model.</span></div>
+          <div class="summary-item"><strong>3</strong><span>Ready Glean signal families usable without raw content.</span></div>
+          <div class="summary-item"><strong>2</strong><span>Governance or data-access gates blocking higher depth.</span></div>
+          <div class="summary-item"><strong>1</strong><span>Missing capability-growth signal to validate next.</span></div>
+        </div>
+
+        <div class="content-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Executive interpretation</p>
+                <h2>What this changes</h2>
+              </div>
+            </div>
+            <div class="panel-body detail-copy">
+              <p>FluencyTracr gives executives a safe way to see which AI fluency outcomes can be measured now from Glean-ready aggregate signals, and which decisions unlock the next layer of evidence.</p>
+              <ul>
+                <li><strong>Current value:</strong> usage quality, behavior change, and coverage can be shown without person-level attribution.</li>
+                <li><strong>Primary gap:</strong> MCP Usage needs export and scrub confirmation before it can support capability-growth and calibration evidence.</li>
+                <li><strong>Governance decision:</strong> AI Security aggregates need approved use before exposure or leadership reinforcement claims appear.</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Click path</p>
+                <h2>Where an executive goes next</h2>
+              </div>
+            </div>
+            <div class="panel-body detail-copy">
+              <button class="drill-button" data-view="readiness" type="button">Inspect signal readiness</button>
+              <button class="drill-button" data-view="evidence" type="button">Review evidence impact</button>
+              <button class="drill-button" data-view="unlocks" type="button">See unlock plan</button>
+              <button class="drill-button" data-view="agent" type="button">Ask Glean Agent</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="readiness" class="view" aria-label="Signal Readiness">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Signal Readiness</p>
+              <h2>Click a readiness state or signal family</h2>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="state-controls" aria-label="Readiness filters">
+              <button class="state-button active" data-filter="present" type="button">Present</button>
+              <button class="state-button" data-filter="not_computed" type="button">Not computed</button>
+              <button class="state-button" data-filter="suppressed" type="button">Suppressed</button>
+              <button class="state-button" data-filter="missing" type="button">Missing</button>
+            </div>
+            <div class="signal-grid" id="signalGrid" style="margin-top:16px"></div>
+          </div>
+        </div>
+
+        <div class="content-grid" style="margin-top:16px">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Meaning</p>
+                <h2 id="stateTitle">Present signals</h2>
+              </div>
+            </div>
+            <div class="panel-body detail-copy" id="stateDetail"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Decision lens</p>
+                <h2>What leaders can decide</h2>
+              </div>
+            </div>
+            <div class="panel-body detail-copy" id="decisionDetail"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="evidence" class="view" aria-label="Evidence Impact">
+        <div class="graph-grid">
+          <article class="panel">
+            <div class="panel-header"><div><p class="eyebrow">Evidence Impact</p><h2>Coverage and behavior-change evidence is ready</h2></div></div>
+            <div class="panel-body detail-copy">
+              <p><strong>Coverage:</strong> WorkflowRun, AgentRun, and Search Retrieval are instrumented in the seeded scenario.</p>
+              <p><strong>Calibration:</strong> Verification presence can be supported by retrieval signals once the source is confirmed for the customer.</p>
+              <p><strong>Suppression:</strong> AI Security remains withheld until approved for this product use.</p>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-header"><div><p class="eyebrow">AI fluency dimensions</p><h2>Where evidence is currently strongest</h2></div></div>
+            <div class="panel-body">
+              <div class="bar-list">
+                <div class="bar-row"><span>Confidence</span><div class="bar-track"><div class="bar-fill" style="width: 36%; background: var(--steel)"></div></div><strong>36</strong></div>
+                <div class="bar-row"><span>Usage Quality</span><div class="bar-track"><div class="bar-fill" style="width: 78%; background: var(--teal)"></div></div><strong>78</strong></div>
+                <div class="bar-row"><span>Behavior Change</span><div class="bar-track"><div class="bar-fill" style="width: 72%; background: var(--blue)"></div></div><strong>72</strong></div>
+                <div class="bar-row"><span>Leadership</span><div class="bar-track"><div class="bar-fill" style="width: 20%; background: var(--amber)"></div></div><strong>20</strong></div>
+                <div class="bar-row"><span>Capability Growth</span><div class="bar-track"><div class="bar-fill" style="width: 42%; background: var(--violet)"></div></div><strong>42</strong></div>
+              </div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-header"><div><p class="eyebrow">Business outcome</p><h2>From data access to behavior change</h2></div></div>
+            <div class="panel-body detail-copy">
+              <p>The product story is not "we have more telemetry." It is: leaders can see where AI is changing work, where governance is blocking evidence, and what unlock moves the organization toward measurable fluency.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="unlocks" class="view" aria-label="Unlock Plan">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Unlock Plan</p>
+              <h2>Three executive decisions increase measurement depth</h2>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="timeline">
+              <div class="timeline-row">
+                <div class="rank">1</div>
+                <div class="detail-copy"><strong>Confirm MCP Usage export and scrubbed field set.</strong><br>Unlocks capability-growth and safe-path calibration evidence without raw tool payloads.</div>
+                <div class="owner">Glean admin</div>
+              </div>
+              <div class="timeline-row">
+                <div class="rank">2</div>
+                <div class="detail-copy"><strong>Approve AI Security aggregate use.</strong><br>Allows exposure and leadership reinforcement evidence only after governance confirms allowed aggregate flags.</div>
+                <div class="owner">Data governance</div>
+              </div>
+              <div class="timeline-row">
+                <div class="rank">3</div>
+                <div class="detail-copy"><strong>Validate Skill Lifecycle availability.</strong><br>Shows whether skills are becoming repeatable assets, not just isolated AI usage.</div>
+                <div class="owner">Data governance</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="agent" class="view" aria-label="Agent Brief">
+        <div class="agent-shell">
+          <article class="panel">
+            <div class="panel-header"><div><p class="eyebrow">Ask Glean Agent</p><h2>Executive-safe prompts</h2></div></div>
+            <div class="panel-body">
+              <div class="agent-prompts">
+                <button type="button" data-answer="ready">Which Glean signals are ready?</button>
+                <button type="button" data-answer="blocked">What is blocked and why?</button>
+                <button type="button" data-answer="decision">What decision should leadership make next?</button>
+              </div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-header"><div><p class="eyebrow">Agent Brief</p><h2>Strict readiness summary</h2></div></div>
+            <div class="panel-body">
+              <div class="answer" id="agentAnswer"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const signals = [
+      { name: "WorkflowRun", state: "present", summary: "Supports aggregate usage quality, behavior change, and coverage.", decision: "Use now for the executive overview." },
+      { name: "AgentRun", state: "present", summary: "Supports aggregate behavior change, capability growth, and coverage.", decision: "Use now when agent-run metadata is included in the customer snapshot." },
+      { name: "Search Retrieval", state: "present", summary: "Supports aggregate usage quality, calibration, and coverage.", decision: "Use now for evidence-seeking behavior, without document content." },
+      { name: "MCP Usage", state: "not_computed", summary: "Approved in concept, but export availability and scrubbed fields need confirmation.", decision: "Ask the Glean admin to confirm export path and safe field set." },
+      { name: "AI Security", state: "suppressed", summary: "Available as aggregate posture, withheld until governance approves allowed use.", decision: "Ask data governance which aggregate policy flags can support exposure evidence." },
+      { name: "Skill Lifecycle", state: "missing", summary: "Not available in the current readiness snapshot.", decision: "Validate whether skill creation, publication, and reuse events can be exported safely." }
+    ];
+
+    const stateCopy = {
+      present: {
+        title: "Present signals",
+        body: "<p>These signals can contribute to aggregate evidence today. They support the executive story without raw content or person-level attribution.</p><ul><li>WorkflowRun anchors usage quality and behavior-change coverage.</li><li>AgentRun expands behavior-change and capability-growth evidence.</li><li>Search Retrieval supports calibration and evidence-seeking behavior.</li></ul>",
+        decision: "<p>Use present signals in the executive overview now. The leadership action is to fund rollout and define the next measurement window.</p>"
+      },
+      not_computed: {
+        title: "Not-computed signals",
+        body: "<p>These are not zeros. They are evidence gaps where export availability, scrub status, or join reliability is not confirmed.</p><ul><li>MCP Usage is the key not-computed family in this demo.</li><li>It unlocks richer capability-growth and safe-path calibration evidence.</li></ul>",
+        decision: "<p>Ask the Glean admin to confirm MCP Usage export availability and safe fields before making measurement claims.</p>"
+      },
+      suppressed: {
+        title: "Suppressed signals",
+        body: "<p>These signals may exist, but FluencyTracr withholds them until governance confirms approved use. Suppression keeps the executive surface credible.</p><ul><li>AI Security is held for policy review.</li><li>No hidden values are inferred from suppressed status.</li></ul>",
+        decision: "<p>Ask data governance to approve which aggregate AI Security flags can support exposure and leadership reinforcement evidence.</p>"
+      },
+      missing: {
+        title: "Missing signals",
+        body: "<p>These signals are not available in the current readiness snapshot. They identify the clearest data-access or product gap.</p><ul><li>Skill Lifecycle is missing in this demo.</li><li>This is the strongest next gap for capability-growth measurement.</li></ul>",
+        decision: "<p>Validate whether skill lifecycle events can be exported or queried safely before treating skill reuse as measurable.</p>"
+      }
+    };
+
+    const answers = {
+      ready: "<p><strong>Three signal families are ready:</strong> WorkflowRun, AgentRun, and Search Retrieval. They support aggregate usage quality, behavior change, capability growth, calibration, and coverage evidence.</p><p>I would present these as measurable-now signals and keep all blocked signals visible as readiness gaps.</p>",
+      blocked: "<p><strong>Two areas need action:</strong> MCP Usage is not computed because export and scrub status are unconfirmed. AI Security is suppressed until governance approves aggregate use.</p><p>I would not infer either signal into evidence until those gates are cleared.</p>",
+      decision: "<p><strong>Recommended next decision:</strong> confirm MCP Usage export availability first. It has the highest unlock value because it expands capability-growth and safe-path calibration evidence.</p><p>Second, approve the specific AI Security aggregate fields allowed for exposure evidence.</p>"
+    };
+
+    function showView(viewName) {
+      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewName));
+      document.querySelectorAll("[data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === viewName));
+    }
+
+    function renderSignals(filter = "present") {
+      const grid = document.getElementById("signalGrid");
+      grid.innerHTML = "";
+      signals.forEach((signal) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = `signal-card ${signal.state === filter ? "active" : ""}`;
+        card.dataset.filter = signal.state;
+        card.innerHTML = `
+          <span class="status-pill ${signal.state}">${signal.state.replace("_", " ")}</span>
+          <h3>${signal.name}</h3>
+          <p>${signal.summary}</p>
+        `;
+        card.addEventListener("click", () => setFilter(signal.state));
+        grid.appendChild(card);
+      });
+      document.querySelectorAll(".state-button").forEach((button) => button.classList.toggle("active", button.dataset.filter === filter));
+      document.getElementById("stateTitle").textContent = stateCopy[filter].title;
+      document.getElementById("stateDetail").innerHTML = stateCopy[filter].body;
+      document.getElementById("decisionDetail").innerHTML = stateCopy[filter].decision;
+    }
+
+    function setFilter(filter) {
+      renderSignals(filter);
+      showView("readiness");
+    }
+
+    document.querySelectorAll("[data-view]").forEach((button) => {
+      button.addEventListener("click", () => showView(button.dataset.view));
+    });
+
+    document.querySelectorAll(".state-button").forEach((button) => {
+      button.addEventListener("click", () => setFilter(button.dataset.filter));
+    });
+
+    document.querySelectorAll("[data-answer]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.getElementById("agentAnswer").innerHTML = answers[button.dataset.answer];
+      });
+    });
+
+    renderSignals("present");
+    document.getElementById("agentAnswer").innerHTML = answers.ready;
+  </script>
+</body>
+</html>

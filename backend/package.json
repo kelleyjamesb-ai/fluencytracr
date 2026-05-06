@@ -1,7 +1,7 @@
 {
   "name": "@learnaire/backend",
   "version": "0.1.0",
-  "main": "dist/index.js",
+  "main": "dist/vercel.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "DEV_HEADER_AUTH=true ts-node-dev --respawn --transpile-only src/index.ts",

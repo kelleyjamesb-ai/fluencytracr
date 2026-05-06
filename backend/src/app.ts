@@ -3140,6 +3140,17 @@ app.post("/api/ingest/unified-telemetry", ingestLimiter, (req, res) => {
     });
   });
 
+  if (req.authOrgId) {
+    const mismatchedIndex = acceptedEvents.findIndex((event) => event.org_id !== req.authOrgId);
+    if (mismatchedIndex >= 0) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Token org scope does not match request org",
+        index: mismatchedIndex + 1
+      });
+    }
+  }
+
   acceptedEvents.forEach((event) => {
     insertUnifiedTelemetryEvent(event);
   });
@@ -3934,7 +3945,15 @@ app.get(
         details: parsed.error.flatten()
       });
     }
-    const events = Array.from(store.fluencyEvents.values());
+    const events = Array.from(store.fluencyEvents.values()).filter((event) => {
+      if (!req.authOrgId) {
+        return true;
+      }
+      return (
+        typeof event.org_unit === "string" &&
+        (event.org_unit === `org:${req.authOrgId}` || event.org_unit.startsWith(`org:${req.authOrgId}:`))
+      );
+    });
     const traces = reconstructTracesForQuery(events, parsed.data);
     const includeSignals =
       req.query.include_signals === "true" ||
