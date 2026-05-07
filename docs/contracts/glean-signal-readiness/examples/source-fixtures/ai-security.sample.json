@@ -12,5 +12,5 @@
     "latency": "known",
     "join_reliability": "partial"
   },
-  "validation_note": "AI Security aggregates require governance approval before use."
+  "validation_note_code": "ai_security_governance_review_required"
 }

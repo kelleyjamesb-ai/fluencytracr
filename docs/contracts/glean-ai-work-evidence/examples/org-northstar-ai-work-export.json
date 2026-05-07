@@ -1,0 +1,116 @@
+{
+  "schema_version": "GAW_2026_05",
+  "registry_id": "glean-default-value-claims",
+  "org_id": "org-northstar",
+  "window": "weekly",
+  "generated_at": "2026-05-07T00:00:00.000Z",
+  "source_system": "Glean",
+  "records": [
+    {
+      "lane": "surface_usage",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "join_keys_present": ["workflow_run_id", "chat_session_id"],
+      "derived_dimensions": ["usage_quality", "coverage"],
+      "governance_hold": false,
+      "governance_hold_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "note_code": "covered_assistance_surfaces_available"
+    },
+    {
+      "lane": "skill_lifecycle",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "not_applicable",
+      "join_keys_present": ["skill_artifact_id", "event_timestamp"],
+      "derived_dimensions": ["capability_growth", "coverage"],
+      "governance_hold": false,
+      "governance_hold_reasons": [],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "note_code": "skill_lifecycle_available"
+    },
+    {
+      "lane": "agent_lifecycle",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "join_keys_present": ["run_id", "workflow_run_id", "trace_id"],
+      "derived_dimensions": ["behavior_change", "capability_growth", "coverage"],
+      "governance_hold": false,
+      "governance_hold_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "note_code": "agent_lifecycle_available"
+    },
+    {
+      "lane": "mcp_action_boundary",
+      "source_availability": "approved_pending_export",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "unknown",
+      "join_keys_present": ["workflow_run_id", "tool_id"],
+      "derived_dimensions": ["calibration", "coverage"],
+      "governance_hold": false,
+      "governance_hold_reasons": [],
+      "data_quality": {
+        "completeness": "unknown",
+        "latency": "unknown",
+        "join_reliability": "partial"
+      },
+      "note_code": "mcp_boundary_unconfirmed",
+      "recommended_next_action": {
+        "action_code": "confirm_mcp_boundary_logs",
+        "owner": "glean_admin",
+        "priority": "high"
+      }
+    },
+    {
+      "lane": "artifact_output",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "not_applicable",
+      "join_keys_present": ["workflow_run_id", "action_run_id"],
+      "derived_dimensions": ["usage_quality", "coverage"],
+      "governance_hold": false,
+      "governance_hold_reasons": [],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "note_code": "artifact_outputs_available"
+    },
+    {
+      "lane": "control_evidence",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "join_keys_present": ["workflow_run_id", "event_timestamp"],
+      "derived_dimensions": ["exposure", "leadership_reinforcement"],
+      "governance_hold": true,
+      "governance_hold_reasons": ["policy_review_required"],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "partial"
+      },
+      "note_code": "control_evidence_suppressed",
+      "recommended_next_action": {
+        "action_code": "approve_control_evidence",
+        "owner": "data_governance",
+        "priority": "high"
+      }
+    }
+  ]
+}

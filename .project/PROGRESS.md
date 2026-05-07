@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Glean trust-layer deep dive: created `artifacts/glean_trust_layer_deep_dive_2026-05-07.md` and plan artifact on branch `cursor/glean-trust-layer-deep-dive-c7e6`; no queue status changed because this was a bounded user-requested strategy slice.
 - Agent governance wiring: `.project/*`, `agents/core`, `agents/review`, `agents/README.md`.
 - Implementation blueprint: `artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md` (v1 build plan §1–17).
 - Frontend CI matcher regression repair: realigned `frontend/package.json` with locked `vite`/`vitest` versions, eliminating invalid workspace resolutions and restoring `ProtectedRoute.test.tsx`.
@@ -31,6 +32,15 @@
 - Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
 - The executive HTML prototype is complete as a bounded user-requested slice; queue status was not changed.
 - Out-of-band Vercel Services implementation is deployed to production at `https://learn-air-engable-tool-frontend.vercel.app`; authenticated `/health` returns `db: "ok"`.
+- Out-of-band Glean trust-layer strategy artifact is complete; the referenced enclosed paper was not found on disk and should be added by path before a paper-specific appendix is written.
+- Out-of-band Glean Value Evidence execution plan is complete; it reframes the insertable product around Glean client value evidence across Search/Chat, Skills, Auto Mode Agents, triggered Agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
+- Glean Value Evidence Pack contract slice is complete: OpenSpec `add-glean-value-evidence-pack`, shared `GVE_2026_05` Zod schema, contract docs, synthetic example, and backend schema tests.
+- Glean Claim Registry contract slice is complete: OpenSpec `add-glean-claim-registry`, shared `GCR_2026_05` schemas, default 10-template registry, org-window evaluation example, registry-aware mapping into Value Evidence Pack claim readiness, and a Glean value governance gate.
+- Glean Assumption Ledger contract slice is complete: OpenSpec `add-glean-assumption-ledger`, shared `GAL_2026_05` schema, Time-Saves-seeded assumption ledger example, targeted tests, and governance gate coverage for low-confidence/high-sensitivity customer-facing assumptions.
+- Glean Skills + Auto Mode Agent readiness slice is complete: source readiness adapter supports `agent_run` and `skill_lifecycle`, source fixtures use closed note/action codes, source-derived readiness map includes Skills and Auto Mode Agents as current value surfaces, and privacy tests reject arbitrary free text.
+- Glean AI Work Evidence adapter slice is complete: OpenSpec `add-glean-ai-work-evidence-adapter`, shared `GAW_2026_05` metadata-only schema, readiness inventory mapping, registry-aware claim evaluation mapping, docs/example, and targeted tests.
+- Glean Value Evidence MCP tools slice is complete: OpenSpec `add-glean-value-evidence-mcp-tools`, strict value evidence summary helper, four bounded MCP tools, docs updates, audit/error hardening, and MCP tests.
+- Glean Value Evidence Pack prototype slice is complete: static synthetic HTML prototype, validator, and demo-guide links for QBR-safe claim readiness, evidence coverage, instrumentation gaps, and Glean Agent answer flow.
 
 ## Blockers
 
@@ -43,3 +53,4 @@
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
+- If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; remaining hardening should include full-suite verification, optional linkcheck, and review/archive decisions for completed OpenSpec changes.

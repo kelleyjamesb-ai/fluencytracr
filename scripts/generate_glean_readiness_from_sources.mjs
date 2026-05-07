@@ -14,6 +14,8 @@ const DEFAULTS = {
   window: "weekly",
   generatedAt: "2026-05-01T13:00:00.000Z",
   workflowRun: "docs/contracts/glean-signal-readiness/examples/source-fixtures/workflow-run.sample.json",
+  agentRun: "docs/contracts/glean-signal-readiness/examples/source-fixtures/auto-mode-agent.sample.json",
+  skillLifecycle: "docs/contracts/glean-signal-readiness/examples/source-fixtures/skill-lifecycle.sample.json",
   mcpUsage: "docs/contracts/glean-signal-readiness/examples/source-fixtures/mcp-usage.sample.json",
   aiSecurity: "docs/contracts/glean-signal-readiness/examples/source-fixtures/ai-security.sample.json",
   output: "docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json"
@@ -25,6 +27,16 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === "--workflow-run") {
       args.workflowRun = argv[i + 1];
+      i += 1;
+      continue;
+    }
+    if (arg === "--agent-run") {
+      args.agentRun = argv[i + 1];
+      i += 1;
+      continue;
+    }
+    if (arg === "--skill-lifecycle") {
+      args.skillLifecycle = argv[i + 1];
       i += 1;
       continue;
     }
@@ -64,7 +76,7 @@ function parseArgs(argv) {
     }
     if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: node scripts/generate_glean_readiness_from_sources.mjs [--workflow-run path] [--mcp-usage path] [--ai-security path] [--output path] [--stdout]"
+        "Usage: node scripts/generate_glean_readiness_from_sources.mjs [--workflow-run path] [--agent-run path] [--skill-lifecycle path] [--mcp-usage path] [--ai-security path] [--output path] [--stdout]"
       );
       process.exit(0);
     }
@@ -83,7 +95,13 @@ const sourceExport = {
   org_id: args.orgId,
   window: args.window,
   generated_at: args.generatedAt,
-  records: [readRecord(args.workflowRun), readRecord(args.mcpUsage), readRecord(args.aiSecurity)]
+  records: [
+    readRecord(args.workflowRun),
+    readRecord(args.agentRun),
+    readRecord(args.skillLifecycle),
+    readRecord(args.mcpUsage),
+    readRecord(args.aiSecurity)
+  ]
 };
 
 const inventory = mapGleanSourcesToReadinessInventory(sourceExport);

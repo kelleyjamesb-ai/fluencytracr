@@ -1,0 +1,16 @@
+{
+  "source_type": "skill_lifecycle",
+  "source_availability": "available",
+  "export_channel": "customer_event_logs",
+  "scrub_status": "not_applicable",
+  "join_keys_present": ["skill_artifact_id", "event_timestamp"],
+  "derived_dimensions": ["capability_growth", "coverage"],
+  "governance_hold": false,
+  "governance_hold_reasons": [],
+  "data_quality": {
+    "completeness": "partial",
+    "latency": "known",
+    "join_reliability": "stable"
+  },
+  "validation_note_code": "skill_lifecycle_available"
+}

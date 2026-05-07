@@ -13,7 +13,7 @@
     "join_reliability": "partial"
   },
   "recommended_next_action": {
-    "action": "Confirm MCP Usage export availability and scrubbed field set.",
+    "action_code": "confirm_mcp_usage_export",
     "owner": "glean_admin",
     "priority": "high"
   }

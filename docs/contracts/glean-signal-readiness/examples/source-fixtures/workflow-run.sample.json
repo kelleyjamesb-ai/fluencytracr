@@ -12,5 +12,5 @@
     "latency": "known",
     "join_reliability": "stable"
   },
-  "validation_note": "WorkflowRun aggregate fields are available without raw content."
+  "validation_note_code": "workflow_run_aggregate_available"
 }

@@ -14,6 +14,8 @@ References:
 - "Is learning trend improving, stable, degrading, suppressed, or not computed?"
 - "Which Glean signal families are ready for evidence derivation?"
 - "Which Glean signal families are missing, suppressed, or not computed, and what needs to unlock them?"
+- "Which Glean value claims are safe, caveated, suppressed, or not computed for this org-window?"
+- "Is a specific Glean value claim safe to use in a QBR or renewal packet?"
 
 ### Expanded org-level classes (still executive-safe)
 - "Which expected instrumentation sources are present versus missing for this org-window?" (coverage only; no team slice)
@@ -25,6 +27,7 @@ References:
 Machine-checked template builder (strict JSON, no extra keys): `@learnaire/fluencytracr-mcp` exports `buildAgentEvidenceResponse` / `validateAgentEvidenceResponse`.
 Preferred MCP read tool for Glean Agents: `fluency.get_agent_evidence_summary`.
 Preferred MCP readiness tool for Glean Agents: `fluency.get_signal_readiness_summary`.
+Preferred MCP value-readiness tool for Glean Agents: `fluency.get_value_claim_readiness_summary`.
 
 Out of scope question classes:
 - Any team-level or manager-level comparison request
@@ -36,6 +39,10 @@ Agent tools may call only bounded, read-only evidence routes plus ingestion faca
 - `fluency.get_agent_evidence_summary` for the strict agent-safe summary template
 - `fluency.get_signal_readiness_summary` for agent-safe Glean readiness counts, non-computable families, suppression state, and next actions
 - `fluency.get_signal_readiness_map` for trusted aggregate readiness map access when the full `GSR_2026_05` contract is required
+- `fluency.get_value_claim_readiness_summary` for agent-safe Glean value claim posture, customer-safe claims, non-computable claims, and next instrumentation actions
+- `fluency.evaluate_claim_safety` for one registered claim's readiness and language state
+- `fluency.get_non_computable_value_claims` for suppressed or not-computed value claims and reason codes
+- `fluency.get_value_evidence_pack` for trusted aggregate `GVE_2026_05` access when the full contract is required
 - `GET /api/evidence/bundles/:orgId?window=<daily|weekly|30d|60d|90d|180d|360d|3m|6m|12m>`
 - `GET /api/evidence/coverage/:orgId?window=<...>` (same window enum as bundles)
 - `GET /api/evidence/controls/:orgId?window=<...>` (same window enum as bundles)
@@ -73,6 +80,20 @@ Required fields:
 - `calibration`
 - `fragility`
 - `coverage_summary`
+- `decision_safe_guidance`
+
+## Value readiness response template
+Required fields:
+- `org_id`
+- `window`
+- `generated_at`
+- `source_system`
+- `value_posture`
+- `evidence_lanes`
+- `claim_readiness_counts`
+- `customer_safe_claims`
+- `non_computable_claims`
+- `next_instrumentation_actions`
 - `decision_safe_guidance`
 
 ## Readiness response template

@@ -20,7 +20,9 @@ The reviewer takeaway:
 | Source-derived readiness map | `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json` | Realistic local fixture path from WorkflowRun, MCP Usage, and AI Security source records |
 | Derived EvidenceBundle fixture | `docs/contracts/evidence-bundle/v1/examples/glean-readiness-derived.json` | EvidenceBundle v1 output derived from validated readiness |
 | Executive clickable prototype | `docs/integrations/glean/prototypes/executive-readiness-demo.html` | Static HTML executive demo with synthetic data, top-level graphs, and drill-down click paths |
+| Value Evidence Pack prototype | `docs/integrations/glean/prototypes/value-evidence-pack-demo.html` | Static HTML demo showing QBR-safe value claim readiness, evidence coverage, and instrumentation gaps |
 | MCP readiness summary tool | `fluency.get_signal_readiness_summary` | Agent-safe answer path for readiness questions |
+| MCP value readiness summary tool | `fluency.get_value_claim_readiness_summary` | Agent-safe answer path for value claim readiness questions |
 | MCP trusted map tool | `fluency.get_signal_readiness_map` | Full aggregate readiness map for trusted systems only |
 
 ## One-Page Narrative
@@ -85,13 +87,20 @@ npm test --workspace @learnaire/fluencytracr-mcp -- --run src/tools.test.ts
 node scripts/validate_glean_executive_prototype.mjs
 ```
 
-7. Open the static HTML prototype directly in a browser:
+7. Validate the Value Evidence Pack prototype:
+
+```bash
+node scripts/validate_glean_value_evidence_prototype.mjs
+```
+
+8. Open the static HTML prototypes directly in a browser:
 
 ```text
 docs/integrations/glean/prototypes/executive-readiness-demo.html
+docs/integrations/glean/prototypes/value-evidence-pack-demo.html
 ```
 
-8. Run the full repository harness:
+9. Run the full repository harness:
 
 ```bash
 ./harness/scripts/verify.sh
@@ -107,6 +116,13 @@ Use `fluency.get_signal_readiness_summary` for:
 - "Is AI Security available for exposure evidence yet?"
 
 Use `fluency.get_signal_readiness_map` only when the full trusted aggregate `GSR_2026_05` contract is required.
+
+Use `fluency.get_value_claim_readiness_summary` for:
+
+- "Which Glean value claims are safe for this QBR?"
+- "Is the ROI claim customer-safe yet?"
+- "Which value claims are suppressed or not computed?"
+- "What instrumentation is needed before MCP action value can be claimed?"
 
 ## What This Does Not Do
 

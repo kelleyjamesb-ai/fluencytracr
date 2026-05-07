@@ -1,0 +1,201 @@
+{
+  "schema_version": "GVE_2026_05",
+  "org_id": "org-northstar",
+  "window": "weekly",
+  "generated_at": "2026-05-07T00:00:00.000Z",
+  "source_system": "Glean",
+  "value_posture": "directional",
+  "executive_summary": {
+    "summary": "Northstar has directional Glean value evidence across covered assistance surfaces and early reusable-work surfaces. Skills and Auto Mode Agents are visible as first-class lanes, but customer-facing ROI language remains caveated until assumptions and coverage are approved.",
+    "approved_language": "Covered Glean surfaces show directional value evidence for this window. Skills and agent lifecycle evidence are being instrumented, so ROI claims should be presented with coverage and assumption caveats.",
+    "caveats": [
+      "ROI translation is not yet finance-approved for customer-facing use.",
+      "Skill lifecycle and Auto Mode Agent evidence are aggregate and readiness-oriented in this synthetic example."
+    ]
+  },
+  "coverage_lanes": [
+    {
+      "lane": "surface_usage",
+      "evidence_state": "present",
+      "covered_surfaces": ["ui_chat", "ui_search", "ai_answers"],
+      "missing_surfaces": ["chat_api", "search_api", "gleanbot", "autocomplete"],
+      "notes": ["Current Time-Saves-style surfaces are represented as covered aggregate evidence."]
+    },
+    {
+      "lane": "skill_lifecycle",
+      "evidence_state": "present",
+      "covered_surfaces": ["skills"],
+      "missing_surfaces": [],
+      "notes": ["Skill evidence is aggregate lifecycle metadata only; no SKILL.md contents are included."]
+    },
+    {
+      "lane": "agent_lifecycle",
+      "evidence_state": "present",
+      "covered_surfaces": ["auto_mode_agents", "content_triggered_agents"],
+      "missing_surfaces": ["scheduled_agents"],
+      "notes": ["Agent evidence is limited to lifecycle, run, and status metadata."]
+    },
+    {
+      "lane": "mcp_action_boundary",
+      "evidence_state": "not_computed",
+      "covered_surfaces": [],
+      "missing_surfaces": ["mcp_actions", "embedded_hosts"],
+      "notes": ["MCP Insights and host attribution must be confirmed before action-boundary claims are customer-safe."]
+    },
+    {
+      "lane": "artifact_output",
+      "evidence_state": "present",
+      "covered_surfaces": ["canvas_artifacts"],
+      "missing_surfaces": [],
+      "notes": ["Artifact counts are aggregate and do not include file contents."]
+    },
+    {
+      "lane": "control_evidence",
+      "evidence_state": "suppressed",
+      "covered_surfaces": [],
+      "missing_surfaces": ["protect_runtime_controls"],
+      "notes": ["Runtime control details are withheld until governance approval is recorded."]
+    },
+    {
+      "lane": "assumptions",
+      "evidence_state": "present",
+      "covered_surfaces": [],
+      "missing_surfaces": [],
+      "notes": ["Base-rate and quality assumptions are present but not fully approved for customer-facing ROI claims."]
+    }
+  ],
+  "skill_lifecycle": {
+    "evidence_state": "present",
+    "skill_types": ["platform", "personal", "imported"],
+    "enabled_skill_count": 12,
+    "invocation_count": 840,
+    "successful_invocation_count": 680,
+    "reused_skill_count": 7,
+    "associated_agent_count": 4,
+    "notes": ["Aggregate skill lifecycle shows repeatable expertise emerging across account planning and support article workflows."]
+  },
+  "agent_lifecycle": {
+    "evidence_state": "present",
+    "agent_types": ["auto_mode", "content_triggered"],
+    "created_count": 9,
+    "tested_count": 8,
+    "enabled_count": 5,
+    "run_count": 210,
+    "completed_run_count": 174,
+    "failed_run_count": 18,
+    "retried_run_count": 22,
+    "artifact_output_count": 66,
+    "action_invocation_count": 44,
+    "notes": ["Auto Mode Agents have moved beyond draft creation into repeated test and run evidence."]
+  },
+  "mcp_action_boundary": {
+    "evidence_state": "not_computed",
+    "host_classes": ["managed_saas", "embedded_host"],
+    "approved_tool_count": 0,
+    "activity_log_state": "not_computed",
+    "hitl_state": "not_computed",
+    "policy_decision_state": "not_computed",
+    "host_attribution_confidence": "unknown",
+    "notes": ["MCP boundary evidence is modeled but not yet computable for this window."]
+  },
+  "artifact_outputs": {
+    "evidence_state": "present",
+    "artifact_types": ["document", "slide", "interactive_page", "spreadsheet"],
+    "created_count": 132,
+    "refreshed_count": 18,
+    "externally_shared_count": 0,
+    "notes": ["Artifact evidence is count-only and content-free."]
+  },
+  "control_evidence": {
+    "evidence_state": "suppressed",
+    "control_families": ["sensitive_content_policy", "runtime_ai_guardrail", "agent_alignment"],
+    "policy_surfaces": ["assistant", "interactive_agents", "automatic_agents"],
+    "policy_coverage_state": "suppressed",
+    "blocked_event_state": "suppressed",
+    "flagged_event_state": "suppressed",
+    "review_event_state": "suppressed",
+    "alignment_check_state": "suppressed",
+    "notes": ["Control evidence requires policy-owner approval before surfacing."]
+  },
+  "assumptions": {
+    "evidence_state": "present",
+    "assumption_count": 6,
+    "low_confidence_count": 2,
+    "high_sensitivity_assumption_count": 3,
+    "high_sensitivity_count": 3,
+    "low_confidence_assumption_count": 2,
+    "approved_for_customer_claims": false,
+    "approval_state": "internal_only",
+    "notes": ["Time-saved estimates remain directional while base-rate and recapture assumptions are under review."]
+  },
+  "claim_readiness": [
+    {
+      "claim_id": "glean.time_saved.covered_surfaces",
+      "claim_type": "time_saved",
+      "evaluation_state": "surface",
+      "evidence_state": "present",
+      "confidence_basis": "derived_aggregate",
+      "readiness_state": "customer_safe_with_caveats",
+      "language_mode": "customer_safe_with_caveats",
+      "reason_codes": ["directional_only", "coverage_limited"],
+      "contributing_lanes": ["surface_usage", "assumptions"],
+      "customer_safe_language": "Covered Glean assistance surfaces show directional time-saved evidence for this reporting window."
+    },
+    {
+      "claim_id": "glean.roi.customer_value_to_cost",
+      "claim_type": "roi",
+      "evaluation_state": "suppress",
+      "evidence_state": "not_safe_to_claim",
+      "confidence_basis": "assumption_backed",
+      "readiness_state": "suppressed",
+      "language_mode": "suppressed",
+      "reason_codes": ["roi_translation_not_approved", "assumption_dominates_result"],
+      "contributing_lanes": ["surface_usage", "assumptions"],
+      "customer_safe_language": null
+    },
+    {
+      "claim_id": "glean.skills.reusable_expertise_operationalized",
+      "claim_type": "skill_reuse",
+      "evaluation_state": "surface",
+      "evidence_state": "present",
+      "confidence_basis": "direct_observed",
+      "readiness_state": "customer_safe_with_caveats",
+      "language_mode": "customer_safe_with_caveats",
+      "reason_codes": ["directional_only"],
+      "contributing_lanes": ["skill_lifecycle"],
+      "customer_safe_language": "Aggregate Skill lifecycle evidence indicates reusable expertise is being operationalized."
+    },
+    {
+      "claim_id": "glean.mcp.governed_action_boundary",
+      "claim_type": "governed_action",
+      "evaluation_state": "suppress",
+      "evidence_state": "not_computed",
+      "confidence_basis": "insufficient",
+      "readiness_state": "not_computed",
+      "language_mode": "suppressed",
+      "reason_codes": ["missing_source"],
+      "contributing_lanes": [],
+      "customer_safe_language": null
+    }
+  ],
+  "next_instrumentation_actions": [
+    {
+      "lane": "mcp_action_boundary",
+      "action": "Confirm MCP Insights export availability, host attribution, scopes, and activity-log coverage.",
+      "owner": "glean_admin",
+      "priority": "high"
+    },
+    {
+      "lane": "control_evidence",
+      "action": "Confirm which Protect runtime aggregate states may be used for customer-safe control evidence.",
+      "owner": "data_governance",
+      "priority": "high"
+    },
+    {
+      "lane": "assumptions",
+      "action": "Review high-sensitivity base-rate and productivity recapture assumptions before ROI language is approved.",
+      "owner": "fluencytracr_operator",
+      "priority": "medium"
+    }
+  ]
+}

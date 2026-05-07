@@ -1,0 +1,60 @@
+{
+  "schema_version": "GCR_2026_05",
+  "registry_id": "glean-default-value-claims",
+  "org_id": "org-northstar",
+  "window": "weekly",
+  "evaluated_at": "2026-05-07T00:00:00.000Z",
+  "source_system": "Glean",
+  "evaluations": [
+    {
+      "claim_id": "glean.time_saved.covered_surfaces",
+      "claim_type": "time_saved",
+      "evaluation_state": "surface",
+      "evidence_state": "present",
+      "confidence_basis": "derived_aggregate",
+      "readiness_state": "customer_safe_with_caveats",
+      "language_mode": "customer_safe_with_caveats",
+      "reason_codes": ["directional_only", "coverage_limited"],
+      "contributing_lanes": ["surface_usage", "assumptions"],
+      "missing_lanes": ["mcp_action_boundary"],
+      "approved_language": "Covered Glean assistance surfaces show directional time-saved evidence for this reporting window."
+    },
+    {
+      "claim_id": "glean.roi.customer_value_to_cost",
+      "claim_type": "roi",
+      "evaluation_state": "suppress",
+      "evidence_state": "not_safe_to_claim",
+      "confidence_basis": "assumption_backed",
+      "readiness_state": "suppressed",
+      "language_mode": "suppressed",
+      "reason_codes": ["roi_translation_not_approved", "assumption_dominates_result"],
+      "contributing_lanes": ["surface_usage", "assumptions"],
+      "missing_lanes": ["skill_lifecycle", "agent_lifecycle", "mcp_action_boundary"]
+    },
+    {
+      "claim_id": "glean.skills.reusable_expertise_operationalized",
+      "claim_type": "skill_reuse",
+      "evaluation_state": "surface",
+      "evidence_state": "present",
+      "confidence_basis": "direct_observed",
+      "readiness_state": "customer_safe_with_caveats",
+      "language_mode": "customer_safe_with_caveats",
+      "reason_codes": ["directional_only"],
+      "contributing_lanes": ["skill_lifecycle"],
+      "missing_lanes": [],
+      "approved_language": "Aggregate Skill lifecycle evidence indicates reusable expertise is being operationalized."
+    },
+    {
+      "claim_id": "glean.mcp.governed_action_boundary",
+      "claim_type": "governed_action",
+      "evaluation_state": "suppress",
+      "evidence_state": "not_computed",
+      "confidence_basis": "insufficient",
+      "readiness_state": "not_computed",
+      "language_mode": "suppressed",
+      "reason_codes": ["missing_source"],
+      "contributing_lanes": [],
+      "missing_lanes": ["mcp_action_boundary", "control_evidence"]
+    }
+  ]
+}
