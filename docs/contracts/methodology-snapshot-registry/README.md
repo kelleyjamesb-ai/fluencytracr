@@ -28,3 +28,9 @@ It also rejects duplicate methodology snapshot IDs, surfaces listed as both cove
 `examples/nielsen-style-methodology-snapshots.json` includes Glean Time-Saves MVP as a source-system snapshot, an internal Nielsen-style ROI/payback fixture, an agentic work placeholder method, and a suppressed unapproved value model.
 
 The intent is to show that ROI is the final claim layer, not the core product object.
+
+## Review Workspace
+
+The Methodology Review Workspace is the human preflight layer for this registry. It summarizes each snapshot by approval state, customer-safe claim effect, covered/excluded surfaces, high-sensitivity assumptions, caveats, blocked claim effects, sensitivity tests, and example claim language.
+
+In the frontend prototype, reviewers can open `/methodology-review` to inspect why a snapshot enables customer-safe language, stays internal-only, remains caveated, or is suppressed. The workspace is read-only in this slice; Strongest Safe Claim remains the enforcement layer.

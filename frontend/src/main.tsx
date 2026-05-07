@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
+import { MethodologyReviewWorkspace } from "./pages/MethodologyReviewWorkspace";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import "./styles.css";
 
@@ -40,6 +41,14 @@ createRoot(container).render(
           element={
             <ProtectedRoute>
               <GovernanceConcept />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/methodology-review"
+          element={
+            <ProtectedRoute>
+              <MethodologyReviewWorkspace />
             </ProtectedRoute>
           }
         />

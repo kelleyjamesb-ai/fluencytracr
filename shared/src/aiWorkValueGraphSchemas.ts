@@ -860,6 +860,185 @@ export function buildMethodologySnapshotRegistry(raw: unknown): MethodologySnaps
   return MethodologySnapshotRegistrySchema.parse(raw);
 }
 
+export type MethodologyReviewAssumption = {
+  assumption_id: string;
+  label: string;
+  value_summary: string;
+  sensitivity: "low" | "medium" | "high" | "unknown";
+  approval_state?: MethodologyApprovalState;
+};
+
+export type MethodologyReviewSnapshot = {
+  methodology_snapshot_id: string;
+  label: string;
+  approval_state: MethodologyApprovalState;
+  customer_safe_claim_effect: z.infer<typeof MethodologyCustomerSafeClaimEffectSchema>;
+  covered_surfaces: AiSurface[];
+  excluded_surfaces: AiSurface[];
+  high_sensitivity_assumptions: MethodologyReviewAssumption[];
+  dominant_assumptions: MethodologyReviewAssumption[];
+  sensitivity_tests: Array<{
+    sensitivity_test_id: string;
+    variable: string;
+    change: string;
+    modeled_effect: string;
+    claim_effect: string;
+  }>;
+  caveats: string[];
+  blocked_claim_effects: string[];
+  approval_gate_explanation: string;
+  financial_claim_effect: string;
+  example_claims: {
+    customer_safe: string;
+    internal_only: string;
+    caveated: string;
+    suppressed: string;
+  };
+};
+
+export type MethodologyReviewWorkspace = {
+  schema_version: "MRW_2026_05";
+  registry_id: string;
+  org_id: string;
+  generated_at: string;
+  selected_snapshot_id: string;
+  snapshots: MethodologyReviewSnapshot[];
+  selected_snapshot: MethodologyReviewSnapshot;
+};
+
+const isSuppressedMethodologySnapshot = (snapshot: MethodologySnapshotEntry) =>
+  snapshot.customer_safe_claim_effect === "suppresses_claim" ||
+  ["draft", "rejected", "expired"].includes(snapshot.approval_state);
+
+const buildApprovalGateExplanation = (snapshot: MethodologySnapshotEntry) => {
+  if (isSuppressedMethodologySnapshot(snapshot)) {
+    return `This methodology is ${snapshot.approval_state}; financial and customer-facing value claims are suppressed.`;
+  }
+  if (snapshot.approval_state === "customer_safe") {
+    return "This methodology is customer-safe; customer-facing financial language can be emitted when evidence supports it.";
+  }
+  if (snapshot.approval_state === "finance_approved") {
+    return "This methodology is finance-approved; financial language is limited to internal-only use until customer-safe approval exists.";
+  }
+  return `This methodology is ${snapshot.approval_state}; it can support directional or caveated review but not customer-facing ROI/payback.`;
+};
+
+const buildFinancialClaimEffect = (snapshot: MethodologySnapshotEntry) => {
+  if (isSuppressedMethodologySnapshot(snapshot)) {
+    return "suppressed: financial claim language is suppressed for this methodology snapshot.";
+  }
+  if (snapshot.approval_state === "customer_safe" && snapshot.customer_safe_claim_effect === "enables_customer_safe") {
+    return "customer-safe: customer-facing ROI/payback can be enabled when evidence supports it.";
+  }
+  if (snapshot.approval_state === "finance_approved") {
+    return "internal-only: customer-facing ROI/payback requires customer-safe methodology approval.";
+  }
+  if (snapshot.customer_safe_claim_effect === "enables_caveated") {
+    return "caveated: methodology can support assumption-aware value language, not financial claims.";
+  }
+  return "directional: methodology can inform review but does not enable financial claim language.";
+};
+
+const buildBlockedClaimEffects = (snapshot: MethodologySnapshotEntry) => {
+  if (isSuppressedMethodologySnapshot(snapshot)) {
+    return [
+      `Financial value language is suppressed because methodology snapshot ${snapshot.methodology_snapshot_id} is ${snapshot.approval_state}.`,
+      "Do not emit ROI, payback, or customer-facing value language from this snapshot."
+    ];
+  }
+  if (snapshot.approval_state === "customer_safe" && snapshot.customer_safe_claim_effect === "enables_customer_safe") {
+    return ["Do not generalize customer-safe value language beyond the frozen snapshot, window, and approved assumptions."];
+  }
+  if (snapshot.approval_state === "finance_approved") {
+    return ["Customer-facing ROI/payback requires customer-safe methodology approval."];
+  }
+  return ["ROI, payback, and finance-approved value language remain blocked until methodology approval is upgraded."];
+};
+
+const buildExampleClaims = (snapshot: MethodologySnapshotEntry): MethodologyReviewSnapshot["example_claims"] => {
+  if (isSuppressedMethodologySnapshot(snapshot)) {
+    return {
+      customer_safe: "Customer-safe financial claim not enabled.",
+      internal_only: "Internal financial claim not enabled.",
+      caveated: "Caveated value language should be withheld for financial claims.",
+      suppressed: "Suppressed: do not use this methodology snapshot for value claims."
+    };
+  }
+  if (snapshot.approval_state === "customer_safe" && snapshot.customer_safe_claim_effect === "enables_customer_safe") {
+    return {
+      customer_safe: "Customer-safe: approved evidence supports bounded financial value language for the covered workflow and window.",
+      internal_only: "Internal-only language may still be used for planning, but customer-safe language is allowed.",
+      caveated: "Caveats should stay attached to the approved window, assumptions, and exclusions.",
+      suppressed: "Suppression is not required unless a downstream evidence or reportability gate fails."
+    };
+  }
+  if (snapshot.approval_state === "finance_approved") {
+    return {
+      customer_safe: "Customer-safe financial language is not enabled.",
+      internal_only: "Internal-only: finance-reviewed evidence can support bounded planning language.",
+      caveated: "Caveat all external-facing summaries until customer-safe approval exists.",
+      suppressed: "Suppress only if evidence, methodology, or reportability gates fail."
+    };
+  }
+  return {
+    customer_safe: "Customer-safe financial language is not enabled.",
+    internal_only: "Internal-only financial language is not enabled.",
+    caveated: "Caveated: aggregate evidence can support assumption-aware methodology review.",
+    suppressed: "Suppress ROI/payback language until methodology approval is upgraded."
+  };
+};
+
+const toReviewAssumption = (
+  assumption: MethodologySnapshotEntry["dominant_assumptions"][number]
+): MethodologyReviewAssumption => ({
+  assumption_id: assumption.assumption_id,
+  label: assumption.label,
+  value_summary: assumption.value_summary,
+  sensitivity: assumption.sensitivity,
+  approval_state: assumption.approval_state
+});
+
+export function buildMethodologyReviewWorkspace(
+  raw: unknown,
+  selectedSnapshotId?: string
+): MethodologyReviewWorkspace {
+  const registry = buildMethodologySnapshotRegistry(raw);
+  const snapshots = registry.snapshots.map<MethodologyReviewSnapshot>((snapshot) => ({
+    methodology_snapshot_id: snapshot.methodology_snapshot_id,
+    label: snapshot.label,
+    approval_state: snapshot.approval_state,
+    customer_safe_claim_effect: snapshot.customer_safe_claim_effect,
+    covered_surfaces: snapshot.covered_surfaces,
+    excluded_surfaces: snapshot.excluded_surfaces,
+    high_sensitivity_assumptions: snapshot.dominant_assumptions
+      .filter((assumption) => assumption.sensitivity === "high")
+      .map(toReviewAssumption),
+    dominant_assumptions: snapshot.dominant_assumptions.map(toReviewAssumption),
+    sensitivity_tests: snapshot.sensitivity_tests,
+    caveats: snapshot.caveats,
+    blocked_claim_effects: buildBlockedClaimEffects(snapshot),
+    approval_gate_explanation: buildApprovalGateExplanation(snapshot),
+    financial_claim_effect: buildFinancialClaimEffect(snapshot),
+    example_claims: buildExampleClaims(snapshot)
+  }));
+  const selectedSnapshot =
+    snapshots.find((snapshot) => snapshot.methodology_snapshot_id === selectedSnapshotId) ?? snapshots[0];
+
+  if (!selectedSnapshot) {
+    throw new Error("No methodology snapshots available for review.");
+  }
+
+  return {
+    schema_version: "MRW_2026_05",
+    registry_id: registry.registry_id,
+    org_id: registry.org_id,
+    generated_at: registry.generated_at,
+    selected_snapshot_id: selectedSnapshot.methodology_snapshot_id,
+    snapshots,
+    selected_snapshot: selectedSnapshot
+  };
+}
+
 const ClaimReadinessRank: Record<ClaimReadinessState, number> = {
   suppressed: 0,
   not_measured: 1,

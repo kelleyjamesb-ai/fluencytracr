@@ -1,0 +1,208 @@
+export const NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY = {
+  schema_version: "MSR_2026_05",
+  registry_id: "methodology-snapshots:nielsen-synthetic:2026-05",
+  org_id: "org-nielsen-synthetic",
+  generated_at: "2026-05-07T00:00:00.000Z",
+  source_system: "FluencyTracr",
+  snapshots: [
+    {
+      methodology_snapshot_id: "glean_time_saves_mvp_2025_10",
+      label: "Glean Time-Saves MVP measurement method",
+      source_system: "Glean",
+      source_model: "Time-Saves MVP",
+      methodology_version: "2025-10-time-saves-mvp",
+      effective_date: "2025-10-01",
+      reporting_window: "28d",
+      covered_surfaces: ["search", "chat", "ai_answers"],
+      excluded_surfaces: ["agents", "skills", "mcp_actions", "canvas_artifacts", "apis", "embedded_hosts"],
+      base_rate_table_ref: "glean.time_saves.base_minutes.v2025_10",
+      quality_multiplier_ref: "glean.time_saves.quality_multiplier.v2025_10",
+      dedupe_policy: "session_highest_value",
+      confidence_treatment: "sensitivity_only",
+      recapture_policy: "Productivity recapture is treated as an assumption, not a finance-approved business outcome.",
+      dominant_assumptions: [
+        {
+          assumption_id: "base_minutes_saved",
+          label: "Base minutes saved by surface and task class",
+          value_summary: "Estimated minutes saved are derived from a base-rate table before quality adjustment.",
+          sensitivity: "high",
+          approval_state: "internal_review"
+        },
+        {
+          assumption_id: "quality_multiplier",
+          label: "Quality multiplier",
+          value_summary: "Estimated time savings are multiplied by an output quality signal.",
+          sensitivity: "high",
+          approval_state: "internal_review"
+        },
+        {
+          assumption_id: "unclassified_fallback",
+          label: "Unclassified work fallback",
+          value_summary: "Unclassified activity uses fallback assumptions until better work-pattern classification exists.",
+          sensitivity: "high",
+          approval_state: "internal_review"
+        },
+        {
+          assumption_id: "session_deduplication",
+          label: "Session deduplication",
+          value_summary: "The highest estimated event per session is retained to reduce double counting.",
+          sensitivity: "medium",
+          approval_state: "internal_review"
+        }
+      ],
+      sensitivity_tests: [
+        {
+          sensitivity_test_id: "chat_base_rate_plus_10",
+          variable: "Average chat base rate",
+          change: "+10 percent",
+          modeled_effect: "Adds about 258K estimated hours over the 28-day fixture window.",
+          claim_effect: "Shows time-saved estimate is materially assumption-sensitive."
+        },
+        {
+          sensitivity_test_id: "no_signal_multiplier_plus_10",
+          variable: "No-signal chat multiplier",
+          change: "+10 percent",
+          modeled_effect: "Adds about 92K estimated hours over the 28-day fixture window.",
+          claim_effect: "Requires caveated language until multiplier governance is approved."
+        }
+      ],
+      approval_state: "internal_review",
+      approved_by_role: "data_science",
+      customer_safe_claim_effect: "enables_caveated",
+      caveats: [
+        "This snapshot supports a measurement exercise with transparent assumptions, not a final ROI claim.",
+        "Coverage is limited to search, chat, and AI Answers.",
+        "Unclassified work and no-signal multiplier assumptions materially influence the estimate."
+      ]
+    },
+    {
+      methodology_snapshot_id: "nielsen_roi_payback_internal_2025_10",
+      label: "Nielsen-style internal ROI and payback fixture",
+      source_system: "synthetic_fixture",
+      source_model: "Nielsen-style business value model",
+      methodology_version: "2025-10-internal-roi-fixture",
+      effective_date: "2025-10-15",
+      reporting_window: "quarterly",
+      covered_surfaces: ["search", "chat", "ai_answers", "agents", "skills"],
+      excluded_surfaces: ["mcp_actions", "canvas_artifacts", "apis", "embedded_hosts"],
+      base_rate_table_ref: "nielsen.synthetic.value_assumptions.v2025_10",
+      quality_multiplier_ref: "nielsen.synthetic.adoption_confidence.v2025_10",
+      dedupe_policy: "external_method",
+      confidence_treatment: "sensitivity_only",
+      recapture_policy: "Recapture assumptions require finance review and are only approved for internal planning language.",
+      cost_model_ref: "nielsen.synthetic.value_to_cost_model.v2025_10",
+      dominant_assumptions: [
+        {
+          assumption_id: "ramped_quarterly_benefit",
+          label: "Ramped quarterly benefit",
+          value_summary: "Quarterly benefit is modeled from adoption and assumed recaptured capacity.",
+          sensitivity: "high",
+          approval_state: "finance_approved"
+        },
+        {
+          assumption_id: "payback_period",
+          label: "Payback period",
+          value_summary: "Payback is calculated from synthetic cost and benefit assumptions.",
+          sensitivity: "high",
+          approval_state: "finance_approved"
+        },
+        {
+          assumption_id: "agent_uplift",
+          label: "Departmental agent uplift",
+          value_summary: "Future-state agent value is treated as a hypothesis until workflow-run and outcome evidence exist.",
+          sensitivity: "high",
+          approval_state: "internal_review"
+        }
+      ],
+      sensitivity_tests: [
+        {
+          sensitivity_test_id: "recapture_minus_20",
+          variable: "Recaptured productivity",
+          change: "-20 percent",
+          modeled_effect: "Materially lowers modeled net benefit and extends payback.",
+          claim_effect: "Keeps ROI/payback language internal-only until customer-safe approval."
+        }
+      ],
+      approval_state: "finance_approved",
+      approved_by_role: "finance",
+      customer_safe_claim_effect: "enables_internal_only",
+      frozen_report_snapshot_ref: "nielsen.synthetic.roi_deck.fixture.2025_10",
+      caveats: [
+        "This fixture supports internal financial planning language only.",
+        "Customer-facing ROI and payback claims require customer-safe methodology approval.",
+        "Agent and MCP value remains an opportunity map until output-backed evidence exists."
+      ]
+    },
+    {
+      methodology_snapshot_id: "agentic_work_placeholder_2026_05",
+      label: "Agentic work measurement placeholder",
+      source_system: "FluencyTracr",
+      source_model: "Agentic work evidence design",
+      methodology_version: "2026-05-agentic-placeholder",
+      effective_date: "2026-05-07",
+      reporting_window: "30d",
+      covered_surfaces: ["agents", "skills", "mcp_actions", "canvas_artifacts"],
+      excluded_surfaces: ["search", "chat", "ai_answers", "apis", "embedded_hosts"],
+      dedupe_policy: "workflow_highest_value",
+      confidence_treatment: "none",
+      recapture_policy: "No recapture claim is enabled until runs, completions, actions, controls, outputs, and outcomes are linked.",
+      dominant_assumptions: [
+        {
+          assumption_id: "output_backed_method_required",
+          label: "Output-backed method required",
+          value_summary: "Agentic work needs workflow-run, artifact, action, control, and outcome evidence instead of minutes-per-session.",
+          sensitivity: "unknown",
+          approval_state: "draft"
+        }
+      ],
+      sensitivity_tests: [],
+      approval_state: "draft",
+      approved_by_role: "none",
+      customer_safe_claim_effect: "suppresses_claim",
+      caveats: [
+        "Agentic work value is not computed by this placeholder.",
+        "Use this snapshot to show missing instrumentation and upgrade actions, not ROI."
+      ]
+    },
+    {
+      methodology_snapshot_id: "suppressed_unapproved_value_model_2026_05",
+      label: "Suppressed unapproved value model",
+      source_system: "synthetic_fixture",
+      source_model: "Rejected value model fixture",
+      methodology_version: "2026-05-suppressed-value-model",
+      effective_date: "2026-05-07",
+      reporting_window: "90d",
+      covered_surfaces: ["search", "chat", "ai_answers", "agents"],
+      excluded_surfaces: ["skills", "mcp_actions", "canvas_artifacts", "apis", "embedded_hosts"],
+      dedupe_policy: "external_method",
+      confidence_treatment: "point_estimate",
+      recapture_policy: "Suppressed because the recapture and attribution assumptions are not approved.",
+      cost_model_ref: "suppressed.synthetic.unapproved_model.v2026_05",
+      dominant_assumptions: [
+        {
+          assumption_id: "unsupported_attribution",
+          label: "Unsupported attribution",
+          value_summary: "The model attributes outcome movement to AI participation without approved counterfactual evidence.",
+          sensitivity: "high",
+          approval_state: "rejected"
+        }
+      ],
+      sensitivity_tests: [
+        {
+          sensitivity_test_id: "counterfactual_missing",
+          variable: "Counterfactual evidence",
+          change: "missing",
+          modeled_effect: "Cannot distinguish AI contribution from external operating changes.",
+          claim_effect: "Suppresses value language until attribution evidence exists."
+        }
+      ],
+      approval_state: "rejected",
+      approved_by_role: "none",
+      customer_safe_claim_effect: "suppresses_claim",
+      caveats: [
+        "Do not use this snapshot for value claims.",
+        "Rejected methodology snapshots exist only to preserve audit history and explain suppression."
+      ]
+    }
+  ]
+} as const;
