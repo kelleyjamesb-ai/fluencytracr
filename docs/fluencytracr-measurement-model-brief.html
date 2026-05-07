@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fluency Tracker Measurement Model Brief</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
+    :root {
+      --ink: #172033;
+      --muted: #596579;
+      --line: #d7deea;
+      --soft: #f6f8fb;
+      --glean: #eaf3ff;
+      --glean-border: #3874bd;
+      --tracker: #eaf8f0;
+      --tracker-border: #2e8b57;
+      --science: #fff3df;
+      --science-border: #bd7a1d;
+      --risk: #fff0ef;
+      --risk-border: #c7524f;
+      --dark: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #eef2f7;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.42;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .artifact {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(23, 32, 51, 0.14);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 24px;
+      padding: 28px 30px 24px;
+      background: linear-gradient(135deg, #122033 0%, #1f3b5b 52%, #234f68 100%);
+      color: #ffffff;
+    }
+
+    .eyebrow,
+    .label {
+      margin: 0 0 8px;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero .eyebrow {
+      color: #b9d5f7;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 36px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: 22px;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 6px;
+      font-size: 15px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 780px;
+      margin-bottom: 18px;
+      color: #dce9f8;
+      font-size: 16px;
+    }
+
+    .recommendation {
+      max-width: 820px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fbff;
+      font-size: 14px;
+    }
+
+    .recommendation strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #ffffff;
+    }
+
+    .hero-meta {
+      display: grid;
+      gap: 10px;
+      align-self: start;
+    }
+
+    .meta-item {
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .meta-label {
+      display: block;
+      margin-bottom: 3px;
+      color: #b9d5f7;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .meta-value {
+      display: block;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    section {
+      padding: 24px 30px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-kicker {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pill.safe {
+      border-color: #9ed8b4;
+      background: #eefaf3;
+      color: #17613a;
+    }
+
+    .pill.blocked {
+      border-color: #efaaa7;
+      background: #fff2f1;
+      color: #a6332f;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .card {
+      min-height: 100%;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .card p,
+    .card li,
+    td,
+    th {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .lane {
+      border-width: 2px;
+    }
+
+    .lane.glean {
+      border-color: var(--glean-border);
+      background: var(--glean);
+    }
+
+    .lane.tracker {
+      border-color: var(--tracker-border);
+      background: var(--tracker);
+    }
+
+    .lane.science {
+      border-color: var(--science-border);
+      background: var(--science);
+    }
+
+    .lane.risk {
+      border-color: var(--risk-border);
+      background: var(--risk);
+    }
+
+    .model {
+      display: grid;
+      grid-template-columns: 1fr 34px 1fr 34px 1fr 34px 1fr;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7c8799;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    li + li {
+      margin-top: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f4f7fb;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .claim {
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+    }
+
+    .claim.safe {
+      border-color: #9ed8b4;
+      background: #f0faf4;
+    }
+
+    .claim.blocked {
+      border-color: #efaaa7;
+      background: #fff4f3;
+    }
+
+    .claim p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bottom-line {
+      padding: 20px;
+      border-radius: 8px;
+      background: var(--dark);
+      color: #ffffff;
+    }
+
+    .bottom-line p {
+      margin: 0;
+      color: #d8e1ef;
+      font-size: 16px;
+    }
+
+    .boundary {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .footer-note {
+      padding: 16px 30px 22px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #23304a;
+      font-size: 11px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      main {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .artifact {
+        border: 0;
+        box-shadow: none;
+      }
+
+      .hero {
+        padding: 18px 22px 16px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      h2 {
+        font-size: 18px;
+      }
+
+      h3 {
+        font-size: 13px;
+      }
+
+      .hero-copy,
+      .bottom-line p {
+        font-size: 13px;
+      }
+
+      .recommendation,
+      .card,
+      .claim,
+      .boundary,
+      .meta-item {
+        padding: 10px;
+      }
+
+      section {
+        padding: 14px 22px;
+        break-inside: auto;
+      }
+
+      .card p,
+      .card li,
+      td,
+      th,
+      .claim p,
+      .section-kicker {
+        font-size: 10.5px;
+      }
+
+      li + li {
+        margin-top: 2px;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+      }
+    }
+
+    @media (max-width: 850px) {
+      .hero,
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .model {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <article class="artifact">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Data science discussion brief</p>
+          <h1>Fluency Tracker Measurement Model</h1>
+          <p class="hero-copy">A practical view of how Glean telemetry becomes aggregate, defensible AI fluency evidence without raw content capture, individual scoring, or unsupported productivity claims.</p>
+          <div class="recommendation">
+            <strong>Recommended framing</strong>
+            Glean shows what happened. Fluency Tracker decides what can be interpreted from it. Data Science validates whether those interpretations are credible enough to use in measurement.
+          </div>
+        </div>
+        <div class="hero-meta" aria-label="Brief metadata">
+          <div class="meta-item">
+            <span class="meta-label">Audience</span>
+            <span class="meta-value">Juhi Singh, Data Science Lead</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Use case</span>
+            <span class="meta-value">AI fluency measurement model review</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Unit of analysis</span>
+            <span class="meta-value">Workflow execution, aggregated to org/window</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Boundary</span>
+            <span class="meta-value">Metadata and event sequences only</span>
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>The Measurement Model</h2>
+            <p class="section-kicker">The model separates source telemetry, derived behavioral evidence, validation, and claim governance. This is the core picture to socialize with Data Science.</p>
+          </div>
+          <span class="pill safe">Aggregate only</span>
+        </div>
+
+        <div class="model" aria-label="Measurement model flow">
+          <div class="card lane glean">
+            <p class="label">1. Glean collects</p>
+            <h3>Structured product events</h3>
+            <ul>
+              <li>Assistant and chat sessions</li>
+              <li>Search and retrieval activity</li>
+              <li>Workflow, agent, action, and MCP runs</li>
+              <li>Security, policy, admin, and product snapshots where available</li>
+            </ul>
+          </div>
+          <div class="arrow">></div>
+          <div class="card lane tracker">
+            <p class="label">2. Fluency Tracker derives</p>
+            <h3>Behavioral proxies</h3>
+            <ul>
+              <li>Signal readiness and joinability</li>
+              <li>Canonical event normalization</li>
+              <li>Trace reconstruction across starts, steps, checks, errors, retries, and completions</li>
+              <li>Feature families mapped to fluency constructs</li>
+            </ul>
+          </div>
+          <div class="arrow">></div>
+          <div class="card lane science">
+            <p class="label">3. Data Science validates</p>
+            <h3>Construct credibility</h3>
+            <ul>
+              <li>Does each proxy mean what we claim?</li>
+              <li>Where are missingness, bias, and drift risks?</li>
+              <li>Which thresholds are stable enough for reporting?</li>
+              <li>Which claims should stay suppressed?</li>
+            </ul>
+          </div>
+          <div class="arrow">></div>
+          <div class="card lane risk">
+            <p class="label">4. Outputs are governed</p>
+            <h3>Claim-safe evidence</h3>
+            <ul>
+              <li>Aggregate workflow behavior patterns</li>
+              <li>Enablement and governance priorities</li>
+              <li>Suppression when evidence is thin, ambiguous, non-joinable, or privacy sensitive</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>How Much Is Glean vs. Fluency Tracker?</h2>
+            <p class="section-kicker">Glean is the source of many observed product events. Fluency Tracker is the measurement and governance layer that turns those events into validated behavioral evidence.</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>What exists or is collected</th>
+              <th>Who owns the interpretation</th>
+              <th>Measurement posture</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Source telemetry</strong></td>
+              <td>Glean product logs: assistant/chat, search, retrieval, workflow runs, agent steps, actions, MCP, policy/security events, and product snapshots where enabled.</td>
+              <td>Glean owns source instrumentation and access contracts.</td>
+              <td>Observed activity, not fluency by itself.</td>
+            </tr>
+            <tr>
+              <td><strong>Readiness map</strong></td>
+              <td>Availability, scrub status, join keys, completeness, time semantics, and org-window coverage by signal family.</td>
+              <td>Fluency Tracker plus Glean data owners.</td>
+              <td>Determines which signals are usable for a given customer/window.</td>
+            </tr>
+            <tr>
+              <td><strong>Behavioral derivation</strong></td>
+              <td>Ordered workflow traces and passive behavior proxies derived from safe metadata and event sequences.</td>
+              <td>Fluency Tracker.</td>
+              <td>Feature engineering layer, not a productivity model.</td>
+            </tr>
+            <tr>
+              <td><strong>Construct validation</strong></td>
+              <td>Proxy confidence, coverage, drift, bias checks, threshold review, and claim approval.</td>
+              <td>Data Science.</td>
+              <td>Decides what is credible enough to present.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Passive Behaviors Tracked</h2>
+            <p class="section-kicker">These are metadata-derived behavior proxies. They are not person-level judgments, output-quality scores, or causal productivity claims.</p>
+          </div>
+          <span class="pill">No raw content required</span>
+        </div>
+
+        <div class="grid grid-4">
+          <div class="card">
+            <h3>Adoption and Exposure</h3>
+            <p>First observed tool use, exploratory feature trials, template reuse, instrumented source coverage.</p>
+          </div>
+          <div class="card">
+            <h3>Work Shaping</h3>
+            <p>Prompt strategy shifts, early constraints, acceptance criteria, scope narrowing, task decomposition.</p>
+          </div>
+          <div class="card">
+            <h3>Trust Calibration</h3>
+            <p>Verification starts, verification latency buckets, counterfactual checks, policy checks, post-run review.</p>
+          </div>
+          <div class="card">
+            <h3>Friction and Iteration</h3>
+            <p>Rapid abandonment, dense retry loops, undo churn, latency buckets, repeat failure loops.</p>
+          </div>
+          <div class="card">
+            <h3>Recovery Behavior</h3>
+            <p>Contradiction detection, conflict resolution, error-to-retry-to-success paths, agent redirects.</p>
+          </div>
+          <div class="card">
+            <h3>Diffusion and Reuse</h3>
+            <p>Artifact forking, peer artifact engagement, template reuse, reusable output creation.</p>
+          </div>
+          <div class="card">
+            <h3>Risk and Oversight</h3>
+            <p>Safe-path escalation, sensitive mode, review before agent execution, stop interventions, permission elevation attempts.</p>
+          </div>
+          <div class="card">
+            <h3>Capability Growth</h3>
+            <p>Movement from basic assistance to reusable workflows, Skills, agentic execution, and governed automation patterns.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>What Can and Cannot Be Claimed</h2>
+            <p class="section-kicker">The brief is strongest when the claim boundary is explicit. Fluency Tracker should fail closed when evidence is not ready.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="claim safe">
+            <span class="pill safe">Claim-safe with caveats</span>
+            <h3 style="margin-top: 12px;">Observed aggregate workflow behavior</h3>
+            <p>Safe language: covered Glean telemetry can support directional evidence of usage quality, verification behavior, friction, recovery, reuse, oversight, and workflow-level adoption patterns.</p>
+          </div>
+          <div class="claim blocked">
+            <span class="pill blocked">Suppress until validated</span>
+            <h3 style="margin-top: 12px;">Unsupported performance or ROI claims</h3>
+            <p>Avoid: individual fluency scoring, team rankings, productivity attribution, causal impact, raw content quality, or ROI translation unless approved assumptions and complete coverage are in place.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Questions For Data Science</h2>
+            <p class="section-kicker">This is the review agenda for Juhi: validate the construct map before broadening reporting or executive claims.</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Why it matters</th>
+              <th>Default answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Is workflow execution the right unit?</strong></td>
+              <td>Prevents the model from becoming person-level monitoring.</td>
+              <td>Yes for V1: aggregate to workflow, function, org, and window.</td>
+            </tr>
+            <tr>
+              <td><strong>Are these credible proxies?</strong></td>
+              <td>Determines whether adoption quality and fluency claims are defensible.</td>
+              <td>Validate feature families first: exposure, shaping, calibration, friction, recovery, reuse, oversight.</td>
+            </tr>
+            <tr>
+              <td><strong>How should missingness behave?</strong></td>
+              <td>Missing telemetry can create false confidence.</td>
+              <td>Fail closed through readiness, full-state coverage, minimum-signal, ambiguity, and cohort-size gates.</td>
+            </tr>
+            <tr>
+              <td><strong>What should be reported first?</strong></td>
+              <td>Sequencing prevents overclaiming.</td>
+              <td>Start with aggregate behavior coverage and workflow pattern mix. Delay ROI, causality, and productivity language.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <div class="grid grid-2">
+          <div class="bottom-line">
+            <h2>What Fluency Tracker Adds</h2>
+            <p>Glean captures structured activity. Fluency Tracker turns that activity into aggregate, validated, claim-safe behavioral evidence.</p>
+          </div>
+          <div class="boundary">
+            <h3>Data boundary</h3>
+            <p>This model uses metadata and event sequences only. It does not require:</p>
+            <ul>
+              <li>Employee rows, names, emails, or direct user identifiers.</li>
+              <li>Raw prompts, responses, documents, screenshots, or transcripts.</li>
+              <li>Person-level rankings, output-quality scoring, or productivity attribution.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer-note">
+        Status: Draft measurement brief for Data Science review. Source anchors: <code>docs/fluencytracr-how-it-works-and-behavior-tracking.md</code>, <code>docs/behaviors/V0_Behaviors_and_Formulas.md</code>, and <code>docs/contracts/reportability/operating-handoff.md</code>.
+      </footer>
+    </article>
+  </main>
+</body>
+</html>

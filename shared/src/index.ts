@@ -16,3 +16,4 @@ export * from "./gleanAssumptionLedgerSchemas";
 export * from "./gleanAiWorkEvidenceAdapter";
 export * from "./reportabilitySchemas";
 export * from "./metricConstants";
+export * from "./aiWorkValueGraphSchemas";
