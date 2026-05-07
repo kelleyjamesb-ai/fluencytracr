@@ -33,6 +33,7 @@
 - The executive HTML prototype is complete as a bounded user-requested slice; queue status was not changed.
 - Out-of-band Vercel Services implementation is deployed to production at `https://learn-air-engable-tool-frontend.vercel.app`; authenticated `/health` returns `db: "ok"`.
 - Out-of-band Glean trust-layer strategy artifact is complete; the referenced enclosed paper was not found on disk and should be added by path before a paper-specific appendix is written.
+- Out-of-band Glean Value Evidence execution plan is complete; it reframes the insertable product around Glean client value evidence across Search/Chat, Skills, Auto Mode Agents, triggered Agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
 
 ## Blockers
 
@@ -45,3 +46,4 @@
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
+- If the human accepts the Glean Value Evidence program, add bounded `glean-value-*` queue items before implementation; start with the Value Evidence Pack contract and Claim Registry OpenSpec proposals from `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`.

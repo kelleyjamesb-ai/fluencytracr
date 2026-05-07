@@ -120,3 +120,9 @@
 - Completed: Created branch `cursor/glean-trust-layer-deep-dive-c7e6`, added `artifacts/plan_glean_trust_layer_deep_dive.md`, and produced `artifacts/glean_trust_layer_deep_dive_2026-05-07.md` positioning FluencyTracr as an independent Glean Trust Evidence Plane.
 - Verified: `git diff --check main...HEAD` passed after whitespace cleanup. Research/reporting slice only; no runtime code touched.
 - Next focus: If approved, convert the recommendations into docs/OpenSpec slices: AWARE crosswalk, Glean Trust Launch Pack, `WorkflowRun`-only live adapter proposal, and MCP Boundary Ledger contract.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence execution plan)
+
+- Completed: Added `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`, an executable plan for a Glean Value Evidence Pack across live/current surfaces: Chat/Search/AI Answers, Skills, Auto Mode Agents, content-triggered agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
+- Verified: `git diff --check` passed for the documentation-only planning slice. Queue unchanged; plan proposes human-owned `glean-value-*` queue items and harness checklist candidates.
+- Next focus: Human decision on whether to add the proposed `glean-value-*` queue items, then start with OpenSpec `add-glean-value-evidence-pack`.
