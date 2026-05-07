@@ -1,8 +1,8 @@
 # Glean deep dive: strengthening FluencyTracr as the must-have trust layer
 
-**Date:** 2026-05-07  
-**Branch:** `cursor/glean-trust-layer-deep-dive-c7e6`  
-**Scope:** Strategic/product analysis, not runtime implementation.  
+**Date:** 2026-05-07
+**Branch:** `cursor/glean-trust-layer-deep-dive-c7e6`
+**Scope:** Strategic/product analysis, not runtime implementation.
 
 ## Paper note
 
