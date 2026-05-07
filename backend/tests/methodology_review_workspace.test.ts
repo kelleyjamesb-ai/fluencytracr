@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { generateStrongestSafeClaim } from "@learnaire/shared";
+import { buildMethodologyDecisionMemo, generateStrongestSafeClaim } from "@learnaire/shared";
 import { summarizeMethodologySnapshotsForReview } from "../src/evidence/methodologyReviewWorkspace";
 
 const fixture = (contractPath: string, name: string) => {
@@ -30,6 +30,20 @@ const customerSafeMethodologyRegistry = {
           approved_by_role: "finance",
           customer_safe_claim_effect: "enables_customer_safe",
           frozen_report_snapshot_ref: "nielsen.synthetic.customer_safe_roi.fixture.2025_10"
+        }
+      : snapshot
+  )
+};
+
+const expiredMethodologyRegistry = {
+  ...methodologySnapshotRegistry,
+  snapshots: methodologySnapshotRegistry.snapshots.map((snapshot: any) =>
+    snapshot.methodology_snapshot_id === "nielsen_roi_payback_internal_2025_10"
+      ? {
+          ...snapshot,
+          methodology_snapshot_id: "expired_roi_model_2026_05",
+          label: "Expired ROI model fixture",
+          approval_state: "expired"
         }
       : snapshot
   )
@@ -180,5 +194,65 @@ describe("Methodology Review Workspace claim gates", () => {
 
     expect(first.strongest_claim.claim_readiness).toBe("internal_only");
     expect(second.strongest_claim).toEqual(first.strongest_claim);
+  });
+});
+
+describe("Methodology decision memo export", () => {
+  it("says finance-approved methodology is internal-only", () => {
+    const workspace = summarizeMethodologySnapshotsForReview(
+      methodologySnapshotRegistry,
+      "nielsen_roi_payback_internal_2025_10"
+    );
+    const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_internal_2025_10");
+
+    expect(memo).toMatch(/Decision state: internal-only/i);
+    expect(memo).toMatch(/Selected methodology snapshot: Nielsen-style internal ROI and payback fixture/i);
+    expect(memo).toMatch(/Approval state: finance_approved/i);
+    expect(memo).toMatch(/Financial claim effect: internal-only/i);
+    expect(memo).toMatch(/Strongest safe language:/i);
+    expect(memo).toMatch(/Blocked claim language:/i);
+    expect(memo).toMatch(/Why stronger claims are blocked:/i);
+    expect(memo).toMatch(/High-sensitivity assumptions:/i);
+    expect(memo).toMatch(/Covered surfaces:/i);
+    expect(memo).toMatch(/Excluded surfaces:/i);
+    expect(memo).toMatch(/Caveats:/i);
+    expect(memo).toMatch(/Upgrade actions:/i);
+  });
+
+  it("allows customer-safe financial language for customer-safe methodology", () => {
+    const workspace = summarizeMethodologySnapshotsForReview(
+      customerSafeMethodologyRegistry,
+      "nielsen_roi_payback_customer_safe_2025_10"
+    );
+    const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_customer_safe_2025_10");
+
+    expect(memo).toMatch(/Decision state: customer-safe/i);
+    expect(memo).toMatch(/customer-facing ROI\/payback can be enabled/i);
+    expect(memo).toMatch(/Strongest safe language: Customer-safe/i);
+  });
+
+  it.each([
+    ["draft", methodologySnapshotRegistry, "agentic_work_placeholder_2026_05"],
+    ["rejected", methodologySnapshotRegistry, "suppressed_unapproved_value_model_2026_05"],
+    ["expired", expiredMethodologyRegistry, "expired_roi_model_2026_05"]
+  ])("says %s methodology is suppressed", (_state, registry, snapshotId) => {
+    const workspace = summarizeMethodologySnapshotsForReview(registry, snapshotId);
+    const memo = buildMethodologyDecisionMemo(workspace, snapshotId);
+
+    expect(memo).toMatch(/Decision state: suppressed/i);
+    expect(memo).toMatch(/Financial claim effect: suppressed/i);
+    expect(memo).toMatch(/Blocked claim language:/i);
+  });
+
+  it("contains no forbidden raw or person-level fields", () => {
+    const workspace = summarizeMethodologySnapshotsForReview(
+      methodologySnapshotRegistry,
+      "nielsen_roi_payback_internal_2025_10"
+    );
+    const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_internal_2025_10");
+
+    expect(memo).not.toMatch(
+      /raw_prompt|raw_response|transcript|query_text|tool_payload|file_content|user_id|employee_id|manager_view|ranking|productivity_score/i
+    );
   });
 });

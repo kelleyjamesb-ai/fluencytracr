@@ -1627,6 +1627,51 @@ body {
   border-radius: 8px;
 }
 
+.mrw-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.mrw-section-head h3 {
+  margin: 0;
+}
+
+.mrw-copy-button {
+  border: 1px solid #343ced;
+  background: #343ced;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mrw-memo {
+  display: grid;
+  gap: 10px;
+}
+
+.mrw-memo-label {
+  color: #565656;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mrw-memo-output {
+  min-height: 360px;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #dfddd6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d1d1d;
+  padding: 12px;
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
 @media (max-width: 900px) {
   .mrw-header,
   .mrw-layout,

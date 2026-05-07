@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import * as methodologySchemas from "@learnaire/shared/dist/aiWorkValueGraphSchemas";
 import { NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY } from "../constants/methodologyReview";
 
-const { buildMethodologyReviewWorkspace } = methodologySchemas;
+const { buildMethodologyDecisionMemo, buildMethodologyReviewWorkspace } = methodologySchemas;
 
 const formatToken = (value: string) => value.replace(/_/g, " ");
 
@@ -26,6 +26,10 @@ export function MethodologyReviewWorkspace() {
     [selectedSnapshotId]
   );
   const selected = workspace.selected_snapshot;
+  const decisionMemo = useMemo(
+    () => buildMethodologyDecisionMemo(workspace, selected.methodology_snapshot_id),
+    [workspace, selected.methodology_snapshot_id]
+  );
 
   return (
     <main className="mrw-shell">
@@ -177,6 +181,25 @@ export function MethodologyReviewWorkspace() {
                 <li key={caveat}>{caveat}</li>
               ))}
             </ul>
+          </section>
+
+          <section className="mrw-band mrw-memo">
+            <div className="mrw-section-head">
+              <h3>Reviewer decision memo</h3>
+              <button
+                type="button"
+                className="mrw-copy-button"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(decisionMemo);
+                }}
+              >
+                Copy memo
+              </button>
+            </div>
+            <label className="mrw-memo-label" htmlFor="reviewer-decision-memo">
+              Reviewer decision memo plain text
+            </label>
+            <textarea id="reviewer-decision-memo" className="mrw-memo-output" readOnly value={decisionMemo} />
           </section>
         </section>
       </section>

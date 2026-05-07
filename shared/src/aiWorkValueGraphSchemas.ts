@@ -1039,6 +1039,118 @@ export function buildMethodologyReviewWorkspace(
   };
 }
 
+const formatMemoList = (items: string[], emptyLabel = "None recorded.") =>
+  items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${emptyLabel}`;
+
+const formatMemoSurfaces = (surfaces: AiSurface[]) =>
+  surfaces.length > 0 ? surfaces.map((surface) => `- ${surface.replace(/_/g, " ")}`).join("\n") : "- None recorded.";
+
+const getMethodologyDecisionState = (snapshot: MethodologyReviewSnapshot) => {
+  if (snapshot.financial_claim_effect.startsWith("suppressed")) {
+    return "suppressed";
+  }
+  if (snapshot.financial_claim_effect.startsWith("customer-safe")) {
+    return "customer-safe";
+  }
+  if (snapshot.financial_claim_effect.startsWith("internal-only")) {
+    return "internal-only";
+  }
+  if (snapshot.financial_claim_effect.startsWith("caveated")) {
+    return "caveated";
+  }
+  return "directional";
+};
+
+const getStrongestSafeMethodologyLanguage = (snapshot: MethodologyReviewSnapshot) => {
+  const decisionState = getMethodologyDecisionState(snapshot);
+  if (decisionState === "customer-safe") {
+    return snapshot.example_claims.customer_safe;
+  }
+  if (decisionState === "internal-only") {
+    return snapshot.example_claims.internal_only;
+  }
+  if (decisionState === "suppressed") {
+    return snapshot.example_claims.suppressed;
+  }
+  return snapshot.example_claims.caveated;
+};
+
+const buildMethodologyUpgradeActions = (snapshot: MethodologyReviewSnapshot) => {
+  const decisionState = getMethodologyDecisionState(snapshot);
+
+  if (decisionState === "customer-safe") {
+    return [
+      "Keep the frozen report snapshot, approved window, assumptions, and caveats attached to any customer-facing use.",
+      "Monitor expiration and re-review before extending the claim to new surfaces, workflows, or reporting windows."
+    ];
+  }
+
+  if (decisionState === "internal-only") {
+    return [
+      "Request customer-safe methodology approval before using ROI, payback, or financial value language with customers.",
+      "Attach the frozen report snapshot, dominant assumptions, sensitivity tests, and caveats for reviewer sign-off.",
+      "Re-run Strongest Safe Claim after the methodology approval state is upgraded."
+    ];
+  }
+
+  if (decisionState === "suppressed") {
+    return [
+      "Replace, revise, or re-approve the methodology snapshot before emitting financial value language.",
+      "Resolve the approval gate and attach approved evidence before customer-facing or internal financial claims are generated.",
+      "Re-run Strongest Safe Claim after the snapshot is no longer draft, rejected, expired, or explicitly suppressed."
+    ];
+  }
+
+  return [
+    "Complete finance review before using ROI, payback, or finance-approved value language.",
+    "Resolve high-sensitivity assumptions and attach sensitivity tests for reviewer inspection.",
+    "Link the methodology to outcome evidence and a counterfactual or baseline where the claim requires it."
+  ];
+};
+
+export function buildMethodologyDecisionMemo(
+  workspace: MethodologyReviewWorkspace,
+  selectedSnapshotId?: string
+): string {
+  const selectedSnapshot =
+    workspace.snapshots.find((snapshot) => snapshot.methodology_snapshot_id === selectedSnapshotId) ??
+    workspace.selected_snapshot;
+  const decisionState = getMethodologyDecisionState(selectedSnapshot);
+  const strongestSafeLanguage = getStrongestSafeMethodologyLanguage(selectedSnapshot);
+  const blockedClaimLanguage =
+    selectedSnapshot.blocked_claim_effects.length > 0
+      ? selectedSnapshot.blocked_claim_effects.join(" ")
+      : "No stronger claim is blocked by this methodology snapshot.";
+  const whyStrongerClaimsAreBlocked =
+    selectedSnapshot.blocked_claim_effects.length > 0
+      ? `${selectedSnapshot.approval_gate_explanation} ${selectedSnapshot.financial_claim_effect}`
+      : selectedSnapshot.approval_gate_explanation;
+  const highSensitivityAssumptions = selectedSnapshot.high_sensitivity_assumptions.map(
+    (assumption) => `${assumption.label}: ${assumption.value_summary}`
+  );
+
+  return [
+    "Reviewer decision memo",
+    `Decision state: ${decisionState}`,
+    `Selected methodology snapshot: ${selectedSnapshot.label} (${selectedSnapshot.methodology_snapshot_id})`,
+    `Approval state: ${selectedSnapshot.approval_state}`,
+    `Financial claim effect: ${selectedSnapshot.financial_claim_effect}`,
+    `Strongest safe language: ${strongestSafeLanguage}`,
+    `Blocked claim language: ${blockedClaimLanguage}`,
+    `Why stronger claims are blocked: ${whyStrongerClaimsAreBlocked}`,
+    "High-sensitivity assumptions:",
+    formatMemoList(highSensitivityAssumptions, "No high-sensitivity assumptions are recorded for this snapshot."),
+    "Covered surfaces:",
+    formatMemoSurfaces(selectedSnapshot.covered_surfaces),
+    "Excluded surfaces:",
+    formatMemoSurfaces(selectedSnapshot.excluded_surfaces),
+    "Caveats:",
+    formatMemoList(selectedSnapshot.caveats),
+    "Upgrade actions:",
+    formatMemoList(buildMethodologyUpgradeActions(selectedSnapshot))
+  ].join("\n");
+}
+
 const ClaimReadinessRank: Record<ClaimReadinessState, number> = {
   suppressed: 0,
   not_measured: 1,
