@@ -96,6 +96,7 @@ export const ValueGraphEdgeTypeSchema = z.enum([
 export const AiWorkMaturityModelSchemaVersionSchema = z.literal("AIWMM_2026_05");
 export const ValueHypothesisRegistrySchemaVersionSchema = z.literal("VHR_2026_05");
 export const OutcomeInstrumentationMapSchemaVersionSchema = z.literal("OIM_2026_05");
+export const MethodologySnapshotRegistrySchemaVersionSchema = z.literal("MSR_2026_05");
 export const StrongestSafeClaimSchemaVersionSchema = z.literal("SSC_2026_05");
 export const AiWorkValueDemoSchemaVersionSchema = z.literal("AIWVG_DEMO_2026_05");
 
@@ -152,6 +153,48 @@ export const ClaimReadinessEffectSchema = z.enum([
   "no_effect",
   "enables_directional",
   "enables_evidence_present",
+  "enables_caveated",
+  "enables_internal_only",
+  "enables_customer_safe",
+  "suppresses_claim"
+]);
+
+export const MethodologySourceSystemSchema = z.enum([
+  "Glean",
+  "FluencyTracr",
+  "external_finance_model",
+  "synthetic_fixture"
+]);
+
+export const MethodologyApprovalStateSchema = z.enum([
+  "draft",
+  "internal_review",
+  "data_science_approved",
+  "finance_approved",
+  "customer_safe",
+  "rejected",
+  "expired"
+]);
+
+export const MethodologyDedupePolicySchema = z.enum([
+  "none",
+  "session_highest_value",
+  "workflow_highest_value",
+  "event_level",
+  "external_method"
+]);
+
+export const MethodologyConfidenceTreatmentSchema = z.enum([
+  "none",
+  "point_estimate",
+  "range",
+  "confidence_interval",
+  "sensitivity_only"
+]);
+
+export const MethodologyCustomerSafeClaimEffectSchema = z.enum([
+  "no_effect",
+  "enables_directional",
   "enables_caveated",
   "enables_internal_only",
   "enables_customer_safe",
@@ -704,6 +747,119 @@ export function buildOutcomeInstrumentationMap(raw: unknown): OutcomeInstrumenta
   return OutcomeInstrumentationMapSchema.parse(raw);
 }
 
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+const MethodologyAssumptionSchema = z
+  .object({
+    assumption_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
+    label: z.string().min(1).max(160),
+    value_summary: z.string().min(1).max(500),
+    sensitivity: z.enum(["low", "medium", "high", "unknown"]),
+    approval_state: MethodologyApprovalStateSchema.optional()
+  })
+  .strict();
+
+const MethodologySensitivityTestSchema = z
+  .object({
+    sensitivity_test_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
+    variable: z.string().min(1).max(160),
+    change: z.string().min(1).max(160),
+    modeled_effect: z.string().min(1).max(500),
+    claim_effect: z.string().min(1).max(500)
+  })
+  .strict();
+
+export const MethodologySnapshotEntrySchema = z
+  .object({
+    methodology_snapshot_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
+    label: z.string().min(1).max(180),
+    source_system: MethodologySourceSystemSchema,
+    source_model: z.string().min(1).max(160),
+    methodology_version: z.string().min(1).max(160),
+    effective_date: z.string().regex(dateRegex),
+    reporting_window: z.string().min(1).max(80),
+    covered_surfaces: z.array(AiSurfaceSchema).min(1),
+    excluded_surfaces: z.array(AiSurfaceSchema).default([]),
+    base_rate_table_ref: z.string().min(1).max(180).optional(),
+    quality_multiplier_ref: z.string().min(1).max(180).optional(),
+    dedupe_policy: MethodologyDedupePolicySchema,
+    confidence_treatment: MethodologyConfidenceTreatmentSchema,
+    recapture_policy: z.string().min(1).max(240),
+    cost_model_ref: z.string().min(1).max(180).optional(),
+    dominant_assumptions: z.array(MethodologyAssumptionSchema).min(1),
+    sensitivity_tests: z.array(MethodologySensitivityTestSchema).default([]),
+    approval_state: MethodologyApprovalStateSchema,
+    approved_by_role: z.enum(["none", "data_science", "finance", "legal", "product", "gtm"]).default("none"),
+    customer_safe_claim_effect: MethodologyCustomerSafeClaimEffectSchema,
+    frozen_report_snapshot_ref: z.string().min(1).max(180).optional(),
+    caveats: z.array(z.string().min(1).max(500)).min(1)
+  })
+  .strict()
+  .superRefine((snapshot, ctx) => {
+    const covered = new Set(snapshot.covered_surfaces);
+    snapshot.excluded_surfaces.forEach((surface, index) => {
+      if (covered.has(surface)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `surface cannot be both covered and excluded: ${surface}`,
+          path: ["excluded_surfaces", index]
+        });
+      }
+    });
+
+    if (
+      snapshot.customer_safe_claim_effect === "enables_customer_safe" &&
+      snapshot.approval_state !== "customer_safe"
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "enables_customer_safe requires customer_safe methodology approval",
+        path: ["customer_safe_claim_effect"]
+      });
+    }
+
+    if (snapshot.approval_state === "customer_safe" && !snapshot.frozen_report_snapshot_ref) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "customer_safe methodology snapshots require a frozen_report_snapshot_ref",
+        path: ["frozen_report_snapshot_ref"]
+      });
+    }
+  });
+
+export const MethodologySnapshotRegistrySchema = z
+  .object({
+    schema_version: MethodologySnapshotRegistrySchemaVersionSchema,
+    registry_id: z.string().min(1).max(120),
+    org_id: z.string().min(1).max(120),
+    generated_at: z.string().datetime(),
+    source_system: z.literal("FluencyTracr"),
+    snapshots: z.array(MethodologySnapshotEntrySchema).min(1)
+  })
+  .strict()
+  .superRefine((registry, ctx) => {
+    rejectForbiddenGraphKeys(registry, ctx);
+    const seen = new Set<string>();
+    registry.snapshots.forEach((snapshot, index) => {
+      if (seen.has(snapshot.methodology_snapshot_id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `duplicate methodology_snapshot_id: ${snapshot.methodology_snapshot_id}`,
+          path: ["snapshots", index, "methodology_snapshot_id"]
+        });
+      }
+      seen.add(snapshot.methodology_snapshot_id);
+    });
+  });
+
+export type MethodologyApprovalState = z.infer<typeof MethodologyApprovalStateSchema>;
+export type MethodologySnapshotEntry = z.infer<typeof MethodologySnapshotEntrySchema>;
+export type MethodologySnapshotRegistry = z.infer<typeof MethodologySnapshotRegistrySchema>;
+
+export function buildMethodologySnapshotRegistry(raw: unknown): MethodologySnapshotRegistry {
+  return MethodologySnapshotRegistrySchema.parse(raw);
+}
+
 const ClaimReadinessRank: Record<ClaimReadinessState, number> = {
   suppressed: 0,
   not_measured: 1,
@@ -771,17 +927,133 @@ const inferClaimReadiness = (
   return weakestReadiness;
 };
 
+const capClaimReadiness = (readiness: ClaimReadinessState, ceiling: ClaimReadinessState): ClaimReadinessState => {
+  return ClaimReadinessRank[readiness] <= ClaimReadinessRank[ceiling] ? readiness : ceiling;
+};
+
+const isFinancialClaimCandidate = (
+  candidate: ValueHypothesisRegistryEntry,
+  maturityStage: MaturityStage,
+  evidenceTypes: Set<ValueEvidenceType>
+) => {
+  return (
+    maturityStage === "finance_approved" ||
+    candidate.target_maturity_stage === "finance_approved" ||
+    evidenceTypes.has("financial_model") ||
+    candidate.claim_templates_enabled.some((template) => /roi|payback|net benefit|financial|finance-approved/i.test(template))
+  );
+};
+
+const methodologyCaveatsForSnapshot = (snapshot: MethodologySnapshotEntry) => [
+  ...snapshot.caveats,
+  ...snapshot.excluded_surfaces.map((surface) => `Methodology excludes ${surface} from this estimate.`)
+];
+
+const applyMethodologyClaimGate = (
+  readiness: ClaimReadinessState,
+  safeClaimLanguage: string,
+  isFinancialClaim: boolean,
+  methodologySnapshot?: MethodologySnapshotEntry
+) => {
+  if (!methodologySnapshot) {
+    return {
+      claimReadiness: readiness,
+      safeClaimLanguage,
+      blockedMethodologyClaims: isFinancialClaim
+        ? ["Customer-facing ROI/payback requires a selected methodology snapshot with customer_safe approval."]
+        : [],
+      methodologyCaveats: []
+    };
+  }
+
+  const methodologyCaveats = methodologyCaveatsForSnapshot(methodologySnapshot);
+  const blockedMethodologyClaims: string[] = [];
+  let claimReadiness = readiness;
+  let gatedSafeClaimLanguage = safeClaimLanguage;
+
+  const suppressesClaim =
+    methodologySnapshot.customer_safe_claim_effect === "suppresses_claim" ||
+    ["draft", "rejected", "expired"].includes(methodologySnapshot.approval_state);
+
+  if (suppressesClaim) {
+    return {
+      claimReadiness: "suppressed" as ClaimReadinessState,
+      safeClaimLanguage: `No customer-safe value claim is available because methodology snapshot ${methodologySnapshot.methodology_snapshot_id} is ${methodologySnapshot.approval_state}.`,
+      blockedMethodologyClaims: [
+        `Financial value language is suppressed by methodology snapshot ${methodologySnapshot.methodology_snapshot_id}.`
+      ],
+      methodologyCaveats
+    };
+  }
+
+  if (isFinancialClaim) {
+    if (methodologySnapshot.approval_state === "customer_safe") {
+      return {
+        claimReadiness,
+        safeClaimLanguage: gatedSafeClaimLanguage,
+        blockedMethodologyClaims,
+        methodologyCaveats
+      };
+    }
+
+    if (methodologySnapshot.approval_state === "finance_approved") {
+      claimReadiness = capClaimReadiness(claimReadiness, "internal_only");
+      blockedMethodologyClaims.push("Customer-facing ROI/payback requires customer-safe methodology approval.");
+    } else {
+      claimReadiness = capClaimReadiness(claimReadiness, "caveated");
+      blockedMethodologyClaims.push(
+        `Finance-approved value language requires finance_approved or customer_safe methodology approval; current approval is ${methodologySnapshot.approval_state}.`
+      );
+    }
+  } else if (methodologySnapshot.customer_safe_claim_effect === "enables_caveated") {
+    claimReadiness = capClaimReadiness(claimReadiness, "caveated");
+  } else if (methodologySnapshot.customer_safe_claim_effect === "enables_internal_only") {
+    claimReadiness = capClaimReadiness(claimReadiness, "internal_only");
+  }
+
+  return {
+    claimReadiness,
+    safeClaimLanguage: gatedSafeClaimLanguage,
+    blockedMethodologyClaims,
+    methodologyCaveats
+  };
+};
+
 const StrongestSafeClaimInputSchema = z
   .object({
     graph: AiWorkValueGraphSchema,
     maturity_model: AiWorkMaturityModelSchema,
     value_hypothesis_registry: ValueHypothesisRegistrySchema,
     outcome_instrumentation_map: OutcomeInstrumentationMapSchema,
-    preferred_hypothesis_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/).optional()
+    methodology_snapshot_registry: MethodologySnapshotRegistrySchema.optional(),
+    preferred_hypothesis_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/).optional(),
+    preferred_methodology_snapshot_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/).optional()
   })
   .strict()
   .superRefine((input, ctx) => {
     rejectForbiddenGraphKeys(input, ctx);
+
+    if (input.preferred_methodology_snapshot_id && !input.methodology_snapshot_registry) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "preferred_methodology_snapshot_id requires methodology_snapshot_registry",
+        path: ["preferred_methodology_snapshot_id"]
+      });
+    }
+
+    if (
+      input.preferred_methodology_snapshot_id &&
+      input.methodology_snapshot_registry &&
+      !input.methodology_snapshot_registry.snapshots.some(
+        (snapshot) => snapshot.methodology_snapshot_id === input.preferred_methodology_snapshot_id
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `unknown methodology snapshot: ${input.preferred_methodology_snapshot_id}`,
+        path: ["preferred_methodology_snapshot_id"]
+      });
+    }
   });
 
 const StrongestSafeClaimDetailSchema = z
@@ -795,6 +1067,9 @@ const StrongestSafeClaimDetailSchema = z
     safe_claim_language: z.string().min(1).max(800),
     evidence_used: z.array(ValueEvidenceTypeSchema).default([]),
     aggregate_metric_refs: z.array(z.string().min(1).max(120)).default([]),
+    methodology_snapshot_id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/).optional(),
+    methodology_approval_state: MethodologyApprovalStateSchema.optional(),
+    methodology_caveats: z.array(z.string().min(1).max(500)).default([]),
     caveats: z.array(z.string().min(1).max(500)).default([])
   })
   .strict();
@@ -816,6 +1091,7 @@ export const StrongestSafeClaimSchema = z
     strongest_claim: StrongestSafeClaimDetailSchema,
     evidence_gaps: z.array(StrongestSafeClaimEvidenceGapSchema).default([]),
     blocked_stronger_claims: z.array(z.string().min(1).max(500)).default([]),
+    blocked_methodology_claims: z.array(z.string().min(1).max(500)).default([]),
     upgrade_actions: z.array(z.string().min(1).max(500)).default([]),
     governance_boundaries: z.array(z.string().min(1).max(500)).default([])
   })
@@ -869,7 +1145,16 @@ export function generateStrongestSafeClaim(raw: unknown): StrongestSafeClaim {
   const presentEvidence = candidate.current_evidence_state.filter((evidence) => evidence.evidence_present);
   const presentEvidenceTypes = new Set(presentEvidence.map((evidence) => evidence.evidence_type));
   const maturityStage = inferCurrentMaturityStage(presentEvidenceTypes);
-  const claimReadiness = inferClaimReadiness(candidate.current_evidence_state, candidate.required_evidence, maturityStage);
+  const inferredClaimReadiness = inferClaimReadiness(candidate.current_evidence_state, candidate.required_evidence, maturityStage);
+  const methodologySnapshot = input.methodology_snapshot_registry
+    ? input.preferred_methodology_snapshot_id
+      ? input.methodology_snapshot_registry.snapshots.find(
+          (snapshot) => snapshot.methodology_snapshot_id === input.preferred_methodology_snapshot_id
+        )
+      : input.methodology_snapshot_registry.snapshots.find(
+          (snapshot) => snapshot.customer_safe_claim_effect !== "suppresses_claim"
+        )
+    : undefined;
   const evidenceGaps = candidate.required_evidence
     .filter((evidenceType) => !presentEvidenceTypes.has(evidenceType))
     .map((evidenceType) => ({
@@ -882,12 +1167,20 @@ export function generateStrongestSafeClaim(raw: unknown): StrongestSafeClaim {
     }));
 
   const hasFinancialModel = presentEvidenceTypes.has("financial_model");
+  const isFinancialClaim = isFinancialClaimCandidate(candidate, maturityStage, presentEvidenceTypes);
   const safeClaimLanguage =
     maturityStage === "finance_approved" && hasFinancialModel
       ? candidate.claim_templates_enabled[0]
       : maturityStage === "outcome_linked"
         ? `Covered evidence supports a contribution story for ${candidate.expected_value_mechanism}`
         : `Evidence shows AI participation in ${candidate.work_pattern} work, but outcome and finance claims remain unproven.`;
+
+  const methodologyGate = applyMethodologyClaimGate(
+    inferredClaimReadiness,
+    safeClaimLanguage,
+    isFinancialClaim,
+    methodologySnapshot
+  );
 
   const blockedStrongerClaims = [
     ...candidate.risks_and_caveats.filter((caveat) => /do not/i.test(caveat)),
@@ -911,14 +1204,18 @@ export function generateStrongestSafeClaim(raw: unknown): StrongestSafeClaim {
       outcome_domain: candidate.outcome_domain,
       work_pattern: candidate.work_pattern,
       maturity_stage: maturityStage,
-      claim_readiness: claimReadiness,
-      safe_claim_language: safeClaimLanguage,
+      claim_readiness: methodologyGate.claimReadiness,
+      safe_claim_language: methodologyGate.safeClaimLanguage,
       evidence_used: Array.from(presentEvidenceTypes),
       aggregate_metric_refs: aggregateMetricRefs,
-      caveats: candidate.risks_and_caveats
+      methodology_snapshot_id: methodologySnapshot?.methodology_snapshot_id,
+      methodology_approval_state: methodologySnapshot?.approval_state,
+      methodology_caveats: methodologyGate.methodologyCaveats,
+      caveats: [...candidate.risks_and_caveats, ...methodologyGate.methodologyCaveats]
     },
     evidence_gaps: evidenceGaps,
     blocked_stronger_claims: blockedStrongerClaims,
+    blocked_methodology_claims: methodologyGate.blockedMethodologyClaims,
     upgrade_actions: candidate.upgrade_actions,
     governance_boundaries: [
       "No raw prompts, raw responses, transcripts, query text, tool payloads, or file contents.",

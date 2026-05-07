@@ -140,16 +140,17 @@ Use this graph to produce a value evidence packet:
 
 Schema version: `SSC_2026_05`
 
-The strongest safe claim generator is a downstream layer over the graph, maturity model, value hypothesis registry, and outcome instrumentation map. It selects the highest defensible claim available from aggregate evidence and returns:
+The strongest safe claim generator is a downstream layer over the graph, maturity model, value hypothesis registry, outcome instrumentation map, and optional Methodology Snapshot Registry. It selects the highest defensible claim available from aggregate evidence and returns:
 
 - strongest safe claim language
 - evidence used
 - evidence gaps
 - blocked stronger claims
+- blocked methodology claims
 - upgrade actions
 - governance boundaries
 
-It does not create ROI or payback language unless `financial_model` evidence is present and the claim is finance-approved. ROI is treated as the final claim layer, not the core product model.
+It does not create ROI or payback language unless `financial_model` evidence is present and the claim is finance-approved. When a methodology snapshot is present, financial language is gated by approval state: `customer_safe` can support customer-facing ROI/payback, `finance_approved` caps financial language at `internal_only`, and draft/rejected/expired/suppressing methodologies block or suppress financial claims. ROI is treated as the final claim layer, not the core product model.
 
 ## Demo Journey
 
@@ -176,6 +177,7 @@ The demo is synthetic and intentionally keeps the architecture broader than a Ni
 - AI Work Maturity Model (`AIWMM_2026_05`) defines how evidence types advance work examples through maturity stages.
 - Value Hypothesis Registry (`VHR_2026_05`) records CFO-legible hypotheses, indicators, evidence state, safe claim templates, and upgrade actions.
 - Outcome Instrumentation Map (`OIM_2026_05`) defines external systems of record, metric requirements, attribution strength, privacy boundaries, and claim-readiness effects.
+- Methodology Snapshot Registry (`MSR_2026_05`) records frozen methodology assumptions, exclusions, sensitivity tests, and approval state before value claims are generated.
 
 The value graph should feed customer evidence and executive reporting only after reportability checks are applied.
 
