@@ -118,5 +118,5 @@
 ## 2026-05-07 (UTC) — Cursor (Glean trust-layer deep dive)
 
 - Completed: Created branch `cursor/glean-trust-layer-deep-dive-c7e6`, added `artifacts/plan_glean_trust_layer_deep_dive.md`, and produced `artifacts/glean_trust_layer_deep_dive_2026-05-07.md` positioning FluencyTracr as an independent Glean Trust Evidence Plane.
-- Verified: Research/reporting slice only; no runtime code touched. Mechanical hygiene pending commit-time diff checks.
+- Verified: `git diff --check main...HEAD` passed after whitespace cleanup. Research/reporting slice only; no runtime code touched.
 - Next focus: If approved, convert the recommendations into docs/OpenSpec slices: AWARE crosswalk, Glean Trust Launch Pack, `WorkflowRun`-only live adapter proposal, and MCP Boundary Ledger contract.
