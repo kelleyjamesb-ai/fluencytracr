@@ -957,12 +957,14 @@ const applyMethodologyClaimGate = (
 ) => {
   if (!methodologySnapshot) {
     return {
-      claimReadiness: readiness,
+      claimReadiness: isFinancialClaim ? capClaimReadiness(readiness, "internal_only") : readiness,
       safeClaimLanguage,
       blockedMethodologyClaims: isFinancialClaim
         ? ["Customer-facing ROI/payback requires a selected methodology snapshot with customer_safe approval."]
         : [],
-      methodologyCaveats: []
+      methodologyCaveats: isFinancialClaim
+        ? ["No methodology snapshot was selected; customer-facing financial language is not enabled."]
+        : []
     };
   }
 

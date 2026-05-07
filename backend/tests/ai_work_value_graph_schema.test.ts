@@ -474,7 +474,7 @@ describe("Outcome Instrumentation Map contract", () => {
 });
 
 describe("Strongest Safe Claim generator", () => {
-  it("returns a finance-approved claim only when financial evidence is present", () => {
+  it("returns an internal-only finance claim when financial evidence is present but methodology is missing", () => {
     const result = generateStrongestSafeClaim({
       graph: customerSafeGraph,
       maturity_model: maturityModel,
@@ -487,12 +487,14 @@ describe("Strongest Safe Claim generator", () => {
     expect(result.roi_positioning).toBe("final_claim_layer");
     expect(result.strongest_claim.hypothesis_id).toBe("agentic_business_reporting");
     expect(result.strongest_claim.maturity_stage).toBe("finance_approved");
-    expect(result.strongest_claim.claim_readiness).toBe("customer_safe");
+    expect(result.strongest_claim.claim_readiness).toBe("internal_only");
     expect(result.strongest_claim.safe_claim_language).toMatch(/Finance-reviewed evidence supports a bounded value claim/);
+    expect(result.strongest_claim.methodology_caveats.join(" ")).toMatch(/No methodology snapshot was selected/);
     expect(result.strongest_claim.evidence_used).toEqual(
       expect.arrayContaining(["workflow_run", "action_log", "artifact_output", "control_evidence", "business_outcome", "financial_model"])
     );
     expect(result.blocked_stronger_claims.join(" ")).toMatch(/Do not generalize/);
+    expect(result.blocked_methodology_claims.join(" ")).toMatch(/Customer-facing ROI\/payback requires a selected methodology snapshot/);
     expect(StrongestSafeClaimSchema.parse(result)).toEqual(result);
   });
 

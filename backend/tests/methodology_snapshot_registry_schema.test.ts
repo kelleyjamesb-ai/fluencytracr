@@ -116,6 +116,22 @@ describe("Methodology Snapshot Registry contract", () => {
 });
 
 describe("Strongest Safe Claim methodology governance", () => {
+  it("downgrades financial claims by default when no methodology snapshot is present", () => {
+    const result = generateStrongestSafeClaim({
+      graph,
+      maturity_model: maturityModel,
+      value_hypothesis_registry: valueHypothesisRegistry,
+      outcome_instrumentation_map: outcomeInstrumentationMap,
+      preferred_hypothesis_id: "agentic_business_reporting"
+    });
+
+    expect(result.strongest_claim.maturity_stage).toBe("finance_approved");
+    expect(result.strongest_claim.claim_readiness).toBe("internal_only");
+    expect(result.strongest_claim.methodology_snapshot_id).toBeUndefined();
+    expect(result.strongest_claim.methodology_caveats.join(" ")).toMatch(/No methodology snapshot was selected/i);
+    expect(result.blocked_methodology_claims.join(" ")).toMatch(/selected methodology snapshot/i);
+  });
+
   it("caps financial claims at internal-only when methodology is finance-approved but not customer-safe", () => {
     const result = generateStrongestSafeClaim({
       graph,

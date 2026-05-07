@@ -50,6 +50,14 @@ The system SHALL include methodology snapshot lineage and caveats when generatin
 - **THEN** the financial claim is capped at `internal_only`
 - **AND** the output explains that customer-facing ROI or payback requires customer-safe methodology approval
 
+#### Scenario: Missing methodology snapshot
+
+- **GIVEN** a value hypothesis has financial model evidence
+- **AND** no methodology snapshot is selected
+- **WHEN** Strongest Safe Claim is generated
+- **THEN** the financial claim is capped below `customer_safe`
+- **AND** the output explains that customer-facing ROI or payback requires a selected customer-safe methodology snapshot
+
 #### Scenario: Suppressed methodology
 
 - **GIVEN** a selected methodology snapshot has a rejected, expired, draft, or suppressing state
