@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   GleanClaimEvaluationSetSchema,
   GleanClaimRegistrySchema,
+  GleanAssumptionLedgerSchema,
   GleanValueEvidencePackSchema,
   buildGleanClaimEvaluationSetForRegistry,
   mapClaimEvaluationToValueEvidenceClaimReadiness
@@ -21,10 +22,12 @@ function readJson(relativePath) {
 const registry = readJson("docs/contracts/glean-claim-registry/examples/default-claim-registry.json");
 const evaluations = readJson("docs/contracts/glean-claim-registry/examples/org-northstar-claim-evaluations.json");
 const valuePack = readJson("docs/contracts/glean-value-evidence/examples/org-northstar-value-pack.json");
+const assumptionLedger = readJson("docs/contracts/glean-assumption-ledger/examples/default-assumption-ledger.json");
 
 GleanClaimRegistrySchema.parse(registry);
 GleanClaimEvaluationSetSchema.parse(evaluations);
 GleanValueEvidencePackSchema.parse(valuePack);
+GleanAssumptionLedgerSchema.parse(assumptionLedger);
 const validatedEvaluations = buildGleanClaimEvaluationSetForRegistry(evaluations, registry);
 const mappedEvaluations = validatedEvaluations.evaluations.map(mapClaimEvaluationToValueEvidenceClaimReadiness);
 const mappedByClaimId = new Map(mappedEvaluations.map((claim) => [claim.claim_id, claim]));
@@ -62,6 +65,20 @@ for (const claim of valuePack.claim_readiness) {
     (claim.language_mode === "executive_safe" || claim.language_mode === "customer_safe_with_caveats")
   ) {
     throw new Error(`Value pack ROI claim ${claim.claim_id} uses customer-safe language.`);
+  }
+}
+
+for (const assumption of assumptionLedger.assumptions) {
+  const riskyForCustomer = assumption.confidence === "low" || assumption.sensitivity.tier === "high";
+  if (
+    riskyForCustomer &&
+    (assumption.approved_for_customer_claims ||
+      assumption.approval_state === "customer_safe" ||
+      assumption.customer_visible ||
+      assumption.claim_language_constraint === "customer_safe_allowed" ||
+      assumption.claim_language_constraint === "customer_safe_with_caveats")
+  ) {
+    throw new Error(`Unsafe customer-facing assumption: ${assumption.assumption_id}`);
   }
 }
 
