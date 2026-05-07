@@ -57,4 +57,3 @@ Included examples:
 - Value Hypothesis Registry (`VHR_2026_05`) defines expected value mechanisms and required evidence.
 - AI Work Maturity Model (`AIWMM_2026_05`) defines maturity stage progression.
 - Outcome Instrumentation Map (`OIM_2026_05`) defines which external metrics can move claim readiness and what attribution/privacy requirements apply.
-

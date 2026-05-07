@@ -67,4 +67,3 @@ Included examples:
 ## Relationship To Value Hypotheses
 
 Use the Value Hypothesis Registry (`VHR_2026_05`) when the question is not only "what maturity stage is this work in?" but "what business value do we expect, what evidence is required, and what claim templates are enabled?"
-

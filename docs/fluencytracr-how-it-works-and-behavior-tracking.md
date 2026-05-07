@@ -134,10 +134,10 @@ flowchart LR
 
 ## Recommended Framing
 
-**Best one-sentence explanation:**  
+**Best one-sentence explanation:**
 FluencyTracr measures aggregate AI-workflow behavior from safe metadata, then suppresses anything that cannot be interpreted defensibly.
 
-**What to validate first with Juhi:**  
+**What to validate first with Juhi:**
 Whether the feature families are credible proxies for the constructs we claim: adoption, trust calibration, friction, recovery, diffusion, and oversight.
 
 ## Source Anchors
