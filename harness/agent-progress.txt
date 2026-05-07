@@ -154,3 +154,10 @@
 - Verified: `npm run build --workspace shared`; `npm run glean:readiness:sources`; `npm test --workspace backend -- --runTestsByPath tests/glean_source_readiness_adapter.test.ts tests/glean_source_readiness_cli_contract.test.ts`; `node scripts/validate_glean_readiness_examples.mjs`; `npx openspec validate expand-glean-readiness-for-skills-agents --strict`; `git diff --check`.
 - Review: code-reviewer found arbitrary free-text leak risk in source notes/actions; fixed by replacing source text with closed `validation_note_code`, `action_code`, and enum governance reasons, plus privacy tests. Final blocker review found no blocking/important findings.
 - Next focus: Slice 5 from the plan — metadata-only Glean AI Work Evidence adapter that maps approved Glean AI work surfaces into readiness and claim evaluation without raw content.
+
+## 2026-05-07 (UTC) — Cursor (Glean AI Work Evidence adapter)
+
+- Completed: Implemented Slice 5 from the plan: OpenSpec `add-glean-ai-work-evidence-adapter`, `docs/contracts/glean-ai-work-evidence/README.md`, synthetic `org-northstar-ai-work-export.json`, shared `GleanAiWorkEvidenceExportSchema`, readiness inventory mapping, and registry-aware claim evaluation mapping.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_ai_work_evidence_adapter.test.ts` (5 tests); `npx openspec validate add-glean-ai-work-evidence-adapter --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer found fabricated assumptions-lane and lane divergence risks; fixed by suppressing time-saved/ROI until assumptions are supplied separately, rejecting duplicate lanes, aligning reason codes with the registry, rendering fixed note codes into validation evidence, and adding tests. Re-review found no remaining blocking/important issues.
+- Next focus: Slice 6 from the plan — MCP tools for bounded Value Evidence Pack and claim safety access.

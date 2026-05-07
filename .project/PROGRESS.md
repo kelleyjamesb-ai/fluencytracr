@@ -38,6 +38,7 @@
 - Glean Claim Registry contract slice is complete: OpenSpec `add-glean-claim-registry`, shared `GCR_2026_05` schemas, default 10-template registry, org-window evaluation example, registry-aware mapping into Value Evidence Pack claim readiness, and a Glean value governance gate.
 - Glean Assumption Ledger contract slice is complete: OpenSpec `add-glean-assumption-ledger`, shared `GAL_2026_05` schema, Time-Saves-seeded assumption ledger example, targeted tests, and governance gate coverage for low-confidence/high-sensitivity customer-facing assumptions.
 - Glean Skills + Auto Mode Agent readiness slice is complete: source readiness adapter supports `agent_run` and `skill_lifecycle`, source fixtures use closed note/action codes, source-derived readiness map includes Skills and Auto Mode Agents as current value surfaces, and privacy tests reject arbitrary free text.
+- Glean AI Work Evidence adapter slice is complete: OpenSpec `add-glean-ai-work-evidence-adapter`, shared `GAW_2026_05` metadata-only schema, readiness inventory mapping, registry-aware claim evaluation mapping, docs/example, and targeted tests.
 
 ## Blockers
 
@@ -50,4 +51,4 @@
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
-- If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; next slice should implement the metadata-only Glean AI Work Evidence adapter from `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`.
+- If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; next slice should expose bounded read tools for Value Evidence Pack and claim safety through the MCP package.

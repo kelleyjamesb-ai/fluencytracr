@@ -13,4 +13,5 @@ export * from "./gleanReadinessToUnifiedTelemetry";
 export * from "./gleanValueEvidenceSchemas";
 export * from "./gleanClaimRegistrySchemas";
 export * from "./gleanAssumptionLedgerSchemas";
+export * from "./gleanAiWorkEvidenceAdapter";
 export * from "./metricConstants";
