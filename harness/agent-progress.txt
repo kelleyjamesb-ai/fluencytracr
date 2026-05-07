@@ -147,3 +147,10 @@
 - Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_assumption_ledger_schema.test.ts` (6 tests); `npx openspec validate add-glean-assumption-ledger --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
 - Review: code-reviewer found a customer-safe loophole for low-confidence/high-sensitivity assumptions and README field omission; fixed by blocking `approval_state: customer_safe`, customer-facing language constraints, and customer visibility for risky assumptions, requiring `last_reviewed_at`, and adding tests. Final blocker review found no remaining blocker/important findings.
 - Next focus: Slice 4 from the plan — promote Skills and Auto Mode Agents in readiness/value signal families with lifecycle fixtures and mappings.
+
+## 2026-05-07 (UTC) — Cursor (Glean Skills + Auto Mode readiness)
+
+- Completed: Implemented Slice 4 from the plan: OpenSpec `expand-glean-readiness-for-skills-agents`, `agent_run` and `skill_lifecycle` source readiness support, Auto Mode Agent and Skill lifecycle source fixtures, generator default/arg updates, regenerated source-derived readiness map, and targeted adapter/CLI tests.
+- Verified: `npm run build --workspace shared`; `npm run glean:readiness:sources`; `npm test --workspace backend -- --runTestsByPath tests/glean_source_readiness_adapter.test.ts tests/glean_source_readiness_cli_contract.test.ts`; `node scripts/validate_glean_readiness_examples.mjs`; `npx openspec validate expand-glean-readiness-for-skills-agents --strict`; `git diff --check`.
+- Review: code-reviewer found arbitrary free-text leak risk in source notes/actions; fixed by replacing source text with closed `validation_note_code`, `action_code`, and enum governance reasons, plus privacy tests. Final blocker review found no blocking/important findings.
+- Next focus: Slice 5 from the plan — metadata-only Glean AI Work Evidence adapter that maps approved Glean AI work surfaces into readiness and claim evaluation without raw content.

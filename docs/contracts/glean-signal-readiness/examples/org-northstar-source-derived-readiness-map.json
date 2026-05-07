@@ -32,7 +32,67 @@
         {
           "checked_at": "2026-05-01T13:00:00.000Z",
           "evidence_type": "sample_export_review",
-          "note": "WorkflowRun aggregate fields are available without raw content."
+          "note": "WorkflowRun aggregate fields are available with unsafe content excluded."
+        }
+      ]
+    },
+    {
+      "signal_family": "agent_run",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "run_id",
+        "workflow_run_id",
+        "trace_id"
+      ],
+      "derived_dimensions": [
+        "behavior_change",
+        "capability_growth",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T13:00:00.000Z",
+          "evidence_type": "sample_export_review",
+          "note": "Auto Mode Agent lifecycle metadata is available as aggregate run and status fields with unsafe content excluded."
+        }
+      ]
+    },
+    {
+      "signal_family": "skill_lifecycle",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "not_applicable",
+      "stable_join_keys": [
+        "skill_artifact_id",
+        "event_timestamp"
+      ],
+      "derived_dimensions": [
+        "capability_growth",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T13:00:00.000Z",
+          "evidence_type": "sample_export_review",
+          "note": "Skill lifecycle metadata is available as aggregate creation, enablement, routing, and invocation counts with unsafe instruction content excluded."
         }
       ]
     },

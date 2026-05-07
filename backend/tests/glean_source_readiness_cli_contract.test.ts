@@ -28,6 +28,8 @@ describe("generate_glean_readiness_from_sources.mjs", () => {
 
     expect(map.schema_version).toBe("GSR_2026_05");
     expect(statuses.workflow_run).toBe("present");
+    expect(statuses.agent_run).toBe("present");
+    expect(statuses.skill_lifecycle).toBe("present");
     expect(statuses.mcp_usage).toBe("not_computed");
     expect(statuses.ai_security).toBe("suppressed");
   });
