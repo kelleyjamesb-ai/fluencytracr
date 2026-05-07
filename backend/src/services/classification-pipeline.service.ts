@@ -8,7 +8,7 @@ import type { ExecutionClassificationOutcome } from "../repositories/classificat
 import type { WorkflowAggregateRepository } from "../repositories/workflow-aggregate.repository";
 import { evaluateFsc } from "./fsc-evaluator";
 import { evaluateMinimumSignalGate } from "./minimum-signal-gate";
-import { classifyBehaviorPattern, type BehaviorPattern } from "./pattern-classifier";
+import { classifyBehaviorPattern, type BehaviorPattern, type SignalBucket } from "./pattern-classifier";
 import { detectSignals, type LatencyDetectionResult } from "./signal-detectors";
 import { evaluateSuppression, type SuppressionReason } from "./suppression-engine";
 import {

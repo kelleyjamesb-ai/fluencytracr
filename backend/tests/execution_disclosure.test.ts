@@ -4,6 +4,7 @@ import {
   evaluateExecutionDisclosure,
   MIN_EVENT_COUNT_FOR_DISCLOSURE
 } from "../src/execution_disclosure";
+import { FLUENCY_GATES_ALL_PASS } from "../src/fluency_execution_gates";
 import { attachPhase2ToTraces } from "../src/execution_signals";
 import { reconstructTrace } from "../src/trace_engine";
 
@@ -44,6 +45,45 @@ describe("evaluateExecutionDisclosure", () => {
     );
     expect(d.state).toBe("SUPPRESSED");
     expect(d.reasons).toContain("invalid_timestamps");
+  });
+
+  it("SUPPRESSED with incomplete_execution when FSC fails", () => {
+    const d = evaluateExecutionDisclosure(signals({}), {
+      fsc_eligible: false,
+      fsc_failed_checks: ["boundary_integrity"],
+      min_signal_allowed: true,
+      min_signal_failed_checks: []
+    });
+    expect(d.state).toBe("SUPPRESSED");
+    expect(d.reasons).toContain("incomplete_execution");
+    expect(d.reasons).toContain("fsc:boundary_integrity");
+  });
+
+  it("SUPPRESSED with insufficient_signal when min gate fails after FSC", () => {
+    const d = evaluateExecutionDisclosure(signals({}), {
+      fsc_eligible: true,
+      fsc_failed_checks: [],
+      min_signal_allowed: false,
+      min_signal_failed_checks: ["minimum_signal_channel"]
+    });
+    expect(d.state).toBe("SUPPRESSED");
+    expect(d.reasons).toContain("insufficient_signal");
+    expect(d.reasons).toContain("min_signal:minimum_signal_channel");
+  });
+
+  it("SUPPRESSED with classification_ambiguity when suppression engine returns AMBIGUITY", () => {
+    const d = evaluateExecutionDisclosure(
+      signals({ confidence_tier: "high" }),
+      FLUENCY_GATES_ALL_PASS,
+      {
+        status: "SUPPRESSED",
+        reason: "AMBIGUITY",
+        diagnostics: Object.freeze(["classification_blocked:AMBIGUITY"])
+      }
+    );
+    expect(d.state).toBe("SUPPRESSED");
+    expect(d.reasons).toContain("classification_ambiguity");
+    expect(d.reasons).toContain("suppression:classification_blocked:AMBIGUITY");
   });
 
   it("documents minimum event threshold", () => {

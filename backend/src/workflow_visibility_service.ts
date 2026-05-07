@@ -1,4 +1,4 @@
-import { store } from "./store";
+import { store, type FluencyEventRecord } from "./store";
 import {
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
@@ -34,7 +34,8 @@ const normalizeDominantPattern = (pattern: string | null): DominantPattern | nul
 export const computeWorkflowVisibility = async (
   orgId: string,
   workflowId: string,
-  now: Date
+  now: Date,
+  fluencyEventsOverride?: FluencyEventRecord[]
 ) => {
   const entries = await listRegistryEntriesByWorkflow(orgId, workflowId);
   const latest = entries
@@ -56,12 +57,13 @@ export const computeWorkflowVisibility = async (
   const policyConfig = getPolicyConfigForRegistryVersion(policyConfigs, latest);
   const baselineResetAt = getBaselineResetAtForRegistryVersion(baselineResets, latest);
 
+  const fluencyEvents = fluencyEventsOverride ?? Array.from(store.fluencyEvents.values());
   const visibilityState = computeVisibilityState(workflowId, "60d", {
     now,
     registryEntry: latest,
     policyConfig,
     baselineResetAt,
-    fluencyEvents: Array.from(store.fluencyEvents.values()),
+    fluencyEvents,
     v0Signals: Array.from(store.behavioralSignals.values()),
     patternInferenceRecords: store.patternInferenceRecords
   });

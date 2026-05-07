@@ -1,13 +1,12 @@
 import type { FluencyPatternName, FluencyWindow } from "@learnaire/shared";
-import {
-  classifyExecutionPattern,
-  computeExecutionSignals,
-  DEFAULT_PHASE2_THRESHOLDS
-} from "./execution_signals";
+import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "./execution_signals";
 import { evaluateExecutionDisclosure } from "./execution_disclosure";
+import { evaluateFluencyExecutionGates, toTraceGateSummary } from "./fluency_execution_gates";
+import { runFluencyPatternSuppression } from "./fluency-pattern-suppression";
 import type { FluencyEventRecord } from "./store";
+import { computeExecutionLifecycle } from "./execution_lifecycle";
 import { filterEventsByWindow, MIN_COHORT_SIZE } from "./fluencytracr";
-import { groupEventsByExecution, reconstructTrace } from "./trace_engine";
+import { groupEventsByExecution, reconstructTrace, sortEventsByTimestamp } from "./trace_engine";
 import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
 
 export const PATTERN_ORDER: FluencyPatternName[] = [
@@ -101,12 +100,21 @@ export const buildObservabilityRollup = (
       if (!trace) {
         continue;
       }
+      const ordered = sortEventsByTimestamp(group);
+      const lifecycle = computeExecutionLifecycle(ordered, trace, { now });
+      const gates = toTraceGateSummary(evaluateFluencyExecutionGates(ordered, trace, lifecycle));
       const signals = computeExecutionSignals(group, trace);
-      const disclosure = evaluateExecutionDisclosure(signals);
-      const pattern = classifyExecutionPattern(signals, workflowThresholds);
+      const { pattern, suppression } = runFluencyPatternSuppression({
+        signals,
+        thresholds: workflowThresholds,
+        gates
+      });
+      const disclosure = evaluateExecutionDisclosure(signals, gates, suppression);
       if (disclosure.state === "ALLOWED") {
         executions_disclosed += 1;
-        dist[pattern] += 1;
+        if (pattern !== null) {
+          dist[pattern] += 1;
+        }
       } else {
         executions_suppressed += 1;
       }

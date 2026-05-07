@@ -76,6 +76,11 @@ import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
 import {
+  isFluencyCanonicalPersistenceEnabled,
+  loadFluencyEventRecords,
+  persistFluencyEventRecord
+} from "./services/fluency-canonical-persistence";
+import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
   filterEventsByScope,
@@ -569,11 +574,17 @@ const evidenceWindowDays = (window: EvidenceBundleWindow): number => {  if (wind
   return WINDOW_DAYS[window];
 };
 
-const buildEvidenceBundle = (orgId: string, window: EvidenceBundleWindow) => {  const now = new Date();
+const buildEvidenceBundle = (
+  orgId: string,
+  window: EvidenceBundleWindow,
+  fluencyEvents?: FluencyEventRecord[]
+) => {
+  const now = new Date();
   const start = new Date(now);
   start.setUTCDate(start.getUTCDate() - evidenceWindowDays(window));
 
-  const scopedEvents = Array.from(store.fluencyEvents.values()).filter((event) => {
+  const source = fluencyEvents ?? Array.from(store.fluencyEvents.values());
+  const scopedEvents = source.filter((event) => {
     const timestamp = new Date(event.timestamp);
     if (Number.isNaN(timestamp.getTime()) || timestamp < start || timestamp > now) {
       return false;
@@ -2944,7 +2955,7 @@ app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFie
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/api/ingest", ingestLimiter, (req, res) => {
+app.post("/api/ingest", ingestLimiter, async (req, res) => {
   const schemaVersion = req.header("X-FluencyTracr-Schema-Version");
   const acceptedVersions = getAcceptedSchemaVersions();
   if (!schemaVersion || !acceptedVersions.includes(schemaVersion)) {
@@ -3020,8 +3031,31 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
     });
   });
 
-  acceptedEvents.forEach((event) => {
-    insertFluencyEvent(buildFluencyEventRecord(event, crypto.randomUUID()));  });
+  try {
+    for (const event of acceptedEvents) {
+      const eventId = crypto.randomUUID();
+      const record = buildFluencyEventRecord(event, eventId);
+      await persistFluencyEventRecord(record, {
+        orgId: req.authOrgId,
+        schemaVersion
+      });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (isFluencyCanonicalPersistenceEnabled() && message.includes("org_id required")) {
+      return res.status(400).json({
+        error: "org_id required for canonical persistence",
+        reason_code: "missing_org_scope",
+        message:
+          "When DATABASE_URL is set, fluency ingest must include org scope (JWT org_id or x-org-id in dev)."
+      });
+    }
+    return res.status(500).json({
+      error: "Ingest persistence failed",
+      reason_code: "persist_failed",
+      message
+    });
+  }
 
   const response = {
     receipt_id: `rcpt_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`,
@@ -3764,6 +3798,7 @@ app.get(
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
     const baselineResets = await listBaselineResetsByOrg(org.id);
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
     const baselineResetsByWorkflowVersion = entries.reduce<Record<string, string | null>>(
       (acc, entry) => {
         acc[`${entry.workflowId}:${entry.version}`] = getBaselineResetAtForRegistryVersion(
@@ -3777,7 +3812,7 @@ app.get(
     const summary = computeWorkflowVisibilitySummary(entries, parsedWindow.data, {
       policyConfigs,
       baselineResetsByWorkflowVersion,
-      fluencyEvents: Array.from(store.fluencyEvents.values()),
+      fluencyEvents,
       v0Signals: Array.from(store.behavioralSignals.values()),
       patternInferenceRecords: store.patternInferenceRecords
     });
@@ -3826,6 +3861,7 @@ app.get(
         return acc;
       }, new Map<string, (typeof entries)[number]>());
     const now = new Date();
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
     const workflows = await Promise.all(
       Array.from(currentWorkflows.values())
         .sort((a, b) => {
@@ -3835,7 +3871,7 @@ app.get(
           return a.workflowId.localeCompare(b.workflowId);
         })
         .map(async (workflow) => {
-          const visibility = await computeWorkflowVisibilityService(org.id, workflow.workflowId, now);
+          const visibility = await computeWorkflowVisibilityService(org.id, workflow.workflowId, now, fluencyEvents);
           const workingStyle =
             visibility.visibilityState === "VISIBLE"
               ? patternToExecutiveWorkingStyle(visibility.dominantPattern)
@@ -3895,7 +3931,7 @@ app.post(
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const parsed = FluencyEventIngestSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
@@ -3904,17 +3940,34 @@ app.post(
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds: string[] = [];
     const executionIds: string[] = [];
-    parsed.data.events.forEach((event) => {
-      const eventId = crypto.randomUUID();
-      const record = buildFluencyEventRecord(event, eventId);
-      insertFluencyEvent(record);
-      eventIds.push(eventId);
-      executionIds.push(record.execution_id);    });
+    try {
+      for (const event of parsed.data.events) {
+        const eventId = crypto.randomUUID();
+        const record = buildFluencyEventRecord(event, eventId);
+        await persistFluencyEventRecord(record, {
+          orgId: req.authOrgId,
+          schemaVersion
+        });
+        eventIds.push(eventId);
+        executionIds.push(record.execution_id);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (isFluencyCanonicalPersistenceEnabled() && message.includes("org_id required")) {
+        return res.status(400).json({
+          error: "org_id required for canonical persistence",
+          message:
+            "When DATABASE_URL is set, fluency ingest must include org scope (JWT org_id or x-org-id in dev)."
+        });
+      }
+      return res.status(500).json({ error: "Event persistence failed", message });
+    }
 
     return res.json({
       ingested: eventIds.length,
       event_ids: eventIds,
-      execution_ids: executionIds,      schema_version: schemaVersion
+      execution_ids: executionIds,
+      schema_version: schemaVersion
     });
   }
 );
@@ -3932,7 +3985,7 @@ const TraceReconstructedQuerySchema = z
 app.get(
   "/api/traces/reconstructed",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const parsed = TraceReconstructedQuerySchema.safeParse({
       workflow_id: typeof req.query.workflow_id === "string" ? req.query.workflow_id : undefined,
       execution_id: typeof req.query.execution_id === "string" ? req.query.execution_id : undefined,
@@ -3945,7 +3998,8 @@ app.get(
         details: parsed.error.flatten()
       });
     }
-    const events = Array.from(store.fluencyEvents.values()).filter((event) => {
+    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
+    const events = loadedEvents.filter((event) => {
       if (!req.authOrgId) {
         return true;
       }
@@ -3973,7 +4027,7 @@ app.get(
 app.get(
   "/api/observability/:orgId",
   rbacMiddleware(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -3989,8 +4043,9 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
     const observationWindow = windowParsed.data;
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
     const workflows = buildObservabilityRollup(
-      Array.from(store.fluencyEvents.values()),
+      fluencyEvents,
       org.id,
       observationWindow,
       { minDisclosedExecutions: MIN_COHORT_SIZE, now: new Date() }
@@ -4178,7 +4233,7 @@ app.get(
 app.get(
   "/api/evidence/bundles/:orgId",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -4194,14 +4249,16 @@ app.get(
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json(bundle);
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: req.params.orgId });
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow, fluencyEvents);
+    return res.json(bundle);
   }
 );
 
 app.get(
   "/api/evidence/coverage/:orgId",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -4217,7 +4274,9 @@ app.get(
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json({
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: req.params.orgId });
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow, fluencyEvents);
+    return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
       window: bundle.window,
@@ -4231,7 +4290,7 @@ app.get(
 app.get(
   "/api/evidence/controls/:orgId",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -4247,7 +4306,9 @@ app.get(
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json({
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: req.params.orgId });
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow, fluencyEvents);
+    return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
       window: bundle.window,
@@ -4301,7 +4362,7 @@ app.post(
 app.post(
   "/api/ledger/:id/evaluate",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const entry = store.decisionLedgerEntries.get(req.params.id);
     if (!entry) {
       return res.status(404).json({ error: "Ledger entry not found" });
@@ -4328,7 +4389,7 @@ app.post(
       return res.status(400).json({ error: "Observation window too short" });
     }
 
-    const events: FluencyEventRecord[] = Array.from(store.fluencyEvents.values());
+    const events: FluencyEventRecord[] = await loadFluencyEventRecords({});
     const scoped = filterEventsByScope(events, entry.decision.scope);
     const observationEvents = scoped.filter((event) => {
       const ts = new Date(event.timestamp);
