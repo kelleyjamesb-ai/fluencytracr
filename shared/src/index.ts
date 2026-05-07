@@ -11,4 +11,5 @@ export * from "./gleanSignalReadinessSchemas";
 export * from "./gleanSourceReadinessAdapter";
 export * from "./gleanReadinessToUnifiedTelemetry";
 export * from "./gleanValueEvidenceSchemas";
+export * from "./gleanClaimRegistrySchemas";
 export * from "./metricConstants";

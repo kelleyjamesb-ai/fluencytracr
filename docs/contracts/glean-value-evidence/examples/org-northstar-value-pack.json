@@ -137,9 +137,9 @@
       "confidence_basis": "derived_aggregate",
       "readiness_state": "customer_safe_with_caveats",
       "language_mode": "customer_safe_with_caveats",
-      "reason_codes": [],
+      "reason_codes": ["directional_only", "coverage_limited"],
       "contributing_lanes": ["surface_usage", "assumptions"],
-      "customer_safe_language": "Covered assistance surfaces show directional time-saved evidence for this reporting window."
+      "customer_safe_language": "Covered Glean assistance surfaces show directional time-saved evidence for this reporting window."
     },
     {
       "claim_id": "glean.roi.customer_value_to_cost",
@@ -161,9 +161,9 @@
       "confidence_basis": "direct_observed",
       "readiness_state": "customer_safe_with_caveats",
       "language_mode": "customer_safe_with_caveats",
-      "reason_codes": [],
+      "reason_codes": ["directional_only"],
       "contributing_lanes": ["skill_lifecycle"],
-      "customer_safe_language": "Aggregate skill lifecycle evidence indicates repeatable expertise is being operationalized."
+      "customer_safe_language": "Aggregate Skill lifecycle evidence indicates reusable expertise is being operationalized."
     },
     {
       "claim_id": "glean.mcp.governed_action_boundary",
@@ -174,7 +174,7 @@
       "readiness_state": "not_computed",
       "language_mode": "suppressed",
       "reason_codes": ["missing_source"],
-      "contributing_lanes": ["mcp_action_boundary"],
+      "contributing_lanes": [],
       "customer_safe_language": null
     }
   ],

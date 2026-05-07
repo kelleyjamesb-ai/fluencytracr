@@ -186,7 +186,7 @@ const AssumptionEvidenceSchema = z
   })
   .strict();
 
-const ClaimReadinessSchema = z
+export const GleanValueClaimReadinessSchema = z
   .object({
     claim_id: z.string().min(1).max(120),
     claim_type: z.enum([
@@ -217,6 +217,8 @@ const ClaimReadinessSchema = z
       claim.evidence_state
     );
     const safeLanguage = claim.language_mode === "executive_safe" || claim.language_mode === "customer_safe_with_caveats";
+    const safeReadiness =
+      claim.readiness_state === "customer_safe" || claim.readiness_state === "customer_safe_with_caveats";
 
     if (claim.evaluation_state === "suppress" || unsafeEvidence) {
       if (claim.language_mode !== "suppressed") {
@@ -247,6 +249,13 @@ const ClaimReadinessSchema = z
           message: "Suppressed or unsafe claims must not include customer-safe language."
         });
       }
+      if (claim.approved_language) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["approved_language"],
+          message: "Suppressed or unsafe claims must not include approved language."
+        });
+      }
     }
 
     if (safeLanguage && !claim.customer_safe_language && !claim.approved_language) {
@@ -254,6 +263,22 @@ const ClaimReadinessSchema = z
         code: z.ZodIssueCode.custom,
         path: ["customer_safe_language"],
         message: "Customer-safe claim language requires approved language."
+      });
+    }
+
+    if (safeReadiness && !safeLanguage) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["language_mode"],
+        message: "Customer-safe readiness requires customer-safe language mode."
+      });
+    }
+
+    if (claim.claim_type === "roi" && (safeLanguage || safeReadiness)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["language_mode"],
+        message: "ROI claim readiness must not use customer-safe language until assumption governance approves it."
       });
     }
   });
@@ -283,7 +308,7 @@ export const GleanValueEvidencePackSchema = z
     artifact_outputs: ArtifactOutputEvidenceSchema,
     control_evidence: ControlEvidenceSchema,
     assumptions: AssumptionEvidenceSchema,
-    claim_readiness: z.array(ClaimReadinessSchema).min(1),
+    claim_readiness: z.array(GleanValueClaimReadinessSchema).min(1),
     next_instrumentation_actions: z.array(NextInstrumentationActionSchema).default([])
   })
   .strict();
@@ -291,6 +316,7 @@ export const GleanValueEvidencePackSchema = z
 export type GleanValueEvidencePack = z.infer<typeof GleanValueEvidencePackSchema>;
 export type GleanValueEvidenceLane = z.infer<typeof GleanValueEvidenceLaneSchema>;
 export type GleanValueClaimReadinessState = z.infer<typeof GleanValueClaimReadinessStateSchema>;
+export type GleanValueClaimReadiness = z.infer<typeof GleanValueClaimReadinessSchema>;
 
 export function buildGleanValueEvidencePack(raw: unknown): GleanValueEvidencePack {
   return GleanValueEvidencePackSchema.parse(raw);

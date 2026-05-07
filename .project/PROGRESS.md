@@ -35,6 +35,7 @@
 - Out-of-band Glean trust-layer strategy artifact is complete; the referenced enclosed paper was not found on disk and should be added by path before a paper-specific appendix is written.
 - Out-of-band Glean Value Evidence execution plan is complete; it reframes the insertable product around Glean client value evidence across Search/Chat, Skills, Auto Mode Agents, triggered Agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
 - Glean Value Evidence Pack contract slice is complete: OpenSpec `add-glean-value-evidence-pack`, shared `GVE_2026_05` Zod schema, contract docs, synthetic example, and backend schema tests.
+- Glean Claim Registry contract slice is complete: OpenSpec `add-glean-claim-registry`, shared `GCR_2026_05` schemas, default 10-template registry, org-window evaluation example, registry-aware mapping into Value Evidence Pack claim readiness, and a Glean value governance gate.
 
 ## Blockers
 
@@ -47,4 +48,4 @@
 - Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
-- If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; next slice should be the Claim Registry contract from `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`.
+- If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; next slice should be the Assumption Ledger contract from `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`.

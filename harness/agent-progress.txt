@@ -133,3 +133,10 @@
 - Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_value_evidence_pack_schema.test.ts` (3 tests); `npx openspec validate add-glean-value-evidence-pack --strict`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
 - Review: code-reviewer found claim-safety and doc/spec consistency issues; fixed with claim `.superRefine`, broader forbidden-field tests, README required field list, and `not_present` vocabulary alignment.
 - Next focus: Slice 2 from the plan — OpenSpec + contracts for `add-glean-claim-registry` so customer-safe ROI/value language is governed separately from the pack shape.
+
+## 2026-05-07 (UTC) — Cursor (Glean Claim Registry contract)
+
+- Completed: Implemented Slice 2 from the plan: OpenSpec `add-glean-claim-registry`, `docs/contracts/glean-claim-registry/README.md`, default 10-template registry example, org-window evaluation example, shared `GCR_2026_05` registry/evaluation schemas, registry-aware validation/mapping into `GleanValueClaimReadinessSchema`, and `scripts/ci_glean_value_governance_gates.mjs` wired into docs sweep.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_claim_registry_schema.test.ts tests/glean_value_evidence_pack_schema.test.ts` (15 tests); `npx openspec validate add-glean-claim-registry --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `python3 scripts/ci_v1_governance_gates.py`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer initially found ROI/template bypasses and pack drift; fixed with registry-aware validation, universal forbidden inputs, ROI hard-block from customer-safe language pending assumption governance, pack/evaluation comparison in the governance gate, and additional tests. Final blocker review found no blocking issues.
+- Next focus: Slice 3 from the plan — Assumption Ledger contract so base rates, quality multipliers, recapture, hourly rates, confidence, and sensitivity can become governable evidence rather than ad hoc ROI inputs.

@@ -69,4 +69,55 @@ describe("GleanValueEvidencePackSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("rejects suppressed claims that still include approved language", () => {
+    const example = loadExample() as { claim_readiness: Array<Record<string, unknown>> };
+    const result = GleanValueEvidencePackSchema.safeParse({
+      ...example,
+      claim_readiness: [
+        {
+          ...example.claim_readiness[1],
+          approved_language: "This suppressed ROI claim is approved."
+        }
+      ]
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects customer-safe ROI claim readiness until assumption governance is approved", () => {
+    const example = loadExample() as { claim_readiness: Array<Record<string, unknown>> };
+    const result = GleanValueEvidencePackSchema.safeParse({
+      ...example,
+      claim_readiness: [
+        {
+          ...example.claim_readiness[1],
+          evaluation_state: "surface",
+          evidence_state: "present",
+          readiness_state: "customer_safe_with_caveats",
+          language_mode: "customer_safe_with_caveats",
+          reason_codes: [],
+          customer_safe_language: "This ROI claim is customer-safe with caveats."
+        }
+      ]
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects customer-safe readiness when language remains internal-only", () => {
+    const example = loadExample() as { claim_readiness: Array<Record<string, unknown>> };
+    const result = GleanValueEvidencePackSchema.safeParse({
+      ...example,
+      claim_readiness: [
+        {
+          ...example.claim_readiness[0],
+          readiness_state: "customer_safe",
+          language_mode: "internal_only"
+        }
+      ]
+    });
+
+    expect(result.success).toBe(false);
+  });
 });
