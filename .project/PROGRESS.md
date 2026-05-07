@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Glean trust-layer deep dive: created `artifacts/glean_trust_layer_deep_dive_2026-05-07.md` and plan artifact on branch `cursor/glean-trust-layer-deep-dive-c7e6`; no queue status changed because this was a bounded user-requested strategy slice.
 - Agent governance wiring: `.project/*`, `agents/core`, `agents/review`, `agents/README.md`.
 - Implementation blueprint: `artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md` (v1 build plan §1–17).
 - Frontend CI matcher regression repair: realigned `frontend/package.json` with locked `vite`/`vitest` versions, eliminating invalid workspace resolutions and restoring `ProtectedRoute.test.tsx`.
@@ -31,6 +32,7 @@
 - Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
 - The executive HTML prototype is complete as a bounded user-requested slice; queue status was not changed.
 - Out-of-band Vercel Services implementation is deployed to production at `https://learn-air-engable-tool-frontend.vercel.app`; authenticated `/health` returns `db: "ok"`.
+- Out-of-band Glean trust-layer strategy artifact is complete; the referenced enclosed paper was not found on disk and should be added by path before a paper-specific appendix is written.
 
 ## Blockers
 
