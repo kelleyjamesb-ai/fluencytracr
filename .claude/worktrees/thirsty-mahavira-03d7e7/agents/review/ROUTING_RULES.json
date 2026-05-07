@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "Human-interpreted routing hints only: match keywords are not consumed by CI or tooling. Pick a reviewer by judgment; use default_reviewer when unsure. Human owns final sign-off.",
+  "rules": [
+    {
+      "match": ["ui", "frontend", "tsx", "css", "component"],
+      "reviewer": "UI/UX reviewer"
+    },
+    {
+      "match": ["auth", "security", "credential", "token", "pii", "billing", "integration", "oauth"],
+      "reviewer": "security reviewer"
+    },
+    {
+      "match": ["multi-file", "3+ files"],
+      "reviewer": "code quality reviewer"
+    },
+    {
+      "match": ["architecture", "pipeline", "shared/", "openspec", "breaking"],
+      "reviewer": "architecture reviewer"
+    },
+    {
+      "match": ["inference", "classifier", "semantic", "llm", "ml_model"],
+      "reviewer": "architecture reviewer"
+    }
+  ],
+  "default_reviewer": "code quality reviewer"
+}

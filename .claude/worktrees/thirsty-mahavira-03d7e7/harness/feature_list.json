@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "description": "Long-running harness checklist. Agents must not delete entries or edit descriptions/steps except to fix obvious typos with human approval. Only the passes field may change from false to true after verification.",
+  "features": [
+    {
+      "id": "harness-001",
+      "category": "process",
+      "description": "Agent has read harness/README.md and run harness/scripts/bootstrap.sh at least once this session",
+      "steps": [
+        "Open harness/README.md",
+        "Run ./harness/scripts/bootstrap.sh from repo root",
+        "Confirm working directory is the repository root"
+      ],
+      "passes": true
+    },
+    {
+      "id": "harness-002",
+      "category": "verification",
+      "description": "Python test suite passes via harness verify (matches CI python-tests; pytest on tests/)",
+      "steps": [
+        "Install Python deps: pip install -r requirements.txt",
+        "Run ./harness/scripts/verify.sh from repo root (installs deps + pytest tests/)",
+        "Resolve failures before marking passes; treat script output as evaluator, not self-check"
+      ],
+      "passes": true
+    },
+    {
+      "id": "harness-003",
+      "category": "verification",
+      "description": "Node workspaces build and tests pass when changing backend, frontend, or shared",
+      "steps": [
+        "npm install at repo root",
+        "npm run build --workspace shared",
+        "npm run test:ci --workspace backend",
+        "npm test --workspace frontend"
+      ],
+      "passes": true
+    },
+    {
+      "id": "harness-004",
+      "category": "process",
+      "description": "Large or ambiguous product change follows OpenSpec proposal workflow before implementation",
+      "steps": [
+        "Read openspec/AGENTS.md when the request matches proposal triggers",
+        "Scaffold or update change under openspec/changes/<id>/ and validate with openspec validate --strict when CLI available",
+        "N/A for bug fixes restoring spec behavior, typos, or tests for existing behavior",
+        "Repo gate: openspec/AGENTS.md + openspec/changes/ layout present for spec-driven work"
+      ],
+      "passes": true
+    },
+    {
+      "id": "harness-006",
+      "category": "functional",
+      "description": "Unified telemetry (UT_2026_04) wired to ingest: shared zod + backend validation + optional CI schema check",
+      "steps": [
+        "Read docs/contracts/unified-telemetry/README.md and schemas/unified_telemetry/ut_event_union.schema.json",
+        "OpenSpec change add-unified-telemetry-ingest; archive when deployed",
+        "Mirror schema in shared/ and reject invalid payloads at API boundary (done: /api/ingest/unified-telemetry)",
+        "Mark passes only after backend tests pass (npm run test:ci --workspace backend)"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-doc-001",
+      "category": "product",
+      "description": "PRD v1 behavioral observability canonical in artifacts + phased checklist hooks",
+      "steps": [
+        "Read artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md",
+        "Use prd-phase-01..04 for build sequencing; harness-004 (OpenSpec) before breaking API/schema work"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-phase-01",
+      "category": "functional",
+      "description": "PRD Phase 1 — Core engine: ingestion, normalization, execution_id resolution, trace reconstruction",
+      "steps": [
+        "Ingestion: strict canonical validation, append-only store (align POST /api/events and any parallel ingest paths)",
+        "Normalization: map workflow_run_id / run_id to execution_id; preserve agent_run_id, chat_id lineage",
+        "Trace reconstruction: order events per execution; retry, step, and tool-call grouping"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-phase-02",
+      "category": "functional",
+      "description": "PRD Phase 2 — Signal detection + deterministic pattern classification (PRD §14–§15)",
+      "steps": [
+        "Implement signals: iteration depth, verification, recovery, abandonment, latency, disposition",
+        "Implement mutually exclusive patterns with priority order and workflow-relative thresholds",
+        "Signal registry: declare required inputs per signal (PRD §17)"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-phase-03",
+      "category": "functional",
+      "description": "PRD Phase 3 — Governance enforcement: suppression defaults, no individual/rank/trend outputs",
+      "steps": [
+        "Suppress on ambiguity; ALLOWED vs SUPPRESSED with reason",
+        "Enforce baseline rules (PRD §16): no numeric baseline exposure, no cross-workflow comparison"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-phase-04",
+      "category": "functional",
+      "description": "PRD Phase 4 — Observability surface: workflow-level aggregated API (GET /api/observability/:org_id)",
+      "steps": [
+        "Expose only workflow-level distributions and allowed interpretations (PRD §7–§8)",
+        "Verify no ranking, trends, or individual exposure at API boundary"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-baseline-016",
+      "category": "functional",
+      "description": "PRD §16 — Workflow-scoped baseline percentiles for Phase 2 thresholds (no numeric baseline on APIs)",
+      "steps": [
+        "`backend/src/workflow_baseline.ts`: `buildWorkflowPhase2ThresholdMap`, env `WORKFLOW_BASELINE_MIN_EXECUTIONS`",
+        "Wired in `observability_aggregate.ts` and `attachPhase2ToTraces` (default `90d` baseline_window for traces; overridable)",
+        "Tests: `backend/tests/workflow_baseline.test.ts`"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-lifecycle-013",
+      "category": "functional",
+      "description": "PRD §13 — Execution lifecycle inference on traces (`lifecycle` when include_signals)",
+      "steps": [
+        "`backend/src/execution_lifecycle.ts`: `computeExecutionLifecycle`, timeouts/window constants",
+        "`TraceWithPhase2.lifecycle` populated in `attachPhase2ToTraces`; not stripped by disclosure",
+        "Tests: `backend/tests/execution_lifecycle.test.ts`, contracts assertions"
+      ],
+      "passes": true
+    },
+    {
+      "id": "prd-boundary-v1",
+      "category": "functional",
+      "description": "FluencyTracr v1 ingest boundary — actor mapping, execution identity, Zod DTOs, mapper, example wiring",
+      "steps": [
+        "`backend/src/boundary/actor-type.adapter.ts`, `execution-id.adapter.ts`, `boundary-schemas.ts`, `ingest-event.mapper.ts`",
+        "`backend/src/boundary/app-integration.example.ts` documents parse → map → validateCanonicalEvent → persist → pipeline",
+        "`v1-pipeline-types` uses `mapActorType` for optional inbound actor remapping",
+        "Tests: `backend/tests/boundary/*.test.ts`; verify `npm run test:ci --workspace backend`"
+      ],
+      "passes": true
+    }
+  ]
+}
