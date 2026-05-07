@@ -10,4 +10,5 @@ export * from "./agentRunSchemas";
 export * from "./gleanSignalReadinessSchemas";
 export * from "./gleanSourceReadinessAdapter";
 export * from "./gleanReadinessToUnifiedTelemetry";
+export * from "./gleanValueEvidenceSchemas";
 export * from "./metricConstants";

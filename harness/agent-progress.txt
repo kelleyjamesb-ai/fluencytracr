@@ -126,3 +126,10 @@
 - Completed: Added `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`, an executable plan for a Glean Value Evidence Pack across live/current surfaces: Chat/Search/AI Answers, Skills, Auto Mode Agents, content-triggered agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
 - Verified: `git diff --check` passed for the documentation-only planning slice. Queue unchanged; plan proposes human-owned `glean-value-*` queue items and harness checklist candidates.
 - Next focus: Human decision on whether to add the proposed `glean-value-*` queue items, then start with OpenSpec `add-glean-value-evidence-pack`.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence Pack contract)
+
+- Completed: Implemented first build slice from the plan: OpenSpec `add-glean-value-evidence-pack`, `docs/contracts/glean-value-evidence/README.md`, synthetic `org-northstar-value-pack.json`, shared `GleanValueEvidencePackSchema`, export from `@learnaire/shared`, and `backend/tests/glean_value_evidence_pack_schema.test.ts`.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_value_evidence_pack_schema.test.ts` (3 tests); `npx openspec validate add-glean-value-evidence-pack --strict`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer found claim-safety and doc/spec consistency issues; fixed with claim `.superRefine`, broader forbidden-field tests, README required field list, and `not_present` vocabulary alignment.
+- Next focus: Slice 2 from the plan — OpenSpec + contracts for `add-glean-claim-registry` so customer-safe ROI/value language is governed separately from the pack shape.
