@@ -4,12 +4,18 @@ import { registerFluencyTools } from "./tools.js";
 import { GleanSignalReadinessMapSchema } from "@learnaire/shared";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
 const readinessFixturePath = path.join(
   repoRoot,
   "docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json"
+);
+const valueEvidenceFixturePath = path.join(
+  repoRoot,
+  "docs/contracts/glean-value-evidence/examples/org-northstar-value-pack.json"
 );
 
 const evidenceBundle = {
@@ -64,9 +70,12 @@ describe("registerFluencyTools", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    const auditDir = mkdtempSync(path.join(tmpdir(), "fluency-mcp-audit-"));
     process.env.FLUENCYTRACR_BASE_URL = "http://example.test";
     process.env.FLUENCYTRACR_DEV_HEADERS = "true";
     process.env.FLUENCYTRACR_GLEAN_READINESS_MAP_PATH = readinessFixturePath;
+    process.env.FLUENCYTRACR_GLEAN_VALUE_EVIDENCE_PACK_PATH = valueEvidenceFixturePath;
+    process.env.FLUENCYTRACR_MCP_AUDIT_LOG = path.join(auditDir, "audit.jsonl");
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -126,12 +135,12 @@ describe("registerFluencyTools", () => {
         org_id: "org-northstar-enterprise",
         source_system: "Glean",
         readiness_counts: {
-          present: 1,
+          present: 3,
           missing: 0,
           suppressed: 1,
           not_computed: 1
         },
-        ready_signal_families: ["workflow_run"],
+        ready_signal_families: ["workflow_run", "agent_run", "skill_lifecycle"],
         non_computable_signal_families: [
           {
             signal_family: "mcp_usage",
@@ -167,9 +176,105 @@ describe("registerFluencyTools", () => {
     expect(() => GleanSignalReadinessMapSchema.parse(payload)).not.toThrow();
     expect(payload.entries.map((entry: { signal_family: string }) => entry.signal_family)).toEqual([
       "workflow_run",
+      "agent_run",
+      "skill_lifecycle",
       "mcp_usage",
       "ai_security"
     ]);
+  });
+
+  it("registers a strict value claim readiness summary tool", async () => {
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.get_value_claim_readiness_summary");
+    expect(handler).toBeDefined();
+
+    const result = await handler!({ org_id: "org-northstar", window: "weekly" });
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(payload).toEqual(
+      expect.objectContaining({
+        org_id: "org-northstar",
+        source_system: "Glean",
+        value_posture: "directional",
+        claim_readiness_counts: {
+          customer_safe: 0,
+          customer_safe_with_caveats: 2,
+          internal_only: 0,
+          not_computed: 1,
+          suppressed: 1
+        }
+      })
+    );
+    expect(payload.customer_safe_claims.map((claim: { claim_id: string }) => claim.claim_id)).toContain(
+      "glean.skills.reusable_expertise_operationalized"
+    );
+    expect(payload.non_computable_claims.map((claim: { claim_id: string }) => claim.claim_id)).toContain(
+      "glean.roi.customer_value_to_cost"
+    );
+    expect(payload.claim_readiness).toBeUndefined();
+  });
+
+  it("evaluates a single value claim safety state", async () => {
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.evaluate_claim_safety");
+    expect(handler).toBeDefined();
+
+    const result = await handler!({
+      org_id: "org-northstar",
+      window: "weekly",
+      claim_id: "glean.roi.customer_value_to_cost"
+    } as { org_id: string; window: string });
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(payload).toEqual(
+      expect.objectContaining({
+        claim_id: "glean.roi.customer_value_to_cost",
+        language_mode: "suppressed"
+      })
+    );
+    expect(payload.customer_safe_language).toBeUndefined();
+  });
+
+  it("returns only non-computable value claims", async () => {
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.get_non_computable_value_claims");
+    expect(handler).toBeDefined();
+
+    const result = await handler!({ org_id: "org-northstar", window: "weekly" });
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(payload.map((claim: { claim_id: string }) => claim.claim_id)).toEqual([
+      "glean.roi.customer_value_to_cost",
+      "glean.mcp.governed_action_boundary"
+    ]);
+  });
+
+  it("rejects extra top-level value tool inputs", async () => {
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.get_value_claim_readiness_summary");
+    expect(handler).toBeDefined();
+
+    const result = await handler!({
+      org_id: "org-northstar",
+      window: "weekly",
+      user_id: "unsafe"
+    } as { org_id: string; window: string });
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(result.isError).toBe(true);
+    expect(payload.reason_code).toBe("invalid_payload");
   });
 
   it("rejects extra top-level readiness tool inputs", async () => {
@@ -189,5 +294,76 @@ describe("registerFluencyTools", () => {
 
     expect(result.isError).toBe(true);
     expect(payload.reason_code).toBe("invalid_payload");
+  });
+
+  it("audits full value pack access as suppressed when suppressed claims are present", async () => {
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.get_value_evidence_pack");
+    expect(handler).toBeDefined();
+
+    await handler!({ org_id: "org-northstar", window: "weekly" });
+    const auditLines = readFileSync(process.env.FLUENCYTRACR_MCP_AUDIT_LOG!, "utf8").trim().split("\n");
+    const audit = JSON.parse(auditLines[auditLines.length - 1]);
+
+    expect(audit).toEqual(
+      expect.objectContaining({
+        tool_name: "fluency.get_value_evidence_pack",
+        result: "suppressed",
+        suppression_applied: true
+      })
+    );
+    expect(audit.suppression_reasons).toContain("roi_translation_not_approved");
+  });
+
+  it("returns deterministic not-found for unknown value claims", async () => {
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.evaluate_claim_safety");
+    expect(handler).toBeDefined();
+
+    const result = await handler!({
+      org_id: "org-northstar",
+      window: "weekly",
+      claim_id: "glean.unknown.claim"
+    } as { org_id: string; window: string });
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(result.isError).toBe(true);
+    expect(payload.reason_code).toBe("value_claim_not_found");
+
+    const auditLines = readFileSync(process.env.FLUENCYTRACR_MCP_AUDIT_LOG!, "utf8").trim().split("\n");
+    const audit = JSON.parse(auditLines[auditLines.length - 1]);
+    expect(audit).toEqual(
+      expect.objectContaining({
+        tool_name: "fluency.evaluate_claim_safety",
+        result: "rejected",
+        reason_code: "value_claim_not_found"
+      })
+    );
+  });
+
+  it("redacts value evidence source errors", async () => {
+    process.env.FLUENCYTRACR_GLEAN_VALUE_EVIDENCE_PACK_PATH = path.join(repoRoot, "missing-value-pack.json");
+    const { server, handlers } = captureTools();
+
+    registerFluencyTools(server, vi.fn() as unknown as typeof fetch);
+
+    const handler = handlers.get("fluency.get_value_claim_readiness_summary");
+    expect(handler).toBeDefined();
+
+    const result = await handler!({ org_id: "org-northstar", window: "weekly" });
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(result.isError).toBe(true);
+    expect(payload).toEqual({
+      error: "Value evidence source unavailable or invalid",
+      reason_code: "value_evidence_source_error"
+    });
+    expect(result.content[0].text).not.toContain(repoRoot);
   });
 });

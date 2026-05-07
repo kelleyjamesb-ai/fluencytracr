@@ -161,3 +161,10 @@
 - Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_ai_work_evidence_adapter.test.ts` (5 tests); `npx openspec validate add-glean-ai-work-evidence-adapter --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
 - Review: code-reviewer found fabricated assumptions-lane and lane divergence risks; fixed by suppressing time-saved/ROI until assumptions are supplied separately, rejecting duplicate lanes, aligning reason codes with the registry, rendering fixed note codes into validation evidence, and adding tests. Re-review found no remaining blocking/important issues.
 - Next focus: Slice 6 from the plan — MCP tools for bounded Value Evidence Pack and claim safety access.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence MCP tools)
+
+- Completed: Implemented Slice 6 from the plan: strict value evidence summary helper plus MCP tools `fluency.get_value_evidence_pack`, `fluency.get_value_claim_readiness_summary`, `fluency.evaluate_claim_safety`, and `fluency.get_non_computable_value_claims`; updated MCP and Glean Agent docs.
+- Verified: `npm test --workspace @learnaire/fluencytracr-mcp` (17 tests); `npm run build --workspace @learnaire/fluencytracr-mcp`; `npx openspec validate add-glean-value-evidence-mcp-tools --strict`; `git diff --check`.
+- Review: code-reviewer found audit/error-safety gaps; fixed suppression-aware audit for full pack access, redacted source errors, omitted customer-safe language from suppressed claims, deterministic unknown-claim rejection, and audit assertions.
+- Next focus: Slice 7 from the plan — executive/client Value Evidence Pack prototype with QBR-safe language and instrumentation-gap callouts.
