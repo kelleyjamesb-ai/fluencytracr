@@ -12,7 +12,9 @@
   },
   "coverage": {
     "instrumented_sources": [
-      "workflow_run"
+      "workflow_run",
+      "agent_run",
+      "skill_lifecycle"
     ],
     "missing_sources": [
       "mcp_usage",
