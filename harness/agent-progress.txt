@@ -181,3 +181,9 @@
 - Completed: Ran broad verification across the Glean Value Evidence program slices on `cursor/glean-trust-layer-deep-dive-c7e6`.
 - Verified: `npm run build --workspace shared`; backend targeted tests for value pack, claim registry, assumption ledger, source readiness, source CLI, and AI Work adapter (31 tests); `npm test --workspace @learnaire/fluencytracr-mcp` (17 tests); `npm run build --workspace @learnaire/fluencytracr-mcp`; `node scripts/validate_glean_readiness_examples.mjs`; `node scripts/ci_glean_value_governance_gates.mjs`; `node scripts/validate_glean_value_evidence_prototype.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for all six new Glean value changes; `git diff --check main...HEAD`.
 - Next focus: Human review of PR #207, then decide whether to archive approved OpenSpec changes or add the `glean-value-*` items to `.project/WORK_QUEUE.json` / `harness/feature_list.json` as the formal queue track.
+
+## 2026-05-08 (UTC) — Codex (QBR Narrative View)
+
+- Completed: Added QBR Narrative View for the Glean Claim Packet Export: shared `buildGleanClaimPacketQbrNarrative`, `/methodology-review` narrative section, synthetic Glean Value Evidence fixture wiring, and backend/frontend coverage for internal-only, suppressed, evidence gap, upgrade, governance, and forbidden-field boundaries.
+- Verified: `npm run build --workspace shared`; targeted backend claim packet tests; targeted Methodology Review Workspace tests; `npm run build --workspace frontend`; `npm test --workspace frontend`; `bash scripts/ci_docs_contract_sweep.sh`; `npx @fission-ai/openspec@latest validate add-qbr-narrative-view --strict --no-interactive`; `npm run test:ci --workspace backend` with local test-server binding permission; `git diff --check`.
+- Next focus: Human review, then archive OpenSpec `add-qbr-narrative-view` when approved.

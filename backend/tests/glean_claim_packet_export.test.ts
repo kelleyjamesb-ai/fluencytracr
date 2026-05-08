@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import {
   GleanClaimPacketExportSchema,
+  buildGleanClaimPacketQbrNarrative,
   buildGleanClaimPacketExport,
   buildGleanValueEvidencePack,
   buildMethodologyReviewWorkspace,
@@ -94,6 +95,37 @@ describe("Glean Claim Packet Export", () => {
     const packet = buildPacket();
 
     expect(JSON.stringify(packet)).not.toMatch(
+      /raw_prompt|raw_response|query_text|tool_payload|file_content|user_id|employee_id|manager_view|team_ranking|productivity_score/i
+    );
+  });
+
+  it("formats a QBR narrative without upgrading internal-only financial posture", () => {
+    const narrative = buildGleanClaimPacketQbrNarrative(buildPacket());
+
+    expect(narrative.executive_decision.decision_state).toBe("internal_only");
+    expect(narrative.strongest_safe_claim.claim_readiness).toBe("internal_only");
+    expect(narrative.internal_only_claims.some((claim) => claim.claim_id === "claim:agentic_business_reporting")).toBe(true);
+    expect(narrative.methodology_snapshot_summary.selected_methodology_snapshot_id).toBe(
+      "nielsen_roi_payback_internal_2025_10"
+    );
+    expect(JSON.stringify(narrative)).not.toMatch(/customer-safe ROI/i);
+  });
+
+  it("keeps suppressed claims, evidence gaps, upgrades, and governance visible in the QBR narrative", () => {
+    const narrative = buildGleanClaimPacketQbrNarrative(buildPacket());
+
+    expect(narrative.suppressed_or_not_computed_claims.map((claim) => claim.claim_id)).toEqual(
+      expect.arrayContaining(["glean.roi.customer_value_to_cost", "glean.mcp.governed_action_boundary"])
+    );
+    expect(narrative.evidence_gaps.length).toBeGreaterThan(0);
+    expect(narrative.upgrade_actions.length).toBeGreaterThan(0);
+    expect(narrative.governance_boundaries.join(" ")).toMatch(/does not calculate ROI independently/i);
+  });
+
+  it("formats QBR narrative without forbidden raw or person-level fields", () => {
+    const narrative = buildGleanClaimPacketQbrNarrative(buildPacket());
+
+    expect(JSON.stringify(narrative)).not.toMatch(
       /raw_prompt|raw_response|query_text|tool_payload|file_content|user_id|employee_id|manager_view|team_ranking|productivity_score/i
     );
   });

@@ -3,12 +3,17 @@ import * as methodologySchemas from "@learnaire/shared/dist/aiWorkValueGraphSche
 import * as claimPacketSchemas from "@learnaire/shared/dist/gleanClaimPacketSchemas";
 import {
   NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH,
-  NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM
+  NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM,
+  NIELSEN_CLAIM_PACKET_VALUE_EVIDENCE_PACK
 } from "../constants/claimPacketReview";
 import { NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY } from "../constants/methodologyReview";
 
 const { buildMethodologyDecisionMemo, buildMethodologyReviewWorkspace } = methodologySchemas;
-const { buildGleanClaimPacketExport } = claimPacketSchemas;
+const { buildGleanClaimPacketExport, buildGleanClaimPacketQbrNarrative } = claimPacketSchemas;
+
+type QbrNarrative = ReturnType<typeof buildGleanClaimPacketQbrNarrative>;
+type QbrClaimStatement = QbrNarrative["caveated_claims"][number];
+type QbrEvidenceGap = QbrNarrative["evidence_gaps"][number];
 
 const formatToken = (value: string) => value.replace(/_/g, " ");
 
@@ -23,6 +28,53 @@ const postureClass = (effect: string) => {
     return "mrw-pill mrw-pill-safe";
   }
   return "mrw-pill mrw-pill-caveated";
+};
+
+const renderClaimList = (claims: QbrClaimStatement[]) => {
+  if (claims.length === 0) {
+    return <p>No claims in this bucket.</p>;
+  }
+
+  return (
+    <div className="mrw-claim-list">
+      {claims.map((claim) => (
+        <article key={`${claim.claim_source}:${claim.claim_id}`} className="mrw-claim-item">
+          <div>
+            <strong>{claim.claim_id}</strong>
+            <span>{formatToken(claim.claim_readiness)}</span>
+          </div>
+          <p>{claim.language}</p>
+          {claim.caveats.length > 0 ? (
+            <ul>
+              {claim.caveats.map((caveat) => (
+                <li key={`${claim.claim_id}:${caveat}`}>{caveat}</li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+      ))}
+    </div>
+  );
+};
+
+const renderEvidenceGaps = (gaps: QbrEvidenceGap[]) => {
+  if (gaps.length === 0) {
+    return <p>No evidence gaps are blocking the current packet.</p>;
+  }
+
+  return (
+    <div className="mrw-claim-list">
+      {gaps.map((gap) => (
+        <article key={gap.gap_id} className="mrw-claim-item">
+          <div>
+            <strong>{gap.gap_id}</strong>
+            <span>{formatToken(gap.blocks)}</span>
+          </div>
+          <p>{gap.action}</p>
+        </article>
+      ))}
+    </div>
+  );
 };
 
 export function MethodologyReviewWorkspace() {
@@ -42,11 +94,13 @@ export function MethodologyReviewWorkspace() {
         methodology_review_workspace: workspace,
         selected_methodology_snapshot_id: selected.methodology_snapshot_id,
         strongest_safe_claim: NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM,
+        value_evidence_pack: NIELSEN_CLAIM_PACKET_VALUE_EVIDENCE_PACK,
         ai_work_value_graph: NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH
       }),
     [workspace, selected.methodology_snapshot_id]
   );
   const claimPacketText = useMemo(() => JSON.stringify(claimPacket, null, 2), [claimPacket]);
+  const qbrNarrative = useMemo(() => buildGleanClaimPacketQbrNarrative(claimPacket), [claimPacket]);
 
   return (
     <main className="mrw-shell">
@@ -241,6 +295,84 @@ export function MethodologyReviewWorkspace() {
               Claim packet JSON
             </label>
             <textarea id="claim-packet-export" className="mrw-memo-output" readOnly value={claimPacketText} />
+          </section>
+
+          <section className="mrw-band mrw-qbr">
+            <h3>QBR narrative view</h3>
+            <div className="mrw-qbr-grid">
+              <section className="mrw-qbr-section">
+                <h4>Executive decision</h4>
+                <p>
+                  <strong>{qbrNarrative.executive_decision.headline}</strong>
+                </p>
+                <p>{qbrNarrative.executive_decision.summary}</p>
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Strongest safe claim</h4>
+                {renderClaimList([qbrNarrative.strongest_safe_claim])}
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Caveated claims</h4>
+                {renderClaimList(qbrNarrative.caveated_claims)}
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Internal-only claims</h4>
+                {renderClaimList(qbrNarrative.internal_only_claims)}
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Suppressed / not-computed claims</h4>
+                {renderClaimList(qbrNarrative.suppressed_or_not_computed_claims)}
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Evidence gaps</h4>
+                {renderEvidenceGaps(qbrNarrative.evidence_gaps)}
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Upgrade actions</h4>
+                <ul>
+                  {qbrNarrative.upgrade_actions.map((action) => (
+                    <li key={action}>{action}</li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Governance boundaries</h4>
+                <ul>
+                  {qbrNarrative.governance_boundaries.map((boundary) => (
+                    <li key={boundary}>{boundary}</li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="mrw-qbr-section">
+                <h4>Methodology snapshot summary</h4>
+                <dl className="mrw-qbr-summary">
+                  <div>
+                    <dt>Snapshot</dt>
+                    <dd>{qbrNarrative.methodology_snapshot_summary.selected_methodology_snapshot_id}</dd>
+                  </div>
+                  <div>
+                    <dt>Decision</dt>
+                    <dd>{qbrNarrative.methodology_snapshot_summary.decision_state}</dd>
+                  </div>
+                  <div>
+                    <dt>Approval</dt>
+                    <dd>{qbrNarrative.methodology_snapshot_summary.approval_state}</dd>
+                  </div>
+                  <div>
+                    <dt>Financial claim effect</dt>
+                    <dd>{qbrNarrative.methodology_snapshot_summary.financial_claim_effect}</dd>
+                  </div>
+                </dl>
+              </section>
+            </div>
           </section>
         </section>
       </section>

@@ -66,6 +66,19 @@ const rejectForbiddenClaimPacketKeys = (
   }
 };
 
+const assertNoForbiddenClaimPacketKeys = (value: unknown) => {
+  const result = z
+    .unknown()
+    .superRefine((candidate, ctx) => {
+      rejectForbiddenClaimPacketKeys(candidate, ctx);
+    })
+    .safeParse(value);
+
+  if (!result.success) {
+    throw result.error;
+  }
+};
+
 const ClaimPacketReadinessSchema = z.enum([
   "customer_safe",
   "customer_safe_with_caveats",
@@ -121,6 +134,27 @@ export const GleanClaimPacketExportSchema = z
 
 export type GleanClaimPacketExport = z.infer<typeof GleanClaimPacketExportSchema>;
 export type ClaimPacketStatement = z.infer<typeof ClaimPacketStatementSchema>;
+
+export type GleanClaimPacketQbrNarrative = {
+  executive_decision: {
+    decision_state: z.infer<typeof ClaimPacketReadinessSchema>;
+    headline: string;
+    summary: string;
+  };
+  strongest_safe_claim: ClaimPacketStatement;
+  caveated_claims: ClaimPacketStatement[];
+  internal_only_claims: ClaimPacketStatement[];
+  suppressed_or_not_computed_claims: ClaimPacketStatement[];
+  evidence_gaps: GleanClaimPacketExport["evidence_gaps"];
+  upgrade_actions: string[];
+  governance_boundaries: string[];
+  methodology_snapshot_summary: {
+    selected_methodology_snapshot_id: string;
+    decision_state: string;
+    approval_state: string;
+    financial_claim_effect: string;
+  };
+};
 
 export type BuildGleanClaimPacketExportInput = {
   methodology_review_workspace: MethodologyReviewWorkspace;
@@ -316,4 +350,89 @@ export function buildGleanClaimPacketExport(input: BuildGleanClaimPacketExportIn
     upgrade_actions: upgradeActions,
     governance_boundaries: governanceBoundaries
   });
+}
+
+const memoValueFor = (memo: string, label: string) => {
+  const line = memo.split("\n").find((entry) => entry.toLowerCase().startsWith(`${label.toLowerCase()}:`));
+  return line ? line.slice(label.length + 1).trim() : "Not available.";
+};
+
+const executiveDecisionStateFor = (packet: GleanClaimPacketExport): z.infer<typeof ClaimPacketReadinessSchema> => {
+  const memoDecisionState = memoValueFor(packet.reviewer_decision_memo, "Decision state").toLowerCase();
+  if (memoDecisionState.includes("internal-only") || memoDecisionState.includes("internal_only")) {
+    return "internal_only";
+  }
+  if (memoDecisionState.includes("suppressed")) {
+    return "suppressed";
+  }
+  if (memoDecisionState.includes("customer-safe") || memoDecisionState.includes("customer_safe")) {
+    return "customer_safe";
+  }
+  if (memoDecisionState.includes("not computed") || memoDecisionState.includes("not_computed")) {
+    return "not_computed";
+  }
+
+  const strongestReadiness = packet.strongest_safe_claim.strongest_claim.claim_readiness;
+  if (strongestReadiness === "internal_only" || packet.internal_only_claims.length > 0) {
+    return "internal_only";
+  }
+  if (strongestReadiness === "customer_safe") {
+    return "customer_safe";
+  }
+  if (strongestReadiness === "suppressed") {
+    return "suppressed";
+  }
+  if (strongestReadiness === "not_measured" && packet.caveated_claims.length === 0) {
+    return packet.suppressed_claims.length > 0 ? "suppressed" : "not_computed";
+  }
+  return "caveated";
+};
+
+const executiveHeadlineFor = (decisionState: z.infer<typeof ClaimPacketReadinessSchema>) => {
+  if (decisionState === "customer_safe") {
+    return "Customer-safe claim language is available within the approved packet scope.";
+  }
+  if (decisionState === "internal_only") {
+    return "Executive decision: internal only.";
+  }
+  if (decisionState === "suppressed") {
+    return "Executive decision: suppressed.";
+  }
+  if (decisionState === "not_computed") {
+    return "Executive decision: not computed.";
+  }
+  return "Executive decision: caveated.";
+};
+
+export function buildGleanClaimPacketQbrNarrative(raw: unknown): GleanClaimPacketQbrNarrative {
+  const packet = GleanClaimPacketExportSchema.parse(raw);
+  const decisionState = executiveDecisionStateFor(packet);
+  const strongestSafeClaim = statementFromStrongestSafeClaim(packet.strongest_safe_claim);
+  const narrative: GleanClaimPacketQbrNarrative = {
+    executive_decision: {
+      decision_state: decisionState,
+      headline: executiveHeadlineFor(decisionState),
+      summary:
+        decisionState === "internal_only"
+          ? "Use financial value language for internal planning only until customer-safe methodology approval exists."
+          : "Use the packet sections below as the current QBR claim posture without calculating ROI or upgrading readiness."
+    },
+    strongest_safe_claim: strongestSafeClaim,
+    caveated_claims: packet.caveated_claims,
+    internal_only_claims: packet.internal_only_claims,
+    suppressed_or_not_computed_claims: packet.suppressed_claims,
+    evidence_gaps: packet.evidence_gaps,
+    upgrade_actions: packet.upgrade_actions,
+    governance_boundaries: packet.governance_boundaries,
+    methodology_snapshot_summary: {
+      selected_methodology_snapshot_id: packet.selected_methodology_snapshot_id,
+      decision_state: memoValueFor(packet.reviewer_decision_memo, "Decision state"),
+      approval_state: memoValueFor(packet.reviewer_decision_memo, "Approval state"),
+      financial_claim_effect: memoValueFor(packet.reviewer_decision_memo, "Financial claim effect")
+    }
+  };
+
+  assertNoForbiddenClaimPacketKeys(narrative);
+
+  return narrative;
 }

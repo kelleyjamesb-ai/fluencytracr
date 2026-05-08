@@ -19,6 +19,16 @@ describe("MethodologyReviewWorkspace", () => {
     expect((screen.getByLabelText(/Claim packet JSON/i) as HTMLTextAreaElement).value).toContain(
       '"schema_version": "GCP_2026_05"'
     );
+    expect(screen.getByRole("heading", { name: /QBR narrative view/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Executive decision/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Strongest safe claim/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Caveated claims/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Internal-only claims/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Suppressed \/ not-computed claims/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Evidence gaps/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Upgrade actions/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Governance boundaries/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Methodology snapshot summary/i })).toBeInTheDocument();
   });
 
   it("lets reviewers inspect internal-only and suppressed claim effects", async () => {
@@ -33,6 +43,8 @@ describe("MethodologyReviewWorkspace", () => {
     expect((screen.getByLabelText(/Claim packet JSON/i) as HTMLTextAreaElement).value).toMatch(
       /"selected_methodology_snapshot_id": "nielsen_roi_payback_internal_2025_10"/i
     );
+    expect(screen.getByText(/Executive decision: internal only/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/claim:cs_response_time_improvement/i).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: /Suppressed unapproved value model/i }));
     expect(screen.getAllByText(/suppressed/i).length).toBeGreaterThan(0);
@@ -43,6 +55,17 @@ describe("MethodologyReviewWorkspace", () => {
     expect((screen.getByLabelText(/Claim packet JSON/i) as HTMLTextAreaElement).value).toMatch(
       /"selected_methodology_snapshot_id": "suppressed_unapproved_value_model_2026_05"/i
     );
+    expect(screen.getAllByText(/suppressed_unapproved_value_model_2026_05/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/financial claim language is suppressed/i).length).toBeGreaterThan(0);
+  });
+
+  it("renders separated suppressed claims, evidence gaps, upgrade actions, and governance boundaries", () => {
+    render(<MethodologyReviewWorkspace />);
+
+    expect(screen.getAllByText(/glean\.roi\.customer_value_to_cost/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/strongest_safe_claim:financial_model/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Attach a finance-approved value model/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/does not calculate ROI independently/i).length).toBeGreaterThan(0);
   });
 
   it("does not render forbidden raw or person-level review fields", () => {

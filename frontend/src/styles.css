@@ -1688,6 +1688,94 @@ body {
   font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
+.mrw-qbr {
+  background: #ffffff;
+}
+
+.mrw-qbr-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.mrw-qbr-section {
+  border-top: 1px solid #e7e3d8;
+  padding-top: 14px;
+}
+
+.mrw-qbr-section h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.mrw-qbr-section p {
+  margin: 0 0 8px;
+}
+
+.mrw-qbr-section ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.mrw-claim-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mrw-claim-item {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #ebe8df;
+  border-radius: 8px;
+  background: #fbfaf6;
+}
+
+.mrw-claim-item div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.mrw-claim-item strong {
+  overflow-wrap: anywhere;
+}
+
+.mrw-claim-item span {
+  flex: 0 0 auto;
+  border: 1px solid #dfddd6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #444444;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mrw-qbr-summary {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.mrw-qbr-summary div {
+  display: grid;
+  gap: 4px;
+}
+
+.mrw-qbr-summary dt {
+  color: #5d5d5d;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mrw-qbr-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
   .mrw-header,
   .mrw-layout,
@@ -1698,6 +1786,10 @@ body {
   }
 
   .mrw-header {
+    display: grid;
+  }
+
+  .mrw-claim-item div {
     display: grid;
   }
 }
