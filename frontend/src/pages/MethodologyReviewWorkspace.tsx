@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import * as methodologySchemas from "@learnaire/shared/dist/aiWorkValueGraphSchemas";
 import * as claimPacketSchemas from "@learnaire/shared/dist/gleanClaimPacketSchemas";
 import * as realSourceReadinessSchemas from "@learnaire/shared/dist/realSourceReadinessSchemas";
+import * as aggregateEvidenceImportSchemas from "@learnaire/shared/dist/aggregateEvidenceImportSchemas";
 import {
   NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH,
   NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM,
   NIELSEN_CLAIM_PACKET_VALUE_EVIDENCE_PACK
 } from "../constants/claimPacketReview";
+import { GLEAN_AGGREGATE_EVIDENCE_IMPORT } from "../constants/aggregateEvidenceImport";
 import { NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY } from "../constants/methodologyReview";
 import { GLEAN_CLAIM_PACKET_REAL_SOURCE_READINESS } from "../constants/realSourceReadiness";
 
@@ -17,10 +19,12 @@ const {
   buildGleanClaimPacketQbrReadinessSummary
 } = claimPacketSchemas;
 const { buildRealSourceReadinessReview } = realSourceReadinessSchemas;
+const { buildAggregateEvidenceImportReview } = aggregateEvidenceImportSchemas;
 
 type QbrNarrative = ReturnType<typeof buildGleanClaimPacketQbrNarrative>;
 type QbrReadinessSummary = ReturnType<typeof buildGleanClaimPacketQbrReadinessSummary>;
 type RealSourceReadinessReview = ReturnType<typeof buildRealSourceReadinessReview>;
+type AggregateEvidenceImportReview = ReturnType<typeof buildAggregateEvidenceImportReview>;
 type QbrClaimStatement = QbrNarrative["caveated_claims"][number];
 type QbrEvidenceGap = QbrNarrative["evidence_gaps"][number];
 
@@ -130,6 +134,23 @@ const renderSourceIdList = (title: string, bucket: RealSourceReadinessReview["re
   </section>
 );
 
+const renderEvidenceIdList = (
+  title: string,
+  bucket: AggregateEvidenceImportReview["accepted_evidence"]
+) => (
+  <section className="mrw-source-card">
+    <h4>{title}</h4>
+    <p>{bucket.summary}</p>
+    {bucket.evidence_record_ids.length > 0 ? (
+      <div className="mrw-readiness-token-row">
+        {bucket.evidence_record_ids.map((recordId) => (
+          <span key={`${title}:${recordId}`}>{recordId}</span>
+        ))}
+      </div>
+    ) : null}
+  </section>
+);
+
 export function MethodologyReviewWorkspace() {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState("glean_time_saves_mvp_2025_10");
   const workspace = useMemo(
@@ -162,6 +183,10 @@ export function MethodologyReviewWorkspace() {
         claim_packet: claimPacket
       }),
     [claimPacket]
+  );
+  const aggregateEvidenceImportReview = useMemo(
+    () => buildAggregateEvidenceImportReview(GLEAN_AGGREGATE_EVIDENCE_IMPORT),
+    []
   );
 
   return (
@@ -418,6 +443,54 @@ export function MethodologyReviewWorkspace() {
                 <section>
                   <h4>Next source upgrade action</h4>
                   <p>{realSourceReadiness.next_upgrade_action}</p>
+                </section>
+              </div>
+            </section>
+
+            <section className="mrw-real-source mrw-import-review" aria-label="Source evidence import">
+              <div className="mrw-section-head">
+                <div>
+                  <h3>Source evidence import</h3>
+                  <p>
+                    {aggregateEvidenceImportReview.summary} This is review only, no persistence. No live ingestion occurred.
+                  </p>
+                </div>
+                <span className="mrw-pill mrw-pill-caveated">
+                  {formatToken(aggregateEvidenceImportReview.claim_readiness_effect)}
+                </span>
+              </div>
+
+              <div className="mrw-real-source-path">
+                <strong>Import path</strong>
+                <span>{ingestionPathLabel(aggregateEvidenceImportReview.import_path)}</span>
+                <em>{aggregateEvidenceImportReview.import_effect.replace(/_/g, ", ")}</em>
+              </div>
+
+              <div className="mrw-real-source-grid">
+                {renderEvidenceIdList("Accepted aggregate evidence", aggregateEvidenceImportReview.accepted_evidence)}
+                {renderEvidenceIdList("Withheld aggregate evidence", aggregateEvidenceImportReview.withheld_evidence)}
+                <section className="mrw-source-card">
+                  <h4>Next import action</h4>
+                  <p>{aggregateEvidenceImportReview.next_upgrade_action}</p>
+                </section>
+              </div>
+
+              <div className="mrw-readiness-followup">
+                <section>
+                  <h4>Import blockers</h4>
+                  <ul>
+                    {aggregateEvidenceImportReview.top_blockers.map((blocker) => (
+                      <li key={blocker}>{blocker}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section>
+                  <h4>Import boundaries</h4>
+                  <ul>
+                    {aggregateEvidenceImportReview.governance_boundaries.map((boundary) => (
+                      <li key={boundary}>{boundary}</li>
+                    ))}
+                  </ul>
                 </section>
               </div>
             </section>

@@ -211,3 +211,9 @@
 - Completed: Added `RSRM_2026_05` Real Source Readiness Manifest, shared review helper, synthetic Glean Claim Packet readiness fixture, docs, and `/methodology-review` real-source readiness section.
 - Verified: `npm run build --workspace shared`; targeted backend manifest and claim packet tests; targeted frontend Methodology Review Workspace tests; `npm run build --workspace frontend`; `npm test --workspace frontend`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for `add-real-source-readiness-manifest`; `git diff --check`.
 - Next focus: Treat this as fixture-replacement readiness only; do not implement ingestion or upgrade claim readiness from source availability.
+
+## 2026-05-08 (UTC) — Codex (Aggregate Evidence Import Stage 1)
+
+- Completed: Added `AEI_2026_05` Aggregate Evidence Import as Stage 1 of Source Evidence Import: admin-exported aggregate upload only, metadata-only schema, shared review helper, synthetic fixture/docs, and `/methodology-review` accepted/withheld aggregate evidence section.
+- Verified: `npm run build --workspace shared`; targeted backend tests for aggregate import and real-source readiness (9 tests); targeted frontend Methodology Review Workspace tests (4 tests); `npm run build --workspace frontend`; full frontend tests (17 tests); `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`. Strict OpenSpec validation was attempted but blocked by restricted network fetching `@fission-ai/openspec`.
+- Next focus: Stage 2 should make the aggregate package review workflow more operational before any persistence, live Glean connection, or claim-readiness effect is introduced.

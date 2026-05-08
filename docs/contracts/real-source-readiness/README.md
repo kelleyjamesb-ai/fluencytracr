@@ -59,3 +59,5 @@ The committed example keeps `implementation_state: not_implemented`.
 The manifest is aggregate-only and metadata-only. It must not include raw prompts, raw responses, transcripts, query text, tool payloads, file contents, direct identifiers, rankings, manager views, productivity scoring, or hidden reconstruction of suppressed values.
 
 See `examples/glean-claim-packet-real-source-readiness.json` for a complete synthetic fixture-replacement readiness manifest.
+
+Stage 1 source evidence import is defined in [`../aggregate-evidence-import/README.md`](../aggregate-evidence-import/README.md). It validates a prepared admin-exported aggregate upload against this manifest, but remains review-only and does not persist records or upgrade claims.

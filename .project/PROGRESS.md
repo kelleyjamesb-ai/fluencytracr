@@ -25,6 +25,7 @@
 - QBR Readiness Summary: added a plain-language selected-packet summary for customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action without ROI calculation or readiness upgrades.
 - Glean Claim Packet real-source readiness doc: added documentation-only fixture replacement gates for source inputs, mappings, unknowns, blockers, privacy, approvals, and minimum acceptance criteria without ingestion.
 - Real Source Readiness Manifest: added `RSRM_2026_05`, source readiness review helper, synthetic manifest fixture, docs, and `/methodology-review` source-readiness section without ingestion, ROI calculation, or claim readiness upgrades.
+- Aggregate Evidence Import Stage 1: added `AEI_2026_05`, a review-only admin-exported aggregate upload package, shared review helper, synthetic fixture/docs, backend/frontend tests, and `/methodology-review` Source Evidence Import section without live ingestion, persistence, ROI calculation, or claim readiness upgrades.
 
 ## Current Status
 
@@ -51,6 +52,7 @@
 - QBR Readiness Summary slice is complete as a bounded user-requested addition; it summarizes existing claim packet buckets only.
 - Glean Claim Packet real-source readiness doc is complete as a bounded documentation-only slice; it does not implement ingestion, ROI calculation, or claim readiness upgrades.
 - Real Source Readiness Manifest slice is complete as a bounded user-requested addition; it shows which synthetic Claim Packet inputs are ready, blocked, unknown, or approval-dependent before ingestion exists.
+- Aggregate Evidence Import Stage 1 is complete as a bounded user-requested addition; it reviews admin-exported aggregate metadata against the Real Source Readiness Manifest and separates accepted vs withheld evidence without storing data or changing claim readiness.
 
 ## Blockers
 
@@ -65,3 +67,4 @@
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
 - If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; remaining hardening should include full-suite verification, optional linkcheck, and review/archive decisions for completed OpenSpec changes.
 - Review/archive OpenSpec `add-qbr-narrative-view` after human approval.
+- Stage 2 for Source Evidence Import should define the reviewer workflow around uploaded aggregate packages before implementing any persistence or live source connection.
