@@ -1,0 +1,116 @@
+{
+  "schema_version": "FT_REPORTABILITY_2026_05",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-01T12:00:00.000Z",
+  "source_system": "FluencyTracr",
+  "report_context": "agent_insights",
+  "reportability": "REPORTABLE_WITH_CAVEATS",
+  "evidence_confidence": "MEDIUM",
+  "included_surfaces": [
+    "agents"
+  ],
+  "excluded_surfaces": [
+    "mcp",
+    "skills"
+  ],
+  "surface_readiness": [
+    {
+      "surface": "agents",
+      "required_for_context": true,
+      "signal_families": [
+        "agent_run",
+        "agent_step"
+      ],
+      "readiness_status": "present",
+      "caveats": []
+    },
+    {
+      "surface": "mcp",
+      "required_for_context": false,
+      "signal_families": [
+        "mcp_usage"
+      ],
+      "readiness_status": "not_computed",
+      "caveats": [
+        "mcp evidence is not yet computed or validated for this reporting window."
+      ]
+    },
+    {
+      "surface": "skills",
+      "required_for_context": false,
+      "signal_families": [
+        "skill_lifecycle"
+      ],
+      "readiness_status": "missing",
+      "caveats": [
+        "skills evidence is not available for this reporting window."
+      ]
+    }
+  ],
+  "required_caveats": [
+    "mcp evidence is not yet computed or validated for this reporting window.",
+    "skills evidence is not available for this reporting window.",
+    "Agent insight claims must be limited to covered surfaces; excluded surfaces: mcp, skills.",
+    "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
+  ],
+  "allowed_claims": [
+    {
+      "claim_type": "surface_adoption",
+      "claim": "Observed usage coverage for included Glean surfaces."
+    },
+    {
+      "claim_type": "agent_observability",
+      "claim": "Agent workflows are structurally observable for covered agent surfaces."
+    },
+    {
+      "claim_type": "workflow_coverage",
+      "claim": "Workflow-level coverage is available for included agent evidence."
+    }
+  ],
+  "blocked_claims": [
+    {
+      "claim_type": "total_productivity_impact",
+      "claim": "Total AI productivity impact across the organization."
+    },
+    {
+      "claim_type": "causal_productivity_lift",
+      "claim": "Glean caused a productivity lift."
+    },
+    {
+      "claim_type": "individual_productivity",
+      "claim": "Individual productivity or performance score."
+    },
+    {
+      "claim_type": "team_ranking",
+      "claim": "Team or manager ranking based on AI usage."
+    }
+  ],
+  "next_actions": [
+    {
+      "action": "Confirm MCP Usage export availability and scrubbed field set.",
+      "owner": "glean_admin",
+      "priority": "high"
+    },
+    {
+      "action": "Approve which AI Security aggregate flags can support exposure and leadership reinforcement evidence.",
+      "owner": "data_governance",
+      "priority": "high"
+    },
+    {
+      "action": "Identify whether Skill lifecycle events are available for customer export.",
+      "owner": "data_governance",
+      "priority": "medium"
+    },
+    {
+      "action": "Confirm whether REST API and Search API activity are available in customer-safe aggregate exports.",
+      "owner": "glean_admin",
+      "priority": "medium"
+    },
+    {
+      "action": "Confirm whether Gleanbot activity can be separated from other assistant or notification surfaces for customer reporting.",
+      "owner": "glean_admin",
+      "priority": "medium"
+    }
+  ]
+}

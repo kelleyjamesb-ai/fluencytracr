@@ -1,0 +1,516 @@
+{
+  "schema_version": "VHR_2026_05",
+  "org_id": "org-nielsen-synthetic",
+  "generated_at": "2026-05-07T18:40:00.000Z",
+  "source_system": "FluencyTracr",
+  "registry_id": "value-hypotheses:nielsen-synthetic:2026-05",
+  "hypotheses": [
+    {
+      "hypothesis_id": "cs_response_time_improvement",
+      "outcome_domain": "customer_success",
+      "work_pattern": "troubleshoot",
+      "target_maturity_stage": "finance_approved",
+      "expected_value_mechanism": "Glean reduces information hunting and synthesis effort in customer-facing workflows, creating capacity for faster response and follow-up.",
+      "leading_indicators": [
+        "covered CS search and assistant sessions",
+        "case-summary artifact creation",
+        "repeat use in customer-response workflows",
+        "verification or review presence before customer-facing response"
+      ],
+      "lagging_indicators": [
+        "aggregate customer response-time movement",
+        "case escalation movement",
+        "customer engagement or health movement",
+        "finance-reviewed value-to-cost estimate"
+      ],
+      "required_evidence": ["product_telemetry", "artifact_output", "business_outcome", "financial_model"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_present": true,
+          "claim_readiness": "caveated",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "cs.covered_glean_activity.window",
+          "note": "Covered Glean usage can show CS activity in search and assistant surfaces."
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "cs.response_artifacts.window",
+          "note": "Synthetic case summaries and response artifacts support repeatable workflow evidence."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": true,
+          "claim_readiness": "caveated",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "cs.response_time_delta.window",
+          "note": "Response-time movement exists but requires attribution and baseline caveats."
+        },
+        {
+          "evidence_type": "financial_model",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "No finance-approved recapture or cost translation is attached."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Covered evidence supports a contribution story for faster customer-response workflows.",
+        "Customer-facing claims must disclose baseline and attribution caveats."
+      ],
+      "upgrade_actions": [
+        "Ask Finance to approve recapture, role-rate, and cost assumptions for CS response-time movement.",
+        "Validate baseline/control logic with Data Science before causal language is considered."
+      ],
+      "risks_and_caveats": [
+        "Response-time movement may reflect customer mix, staffing, or process changes.",
+        "Do not claim Glean caused customer health improvement without stronger design."
+      ]
+    },
+    {
+      "hypothesis_id": "sales_account_planning_acceleration",
+      "outcome_domain": "sales",
+      "work_pattern": "draft",
+      "target_maturity_stage": "outcome_linked",
+      "expected_value_mechanism": "Glean helps sellers find account context and draft planning artifacts faster, shifting time from manual preparation toward customer engagement.",
+      "leading_indicators": [
+        "account-planning search sessions",
+        "assistant drafting sessions for account planning",
+        "account-plan artifact creation",
+        "artifact reuse across planning workflows"
+      ],
+      "lagging_indicators": [
+        "planning-cycle duration movement",
+        "meeting preparation completion movement",
+        "pipeline-stage movement where approved",
+        "seller capacity released for customer-facing activity"
+      ],
+      "required_evidence": ["product_telemetry", "artifact_output", "business_outcome"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "sales.account_planning_activity.window",
+          "note": "Aggregate planning activity is visible across covered surfaces."
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "sales.account_plan_artifacts.window",
+          "note": "Reusable account-plan artifacts are present."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "No approved planning-cycle or pipeline movement metric is linked."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Sales planning evidence shows repeatable account-planning support and reusable artifacts."
+      ],
+      "upgrade_actions": [
+        "Connect account-planning activity to planning-cycle duration or customer-meeting preparation metrics.",
+        "Separate preparation efficiency claims from revenue or pipeline causality claims."
+      ],
+      "risks_and_caveats": [
+        "Pipeline movement is influenced by market, account quality, seller behavior, and timing.",
+        "Do not claim revenue acceleration until business outcome evidence is validated."
+      ]
+    },
+    {
+      "hypothesis_id": "engineering_time_to_first_commit_reduction",
+      "outcome_domain": "engineering",
+      "work_pattern": "troubleshoot",
+      "target_maturity_stage": "outcome_linked",
+      "expected_value_mechanism": "Glean shortens discovery and debugging loops for engineers by making project context, technical references, and prior resolutions easier to find and summarize.",
+      "leading_indicators": [
+        "engineering search sessions",
+        "assistant troubleshooting sessions",
+        "technical artifact reuse",
+        "workflow runs tied to onboarding or issue investigation"
+      ],
+      "lagging_indicators": [
+        "aggregate time-to-first-commit movement",
+        "issue investigation cycle-time movement",
+        "developer onboarding milestone movement"
+      ],
+      "required_evidence": ["product_telemetry", "workflow_run", "business_outcome"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_present": true,
+          "claim_readiness": "directional",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "engineering.covered_activity.window",
+          "note": "Engineering usage can be observed at aggregate surface level."
+        },
+        {
+          "evidence_type": "workflow_run",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "Engineering workflow runs are not yet linked to first-commit milestones."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "No aggregate time-to-first-commit metric is linked."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Engineering evidence is directional and shows covered activity in discovery and troubleshooting workflows."
+      ],
+      "upgrade_actions": [
+        "Link aggregate engineering activity to first-commit or issue-cycle metrics.",
+        "Define eligible engineering workflow cohorts before reporting."
+      ],
+      "risks_and_caveats": [
+        "First-commit timing depends on project complexity, review process, and onboarding context.",
+        "Do not rank engineers or infer individual engineering productivity."
+      ]
+    },
+    {
+      "hypothesis_id": "support_case_deflection",
+      "outcome_domain": "support",
+      "work_pattern": "find",
+      "target_maturity_stage": "outcome_linked",
+      "expected_value_mechanism": "Glean helps users and support teams resolve questions through self-service discovery and reusable case context, reducing avoidable support demand.",
+      "leading_indicators": [
+        "support-related search sessions",
+        "AI Answers engagement on support topics",
+        "self-service retrieval coverage",
+        "case-summary artifact reuse"
+      ],
+      "lagging_indicators": [
+        "case creation movement",
+        "case deflection movement",
+        "support queue volume movement",
+        "reopen or escalation movement"
+      ],
+      "required_evidence": ["product_telemetry", "artifact_output", "business_outcome"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_present": true,
+          "claim_readiness": "directional",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "support.self_service_activity.window",
+          "note": "Self-service discovery activity is visible in aggregate."
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "weak",
+          "aggregate_metric_ref": "support.case_context_artifacts.window",
+          "note": "Reusable support artifacts exist but are not yet tied to deflection."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "No approved support deflection or queue metric is linked."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Support evidence shows directional self-service and reusable case-context patterns."
+      ],
+      "upgrade_actions": [
+        "Define a support deflection metric and link it to eligible self-service workflows.",
+        "Separate deflection from case avoidance, escalation reduction, and faster resolution claims."
+      ],
+      "risks_and_caveats": [
+        "Case volume can shift due to seasonality, product changes, or support policy.",
+        "Do not claim deflection until outcome linkage is validated."
+      ]
+    },
+    {
+      "hypothesis_id": "security_incident_response_acceleration",
+      "outcome_domain": "security",
+      "work_pattern": "orchestrate",
+      "target_maturity_stage": "outcome_linked",
+      "expected_value_mechanism": "Glean-assisted incident workflows reduce context-gathering and coordination time while preserving reviewable control evidence.",
+      "leading_indicators": [
+        "security incident assistant runs",
+        "governed action logs",
+        "approval coverage",
+        "safe-path routing coverage"
+      ],
+      "lagging_indicators": [
+        "incident response time movement",
+        "containment milestone movement",
+        "post-incident documentation cycle movement"
+      ],
+      "required_evidence": ["workflow_run", "action_log", "control_evidence", "business_outcome"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "workflow_run",
+          "evidence_present": true,
+          "claim_readiness": "internal_only",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "security.incident_assistant.runs.window",
+          "note": "Incident assistant runs are structurally observable."
+        },
+        {
+          "evidence_type": "action_log",
+          "evidence_present": true,
+          "claim_readiness": "internal_only",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "security.incident_actions.window",
+          "note": "Action logs are available but need action-class validation."
+        },
+        {
+          "evidence_type": "control_evidence",
+          "evidence_present": true,
+          "claim_readiness": "internal_only",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "security.control_coverage.window",
+          "note": "Control evidence supports internal governance review."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "Incident response or containment movement is not yet linked."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Security incident assistant evidence shows governed, reviewable action patterns for covered workflows."
+      ],
+      "upgrade_actions": [
+        "Link governed incident workflows to aggregate response or containment movement.",
+        "Have Security leadership approve customer-safe risk-reduction language."
+      ],
+      "risks_and_caveats": [
+        "Security outcomes are sensitive and require policy-owner approval.",
+        "Do not claim prevented losses or reduced incidents from activity evidence alone."
+      ]
+    },
+    {
+      "hypothesis_id": "finance_reporting_acceleration",
+      "outcome_domain": "finance",
+      "work_pattern": "analyze",
+      "target_maturity_stage": "finance_approved",
+      "expected_value_mechanism": "Glean reduces reporting preparation and analysis time by connecting finance context, reusable artifacts, governed actions, and approved value assumptions.",
+      "leading_indicators": [
+        "finance reporting assistant sessions",
+        "report artifact creation",
+        "workflow run completion",
+        "governed action coverage"
+      ],
+      "lagging_indicators": [
+        "reporting cycle-time movement",
+        "finance review turnaround movement",
+        "approved value-to-cost estimate"
+      ],
+      "required_evidence": ["product_telemetry", "artifact_output", "workflow_run", "business_outcome", "financial_model"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "finance.reporting_activity.window",
+          "note": "Finance reporting activity is visible in aggregate."
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "finance.reporting_artifacts.window",
+          "note": "Reporting artifacts are present."
+        },
+        {
+          "evidence_type": "workflow_run",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "Reporting workflow runs are not fully instrumented."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "Reporting cycle-time movement is not yet linked."
+        },
+        {
+          "evidence_type": "financial_model",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "Finance has not approved a value model for this workflow."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Finance reporting evidence shows reusable reporting support patterns."
+      ],
+      "upgrade_actions": [
+        "Instrument reporting workflow runs and link them to cycle-time movement.",
+        "Have Finance approve value-model assumptions before finance-approved language."
+      ],
+      "risks_and_caveats": [
+        "Finance reporting cycles can be affected by close calendar, audit needs, and data availability.",
+        "Do not claim finance-approved ROI until financial model evidence is present and validated."
+      ]
+    },
+    {
+      "hypothesis_id": "hr_onboarding_acceleration",
+      "outcome_domain": "HR",
+      "work_pattern": "understand",
+      "target_maturity_stage": "outcome_linked",
+      "expected_value_mechanism": "Glean accelerates onboarding by helping new hires and HR partners find context, understand policies, and reuse onboarding artifacts.",
+      "leading_indicators": [
+        "onboarding search sessions",
+        "assistant sessions for onboarding topics",
+        "onboarding artifact reuse",
+        "repeat usage across onboarding workflows"
+      ],
+      "lagging_indicators": [
+        "time-to-first-project movement",
+        "new-hire ramp milestone movement",
+        "HR help-request movement"
+      ],
+      "required_evidence": ["survey", "product_telemetry", "artifact_output", "business_outcome"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "survey",
+          "evidence_present": true,
+          "claim_readiness": "directional",
+          "evidence_strength": "weak",
+          "aggregate_metric_ref": "hr.onboarding_survey.aggregate",
+          "note": "Survey evidence supports perceived friction reduction but not outcome movement."
+        },
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "hr.onboarding_activity.window",
+          "note": "Onboarding-related activity is visible in aggregate."
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_present": true,
+          "claim_readiness": "evidence_present",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "hr.onboarding_artifacts.window",
+          "note": "Reusable onboarding artifacts are present."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": false,
+          "claim_readiness": "not_measured",
+          "evidence_strength": "unverified",
+          "note": "No onboarding milestone movement is linked."
+        }
+      ],
+      "claim_templates_enabled": [
+        "HR onboarding evidence shows directional and reusable onboarding-support patterns."
+      ],
+      "upgrade_actions": [
+        "Link onboarding activity to ramp milestones or HR help-request movement.",
+        "Use aggregate cohort-level reporting only."
+      ],
+      "risks_and_caveats": [
+        "Onboarding outcomes vary by role, team, hiring cohort, and ramp expectations.",
+        "Do not expose person-level onboarding performance or manager views."
+      ]
+    },
+    {
+      "hypothesis_id": "agentic_business_reporting",
+      "outcome_domain": "finance",
+      "work_pattern": "orchestrate",
+      "target_maturity_stage": "finance_approved",
+      "expected_value_mechanism": "Glean agents and governed actions help assemble recurring business reports faster while preserving control evidence and finance-reviewed assumptions.",
+      "leading_indicators": [
+        "completed reporting agent runs",
+        "governed action logs",
+        "report artifact generation",
+        "control coverage"
+      ],
+      "lagging_indicators": [
+        "reporting cycle-time movement",
+        "review turnaround movement",
+        "finance-approved value-to-cost estimate"
+      ],
+      "required_evidence": ["workflow_run", "action_log", "artifact_output", "control_evidence", "business_outcome", "financial_model"],
+      "current_evidence_state": [
+        {
+          "evidence_type": "workflow_run",
+          "evidence_present": true,
+          "claim_readiness": "customer_safe",
+          "evidence_strength": "strong",
+          "aggregate_metric_ref": "agentic_reporting.completed_runs.window",
+          "note": "Recurring reporting runs are validated."
+        },
+        {
+          "evidence_type": "action_log",
+          "evidence_present": true,
+          "claim_readiness": "customer_safe",
+          "evidence_strength": "strong",
+          "aggregate_metric_ref": "agentic_reporting.governed_actions.window",
+          "note": "Actions are logged and action classes are validated."
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_present": true,
+          "claim_readiness": "customer_safe",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "agentic_reporting.artifacts.window",
+          "note": "Generated reporting artifacts are observable without raw content."
+        },
+        {
+          "evidence_type": "control_evidence",
+          "evidence_present": true,
+          "claim_readiness": "customer_safe",
+          "evidence_strength": "strong",
+          "aggregate_metric_ref": "agentic_reporting.control_coverage.window",
+          "note": "Control evidence supports governed action claims."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_present": true,
+          "claim_readiness": "customer_safe",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "agentic_reporting.cycle_time_delta.window",
+          "note": "Reporting cycle movement is linked with caveats."
+        },
+        {
+          "evidence_type": "financial_model",
+          "evidence_present": true,
+          "claim_readiness": "customer_safe",
+          "evidence_strength": "medium",
+          "aggregate_metric_ref": "agentic_reporting.finance_approved_value_model",
+          "note": "Finance-approved value assumptions are attached."
+        }
+      ],
+      "claim_templates_enabled": [
+        "Finance-reviewed evidence supports a bounded value claim for governed agentic business reporting workflows.",
+        "Evidence supports covered value only within the approved reporting workflow and assumptions."
+      ],
+      "upgrade_actions": [
+        "Monitor drift in reporting workflow coverage, control evidence, and financial assumptions.",
+        "Revalidate finance approval when pricing, recapture, or workflow scope changes."
+      ],
+      "risks_and_caveats": [
+        "Finance approval is scoped to the synthetic workflow and approved assumptions.",
+        "Do not generalize this value claim to all agentic work."
+      ]
+    }
+  ]
+}

@@ -20,6 +20,10 @@
 - Glean readiness roadmap Phase 8: added live-data access decision gate; Path C is the current pilot default until Path A/B evidence is confirmed.
 - Glean readiness executive prototype: added a static synthetic-data HTML demo with first-screen executive graphs, drill-down click paths, an Agent Brief view, docs links, and a dedicated validator.
 - Vercel Services + Supabase RLS hardening: root Services config now owns frontend/backend deployment, old backend Vercel project is disconnected from GitHub, production Supabase envs are fixed, authenticated DB health is green, and the live Prisma RLS migration covers public application tables.
+- QBR Narrative View for Glean Claim Packet Export: added a shared `GCP_2026_05` narrative formatter, a `/methodology-review` QBR prep section, synthetic packet evidence for suppressed ROI/MCP claims, and tests preserving internal-only/suppressed boundaries.
+- Product framing audit: tightened docs/UI copy around methodology-governed claim packaging, QBR-prep artifacts, not-an-ROI-calculator language, synthetic Nielsen fixtures, and strongest safe claim framing.
+- QBR Readiness Summary: added a plain-language selected-packet summary for customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action without ROI calculation or readiness upgrades.
+- Glean Claim Packet real-source readiness doc: added documentation-only fixture replacement gates for source inputs, mappings, unknowns, blockers, privacy, approvals, and minimum acceptance criteria without ingestion.
 
 ## Current Status
 
@@ -41,6 +45,10 @@
 - Glean AI Work Evidence adapter slice is complete: OpenSpec `add-glean-ai-work-evidence-adapter`, shared `GAW_2026_05` metadata-only schema, readiness inventory mapping, registry-aware claim evaluation mapping, docs/example, and targeted tests.
 - Glean Value Evidence MCP tools slice is complete: OpenSpec `add-glean-value-evidence-mcp-tools`, strict value evidence summary helper, four bounded MCP tools, docs updates, audit/error hardening, and MCP tests.
 - Glean Value Evidence Pack prototype slice is complete: static synthetic HTML prototype, validator, and demo-guide links for QBR-safe claim readiness, evidence coverage, instrumentation gaps, and Glean Agent answer flow.
+- QBR Narrative View slice is complete as a bounded user-requested addition; it renders the existing claim packet for QBR prep without ROI calculation, readiness upgrade, or raw content ingestion.
+- Product framing audit is complete as a bounded user-requested copy/docs slice; no claim behavior changed.
+- QBR Readiness Summary slice is complete as a bounded user-requested addition; it summarizes existing claim packet buckets only.
+- Glean Claim Packet real-source readiness doc is complete as a bounded documentation-only slice; it does not implement ingestion, ROI calculation, or claim readiness upgrades.
 
 ## Blockers
 
@@ -54,3 +62,4 @@
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
 - If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; remaining hardening should include full-suite verification, optional linkcheck, and review/archive decisions for completed OpenSpec changes.
+- Review/archive OpenSpec `add-qbr-narrative-view` after human approval.

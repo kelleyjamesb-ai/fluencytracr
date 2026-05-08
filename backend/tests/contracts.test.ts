@@ -264,7 +264,8 @@ it("suppresses interpretive fields when include_signals=true and disclosure rule
   expect(response.body.traces[0].signals).toBeNull();
   expect(response.body.traces[0].pattern_confidence_tier).toBeNull();
   expect(response.body.traces[0].ordered_event_ids.length).toBe(1);
-  expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");});
+  expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");
+});
 
 it("accepts configured compatibility versions and marks deprecated versions", async () => {
   process.env.SCHEMA_ACCEPTED_VERSIONS = "0.1,0.2";

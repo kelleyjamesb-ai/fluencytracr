@@ -1,0 +1,474 @@
+{
+  "schema_version": "AIWVG_2026_05",
+  "graph_id": "aiwvg:org-northstar:2026-05-weekly",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-07T18:00:00.000Z",
+  "source_system": "FluencyTracr",
+  "summary": {
+    "overall_claim_readiness": "caveated",
+    "highest_maturity_stage": "outcome_linked",
+    "covered_surfaces": ["search", "chat", "ai_answers", "agents", "skills", "mcp_actions", "canvas_artifacts", "apis", "embedded_hosts"],
+    "covered_outcome_domains": ["sales", "customer_success", "support", "engineering", "product", "IT", "HR", "legal", "finance", "security", "operations"],
+    "blocked_claims": [
+      "Do not claim causal productivity lift.",
+      "Do not rank teams, managers, or individuals.",
+      "Do not claim finance-approved ROI until financial_model evidence is validated."
+    ],
+    "next_evidence_actions": [
+      "Validate financial_model assumptions with Finance before finance_approved maturity.",
+      "Connect action_log and business_outcome evidence for agentic workflows.",
+      "Review control_evidence before customer-facing risk-reduction language."
+    ]
+  },
+  "nodes": [
+    {
+      "id": "surface:search",
+      "kind": "surface",
+      "label": "Search",
+      "claim_readiness": "customer_safe",
+      "surface": "search",
+      "observed_patterns": ["find", "understand"],
+      "maturity_stage": "repeated_assistance",
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "strong",
+          "claim_readiness": "customer_safe",
+          "source_surface": "search",
+          "maturity_stage": "repeated_assistance",
+          "validation_status": "validated",
+          "aggregate_metric_ref": "search.covered_sessions.weekly"
+        }
+      ],
+      "claim_boundary": {
+        "allowed_language": "Search evidence supports aggregate information-friction reduction for covered sessions.",
+        "blocked_language": "Search evidence proves total productivity lift.",
+        "required_caveats": ["Limit claims to covered search surfaces and validated reporting windows."]
+      }
+    },
+    {
+      "id": "surface:chat",
+      "kind": "surface",
+      "label": "Chat",
+      "claim_readiness": "caveated",
+      "surface": "chat",
+      "observed_patterns": ["understand", "summarize", "draft", "analyze"],
+      "maturity_stage": "repeated_assistance",
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "medium",
+          "claim_readiness": "caveated",
+          "source_surface": "chat",
+          "maturity_stage": "repeated_assistance",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "chat.quality_adjusted_sessions.weekly"
+        }
+      ],
+      "claim_boundary": {
+        "allowed_language": "Chat evidence supports bounded, quality-adjusted assistance claims with caveats.",
+        "blocked_language": "Chat evidence proves broad knowledge-worker productivity gains.",
+        "required_caveats": ["No-signal quality assumptions and classification coverage must travel with the claim."]
+      }
+    },
+    {
+      "id": "surface:ai_answers",
+      "kind": "surface",
+      "label": "AI Answers",
+      "claim_readiness": "directional",
+      "surface": "ai_answers",
+      "observed_patterns": ["find", "understand", "summarize"],
+      "maturity_stage": "ad_hoc_assistance",
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "weak",
+          "claim_readiness": "directional",
+          "source_surface": "ai_answers",
+          "maturity_stage": "ad_hoc_assistance",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "ai_answers.engaged_answers.weekly"
+        }
+      ]
+    },
+    {
+      "id": "surface:agents",
+      "kind": "surface",
+      "label": "Agents",
+      "claim_readiness": "internal_only",
+      "surface": "agents",
+      "observed_patterns": ["troubleshoot", "automate", "orchestrate"],
+      "maturity_stage": "agentic_execution",
+      "evidence": [
+        {
+          "evidence_type": "workflow_run",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surface": "agents",
+          "maturity_stage": "agentic_execution",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "agents.completed_runs.weekly"
+        }
+      ]
+    },
+    {
+      "id": "surface:skills",
+      "kind": "surface",
+      "label": "Skills",
+      "claim_readiness": "evidence_present",
+      "surface": "skills",
+      "observed_patterns": ["summarize", "draft", "automate"],
+      "maturity_stage": "reusable_expertise",
+      "evidence": [
+        {
+          "evidence_type": "artifact_output",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surface": "skills",
+          "maturity_stage": "reusable_expertise",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "skills.lifecycle_events.weekly"
+        }
+      ]
+    },
+    {
+      "id": "surface:mcp_actions",
+      "kind": "surface",
+      "label": "MCP and Actions",
+      "claim_readiness": "internal_only",
+      "surface": "mcp_actions",
+      "observed_patterns": ["automate", "orchestrate", "decide"],
+      "maturity_stage": "governed_action",
+      "evidence": [
+        {
+          "evidence_type": "action_log",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surface": "mcp_actions",
+          "maturity_stage": "governed_action",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "mcp_actions.tool_runs.weekly"
+        },
+        {
+          "evidence_type": "control_evidence",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surface": "mcp_actions",
+          "maturity_stage": "governed_action",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "mcp_actions.approval_coverage.weekly"
+        }
+      ]
+    },
+    {
+      "id": "surface:canvas_artifacts",
+      "kind": "surface",
+      "label": "Canvas and Artifacts",
+      "claim_readiness": "evidence_present",
+      "surface": "canvas_artifacts",
+      "observed_patterns": ["draft", "summarize", "analyze"],
+      "maturity_stage": "reusable_expertise",
+      "evidence": [
+        {
+          "evidence_type": "artifact_output",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surface": "canvas_artifacts",
+          "maturity_stage": "reusable_expertise",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "artifacts.reuse_events.weekly"
+        }
+      ]
+    },
+    {
+      "id": "surface:apis",
+      "kind": "surface",
+      "label": "APIs",
+      "claim_readiness": "directional",
+      "surface": "apis",
+      "observed_patterns": ["find", "automate", "orchestrate"],
+      "maturity_stage": "agentic_execution",
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "weak",
+          "claim_readiness": "directional",
+          "source_surface": "apis",
+          "maturity_stage": "agentic_execution",
+          "validation_status": "not_started",
+          "aggregate_metric_ref": "apis.aggregate_calls.weekly"
+        }
+      ]
+    },
+    {
+      "id": "surface:embedded_hosts",
+      "kind": "surface",
+      "label": "Embedded Hosts",
+      "claim_readiness": "directional",
+      "surface": "embedded_hosts",
+      "observed_patterns": ["find", "understand", "draft"],
+      "maturity_stage": "ad_hoc_assistance",
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "weak",
+          "claim_readiness": "directional",
+          "source_surface": "embedded_hosts",
+          "maturity_stage": "ad_hoc_assistance",
+          "validation_status": "not_started",
+          "aggregate_metric_ref": "embedded_hosts.aggregate_assists.weekly"
+        }
+      ]
+    },
+    {
+      "id": "pattern:find",
+      "kind": "work_pattern",
+      "label": "Find work",
+      "claim_readiness": "customer_safe",
+      "work_pattern": "find",
+      "supported_surfaces": ["search", "ai_answers", "apis", "embedded_hosts"],
+      "maturity_stage": "repeated_assistance",
+      "value_hypotheses": ["productivity_capacity", "customer_experience"],
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "strong",
+          "claim_readiness": "customer_safe",
+          "maturity_stage": "repeated_assistance",
+          "validation_status": "validated",
+          "aggregate_metric_ref": "patterns.find.coverage.weekly"
+        }
+      ]
+    },
+    {
+      "id": "pattern:understand",
+      "kind": "work_pattern",
+      "label": "Understand work",
+      "claim_readiness": "caveated",
+      "work_pattern": "understand",
+      "supported_surfaces": ["search", "chat", "ai_answers", "embedded_hosts"],
+      "maturity_stage": "repeated_assistance",
+      "value_hypotheses": ["productivity_capacity", "quality_improvement"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:summarize",
+      "kind": "work_pattern",
+      "label": "Summarize work",
+      "claim_readiness": "evidence_present",
+      "work_pattern": "summarize",
+      "supported_surfaces": ["chat", "ai_answers", "skills", "canvas_artifacts"],
+      "maturity_stage": "reusable_expertise",
+      "value_hypotheses": ["productivity_capacity", "capability_leverage"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:draft",
+      "kind": "work_pattern",
+      "label": "Draft work",
+      "claim_readiness": "evidence_present",
+      "work_pattern": "draft",
+      "supported_surfaces": ["chat", "skills", "canvas_artifacts", "embedded_hosts"],
+      "maturity_stage": "reusable_expertise",
+      "value_hypotheses": ["productivity_capacity", "capability_leverage"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:decide",
+      "kind": "work_pattern",
+      "label": "Decide work",
+      "claim_readiness": "internal_only",
+      "work_pattern": "decide",
+      "supported_surfaces": ["chat", "mcp_actions"],
+      "maturity_stage": "governed_action",
+      "value_hypotheses": ["risk_reduction", "quality_improvement"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:analyze",
+      "kind": "work_pattern",
+      "label": "Analyze work",
+      "claim_readiness": "evidence_present",
+      "work_pattern": "analyze",
+      "supported_surfaces": ["chat", "canvas_artifacts"],
+      "maturity_stage": "reusable_expertise",
+      "value_hypotheses": ["productivity_capacity", "quality_improvement"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:troubleshoot",
+      "kind": "work_pattern",
+      "label": "Troubleshoot work",
+      "claim_readiness": "internal_only",
+      "work_pattern": "troubleshoot",
+      "supported_surfaces": ["chat", "agents"],
+      "maturity_stage": "agentic_execution",
+      "value_hypotheses": ["cost_avoidance", "customer_experience"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:automate",
+      "kind": "work_pattern",
+      "label": "Automate work",
+      "claim_readiness": "internal_only",
+      "work_pattern": "automate",
+      "supported_surfaces": ["agents", "skills", "mcp_actions", "apis"],
+      "maturity_stage": "governed_action",
+      "value_hypotheses": ["cost_avoidance", "capability_leverage"],
+      "evidence": []
+    },
+    {
+      "id": "pattern:orchestrate",
+      "kind": "work_pattern",
+      "label": "Orchestrate work",
+      "claim_readiness": "internal_only",
+      "work_pattern": "orchestrate",
+      "supported_surfaces": ["agents", "mcp_actions", "apis"],
+      "maturity_stage": "governed_action",
+      "value_hypotheses": ["capability_leverage", "risk_reduction"],
+      "evidence": []
+    },
+    {
+      "id": "maturity:outcome_linked",
+      "kind": "maturity_stage",
+      "label": "Outcome linked",
+      "claim_readiness": "caveated",
+      "maturity_stage": "outcome_linked",
+      "supported_surfaces": ["search", "chat", "ai_answers", "agents", "skills", "mcp_actions", "canvas_artifacts", "apis", "embedded_hosts"],
+      "supported_patterns": ["find", "understand", "summarize", "draft", "decide", "analyze", "troubleshoot", "automate", "orchestrate"],
+      "evidence": [
+        {
+          "evidence_type": "business_outcome",
+          "evidence_strength": "medium",
+          "claim_readiness": "caveated",
+          "maturity_stage": "outcome_linked",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "outcomes.linked_workflows.weekly"
+        }
+      ]
+    },
+    {
+      "id": "outcome:customer_success",
+      "kind": "outcome",
+      "label": "Customer Success value",
+      "claim_readiness": "caveated",
+      "outcome_domain": "customer_success",
+      "value_hypotheses": ["customer_experience", "revenue_acceleration"],
+      "supported_patterns": ["find", "summarize", "troubleshoot"],
+      "maturity_stage": "outcome_linked",
+      "evidence": [
+        {
+          "evidence_type": "business_outcome",
+          "evidence_strength": "medium",
+          "claim_readiness": "caveated",
+          "maturity_stage": "outcome_linked",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "customer_success.response_time_delta.window"
+        }
+      ],
+      "claim_boundary": {
+        "allowed_language": "Covered evidence supports a contribution story for faster customer response workflows.",
+        "blocked_language": "Glean caused customer health improvement.",
+        "required_caveats": ["Outcome evidence needs baseline and attribution review before causal language."]
+      }
+    },
+    {
+      "id": "outcome:finance",
+      "kind": "outcome",
+      "label": "Finance approval",
+      "claim_readiness": "internal_only",
+      "outcome_domain": "finance",
+      "value_hypotheses": ["productivity_capacity", "cost_avoidance"],
+      "supported_patterns": ["find", "draft", "automate"],
+      "maturity_stage": "outcome_linked",
+      "evidence": [
+        {
+          "evidence_type": "financial_model",
+          "evidence_strength": "weak",
+          "claim_readiness": "internal_only",
+          "maturity_stage": "outcome_linked",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "finance.value_to_cost_model.draft"
+        }
+      ]
+    },
+    {
+      "id": "outcome:security",
+      "kind": "outcome",
+      "label": "Security and control value",
+      "claim_readiness": "internal_only",
+      "outcome_domain": "security",
+      "value_hypotheses": ["risk_reduction"],
+      "supported_patterns": ["decide", "automate", "orchestrate"],
+      "maturity_stage": "governed_action",
+      "evidence": [
+        {
+          "evidence_type": "control_evidence",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "maturity_stage": "governed_action",
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "security.safe_path_coverage.weekly"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:search_supports_find",
+      "edge_type": "surface_supports_pattern",
+      "from_node_id": "surface:search",
+      "to_node_id": "pattern:find",
+      "evidence_types": ["product_telemetry"],
+      "claim_readiness": "customer_safe",
+      "evidence_strength": "strong",
+      "value_hypotheses": ["productivity_capacity"],
+      "required_caveats": []
+    },
+    {
+      "id": "edge:chat_supports_understand",
+      "edge_type": "surface_supports_pattern",
+      "from_node_id": "surface:chat",
+      "to_node_id": "pattern:understand",
+      "evidence_types": ["product_telemetry"],
+      "claim_readiness": "caveated",
+      "evidence_strength": "medium",
+      "value_hypotheses": ["productivity_capacity", "quality_improvement"],
+      "required_caveats": ["No-signal quality assumptions must be disclosed."]
+    },
+    {
+      "id": "edge:skills_support_reusable_expertise",
+      "edge_type": "pattern_advances_maturity",
+      "from_node_id": "pattern:automate",
+      "to_node_id": "maturity:outcome_linked",
+      "evidence_types": ["artifact_output", "workflow_run"],
+      "claim_readiness": "internal_only",
+      "evidence_strength": "medium",
+      "value_hypotheses": ["capability_leverage"],
+      "required_caveats": ["Do not include skill ROI until invocation and outcome rules are approved."]
+    },
+    {
+      "id": "edge:troubleshoot_links_customer_success",
+      "edge_type": "pattern_links_outcome",
+      "from_node_id": "pattern:troubleshoot",
+      "to_node_id": "outcome:customer_success",
+      "evidence_types": ["workflow_run", "business_outcome"],
+      "claim_readiness": "caveated",
+      "evidence_strength": "medium",
+      "value_hypotheses": ["customer_experience", "cost_avoidance"],
+      "required_caveats": ["Use contribution language unless baseline/control evidence supports stronger attribution."]
+    },
+    {
+      "id": "edge:finance_blocks_finance_approved",
+      "edge_type": "claim_blocked_by_gap",
+      "from_node_id": "outcome:finance",
+      "to_node_id": "maturity:outcome_linked",
+      "evidence_types": ["financial_model"],
+      "claim_readiness": "internal_only",
+      "evidence_strength": "weak",
+      "value_hypotheses": ["productivity_capacity", "cost_avoidance"],
+      "required_caveats": ["Finance approval is not complete; do not claim finance_approved maturity."]
+    }
+  ]
+}

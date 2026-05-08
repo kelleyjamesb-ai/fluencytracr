@@ -1,0 +1,513 @@
+{
+  "schema_version": "AIWMM_2026_05",
+  "generated_at": "2026-05-07T18:20:00.000Z",
+  "source_system": "FluencyTracr",
+  "evidence_to_stage_map": [
+    {
+      "evidence_type": "survey",
+      "default_stage": "ad_hoc_assistance",
+      "supported_maturity_stages": ["ad_hoc_assistance", "repeated_assistance"]
+    },
+    {
+      "evidence_type": "product_telemetry",
+      "default_stage": "repeated_assistance",
+      "supported_maturity_stages": ["ad_hoc_assistance", "repeated_assistance", "reusable_expertise"]
+    },
+    {
+      "evidence_type": "workflow_run",
+      "default_stage": "agentic_execution",
+      "supported_maturity_stages": ["repeated_assistance", "agentic_execution", "outcome_linked"]
+    },
+    {
+      "evidence_type": "artifact_output",
+      "default_stage": "reusable_expertise",
+      "supported_maturity_stages": ["reusable_expertise", "outcome_linked"]
+    },
+    {
+      "evidence_type": "action_log",
+      "default_stage": "agentic_execution",
+      "supported_maturity_stages": ["agentic_execution", "governed_action", "outcome_linked"]
+    },
+    {
+      "evidence_type": "control_evidence",
+      "default_stage": "governed_action",
+      "supported_maturity_stages": ["governed_action", "outcome_linked", "finance_approved"]
+    },
+    {
+      "evidence_type": "business_outcome",
+      "default_stage": "outcome_linked",
+      "supported_maturity_stages": ["outcome_linked", "finance_approved"]
+    },
+    {
+      "evidence_type": "financial_model",
+      "default_stage": "finance_approved",
+      "supported_maturity_stages": ["finance_approved"]
+    }
+  ],
+  "examples": [
+    {
+      "example_id": "search_productivity",
+      "label": "Search productivity",
+      "outcome_domain": "operations",
+      "ai_surfaces": ["search", "ai_answers"],
+      "work_patterns": ["find", "understand"],
+      "current_maturity_stage": "repeated_assistance",
+      "claim_readiness": "customer_safe",
+      "evidence_present": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "strong",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["search"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "search.successful_sessions.weekly"
+        },
+        {
+          "evidence_type": "survey",
+          "evidence_strength": "weak",
+          "claim_readiness": "directional",
+          "source_surfaces": ["search"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "survey.search_friction.aggregate"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "business_outcome",
+          "needed_for_stage": "outcome_linked",
+          "reason": "Search activity is not yet linked to a business process metric."
+        },
+        {
+          "evidence_type": "financial_model",
+          "needed_for_stage": "finance_approved",
+          "reason": "Finance has not approved a value-to-cost translation."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "repeated_assistance",
+          "to_stage": "outcome_linked",
+          "required_evidence": ["business_outcome"],
+          "action": "Link aggregate search activity to a validated operational metric such as resolution time, cycle time, or avoided help requests.",
+          "claim_readiness_after_upgrade": "caveated"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Search evidence supports aggregate information-friction reduction for covered sessions.",
+        "blocked_claim": "Search evidence proves total company productivity lift.",
+        "next_safe_claim_after_upgrade": "Search evidence is linked to a business process metric with caveats."
+      }
+    },
+    {
+      "example_id": "assistant_productivity",
+      "label": "Assistant productivity",
+      "outcome_domain": "operations",
+      "ai_surfaces": ["chat", "ai_answers"],
+      "work_patterns": ["understand", "summarize", "draft", "analyze"],
+      "current_maturity_stage": "repeated_assistance",
+      "claim_readiness": "caveated",
+      "evidence_present": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "medium",
+          "claim_readiness": "caveated",
+          "source_surfaces": ["chat", "ai_answers"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "assistant.quality_adjusted_sessions.weekly"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "workflow_run",
+          "needed_for_stage": "agentic_execution",
+          "reason": "Assistant use is not yet represented as a multi-step workflow run."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "needed_for_stage": "outcome_linked",
+          "reason": "The assistance estimate is not linked to an operational outcome."
+        },
+        {
+          "evidence_type": "financial_model",
+          "needed_for_stage": "finance_approved",
+          "reason": "No finance-approved recapture, rate, or cost model is attached."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "repeated_assistance",
+          "to_stage": "reusable_expertise",
+          "required_evidence": ["artifact_output"],
+          "action": "Track aggregate reusable outputs or saved artifacts from Assistant workflows.",
+          "claim_readiness_after_upgrade": "evidence_present"
+        },
+        {
+          "from_stage": "reusable_expertise",
+          "to_stage": "outcome_linked",
+          "required_evidence": ["business_outcome"],
+          "action": "Connect assistant-supported work to a business process metric.",
+          "claim_readiness_after_upgrade": "caveated"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Assistant evidence supports bounded, quality-adjusted assistance claims with caveats.",
+        "blocked_claim": "Assistant evidence proves broad knowledge-worker productivity gains.",
+        "next_safe_claim_after_upgrade": "Assistant-supported workflows show reusable output patterns linked to an outcome metric."
+      }
+    },
+    {
+      "example_id": "cs_response_time_improvement",
+      "label": "CS response-time improvement",
+      "outcome_domain": "customer_success",
+      "ai_surfaces": ["search", "chat"],
+      "work_patterns": ["find", "understand", "summarize", "troubleshoot"],
+      "current_maturity_stage": "outcome_linked",
+      "claim_readiness": "caveated",
+      "evidence_present": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "medium",
+          "claim_readiness": "caveated",
+          "source_surfaces": ["search", "chat"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "cs.covered_glean_activity.window"
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_strength": "medium",
+          "claim_readiness": "caveated",
+          "source_surfaces": ["search", "chat"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "cs.response_time_delta.window"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "financial_model",
+          "needed_for_stage": "finance_approved",
+          "reason": "Response-time movement has not been translated into an approved financial model."
+        },
+        {
+          "evidence_type": "control_evidence",
+          "needed_for_stage": "finance_approved",
+          "reason": "Attribution and governance review are not complete."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "outcome_linked",
+          "to_stage": "finance_approved",
+          "required_evidence": ["financial_model", "control_evidence"],
+          "action": "Have Finance and Data Science approve the response-time value translation and attribution caveats.",
+          "claim_readiness_after_upgrade": "customer_safe"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Covered evidence supports a contribution story for faster customer response workflows.",
+        "blocked_claim": "Glean caused customer health improvement.",
+        "next_safe_claim_after_upgrade": "Finance-reviewed evidence supports a bounded value claim for covered CS response workflows."
+      }
+    },
+    {
+      "example_id": "sales_account_planning",
+      "label": "Sales account planning",
+      "outcome_domain": "sales",
+      "ai_surfaces": ["search", "chat", "canvas_artifacts"],
+      "work_patterns": ["find", "summarize", "draft", "analyze"],
+      "current_maturity_stage": "reusable_expertise",
+      "claim_readiness": "evidence_present",
+      "evidence_present": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surfaces": ["search", "chat"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "sales.account_planning_activity.weekly"
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surfaces": ["canvas_artifacts"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "sales.account_plan_artifacts.weekly"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "business_outcome",
+          "needed_for_stage": "outcome_linked",
+          "reason": "Account-planning evidence is not yet linked to pipeline movement or seller capacity."
+        },
+        {
+          "evidence_type": "financial_model",
+          "needed_for_stage": "finance_approved",
+          "reason": "No finance-reviewed value model exists for reclaimed selling time."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "reusable_expertise",
+          "to_stage": "outcome_linked",
+          "required_evidence": ["business_outcome"],
+          "action": "Connect aggregate account-planning activity to planning-cycle time, meeting volume, or pipeline-stage movement.",
+          "claim_readiness_after_upgrade": "caveated"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Sales planning evidence shows repeatable account-planning support and reusable artifacts.",
+        "blocked_claim": "Glean accelerated pipeline or caused revenue growth.",
+        "next_safe_claim_after_upgrade": "Sales planning evidence is linked to a validated business process metric with caveats."
+      }
+    },
+    {
+      "example_id": "support_case_analyzer",
+      "label": "Support case analyzer",
+      "outcome_domain": "support",
+      "ai_surfaces": ["agents", "skills", "canvas_artifacts"],
+      "work_patterns": ["summarize", "troubleshoot", "automate"],
+      "current_maturity_stage": "agentic_execution",
+      "claim_readiness": "internal_only",
+      "evidence_present": [
+        {
+          "evidence_type": "workflow_run",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surfaces": ["agents"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "support.case_analyzer.completed_runs.weekly"
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surfaces": ["canvas_artifacts", "skills"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "support.case_summary_artifacts.weekly"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "action_log",
+          "needed_for_stage": "governed_action",
+          "reason": "Agent actions are not yet classified by action class and completion state."
+        },
+        {
+          "evidence_type": "business_outcome",
+          "needed_for_stage": "outcome_linked",
+          "reason": "Case analyzer usage is not linked to ticket resolution or escalation movement."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "agentic_execution",
+          "to_stage": "governed_action",
+          "required_evidence": ["action_log", "control_evidence"],
+          "action": "Classify agent actions and attach control evidence for review, approval, and failure handling.",
+          "claim_readiness_after_upgrade": "internal_only"
+        },
+        {
+          "from_stage": "governed_action",
+          "to_stage": "outcome_linked",
+          "required_evidence": ["business_outcome"],
+          "action": "Link aggregate case-analyzer usage to ticket resolution, reopen rate, or escalation movement.",
+          "claim_readiness_after_upgrade": "caveated"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Support case analyzer evidence shows structurally observable agentic execution for covered workflows.",
+        "blocked_claim": "The support agent resolved cases or improved support productivity.",
+        "next_safe_claim_after_upgrade": "Governed case-analyzer workflows are linked to support outcome movement with caveats."
+      }
+    },
+    {
+      "example_id": "project_onboarding",
+      "label": "Project onboarding",
+      "outcome_domain": "operations",
+      "ai_surfaces": ["search", "chat", "canvas_artifacts", "skills"],
+      "work_patterns": ["find", "understand", "summarize", "draft"],
+      "current_maturity_stage": "reusable_expertise",
+      "claim_readiness": "evidence_present",
+      "evidence_present": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surfaces": ["search", "chat"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "onboarding.assisted_sessions.weekly"
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_strength": "medium",
+          "claim_readiness": "evidence_present",
+          "source_surfaces": ["canvas_artifacts", "skills"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "onboarding.reusable_artifacts.weekly"
+        },
+        {
+          "evidence_type": "survey",
+          "evidence_strength": "weak",
+          "claim_readiness": "directional",
+          "source_surfaces": ["chat"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "onboarding.survey.aggregate"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "business_outcome",
+          "needed_for_stage": "outcome_linked",
+          "reason": "Onboarding evidence is not linked to time-to-first-project milestone."
+        },
+        {
+          "evidence_type": "financial_model",
+          "needed_for_stage": "finance_approved",
+          "reason": "Onboarding cycle-time value has not been finance reviewed."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "reusable_expertise",
+          "to_stage": "outcome_linked",
+          "required_evidence": ["business_outcome"],
+          "action": "Link reusable onboarding artifacts to aggregate onboarding-cycle or ramp milestone movement.",
+          "claim_readiness_after_upgrade": "caveated"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Project onboarding evidence shows reusable onboarding support patterns.",
+        "blocked_claim": "Glean reduced onboarding time across the business.",
+        "next_safe_claim_after_upgrade": "Onboarding support patterns are linked to aggregate ramp or project-start movement with caveats."
+      }
+    },
+    {
+      "example_id": "security_incident_assistant",
+      "label": "Security incident assistant",
+      "outcome_domain": "security",
+      "ai_surfaces": ["agents", "mcp_actions", "apis"],
+      "work_patterns": ["troubleshoot", "decide", "automate", "orchestrate"],
+      "current_maturity_stage": "governed_action",
+      "claim_readiness": "internal_only",
+      "evidence_present": [
+        {
+          "evidence_type": "workflow_run",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surfaces": ["agents"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "security.incident_assistant.runs.weekly"
+        },
+        {
+          "evidence_type": "action_log",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surfaces": ["mcp_actions", "apis"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "security.incident_actions.weekly"
+        },
+        {
+          "evidence_type": "control_evidence",
+          "evidence_strength": "medium",
+          "claim_readiness": "internal_only",
+          "source_surfaces": ["mcp_actions"],
+          "validation_status": "in_review",
+          "aggregate_metric_ref": "security.approval_coverage.weekly"
+        }
+      ],
+      "evidence_missing": [
+        {
+          "evidence_type": "business_outcome",
+          "needed_for_stage": "outcome_linked",
+          "reason": "Incident assistant evidence is not linked to incident response time or containment movement."
+        },
+        {
+          "evidence_type": "financial_model",
+          "needed_for_stage": "finance_approved",
+          "reason": "Risk-reduction value has not been reviewed by Finance and Security leadership."
+        }
+      ],
+      "upgrade_path": [
+        {
+          "from_stage": "governed_action",
+          "to_stage": "outcome_linked",
+          "required_evidence": ["business_outcome"],
+          "action": "Link governed incident-assistant actions to aggregate incident response or containment movement.",
+          "claim_readiness_after_upgrade": "internal_only"
+        }
+      ],
+      "safe_claim_language": {
+        "current_safe_claim": "Security incident assistant evidence shows governed, reviewable action patterns for covered workflows.",
+        "blocked_claim": "Glean reduced security incidents or prevented losses.",
+        "next_safe_claim_after_upgrade": "Governed incident-assistant workflows are linked to security outcome movement with approval caveats."
+      }
+    },
+    {
+      "example_id": "agentic_business_reporting",
+      "label": "Agentic business reporting",
+      "outcome_domain": "finance",
+      "ai_surfaces": ["agents", "mcp_actions", "apis", "canvas_artifacts"],
+      "work_patterns": ["analyze", "draft", "automate", "orchestrate"],
+      "current_maturity_stage": "finance_approved",
+      "claim_readiness": "customer_safe",
+      "evidence_present": [
+        {
+          "evidence_type": "workflow_run",
+          "evidence_strength": "strong",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["agents"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "business_reporting.completed_runs.weekly"
+        },
+        {
+          "evidence_type": "action_log",
+          "evidence_strength": "strong",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["mcp_actions", "apis"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "business_reporting.governed_actions.weekly"
+        },
+        {
+          "evidence_type": "artifact_output",
+          "evidence_strength": "medium",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["canvas_artifacts"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "business_reporting.generated_artifacts.weekly"
+        },
+        {
+          "evidence_type": "control_evidence",
+          "evidence_strength": "strong",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["mcp_actions"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "business_reporting.control_coverage.weekly"
+        },
+        {
+          "evidence_type": "business_outcome",
+          "evidence_strength": "medium",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["agents", "mcp_actions"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "business_reporting.reporting_cycle_delta.window"
+        },
+        {
+          "evidence_type": "financial_model",
+          "evidence_strength": "medium",
+          "claim_readiness": "customer_safe",
+          "source_surfaces": ["agents", "mcp_actions"],
+          "validation_status": "validated",
+          "aggregate_metric_ref": "business_reporting.finance_approved_value_model"
+        }
+      ],
+      "evidence_missing": [],
+      "upgrade_path": [],
+      "safe_claim_language": {
+        "current_safe_claim": "Finance-reviewed evidence supports a bounded value claim for governed agentic business reporting workflows.",
+        "blocked_claim": "Glean caused all business reporting productivity gains.",
+        "next_safe_claim_after_upgrade": "Continue monitoring drift, control coverage, and model assumption changes before renewing finance approval."
+      }
+    }
+  ]
+}

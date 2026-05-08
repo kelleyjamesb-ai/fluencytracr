@@ -1,0 +1,90 @@
+{
+  "schema_version": "FT_EVIDENCE_APPENDIX_2026_05",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-01T12:00:00.000Z",
+  "source_system": "FluencyTracr",
+  "report_context": "agent_insights",
+  "reportability": "REPORTABLE_WITH_CAVEATS",
+  "evidence_confidence": "MEDIUM",
+  "summary": "Evidence supports a bounded customer-facing claim only when required caveats travel with the report.",
+  "covered_surfaces": [
+    "agents"
+  ],
+  "excluded_surfaces": [
+    {
+      "surface": "mcp",
+      "reason": "mcp evidence is not yet computed or validated for this reporting window."
+    },
+    {
+      "surface": "skills",
+      "reason": "skills evidence is not available for this reporting window."
+    }
+  ],
+  "required_caveats": [
+    "mcp evidence is not yet computed or validated for this reporting window.",
+    "skills evidence is not available for this reporting window.",
+    "Agent insight claims must be limited to covered surfaces; excluded surfaces: mcp, skills.",
+    "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
+  ],
+  "blocked_claims": [
+    {
+      "claim_type": "total_productivity_impact",
+      "claim": "Total AI productivity impact across the organization."
+    },
+    {
+      "claim_type": "causal_productivity_lift",
+      "claim": "Glean caused a productivity lift."
+    },
+    {
+      "claim_type": "individual_productivity",
+      "claim": "Individual productivity or performance score."
+    },
+    {
+      "claim_type": "team_ranking",
+      "claim": "Team or manager ranking based on AI usage."
+    }
+  ],
+  "evidence_gaps": [
+    "mcp: mcp evidence is not yet computed or validated for this reporting window.",
+    "skills: skills evidence is not available for this reporting window.",
+    "Confirm MCP Usage export availability and scrubbed field set.",
+    "Approve which AI Security aggregate flags can support exposure and leadership reinforcement evidence.",
+    "Identify whether Skill lifecycle events are available for customer export.",
+    "Confirm whether REST API and Search API activity are available in customer-safe aggregate exports.",
+    "Confirm whether Gleanbot activity can be separated from other assistant or notification surfaces for customer reporting."
+  ],
+  "governance_posture": [
+    "Aggregate-only output; no individual productivity or performance scoring.",
+    "Customer-facing claims must stay within covered surfaces and required caveats.",
+    "Raw prompts, outputs, transcripts, message text, and file content are outside the appendix boundary.",
+    "Suppressed or unsupported evidence cannot be converted into a customer-facing claim."
+  ],
+  "next_actions": [
+    {
+      "action": "Confirm MCP Usage export availability and scrubbed field set.",
+      "owner": "glean_admin",
+      "priority": "high"
+    },
+    {
+      "action": "Approve which AI Security aggregate flags can support exposure and leadership reinforcement evidence.",
+      "owner": "data_governance",
+      "priority": "high"
+    },
+    {
+      "action": "Identify whether Skill lifecycle events are available for customer export.",
+      "owner": "data_governance",
+      "priority": "medium"
+    },
+    {
+      "action": "Confirm whether REST API and Search API activity are available in customer-safe aggregate exports.",
+      "owner": "glean_admin",
+      "priority": "medium"
+    },
+    {
+      "action": "Confirm whether Gleanbot activity can be separated from other assistant or notification surfaces for customer reporting.",
+      "owner": "glean_admin",
+      "priority": "medium"
+    }
+  ]
+}
