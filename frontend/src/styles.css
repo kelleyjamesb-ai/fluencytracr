@@ -1660,6 +1660,22 @@ body {
   font-weight: 700;
 }
 
+.mrw-packet-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mrw-packet-summary span {
+  border: 1px solid #dfddd6;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 7px 9px;
+  color: #444444;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .mrw-memo-output {
   min-height: 360px;
   width: 100%;

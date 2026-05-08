@@ -1,8 +1,14 @@
 import { useMemo, useState } from "react";
 import * as methodologySchemas from "@learnaire/shared/dist/aiWorkValueGraphSchemas";
+import * as claimPacketSchemas from "@learnaire/shared/dist/gleanClaimPacketSchemas";
+import {
+  NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH,
+  NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM
+} from "../constants/claimPacketReview";
 import { NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY } from "../constants/methodologyReview";
 
 const { buildMethodologyDecisionMemo, buildMethodologyReviewWorkspace } = methodologySchemas;
+const { buildGleanClaimPacketExport } = claimPacketSchemas;
 
 const formatToken = (value: string) => value.replace(/_/g, " ");
 
@@ -30,6 +36,17 @@ export function MethodologyReviewWorkspace() {
     () => buildMethodologyDecisionMemo(workspace, selected.methodology_snapshot_id),
     [workspace, selected.methodology_snapshot_id]
   );
+  const claimPacket = useMemo(
+    () =>
+      buildGleanClaimPacketExport({
+        methodology_review_workspace: workspace,
+        selected_methodology_snapshot_id: selected.methodology_snapshot_id,
+        strongest_safe_claim: NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM,
+        ai_work_value_graph: NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH
+      }),
+    [workspace, selected.methodology_snapshot_id]
+  );
+  const claimPacketText = useMemo(() => JSON.stringify(claimPacket, null, 2), [claimPacket]);
 
   return (
     <main className="mrw-shell">
@@ -200,6 +217,30 @@ export function MethodologyReviewWorkspace() {
               Reviewer decision memo plain text
             </label>
             <textarea id="reviewer-decision-memo" className="mrw-memo-output" readOnly value={decisionMemo} />
+          </section>
+
+          <section className="mrw-band mrw-memo">
+            <div className="mrw-section-head">
+              <h3>Export claim packet</h3>
+              <button
+                type="button"
+                className="mrw-copy-button"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(claimPacketText);
+                }}
+              >
+                Copy packet
+              </button>
+            </div>
+            <div className="mrw-packet-summary" aria-label="Claim packet summary">
+              <span>{claimPacket.claim_packet_id}</span>
+              <span>{claimPacket.window}</span>
+              <span>{claimPacket.selected_methodology_snapshot_id}</span>
+            </div>
+            <label className="mrw-memo-label" htmlFor="claim-packet-export">
+              Claim packet JSON
+            </label>
+            <textarea id="claim-packet-export" className="mrw-memo-output" readOnly value={claimPacketText} />
           </section>
         </section>
       </section>
