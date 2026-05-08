@@ -156,6 +156,31 @@ export type GleanClaimPacketQbrNarrative = {
   };
 };
 
+export type GleanClaimPacketQbrReadinessSummary = {
+  customer_safe_claims: {
+    count: number;
+    summary: string;
+    claim_ids: string[];
+  };
+  caveated_claims: {
+    count: number;
+    summary: string;
+    claim_ids: string[];
+  };
+  internal_only_claims: {
+    count: number;
+    summary: string;
+    claim_ids: string[];
+  };
+  suppressed_or_not_computed_claims: {
+    count: number;
+    summary: string;
+    claim_ids: string[];
+  };
+  top_blockers: string[];
+  next_upgrade_action: string;
+};
+
 export type BuildGleanClaimPacketExportInput = {
   methodology_review_workspace: MethodologyReviewWorkspace;
   selected_methodology_snapshot_id?: string;
@@ -403,6 +428,57 @@ const executiveHeadlineFor = (decisionState: z.infer<typeof ClaimPacketReadiness
   }
   return "Executive decision: caveated.";
 };
+
+const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
+  `${count} ${count === 1 ? singular : plural}`;
+
+const summarizeClaims = (
+  claims: ClaimPacketStatement[],
+  emptySummary: string,
+  singularLabel: string,
+  pluralLabel = `${singularLabel}s`
+) => ({
+  count: claims.length,
+  summary: claims.length === 0 ? emptySummary : pluralize(claims.length, singularLabel, pluralLabel),
+  claim_ids: claims.map((claim) => claim.claim_id)
+});
+
+export function buildGleanClaimPacketQbrReadinessSummary(raw: unknown): GleanClaimPacketQbrReadinessSummary {
+  const packet = GleanClaimPacketExportSchema.parse(raw);
+  const customerSafeClaims = packet.caveated_claims.filter(
+    (claim) => claim.claim_readiness === "customer_safe" || claim.claim_readiness === "customer_safe_with_caveats"
+  );
+  const caveatedClaims = packet.caveated_claims.filter((claim) => claim.claim_readiness === "caveated");
+  const topBlockers = packet.evidence_gaps
+    .slice(0, 3)
+    .map((gap) => `${gap.gap_type.replace(/_/g, " ")} blocks ${gap.blocks.replace(/_/g, " ")}: ${gap.action}`);
+
+  const summary: GleanClaimPacketQbrReadinessSummary = {
+    customer_safe_claims: summarizeClaims(
+      customerSafeClaims,
+      "No customer-safe claims in this packet.",
+      "customer-safe claim with caveats",
+      "customer-safe claims with caveats"
+    ),
+    caveated_claims: summarizeClaims(caveatedClaims, "No caveated claims in this packet.", "caveated claim"),
+    internal_only_claims: summarizeClaims(
+      packet.internal_only_claims,
+      "No internal-only claims in this packet.",
+      "internal-only claim"
+    ),
+    suppressed_or_not_computed_claims: summarizeClaims(
+      packet.suppressed_claims,
+      "No suppressed or not-computed claims in this packet.",
+      "suppressed or not-computed claim"
+    ),
+    top_blockers: topBlockers.length > 0 ? topBlockers : ["No blockers are recorded in this claim packet."],
+    next_upgrade_action: packet.upgrade_actions[0] ?? "No upgrade action is recorded in this claim packet."
+  };
+
+  assertNoForbiddenClaimPacketKeys(summary);
+
+  return summary;
+}
 
 export function buildGleanClaimPacketQbrNarrative(raw: unknown): GleanClaimPacketQbrNarrative {
   const packet = GleanClaimPacketExportSchema.parse(raw);

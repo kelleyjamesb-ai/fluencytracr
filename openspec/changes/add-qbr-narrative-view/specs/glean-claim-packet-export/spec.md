@@ -32,6 +32,16 @@ The Methodology Review Workspace SHALL render a QBR narrative view for the selec
 - **WHEN** the selected methodology snapshot changes
 - **THEN** the QBR narrative updates its methodology snapshot summary and keeps evidence gaps, upgrade actions, and governance boundaries visible
 
+### Requirement: QBR Readiness Summary
+
+The Methodology Review Workspace SHALL render a plain-language QBR readiness summary for the selected claim packet without calculating ROI or upgrading claim readiness.
+
+#### Scenario: Summary includes claim buckets and next action
+
+- **GIVEN** a reviewer opens `/methodology-review`
+- **WHEN** a claim packet is available
+- **THEN** the summary shows customer-safe claims, caveated claims, internal-only claims, suppressed or not-computed claims, top blockers, and the next upgrade action from the packet
+
 ### Requirement: QBR Narrative Privacy Boundary
 
 The QBR narrative SHALL NOT render raw prompts, raw responses, transcripts, query text, tool payloads, file contents, direct identifiers, rankings, manager views, or productivity scoring.

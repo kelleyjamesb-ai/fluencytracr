@@ -22,6 +22,7 @@
 - Vercel Services + Supabase RLS hardening: root Services config now owns frontend/backend deployment, old backend Vercel project is disconnected from GitHub, production Supabase envs are fixed, authenticated DB health is green, and the live Prisma RLS migration covers public application tables.
 - QBR Narrative View for Glean Claim Packet Export: added a shared `GCP_2026_05` narrative formatter, a `/methodology-review` QBR prep section, synthetic packet evidence for suppressed ROI/MCP claims, and tests preserving internal-only/suppressed boundaries.
 - Product framing audit: tightened docs/UI copy around methodology-governed claim packaging, QBR-prep artifacts, not-an-ROI-calculator language, synthetic Nielsen fixtures, and strongest safe claim framing.
+- QBR Readiness Summary: added a plain-language selected-packet summary for customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action without ROI calculation or readiness upgrades.
 
 ## Current Status
 
@@ -45,6 +46,7 @@
 - Glean Value Evidence Pack prototype slice is complete: static synthetic HTML prototype, validator, and demo-guide links for QBR-safe claim readiness, evidence coverage, instrumentation gaps, and Glean Agent answer flow.
 - QBR Narrative View slice is complete as a bounded user-requested addition; it renders the existing claim packet for QBR prep without ROI calculation, readiness upgrade, or raw content ingestion.
 - Product framing audit is complete as a bounded user-requested copy/docs slice; no claim behavior changed.
+- QBR Readiness Summary slice is complete as a bounded user-requested addition; it summarizes existing claim packet buckets only.
 
 ## Blockers
 

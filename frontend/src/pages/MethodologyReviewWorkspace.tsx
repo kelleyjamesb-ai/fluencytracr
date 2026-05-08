@@ -9,9 +9,14 @@ import {
 import { NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY } from "../constants/methodologyReview";
 
 const { buildMethodologyDecisionMemo, buildMethodologyReviewWorkspace } = methodologySchemas;
-const { buildGleanClaimPacketExport, buildGleanClaimPacketQbrNarrative } = claimPacketSchemas;
+const {
+  buildGleanClaimPacketExport,
+  buildGleanClaimPacketQbrNarrative,
+  buildGleanClaimPacketQbrReadinessSummary
+} = claimPacketSchemas;
 
 type QbrNarrative = ReturnType<typeof buildGleanClaimPacketQbrNarrative>;
+type QbrReadinessSummary = ReturnType<typeof buildGleanClaimPacketQbrReadinessSummary>;
 type QbrClaimStatement = QbrNarrative["caveated_claims"][number];
 type QbrEvidenceGap = QbrNarrative["evidence_gaps"][number];
 
@@ -77,6 +82,23 @@ const renderEvidenceGaps = (gaps: QbrEvidenceGap[]) => {
   );
 };
 
+const renderReadinessSummaryBucket = (
+  title: string,
+  bucket: QbrReadinessSummary["customer_safe_claims"]
+) => (
+  <section className="mrw-readiness-card">
+    <h4>{title}</h4>
+    <p>{bucket.summary}</p>
+    {bucket.claim_ids.length > 0 ? (
+      <div className="mrw-readiness-token-row">
+        {bucket.claim_ids.map((claimId) => (
+          <span key={`${title}:${claimId}`}>{claimId}</span>
+        ))}
+      </div>
+    ) : null}
+  </section>
+);
+
 export function MethodologyReviewWorkspace() {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState("glean_time_saves_mvp_2025_10");
   const workspace = useMemo(
@@ -101,6 +123,7 @@ export function MethodologyReviewWorkspace() {
   );
   const claimPacketText = useMemo(() => JSON.stringify(claimPacket, null, 2), [claimPacket]);
   const qbrNarrative = useMemo(() => buildGleanClaimPacketQbrNarrative(claimPacket), [claimPacket]);
+  const qbrReadinessSummary = useMemo(() => buildGleanClaimPacketQbrReadinessSummary(claimPacket), [claimPacket]);
 
   return (
     <main className="mrw-shell">
@@ -304,6 +327,32 @@ export function MethodologyReviewWorkspace() {
               current evidence and methodology approval instead of calculating ROI or choosing the strongest
               possible claim.
             </p>
+            <section className="mrw-readiness-summary" aria-label="QBR readiness summary">
+              <h4>QBR readiness summary</h4>
+              <div className="mrw-readiness-grid">
+                {renderReadinessSummaryBucket("Customer-safe claims", qbrReadinessSummary.customer_safe_claims)}
+                {renderReadinessSummaryBucket("Caveated claims", qbrReadinessSummary.caveated_claims)}
+                {renderReadinessSummaryBucket("Internal-only claims", qbrReadinessSummary.internal_only_claims)}
+                {renderReadinessSummaryBucket(
+                  "Suppressed/not-computed claims",
+                  qbrReadinessSummary.suppressed_or_not_computed_claims
+                )}
+              </div>
+              <div className="mrw-readiness-followup">
+                <section>
+                  <h4>Top blockers</h4>
+                  <ul>
+                    {qbrReadinessSummary.top_blockers.map((blocker) => (
+                      <li key={blocker}>{blocker}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section>
+                  <h4>Next upgrade action</h4>
+                  <p>{qbrReadinessSummary.next_upgrade_action}</p>
+                </section>
+              </div>
+            </section>
             <div className="mrw-qbr-grid">
               <section className="mrw-qbr-section">
                 <h4>Executive decision</h4>

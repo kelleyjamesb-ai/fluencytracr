@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import {
   GleanClaimPacketExportSchema,
+  buildGleanClaimPacketQbrReadinessSummary,
   buildGleanClaimPacketQbrNarrative,
   buildGleanClaimPacketExport,
   buildGleanValueEvidencePack,
@@ -128,5 +129,19 @@ describe("Glean Claim Packet Export", () => {
     expect(JSON.stringify(narrative)).not.toMatch(
       /raw_prompt|raw_response|query_text|tool_payload|file_content|user_id|employee_id|manager_view|team_ranking|productivity_score/i
     );
+  });
+
+  it("summarizes QBR readiness from existing claim buckets without upgrading readiness", () => {
+    const summary = buildGleanClaimPacketQbrReadinessSummary(buildPacket());
+
+    expect(summary.customer_safe_claims.summary).toMatch(/customer-safe claims? with caveats/i);
+    expect(summary.caveated_claims.count).toBeGreaterThanOrEqual(0);
+    expect(summary.internal_only_claims.summary).toMatch(/internal-only claim/i);
+    expect(summary.suppressed_or_not_computed_claims.claim_ids).toEqual(
+      expect.arrayContaining(["glean.roi.customer_value_to_cost", "glean.mcp.governed_action_boundary"])
+    );
+    expect(summary.top_blockers.length).toBeGreaterThan(0);
+    expect(summary.next_upgrade_action).toMatch(/\S/);
+    expect(JSON.stringify(summary)).not.toMatch(/customer-safe ROI/i);
   });
 });

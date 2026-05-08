@@ -24,10 +24,17 @@ describe("MethodologyReviewWorkspace", () => {
       '"schema_version": "GCP_2026_05"'
     );
     expect(screen.getByRole("heading", { name: /QBR narrative view/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /QBR readiness summary/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Customer-safe claims/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Top blockers/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Next upgrade action/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 customer-safe claim with caveats/i)).toBeInTheDocument();
+    expect(screen.getByText(/No internal-only claims in this packet/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 suppressed or not-computed claims/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Executive decision/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Strongest safe claim/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Caveated claims/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Internal-only claims/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: /Caveated claims/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("heading", { name: /Internal-only claims/i }).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Suppressed \/ not-computed claims/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Evidence gaps/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Upgrade actions/i })).toBeInTheDocument();

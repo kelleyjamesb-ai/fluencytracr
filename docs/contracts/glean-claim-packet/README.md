@@ -8,6 +8,8 @@ The Claim Packet Export is a methodology-governed claim packaging layer and QBR-
 
 It is a packaging layer, not an ROI calculator. It does not compute ROI independently and does not override source-system estimates, methodology approval, or Strongest Safe Claim gates. It preserves the strongest safe claim, not the strongest possible claim.
 
+The Methodology Review Workspace also renders a QBR Readiness Summary from the selected packet. That summary is plain-language packaging of the existing buckets: customer-safe claims, caveated claims, internal-only claims, suppressed or not-computed claims, top blockers, and next upgrade action.
+
 ## Required top-level fields
 
 - `claim_packet_id`
