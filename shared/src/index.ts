@@ -12,6 +12,7 @@ export * from "./gleanSourceReadinessAdapter";
 export * from "./gleanReadinessToUnifiedTelemetry";
 export * from "./gleanValueEvidenceSchemas";
 export * from "./gleanClaimPacketSchemas";
+export * from "./realSourceReadinessSchemas";
 export * from "./gleanClaimRegistrySchemas";
 export * from "./gleanAssumptionLedgerSchemas";
 export * from "./gleanAiWorkEvidenceAdapter";

@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import * as methodologySchemas from "@learnaire/shared/dist/aiWorkValueGraphSchemas";
 import * as claimPacketSchemas from "@learnaire/shared/dist/gleanClaimPacketSchemas";
+import * as realSourceReadinessSchemas from "@learnaire/shared/dist/realSourceReadinessSchemas";
 import {
   NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH,
   NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM,
   NIELSEN_CLAIM_PACKET_VALUE_EVIDENCE_PACK
 } from "../constants/claimPacketReview";
 import { NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY } from "../constants/methodologyReview";
+import { GLEAN_CLAIM_PACKET_REAL_SOURCE_READINESS } from "../constants/realSourceReadiness";
 
 const { buildMethodologyDecisionMemo, buildMethodologyReviewWorkspace } = methodologySchemas;
 const {
@@ -14,9 +16,11 @@ const {
   buildGleanClaimPacketQbrNarrative,
   buildGleanClaimPacketQbrReadinessSummary
 } = claimPacketSchemas;
+const { buildRealSourceReadinessReview } = realSourceReadinessSchemas;
 
 type QbrNarrative = ReturnType<typeof buildGleanClaimPacketQbrNarrative>;
 type QbrReadinessSummary = ReturnType<typeof buildGleanClaimPacketQbrReadinessSummary>;
+type RealSourceReadinessReview = ReturnType<typeof buildRealSourceReadinessReview>;
 type QbrClaimStatement = QbrNarrative["caveated_claims"][number];
 type QbrEvidenceGap = QbrNarrative["evidence_gaps"][number];
 
@@ -99,6 +103,33 @@ const renderReadinessSummaryBucket = (
   </section>
 );
 
+const ingestionPathLabel = (path: string) => {
+  if (path === "admin_exported_aggregate_upload") {
+    return "admin-exported aggregate upload";
+  }
+  if (path === "glean_hosted_mcp_read_access") {
+    return "Glean-hosted MCP/read access";
+  }
+  if (path === "live_event_ingestion") {
+    return "live event ingestion";
+  }
+  return formatToken(path);
+};
+
+const renderSourceIdList = (title: string, bucket: RealSourceReadinessReview["ready_sources"]) => (
+  <section className="mrw-source-card">
+    <h4>{title}</h4>
+    <p>{bucket.summary}</p>
+    {bucket.source_input_ids.length > 0 ? (
+      <div className="mrw-readiness-token-row">
+        {bucket.source_input_ids.map((sourceId) => (
+          <span key={`${title}:${sourceId}`}>{sourceId}</span>
+        ))}
+      </div>
+    ) : null}
+  </section>
+);
+
 export function MethodologyReviewWorkspace() {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState("glean_time_saves_mvp_2025_10");
   const workspace = useMemo(
@@ -124,6 +155,14 @@ export function MethodologyReviewWorkspace() {
   const claimPacketText = useMemo(() => JSON.stringify(claimPacket, null, 2), [claimPacket]);
   const qbrNarrative = useMemo(() => buildGleanClaimPacketQbrNarrative(claimPacket), [claimPacket]);
   const qbrReadinessSummary = useMemo(() => buildGleanClaimPacketQbrReadinessSummary(claimPacket), [claimPacket]);
+  const realSourceReadiness = useMemo(
+    () =>
+      buildRealSourceReadinessReview({
+        manifest: GLEAN_CLAIM_PACKET_REAL_SOURCE_READINESS,
+        claim_packet: claimPacket
+      }),
+    [claimPacket]
+  );
 
   return (
     <main className="mrw-shell">
@@ -321,6 +360,68 @@ export function MethodologyReviewWorkspace() {
           </section>
 
           <section className="mrw-band mrw-qbr">
+            <section className="mrw-real-source" aria-label="Real-source readiness">
+              <div className="mrw-section-head">
+                <div>
+                  <h3>Real-source readiness</h3>
+                  <p>
+                    {realSourceReadiness.summary} No ingestion is implemented; this only shows whether synthetic
+                    fixture inputs are ready to be replaced by approved aggregate sources.
+                  </p>
+                </div>
+                <span className={postureClass(realSourceReadiness.overall_state)}>
+                  {formatToken(realSourceReadiness.overall_state)}
+                </span>
+              </div>
+
+              <div className="mrw-real-source-path">
+                <strong>Recommended path</strong>
+                <span>{ingestionPathLabel(realSourceReadiness.ingestion_decision.recommended_path)}</span>
+                <em>{formatToken(realSourceReadiness.ingestion_decision.implementation_state)}</em>
+              </div>
+              <p className="mrw-real-source-effect">
+                Claim effect: {formatToken(realSourceReadiness.claim_readiness_effect)}
+              </p>
+
+              <div className="mrw-real-source-grid">
+                {renderSourceIdList("Ready sources", realSourceReadiness.ready_sources)}
+                {renderSourceIdList("Blocked or unknown sources", realSourceReadiness.blocked_or_unknown_sources)}
+                {renderSourceIdList("Approval required", realSourceReadiness.approval_required_sources)}
+              </div>
+
+              <section className="mrw-source-card">
+                <h4>Affected claim buckets</h4>
+                <div className="mrw-bucket-list">
+                  {realSourceReadiness.affected_claim_buckets.map((bucket) => (
+                    <article key={bucket.claim_bucket}>
+                      <strong>{formatToken(bucket.claim_bucket)}</strong>
+                      <p>{bucket.summary}</p>
+                      <div className="mrw-readiness-token-row">
+                        {bucket.source_input_ids.map((sourceId) => (
+                          <span key={`${bucket.claim_bucket}:${sourceId}`}>{sourceId}</span>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <div className="mrw-readiness-followup">
+                <section>
+                  <h4>Top source blockers</h4>
+                  <ul>
+                    {realSourceReadiness.top_blockers.map((blocker) => (
+                      <li key={blocker}>{blocker}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section>
+                  <h4>Next source upgrade action</h4>
+                  <p>{realSourceReadiness.next_upgrade_action}</p>
+                </section>
+              </div>
+            </section>
+
             <h3>QBR narrative view</h3>
             <p className="mrw-qbr-intro">
               A human-readable QBR-prep artifact for the selected synthetic fixture. It classifies claims by

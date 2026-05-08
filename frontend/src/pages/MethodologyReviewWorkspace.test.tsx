@@ -31,6 +31,14 @@ describe("MethodologyReviewWorkspace", () => {
     expect(screen.getByText(/1 customer-safe claim with caveats/i)).toBeInTheDocument();
     expect(screen.getByText(/No internal-only claims in this packet/i)).toBeInTheDocument();
     expect(screen.getByText(/2 suppressed or not-computed claims/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Real-source readiness/i })).toBeInTheDocument();
+    expect(screen.getByText(/No ingestion is implemented/i)).toBeInTheDocument();
+    expect(screen.getByText(/admin-exported aggregate upload/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Ready sources/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Blocked or unknown sources/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Approval required/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Affected claim buckets/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/no readiness upgrade/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Executive decision/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Strongest safe claim/i })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { name: /Caveated claims/i }).length).toBeGreaterThan(0);

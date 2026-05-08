@@ -24,6 +24,7 @@
 - Product framing audit: tightened docs/UI copy around methodology-governed claim packaging, QBR-prep artifacts, not-an-ROI-calculator language, synthetic Nielsen fixtures, and strongest safe claim framing.
 - QBR Readiness Summary: added a plain-language selected-packet summary for customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action without ROI calculation or readiness upgrades.
 - Glean Claim Packet real-source readiness doc: added documentation-only fixture replacement gates for source inputs, mappings, unknowns, blockers, privacy, approvals, and minimum acceptance criteria without ingestion.
+- Real Source Readiness Manifest: added `RSRM_2026_05`, source readiness review helper, synthetic manifest fixture, docs, and `/methodology-review` source-readiness section without ingestion, ROI calculation, or claim readiness upgrades.
 
 ## Current Status
 
@@ -49,6 +50,7 @@
 - Product framing audit is complete as a bounded user-requested copy/docs slice; no claim behavior changed.
 - QBR Readiness Summary slice is complete as a bounded user-requested addition; it summarizes existing claim packet buckets only.
 - Glean Claim Packet real-source readiness doc is complete as a bounded documentation-only slice; it does not implement ingestion, ROI calculation, or claim readiness upgrades.
+- Real Source Readiness Manifest slice is complete as a bounded user-requested addition; it shows which synthetic Claim Packet inputs are ready, blocked, unknown, or approval-dependent before ingestion exists.
 
 ## Blockers
 

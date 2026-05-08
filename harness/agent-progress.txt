@@ -205,3 +205,9 @@
 - Completed: Added `docs/contracts/glean-claim-packet/REAL_SOURCE_READINESS.md`, a documentation-only readiness gate for replacing synthetic Glean Claim Packet fixtures with real source inputs.
 - Verified: `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for `add-glean-claim-packet-export`; `git diff --check`.
 - Next focus: Keep any future real-source work behind a separate approved ingestion/source-contract change; this slice does not implement ingestion.
+
+## 2026-05-08 (UTC) — Codex (Real Source Readiness Manifest)
+
+- Completed: Added `RSRM_2026_05` Real Source Readiness Manifest, shared review helper, synthetic Glean Claim Packet readiness fixture, docs, and `/methodology-review` real-source readiness section.
+- Verified: `npm run build --workspace shared`; targeted backend manifest and claim packet tests; targeted frontend Methodology Review Workspace tests; `npm run build --workspace frontend`; `npm test --workspace frontend`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for `add-real-source-readiness-manifest`; `git diff --check`.
+- Next focus: Treat this as fixture-replacement readiness only; do not implement ingestion or upgrade claim readiness from source availability.
