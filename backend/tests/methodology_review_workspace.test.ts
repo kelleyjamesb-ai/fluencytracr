@@ -206,7 +206,7 @@ describe("Methodology decision memo export", () => {
     const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_internal_2025_10");
 
     expect(memo).toMatch(/Decision state: internal-only/i);
-    expect(memo).toMatch(/Selected methodology snapshot: Nielsen-style internal ROI and payback fixture/i);
+    expect(memo).toMatch(/Selected methodology snapshot: Synthetic Nielsen-style internal ROI and payback fixture/i);
     expect(memo).toMatch(/Approval state: finance_approved/i);
     expect(memo).toMatch(/Financial claim effect: internal-only/i);
     expect(memo).toMatch(/Strongest safe language:/i);

@@ -106,11 +106,11 @@ export function MethodologyReviewWorkspace() {
     <main className="mrw-shell">
       <header className="mrw-header">
         <div>
-          <p className="mrw-kicker">Evidence Governance</p>
+          <p className="mrw-kicker">Methodology-Governed Claim Packaging</p>
           <h1>Methodology Review Workspace</h1>
           <p>
-            Review methodology approval, assumptions, sensitivity, and claim effects before financial or
-            customer-facing language is emitted.
+            Build a QBR-prep artifact from synthetic Nielsen-style fixtures and approved evidence gates. This is
+            not an ROI calculator; it preserves strongest safe claim language, caveats, and suppression boundaries.
           </p>
         </div>
         <div className="mrw-header-meta">
@@ -275,7 +275,7 @@ export function MethodologyReviewWorkspace() {
 
           <section className="mrw-band mrw-memo">
             <div className="mrw-section-head">
-              <h3>Export claim packet</h3>
+              <h3>Export methodology-governed claim packet</h3>
               <button
                 type="button"
                 className="mrw-copy-button"
@@ -299,6 +299,11 @@ export function MethodologyReviewWorkspace() {
 
           <section className="mrw-band mrw-qbr">
             <h3>QBR narrative view</h3>
+            <p className="mrw-qbr-intro">
+              A human-readable QBR-prep artifact for the selected synthetic fixture. It classifies claims by
+              current evidence and methodology approval instead of calculating ROI or choosing the strongest
+              possible claim.
+            </p>
             <div className="mrw-qbr-grid">
               <section className="mrw-qbr-section">
                 <h4>Executive decision</h4>

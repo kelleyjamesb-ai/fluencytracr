@@ -187,3 +187,9 @@
 - Completed: Added QBR Narrative View for the Glean Claim Packet Export: shared `buildGleanClaimPacketQbrNarrative`, `/methodology-review` narrative section, synthetic Glean Value Evidence fixture wiring, and backend/frontend coverage for internal-only, suppressed, evidence gap, upgrade, governance, and forbidden-field boundaries.
 - Verified: `npm run build --workspace shared`; targeted backend claim packet tests; targeted Methodology Review Workspace tests; `npm run build --workspace frontend`; `npm test --workspace frontend`; `bash scripts/ci_docs_contract_sweep.sh`; `npx @fission-ai/openspec@latest validate add-qbr-narrative-view --strict --no-interactive`; `npm run test:ci --workspace backend` with local test-server binding permission; `git diff --check`.
 - Next focus: Human review, then archive OpenSpec `add-qbr-narrative-view` when approved.
+
+## 2026-05-08 (UTC) — Codex (product framing audit)
+
+- Completed: Audited and tightened docs/UI copy so claim packaging is framed as methodology-governed, QBR-prep oriented, not an ROI calculator, Nielsen-as-synthetic-fixture only, and strongest safe claim rather than strongest possible claim.
+- Verified: Targeted frontend Methodology Review Workspace tests; targeted backend methodology/claim packet tests; frontend build; docs contract sweep; strict OpenSpec validation for `add-qbr-narrative-view` and `add-glean-claim-packet-export`; `git diff --check`.
+- Next focus: Keep future PR copy aligned to evidence governance and claim packaging, not ROI calculation.

@@ -7,6 +7,10 @@ describe("MethodologyReviewWorkspace", () => {
     render(<MethodologyReviewWorkspace />);
 
     expect(screen.getByRole("heading", { name: /Methodology Review Workspace/i })).toBeInTheDocument();
+    expect(screen.getByText(/Methodology-Governed Claim Packaging/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/QBR-prep artifact/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/not an ROI calculator/i)).toBeInTheDocument();
+    expect(screen.getByText(/strongest safe claim language/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Glean Time-Saves MVP measurement method/i })).toBeInTheDocument();
     expect(screen.getByText(/Approval gate/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Financial claim effect/i).length).toBeGreaterThan(0);
@@ -15,7 +19,7 @@ describe("MethodologyReviewWorkspace", () => {
     expect(screen.getByRole("heading", { name: /Safe \/ internal-only \/ suppressed examples/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Reviewer decision memo/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Reviewer decision memo plain text/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Export claim packet/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Export methodology-governed claim packet/i })).toBeInTheDocument();
     expect((screen.getByLabelText(/Claim packet JSON/i) as HTMLTextAreaElement).value).toContain(
       '"schema_version": "GCP_2026_05"'
     );
@@ -34,7 +38,7 @@ describe("MethodologyReviewWorkspace", () => {
   it("lets reviewers inspect internal-only and suppressed claim effects", async () => {
     render(<MethodologyReviewWorkspace />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Nielsen-style internal ROI and payback fixture/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Synthetic Nielsen-style internal ROI and payback fixture/i }));
     expect(screen.getAllByText(/internal-only/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/customer-facing ROI\/payback requires customer-safe methodology approval/i).length).toBeGreaterThan(0);
     expect((screen.getByLabelText(/Reviewer decision memo plain text/i) as HTMLTextAreaElement).value).toMatch(

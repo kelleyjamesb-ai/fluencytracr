@@ -1,12 +1,13 @@
 # Change: Add Glean Claim Packet Export
 
 ## Why
-CS, Value Engineering, Finance, and Governance reviewers need one account/window artifact that brings together methodology review, strongest safe claim language, evidence posture, caveats, suppression, and upgrade actions for QBR preparation.
+CS, Value Engineering, Finance, and Governance reviewers need one methodology-governed QBR-prep artifact that brings together methodology review, strongest safe claim language, evidence posture, caveats, suppression, and upgrade actions for QBR preparation.
 
 ## What Changes
 - Add a shared Claim Packet Export schema and helper for Glean value evidence.
 - Package a selected methodology review memo, Strongest Safe Claim result, Value Evidence Pack or AI Work Value Graph posture, evidence gaps, and upgrade actions into one privacy-safe artifact.
-- Add a synthetic QBR-style example and backend tests.
+- Add a synthetic QBR-style example and backend tests; Nielsen-style inputs are fixtures only.
+- Keep the packet as claim packaging, not an ROI calculator or strongest-possible-claim selector.
 - Optionally expose the generated packet in `/methodology-review` as copyable JSON.
 
 ## Impact

@@ -4,9 +4,9 @@ Schema version: `GCP_2026_05`
 
 ## Purpose
 
-The Claim Packet Export is a QBR-prep artifact for one account and reporting window. It packages methodology review, strongest safe claim language, value evidence posture, caveated claims, internal-only claims, suppressed claims, evidence gaps, upgrade actions, and governance boundaries.
+The Claim Packet Export is a methodology-governed claim packaging layer and QBR-prep artifact for one account and reporting window. It packages methodology review, strongest safe claim language, value evidence posture, caveated claims, internal-only claims, suppressed claims, evidence gaps, upgrade actions, and governance boundaries.
 
-It is a packaging layer, not a value calculator. It does not compute ROI independently and does not override source-system estimates, methodology approval, or Strongest Safe Claim gates.
+It is a packaging layer, not an ROI calculator. It does not compute ROI independently and does not override source-system estimates, methodology approval, or Strongest Safe Claim gates. It preserves the strongest safe claim, not the strongest possible claim.
 
 ## Required top-level fields
 
@@ -28,4 +28,4 @@ It is a packaging layer, not a value calculator. It does not compute ROI indepen
 
 The packet is aggregate-only. It must not include raw prompts, raw responses, transcripts, query text, tool payloads, file contents, direct identifiers, rankings, manager views, or productivity scoring.
 
-See `examples/nielsen-style-qbr-claim-packet.json` for a complete synthetic packet.
+See `examples/nielsen-style-qbr-claim-packet.json` for a complete synthetic packet. Nielsen appears only as a synthetic fixture for stress-testing the claim packaging path.

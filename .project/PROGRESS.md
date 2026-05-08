@@ -21,6 +21,7 @@
 - Glean readiness executive prototype: added a static synthetic-data HTML demo with first-screen executive graphs, drill-down click paths, an Agent Brief view, docs links, and a dedicated validator.
 - Vercel Services + Supabase RLS hardening: root Services config now owns frontend/backend deployment, old backend Vercel project is disconnected from GitHub, production Supabase envs are fixed, authenticated DB health is green, and the live Prisma RLS migration covers public application tables.
 - QBR Narrative View for Glean Claim Packet Export: added a shared `GCP_2026_05` narrative formatter, a `/methodology-review` QBR prep section, synthetic packet evidence for suppressed ROI/MCP claims, and tests preserving internal-only/suppressed boundaries.
+- Product framing audit: tightened docs/UI copy around methodology-governed claim packaging, QBR-prep artifacts, not-an-ROI-calculator language, synthetic Nielsen fixtures, and strongest safe claim framing.
 
 ## Current Status
 
@@ -43,6 +44,7 @@
 - Glean Value Evidence MCP tools slice is complete: OpenSpec `add-glean-value-evidence-mcp-tools`, strict value evidence summary helper, four bounded MCP tools, docs updates, audit/error hardening, and MCP tests.
 - Glean Value Evidence Pack prototype slice is complete: static synthetic HTML prototype, validator, and demo-guide links for QBR-safe claim readiness, evidence coverage, instrumentation gaps, and Glean Agent answer flow.
 - QBR Narrative View slice is complete as a bounded user-requested addition; it renders the existing claim packet for QBR prep without ROI calculation, readiness upgrade, or raw content ingestion.
+- Product framing audit is complete as a bounded user-requested copy/docs slice; no claim behavior changed.
 
 ## Blockers
 

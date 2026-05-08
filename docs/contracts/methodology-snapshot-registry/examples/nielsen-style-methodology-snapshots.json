@@ -77,9 +77,9 @@
     },
     {
       "methodology_snapshot_id": "nielsen_roi_payback_internal_2025_10",
-      "label": "Nielsen-style internal ROI and payback fixture",
+      "label": "Synthetic Nielsen-style internal ROI and payback fixture",
       "source_system": "synthetic_fixture",
-      "source_model": "Nielsen-style business value model",
+      "source_model": "Synthetic Nielsen-style business value fixture",
       "methodology_version": "2025-10-internal-roi-fixture",
       "effective_date": "2025-10-15",
       "reporting_window": "quarterly",
