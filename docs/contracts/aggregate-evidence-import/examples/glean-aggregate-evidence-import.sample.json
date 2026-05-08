@@ -1,0 +1,252 @@
+{
+  "schema_version": "AEI_2026_05",
+  "import_id": "aggregate_evidence_import:org-nielsen-synthetic:quarterly:2026_05",
+  "org_id": "org-nielsen-synthetic",
+  "window": "quarterly",
+  "generated_at": "2026-05-08T00:00:00.000Z",
+  "import_path": "admin_exported_aggregate_upload",
+  "real_source_readiness_manifest": {
+    "schema_version": "RSRM_2026_05",
+    "manifest_id": "real_source_readiness:glean_claim_packet:nielsen_synthetic:2026_05",
+    "org_id": "org-nielsen-synthetic",
+    "window": "quarterly",
+    "generated_at": "2026-05-08T00:00:00.000Z",
+    "claim_packet_id": "claim_packet:org-nielsen-synthetic:quarterly:glean_time_saves_mvp_2025_10",
+    "selected_methodology_snapshot_id": "glean_time_saves_mvp_2025_10",
+    "source_inputs": [
+      {
+        "source_input_id": "source:methodology_snapshot",
+        "label": "Methodology Snapshot Registry",
+        "source_type": "methodology_snapshot",
+        "source_system": "FluencyTracr",
+        "readiness_state": "ready",
+        "required_fields": [
+          {
+            "field_name": "methodology_snapshot_id",
+            "status": "known",
+            "impact": "Frozen snapshot reference is available for the selected packet."
+          },
+          {
+            "field_name": "approval_state",
+            "status": "known",
+            "impact": "Approval state can gate financial language."
+          }
+        ],
+        "privacy_boundary": {
+          "aggregate_only": true,
+          "forbidden_fields_absent": true,
+          "privacy_review_state": "approved",
+          "notes": [
+            "Snapshot metadata is aggregate and methodology-scoped."
+          ]
+        },
+        "approval_state": "approved_internal",
+        "affects_claim_buckets": [
+          "caveated",
+          "internal_only"
+        ],
+        "blockers": [],
+        "upgrade_actions": [
+          "Keep methodology snapshot ids, approval states, and claim effects attached to each packet."
+        ]
+      },
+      {
+        "source_input_id": "source:value_evidence_pack",
+        "label": "Glean Value Evidence Pack inputs",
+        "source_type": "value_evidence_pack",
+        "source_system": "Glean",
+        "readiness_state": "unknown",
+        "required_fields": [
+          {
+            "field_name": "surface_class",
+            "status": "unknown",
+            "impact": "Covered surfaces cannot replace fixture evidence until approved aggregate exports are confirmed."
+          }
+        ],
+        "privacy_boundary": {
+          "aggregate_only": true,
+          "forbidden_fields_absent": true,
+          "privacy_review_state": "needs_review",
+          "notes": [
+            "Real aggregate export fields are not confirmed yet."
+          ]
+        },
+        "approval_state": "in_review",
+        "affects_claim_buckets": [
+          "customer_safe",
+          "caveated",
+          "suppressed_or_not_computed"
+        ],
+        "blockers": [
+          "Confirm aggregate Glean export fields for surface, Skill, Agent, and artifact evidence."
+        ],
+        "upgrade_actions": [
+          "Request an admin-exported aggregate sample with only approved metadata fields."
+        ]
+      },
+      {
+        "source_input_id": "source:mcp_action_boundary",
+        "label": "MCP and action boundary evidence",
+        "source_type": "mcp_action_boundary",
+        "source_system": "Glean",
+        "readiness_state": "blocked",
+        "required_fields": [
+          {
+            "field_name": "host_class",
+            "status": "missing",
+            "impact": "Action-value claims remain not computed without host attribution."
+          }
+        ],
+        "privacy_boundary": {
+          "aggregate_only": true,
+          "forbidden_fields_absent": true,
+          "privacy_review_state": "unknown",
+          "notes": [
+            "MCP boundary readiness requires approved aggregate activity metadata."
+          ]
+        },
+        "approval_state": "not_requested",
+        "affects_claim_buckets": [
+          "suppressed_or_not_computed"
+        ],
+        "blockers": [
+          "MCP/action host attribution, scopes, operation class, and activity coverage are not confirmed."
+        ],
+        "upgrade_actions": [
+          "Confirm MCP Insights or equivalent aggregate activity export before computing governed action evidence."
+        ]
+      },
+      {
+        "source_input_id": "source:customer_safe_financial_approval",
+        "label": "Customer-safe financial approval workflow",
+        "source_type": "approval_workflow",
+        "source_system": "FluencyTracr",
+        "readiness_state": "needs_approval",
+        "required_fields": [
+          {
+            "field_name": "finance_approval_state",
+            "status": "known",
+            "impact": "Finance approval can support internal-only language."
+          }
+        ],
+        "privacy_boundary": {
+          "aggregate_only": true,
+          "forbidden_fields_absent": true,
+          "privacy_review_state": "approved",
+          "notes": [
+            "Approval workflow records claim effect and reviewer role, not person-level performance."
+          ]
+        },
+        "approval_state": "in_review",
+        "affects_claim_buckets": [
+          "internal_only",
+          "suppressed_or_not_computed"
+        ],
+        "blockers": [
+          "Finance-approved language is not customer-safe until customer-safe claim effect is approved."
+        ],
+        "upgrade_actions": [
+          "Route the selected methodology snapshot for customer-safe financial claim review."
+        ]
+      }
+    ],
+    "ingestion_path": {
+      "recommended_path": "admin_exported_aggregate_upload",
+      "implementation_state": "not_implemented",
+      "rationale": "Start with admin-exported aggregate uploads so reviewers can validate field contracts and privacy boundaries before live access.",
+      "next_decision": "Create a separate source-contract proposal after aggregate fields, approvals, retention, and rollback behavior are confirmed."
+    },
+    "governance_boundaries": [
+      "Real-source readiness does not implement ingestion.",
+      "Readiness review does not calculate ROI or upgrade claim readiness.",
+      "Only aggregate, metadata-only, account-window evidence may replace synthetic fixtures."
+    ]
+  },
+  "aggregate_evidence": [
+    {
+      "evidence_record_id": "aggregate:methodology_snapshot:approval_state",
+      "source_input_id": "source:methodology_snapshot",
+      "evidence_type": "methodology_approval",
+      "evidence_state": "present",
+      "aggregate_metric_refs": [
+        "methodology.approval_state.window"
+      ],
+      "aggregate_values": [
+        {
+          "metric_name": "approved_snapshot_count",
+          "value": 1,
+          "unit": "count",
+          "aggregation_level": "methodology"
+        }
+      ],
+      "notes": [
+        "Methodology snapshot metadata is ready for review."
+      ]
+    },
+    {
+      "evidence_record_id": "aggregate:value_evidence_pack:surface_coverage",
+      "source_input_id": "source:value_evidence_pack",
+      "evidence_type": "source_coverage",
+      "evidence_state": "present",
+      "aggregate_metric_refs": [
+        "glean.surface_coverage.window"
+      ],
+      "aggregate_values": [
+        {
+          "metric_name": "covered_surface_count",
+          "value": 3,
+          "unit": "count",
+          "aggregation_level": "surface"
+        }
+      ],
+      "notes": [
+        "Presented for review but withheld until aggregate export fields are confirmed."
+      ]
+    },
+    {
+      "evidence_record_id": "aggregate:mcp_action_boundary:coverage",
+      "source_input_id": "source:mcp_action_boundary",
+      "evidence_type": "action_log",
+      "evidence_state": "not_computed",
+      "aggregate_metric_refs": [
+        "glean.mcp_action_boundary.window"
+      ],
+      "aggregate_values": [
+        {
+          "metric_name": "approved_tool_count",
+          "value": 0,
+          "unit": "count",
+          "aggregation_level": "source_input"
+        }
+      ],
+      "notes": [
+        "MCP/action evidence is withheld behind host attribution and activity coverage blockers."
+      ]
+    },
+    {
+      "evidence_record_id": "aggregate:financial_approval:customer_safe_effect",
+      "source_input_id": "source:customer_safe_financial_approval",
+      "evidence_type": "financial_model",
+      "evidence_state": "missing",
+      "aggregate_metric_refs": [
+        "methodology.customer_safe_claim_effect.window"
+      ],
+      "aggregate_values": [
+        {
+          "metric_name": "customer_safe_financial_model_count",
+          "value": 0,
+          "unit": "count",
+          "aggregation_level": "methodology"
+        }
+      ],
+      "notes": [
+        "Customer-safe financial approval is not present."
+      ]
+    }
+  ],
+  "governance_boundaries": [
+    "Aggregate Evidence Import v1 is review only and writes no persistent records.",
+    "No raw events, raw content, direct identifiers, rankings, manager views, or productivity scoring.",
+    "Accepted aggregate evidence does not upgrade claim readiness."
+  ]
+}

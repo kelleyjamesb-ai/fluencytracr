@@ -1,0 +1,486 @@
+{
+  "schema_version": "NSETR_2026_05",
+  "trial_id": "nielsen_source_evidence_trial:org-nielsen-synthetic:2026_05",
+  "org_id": "org-nielsen-synthetic",
+  "window": "october_2025_business_value_review",
+  "generated_at": "2026-05-08T00:00:00.000Z",
+  "trial_effect": "document_claim_mapping_only",
+  "source_artifacts": [
+    {
+      "source_artifact_id": "artifact:nielsen_value_deck",
+      "artifact_type": "customer_value_deck",
+      "artifact_label": "Nielsen Business Value Analysis deck",
+      "artifact_role": "customer_value_narrative",
+      "provenance_note": "Sanitized slide-level references only; no deck text or speaker notes are embedded."
+    },
+    {
+      "source_artifact_id": "artifact:time_saves_packet",
+      "artifact_type": "methodology_packet",
+      "artifact_label": "Time-Saves MVP Review Packet",
+      "artifact_role": "methodology_context",
+      "provenance_note": "Sanitized methodology references only; source-system export rows are not embedded."
+    }
+  ],
+  "claim_candidates": [
+    {
+      "claim_candidate_id": "candidate:nielsen:agent_opportunity_map",
+      "source_artifact_id": "artifact:nielsen_value_deck",
+      "source_locator": "slide:8-and-slide:12",
+      "claim_family": "agent_opportunity",
+      "outcome_domain": "cross_functional",
+      "work_pattern": "orchestrate",
+      "target_source_input_id": "source:nielsen_value_deck_document",
+      "mapped_evidence_record_id": "aggregate:nielsen:agent_opportunity_map",
+      "mapping_disposition": "accepted_for_review",
+      "claim_treatment": "directional",
+      "reason_codes": ["document_opportunity_map_only", "no_outcome_evidence_attached"],
+      "required_upgrade_evidence": ["Attach aggregate Skill, Agent, artifact, or action telemetry for opportunity areas."]
+    },
+    {
+      "claim_candidate_id": "candidate:nielsen:time_saves_methodology_context",
+      "source_artifact_id": "artifact:time_saves_packet",
+      "source_locator": "section:headline-time-savings",
+      "claim_family": "methodology_context",
+      "outcome_domain": "cross_functional",
+      "work_pattern": "find",
+      "target_source_input_id": "source:time_saves_methodology_packet",
+      "mapped_evidence_record_id": "aggregate:nielsen:time_saves_methodology_context",
+      "mapping_disposition": "accepted_for_review",
+      "claim_treatment": "caveated",
+      "reason_codes": ["methodology_context_available", "customer_rollup_not_attached"],
+      "required_upgrade_evidence": ["Attach customer-level aggregate telemetry rollup for the selected account window."]
+    },
+    {
+      "claim_candidate_id": "candidate:nielsen:survey_opportunity",
+      "source_artifact_id": "artifact:nielsen_value_deck",
+      "source_locator": "slide:11",
+      "claim_family": "survey_opportunity",
+      "outcome_domain": "cross_functional",
+      "work_pattern": "find",
+      "target_source_input_id": "source:nielsen_survey_aggregate",
+      "mapped_evidence_record_id": "aggregate:nielsen:survey_opportunity",
+      "mapping_disposition": "withheld",
+      "claim_treatment": "directional",
+      "reason_codes": ["survey_claim_in_deck", "original_aggregate_survey_export_missing"],
+      "required_upgrade_evidence": ["Attach aggregate survey export with sample size, field definitions, and approval state."]
+    },
+    {
+      "claim_candidate_id": "candidate:nielsen:cs_cx_outcome_movement",
+      "source_artifact_id": "artifact:nielsen_value_deck",
+      "source_locator": "slide:22",
+      "claim_family": "operational_outcome_claim",
+      "outcome_domain": "customer_success",
+      "work_pattern": "troubleshoot",
+      "target_source_input_id": "source:staircase_ai_aggregate_outcomes",
+      "mapped_evidence_record_id": "aggregate:nielsen:cs_cx_outcome_movement",
+      "mapping_disposition": "withheld",
+      "claim_treatment": "caveated",
+      "reason_codes": ["external_outcome_claim_in_deck", "system_of_record_export_missing"],
+      "required_upgrade_evidence": ["Attach aggregate Staircase AI outcome export with baseline window, comparison window, and attribution caveat."]
+    },
+    {
+      "claim_candidate_id": "candidate:nielsen:financial_model_claim",
+      "source_artifact_id": "artifact:nielsen_value_deck",
+      "source_locator": "slide:13",
+      "claim_family": "financial_value_claim",
+      "outcome_domain": "finance",
+      "work_pattern": "analyze",
+      "target_source_input_id": "source:nielsen_financial_model_approval",
+      "mapped_evidence_record_id": "aggregate:nielsen:financial_model_claim",
+      "mapping_disposition": "withheld",
+      "claim_treatment": "internal_only",
+      "reason_codes": ["financial_claim_in_deck", "customer_safe_financial_approval_missing"],
+      "required_upgrade_evidence": ["Attach finance-approved methodology snapshot with customer-safe financial claim effect."]
+    },
+    {
+      "claim_candidate_id": "candidate:nielsen:product_telemetry_gap",
+      "source_artifact_id": "artifact:time_saves_packet",
+      "source_locator": "section:coverage-and-extensions",
+      "claim_family": "product_telemetry_gap",
+      "outcome_domain": "cross_functional",
+      "work_pattern": "find",
+      "target_source_input_id": "source:glean_customer_level_product_telemetry",
+      "mapped_evidence_record_id": "aggregate:nielsen:product_telemetry_gap",
+      "mapping_disposition": "withheld",
+      "claim_treatment": "not_computed",
+      "reason_codes": ["customer_level_rollup_missing", "additional_surface_coverage_missing"],
+      "required_upgrade_evidence": ["Attach customer-level aggregate telemetry for Search, Chat, AI Answers, Skills, Agents, and artifacts."]
+    }
+  ],
+  "generated_aggregate_import": {
+    "schema_version": "AEI_2026_05",
+    "import_id": "aggregate_evidence_import:nielsen_source_trial:2026_05",
+    "org_id": "org-nielsen-synthetic",
+    "window": "october_2025_business_value_review",
+    "generated_at": "2026-05-08T00:00:00.000Z",
+    "import_path": "admin_exported_aggregate_upload",
+    "real_source_readiness_manifest": {
+      "schema_version": "RSRM_2026_05",
+      "manifest_id": "real_source_readiness:nielsen_source_trial:2026_05",
+      "org_id": "org-nielsen-synthetic",
+      "window": "october_2025_business_value_review",
+      "generated_at": "2026-05-08T00:00:00.000Z",
+      "claim_packet_id": "GCP_2026_05:nielsen_source_trial",
+      "selected_methodology_snapshot_id": "glean_time_saves_mvp_2025_10",
+      "source_inputs": [
+        {
+          "source_input_id": "source:nielsen_value_deck_document",
+          "label": "Nielsen value deck document artifact",
+          "source_type": "value_evidence_pack",
+          "source_system": "synthetic_fixture",
+          "readiness_state": "ready",
+          "required_fields": [
+            {
+              "field_name": "slide_level_claim_refs",
+              "status": "known",
+              "impact": "Allows claim candidates to reference sanitized deck locations."
+            }
+          ],
+          "privacy_boundary": {
+            "aggregate_only": true,
+            "forbidden_fields_absent": true,
+            "privacy_review_state": "approved",
+            "notes": ["Deck-derived candidates are sanitized and do not include quotes, account names, or person-level metrics."]
+          },
+          "approval_state": "not_required",
+          "affects_claim_buckets": ["caveated", "suppressed_or_not_computed"],
+          "blockers": [],
+          "upgrade_actions": ["Attach source-system evidence for each opportunity before stronger claims are emitted."]
+        },
+        {
+          "source_input_id": "source:time_saves_methodology_packet",
+          "label": "Time-Saves methodology context packet",
+          "source_type": "methodology_snapshot",
+          "source_system": "Glean",
+          "readiness_state": "ready",
+          "required_fields": [
+            {
+              "field_name": "covered_surfaces",
+              "status": "known",
+              "impact": "Shows which AI surfaces are covered by the methodology context."
+            },
+            {
+              "field_name": "coverage_window",
+              "status": "known",
+              "impact": "Preserves the methodology reporting window."
+            }
+          ],
+          "privacy_boundary": {
+            "aggregate_only": true,
+            "forbidden_fields_absent": true,
+            "privacy_review_state": "approved",
+            "notes": ["Only aggregate methodology values are represented."]
+          },
+          "approval_state": "approved_internal",
+          "affects_claim_buckets": ["caveated", "internal_only"],
+          "blockers": [],
+          "upgrade_actions": ["Attach customer-level aggregate telemetry rollup for Nielsen before customer-specific claims are emitted."]
+        },
+        {
+          "source_input_id": "source:nielsen_survey_aggregate",
+          "label": "Nielsen survey aggregate export",
+          "source_type": "value_evidence_pack",
+          "source_system": "customer_system",
+          "readiness_state": "unknown",
+          "required_fields": [
+            {
+              "field_name": "aggregate_answer_counts",
+              "status": "unknown",
+              "impact": "Required before survey burden can move beyond directional deck-derived evidence."
+            }
+          ],
+          "privacy_boundary": {
+            "aggregate_only": true,
+            "forbidden_fields_absent": true,
+            "privacy_review_state": "needs_review",
+            "notes": ["Original aggregate survey export has not been attached."]
+          },
+          "approval_state": "not_requested",
+          "affects_claim_buckets": ["caveated"],
+          "blockers": ["Original aggregate survey export is not attached."],
+          "upgrade_actions": ["Attach aggregate survey export and approval state."]
+        },
+        {
+          "source_input_id": "source:staircase_ai_aggregate_outcomes",
+          "label": "Staircase AI aggregate outcome export",
+          "source_type": "outcome_instrumentation_map",
+          "source_system": "external_system",
+          "readiness_state": "unknown",
+          "required_fields": [
+            {
+              "field_name": "baseline_window",
+              "status": "unknown",
+              "impact": "Required for outcome movement interpretation."
+            },
+            {
+              "field_name": "comparison_window",
+              "status": "unknown",
+              "impact": "Required for outcome movement interpretation."
+            }
+          ],
+          "privacy_boundary": {
+            "aggregate_only": true,
+            "forbidden_fields_absent": true,
+            "privacy_review_state": "needs_review",
+            "notes": ["No account names or person-level metrics are included in the trial fixture."]
+          },
+          "approval_state": "not_requested",
+          "affects_claim_buckets": ["caveated", "customer_safe"],
+          "blockers": ["Aggregate external outcome export is not attached."],
+          "upgrade_actions": ["Attach aggregate external outcome export with baseline, comparison window, sample size, and attribution caveat."]
+        },
+        {
+          "source_input_id": "source:nielsen_financial_model_approval",
+          "label": "Nielsen financial model approval",
+          "source_type": "approval_workflow",
+          "source_system": "FluencyTracr",
+          "readiness_state": "needs_approval",
+          "required_fields": [
+            {
+              "field_name": "approval_state",
+              "status": "missing",
+              "impact": "Required before customer-facing financial language can be emitted."
+            }
+          ],
+          "privacy_boundary": {
+            "aggregate_only": true,
+            "forbidden_fields_absent": true,
+            "privacy_review_state": "approved",
+            "notes": ["Financial values are source claims from the value deck, not recalculated by FluencyTracr."]
+          },
+          "approval_state": "in_review",
+          "affects_claim_buckets": ["internal_only", "customer_safe"],
+          "blockers": ["Finance/customer-safe approval is not attached."],
+          "upgrade_actions": ["Attach finance-approved methodology snapshot with customer-safe financial claim effect."]
+        },
+        {
+          "source_input_id": "source:glean_customer_level_product_telemetry",
+          "label": "Glean customer-level aggregate product telemetry",
+          "source_type": "value_evidence_pack",
+          "source_system": "Glean",
+          "readiness_state": "unknown",
+          "required_fields": [
+            {
+              "field_name": "surface_aggregate_counts",
+              "status": "unknown",
+              "impact": "Required before the Nielsen deck can be linked to observed customer usage."
+            }
+          ],
+          "privacy_boundary": {
+            "aggregate_only": true,
+            "forbidden_fields_absent": true,
+            "privacy_review_state": "needs_review",
+            "notes": ["Customer-level aggregate telemetry is not attached in this trial."]
+          },
+          "approval_state": "not_requested",
+          "affects_claim_buckets": ["caveated", "suppressed_or_not_computed"],
+          "blockers": ["Customer-level aggregate product telemetry is not attached."],
+          "upgrade_actions": ["Attach aggregate customer telemetry for covered AI surfaces and map excluded surfaces explicitly."]
+        }
+      ],
+      "ingestion_path": {
+        "recommended_path": "admin_exported_aggregate_upload",
+        "implementation_state": "proposal_required",
+        "rationale": "Use an admin-exported aggregate package to test document-to-evidence mapping before live source connections.",
+        "next_decision": "Decide whether to add a reviewer upload workflow for sanitized aggregate packages."
+      },
+      "governance_boundaries": [
+        "Real-source readiness remains review-only.",
+        "Document-derived claims cannot upgrade claim readiness.",
+        "No raw document text, direct identifiers, rankings, manager views, or productivity scoring are included."
+      ]
+    },
+    "aggregate_evidence": [
+      {
+        "evidence_record_id": "aggregate:nielsen:agent_opportunity_map",
+        "source_input_id": "source:nielsen_value_deck_document",
+        "evidence_type": "source_coverage",
+        "evidence_state": "present",
+        "aggregate_metric_refs": ["nielsen.deck.agent_opportunity_map"],
+        "aggregate_values": [
+          {
+            "metric_name": "department_domain_count",
+            "value": 10,
+            "unit": "count",
+            "aggregation_level": "outcome_domain"
+          },
+          {
+            "metric_name": "opportunity_area_count",
+            "value": 8,
+            "unit": "count",
+            "aggregation_level": "account_window"
+          }
+        ],
+        "notes": ["Deck-derived opportunity map accepted for review as directional narrative context only."]
+      },
+      {
+        "evidence_record_id": "aggregate:nielsen:time_saves_methodology_context",
+        "source_input_id": "source:time_saves_methodology_packet",
+        "evidence_type": "methodology_approval",
+        "evidence_state": "present",
+        "aggregate_metric_refs": ["time_saves.methodology.coverage"],
+        "aggregate_values": [
+          {
+            "metric_name": "covered_surface_count",
+            "value": 3,
+            "unit": "count",
+            "aggregation_level": "surface"
+          },
+          {
+            "metric_name": "session_coverage_percent",
+            "value": 87,
+            "unit": "percent",
+            "aggregation_level": "methodology"
+          },
+          {
+            "metric_name": "global_session_count",
+            "value": 22206932,
+            "unit": "count",
+            "aggregation_level": "methodology"
+          },
+          {
+            "metric_name": "global_estimated_hour_count",
+            "value": 3262339,
+            "unit": "hours",
+            "aggregation_level": "methodology"
+          }
+        ],
+        "notes": ["Methodology context accepted for review; this is global methodology context, not Nielsen customer telemetry."]
+      },
+      {
+        "evidence_record_id": "aggregate:nielsen:survey_opportunity",
+        "source_input_id": "source:nielsen_survey_aggregate",
+        "evidence_type": "survey",
+        "evidence_state": "present",
+        "aggregate_metric_refs": ["nielsen.survey.opportunity"],
+        "aggregate_values": [
+          {
+            "metric_name": "reported_daily_hours_low",
+            "value": 2,
+            "unit": "hours",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "reported_daily_hours_high",
+            "value": 3,
+            "unit": "hours",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "finding_information_challenge_percent",
+            "value": 96,
+            "unit": "percent",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "search_tool_satisfaction_percent",
+            "value": 8,
+            "unit": "percent",
+            "aggregation_level": "account_window"
+          }
+        ],
+        "notes": ["Survey opportunity is withheld until original aggregate survey export is attached."]
+      },
+      {
+        "evidence_record_id": "aggregate:nielsen:cs_cx_outcome_movement",
+        "source_input_id": "source:staircase_ai_aggregate_outcomes",
+        "evidence_type": "business_outcome",
+        "evidence_state": "present",
+        "aggregate_metric_refs": ["nielsen.external_outcome.cs_cx"],
+        "aggregate_values": [
+          {
+            "metric_name": "health_score_average_improvement",
+            "value": 3.9,
+            "unit": "score",
+            "aggregation_level": "outcome_domain"
+          },
+          {
+            "metric_name": "engagement_score_average_improvement",
+            "value": 7.4,
+            "unit": "score",
+            "aggregation_level": "outcome_domain"
+          },
+          {
+            "metric_name": "reply_time_score_average_improvement",
+            "value": 8.9,
+            "unit": "score",
+            "aggregation_level": "outcome_domain"
+          },
+          {
+            "metric_name": "largest_outcome_sample_size",
+            "value": 29,
+            "unit": "count",
+            "aggregation_level": "outcome_domain"
+          }
+        ],
+        "notes": ["CS/CX outcome movement is withheld until aggregate external outcome export and attribution caveat are attached."]
+      },
+      {
+        "evidence_record_id": "aggregate:nielsen:financial_model_claim",
+        "source_input_id": "source:nielsen_financial_model_approval",
+        "evidence_type": "financial_model",
+        "evidence_state": "present",
+        "aggregate_metric_refs": ["nielsen.value_deck.financial_claims"],
+        "aggregate_values": [
+          {
+            "metric_name": "two_year_net_benefit",
+            "value": 4.82,
+            "unit": "currency_usd_millions",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "quarterly_benefit_ramped",
+            "value": 1.27,
+            "unit": "currency_usd_millions",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "annual_total_cost",
+            "value": 2.06,
+            "unit": "currency_usd_millions",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "break_even_months",
+            "value": 7.4,
+            "unit": "months",
+            "aggregation_level": "account_window"
+          },
+          {
+            "metric_name": "return_ratio_source_claim",
+            "value": 1.17,
+            "unit": "ratio",
+            "aggregation_level": "account_window"
+          }
+        ],
+        "notes": ["Financial values are withheld as source claims until finance/customer-safe approval is attached."]
+      },
+      {
+        "evidence_record_id": "aggregate:nielsen:product_telemetry_gap",
+        "source_input_id": "source:glean_customer_level_product_telemetry",
+        "evidence_type": "product_telemetry",
+        "evidence_state": "missing",
+        "aggregate_metric_refs": ["nielsen.glean.customer_telemetry_gap"],
+        "aggregate_values": [
+          {
+            "metric_name": "attached_customer_telemetry_count",
+            "value": 0,
+            "unit": "count",
+            "aggregation_level": "account_window"
+          }
+        ],
+        "notes": ["Customer-level aggregate telemetry is not attached in this trial."]
+      }
+    ],
+    "governance_boundaries": [
+      "Nielsen source evidence trial is review only and writes no persistent records.",
+      "Deck-derived claims are claim candidates, not observed product telemetry.",
+      "Accepted aggregate evidence does not upgrade claim readiness."
+    ]
+  },
+  "governance_boundaries": [
+    "Nielsen Source Evidence Trial maps sanitized source artifacts into claim candidates only.",
+    "No raw slide text, notes, document contents, account names, person-level metrics, or direct identifiers are embedded.",
+    "No live Glean connection, persistence, ROI calculation, or claim readiness upgrade occurs."
+  ]
+}

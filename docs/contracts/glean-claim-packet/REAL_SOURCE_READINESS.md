@@ -4,6 +4,8 @@ This document defines what must be true before the synthetic Glean Claim Packet 
 
 It does not define or implement ingestion. Any live import, export, or MCP/read path requires a separate approved OpenSpec change with exact source contracts, privacy proof, and rollback behavior.
 
+The executable readiness contract lives in [`../real-source-readiness/README.md`](../real-source-readiness/README.md). It provides `RSRM_2026_05`, a metadata-only manifest for reviewing source availability, field status, approval state, privacy boundaries, affected claim buckets, blockers, and the recommended ingestion path.
+
 ## Product Stance
 
 The Claim Packet Export is methodology-governed claim packaging for QBR preparation. It is not an ROI calculator, not a live telemetry warehouse, and not a strongest-possible-claim generator.
