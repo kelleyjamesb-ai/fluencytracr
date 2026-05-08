@@ -199,3 +199,9 @@
 - Completed: Added QBR Readiness Summary to `/methodology-review`, backed by shared `buildGleanClaimPacketQbrReadinessSummary`, showing customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action from the selected claim packet.
 - Verified: `npm run build --workspace shared`; targeted backend claim packet tests; targeted frontend Methodology Review Workspace tests; `npm test --workspace frontend`; `npm run build --workspace frontend`; docs contract sweep; strict OpenSpec validation for `add-qbr-narrative-view`; `git diff --check`.
 - Next focus: Keep summary language tied to existing packet buckets; do not add ROI calculation or readiness upgrades.
+
+## 2026-05-08 (UTC) — Codex (Claim Packet real-source readiness)
+
+- Completed: Added `docs/contracts/glean-claim-packet/REAL_SOURCE_READINESS.md`, a documentation-only readiness gate for replacing synthetic Glean Claim Packet fixtures with real source inputs.
+- Verified: `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for `add-glean-claim-packet-export`; `git diff --check`.
+- Next focus: Keep any future real-source work behind a separate approved ingestion/source-contract change; this slice does not implement ingestion.

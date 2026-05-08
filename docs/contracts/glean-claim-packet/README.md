@@ -10,6 +10,8 @@ It is a packaging layer, not an ROI calculator. It does not compute ROI independ
 
 The Methodology Review Workspace also renders a QBR Readiness Summary from the selected packet. That summary is plain-language packaging of the existing buckets: customer-safe claims, caveated claims, internal-only claims, suppressed or not-computed claims, top blockers, and next upgrade action.
 
+For production planning, see [`REAL_SOURCE_READINESS.md`](REAL_SOURCE_READINESS.md). It defines the source inputs, fixture-to-real mapping, unknown-field handling, production blockers, privacy boundaries, approval workflow, and minimum acceptance criteria required before synthetic fixtures can be replaced. It does not implement ingestion.
+
 ## Required top-level fields
 
 - `claim_packet_id`

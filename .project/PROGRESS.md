@@ -23,6 +23,7 @@
 - QBR Narrative View for Glean Claim Packet Export: added a shared `GCP_2026_05` narrative formatter, a `/methodology-review` QBR prep section, synthetic packet evidence for suppressed ROI/MCP claims, and tests preserving internal-only/suppressed boundaries.
 - Product framing audit: tightened docs/UI copy around methodology-governed claim packaging, QBR-prep artifacts, not-an-ROI-calculator language, synthetic Nielsen fixtures, and strongest safe claim framing.
 - QBR Readiness Summary: added a plain-language selected-packet summary for customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action without ROI calculation or readiness upgrades.
+- Glean Claim Packet real-source readiness doc: added documentation-only fixture replacement gates for source inputs, mappings, unknowns, blockers, privacy, approvals, and minimum acceptance criteria without ingestion.
 
 ## Current Status
 
@@ -47,6 +48,7 @@
 - QBR Narrative View slice is complete as a bounded user-requested addition; it renders the existing claim packet for QBR prep without ROI calculation, readiness upgrade, or raw content ingestion.
 - Product framing audit is complete as a bounded user-requested copy/docs slice; no claim behavior changed.
 - QBR Readiness Summary slice is complete as a bounded user-requested addition; it summarizes existing claim packet buckets only.
+- Glean Claim Packet real-source readiness doc is complete as a bounded documentation-only slice; it does not implement ingestion, ROI calculation, or claim readiness upgrades.
 
 ## Blockers
 

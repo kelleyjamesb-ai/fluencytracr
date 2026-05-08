@@ -45,3 +45,14 @@ The Methodology Review Workspace SHALL expose a copyable claim packet export for
 - **GIVEN** a reviewer opens `/methodology-review`
 - **WHEN** the reviewer changes the selected snapshot
 - **THEN** the "Export claim packet" output updates to the selected methodology snapshot
+
+### Requirement: Real-Source Readiness Documentation
+
+The contract documentation SHALL define the minimum source, privacy, approval, and acceptance requirements for replacing synthetic Glean Claim Packet Export fixtures without implementing ingestion.
+
+#### Scenario: Readiness gate before fixture replacement
+
+- **GIVEN** a reviewer is evaluating whether synthetic claim packet fixtures can be replaced with real source inputs
+- **WHEN** they inspect the Glean Claim Packet Export contract docs
+- **THEN** the docs identify required source inputs, fixture-to-real mapping, unknown fields, production blockers, privacy boundaries, approval workflow requirements, and minimum acceptance criteria
+- **AND** the docs state that ingestion, ROI calculation, and claim readiness upgrades are out of scope
