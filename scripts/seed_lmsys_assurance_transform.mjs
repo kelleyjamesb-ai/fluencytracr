@@ -1,350 +1,354 @@
 #!/usr/bin/env node
-const EVENT_VERSION = "1";
+const DEFAULT_ORG_ID = "lmsys-org-assurance";
 
 function iso(baseMs, offsetMs) {
   return new Date(baseMs + offsetMs).toISOString();
 }
 
-function event({
-  id,
-  orgId,
-  workflowId,
-  executionId,
-  at,
-  name,
-  actor = "human",
-  context = {},
-  metadata = {}
-}) {
+function orgUnit(orgId) {
+  return `org:${orgId}`;
+}
+
+function runId(runLabel, caseId, index) {
+  return `lmsys-assurance-${runLabel}-${caseId}-${index}`;
+}
+
+function eventBase({ orgId, workflowId, executionRunId, at, riskClass = "medium" }) {
   return {
-    event_name: name,
-    event_version: EVENT_VERSION,
-    org_id: orgId,
-    workflow_id: workflowId,
     timestamp: at,
-    actor_type: actor,
-    context,
-    metadata: { event_id: id, ...metadata },
-    execution_id: executionId
+    risk_class: riskClass,
+    org_unit: orgUnit(orgId),
+    workflow_id: workflowId,
+    run_id: executionRunId
   };
 }
 
-function goldenExecution({ orgId, workflowId, executionId, baseMs, verification = false, prefix = executionId }) {
+function stage(params, stageFrom, stageTo, aiAssisted) {
+  return {
+    ...eventBase(params),
+    event_type: "workflow_stage_transition",
+    stage_from: stageFrom,
+    stage_to: stageTo,
+    ai_assisted: aiAssisted
+  };
+}
+
+function disposition(params, dispositionValue, options = {}) {
+  return {
+    ...eventBase(params),
+    event_type: "ai_output_disposition",
+    disposition: dispositionValue,
+    edit_distance_bucket: options.editDistanceBucket ?? "none",
+    verification_present: options.verificationPresent === true,
+    time_to_action_ms: options.timeToActionMs ?? 0
+  };
+}
+
+function recovery(params, options = {}) {
+  return {
+    ...eventBase(params),
+    event_type: "ai_recovery_loop",
+    recovery_type: options.recoveryType ?? "re_prompt",
+    cycles: options.cycles ?? 1,
+    resolution_time_ms: options.resolutionTimeMs ?? 0
+  };
+}
+
+function verification(params, options = {}) {
+  return {
+    ...eventBase(params),
+    event_type: "verification_signal",
+    verification_type: options.verificationType ?? "policy_check",
+    verification_latency_ms: options.verificationLatencyMs ?? 100
+  };
+}
+
+function abandonment(params, stageValue = "generated") {
+  return {
+    ...eventBase(params),
+    event_type: "ai_abandonment",
+    abandonment_stage: stageValue,
+    reason_bucket: "low_trust"
+  };
+}
+
+function executionParams({ orgId, workflowId, executionRunId, baseMs, offsetMs = 0 }) {
+  return (stepMs) => ({
+    orgId,
+    workflowId,
+    executionRunId,
+    at: iso(baseMs, offsetMs + stepMs)
+  });
+}
+
+function calibratedExecution(input) {
+  const p = executionParams(input);
   return [
-    event({
-      id: `${prefix}-start`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 0),
-      name: "execution_start",
-      actor: "human",
-      context: { structural_start: true }
-    }),
-    event({
-      id: `${prefix}-attempt`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 30_000),
-      name: "step",
-      actor: "ai",
-      context: { step_kind: "attempt", step_index: 0 }
-    }),
-    event({
-      id: `${prefix}-complete`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 45_000),
-      name: "ai_output_disposition",
-      actor: "ai",
-      context: {
-        disposition: "accepted",
-        terminal: true,
-        verification_present: verification
+    stage(p(0), "not_started", "started", false),
+    stage(p(30_000), "started", "attempt", true),
+    verification(p(45_000)),
+    disposition(p(60_000), "accepted", { verificationPresent: true, timeToActionMs: 60_000 })
+  ];
+}
+
+function blindExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(15_000), "started", "attempt", true),
+    disposition(p(30_000), "accepted", { verificationPresent: false, timeToActionMs: 30_000 })
+  ];
+}
+
+function recoveryExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    disposition(p(30_000), "rejected", { verificationPresent: false, timeToActionMs: 30_000 }),
+    recovery(p(45_000), { cycles: 1, resolutionTimeMs: 45_000 }),
+    disposition(p(90_000), "accepted", { verificationPresent: false, timeToActionMs: 90_000 })
+  ];
+}
+
+function frictionExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    disposition(p(60_000), "rejected", { verificationPresent: false, timeToActionMs: 60_000 }),
+    stage(p(120_000), "attempt", "attempt", true),
+    disposition(p(300_000), "rejected", { verificationPresent: false, timeToActionMs: 300_000 }),
+    stage(p(360_000), "attempt", "attempt", true),
+    disposition(p(660_000), "accepted", { verificationPresent: false, timeToActionMs: 660_000 })
+  ];
+}
+
+function undertrustExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(30_000), "started", "attempt", true),
+    abandonment(p(60_000), "generated")
+  ];
+}
+
+function buildExecutions({ orgId, workflowId, caseId, count, baseMs, runLabel, factory }) {
+  const out = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push(
+      ...factory({
+        orgId,
+        workflowId,
+        executionRunId: runId(runLabel, caseId, i),
+        baseMs,
+        offsetMs: i * 15 * 60_000
+      })
+    );
+  }
+  return out;
+}
+
+function buildFrictionThresholdExecutions({ orgId, workflowId, caseId, baseMs, runLabel, count }) {
+  const out = [];
+  const frictionStart = Math.floor(count / 2);
+  for (let i = 0; i < count; i += 1) {
+    const factory = i < frictionStart ? blindExecution : frictionExecution;
+    out.push(
+      ...factory({
+        orgId,
+        workflowId,
+        executionRunId: runId(runLabel, caseId, i),
+        baseMs,
+        offsetMs: i * 15 * 60_000
+      })
+    );
+  }
+  return out;
+}
+
+function validPiiProbeBase({ orgId, workflowId, executionRunId, baseMs }) {
+  return {
+    events: [
+      {
+        timestamp: iso(baseMs, 0),
+        risk_class: "medium",
+        org_unit: orgUnit(orgId),
+        workflow_id: workflowId,
+        run_id: executionRunId,
+        event_type: "workflow_stage_transition",
+        stage_from: "not_started",
+        stage_to: "started",
+        ai_assisted: false
       }
-    })
-  ];
-}
-
-function recoveryExecution({ orgId, workflowId, executionId, baseMs, prefix = executionId }) {
-  return [
-    event({
-      id: `${prefix}-start`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 0),
-      name: "execution_start",
-      actor: "human",
-      context: { structural_start: true }
-    }),
-    event({
-      id: `${prefix}-error`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 30_000),
-      name: "execution_error",
-      actor: "system",
-      context: { error_signal: true }
-    }),
-    event({
-      id: `${prefix}-retry`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 60_000),
-      name: "step",
-      actor: "human",
-      context: { step_kind: "retry", retry_visibility: true, step_index: 1 }
-    }),
-    event({
-      id: `${prefix}-complete`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 90_000),
-      name: "ai_output_disposition",
-      actor: "ai",
-      context: { disposition: "accepted", terminal: true }
-    })
-  ];
-}
-
-function frictionExecution({ orgId, workflowId, executionId, baseMs, prefix = executionId }) {
-  return [
-    event({
-      id: `${prefix}-start`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 0),
-      name: "execution_start",
-      actor: "human",
-      context: { structural_start: true }
-    }),
-    event({
-      id: `${prefix}-reject-1`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 60_000),
-      name: "ai_output_disposition",
-      actor: "human",
-      context: { disposition: "rejected" }
-    }),
-    event({
-      id: `${prefix}-retry-1`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 120_000),
-      name: "step",
-      actor: "human",
-      context: { step_kind: "retry", retry_visibility: true, step_index: 1 }
-    }),
-    event({
-      id: `${prefix}-reject-2`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 300_000),
-      name: "ai_output_disposition",
-      actor: "human",
-      context: { disposition: "rejected" }
-    }),
-    event({
-      id: `${prefix}-retry-2`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 360_000),
-      name: "step",
-      actor: "human",
-      context: { step_kind: "retry", retry_visibility: true, step_index: 2 }
-    }),
-    event({
-      id: `${prefix}-complete`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 660_000),
-      name: "ai_output_disposition",
-      actor: "ai",
-      context: { disposition: "accepted", terminal: true }
-    })
-  ];
-}
-
-function noTerminalExecution({ orgId, workflowId, executionId, baseMs, prefix = executionId }) {
-  return [
-    event({
-      id: `${prefix}-start`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 0),
-      name: "execution_start",
-      actor: "human",
-      context: { structural_start: true }
-    }),
-    event({
-      id: `${prefix}-attempt`,
-      orgId,
-      workflowId,
-      executionId,
-      at: iso(baseMs, 60_000),
-      name: "step",
-      actor: "ai",
-      context: { step_kind: "attempt", step_index: 0 }
-    })
-  ];
+    ]
+  };
 }
 
 export function buildAssuranceCases(options = {}) {
   const minCohortSize = options.minCohortSize ?? 5;
-  const baseMs = Date.parse(options.baseTimestamp ?? "2026-01-01T12:00:00.000Z");
-  const org = "lmsys-org-assurance";
-  const workflow = "lmsys-workflow-assurance";
+  const runLabel = options.runLabel ?? "selftest";
+  const baseMs = Date.parse(options.baseTimestamp ?? new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString());
+  const orgId = options.orgId ?? DEFAULT_ORG_ID;
+  const workflowPrefix = `lmsys-assurance-${runLabel}`;
+  const caseCount = Math.max(minCohortSize, 5);
+  const frictionCaseCount = Math.max(caseCount, 50);
 
-  const subThresholdEvents = [];
-  for (let i = 0; i < Math.max(1, minCohortSize - 1); i += 1) {
-    subThresholdEvents.push(
-      ...goldenExecution({
-        orgId: org,
-        workflowId: "lmsys-workflow-sub-threshold",
-        executionId: `lmsys-exec-sub-threshold-${i}`,
-        baseMs: baseMs + i * 120_000
-      })
-    );
-  }
+  const subThresholdEvents = buildExecutions({
+    orgId,
+    workflowId: `${workflowPrefix}-sub-threshold`,
+    caseId: "sub-threshold",
+    count: Math.max(1, minCohortSize - 1),
+    baseMs,
+    runLabel,
+    factory: blindExecution
+  });
 
+  const duplicateRun = `lmsys-assurance-${runLabel}-duplicate-shared-run`;
   const duplicateEvents = [
-    ...goldenExecution({
+    ...blindExecution({
       orgId: "lmsys-org-tenant-a",
-      workflowId: "lmsys-workflow-shared-model",
-      executionId: "lmsys-exec-duplicate-cross-org",
+      workflowId: `${workflowPrefix}-shared-model`,
+      executionRunId: duplicateRun,
       baseMs,
-      prefix: "tenant-a"
+      offsetMs: 0
     }),
-    ...goldenExecution({
+    ...blindExecution({
       orgId: "lmsys-org-tenant-b",
-      workflowId: "lmsys-workflow-shared-model",
-      executionId: "lmsys-exec-duplicate-cross-org",
-      baseMs: baseMs + 120_000,
-      prefix: "tenant-b"
+      workflowId: `${workflowPrefix}-shared-model`,
+      executionRunId: duplicateRun,
+      baseMs,
+      offsetMs: 15 * 60_000
     })
   ];
 
   return [
     {
       id: "sub_threshold_workflow",
-      description: "Workflow has fewer executions than MIN_COHORT_SIZE and must suppress aggregate surfacing.",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-sub-threshold`,
+      description: "Workflow has fewer disclosed executions than MIN_COHORT_SIZE and must suppress aggregate surfacing.",
       expected: { aggregate: "SUPPRESSED" },
       events: subThresholdEvents
     },
     {
       id: "pii_boundary_rejection",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-pii-probe`,
       description: "Forbidden raw-content and direct-identifier fields must be rejected before persistence.",
       expected: { post_status: "4xx" },
       invalid_payloads: [
         {
-          event_name: "execution_start",
-          event_version: EVENT_VERSION,
-          org_id: org,
-          workflow_id: workflow,
-          timestamp: iso(baseMs, 0),
-          actor_type: "human",
-          context: {},
-          execution_id: "lmsys-exec-pii-name",
+          ...validPiiProbeBase({
+            orgId,
+            workflowId: `${workflowPrefix}-pii-probe`,
+            executionRunId: `lmsys-assurance-${runLabel}-pii-name`,
+            baseMs
+          }),
           name: "Alice"
         },
         {
-          event_name: "step",
-          event_version: EVENT_VERSION,
-          org_id: org,
-          workflow_id: workflow,
-          timestamp: iso(baseMs, 1_000),
-          actor_type: "human",
-          context: { content: "raw prompt body" },
-          execution_id: "lmsys-exec-pii-content"
+          events: [
+            {
+              ...validPiiProbeBase({
+                orgId,
+                workflowId: `${workflowPrefix}-pii-probe`,
+                executionRunId: `lmsys-assurance-${runLabel}-pii-content`,
+                baseMs
+              }).events[0],
+              message_text: "raw prompt body"
+            }
+          ]
         },
         {
-          event_name: "step",
-          event_version: EVENT_VERSION,
-          org_id: org,
-          workflow_id: workflow,
-          timestamp: iso(baseMs, 2_000),
-          actor_type: "human",
-          context: {},
-          execution_id: "lmsys-exec-pii-email",
+          ...validPiiProbeBase({
+            orgId,
+            workflowId: `${workflowPrefix}-pii-probe`,
+            executionRunId: `lmsys-assurance-${runLabel}-pii-email`,
+            baseMs
+          }),
           email: "alice@example.com"
         }
       ]
     },
     {
-      id: "out_of_order_timestamps",
-      description: "Input order is shuffled; deterministic reconstruction must use event timestamps.",
-      expected: { classification_status: "ALLOWED" },
-      events: goldenExecution({
-        orgId: org,
-        workflowId: "lmsys-workflow-out-of-order",
-        executionId: "lmsys-exec-out-of-order",
-        baseMs
-      }).reverse()
-    },
-    {
-      id: "duplicate_execution_ids_across_orgs",
-      description: "Same execution_id in two orgs must stay tenant-isolated.",
-      expected: { tenant_isolation: "PASS" },
-      events: duplicateEvents
-    },
-    {
-      id: "no_terminal_event",
-      description: "Open execution without a terminal event should fail closed or resolve to an allowed avoidance/friction pattern only with explicit lifecycle support.",
-      expected: { accepted_patterns: ["FRICTION_LOOP", "UNDERTRUST_AVOIDANCE"], fallback_status: "SUPPRESSED" },
-      events: noTerminalExecution({
-        orgId: org,
-        workflowId: "lmsys-workflow-no-terminal",
-        executionId: "lmsys-exec-no-terminal",
-        baseMs
+      id: "calibrated_fluency",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-calibrated-fluency`,
+      expected: { pattern: "Calibrated Fluency" },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-calibrated-fluency`,
+        caseId: "calibrated-fluency",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: calibratedExecution
       })
     },
     {
       id: "fast_completion_no_verification",
-      description: "Fast completion with no verification should classify as BLIND_EFFICIENCY.",
-      expected: { pattern: "BLIND_EFFICIENCY" },
-      events: goldenExecution({
-        orgId: org,
-        workflowId: "lmsys-workflow-blind-efficiency",
-        executionId: "lmsys-exec-blind-efficiency",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-blind-efficiency`,
+      expected: { pattern: "Blind Efficiency" },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-blind-efficiency`,
+        caseId: "blind-efficiency",
+        count: caseCount,
         baseMs,
-        verification: false
+        runLabel,
+        factory: blindExecution
       })
     },
     {
       id: "failure_success_recovery_maturity",
-      description: "Failure followed by retry and success should classify as RECOVERY_MATURITY.",
-      expected: { pattern: "RECOVERY_MATURITY" },
-      events: recoveryExecution({
-        orgId: org,
-        workflowId: "lmsys-workflow-recovery-maturity",
-        executionId: "lmsys-exec-recovery-maturity",
-        baseMs
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-recovery-maturity`,
+      expected: { pattern: "Recovery Maturity" },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-recovery-maturity`,
+        caseId: "recovery-maturity",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: recoveryExecution
       })
     },
     {
-      id: "iteration_high_threshold_cluster",
-      description: "Executions clustered exactly at iteration_high_threshold with high latency should classify as FRICTION_LOOP.",
-      expected: { pattern: "FRICTION_LOOP", iteration_high_threshold: options.iterationHighThreshold ?? 2 },
-      events: frictionExecution({
-        orgId: org,
-        workflowId: "lmsys-workflow-friction-loop",
-        executionId: "lmsys-exec-friction-loop",
-        baseMs
+      id: "friction_loop",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-friction-loop`,
+      expected: { pattern: "Friction Loop", iteration_high_threshold: options.iterationHighThreshold ?? 2 },
+      events: buildFrictionThresholdExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-friction-loop`,
+        caseId: "friction-loop",
+        count: frictionCaseCount,
+        baseMs,
+        runLabel
       })
+    },
+    {
+      id: "undertrust_avoidance",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-undertrust-avoidance`,
+      expected: { pattern: "Undertrust Avoidance" },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-undertrust-avoidance`,
+        caseId: "undertrust-avoidance",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: undertrustExecution
+      })
+    },
+    {
+      id: "duplicate_execution_ids_across_orgs",
+      org_id: "lmsys-org-tenant-a",
+      workflow_id: `${workflowPrefix}-shared-model`,
+      expected: { tenant_isolation: "PASS", duplicate_run_id: duplicateRun },
+      events: duplicateEvents
     }
   ];
 }
@@ -354,6 +358,6 @@ export function buildAssuranceEvents(options = {}) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const cases = buildAssuranceCases();
+  const cases = buildAssuranceCases({ runLabel: process.env.ASSURANCE_RUN_ID ?? "preview" });
   console.log(JSON.stringify({ cases, event_count: buildAssuranceEvents().length }, null, 2));
 }
