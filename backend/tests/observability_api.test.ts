@@ -66,6 +66,27 @@ it("returns observability payload with schema validation", async () => {
   expect(row?.pattern_distribution).not.toBeNull();
 });
 
+it("returns categorical prevalence bands only at the executive boundary", async () => {
+  for (let i = 0; i < 5; i += 1) {
+    pair("wf-prevalence", `rp${i}`, true).forEach((e) => store.fluencyEvents.set(e.event_id, e));
+  }
+
+  const res = await request(app)
+    .get("/api/observability/org-1?window=60d")
+    .set({ "x-role": "EXEC_VIEWER" });
+
+  expect(res.status).toBe(200);
+  const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-prevalence");
+  expect(row?.pattern_distribution).not.toBeNull();
+  const prevalenceValues = Object.values(row.pattern_distribution as Record<string, unknown>);
+  expect(prevalenceValues.length).toBeGreaterThan(0);
+  for (const value of prevalenceValues) {
+    expect(typeof value).toBe("string");
+    expect(["LOW", "MODERATE", "HIGH"]).toContain(value);
+  }
+  expect(JSON.stringify(row.pattern_distribution)).not.toMatch(/:\d/);
+});
+
 it("rejects invalid window token", async () => {
   const res = await request(app)
     .get("/api/observability/org-1?window=not-a-window")

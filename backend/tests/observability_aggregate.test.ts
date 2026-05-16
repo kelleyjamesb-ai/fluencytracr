@@ -76,7 +76,8 @@ describe("buildObservabilityRollup", () => {
     const wfa = rows.find((r) => r.workflow_id === "wf-a");
     expect(wfa?.disclosure).toBe("ALLOWED");
     expect(wfa?.executions_disclosed).toBe(2);
-    expect(wfa?.pattern_distribution?.["Calibrated Fluency"]).toBe(2);
+    expect(wfa?.pattern_distribution?.["Calibrated Fluency"]).toBe("HIGH");
+    expect(Object.values(wfa?.pattern_distribution ?? {}).every((v) => typeof v === "string")).toBe(true);
     const wfb = rows.find((r) => r.workflow_id === "wf-b");
     expect(wfb?.disclosure).toBe("SUPPRESSED");
     expect(wfb?.suppression_reasons).toContain("insufficient_disclosed_executions");
