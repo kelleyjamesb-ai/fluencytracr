@@ -69,7 +69,18 @@ const AggregateEvidenceValueSchema = z
   .object({
     metric_name: SafeAggregateTokenSchema,
     value: z.number().finite(),
-    unit: z.enum(["count", "percent", "minutes", "hours", "state", "score", "index"]),
+    unit: z.enum([
+      "count",
+      "percent",
+      "minutes",
+      "hours",
+      "state",
+      "score",
+      "index",
+      "months",
+      "ratio",
+      "currency_usd_millions"
+    ]),
     aggregation_level: z
       .enum(["account_window", "source_input", "surface", "work_pattern", "outcome_domain", "methodology"])
       .default("account_window")
@@ -82,6 +93,7 @@ export const AggregateEvidenceRecordSchema = z
     source_input_id: z.string().min(1).max(180),
     evidence_type: z.enum([
       "source_coverage",
+      "survey",
       "methodology_approval",
       "product_telemetry",
       "workflow_run",
