@@ -6,6 +6,7 @@ import { runFluencyPatternSuppression } from "./fluency-pattern-suppression";
 import type { FluencyEventRecord } from "./store";
 import { computeExecutionLifecycle } from "./execution_lifecycle";
 import { filterEventsByWindow, MIN_COHORT_SIZE } from "./fluencytracr";
+import { evaluateGhostUseResidual, hasPositiveAiEvidence, type GhostUseStatus } from "./ghost_use_evaluator";
 import { groupEventsByExecution, reconstructTrace, sortEventsByTimestamp } from "./trace_engine";
 import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
 import { toPrevalenceBand } from "./services/workflow-aggregate.service";
@@ -66,6 +67,7 @@ export type WorkflowObservabilityRow = {
   disclosure: "ALLOWED" | "SUPPRESSED";
   suppression_reasons: string[];
   pattern_distribution: Record<FluencyPatternName, ObservabilityPrevalenceBand> | null;
+  residual_patterns: { ghost_use: GhostUseStatus };
   /** Qualitative hints only; no scores, ranks, or trends (PRD §8). */
   allowed_interpretation_hints: string[];
 };
@@ -111,6 +113,8 @@ export const buildObservabilityRollup = (
 
   return workflowIds.map((workflowId) => {
     const wfEvents = windowed.filter((e) => e.workflow_id === workflowId);
+    const allWorkflowEvents = scoped.filter((e) => e.workflow_id === workflowId);
+    const ghostUse = evaluateGhostUseResidual(allWorkflowEvents, window, now);
     const byExec = groupEventsByExecution(wfEvents);
     const workflowThresholds =
       thresholdsByWorkflow.get(workflowId) ?? DEFAULT_PHASE2_THRESHOLDS;
@@ -135,7 +139,7 @@ export const buildObservabilityRollup = (
       const disclosure = evaluateExecutionDisclosure(signals, gates, suppression);
       if (disclosure.state === "ALLOWED") {
         executions_disclosed += 1;
-        if (pattern !== null) {
+        if (pattern !== null && hasPositiveAiEvidence(group)) {
           dist[pattern] += 1;
         }
       } else {
@@ -148,14 +152,19 @@ export const buildObservabilityRollup = (
     let disclosure: "ALLOWED" | "SUPPRESSED" = "ALLOWED";
     let pattern_distribution: Record<FluencyPatternName, ObservabilityPrevalenceBand> | null =
       toCategoricalPatternDistribution(dist, executions_disclosed);
+    let residual_patterns: { ghost_use: GhostUseStatus } = { ghost_use: ghostUse.status };
     let allowed_interpretation_hints: string[] = [];
 
     if (executions_disclosed < minDisclosed) {
       disclosure = "SUPPRESSED";
       suppression_reasons.push("insufficient_disclosed_executions");
       pattern_distribution = null;
+      residual_patterns = { ghost_use: "SUPPRESSED" };
     } else {
       allowed_interpretation_hints = interpretationHints(dist);
+      if (ghostUse.hint) {
+        allowed_interpretation_hints.push(ghostUse.hint);
+      }
     }
 
     return {
@@ -166,6 +175,7 @@ export const buildObservabilityRollup = (
       disclosure,
       suppression_reasons,
       pattern_distribution,
+      residual_patterns,
       allowed_interpretation_hints
     };
   });

@@ -18,14 +18,27 @@ function runId(runLabel, caseId, index) {
   return `lmsys-assurance-${runLabel}-${caseId}-${index}`;
 }
 
-function eventBase({ orgId, workflowId, executionRunId, at, riskClass = "medium" }) {
-  return {
+function eventBase({
+  orgId,
+  workflowId,
+  executionRunId,
+  at,
+  riskClass = "medium",
+  ambiguityFlag = false,
+  ambiguityReasonCode
+}) {
+  const event = {
     timestamp: at,
     risk_class: riskClass,
     org_unit: orgUnit(orgId),
     workflow_id: workflowId,
     run_id: executionRunId
   };
+  if (ambiguityFlag) {
+    event.ambiguity_flag = true;
+    event.ambiguity_reason_code = ambiguityReasonCode ?? "AMB_EVIDENCE_INSUFFICIENT";
+  }
+  return event;
 }
 
 function stage(params, stageFrom, stageTo, aiAssisted) {
@@ -77,12 +90,22 @@ function abandonment(params, stageValue = "generated") {
   };
 }
 
-function executionParams({ orgId, workflowId, executionRunId, baseMs, offsetMs = 0 }) {
+function executionParams({
+  orgId,
+  workflowId,
+  executionRunId,
+  baseMs,
+  offsetMs = 0,
+  ambiguityFlag = false,
+  ambiguityReasonCode
+}) {
   return (stepMs) => ({
     orgId,
     workflowId,
     executionRunId,
-    at: iso(baseMs, offsetMs + stepMs)
+    at: iso(baseMs, offsetMs + stepMs),
+    ambiguityFlag,
+    ambiguityReasonCode
   });
 }
 
@@ -178,17 +201,21 @@ function buildGhostUseScenario({ orgId, workflowPrefix, scenarioId, runLabel, ba
   const events = [];
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex += 1) {
-    events.push(
-      ...buildExecutions({
-        orgId,
-        workflowId,
-        caseId: `${scenarioId}-window-${windowIndex + 1}`,
-        count,
-        baseMs,
-        runLabel,
-        factory
-      })
-    );
+    const windowOffsetMs =
+      (windowIndex - (windowCount - 1)) * GHOST_USE_SURFACING_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    for (let i = 0; i < count; i += 1) {
+      events.push(
+        ...factory({
+          orgId,
+          workflowId,
+          executionRunId: runId(runLabel, `${scenarioId}-window-${windowIndex + 1}`, i),
+          baseMs,
+          offsetMs: windowOffsetMs + i * 15 * 60_000,
+          ambiguityFlag: overrides.ambiguityDominant === true,
+          ambiguityReasonCode: "AMB_EVIDENCE_INSUFFICIENT"
+        })
+      );
+    }
   }
 
   return {
@@ -414,7 +441,7 @@ export function buildAssuranceCases(options = {}) {
       })
     },
     buildGhostUseScenario({
-      orgId,
+      orgId: `${orgId}-residual-fires`,
       workflowPrefix,
       scenarioId: "ghost_use_residual_fires",
       runLabel,
@@ -423,7 +450,7 @@ export function buildAssuranceCases(options = {}) {
       expected: "SURFACE"
     }),
     buildGhostUseScenario({
-      orgId,
+      orgId: `${orgId}-residual-positive-bypass`,
       workflowPrefix,
       scenarioId: "ghost_use_bypassed_by_positive_evidence",
       runLabel,
@@ -433,7 +460,7 @@ export function buildAssuranceCases(options = {}) {
       overrides: { positiveEvidence: true }
     }),
     buildGhostUseScenario({
-      orgId,
+      orgId: `${orgId}-residual-ambiguity`,
       workflowPrefix,
       scenarioId: "ghost_use_suppressed_by_ambiguity",
       runLabel,
@@ -443,7 +470,7 @@ export function buildAssuranceCases(options = {}) {
       overrides: { ambiguityDominant: true }
     }),
     buildGhostUseScenario({
-      orgId,
+      orgId: `${orgId}-residual-no-persistence`,
       workflowPrefix,
       scenarioId: "ghost_use_does_not_persist",
       runLabel,
