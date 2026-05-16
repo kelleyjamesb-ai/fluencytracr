@@ -8,6 +8,7 @@ import { computeExecutionLifecycle } from "./execution_lifecycle";
 import { filterEventsByWindow, MIN_COHORT_SIZE } from "./fluencytracr";
 import { groupEventsByExecution, reconstructTrace, sortEventsByTimestamp } from "./trace_engine";
 import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
+import { toPrevalenceBand } from "./services/workflow-aggregate.service";
 
 export const PATTERN_ORDER: FluencyPatternName[] = [
   "Calibrated Fluency",
@@ -24,6 +25,28 @@ export const emptyPatternDistribution = (): Record<FluencyPatternName, number> =
   "Friction Loop": 0,
   "Undertrust Avoidance": 0
 });
+
+export type ObservabilityPrevalenceBand = "LOW" | "MODERATE" | "HIGH";
+
+export const emptyCategoricalPatternDistribution = (): Record<FluencyPatternName, ObservabilityPrevalenceBand> => ({
+  "Calibrated Fluency": "LOW",
+  "Blind Efficiency": "LOW",
+  "Recovery Maturity": "LOW",
+  "Friction Loop": "LOW",
+  "Undertrust Avoidance": "LOW"
+});
+
+export const toCategoricalPatternDistribution = (
+  dist: Record<FluencyPatternName, number>,
+  disclosedExecutions: number
+): Record<FluencyPatternName, ObservabilityPrevalenceBand> => {
+  const out = emptyCategoricalPatternDistribution();
+  for (const pattern of PATTERN_ORDER) {
+    const share = disclosedExecutions > 0 ? dist[pattern] / disclosedExecutions : 0;
+    out[pattern] = toPrevalenceBand(share);
+  }
+  return out;
+};
 
 /**
  * Fail-closed org scoping: only events whose org_unit encodes this org_id.
@@ -42,7 +65,7 @@ export type WorkflowObservabilityRow = {
   executions_suppressed: number;
   disclosure: "ALLOWED" | "SUPPRESSED";
   suppression_reasons: string[];
-  pattern_distribution: Record<FluencyPatternName, number> | null;
+  pattern_distribution: Record<FluencyPatternName, ObservabilityPrevalenceBand> | null;
   /** Qualitative hints only; no scores, ranks, or trends (PRD §8). */
   allowed_interpretation_hints: string[];
 };
@@ -123,7 +146,8 @@ export const buildObservabilityRollup = (
     const executions_total = executions_disclosed + executions_suppressed;
     const suppression_reasons: string[] = [];
     let disclosure: "ALLOWED" | "SUPPRESSED" = "ALLOWED";
-    let pattern_distribution: Record<FluencyPatternName, number> | null = { ...dist };
+    let pattern_distribution: Record<FluencyPatternName, ObservabilityPrevalenceBand> | null =
+      toCategoricalPatternDistribution(dist, executions_disclosed);
     let allowed_interpretation_hints: string[] = [];
 
     if (executions_disclosed < minDisclosed) {

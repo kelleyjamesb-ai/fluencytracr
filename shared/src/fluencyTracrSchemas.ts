@@ -410,14 +410,17 @@ export const BoardSnapshotResponseSchema = z.object({
 }).strict();
 export type BoardSnapshotResponse = z.infer<typeof BoardSnapshotResponseSchema>;
 
-/** PRD Phase 4 — fixed key order; counts are not ranks (no sorting by value in API). */
+export const ObservabilityPrevalenceBandSchema = z.enum(["LOW", "MODERATE", "HIGH"]);
+export type ObservabilityPrevalenceBand = z.infer<typeof ObservabilityPrevalenceBandSchema>;
+
+/** PRD Phase 4 — executive boundary exposes categorical prevalence only. */
 export const ObservabilityPatternDistributionSchema = z
   .object({
-    "Calibrated Fluency": z.number().int().nonnegative(),
-    "Blind Efficiency": z.number().int().nonnegative(),
-    "Recovery Maturity": z.number().int().nonnegative(),
-    "Friction Loop": z.number().int().nonnegative(),
-    "Undertrust Avoidance": z.number().int().nonnegative()
+    "Calibrated Fluency": ObservabilityPrevalenceBandSchema,
+    "Blind Efficiency": ObservabilityPrevalenceBandSchema,
+    "Recovery Maturity": ObservabilityPrevalenceBandSchema,
+    "Friction Loop": ObservabilityPrevalenceBandSchema,
+    "Undertrust Avoidance": ObservabilityPrevalenceBandSchema
   })
   .strict();
 export type ObservabilityPatternDistribution = z.infer<typeof ObservabilityPatternDistributionSchema>;

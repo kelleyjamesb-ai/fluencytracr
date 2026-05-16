@@ -259,6 +259,16 @@ export type AuditLogRecord = {
   timestamp: string;
 };
 
+export type SuppressionAuditLogRecord = {
+  id: string;
+  orgId: string;
+  workflowId: string;
+  executionId: string;
+  suppressionReason: string;
+  diagnostics: Record<string, unknown>;
+  decidedAt: string;
+};
+
 export type ConnectorEventQuarantineRecord = {
   vendor: string;
   connector_name: string;
@@ -398,6 +408,7 @@ class MemoryStore {
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
   auditLogs = new Map<string, AuditLogRecord>();
+  suppressionAuditLogs = new Map<string, SuppressionAuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
   ingestReceipts = new Map<string, IngestReceiptRecord>();
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
@@ -436,6 +447,7 @@ class MemoryStore {
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
     this.auditLogs.clear();
+    this.suppressionAuditLogs.clear();
     this.connectorEventQuarantine.clear();
     this.ingestReceipts.clear();
     this.workflowRegistry.clear();

@@ -103,7 +103,7 @@ async function getObservability(backendUrl, orgId) {
 }
 
 async function getAuditLog(backendUrl, orgId) {
-  const url = new URL(`/orgs/${encodeURIComponent(orgId)}/audit-log`, backendUrl);
+  const url = new URL(`/orgs/${encodeURIComponent(orgId)}/suppression-audit-log`, backendUrl);
   return fetchJson(url, {
     method: "GET",
     headers: requestHeaders(orgId)
