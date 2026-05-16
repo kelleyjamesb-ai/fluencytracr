@@ -24,6 +24,18 @@ const FluencyEventBaseSchema = z.object({
   timestamp: z.string().min(1),
   risk_class: RiskClassSchema,
   org_unit: z.string().min(1).optional(),
+  ambiguity_flag: z.boolean().optional(),
+  ambiguity_reason_code: z.enum([
+    "AMB_SCHEMA_MISSING_REQUIRED",
+    "AMB_SCHEMA_INVALID_TYPE",
+    "AMB_SCHEMA_OUT_OF_RANGE",
+    "AMB_TEMPORAL_WINDOW_UNKNOWN",
+    "AMB_TEMPORAL_EVENT_OUTSIDE_WINDOW",
+    "AMB_EVIDENCE_CONFLICT",
+    "AMB_EVIDENCE_INSUFFICIENT",
+    "AMB_SOURCE_UNTRUSTED",
+    "AMB_TOOL_SURFACE_UNKNOWN"
+  ]).optional(),
   /** Platform agent/workflow run identifier (canonical when present). */
   run_id: z.string().min(1).optional(),
   /** Assistant/workflow run correlation (secondary to run_id). */
@@ -72,13 +84,30 @@ export const AiAbandonmentEventSchema = FluencyEventBaseSchema.extend({
   reason_bucket: z.enum(["low_quality", "low_trust", "time_pressure", "unknown"])
 }).strict();
 
-export const FluencyEventSchema = z.discriminatedUnion("event_type", [
+const FluencyEventUnionSchema = z.discriminatedUnion("event_type", [
   AiOutputDispositionEventSchema,
   AiRecoveryLoopEventSchema,
   WorkflowStageTransitionEventSchema,
   VerificationSignalEventSchema,
   AiAbandonmentEventSchema
 ]);
+
+export const FluencyEventSchema = FluencyEventUnionSchema.superRefine((event, context) => {
+  if (event.ambiguity_flag === true && !event.ambiguity_reason_code) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "ambiguity_reason_code must be set when ambiguity_flag is true",
+      path: ["ambiguity_reason_code"]
+    });
+  }
+  if (event.ambiguity_flag !== true && event.ambiguity_reason_code) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "ambiguity_reason_code requires ambiguity_flag true",
+      path: ["ambiguity_reason_code"]
+    });
+  }
+});
 
 export type FluencyEvent = z.infer<typeof FluencyEventSchema>;
 
@@ -425,6 +454,13 @@ export const ObservabilityPatternDistributionSchema = z
   .strict();
 export type ObservabilityPatternDistribution = z.infer<typeof ObservabilityPatternDistributionSchema>;
 
+export const ObservabilityResidualPatternsSchema = z
+  .object({
+    ghost_use: z.enum(["PRESENT", "ABSENT", "SUPPRESSED"])
+  })
+  .strict();
+export type ObservabilityResidualPatterns = z.infer<typeof ObservabilityResidualPatternsSchema>;
+
 export const ObservabilityWorkflowRowSchema = z
   .object({
     workflow_id: z.string().min(1),
@@ -434,6 +470,7 @@ export const ObservabilityWorkflowRowSchema = z
     disclosure: z.enum(["ALLOWED", "SUPPRESSED"]),
     suppression_reasons: z.array(z.string().min(1)),
     pattern_distribution: ObservabilityPatternDistributionSchema.nullable(),
+    residual_patterns: ObservabilityResidualPatternsSchema,
     allowed_interpretation_hints: z.array(z.string().min(1))
   })
   .strict();
