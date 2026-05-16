@@ -45,6 +45,13 @@ async function main() {
         backend_url: backendUrl,
         run_label: runLabel,
         cases: cases.length,
+        manifest: cases.map((entry) => ({
+          id: entry.id,
+          org_id: entry.org_id,
+          workflow_id: entry.workflow_id,
+          expected: entry.expected,
+          ghost_use_manifest: entry.ghost_use_manifest
+        })),
         events_generated: events.length,
         ...posted
       },
