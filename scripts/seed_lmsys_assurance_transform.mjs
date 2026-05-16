@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 const DEFAULT_ORG_ID = "lmsys-org-assurance";
+// Source of truth: backend/src/inference/confidence_layer.ts.
+// Ghost-use persists when a current 60-day window has an adjacent qualifying previous window.
+const GHOST_USE_REQUIRED_WINDOWS = 2;
+const GHOST_USE_SURFACING_WINDOW_DAYS = 60;
+const GHOST_USE_AMBIGUITY_DOMINANCE_THRESHOLD = 0.2;
 
 function iso(baseMs, offsetMs) {
   return new Date(baseMs + offsetMs).toISOString();
@@ -131,6 +136,23 @@ function undertrustExecution(input) {
   ];
 }
 
+function ghostUseWorkActivityExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(30_000), "started", "human_work_observed", false)
+  ];
+}
+
+function ghostUsePositiveEvidenceExecution(input) {
+  const p = executionParams(input);
+  return [
+    ...ghostUseWorkActivityExecution(input),
+    stage(p(45_000), "human_work_observed", "attempt", true),
+    verification(p(60_000), { verificationType: "policy_check", verificationLatencyMs: 100 })
+  ];
+}
+
 function buildExecutions({ orgId, workflowId, caseId, count, baseMs, runLabel, factory }) {
   const out = [];
   for (let i = 0; i < count; i += 1) {
@@ -145,6 +167,54 @@ function buildExecutions({ orgId, workflowId, caseId, count, baseMs, runLabel, f
     );
   }
   return out;
+}
+
+function buildGhostUseScenario({ orgId, workflowPrefix, scenarioId, runLabel, baseMs, count, expected, overrides = {} }) {
+  const workflowId = `${workflowPrefix}-${scenarioId.replaceAll("_", "-")}`;
+  const factory = overrides.positiveEvidence === true
+    ? ghostUsePositiveEvidenceExecution
+    : ghostUseWorkActivityExecution;
+  const windowCount = overrides.persistAcrossRequiredWindows === false ? 1 : GHOST_USE_REQUIRED_WINDOWS;
+  const events = [];
+
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex += 1) {
+    events.push(
+      ...buildExecutions({
+        orgId,
+        workflowId,
+        caseId: `${scenarioId}-window-${windowIndex + 1}`,
+        count,
+        baseMs,
+        runLabel,
+        factory
+      })
+    );
+  }
+
+  return {
+    id: scenarioId,
+    org_id: orgId,
+    workflow_id: workflowId,
+    description: "Ghost-use residual evaluation scenario. This fixture uses canonical metadata only and carries no message content.",
+    expected: {
+      ghost_use: expected,
+      framing: "observability_only"
+    },
+    ghost_use_manifest: {
+      source_contract: "docs/contracts/FluencyTracr_V1_Phase2_Signal_Evaluation_Contract.md#ghost-use-residual-policy",
+      inference_source: "backend/src/inference/confidence_layer.ts",
+      required_windows: GHOST_USE_REQUIRED_WINDOWS,
+      surfacing_window_days: GHOST_USE_SURFACING_WINDOW_DAYS,
+      ambiguity_dominance_threshold: GHOST_USE_AMBIGUITY_DOMINANCE_THRESHOLD,
+      ai_exposure_exists: true,
+      work_activity_observed: true,
+      positive_evidence_present: overrides.positiveEvidence === true,
+      ambiguity_dominant: overrides.ambiguityDominant === true,
+      persists_across_required_windows: overrides.persistAcrossRequiredWindows !== false,
+      acceptable_language_hint: "no observed AI evidence in window"
+    },
+    events
+  };
 }
 
 function buildFrictionThresholdExecutions({ orgId, workflowId, caseId, baseMs, runLabel, count }) {
@@ -343,6 +413,45 @@ export function buildAssuranceCases(options = {}) {
         factory: undertrustExecution
       })
     },
+    buildGhostUseScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "ghost_use_residual_fires",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      expected: "SURFACE"
+    }),
+    buildGhostUseScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "ghost_use_bypassed_by_positive_evidence",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      expected: "BYPASS",
+      overrides: { positiveEvidence: true }
+    }),
+    buildGhostUseScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "ghost_use_suppressed_by_ambiguity",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      expected: "SUPPRESS",
+      overrides: { ambiguityDominant: true }
+    }),
+    buildGhostUseScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "ghost_use_does_not_persist",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      expected: "SUPPRESS_PERSISTENCE",
+      overrides: { persistAcrossRequiredWindows: false }
+    }),
     {
       id: "duplicate_execution_ids_across_orgs",
       org_id: "lmsys-org-tenant-a",
