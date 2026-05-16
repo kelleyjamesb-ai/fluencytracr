@@ -73,6 +73,7 @@ import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
+import { auditSuppressedObservabilityRows, listSuppressionAuditLogs } from "./suppression_audit_log";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
 import {
@@ -4050,6 +4051,7 @@ app.get(
       observationWindow,
       { minDisclosedExecutions: MIN_COHORT_SIZE, now: new Date() }
     );
+    await auditSuppressedObservabilityRows(org.id, workflows);
     const payload = {
       org_id: org.id,
       observation_window: observationWindow,
@@ -4060,6 +4062,17 @@ app.get(
       return res.status(500).json({ error: "Internal response shape error" });
     }
     return res.json(validated.data);
+  }
+);
+app.get(
+  "/orgs/:orgId/suppression-audit-log",
+  rbacMiddleware(["ADMIN"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    return res.json({ logs: listSuppressionAuditLogs(org.id) });
   }
 );
 app.get(

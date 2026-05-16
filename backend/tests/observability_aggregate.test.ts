@@ -4,6 +4,8 @@ import {
   emptyPatternDistribution,
   eventBelongsToOrg
 } from "../src/observability_aggregate";
+import { auditSuppressedObservabilityRows } from "../src/suppression_audit_log";
+import { store } from "../src/store";
 
 const now = new Date("2026-04-10T12:00:00.000Z");
 
@@ -91,6 +93,30 @@ describe("buildObservabilityRollup", () => {
     );
     const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 1 });
     expect(rows).toEqual([]);
+  });
+
+  it("writes suppression audit rows for suppressed workflow disclosures", async () => {
+    store.suppressionAuditLogs.clear();
+    const events = dispositionPair(
+      "wf-audit",
+      "r-audit",
+      "2026-04-09T00:00:00.000Z",
+      "2026-04-09T00:01:00.000Z",
+      false
+    );
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 2 });
+    const decidedAt = "2026-04-10T12:30:00.000Z";
+
+    const written = await auditSuppressedObservabilityRows("org-1", rows, decidedAt);
+
+    expect(written).toHaveLength(1);
+    expect(written[0]).toMatchObject({
+      orgId: "org-1",
+      workflowId: "wf-audit",
+      suppressionReason: "insufficient_disclosed_executions",
+      decidedAt
+    });
+    expect(Array.from(store.suppressionAuditLogs.values())).toHaveLength(1);
   });
 });
 
