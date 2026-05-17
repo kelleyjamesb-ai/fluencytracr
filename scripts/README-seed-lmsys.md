@@ -16,3 +16,16 @@ The adversarial seed manifest includes four ghost-use scenarios:
 | `ghost_use_does_not_persist` | Preconditions appear for one window only. Ghost-use should not surface because the persistence gate holds. |
 
 The verifier searches live read surfaces for ghost-use surfacing and fails if any response uses judgment-coded language such as `resistance`, `underperformance`, or `lack of fluency`. Acceptable language is observability-only, for example: `no observed AI evidence in window`.
+
+## CI Coverage
+
+The assurance harness now runs continuously in GitHub Actions.
+
+| Cadence | Dataset | Checks | Expected runtime | Artifact |
+| --- | --- | --- | --- | --- |
+| Per PR and push to `main` | 2,000 synthetic LMSYS-shaped records from `tests/fixtures/lmsys-ci-sample.jsonl` | Current assurance suite, including the five behavioral patterns, boundary checks, suppression, tenant isolation, categorical disclosure, and ghost-use residual checks | About 5 minutes, target under 8 minutes | `scripts/assurance-report.md` uploaded as `assurance-report` |
+| Weekly scheduled full-scale run | Full `lmsys/lmsys-chat-1m` download using the `HF_TOKEN` GitHub secret | Same assurance suite after full-scale seed | About 45-90 minutes | `scripts/assurance-report.md` uploaded as `assurance-report-full-scale` |
+
+The current verifier emits 19 checks after the ghost-use framing guard. Older
+notes may say 18/18; treat the workflow result as authoritative because
+`scripts/verify_lmsys_assurance.mjs` exits non-zero on any failed check.
