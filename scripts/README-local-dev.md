@@ -50,6 +50,18 @@ Run the LMSYS sample seed:
 BACKEND_URL=http://localhost:4000 npm run seed:lmsys:sample
 ```
 
+For a fresh local database, use the faster local path. It skips per-conversation
+idempotency probes and prints progress while seeding:
+
+```bash
+BACKEND_URL=http://localhost:4000 \
+SAMPLE_LIMIT=1000 \
+BATCH_SIZE=25 \
+SKIP_IDEMPOTENCY=true \
+PROGRESS_EVERY=100 \
+npm run seed:lmsys:sample
+```
+
 ## Option B: Existing Supabase Postgres
 
 Use this when the full 1M event run should use an existing Supabase project
@@ -72,4 +84,8 @@ local Docker path.
 - `DATABASE_URL` and `DIRECT_URL` are both required by Prisma.
 - The LMSYS seed scripts use dev header auth locally, so the backend should be
   started with `DEV_HEADER_AUTH=true`.
+- `SKIP_IDEMPOTENCY=true` is only for fresh local databases. Do not use it when
+  you need append-safe reruns against an existing shared database.
+- `REQUEST_TIMEOUT_MS` defaults to `30000` so stuck backend requests fail with a
+  useful URL instead of hanging indefinitely.
 - For full-scale seeding, keep Postgres running and use `npm run seed:lmsys`.
