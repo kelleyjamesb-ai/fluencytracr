@@ -23,6 +23,17 @@ const EXPECTED_PATTERNS = [
   "Undertrust Avoidance"
 ];
 const PREVALENCE_BANDS = new Set(["LOW", "MODERATE", "HIGH"]);
+const GHOST_USE_CHECK_IDS = new Set([
+  "ghost_use_residual_fires",
+  "ghost_use_bypassed_by_positive_evidence",
+  "ghost_use_suppressed_by_ambiguity",
+  "ghost_use_does_not_persist"
+]);
+const GHOST_USE_JUDGMENT_TERMS = [
+  "resistance",
+  "underperformance",
+  "lack of fluency"
+];
 
 function pass(id, detail = {}) {
   return { id, ...detail, status: "PASS" };
@@ -120,6 +131,25 @@ async function getPatternsEndpoint(backendUrl, orgId) {
   });
 }
 
+async function getBoardSnapshot(backendUrl, orgId) {
+  const url = new URL(`/api/board-snapshot/${encodeURIComponent(orgId)}`, backendUrl);
+  url.searchParams.set("window", "60d");
+  return fetchJson(url, {
+    method: "GET",
+    headers: requestHeaders(orgId)
+  });
+}
+
+async function getCoverageEndpoint(backendUrl, orgId) {
+  const url = new URL("/api/coverage", backendUrl);
+  url.searchParams.set("window", "60d");
+  url.searchParams.set("scope", "org");
+  return fetchJson(url, {
+    method: "GET",
+    headers: requestHeaders(orgId)
+  });
+}
+
 function findWorkflow(observabilityBody, workflowId) {
   return (observabilityBody?.workflows ?? []).find((workflow) => workflow.workflow_id === workflowId) ?? null;
 }
@@ -169,6 +199,152 @@ function suppressionAuditMatches(logs, suppressedWorkflows) {
     const suppressionHit = serializedLogs.includes("suppression") || serializedLogs.includes("suppressed");
     return !(workflowHit && suppressionHit);
   });
+}
+
+function bodySlice(value, max = 1200) {
+  const serialized = JSON.stringify(value);
+  if (serialized.length <= max) {
+    return value;
+  }
+  return `${serialized.slice(0, max)}...`;
+}
+
+function containsAnyTerm(value, terms) {
+  const serialized = JSON.stringify(value ?? "").toLowerCase();
+  return terms.some((term) => serialized.includes(term));
+}
+
+function isIdentifierPath(path) {
+  return /\.(workflow_id|run_id|execution_id|id)$/.test(path);
+}
+
+function collectGhostUseSurfacing(value, workflowId, path = "$", hits = []) {
+  if (value === null || value === undefined) {
+    return hits;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    const mentionsGhostUse =
+      normalized.includes("ghost_use") ||
+      normalized.includes("ghost-use") ||
+      normalized.includes("ghost use") ||
+      normalized.includes("no observed ai evidence") ||
+      normalized.includes("no positive ai evidence");
+    if (mentionsGhostUse && !isIdentifierPath(path)) {
+      hits.push({ path, value });
+    }
+    return hits;
+  }
+
+  if (typeof value === "boolean" && path.toLowerCase().endsWith(".ghost_use_evaluated") && value === true) {
+    hits.push({ path, value });
+    return hits;
+  }
+
+  if (typeof value !== "object") {
+    return hits;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => collectGhostUseSurfacing(entry, workflowId, `${path}[${index}]`, hits));
+    return hits;
+  }
+
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === "ghost_use_evaluated" && entry === true) {
+      hits.push({ path: `${path}.${key}`, value: entry });
+      continue;
+    }
+    collectGhostUseSurfacing(entry, workflowId, `${path}.${key}`, hits);
+  }
+  return hits;
+}
+
+function collectExplicitGateEvidence(value, workflowId, terms, path = "$", hits = []) {
+  if (value === null || value === undefined) {
+    return hits;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    const mentionsTerm = terms.some((term) => normalized.includes(term));
+    if (mentionsTerm && !isIdentifierPath(path)) {
+      hits.push({ path, value });
+    }
+    return hits;
+  }
+
+  if (typeof value === "boolean") {
+    const normalizedPath = path.toLowerCase();
+    const mentionsTerm = terms.some((term) => normalizedPath.includes(term.replaceAll(" ", "_")));
+    if (mentionsTerm) {
+      hits.push({ path, value });
+    }
+    return hits;
+  }
+
+  if (typeof value !== "object") {
+    return hits;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => collectExplicitGateEvidence(entry, workflowId, terms, `${path}[${index}]`, hits));
+    return hits;
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    const normalizedKey = key.toLowerCase();
+    if (terms.some((term) => normalizedKey.includes(term.replaceAll(" ", "_")))) {
+      hits.push({ path: `${path}.${key}`, value: entry });
+    }
+    collectExplicitGateEvidence(entry, workflowId, terms, `${path}.${key}`, hits);
+  }
+  return hits;
+}
+
+function summarizeReadAttempt(name, res, workflowId) {
+  let body = res.body;
+  if (name === "observability") {
+    body = findWorkflow(res.body, workflowId) ?? {
+      org_id: res.body?.org_id,
+      workflow_count: res.body?.workflows?.length ?? 0
+    };
+  } else if (name === "board_snapshot") {
+    body = (res.body?.workflows ?? []).find((workflow) => workflow.workflow_id === workflowId) ?? {
+      org_id: res.body?.org_id,
+      header: res.body?.header,
+      workflow_count: res.body?.workflows?.length ?? 0
+    };
+  }
+  return {
+    endpoint: name,
+    status: res.response.status,
+    body: bodySlice(body)
+  };
+}
+
+async function readGhostUseSurfaces(backendUrl, orgId, workflowId) {
+  const attempts = [];
+  const observability = await getObservability(backendUrl, orgId);
+  attempts.push({ name: "observability", res: observability });
+  const patterns = await getPatternsEndpoint(backendUrl, orgId);
+  attempts.push({ name: "patterns", res: patterns });
+  const board = await getBoardSnapshot(backendUrl, orgId);
+  attempts.push({ name: "board_snapshot", res: board });
+  const coverage = await getCoverageEndpoint(backendUrl, orgId);
+  attempts.push({ name: "coverage", res: coverage });
+
+  const bodies = attempts.map((attempt) => attempt.res.body);
+  return {
+    attempts,
+    ghost_hits: bodies.flatMap((body, index) =>
+      collectGhostUseSurfacing(body, workflowId).map((hit) => ({
+        endpoint: attempts[index].name,
+        path: hit.path,
+        value: hit.value
+      }))
+    ),
+    summaries: attempts.map((attempt) => summarizeReadAttempt(attempt.name, attempt.res, workflowId))
+  };
 }
 
 function markdownReport({ backendUrl, runLabel, checks, verdictLine }) {
@@ -312,6 +488,113 @@ async function main() {
     prevalenceViolations.length === 0
       ? pass("prevalence_values_are_categorical", { allowed_values: [...PREVALENCE_BANDS] })
       : fail("prevalence_values_are_categorical", { violations: prevalenceViolations.slice(0, 10) })
+  );
+
+  const ghostUseCases = cases.filter((entry) => GHOST_USE_CHECK_IDS.has(entry.id));
+  const allGhostHits = [];
+  for (const entry of ghostUseCases) {
+    const surfaces = await readGhostUseSurfaces(backendUrl, entry.org_id, entry.workflow_id);
+    allGhostHits.push(...surfaces.ghost_hits);
+    const hasJudgmentLanguage = containsAnyTerm(surfaces.ghost_hits, GHOST_USE_JUDGMENT_TERMS);
+
+    if (entry.id === "ghost_use_residual_fires") {
+      checks.push(
+        surfaces.ghost_hits.length > 0 && !hasJudgmentLanguage
+          ? pass(entry.id, { workflow_id: entry.workflow_id, ghost_use_surfacings: surfaces.ghost_hits.length })
+          : fail(entry.id, {
+              workflow_id: entry.workflow_id,
+              expected: "ghost-use residual surfaces as observability-only pattern",
+              ghost_use_surfacings: surfaces.ghost_hits.length,
+              judgment_language_detected: hasJudgmentLanguage,
+              read_attempts: surfaces.summaries
+            })
+      );
+      continue;
+    }
+
+    if (entry.id === "ghost_use_bypassed_by_positive_evidence") {
+      const bypassEvidence = surfaces.attempts.flatMap((attempt) =>
+        collectExplicitGateEvidence(attempt.res.body, entry.workflow_id, [
+          "positive_evidence_present",
+          "positive evidence",
+          "hard-bypass",
+          "hard bypass"
+        ])
+      );
+      checks.push(
+        surfaces.ghost_hits.length === 0 && bypassEvidence.length > 0
+          ? pass(entry.id, { workflow_id: entry.workflow_id, bypass_evidence: bypassEvidence.length })
+          : fail(entry.id, {
+              workflow_id: entry.workflow_id,
+              expected: "ghost-use not surfaced and positive-evidence hard-bypass is observable",
+              ghost_use_surfacings: surfaces.ghost_hits.length,
+              bypass_evidence: bypassEvidence.length,
+              read_attempts: surfaces.summaries
+            })
+      );
+      continue;
+    }
+
+    if (entry.id === "ghost_use_suppressed_by_ambiguity") {
+      const ambiguityEvidence = surfaces.attempts.flatMap((attempt) =>
+        collectExplicitGateEvidence(attempt.res.body, entry.workflow_id, [
+          "ambiguity",
+          "high_ambiguity",
+          "supp_ambiguity_present",
+          "suppressed by ambiguity"
+        ])
+      );
+      checks.push(
+        surfaces.ghost_hits.length === 0 && ambiguityEvidence.length > 0
+          ? pass(entry.id, { workflow_id: entry.workflow_id, ambiguity_evidence: ambiguityEvidence.length })
+          : fail(entry.id, {
+              workflow_id: entry.workflow_id,
+              expected: "ghost-use evaluation suppressed by ambiguity-dominant window",
+              ghost_use_surfacings: surfaces.ghost_hits.length,
+              ambiguity_evidence: ambiguityEvidence.length,
+              read_attempts: surfaces.summaries
+            })
+      );
+      continue;
+    }
+
+    const persistenceEvidence = surfaces.attempts.flatMap((attempt) =>
+      collectExplicitGateEvidence(attempt.res.body, entry.workflow_id, [
+        "persist",
+        "required windows",
+        "no_convergence",
+        "not_adjacent_windows",
+        "adjacent"
+      ])
+    );
+    checks.push(
+      surfaces.ghost_hits.length === 0 && persistenceEvidence.length > 0
+        ? pass(entry.id, { workflow_id: entry.workflow_id, persistence_evidence: persistenceEvidence.length })
+        : fail(entry.id, {
+            workflow_id: entry.workflow_id,
+            expected: "ghost-use not surfaced because persistence gate is not met",
+            ghost_use_surfacings: surfaces.ghost_hits.length,
+            persistence_evidence: persistenceEvidence.length,
+            read_attempts: surfaces.summaries
+          })
+    );
+  }
+
+  const judgmentHits = allGhostHits.filter((hit) => containsAnyTerm(hit.value, GHOST_USE_JUDGMENT_TERMS));
+  checks.push(
+    judgmentHits.length === 0
+      ? pass("ghost_use_framed_as_observability_only", {
+          ghost_use_surfacings_inspected: allGhostHits.length,
+          forbidden_terms: GHOST_USE_JUDGMENT_TERMS
+        })
+      : fail("ghost_use_framed_as_observability_only", {
+          forbidden_terms: GHOST_USE_JUDGMENT_TERMS,
+          violations: judgmentHits.slice(0, 10).map((hit) => ({
+            endpoint: hit.endpoint,
+            path: hit.path,
+            value: bodySlice(hit.value, 400)
+          }))
+        })
   );
 
   const patternsEndpoint = await getPatternsEndpoint(backendUrl, assuranceOrgId);

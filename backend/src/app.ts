@@ -5029,7 +5029,7 @@ app.get("/health", async (_req, res) => {
     incrementOpsCounter("health_ok");
     return res.json({
       status: "ok",
-      db: "ok",
+      db: "postgres",
       db_tables: readiness.tableCount,
       fail_closed_total: failClosedMetrics.total
     });

@@ -14,6 +14,8 @@ export const DEFAULT_DATA_DIR = "./data/lmsys";
 export const DEFAULT_BATCH_SIZE = 500;
 export const DEFAULT_MAX_RETRIES = 4;
 export const DEFAULT_ORG_ID = "lmsys-org-assurance";
+export const DEFAULT_PROGRESS_EVERY = 250;
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 export const SCHEMA_VERSION = "0.1";
 
 function env(name) {
@@ -30,6 +32,24 @@ function parsePositiveInt(value, fallback, label) {
     throw new Error(`${label} must be a positive integer`);
   }
   return parsed;
+}
+
+function parseNonNegativeInt(value, fallback, label) {
+  if (value === undefined || value === "") {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${label} must be a non-negative integer`);
+  }
+  return parsed;
+}
+
+function parseBoolean(value, fallback = false) {
+  if (value === undefined || value === "") {
+    return fallback;
+  }
+  return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
 }
 
 export function backendUrlFromEnv() {
@@ -101,7 +121,23 @@ async function* readJsonLines(file) {
 }
 
 export async function fetchJson(url, init = {}) {
-  const response = await fetch(url, init);
+  const {
+    timeoutMs = parsePositiveInt(process.env.REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS, "REQUEST_TIMEOUT_MS"),
+    ...fetchInit
+  } = init;
+  const method = fetchInit.method ?? "GET";
+  const signal =
+    fetchInit.signal ??
+    (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+      ? AbortSignal.timeout(timeoutMs)
+      : undefined);
+  let response;
+  try {
+    response = await fetch(url, { ...fetchInit, signal });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`fetch failed: ${method} ${url.toString()} (${message})`);
+  }
   const text = await response.text();
   let body = null;
   if (text.length > 0) {
@@ -243,6 +279,9 @@ export async function loadLmsysDataset(options = {}) {
   const dataDir = options.dataDir ?? env("LMSYS_DATA_DIR") ?? DEFAULT_DATA_DIR;
   const batchSize = options.batchSize ?? parsePositiveInt(process.env.BATCH_SIZE, DEFAULT_BATCH_SIZE, "BATCH_SIZE");
   const sampleLimit = options.sampleLimit ?? null;
+  const skipIdempotency = options.skipIdempotency ?? parseBoolean(process.env.SKIP_IDEMPOTENCY, false);
+  const progressEvery =
+    options.progressEvery ?? parseNonNegativeInt(process.env.PROGRESS_EVERY, DEFAULT_PROGRESS_EVERY, "PROGRESS_EVERY");
   const files = collectJsonlFiles(dataDir);
   if (files.length === 0) {
     throw new Error(`No JSONL files found in ${dataDir}`);
@@ -255,9 +294,31 @@ export async function loadLmsysDataset(options = {}) {
     conversations_skipped_idempotent: 0,
     events_generated: 0,
     events_posted: 0,
-    batches_posted: 0
+    batches_posted: 0,
+    skip_idempotency: skipIdempotency
   };
   const pendingByOrg = new Map();
+  let lastProgressConversation = 0;
+
+  const logProgress = (force = false) => {
+    if (progressEvery === 0) {
+      return;
+    }
+    if (!force && stats.conversations_read - lastProgressConversation < progressEvery) {
+      return;
+    }
+    lastProgressConversation = stats.conversations_read;
+    console.error(
+      JSON.stringify({
+        type: "lmsys_seed_progress",
+        conversations_read: stats.conversations_read,
+        conversations_skipped_idempotent: stats.conversations_skipped_idempotent,
+        events_generated: stats.events_generated,
+        events_posted: stats.events_posted,
+        batches_posted: stats.batches_posted
+      })
+    );
+  };
 
   const flushOrg = async (orgId) => {
     const batch = pendingByOrg.get(orgId) ?? [];
@@ -268,6 +329,7 @@ export async function loadLmsysDataset(options = {}) {
     stats.events_posted += batch.length;
     stats.batches_posted += 1;
     pendingByOrg.set(orgId, []);
+    logProgress(true);
   };
 
   const flushAll = async () => {
@@ -284,7 +346,8 @@ export async function loadLmsysDataset(options = {}) {
       const first = events[0];
       const orgId = orgIdFromEvent(first);
       const executionId = resolvedBackendExecutionId(first);
-      if (executionId && (await executionAlreadyLoaded({ backendUrl, orgId, executionId }))) {
+      logProgress();
+      if (!skipIdempotency && executionId && (await executionAlreadyLoaded({ backendUrl, orgId, executionId }))) {
         stats.conversations_skipped_idempotent += 1;
         continue;
       }

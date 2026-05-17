@@ -96,11 +96,30 @@ assert.deepEqual(ids, [
   "failure_success_recovery_maturity",
   "fast_completion_no_verification",
   "friction_loop",
+  "ghost_use_bypassed_by_positive_evidence",
+  "ghost_use_does_not_persist",
+  "ghost_use_residual_fires",
+  "ghost_use_suppressed_by_ambiguity",
   "pii_boundary_rejection",
   "sub_threshold_workflow",
   "undertrust_avoidance"
 ]);
 assert.ok(cases.every((entry) => Array.isArray(entry.events) || Array.isArray(entry.invalid_payloads)));
+const ghostUseCases = cases.filter((entry) => entry.expected?.ghost_use);
+assert.deepEqual(ghostUseCases.map((entry) => entry.id).sort(), [
+  "ghost_use_bypassed_by_positive_evidence",
+  "ghost_use_does_not_persist",
+  "ghost_use_residual_fires",
+  "ghost_use_suppressed_by_ambiguity"
+]);
+for (const entry of ghostUseCases) {
+  assert.equal(typeof entry.workflow_id, "string");
+  assert.ok(entry.workflow_id.includes(entry.id.replaceAll("_", "-")));
+  assert.equal(entry.expected.framing, "observability_only");
+  assert.equal(entry.ghost_use_manifest.required_windows, 2);
+  assert.equal(entry.ghost_use_manifest.ambiguity_dominance_threshold, 0.2);
+  assert.ok(["SURFACE", "BYPASS", "SUPPRESS", "SUPPRESS_PERSISTENCE"].includes(entry.expected.ghost_use));
+}
 
 const assuranceEvents = buildAssuranceEvents({ minCohortSize: 5, iterationHighThreshold: 2 });
 assert.ok(assuranceEvents.length > 0);
