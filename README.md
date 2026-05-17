@@ -1,4 +1,6 @@
 # LearnAIR_Engable_Tool
+![Assurance Harness](https://github.com/kelleyjamesb-ai/fluencytracr/actions/workflows/assurance-harness.yml/badge.svg)
+
 This is a way to capture organizational signals on AI Fluency using passive data.
 
 ## AI assistants — start every session here

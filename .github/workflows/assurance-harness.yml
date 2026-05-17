@@ -1,0 +1,147 @@
+name: Assurance Harness
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DATABASE_URL: postgresql://fluency:fluency@localhost:5432/fluency?schema=public
+  DIRECT_URL: postgresql://fluency:fluency@localhost:5432/fluency?schema=public
+  JWT_SECRET: dev-secret
+  DEV_HEADER_AUTH: "true"
+  BACKEND_URL: http://localhost:4000
+  BATCH_SIZE: "25"
+  SAMPLE_LIMIT: "10000"
+  SKIP_IDEMPOTENCY: "true"
+  PROGRESS_EVERY: "500"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  assurance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fluency
+          POSTGRES_PASSWORD: fluency
+          POSTGRES_DB: fluency
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fluency -d fluency"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build --workspace shared
+
+      - name: Bootstrap fresh CI database for legacy migrations
+        run: |
+          npx prisma db execute --schema backend/prisma/schema.prisma --stdin <<'SQL'
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+          CREATE TABLE IF NOT EXISTS "Organization" (
+            "id" TEXT NOT NULL,
+            "name" TEXT NOT NULL,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "Organization_pkey" PRIMARY KEY ("id")
+          );
+
+          CREATE TABLE IF NOT EXISTS "AuditEvent" (
+            "id" TEXT NOT NULL,
+            "orgId" TEXT NOT NULL,
+            "seq" INTEGER NOT NULL DEFAULT 0,
+            "actorSub" TEXT,
+            "actorRole" TEXT,
+            "eventType" TEXT NOT NULL,
+            "metadata" JSONB NOT NULL,
+            "prevHash" TEXT,
+            "hash" TEXT,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "AuditEvent_pkey" PRIMARY KEY ("id")
+          );
+          SQL
+
+      - name: Run Prisma migrations
+        run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
+
+      - name: Align non-migrated legacy tables
+        run: npx prisma db push --schema backend/prisma/schema.prisma --skip-generate
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema backend/prisma/schema.prisma
+
+      - name: Start backend
+        run: |
+          npm run dev --workspace backend > backend.log 2>&1 &
+          echo $! > backend.pid
+
+      - name: Wait for Postgres-backed health
+        run: |
+          node - <<'NODE'
+          const deadline = Date.now() + 120_000;
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          while (Date.now() < deadline) {
+            try {
+              const response = await fetch("http://localhost:4000/health");
+              const body = await response.json();
+              console.log(JSON.stringify(body));
+              if (response.ok && body.status === "ok" && body.db === "postgres") {
+                process.exit(0);
+              }
+            } catch (error) {
+              console.log(`Waiting for backend: ${error.message}`);
+            }
+            await sleep(2000);
+          }
+          console.error("Backend did not report db: postgres before timeout");
+          process.exit(1);
+          NODE
+
+      - name: Run seed self-test
+        run: npm run test:seed
+
+      - name: Install synthetic LMSYS CI fixture
+        run: |
+          mkdir -p data/lmsys
+          cp tests/fixtures/lmsys-ci-sample.jsonl data/lmsys/conversations.jsonl
+
+      - name: Seed LMSYS sample
+        run: npm run seed:lmsys:sample
+
+      - name: Verify assurance properties
+        run: npm run verify:assurance
+
+      - name: Upload assurance report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: assurance-report
+          path: scripts/assurance-report.md
+          if-no-files-found: error
+
+      - name: Upload backend log on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: assurance-backend-log
+          path: backend.log
+          if-no-files-found: warn
