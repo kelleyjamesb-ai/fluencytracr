@@ -53,38 +53,19 @@ jobs:
       - name: Build shared package
         run: npm run build --workspace shared
 
-      - name: Bootstrap fresh CI database for legacy migrations
+      - name: Create current schema in fresh CI database
+        run: npx prisma db push --schema backend/prisma/schema.prisma --skip-generate
+
+      - name: Baseline existing migrations for CI schema
         run: |
-          npx prisma db execute --schema backend/prisma/schema.prisma --stdin <<'SQL'
-          CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-          CREATE TABLE IF NOT EXISTS "Organization" (
-            "id" TEXT NOT NULL,
-            "name" TEXT NOT NULL,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT "Organization_pkey" PRIMARY KEY ("id")
-          );
-
-          CREATE TABLE IF NOT EXISTS "AuditEvent" (
-            "id" TEXT NOT NULL,
-            "orgId" TEXT NOT NULL,
-            "seq" INTEGER NOT NULL DEFAULT 0,
-            "actorSub" TEXT,
-            "actorRole" TEXT,
-            "eventType" TEXT NOT NULL,
-            "metadata" JSONB NOT NULL,
-            "prevHash" TEXT,
-            "hash" TEXT,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT "AuditEvent_pkey" PRIMARY KEY ("id")
-          );
-          SQL
+          for migration in backend/prisma/migrations/*; do
+            if [ -d "$migration" ]; then
+              npx prisma migrate resolve --schema backend/prisma/schema.prisma --applied "$(basename "$migration")"
+            fi
+          done
 
       - name: Run Prisma migrations
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
-
-      - name: Align non-migrated legacy tables
-        run: npx prisma db push --schema backend/prisma/schema.prisma --skip-generate
 
       - name: Generate Prisma client
         run: npx prisma generate --schema backend/prisma/schema.prisma
