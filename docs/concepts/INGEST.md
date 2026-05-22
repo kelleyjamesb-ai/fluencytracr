@@ -78,7 +78,7 @@ Calibration baselines are shared governed artifacts. They help interpret aggrega
 
 ## 7. Forward Reference to Calibration
 
-Calibration baselines are governed separately. See [CALIBRATION.md](./CALIBRATION.md).
+Calibration baselines are governed separately. See [CALIBRATION.md](./CALIBRATION.md) for the V3 distinction between immutable versioned reference baselines and prohibited tunable thresholds.
 
 The ingest architecture depends on calibration, but it does not define calibration policy. V3 ingest should carry a calibration reference with aggregate records so downstream verdicts can explain what baseline was used. Swapping or updating calibration references must remain a deliberate governance-reviewed operation, not an admin override of suppression behavior.
 
