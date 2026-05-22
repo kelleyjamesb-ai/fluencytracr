@@ -52,6 +52,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day surface diagnostic showing V1 captured roughly 3.3M of an addressable ~28M first-class AI-use events
 - Used in: future V2.1 surface taxonomy concept document
 
+### Agent sub-surface taxonomy
+- Source: James Kelley, auto-vs-workflow agent split insight
+- Empirical grounding: scio-prod 60-day agent diagnostic showing autonomous agents represented 42% of AGENT volume
+- Used in: future V2.3 AGENT_TYPES concept document
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative

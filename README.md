@@ -93,6 +93,7 @@ is not the lead positioning for this repository.
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
+- Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)
 - Velocity Index contract: [docs/contracts/velocity-index.md](docs/contracts/velocity-index.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)
