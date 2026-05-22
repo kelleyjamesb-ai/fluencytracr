@@ -3,6 +3,63 @@ info:
   title: FluencyTracr API
   version: 1.0.0
 paths:
+  /api/v1/outcome-evidence:
+    post:
+      summary: Store aggregate outcome evidence
+      description: >
+        Stores one customer-attested aggregate KPI observation for replay beside
+        workflow verdicts. This endpoint does not compute correlation,
+        causation, attribution, dollarization, or claim-readiness upgrades.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutcomeEvidenceCreate"
+      responses:
+        "201":
+          description: Outcome evidence accepted for storage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutcomeEvidenceReceipt"
+        "400":
+          description: Invalid payload
+        "422":
+          description: Aggregate cohort is below the minimum volume gate
+    get:
+      summary: Replay outcome evidence beside a workflow verdict
+      description: >
+        Returns the workflow verdict unchanged alongside matching stored outcome
+        evidence. Consumers may perform their own correlation outside
+        FluencyTracr.
+      parameters:
+        - name: workflow_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: period_start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: period_end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Workflow verdict plus matching outcome evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutcomeEvidenceReplayResponse"
+        "400":
+          description: Invalid query
   /api/v1/quality-multiplier:
     get:
       summary: Get the workflow-level quality multiplier
@@ -39,6 +96,144 @@ paths:
                 $ref: "#/components/schemas/QualityMultiplierResponse"
 components:
   schemas:
+    OutcomeEvidenceCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - outcome_metric
+        - outcome_unit
+        - period_start
+        - period_end
+        - aggregate_value
+        - cohort_size
+        - source_system
+        - jbtd_id
+        - persona_id
+      properties:
+        workflow_id:
+          type: string
+        outcome_metric:
+          type: string
+        outcome_unit:
+          type: string
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        aggregate_value:
+          type: number
+        cohort_size:
+          type: integer
+          minimum: 1
+        source_system:
+          type: string
+        jbtd_id:
+          anyOf:
+            - type: string
+              pattern: "^[a-z0-9_-]{1,64}$"
+            - type: "null"
+        persona_id:
+          anyOf:
+            - type: string
+              pattern: "^[a-z0-9_-]{1,64}$"
+            - type: "null"
+        aggregate_kind:
+          anyOf:
+            - type: string
+            - type: "null"
+        source_attestation:
+          type: object
+    OutcomeEvidenceReceipt:
+      type: object
+      additionalProperties: false
+      required:
+        - evidence_id
+        - accepted_at
+        - workflow_id
+      properties:
+        evidence_id:
+          type: string
+          format: uuid
+        accepted_at:
+          type: string
+          format: date-time
+        workflow_id:
+          type: string
+    OutcomeEvidenceReplayResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - verdict
+        - suppression_reason
+        - value_type
+        - evidence_grade
+        - reliability_factor
+        - outcome_evidence
+      properties:
+        workflow_id:
+          type: string
+        verdict:
+          type: string
+          enum: [SURFACE, SUPPRESS]
+        suppression_reason:
+          anyOf:
+            - type: string
+              enum: [INSUFFICIENT_TIME, INSUFFICIENT_VOLUME, NO_CONVERGENCE, BASELINE_UNSTABLE, HIGH_AMBIGUITY]
+            - type: "null"
+        value_type:
+          type: string
+          enum: [ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED]
+        evidence_grade:
+          type: string
+          enum: [OBJECTIVE, CALIBRATED, QUALITATIVE]
+        reliability_factor:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        outcome_evidence:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - evidence_id
+              - outcome_metric
+              - outcome_unit
+              - period_start
+              - period_end
+              - aggregate_value
+              - cohort_size
+              - source_system
+              - ingested_at
+            properties:
+              evidence_id:
+                type: string
+                format: uuid
+              outcome_metric:
+                type: string
+              outcome_unit:
+                type: string
+              period_start:
+                type: string
+                format: date-time
+              period_end:
+                type: string
+                format: date-time
+              aggregate_value:
+                type: number
+              cohort_size:
+                type: integer
+              source_system:
+                type: string
+              ingested_at:
+                type: string
+                format: date-time
     QualityMultiplierResponse:
       type: object
       additionalProperties: false

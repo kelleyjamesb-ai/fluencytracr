@@ -223,3 +223,9 @@
 - Completed: Added `NSETR_2026_05`, a review-only Nielsen Source Evidence Trial that maps sanitized Nielsen deck and Time-Saves packet references into document-derived claim candidates and a generated Aggregate Evidence Import package. The sample maps 6 candidates: 2 accepted for review and 4 withheld behind survey export, external outcome export, financial approval, and customer-level telemetry gaps.
 - Verified: `npm run build --workspace shared`; `npm run test:ci --workspace backend -- nielsen_source_evidence_trial.test.ts aggregate_evidence_import.test.ts` (10 tests); `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`; generated review summary via shared helper. OpenSpec strict validation was unavailable because `@fission-ai/openspec` is not cached and network fetches are blocked.
 - Next focus: Decide whether Stage 3 should be a reviewer upload/workspace for sanitized aggregate packages or a source-template definition slice for the specific exports needed to upgrade withheld Nielsen candidates.
+
+## 2026-05-22 (UTC) — Codex (Outcome Evidence ingestion contract)
+
+- Completed: Added storage-only Outcome Evidence ingestion/replay endpoints, Prisma persistence, aggregate-only gates, OpenAPI/schema/OpenSpec/docs, attribution and README updates, and LMSYS assurance scenarios for SURFACE + outcomes, SUPPRESS + outcomes, and no outcomes.
+- Verified: backend build; full backend Jest suite (111 suites / 669 tests); LMSYS harness self-test; dogfood unittest; strict OpenSpec validation; governance gates; git diff --check.
+- Next focus: Keep correlation, causation, attribution, dollarization, source validation, and browsing UI outside FluencyTracr; consumers own those analyses.

@@ -455,6 +455,25 @@ function buildReliabilityFactorCase({
   };
 }
 
+function outcomeEvidencePayload({ workflowId, baseMs, metric, cohortSize = 12, aggregateKind = null }) {
+  const payload = {
+    workflow_id: workflowId,
+    outcome_metric: metric,
+    outcome_unit: "days",
+    period_start: iso(baseMs, -14 * 24 * 60 * 60 * 1000),
+    period_end: iso(baseMs, 0),
+    aggregate_value: 4.2,
+    cohort_size: cohortSize,
+    source_system: "Jira",
+    jbtd_id: null,
+    persona_id: null
+  };
+  if (aggregateKind) {
+    payload.aggregate_kind = aggregateKind;
+  }
+  return payload;
+}
+
 function validPiiProbeBase({ orgId, workflowId, executionRunId, baseMs }) {
   return {
     events: [
@@ -869,6 +888,69 @@ export function buildAssuranceCases(options = {}) {
       ],
       notes: "Sparse telemetry lacks enough behavioral classes to compute Reliability Factor, so expected verdict output keeps Reliability Factor fields null."
     }),
+    {
+      id: "outcome_evidence_surface_with_outcomes",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-outcome-surface`,
+      expected: { outcome_verdict: "SURFACE", outcome_count: 1 },
+      outcome_evidence_manifest: true,
+      outcome_evidence: [
+        outcomeEvidencePayload({
+          workflowId: `${workflowPrefix}-outcome-surface`,
+          baseMs,
+          metric: "jira_cycle_time"
+        })
+      ],
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-outcome-surface`,
+        caseId: "outcome-surface",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: calibratedExecution
+      })
+    },
+    {
+      id: "outcome_evidence_suppress_with_outcomes",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-outcome-suppress`,
+      expected: { outcome_verdict: "SUPPRESS", outcome_count: 1 },
+      outcome_evidence_manifest: true,
+      outcome_evidence: [
+        outcomeEvidencePayload({
+          workflowId: `${workflowPrefix}-outcome-suppress`,
+          baseMs,
+          metric: "veeva_approval_time"
+        })
+      ],
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-outcome-suppress`,
+        caseId: "outcome-suppress",
+        count: Math.max(1, minCohortSize - 1),
+        baseMs,
+        runLabel,
+        factory: blindExecution
+      })
+    },
+    {
+      id: "outcome_evidence_surface_no_outcomes",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-outcome-none`,
+      expected: { outcome_verdict: "SURFACE", outcome_count: 0 },
+      outcome_evidence_manifest: true,
+      outcome_evidence: [],
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-outcome-none`,
+        caseId: "outcome-none",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: calibratedExecution
+      })
+    },
     {
       id: "duplicate_execution_ids_across_orgs",
       org_id: "lmsys-org-tenant-a",

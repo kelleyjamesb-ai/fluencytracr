@@ -110,6 +110,9 @@ assert.deepEqual(ids, [
   "ghost_use_does_not_persist",
   "ghost_use_residual_fires",
   "ghost_use_suppressed_by_ambiguity",
+  "outcome_evidence_suppress_with_outcomes",
+  "outcome_evidence_surface_no_outcomes",
+  "outcome_evidence_surface_with_outcomes",
   "pii_boundary_rejection",
   "reliability_factor_high_reliability_workflow",
   "reliability_factor_low_reliability_workflow",
@@ -118,6 +121,22 @@ assert.deepEqual(ids, [
   "undertrust_avoidance"
 ]);
 assert.ok(cases.every((entry) => Array.isArray(entry.events) || Array.isArray(entry.invalid_payloads)));
+const outcomeEvidenceCases = cases.filter((entry) => entry.outcome_evidence_manifest);
+assert.deepEqual(outcomeEvidenceCases.map((entry) => entry.id).sort(), [
+  "outcome_evidence_suppress_with_outcomes",
+  "outcome_evidence_surface_no_outcomes",
+  "outcome_evidence_surface_with_outcomes"
+]);
+for (const entry of outcomeEvidenceCases) {
+  assert.ok(["SURFACE", "SUPPRESS"].includes(entry.expected.outcome_verdict));
+  assert.equal(typeof entry.expected.outcome_count, "number");
+  for (const payload of entry.outcome_evidence ?? []) {
+    assert.equal(payload.workflow_id, entry.workflow_id);
+    assert.equal(payload.jbtd_id, null);
+    assert.equal(payload.persona_id, null);
+    assert.ok(payload.cohort_size >= 5);
+  }
+}
 const ghostUseCases = cases.filter((entry) => entry.expected?.ghost_use);
 assert.deepEqual(ghostUseCases.map((entry) => entry.id).sort(), [
   "ghost_use_bypassed_by_positive_evidence",

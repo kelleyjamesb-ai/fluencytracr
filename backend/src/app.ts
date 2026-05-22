@@ -17,6 +17,9 @@ import {
   FluencyEventIngestSchema,
   FluencyEventSchema,
   FluencyJoinKeySchema,
+  OutcomeEvidenceCreateSchema,
+  OutcomeEvidenceQuerySchema,
+  deriveAivmVerdictFields,
   UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
@@ -91,6 +94,10 @@ import {
   loadFluencyEventRecords,
   persistFluencyEventRecord
 } from "./services/fluency-canonical-persistence";
+import {
+  listOutcomeEvidence,
+  persistOutcomeEvidence
+} from "./repositories/outcome-evidence.repository";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -4104,6 +4111,163 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     })
   );
 });
+
+const toOutcomeEvidenceSuppressionReason = (reasons: string[] | undefined) => {
+  if (!reasons || reasons.length === 0) {
+    return null;
+  }
+  if (reasons.includes("insufficient_disclosed_executions")) {
+    return "INSUFFICIENT_VOLUME";
+  }
+  return "HIGH_AMBIGUITY";
+};
+
+const outcomeEvidenceAivmFields = (
+  events: FluencyEventRecord[],
+  workflowId: string,
+  jbtdId: string | null,
+  personaId: string | null,
+  periodStart: string,
+  periodEnd: string
+) => {
+  const startMs = Date.parse(periodStart);
+  const endMs = Date.parse(periodEnd);
+  const canonical_events = events
+    .filter((event) => event.workflow_id === workflowId)
+    .filter((event) => (event.jbtd_id ?? null) === jbtdId)
+    .filter((event) => (event.persona_id ?? null) === personaId)
+    .filter((event) => {
+      const at = Date.parse(event.timestamp);
+      return at >= startMs && at <= endMs;
+    })
+    .map((event) => {
+      switch (event.event_type) {
+        case "ai_output_disposition":
+          return {
+            event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
+            verification_present: event.verification_present
+          };
+        case "ai_recovery_loop":
+          return { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true };
+        case "ai_abandonment":
+          return { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: true };
+        default:
+          return { event_name: "FT_V1_DISPOSITION_OBSERVED" };
+      }
+    });
+  return deriveAivmVerdictFields({
+    canonical_events,
+    cohort_size: new Set(
+      events
+        .filter((event) => event.workflow_id === workflowId)
+        .filter((event) => (event.jbtd_id ?? null) === jbtdId)
+        .filter((event) => (event.persona_id ?? null) === personaId)
+        .map((event) => event.execution_id)
+    ).size,
+    window_length_days: Math.floor((endMs - startMs) / (24 * 60 * 60 * 1000))
+  });
+};
+
+app.post(
+  "/api/v1/outcome-evidence",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    // TODO(auth): bind outcome evidence writes to a service identity for Paul Li's pipeline / AIOM ingestion.
+    const parsed = OutcomeEvidenceCreateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const flattened = parsed.error.flatten();
+      const insufficientVolume = parsed.error.issues.some((issue) => issue.message === "INSUFFICIENT_VOLUME");
+      return res.status(insufficientVolume ? 422 : 400).json({
+        error: "Invalid outcome evidence payload",
+        reason: insufficientVolume ? "INSUFFICIENT_VOLUME" : "INVALID_PAYLOAD",
+        details: flattened
+      });
+    }
+    if (!req.authOrgId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const evidenceId = crypto.randomUUID();
+    const acceptedAt = new Date().toISOString();
+    await persistOutcomeEvidence(req.authOrgId, parsed.data, evidenceId, acceptedAt);
+
+    return res.status(201).json({
+      evidence_id: evidenceId,
+      accepted_at: acceptedAt,
+      workflow_id: parsed.data.workflow_id
+    });
+  }
+);
+
+app.get(
+  "/api/v1/outcome-evidence",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    // TODO(auth): replace ambient org header auth with a scoped read token for value-realization consumers.
+    const parsed = OutcomeEvidenceQuerySchema.safeParse({
+      workflow_id: req.query.workflow_id,
+      period_start: req.query.period_start,
+      period_end: req.query.period_end,
+      jbtd_id: req.query.jbtd_id,
+      persona_id: req.query.persona_id
+    });
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid outcome evidence query",
+        reason: "INVALID_QUERY",
+        details: parsed.error.flatten()
+      });
+    }
+
+    const orgId = req.authOrgId;
+    if (!orgId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: orgId });
+    const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, orgId));
+    const periodEnd = new Date(parsed.data.period_end);
+    const rows = orgId
+      ? buildObservabilityRollup(scopedEvents, orgId, "90d", { now: periodEnd })
+      : [];
+    const row = rows.find(
+      (entry) =>
+        entry.workflow_id === parsed.data.workflow_id &&
+        (entry.jbtd_id ?? null) === (parsed.data.jbtd_id ?? null) &&
+        (entry.persona_id ?? null) === (parsed.data.persona_id ?? null)
+    );
+    const verdict = row?.disclosure === "ALLOWED" ? "SURFACE" : "SUPPRESS";
+    const outcomeEvidence = await listOutcomeEvidence(orgId, parsed.data);
+    const aivm = outcomeEvidenceAivmFields(
+      scopedEvents,
+      parsed.data.workflow_id,
+      parsed.data.jbtd_id ?? null,
+      parsed.data.persona_id ?? null,
+      parsed.data.period_start,
+      parsed.data.period_end
+    );
+
+    return res.json({
+      workflow_id: parsed.data.workflow_id,
+      verdict,
+      suppression_reason:
+        verdict === "SURFACE" ? null : toOutcomeEvidenceSuppressionReason(row?.suppression_reasons) ?? "INSUFFICIENT_VOLUME",
+      value_type: aivm.value_type,
+      evidence_grade: aivm.evidence_grade,
+      reliability_factor: row?.reliability_factor ?? null,
+      outcome_evidence: outcomeEvidence.map((record) => ({
+        evidence_id: record.evidence_id,
+        outcome_metric: record.outcome_metric,
+        outcome_unit: record.outcome_unit,
+        period_start: record.period_start,
+        period_end: record.period_end,
+        aggregate_value: record.aggregate_value,
+        cohort_size: record.cohort_size,
+        source_system: record.source_system,
+        ingested_at: record.ingested_at
+      }))
+    });
+  }
+);
 
 app.get(
   "/api/traces/reconstructed",
