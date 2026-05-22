@@ -1,0 +1,10 @@
+{
+  "calibration_id": "scio-prod-60d-2026-05",
+  "frequency_p50": 71,
+  "frequency_p99": 701,
+  "engagement_p50": 61,
+  "engagement_p99": 61,
+  "breadth_p50": 7,
+  "breadth_p99": 12,
+  "source": "scio-prod scrubbed GCE, 1553 distinct users, 60-day window"
+}
