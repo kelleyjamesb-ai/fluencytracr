@@ -32,6 +32,7 @@ REQUIRED_FIELDS = [
 BLANK_WORKFLOW_ID_REASON = (
     "Blank workflow_id in input — likely unclassified BigQuery feature rows; relabeled UNCLASSIFIED"
 )
+MIN_CANONICAL_COHORT_SIZE = 5
 
 MANAGER_REVIEW_SURFACES = {"CHAT", "AI_ANSWER"}
 ENG_ON_CALL_SURFACES = {
@@ -151,8 +152,15 @@ def run_command(args: list[str]) -> str:
     return completed.stdout
 
 
+def fixture_cohort_size(row: dict[str, Any], configured_cohort_size: int) -> int:
+    if row["real_cohort_size"] < MIN_CANONICAL_COHORT_SIZE:
+        return row["real_cohort_size"]
+    return configured_cohort_size
+
+
 def generate_fixture(row: dict[str, Any], output_dir: Path, cohort_size: int) -> Path:
     fixture_path = output_dir / f"{surface_filename(row['workflow_id']).removesuffix('.md')}.json"
+    generated_cohort_size = fixture_cohort_size(row, cohort_size)
     run_command(
         [
             sys.executable,
@@ -160,7 +168,7 @@ def generate_fixture(row: dict[str, Any], output_dir: Path, cohort_size: int) ->
             "--workflow-family",
             workflow_family_for(row["workflow_id"]),
             "--cohort-size",
-            str(cohort_size),
+            str(generated_cohort_size),
             "--abandonment-rate",
             str(row["abandonment_rate"]),
             "--recovery-rate",
@@ -227,7 +235,12 @@ def run_surface(row: dict[str, Any], output_dir: Path, cohort_size: int) -> dict
     surface_readout = output_dir / surface_filename(row["workflow_id"])
     surface_readout.write_text(readout_text)
     parsed = parse_readout(readout_text)
-    return {**row, **parsed, "readout_path": str(surface_readout)}
+    return {
+        **row,
+        **parsed,
+        "synthetic_cohort_size": fixture_cohort_size(row, cohort_size),
+        "readout_path": str(surface_readout),
+    }
 
 
 def fmt(value: float | None) -> str:
@@ -308,7 +321,7 @@ def render_readout(
             "",
             "## Methodology Footnote",
             "",
-            f"Rates come from customer-supplied BigQuery aggregate rows. The driver expands each included surface into {cohort_size} synthetic GCE-shaped workflow runs so the V1 dogfood ingest path can evaluate the same aggregate behavior without using real customer data or row-level records.",
+            f"Rates come from customer-supplied BigQuery aggregate rows. The driver expands each included surface into synthetic GCE-shaped workflow runs so the V1 dogfood ingest path can evaluate the same aggregate behavior without using real customer data or row-level records. Surfaces use the configured synthetic cohort size of {cohort_size}, except real cohorts below 5 preserve the real cohort count so canonical volume suppression applies.",
             "Weighted rollups use real_cohort_size from the input rows and include SURFACE rows only. Each surface is evaluated independently before any read-only weighted summary is computed.",
         ]
     )

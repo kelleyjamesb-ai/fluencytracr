@@ -193,6 +193,28 @@ def test_real_cohorts_below_100_are_evaluated_not_skipped(tmp_path: Path) -> Non
     assert (output_dir / "AGENT.md").exists()
 
 
+def test_real_cohorts_below_canonical_volume_floor_suppress(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 1, 0.9, 0.9)])
+
+    completed = run_driver(input_path, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "No surfaces qualified for weighted rollup." in text
+    assert (
+        "| AGENT | 1 | SUPPRESS | INSUFFICIENT_VOLUME | n/a | n/a | "
+        "UNCLASSIFIED / QUALITATIVE |"
+    ) in text
+    assert "| none | 0 | n/a |" in text
+    assert (output_dir / "AGENT.md").exists()
+    fixture = json.loads((output_dir / "AGENT.json").read_text())
+    assert fixture["parameters"]["cohort_size"] == 1
+    assert len(fixture["events"]) == 1
+
+
 def test_bad_input_exits_one_with_clear_error(tmp_path: Path) -> None:
     input_path = tmp_path / "bad.csv"
     output_dir = tmp_path / "out"
