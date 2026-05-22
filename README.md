@@ -90,6 +90,7 @@ is not the lead positioning for this repository.
 - Glean live-data decision gate: [docs/integrations/glean/07-live-data-access-decision-gate.md](docs/integrations/glean/07-live-data-access-decision-gate.md)
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
+- Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Velocity Index contract: [docs/contracts/velocity-index.md](docs/contracts/velocity-index.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)
