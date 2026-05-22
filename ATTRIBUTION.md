@@ -57,6 +57,16 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day agent diagnostic showing autonomous agents represented 42% of AGENT volume
 - Used in: V2.3 AGENT_TYPES concept document and V2.3 AGENT sub-surface implementation
 
+### Customer-side transformer privacy boundary
+- Source: James Kelley, architectural choice that production ingest should keep raw GCE inside the customer environment
+- Governance grounding: structural privacy boundary where only cohort percentile distributions cross into FluencyTracr
+- Used in: V3 ingest concept document
+
+### Calibration as versioned baseline governance
+- Source: James Kelley, calibration-as-versioned-baseline governance pattern
+- Governance grounding: calibration baselines are immutable reference artifacts, not tunable thresholds or admin overrides
+- Used in: V3 calibration concept document
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative

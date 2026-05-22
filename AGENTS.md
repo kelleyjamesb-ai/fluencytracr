@@ -66,6 +66,10 @@ Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.
 
 Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Implemented workflow surface labels replace the single AGENT bucket with `agent:autonomous`, `agent:workflow_named`, and `agent:ephemeral`; they do not modify any canonical observation events or suppression reasons.
 
+Production ingest is a defined V3 concept (see docs/concepts/INGEST.md). It is not yet implemented and establishes the customer-side-transformer privacy boundary: raw GCE remains in the customer environment, and only aggregate cohort distributions cross into FluencyTracr.
+
+Calibration governance is a defined V3 concept (see docs/concepts/CALIBRATION.md). It is not yet implemented and distinguishes immutable, versioned reference baselines from prohibited tunable thresholds.
+
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
 - AIVM grammar: value_type in {ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED}; evidence_grade in {OBJECTIVE, CALIBRATED, QUALITATIVE}
