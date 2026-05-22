@@ -453,3 +453,31 @@ model V2VelocityDistributionObservation {
   @@index([orgId, ingestedAt])
   @@map("velocity_distribution_observations")
 }
+
+model FluencyTracrVerdict {
+  id                String   @id @default(uuid()) @db.Uuid
+  orgId             String   @map("org_id")
+  cohortId          String   @map("cohort_id")
+  workflowId        String   @map("workflow_id")
+  jbtdId            String?  @map("jbtd_id") @db.VarChar(64)
+  personaId         String?  @map("persona_id") @db.VarChar(64)
+  sliceKey          String   @map("slice_key")
+  windowStart       DateTime @map("window_start")
+  windowEnd         DateTime @map("window_end")
+  calibrationId     String   @map("calibration_id")
+  verdict           String
+  suppressionReason String?  @map("suppression_reason")
+  cohortSize        Int      @map("cohort_size")
+  evidenceGrade     String   @map("evidence_grade")
+  velocityIndex     Float?   @map("velocity_index")
+  qualityMultiplier Float?   @map("quality_multiplier")
+  payloadJson       Json     @map("payload_json")
+  computedAt        DateTime @map("computed_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, cohortId, workflowId, sliceKey, windowStart, windowEnd, calibrationId], name: "fluencytracr_verdicts_immutable_key")
+  @@index([orgId, cohortId])
+  @@index([orgId, workflowId])
+  @@index([orgId, calibrationId])
+  @@map("fluencytracr_verdicts")
+}

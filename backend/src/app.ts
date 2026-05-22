@@ -94,6 +94,15 @@ import {
   VelocityDistributionSchema,
   velocityAdjustmentFactor
 } from "./value_realization/velocity_index";
+import {
+  findCalibrationBaseline,
+  loadCalibrationBaselines
+} from "./value_realization/calibration_registry";
+import {
+  computeV3AggregateVerdict,
+  V3AggregateIngestSchema,
+  velocityRecordsFromV3Aggregate
+} from "./value_realization/v3_aggregate_ingest";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
 import {
@@ -110,6 +119,12 @@ import {
   listVelocityDistributions,
   persistVelocityDistribution
 } from "./repositories/velocity-distribution.repository";
+import {
+  listFluencyTracrVerdicts,
+  persistFluencyTracrVerdict,
+  VerdictAlreadyExistsError,
+  verdictSliceKey
+} from "./repositories/fluencytracr-verdict.repository";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -4040,6 +4055,11 @@ const VelocityIndexQuerySchema = z.object({
   window_days: z.coerce.number().int().positive().max(3650)
 }).strict();
 
+const V3VerdictsQuerySchema = z.object({
+  cohort_id: z.string().min(1),
+  workflow_id: z.string().min(1).optional()
+}).strict();
+
 const eventBelongsToAuthOrg = (event: FluencyEventRecord, orgId: string | undefined): boolean => {
   if (!orgId) {
     return true;
@@ -4237,6 +4257,154 @@ app.get("/api/v2/velocity-index", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABL
     })
   );
 });
+
+app.get(
+  "/api/v3/calibration/baselines",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (_req, res) => {
+    try {
+      return res.json({
+        baselines: loadCalibrationBaselines().map((baseline) => ({
+          calibration_id: baseline.calibration_id,
+          source: baseline.source,
+          frequency_p50: baseline.frequency_p50,
+          engagement_p50: baseline.engagement_p50,
+          breadth_p50: baseline.breadth_p50
+        }))
+      });
+    } catch {
+      return res.status(500).json({
+        error: "Calibration baselines unavailable",
+        reason_code: "calibration_baselines_unavailable"
+      });
+    }
+  }
+);
+
+app.post("/api/v3/ingest/aggregate", rbacMiddleware(["ADMIN"]), async (req, res) => {
+  const personField = findVelocityPersonField(req.body);
+  if (personField) {
+    return res.status(400).json({
+      error: "Person-level field rejected",
+      reason_code: "person_level_field_rejected",
+      field_path: personField
+    });
+  }
+  const forbiddenField = findForbiddenField(req.body);
+  if (forbiddenField) {
+    return res.status(400).json({
+      error: "Forbidden raw field rejected",
+      reason_code: "forbidden_field_rejected",
+      field_path: forbiddenField.path
+    });
+  }
+  const parsed = V3AggregateIngestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid aggregate ingest payload",
+      reason_code: "invalid_aggregate_ingest_payload",
+      details: parsed.error.flatten()
+    });
+  }
+  const baseline = findCalibrationBaseline(parsed.data.calibration_id);
+  if (!baseline) {
+    return res.status(400).json({
+      error: "Unknown calibration baseline",
+      reason_code: "unknown_calibration_id",
+      calibration_id: parsed.data.calibration_id
+    });
+  }
+  if (!req.authOrgId) {
+    return res.status(400).json({
+      error: "Aggregate ingest requires organization scope",
+      reason_code: "missing_org_scope"
+    });
+  }
+
+  const computed = computeV3AggregateVerdict(parsed.data, baseline);
+  const now = new Date().toISOString();
+  const orgId = req.authOrgId;
+  const record = {
+    id: crypto.randomUUID(),
+    org_id: orgId,
+    cohort_id: computed.cohort_id,
+    workflow_id: computed.workflow_id,
+    jbtd_id: computed.jbtd_id,
+    persona_id: computed.persona_id,
+    slice_key: verdictSliceKey(computed.jbtd_id, computed.persona_id),
+    window_start: computed.window_start,
+    window_end: computed.window_end,
+    calibration_id: computed.calibration_id,
+    verdict: computed.verdict,
+    suppression_reason: computed.suppression_reason,
+    cohort_size: computed.cohort_size,
+    evidence_grade: computed.evidence_grade,
+    velocity_index: computed.velocity_index,
+    quality_multiplier: computed.quality_multiplier,
+    payload_json: {
+      ...computed,
+      privacy: parsed.data.privacy
+    },
+    computed_at: computed.computed_at,
+    created_at: now
+  };
+
+  try {
+    await persistFluencyTracrVerdict(record);
+    for (const velocityRecord of velocityRecordsFromV3Aggregate(orgId, parsed.data, now)) {
+      await persistVelocityDistribution(velocityRecord);
+    }
+  } catch (error) {
+    if (error instanceof VerdictAlreadyExistsError) {
+      return res.status(409).json({
+        error: "Verdict already exists for immutable aggregate key",
+        reason_code: "verdict_already_exists"
+      });
+    }
+    return res.status(500).json({
+      error: "Aggregate ingest failed",
+      reason_code: "aggregate_ingest_failed"
+    });
+  }
+
+  return res.status(202).json({
+    accepted: true,
+    verdict: computed
+  });
+});
+
+app.get(
+  "/api/v3/verdicts",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const parsed = V3VerdictsQuerySchema.safeParse({
+      cohort_id: req.query.cohort_id,
+      workflow_id: req.query.workflow_id
+    });
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid verdict query",
+        reason_code: "invalid_verdict_query",
+        details: parsed.error.flatten()
+      });
+    }
+    if (!req.authOrgId) {
+      return res.status(400).json({
+        error: "Verdict query requires organization scope",
+        reason_code: "missing_org_scope"
+      });
+    }
+    const rows = await listFluencyTracrVerdicts({
+      orgId: req.authOrgId,
+      cohortId: parsed.data.cohort_id,
+      workflowId: parsed.data.workflow_id
+    });
+    return res.json({
+      cohort_id: parsed.data.cohort_id,
+      verdicts: rows.map((row) => row.payload_json)
+    });
+  }
+);
 
 const toOutcomeEvidenceSuppressionReason = (reasons: string[] | undefined) => {
   if (!reasons || reasons.length === 0) {
