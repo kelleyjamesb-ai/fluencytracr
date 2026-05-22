@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AivmEvidenceGradeSchema, AivmValueTypeSchema } from "./fluencyTracrAivm";
 
 export const FluencyTracrV1SchemaVersionSchema = z.literal("FT_V1_2026_01");
 export type FluencyTracrV1SchemaVersion = z.infer<typeof FluencyTracrV1SchemaVersionSchema>;
@@ -102,8 +103,22 @@ export const FluencyTracrV1EventSchema = FluencyTracrV1EventUnionSchema.superRef
 );
 export type FluencyTracrV1Event = z.infer<typeof FluencyTracrV1EventSchema>;
 
-export const FluencyTracrV1DecisionSchema = z.literal("SURFACE");
+export const FluencyTracrV1DecisionSchema = z.enum(["SURFACE", "SUPPRESS"]);
 export type FluencyTracrV1Decision = z.infer<typeof FluencyTracrV1DecisionSchema>;
+
+export const FluencyTracrV1SuppressReasonCodeSchema = z.enum([
+  "SUPP_INTERNAL_INVARIANT_FAIL",
+  "SUPP_AMBIGUITY_PRESENT",
+  "SUPP_SMALL_TEAM_LT_5",
+  "SUPP_WINDOW_LT_60D",
+  "SUPP_NOT_ADJACENT_WINDOWS",
+  "SUPP_LT_2_BEHAVIOR_CLASSES",
+  "SUPP_NO_QUALIFYING_EVIDENCE",
+  "SUPP_SPARSE_DATA"
+]);
+export type FluencyTracrV1SuppressReasonCode = z.infer<
+  typeof FluencyTracrV1SuppressReasonCodeSchema
+>;
 
 export const FluencyTracrV1EvaluationDecisionSchema = z.object({
   schema_version: FluencyTracrV1SchemaVersionSchema,
@@ -111,8 +126,26 @@ export const FluencyTracrV1EvaluationDecisionSchema = z.object({
   function_id: z.string().min(1),
   role_class: z.string().min(1),
   window_id: z.string().regex(/^\d{4}-\d{2}-\d{2}__\d{4}-\d{2}-\d{2}$/),
-  decision: FluencyTracrV1DecisionSchema
-}).strict();
+  decision: FluencyTracrV1DecisionSchema,
+  value_type: AivmValueTypeSchema,
+  evidence_grade: AivmEvidenceGradeSchema,
+  suppress_reason_code: FluencyTracrV1SuppressReasonCodeSchema.optional()
+}).strict().superRefine((decision, context) => {
+  if (decision.decision === "SUPPRESS" && !decision.suppress_reason_code) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "suppress_reason_code is required when decision is SUPPRESS",
+      path: ["suppress_reason_code"]
+    });
+  }
+  if (decision.decision === "SURFACE" && decision.suppress_reason_code) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "suppress_reason_code must be omitted when decision is SURFACE",
+      path: ["suppress_reason_code"]
+    });
+  }
+});
 export type FluencyTracrV1EvaluationDecision = z.infer<
   typeof FluencyTracrV1EvaluationDecisionSchema
 >;

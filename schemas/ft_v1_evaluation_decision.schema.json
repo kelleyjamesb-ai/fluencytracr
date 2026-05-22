@@ -31,6 +31,23 @@
     "decision": {
       "type": "string",
       "enum": ["SURFACE"]
+    },
+    "value_type": {
+      "type": "string",
+      "enum": [
+        "ACCELERATION",
+        "QUALITY_PREMIUM",
+        "NET_NEW",
+        "UNCLASSIFIED"
+      ]
+    },
+    "evidence_grade": {
+      "type": "string",
+      "enum": [
+        "OBJECTIVE",
+        "CALIBRATED",
+        "QUALITATIVE"
+      ]
     }
   },
   "required": [
@@ -40,6 +57,8 @@
     "function_id",
     "role_class",
     "window_id",
-    "decision"
+    "decision",
+    "value_type",
+    "evidence_grade"
   ]
 }

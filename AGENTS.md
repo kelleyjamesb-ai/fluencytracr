@@ -1,79 +1,91 @@
-## Every coding session (mandatory)
+# AGENTS.md
 
-**Read [`docs/agent/SESSION_START.md`](docs/agent/SESSION_START.md) first** — how to start every time, where memory lives (queue, harness, git), and how queue + Anthropic-style harness fit together. Then continue with OpenSpec, queue, or harness sections below as applicable.
+## 1. Purpose
 
-<!-- OPENSPEC:START -->
-# OpenSpec Instructions
+This file is the canonical context for any AI agent making changes in this repository. Read it at the start of every session before making any modifications.
 
-These instructions are for AI assistants working in this project.
+## 2. What FluencyTracr Is (current positioning)
 
-Always open `@/openspec/AGENTS.md` when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
+FluencyTracr is the behavioral evidence layer that makes Glean's value-realization claims defensible. It consumes GCE-shaped workflow telemetry, applies fail-closed suppression gates, and emits SURFACE or SUPPRESS verdicts on aggregate workflow patterns. It is NOT an AI fluency scoring tool, NOT a surveillance product, and NOT a replacement for Glean Insights, MUSE, or Sigma. Audience: AIOMs, value-realization PMs, CIOs.
 
-Use `@/openspec/AGENTS.md` to learn:
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
+## 3. The Nine Invariants (hard constraints - never violate)
 
-Keep this managed block so 'openspec update' can refresh the instructions.
+1. No new canonical events beyond the existing six.
+2. No new suppression reasons beyond the existing five.
+3. No tunable thresholds. Constants are compiled into code.
+4. No admin overrides of suppression decisions.
+5. No individual scoring. No user-identifiable fields anywhere in inputs, storage, or outputs.
+6. Default verdict is SUPPRESS. SURFACE requires all gates clearing.
+7. Latency is corroborative only, never a surfacing trigger.
+8. Every PR must keep the Assurance Harness CI workflow green.
+9. Suppression gates apply independently per slice (workflow_id, jbtd_id, persona_id) - no cross-slice aggregation that could re-identify.
 
-<!-- OPENSPEC:END -->
+## 4. Canonical Events (the six, locked)
 
-## Agent execution (queue)
+- FT_V1_DISPOSITION_OBSERVED
+- ITERATION_DEPTH_OBSERVED
+- VERIFICATION_PRESENCE_OBSERVED
+- RECOVERY_OBSERVED
+- LATENCY_OBSERVED
+- ABANDONMENT_OBSERVED
 
-**START HERE (queue-driven work):** `agents/core/SYSTEM_PROMPT.md` → `.project/GOVERNANCE.md` → `.project/WORK_QUEUE.json` → `.project/PROGRESS.md`. Then `.antigravity/rules.md`.
+## 5. Suppression Reasons (the five, locked)
 
-## Local workspace vs GitHub
+- INSUFFICIENT_TIME (window < 60d)
+- INSUFFICIENT_VOLUME (cohort_size < 5)
+- NO_CONVERGENCE
+- BASELINE_UNSTABLE
+- HIGH_AMBIGUITY
 
-Treat **files in this Cursor workspace as source of truth** until you commit and push. Do not assume the remote default branch matches uncommitted local state.
+## 6. Out of Scope (do not implement without explicit human approval)
 
-## Repo map (start here)
+- New canonical events or suppression reasons
+- Statistical significance scoring or p-values in verdict outputs
+- Built-in JBTD or persona taxonomies
+- Connectors to Veeva, Jira, ServiceNow, or other systems of record
+- Correlation or causation engines on outcome evidence
+- Dollarized ROI computation
+- Individual user attribution under any framing
+- Admin UI for adjusting thresholds
 
-| Area | Path |
-| --- | --- |
-| **Queue + session state** (one `in_progress` item) | [`.project/GOVERNANCE.md`](.project/GOVERNANCE.md), [`.project/WORK_QUEUE.json`](.project/WORK_QUEUE.json), [`.project/PROGRESS.md`](.project/PROGRESS.md) |
-| **Agent navigation hub** (maps, contracts, evaluation) | [`docs/agent/README.md`](docs/agent/README.md) |
-| **Long-running harness** (sessions, checklist, handoff) | [`harness/README.md`](harness/README.md) |
-| **OpenSpec** (proposals, specs, validate) | [`openspec/AGENTS.md`](openspec/AGENTS.md) |
-| **Architecture** | [`docs/ARCHITECTURE_MAP.md`](docs/ARCHITECTURE_MAP.md) |
-| **CI truth** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
-## Long-running agent harness (Codex, Claude, Cursor)
+- AIVM grammar: value_type in {ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED}; evidence_grade in {OBJECTIVE, CALIBRATED, QUALITATIVE}
+- Quality Multiplier: behavioral discount/amplifier on time-saved estimates
+- Causal Delta: pre/post window pattern shift verdict
+- Reliability Factor: composite of abandonment, friction loop, recovery, verification
+- Outcome Evidence: customer-attested aggregate KPI ingestion (storage only)
 
-For multi-session work, follow [`harness/README.md`](harness/README.md). First session: [`harness/prompts/initializer.md`](harness/prompts/initializer.md). Later sessions: [`harness/prompts/incremental_session.md`](harness/prompts/incremental_session.md). Checklist: [`harness/feature_list.json`](harness/feature_list.json); handoff log: [`harness/agent-progress.txt`](harness/agent-progress.txt). After substantive edits, run checks in [`docs/agent/EVALUATION.md`](docs/agent/EVALUATION.md) (includes `./harness/scripts/verify.sh`).
+## 8. Repositioning Context
 
-## Cursor Cloud specific instructions
+FluencyTracr's narrative leads with value realization, not AI fluency. Closes the 64%-no-signal gap in Paul Li's time-saved pipeline. Governance invariants are the proof of seriousness, not the headline. Avoid the word "fluency" in new headers and section titles except where it is the literal product name. Audience is the value-realization team and CIOs, not HR or L&D.
 
-### Services overview
+## 9. Ordered Prompt Roadmap (the staged work plan)
 
-This is an npm workspaces monorepo with workspaces: `backend`, `frontend`, `shared`, `packages/fluencytracr-mcp`, `packages/glean-publisher`, `integrations/openai-agents`. It also has a Python component at the repo root (`requirements.txt`, `tests/`).
+The human will feed Codex these prompts in order:
 
-### Build order (must be followed)
+1. Repository orientation
+2. AIVM tagging on verdict outputs
+3. Quality Multiplier API
+4. Causal-delta primitive
+5. Reliability Factor output
+6. JBTD / persona join key
+7. Outcome ingestion contract
+8. README and docs repositioning
+9. Glean-internal dogfood scaffold
 
-1. `npm run build --workspace shared` — backend and frontend both depend on `@learnaire/shared`
-2. `npm run generate --workspace backend` — generates Prisma client (required even for in-memory tests)
+Note: each prompt is one PR. Do not combine.
 
-### Running tests
+## 10. Working Rules for Agents
 
-- **Backend (Jest):** `npm run test:ci --workspace backend` — tests blank `DATABASE_URL` and `DIRECT_URL` so no DB needed
-- **Frontend (Vitest):** `npm test --workspace frontend`
-- **Python (pytest):** `python3 -m pytest tests/ -q` — use `python3` not `python`
-- **MCP package:** `npm run test --workspace @learnaire/fluencytracr-mcp`
-- **Glean publisher:** `npm run test --workspace @learnaire/glean-publisher`
+- Read README.md, docs/contracts/, schemas/, and openspec/ before changing code.
+- Never modify the canonical event set or suppression reason set without an explicit human instruction citing this section.
+- Every new endpoint must respect existing fail-closed gates.
+- Every new field must be additive - do not break existing consumers.
+- Add LMSYS assurance harness fixtures for every new behavior.
+- Verdict shape changes require updates to schemas/, openspec/, and docs/contracts/ in the same PR.
+- Commits must reference which invariant or roadmap prompt they implement.
 
-### Running dev servers
+## 11. When in Doubt
 
-The backend requires Docker + PostgreSQL. Start Postgres via `sudo docker compose -f infra/docker-compose.yml up -d` (user/pass/db: `fluency`, port 5432). Then sync schema with `prisma db push` (not `prisma migrate deploy` — migrations have a pre-existing ordering issue with the `Organization` table). Copy `backend/.env.example` to `backend/.env` for `DATABASE_URL` and `JWT_SECRET`.
-
-- **Backend:** `npm run dev --workspace backend` — Express on port 4000 (sets `DEV_HEADER_AUTH=true` for dev token generation)
-- **Frontend:** `npm run dev --workspace frontend` — Vite on port 5173 with proxy to backend for `/api`, `/auth`, `/health`, `/orgs`
-- **Auth:** `POST /auth/token` with `{"org_id": "...", "role": "ADMIN", "email": "..."}` — no real auth provider, JWT is self-issued
-
-### Gotchas
-
-- ESLint configs (`backend/.eslintrc.json`, `frontend/.eslintrc.json`) lack a TypeScript parser; `npm run lint` fails on all TS files. Lint is **not** part of CI.
-- Prisma schema requires both `DATABASE_URL` and `DIRECT_URL` env vars. Tests blank them intentionally. For dev/push operations set both.
-- The `version` key in `infra/docker-compose.yml` triggers a Docker Compose v2 deprecation warning — harmless.
-- CI uses Node 20 and Python 3.11; Node 22 and Python 3.12 work locally without issues.
+If a request appears to violate any invariant, stop and ask the human. Do not soften invariants under feature pressure. The governance posture is the product.

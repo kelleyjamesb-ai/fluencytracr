@@ -50,6 +50,11 @@ const buildEvent = (
   }
 };
 
+const expectAivmDefaults = (decision: { value_type?: string; evidence_grade?: string } | undefined) => {
+  expect(decision?.value_type).toBe("UNCLASSIFIED");
+  expect(decision?.evidence_grade).toBe("QUALITATIVE");
+};
+
 describe("FluencyTracr V1 Signal Evaluation", () => {
   test("SUPPRESS includes exactly one suppress_reason_code and SURFACE omits it", () => {
     const start = new Date(Date.UTC(2026, 0, 1));
@@ -71,8 +76,10 @@ describe("FluencyTracr V1 Signal Evaluation", () => {
 
     expect(first?.decision).toBe("SUPPRESS");
     expect(first?.suppress_reason_code).toBeDefined();
+    expectAivmDefaults(first);
     expect(second?.decision).toBe("SURFACE");
     expect(second).not.toHaveProperty("suppress_reason_code");
+    expectAivmDefaults(second);
   });
 
   test("ambiguity suppresses before other gates", () => {
@@ -91,6 +98,7 @@ describe("FluencyTracr V1 Signal Evaluation", () => {
     const [decision] = evaluateV1SignalDecisions([event], cohortSizes);
     expect(decision.decision).toBe("SUPPRESS");
     expect(decision.suppress_reason_code).toBe("SUPP_AMBIGUITY_PRESENT");
+    expectAivmDefaults(decision);
   });
 
   test("30–59 day windows never surface before 60 days", () => {
@@ -105,6 +113,7 @@ describe("FluencyTracr V1 Signal Evaluation", () => {
     const [decision] = evaluateV1SignalDecisions([event], cohortSizes);
     expect(decision.decision).toBe("SUPPRESS");
     expect(decision.suppress_reason_code).toBe("SUPP_WINDOW_LT_60D");
+    expectAivmDefaults(decision);
   });
 
   test("small-team cohorts always suppress", () => {
@@ -119,6 +128,7 @@ describe("FluencyTracr V1 Signal Evaluation", () => {
     const [decision] = evaluateV1SignalDecisions([event], cohortSizes);
     expect(decision.decision).toBe("SUPPRESS");
     expect(decision.suppress_reason_code).toBe("SUPP_SMALL_TEAM_LT_5");
+    expectAivmDefaults(decision);
   });
 
   test("unknown enum or missing required fields fail closed", () => {
@@ -144,5 +154,50 @@ describe("FluencyTracr V1 Signal Evaluation", () => {
     const [decision] = evaluateV1SignalDecisions([invalidEvent], cohortSizes);
     expect(decision.decision).toBe("SUPPRESS");
     expect(decision.suppress_reason_code).toBe("SUPP_INTERNAL_INVARIANT_FAIL");
+    expectAivmDefaults(decision);
+  });
+
+  test("AIVM acceleration is derived from latency plus low abandonment dominance", () => {
+    const start = new Date(Date.UTC(2026, 0, 1));
+    const window1 = buildWindowId(start, 90);
+    const window2 = buildWindowId(addDays(start, 90), 90);
+    const events: FluencyTracrV1Event[] = [
+      buildEvent("FT_V1_LATENCY_OBSERVED", window1),
+      buildEvent("FT_V1_ABANDONMENT_OBSERVED", window1, { abandonment_present: false }),
+      buildEvent("FT_V1_LATENCY_OBSERVED", window2),
+      buildEvent("FT_V1_LATENCY_OBSERVED", window2),
+      buildEvent("FT_V1_ABANDONMENT_OBSERVED", window2, { abandonment_present: false }),
+      buildEvent("FT_V1_ABANDONMENT_OBSERVED", window2, { abandonment_present: false })
+    ];
+    const cohortSizes = new Map<string, number>([
+      [buildCohortWindowKey({ org_id: "org-1", function_id: "func-1", role_class: "IC", window_id: window1 }), 30],
+      [buildCohortWindowKey({ org_id: "org-1", function_id: "func-1", role_class: "IC", window_id: window2 }), 30]
+    ]);
+
+    const second = evaluateV1SignalDecisions(events, cohortSizes).find((decision) => decision.window_id === window2);
+    expect(second?.decision).toBe("SURFACE");
+    expect(second?.value_type).toBe("ACCELERATION");
+    expect(second?.evidence_grade).toBe("OBJECTIVE");
+  });
+
+  test("AIVM quality premium is derived from verification plus recovery dominance", () => {
+    const start = new Date(Date.UTC(2026, 0, 1));
+    const window1 = buildWindowId(start, 60);
+    const window2 = buildWindowId(addDays(start, 60), 60);
+    const events: FluencyTracrV1Event[] = [
+      buildEvent("FT_V1_VERIFICATION_PRESENCE_OBSERVED", window1),
+      buildEvent("FT_V1_RECOVERY_OBSERVED", window1),
+      buildEvent("FT_V1_VERIFICATION_PRESENCE_OBSERVED", window2),
+      buildEvent("FT_V1_RECOVERY_OBSERVED", window2)
+    ];
+    const cohortSizes = new Map<string, number>([
+      [buildCohortWindowKey({ org_id: "org-1", function_id: "func-1", role_class: "IC", window_id: window1 }), 6],
+      [buildCohortWindowKey({ org_id: "org-1", function_id: "func-1", role_class: "IC", window_id: window2 }), 6]
+    ]);
+
+    const second = evaluateV1SignalDecisions(events, cohortSizes).find((decision) => decision.window_id === window2);
+    expect(second?.decision).toBe("SURFACE");
+    expect(second?.value_type).toBe("QUALITY_PREMIUM");
+    expect(second?.evidence_grade).toBe("QUALITATIVE");
   });
 });
