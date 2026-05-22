@@ -55,7 +55,7 @@ not necessarily reviewed or approved FluencyTracr.
 ### Agent sub-surface taxonomy
 - Source: James Kelley, auto-vs-workflow agent split insight
 - Empirical grounding: scio-prod 60-day agent diagnostic showing autonomous agents represented 42% of AGENT volume
-- Used in: future V2.3 AGENT_TYPES concept document
+- Used in: V2.3 AGENT_TYPES concept document and V2.3 AGENT sub-surface implementation
 
 ## Framing influences (not directly implemented)
 

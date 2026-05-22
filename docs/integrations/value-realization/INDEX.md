@@ -60,6 +60,26 @@ The CSV files are the current developer dogfood adapter. They should be replaced
 by a direct aggregate feed when this moves toward real-time internal data, using
 the same aggregate-only fields and suppression posture.
 
+### Agent Sub-Surface Composition
+
+When AGENT sub-surfaces are present, the consolidated readout includes:
+
+```markdown
+## AGENT sub-surface composition
+
+Legacy AGENT derived cohort: 100
+Legacy AGENT derived velocity-adjusted Quality Multiplier: 1.495
+
+| sub-surface | runs | AGENT mix | velocity_adjusted_QM |
+| --- | ---: | ---: | ---: |
+| autonomous | 60 | 60% | 1.495 |
+| workflow_named | 30 | 30% | 1.495 |
+| ephemeral | 10 | 10% | 1.495 |
+```
+
+The three sub-surfaces are evaluated independently before the legacy AGENT
+summary is derived.
+
 ## Complementary Stated-Evidence Layer
 
 The AI Fluency Instrument remains useful as stated evidence: what people say

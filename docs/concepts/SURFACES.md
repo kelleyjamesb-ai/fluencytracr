@@ -42,11 +42,11 @@ A surface is any discrete user-initiated AI interaction. The expanded taxonomy h
 
 ### WORKFLOW SURFACES
 
-Workflow surfaces are events with a populated `workflow_run` structure. This is the V1 set: AGENT, CHAT, GLEANBOT as `workflow_run`, AI_ANSWER, VOICE_CHAT, AGENT_LIVE_PREVIEW, INTERACTIVE_COMPILER, SPACES, INLINE_MENU, EMBEDDED_INTEGRATION_SUPPORT, PRISM, SUPPORT_NEXT_STEPS, and GITHUB_PR_DESCRIPTION_GENERATOR.
+Workflow surfaces are events with a populated `workflow_run` structure. This is the V1 set: AGENT, CHAT, GLEANBOT as `workflow_run`, AI_ANSWER, VOICE_CHAT, AGENT_LIVE_PREVIEW, INTERACTIVE_COMPILER, SPACES, INLINE_MENU, EMBEDDED_INTEGRATION_SUPPORT, PRISM, SUPPORT_NEXT_STEPS, and GITHUB_PR_DESCRIPTION_GENERATOR. V2.3 splits AGENT into `agent:autonomous`, `agent:workflow_named`, and `agent:ephemeral`.
 
 These remain first-class surfaces.
 
-See [AGENT_TYPES.md](./AGENT_TYPES.md) for the three-way split of AGENT into autonomous, named-workflow, and ephemeral sub-surfaces, scheduled for V2.3.
+See [AGENT_TYPES.md](./AGENT_TYPES.md) for the V2.3 three-way split of AGENT into autonomous, named-workflow, and ephemeral sub-surfaces.
 
 ### STANDALONE NON-WORKFLOW SURFACES
 
