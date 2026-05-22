@@ -64,11 +64,20 @@ VELOCITY_FIELDS = [
 MANAGER_REVIEW_SURFACES = {"CHAT", "AI_ANSWER"}
 ENG_ON_CALL_SURFACES = {
     "AGENT",
+    "AGENT:AUTONOMOUS",
+    "AGENT:WORKFLOW_NAMED",
+    "AGENT:EPHEMERAL",
     "GLEANBOT",
     "SUPPORT_NEXT_STEPS",
     "INTERACTIVE_COMPILER",
     "PRISM",
     "AGENT_LIVE_PREVIEW",
+}
+
+AGENT_SUB_SURFACES = {
+    "agent:autonomous": "autonomous",
+    "agent:workflow_named": "workflow_named",
+    "agent:ephemeral": "ephemeral",
 }
 
 
@@ -477,6 +486,10 @@ def fmt(value: float | None) -> str:
     return f"{value:.3f}".rstrip("0").rstrip(".")
 
 
+def fmt_percent(value: float) -> str:
+    return f"{value:.1f}".rstrip("0").rstrip(".")
+
+
 def weighted(rows: list[dict[str, Any]], metric: str) -> float | None:
     surface_rows = [
         row
@@ -495,6 +508,14 @@ def weighted_by_category(rows: list[dict[str, Any]], metric: str) -> dict[str, f
         category: weighted([row for row in rows if row.get("surface_category") == category], metric)
         for category in ["workflow", "standalone"]
     }
+
+
+def agent_sub_surface_key(workflow_id: str) -> str | None:
+    return AGENT_SUB_SURFACES.get(workflow_id.strip().lower())
+
+
+def agent_sub_surface_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [row for row in rows if agent_sub_surface_key(row["workflow_id"])]
 
 
 def merge_velocity_context(
@@ -688,6 +709,30 @@ def render_readout(
             )
     if not results:
         lines.append("| none | 0 | n/a | n/a | n/a | n/a | n/a |")
+
+    agent_rows = agent_sub_surface_rows(results)
+    if agent_rows:
+        total_agent_volume = sum(row["real_cohort_size"] for row in agent_rows)
+        legacy_metric = "velocity_adjusted_multiplier" if velocity_enabled else "quality_multiplier"
+        lines.extend(
+            [
+                "",
+                "## AGENT sub-surface composition",
+                "",
+                f"Legacy AGENT derived cohort: {total_agent_volume}",
+                f"Legacy AGENT derived velocity-adjusted Quality Multiplier: {fmt(weighted(agent_rows, legacy_metric))}",
+                "",
+                "| sub-surface | runs | AGENT mix | velocity_adjusted_QM |",
+                "| --- | ---: | ---: | ---: |",
+            ]
+        )
+        by_sub_surface = {agent_sub_surface_key(row["workflow_id"]): row for row in agent_rows}
+        for sub_surface in ["autonomous", "workflow_named", "ephemeral"]:
+            row = by_sub_surface.get(sub_surface)
+            runs = row["real_cohort_size"] if row else 0
+            mix = (runs / total_agent_volume * 100) if total_agent_volume else 0.0
+            metric_value = row.get(legacy_metric) if row else None
+            lines.append(f"| {sub_surface} | {runs} | {fmt_percent(mix)}% | {fmt(metric_value)} |")
 
     lines.extend(
         [

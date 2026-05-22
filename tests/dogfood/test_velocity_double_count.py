@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SQL = ROOT / "sql" / "dogfood" / "velocity_diagnostic.sql"
+AGENT_SQL = ROOT / "sql" / "dogfood" / "agent_type_diagnostic.sql"
 
 
 def test_glean_bot_activity_anti_double_count_is_enforced_in_sql() -> None:
@@ -62,3 +63,33 @@ def test_verification_signals_join_back_to_parent_surfaces() -> None:
     assert "verification_signal_count" in sql
     assert "verified_user_count" in sql
     assert "verification_rate" in sql
+
+
+def test_velocity_sql_splits_agent_into_sub_surfaces() -> None:
+    sql = SQL.read_text()
+
+    assert "product_snapshots AS" in sql
+    assert "snapshot.snapshot_workflow_id = root_workflow_id" in sql
+    assert "agent:autonomous" in sql
+    assert "agent:workflow_named" in sql
+    assert "agent:ephemeral" in sql
+    assert "TODO(AGENT_TYPES.md section 11)" in sql
+
+
+def test_agent_type_diagnostic_reports_sub_surface_aggregates() -> None:
+    sql = AGENT_SQL.read_text()
+
+    assert "agent_runs AS" in sql
+    assert "agent:autonomous" in sql
+    assert "agent:workflow_named" in sql
+    assert "agent:ephemeral" in sql
+    for field in [
+        "cohort_size",
+        "completion_rate",
+        "error_rate",
+        "abandonment_rate",
+        "recovery_rate",
+        "p50_latency_ms",
+        "p95_latency_ms",
+    ]:
+        assert field in sql

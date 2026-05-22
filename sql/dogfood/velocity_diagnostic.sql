@@ -14,6 +14,12 @@ WITH source_events AS (
     JSON_VALUE(jsonPayload, '$.type') AS event_type,
     NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.workflowrun.feature')), '') AS workflow_feature,
     NULLIF(TRIM(COALESCE(
+      JSON_VALUE(jsonPayload, '$.workflowrun.rootworkflowid'),
+      JSON_VALUE(jsonPayload, '$.workflowrun.rootWorkflowId'),
+      JSON_VALUE(jsonPayload, '$.workflowrun.workflowid'),
+      JSON_VALUE(jsonPayload, '$.workflowrun.workflowId')
+    )), '') AS root_workflow_id,
+    NULLIF(TRIM(COALESCE(
       JSON_VALUE(jsonPayload, '$.workflowrun.runId'),
       JSON_VALUE(jsonPayload, '$.workflowrun.id'),
       JSON_VALUE(jsonPayload, '$.workflow_run_id'),
@@ -24,10 +30,26 @@ WITH source_events AS (
       JSON_VALUE(jsonPayload, '$.actor.stable_user_key'),
       JSON_VALUE(jsonPayload, '$.user.stable_user_key'),
       JSON_VALUE(jsonPayload, '$.user_id')
-    ) AS user_key
+    ) AS user_key,
+    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.workflowid')), '') AS snapshot_workflow_id,
+    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.isautonomousagent') AS BOOL) AS snapshot_is_autonomous,
+    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.name')), '') AS snapshot_workflow_name,
+    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.unlisted') AS BOOL) AS snapshot_unlisted
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp >= window_start
     AND timestamp < window_end
+),
+
+product_snapshots AS (
+  SELECT
+    snapshot_workflow_id,
+    ANY_VALUE(snapshot_is_autonomous) AS is_autonomous,
+    ANY_VALUE(snapshot_workflow_name) AS workflow_name,
+    COALESCE(ANY_VALUE(snapshot_unlisted), FALSE) AS unlisted
+  FROM source_events
+  WHERE event_type = 'PRODUCT_SNAPSHOT'
+    AND snapshot_workflow_id IS NOT NULL
+  GROUP BY snapshot_workflow_id
 ),
 
 workflow_sessions AS (
@@ -47,9 +69,24 @@ workflow_surfaces AS (
       session_token,
       CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
     ) AS surface_join_key,
-    CONCAT('workflow:', workflow_feature) AS workflow_id,
+    CONCAT(
+      'workflow:',
+      CASE
+        WHEN UPPER(workflow_feature) = 'AGENT' AND snapshot.is_autonomous IS TRUE THEN 'agent:autonomous'
+        WHEN UPPER(workflow_feature) = 'AGENT'
+          AND snapshot.is_autonomous IS FALSE
+          AND snapshot.workflow_name IS NOT NULL
+          AND snapshot.unlisted IS FALSE THEN 'agent:workflow_named'
+        -- TODO(AGENT_TYPES.md section 11): NO_SNAPSHOT AGENT runs default to
+        -- ephemeral for V2.3 until exclusion vs inclusion is resolved.
+        WHEN UPPER(workflow_feature) = 'AGENT' THEN 'agent:ephemeral'
+        ELSE workflow_feature
+      END
+    ) AS workflow_id,
     'workflow' AS surface_category
   FROM source_events
+  LEFT JOIN product_snapshots AS snapshot
+    ON snapshot.snapshot_workflow_id = root_workflow_id
   WHERE event_type = 'WORKFLOW_RUN'
     AND workflow_feature IS NOT NULL
     AND user_key IS NOT NULL

@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-This document defines the three sub-surfaces of AGENT as a future taxonomy refinement for FluencyTracr. It establishes the conceptual basis before any code is written, before any schema changes, and before any verdict depends on the split. The refinement is load-bearing on the diagnostic accuracy of every FluencyTracr verdict that touches AGENT.
+This document defines the three sub-surfaces of AGENT as a V2.3 taxonomy refinement for FluencyTracr. It establishes the conceptual basis for implementation and future governance review. The refinement is load-bearing on the diagnostic accuracy of every FluencyTracr verdict that touches AGENT.
 
 ## 2. The Conflation in V2 Surface Taxonomy
 
 `SURFACES.md` treats AGENT as a single workflow surface. That is accurate enough for the current V2 taxonomy, but empirical evidence shows that AGENT is not one behavioral population. The surface contains at least three structurally distinct populations that differ in initiation pattern, reuse model, planning delegation, and downstream signal interpretation.
 
-This document treats the current AGENT grouping as a useful transitional boundary, not the final taxonomy.
+This document treats the older AGENT grouping as a useful transitional boundary, not the final taxonomy.
 
 ## 3. The Empirical Evidence
 
@@ -119,7 +119,7 @@ These are hypotheses, not verdict claims. Customer interpretation must still pas
 
 ## 11. Open Questions
 
-These questions are deliberately open and must be resolved before V2.3 implementation:
+These questions are deliberately open and must be resolved before V2.3 production hardening:
 
 - Should all three sub-surfaces share identical suppression gate thresholds, or does autonomous require different gates?
 - How should verification signals, such as citation clicks, attribute across the three sub-surfaces?

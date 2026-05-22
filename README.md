@@ -27,6 +27,9 @@ FluencyTracr sits on top of that pipeline as five bounded evidence services:
   the same fail-closed gates clear. Dogfood velocity coverage now follows the
   full surface taxonomy in [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md),
   spanning workflow and standalone AI surfaces without adding person-level output.
+- **AGENT sub-surfaces:** V2.3 splits AGENT into `agent:autonomous`,
+  `agent:workflow_named`, and `agent:ephemeral` so delegation, reusable Skill,
+  and exploratory agent behavior can be evaluated independently.
 
 The aggregate verdict layer uses AIVM vocabulary consistently: `value_type`
 communicates the kind of value claim, and `evidence_grade` communicates whether
