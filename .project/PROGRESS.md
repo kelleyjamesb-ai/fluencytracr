@@ -28,6 +28,7 @@
 - Aggregate Evidence Import Stage 1: added `AEI_2026_05`, a review-only admin-exported aggregate upload package, shared review helper, synthetic fixture/docs, backend/frontend tests, and `/methodology-review` Source Evidence Import section without live ingestion, persistence, ROI calculation, or claim readiness upgrades.
 - Nielsen Source Evidence Trial Stage 2: added `NSETR_2026_05`, a document-derived claim mapping wrapper for the Nielsen value deck and Time-Saves packet; the trial maps 6 candidates, accepts 2 for review, withholds 4 behind source-system/approval gaps, and preserves no live ingestion, no persistence, no ROI calculation, and no claim readiness upgrades.
 - Attribution governance slice: added root `ATTRIBUTION.md`, README/AGENTS pointers, and CODEOWNERS protection for value-realization influence credits.
+- README/Glean value-realization repositioning slice: rewrote the public narrative around the 64% no-quality-signal gap, Quality Multiplier, Causal Delta, Reliability Factor, AIVM fields, and added the value-realization contract index; GitHub repo description/topics updated.
 
 ## Current Status
 
