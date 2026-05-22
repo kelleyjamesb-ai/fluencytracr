@@ -181,6 +181,17 @@ Ambiguity suppression takes precedence over all other inference logic, including
 8) Emit a binary decision only: SURFACE or SUPPRESS.
 9) If SUPPRESS, emit exactly one suppress_reason_code; if SURFACE, emit no reason code.
 
+## AIVM value-realization metadata (additive)
+
+V1 verdict payloads include two additive fields for Glean Value Realization readability:
+
+| Field | Values | Rule |
+| --- | --- | --- |
+| `value_type` | `ACCELERATION`, `QUALITY_PREMIUM`, `NET_NEW`, `UNCLASSIFIED` | Defaults to `UNCLASSIFIED`; derived from existing canonical event classes only. |
+| `evidence_grade` | `OBJECTIVE`, `CALIBRATED`, `QUALITATIVE` | Defaults to `QUALITATIVE`; `OBJECTIVE` requires cohort size at least 30 and a window at least 90 days. |
+
+Detailed mapping lives in [`FluencyTracr_V1_AIVM_Value_Mapping.md`](FluencyTracr_V1_AIVM_Value_Mapping.md). These fields are descriptive metadata only and do not change suppression, ambiguity precedence, persistence, or fail-closed behavior.
+
 **Provenance**
 This section is added verbatim from Sentinel-approved V1 acceptance criteria and Astra clarification previously approved in-project. This content was not derived from existing in-repo text and is included to close explicit Phase 2 governance requirements.
 

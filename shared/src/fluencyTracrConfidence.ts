@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AivmEvidenceGradeSchema, AivmValueTypeSchema } from "./fluencyTracrAivm";
 
 export const ConfidenceSchemaVersionSchema = z.literal("v1");
 export type ConfidenceSchemaVersion = z.infer<typeof ConfidenceSchemaVersionSchema>;
@@ -89,6 +90,8 @@ export const FunctionWindowAggregateSchema = z.object({
   window_end: z.string().min(1),
   decision: SignalDecisionSchema,
   suppression_reason: SuppressionReasonSchema.nullable(),
+  value_type: AivmValueTypeSchema,
+  evidence_grade: AivmEvidenceGradeSchema,
   signal_classes: z.array(SignalClassSchema),
   positive_evidence_present: z.boolean(),
   ghost_use_evaluated: z.boolean(),
