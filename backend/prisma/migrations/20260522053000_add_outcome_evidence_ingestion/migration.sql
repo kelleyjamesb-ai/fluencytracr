@@ -1,5 +1,6 @@
 CREATE TABLE "outcome_evidence" (
   "evidence_id" UUID NOT NULL DEFAULT gen_random_uuid(),
+  "org_id" TEXT NOT NULL,
   "workflow_id" TEXT NOT NULL,
   "outcome_metric" TEXT NOT NULL,
   "outcome_unit" TEXT NOT NULL,
@@ -27,6 +28,12 @@ CREATE TABLE "outcome_evidence" (
 
 CREATE INDEX "outcome_evidence_workflow_id_idx"
   ON "outcome_evidence"("workflow_id");
+
+CREATE INDEX "outcome_evidence_org_id_idx"
+  ON "outcome_evidence"("org_id");
+
+CREATE INDEX "outcome_evidence_org_id_workflow_id_period_start_period_end_idx"
+  ON "outcome_evidence"("org_id", "workflow_id", "period_start", "period_end");
 
 CREATE INDEX "outcome_evidence_jbtd_id_idx"
   ON "outcome_evidence"("jbtd_id");

@@ -12,6 +12,31 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const isIsoDate = (value: string) => !Number.isNaN(Date.parse(value));
 
+const rejectForbiddenAttestationKeys = (
+  value: unknown,
+  ctx: z.RefinementCtx,
+  path: Array<string | number> = ["source_attestation"]
+) => {
+  if (!value || typeof value !== "object") {
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => rejectForbiddenAttestationKeys(entry, ctx, [...path, index]));
+    return;
+  }
+  for (const [fieldName, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+    const nextPath = [...path, fieldName];
+    if (FORBIDDEN_FIELD_NAME_RE.test(fieldName)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: nextPath,
+        message: "free-form source_attestation fields may not contain user, email, name, or id"
+      });
+    }
+    rejectForbiddenAttestationKeys(nestedValue, ctx, nextPath);
+  }
+};
+
 export const OutcomeEvidenceCreateSchema = z
   .object({
     workflow_id: z.string().min(1).max(180),
@@ -60,17 +85,7 @@ export const OutcomeEvidenceCreateSchema = z
         message: "INSUFFICIENT_VOLUME"
       });
     }
-    if (payload.source_attestation) {
-      for (const [fieldName, value] of Object.entries(payload.source_attestation)) {
-        if (FORBIDDEN_FIELD_NAME_RE.test(fieldName) && typeof value === "string") {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["source_attestation", fieldName],
-            message: "free-form source_attestation fields may not contain user, email, name, or id"
-          });
-        }
-      }
-    }
+    rejectForbiddenAttestationKeys(payload.source_attestation, ctx);
   });
 
 export const OutcomeEvidenceQuerySchema = z
@@ -91,6 +106,7 @@ export type OutcomeEvidenceCreate = z.infer<typeof OutcomeEvidenceCreateSchema>;
 export type OutcomeEvidenceQuery = z.infer<typeof OutcomeEvidenceQuerySchema>;
 
 export type OutcomeEvidenceRecord = OutcomeEvidenceCreate & {
+  org_id: string;
   evidence_id: string;
   ingested_at: string;
 };

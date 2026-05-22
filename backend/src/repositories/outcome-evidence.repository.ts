@@ -7,12 +7,14 @@ import { store, type OutcomeEvidenceStoredRecord } from "../store";
 const usePrisma = () => Boolean(process.env.DATABASE_URL);
 
 export async function persistOutcomeEvidence(
+  orgId: string,
   payload: OutcomeEvidenceCreate,
   evidenceId: string,
   acceptedAt: string
 ): Promise<OutcomeEvidenceStoredRecord> {
   const record: OutcomeEvidenceStoredRecord = {
     ...payload,
+    org_id: orgId,
     jbtd_id: payload.jbtd_id ?? null,
     persona_id: payload.persona_id ?? null,
     aggregate_kind: payload.aggregate_kind ?? null,
@@ -28,6 +30,7 @@ export async function persistOutcomeEvidence(
   await getPrisma().v1OutcomeEvidence.create({
     data: {
       evidenceId,
+      orgId,
       workflowId: record.workflow_id,
       outcomeMetric: record.outcome_metric,
       outcomeUnit: record.outcome_unit,
@@ -46,12 +49,16 @@ export async function persistOutcomeEvidence(
   return record;
 }
 
-export async function listOutcomeEvidence(query: OutcomeEvidenceQuery): Promise<OutcomeEvidenceStoredRecord[]> {
+export async function listOutcomeEvidence(
+  orgId: string,
+  query: OutcomeEvidenceQuery
+): Promise<OutcomeEvidenceStoredRecord[]> {
   const periodStart = Date.parse(query.period_start);
   const periodEnd = Date.parse(query.period_end);
 
   if (!usePrisma()) {
     return Array.from(store.outcomeEvidence.values())
+      .filter((record) => record.org_id === orgId)
       .filter((record) => record.workflow_id === query.workflow_id)
       .filter((record) => Date.parse(record.period_start) >= periodStart)
       .filter((record) => Date.parse(record.period_end) <= periodEnd)
@@ -62,6 +69,7 @@ export async function listOutcomeEvidence(query: OutcomeEvidenceQuery): Promise<
 
   const rows = await getPrisma().v1OutcomeEvidence.findMany({
     where: {
+      orgId,
       workflowId: query.workflow_id,
       periodStart: { gte: new Date(query.period_start) },
       periodEnd: { lte: new Date(query.period_end) },
@@ -72,6 +80,7 @@ export async function listOutcomeEvidence(query: OutcomeEvidenceQuery): Promise<
   });
 
   return rows.map((row) => ({
+    org_id: row.orgId,
     evidence_id: row.evidenceId,
     workflow_id: row.workflowId,
     outcome_metric: row.outcomeMetric,

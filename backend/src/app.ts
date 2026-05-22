@@ -4183,10 +4183,13 @@ app.post(
         details: flattened
       });
     }
+    if (!req.authOrgId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     const evidenceId = crypto.randomUUID();
     const acceptedAt = new Date().toISOString();
-    await persistOutcomeEvidence(parsed.data, evidenceId, acceptedAt);
+    await persistOutcomeEvidence(req.authOrgId, parsed.data, evidenceId, acceptedAt);
 
     return res.status(201).json({
       evidence_id: evidenceId,
@@ -4217,6 +4220,9 @@ app.get(
     }
 
     const orgId = req.authOrgId;
+    if (!orgId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
     const loadedEvents = await loadFluencyEventRecords({ dbOrgId: orgId });
     const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, orgId));
     const periodEnd = new Date(parsed.data.period_end);
@@ -4230,7 +4236,7 @@ app.get(
         (entry.persona_id ?? null) === (parsed.data.persona_id ?? null)
     );
     const verdict = row?.disclosure === "ALLOWED" ? "SURFACE" : "SUPPRESS";
-    const outcomeEvidence = await listOutcomeEvidence(parsed.data);
+    const outcomeEvidence = await listOutcomeEvidence(orgId, parsed.data);
     const aivm = outcomeEvidenceAivmFields(
       scopedEvents,
       parsed.data.workflow_id,

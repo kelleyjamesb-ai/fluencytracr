@@ -27,7 +27,7 @@ const basePayload = (overrides: Record<string, unknown> = {}) => ({
   ...overrides
 });
 
-const addSurfaceEvents = (workflowId = "wf-outcome") => {
+const addSurfaceEvents = (workflowId = "wf-outcome", orgId = "org-1") => {
   for (let i = 0; i < 5; i += 1) {
     const runId = `${workflowId}-run-${i}`;
     const timestamp = `2026-05-1${i}T00:00:00.000Z`;
@@ -36,7 +36,7 @@ const addSurfaceEvents = (workflowId = "wf-outcome") => {
         event_type: "ai_output_disposition",
         timestamp,
         risk_class: "low",
-        org_unit: "org:org-1",
+        org_unit: `org:${orgId}`,
         workflow_id: workflowId,
         run_id: runId,
         disposition: "accepted",
@@ -51,7 +51,7 @@ const addSurfaceEvents = (workflowId = "wf-outcome") => {
         event_type: "ai_output_disposition",
         timestamp,
         risk_class: "low",
-        org_unit: "org:org-1",
+        org_unit: `org:${orgId}`,
         workflow_id: workflowId,
         run_id: runId,
         disposition: "accepted",
@@ -152,6 +152,49 @@ describe("Outcome Evidence API", () => {
       .set(writeAuth)
       .send(basePayload({ source_attestation: { user_name: "Alice" } }));
     expect(forbidden.status).toBe(400);
+
+    const forbiddenNumeric = await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send(basePayload({ source_attestation: { user_id: 12345 } }));
+    expect(forbiddenNumeric.status).toBe(400);
+
+    const forbiddenNested = await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send(basePayload({ source_attestation: { approver: { email_address: ["person@example.com"] } } }));
+    expect(forbiddenNested.status).toBe(400);
+  });
+
+  it("scopes outcome evidence reads by authenticated org when workflow identifiers collide", async () => {
+    addSurfaceEvents("wf-shared", "org-1");
+    addSurfaceEvents("wf-shared", "org-2");
+
+    const org1 = await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set({ "x-role": "ADMIN", "x-org-id": "org-1" })
+      .send(basePayload({ workflow_id: "wf-shared", aggregate_value: 4.2 }));
+    const org2 = await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set({ "x-role": "ADMIN", "x-org-id": "org-2" })
+      .send(basePayload({ workflow_id: "wf-shared", aggregate_value: 9.9 }));
+
+    expect(org1.status).toBe(201);
+    expect(org2.status).toBe(201);
+
+    const org1Read = await request(app)
+      .get(`/api/v1/outcome-evidence?workflow_id=wf-shared&period_start=${PERIOD_START}&period_end=${PERIOD_END}`)
+      .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
+    const org2Read = await request(app)
+      .get(`/api/v1/outcome-evidence?workflow_id=wf-shared&period_start=${PERIOD_START}&period_end=${PERIOD_END}`)
+      .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-2" });
+
+    expect(org1Read.status).toBe(200);
+    expect(org2Read.status).toBe(200);
+    expect(org1Read.body.outcome_evidence).toHaveLength(1);
+    expect(org2Read.body.outcome_evidence).toHaveLength(1);
+    expect(org1Read.body.outcome_evidence[0].aggregate_value).toBe(4.2);
+    expect(org2Read.body.outcome_evidence[0].aggregate_value).toBe(9.9);
   });
 
   it("keeps a suppressed workflow suppressed even when outcome evidence exists", async () => {

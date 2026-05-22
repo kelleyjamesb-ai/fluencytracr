@@ -404,6 +404,7 @@ model V1SuppressionAuditLog {
 
 model V1OutcomeEvidence {
   evidenceId        String   @id @default(uuid()) @map("evidence_id") @db.Uuid
+  orgId             String   @map("org_id")
   workflowId        String   @map("workflow_id")
   outcomeMetric     String   @map("outcome_metric")
   outcomeUnit       String   @map("outcome_unit")
@@ -418,7 +419,9 @@ model V1OutcomeEvidence {
   ingestedAt        DateTime @default(now()) @map("ingested_at")
   sourceAttestation Json?    @map("source_attestation")
 
+  @@index([orgId])
   @@index([workflowId])
+  @@index([orgId, workflowId, periodStart, periodEnd])
   @@index([jbtdId])
   @@index([personaId])
   @@index([workflowId, periodStart, periodEnd])
