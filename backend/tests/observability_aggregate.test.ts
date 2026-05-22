@@ -6,6 +6,7 @@ import {
 } from "../src/observability_aggregate";
 import { auditSuppressedObservabilityRows } from "../src/suppression_audit_log";
 import { store } from "../src/store";
+import { DEFAULT_PHASE2_THRESHOLDS } from "../src/execution_signals";
 
 const now = new Date("2026-04-10T12:00:00.000Z");
 
@@ -14,7 +15,8 @@ const dispositionPair = (
   runId: string,
   ts1: string,
   ts2: string,
-  verification: boolean
+  verification: boolean,
+  overrides: Record<string, unknown> = {}
 ) => [
   buildFluencyEventRecord(
     {
@@ -27,7 +29,8 @@ const dispositionPair = (
       edit_distance_bucket: "none",
       verification_present: verification,
       time_to_action_ms: 100,
-      run_id: runId
+      run_id: runId,
+      ...overrides
     },
     `e-${runId}-1`
   ),
@@ -42,7 +45,8 @@ const dispositionPair = (
       edit_distance_bucket: "none",
       verification_present: false,
       time_to_action_ms: 100,
-      run_id: runId
+      run_id: runId,
+      ...overrides
     },
     `e-${runId}-2`
   )
@@ -134,6 +138,90 @@ describe("buildObservabilityRollup", () => {
     expect(wfb?.pattern_distribution).toBeNull();
     expect(wfb?.reliability_factor).toBeNull();
     expect(wfb?.reliability_components).toBeNull();
+  });
+
+  it("gates observability independently by JBTD/persona slice", () => {
+    const events = [];
+    for (let i = 0; i < 2; i += 1) {
+      events.push(
+        ...dispositionPair(
+          "wf-sliced",
+          `large-${i}`,
+          "2026-04-09T00:00:00.000Z",
+          "2026-04-09T00:01:00.000Z",
+          true,
+          { jbtd_id: "manager-review", persona_id: "frontline-manager" }
+        )
+      );
+    }
+    events.push(
+      ...dispositionPair(
+        "wf-sliced",
+        "small-0",
+        "2026-04-09T02:00:00.000Z",
+        "2026-04-09T02:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "exec" }
+      )
+    );
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 2 });
+    const large = rows.find((r) => r.persona_id === "frontline-manager");
+    const small = rows.find((r) => r.persona_id === "exec");
+
+    expect(large).toMatchObject({
+      workflow_id: "wf-sliced",
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager",
+      disclosure: "ALLOWED",
+      executions_disclosed: 2
+    });
+    expect(small).toMatchObject({
+      workflow_id: "wf-sliced",
+      jbtd_id: "manager-review",
+      persona_id: "exec",
+      disclosure: "SUPPRESSED",
+      executions_disclosed: 1
+    });
+  });
+
+  it("derives Phase 2 baselines from each JBTD/persona slice only", () => {
+    const events = [
+      ...dispositionPair(
+        "wf-baseline-sliced",
+        "manager-0",
+        "2026-04-09T00:00:00.000Z",
+        "2026-04-09T00:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "frontline-manager" }
+      ),
+      ...dispositionPair(
+        "wf-baseline-sliced",
+        "exec-0",
+        "2026-04-09T02:00:00.000Z",
+        "2026-04-09T02:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "exec" }
+      )
+    ];
+    const thresholdInputs: ReadonlyArray<string>[] = [];
+
+    buildObservabilityRollup(events, "org-1", "60d", {
+      now,
+      minDisclosedExecutions: 1,
+      thresholdMapBuilder: (sliceEvents) => {
+        thresholdInputs.push(sliceEvents.map((event) => `${event.jbtd_id ?? ""}:${event.persona_id ?? ""}`));
+        return new Map([["wf-baseline-sliced", DEFAULT_PHASE2_THRESHOLDS]]);
+      }
+    });
+
+    expect(thresholdInputs).toHaveLength(2);
+    expect(thresholdInputs).toEqual(
+      expect.arrayContaining([
+        ["manager-review:frontline-manager", "manager-review:frontline-manager"],
+        ["manager-review:exec", "manager-review:exec"]
+      ])
+    );
   });
 
   it("excludes events outside window", () => {

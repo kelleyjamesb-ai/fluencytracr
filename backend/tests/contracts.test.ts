@@ -101,6 +101,52 @@ it("accepts valid payloads with schema version", async () => {
   expect(typeof body.execution_ids[0]).toBe("string");
 });
 
+it("accepts taxonomy-free JBTD and persona join keys", async () => {
+  const response = await request(app)
+    .post("/api/events")
+    .set(schemaHeaders)
+    .send({
+      events: [
+        {
+          ...validEventPayload.events[0],
+          jbtd_id: "manager-review",
+          persona_id: "frontline_manager"
+        }
+      ]
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body.ingested).toBe(1);
+});
+
+it("rejects oversize or invalid JBTD and persona join keys at ingest", async () => {
+  const invalidResponse = await request(app)
+    .post("/api/events")
+    .set(schemaHeaders)
+    .send({
+      events: [
+        {
+          ...validEventPayload.events[0],
+          jbtd_id: "Manager Review"
+        }
+      ]
+    });
+  const oversizeResponse = await request(app)
+    .post("/api/events")
+    .set(schemaHeaders)
+    .send({
+      events: [
+        {
+          ...validEventPayload.events[0],
+          persona_id: "a".repeat(65)
+        }
+      ]
+    });
+
+  expect(invalidResponse.status).toBe(400);
+  expect(oversizeResponse.status).toBe(400);
+});
+
 it("rejects traces reconstructed query without workflow_id or execution_id", async () => {
   const response = await request(app)
     .get("/api/traces/reconstructed")

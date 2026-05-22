@@ -8,6 +8,8 @@ export type QualityMultiplierEvidenceGrade = "OBJECTIVE" | "CALIBRATED" | "QUALI
 
 export type QualityMultiplierResponse = {
   workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
   window_days: number;
   multiplier: number | null;
   verdict: QualityMultiplierVerdict;
@@ -27,6 +29,8 @@ type QualitySignalClass =
 
 type QualityMultiplierInputs = {
   workflowId: string;
+  jbtdId?: string | null;
+  personaId?: string | null;
   windowDays: number;
   events: FluencyEventRecord[];
   now?: Date;
@@ -63,6 +67,12 @@ const eventInRange = (event: FluencyEventRecord, start: Date, end: Date): boolea
   const t = toTime(event.timestamp);
   return t !== null && t >= start.getTime() && t <= end.getTime();
 };
+
+const eventInSlice = (
+  event: FluencyEventRecord,
+  jbtdId: string | null,
+  personaId: string | null
+): boolean => (event.jbtd_id ?? null) === jbtdId && (event.persona_id ?? null) === personaId;
 
 const executionHasVerification = (events: FluencyEventRecord[]): boolean =>
   events.some((event) => {
@@ -169,6 +179,8 @@ const evidenceGrade = (
 const suppress = (
   params: {
     workflowId: string;
+    jbtdId: string | null;
+    personaId: string | null;
     windowDays: number;
     reason: SuppressionReason;
     cohortSize: number;
@@ -176,6 +188,8 @@ const suppress = (
   }
 ): QualityMultiplierResponse => ({
   workflow_id: params.workflowId,
+  jbtd_id: params.jbtdId,
+  persona_id: params.personaId,
   window_days: params.windowDays,
   multiplier: null,
   verdict: "SUPPRESS",
@@ -227,12 +241,16 @@ const computeRates = (slice: WindowSlice) => {
 
 export const computeQualityMultiplier = ({
   workflowId,
+  jbtdId = null,
+  personaId = null,
   windowDays,
   events,
   now = new Date()
 }: QualityMultiplierInputs): QualityMultiplierResponse => {
   const computedAt = now.toISOString();
-  const workflowEvents = events.filter((event) => event.workflow_id === workflowId);
+  const workflowEvents = events.filter(
+    (event) => event.workflow_id === workflowId && eventInSlice(event, jbtdId, personaId)
+  );
   const currentStart = daysAgo(now, windowDays);
   const previousStart = daysAgo(now, windowDays * 2);
   const currentEvents = workflowEvents.filter((event) => eventInRange(event, currentStart, now));
@@ -243,6 +261,8 @@ export const computeQualityMultiplier = ({
   if (windowDays < MIN_WINDOW_DAYS) {
     return suppress({
       workflowId,
+      jbtdId,
+      personaId,
       windowDays,
       reason: "INSUFFICIENT_TIME",
       cohortSize: current.cohortSize,
@@ -252,6 +272,8 @@ export const computeQualityMultiplier = ({
   if (current.ambiguityRate > AMBIGUITY_RATE_THRESHOLD) {
     return suppress({
       workflowId,
+      jbtdId,
+      personaId,
       windowDays,
       reason: "HIGH_AMBIGUITY",
       cohortSize: current.cohortSize,
@@ -261,6 +283,8 @@ export const computeQualityMultiplier = ({
   if (current.cohortSize < MIN_COHORT_SIZE) {
     return suppress({
       workflowId,
+      jbtdId,
+      personaId,
       windowDays,
       reason: "INSUFFICIENT_VOLUME",
       cohortSize: current.cohortSize,
@@ -270,6 +294,8 @@ export const computeQualityMultiplier = ({
   if (!hasConvergence(current) || !hasConvergence(previous)) {
     return suppress({
       workflowId,
+      jbtdId,
+      personaId,
       windowDays,
       reason: "NO_CONVERGENCE",
       cohortSize: current.cohortSize,
@@ -279,6 +305,8 @@ export const computeQualityMultiplier = ({
   if (!sameSignalClasses(current.signalClasses, previous.signalClasses)) {
     return suppress({
       workflowId,
+      jbtdId,
+      personaId,
       windowDays,
       reason: "BASELINE_UNSTABLE",
       cohortSize: current.cohortSize,
@@ -297,6 +325,8 @@ export const computeQualityMultiplier = ({
 
   return {
     workflow_id: workflowId,
+    jbtd_id: jbtdId,
+    persona_id: personaId,
     window_days: windowDays,
     multiplier,
     verdict: "SURFACE",
@@ -310,9 +340,13 @@ export const computeQualityMultiplier = ({
 export const failClosedQualityMultiplierResponse = (
   workflowId: string,
   windowDays: number,
-  computedAt = new Date().toISOString()
+  computedAt = new Date().toISOString(),
+  jbtdId: string | null = null,
+  personaId: string | null = null
 ): QualityMultiplierResponse => ({
   workflow_id: workflowId,
+  jbtd_id: jbtdId,
+  persona_id: personaId,
   window_days: windowDays,
   multiplier: null,
   verdict: "SUPPRESS",

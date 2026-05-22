@@ -89,16 +89,17 @@ const seedQualityWorkflow = (
   workflowId: string,
   count: number,
   currentDaysAgo = 5,
-  previousDaysAgo = 95
+  previousDaysAgo = 95,
+  overrides: Partial<FluencyEventRecord> = {}
 ): void => {
   for (let i = 0; i < count; i += 1) {
     const currentRun = `${workflowId}-current-${i}`;
-    addEvent(recovery(workflowId, currentRun, currentDaysAgo));
-    addEvent(disposition(workflowId, currentRun, currentDaysAgo, {}, 1_000));
+    addEvent(recovery(workflowId, currentRun, currentDaysAgo, overrides, 0));
+    addEvent(disposition(workflowId, currentRun, currentDaysAgo, overrides, 1_000));
 
     const previousRun = `${workflowId}-previous-${i}`;
-    addEvent(recovery(workflowId, previousRun, previousDaysAgo));
-    addEvent(disposition(workflowId, previousRun, previousDaysAgo, {}, 1_000));
+    addEvent(recovery(workflowId, previousRun, previousDaysAgo, overrides, 0));
+    addEvent(disposition(workflowId, previousRun, previousDaysAgo, overrides, 1_000));
   }
 };
 
@@ -143,6 +144,13 @@ const seedLowQualityWorkflow = (workflowId: string): void => {
 const getMultiplier = (workflowId: string, windowDays = 90) =>
   request(app)
     .get(`/api/v1/quality-multiplier?workflow_id=${workflowId}&window_days=${windowDays}`)
+    .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
+
+const getSlicedMultiplier = (workflowId: string, jbtdId: string, personaId: string, windowDays = 90) =>
+  request(app)
+    .get(
+      `/api/v1/quality-multiplier?workflow_id=${workflowId}&window_days=${windowDays}&jbtd_id=${jbtdId}&persona_id=${personaId}`
+    )
     .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
 
 describe("GET /api/v1/quality-multiplier", () => {
@@ -215,6 +223,36 @@ describe("GET /api/v1/quality-multiplier", () => {
     expect(res.body.multiplier).toBeNull();
     expect(res.body.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(res.body.cohort_size).toBe(4);
+  });
+
+  it("applies cohort gates independently within JBTD/persona slices", async () => {
+    seedQualityWorkflow("wf-sliced-quality", 5, 5, 95, {
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager"
+    });
+    seedQualityWorkflow("wf-sliced-quality", 1, 5, 95, {
+      jbtd_id: "manager-review",
+      persona_id: "exec"
+    });
+
+    const large = await getSlicedMultiplier("wf-sliced-quality", "manager-review", "frontline-manager");
+    const small = await getSlicedMultiplier("wf-sliced-quality", "manager-review", "exec");
+
+    expect(large.status).toBe(200);
+    expect(large.body).toMatchObject({
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager",
+      verdict: "SURFACE",
+      cohort_size: 5
+    });
+    expect(small.status).toBe(200);
+    expect(small.body).toMatchObject({
+      jbtd_id: "manager-review",
+      persona_id: "exec",
+      verdict: "SUPPRESS",
+      suppression_reason: "INSUFFICIENT_VOLUME",
+      cohort_size: 1
+    });
   });
 
   it("suppresses when the workflow has not converged on sufficient behavioral classes", async () => {

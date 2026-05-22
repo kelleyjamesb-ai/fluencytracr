@@ -1,5 +1,5 @@
 import type { FluencyPatternName, FluencyWindow, ObservabilityReliabilityComponents } from "@learnaire/shared";
-import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "./execution_signals";
+import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS, type Phase2Thresholds } from "./execution_signals";
 import { evaluateExecutionDisclosure } from "./execution_disclosure";
 import { evaluateFluencyExecutionGates, toTraceGateSummary } from "./fluency_execution_gates";
 import { runFluencyPatternSuppression } from "./fluency-pattern-suppression";
@@ -65,6 +65,8 @@ export const eventBelongsToOrg = (event: FluencyEventRecord, orgId: string): boo
 
 export type WorkflowObservabilityRow = {
   workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
   executions_total: number;
   executions_disclosed: number;
   executions_suppressed: number;
@@ -77,6 +79,9 @@ export type WorkflowObservabilityRow = {
   /** Qualitative hints only; no scores, ranks, or trends (PRD §8). */
   allowed_interpretation_hints: string[];
 };
+
+const sliceKey = (workflowId: string, jbtdId: string | null, personaId: string | null): string =>
+  JSON.stringify([workflowId, jbtdId, personaId]);
 
 const interpretationHints = (dist: Record<FluencyPatternName, number>): string[] => {
   const hints: string[] = [];
@@ -95,6 +100,7 @@ const interpretationHints = (dist: Record<FluencyPatternName, number>): string[]
 export type BuildObservabilityRollupOptions = {
   minDisclosedExecutions?: number;
   now?: Date;
+  thresholdMapBuilder?: (events: FluencyEventRecord[]) => Map<string, Phase2Thresholds>;
 };
 
 /**
@@ -108,20 +114,32 @@ export const buildObservabilityRollup = (
 ): WorkflowObservabilityRow[] => {
   const now = options.now ?? new Date();
   const minDisclosed = options.minDisclosedExecutions ?? MIN_COHORT_SIZE;
+  const thresholdMapBuilder = options.thresholdMapBuilder ?? buildWorkflowPhase2ThresholdMap;
 
   const scoped = allEvents.filter((e) => eventBelongsToOrg(e, orgId));
   const windowed = filterEventsByWindow(scoped, window, now) as FluencyEventRecord[];
-  const thresholdsByWorkflow = buildWorkflowPhase2ThresholdMap(windowed);
 
-  const workflowIds = [...new Set(windowed.map((e) => e.workflow_id))].sort((a, b) =>
-    a.localeCompare(b)
-  );
+  const sliceKeys = [
+    ...new Set(windowed.map((e) => sliceKey(e.workflow_id, e.jbtd_id ?? null, e.persona_id ?? null)))
+  ].sort((a, b) => a.localeCompare(b));
 
-  return workflowIds.map((workflowId) => {
-    const wfEvents = windowed.filter((e) => e.workflow_id === workflowId);
-    const allWorkflowEvents = scoped.filter((e) => e.workflow_id === workflowId);
+  return sliceKeys.map((key) => {
+    const [workflowId, jbtdId, personaId] = JSON.parse(key) as [string, string | null, string | null];
+    const wfEvents = windowed.filter(
+      (e) =>
+        e.workflow_id === workflowId &&
+        (e.jbtd_id ?? null) === jbtdId &&
+        (e.persona_id ?? null) === personaId
+    );
+    const allWorkflowEvents = scoped.filter(
+      (e) =>
+        e.workflow_id === workflowId &&
+        (e.jbtd_id ?? null) === jbtdId &&
+        (e.persona_id ?? null) === personaId
+    );
     const ghostUse = evaluateGhostUseResidual(allWorkflowEvents, window, now);
     const byExec = groupEventsByExecution(wfEvents);
+    const thresholdsByWorkflow = thresholdMapBuilder(wfEvents);
     const workflowThresholds =
       thresholdsByWorkflow.get(workflowId) ?? DEFAULT_PHASE2_THRESHOLDS;
     let executions_disclosed = 0;
@@ -203,6 +221,8 @@ export const buildObservabilityRollup = (
 
     return {
       workflow_id: workflowId,
+      jbtd_id: jbtdId,
+      persona_id: personaId,
       executions_total,
       executions_disclosed,
       executions_suppressed,

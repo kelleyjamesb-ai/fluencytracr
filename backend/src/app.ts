@@ -16,6 +16,7 @@ import {
   ConnectorEventImportSchema,
   FluencyEventIngestSchema,
   FluencyEventSchema,
+  FluencyJoinKeySchema,
   UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
@@ -3994,6 +3995,8 @@ const TraceReconstructedQuerySchema = z
 
 const CausalDeltaBodySchema = z.object({
   workflow_id: z.string().min(1),
+  jbtd_id: FluencyJoinKeySchema.nullable().optional(),
+  persona_id: FluencyJoinKeySchema.nullable().optional(),
   event_at: z.string().datetime({ offset: true }),
   pre_window_days: z.number().int().positive().default(30),
   post_window_days: z.number().int().positive().default(30),
@@ -4002,6 +4005,8 @@ const CausalDeltaBodySchema = z.object({
 
 const QualityMultiplierQuerySchema = z.object({
   workflow_id: z.string().min(1),
+  jbtd_id: FluencyJoinKeySchema.nullable().optional(),
+  persona_id: FluencyJoinKeySchema.nullable().optional(),
   window_days: z.coerce.number().int().positive().max(3650)
 }).strict();
 
@@ -4027,7 +4032,7 @@ app.post(
       });
     }
 
-    const { workflow_id, event_at, pre_window_days, post_window_days } = parsed.data;
+    const { workflow_id, jbtd_id, persona_id, event_at, pre_window_days, post_window_days } = parsed.data;
     if (
       pre_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS ||
       post_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS
@@ -4056,6 +4061,8 @@ app.post(
     return res.json(
       computeCausalDelta({
         workflowId: workflow_id,
+        jbtdId: jbtd_id ?? null,
+        personaId: persona_id ?? null,
         eventAt: event_at,
         preWindowDays: pre_window_days,
         postWindowDays: post_window_days,
@@ -4072,10 +4079,12 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     typeof req.query.window_days === "string" && /^\d+$/.test(req.query.window_days)
       ? Number(req.query.window_days)
       : 0;
-  const parsed = QualityMultiplierQuerySchema.safeParse({
-    workflow_id: req.query.workflow_id,
-    window_days: req.query.window_days
-  });
+	  const parsed = QualityMultiplierQuerySchema.safeParse({
+	    workflow_id: req.query.workflow_id,
+	    jbtd_id: req.query.jbtd_id,
+	    persona_id: req.query.persona_id,
+	    window_days: req.query.window_days
+	  });
 
   if (!parsed.success) {
     return res.status(400).json(
@@ -4088,6 +4097,8 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
   return res.json(
     computeQualityMultiplier({
       workflowId: parsed.data.workflow_id,
+      jbtdId: parsed.data.jbtd_id ?? null,
+      personaId: parsed.data.persona_id ?? null,
       windowDays: parsed.data.window_days,
       events: scopedEvents
     })
@@ -4166,7 +4177,11 @@ app.get(
     const payload = {
       org_id: org.id,
       observation_window: observationWindow,
-      workflows
+      workflows: workflows.filter(
+        (workflow) =>
+          workflow.disclosure === "ALLOWED" ||
+          (workflow.jbtd_id === null && workflow.persona_id === null)
+      )
     };
     const validated = ObservabilityResponseSchema.safeParse(payload);
     if (!validated.success) {
