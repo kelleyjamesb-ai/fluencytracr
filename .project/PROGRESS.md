@@ -27,6 +27,7 @@
 - Real Source Readiness Manifest: added `RSRM_2026_05`, source readiness review helper, synthetic manifest fixture, docs, and `/methodology-review` source-readiness section without ingestion, ROI calculation, or claim readiness upgrades.
 - Aggregate Evidence Import Stage 1: added `AEI_2026_05`, a review-only admin-exported aggregate upload package, shared review helper, synthetic fixture/docs, backend/frontend tests, and `/methodology-review` Source Evidence Import section without live ingestion, persistence, ROI calculation, or claim readiness upgrades.
 - Nielsen Source Evidence Trial Stage 2: added `NSETR_2026_05`, a document-derived claim mapping wrapper for the Nielsen value deck and Time-Saves packet; the trial maps 6 candidates, accepts 2 for review, withholds 4 behind source-system/approval gaps, and preserves no live ingestion, no persistence, no ROI calculation, and no claim readiness upgrades.
+- Glean dogfood E2E harness slice: added pure-stdlib mocked GCE fixture generation, no-network dogfood runner, healthy/regressed/sparse unittest coverage, docs, and a PR-gating `dogfood-e2e` job in the Assurance Harness workflow.
 
 ## Current Status
 
