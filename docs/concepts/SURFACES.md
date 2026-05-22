@@ -46,6 +46,8 @@ Workflow surfaces are events with a populated `workflow_run` structure. This is 
 
 These remain first-class surfaces.
 
+See [AGENT_TYPES.md](./AGENT_TYPES.md) for the three-way split of AGENT into autonomous, named-workflow, and ephemeral sub-surfaces, scheduled for V2.3.
+
 ### STANDALONE NON-WORKFLOW SURFACES
 
 Standalone non-workflow surfaces are discrete AI interactions without a `workflow_run` wrapper:
