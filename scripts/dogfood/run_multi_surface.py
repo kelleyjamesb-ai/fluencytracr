@@ -29,7 +29,9 @@ REQUIRED_FIELDS = [
     "p95_latency_ms",
 ]
 
-BLANK_WORKFLOW_ID_REASON = "Blank workflow_id in input — likely unclassified BigQuery feature rows"
+BLANK_WORKFLOW_ID_REASON = (
+    "Blank workflow_id in input — likely unclassified BigQuery feature rows; relabeled UNCLASSIFIED"
+)
 
 MANAGER_REVIEW_SURFACES = {"CHAT", "AI_ANSWER"}
 ENG_ON_CALL_SURFACES = {
