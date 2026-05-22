@@ -68,6 +68,8 @@ Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces
 
 Production ingest is a defined V3 concept (see docs/concepts/INGEST.md). It is not yet implemented and establishes the customer-side-transformer privacy boundary: raw GCE remains in the customer environment, and only aggregate cohort distributions cross into FluencyTracr.
 
+Calibration governance is a defined V3 concept (see docs/concepts/CALIBRATION.md). It is not yet implemented and distinguishes immutable, versioned reference baselines from prohibited tunable thresholds.
+
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
 - AIVM grammar: value_type in {ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED}; evidence_grade in {OBJECTIVE, CALIBRATED, QUALITATIVE}

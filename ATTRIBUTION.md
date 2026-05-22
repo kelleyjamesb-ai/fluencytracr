@@ -62,6 +62,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: structural privacy boundary where only cohort percentile distributions cross into FluencyTracr
 - Used in: V3 ingest concept document
 
+### Calibration as versioned baseline governance
+- Source: James Kelley, calibration-as-versioned-baseline governance pattern
+- Governance grounding: calibration baselines are immutable reference artifacts, not tunable thresholds or admin overrides
+- Used in: V3 calibration concept document
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative
