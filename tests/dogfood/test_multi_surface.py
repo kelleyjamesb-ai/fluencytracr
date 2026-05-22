@@ -358,6 +358,29 @@ def test_velocity_adjustment_accepts_integral_indices() -> None:
     assert driver.velocity_adjusted_multiplier(1.2, {"verdict": "SURFACE", "velocity_index": 0}) == 0.84
 
 
+def test_velocity_input_verification_rate_feeds_surface_fixture_generation(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    velocity_input = tmp_path / "velocity.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 100, 0.9, 0.0)])
+    velocity_input.write_text(
+        "\n".join(
+            [
+                "workflow_id,surface_category,cohort_size,window_days,surface_interaction_count,verification_signal_count,verified_user_count,verification_rate,freq_p10,freq_p50,freq_p90,freq_p99,engagement_p10,engagement_p50,engagement_p90,engagement_p99,breadth_p10,breadth_p50,breadth_p90,breadth_p99",
+                "workflow:AGENT,workflow,30,60,30,30,30,1.0,11,71,350,701,30,61,61,61,1,7,10,12",
+                "",
+            ]
+        )
+    )
+
+    completed = run_driver_with_velocity(input_path, velocity_input, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "| AGENT | workflow | surface | 100 | SURFACE | none | 0.975 | 1.5 | 1 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
+
+
 def test_velocity_input_preserves_v1_when_not_supplied(tmp_path: Path) -> None:
     input_path = tmp_path / "input.csv"
     output_dir = tmp_path / "out"

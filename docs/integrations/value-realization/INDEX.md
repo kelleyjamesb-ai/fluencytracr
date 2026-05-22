@@ -56,6 +56,10 @@ person-level reporting.
 4. Review the overall velocity-adjusted Quality Multiplier and the workflow vs standalone category split.
 5. Treat the velocity section as aggregate context only; each surface still clears or suppresses independently.
 
+The CSV files are the current developer dogfood adapter. They should be replaced
+by a direct aggregate feed when this moves toward real-time internal data, using
+the same aggregate-only fields and suppression posture.
+
 ## Complementary Stated-Evidence Layer
 
 The AI Fluency Instrument remains useful as stated evidence: what people say

@@ -228,6 +228,8 @@ def normalize_velocity_row(row: dict[str, Any], row_number: int) -> dict[str, An
         values = normalized[name]
         if not (values["p10"] <= values["p50"] <= values["p90"] <= values["p99"]):
             raise InputError(f"row {row_number}: {name} percentiles must be ordered")
+    if row.get("verification_rate") not in {None, ""}:
+        normalized["verification_rate"] = _to_float(row, "verification_rate", row_number)
     return normalized
 
 
@@ -409,6 +411,8 @@ def generate_fixture(row: dict[str, Any], output_dir: Path, cohort_size: int) ->
         "real_cohort_size": row["real_cohort_size"],
         "distinct_users": row["distinct_users"],
         "completion_rate": row["completion_rate"],
+        "verification_rate": row["verification_rate"],
+        "verification_rate_source": row.get("verification_rate_source", "surface_input"),
         "p50_latency_ms": row["p50_latency_ms"],
         "p95_latency_ms": row["p95_latency_ms"],
     }
@@ -583,6 +587,20 @@ def merge_velocity_context(
     return merged
 
 
+def apply_velocity_overrides(
+    row: dict[str, Any],
+    velocity_by_key: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    velocity = velocity_by_key.get(velocity_match_key(row["workflow_id"]))
+    if not velocity or not isinstance(velocity.get("verification_rate"), float):
+        return {**row, "verification_rate_source": "surface_input"}
+    return {
+        **row,
+        "verification_rate": velocity["verification_rate"],
+        "verification_rate_source": "velocity_input",
+    }
+
+
 def render_readout(
     *,
     results: list[dict[str, Any]],
@@ -690,7 +708,7 @@ def render_readout(
             "",
             "## Methodology Footnote",
             "",
-            f"Rates come from customer-supplied BigQuery aggregate rows. The driver expands each included surface into synthetic GCE-shaped workflow runs so the V1 dogfood ingest path can evaluate the same aggregate behavior without using real customer data or row-level records. Surfaces use the configured synthetic cohort size of {cohort_size}, except real cohorts below 5 preserve the real cohort count so canonical volume suppression applies.",
+            f"Rates come from customer-supplied BigQuery aggregate rows. When velocity input includes joined verification_rate, that aggregate verification rate overrides the base surface row so verification signals enrich the parent surface without becoming standalone surfaces. The CSV/JSON files are a replaceable developer adapter boundary, not a production data architecture. The driver expands each included surface into synthetic GCE-shaped workflow runs so the V1 dogfood ingest path can evaluate the same aggregate behavior without using real customer data or row-level records. Surfaces use the configured synthetic cohort size of {cohort_size}, except real cohorts below 5 preserve the real cohort count so canonical volume suppression applies.",
             "Weighted rollups use real_cohort_size from the input rows and include SURFACE rows only. Each surface is evaluated independently before any read-only weighted summary is computed.",
         ]
     )
@@ -707,6 +725,8 @@ def run(
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     raw_rows = read_rows(input_path)
+    velocity_rows = read_velocity_rows(velocity_input) if velocity_input is not None else []
+    velocity_by_key = {velocity_match_key(row["workflow_id"]): row for row in velocity_rows}
     results: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     for index, raw_row in enumerate(raw_rows, start=2):
@@ -714,11 +734,12 @@ def run(
         if row["workflow_id"] == "UNCLASSIFIED":
             skipped.append({**row, "reason": BLANK_WORKFLOW_ID_REASON})
             continue
+        row = apply_velocity_overrides(row, velocity_by_key)
         results.append(run_surface(row, output_dir, cohort_size))
     if velocity_input is not None:
         results = merge_velocity_context(
             results,
-            read_velocity_rows(velocity_input),
+            velocity_rows,
             output_dir,
             backend_url,
         )
