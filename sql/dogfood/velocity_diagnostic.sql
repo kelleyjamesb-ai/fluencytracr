@@ -164,10 +164,29 @@ taxonomy_surfaces AS (
   UNION ALL SELECT * FROM standalone_glean_bot_activity
 ),
 
+surface_join_aliases AS (
+  SELECT DISTINCT
+    user_key,
+    surface_join_key,
+    surface_join_key AS attribution_join_key
+  FROM taxonomy_surfaces
+  UNION DISTINCT
+  SELECT DISTINCT
+    user_key,
+    surface_join_key,
+    session_token AS attribution_join_key
+  FROM taxonomy_surfaces
+  WHERE session_token IS NOT NULL
+),
+
 verification_signals AS (
   SELECT
     user_key,
-    COALESCE(workflow_run_id, session_token) AS surface_join_key,
+    COALESCE(
+      workflow_run_id,
+      session_token,
+      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
+    ) AS attribution_join_key,
     event_type AS verification_event_type
   FROM source_events
   WHERE event_type IN (
@@ -177,7 +196,6 @@ verification_signals AS (
       'SEARCH_FEEDBACK'
     )
     AND user_key IS NOT NULL
-    AND COALESCE(workflow_run_id, session_token) IS NOT NULL
 ),
 
 surface_verification AS (
@@ -188,8 +206,11 @@ surface_verification AS (
     COUNT(DISTINCT verification.user_key) AS verified_user_count,
     COUNT(DISTINCT surface.surface_join_key) AS verified_surface_count
   FROM taxonomy_surfaces AS surface
+  JOIN surface_join_aliases AS alias
+    ON alias.surface_join_key = surface.surface_join_key
+    AND alias.user_key = surface.user_key
   JOIN verification_signals AS verification
-    ON verification.surface_join_key = surface.surface_join_key
+    ON verification.attribution_join_key = alias.attribution_join_key
     AND verification.user_key = surface.user_key
   GROUP BY surface.workflow_id, surface.surface_category
 ),

@@ -46,6 +46,7 @@ def test_verification_signals_join_back_to_parent_surfaces() -> None:
     sql = SQL.read_text()
 
     assert "verification_signals AS" in sql
+    assert "surface_join_aliases AS" in sql
     assert "surface_verification AS" in sql
     for verification_signal in [
         "CHAT_CITATION_CLICK",
@@ -54,7 +55,9 @@ def test_verification_signals_join_back_to_parent_surfaces() -> None:
         "SEARCH_FEEDBACK",
     ]:
         assert verification_signal in sql
-    assert "verification.surface_join_key = surface.surface_join_key" in sql
+    assert "surface_join_key AS attribution_join_key" in sql
+    assert "session_token AS attribution_join_key" in sql
+    assert "verification.attribution_join_key = alias.attribution_join_key" in sql
     assert "LEFT JOIN surface_verification" in sql
     assert "verification_signal_count" in sql
     assert "verified_user_count" in sql
