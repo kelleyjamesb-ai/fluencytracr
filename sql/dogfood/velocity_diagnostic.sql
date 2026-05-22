@@ -13,6 +13,12 @@ WITH source_events AS (
     DATE(timestamp) AS event_date,
     JSON_VALUE(jsonPayload, '$.type') AS event_type,
     NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.workflowrun.feature')), '') AS workflow_feature,
+    NULLIF(TRIM(COALESCE(
+      JSON_VALUE(jsonPayload, '$.workflowrun.runId'),
+      JSON_VALUE(jsonPayload, '$.workflowrun.id'),
+      JSON_VALUE(jsonPayload, '$.workflow_run_id'),
+      JSON_VALUE(jsonPayload, '$.run_id')
+    )), '') AS workflow_run_id,
     JSON_VALUE(jsonPayload, '$.session_token') AS session_token,
     COALESCE(
       JSON_VALUE(jsonPayload, '$.actor.stable_user_key'),
@@ -37,6 +43,11 @@ workflow_surfaces AS (
     user_key,
     event_date,
     session_token,
+    COALESCE(
+      workflow_run_id,
+      session_token,
+      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
+    ) AS surface_join_key,
     CONCAT('workflow:', workflow_feature) AS workflow_id,
     'workflow' AS surface_category
   FROM source_events
@@ -46,7 +57,17 @@ workflow_surfaces AS (
 ),
 
 standalone_search AS (
-  SELECT user_key, event_date, session_token, 'standalone:SEARCH' AS workflow_id, 'standalone' AS surface_category
+  SELECT
+    user_key,
+    event_date,
+    session_token,
+    COALESCE(
+      workflow_run_id,
+      session_token,
+      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
+    ) AS surface_join_key,
+    'standalone:SEARCH' AS workflow_id,
+    'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'SEARCH'
     AND workflow_feature IS NULL
@@ -54,7 +75,17 @@ standalone_search AS (
 ),
 
 standalone_autocomplete AS (
-  SELECT user_key, event_date, session_token, 'standalone:AUTOCOMPLETE' AS workflow_id, 'standalone' AS surface_category
+  SELECT
+    user_key,
+    event_date,
+    session_token,
+    COALESCE(
+      workflow_run_id,
+      session_token,
+      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
+    ) AS surface_join_key,
+    'standalone:AUTOCOMPLETE' AS workflow_id,
+    'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'AUTOCOMPLETE'
     AND workflow_feature IS NULL
@@ -62,7 +93,17 @@ standalone_autocomplete AS (
 ),
 
 standalone_mcp_usage AS (
-  SELECT user_key, event_date, session_token, 'standalone:MCP_USAGE' AS workflow_id, 'standalone' AS surface_category
+  SELECT
+    user_key,
+    event_date,
+    session_token,
+    COALESCE(
+      workflow_run_id,
+      session_token,
+      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
+    ) AS surface_join_key,
+    'standalone:MCP_USAGE' AS workflow_id,
+    'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'MCP_USAGE'
     AND workflow_feature IS NULL
@@ -70,7 +111,17 @@ standalone_mcp_usage AS (
 ),
 
 standalone_ai_summary AS (
-  SELECT user_key, event_date, session_token, 'standalone:AI_SUMMARY' AS workflow_id, 'standalone' AS surface_category
+  SELECT
+    user_key,
+    event_date,
+    session_token,
+    COALESCE(
+      workflow_run_id,
+      session_token,
+      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
+    ) AS surface_join_key,
+    'standalone:AI_SUMMARY' AS workflow_id,
+    'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'AI_SUMMARY'
     AND workflow_feature IS NULL
@@ -82,6 +133,11 @@ standalone_glean_bot_activity AS (
     bot.user_key,
     bot.event_date,
     bot.session_token,
+    COALESCE(
+      bot.workflow_run_id,
+      bot.session_token,
+      CONCAT(bot.user_key, ':', CAST(bot.event_ts AS STRING), ':', bot.event_type)
+    ) AS surface_join_key,
     'standalone:GLEAN_BOT_ACTIVITY' AS workflow_id,
     'standalone' AS surface_category
   FROM source_events AS bot
@@ -109,12 +165,43 @@ taxonomy_surfaces AS (
   UNION ALL SELECT * FROM standalone_glean_bot_activity
 ),
 
+verification_signals AS (
+  SELECT
+    user_key,
+    COALESCE(workflow_run_id, session_token) AS surface_join_key,
+    event_type AS verification_event_type
+  FROM source_events
+  WHERE event_type IN (
+      'CHAT_CITATION_CLICK',
+      'AI_ANSWER_VOTE',
+      'AI_SUMMARY_VOTE',
+      'SEARCH_FEEDBACK'
+    )
+    AND user_key IS NOT NULL
+    AND COALESCE(workflow_run_id, session_token) IS NOT NULL
+),
+
+surface_verification AS (
+  SELECT
+    surface.workflow_id,
+    surface.surface_category,
+    COUNT(*) AS verification_signal_count,
+    COUNT(DISTINCT verification.user_key) AS verified_user_count,
+    COUNT(DISTINCT surface.surface_join_key) AS verified_surface_count
+  FROM taxonomy_surfaces AS surface
+  JOIN verification_signals AS verification
+    ON verification.surface_join_key = surface.surface_join_key
+    AND verification.user_key = surface.user_key
+  GROUP BY surface.workflow_id, surface.surface_category
+),
+
 user_surface_activity AS (
   SELECT
     user_key,
     workflow_id,
     surface_category,
     COUNT(*) AS total_events,
+    COUNT(DISTINCT surface_join_key) AS surface_interaction_count,
     COUNT(DISTINCT event_date) AS active_days,
     SAFE_DIVIDE(COUNT(*), COUNT(DISTINCT event_date)) AS runs_per_active_day
   FROM taxonomy_surfaces
@@ -134,6 +221,7 @@ surface_with_breadth AS (
     activity.workflow_id,
     activity.surface_category,
     activity.user_key,
+    activity.surface_interaction_count,
     activity.active_days,
     activity.runs_per_active_day,
     breadth.distinct_surfaces_touched
@@ -147,6 +235,13 @@ surface_percentiles AS (
     surface_category,
     COUNT(DISTINCT user_key) AS cohort_size,
     DATE_DIFF(DATE(window_end), DATE(window_start), DAY) AS window_days,
+    SUM(surface_interaction_count) AS surface_interaction_count,
+    COALESCE(MAX(verification.verification_signal_count), 0) AS verification_signal_count,
+    COALESCE(MAX(verification.verified_user_count), 0) AS verified_user_count,
+    SAFE_DIVIDE(
+      COALESCE(MAX(verification.verified_surface_count), 0),
+      SUM(surface_interaction_count)
+    ) AS verification_rate,
     APPROX_QUANTILES(runs_per_active_day, 100)[OFFSET(10)] AS freq_p10,
     APPROX_QUANTILES(runs_per_active_day, 100)[OFFSET(50)] AS freq_p50,
     APPROX_QUANTILES(runs_per_active_day, 100)[OFFSET(90)] AS freq_p90,
@@ -160,6 +255,7 @@ surface_percentiles AS (
     APPROX_QUANTILES(distinct_surfaces_touched, 100)[OFFSET(90)] AS breadth_p90,
     APPROX_QUANTILES(distinct_surfaces_touched, 100)[OFFSET(99)] AS breadth_p99
   FROM surface_with_breadth
+  LEFT JOIN surface_verification AS verification USING (workflow_id, surface_category)
   GROUP BY workflow_id, surface_category
 )
 
@@ -168,6 +264,10 @@ SELECT
   surface_category,
   cohort_size,
   window_days,
+  surface_interaction_count,
+  verification_signal_count,
+  verified_user_count,
+  verification_rate,
   freq_p10,
   freq_p50,
   freq_p90,
