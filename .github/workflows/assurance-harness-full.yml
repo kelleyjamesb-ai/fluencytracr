@@ -39,32 +39,59 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Check LMSYS dataset credentials
+        id: lmsys-credentials
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "${HF_TOKEN}" ]; then
+            {
+              echo "# Assurance Harness Full Scale"
+              echo ""
+              echo "Status: skipped"
+              echo "Reason: HF_TOKEN GitHub secret is not configured."
+              echo ""
+              echo "Set the repository secret \`HF_TOKEN\` to enable the full LMSYS-Chat-1M assurance run."
+            } > scripts/assurance-report.md
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
       - name: Set up Node
+        if: steps.lmsys-credentials.outputs.available == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "20"
           package-manager-cache: false
 
       - name: Set up Python
+        if: steps.lmsys-credentials.outputs.available == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install Node dependencies
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npm ci
 
       - name: Install Hugging Face dataset dependencies
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install datasets huggingface_hub
 
       - name: Build shared package
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npm run build --workspace shared
 
       - name: Create current schema in fresh CI database
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npx prisma db push --schema backend/prisma/schema.prisma --skip-generate
 
       - name: Baseline existing migrations for CI schema
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: |
           for migration in backend/prisma/migrations/*; do
             if [ -d "$migration" ]; then
@@ -73,12 +100,15 @@ jobs:
           done
 
       - name: Run Prisma migrations
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
 
       - name: Generate Prisma client
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npx prisma generate --schema backend/prisma/schema.prisma
 
       - name: Download LMSYS-Chat-1M
+        if: steps.lmsys-credentials.outputs.available == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -95,11 +125,13 @@ jobs:
           PY
 
       - name: Start backend
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: |
           npm run dev --workspace backend > backend.log 2>&1 &
           echo $! > backend.pid
 
       - name: Wait for Postgres-backed health
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: |
           node - <<'NODE'
           const deadline = Date.now() + 120_000;
@@ -122,12 +154,15 @@ jobs:
           NODE
 
       - name: Run seed self-test
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npm run test:seed
 
       - name: Seed full LMSYS dataset
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npm run seed:lmsys
 
       - name: Verify assurance properties
+        if: steps.lmsys-credentials.outputs.available == 'true'
         run: npm run verify:assurance
 
       - name: Upload assurance report
