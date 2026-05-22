@@ -13,6 +13,7 @@
 # Governance and agent context — require owner review
 /AGENTS.md                          @kelleyjamesb-ai
 /CODEX.md                           @kelleyjamesb-ai
+/ATTRIBUTION.md                     @kelleyjamesb-ai
 /.github/CODEOWNERS                 @kelleyjamesb-ai
 
 # V1 contracts — schema, suppression, canonical events

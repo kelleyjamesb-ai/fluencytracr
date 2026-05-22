@@ -2,6 +2,7 @@
 ![Assurance Harness](https://github.com/kelleyjamesb-ai/fluencytracr/actions/workflows/assurance-harness.yml/badge.svg)
 
 > **Agents and contributors:** Read [AGENTS.md](./AGENTS.md) before making any changes. It defines the V1 invariants, the canonical event and suppression sets, and the ordered prompt roadmap.
+> Influences and credits: see [ATTRIBUTION.md](./ATTRIBUTION.md).
 
 FluencyTracr is the behavioral evidence layer for Glean value realization.
 It exists because the current time-saved pipeline can show acceleration while

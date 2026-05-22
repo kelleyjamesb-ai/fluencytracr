@@ -85,6 +85,7 @@ Note: each prompt is one PR. Do not combine.
 - Add LMSYS assurance harness fixtures for every new behavior.
 - Verdict shape changes require updates to schemas/, openspec/, and docs/contracts/ in the same PR.
 - Commits must reference which invariant or roadmap prompt they implement.
+- When implementing a roadmap prompt that derives from external work, reference the relevant entry in ATTRIBUTION.md in the PR description. Add new entries when new sources are introduced.
 
 ## 11. When in Doubt
 
