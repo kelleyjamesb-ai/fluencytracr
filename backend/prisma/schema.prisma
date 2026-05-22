@@ -401,3 +401,26 @@ model V1SuppressionAuditLog {
   @@index([orgId, executionId])
   @@map("suppression_audit_log")
 }
+
+model V1OutcomeEvidence {
+  evidenceId        String   @id @default(uuid()) @map("evidence_id") @db.Uuid
+  workflowId        String   @map("workflow_id")
+  outcomeMetric     String   @map("outcome_metric")
+  outcomeUnit       String   @map("outcome_unit")
+  periodStart       DateTime @map("period_start")
+  periodEnd         DateTime @map("period_end")
+  aggregateValue    Float    @map("aggregate_value")
+  cohortSize        Int      @map("cohort_size")
+  sourceSystem      String   @map("source_system")
+  jbtdId            String?  @map("jbtd_id") @db.VarChar(64)
+  personaId         String?  @map("persona_id") @db.VarChar(64)
+  aggregateKind     String?  @map("aggregate_kind")
+  ingestedAt        DateTime @default(now()) @map("ingested_at")
+  sourceAttestation Json?    @map("source_attestation")
+
+  @@index([workflowId])
+  @@index([jbtdId])
+  @@index([personaId])
+  @@index([workflowId, periodStart, periodEnd])
+  @@map("outcome_evidence")
+}

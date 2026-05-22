@@ -156,6 +156,26 @@ async function getCoverageEndpoint(backendUrl, orgId) {
   });
 }
 
+async function postOutcomeEvidence(backendUrl, orgId, payload) {
+  const url = new URL("/api/v1/outcome-evidence", backendUrl);
+  return fetchJson(url, {
+    method: "POST",
+    headers: requestHeaders(orgId),
+    body: JSON.stringify(payload)
+  });
+}
+
+async function getOutcomeEvidence(backendUrl, orgId, payload) {
+  const url = new URL("/api/v1/outcome-evidence", backendUrl);
+  url.searchParams.set("workflow_id", payload.workflow_id);
+  url.searchParams.set("period_start", payload.period_start);
+  url.searchParams.set("period_end", payload.period_end);
+  return fetchJson(url, {
+    method: "GET",
+    headers: requestHeaders(orgId)
+  });
+}
+
 function findWorkflow(observabilityBody, workflowId) {
   return (observabilityBody?.workflows ?? []).find((workflow) => workflow.workflow_id === workflowId) ?? null;
 }
@@ -557,6 +577,47 @@ async function main() {
             reason: match.reason,
             delta: match.delta,
             row: bodySlice(row)
+          })
+    );
+  }
+
+  const outcomeEvidenceCases = cases.filter((entry) => entry.outcome_evidence_manifest);
+  for (const entry of outcomeEvidenceCases) {
+    for (const payload of entry.outcome_evidence ?? []) {
+      const postedOutcome = await postOutcomeEvidence(backendUrl, entry.org_id, payload);
+      checks.push(
+        postedOutcome.response.ok
+          ? pass(`post_${entry.id}`, { workflow_id: entry.workflow_id, status: postedOutcome.response.status })
+          : fail(`post_${entry.id}`, {
+              workflow_id: entry.workflow_id,
+              status: postedOutcome.response.status,
+              body: postedOutcome.body
+            })
+      );
+    }
+
+    const queryPayload =
+      entry.outcome_evidence?.[0] ?? {
+        workflow_id: entry.workflow_id,
+        period_start: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+        period_end: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      };
+    const replay = await getOutcomeEvidence(backendUrl, entry.org_id, queryPayload);
+    const outcomeCount = replay.body?.outcome_evidence?.length ?? 0;
+    checks.push(
+      replay.response.ok &&
+        replay.body?.verdict === entry.expected?.outcome_verdict &&
+        outcomeCount === entry.expected?.outcome_count
+        ? pass(entry.id, {
+            workflow_id: entry.workflow_id,
+            verdict: replay.body.verdict,
+            outcome_count: outcomeCount
+          })
+        : fail(entry.id, {
+            workflow_id: entry.workflow_id,
+            expected: entry.expected,
+            status: replay.response.status,
+            body: bodySlice(replay.body)
           })
     );
   }

@@ -30,6 +30,7 @@
 - Glean dogfood E2E harness slice: added pure-stdlib mocked GCE fixture generation, no-network dogfood runner, healthy/regressed/sparse unittest coverage, docs, and a PR-gating `dogfood-e2e` job in the Assurance Harness workflow.
 - README/Glean value-realization repositioning slice: rewrote the public narrative around the 64% no-quality-signal gap, Quality Multiplier, Causal Delta, Reliability Factor, AIVM fields, and added the value-realization contract index; GitHub repo description/topics updated.
 - JBTD/persona join-key slice: added optional opaque `jbtd_id` / `persona_id` across ingest schemas, persistence columns, classification aggregates, observability, Quality Multiplier, Causal Delta, and contract docs; cohort gates now apply per `(workflow_id, jbtd_id, persona_id)` slice and suppressed keyed slices are hidden from public observability.
+- Outcome Evidence ingestion contract slice: added storage-only `POST`/`GET /api/v1/outcome-evidence`, Prisma `outcome_evidence` persistence, aggregate-only gates, OpenAPI/schema/OpenSpec/docs, attribution/README updates, and LMSYS assurance scenarios for `SURFACE + outcomes`, `SUPPRESS + outcomes`, and `no outcomes`.
 
 ## Current Status
 
@@ -58,6 +59,7 @@
 - Real Source Readiness Manifest slice is complete as a bounded user-requested addition; it shows which synthetic Claim Packet inputs are ready, blocked, unknown, or approval-dependent before ingestion exists.
 - Aggregate Evidence Import Stage 1 is complete as a bounded user-requested addition; it reviews admin-exported aggregate metadata against the Real Source Readiness Manifest and separates accepted vs withheld evidence without storing data or changing claim readiness.
 - Nielsen Source Evidence Trial Stage 2 is complete as a bounded user-requested addition; it shows that the Nielsen deck can be mapped into FluencyTracr as document-derived claim candidates, while survey, CS/CX outcome, financial, and customer telemetry claims remain withheld until real aggregate exports or approvals are attached.
+- Outcome Evidence ingestion contract is complete as a bounded user-requested addition; it stores and replays aggregate KPI outcomes beside unchanged workflow verdicts and does not compute correlation, causation, attribution, dollarization, or readiness upgrades.
 
 ## Blockers
 

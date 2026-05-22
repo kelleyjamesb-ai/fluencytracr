@@ -34,7 +34,7 @@ not necessarily reviewed or approved FluencyTracr.
 - Used in: Prompt 6 (JBTD/persona join key)
 
 ### Outcome evidence (systems of record)
-- Source: Chris Lee, "AI Outcomes Manager" proposal
+- Source: Chris Lee, "AI Outcomes Manager" proposal and AIOM framework
 - Customer pull: Datadog (Julien Vige), Nielsen, Informatica, GSK
 - Used in: Prompt 7 (Outcome ingestion contract)
 

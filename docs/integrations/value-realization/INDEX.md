@@ -22,16 +22,16 @@ Each contract preserves the same posture:
 | Quality Multiplier | [quality-multiplier.md](./quality-multiplier.md) | Discounts, preserves, or amplifies time-saved estimates when observed aggregate workflow quality supports it. |
 | Causal Delta | [../../contracts/causal-delta.md](../../contracts/causal-delta.md) | Compares pre/post aggregate workflow patterns around a rollout or change moment without claiming statistical causality. |
 | Reliability Factor | [reliability-factor.md](./reliability-factor.md) and [../../contracts/reliability-factor.md](../../contracts/reliability-factor.md) | Qualifies whether surfaced evidence looks operationally dependable based on verification, recovery, abandonment, and friction-loop behavior. |
-| Outcome Evidence | [../../contracts/outcome-instrumentation-map/README.md](../../contracts/outcome-instrumentation-map/README.md) | Defines which customer-attested aggregate systems-of-record metrics can later support claim readiness. |
+| Outcome Evidence | [outcome-evidence.md](./outcome-evidence.md) | Stores and replays customer-attested aggregate systems-of-record metrics next to unchanged workflow verdicts. |
 
 ## How To Read The Set
 
 Quality Multiplier answers whether the time-saved estimate should be adjusted
 for observed workflow quality. Causal Delta answers whether the aggregate
 pattern moved after a known change. Reliability Factor answers whether the
-surfaced signal is dependable enough to use carefully. Outcome Evidence defines
-what external aggregate metrics are required before a claim can advance beyond
-behavioral evidence.
+surfaced signal is dependable enough to use carefully. Outcome Evidence stores
+external aggregate metrics beside verdicts without computing correlation,
+causation, or dollarized ROI.
 
 Together, they let AIOMs, value-realization PMs, and CIOs separate raw usage or
 time saved from defensible value realization.

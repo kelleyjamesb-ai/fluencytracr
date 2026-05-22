@@ -9,6 +9,7 @@ import {
   DecisionLedgerEntry,
   DecisionLedgerEvaluationInput,
   UnifiedTelemetryEvent,
+  OutcomeEvidenceRecord,
   resolveFluencyExecutionId} from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
@@ -283,6 +284,8 @@ export type ConnectorEventQuarantineRecord = {
   received_at: string;
 };
 
+export type OutcomeEvidenceStoredRecord = OutcomeEvidenceRecord;
+
 export type IngestReceiptRecord = {
   idempotencyKey: string;
   payloadHash: string;
@@ -410,6 +413,7 @@ class MemoryStore {
   auditLogs = new Map<string, AuditLogRecord>();
   suppressionAuditLogs = new Map<string, SuppressionAuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
+  outcomeEvidence = new Map<string, OutcomeEvidenceStoredRecord>();
   ingestReceipts = new Map<string, IngestReceiptRecord>();
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
   workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
@@ -449,6 +453,7 @@ class MemoryStore {
     this.auditLogs.clear();
     this.suppressionAuditLogs.clear();
     this.connectorEventQuarantine.clear();
+    this.outcomeEvidence.clear();
     this.ingestReceipts.clear();
     this.workflowRegistry.clear();
     this.workflowRegistryCurrent.clear();

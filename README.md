@@ -9,7 +9,7 @@ It exists because the current time-saved pipeline can show acceleration while
 leaving a critical question unanswered: roughly 64% of chat runs have no
 quality signal today.
 
-FluencyTracr sits on top of that pipeline as three bounded evidence services:
+FluencyTracr sits on top of that pipeline as four bounded evidence services:
 
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
@@ -19,6 +19,9 @@ FluencyTracr sits on top of that pipeline as three bounded evidence services:
 - **Reliability Factor:** qualifies whether surfaced workflow evidence looks
   operationally dependable based on verification, recovery, abandonment, and
   friction-loop behavior.
+- **Outcome Evidence:** stores and replays customer-attested aggregate KPI
+  outcomes next to the unchanged workflow verdict so external consumers can do
+  their own correlation.
 
 The aggregate verdict layer uses AIVM vocabulary consistently: `value_type`
 communicates the kind of value claim, and `evidence_grade` communicates whether
