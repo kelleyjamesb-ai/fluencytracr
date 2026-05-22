@@ -74,6 +74,10 @@ import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { auditSuppressedObservabilityRows, listSuppressionAuditLogs } from "./suppression_audit_log";
+import {
+  computeQualityMultiplier,
+  failClosedQualityMultiplierResponse
+} from "./value_realization/quality_multiplier";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
 import {
@@ -3982,6 +3986,50 @@ const TraceReconstructedQuerySchema = z
   .refine((q) => Boolean(q.workflow_id ?? q.execution_id), {
     message: "Provide at least one of workflow_id, execution_id"
   });
+
+const QualityMultiplierQuerySchema = z.object({
+  workflow_id: z.string().min(1),
+  window_days: z.coerce.number().int().positive().max(3650)
+}).strict();
+
+const eventBelongsToAuthOrg = (event: FluencyEventRecord, orgId: string | undefined): boolean => {
+  if (!orgId) {
+    return true;
+  }
+  return (
+    typeof event.org_unit === "string" &&
+    (event.org_unit === `org:${orgId}` || event.org_unit.startsWith(`org:${orgId}:`))
+  );
+};
+
+app.get("/api/v1/quality-multiplier", async (req, res) => {
+  // TODO(auth): replace ambient/dev header context with service auth when Paul Li's pipeline identity is defined.
+  const rawWorkflowId = typeof req.query.workflow_id === "string" ? req.query.workflow_id : "";
+  const rawWindowDays =
+    typeof req.query.window_days === "string" && /^\d+$/.test(req.query.window_days)
+      ? Number(req.query.window_days)
+      : 0;
+  const parsed = QualityMultiplierQuerySchema.safeParse({
+    workflow_id: req.query.workflow_id,
+    window_days: req.query.window_days
+  });
+
+  if (!parsed.success) {
+    return res.status(400).json(
+      failClosedQualityMultiplierResponse(rawWorkflowId, rawWindowDays)
+    );
+  }
+
+  const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
+  const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, req.authOrgId));
+  return res.json(
+    computeQualityMultiplier({
+      workflowId: parsed.data.workflow_id,
+      windowDays: parsed.data.window_days,
+      events: scopedEvents
+    })
+  );
+});
 
 app.get(
   "/api/traces/reconstructed",

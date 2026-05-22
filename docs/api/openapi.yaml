@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: FluencyTracr API
+  version: 1.0.0
+paths:
+  /api/v1/quality-multiplier:
+    get:
+      summary: Get the workflow-level quality multiplier
+      description: >
+        Returns a read-only, aggregate multiplier that downstream value-realization
+        pipelines can apply to time-saved estimates. The endpoint fails closed:
+        when suppression applies, multiplier is null.
+      parameters:
+        - name: workflow_id
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: window_days
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3650
+      responses:
+        "200":
+          description: Quality multiplier verdict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityMultiplierResponse"
+        "400":
+          description: Malformed input; fails closed with no multiplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityMultiplierResponse"
+components:
+  schemas:
+    QualityMultiplierResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - window_days
+        - multiplier
+        - verdict
+        - suppression_reason
+        - cohort_size
+        - evidence_grade
+        - computed_at
+      properties:
+        workflow_id:
+          type: string
+        window_days:
+          type: integer
+        multiplier:
+          anyOf:
+            - type: number
+              minimum: 0.5
+              maximum: 1.5
+            - type: "null"
+        verdict:
+          type: string
+          enum:
+            - SURFACE
+            - SUPPRESS
+        suppression_reason:
+          anyOf:
+            - type: string
+              enum:
+                - INSUFFICIENT_TIME
+                - INSUFFICIENT_VOLUME
+                - NO_CONVERGENCE
+                - BASELINE_UNSTABLE
+                - HIGH_AMBIGUITY
+            - type: "null"
+        cohort_size:
+          type: integer
+          minimum: 0
+        evidence_grade:
+          type: string
+          enum:
+            - OBJECTIVE
+            - CALIBRATED
+            - QUALITATIVE
+        computed_at:
+          type: string
+          format: date-time
