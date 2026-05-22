@@ -117,6 +117,31 @@ def test_mixed_path_skips_short_windows(tmp_path: Path) -> None:
     assert not (output_dir / "PRISM.md").exists()
 
 
+def test_blank_workflow_id_is_skipped_as_unclassified(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    blank = base_row("   ", 250, 0.9, 0.9)
+    write_csv(
+        input_path,
+        [
+            blank,
+            base_row("CHAT", 300, 0.8, 0.8),
+        ],
+    )
+
+    completed = run_driver(input_path, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert (
+        "| UNCLASSIFIED | 250 | Blank workflow_id in input — likely unclassified BigQuery feature rows |"
+        in text
+    )
+    assert "| CHAT | 300 | SURFACE | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert not (output_dir / "UNCLASSIFIED.md").exists()
+
+
 def test_json_input_is_supported(tmp_path: Path) -> None:
     input_path = tmp_path / "input.json"
     output_dir = tmp_path / "out"

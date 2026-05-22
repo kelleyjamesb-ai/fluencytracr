@@ -18,7 +18,6 @@ GENERATOR = ROOT / "scripts" / "dogfood" / "generate_gce_fixtures.py"
 RUNNER = ROOT / "scripts" / "dogfood" / "run_end_to_end.py"
 
 REQUIRED_FIELDS = [
-    "workflow_id",
     "real_cohort_size",
     "distinct_users",
     "window_days",
@@ -29,6 +28,8 @@ REQUIRED_FIELDS = [
     "p50_latency_ms",
     "p95_latency_ms",
 ]
+
+BLANK_WORKFLOW_ID_REASON = "Blank workflow_id in input — likely unclassified BigQuery feature rows"
 
 MANAGER_REVIEW_SURFACES = {"CHAT", "AI_ANSWER"}
 ENG_ON_CALL_SURFACES = {
@@ -108,14 +109,18 @@ def _to_float(row: dict[str, Any], field: str, row_number: int, *, default: floa
     return parsed
 
 
+def normalize_workflow_id(value: Any) -> str:
+    if value is None:
+        return "UNCLASSIFIED"
+    workflow_id = str(value).strip()
+    return workflow_id or "UNCLASSIFIED"
+
+
 def normalize_row(row: dict[str, Any], row_number: int) -> dict[str, Any]:
     for field in REQUIRED_FIELDS:
         _require(row, field, row_number)
-    workflow_id = str(row["workflow_id"]).strip()
-    if not workflow_id:
-        raise InputError(f"row {row_number}: workflow_id must not be empty")
     return {
-        "workflow_id": workflow_id,
+        "workflow_id": normalize_workflow_id(row.get("workflow_id")),
         "real_cohort_size": _to_int(row, "real_cohort_size", row_number),
         "distinct_users": _to_int(row, "distinct_users", row_number),
         "window_days": _to_int(row, "window_days", row_number),
@@ -314,6 +319,9 @@ def run(input_path: Path, output_dir: Path, readout_path: Path, cohort_size: int
     skipped: list[dict[str, Any]] = []
     for index, raw_row in enumerate(raw_rows, start=2):
         row = normalize_row(raw_row, index)
+        if row["workflow_id"] == "UNCLASSIFIED":
+            skipped.append({**row, "reason": BLANK_WORKFLOW_ID_REASON})
+            continue
         if row["window_days"] < 60:
             skipped.append({**row, "reason": "window_days < 60"})
             continue
