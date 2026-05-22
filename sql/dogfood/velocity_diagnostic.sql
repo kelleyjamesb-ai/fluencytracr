@@ -12,7 +12,7 @@ WITH source_events AS (
     timestamp AS event_ts,
     DATE(timestamp) AS event_date,
     JSON_VALUE(jsonPayload, '$.type') AS event_type,
-    JSON_VALUE(jsonPayload, '$.workflowrun.feature') AS workflow_feature,
+    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.workflowrun.feature')), '') AS workflow_feature,
     JSON_VALUE(jsonPayload, '$.session_token') AS session_token,
     COALESCE(
       JSON_VALUE(jsonPayload, '$.actor.stable_user_key'),
