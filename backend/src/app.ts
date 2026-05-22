@@ -106,6 +106,7 @@ import {
   persistOutcomeEvidence
 } from "./repositories/outcome-evidence.repository";
 import {
+  isVelocityPersistenceEnabled,
   listVelocityDistributions,
   persistVelocityDistribution
 } from "./repositories/velocity-distribution.repository";
@@ -4175,13 +4176,13 @@ app.post("/api/v2/ingest/velocity-distribution", rbacMiddleware(["ADMIN"]), asyn
       details: parsed.error.flatten()
     });
   }
-  if (!req.authOrgId) {
+  if (!req.authOrgId && isVelocityPersistenceEnabled()) {
     return res.status(400).json({
       error: "Velocity distribution requires organization scope",
       reason_code: "missing_org_scope"
     });
   }
-  const orgId = req.authOrgId;
+  const orgId = req.authOrgId ?? "org-in-memory";
   const calibrationReference = parsed.data.calibration_reference ?? loadVelocityBaseline().calibration_id;
   const record = {
     ...parsed.data,
