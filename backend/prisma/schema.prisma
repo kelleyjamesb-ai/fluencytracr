@@ -427,3 +427,29 @@ model V1OutcomeEvidence {
   @@index([workflowId, periodStart, periodEnd])
   @@map("outcome_evidence")
 }
+
+model V2VelocityDistributionObservation {
+  id                         String   @id @default(uuid()) @db.Uuid
+  orgId                      String   @map("org_id")
+  workflowId                 String   @map("workflow_id")
+  jbtdId                     String?  @map("jbtd_id") @db.VarChar(64)
+  personaId                  String?  @map("persona_id") @db.VarChar(64)
+  eventName                  String   @map("event_name")
+  schemaVersion              String   @map("schema_version")
+  windowStart                DateTime @map("window_start")
+  windowEnd                  DateTime @map("window_end")
+  cohortSize                 Int      @map("cohort_size")
+  ambiguityRate              Float?   @map("ambiguity_rate")
+  distributionJson           Json     @map("distribution_json")
+  calibrationReference       String   @map("calibration_reference")
+  personLevelFieldsIncluded  Boolean  @default(false) @map("person_level_fields_included")
+  ingestedAt                 DateTime @default(now()) @map("ingested_at")
+  ingestSequence             BigInt   @unique @default(autoincrement()) @map("ingest_sequence")
+
+  @@index([orgId])
+  @@index([orgId, workflowId])
+  @@index([orgId, workflowId, jbtdId, personaId])
+  @@index([orgId, workflowId, eventName, windowStart, windowEnd])
+  @@index([orgId, ingestedAt])
+  @@map("velocity_distribution_observations")
+}

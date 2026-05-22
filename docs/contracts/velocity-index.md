@@ -28,6 +28,14 @@ Required fields include `workflow_id`, `window_start`, `window_end`, `cohort_siz
 
 Payloads with person-resolving fields are rejected at the boundary. The accepted path stores only aggregate percentiles and the optional opaque slice keys `jbtd_id` and `persona_id`.
 
+When Postgres is configured, accepted velocity distributions are persisted as
+append-only aggregate observations in `velocity_distribution_observations`.
+The table stores workflow/window/slice metadata, percentile distribution JSON,
+calibration reference, and ingestion timestamps. It does not store person-level
+rows, names, email addresses, raw user identifiers, or any field that can
+resolve a person. The database migration also includes a check constraint that
+keeps `person_level_fields_included` false at the storage boundary.
+
 ## Endpoint
 
 `GET /api/v2/velocity-index?workflow_id=<workflow>&window_days=<days>`
@@ -56,6 +64,13 @@ Response:
 When suppression applies, `verdict` is `SUPPRESS` and all index fields are `null`.
 
 The read path only uses distribution payloads that cover the requested window and align to the current evaluation window. Shorter or stale distributions are ignored and therefore fail closed.
+
+The read path uses durable observations when database persistence is enabled.
+If no qualifying persisted observations exist for the requested workflow/window
+and slice, the endpoint returns `SUPPRESS`; it does not synthesize fallback
+velocity values from partial data. Persisted reads are tenant scoped and only
+replay rows from the current V2 schema version and the three velocity event
+types.
 
 ## Gates
 
