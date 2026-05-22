@@ -92,8 +92,7 @@ import {
   findVelocityPersonField,
   loadVelocityBaseline,
   VelocityDistributionSchema,
-  velocityAdjustmentFactor,
-  velocityStoreKey
+  velocityAdjustmentFactor
 } from "./value_realization/velocity_index";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
@@ -106,6 +105,10 @@ import {
   listOutcomeEvidence,
   persistOutcomeEvidence
 } from "./repositories/outcome-evidence.repository";
+import {
+  listVelocityDistributions,
+  persistVelocityDistribution
+} from "./repositories/velocity-distribution.repository";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -4136,8 +4139,12 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     jbtdId: parsed.data.jbtd_id ?? null,
     personaId: parsed.data.persona_id ?? null,
     windowDays: parsed.data.window_days,
-    distributions: Array.from(store.velocityDistributions.values())
-      .filter((record) => !req.authOrgId || record.org_id === req.authOrgId)
+    distributions: await listVelocityDistributions({
+      orgId: req.authOrgId,
+      workflowId: parsed.data.workflow_id,
+      jbtdId: parsed.data.jbtd_id ?? null,
+      personaId: parsed.data.persona_id ?? null
+    })
   });
   if (velocityResponse.verdict !== "SURFACE" || velocityResponse.velocity_index === null) {
     return res.json(baseResponse);
@@ -4168,7 +4175,13 @@ app.post("/api/v2/ingest/velocity-distribution", rbacMiddleware(["ADMIN"]), asyn
       details: parsed.error.flatten()
     });
   }
-  const orgId = req.authOrgId ?? "default";
+  if (!req.authOrgId) {
+    return res.status(400).json({
+      error: "Velocity distribution requires organization scope",
+      reason_code: "missing_org_scope"
+    });
+  }
+  const orgId = req.authOrgId;
   const calibrationReference = parsed.data.calibration_reference ?? loadVelocityBaseline().calibration_id;
   const record = {
     ...parsed.data,
@@ -4178,10 +4191,14 @@ app.post("/api/v2/ingest/velocity-distribution", rbacMiddleware(["ADMIN"]), asyn
     calibration_reference: calibrationReference,
     ingested_at: new Date().toISOString()
   };
-  store.velocityDistributions.set(
-    velocityStoreKey(orgId, record.workflow_id, record.event_name, record.jbtd_id, record.persona_id),
-    record
-  );
+  try {
+    await persistVelocityDistribution(record);
+  } catch {
+    return res.status(500).json({
+      error: "Velocity persistence failed",
+      reason_code: "velocity_persistence_failed"
+    });
+  }
   return res.status(202).json({
     accepted: true,
     event_name: record.event_name,
@@ -4210,8 +4227,12 @@ app.get("/api/v2/velocity-index", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABL
       jbtdId: parsed.data.jbtd_id ?? null,
       personaId: parsed.data.persona_id ?? null,
       windowDays: parsed.data.window_days,
-      distributions: Array.from(store.velocityDistributions.values())
-        .filter((record) => !req.authOrgId || record.org_id === req.authOrgId)
+      distributions: await listVelocityDistributions({
+        orgId: req.authOrgId,
+        workflowId: parsed.data.workflow_id,
+        jbtdId: parsed.data.jbtd_id ?? null,
+        personaId: parsed.data.persona_id ?? null
+      })
     })
   );
 });
