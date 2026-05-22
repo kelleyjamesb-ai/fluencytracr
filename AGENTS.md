@@ -66,6 +66,8 @@ Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.
 
 Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Not yet implemented and does not modify any V1 or V2 invariants.
 
+Production ingest is a defined V3 concept (see docs/concepts/INGEST.md). It is not yet implemented and establishes the customer-side-transformer privacy boundary: raw GCE remains in the customer environment, and only aggregate cohort distributions cross into FluencyTracr.
+
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
 - AIVM grammar: value_type in {ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED}; evidence_grade in {OBJECTIVE, CALIBRATED, QUALITATIVE}

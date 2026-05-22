@@ -57,6 +57,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day agent diagnostic showing autonomous agents represented 42% of AGENT volume
 - Used in: future V2.3 AGENT_TYPES concept document
 
+### Customer-side transformer privacy boundary
+- Source: James Kelley, architectural choice that production ingest should keep raw GCE inside the customer environment
+- Governance grounding: structural privacy boundary where only cohort percentile distributions cross into FluencyTracr
+- Used in: V3 ingest concept document
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative
