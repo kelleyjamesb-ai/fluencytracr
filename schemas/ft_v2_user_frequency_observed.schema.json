@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FluencyTracr V2 User Frequency Observed",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "FT_V2_2026_05" },
+    "event_name": { "type": "string", "const": "USER_FREQUENCY_OBSERVED" },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "jbtd_id": {
+      "anyOf": [
+        { "type": "string", "maxLength": 64, "pattern": "^[a-z0-9_-]+$" },
+        { "type": "null" }
+      ]
+    },
+    "persona_id": {
+      "anyOf": [
+        { "type": "string", "maxLength": 64, "pattern": "^[a-z0-9_-]+$" },
+        { "type": "null" }
+      ]
+    },
+    "window_start": { "type": "string", "format": "date-time" },
+    "window_end": { "type": "string", "format": "date-time" },
+    "cohort_size": { "type": "integer", "minimum": 1 },
+    "ambiguity_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p10", "p50", "p90", "p99"],
+      "allOf": [
+        { "properties": { "p50": { "minimum": { "$data": "1/p10" } } } },
+        { "properties": { "p90": { "minimum": { "$data": "1/p50" } } } },
+        { "properties": { "p99": { "minimum": { "$data": "1/p90" } } } }
+      ],
+      "properties": {
+        "p10": { "type": "number", "minimum": 0 },
+        "p50": { "type": "number", "minimum": 0 },
+        "p90": { "type": "number", "minimum": 0 },
+        "p99": { "type": "number", "minimum": 0 }
+      }
+    },
+    "calibration_reference": { "type": "string", "minLength": 1 },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["person_level_fields_included"],
+      "properties": {
+        "person_level_fields_included": { "type": "boolean", "const": false }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_name",
+    "workflow_id",
+    "window_start",
+    "window_end",
+    "cohort_size",
+    "distribution",
+    "privacy"
+  ]
+}

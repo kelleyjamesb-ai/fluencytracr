@@ -37,9 +37,9 @@ The endpoint uses the existing five suppression reasons:
 
 These gates run before the multiplier is disclosed. The default posture is suppress.
 
-## Math
+## Base Math
 
-The multiplier is centered at `1.0` and bounded to `[0.5, 1.5]`.
+The base multiplier is centered at `1.0` and bounded to `[0.5, 1.5]`.
 
 ```text
 raw_multiplier =
@@ -59,18 +59,37 @@ Signals are derived from existing canonical workflow events only:
 - Abandonment lowers the multiplier.
 - Friction-loop behavior lowers the multiplier when repeated retry behavior and high latency cluster in the workflow.
 
-## Velocity-Aware Option
+## Velocity-Aware Adjustment
 
-Default behavior is unchanged.
+Default behavior is unchanged. Callers must explicitly opt in:
 
-Callers may opt in with `include_velocity=true`. When the matching V2 Velocity Index surfaces for the same workflow and window, the endpoint applies a bounded adjustment:
+`GET /api/v1/quality-multiplier?workflow_id=<workflow>&window_days=<days>&include_velocity=true`
+
+When `include_velocity=true` and the matching Velocity Index returns `SURFACE`, Quality Multiplier applies this deterministic adjustment:
 
 ```text
 velocity_adjustment_factor = clamp(velocity_index, 0.7, 1.3)
 adjusted_multiplier = clamp(base_multiplier * velocity_adjustment_factor, 0.5, 1.5)
 ```
 
-If the Velocity Index suppresses, the endpoint returns the base multiplier without fabricating velocity evidence.
+When the Velocity Index returns `SUPPRESS`, Quality Multiplier silently returns the base multiplier. It does not fabricate a velocity value and does not expose a fallback adjustment.
+
+Response with surfaced velocity:
+
+```json
+{
+  "workflow_id": "sales_proposal_drafting",
+  "window_days": 90,
+  "multiplier": 1.3,
+  "verdict": "SURFACE",
+  "suppression_reason": null,
+  "cohort_size": 37,
+  "evidence_grade": "OBJECTIVE",
+  "computed_at": "2026-05-22T00:00:00.000Z",
+  "velocity_adjustment_factor": 1.12,
+  "velocity_index": 1.12
+}
+```
 
 ## Evidence Grade
 

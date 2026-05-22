@@ -45,7 +45,7 @@ not necessarily reviewed or approved FluencyTracr.
 ### Velocity as behavioral counterpart to stated evidence
 - Source: James Kelley, velocity-as-AI-fluency bridge insight
 - Empirical grounding: scio-prod 60-day velocity diagnostic across 1,553 internal Glean users and 13 workflow surfaces
-- Used in: future V2 Velocity concept document
+- Used in: V2 Velocity concept document, V2 canonical velocity events, and Velocity Index implementation
 
 ## Framing influences (not directly implemented)
 

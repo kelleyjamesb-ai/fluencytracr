@@ -10,7 +10,7 @@ FluencyTracr is the behavioral evidence layer that makes Glean's value-realizati
 
 ## 3. The Nine Invariants (hard constraints - never violate)
 
-1. No new canonical events beyond the existing six.
+1. No new canonical events beyond the existing nine.
 2. No new suppression reasons beyond the existing five.
 3. No tunable thresholds. Constants are compiled into code.
 4. No admin overrides of suppression decisions.
@@ -20,7 +20,9 @@ FluencyTracr is the behavioral evidence layer that makes Glean's value-realizati
 8. Every PR must keep the Assurance Harness CI workflow green.
 9. Suppression gates apply independently per slice (workflow_id, jbtd_id, persona_id) - no cross-slice aggregation that could re-identify.
 
-## 4. Canonical Events (the six, locked)
+## 4. Canonical Events (the nine, locked)
+
+### V1 foundation (six, preserved)
 
 - FT_V1_DISPOSITION_OBSERVED
 - ITERATION_DEPTH_OBSERVED
@@ -28,6 +30,14 @@ FluencyTracr is the behavioral evidence layer that makes Glean's value-realizati
 - RECOVERY_OBSERVED
 - LATENCY_OBSERVED
 - ABANDONMENT_OBSERVED
+
+### V2 additions (added 2026-05)
+
+- USER_FREQUENCY_OBSERVED
+- USER_ENGAGEMENT_OBSERVED
+- USER_BREADTH_OBSERVED
+
+Future expansions require a governance-grade concept doc in docs/concepts/ before implementation, mirroring docs/concepts/VELOCITY.md.
 
 ## 5. Suppression Reasons (the five, locked)
 
@@ -39,7 +49,7 @@ FluencyTracr is the behavioral evidence layer that makes Glean's value-realizati
 
 ## 6. Out of Scope (do not implement without explicit human approval)
 
-- New canonical events or suppression reasons
+- New canonical events beyond the existing nine or new suppression reasons
 - Statistical significance scoring or p-values in verdict outputs
 - Built-in JBTD or persona taxonomies
 - Connectors to Veeva, Jira, ServiceNow, or other systems of record
@@ -50,7 +60,7 @@ FluencyTracr is the behavioral evidence layer that makes Glean's value-realizati
 
 ### Future V2 Concepts
 
-Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md). It is not yet implemented and does not modify any V1 invariants. Implementation will require a separate governance review and explicit AGENTS.md update.
+Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemented as three aggregate-distribution canonical events plus a Velocity Index output. It preserves the V1 suppression reasons, fail-closed posture, and no-individual-scoring invariant.
 
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
@@ -59,6 +69,7 @@ Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md). It is not yet 
 - Causal Delta: pre/post window pattern shift verdict
 - Reliability Factor: composite of abandonment, friction loop, recovery, verification
 - Outcome Evidence: customer-attested aggregate KPI ingestion (storage only)
+- Velocity Index: V2 aggregate-distribution output across frequency, engagement, and breadth
 
 ## 8. Repositioning Context
 

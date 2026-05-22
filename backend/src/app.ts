@@ -87,6 +87,14 @@ import {
   computeQualityMultiplier,
   failClosedQualityMultiplierResponse
 } from "./value_realization/quality_multiplier";
+import {
+  computeVelocityIndex,
+  findVelocityPersonField,
+  loadVelocityBaseline,
+  VelocityDistributionSchema,
+  velocityAdjustmentFactor,
+  velocityStoreKey
+} from "./value_realization/velocity_index";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
 import {
@@ -4014,6 +4022,17 @@ const QualityMultiplierQuerySchema = z.object({
   workflow_id: z.string().min(1),
   jbtd_id: FluencyJoinKeySchema.nullable().optional(),
   persona_id: FluencyJoinKeySchema.nullable().optional(),
+  window_days: z.coerce.number().int().positive().max(3650),
+  include_velocity: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true")
+}).strict();
+
+const VelocityIndexQuerySchema = z.object({
+  workflow_id: z.string().min(1),
+  jbtd_id: FluencyJoinKeySchema.nullable().optional(),
+  persona_id: FluencyJoinKeySchema.nullable().optional(),
   window_days: z.coerce.number().int().positive().max(3650)
 }).strict();
 
@@ -4086,12 +4105,13 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     typeof req.query.window_days === "string" && /^\d+$/.test(req.query.window_days)
       ? Number(req.query.window_days)
       : 0;
-	  const parsed = QualityMultiplierQuerySchema.safeParse({
-	    workflow_id: req.query.workflow_id,
-	    jbtd_id: req.query.jbtd_id,
-	    persona_id: req.query.persona_id,
-	    window_days: req.query.window_days
-	  });
+  const parsed = QualityMultiplierQuerySchema.safeParse({
+    workflow_id: req.query.workflow_id,
+    jbtd_id: req.query.jbtd_id,
+    persona_id: req.query.persona_id,
+    window_days: req.query.window_days,
+    include_velocity: req.query.include_velocity
+  });
 
   if (!parsed.success) {
     return res.status(400).json(
@@ -4101,13 +4121,97 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
 
   const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
   const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, req.authOrgId));
+  const baseResponse = computeQualityMultiplier({
+    workflowId: parsed.data.workflow_id,
+    jbtdId: parsed.data.jbtd_id ?? null,
+    personaId: parsed.data.persona_id ?? null,
+    windowDays: parsed.data.window_days,
+    events: scopedEvents
+  });
+  if (!parsed.data.include_velocity || baseResponse.verdict !== "SURFACE" || baseResponse.multiplier === null) {
+    return res.json(baseResponse);
+  }
+  const velocityResponse = computeVelocityIndex({
+    workflowId: parsed.data.workflow_id,
+    jbtdId: parsed.data.jbtd_id ?? null,
+    personaId: parsed.data.persona_id ?? null,
+    windowDays: parsed.data.window_days,
+    distributions: Array.from(store.velocityDistributions.values())
+      .filter((record) => !req.authOrgId || record.org_id === req.authOrgId)
+  });
+  if (velocityResponse.verdict !== "SURFACE" || velocityResponse.velocity_index === null) {
+    return res.json(baseResponse);
+  }
+  const velocity_adjustment_factor = velocityAdjustmentFactor(velocityResponse.velocity_index);
+  return res.json({
+    ...baseResponse,
+    multiplier: Number(Math.min(1.5, Math.max(0.5, baseResponse.multiplier * velocity_adjustment_factor)).toFixed(3)),
+    velocity_adjustment_factor,
+    velocity_index: velocityResponse.velocity_index
+  });
+});
+
+app.post("/api/v2/ingest/velocity-distribution", rbacMiddleware(["ADMIN"]), async (req, res) => {
+  const personField = findVelocityPersonField(req.body);
+  if (personField) {
+    return res.status(400).json({
+      error: "Person-level field rejected",
+      reason_code: "person_level_field_rejected",
+      field_path: personField
+    });
+  }
+  const parsed = VelocityDistributionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid velocity distribution",
+      reason_code: "invalid_velocity_distribution",
+      details: parsed.error.flatten()
+    });
+  }
+  const orgId = req.authOrgId ?? "default";
+  const calibrationReference = parsed.data.calibration_reference ?? loadVelocityBaseline().calibration_id;
+  const record = {
+    ...parsed.data,
+    org_id: orgId,
+    jbtd_id: parsed.data.jbtd_id ?? null,
+    persona_id: parsed.data.persona_id ?? null,
+    calibration_reference: calibrationReference,
+    ingested_at: new Date().toISOString()
+  };
+  store.velocityDistributions.set(
+    velocityStoreKey(orgId, record.workflow_id, record.event_name, record.jbtd_id, record.persona_id),
+    record
+  );
+  return res.status(202).json({
+    accepted: true,
+    event_name: record.event_name,
+    workflow_id: record.workflow_id,
+    calibration_reference: record.calibration_reference
+  });
+});
+
+app.get("/api/v2/velocity-index", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
+  const parsed = VelocityIndexQuerySchema.safeParse({
+    workflow_id: req.query.workflow_id,
+    jbtd_id: req.query.jbtd_id,
+    persona_id: req.query.persona_id,
+    window_days: req.query.window_days
+  });
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid velocity index request",
+      reason_code: "invalid_velocity_index_request",
+      details: parsed.error.flatten()
+    });
+  }
   return res.json(
-    computeQualityMultiplier({
+    computeVelocityIndex({
       workflowId: parsed.data.workflow_id,
       jbtdId: parsed.data.jbtd_id ?? null,
       personaId: parsed.data.persona_id ?? null,
       windowDays: parsed.data.window_days,
-      events: scopedEvents
+      distributions: Array.from(store.velocityDistributions.values())
+        .filter((record) => !req.authOrgId || record.org_id === req.authOrgId)
     })
   );
 });

@@ -23,6 +23,7 @@ Each contract preserves the same posture:
 | Causal Delta | [../../contracts/causal-delta.md](../../contracts/causal-delta.md) | Compares pre/post aggregate workflow patterns around a rollout or change moment without claiming statistical causality. |
 | Reliability Factor | [reliability-factor.md](./reliability-factor.md) and [../../contracts/reliability-factor.md](../../contracts/reliability-factor.md) | Qualifies whether surfaced evidence looks operationally dependable based on verification, recovery, abandonment, and friction-loop behavior. |
 | Outcome Evidence | [outcome-evidence.md](./outcome-evidence.md) | Stores and replays customer-attested aggregate systems-of-record metrics next to unchanged workflow verdicts. |
+| Velocity Index | [../../contracts/velocity-index.md](../../contracts/velocity-index.md) | Adds V2 aggregate velocity context through frequency, engagement, and breadth distributions, surfaced only after fail-closed gates clear. |
 
 ## How To Read The Set
 
@@ -34,7 +35,9 @@ external aggregate metrics beside verdicts without computing correlation,
 causation, or dollarized ROI.
 
 Together, they let AIOMs, value-realization PMs, and CIOs separate raw usage or
-time saved from defensible value realization.
+time saved from defensible value realization. Velocity Index adds a governed V2
+behavioral-distribution layer for teams that need adoption depth context without
+person-level reporting.
 
 ## Running Multi-Surface Dogfood
 
