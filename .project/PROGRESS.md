@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Multi-surface dogfood review fix: updated PR #238 branch worktree `/Users/jkelley/.codex/worktrees/review-91baf9-FluencyTracr` so `scripts/dogfood/run_multi_surface.py` sends short-window and 5-99 real-cohort rows through canonical `run_end_to_end.py` verdicting instead of skipping them with ad-hoc reasons, and preserves real cohort count for cohorts below 5 so canonical `INSUFFICIENT_VOLUME` applies; per-surface readout now includes canonical suppression reason alongside AIVM tags.
 - Glean trust-layer deep dive: created `artifacts/glean_trust_layer_deep_dive_2026-05-07.md` and plan artifact on branch `cursor/glean-trust-layer-deep-dive-c7e6`; no queue status changed because this was a bounded user-requested strategy slice.
 - Agent governance wiring: `.project/*`, `agents/core`, `agents/review`, `agents/README.md`.
 - Implementation blueprint: `artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md` (v1 build plan §1–17).
