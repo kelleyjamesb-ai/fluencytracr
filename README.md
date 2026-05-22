@@ -3,18 +3,45 @@
 
 > **Agents and contributors:** Read [AGENTS.md](./AGENTS.md) before making any changes. It defines the V1 invariants, the canonical event and suppression sets, and the ordered prompt roadmap.
 
-This is a way to capture organizational signals on AI Fluency using passive data.
+FluencyTracr is the behavioral evidence layer for Glean value realization.
+It exists because the current time-saved pipeline can show acceleration while
+leaving a critical question unanswered: roughly 64% of chat runs have no
+quality signal today.
+
+FluencyTracr sits on top of that pipeline as three bounded evidence services:
+
+- **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
+  when aggregate workflow behavior shows enough evidence quality.
+- **Causal Delta:** compares pre/post workflow patterns around a known change
+  moment so value teams can ask what changed after rollout without claiming
+  statistical causality.
+- **Reliability Factor:** qualifies whether surfaced workflow evidence looks
+  operationally dependable based on verification, recovery, abandonment, and
+  friction-loop behavior.
+
+The aggregate verdict layer uses AIVM vocabulary consistently: `value_type`
+communicates the kind of value claim, and `evidence_grade` communicates whether
+the support is `OBJECTIVE`, `CALIBRATED`, or `QUALITATIVE`. Value-realization
+services should preserve those fields when they consume verdict metadata, and
+suppression remains fail-closed.
+
+The audience is AIOMs, value-realization PMs, and CIOs deciding which Glean
+value claims are defensible. This is not an HR, learning, or individual
+measurement product.
 
 ## AI assistants — start every session here
 
 Long-form or multi-session coding **must** begin with **[`docs/agent/SESSION_START.md`](docs/agent/SESSION_START.md)** so work stays bounded, verified, and grounded in repo memory (queue + harness + git), not chat context alone. That doc aligns with [Anthropic’s guidance on long-running agent harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) as implemented under [`harness/`](harness/README.md).
 
-## Scope guardrails
+## Scope Guardrails
 This project intentionally rejects surveillance and scope creep. Please read and follow
 the guardrails in [SCOPE_GUARDRAILS.md](SCOPE_GUARDRAILS.md) before proposing changes.
 
-## FluencyTracr V1 Confidence & Signal Layer
-The confidence layer enforces inference safety invariants for behavioral signals:
+## Evidence Layer Invariants
+The governance invariants are the proof of seriousness behind the value
+realization story. They are not the headline, but they make the headline
+credible:
+
 - Outputs are signals, not facts, and are strictly binary: `SURFACE` or `SUPPRESS`.
 - Default state is `SUPPRESS`; ambiguity is first-class and always suppressive.
 - No content storage or individual attribution is permitted.
@@ -28,7 +55,14 @@ Suppression reason codes (one-hot, immutable):
 - `BASELINE_UNSTABLE`
 - `HIGH_AMBIGUITY`
 
-## Canonical docs
+## Complementary Stated-Evidence Layer
+The AI Fluency Instrument remains useful as a stated-evidence layer: it captures
+what people report about adoption, confidence, and practice. FluencyTracr should
+be paired with that instrument when value teams want to compare stated evidence
+with observed aggregate workflow evidence. The instrument is complementary; it
+is not the lead positioning for this repository.
+
+## Canonical Docs
 - **Every session (mandatory for agents):** [docs/agent/SESSION_START.md](docs/agent/SESSION_START.md)
 - AI / agent navigation (harness, evaluation, task contracts): [docs/agent/README.md](docs/agent/README.md)
 - Cursor agent harness rules: [docs/agent/cursor-agent-harness.md](docs/agent/cursor-agent-harness.md)
@@ -47,6 +81,7 @@ Suppression reason codes (one-hot, immutable):
 - Glean readiness demo guide: [docs/integrations/glean/06-readiness-demo-guide.md](docs/integrations/glean/06-readiness-demo-guide.md)
 - Glean executive readiness prototype: [docs/integrations/glean/prototypes/executive-readiness-demo.html](docs/integrations/glean/prototypes/executive-readiness-demo.html)
 - Glean live-data decision gate: [docs/integrations/glean/07-live-data-access-decision-gate.md](docs/integrations/glean/07-live-data-access-decision-gate.md)
+- Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)
 - API reference: [docs/api/API_REFERENCE.md](docs/api/API_REFERENCE.md)
