@@ -169,6 +169,32 @@ describe("POST /api/v2/ingest/velocity-distribution", () => {
     });
   });
 
+  it("allows in-memory velocity ingest without org scope when persistence is disabled", async () => {
+    for (const eventName of [
+      "USER_FREQUENCY_OBSERVED",
+      "USER_ENGAGEMENT_OBSERVED",
+      "USER_BREADTH_OBSERVED"
+    ]) {
+      const res = await request(app)
+        .post("/api/v2/ingest/velocity-distribution")
+        .set({ "x-role": "ADMIN", "Content-Type": "application/json" })
+        .send({
+          ...validVelocityEvent(eventName),
+          workflow_id: "wf-velocity-memory-no-org",
+          distribution: distributionForEvent(eventName)
+        });
+      expect(res.status).toBe(202);
+    }
+
+    const replayed = await request(app)
+      .get("/api/v2/velocity-index?workflow_id=wf-velocity-memory-no-org&window_days=60")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(replayed.status).toBe(200);
+    expect(replayed.body.verdict).toBe("SURFACE");
+    expect(replayed.body.velocity_index).toBeCloseTo(1, 3);
+  });
+
   it("rejects payloads with person-resolving fields", async () => {
     const res = await ingestVelocity({ ...validVelocityEvent(), name: "Ada Lovelace" });
 

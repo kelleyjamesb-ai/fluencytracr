@@ -28,7 +28,6 @@ workflow_sessions AS (
   SELECT DISTINCT session_token
   FROM source_events
   WHERE event_type = 'WORKFLOW_RUN'
-    AND workflow_feature IS NOT NULL
     AND session_token IS NOT NULL
 ),
 
