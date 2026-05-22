@@ -9,10 +9,24 @@ def test_glean_bot_activity_anti_double_count_is_enforced_in_sql() -> None:
     sql = SQL.read_text()
 
     assert "standalone_glean_bot_activity AS" in sql
+    assert "AND bot.workflow_feature IS NULL" in sql
     assert "NOT EXISTS" in sql
     assert "workflow_sessions" in sql
     assert "workflow_session.session_token = bot.session_token" in sql
     assert "'standalone:GLEAN_BOT_ACTIVITY'" in sql
+
+
+def test_standalone_surfaces_require_absence_of_workflow_wrapper() -> None:
+    sql = SQL.read_text()
+
+    for cte in [
+        "standalone_search AS",
+        "standalone_autocomplete AS",
+        "standalone_mcp_usage AS",
+        "standalone_ai_summary AS",
+    ]:
+        block = sql.split(cte, 1)[1].split("),", 1)[0]
+        assert "AND workflow_feature IS NULL" in block
 
 
 def test_sub_events_and_verification_signals_do_not_become_surfaces() -> None:

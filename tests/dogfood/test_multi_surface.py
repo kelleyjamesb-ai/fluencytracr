@@ -335,8 +335,8 @@ def test_velocity_input_adds_adjusted_multiplier_and_categories(tmp_path: Path) 
     assert "## By Surface Category" in text
     assert "| workflow | 100 | 1.5 |" in text
     assert "| standalone | 0 | n/a |" in text
-    assert "| AGENT | workflow | 100 | SURFACE | none | 0.95 | 1.495 | 1.2 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
-    assert "| standalone:SEARCH | standalone | 30 | VELOCITY_ONLY | none | n/a | n/a | 0.8 | n/a | n/a |" in text
+    assert "| AGENT | workflow | surface | 100 | SURFACE | none | 0.95 | 1.495 | 1.2 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| standalone:SEARCH | standalone | velocity_only | 30 | SURFACE | none | n/a | n/a | 0.8 | n/a | n/a |" in text
     assert (output_dir / "AGENT.md").exists()
     assert (output_dir / "standalone_SEARCH.md").exists()
 
@@ -374,7 +374,7 @@ def test_velocity_input_preserves_per_surface_independence_across_categories(tmp
 
     assert completed.returncode == 0, completed.stderr
     text = readout.read_text()
-    assert "| AGENT | workflow | 100 | SURFACE | none | 0.95 | 1.495 | 1.1 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
-    assert "| standalone:MCP_USAGE | standalone | 1 | VELOCITY_ONLY | INSUFFICIENT_VOLUME | n/a | n/a | n/a | n/a | n/a |" in text
+    assert "| AGENT | workflow | surface | 100 | SURFACE | none | 0.95 | 1.495 | 1.1 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| standalone:MCP_USAGE | standalone | velocity_only | 1 | SUPPRESS | INSUFFICIENT_VOLUME | n/a | n/a | n/a | n/a | n/a |" in text
     assert "| workflow | 100 | 1.5 |" in text
     assert "| standalone | 0 | n/a |" in text

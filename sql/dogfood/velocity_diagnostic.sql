@@ -49,6 +49,7 @@ standalone_search AS (
   SELECT user_key, event_date, session_token, 'standalone:SEARCH' AS workflow_id, 'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'SEARCH'
+    AND workflow_feature IS NULL
     AND user_key IS NOT NULL
 ),
 
@@ -56,6 +57,7 @@ standalone_autocomplete AS (
   SELECT user_key, event_date, session_token, 'standalone:AUTOCOMPLETE' AS workflow_id, 'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'AUTOCOMPLETE'
+    AND workflow_feature IS NULL
     AND user_key IS NOT NULL
 ),
 
@@ -63,6 +65,7 @@ standalone_mcp_usage AS (
   SELECT user_key, event_date, session_token, 'standalone:MCP_USAGE' AS workflow_id, 'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'MCP_USAGE'
+    AND workflow_feature IS NULL
     AND user_key IS NOT NULL
 ),
 
@@ -70,6 +73,7 @@ standalone_ai_summary AS (
   SELECT user_key, event_date, session_token, 'standalone:AI_SUMMARY' AS workflow_id, 'standalone' AS surface_category
   FROM source_events
   WHERE event_type = 'AI_SUMMARY'
+    AND workflow_feature IS NULL
     AND user_key IS NOT NULL
 ),
 
@@ -82,6 +86,7 @@ standalone_glean_bot_activity AS (
     'standalone' AS surface_category
   FROM source_events AS bot
   WHERE bot.event_type = 'GLEAN_BOT_ACTIVITY'
+    AND bot.workflow_feature IS NULL
     AND bot.user_key IS NOT NULL
     AND NOT EXISTS (
       SELECT 1

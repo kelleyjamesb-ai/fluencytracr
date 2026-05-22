@@ -554,6 +554,7 @@ def merge_velocity_context(
         merged.append(
             {
                 "workflow_id": velocity["display_workflow_id"],
+                "row_type": "velocity_only",
                 "real_cohort_size": velocity["cohort_size"],
                 "distinct_users": velocity["cohort_size"],
                 "window_days": velocity["window_days"],
@@ -564,7 +565,7 @@ def merge_velocity_context(
                 "verification_rate": None,
                 "p50_latency_ms": None,
                 "p95_latency_ms": None,
-                "verdict": "VELOCITY_ONLY",
+                "verdict": velocity["verdict"],
                 "suppression_reason": velocity["suppression_reason"],
                 "value_type": None,
                 "evidence_grade": None,
@@ -636,8 +637,8 @@ def render_readout(
     if velocity_enabled:
         lines.extend(
             [
-                "| workflow_id | surface_category | real cohort | verdict | suppression reason | reliability | quality multiplier | velocity index | velocity-adjusted quality multiplier | AIVM tags |",
-                "| --- | --- | ---: | --- | --- | ---: | ---: | ---: | ---: | --- |",
+                "| workflow_id | surface_category | row type | real cohort | verdict | suppression reason | reliability | quality multiplier | velocity index | velocity-adjusted quality multiplier | AIVM tags |",
+                "| --- | --- | --- | ---: | --- | --- | ---: | ---: | ---: | ---: | --- |",
             ]
         )
     else:
@@ -656,7 +657,8 @@ def render_readout(
         suppression_reason = row["suppression_reason"] or "none"
         if velocity_enabled:
             lines.append(
-                f"| {row['workflow_id']} | {row.get('surface_category', 'workflow')} | {row['real_cohort_size']} | "
+                f"| {row['workflow_id']} | {row.get('surface_category', 'workflow')} | "
+                f"{row.get('row_type', 'surface')} | {row['real_cohort_size']} | "
                 f"{row['verdict']} | {suppression_reason} | {fmt(row['reliability_factor'])} | "
                 f"{fmt(row['quality_multiplier'])} | {fmt(row.get('velocity_index'))} | "
                 f"{fmt(row.get('velocity_adjusted_multiplier'))} | {tags} |"
