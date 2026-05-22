@@ -24,7 +24,9 @@ FluencyTracr sits on top of that pipeline as five bounded evidence services:
   their own correlation.
 - **Velocity Index:** adds V2 aggregate usage-distribution context across
   frequency, engagement, and breadth, surfaced only as cohort percentiles after
-  the same fail-closed gates clear.
+  the same fail-closed gates clear. Dogfood velocity coverage now follows the
+  full surface taxonomy in [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md),
+  spanning workflow and standalone AI surfaces without adding person-level output.
 
 The aggregate verdict layer uses AIVM vocabulary consistently: `value_type`
 communicates the kind of value claim, and `evidence_grade` communicates whether
