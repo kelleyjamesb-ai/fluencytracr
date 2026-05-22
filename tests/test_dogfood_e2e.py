@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts" / "dogfood"))
+
+from generate_gce_fixtures import build_fixture  # noqa: E402
+
 GENERATOR = ROOT / "scripts" / "dogfood" / "generate_gce_fixtures.py"
 RUNNER = ROOT / "scripts" / "dogfood" / "run_end_to_end.py"
 
@@ -104,6 +108,89 @@ class DogfoodEndToEndTest(unittest.TestCase):
             },
         )
 
+    def test_causal_delta_uses_change_timestamp_not_run_id_prefix(self) -> None:
+        workflow = "eng-on-call-triage"
+        pre = build_fixture(
+            workflow_family=workflow,
+            cohort_size=6,
+            abandonment_rate=0.0,
+            recovery_rate=0.90,
+            verification_rate=0.92,
+            friction_rate=0.05,
+            days=30,
+            start_offset_days=30,
+            run_prefix="run",
+        )
+        post = build_fixture(
+            workflow_family=workflow,
+            cohort_size=30,
+            abandonment_rate=0.25,
+            recovery_rate=0.25,
+            verification_rate=0.20,
+            friction_rate=0.58,
+            days=30,
+            run_prefix="run",
+        )
+        stale = build_fixture(
+            workflow_family=workflow,
+            cohort_size=30,
+            abandonment_rate=0.25,
+            recovery_rate=0.25,
+            verification_rate=0.20,
+            friction_rate=0.58,
+            days=30,
+            start_offset_days=70,
+            run_prefix="stale",
+        )
+        fixture = {
+            **post,
+            "days": 60,
+            "change_event": {
+                "label": "Agent prompt rollout",
+                "event_at": "2026-04-22T00:00:00Z",
+            },
+            "events": stale["events"] + pre["events"] + post["events"],
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "timestamp-causal-delta.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(
+            readout["causal_delta"],
+            {
+                "verdict": "SURFACE",
+                "shift": "REGRESSED",
+                "pre_pattern": "Calibrated Fluency",
+                "post_pattern": "Friction Loop",
+            },
+        )
+
+    def test_causal_delta_suppresses_sub_minimum_windows(self) -> None:
+        fixture = build_fixture(
+            workflow_family="eng-on-call-triage",
+            cohort_size=30,
+            abandonment_rate=0.0,
+            recovery_rate=0.90,
+            verification_rate=0.90,
+            friction_rate=0.0,
+        )
+        fixture["change_event"] = {
+            "label": "Tiny test window",
+            "event_at": "2026-04-22T00:00:00Z",
+            "pre_window_days": 1,
+            "post_window_days": 1,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "tiny-causal-window.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(readout["causal_delta"]["verdict"], "SUPPRESS")
+        self.assertEqual(readout["causal_delta"]["shift"], "INDETERMINATE")
+
     def test_sparse_workflow_suppresses_and_nulls_value_outputs(self) -> None:
         readout = run_json("--scenario", "sparse")
 
@@ -156,6 +243,154 @@ class DogfoodEndToEndTest(unittest.TestCase):
         self.assertEqual(readout["verdict"], "SUPPRESS")
         self.assertEqual(readout["suppression_reason"], "INSUFFICIENT_TIME")
         self.assertIsNone(readout["quality_multiplier"])
+
+    def test_ambiguous_fixture_suppresses_before_value_outputs(self) -> None:
+        fixture = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=0.9,
+            verification_rate=0.9,
+            friction_rate=0.0,
+        )
+        fixture["days"] = 30
+        for event in fixture["events"][:3]:
+            event["signals"]["ambiguity_present"] = True
+            event["signals"]["ambiguity_reason_code"] = "AMB_EVIDENCE_CONFLICT"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "ambiguous.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(readout["verdict"], "SUPPRESS")
+        self.assertEqual(readout["suppression_reason"], "HIGH_AMBIGUITY")
+        self.assertIsNone(readout["reliability_factor"])
+        self.assertIsNone(readout["quality_multiplier"])
+
+    def test_non_convergent_fixture_suppresses_before_value_outputs(self) -> None:
+        fixture = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=0.0,
+            verification_rate=0.0,
+            friction_rate=0.0,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "non-convergent.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(readout["verdict"], "SUPPRESS")
+        self.assertEqual(readout["suppression_reason"], "NO_CONVERGENCE")
+        self.assertIsNone(readout["reliability_factor"])
+        self.assertIsNone(readout["quality_multiplier"])
+
+    def test_unstable_baseline_fixture_suppresses_before_value_outputs(self) -> None:
+        fixture = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=0.0,
+            verification_rate=1.0,
+            friction_rate=1.0,
+        )
+        baseline = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=1.0,
+            verification_rate=1.0,
+            friction_rate=0.0,
+            days=60,
+            start_offset_days=60,
+            run_prefix="baseline",
+        )
+        fixture["baseline_events"] = baseline["events"]
+        fixture["baseline_days"] = 60
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "unstable-baseline.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(readout["verdict"], "SUPPRESS")
+        self.assertEqual(readout["suppression_reason"], "BASELINE_UNSTABLE")
+        self.assertIsNone(readout["reliability_factor"])
+        self.assertIsNone(readout["quality_multiplier"])
+
+    def test_suppressed_baseline_fixture_suppresses_before_value_outputs(self) -> None:
+        fixture = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=1.0,
+            verification_rate=1.0,
+            friction_rate=0.0,
+        )
+        baseline = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=4,
+            abandonment_rate=0.0,
+            recovery_rate=1.0,
+            verification_rate=1.0,
+            friction_rate=0.0,
+            days=60,
+            start_offset_days=60,
+            run_prefix="baseline",
+        )
+        fixture["baseline_events"] = baseline["events"]
+        fixture["baseline_days"] = 60
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "suppressed-baseline.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(readout["verdict"], "SUPPRESS")
+        self.assertEqual(readout["suppression_reason"], "INSUFFICIENT_VOLUME")
+        self.assertIsNone(readout["reliability_factor"])
+        self.assertIsNone(readout["quality_multiplier"])
+
+    def test_short_or_unbounded_baseline_fixture_suppresses_before_value_outputs(self) -> None:
+        fixture = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=1.0,
+            verification_rate=1.0,
+            friction_rate=0.0,
+        )
+        baseline = build_fixture(
+            workflow_family="manager-review-writer",
+            cohort_size=10,
+            abandonment_rate=0.0,
+            recovery_rate=1.0,
+            verification_rate=1.0,
+            friction_rate=0.0,
+            days=30,
+            start_offset_days=60,
+            run_prefix="baseline",
+        )
+        fixture["baseline_events"] = baseline["events"]
+        fixture["baseline_days"] = 30
+
+        with tempfile.TemporaryDirectory() as tmp:
+            short_output = Path(tmp) / "short-baseline.json"
+            short_output.write_text(json.dumps(fixture))
+            short_readout = run_json("--fixture", str(short_output))
+
+            fixture.pop("baseline_days")
+            unbounded_output = Path(tmp) / "unbounded-baseline.json"
+            unbounded_output.write_text(json.dumps(fixture))
+            unbounded_readout = run_json("--fixture", str(unbounded_output))
+
+        self.assertEqual(short_readout["verdict"], "SUPPRESS")
+        self.assertEqual(short_readout["suppression_reason"], "INSUFFICIENT_TIME")
+        self.assertEqual(unbounded_readout["verdict"], "SUPPRESS")
+        self.assertEqual(unbounded_readout["suppression_reason"], "INSUFFICIENT_TIME")
 
     def test_fixture_with_forbidden_person_or_content_fields_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
