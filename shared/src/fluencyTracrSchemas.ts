@@ -20,10 +20,20 @@ export type FluencyScope = z.infer<typeof FluencyScopeSchema>;
 export const RiskClassSchema = z.enum(["low", "medium", "high"]);
 export type RiskClass = z.infer<typeof RiskClassSchema>;
 
+export const FluencyJoinKeySchema = z
+  .string()
+  .max(64)
+  .regex(/^[a-z0-9_-]+$/);
+export type FluencyJoinKey = z.infer<typeof FluencyJoinKeySchema>;
+
+export const OptionalFluencyJoinKeySchema = FluencyJoinKeySchema.nullable().optional();
+
 const FluencyEventBaseSchema = z.object({
   timestamp: z.string().min(1),
   risk_class: RiskClassSchema,
   org_unit: z.string().min(1).optional(),
+  jbtd_id: OptionalFluencyJoinKeySchema,
+  persona_id: OptionalFluencyJoinKeySchema,
   ambiguity_flag: z.boolean().optional(),
   ambiguity_reason_code: z.enum([
     "AMB_SCHEMA_MISSING_REQUIRED",
@@ -476,6 +486,8 @@ export type ObservabilityReliabilityComponents = z.infer<
 export const ObservabilityWorkflowRowSchema = z
   .object({
     workflow_id: z.string().min(1),
+    jbtd_id: OptionalFluencyJoinKeySchema,
+    persona_id: OptionalFluencyJoinKeySchema,
     executions_total: z.number().int().nonnegative(),
     executions_disclosed: z.number().int().nonnegative(),
     executions_suppressed: z.number().int().nonnegative(),

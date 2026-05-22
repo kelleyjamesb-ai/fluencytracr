@@ -13,6 +13,9 @@ export type CausalDeltaShift = "IMPROVED" | "HELD" | "REGRESSED" | "INDETERMINAT
 export type CausalDeltaEvidenceGrade = "OBJECTIVE" | "CALIBRATED" | "QUALITATIVE";
 
 export type CausalDeltaResponse = {
+  workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
   verdict: "SURFACE" | "SUPPRESS";
   suppression_reason: SuppressionReason | null;
   pre_pattern: FluencyPatternName | null;
@@ -32,6 +35,8 @@ type WindowSummary = {
 
 type CausalDeltaInput = {
   workflowId: string;
+  jbtdId?: string | null;
+  personaId?: string | null;
   eventAt: string;
   preWindowDays: number;
   postWindowDays: number;
@@ -75,6 +80,12 @@ const inWindow = (event: FluencyEventRecord, start: Date, endExclusive: Date): b
   const t = toTime(event.timestamp);
   return t !== null && t >= start.getTime() && t < endExclusive.getTime();
 };
+
+const eventInSlice = (
+  event: FluencyEventRecord,
+  jbtdId: string | null,
+  personaId: string | null
+): boolean => (event.jbtd_id ?? null) === jbtdId && (event.persona_id ?? null) === personaId;
 
 const resolveSuppression = (
   summary: WindowSummary
@@ -191,6 +202,9 @@ const evidenceGrade = (
 
 const suppress = (
   params: {
+    workflowId: string;
+    jbtdId: string | null;
+    personaId: string | null;
     reason: SuppressionReason;
     prePattern: FluencyPatternName | null;
     postPattern: FluencyPatternName | null;
@@ -201,6 +215,9 @@ const suppress = (
     computedAt: string;
   }
 ): CausalDeltaResponse => ({
+  workflow_id: params.workflowId,
+  jbtd_id: params.jbtdId,
+  persona_id: params.personaId,
   verdict: "SUPPRESS",
   suppression_reason: params.reason,
   pre_pattern: params.prePattern,
@@ -220,6 +237,8 @@ const suppress = (
 
 export const computeCausalDelta = ({
   workflowId,
+  jbtdId = null,
+  personaId = null,
   eventAt,
   preWindowDays,
   postWindowDays,
@@ -233,7 +252,9 @@ export const computeCausalDelta = ({
   const postStart = changeAt;
   const postEnd = addDays(changeAt, postWindowDays);
 
-  const workflowEvents = events.filter((event) => event.workflow_id === workflowId);
+  const workflowEvents = events.filter(
+    (event) => event.workflow_id === workflowId && eventInSlice(event, jbtdId, personaId)
+  );
   const preEvents = workflowEvents.filter((event) => inWindow(event, preStart, preEnd));
   const postEvents = workflowEvents.filter((event) => inWindow(event, postStart, postEnd));
   const allWindowEvents = workflowEvents.filter((event) => inWindow(event, preStart, postEnd));
@@ -245,6 +266,9 @@ export const computeCausalDelta = ({
 
   if (preReason || postReason || pre.pattern === null || post.pattern === null) {
     return suppress({
+      workflowId,
+      jbtdId,
+      personaId,
       reason: preReason ?? postReason ?? "NO_CONVERGENCE",
       prePattern: pre.pattern,
       postPattern: post.pattern,
@@ -257,6 +281,9 @@ export const computeCausalDelta = ({
   }
 
   return {
+    workflow_id: workflowId,
+    jbtd_id: jbtdId,
+    persona_id: personaId,
     verdict: "SURFACE",
     suppression_reason: null,
     pre_pattern: pre.pattern,

@@ -29,6 +29,7 @@
 - Nielsen Source Evidence Trial Stage 2: added `NSETR_2026_05`, a document-derived claim mapping wrapper for the Nielsen value deck and Time-Saves packet; the trial maps 6 candidates, accepts 2 for review, withholds 4 behind source-system/approval gaps, and preserves no live ingestion, no persistence, no ROI calculation, and no claim readiness upgrades.
 - Glean dogfood E2E harness slice: added pure-stdlib mocked GCE fixture generation, no-network dogfood runner, healthy/regressed/sparse unittest coverage, docs, and a PR-gating `dogfood-e2e` job in the Assurance Harness workflow.
 - README/Glean value-realization repositioning slice: rewrote the public narrative around the 64% no-quality-signal gap, Quality Multiplier, Causal Delta, Reliability Factor, AIVM fields, and added the value-realization contract index; GitHub repo description/topics updated.
+- JBTD/persona join-key slice: added optional opaque `jbtd_id` / `persona_id` across ingest schemas, persistence columns, classification aggregates, observability, Quality Multiplier, Causal Delta, and contract docs; cohort gates now apply per `(workflow_id, jbtd_id, persona_id)` slice and suppressed keyed slices are hidden from public observability.
 
 ## Current Status
 

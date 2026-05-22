@@ -296,6 +296,8 @@ model V1CanonicalEvent {
   id                 String   @id @default(uuid()) @db.Uuid
   orgId              String   @map("org_id")
   workflowId         String   @map("workflow_id")
+  jbtdId             String?  @map("jbtd_id") @db.VarChar(64)
+  personaId          String?  @map("persona_id") @db.VarChar(64)
   executionId        String   @map("execution_id")
   eventName          String   @map("event_name")
   eventVersion       String   @map("event_version")
@@ -310,6 +312,7 @@ model V1CanonicalEvent {
   @@index([executionId])
   @@index([workflowId])
   @@index([orgId, workflowId])
+  @@index([orgId, workflowId, jbtdId, personaId])
   @@index([executionId, eventTimestamp, ingestSequence])
   @@map("canonical_events")
 }
@@ -338,6 +341,8 @@ model V1ClassificationOutcome {
   orgId              String    @map("org_id")
   executionId        String    @map("execution_id")
   workflowId         String    @map("workflow_id")
+  jbtdId             String?   @map("jbtd_id") @db.VarChar(64)
+  personaId          String?   @map("persona_id") @db.VarChar(64)
   status             String
   pattern            String?
   suppressionReason  String?   @map("suppression_reason")
@@ -347,6 +352,7 @@ model V1ClassificationOutcome {
 
   @@id([orgId, executionId])
   @@index([orgId, workflowId, processedAt])
+  @@index([orgId, workflowId, jbtdId, personaId])
   @@map("classification_outcomes")
 }
 
@@ -354,14 +360,16 @@ model V1WorkflowAggregate {
   id                         String   @id @default(uuid()) @db.Uuid
   orgId                      String   @map("org_id")
   workflowId                 String   @map("workflow_id")
+  jbtdId                     String?  @map("jbtd_id") @db.VarChar(64)
+  personaId                  String?  @map("persona_id") @db.VarChar(64)
   prevalenceMode             String   @map("prevalence_mode")
   classifiedExecutionCount   Int      @map("classified_execution_count")
   suppressedExecutionCount   Int      @map("suppressed_execution_count")
   patternDistributionJson    Json     @map("pattern_distribution_json")
   recomputedAt               DateTime @map("recomputed_at")
 
-  @@unique([orgId, workflowId])
   @@index([orgId])
+  @@index([orgId, workflowId, jbtdId, personaId])
   @@map("workflow_aggregates")
 }
 

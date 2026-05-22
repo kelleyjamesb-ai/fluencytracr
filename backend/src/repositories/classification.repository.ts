@@ -10,6 +10,8 @@ export type ClassificationDiagnostics = Readonly<Record<string, unknown>>;
 export interface ExecutionClassificationOutcome {
   readonly org_id: string;
   readonly workflow_id: string;
+  readonly jbtd_id: string | null;
+  readonly persona_id: string | null;
   readonly execution_id: string;
   readonly status: "ALLOWED" | "SUPPRESSED";
   readonly pattern?: BehaviorPattern;
@@ -25,7 +27,8 @@ export interface ClassificationRepository {
   findByWorkflowId(workflowId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>>;
   findByOrgIdAndWorkflowId(
     orgId: string,
-    workflowId: string
+    workflowId: string,
+    slice?: { readonly jbtd_id: string | null; readonly persona_id: string | null }
   ): Promise<ReadonlyArray<ExecutionClassificationOutcome>>;
   findByOrgId(orgId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>>;
 }
@@ -47,9 +50,18 @@ export class InMemoryClassificationRepository implements ClassificationRepositor
 
   async findByOrgIdAndWorkflowId(
     orgId: string,
-    workflowId: string
+    workflowId: string,
+    slice?: { readonly jbtd_id: string | null; readonly persona_id: string | null }
   ): Promise<ReadonlyArray<ExecutionClassificationOutcome>> {
-    return [...this.byExecution.values()].filter((o) => o.org_id === orgId && o.workflow_id === workflowId);
+    return [...this.byExecution.values()].filter((o) => {
+      if (o.org_id !== orgId || o.workflow_id !== workflowId) {
+        return false;
+      }
+      if (!slice) {
+        return true;
+      }
+      return o.jbtd_id === slice.jbtd_id && o.persona_id === slice.persona_id;
+    });
   }
 
   async findByOrgId(orgId: string): Promise<ReadonlyArray<ExecutionClassificationOutcome>> {

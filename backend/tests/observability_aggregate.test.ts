@@ -14,7 +14,8 @@ const dispositionPair = (
   runId: string,
   ts1: string,
   ts2: string,
-  verification: boolean
+  verification: boolean,
+  overrides: Record<string, unknown> = {}
 ) => [
   buildFluencyEventRecord(
     {
@@ -27,7 +28,8 @@ const dispositionPair = (
       edit_distance_bucket: "none",
       verification_present: verification,
       time_to_action_ms: 100,
-      run_id: runId
+      run_id: runId,
+      ...overrides
     },
     `e-${runId}-1`
   ),
@@ -42,7 +44,8 @@ const dispositionPair = (
       edit_distance_bucket: "none",
       verification_present: false,
       time_to_action_ms: 100,
-      run_id: runId
+      run_id: runId,
+      ...overrides
     },
     `e-${runId}-2`
   )
@@ -134,6 +137,51 @@ describe("buildObservabilityRollup", () => {
     expect(wfb?.pattern_distribution).toBeNull();
     expect(wfb?.reliability_factor).toBeNull();
     expect(wfb?.reliability_components).toBeNull();
+  });
+
+  it("gates observability independently by JBTD/persona slice", () => {
+    const events = [];
+    for (let i = 0; i < 2; i += 1) {
+      events.push(
+        ...dispositionPair(
+          "wf-sliced",
+          `large-${i}`,
+          "2026-04-09T00:00:00.000Z",
+          "2026-04-09T00:01:00.000Z",
+          true,
+          { jbtd_id: "manager-review", persona_id: "frontline-manager" }
+        )
+      );
+    }
+    events.push(
+      ...dispositionPair(
+        "wf-sliced",
+        "small-0",
+        "2026-04-09T02:00:00.000Z",
+        "2026-04-09T02:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "exec" }
+      )
+    );
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 2 });
+    const large = rows.find((r) => r.persona_id === "frontline-manager");
+    const small = rows.find((r) => r.persona_id === "exec");
+
+    expect(large).toMatchObject({
+      workflow_id: "wf-sliced",
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager",
+      disclosure: "ALLOWED",
+      executions_disclosed: 2
+    });
+    expect(small).toMatchObject({
+      workflow_id: "wf-sliced",
+      jbtd_id: "manager-review",
+      persona_id: "exec",
+      disclosure: "SUPPRESSED",
+      executions_disclosed: 1
+    });
   });
 
   it("excludes events outside window", () => {

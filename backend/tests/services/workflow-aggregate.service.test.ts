@@ -42,12 +42,11 @@ describe("aggregateWorkflowClassifications", () => {
     });
     expect(out.success).toBe(true);
     if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
       expect(out.result.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
       expect(out.result.prevalence_mode).toBe(DEFAULT_PREVALENCE_MODE);
-      const row = out.result.pattern_distribution[0]!;
-      expect(row.count).toBe(2);
-      expect(row.prevalence_band).toBe("HIGH");
-      expect(row.share).toBeUndefined();
+      expect(out.result.pattern_distribution).toEqual([]);
     }
   });
 
@@ -55,13 +54,18 @@ describe("aggregateWorkflowClassifications", () => {
     const out = aggregateWorkflowClassifications({
       records: [
         rec({ execution_id: "e1", pattern: BehaviorPattern.CALIBRATED_FLUENCY }),
-        rec({ execution_id: "e2", pattern: BehaviorPattern.CALIBRATED_FLUENCY })
+        rec({ execution_id: "e2", pattern: BehaviorPattern.CALIBRATED_FLUENCY }),
+        rec({ execution_id: "e3", pattern: BehaviorPattern.CALIBRATED_FLUENCY }),
+        rec({ execution_id: "e4", pattern: BehaviorPattern.CALIBRATED_FLUENCY }),
+        rec({ execution_id: "e5", pattern: BehaviorPattern.CALIBRATED_FLUENCY })
       ],
       prevalence_mode: "NUMERIC_SHARE"
     });
     expect(out.success).toBe(true);
     if (out.success) {
       expect(out.result.prevalence_mode).toBe("NUMERIC_SHARE");
+      expect(out.result.verdict).toBe("SURFACE");
+      expect(out.result.suppression_reason).toBeNull();
       const row = out.result.pattern_distribution[0]!;
       expect(row.share).toBe(1);
       expect(row.prevalence_band).toBeUndefined();
@@ -73,7 +77,9 @@ describe("aggregateWorkflowClassifications", () => {
       records: [
         rec({ execution_id: "e1", pattern: BehaviorPattern.CALIBRATED_FLUENCY }),
         rec({ execution_id: "e2", pattern: BehaviorPattern.CALIBRATED_FLUENCY }),
-        rec({ execution_id: "e3", pattern: BehaviorPattern.FRICTION_LOOP })
+        rec({ execution_id: "e3", pattern: BehaviorPattern.FRICTION_LOOP }),
+        rec({ execution_id: "e4", pattern: BehaviorPattern.FRICTION_LOOP }),
+        rec({ execution_id: "e5", pattern: BehaviorPattern.FRICTION_LOOP })
       ],
       prevalence_mode: "CATEGORICAL_PREVALENCE"
     });
@@ -86,8 +92,8 @@ describe("aggregateWorkflowClassifications", () => {
       const fr = out.result.pattern_distribution.find(
         (d) => d.pattern === BehaviorPattern.FRICTION_LOOP
       )!;
-      expect(cal.prevalence_band).toBe("HIGH");
-      expect(fr.prevalence_band).toBe("MODERATE");
+      expect(cal.prevalence_band).toBe("MODERATE");
+      expect(fr.prevalence_band).toBe("HIGH");
       assertNumericDist(cal, "CATEGORICAL_PREVALENCE");
       assertNumericDist(fr, "CATEGORICAL_PREVALENCE");
     }
@@ -97,6 +103,9 @@ describe("aggregateWorkflowClassifications", () => {
     const out = aggregateWorkflowClassifications({
       records: [
         rec({ execution_id: "e1", pattern: BehaviorPattern.BLIND_EFFICIENCY }),
+        rec({ execution_id: "e3", pattern: BehaviorPattern.BLIND_EFFICIENCY }),
+        rec({ execution_id: "e4", pattern: BehaviorPattern.BLIND_EFFICIENCY }),
+        rec({ execution_id: "e5", pattern: BehaviorPattern.BLIND_EFFICIENCY }),
         rec({
           execution_id: "e2",
           status: "SUPPRESSED",
@@ -106,10 +115,10 @@ describe("aggregateWorkflowClassifications", () => {
     });
     expect(out.success).toBe(true);
     if (out.success) {
-      expect(out.result.classified_execution_count).toBe(1);
+      expect(out.result.classified_execution_count).toBe(4);
       expect(out.result.suppressed_execution_count).toBe(1);
       const dist = out.result.pattern_distribution[0]!;
-      expect(dist.count).toBe(1);
+      expect(dist.count).toBe(4);
       expect(dist.prevalence_band).toBe("HIGH");
       expect(dist.share).toBeUndefined();
     }
@@ -148,9 +157,49 @@ describe("aggregateWorkflowClassifications", () => {
     });
     expect(out.success).toBe(true);
     if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
       expect(out.result.classified_execution_count).toBe(0);
       expect(out.result.pattern_distribution).toEqual([]);
       expect(out.result.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
+    }
+  });
+
+  it("suppresses a one-execution JBTD persona slice independently", () => {
+    const out = aggregateWorkflowClassifications({
+      records: [
+        rec({
+          execution_id: "solo",
+          jbtd_id: "manager-review",
+          persona_id: "frontline-manager",
+          pattern: BehaviorPattern.CALIBRATED_FLUENCY
+        })
+      ]
+    });
+
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.result.workflow_id).toBe("wf1");
+      expect(out.result.jbtd_id).toBe("manager-review");
+      expect(out.result.persona_id).toBe("frontline-manager");
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.suppressed_execution_count).toBe(1);
+      expect(out.result.pattern_distribution).toEqual([]);
+    }
+  });
+
+  it("rejects mixed JBTD persona slices", () => {
+    const out = aggregateWorkflowClassifications({
+      records: [
+        rec({ execution_id: "a", jbtd_id: "review", persona_id: "manager" }),
+        rec({ execution_id: "b", jbtd_id: "triage", persona_id: "engineer" })
+      ]
+    });
+    expect(out.success).toBe(false);
+    if (!out.success) {
+      expect(out.failed_reason).toBe("MIXED_SLICE");
     }
   });
 });

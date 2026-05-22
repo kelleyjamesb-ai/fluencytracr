@@ -17,27 +17,31 @@ import type { CanonicalEvent } from "../../src/domain/canonical-event.schema";
 describe("governance regression — aggregation safety", () => {
   it("observability exposes per-workflow rows only; no cross-workflow comparison fields", async () => {
     const { classificationRepository, workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
-    const eventsA: CanonicalEvent[] = happyPathExecution("gov-wf-a", fixtureIds.workflowA);
-    const eventsB: CanonicalEvent[] = happyPathWorkflowB("gov-wf-b");
+    for (let i = 0; i < 5; i += 1) {
+      const executionA = `gov-wf-a-${i}`;
+      const executionB = `gov-wf-b-${i}`;
+      const eventsA: CanonicalEvent[] = happyPathExecution(executionA, fixtureIds.workflowA);
+      const eventsB: CanonicalEvent[] = happyPathWorkflowB(executionB);
 
-    await runClassificationPipeline(
-      {
-        org_id: fixtureIds.org,
-        workflow_id: fixtureIds.workflowA,
-        execution_id: "gov-wf-a",
-        events: eventsA
-      },
-      { classificationRepository, workflowAggregateRepository }
-    );
-    await runClassificationPipeline(
-      {
-        org_id: fixtureIds.org,
-        workflow_id: fixtureIds.workflowB,
-        execution_id: "gov-wf-b",
-        events: eventsB
-      },
-      { classificationRepository, workflowAggregateRepository }
-    );
+      await runClassificationPipeline(
+        {
+          org_id: fixtureIds.org,
+          workflow_id: fixtureIds.workflowA,
+          execution_id: executionA,
+          events: eventsA
+        },
+        { classificationRepository, workflowAggregateRepository }
+      );
+      await runClassificationPipeline(
+        {
+          org_id: fixtureIds.org,
+          workflow_id: fixtureIds.workflowB,
+          execution_id: executionB,
+          events: eventsB
+        },
+        { classificationRepository, workflowAggregateRepository }
+      );
+    }
 
     const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
     expect(res.status).toBe(200);
@@ -54,15 +58,18 @@ describe("governance regression — aggregation safety", () => {
 
   it("default prevalence mode from pipeline refresh remains categorical (executive-safe default)", async () => {
     const { classificationRepository, workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
-    await runClassificationPipeline(
-      {
-        org_id: fixtureIds.org,
-        workflow_id: fixtureIds.workflowA,
-        execution_id: "gov-prev-default",
-        events: happyPathExecution("gov-prev-default")
-      },
-      { classificationRepository, workflowAggregateRepository }
-    );
+    for (let i = 0; i < 5; i += 1) {
+      const executionId = `gov-prev-default-${i}`;
+      await runClassificationPipeline(
+        {
+          org_id: fixtureIds.org,
+          workflow_id: fixtureIds.workflowA,
+          execution_id: executionId,
+          events: happyPathExecution(executionId)
+        },
+        { classificationRepository, workflowAggregateRepository }
+      );
+    }
     const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
     const w = (res.body as { workflows: ReadonlyArray<{ prevalence_mode: string }> }).workflows[0]!;
     expect(w.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
@@ -73,6 +80,10 @@ describe("governance regression — aggregation safety", () => {
     await workflowAggregateRepository.upsertAggregate(
       {
         workflow_id: fixtureIds.workflowA,
+        jbtd_id: null,
+        persona_id: null,
+        verdict: "SURFACE",
+        suppression_reason: null,
         classified_execution_count: 1,
         suppressed_execution_count: 0,
         prevalence_mode: "NUMERIC_SHARE",

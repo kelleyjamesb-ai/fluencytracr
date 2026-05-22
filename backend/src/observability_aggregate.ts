@@ -65,6 +65,8 @@ export const eventBelongsToOrg = (event: FluencyEventRecord, orgId: string): boo
 
 export type WorkflowObservabilityRow = {
   workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
   executions_total: number;
   executions_disclosed: number;
   executions_suppressed: number;
@@ -77,6 +79,9 @@ export type WorkflowObservabilityRow = {
   /** Qualitative hints only; no scores, ranks, or trends (PRD §8). */
   allowed_interpretation_hints: string[];
 };
+
+const sliceKey = (workflowId: string, jbtdId: string | null, personaId: string | null): string =>
+  JSON.stringify([workflowId, jbtdId, personaId]);
 
 const interpretationHints = (dist: Record<FluencyPatternName, number>): string[] => {
   const hints: string[] = [];
@@ -113,13 +118,24 @@ export const buildObservabilityRollup = (
   const windowed = filterEventsByWindow(scoped, window, now) as FluencyEventRecord[];
   const thresholdsByWorkflow = buildWorkflowPhase2ThresholdMap(windowed);
 
-  const workflowIds = [...new Set(windowed.map((e) => e.workflow_id))].sort((a, b) =>
-    a.localeCompare(b)
-  );
+  const sliceKeys = [
+    ...new Set(windowed.map((e) => sliceKey(e.workflow_id, e.jbtd_id ?? null, e.persona_id ?? null)))
+  ].sort((a, b) => a.localeCompare(b));
 
-  return workflowIds.map((workflowId) => {
-    const wfEvents = windowed.filter((e) => e.workflow_id === workflowId);
-    const allWorkflowEvents = scoped.filter((e) => e.workflow_id === workflowId);
+  return sliceKeys.map((key) => {
+    const [workflowId, jbtdId, personaId] = JSON.parse(key) as [string, string | null, string | null];
+    const wfEvents = windowed.filter(
+      (e) =>
+        e.workflow_id === workflowId &&
+        (e.jbtd_id ?? null) === jbtdId &&
+        (e.persona_id ?? null) === personaId
+    );
+    const allWorkflowEvents = scoped.filter(
+      (e) =>
+        e.workflow_id === workflowId &&
+        (e.jbtd_id ?? null) === jbtdId &&
+        (e.persona_id ?? null) === personaId
+    );
     const ghostUse = evaluateGhostUseResidual(allWorkflowEvents, window, now);
     const byExec = groupEventsByExecution(wfEvents);
     const workflowThresholds =
@@ -203,6 +219,8 @@ export const buildObservabilityRollup = (
 
     return {
       workflow_id: workflowId,
+      jbtd_id: jbtdId,
+      persona_id: personaId,
       executions_total,
       executions_disclosed,
       executions_suppressed,

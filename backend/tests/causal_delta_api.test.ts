@@ -120,12 +120,18 @@ const seedWindow = (
   workflowId: string,
   phase: "pre" | "post",
   count: number,
-  factory: ExecutionFactory
+  factory: ExecutionFactory,
+  overrides: Partial<FluencyEventRecord> = {}
 ) => {
   const dayOffset = phase === "pre" ? -15 : 15;
   for (let i = 0; i < count; i += 1) {
     const at = timestampFromEventAt(EVENT_AT, dayOffset, i * 60_000);
-    addEvents(factory(workflowId, `${workflowId}-${phase}-${i}`, at));
+    addEvents(
+      factory(workflowId, `${workflowId}-${phase}-${i}`, at).map((event) => ({
+        ...event,
+        ...overrides
+      }))
+    );
   }
 };
 
@@ -217,6 +223,56 @@ describe("POST /api/v1/causal-delta", () => {
     expect(res.body.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(res.body.pre_cohort_size).toBe(5);
     expect(res.body.post_cohort_size).toBe(4);
+  });
+
+  it("applies pre/post cohort gates independently within JBTD/persona slices", async () => {
+    seedWindow("wf-sliced-delta", "pre", 5, blindExecution, {
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager"
+    });
+    seedWindow("wf-sliced-delta", "post", 5, calibratedExecution, {
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager"
+    });
+    seedWindow("wf-sliced-delta", "pre", 1, blindExecution, {
+      jbtd_id: "manager-review",
+      persona_id: "exec"
+    });
+    seedWindow("wf-sliced-delta", "post", 1, calibratedExecution, {
+      jbtd_id: "manager-review",
+      persona_id: "exec"
+    });
+
+    const large = await postCausalDelta(
+      bodyFor("wf-sliced-delta", {
+        jbtd_id: "manager-review",
+        persona_id: "frontline-manager"
+      })
+    );
+    const small = await postCausalDelta(
+      bodyFor("wf-sliced-delta", {
+        jbtd_id: "manager-review",
+        persona_id: "exec"
+      })
+    );
+
+    expect(large.status).toBe(200);
+    expect(large.body).toMatchObject({
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager",
+      verdict: "SURFACE",
+      pre_cohort_size: 5,
+      post_cohort_size: 5
+    });
+    expect(small.status).toBe(200);
+    expect(small.body).toMatchObject({
+      jbtd_id: "manager-review",
+      persona_id: "exec",
+      verdict: "SUPPRESS",
+      suppression_reason: "INSUFFICIENT_VOLUME",
+      pre_cohort_size: 1,
+      post_cohort_size: 1
+    });
   });
 
   it("rejects overlapping window definitions", () => {

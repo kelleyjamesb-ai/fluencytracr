@@ -42,10 +42,11 @@ describe("governance regression — suppression policy", () => {
 
     const agg = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA);
     expect(agg).not.toBeNull();
-    expect(agg!.suppressed_execution_count).toBeGreaterThanOrEqual(1);
-    expect(agg!.classified_execution_count).toBe(1);
-    expect(agg!.pattern_distribution.length).toBe(1);
-    expect(agg!.pattern_distribution[0]!.count).toBe(1);
+    expect(agg!.verdict).toBe("SUPPRESS");
+    expect(agg!.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(agg!.suppressed_execution_count).toBe(2);
+    expect(agg!.classified_execution_count).toBe(0);
+    expect(agg!.pattern_distribution.length).toBe(0);
   });
 
   it("insufficient-signal executions are suppressed and not counted as classified", async () => {

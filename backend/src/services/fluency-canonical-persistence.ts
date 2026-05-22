@@ -167,6 +167,8 @@ export const persistFluencyEventRecord = async (
       data: {
         orgId: options.orgId,
         workflowId: tagged.workflow_id,
+        jbtdId: tagged.jbtd_id ?? null,
+        personaId: tagged.persona_id ?? null,
         executionId: tagged.execution_id,
         eventName: tagged.event_type,
         eventVersion: options.schemaVersion,
