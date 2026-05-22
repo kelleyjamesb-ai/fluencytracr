@@ -47,6 +47,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day velocity diagnostic across 1,553 internal Glean users and 13 workflow surfaces
 - Used in: V2 Velocity concept document, V2 canonical velocity events, and Velocity Index implementation
 
+### Surface taxonomy across AI touchpoints
+- Source: James Kelley, surface-taxonomy insight that AI fluency must be measured across every AI touchpoint, not within an arbitrarily scoped subset
+- Empirical grounding: scio-prod 60-day surface diagnostic showing V1 captured roughly 3.3M of an addressable ~28M first-class AI-use events
+- Used in: future V2.1 surface taxonomy concept document
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative

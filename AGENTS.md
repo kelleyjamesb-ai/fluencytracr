@@ -62,6 +62,8 @@ Future expansions require a governance-grade concept doc in docs/concepts/ befor
 
 Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemented as three aggregate-distribution canonical events plus a Velocity Index output. It preserves the V1 suppression reasons, fail-closed posture, and no-individual-scoring invariant.
 
+Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md). It is not yet implemented and does not modify any V1 or V2 invariants. Implementation will require a separate governance review and explicit AGENTS.md update.
+
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
 - AIVM grammar: value_type in {ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED}; evidence_grade in {OBJECTIVE, CALIBRATED, QUALITATIVE}
