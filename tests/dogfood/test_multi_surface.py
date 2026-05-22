@@ -30,12 +30,42 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 
 
 def run_driver(input_path: Path, output_dir: Path, readout: Path, cohort_size: int = 30):
+    args = [
+            sys.executable,
+            str(DRIVER),
+            "--input",
+            str(input_path),
+            "--output-dir",
+            str(output_dir),
+            "--readout",
+            str(readout),
+            "--cohort-size",
+            str(cohort_size),
+        ]
+    return subprocess.run(
+        args,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+
+def run_driver_with_velocity(
+    input_path: Path,
+    velocity_input: Path,
+    output_dir: Path,
+    readout: Path,
+    cohort_size: int = 30,
+):
     return subprocess.run(
         [
             sys.executable,
             str(DRIVER),
             "--input",
             str(input_path),
+            "--velocity-input",
+            str(velocity_input),
             "--output-dir",
             str(output_dir),
             "--readout",
@@ -63,6 +93,58 @@ def base_row(workflow_id: str, real_cohort_size: int, recovery_rate: float, veri
         "verification_rate": verification_rate,
         "p50_latency_ms": 45000,
         "p95_latency_ms": 120000,
+    }
+
+
+def write_velocity_csv(path: Path, rows: list[dict[str, object]]) -> None:
+    fieldnames = [
+        "workflow_id",
+        "surface_category",
+        "cohort_size",
+        "window_days",
+        "freq_p10",
+        "freq_p50",
+        "freq_p90",
+        "freq_p99",
+        "engagement_p10",
+        "engagement_p50",
+        "engagement_p90",
+        "engagement_p99",
+        "breadth_p10",
+        "breadth_p50",
+        "breadth_p90",
+        "breadth_p99",
+    ]
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def velocity_row(
+    workflow_id: str,
+    surface_category: str,
+    cohort_size: int = 30,
+    window_days: int = 60,
+    factor: float = 1.0,
+) -> dict[str, object]:
+    return {
+        "workflow_id": workflow_id,
+        "surface_category": surface_category,
+        "cohort_size": cohort_size,
+        "window_days": window_days,
+        "freq_p10": 11 * factor,
+        "freq_p50": 71 * factor,
+        "freq_p90": 350 * factor,
+        "freq_p99": 701 * factor,
+        "engagement_p10": 30 * factor,
+        "engagement_p50": 61 * factor,
+        "engagement_p90": 61 * factor,
+        "engagement_p99": 61 * factor,
+        "breadth_p10": 1 * factor,
+        "breadth_p50": 7 * factor,
+        "breadth_p90": 10 * factor,
+        "breadth_p99": 12 * factor,
     }
 
 
@@ -229,3 +311,70 @@ def test_bad_input_exits_one_with_clear_error(tmp_path: Path) -> None:
     assert completed.returncode == 1
     assert "Invalid input" in completed.stderr
     assert "real_cohort_size" in completed.stderr
+
+
+def test_velocity_input_adds_adjusted_multiplier_and_categories(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    velocity_input = tmp_path / "velocity.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 100, 0.9, 0.9)])
+    write_velocity_csv(
+        velocity_input,
+        [
+            velocity_row("workflow:AGENT", "workflow", factor=1.2),
+            velocity_row("standalone:SEARCH", "standalone", factor=0.8),
+        ],
+    )
+
+    completed = run_driver_with_velocity(input_path, velocity_input, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "Weighted Velocity-Adjusted Quality Multiplier: 1.5" in text
+    assert "## By Surface Category" in text
+    assert "| workflow | 100 | 1.5 |" in text
+    assert "| standalone | 0 | n/a |" in text
+    assert "| AGENT | workflow | 100 | SURFACE | none | 0.95 | 1.495 | 1.2 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| standalone:SEARCH | standalone | 30 | VELOCITY_ONLY | none | n/a | n/a | 0.8 | n/a | n/a |" in text
+    assert (output_dir / "AGENT.md").exists()
+    assert (output_dir / "standalone_SEARCH.md").exists()
+
+
+def test_velocity_input_preserves_v1_when_not_supplied(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 100, 0.9, 0.9)])
+
+    completed = run_driver(input_path, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "Weighted Velocity-Adjusted Quality Multiplier" not in text
+    assert "surface_category" not in text
+    assert "| AGENT | 100 | SURFACE | none | 0.95 | 1.495 | QUALITY_PREMIUM / QUALITATIVE |" in text
+
+
+def test_velocity_input_preserves_per_surface_independence_across_categories(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    velocity_input = tmp_path / "velocity.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 100, 0.9, 0.9)])
+    write_velocity_csv(
+        velocity_input,
+        [
+            velocity_row("workflow:AGENT", "workflow", cohort_size=30, factor=1.1),
+            velocity_row("standalone:MCP_USAGE", "standalone", cohort_size=1, factor=1.1),
+        ],
+    )
+
+    completed = run_driver_with_velocity(input_path, velocity_input, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "| AGENT | workflow | 100 | SURFACE | none | 0.95 | 1.495 | 1.1 | 1.5 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| standalone:MCP_USAGE | standalone | 1 | VELOCITY_ONLY | INSUFFICIENT_VOLUME | n/a | n/a | n/a | n/a | n/a |" in text
+    assert "| workflow | 100 | 1.5 |" in text
+    assert "| standalone | 0 | n/a |" in text

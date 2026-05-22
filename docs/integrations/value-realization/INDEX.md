@@ -47,6 +47,15 @@ person-level reporting.
 4. Review per-surface `SURFACE` / `SUPPRESS`, AIVM tags, Reliability Factor, and Quality Multiplier.
 5. Use the weighted headline as a read-only summary; each surface is evaluated independently first.
 
+## Running Velocity-Aware Dogfood
+
+1. Export taxonomy-aware velocity distributions with [`sql/dogfood/velocity_diagnostic.sql`](../../../sql/dogfood/velocity_diagnostic.sql).
+2. Keep workflow surfaces as `workflow:<surface>` and standalone surfaces as `standalone:<surface>`.
+3. Run `python3 scripts/dogfood/run_multi_surface.py --input <surface-csv> --velocity-input <velocity-csv>`.
+   Set `BACKEND_URL=http://localhost:4000` when you want the driver to exercise the live V2 ingest, Velocity Index, and velocity-aware Quality Multiplier endpoints.
+4. Review the overall velocity-adjusted Quality Multiplier and the workflow vs standalone category split.
+5. Treat the velocity section as aggregate context only; each surface still clears or suppresses independently.
+
 ## Complementary Stated-Evidence Layer
 
 The AI Fluency Instrument remains useful as stated evidence: what people say
