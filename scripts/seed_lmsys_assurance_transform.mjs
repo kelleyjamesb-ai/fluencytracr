@@ -1,10 +1,19 @@
 #!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 const DEFAULT_ORG_ID = "lmsys-org-assurance";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const VELOCITY_BASELINE = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, "../calibration/velocity_baselines.json"), "utf8")
+);
 // Source of truth: backend/src/inference/confidence_layer.ts.
 // Ghost-use persists when a current 60-day window has an adjacent qualifying previous window.
 const GHOST_USE_REQUIRED_WINDOWS = 2;
 const GHOST_USE_SURFACING_WINDOW_DAYS = 60;
 const GHOST_USE_AMBIGUITY_DOMINANCE_THRESHOLD = 0.2;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function iso(baseMs, offsetMs) {
   return new Date(baseMs + offsetMs).toISOString();
@@ -472,6 +481,82 @@ function outcomeEvidencePayload({ workflowId, baseMs, metric, cohortSize = 12, a
     payload.aggregate_kind = aggregateKind;
   }
   return payload;
+}
+
+function velocityDistributionPayload({ workflowId, eventName, cohortSize, distribution, baseMs }) {
+  return {
+    schema_version: "FT_V2_2026_05",
+    event_name: eventName,
+    workflow_id: workflowId,
+    window_start: iso(baseMs, -60 * DAY_MS),
+    window_end: iso(baseMs, 0),
+    cohort_size: cohortSize,
+    distribution,
+    calibration_reference: "scio-prod-60d-2026-05",
+    privacy: {
+      person_level_fields_included: false
+    }
+  };
+}
+
+function buildVelocityCase({ orgId, workflowPrefix, caseId, baseMs, cohortSize, distributions, expectedVelocityIndex }) {
+  const workflowId = `${workflowPrefix}-${caseId.replaceAll("_", "-")}`;
+  const payloads = [
+    velocityDistributionPayload({
+      workflowId,
+      eventName: "USER_FREQUENCY_OBSERVED",
+      cohortSize,
+      distribution: distributions.frequency,
+      baseMs
+    }),
+    velocityDistributionPayload({
+      workflowId,
+      eventName: "USER_ENGAGEMENT_OBSERVED",
+      cohortSize,
+      distribution: distributions.engagement,
+      baseMs
+    }),
+    velocityDistributionPayload({
+      workflowId,
+      eventName: "USER_BREADTH_OBSERVED",
+      cohortSize,
+      distribution: distributions.breadth,
+      baseMs
+    })
+  ];
+  return {
+    id: caseId,
+    org_id: orgId,
+    workflow_id: workflowId,
+    expected: {
+      velocity_index: expectedVelocityIndex,
+      verdict: "SURFACE"
+    },
+    velocity_manifest: {
+      source_contract: "docs/contracts/velocity-index.md",
+      calibration_reference: "scio-prod-60d-2026-05",
+      canonical_events: [
+        "USER_FREQUENCY_OBSERVED",
+        "USER_ENGAGEMENT_OBSERVED",
+        "USER_BREADTH_OBSERVED"
+      ],
+      distribution_only: true,
+      person_level_fields_included: false
+    },
+    velocity_distribution_payloads: payloads,
+    events: []
+  };
+}
+
+function velocityDistributionFromBaseline(dimension, factor = 1) {
+  const p50 = VELOCITY_BASELINE[`${dimension}_p50`] * factor;
+  const p99 = VELOCITY_BASELINE[`${dimension}_p99`] * factor;
+  return {
+    p10: Math.max(0, p50 * 0.25),
+    p50,
+    p90: p99,
+    p99
+  };
 }
 
 function validPiiProbeBase({ orgId, workflowId, executionRunId, baseMs }) {
@@ -951,6 +1036,45 @@ export function buildAssuranceCases(options = {}) {
         factory: calibratedExecution
       })
     },
+    buildVelocityCase({
+      orgId,
+      workflowPrefix,
+      caseId: "velocity_saturated_calibration_cohort",
+      baseMs,
+      cohortSize: 1553,
+      distributions: {
+        frequency: velocityDistributionFromBaseline("frequency"),
+        engagement: velocityDistributionFromBaseline("engagement"),
+        breadth: velocityDistributionFromBaseline("breadth")
+      },
+      expectedVelocityIndex: 1
+    }),
+    buildVelocityCase({
+      orgId,
+      workflowPrefix,
+      caseId: "velocity_customer_low",
+      baseMs,
+      cohortSize: 30,
+      distributions: {
+        frequency: velocityDistributionFromBaseline("frequency", 0.4),
+        engagement: velocityDistributionFromBaseline("engagement", 0.4),
+        breadth: velocityDistributionFromBaseline("breadth", 0.4)
+      },
+      expectedVelocityIndex: 0.4
+    }),
+    buildVelocityCase({
+      orgId,
+      workflowPrefix,
+      caseId: "velocity_customer_above_calibration",
+      baseMs,
+      cohortSize: 30,
+      distributions: {
+        frequency: velocityDistributionFromBaseline("frequency", 1.1),
+        engagement: velocityDistributionFromBaseline("engagement", 1.1),
+        breadth: velocityDistributionFromBaseline("breadth", 1.1)
+      },
+      expectedVelocityIndex: 1.1
+    }),
     {
       id: "duplicate_execution_ids_across_orgs",
       org_id: "lmsys-org-tenant-a",

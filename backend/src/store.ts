@@ -225,6 +225,35 @@ export type FluencyEventRecord = FluencyEvent & {
   execution_id: string;
 };
 
+export type VelocityEventName =
+  | "USER_FREQUENCY_OBSERVED"
+  | "USER_ENGAGEMENT_OBSERVED"
+  | "USER_BREADTH_OBSERVED";
+
+export type VelocityDistributionRecord = {
+  org_id: string;
+  schema_version: "FT_V2_2026_05";
+  event_name: VelocityEventName;
+  workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
+  window_start: string;
+  window_end: string;
+  cohort_size: number;
+  ambiguity_rate?: number;
+  distribution: {
+    p10: number;
+    p50: number;
+    p90: number;
+    p99: number;
+  };
+  calibration_reference: string;
+  privacy: {
+    person_level_fields_included: false;
+  };
+  ingested_at: string;
+};
+
 export const buildFluencyEventRecord = (event: FluencyEvent, eventId: string): FluencyEventRecord => ({
   ...event,
   event_id: eventId,
@@ -414,6 +443,7 @@ class MemoryStore {
   suppressionAuditLogs = new Map<string, SuppressionAuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
   outcomeEvidence = new Map<string, OutcomeEvidenceStoredRecord>();
+  velocityDistributions = new Map<string, VelocityDistributionRecord>();
   ingestReceipts = new Map<string, IngestReceiptRecord>();
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
   workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
@@ -454,6 +484,7 @@ class MemoryStore {
     this.suppressionAuditLogs.clear();
     this.connectorEventQuarantine.clear();
     this.outcomeEvidence.clear();
+    this.velocityDistributions.clear();
     this.ingestReceipts.clear();
     this.workflowRegistry.clear();
     this.workflowRegistryCurrent.clear();

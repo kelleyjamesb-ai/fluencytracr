@@ -17,6 +17,8 @@ export type QualityMultiplierResponse = {
   cohort_size: number;
   evidence_grade: QualityMultiplierEvidenceGrade;
   computed_at: string;
+  velocity_adjustment_factor?: number;
+  velocity_index?: number;
 };
 
 type QualitySignalClass =

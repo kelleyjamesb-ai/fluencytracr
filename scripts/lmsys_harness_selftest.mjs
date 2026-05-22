@@ -118,9 +118,39 @@ assert.deepEqual(ids, [
   "reliability_factor_low_reliability_workflow",
   "reliability_factor_suppressed_sparse_data_workflow",
   "sub_threshold_workflow",
-  "undertrust_avoidance"
+  "undertrust_avoidance",
+  "velocity_customer_above_calibration",
+  "velocity_customer_low",
+  "velocity_saturated_calibration_cohort"
 ]);
 assert.ok(cases.every((entry) => Array.isArray(entry.events) || Array.isArray(entry.invalid_payloads)));
+const velocityCases = cases.filter((entry) => entry.velocity_manifest);
+assert.deepEqual(velocityCases.map((entry) => entry.id).sort(), [
+  "velocity_customer_above_calibration",
+  "velocity_customer_low",
+  "velocity_saturated_calibration_cohort"
+]);
+for (const entry of velocityCases) {
+  assert.equal(entry.velocity_manifest.source_contract, "docs/contracts/velocity-index.md");
+  assert.equal(entry.velocity_manifest.distribution_only, true);
+  assert.equal(entry.velocity_manifest.person_level_fields_included, false);
+  assert.deepEqual(entry.velocity_manifest.canonical_events, [
+    "USER_FREQUENCY_OBSERVED",
+    "USER_ENGAGEMENT_OBSERVED",
+    "USER_BREADTH_OBSERVED"
+  ]);
+  assert.equal(entry.velocity_distribution_payloads.length, 3);
+  assert.ok(["SURFACE", "SUPPRESS"].includes(entry.expected.verdict));
+  for (const payload of entry.velocity_distribution_payloads) {
+    assert.equal(payload.workflow_id, entry.workflow_id);
+    assert.equal(payload.schema_version, "FT_V2_2026_05");
+    assert.equal(payload.privacy.person_level_fields_included, false);
+    assert.ok(entry.velocity_manifest.canonical_events.includes(payload.event_name));
+    assert.equal("user_email" in payload, false);
+    assert.equal("name" in payload, false);
+    assert.deepEqual(Object.keys(payload.distribution).sort(), ["p10", "p50", "p90", "p99"]);
+  }
+}
 const outcomeEvidenceCases = cases.filter((entry) => entry.outcome_evidence_manifest);
 assert.deepEqual(outcomeEvidenceCases.map((entry) => entry.id).sort(), [
   "outcome_evidence_suppress_with_outcomes",

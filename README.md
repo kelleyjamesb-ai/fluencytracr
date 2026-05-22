@@ -9,7 +9,7 @@ It exists because the current time-saved pipeline can show acceleration while
 leaving a critical question unanswered: roughly 64% of chat runs have no
 quality signal today.
 
-FluencyTracr sits on top of that pipeline as four bounded evidence services:
+FluencyTracr sits on top of that pipeline as five bounded evidence services:
 
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
@@ -22,6 +22,9 @@ FluencyTracr sits on top of that pipeline as four bounded evidence services:
 - **Outcome Evidence:** stores and replays customer-attested aggregate KPI
   outcomes next to the unchanged workflow verdict so external consumers can do
   their own correlation.
+- **Velocity Index:** adds V2 aggregate usage-distribution context across
+  frequency, engagement, and breadth, surfaced only as cohort percentiles after
+  the same fail-closed gates clear.
 
 The aggregate verdict layer uses AIVM vocabulary consistently: `value_type`
 communicates the kind of value claim, and `evidence_grade` communicates whether
@@ -86,7 +89,8 @@ is not the lead positioning for this repository.
 - Glean executive readiness prototype: [docs/integrations/glean/prototypes/executive-readiness-demo.html](docs/integrations/glean/prototypes/executive-readiness-demo.html)
 - Glean live-data decision gate: [docs/integrations/glean/07-live-data-access-decision-gate.md](docs/integrations/glean/07-live-data-access-decision-gate.md)
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
-- Velocity concept (future V2): [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
+- Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
+- Velocity Index contract: [docs/contracts/velocity-index.md](docs/contracts/velocity-index.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)
 - API reference: [docs/api/API_REFERENCE.md](docs/api/API_REFERENCE.md)
