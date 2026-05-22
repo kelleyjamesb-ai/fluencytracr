@@ -135,7 +135,7 @@ def test_blank_workflow_id_is_skipped_as_unclassified(tmp_path: Path) -> None:
     assert completed.returncode == 0, completed.stderr
     text = readout.read_text()
     assert (
-        "| UNCLASSIFIED | 250 | Blank workflow_id in input — likely unclassified BigQuery feature rows |"
+        "| UNCLASSIFIED | 250 | Blank workflow_id in input — likely unclassified BigQuery feature rows; relabeled UNCLASSIFIED |"
         in text
     )
     assert "| CHAT | 300 | SURFACE | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
