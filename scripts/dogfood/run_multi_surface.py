@@ -352,9 +352,9 @@ def api_quality_multiplier(
 def velocity_adjusted_multiplier(base_multiplier: float | None, velocity: dict[str, Any] | None) -> float | None:
     if base_multiplier is None:
         return None
-    if not velocity or velocity.get("verdict") != "SURFACE" or not isinstance(velocity.get("velocity_index"), float):
+    if not velocity or velocity.get("verdict") != "SURFACE" or not isinstance(velocity.get("velocity_index"), (int, float)):
         return base_multiplier
-    factor = _round(_clamp(velocity["velocity_index"], 0.7, 1.3))
+    factor = _round(_clamp(float(velocity["velocity_index"]), 0.7, 1.3))
     return _round(_clamp(base_multiplier * factor, 0.5, 1.5))
 
 

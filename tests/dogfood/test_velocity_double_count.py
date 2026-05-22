@@ -7,12 +7,14 @@ SQL = ROOT / "sql" / "dogfood" / "velocity_diagnostic.sql"
 
 def test_glean_bot_activity_anti_double_count_is_enforced_in_sql() -> None:
     sql = SQL.read_text()
+    workflow_sessions_block = sql.split("workflow_sessions AS", 1)[1].split("workflow_surfaces AS", 1)[0]
 
     assert "standalone_glean_bot_activity AS" in sql
     assert "AND bot.workflow_feature IS NULL" in sql
     assert "NOT EXISTS" in sql
     assert "workflow_sessions" in sql
     assert "workflow_session.session_token = bot.session_token" in sql
+    assert "workflow_feature IS NOT NULL" not in workflow_sessions_block
     assert "'standalone:GLEAN_BOT_ACTIVITY'" in sql
 
 

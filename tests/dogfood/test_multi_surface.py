@@ -1,4 +1,5 @@
 import csv
+import importlib.util
 import json
 import subprocess
 import sys
@@ -7,6 +8,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DRIVER = ROOT / "scripts" / "dogfood" / "run_multi_surface.py"
+
+
+def load_driver_module():
+    spec = importlib.util.spec_from_file_location("run_multi_surface", DRIVER)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
@@ -339,6 +349,13 @@ def test_velocity_input_adds_adjusted_multiplier_and_categories(tmp_path: Path) 
     assert "| standalone:SEARCH | standalone | velocity_only | 30 | SURFACE | none | n/a | n/a | 0.8 | n/a | n/a |" in text
     assert (output_dir / "AGENT.md").exists()
     assert (output_dir / "standalone_SEARCH.md").exists()
+
+
+def test_velocity_adjustment_accepts_integral_indices() -> None:
+    driver = load_driver_module()
+
+    assert driver.velocity_adjusted_multiplier(1.2, {"verdict": "SURFACE", "velocity_index": 1}) == 1.2
+    assert driver.velocity_adjusted_multiplier(1.2, {"verdict": "SURFACE", "velocity_index": 0}) == 0.84
 
 
 def test_velocity_input_preserves_v1_when_not_supplied(tmp_path: Path) -> None:

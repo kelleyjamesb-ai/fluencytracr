@@ -4,7 +4,8 @@ import { getPrisma } from "../db";
 import { store, type VelocityDistributionRecord, type VelocityEventName } from "../store";
 import { VELOCITY_SCHEMA_VERSION, velocityStoreKey } from "../value_realization/velocity_index";
 
-const usePrisma = () => Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0);
+export const isVelocityPersistenceEnabled = () =>
+  Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0);
 const VELOCITY_EVENT_NAMES: VelocityEventName[] = [
   "USER_FREQUENCY_OBSERVED",
   "USER_ENGAGEMENT_OBSERVED",
@@ -55,7 +56,7 @@ const rowToRecord = (row: VelocityDistributionRow): VelocityDistributionRecord =
 export const persistVelocityDistribution = async (
   record: VelocityDistributionRecord
 ): Promise<VelocityDistributionRecord> => {
-  if (!usePrisma()) {
+  if (!isVelocityPersistenceEnabled()) {
     cacheRecord(record);
     return record;
   }
@@ -88,7 +89,7 @@ export const listVelocityDistributions = async (params: {
   jbtdId?: string | null;
   personaId?: string | null;
 } = {}): Promise<VelocityDistributionRecord[]> => {
-  if (!usePrisma()) {
+  if (!isVelocityPersistenceEnabled()) {
     return Array.from(store.velocityDistributions.values()).filter((record) => {
       if (params.orgId && record.org_id !== params.orgId) {
         return false;
