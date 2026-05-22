@@ -85,15 +85,15 @@ def test_happy_path_weights_surface_rows(tmp_path: Path) -> None:
     text = readout.read_text()
     assert "Weighted Reliability Factor: 0.875" in text
     assert "Weighted Quality Multiplier: 1.413" in text
-    assert "| AGENT | 100 | SURFACE | 0.95 | 1.495 | QUALITY_PREMIUM / QUALITATIVE |" in text
-    assert "| CHAT | 300 | SURFACE | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
-    assert "| GLEANBOT | 600 | SURFACE | 0.85 | 1.385 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| AGENT | 100 | SURFACE | none | 0.95 | 1.495 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| CHAT | 300 | SURFACE | none | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| GLEANBOT | 600 | SURFACE | none | 0.85 | 1.385 | QUALITY_PREMIUM / QUALITATIVE |" in text
     assert (output_dir / "AGENT.md").exists()
     assert (output_dir / "CHAT.md").exists()
     assert (output_dir / "GLEANBOT.md").exists()
 
 
-def test_mixed_path_skips_short_windows(tmp_path: Path) -> None:
+def test_mixed_path_canonicalizes_short_windows(tmp_path: Path) -> None:
     input_path = tmp_path / "input.csv"
     output_dir = tmp_path / "out"
     readout = output_dir / "READOUT.md"
@@ -113,8 +113,11 @@ def test_mixed_path_skips_short_windows(tmp_path: Path) -> None:
     assert completed.returncode == 0, completed.stderr
     text = readout.read_text()
     assert "Weighted Reliability Factor: 0.912" in text
-    assert "| PRISM | 500 | window_days < 60 |" in text
-    assert not (output_dir / "PRISM.md").exists()
+    assert (
+        "| PRISM | 500 | SUPPRESS | INSUFFICIENT_TIME | n/a | n/a | "
+        "UNCLASSIFIED / QUALITATIVE |"
+    ) in text
+    assert (output_dir / "PRISM.md").exists()
 
 
 def test_blank_workflow_id_is_skipped_as_unclassified(tmp_path: Path) -> None:
@@ -138,7 +141,7 @@ def test_blank_workflow_id_is_skipped_as_unclassified(tmp_path: Path) -> None:
         "| UNCLASSIFIED | 250 | Blank workflow_id in input — likely unclassified BigQuery feature rows; relabeled UNCLASSIFIED |"
         in text
     )
-    assert "| CHAT | 300 | SURFACE | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| CHAT | 300 | SURFACE | none | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
     assert not (output_dir / "UNCLASSIFIED.md").exists()
 
 
@@ -152,25 +155,64 @@ def test_json_input_is_supported(tmp_path: Path) -> None:
 
     assert completed.returncode == 0, completed.stderr
     text = readout.read_text()
-    assert "| AI_ANSWER | 120 | SURFACE | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| AI_ANSWER | 120 | SURFACE | none | 0.9 | 1.44 | QUALITY_PREMIUM / QUALITATIVE |" in text
 
 
-def test_empty_path_exits_zero_with_no_qualified_message(tmp_path: Path) -> None:
+def test_suppressed_surfaces_are_canonicalized_not_skipped(tmp_path: Path) -> None:
     input_path = tmp_path / "input.csv"
     output_dir = tmp_path / "out"
     readout = output_dir / "READOUT.md"
     short = base_row("CHAT", 200, 0.9, 0.9)
     short["window_days"] = 14
-    low_signal = base_row("AGENT", 99, 0.9, 0.9)
-    write_csv(input_path, [short, low_signal])
+    write_csv(input_path, [short])
 
     completed = run_driver(input_path, output_dir, readout)
 
     assert completed.returncode == 0, completed.stderr
     text = readout.read_text()
     assert "No surfaces qualified for weighted rollup." in text
-    assert "| CHAT | 200 | window_days < 60 |" in text
-    assert "| AGENT | 99 | real_cohort_size < 100 |" in text
+    assert (
+        "| CHAT | 200 | SUPPRESS | INSUFFICIENT_TIME | n/a | n/a | "
+        "UNCLASSIFIED / QUALITATIVE |"
+    ) in text
+    assert "| none | 0 | n/a |" in text
+
+
+def test_real_cohorts_below_100_are_evaluated_not_skipped(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 99, 0.9, 0.9)])
+
+    completed = run_driver(input_path, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "| AGENT | 99 | SURFACE | none | 0.95 | 1.495 | QUALITY_PREMIUM / QUALITATIVE |" in text
+    assert "| none | 0 | n/a |" in text
+    assert (output_dir / "AGENT.md").exists()
+
+
+def test_real_cohorts_below_canonical_volume_floor_suppress(tmp_path: Path) -> None:
+    input_path = tmp_path / "input.csv"
+    output_dir = tmp_path / "out"
+    readout = output_dir / "READOUT.md"
+    write_csv(input_path, [base_row("AGENT", 1, 0.9, 0.9)])
+
+    completed = run_driver(input_path, output_dir, readout)
+
+    assert completed.returncode == 0, completed.stderr
+    text = readout.read_text()
+    assert "No surfaces qualified for weighted rollup." in text
+    assert (
+        "| AGENT | 1 | SUPPRESS | INSUFFICIENT_VOLUME | n/a | n/a | "
+        "UNCLASSIFIED / QUALITATIVE |"
+    ) in text
+    assert "| none | 0 | n/a |" in text
+    assert (output_dir / "AGENT.md").exists()
+    fixture = json.loads((output_dir / "AGENT.json").read_text())
+    assert fixture["parameters"]["cohort_size"] == 1
+    assert len(fixture["events"]) == 1
 
 
 def test_bad_input_exits_one_with_clear_error(tmp_path: Path) -> None:
