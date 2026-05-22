@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +16,9 @@ from generate_gce_fixtures import SCHEMA_VERSION, build_fixture
 
 MIN_COHORT_SIZE = 5
 MIN_WINDOW_DAYS = 60
+MIN_CAUSAL_WINDOW_DAYS = 14
+MIN_CONVERGENT_SIGNAL_CLASSES = 2
+AMBIGUITY_RATE_THRESHOLD = 0.20
 FORBIDDEN_FIXTURE_KEYS = {
     "email",
     "manager_id",
@@ -44,6 +49,10 @@ def _round(value: float) -> float:
 
 def _clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
+
+
+def _parse_timestamp(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
 def _window_id(days: int) -> str:
@@ -127,14 +136,14 @@ def scenario_fixture(name: str) -> dict[str, Any]:
     raise ValueError(f"unknown scenario: {name}")
 
 
-def ingest_events(fixture: dict[str, Any]) -> list[dict[str, Any]]:
+def ingest_events(fixture: dict[str, Any], *, event_key: str = "events") -> list[dict[str, Any]]:
     if fixture.get("schema_version") != SCHEMA_VERSION:
         raise ValueError(f"unsupported fixture schema_version: {fixture.get('schema_version')}")
     _reject_forbidden_fields(fixture)
 
     canonical: list[dict[str, Any]] = []
     window_id = _window_id(int(fixture.get("days", 60)))
-    for event in fixture.get("events", []):
+    for event in fixture.get(event_key, []):
         if event.get("source_type") != "workflow_run":
             continue
         if event.get("privacy", {}).get("raw_content_included") is not False:
@@ -148,6 +157,7 @@ def ingest_events(fixture: dict[str, Any]) -> list[dict[str, Any]]:
             "workflow_family": event["workflow_family"],
             "workflow_run_id": event["workflow_run_id"],
         }
+        ambiguity_flag = bool(signals.get("ambiguity_present", False))
         base = {
             "schema_version": "FT_V1_2026_01",
             "org_id": "org-dogfood-synthetic",
@@ -156,8 +166,12 @@ def ingest_events(fixture: dict[str, Any]) -> list[dict[str, Any]]:
             "tool_surface": "ASSISTANT",
             "event_timestamp": event["event_timestamp"],
             "window_id": window_id,
-            "ambiguity_flag": False,
+            "ambiguity_flag": ambiguity_flag,
         }
+        if ambiguity_flag:
+            base["ambiguity_reason_code"] = signals.get(
+                "ambiguity_reason_code", "AMB_EVIDENCE_INSUFFICIENT"
+            )
         def record(fields: dict[str, Any]) -> dict[str, Any]:
             return {"metadata": metadata, "v1_event": {**base, **fields}}
 
@@ -216,6 +230,31 @@ def _rate(events: list[dict[str, Any]], event_name: str, field: str, positive: A
         return 0.0
     count = sum(1 for event in matching if _v1(event).get(field) == positive)
     return _round(count / len(matching))
+
+
+def _ambiguous_run_rate(events: list[dict[str, Any]]) -> float:
+    runs = _run_ids(events)
+    if not runs:
+        return 0.0
+    ambiguous = {
+        event["metadata"]["workflow_run_id"]
+        for event in events
+        if _v1(event).get("ambiguity_flag") is True
+    }
+    return _round(len(ambiguous) / len(runs))
+
+
+def active_signal_classes(components: dict[str, float]) -> set[str]:
+    classes: set[str] = set()
+    if components["abandonment_rate"] > 0:
+        classes.add("ABANDONMENT")
+    if components["friction_loop_rate"] > 0:
+        classes.add("ITERATION")
+    if components["recovery_success_rate"] > 0:
+        classes.add("RECOVERY")
+    if components["verification_presence_rate"] > 0:
+        classes.add("VERIFICATION")
+    return classes
 
 
 def reliability_components(events: list[dict[str, Any]]) -> dict[str, float]:
@@ -321,41 +360,87 @@ def classify_pattern(components: dict[str, float]) -> str:
     return "Undertrust Avoidance"
 
 
-def compute_verdict(events: list[dict[str, Any]], *, window_days: int = 60) -> dict[str, Any]:
+def _suppressed_verdict(
+    *,
+    reason: str,
+    cohort_size: int,
+    evidence_grade: str,
+) -> dict[str, Any]:
+    return {
+        "verdict": "SUPPRESS",
+        "suppression_reason": reason,
+        "cohort_size": cohort_size,
+        "aivm": {
+            "value_type": "UNCLASSIFIED",
+            "evidence_grade": evidence_grade,
+        },
+        "reliability_factor": None,
+        "reliability_components": None,
+        "quality_multiplier": None,
+        "pattern": None,
+    }
+
+
+def compute_verdict(
+    events: list[dict[str, Any]],
+    *,
+    window_days: int = 60,
+    baseline_events: list[dict[str, Any]] | None = None,
+    baseline_window_days: int | None = None,
+) -> dict[str, Any]:
     cohort_size = len(_run_ids(events))
     aivm = derive_aivm(events, cohort_size, window_days)
 
+    if _ambiguous_run_rate(events) > AMBIGUITY_RATE_THRESHOLD:
+        return _suppressed_verdict(
+            reason="HIGH_AMBIGUITY",
+            cohort_size=cohort_size,
+            evidence_grade=aivm["evidence_grade"],
+        )
+
     if window_days < MIN_WINDOW_DAYS:
-        return {
-            "verdict": "SUPPRESS",
-            "suppression_reason": "INSUFFICIENT_TIME",
-            "cohort_size": cohort_size,
-            "aivm": {
-                "value_type": "UNCLASSIFIED",
-                "evidence_grade": aivm["evidence_grade"],
-            },
-            "reliability_factor": None,
-            "reliability_components": None,
-            "quality_multiplier": None,
-            "pattern": None,
-        }
+        return _suppressed_verdict(
+            reason="INSUFFICIENT_TIME",
+            cohort_size=cohort_size,
+            evidence_grade=aivm["evidence_grade"],
+        )
 
     if cohort_size < MIN_COHORT_SIZE:
-        return {
-            "verdict": "SUPPRESS",
-            "suppression_reason": "INSUFFICIENT_VOLUME",
-            "cohort_size": cohort_size,
-            "aivm": {
-                "value_type": "UNCLASSIFIED",
-                "evidence_grade": aivm["evidence_grade"],
-            },
-            "reliability_factor": None,
-            "reliability_components": None,
-            "quality_multiplier": None,
-            "pattern": None,
-        }
+        return _suppressed_verdict(
+            reason="INSUFFICIENT_VOLUME",
+            cohort_size=cohort_size,
+            evidence_grade=aivm["evidence_grade"],
+        )
 
     components = reliability_components(events)
+    signal_classes = active_signal_classes(components)
+    if len(signal_classes) < MIN_CONVERGENT_SIGNAL_CLASSES:
+        return _suppressed_verdict(
+            reason="NO_CONVERGENCE",
+            cohort_size=cohort_size,
+            evidence_grade=aivm["evidence_grade"],
+        )
+
+    if baseline_events is not None:
+        baseline_verdict = compute_verdict(
+            baseline_events,
+            window_days=baseline_window_days if baseline_window_days is not None else 0,
+        )
+        if baseline_verdict["verdict"] == "SUPPRESS":
+            return _suppressed_verdict(
+                reason=baseline_verdict["suppression_reason"],
+                cohort_size=cohort_size,
+                evidence_grade=aivm["evidence_grade"],
+            )
+        baseline_components = reliability_components(baseline_events)
+        baseline_signal_classes = active_signal_classes(baseline_components)
+        if signal_classes != baseline_signal_classes:
+            return _suppressed_verdict(
+                reason="BASELINE_UNSTABLE",
+                cohort_size=cohort_size,
+                evidence_grade=aivm["evidence_grade"],
+            )
+
     return {
         "verdict": "SURFACE",
         "suppression_reason": None,
@@ -369,18 +454,31 @@ def compute_verdict(events: list[dict[str, Any]], *, window_days: int = 60) -> d
 
 
 def compute_causal_delta(fixture: dict[str, Any], canonical_events: list[dict[str, Any]]) -> dict[str, Any] | None:
-    if not fixture.get("change_event"):
+    change_event = fixture.get("change_event")
+    if not change_event:
         return None
 
+    change_at = _parse_timestamp(change_event["event_at"])
+    pre_window_days = int(change_event.get("pre_window_days", 30))
+    post_window_days = int(change_event.get("post_window_days", 30))
+    if pre_window_days < MIN_CAUSAL_WINDOW_DAYS or post_window_days < MIN_CAUSAL_WINDOW_DAYS:
+        return {
+            "verdict": "SUPPRESS",
+            "shift": "INDETERMINATE",
+            "pre_pattern": None,
+            "post_pattern": None,
+        }
+    pre_start = change_at - timedelta(days=pre_window_days)
+    post_end = change_at + timedelta(days=post_window_days)
     pre_events = [
         event
         for event in canonical_events
-        if event["metadata"]["workflow_run_id"].startswith("pre-")
+        if pre_start <= _parse_timestamp(_v1(event)["event_timestamp"]) < change_at
     ]
     post_events = [
         event
         for event in canonical_events
-        if event["metadata"]["workflow_run_id"].startswith("post-")
+        if change_at <= _parse_timestamp(_v1(event)["event_timestamp"]) < post_end
     ]
     pre = compute_verdict(pre_events, window_days=60)
     post = compute_verdict(post_events, window_days=60)
@@ -412,7 +510,22 @@ def compute_causal_delta(fixture: dict[str, Any], canonical_events: list[dict[st
 
 def run_fixture(fixture: dict[str, Any], *, scenario: str | None = None) -> dict[str, Any]:
     canonical_events = ingest_events(fixture)
-    verdict = compute_verdict(canonical_events, window_days=int(fixture.get("days", 60)))
+    baseline_events = (
+        ingest_events(fixture, event_key="baseline_events")
+        if "baseline_events" in fixture
+        else None
+    )
+    baseline_window_days = fixture.get("baseline_days")
+    if baseline_events is not None and baseline_window_days is None:
+        baseline_window_days = 0
+    verdict = compute_verdict(
+        canonical_events,
+        window_days=int(fixture.get("days", 60)),
+        baseline_events=baseline_events,
+        baseline_window_days=int(baseline_window_days)
+        if baseline_window_days is not None
+        else None,
+    )
     return {
         "scenario": scenario,
         "workflow_family": fixture["workflow_family"],
