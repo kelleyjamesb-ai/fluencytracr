@@ -68,6 +68,14 @@ def test_verification_signals_join_back_to_parent_surfaces() -> None:
 def test_velocity_sql_splits_agent_into_sub_surfaces() -> None:
     sql = SQL.read_text()
 
+    snapshot_events_block = sql.split("product_snapshot_events AS", 1)[1].split("product_snapshot_latest AS", 1)[0]
+    product_snapshots_block = sql.split("product_snapshots AS", 1)[1].split("workflow_sessions AS", 1)[0]
+
+    assert "FROM `PROJECT.DATASET.gce_events`" in snapshot_events_block
+    assert "timestamp < window_end" in snapshot_events_block
+    assert "timestamp >= window_start" not in snapshot_events_block
+    assert "FROM source_events" not in product_snapshots_block
+    assert "ORDER BY snapshot_ts DESC" in sql
     assert "product_snapshots AS" in sql
     assert "snapshot.snapshot_workflow_id = root_workflow_id" in sql
     assert "agent:autonomous" in sql
@@ -79,6 +87,14 @@ def test_velocity_sql_splits_agent_into_sub_surfaces() -> None:
 def test_agent_type_diagnostic_reports_sub_surface_aggregates() -> None:
     sql = AGENT_SQL.read_text()
 
+    snapshot_events_block = sql.split("product_snapshot_events AS", 1)[1].split("product_snapshot_latest AS", 1)[0]
+    product_snapshots_block = sql.split("product_snapshots AS", 1)[1].split("agent_runs AS", 1)[0]
+
+    assert "FROM `PROJECT.DATASET.gce_events`" in snapshot_events_block
+    assert "timestamp < window_end" in snapshot_events_block
+    assert "timestamp >= window_start" not in snapshot_events_block
+    assert "FROM source_events" not in product_snapshots_block
+    assert "ORDER BY snapshot_ts DESC" in sql
     assert "agent_runs AS" in sql
     assert "agent:autonomous" in sql
     assert "agent:workflow_named" in sql
