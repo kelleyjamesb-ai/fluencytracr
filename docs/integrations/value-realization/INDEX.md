@@ -36,6 +36,14 @@ causation, or dollarized ROI.
 Together, they let AIOMs, value-realization PMs, and CIOs separate raw usage or
 time saved from defensible value realization.
 
+## Running Multi-Surface Dogfood
+
+1. Export BigQuery surface aggregates to CSV with the columns shown in [`examples/dogfood/example_multi_surface_input.csv`](../../../examples/dogfood/example_multi_surface_input.csv).
+2. Run `python3 scripts/dogfood/run_multi_surface.py --input <csv>`.
+3. Open `dogfood-output/READOUT.md`.
+4. Review per-surface `SURFACE` / `SUPPRESS`, AIVM tags, Reliability Factor, and Quality Multiplier.
+5. Use the weighted headline as a read-only summary; each surface is evaluated independently first.
+
 ## Complementary Stated-Evidence Layer
 
 The AI Fluency Instrument remains useful as stated evidence: what people say
