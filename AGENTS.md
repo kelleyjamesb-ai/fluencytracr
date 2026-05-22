@@ -64,7 +64,7 @@ Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemen
 
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md). It is not yet implemented and does not modify any V1 or V2 invariants. Implementation will require a separate governance review and explicit AGENTS.md update.
 
-Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Not yet implemented and does not modify any V1 or V2 invariants.
+Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Implemented workflow surface labels replace the single AGENT bucket with `agent:autonomous`, `agent:workflow_named`, and `agent:ephemeral`; they do not modify any canonical observation events or suppression reasons.
 
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 

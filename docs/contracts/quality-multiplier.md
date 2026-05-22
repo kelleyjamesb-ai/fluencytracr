@@ -91,6 +91,23 @@ Response with surfaced velocity:
 }
 ```
 
+## AGENT Sub-Surfaces
+
+V2.3 treats AGENT as three independently scored sub-surfaces:
+
+- `agent:autonomous`
+- `agent:workflow_named`
+- `agent:ephemeral`
+
+Each sub-surface runs through the same Quality Multiplier contract and the same
+fail-closed gates. A suppressed sub-surface has `multiplier = null`, even when
+another AGENT sub-surface clears.
+
+For legacy V2 consumers that still expect an AGENT-level value, the AGENT-level
+multiplier is a derived volume-weighted value across the three sub-surfaces. It
+does not bypass sub-surface suppression and does not introduce a new endpoint
+contract.
+
 ## Evidence Grade
 
 - `OBJECTIVE`: surfaced result with `cohort_size >= 30` and `window_days >= 90`.
