@@ -48,6 +48,10 @@ FluencyTracr is the behavioral evidence layer that makes Glean's value-realizati
 - Individual user attribution under any framing
 - Admin UI for adjusting thresholds
 
+### Future V2 Concepts
+
+Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md). It is not yet implemented and does not modify any V1 invariants. Implementation will require a separate governance review and explicit AGENTS.md update.
+
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
 - AIVM grammar: value_type in {ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED}; evidence_grade in {OBJECTIVE, CALIBRATED, QUALITATIVE}
