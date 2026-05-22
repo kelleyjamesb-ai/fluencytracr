@@ -6,9 +6,14 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +38,28 @@ BLANK_WORKFLOW_ID_REASON = (
     "Blank workflow_id in input — likely unclassified BigQuery feature rows; relabeled UNCLASSIFIED"
 )
 MIN_CANONICAL_COHORT_SIZE = 5
+MIN_VELOCITY_WINDOW_DAYS = 60
+MIN_VELOCITY_COHORT_SIZE = 5
+VELOCITY_BASELINE_PATH = ROOT / "calibration" / "velocity_baselines.json"
+
+VELOCITY_FIELDS = [
+    "workflow_id",
+    "surface_category",
+    "cohort_size",
+    "window_days",
+    "freq_p10",
+    "freq_p50",
+    "freq_p90",
+    "freq_p99",
+    "engagement_p10",
+    "engagement_p50",
+    "engagement_p90",
+    "engagement_p99",
+    "breadth_p10",
+    "breadth_p50",
+    "breadth_p90",
+    "breadth_p99",
+]
 
 MANAGER_REVIEW_SURFACES = {"CHAT", "AI_ANSWER"}
 ENG_ON_CALL_SURFACES = {
@@ -119,6 +146,16 @@ def normalize_workflow_id(value: Any) -> str:
     return workflow_id or "UNCLASSIFIED"
 
 
+def display_workflow_id(workflow_id: str) -> str:
+    if workflow_id.startswith("workflow:"):
+        return workflow_id.removeprefix("workflow:")
+    return workflow_id
+
+
+def velocity_match_key(workflow_id: str) -> str:
+    return display_workflow_id(workflow_id).strip().upper()
+
+
 def normalize_row(row: dict[str, Any], row_number: int) -> dict[str, Any]:
     for field in REQUIRED_FIELDS:
         _require(row, field, row_number)
@@ -135,6 +172,190 @@ def normalize_row(row: dict[str, Any], row_number: int) -> dict[str, Any]:
         "p50_latency_ms": _to_int(row, "p50_latency_ms", row_number),
         "p95_latency_ms": _to_int(row, "p95_latency_ms", row_number),
     }
+
+
+def _to_nonnegative_float(row: dict[str, Any], field: str, row_number: int) -> float:
+    value = _require(row, field, row_number)
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as error:
+        raise InputError(f"row {row_number}: {field} must be a number") from error
+    if parsed < 0.0:
+        raise InputError(f"row {row_number}: {field} must be non-negative")
+    return parsed
+
+
+def read_velocity_rows(path: Path) -> list[dict[str, Any]]:
+    raw_rows = read_rows(path)
+    return [normalize_velocity_row(row, index) for index, row in enumerate(raw_rows, start=2)]
+
+
+def normalize_velocity_row(row: dict[str, Any], row_number: int) -> dict[str, Any]:
+    for field in VELOCITY_FIELDS:
+        _require(row, field, row_number)
+    workflow_id = str(row.get("workflow_id", "")).strip()
+    if not workflow_id:
+        raise InputError(f"row {row_number}: velocity workflow_id must not be blank")
+    surface_category = str(row.get("surface_category", "")).strip().lower()
+    if surface_category not in {"workflow", "standalone"}:
+        raise InputError(f"row {row_number}: surface_category must be workflow or standalone")
+    normalized = {
+        "workflow_id": workflow_id,
+        "display_workflow_id": display_workflow_id(workflow_id),
+        "surface_category": surface_category,
+        "cohort_size": _to_int(row, "cohort_size", row_number),
+        "window_days": _to_int(row, "window_days", row_number),
+        "frequency_distribution": {
+            "p10": _to_nonnegative_float(row, "freq_p10", row_number),
+            "p50": _to_nonnegative_float(row, "freq_p50", row_number),
+            "p90": _to_nonnegative_float(row, "freq_p90", row_number),
+            "p99": _to_nonnegative_float(row, "freq_p99", row_number),
+        },
+        "engagement_distribution": {
+            "p10": _to_nonnegative_float(row, "engagement_p10", row_number),
+            "p50": _to_nonnegative_float(row, "engagement_p50", row_number),
+            "p90": _to_nonnegative_float(row, "engagement_p90", row_number),
+            "p99": _to_nonnegative_float(row, "engagement_p99", row_number),
+        },
+        "breadth_distribution": {
+            "p10": _to_nonnegative_float(row, "breadth_p10", row_number),
+            "p50": _to_nonnegative_float(row, "breadth_p50", row_number),
+            "p90": _to_nonnegative_float(row, "breadth_p90", row_number),
+            "p99": _to_nonnegative_float(row, "breadth_p99", row_number),
+        },
+    }
+    for name in ["frequency_distribution", "engagement_distribution", "breadth_distribution"]:
+        values = normalized[name]
+        if not (values["p10"] <= values["p50"] <= values["p90"] <= values["p99"]):
+            raise InputError(f"row {row_number}: {name} percentiles must be ordered")
+    return normalized
+
+
+def load_velocity_baseline() -> dict[str, Any]:
+    return json.loads(VELOCITY_BASELINE_PATH.read_text())
+
+
+def _clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+def _round(value: float) -> float:
+    return round(value, 3)
+
+
+def evaluate_velocity_row(row: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
+    result = {
+        **row,
+        "verdict": "SURFACE",
+        "suppression_reason": None,
+        "frequency_index": None,
+        "engagement_index": None,
+        "breadth_index": None,
+        "velocity_index": None,
+    }
+    if row["window_days"] < MIN_VELOCITY_WINDOW_DAYS:
+        return {**result, "verdict": "SUPPRESS", "suppression_reason": "INSUFFICIENT_TIME"}
+    if row["cohort_size"] < MIN_VELOCITY_COHORT_SIZE:
+        return {**result, "verdict": "SUPPRESS", "suppression_reason": "INSUFFICIENT_VOLUME"}
+
+    frequency_index = _round(_clamp(row["frequency_distribution"]["p50"] / baseline["frequency_p50"], 0.0, 1.5))
+    engagement_index = _round(_clamp(row["engagement_distribution"]["p50"] / baseline["engagement_p50"], 0.0, 1.5))
+    breadth_index = _round(_clamp(row["breadth_distribution"]["p50"] / baseline["breadth_p50"], 0.0, 1.5))
+    velocity_index = _round((frequency_index + engagement_index + breadth_index) / 3)
+    return {
+        **result,
+        "frequency_index": frequency_index,
+        "engagement_index": engagement_index,
+        "breadth_index": breadth_index,
+        "velocity_index": velocity_index,
+    }
+
+
+def velocity_distribution_payloads(row: dict[str, Any], baseline: dict[str, Any]) -> list[dict[str, Any]]:
+    window_end = datetime.now(timezone.utc)
+    window_start = window_end - timedelta(days=row["window_days"])
+    base = {
+        "schema_version": "FT_V2_2026_05",
+        "workflow_id": row["workflow_id"],
+        "window_start": window_start.isoformat().replace("+00:00", "Z"),
+        "window_end": window_end.isoformat().replace("+00:00", "Z"),
+        "cohort_size": row["cohort_size"],
+        "calibration_reference": baseline["calibration_id"],
+        "privacy": {"person_level_fields_included": False},
+    }
+    return [
+        {**base, "event_name": "USER_FREQUENCY_OBSERVED", "distribution": row["frequency_distribution"]},
+        {**base, "event_name": "USER_ENGAGEMENT_OBSERVED", "distribution": row["engagement_distribution"]},
+        {**base, "event_name": "USER_BREADTH_OBSERVED", "distribution": row["breadth_distribution"]},
+    ]
+
+
+def api_json(
+    backend_url: str,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    url = f"{backend_url.rstrip('/')}{path}"
+    headers = {
+        "Content-Type": "application/json",
+        "x-role": "ADMIN",
+        "x-org-id": os.environ.get("ORG_ID", "org-dogfood-synthetic"),
+        "x-schema-version": "0.1",
+    }
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8")
+        raise RuntimeError(f"{method} {path} failed with HTTP {error.code}: {detail}") from error
+
+
+def api_velocity_context(
+    row: dict[str, Any],
+    baseline: dict[str, Any],
+    backend_url: str,
+) -> dict[str, Any]:
+    for payload in velocity_distribution_payloads(row, baseline):
+        api_json(backend_url, "POST", "/api/v2/ingest/velocity-distribution", payload)
+    encoded = urllib.parse.urlencode(
+        {"workflow_id": row["workflow_id"], "window_days": row["window_days"]}
+    )
+    velocity_response = api_json(backend_url, "GET", f"/api/v2/velocity-index?{encoded}")
+    return {
+        **row,
+        "verdict": velocity_response.get("verdict", "SUPPRESS"),
+        "suppression_reason": velocity_response.get("suppression_reason"),
+        "frequency_index": velocity_response.get("frequency_index"),
+        "engagement_index": velocity_response.get("engagement_index"),
+        "breadth_index": velocity_response.get("breadth_index"),
+        "velocity_index": velocity_response.get("velocity_index"),
+    }
+
+
+def api_quality_multiplier(
+    workflow_id: str,
+    window_days: int,
+    backend_url: str,
+) -> float | None:
+    encoded = urllib.parse.urlencode(
+        {"workflow_id": workflow_id, "window_days": window_days, "include_velocity": "true"}
+    )
+    response = api_json(backend_url, "GET", f"/api/v1/quality-multiplier?{encoded}")
+    if response.get("verdict") == "SURFACE" and isinstance(response.get("multiplier"), (int, float)):
+        return float(response["multiplier"])
+    return None
+
+
+def velocity_adjusted_multiplier(base_multiplier: float | None, velocity: dict[str, Any] | None) -> float | None:
+    if base_multiplier is None:
+        return None
+    if not velocity or velocity.get("verdict") != "SURFACE" or not isinstance(velocity.get("velocity_index"), float):
+        return base_multiplier
+    factor = _round(_clamp(velocity["velocity_index"], 0.7, 1.3))
+    return _round(_clamp(base_multiplier * factor, 0.5, 1.5))
 
 
 def run_command(args: list[str]) -> str:
@@ -238,6 +459,9 @@ def run_surface(row: dict[str, Any], output_dir: Path, cohort_size: int) -> dict
     return {
         **row,
         **parsed,
+        "surface_category": "workflow",
+        "velocity_index": None,
+        "velocity_adjusted_multiplier": None,
         "synthetic_cohort_size": fixture_cohort_size(row, cohort_size),
         "readout_path": str(surface_readout),
     }
@@ -262,14 +486,112 @@ def weighted(rows: list[dict[str, Any]], metric: str) -> float | None:
     return round(numerator / denominator, 3)
 
 
+def weighted_by_category(rows: list[dict[str, Any]], metric: str) -> dict[str, float | None]:
+    return {
+        category: weighted([row for row in rows if row.get("surface_category") == category], metric)
+        for category in ["workflow", "standalone"]
+    }
+
+
+def merge_velocity_context(
+    results: list[dict[str, Any]],
+    velocity_rows: list[dict[str, Any]],
+    output_dir: Path,
+    backend_url: str | None = None,
+) -> list[dict[str, Any]]:
+    baseline = load_velocity_baseline()
+    velocity_results = [
+        api_velocity_context(row, baseline, backend_url)
+        if backend_url
+        else evaluate_velocity_row(row, baseline)
+        for row in velocity_rows
+    ]
+    by_key = {velocity_match_key(row["workflow_id"]): row for row in velocity_results}
+    merged: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in results:
+        velocity = by_key.get(velocity_match_key(row["workflow_id"]))
+        seen.add(velocity_match_key(row["workflow_id"]))
+        adjusted_multiplier = velocity_adjusted_multiplier(row.get("quality_multiplier"), velocity)
+        if backend_url and velocity:
+            api_multiplier = api_quality_multiplier(
+                velocity["workflow_id"],
+                velocity["window_days"],
+                backend_url,
+            )
+            adjusted_multiplier = api_multiplier if api_multiplier is not None else adjusted_multiplier
+        merged.append(
+            {
+                **row,
+                "surface_category": velocity["surface_category"] if velocity else "workflow",
+                "velocity_index": velocity["velocity_index"] if velocity else None,
+                "velocity_suppression_reason": velocity["suppression_reason"] if velocity else None,
+                "velocity_adjusted_multiplier": adjusted_multiplier,
+            }
+        )
+
+    for velocity in velocity_results:
+        key = velocity_match_key(velocity["workflow_id"])
+        if key in seen:
+            continue
+        surface_readout = output_dir / surface_filename(velocity["display_workflow_id"])
+        text = "\n".join(
+            [
+                "# FluencyTracr Velocity Dogfood Readout",
+                "",
+                f"Surface: {velocity['display_workflow_id']}",
+                f"Surface category: {velocity['surface_category']}",
+                f"Velocity verdict: {velocity['verdict']}",
+                f"Velocity suppression reason: {velocity['suppression_reason'] or 'none'}",
+                f"Velocity index: {velocity['velocity_index']}",
+                f"Frequency index: {velocity['frequency_index']}",
+                f"Engagement index: {velocity['engagement_index']}",
+                f"Breadth index: {velocity['breadth_index']}",
+                "",
+            ]
+        )
+        surface_readout.write_text(text)
+        merged.append(
+            {
+                "workflow_id": velocity["display_workflow_id"],
+                "real_cohort_size": velocity["cohort_size"],
+                "distinct_users": velocity["cohort_size"],
+                "window_days": velocity["window_days"],
+                "completion_rate": None,
+                "error_rate": None,
+                "abandonment_rate": None,
+                "recovery_rate": None,
+                "verification_rate": None,
+                "p50_latency_ms": None,
+                "p95_latency_ms": None,
+                "verdict": "VELOCITY_ONLY",
+                "suppression_reason": velocity["suppression_reason"],
+                "value_type": None,
+                "evidence_grade": None,
+                "reliability_factor": None,
+                "quality_multiplier": None,
+                "canonical_event_count": None,
+                "surface_category": velocity["surface_category"],
+                "velocity_index": velocity["velocity_index"],
+                "velocity_suppression_reason": velocity["suppression_reason"],
+                "velocity_adjusted_multiplier": None,
+                "synthetic_cohort_size": None,
+                "readout_path": str(surface_readout),
+            }
+        )
+    return merged
+
+
 def render_readout(
     *,
     results: list[dict[str, Any]],
     skipped: list[dict[str, Any]],
     cohort_size: int,
+    velocity_enabled: bool = False,
 ) -> str:
     weighted_reliability = weighted(results, "reliability_factor")
     weighted_quality = weighted(results, "quality_multiplier")
+    weighted_velocity_quality = weighted(results, "velocity_adjusted_multiplier") if velocity_enabled else None
     lines = [
         "# Multi-Surface Dogfood Readout",
         "",
@@ -283,22 +605,67 @@ def render_readout(
                 f"Weighted Quality Multiplier: {fmt(weighted_quality)}",
             ]
         )
+    if velocity_enabled:
+        lines.append(f"Weighted Velocity-Adjusted Quality Multiplier: {fmt(weighted_velocity_quality)}")
+        category_weights = weighted_by_category(results, "velocity_adjusted_multiplier")
+        lines.extend(
+            [
+                "",
+                "## By Surface Category",
+                "",
+                "| surface_category | SURFACE real cohort | velocity-adjusted quality multiplier |",
+                "| --- | ---: | ---: |",
+            ]
+        )
+        for category in ["workflow", "standalone"]:
+            cohort = sum(
+                row["real_cohort_size"]
+                for row in results
+                if row.get("surface_category") == category
+                and row.get("verdict") == "SURFACE"
+                and isinstance(row.get("velocity_adjusted_multiplier"), float)
+            )
+            lines.append(f"| {category} | {cohort} | {fmt(category_weights[category])} |")
     lines.extend(
         [
             "",
             "## Per-surface Results",
             "",
-            "| workflow_id | real cohort | verdict | suppression reason | reliability | quality multiplier | AIVM tags |",
-            "| --- | ---: | --- | --- | ---: | ---: | --- |",
         ]
     )
-    for row in results:
-        tags = f"{row['value_type']} / {row['evidence_grade']}"
-        suppression_reason = row["suppression_reason"] or "none"
-        lines.append(
-            f"| {row['workflow_id']} | {row['real_cohort_size']} | {row['verdict']} | {suppression_reason} | "
-            f"{fmt(row['reliability_factor'])} | {fmt(row['quality_multiplier'])} | {tags} |"
+    if velocity_enabled:
+        lines.extend(
+            [
+                "| workflow_id | surface_category | real cohort | verdict | suppression reason | reliability | quality multiplier | velocity index | velocity-adjusted quality multiplier | AIVM tags |",
+                "| --- | --- | ---: | --- | --- | ---: | ---: | ---: | ---: | --- |",
+            ]
         )
+    else:
+        lines.extend(
+            [
+                "| workflow_id | real cohort | verdict | suppression reason | reliability | quality multiplier | AIVM tags |",
+                "| --- | ---: | --- | --- | ---: | ---: | --- |",
+            ]
+        )
+    for row in results:
+        tags = (
+            f"{row['value_type']} / {row['evidence_grade']}"
+            if row.get("value_type") and row.get("evidence_grade")
+            else "n/a"
+        )
+        suppression_reason = row["suppression_reason"] or "none"
+        if velocity_enabled:
+            lines.append(
+                f"| {row['workflow_id']} | {row.get('surface_category', 'workflow')} | {row['real_cohort_size']} | "
+                f"{row['verdict']} | {suppression_reason} | {fmt(row['reliability_factor'])} | "
+                f"{fmt(row['quality_multiplier'])} | {fmt(row.get('velocity_index'))} | "
+                f"{fmt(row.get('velocity_adjusted_multiplier'))} | {tags} |"
+            )
+        else:
+            lines.append(
+                f"| {row['workflow_id']} | {row['real_cohort_size']} | {row['verdict']} | {suppression_reason} | "
+                f"{fmt(row['reliability_factor'])} | {fmt(row['quality_multiplier'])} | {tags} |"
+            )
     if not results:
         lines.append("| none | 0 | n/a | n/a | n/a | n/a | n/a |")
 
@@ -328,7 +695,14 @@ def render_readout(
     return "\n".join(lines) + "\n"
 
 
-def run(input_path: Path, output_dir: Path, readout_path: Path, cohort_size: int) -> None:
+def run(
+    input_path: Path,
+    output_dir: Path,
+    readout_path: Path,
+    cohort_size: int,
+    velocity_input: Path | None = None,
+    backend_url: str | None = None,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     raw_rows = read_rows(input_path)
     results: list[dict[str, Any]] = []
@@ -339,14 +713,30 @@ def run(input_path: Path, output_dir: Path, readout_path: Path, cohort_size: int
             skipped.append({**row, "reason": BLANK_WORKFLOW_ID_REASON})
             continue
         results.append(run_surface(row, output_dir, cohort_size))
+    if velocity_input is not None:
+        results = merge_velocity_context(
+            results,
+            read_velocity_rows(velocity_input),
+            output_dir,
+            backend_url,
+        )
 
     readout_path.parent.mkdir(parents=True, exist_ok=True)
-    readout_path.write_text(render_readout(results=results, skipped=skipped, cohort_size=cohort_size))
+    readout_path.write_text(
+        render_readout(
+            results=results,
+            skipped=skipped,
+            cohort_size=cohort_size,
+            velocity_enabled=velocity_input is not None,
+        )
+    )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
+    parser.add_argument("--velocity-input", type=Path)
+    parser.add_argument("--backend-url", default=os.environ.get("BACKEND_URL"))
     parser.add_argument("--output-dir", type=Path, default=Path("./dogfood-output/"))
     parser.add_argument("--readout", type=Path, default=Path("./dogfood-output/READOUT.md"))
     parser.add_argument("--cohort-size", type=int, default=1000)
@@ -358,7 +748,14 @@ def main() -> int:
     try:
         if args.cohort_size < 5:
             raise InputError("--cohort-size must be at least 5")
-        run(args.input, args.output_dir, args.readout, args.cohort_size)
+        run(
+            args.input,
+            args.output_dir,
+            args.readout,
+            args.cohort_size,
+            args.velocity_input,
+            args.backend_url,
+        )
         print(f"Wrote consolidated dogfood readout to {args.readout}")
         return 0
     except (InputError, json.JSONDecodeError) as error:
