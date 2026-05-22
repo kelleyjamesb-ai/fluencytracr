@@ -75,6 +75,11 @@ import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
 import { auditSuppressedObservabilityRows, listSuppressionAuditLogs } from "./suppression_audit_log";
 import {
+  causalDeltaWindowsOverlap,
+  computeCausalDelta,
+  MIN_CAUSAL_DELTA_WINDOW_DAYS
+} from "./value_realization/causal_delta";
+import {
   computeQualityMultiplier,
   failClosedQualityMultiplierResponse
 } from "./value_realization/quality_multiplier";
@@ -3987,6 +3992,14 @@ const TraceReconstructedQuerySchema = z
     message: "Provide at least one of workflow_id, execution_id"
   });
 
+const CausalDeltaBodySchema = z.object({
+  workflow_id: z.string().min(1),
+  event_at: z.string().datetime({ offset: true }),
+  pre_window_days: z.number().int().positive().default(30),
+  post_window_days: z.number().int().positive().default(30),
+  label: z.string()
+}).strict();
+
 const QualityMultiplierQuerySchema = z.object({
   workflow_id: z.string().min(1),
   window_days: z.coerce.number().int().positive().max(3650)
@@ -4001,6 +4014,56 @@ const eventBelongsToAuthOrg = (event: FluencyEventRecord, orgId: string | undefi
     (event.org_unit === `org:${orgId}` || event.org_unit.startsWith(`org:${orgId}:`))
   );
 };
+
+app.post(
+  "/api/v1/causal-delta",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const parsed = CausalDeltaBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid causal delta request",
+        details: parsed.error.flatten()
+      });
+    }
+
+    const { workflow_id, event_at, pre_window_days, post_window_days } = parsed.data;
+    if (
+      pre_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS ||
+      post_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS
+    ) {
+      return res.status(400).json({
+        error: "Invalid causal delta request",
+        reason_code: "window_below_minimum",
+        min_window_days: MIN_CAUSAL_DELTA_WINDOW_DAYS
+      });
+    }
+
+    const changeAt = new Date(event_at);
+    const preStart = new Date(changeAt.getTime() - pre_window_days * 24 * 60 * 60 * 1000);
+    const preEnd = changeAt;
+    const postStart = changeAt;
+    const postEnd = new Date(changeAt.getTime() + post_window_days * 24 * 60 * 60 * 1000);
+    if (causalDeltaWindowsOverlap(preStart, preEnd, postStart, postEnd)) {
+      return res.status(400).json({
+        error: "Invalid causal delta request",
+        reason_code: "overlapping_windows"
+      });
+    }
+
+    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
+    const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, req.authOrgId));
+    return res.json(
+      computeCausalDelta({
+        workflowId: workflow_id,
+        eventAt: event_at,
+        preWindowDays: pre_window_days,
+        postWindowDays: post_window_days,
+        events: scopedEvents
+      })
+    );
+  }
+);
 
 app.get("/api/v1/quality-multiplier", async (req, res) => {
   // TODO(auth): replace ambient/dev header context with service auth when Paul Li's pipeline identity is defined.

@@ -98,6 +98,10 @@ assert.deepEqual(ids, [
   "aivm_unclassified_objective",
   "aivm_unclassified_qualitative",
   "calibrated_fluency",
+  "causal_delta_held",
+  "causal_delta_improved",
+  "causal_delta_indeterminate",
+  "causal_delta_regressed",
   "duplicate_execution_ids_across_orgs",
   "failure_success_recovery_maturity",
   "fast_completion_no_verification",
@@ -125,6 +129,23 @@ for (const entry of ghostUseCases) {
   assert.equal(entry.ghost_use_manifest.required_windows, 2);
   assert.equal(entry.ghost_use_manifest.ambiguity_dominance_threshold, 0.2);
   assert.ok(["SURFACE", "BYPASS", "SUPPRESS", "SUPPRESS_PERSISTENCE"].includes(entry.expected.ghost_use));
+}
+
+const causalDeltaCases = cases.filter((entry) => entry.expected?.causal_delta_shift);
+assert.deepEqual(causalDeltaCases.map((entry) => entry.id).sort(), [
+  "causal_delta_held",
+  "causal_delta_improved",
+  "causal_delta_indeterminate",
+  "causal_delta_regressed"
+]);
+for (const entry of causalDeltaCases) {
+  assert.equal(typeof entry.workflow_id, "string");
+  assert.ok(entry.workflow_id.includes(entry.id.replaceAll("_", "-")));
+  assert.ok(["IMPROVED", "HELD", "REGRESSED", "INDETERMINATE"].includes(entry.expected.causal_delta_shift));
+  assert.equal(entry.causal_delta_manifest.endpoint, "/api/v1/causal-delta");
+  assert.equal(entry.causal_delta_manifest.pre_window_days, 30);
+  assert.equal(entry.causal_delta_manifest.post_window_days, 30);
+  assert.equal(entry.causal_delta_manifest.no_statistical_claims, true);
 }
 
 const aivmCases = cases.filter((entry) => entry.aivm_manifest);
