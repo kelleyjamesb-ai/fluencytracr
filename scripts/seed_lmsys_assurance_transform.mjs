@@ -244,6 +244,67 @@ function buildGhostUseScenario({ orgId, workflowPrefix, scenarioId, runLabel, ba
   };
 }
 
+function buildCausalDeltaScenario({
+  orgId,
+  workflowPrefix,
+  scenarioId,
+  runLabel,
+  eventAtMs,
+  preFactory,
+  postFactory,
+  preCount,
+  postCount,
+  expectedShift
+}) {
+  const workflowId = `${workflowPrefix}-${scenarioId.replaceAll("_", "-")}`;
+  const events = [];
+  const preBaseMs = eventAtMs - 15 * 24 * 60 * 60 * 1000;
+  const postBaseMs = eventAtMs + 15 * 24 * 60 * 60 * 1000;
+
+  for (let i = 0; i < preCount; i += 1) {
+    events.push(
+      ...preFactory({
+        orgId,
+        workflowId,
+        executionRunId: runId(runLabel, `${scenarioId}-pre`, i),
+        baseMs: preBaseMs,
+        offsetMs: i * 15 * 60_000
+      })
+    );
+  }
+
+  for (let i = 0; i < postCount; i += 1) {
+    events.push(
+      ...postFactory({
+        orgId,
+        workflowId,
+        executionRunId: runId(runLabel, `${scenarioId}-post`, i),
+        baseMs: postBaseMs,
+        offsetMs: i * 15 * 60_000
+      })
+    );
+  }
+
+  return {
+    id: scenarioId,
+    org_id: orgId,
+    workflow_id: workflowId,
+    description: "Causal Delta pre/post pattern-shift scenario. This fixture carries aggregate workflow metadata only.",
+    expected: {
+      causal_delta_shift: expectedShift
+    },
+    causal_delta_manifest: {
+      endpoint: "/api/v1/causal-delta",
+      event_at: iso(eventAtMs, 0),
+      pre_window_days: 30,
+      post_window_days: 30,
+      methodology: "pre/post aggregate pattern shift; correlation only, not causation",
+      no_statistical_claims: true
+    },
+    events
+  };
+}
+
 function buildFrictionThresholdExecutions({ orgId, workflowId, caseId, baseMs, runLabel, count }) {
   const out = [];
   const frictionStart = Math.floor(count / 2);
@@ -288,6 +349,7 @@ export function buildAssuranceCases(options = {}) {
   const workflowPrefix = `lmsys-assurance-${runLabel}`;
   const caseCount = Math.max(minCohortSize, 5);
   const frictionCaseCount = Math.max(caseCount, 50);
+  const causalDeltaEventAtMs = baseMs - 45 * 24 * 60 * 60 * 1000;
 
   const subThresholdEvents = buildExecutions({
     orgId,
@@ -478,6 +540,54 @@ export function buildAssuranceCases(options = {}) {
       count: caseCount,
       expected: "SUPPRESS_PERSISTENCE",
       overrides: { persistAcrossRequiredWindows: false }
+    }),
+    buildCausalDeltaScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "causal_delta_improved",
+      runLabel,
+      eventAtMs: causalDeltaEventAtMs,
+      preFactory: blindExecution,
+      postFactory: calibratedExecution,
+      preCount: caseCount,
+      postCount: caseCount,
+      expectedShift: "IMPROVED"
+    }),
+    buildCausalDeltaScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "causal_delta_held",
+      runLabel,
+      eventAtMs: causalDeltaEventAtMs,
+      preFactory: calibratedExecution,
+      postFactory: calibratedExecution,
+      preCount: caseCount,
+      postCount: caseCount,
+      expectedShift: "HELD"
+    }),
+    buildCausalDeltaScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "causal_delta_regressed",
+      runLabel,
+      eventAtMs: causalDeltaEventAtMs,
+      preFactory: calibratedExecution,
+      postFactory: frictionExecution,
+      preCount: caseCount,
+      postCount: caseCount,
+      expectedShift: "REGRESSED"
+    }),
+    buildCausalDeltaScenario({
+      orgId,
+      workflowPrefix,
+      scenarioId: "causal_delta_indeterminate",
+      runLabel,
+      eventAtMs: causalDeltaEventAtMs,
+      preFactory: calibratedExecution,
+      postFactory: calibratedExecution,
+      preCount: Math.max(1, minCohortSize - 1),
+      postCount: caseCount,
+      expectedShift: "INDETERMINATE"
     }),
     {
       id: "duplicate_execution_ids_across_orgs",
