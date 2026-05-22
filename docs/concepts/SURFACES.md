@@ -134,6 +134,9 @@ These questions are deliberately open and must be resolved before V2.1 implement
 - How should AUTOCOMPLETE's high volume but low individual signal weight affect Velocity Index breadth?
 - Does MCP_USAGE count each tool call or each tool-call session as the unit of analysis?
 - How should GLEAN_BOT_ACTIVITY overlap with workflow-run-tagged bot events be deduplicated?
+- If customer data shows meaningful published-Skill volume, should published
+  Skills become an explicit surface family or remain represented through their
+  parent workflow-run surfaces?
 
 These are governance and methodology decisions, not bugs.
 
