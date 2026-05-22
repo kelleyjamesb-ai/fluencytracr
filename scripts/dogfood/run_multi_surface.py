@@ -273,18 +273,19 @@ def render_readout(
             "",
             "## Per-surface Results",
             "",
-            "| workflow_id | real cohort | verdict | reliability | quality multiplier | AIVM tags |",
-            "| --- | ---: | --- | ---: | ---: | --- |",
+            "| workflow_id | real cohort | verdict | suppression reason | reliability | quality multiplier | AIVM tags |",
+            "| --- | ---: | --- | --- | ---: | ---: | --- |",
         ]
     )
     for row in results:
         tags = f"{row['value_type']} / {row['evidence_grade']}"
+        suppression_reason = row["suppression_reason"] or "none"
         lines.append(
-            f"| {row['workflow_id']} | {row['real_cohort_size']} | {row['verdict']} | "
+            f"| {row['workflow_id']} | {row['real_cohort_size']} | {row['verdict']} | {suppression_reason} | "
             f"{fmt(row['reliability_factor'])} | {fmt(row['quality_multiplier'])} | {tags} |"
         )
     if not results:
-        lines.append("| none | 0 | n/a | n/a | n/a | n/a |")
+        lines.append("| none | 0 | n/a | n/a | n/a | n/a | n/a |")
 
     lines.extend(
         [
@@ -321,12 +322,6 @@ def run(input_path: Path, output_dir: Path, readout_path: Path, cohort_size: int
         row = normalize_row(raw_row, index)
         if row["workflow_id"] == "UNCLASSIFIED":
             skipped.append({**row, "reason": BLANK_WORKFLOW_ID_REASON})
-            continue
-        if row["window_days"] < 60:
-            skipped.append({**row, "reason": "window_days < 60"})
-            continue
-        if row["real_cohort_size"] < 100:
-            skipped.append({**row, "reason": "real_cohort_size < 100"})
             continue
         results.append(run_surface(row, output_dir, cohort_size))
 
