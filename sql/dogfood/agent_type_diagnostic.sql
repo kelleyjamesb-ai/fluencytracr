@@ -33,26 +33,48 @@ WITH source_events AS (
     SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.error') AS BOOL) AS errored,
     SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.abandoned') AS BOOL) AS abandoned,
     SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.recovered') AS BOOL) AS recovered,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.latency_ms') AS INT64) AS latency_ms,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.workflowid')), '') AS snapshot_workflow_id,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.isautonomousagent') AS BOOL) AS snapshot_is_autonomous,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.name')), '') AS snapshot_workflow_name,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.unlisted') AS BOOL) AS snapshot_unlisted
+    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.latency_ms') AS INT64) AS latency_ms
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp >= window_start
     AND timestamp < window_end
 ),
 
+product_snapshot_events AS (
+  SELECT
+    timestamp AS snapshot_ts,
+    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.workflowid')), '') AS snapshot_workflow_id,
+    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.isautonomousagent') AS BOOL) AS snapshot_is_autonomous,
+    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.name')), '') AS snapshot_workflow_name,
+    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.unlisted') AS BOOL) AS snapshot_unlisted
+  FROM `PROJECT.DATASET.gce_events`
+  WHERE timestamp < window_end
+    AND JSON_VALUE(jsonPayload, '$.type') = 'PRODUCT_SNAPSHOT'
+),
+
+product_snapshot_latest AS (
+  SELECT
+    snapshot_workflow_id,
+    ARRAY_AGG(
+      STRUCT(
+        snapshot_is_autonomous AS is_autonomous,
+        snapshot_workflow_name AS workflow_name,
+        COALESCE(snapshot_unlisted, FALSE) AS unlisted
+      )
+      ORDER BY snapshot_ts DESC
+      LIMIT 1
+    )[OFFSET(0)] AS snapshot
+  FROM product_snapshot_events
+  WHERE snapshot_workflow_id IS NOT NULL
+  GROUP BY snapshot_workflow_id
+),
+
 product_snapshots AS (
   SELECT
     snapshot_workflow_id,
-    ANY_VALUE(snapshot_is_autonomous) AS is_autonomous,
-    ANY_VALUE(snapshot_workflow_name) AS workflow_name,
-    COALESCE(ANY_VALUE(snapshot_unlisted), FALSE) AS unlisted
-  FROM source_events
-  WHERE event_type = 'PRODUCT_SNAPSHOT'
-    AND snapshot_workflow_id IS NOT NULL
-  GROUP BY snapshot_workflow_id
+    snapshot.is_autonomous AS is_autonomous,
+    snapshot.workflow_name AS workflow_name,
+    snapshot.unlisted AS unlisted
+  FROM product_snapshot_latest
 ),
 
 agent_runs AS (

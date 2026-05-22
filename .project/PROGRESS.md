@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- AGENT sub-surface snapshot history fix: updated velocity and agent-type diagnostics so `PRODUCT_SNAPSHOT` classification reads full snapshot history up to `window_end` and uses the latest snapshot per workflow instead of the 60-day run window.
 - Velocity diagnostic verification attribution fix: added parent-surface join aliases so verification signals with only `session_token` still attribute to surfaces whose canonical key is `workflow_run_id`.
 - Velocity review fixes: bounded the org-scope rejection to durable persistence mode, preserved in-memory velocity ingest without `x-org-id`, accepted integral `velocity_index` values in the dogfood multiplier fallback, and deduped standalone bot activity against all workflow-run sessions in the diagnostic SQL.
 - Multi-surface dogfood review fix: updated PR #238 branch worktree `/Users/jkelley/.codex/worktrees/review-91baf9-FluencyTracr` so `scripts/dogfood/run_multi_surface.py` sends short-window and 5-99 real-cohort rows through canonical `run_end_to_end.py` verdicting instead of skipping them with ad-hoc reasons, and preserves real cohort count for cohorts below 5 so canonical `INSUFFICIENT_VOLUME` applies; per-surface readout now includes canonical suppression reason alongside AIVM tags.
