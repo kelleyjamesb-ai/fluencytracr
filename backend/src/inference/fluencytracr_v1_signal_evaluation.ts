@@ -4,8 +4,13 @@ import {
   FluencyTracrV1EventName,
   deriveAivmVerdictFields,
   type AivmEvidenceGrade,
-  type AivmValueType
+  type AivmValueType,
+  type ReliabilityComponents
 } from "@learnaire/shared";
+import {
+  computeReliabilityFactor,
+  reliabilityComponentsFromCanonicalEvents
+} from "../value_realization/reliability_factor";
 
 type FluencyTracrV1SuppressReasonCode =
   | "SUPP_INTERNAL_INVARIANT_FAIL"
@@ -27,6 +32,8 @@ type FluencyTracrV1EvaluationDecision =
       decision: "SURFACE";
       value_type: AivmValueType;
       evidence_grade: AivmEvidenceGrade;
+      reliability_factor: number;
+      reliability_components: ReliabilityComponents;
     }
   | {
       schema_version: "FT_V1_2026_01";
@@ -37,6 +44,8 @@ type FluencyTracrV1EvaluationDecision =
       decision: "SUPPRESS";
       value_type: AivmValueType;
       evidence_grade: AivmEvidenceGrade;
+      reliability_factor: null;
+      reliability_components: null;
       suppress_reason_code: FluencyTracrV1SuppressReasonCode;
     };
 
@@ -143,6 +152,8 @@ const failClosed = (
     decision: "SUPPRESS",
     value_type: aivm.value_type,
     evidence_grade: aivm.evidence_grade,
+    reliability_factor: null,
+    reliability_components: null,
     suppress_reason_code: "SUPP_INTERNAL_INVARIANT_FAIL"
   };
 };
@@ -161,12 +172,15 @@ const suppressWith = (
     decision: "SUPPRESS",
     value_type: aivm.value_type,
     evidence_grade: aivm.evidence_grade,
+    reliability_factor: null,
+    reliability_components: null,
     suppress_reason_code: reason
   };
 };
 
 const surface = (context: WindowEvaluationContext): FluencyTracrV1EvaluationDecision => {
   const aivm = aivmFieldsForContext(context);
+  const reliabilityComponents = reliabilityComponentsFromCanonicalEvents(context.events);
   return {
     schema_version: "FT_V1_2026_01",
     org_id: context.cohort.org_id,
@@ -175,7 +189,9 @@ const surface = (context: WindowEvaluationContext): FluencyTracrV1EvaluationDeci
     window_id: context.cohort.window_id,
     decision: "SURFACE",
     value_type: aivm.value_type,
-    evidence_grade: aivm.evidence_grade
+    evidence_grade: aivm.evidence_grade,
+    reliability_factor: computeReliabilityFactor(reliabilityComponents),
+    reliability_components: reliabilityComponents
   };
 };
 

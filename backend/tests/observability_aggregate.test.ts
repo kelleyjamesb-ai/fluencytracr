@@ -121,10 +121,19 @@ describe("buildObservabilityRollup", () => {
     expect(wfa?.executions_disclosed).toBe(2);
     expect(wfa?.pattern_distribution?.["Calibrated Fluency"]).toBe("HIGH");
     expect(Object.values(wfa?.pattern_distribution ?? {}).every((v) => typeof v === "string")).toBe(true);
+    expect(wfa?.reliability_components).toEqual({
+      abandonment_rate: 0,
+      friction_loop_rate: 0,
+      recovery_success_rate: 0,
+      verification_presence_rate: 1
+    });
+    expect(wfa?.reliability_factor).toBe(0.75);
     const wfb = rows.find((r) => r.workflow_id === "wf-b");
     expect(wfb?.disclosure).toBe("SUPPRESSED");
     expect(wfb?.suppression_reasons).toContain("insufficient_disclosed_executions");
     expect(wfb?.pattern_distribution).toBeNull();
+    expect(wfb?.reliability_factor).toBeNull();
+    expect(wfb?.reliability_components).toBeNull();
   });
 
   it("excludes events outside window", () => {

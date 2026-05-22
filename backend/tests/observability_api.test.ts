@@ -95,6 +95,27 @@ it("returns observability payload with schema validation", async () => {
   const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-api");
   expect(row?.disclosure).toBe("ALLOWED");
   expect(row?.pattern_distribution).not.toBeNull();
+  expect(row?.reliability_components).toEqual({
+    abandonment_rate: 0,
+    friction_loop_rate: 0,
+    recovery_success_rate: 0,
+    verification_presence_rate: 1
+  });
+  expect(row?.reliability_factor).toBe(0.75);
+});
+
+it("nulls Reliability Factor fields when workflow disclosure is suppressed", async () => {
+  pair("wf-sparse-reliability", "sparse-r0", true).forEach((e) => store.fluencyEvents.set(e.event_id, e));
+
+  const res = await request(app)
+    .get("/api/observability/org-1?window=60d")
+    .set({ "x-role": "EXEC_VIEWER" });
+
+  expect(res.status).toBe(200);
+  const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-sparse-reliability");
+  expect(row?.disclosure).toBe("SUPPRESSED");
+  expect(row?.reliability_factor).toBeNull();
+  expect(row?.reliability_components).toBeNull();
 });
 
 it("returns ghost-use as residual observability only", async () => {

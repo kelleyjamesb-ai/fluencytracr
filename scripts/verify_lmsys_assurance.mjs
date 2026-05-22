@@ -34,6 +34,12 @@ const GHOST_USE_JUDGMENT_TERMS = [
   "underperformance",
   "lack of fluency"
 ];
+const RELIABILITY_COMPONENT_KEYS = [
+  "abandonment_rate",
+  "friction_loop_rate",
+  "recovery_success_rate",
+  "verification_presence_rate"
+];
 
 function pass(id, detail = {}) {
   return { id, ...detail, status: "PASS" };
@@ -190,6 +196,50 @@ function prevalenceValuesAreCategorical(observabilityBody) {
     }
   }
   return violations;
+}
+
+function boundedNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+function reliabilityComponentsValid(components) {
+  if (components === null || typeof components !== "object" || Array.isArray(components)) {
+    return false;
+  }
+  return RELIABILITY_COMPONENT_KEYS.every((key) => boundedNumber(components[key]));
+}
+
+function reliabilityMatchesExpected(row, entry) {
+  if (!row) {
+    return { ok: false, reason: "workflow_not_found" };
+  }
+  if (row.disclosure === "SUPPRESSED") {
+    return {
+      ok: row.reliability_factor === null && row.reliability_components === null,
+      reason: "suppressed_rows_must_null_reliability_fields"
+    };
+  }
+  const factorValid = boundedNumber(row.reliability_factor);
+  const componentsValid = reliabilityComponentsValid(row.reliability_components);
+  if (!factorValid || !componentsValid) {
+    return { ok: false, reason: "surface_rows_require_bounded_reliability_fields" };
+  }
+  if (typeof entry.expected?.reliability_factor === "number") {
+    const delta = Math.abs(row.reliability_factor - entry.expected.reliability_factor);
+    if (delta > 0.001) {
+      return { ok: false, reason: "factor_mismatch", delta };
+    }
+  }
+  for (const key of RELIABILITY_COMPONENT_KEYS) {
+    const expectedValue = entry.expected?.reliability_components?.[key];
+    if (typeof expectedValue === "number") {
+      const delta = Math.abs(row.reliability_components[key] - expectedValue);
+      if (delta > 0.001) {
+        return { ok: false, reason: `component_mismatch:${key}`, delta };
+      }
+    }
+  }
+  return { ok: true, reason: "matched" };
 }
 
 function suppressionAuditMatches(logs, suppressedWorkflows) {
@@ -489,6 +539,27 @@ async function main() {
       ? pass("prevalence_values_are_categorical", { allowed_values: [...PREVALENCE_BANDS] })
       : fail("prevalence_values_are_categorical", { violations: prevalenceViolations.slice(0, 10) })
   );
+
+  const reliabilityCases = cases.filter((entry) => entry.reliability_factor_manifest);
+  for (const entry of reliabilityCases) {
+    const row = findWorkflow(observability.body, entry.workflow_id);
+    const match = reliabilityMatchesExpected(row, entry);
+    checks.push(
+      match.ok
+        ? pass(entry.id, {
+            workflow_id: entry.workflow_id,
+            disclosure: row?.disclosure,
+            reliability_factor: row?.reliability_factor ?? null
+          })
+        : fail(entry.id, {
+            workflow_id: entry.workflow_id,
+            expected: entry.expected,
+            reason: match.reason,
+            delta: match.delta,
+            row: bodySlice(row)
+          })
+    );
+  }
 
   const ghostUseCases = cases.filter((entry) => GHOST_USE_CHECK_IDS.has(entry.id));
   const allGhostHits = [];

@@ -76,9 +76,18 @@ describe("FluencyTracr V1 Signal Evaluation", () => {
 
     expect(first?.decision).toBe("SUPPRESS");
     expect(first?.suppress_reason_code).toBeDefined();
+    expect(first?.reliability_factor).toBeNull();
+    expect(first?.reliability_components).toBeNull();
     expectAivmDefaults(first);
     expect(second?.decision).toBe("SURFACE");
     expect(second).not.toHaveProperty("suppress_reason_code");
+    expect(second?.reliability_factor).toBe(0.75);
+    expect(second?.reliability_components).toEqual({
+      abandonment_rate: 0,
+      friction_loop_rate: 0,
+      recovery_success_rate: 0,
+      verification_presence_rate: 1
+    });
     expectAivmDefaults(second);
   });
 

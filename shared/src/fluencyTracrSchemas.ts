@@ -461,6 +461,18 @@ export const ObservabilityResidualPatternsSchema = z
   .strict();
 export type ObservabilityResidualPatterns = z.infer<typeof ObservabilityResidualPatternsSchema>;
 
+export const ObservabilityReliabilityComponentsSchema = z
+  .object({
+    abandonment_rate: z.number().min(0).max(1),
+    friction_loop_rate: z.number().min(0).max(1),
+    recovery_success_rate: z.number().min(0).max(1),
+    verification_presence_rate: z.number().min(0).max(1)
+  })
+  .strict();
+export type ObservabilityReliabilityComponents = z.infer<
+  typeof ObservabilityReliabilityComponentsSchema
+>;
+
 export const ObservabilityWorkflowRowSchema = z
   .object({
     workflow_id: z.string().min(1),
@@ -471,9 +483,45 @@ export const ObservabilityWorkflowRowSchema = z
     suppression_reasons: z.array(z.string().min(1)),
     pattern_distribution: ObservabilityPatternDistributionSchema.nullable(),
     residual_patterns: ObservabilityResidualPatternsSchema,
+    reliability_factor: z.number().min(0).max(1).nullable(),
+    reliability_components: ObservabilityReliabilityComponentsSchema.nullable(),
     allowed_interpretation_hints: z.array(z.string().min(1))
   })
-  .strict();
+  .strict()
+  .superRefine((row, context) => {
+    if (row.disclosure === "ALLOWED") {
+      if (row.reliability_factor === null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_factor is required when disclosure is ALLOWED",
+          path: ["reliability_factor"]
+        });
+      }
+      if (row.reliability_components === null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_components is required when disclosure is ALLOWED",
+          path: ["reliability_components"]
+        });
+      }
+    }
+    if (row.disclosure === "SUPPRESSED") {
+      if (row.reliability_factor !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_factor must be null when disclosure is SUPPRESSED",
+          path: ["reliability_factor"]
+        });
+      }
+      if (row.reliability_components !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_components must be null when disclosure is SUPPRESSED",
+          path: ["reliability_components"]
+        });
+      }
+    }
+  });
 export type ObservabilityWorkflowRow = z.infer<typeof ObservabilityWorkflowRowSchema>;
 
 export const ObservabilityResponseSchema = z

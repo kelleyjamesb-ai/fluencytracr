@@ -190,6 +190,48 @@ describe("FluencyTracr V1 Confidence Layer", () => {
     expect(secondWindow?.evidence_grade).toBe("OBJECTIVE");
   });
 
+  test("SURFACE aggregate emits reliability factor and components without changing the decision", () => {
+    const episodes: TaskEpisode[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      episodes.push(buildEpisode({
+        episode_id: `reliable-1-${i}`,
+        start_ts: "2026-01-10T00:00:00Z",
+        signal_primitives: {
+          iteration_count: i < 2 ? 3 : 0,
+          verification_present: true,
+          recovery_present: true,
+          latency_ms: 100,
+          abandonment: i === 0
+        }
+      }));
+      episodes.push(buildEpisode({
+        episode_id: `reliable-2-${i}`,
+        start_ts: "2026-04-10T00:00:00Z",
+        signal_primitives: {
+          iteration_count: i < 2 ? 3 : 0,
+          verification_present: true,
+          recovery_present: true,
+          latency_ms: 120,
+          abandonment: i === 0
+        }
+      }));
+    }
+
+    const result = aggregateFunctionWindows(episodes, windows, buildInputs({
+      contributor_counts: new Map([ ["func-1", 10] ])
+    }));
+
+    const secondWindow = result.find((entry) => entry.window_start === windows[1].window_start);
+    expect(secondWindow?.decision).toBe("SURFACE");
+    expect(secondWindow?.reliability_components).toEqual({
+      abandonment_rate: 0.1,
+      friction_loop_rate: 0.2,
+      recovery_success_rate: 0.9,
+      verification_presence_rate: 1
+    });
+    expect(secondWindow?.reliability_factor).toBe(0.9);
+  });
+
   test("latency alone never surfaces and latency is ignored for ineligible roles", () => {
     const episodes = [
       buildEpisode({
@@ -248,6 +290,8 @@ describe("FluencyTracr V1 Confidence Layer", () => {
 
     expect(lowVolumeResult[0].decision).toBe("SUPPRESS");
     expect(lowVolumeResult[0].suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(lowVolumeResult[0].reliability_factor).toBeNull();
+    expect(lowVolumeResult[0].reliability_components).toBeNull();
 
     const baselineEpisodes: TaskEpisode[] = [];
     for (let i = 0; i < 10; i += 1) {

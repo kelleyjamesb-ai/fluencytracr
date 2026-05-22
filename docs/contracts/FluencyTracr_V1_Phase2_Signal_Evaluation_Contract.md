@@ -192,6 +192,21 @@ V1 verdict payloads include two additive fields for Glean Value Realization read
 
 Detailed mapping lives in [`FluencyTracr_V1_AIVM_Value_Mapping.md`](FluencyTracr_V1_AIVM_Value_Mapping.md). These fields are descriptive metadata only and do not change suppression, ambiguity precedence, persistence, or fail-closed behavior.
 
+## Reliability Factor metadata (additive)
+
+V1 aggregate verdict payloads include additive Reliability Factor fields for workflow-level reliability readability:
+
+| Field | Values | Rule |
+| --- | --- | --- |
+| `reliability_factor` | `0.0` to `1.0`, or `null` | Populated only when the verdict/disclosure is surfaced; `null` whenever the fail-closed decision is `SUPPRESS`. |
+| `reliability_components` | Object with four component rates, or `null` | Populated only when surfaced; contains `abandonment_rate`, `friction_loop_rate`, `recovery_success_rate`, and `verification_presence_rate`. |
+
+The factor is computed from existing canonical observations only:
+
+`clamp01(0.5 + 0.25 * verification_presence_rate + 0.25 * recovery_success_rate - 0.25 * abandonment_rate - 0.25 * friction_loop_rate)`
+
+Detailed methodology and known limits live in [`reliability-factor.md`](reliability-factor.md). Reliability Factor is output-only and does not influence `SURFACE` / `SUPPRESS`.
+
 **Provenance**
 This section is added verbatim from Sentinel-approved V1 acceptance criteria and Astra clarification previously approved in-project. This content was not derived from existing in-repo text and is included to close explicit Phase 2 governance requirements.
 
