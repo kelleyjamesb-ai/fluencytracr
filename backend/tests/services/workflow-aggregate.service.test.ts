@@ -99,7 +99,7 @@ describe("aggregateWorkflowClassifications", () => {
     }
   });
 
-  it("excludes suppressed from pattern distribution denominator", () => {
+  it("suppresses the slice when any execution fails execution-level gates", () => {
     const out = aggregateWorkflowClassifications({
       records: [
         rec({ execution_id: "e1", pattern: BehaviorPattern.BLIND_EFFICIENCY }),
@@ -115,12 +115,11 @@ describe("aggregateWorkflowClassifications", () => {
     });
     expect(out.success).toBe(true);
     if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_SIGNAL");
       expect(out.result.classified_execution_count).toBe(4);
       expect(out.result.suppressed_execution_count).toBe(1);
-      const dist = out.result.pattern_distribution[0]!;
-      expect(dist.count).toBe(4);
-      expect(dist.prevalence_band).toBe("HIGH");
-      expect(dist.share).toBeUndefined();
+      expect(out.result.pattern_distribution).toEqual([]);
     }
   });
 

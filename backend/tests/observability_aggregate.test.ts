@@ -6,6 +6,7 @@ import {
 } from "../src/observability_aggregate";
 import { auditSuppressedObservabilityRows } from "../src/suppression_audit_log";
 import { store } from "../src/store";
+import { DEFAULT_PHASE2_THRESHOLDS } from "../src/execution_signals";
 
 const now = new Date("2026-04-10T12:00:00.000Z");
 
@@ -182,6 +183,45 @@ describe("buildObservabilityRollup", () => {
       disclosure: "SUPPRESSED",
       executions_disclosed: 1
     });
+  });
+
+  it("derives Phase 2 baselines from each JBTD/persona slice only", () => {
+    const events = [
+      ...dispositionPair(
+        "wf-baseline-sliced",
+        "manager-0",
+        "2026-04-09T00:00:00.000Z",
+        "2026-04-09T00:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "frontline-manager" }
+      ),
+      ...dispositionPair(
+        "wf-baseline-sliced",
+        "exec-0",
+        "2026-04-09T02:00:00.000Z",
+        "2026-04-09T02:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "exec" }
+      )
+    ];
+    const thresholdInputs: ReadonlyArray<string>[] = [];
+
+    buildObservabilityRollup(events, "org-1", "60d", {
+      now,
+      minDisclosedExecutions: 1,
+      thresholdMapBuilder: (sliceEvents) => {
+        thresholdInputs.push(sliceEvents.map((event) => `${event.jbtd_id ?? ""}:${event.persona_id ?? ""}`));
+        return new Map([["wf-baseline-sliced", DEFAULT_PHASE2_THRESHOLDS]]);
+      }
+    });
+
+    expect(thresholdInputs).toHaveLength(2);
+    expect(thresholdInputs).toEqual(
+      expect.arrayContaining([
+        ["manager-review:frontline-manager", "manager-review:frontline-manager"],
+        ["manager-review:exec", "manager-review:exec"]
+      ])
+    );
   });
 
   it("excludes events outside window", () => {

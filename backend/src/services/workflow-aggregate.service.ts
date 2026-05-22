@@ -150,8 +150,12 @@ export function aggregateWorkflowClassifications(
   }
   const suppressed_execution_count = records.filter((r) => r.status === "SUPPRESSED").length;
   const classified_execution_count = records.filter((r) => r.status === "ALLOWED").length;
-  const pattern_distribution = computePatternDistribution(records, prevalence_mode);
-  const verdict = classified_execution_count > 0 ? "SURFACE" : "SUPPRESS";
+  const verdict =
+    suppressed_execution_count === 0 && classified_execution_count === records.length
+      ? "SURFACE"
+      : "SUPPRESS";
+  const pattern_distribution =
+    verdict === "SURFACE" ? computePatternDistribution(records, prevalence_mode) : Object.freeze([]);
   const firstSuppressionReason =
     verdict === "SUPPRESS"
       ? records.find((r) => r.suppression_reason !== undefined)?.suppression_reason ?? null
