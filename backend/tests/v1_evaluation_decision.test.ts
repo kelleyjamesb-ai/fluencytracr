@@ -62,6 +62,39 @@ it("drops suppress reason codes on SURFACE decisions", () => {
   expect(result.suppress_reason_code).toBeUndefined();
 });
 
+it("nulls Reliability Factor fields on SUPPRESS decisions", () => {
+  const result = enforceV1EvaluationDecision(baseInput);
+  expect(result.decision).toBe("SUPPRESS");
+  expect(result.reliability_factor).toBeNull();
+  expect(result.reliability_components).toBeNull();
+});
+
+it("emits Reliability Factor fields on SURFACE decisions from canonical observations", () => {
+  const result = enforceV1EvaluationDecision({
+    ...baseInput,
+    candidate_decision: "SURFACE",
+    canonical_events: [
+      { event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED", verification_present: true },
+      { event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED", verification_present: false },
+      { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true },
+      { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true },
+      { event_name: "FT_V1_ITERATION_DEPTH_OBSERVED", iteration_depth: "HEAVY" },
+      { event_name: "FT_V1_ITERATION_DEPTH_OBSERVED", iteration_depth: "LIGHT" },
+      { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: true },
+      { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: false }
+    ]
+  });
+
+  expect(result.decision).toBe("SURFACE");
+  expect(result.reliability_components).toEqual({
+    abandonment_rate: 0.5,
+    friction_loop_rate: 0.5,
+    recovery_success_rate: 1,
+    verification_presence_rate: 0.5
+  });
+  expect(result.reliability_factor).toBe(0.625);
+});
+
 it("bypasses ghost-use evaluation when positive evidence is present", () => {
   const result = enforceV1EvaluationDecision({
     ...baseInput,

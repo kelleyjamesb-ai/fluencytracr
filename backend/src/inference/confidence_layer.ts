@@ -6,8 +6,13 @@ import {
   AmbiguityState,
   AmbiguityReasonCode,
   IterationDepth,
+  ReliabilityComponents,
   deriveAivmVerdictFields
 } from "@learnaire/shared";
+import {
+  computeReliabilityFactor,
+  reliabilityComponentsFromCounts
+} from "../value_realization/reliability_factor";
 
 export const CONFIDENCE_SCHEMA_VERSION = "v1" as const;
 
@@ -59,6 +64,7 @@ export type FunctionWindowMetrics = {
   verification_present: boolean;
   recovery_present: boolean;
   directed_iteration_present: boolean;
+  reliability_components: ReliabilityComponents;
   aivm_events: Array<{
     event_name: string;
     abandonment_present?: boolean;
@@ -248,6 +254,20 @@ const buildWindowMetrics = (
   );
   const recoveryPresent = nonAmbiguous.some((episode) => episode.signal_primitives.recovery_present);
   const directedIterationPresent = detectDirectedIteration(nonAmbiguous);
+  const reliabilityComponents = reliabilityComponentsFromCounts({
+    total: nonAmbiguousEpisodes,
+    abandonment: nonAmbiguous.filter((episode) => episode.signal_primitives.abandonment).length,
+    frictionLoop: nonAmbiguous.filter(
+      (episode) => deriveIterationDepthLabel(episode.signal_primitives.iteration_count) === "Heavy"
+    ).length,
+    recoverySuccess: nonAmbiguous.filter(
+      (episode) =>
+        episode.signal_primitives.recovery_present && !episode.signal_primitives.abandonment
+    ).length,
+    verificationPresence: nonAmbiguous.filter(
+      (episode) => episode.signal_primitives.verification_present
+    ).length
+  });
   const aivm_events = nonAmbiguous.flatMap((episode) => {
     const events: FunctionWindowMetrics["aivm_events"] = [
       {
@@ -291,6 +311,7 @@ const buildWindowMetrics = (
     verification_present: verificationPresent,
     recovery_present: recoveryPresent,
     directed_iteration_present: directedIterationPresent,
+    reliability_components: reliabilityComponents,
     aivm_events
   };
 };
@@ -486,6 +507,8 @@ export const aggregateFunctionWindows = (
         cohort_size: metrics.eligible_contributors,
         window_length_days: daysBetween(metrics.window_start, metrics.window_end)
       });
+      const reliabilityComponents =
+        decision.decision === "SURFACE" ? metrics.reliability_components : null;
 
       aggregates.push({
         org_id: metrics.org_id,
@@ -497,6 +520,10 @@ export const aggregateFunctionWindows = (
         suppression_reason: decision.suppression_reason,
         value_type: aivm.value_type,
         evidence_grade: aivm.evidence_grade,
+        reliability_factor: reliabilityComponents
+          ? computeReliabilityFactor(reliabilityComponents)
+          : null,
+        reliability_components: reliabilityComponents,
         signal_classes: metrics.signal_classes,
         positive_evidence_present: positiveEvidence,
         ghost_use_evaluated: ghostUseEvaluated,
@@ -522,6 +549,8 @@ export const aggregateFunctionWindows = (
         suppression_reason: "INSUFFICIENT_VOLUME",
         value_type: "UNCLASSIFIED",
         evidence_grade: "QUALITATIVE",
+        reliability_factor: null,
+        reliability_components: null,
         signal_classes: [],
         positive_evidence_present: false,
         ghost_use_evaluated: false,

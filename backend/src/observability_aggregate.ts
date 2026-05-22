@@ -1,4 +1,4 @@
-import type { FluencyPatternName, FluencyWindow } from "@learnaire/shared";
+import type { FluencyPatternName, FluencyWindow, ObservabilityReliabilityComponents } from "@learnaire/shared";
 import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "./execution_signals";
 import { evaluateExecutionDisclosure } from "./execution_disclosure";
 import { evaluateFluencyExecutionGates, toTraceGateSummary } from "./fluency_execution_gates";
@@ -10,6 +10,10 @@ import { evaluateGhostUseResidual, hasPositiveAiEvidence, type GhostUseStatus } 
 import { groupEventsByExecution, reconstructTrace, sortEventsByTimestamp } from "./trace_engine";
 import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
 import { toPrevalenceBand } from "./services/workflow-aggregate.service";
+import {
+  computeReliabilityFactor,
+  reliabilityComponentsFromCounts
+} from "./value_realization/reliability_factor";
 
 export const PATTERN_ORDER: FluencyPatternName[] = [
   "Calibrated Fluency",
@@ -68,6 +72,8 @@ export type WorkflowObservabilityRow = {
   suppression_reasons: string[];
   pattern_distribution: Record<FluencyPatternName, ObservabilityPrevalenceBand> | null;
   residual_patterns: { ghost_use: GhostUseStatus };
+  reliability_factor: number | null;
+  reliability_components: ObservabilityReliabilityComponents | null;
   /** Qualitative hints only; no scores, ranks, or trends (PRD §8). */
   allowed_interpretation_hints: string[];
 };
@@ -120,6 +126,13 @@ export const buildObservabilityRollup = (
       thresholdsByWorkflow.get(workflowId) ?? DEFAULT_PHASE2_THRESHOLDS;
     let executions_disclosed = 0;
     let executions_suppressed = 0;
+    const reliabilityCounts = {
+      total: 0,
+      abandonment: 0,
+      frictionLoop: 0,
+      recoverySuccess: 0,
+      verificationPresence: 0
+    };
     const dist = emptyPatternDistribution();
 
     for (const [, group] of byExec) {
@@ -139,8 +152,24 @@ export const buildObservabilityRollup = (
       const disclosure = evaluateExecutionDisclosure(signals, gates, suppression);
       if (disclosure.state === "ALLOWED") {
         executions_disclosed += 1;
+        reliabilityCounts.total += 1;
+        if (signals.abandonment_present) {
+          reliabilityCounts.abandonment += 1;
+        }
+        if (
+          signals.recovery_present &&
+          (signals.last_disposition === "accepted" || signals.last_disposition === "edited")
+        ) {
+          reliabilityCounts.recoverySuccess += 1;
+        }
+        if (signals.verification_present) {
+          reliabilityCounts.verificationPresence += 1;
+        }
         if (pattern !== null && hasPositiveAiEvidence(group)) {
           dist[pattern] += 1;
+        }
+        if (pattern === "Friction Loop") {
+          reliabilityCounts.frictionLoop += 1;
         }
       } else {
         executions_suppressed += 1;
@@ -153,6 +182,9 @@ export const buildObservabilityRollup = (
     let pattern_distribution: Record<FluencyPatternName, ObservabilityPrevalenceBand> | null =
       toCategoricalPatternDistribution(dist, executions_disclosed);
     let residual_patterns: { ghost_use: GhostUseStatus } = { ghost_use: ghostUse.status };
+    let reliability_components: ObservabilityReliabilityComponents | null =
+      reliabilityComponentsFromCounts(reliabilityCounts);
+    let reliability_factor: number | null = computeReliabilityFactor(reliability_components);
     let allowed_interpretation_hints: string[] = [];
 
     if (executions_disclosed < minDisclosed) {
@@ -160,6 +192,8 @@ export const buildObservabilityRollup = (
       suppression_reasons.push("insufficient_disclosed_executions");
       pattern_distribution = null;
       residual_patterns = { ghost_use: "SUPPRESSED" };
+      reliability_components = null;
+      reliability_factor = null;
     } else {
       allowed_interpretation_hints = interpretationHints(dist);
       if (ghostUse.hint) {
@@ -176,6 +210,8 @@ export const buildObservabilityRollup = (
       suppression_reasons,
       pattern_distribution,
       residual_patterns,
+      reliability_factor,
+      reliability_components,
       allowed_interpretation_hints
     };
   });

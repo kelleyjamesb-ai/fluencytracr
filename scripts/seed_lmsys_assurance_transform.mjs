@@ -188,6 +188,26 @@ function aivmUnclassifiedExecution(input) {
   ];
 }
 
+function lowReliabilityExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(30_000), "started", "attempt", true),
+    disposition(p(60_000), "rejected", { verificationPresent: false, timeToActionMs: 60_000 }),
+    stage(p(120_000), "attempt", "attempt", true),
+    disposition(p(300_000), "rejected", { verificationPresent: false, timeToActionMs: 300_000 }),
+    stage(p(360_000), "attempt", "attempt", true),
+    abandonment(p(660_000), "generated")
+  ];
+}
+
+function sparseReliabilityExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false)
+  ];
+}
+
 function ghostUseWorkActivityExecution(input) {
   const p = executionParams(input);
   return [
@@ -381,6 +401,47 @@ function buildAivmCase({
       cohort_size: evidenceGrade === "OBJECTIVE" ? 30 : count,
       window_length_days: evidenceGrade === "OBJECTIVE" ? 90 : 60,
       note: "NET_NEW and CALIBRATED are reserved hooks and are not inferred from LMSYS fixtures."
+    },
+    events: buildExecutions({
+      orgId,
+      workflowId,
+      caseId,
+      count,
+      baseMs,
+      runLabel,
+      factory
+    })
+  };
+}
+
+function buildReliabilityFactorCase({
+  orgId,
+  workflowPrefix,
+  caseId,
+  runLabel,
+  baseMs,
+  count,
+  factory,
+  expected,
+  canonicalEvidence,
+  notes
+}) {
+  const workflowId = `${workflowPrefix}-${caseId.replaceAll("_", "-")}`;
+  return {
+    id: caseId,
+    org_id: orgId,
+    workflow_id: workflowId,
+    description: "Reliability Factor assurance fixture. Events remain canonical metadata only; expected Reliability Factor fields are derived from aggregate workflow behavior.",
+    expected,
+    reliability_factor_manifest: {
+      source_contract: "schemas/ft_v1_evaluation_decision.schema.json",
+      inference_source: "backend/src/value_realization/reliability_factor.ts",
+      verdict_fields: ["reliability_factor", "reliability_components"],
+      formula: "clamp01(0.5 + 0.25*verification_presence_rate + 0.25*recovery_success_rate - 0.25*abandonment_rate - 0.25*friction_loop_rate)",
+      rounding: "3_decimal_places",
+      canonical_evidence: canonicalEvidence,
+      cohort_size: count,
+      notes
     },
     events: buildExecutions({
       orgId,
@@ -732,6 +793,81 @@ export function buildAssuranceCases(options = {}) {
       evidenceGrade: "OBJECTIVE",
       factory: aivmUnclassifiedExecution,
       canonicalEvidence: ["FT_V1_DISPOSITION_OBSERVED"]
+    }),
+    buildReliabilityFactorCase({
+      orgId,
+      workflowPrefix,
+      caseId: "reliability_factor_high_reliability_workflow",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      factory: aivmQualityPremiumExecution,
+      expected: {
+        decision: "SURFACE",
+        reliability_factor: 1,
+        reliability_components: {
+          abandonment_rate: 0,
+          friction_loop_rate: 0,
+          recovery_success_rate: 1,
+          verification_presence_rate: 1
+        }
+      },
+      canonicalEvidence: [
+        "FT_V1_RECOVERY_OBSERVED",
+        "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
+        "FT_V1_ABANDONMENT_OBSERVED:false",
+        "FT_V1_ITERATION_DEPTH_OBSERVED:below_friction_threshold"
+      ],
+      notes: "All disclosed executions include verification and successful recovery, with no abandonment or friction-loop evidence."
+    }),
+    buildReliabilityFactorCase({
+      orgId,
+      workflowPrefix,
+      caseId: "reliability_factor_low_reliability_workflow",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      factory: lowReliabilityExecution,
+      expected: {
+        decision: "SURFACE",
+        reliability_factor: 0.25,
+        reliability_components: {
+          abandonment_rate: 1,
+          friction_loop_rate: 0,
+          recovery_success_rate: 0,
+          verification_presence_rate: 0
+        }
+      },
+      canonicalEvidence: [
+        "FT_V1_ABANDONMENT_OBSERVED",
+        "FT_V1_ITERATION_DEPTH_OBSERVED:friction_loop",
+        "FT_V1_RECOVERY_OBSERVED:false",
+        "FT_V1_VERIFICATION_PRESENCE_OBSERVED:false"
+      ],
+      notes: "All disclosed executions show abandonment without recovery success or verification, producing a low bounded Reliability Factor without changing disclosure."
+    }),
+    buildReliabilityFactorCase({
+      orgId,
+      workflowPrefix,
+      caseId: "reliability_factor_suppressed_sparse_data_workflow",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      factory: sparseReliabilityExecution,
+      expected: {
+        decision: "SUPPRESS",
+        suppression: "sparse_data",
+        reliability_factor: null,
+        reliability_components: null
+      },
+      canonicalEvidence: [
+        "FT_V1_ITERATION_DEPTH_OBSERVED:missing",
+        "FT_V1_DISPOSITION_OBSERVED:missing",
+        "FT_V1_VERIFICATION_PRESENCE_OBSERVED:missing",
+        "FT_V1_RECOVERY_OBSERVED:missing",
+        "FT_V1_ABANDONMENT_OBSERVED:missing"
+      ],
+      notes: "Sparse telemetry lacks enough behavioral classes to compute Reliability Factor, so expected verdict output keeps Reliability Factor fields null."
     }),
     {
       id: "duplicate_execution_ids_across_orgs",

@@ -106,6 +106,16 @@ export type FluencyTracrV1Event = z.infer<typeof FluencyTracrV1EventSchema>;
 export const FluencyTracrV1DecisionSchema = z.enum(["SURFACE", "SUPPRESS"]);
 export type FluencyTracrV1Decision = z.infer<typeof FluencyTracrV1DecisionSchema>;
 
+export const FluencyTracrV1ReliabilityComponentsSchema = z.object({
+  abandonment_rate: z.number().min(0).max(1),
+  friction_loop_rate: z.number().min(0).max(1),
+  recovery_success_rate: z.number().min(0).max(1),
+  verification_presence_rate: z.number().min(0).max(1)
+}).strict();
+export type FluencyTracrV1ReliabilityComponents = z.infer<
+  typeof FluencyTracrV1ReliabilityComponentsSchema
+>;
+
 export const FluencyTracrV1SuppressReasonCodeSchema = z.enum([
   "SUPP_INTERNAL_INVARIANT_FAIL",
   "SUPP_AMBIGUITY_PRESENT",
@@ -129,6 +139,8 @@ export const FluencyTracrV1EvaluationDecisionSchema = z.object({
   decision: FluencyTracrV1DecisionSchema,
   value_type: AivmValueTypeSchema,
   evidence_grade: AivmEvidenceGradeSchema,
+  reliability_factor: z.number().min(0).max(1).nullable(),
+  reliability_components: FluencyTracrV1ReliabilityComponentsSchema.nullable(),
   suppress_reason_code: FluencyTracrV1SuppressReasonCodeSchema.optional()
 }).strict().superRefine((decision, context) => {
   if (decision.decision === "SUPPRESS" && !decision.suppress_reason_code) {
@@ -144,6 +156,38 @@ export const FluencyTracrV1EvaluationDecisionSchema = z.object({
       message: "suppress_reason_code must be omitted when decision is SURFACE",
       path: ["suppress_reason_code"]
     });
+  }
+  if (decision.decision === "SUPPRESS") {
+    if (decision.reliability_factor !== null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_factor must be null when decision is SUPPRESS",
+        path: ["reliability_factor"]
+      });
+    }
+    if (decision.reliability_components !== null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_components must be null when decision is SUPPRESS",
+        path: ["reliability_components"]
+      });
+    }
+  }
+  if (decision.decision === "SURFACE") {
+    if (decision.reliability_factor === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_factor is required when decision is SURFACE",
+        path: ["reliability_factor"]
+      });
+    }
+    if (decision.reliability_components === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_components is required when decision is SURFACE",
+        path: ["reliability_components"]
+      });
+    }
   }
 });
 export type FluencyTracrV1EvaluationDecision = z.infer<

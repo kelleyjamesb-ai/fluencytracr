@@ -58,6 +58,8 @@ print(json.dumps({'events': ev}))
   - **`executions_total`**, **`executions_disclosed`**, **`executions_suppressed`** (Phase 3 disclosure per execution).
   - **`disclosure`**: `ALLOWED` | `SUPPRESSED` at **workflow** level if disclosed execution count &lt; `MIN_COHORT_SIZE` (same env as fluency cohort guardrails).
   - **`pattern_distribution`**: counts per `FluencyPatternName` when workflow disclosure is `ALLOWED`; otherwise **`null`**. Per-execution patterns use **workflow-scoped baselines** over the same observation window (PRD §16); counts are aggregates only—no numeric baselines in the JSON.
+  - **`reliability_factor`**: bounded aggregate factor in `[0.0, 1.0]` when workflow disclosure is `ALLOWED`; otherwise **`null`**. This is output-only and does not change disclosure.
+  - **`reliability_components`**: component rates for `abandonment_rate`, `friction_loop_rate`, `recovery_success_rate`, and `verification_presence_rate` when workflow disclosure is `ALLOWED`; otherwise **`null`**.
   - **`allowed_interpretation_hints`**: qualitative strings only (`recovery_behavior`, `friction_patterns`, `undertrust_signals`) when workflow is `ALLOWED`.
 
 ## Implementation

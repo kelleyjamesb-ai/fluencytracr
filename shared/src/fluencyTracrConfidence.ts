@@ -82,6 +82,14 @@ export const SuppressionReasonSchema = z.enum([
 ]);
 export type SuppressionReason = z.infer<typeof SuppressionReasonSchema>;
 
+export const ReliabilityComponentsSchema = z.object({
+  abandonment_rate: z.number().min(0).max(1),
+  friction_loop_rate: z.number().min(0).max(1),
+  recovery_success_rate: z.number().min(0).max(1),
+  verification_presence_rate: z.number().min(0).max(1)
+}).strict();
+export type ReliabilityComponents = z.infer<typeof ReliabilityComponentsSchema>;
+
 export const FunctionWindowAggregateSchema = z.object({
   org_id: z.string().min(1),
   function_id: z.string().min(1),
@@ -92,6 +100,8 @@ export const FunctionWindowAggregateSchema = z.object({
   suppression_reason: SuppressionReasonSchema.nullable(),
   value_type: AivmValueTypeSchema,
   evidence_grade: AivmEvidenceGradeSchema,
+  reliability_factor: z.number().min(0).max(1).nullable(),
+  reliability_components: ReliabilityComponentsSchema.nullable(),
   signal_classes: z.array(SignalClassSchema),
   positive_evidence_present: z.boolean(),
   ghost_use_evaluated: z.boolean(),
@@ -100,5 +110,38 @@ export const FunctionWindowAggregateSchema = z.object({
   eligible_contributors: z.number().int().nonnegative(),
   population_episodes: z.number().int().nonnegative(),
   non_ambiguous_episodes: z.number().int().nonnegative()
-}).strict();
+}).strict().superRefine((aggregate, context) => {
+  if (aggregate.decision === "SURFACE") {
+    if (aggregate.reliability_factor === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_factor is required when decision is SURFACE",
+        path: ["reliability_factor"]
+      });
+    }
+    if (aggregate.reliability_components === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_components is required when decision is SURFACE",
+        path: ["reliability_components"]
+      });
+    }
+  }
+  if (aggregate.decision === "SUPPRESS") {
+    if (aggregate.reliability_factor !== null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_factor must be null when decision is SUPPRESS",
+        path: ["reliability_factor"]
+      });
+    }
+    if (aggregate.reliability_components !== null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "reliability_components must be null when decision is SUPPRESS",
+        path: ["reliability_components"]
+      });
+    }
+  }
+});
 export type FunctionWindowAggregate = z.infer<typeof FunctionWindowAggregateSchema>;

@@ -48,6 +48,43 @@
         "CALIBRATED",
         "QUALITATIVE"
       ]
+    },
+    "reliability_factor": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reliability_components": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "abandonment_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "friction_loop_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recovery_success_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "verification_presence_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "abandonment_rate",
+        "friction_loop_rate",
+        "recovery_success_rate",
+        "verification_presence_rate"
+      ]
     }
   },
   "required": [
@@ -59,6 +96,8 @@
     "window_id",
     "decision",
     "value_type",
-    "evidence_grade"
+    "evidence_grade",
+    "reliability_factor",
+    "reliability_components"
   ]
 }

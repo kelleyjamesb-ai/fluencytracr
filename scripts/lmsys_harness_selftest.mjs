@@ -111,6 +111,9 @@ assert.deepEqual(ids, [
   "ghost_use_residual_fires",
   "ghost_use_suppressed_by_ambiguity",
   "pii_boundary_rejection",
+  "reliability_factor_high_reliability_workflow",
+  "reliability_factor_low_reliability_workflow",
+  "reliability_factor_suppressed_sparse_data_workflow",
   "sub_threshold_workflow",
   "undertrust_avoidance"
 ]);
@@ -172,6 +175,35 @@ for (const entry of aivmCases) {
   if (entry.expected.evidence_grade === "OBJECTIVE") {
     assert.equal(entry.aivm_manifest.cohort_size, 30);
     assert.equal(entry.aivm_manifest.window_length_days, 90);
+  }
+}
+
+const reliabilityCases = cases.filter((entry) => entry.reliability_factor_manifest);
+assert.deepEqual(reliabilityCases.map((entry) => entry.id).sort(), [
+  "reliability_factor_high_reliability_workflow",
+  "reliability_factor_low_reliability_workflow",
+  "reliability_factor_suppressed_sparse_data_workflow"
+]);
+for (const entry of reliabilityCases) {
+  assert.ok(entry.workflow_id.includes(entry.id.replaceAll("_", "-")));
+  assert.deepEqual(entry.reliability_factor_manifest.verdict_fields, [
+    "reliability_factor",
+    "reliability_components"
+  ]);
+  assert.equal(
+    entry.reliability_factor_manifest.formula,
+    "clamp01(0.5 + 0.25*verification_presence_rate + 0.25*recovery_success_rate - 0.25*abandonment_rate - 0.25*friction_loop_rate)"
+  );
+  assert.equal(entry.reliability_factor_manifest.rounding, "3_decimal_places");
+  assert.ok(["SURFACE", "SUPPRESS"].includes(entry.expected.decision));
+  if (entry.expected.decision === "SURFACE") {
+    assert.equal(typeof entry.expected.reliability_factor, "number");
+    assert.notEqual(entry.expected.reliability_components, null);
+  } else {
+    assert.equal(entry.expected.suppression, "sparse_data");
+  }
+  for (const event of entry.events) {
+    assertFluencyEvent(event);
   }
 }
 
