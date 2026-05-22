@@ -19,6 +19,21 @@ on:
       - main
 
 jobs:
+  dogfood-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run dogfood end-to-end harness
+        run: python -m unittest tests.test_dogfood_e2e
+
   assurance:
     runs-on: ubuntu-latest
     timeout-minutes: 8
