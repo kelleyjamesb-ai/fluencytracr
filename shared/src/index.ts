@@ -5,6 +5,7 @@ export * from "./fluencyTracrSchemas";
 export * from "./fluencyExecutionId";
 export * from "./fluencyTracrConfidence";
 export * from "./fluencyTracrV1Signal";
+export * from "./fluencyTracrAivm";
 export * from "./unifiedTelemetrySchemas";
 export * from "./agentRunSchemas";
 export * from "./gleanSignalReadinessSchemas";

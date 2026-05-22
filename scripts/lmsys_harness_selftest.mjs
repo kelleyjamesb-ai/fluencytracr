@@ -91,6 +91,12 @@ assertNoRawText(abandoned);
 const cases = buildAssuranceCases({ minCohortSize: 5, iterationHighThreshold: 2 });
 const ids = cases.map((entry) => entry.id).sort();
 assert.deepEqual(ids, [
+  "aivm_acceleration_objective",
+  "aivm_acceleration_qualitative",
+  "aivm_quality_premium_objective",
+  "aivm_quality_premium_qualitative",
+  "aivm_unclassified_objective",
+  "aivm_unclassified_qualitative",
   "calibrated_fluency",
   "duplicate_execution_ids_across_orgs",
   "failure_success_recovery_maturity",
@@ -119,6 +125,33 @@ for (const entry of ghostUseCases) {
   assert.equal(entry.ghost_use_manifest.required_windows, 2);
   assert.equal(entry.ghost_use_manifest.ambiguity_dominance_threshold, 0.2);
   assert.ok(["SURFACE", "BYPASS", "SUPPRESS", "SUPPRESS_PERSISTENCE"].includes(entry.expected.ghost_use));
+}
+
+const aivmCases = cases.filter((entry) => entry.aivm_manifest);
+assert.equal(aivmCases.length, 6);
+assert.deepEqual(
+  aivmCases
+    .map((entry) => `${entry.expected.value_type}:${entry.expected.evidence_grade}`)
+    .sort(),
+  [
+    "ACCELERATION:OBJECTIVE",
+    "ACCELERATION:QUALITATIVE",
+    "QUALITY_PREMIUM:OBJECTIVE",
+    "QUALITY_PREMIUM:QUALITATIVE",
+    "UNCLASSIFIED:OBJECTIVE",
+    "UNCLASSIFIED:QUALITATIVE"
+  ]
+);
+for (const entry of aivmCases) {
+  assert.ok(entry.workflow_id.includes(entry.id.replaceAll("_", "-")));
+  assert.deepEqual(entry.aivm_manifest.verdict_fields, ["value_type", "evidence_grade"]);
+  assert.ok(Array.isArray(entry.aivm_manifest.canonical_evidence));
+  assert.ok(["ACCELERATION", "QUALITY_PREMIUM", "UNCLASSIFIED"].includes(entry.expected.value_type));
+  assert.ok(["OBJECTIVE", "QUALITATIVE"].includes(entry.expected.evidence_grade));
+  if (entry.expected.evidence_grade === "OBJECTIVE") {
+    assert.equal(entry.aivm_manifest.cohort_size, 30);
+    assert.equal(entry.aivm_manifest.window_length_days, 90);
+  }
 }
 
 const assuranceEvents = buildAssuranceEvents({ minCohortSize: 5, iterationHighThreshold: 2 });

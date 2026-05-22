@@ -159,6 +159,35 @@ function undertrustExecution(input) {
   ];
 }
 
+function aivmAccelerationExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(15_000), "started", "attempt", true),
+    disposition(p(30_000), "accepted", { verificationPresent: false, timeToActionMs: 30_000 })
+  ];
+}
+
+function aivmQualityPremiumExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(30_000), "started", "attempt", true),
+    verification(p(45_000), { verificationType: "peer_review", verificationLatencyMs: 200 }),
+    recovery(p(60_000), { recoveryType: "human_correction", cycles: 1, resolutionTimeMs: 60_000 }),
+    disposition(p(90_000), "accepted", { verificationPresent: true, timeToActionMs: 90_000 })
+  ];
+}
+
+function aivmUnclassifiedExecution(input) {
+  const p = executionParams(input);
+  return [
+    stage(p(0), "not_started", "started", false),
+    stage(p(30_000), "started", "attempt", true),
+    disposition(p(120_000), "edited", { verificationPresent: false, timeToActionMs: 120_000 })
+  ];
+}
+
 function ghostUseWorkActivityExecution(input) {
   const p = executionParams(input);
   return [
@@ -262,6 +291,48 @@ function buildFrictionThresholdExecutions({ orgId, workflowId, caseId, baseMs, r
   return out;
 }
 
+function buildAivmCase({
+  orgId,
+  workflowPrefix,
+  caseId,
+  runLabel,
+  baseMs,
+  count,
+  valueType,
+  evidenceGrade,
+  factory,
+  canonicalEvidence
+}) {
+  const workflowId = `${workflowPrefix}-${caseId.replaceAll("_", "-")}`;
+  return {
+    id: caseId,
+    org_id: orgId,
+    workflow_id: workflowId,
+    description: "AIVM verdict-legibility fixture. Events remain canonical metadata only; expected value fields are derived from existing evidence classes.",
+    expected: {
+      value_type: valueType,
+      evidence_grade: evidenceGrade
+    },
+    aivm_manifest: {
+      source_contract: "docs/contracts/FluencyTracr_V1_AIVM_Value_Mapping.md",
+      verdict_fields: ["value_type", "evidence_grade"],
+      canonical_evidence: canonicalEvidence,
+      cohort_size: evidenceGrade === "OBJECTIVE" ? 30 : count,
+      window_length_days: evidenceGrade === "OBJECTIVE" ? 90 : 60,
+      note: "NET_NEW and CALIBRATED are reserved hooks and are not inferred from LMSYS fixtures."
+    },
+    events: buildExecutions({
+      orgId,
+      workflowId,
+      caseId,
+      count,
+      baseMs,
+      runLabel,
+      factory
+    })
+  };
+}
+
 function validPiiProbeBase({ orgId, workflowId, executionRunId, baseMs }) {
   return {
     events: [
@@ -288,6 +359,7 @@ export function buildAssuranceCases(options = {}) {
   const workflowPrefix = `lmsys-assurance-${runLabel}`;
   const caseCount = Math.max(minCohortSize, 5);
   const frictionCaseCount = Math.max(caseCount, 50);
+  const objectiveCaseCount = Math.max(30, caseCount);
 
   const subThresholdEvents = buildExecutions({
     orgId,
@@ -478,6 +550,78 @@ export function buildAssuranceCases(options = {}) {
       count: caseCount,
       expected: "SUPPRESS_PERSISTENCE",
       overrides: { persistAcrossRequiredWindows: false }
+    }),
+    buildAivmCase({
+      orgId,
+      workflowPrefix,
+      caseId: "aivm_acceleration_qualitative",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      valueType: "ACCELERATION",
+      evidenceGrade: "QUALITATIVE",
+      factory: aivmAccelerationExecution,
+      canonicalEvidence: ["FT_V1_LATENCY_OBSERVED", "FT_V1_ABANDONMENT_OBSERVED:false"]
+    }),
+    buildAivmCase({
+      orgId,
+      workflowPrefix,
+      caseId: "aivm_acceleration_objective",
+      runLabel,
+      baseMs,
+      count: objectiveCaseCount,
+      valueType: "ACCELERATION",
+      evidenceGrade: "OBJECTIVE",
+      factory: aivmAccelerationExecution,
+      canonicalEvidence: ["FT_V1_LATENCY_OBSERVED", "FT_V1_ABANDONMENT_OBSERVED:false"]
+    }),
+    buildAivmCase({
+      orgId,
+      workflowPrefix,
+      caseId: "aivm_quality_premium_qualitative",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      valueType: "QUALITY_PREMIUM",
+      evidenceGrade: "QUALITATIVE",
+      factory: aivmQualityPremiumExecution,
+      canonicalEvidence: ["FT_V1_VERIFICATION_PRESENCE_OBSERVED:true", "FT_V1_RECOVERY_OBSERVED:true"]
+    }),
+    buildAivmCase({
+      orgId,
+      workflowPrefix,
+      caseId: "aivm_quality_premium_objective",
+      runLabel,
+      baseMs,
+      count: objectiveCaseCount,
+      valueType: "QUALITY_PREMIUM",
+      evidenceGrade: "OBJECTIVE",
+      factory: aivmQualityPremiumExecution,
+      canonicalEvidence: ["FT_V1_VERIFICATION_PRESENCE_OBSERVED:true", "FT_V1_RECOVERY_OBSERVED:true"]
+    }),
+    buildAivmCase({
+      orgId,
+      workflowPrefix,
+      caseId: "aivm_unclassified_qualitative",
+      runLabel,
+      baseMs,
+      count: caseCount,
+      valueType: "UNCLASSIFIED",
+      evidenceGrade: "QUALITATIVE",
+      factory: aivmUnclassifiedExecution,
+      canonicalEvidence: ["FT_V1_DISPOSITION_OBSERVED"]
+    }),
+    buildAivmCase({
+      orgId,
+      workflowPrefix,
+      caseId: "aivm_unclassified_objective",
+      runLabel,
+      baseMs,
+      count: objectiveCaseCount,
+      valueType: "UNCLASSIFIED",
+      evidenceGrade: "OBJECTIVE",
+      factory: aivmUnclassifiedExecution,
+      canonicalEvidence: ["FT_V1_DISPOSITION_OBSERVED"]
     }),
     {
       id: "duplicate_execution_ids_across_orgs",
