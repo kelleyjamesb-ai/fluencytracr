@@ -138,45 +138,81 @@ taxonomy_events AS (
 -- Ambiguous surfaces are intentionally left unmapped and excluded from ratio
 -- numerators. This avoids inventing semantics for autocomplete, bot activity,
 -- or workflow features whose delegation meaning depends on local context.
+-- Buckets are not mutually exclusive: named workflow agents intentionally
+-- remain in structured_delegation while also contributing to reusable_leverage
+-- when reusable fields support that narrower interpretation.
 bucketed_events AS (
   SELECT
     user_key,
     surface_join_key,
     surface_id,
-    CASE
-      WHEN surface_id IN ('standalone:SEARCH', 'workflow:AI_ANSWER') THEN 'retrieval'
-      WHEN surface_id IN ('workflow:CHAT', 'standalone:AI_SUMMARY')
-        OR REGEXP_CONTAINS(LOWER(surface_id), r'(summary|summar|draft|write)') THEN 'transformation'
-      WHEN surface_id = 'workflow:agent:ephemeral' THEN 'exploratory_delegation'
-      WHEN surface_id = 'workflow:agent:workflow_named'
-        AND (workflow_name IS NOT NULL OR reusable IS TRUE) THEN 'reusable_leverage'
-      WHEN surface_id IN (
-        'workflow:agent:autonomous',
-        'workflow:agent:workflow_named',
-        'standalone:MCP_USAGE'
-      ) THEN 'structured_delegation'
-    END AS delegation_bucket
+    'retrieval' AS delegation_bucket
   FROM taxonomy_events
-  WHERE surface_id IS NOT NULL
+  WHERE surface_id IN ('standalone:SEARCH', 'workflow:AI_ANSWER')
+
+  UNION ALL
+
+  SELECT
+    user_key,
+    surface_join_key,
+    surface_id,
+    'transformation' AS delegation_bucket
+  FROM taxonomy_events
+  WHERE surface_id IN ('workflow:CHAT', 'standalone:AI_SUMMARY')
+    OR REGEXP_CONTAINS(LOWER(surface_id), r'(summary|summar|draft|write)')
+
+  UNION ALL
+
+  SELECT
+    user_key,
+    surface_join_key,
+    surface_id,
+    'exploratory_delegation' AS delegation_bucket
+  FROM taxonomy_events
+  WHERE surface_id = 'workflow:agent:ephemeral'
+
+  UNION ALL
+
+  SELECT
+    user_key,
+    surface_join_key,
+    surface_id,
+    'structured_delegation' AS delegation_bucket
+  FROM taxonomy_events
+  WHERE surface_id IN (
+    'workflow:agent:autonomous',
+    'workflow:agent:workflow_named',
+    'standalone:MCP_USAGE'
+  )
+
+  UNION ALL
+
+  SELECT
+    user_key,
+    surface_join_key,
+    surface_id,
+    'reusable_leverage' AS delegation_bucket
+  FROM taxonomy_events
+  WHERE surface_id = 'workflow:agent:workflow_named'
+    AND (workflow_name IS NOT NULL OR reusable IS TRUE)
 ),
 
 per_user_bucket AS (
   SELECT
     delegation_bucket,
     user_key,
-    COUNT(DISTINCT surface_join_key) AS bucket_events,
+    COUNT(DISTINCT TO_JSON_STRING(STRUCT(user_key, surface_id, surface_join_key))) AS bucket_events,
     COUNT(DISTINCT surface_id) AS distinct_surfaces
   FROM bucketed_events
   WHERE delegation_bucket IS NOT NULL
   GROUP BY delegation_bucket, user_key
 ),
 
-per_user_total AS (
+overall_taxonomy AS (
   SELECT
-    user_key,
-    COUNT(DISTINCT surface_join_key) AS total_taxonomy_events
-  FROM bucketed_events
-  GROUP BY user_key
+    COUNT(DISTINCT TO_JSON_STRING(STRUCT(user_key, surface_id, surface_join_key))) AS total_taxonomy_events
+  FROM taxonomy_events
+  WHERE surface_id IS NOT NULL
 ),
 
 aggregate_metrics AS (
@@ -184,14 +220,13 @@ aggregate_metrics AS (
     bucket.delegation_bucket,
     COUNT(*) AS aggregate_user_count,
     SUM(bucket.bucket_events) AS aggregate_bucket_events,
-    SUM(total.total_taxonomy_events) AS aggregate_taxonomy_events,
-    SAFE_DIVIDE(SUM(bucket.bucket_events), SUM(total.total_taxonomy_events)) AS bucket_event_share,
+    MAX(overall.total_taxonomy_events) AS aggregate_taxonomy_events,
+    SAFE_DIVIDE(SUM(bucket.bucket_events), MAX(overall.total_taxonomy_events)) AS bucket_event_share,
     APPROX_QUANTILES(bucket.bucket_events, 100)[OFFSET(50)] AS p50,
     APPROX_QUANTILES(bucket.bucket_events, 100)[OFFSET(90)] AS p90,
     APPROX_QUANTILES(bucket.bucket_events, 100)[OFFSET(99)] AS p99
   FROM per_user_bucket AS bucket
-  JOIN per_user_total AS total
-    ON total.user_key = bucket.user_key
+  CROSS JOIN overall_taxonomy AS overall
   GROUP BY bucket.delegation_bucket
 )
 

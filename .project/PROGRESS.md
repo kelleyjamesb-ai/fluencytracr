@@ -2,7 +2,7 @@
 
 ## Last Completed
 
-- Delegation Depth concept: added documentation-only V4 Depth subdimension framing for aggregate retrieval, transformation, and delegation surface mix, including scio-prod 60-day caveats and links from Depth, V4 Value Confidence, value-realization index, README, and AGENTS; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.
+- V4 signal discovery review fix: corrected the delegation probe so `bucket_event_share` uses the full taxonomy-event denominator and named workflow agents can contribute to both `structured_delegation` and `reusable_leverage`; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.
 - V4 signal discovery probe pack: added research-only signal promotion criteria, V4 discovery probe framing, and aggregate-only BigQuery probes for rapid refinement behavior, delegation depth, and reusable workflow propagation; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.
 - PR #255 ingest concept conflict resolution: merged current `main` into `docs/ingest-concept`, preserving the V3 ingest privacy-boundary concept alongside the newly merged calibration concept and links.
 - Velocity diagnostic verification attribution fix: added parent-surface join aliases so verification signals with only `session_token` still attribute to surfaces whose canonical key is `workflow_run_id`.
