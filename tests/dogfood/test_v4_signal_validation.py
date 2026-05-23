@@ -274,3 +274,22 @@ def test_fewer_than_three_windows_holds_not_promotes(tmp_path: Path) -> None:
     assert summary["signals"]["rapid_refinement"]["windows_present"] == 2
     assert summary["signals"]["delegation_depth"]["decision"] == "HOLD"
     assert summary["signals"]["velocity_depth_zone"]["decision"] == "HOLD"
+
+
+def test_non_contiguous_fixed_windows_hold_not_promote(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    write_complete_input(input_dir)
+    (input_dir / "v4_refinement_window_1.csv").unlink()
+    write_csv(input_dir / "v4_refinement_window_4.csv", [refinement_row()])
+
+    completed = run_validator(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    refinement = summary["signals"]["rapid_refinement"]
+    assert refinement["decision"] == "HOLD"
+    assert refinement["primary_reason"] == "missing required fixed windows"
+    assert "v4_refinement_window_1.csv" in refinement["input_files_missing"]
+    assert "v4_refinement_window_4.csv" in refinement["input_files_found"]
+    assert refinement["stability"]["p50_window_values"] == [2.0, 2.0, 2.0]

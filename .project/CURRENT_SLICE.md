@@ -6,7 +6,7 @@
 
 ## Summary
 
-Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmatched metrics counted runs instead of distinct workflows. This remains a dogfood diagnostic-only SQL contract fix.
+Addressed the actionable V4 signal validation review findings by normalizing CSV row keys at ingestion and requiring the exact fixed `window_1`, `window_2`, and `window_3` export set before promotion. Rechecked the runbook predictive-claims comment; the flagged `non-predictive unless separately validated` language is already absent from this branch.
 
 ## Scope Paths
 
@@ -17,15 +17,18 @@ Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmat
 
 ## Key Risks
 
-- Candidate and unmatched workflow metrics can be overstated when one workflow has multiple runs.
-- SQL must remain aggregate-only and research/dogfood scoped.
-- Tests should verify the intended workflow-granularity contract without requiring BigQuery execution.
+- Header schema validation could pass while metric readers silently miss values if row keys remain raw.
+- Display-style headers such as `P50` or `Adopter Count P50` must not downgrade valid aggregate exports to HOLD.
+- Non-contiguous exports such as `window_2`, `window_3`, and `window_4` must not satisfy the fixed-window promotion gate.
+- V4 validation outputs must preserve aggregate-only, fail-closed, non-predictive governance constraints.
 
 ## Planned Checks
 
-- Change coverage metrics to conditional distinct workflow counts.
-- Add/extend SQL contract coverage for workflow-granularity counts.
-- Run the focused dogfood SQL contract test.
+- Confirm the runbook no longer contains the predictive exception.
+- Add regression coverage for case/format header variants.
+- Add regression coverage for missing `window_1` plus extra `window_4`.
+- Run the focused V4 signal validation dogfood tests.
+- Compile the V4 validation harness.
 - Run `git diff --check`.
 
 ## Evaluator Command Profile
@@ -35,9 +38,10 @@ Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmat
 
 ## Evaluator Pass Criteria
 
-- `named_candidate_count`, `confirmed_reusable_candidate_count`, and `unmatched_agent_workflow_count` count distinct `workflow_key` values.
-- Existing dogfood SQL contract tests still pass.
-- No unrelated SQL or product behavior changes are introduced.
+- Variant CSV headers feed p50, coverage, and non-empty calculations.
+- Promotion requires the exact fixed window export set, not only three matching files.
+- Existing governance/fail-closed tests still pass.
+- No predictive exception language remains in the V4 signal validation runbook.
 
 ## Specialists To Consult
 
@@ -45,4 +49,4 @@ Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmat
 
 ## Next Handoff Note
 
-Completed: `named_candidate_count`, `confirmed_reusable_candidate_count`, and `unmatched_agent_workflow_count` now use conditional distinct `workflow_key` counts; focused dogfood SQL contract verification passed.
+Completed: row keys now normalize during CSV ingestion, display-style header variants are covered by regression tests, non-contiguous fixed windows hold instead of promote, and focused verification passed.

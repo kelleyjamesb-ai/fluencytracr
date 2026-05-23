@@ -348,7 +348,7 @@ def evaluate_signal(input_dir: Path, spec: SignalSpec) -> dict[str, Any]:
     distribution = summarize_distribution(all_rows)
     p50_values = window_p50_means(windows)
     is_stable, stability_reason = stable_enough(p50_values)
-    has_required_windows = windows_present >= MIN_PROMOTION_WINDOWS
+    has_required_windows = not missing_window_files and found_file_names == expected_window_files(spec)
     non_empty = row_count >= MIN_NONEMPTY_ROWS and nonempty_total > 0
     coverage_values = [value for value in coverage.values() if value is not None]
     coverage_sufficient = bool(coverage_values) and max(coverage_values) >= MIN_COVERAGE_VALUE
@@ -388,7 +388,8 @@ def evaluate_signal(input_dir: Path, spec: SignalSpec) -> dict[str, Any]:
         required_followup = "Document a Velocity relationship that preserves independent dimensions."
         destination = "Reject"
     elif not has_required_windows:
-        primary_reason = "fewer than three comparable windows"
+        primary_reason = "missing required fixed windows"
+        required_followup = "Export exactly window_1, window_2, and window_3 before promotion review."
     elif not is_stable:
         primary_reason = stability_reason
         required_followup = "Investigate window comparability, taxonomy drift, or instrumentation drift."
