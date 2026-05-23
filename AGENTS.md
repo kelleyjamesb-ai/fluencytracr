@@ -64,6 +64,8 @@ Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemen
 
 Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames work integration through verification, workflow repertoire, reusable workflow creation, agent relationship mix, recovery discipline, and judgment behavior. It is documentation-stage only unless a future implementation PR explicitly adds runtime support under the nine invariants.
 
+Delegation Depth is a V4 concept-stage Depth subdimension (see docs/concepts/DELEGATION_DEPTH.md). It must not be implemented as a new canonical event, standalone score, or person-level label without explicit governance approval.
+
 The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, team ranking, or individual labels from that language.
 
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md) and is implemented in the customer-side transformer path. It does not modify any V1 or V2 invariants.

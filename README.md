@@ -114,6 +114,7 @@ is not the lead positioning for this repository.
 - V4 value confidence integration: [docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md](docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
 - Depth concept and V4 reference: [docs/concepts/DEPTH.md](docs/concepts/DEPTH.md)
+- Delegation Depth concept and V4 Depth subdimension: [docs/concepts/DELEGATION_DEPTH.md](docs/concepts/DELEGATION_DEPTH.md)
 - V4 Value Confidence Layer concept: [docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md](docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md)
 - Signal promotion criteria: [docs/research/SIGNAL_PROMOTION_CRITERIA.md](docs/research/SIGNAL_PROMOTION_CRITERIA.md)
 - V4 signal discovery probes: [docs/research/V4_SIGNAL_DISCOVERY_PROBES.md](docs/research/V4_SIGNAL_DISCOVERY_PROBES.md)
