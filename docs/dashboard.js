@@ -1,6 +1,6 @@
 const rangeSelect = document.getElementById("range-select");
 const teamSelect = document.getElementById("team-select");
-const maturitySelect = document.getElementById("maturity-select");
+const readinessSelect = document.getElementById("readiness-select");
 const exportPdf = document.getElementById("export-pdf");
 const exportCsv = document.getElementById("export-csv");
 const tabDashboard = document.getElementById("tab-dashboard");
@@ -8,12 +8,12 @@ const tabOpportunities = document.getElementById("tab-opportunities");
 const dashboardPanel = document.getElementById("dashboard-panel");
 const opportunitiesPanel = document.getElementById("opportunities-panel");
 
-const fluencyScore = document.getElementById("fluency-score");
+const evidenceReadiness = document.getElementById("evidence-readiness-value");
 const coverageSummary = document.getElementById("coverage-summary");
 const adoptionSummary = document.getElementById("adoption-summary");
 const spreadSummary = document.getElementById("spread-summary");
 
-const fluencyChart = document.getElementById("fluency-chart");
+const evidenceReadinessChart = document.getElementById("evidence-readiness-chart");
 const coverageChart = document.getElementById("coverage-chart");
 const adoptionChart = document.getElementById("adoption-chart");
 const spreadChart = document.getElementById("spread-chart");
@@ -25,7 +25,7 @@ const palette = ["#2563eb", "#0f766e", "#9333ea", "#f97316"];
 const opportunityLibrary = [
   {
     role: "sales",
-    maturity: "emerging",
+    readiness: "emerging",
     title: "Prep account briefs with AI copilots",
     summary: "Use AI to summarize account history and prep discovery questions.",
     gapTags: ["coverage_low", "velocity_low"],
@@ -33,7 +33,7 @@ const opportunityLibrary = [
   },
   {
     role: "sales",
-    maturity: "scaling",
+    readiness: "scaling",
     title: "Standardize call follow-ups",
     summary: "Generate consistent recap emails and CRM updates.",
     gapTags: ["depth_low", "velocity_low"],
@@ -41,7 +41,7 @@ const opportunityLibrary = [
   },
   {
     role: "support",
-    maturity: "emerging",
+    readiness: "emerging",
     title: "Draft resolution playbooks",
     summary: "Summarize past tickets into reusable resolution snippets.",
     gapTags: ["coverage_low", "judgment_low"],
@@ -49,7 +49,7 @@ const opportunityLibrary = [
   },
   {
     role: "engineering",
-    maturity: "scaling",
+    readiness: "scaling",
     title: "Improve code review readiness",
     summary: "Use AI to catch common issues before review.",
     gapTags: ["depth_low", "judgment_low"],
@@ -57,7 +57,7 @@ const opportunityLibrary = [
   },
   {
     role: "operations",
-    maturity: "advanced",
+    readiness: "advanced",
     title: "Automate reporting narratives",
     summary: "Generate weekly summaries from dashboards.",
     gapTags: ["velocity_low", "coverage_low"],
@@ -68,12 +68,12 @@ const opportunityLibrary = [
 function sampleData() {
   return {
     teams: ["All teams", "Sales", "Support", "Engineering"],
-    fluencyTrend: [
-      { date: "2024-01-01", score: 48 },
-      { date: "2024-01-08", score: 52 },
-      { date: "2024-01-15", score: 55 },
-      { date: "2024-01-22", score: 59 },
-      { date: "2024-01-29", score: 62 },
+    evidenceReadinessTrend: [
+      { date: "2024-01-01", value: 48 },
+      { date: "2024-01-08", value: 52 },
+      { date: "2024-01-15", value: 55 },
+      { date: "2024-01-22", value: 59 },
+      { date: "2024-01-29", value: 62 },
     ],
     coverage: [
       { label: "Sales", value: 0.64 },
@@ -106,23 +106,23 @@ async function fetchDashboardData(range, team) {
   }
 }
 
-function matchOpportunities({ role, maturity, gaps }) {
+function matchOpportunities({ role, readiness, gaps }) {
   const normalizedRole = role.toLowerCase();
   const normalizedGaps = new Set(gaps.map((gap) => gap.toLowerCase()));
   return opportunityLibrary.filter((pattern) => {
     const roleMatch = pattern.role === normalizedRole || normalizedRole === "all";
-    const maturityMatch = pattern.maturity === maturity;
+    const readinessMatch = pattern.readiness === readiness;
     const gapMatch = pattern.gapTags.some((tag) => normalizedGaps.has(tag));
-    return roleMatch && maturityMatch && gapMatch;
+    return roleMatch && readinessMatch && gapMatch;
   });
 }
 
-function renderOpportunities(patterns, roleLabel, maturityLabel) {
+function renderOpportunities(patterns, roleLabel, readinessLabel) {
   opportunityList.innerHTML = "";
   if (patterns.length === 0) {
     const empty = document.createElement("div");
     empty.className = "opportunity-card";
-    empty.innerHTML = "<h3>No matches yet</h3><p>Adjust maturity or team filters to explore other patterns.</p>";
+    empty.innerHTML = "<h3>No matches yet</h3><p>Adjust readiness or team filters to explore other patterns.</p>";
     opportunityList.appendChild(empty);
     return;
   }
@@ -131,7 +131,7 @@ function renderOpportunities(patterns, roleLabel, maturityLabel) {
     const card = document.createElement("div");
     card.className = "opportunity-card";
     card.innerHTML = `
-      <div class="opportunity-tag">${roleLabel} · ${maturityLabel}</div>
+      <div class="opportunity-tag">${roleLabel} · ${readinessLabel}</div>
       <h3>${pattern.title}</h3>
       <p>${pattern.summary}</p>
       <p><strong>Guidance:</strong> ${pattern.guidance}</p>
@@ -275,9 +275,9 @@ function renderSpreadChart(svg, data) {
 }
 
 function updateSummaries(data) {
-  const latestFluency = data.fluencyTrend[data.fluencyTrend.length - 1];
-  fluencyScore.textContent = latestFluency
-    ? `${latestFluency.score.toFixed(0)} / 100`
+  const latestEvidence = data.evidenceReadinessTrend[data.evidenceReadinessTrend.length - 1];
+  evidenceReadiness.textContent = latestEvidence
+    ? `${latestEvidence.value.toFixed(0)} / 100`
     : "--";
 
   const averageCoverage =
@@ -308,12 +308,12 @@ function updateSummaries(data) {
 }
 
 function exportCsvData(data) {
-  const latestScore = data.fluencyTrend.length
-    ? data.fluencyTrend[data.fluencyTrend.length - 1].score
+  const latestValue = data.evidenceReadinessTrend.length
+    ? data.evidenceReadinessTrend[data.evidenceReadinessTrend.length - 1].value
     : "";
   const rows = [
     ["Section", "Metric", "Value"],
-    ["Fluency", "Latest score", latestScore],
+    ["Evidence", "Latest value", latestValue],
   ];
 
   data.coverage.forEach((item) => {
@@ -349,13 +349,13 @@ function exportCsvData(data) {
 function refreshOpportunities(data) {
   const selectedTeam = teamSelect.value;
   const roleLabel = selectedTeam === "all" ? "All teams" : selectedTeam;
-  const maturity = maturitySelect.value;
+  const readiness = readinessSelect.value;
   const patterns = matchOpportunities({
     role: selectedTeam,
-    maturity,
+    readiness,
     gaps: data.opportunityGaps || [],
   });
-  renderOpportunities(patterns, roleLabel, maturity);
+  renderOpportunities(patterns, roleLabel, readiness);
 }
 
 function setActiveTab(tab) {
@@ -380,8 +380,8 @@ async function refreshDashboard() {
   updateTeamOptions(data.teams || []);
 
   renderLineChart(
-    fluencyChart,
-    data.fluencyTrend.map((point) => ({ value: point.score })),
+    evidenceReadinessChart,
+    data.evidenceReadinessTrend.map((point) => ({ value: point.value })),
     { color: palette[0] }
   );
   renderBarChart(
@@ -399,7 +399,7 @@ async function refreshDashboard() {
 
 rangeSelect.addEventListener("change", refreshDashboard);
 teamSelect.addEventListener("change", refreshDashboard);
-maturitySelect.addEventListener("change", refreshDashboard);
+readinessSelect.addEventListener("change", refreshDashboard);
 exportPdf.addEventListener("click", () => window.print());
 
 tabDashboard.addEventListener("click", () => setActiveTab("dashboard"));

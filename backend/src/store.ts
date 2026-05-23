@@ -188,6 +188,7 @@ export type FluencyMetaRecord = {
   confidence: number;
 };
 
+/** Deprecated legacy score dimension record. Retained only for quarantined compatibility storage. */
 export type FluencyDimensionRecord = {
   orgId: string;
   bucketStart: string;
@@ -195,6 +196,7 @@ export type FluencyDimensionRecord = {
   score: number;
 };
 
+/** Deprecated legacy score snapshot record. Retained only for quarantined compatibility storage. */
 export type FluencySnapshotRecord = {
   orgId: string;
   bucketStart: string;

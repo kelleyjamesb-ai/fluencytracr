@@ -7,12 +7,10 @@ import { groupEventsByExecution, reconstructTrace, sortEventsByTimestamp } from 
  * Distributions are internal; numeric baselines are never exposed on APIs.
  */
 
-export const WORKFLOW_BASELINE_MIN_EXECUTIONS = Number(process.env.WORKFLOW_BASELINE_MIN_EXECUTIONS ?? 3);
+export const WORKFLOW_BASELINE_MIN_EXECUTIONS = 3;
 
 /** Rolling cap per workflow when deriving internal percentiles (blueprint §9–10). */
-export const WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS = Number(
-  process.env.WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS ?? 200
-);
+export const WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS = 200;
 
 /** Matches latency span in computeExecutionSignals (no cross-module import to avoid cycles). */
 const latencyMsForOrdered = (ordered: FluencyEventRecord[]): number | null => {

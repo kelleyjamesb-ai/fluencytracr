@@ -54,9 +54,14 @@ model Team {
   organization   Organization  @relation(fields: [organizationId], references: [id])
   organizationId String
   createdAt      DateTime      @default(now())
-  fluencyScores  FluencyScore[]
+  /// Deprecated legacy scoring relation. Ignored because FluencyTracr's
+  /// current value-realization evidence layer does not expose team scores.
+  fluencyScores  FluencyScore[] @ignore
 }
 
+/// Deprecated legacy scoring model. Quarantined from Prisma Client generation
+/// because FluencyTracr now emits aggregate fail-closed evidence verdicts, not
+/// team, maturity, productivity, or general fluency scores.
 model FluencyScore {
   id             String   @id @default(uuid())
   organizationId String
@@ -72,6 +77,7 @@ model FluencyScore {
   createdAt      DateTime @default(now())
 
   @@index([organizationId, day])
+  @@ignore
 }
 
 model AuditEvent {
