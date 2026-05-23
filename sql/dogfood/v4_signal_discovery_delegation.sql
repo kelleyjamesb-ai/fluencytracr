@@ -16,17 +16,8 @@ WITH source_events AS (
     timestamp AS event_ts,
     jsonPayload.type AS event_type,
     NULLIF(TRIM(jsonPayload.workflowrun.feature), '') AS workflow_feature,
-    NULLIF(TRIM(COALESCE(
-      jsonPayload.workflowrun.rootworkflowid,
-      jsonPayload.workflowrun.rootWorkflowId,
-      jsonPayload.workflowrun.workflowid,
-      jsonPayload.workflowrun.workflowId
-    )), '') AS root_workflow_id,
-    NULLIF(TRIM(COALESCE(
-      jsonPayload.workflowrun.runid,
-      jsonPayload.workflowrun.runId,
-      jsonPayload.workflowrun.id
-    )), '') AS workflow_run_id,
+    NULLIF(TRIM(jsonPayload.workflowrun.rootworkflowid), '') AS root_workflow_id,
+    NULLIF(TRIM(jsonPayload.workflowrun.runid), '') AS workflow_run_id,
     COALESCE(
       NULLIF(TRIM(jsonPayload.workflowrun.sessiontrackingtoken), ''),
       NULLIF(TRIM(jsonPayload.chat.sessiontrackingtoken), ''),
@@ -37,8 +28,6 @@ WITH source_events AS (
     ) AS session_token,
     COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
-      NULLIF(TRIM(jsonPayload.user.id), ''),
-      NULLIF(TRIM(jsonPayload.user.canonicalid), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
     ) AS user_key
@@ -54,12 +43,7 @@ product_snapshot_events AS (
     jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
     NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
     COALESCE(jsonPayload.productsnapshot.workflow.unlisted, FALSE) AS snapshot_unlisted,
-    COALESCE(
-      jsonPayload.productsnapshot.workflow.published,
-      jsonPayload.productsnapshot.workflow.ispublished,
-      jsonPayload.productsnapshot.workflow.reusable,
-      FALSE
-    ) AS snapshot_reusable
+    COALESCE(jsonPayload.productsnapshot.workflow.isdraftonly, TRUE) AS snapshot_isdraftonly
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp < window_end
     AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
@@ -73,7 +57,7 @@ product_snapshots AS (
         snapshot_is_autonomous AS is_autonomous,
         snapshot_workflow_name AS workflow_name,
         snapshot_unlisted AS unlisted,
-        snapshot_reusable AS reusable
+        snapshot_isdraftonly AS isdraftonly
       )
       ORDER BY snapshot_ts DESC
       LIMIT 1
@@ -112,7 +96,7 @@ taxonomy_events AS (
       WHEN event.event_type = 'GLEAN_BOT_ACTIVITY' THEN 'standalone:GLEAN_BOT_ACTIVITY'
     END AS surface_id,
     snapshot.snapshot.workflow_name AS workflow_name,
-    COALESCE(snapshot.snapshot.reusable, FALSE) AS reusable
+    COALESCE(snapshot.snapshot.isdraftonly, TRUE) AS isdraftonly
   FROM source_events AS event
   LEFT JOIN product_snapshots AS snapshot
     ON snapshot.snapshot_workflow_id = event.root_workflow_id
@@ -194,7 +178,8 @@ bucketed_events AS (
     'reusable_leverage' AS delegation_bucket
   FROM taxonomy_events
   WHERE surface_id = 'workflow:agent:workflow_named'
-    AND (workflow_name IS NOT NULL OR reusable IS TRUE)
+    AND workflow_name IS NOT NULL
+    AND isdraftonly IS FALSE
 ),
 
 per_user_bucket AS (
