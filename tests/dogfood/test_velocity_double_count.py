@@ -4,6 +4,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SQL = ROOT / "sql" / "dogfood" / "velocity_diagnostic.sql"
 AGENT_SQL = ROOT / "sql" / "dogfood" / "agent_type_diagnostic.sql"
+DELEGATION_SQL = ROOT / "sql" / "dogfood" / "delegation_depth_diagnostic.sql"
+REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "refinement_depth_diagnostic.sql"
+REUSE_SQL = ROOT / "sql" / "dogfood" / "reuse_propagation_diagnostic.sql"
 V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.sql"
 V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
 V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
@@ -12,6 +15,9 @@ AGENT_JOIN_KEY_SQL = ROOT / "sql" / "dogfood" / "agent_snapshot_join_key_diagnos
 DOGFOOD_SQL = [
     SQL,
     AGENT_SQL,
+    DELEGATION_SQL,
+    REFINEMENT_SQL,
+    REUSE_SQL,
     V4_DELEGATION_SQL,
     V4_REFINEMENT_SQL,
     V4_REUSE_SQL,
@@ -133,12 +139,64 @@ def test_dogfood_sql_uses_valid_scio_prod_struct_paths() -> None:
         "jsonPayload.workflowrun.id",
         "jsonPayload.user.id",
         "jsonPayload.user.canonicalid",
+        "JSON_VALUE(jsonPayload",
     ]
 
     for path in DOGFOOD_SQL:
         sql = path.read_text()
         for invalid_path in invalid_paths:
             assert invalid_path not in sql, f"{path} uses invalid scio-prod path {invalid_path}"
+
+
+def test_reuse_propagation_diagnostic_reports_candidate_and_coverage_metrics() -> None:
+    sql = REUSE_SQL.read_text()
+
+    for population in [
+        "named_workflow_candidate",
+        "confirmed_reusable_candidate",
+        "autonomous_agent",
+        "ephemeral_or_unlisted_agent",
+        "unclassified_agent_workflow",
+        "unmatched_agent_workflow",
+    ]:
+        assert population in sql
+
+    for output_field in [
+        "population",
+        "adopter_bucket",
+        "workflow_count",
+        "run_count",
+        "summed_workflow_adopters",
+        "workflow_share",
+        "run_share",
+        "adopter_count_p50",
+        "adopter_count_p90",
+        "adopter_count_p99",
+        "bucket_adopter_count_p50",
+        "bucket_adopter_count_p90",
+        "bucket_adopter_count_p99",
+        "snapshot_match_rate",
+        "named_candidate_count",
+        "confirmed_reusable_candidate_count",
+        "unmatched_agent_workflow_count",
+    ]:
+        assert output_field in sql
+
+    assert "named_workflow_candidate AS (" in sql
+    assert "confirmed_reusable_candidate AS (" in sql
+    assert "snapshot_join_coverage AS (" in sql
+    assert (
+        "COUNT(DISTINCT IF(is_named_workflow_candidate, workflow_key, NULL)) "
+        "AS named_candidate_count"
+    ) in sql
+    assert (
+        "COUNT(DISTINCT IF(is_confirmed_reusable_candidate, workflow_key, NULL)) "
+        "AS confirmed_reusable_candidate_count"
+    ) in sql
+    assert (
+        "COUNT(DISTINCT IF(NOT has_snapshot_match, workflow_key, NULL)) "
+        "AS unmatched_agent_workflow_count"
+    ) in sql
 
 
 def test_agent_snapshot_join_key_diagnostic_compares_aggregate_candidates() -> None:

@@ -1,53 +1,62 @@
 # Current Slice Contract
 
-- Work item id: `v4-signal-validation-review-fixes`
-- Title: `Tighten V4 signal validation header handling and governance review comments`
+- Work item id: `reuse-propagation-pr275-conflict-reconciliation`
+- Title: `Reconcile PR 275 reusable workflow propagation diagnostic with main`
 - Status: `completed`
 
 ## Summary
 
-Addressed the actionable V4 signal validation review findings by normalizing CSV row keys at ingestion and requiring the exact fixed `window_1`, `window_2`, and `window_3` export set before promotion. Rechecked the runbook predictive-claims comment; the flagged `non-predictive unless separately validated` language is already absent from this branch.
+Resolved PR #275 conflicts by preserving `main`'s V4 signal-validation and
+join-key diagnostic updates while keeping the PR's separate reusable workflow
+propagation diagnostic and workflow-granularity coverage fix.
 
 ## Scope Paths
 
-- `scripts/dogfood/run_v4_signal_validation.py`
-- `tests/dogfood/test_v4_signal_validation.py`
+- `docs/research/V4_SIGNAL_DISCOVERY_READOUT.md`
+- `sql/dogfood/v4_signal_discovery_reuse_propagation.sql`
+- `sql/dogfood/reuse_propagation_diagnostic.sql`
+- `tests/dogfood/test_velocity_double_count.py`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Header schema validation could pass while metric readers silently miss values if row keys remain raw.
-- Display-style headers such as `P50` or `Adopter Count P50` must not downgrade valid aggregate exports to HOLD.
-- Non-contiguous exports such as `window_2`, `window_3`, and `window_4` must not satisfy the fixed-window promotion gate.
-- V4 validation outputs must preserve aggregate-only, fail-closed, non-predictive governance constraints.
+- Replacing `main`'s join-key diagnostic context could regress the unresolved
+  reusable-workflow finding.
+- Dropping the PR diagnostic would lose candidate/confirmed propagation
+  coverage.
+- The merged SQL contract test must cover both diagnostics without adding
+  customer-facing V4 claims.
 
 ## Planned Checks
 
-- Confirm the runbook no longer contains the predictive exception.
-- Add regression coverage for case/format header variants.
-- Add regression coverage for missing `window_1` plus extra `window_4`.
-- Run the focused V4 signal validation dogfood tests.
+- Preserve `main`'s V4 signal-discovery probe and join-key readout.
+- Preserve PR #275's reusable workflow propagation diagnostic and distinct
+  workflow coverage counts.
+- Run the focused dogfood SQL contract test.
+- Run the focused V4 signal validation test touched by `main`.
 - Compile the V4 validation harness.
 - Run `git diff --check`.
 
 ## Evaluator Command Profile
 
-- `.venv/bin/python -m pytest tests/dogfood/test_v4_signal_validation.py`
+- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py tests/dogfood/test_v4_signal_validation.py`
 - `.venv/bin/python -m compileall scripts/dogfood/run_v4_signal_validation.py`
 - `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- Variant CSV headers feed p50, coverage, and non-empty calculations.
-- Promotion requires the exact fixed window export set, not only three matching files.
-- Existing governance/fail-closed tests still pass.
-- No predictive exception language remains in the V4 signal validation runbook.
+- PR #275 is no longer merge-conflicted against `main`.
+- Dogfood SQL contract tests include the reusable propagation diagnostic and
+  agent snapshot join-key diagnostic.
+- V4 validation behavior from `main` remains intact.
+- No V4 signal is promoted or productized.
 
 ## Specialists To Consult
 
-- Not used for this narrow review fix.
+- Not used for this focused merge reconciliation.
 
 ## Next Handoff Note
 
-Completed: row keys now normalize during CSV ingestion, display-style header variants are covered by regression tests, non-contiguous fixed windows hold instead of promote, and focused verification passed.
+Completed locally: conflicts resolved and focused verification passed. Commit,
+push, and re-check PR #275 mergeability.
