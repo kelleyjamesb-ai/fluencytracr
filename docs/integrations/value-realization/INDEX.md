@@ -25,6 +25,8 @@ Each contract preserves the same posture:
 | Outcome Evidence | [outcome-evidence.md](./outcome-evidence.md) | Stores and replays customer-attested aggregate systems-of-record metrics next to unchanged workflow verdicts. |
 | Velocity Index | [../../contracts/velocity-index.md](../../contracts/velocity-index.md) | Adds V2 aggregate velocity context through frequency, engagement, and breadth distributions, surfaced only after fail-closed gates clear. |
 | V3 Production Ingest | [V3_INGEST.md](./V3_INGEST.md) | Replaces manual CSV dogfood with customer-side aggregate transformation, governed calibration references, and immutable verdict replay. |
+| V4 Value Confidence | [V4_VALUE_CONFIDENCE.md](./V4_VALUE_CONFIDENCE.md) and [../../contracts/value-confidence/README.md](../../contracts/value-confidence/README.md) | Composes V3 verdicts, Velocity, Depth, quality, reliability, trust calibration, and outcome evidence into executive economic decision artifacts. |
+| Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate work-integration primitive alongside Velocity. |
 
 ## How To Read The Set
 
@@ -39,6 +41,20 @@ Together, they let AIOMs, value-realization PMs, and CIOs separate raw usage or
 time saved from defensible value realization. Velocity Index adds a governed V2
 behavioral-distribution layer for teams that need adoption depth context without
 person-level reporting.
+
+V4 does not replace existing V3 ingest or value-realization primitives. It
+composes them into executive economic decision artifacts: Time-Saved
+Defensibility Range, AI Value Leakage Map, AI Scale Readiness Portfolio, and
+Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
+
+## Conceptual Stack
+
+1. V3 aggregate verdicts establish whether evidence may surface.
+2. Velocity measures adoption energy.
+3. Depth measures work integration.
+4. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
+5. Outcome Evidence may add customer-attested aggregate context without proving causality.
+6. V4 Value Confidence composes those inputs into bounded executive readouts.
 
 ## Running Multi-Surface Dogfood
 

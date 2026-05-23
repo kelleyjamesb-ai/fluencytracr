@@ -78,6 +78,20 @@ Velocity may eventually inform the Quality Multiplier by distinguishing broad, p
 
 These connections are possible V2 uses. They do not alter V1 behavior.
 
+## 8a. Relationship to Depth
+
+Velocity measures adoption energy. Depth measures work integration.
+
+High Velocity without Depth may indicate fragile scale: the cohort is active,
+but the evidence may not show durable workflow integration, reuse,
+verification, recovery, or judgment behavior.
+
+High Depth with low Velocity may indicate focused expertise, limited rollout,
+or a narrow workflow that is integrated but not yet broadly adopted.
+
+Economic confidence requires both. V4 should use Velocity and Depth together to
+distinguish activity from durable operating leverage.
+
 ## 9. Empirical Foundation
 
 This concept is motivated by a velocity diagnostic run on scio-prod over a 60-day window. The data reflects internal Glean usage and should be treated as a calibration-cohort reference, not a customer baseline.
