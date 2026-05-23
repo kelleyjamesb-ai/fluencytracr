@@ -91,6 +91,7 @@ is not the lead positioning for this repository.
 ## Canonical Docs
 - **Every session (mandatory for agents):** [docs/agent/SESSION_START.md](docs/agent/SESSION_START.md)
 - AI / agent navigation (harness, evaluation, task contracts): [docs/agent/README.md](docs/agent/README.md)
+- Agentic execution harness concept: [docs/concepts/AGENTIC_EXECUTION_HARNESS.md](docs/concepts/AGENTIC_EXECUTION_HARNESS.md)
 - Cursor agent harness rules: [docs/agent/cursor-agent-harness.md](docs/agent/cursor-agent-harness.md)
 - Optional OpenAI Agents SDK development harness: [docs/agent/openai-agents-harness.md](docs/agent/openai-agents-harness.md)
 - Partner ingestion facade: [docs/api/ingest.md](docs/api/ingest.md)
@@ -102,6 +103,7 @@ is not the lead positioning for this repository.
 - EvidenceBundle v1 contract: [docs/contracts/evidence-bundle/v1/README.md](docs/contracts/evidence-bundle/v1/README.md)
 - Reportability contract: [docs/contracts/reportability/README.md](docs/contracts/reportability/README.md)
 - Agent-run development harness contract: [docs/contracts/agent-run/README.md](docs/contracts/agent-run/README.md)
+- Agent-run ledger contract framing: [docs/contracts/agent-run/ledger.md](docs/contracts/agent-run/ledger.md)
 - Unified cross-surface telemetry (UT_2026_04): [docs/contracts/unified-telemetry/README.md](docs/contracts/unified-telemetry/README.md)
 - Glean integration pack: [docs/integrations/glean/01-overview.md](docs/integrations/glean/01-overview.md)
 - Glean readiness demo guide: [docs/integrations/glean/06-readiness-demo-guide.md](docs/integrations/glean/06-readiness-demo-guide.md)

@@ -36,3 +36,7 @@ V4 may qualify the defensibility of AI value claims, but it must not create:
 - Maturity scoring.
 - Team or individual rankings.
 - Suppressed economics, including hidden dollar values, hours saved, upside estimates, or portfolio totals.
+
+## Agentic Harness Guardrails
+
+Development-harness telemetry may support repo execution, investigation, and verification, but it must not become customer product evidence. Agent-run logs and future ledgers must not store raw prompts, raw responses, file content, diffs, secrets, emails, direct identifiers, person-level metrics, customer raw GCE rows, customer value evidence payloads, or customer-facing economic claims.

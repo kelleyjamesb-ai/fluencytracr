@@ -114,6 +114,7 @@ Note: each prompt is one PR. Do not combine.
 ## 10. Working Rules for Agents
 
 - Read README.md, docs/contracts/, schemas/, and openspec/ before changing code.
+- For agentic development or harness work, use docs/concepts/AGENTIC_EXECUTION_HARNESS.md as the canonical architecture spine. Provider-specific Cursor, OpenAI Agents SDK, Codex, and Claude docs are adapters back to that spine, not separate sources of truth.
 - Never modify the canonical event set or suppression reason set without an explicit human instruction citing this section.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
@@ -121,6 +122,20 @@ Note: each prompt is one PR. Do not combine.
 - Verdict shape changes require updates to schemas/, openspec/, and docs/contracts/ in the same PR.
 - Commits must reference which invariant or roadmap prompt they implement.
 - When implementing a roadmap prompt that derives from external work, reference the relevant entry in ATTRIBUTION.md in the PR description. Add new entries when new sources are introduced.
+
+### Agentic Harness Boundary
+
+Agent-run telemetry is development infrastructure only. It must not be treated as FluencyTracr customer evidence, customer telemetry, or a new value-realization signal. Any future agentic backend must preserve the nine invariants, store only metadata and references, and avoid raw prompts, raw responses, file content, diffs, secrets, emails, direct identifiers, person-level metrics, team comparisons, ROI computation, or causal claims.
+
+Canonical harness sources are:
+
+- docs/agent/SESSION_START.md for session startup.
+- .project/WORK_QUEUE.json and .project/PROGRESS.md for active queue state.
+- harness/feature_list.json and harness/agent-progress.txt for checklist and handoff state.
+- docs/contracts/agent-run/README.md for provider-neutral agent-run events.
+- docs/contracts/agent-run/ledger.md for future ledger semantics.
+
+Do not commit local provider worktrees or duplicate repository copies. Use pointer docs or symlink aliases when a provider needs its own entrypoint.
 
 ## 11. When in Doubt
 
