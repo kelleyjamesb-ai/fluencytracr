@@ -138,6 +138,9 @@ taxonomy_events AS (
 -- Ambiguous surfaces are intentionally left unmapped and excluded from ratio
 -- numerators. This avoids inventing semantics for autocomplete, bot activity,
 -- or workflow features whose delegation meaning depends on local context.
+-- Buckets are not mutually exclusive: named workflow agents intentionally
+-- remain in structured_delegation while also contributing to reusable_leverage
+-- when reusable fields support that narrower interpretation.
 bucketed_events AS (
   SELECT
     user_key,
