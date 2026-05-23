@@ -109,7 +109,7 @@ The split should not replace FREQUENCY, ENGAGEMENT, or BREADTH. It should refine
 
 This section is forward-looking and grounded in calibration data only.
 
-At Glean, all three sub-surfaces have meaningful volume. At customers, the mix between autonomous and ephemeral is hypothesized to be one of the strongest aggregate signals of organizational AI fluency maturity:
+At Glean, all three sub-surfaces have meaningful volume. At customers, the mix between autonomous and ephemeral is hypothesized to be one of the strongest aggregate signals of workflow Depth:
 
 - High autonomous share at a customer = delegation culture
 - High ephemeral share at a customer = exploratory or stalled adoption
