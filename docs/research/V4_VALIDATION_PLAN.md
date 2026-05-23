@@ -12,6 +12,23 @@ Current V4 documentation defines value confidence, not prediction. The repo does
 
 Until validation exists, V4 must not make customer-facing prediction claims.
 
+## V4 Signal Validation Gate
+
+The V4 signal validation gate precedes productization. It must be completed
+before a candidate signal can become a productized V4 API, schema, contract, or
+customer-facing readout.
+
+Canonical validation gate documents:
+
+- [V4 Signal Validation Gate](./V4_SIGNAL_VALIDATION_GATE.md)
+- [V4 Signal Validation Runbook](./V4_SIGNAL_VALIDATION_RUNBOOK.md)
+- [V4 Signal Validation Readout Template](./V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
+
+Forecasting remains out of scope. Product APIs remain out of scope until signal
+promotion decisions are made through the validation gate. A `PROMOTE` decision
+means a signal is eligible for later productization review, not automatically
+productized.
+
 ## Candidate Predictive Tests
 
 ### Skill Catalyst vs Selection Test

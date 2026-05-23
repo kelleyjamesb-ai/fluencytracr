@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- V4 validation gate doc linking follow-up: linked the validation gate from V4 validation plan, added value-realization validation status language, and tightened README/AGENTS routing so research probes and candidate docs are not treated as API-build permission; no product APIs, migrations, frontend surfaces, canonical events, suppression reasons, scoring, ROI, causality, or prediction claims.
 - V4 validation runbook/readout follow-up: tightened the docs-only runbook and template with weekend-validation prerequisites, BigQuery export names, follow-up local validator command, required readout columns, allowed destinations, and HOLD defaults for insufficient windows; no scripts, SQL, tests, schemas, APIs, migrations, frontend surfaces, canonical events, or suppression reasons.
 - V4 signal validation gate: added documentation-only dogfood validation gate, runbook, and readout template for V4 candidate signal promotion, with links from README and value-realization index; no scripts, SQL, tests, schemas, APIs, migrations, frontend surfaces, canonical events, or suppression reasons.
 - Delegation Depth concept: added documentation-only V4 Depth subdimension framing for aggregate retrieval, transformation, and delegation surface mix, including scio-prod 60-day caveats and links from Depth, V4 Value Confidence, value-realization index, README, and AGENTS; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.

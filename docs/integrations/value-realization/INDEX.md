@@ -73,6 +73,17 @@ work.
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
 
+## V4 Signal Validation Status
+
+V4 signal validation is dogfood-only. It is a governance step before any
+candidate signal can feed a productized V4 API, schema, contract, or
+customer-facing readout.
+
+Promoted signals may later feed V4 Value Confidence after a separate
+productization PR and governance review. Held signals remain research-only.
+Rejected signals must not be used in product readouts unless governance reopens
+them.
+
 ## Running Multi-Surface Dogfood
 
 1. Export BigQuery surface aggregates to CSV with the columns shown in [`examples/dogfood/example_multi_surface_input.csv`](../../../examples/dogfood/example_multi_surface_input.csv).
