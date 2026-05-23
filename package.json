@@ -3,6 +3,7 @@
   "workspaces": ["backend", "frontend", "shared", "packages/fluencytracr-mcp", "packages/glean-publisher", "integrations/openai-agents"],
   "scripts": {
     "agent:dev": "npm run build --workspace @learnaire/openai-agents-harness && npm run start --workspace @learnaire/openai-agents-harness --",
+    "test:agentic-harness": "node --test scripts/agentic_harness_guard.test.mjs scripts/agentic_harness_ledger.test.mjs scripts/agentic_harness_replay.test.mjs",
     "glean:readiness": "npm run build --workspace shared && node scripts/generate_glean_readiness_map.mjs",
     "glean:readiness:sources": "npm run build --workspace shared && node scripts/generate_glean_readiness_from_sources.mjs",
     "validate:agents": "npm run build --workspace @learnaire/openai-agents-harness",

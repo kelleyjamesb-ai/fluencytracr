@@ -1,4 +1,4 @@
-import { AgentRunEventSchema } from "@learnaire/shared";
+import { AgentRunEventSchema, AgentRunLedgerEntrySchema } from "@learnaire/shared";
 
 const baseEvent = {
   schema_version: "AR_2026_05",
@@ -67,5 +67,57 @@ describe("AgentRunEventSchema", () => {
 
       expect(parsed.success).toBe(false);
     }
+  });
+});
+
+describe("AgentRunLedgerEntrySchema", () => {
+  const baseLedgerEntry = {
+    schema_version: "AR_LEDGER_2026_05",
+    repo_id: "fluencytracr",
+    run_id: "run-2026-05-23-001",
+    provider: "CODEX",
+    harness_surface: "CODEX_CLI",
+    branch_name: "codex/build-agentic-harness-runtime",
+    scope_ref: "docs/concepts/AGENTIC_EXECUTION_HARNESS.md",
+    status: "COMPLETED",
+    event_batch_ref: "artifacts/harness/checkpoints/run-2026-05-23-001.events.json",
+    verification_refs: [
+      "node scripts/agentic_harness_guard.mjs",
+      "npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts"
+    ],
+    handoff_ref: "harness/agent-progress.txt",
+    pr_ref: "pending",
+    required_caveats: [
+      "Development-harness telemetry only.",
+      "No raw prompt, raw response, file content, diff, secret, or direct identifier is stored."
+    ]
+  };
+
+  it("accepts a metadata-only ledger entry", () => {
+    const parsed = AgentRunLedgerEntrySchema.parse(baseLedgerEntry);
+
+    expect(parsed.status).toBe("COMPLETED");
+    expect(parsed.verification_refs).toContain("node scripts/agentic_harness_guard.mjs");
+  });
+
+  it("rejects raw content and direct identifiers anywhere in the ledger entry", () => {
+    const forbidden = AgentRunLedgerEntrySchema.safeParse({
+      ...baseLedgerEntry,
+      raw_prompt: "summarize this repo",
+      reviewer: {
+        user_email: "person@example.com"
+      }
+    });
+
+    expect(forbidden.success).toBe(false);
+  });
+
+  it("does not allow unknown fields that could become parallel state", () => {
+    const parsed = AgentRunLedgerEntrySchema.safeParse({
+      ...baseLedgerEntry,
+      work_queue_snapshot: [{ id: "phase-01", status: "done" }]
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });
