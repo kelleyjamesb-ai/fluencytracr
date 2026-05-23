@@ -7,6 +7,18 @@ import { app } from "../src/app";
 import { loadCalibrationBaselines } from "../src/value_realization/calibration_registry";
 import { store } from "../src/store";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const BASE_NOW = Date.now();
+
+const rollingWindow = (windowDays: number, endOffsetMs = 0): { window_start: string; window_end: string } => {
+  const end = new Date(BASE_NOW + endOffsetMs);
+  const start = new Date(end.getTime() - windowDays * MS_PER_DAY);
+  return {
+    window_start: start.toISOString(),
+    window_end: end.toISOString()
+  };
+};
+
 const headers = {
   "x-role": "ADMIN",
   "x-org-id": "org-v3",
@@ -24,8 +36,7 @@ const validPayload = (overrides: Record<string, unknown> = {}) => ({
   schema_version: "FT_V3_2026_05",
   cohort_id: "cohort-enterprise-aiom",
   workflow_id: "workflow:CHAT",
-  window_start: "2026-02-21T00:00:00.000Z",
-  window_end: "2026-05-22T00:00:00.000Z",
+  ...rollingWindow(90),
   cohort_size: 50,
   calibration_id: "scio-prod-60d-2026-05",
   velocity: {

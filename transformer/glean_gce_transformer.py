@@ -51,8 +51,8 @@ WITH source_events AS (
     ) AS tracking_token,
     COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
+      NULLIF(TRIM(jsonPayload.user.id), ''),
+      NULLIF(TRIM(jsonPayload.user.canonicalid), '')
     ) AS user_key,
     COALESCE(
       jsonPayload.workflow.workflowexecutionstatus,
@@ -97,10 +97,11 @@ WITH source_events AS (
   FROM `{project}.{dataset}.{table}`
   WHERE timestamp >= TIMESTAMP('{window_start}')
     AND timestamp < TIMESTAMP('{window_end}')
+    AND COALESCE(UPPER(jsonPayload.type), '') != 'PRODUCT_SNAPSHOT'
     AND COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
+      NULLIF(TRIM(jsonPayload.user.id), ''),
+      NULLIF(TRIM(jsonPayload.user.canonicalid), '')
     ) IS NOT NULL
 ),
 

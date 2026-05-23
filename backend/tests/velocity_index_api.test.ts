@@ -20,6 +20,15 @@ const headers = {
 const isoDaysAgo = (days: number, offsetMs = 0): string =>
   new Date(BASE_NOW - days * MS_PER_DAY + offsetMs).toISOString();
 
+const velocityWindow = (windowDays: number, endOffsetMs = 0): { window_start: string; window_end: string } => {
+  const end = new Date(BASE_NOW + endOffsetMs);
+  const start = new Date(end.getTime() - windowDays * MS_PER_DAY);
+  return {
+    window_start: start.toISOString(),
+    window_end: end.toISOString()
+  };
+};
+
 let eventCounter = 0;
 const nextEventId = (): string => {
   eventCounter += 1;
@@ -77,8 +86,7 @@ const validVelocityEvent = (eventName = "USER_FREQUENCY_OBSERVED", cohortSize = 
   schema_version: "FT_V2_2026_05",
   event_name: eventName,
   workflow_id: "wf-velocity",
-  window_start: "2026-03-23T00:00:00.000Z",
-  window_end: "2026-05-22T00:00:00.000Z",
+  ...velocityWindow(60),
   cohort_size: cohortSize,
   distribution: { p10: 0, p50: baseline.frequency_p50, p90: baseline.frequency_p99, p99: baseline.frequency_p99 },
   calibration_reference: baseline.calibration_id,
@@ -273,8 +281,7 @@ describe("GET /api/v2/velocity-index", () => {
     ]) {
       await ingestVelocity({
         ...validVelocityEvent(eventName),
-        window_start: "2026-04-22T00:00:00.000Z",
-        window_end: "2026-05-22T00:00:00.000Z"
+        ...velocityWindow(30)
       });
     }
 
@@ -344,8 +351,7 @@ describe("GET /api/v2/velocity-index", () => {
       await ingestVelocity({
         ...validVelocityEvent(eventName),
         workflow_id: "wf-velocity-qm",
-        window_start: "2026-02-21T00:00:00.000Z",
-        window_end: "2026-05-22T00:00:00.000Z",
+        ...velocityWindow(90),
         distribution: distributionForEvent(eventName, 2)
       });
     }
@@ -510,8 +516,7 @@ describe("GET /api/v2/velocity-index", () => {
         await ingestVelocity({
           ...validVelocityEvent(eventName),
           workflow_id: "wf-velocity-qm-persisted",
-          window_start: "2026-02-21T00:00:00.000Z",
-          window_end: "2026-05-22T00:00:00.000Z",
+          ...velocityWindow(90),
           distribution: distributionForEvent(eventName, 2)
         });
       }
