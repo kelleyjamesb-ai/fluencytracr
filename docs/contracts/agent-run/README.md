@@ -24,6 +24,7 @@ Agent-run events are for development-harness telemetry. They are not FluencyTrac
 
 - Zod schema: `shared/src/agentRunSchemas.ts`
 - JSON Schema: `schemas/agent_run/agent_run_event.schema.json`
+- Ledger JSON Schema: `schemas/agent_run/agent_run_ledger_entry.schema.json`
 - Cursor project rules: `.cursor/rules/`
 
 ## Event Shape
@@ -55,4 +56,6 @@ Optional fields include `branch_name`, `parent_run_id`, `model`, `permission_mod
 
 ## Ledger Boundary
 
-The future ledger is a metadata-and-reference store for these events. It must not store provider traces directly unless they have been reduced to the allowed metadata shape. It does not replace `.project/`, `harness/`, or git history.
+The ledger is a metadata-and-reference store for these events. The current implementation is a local writer under `scripts/agentic_harness_ledger.mjs` backed by `AgentRunLedgerEntrySchema`; durable backend persistence and replay APIs remain future work.
+
+The ledger must not store provider traces directly unless they have been reduced to the allowed metadata shape. It does not replace `.project/`, `harness/`, or git history.

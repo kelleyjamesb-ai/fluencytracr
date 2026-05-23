@@ -64,6 +64,8 @@ Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemen
 
 Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames work integration through verification, workflow repertoire, reusable workflow creation, agent relationship mix, recovery discipline, and judgment behavior. It is documentation-stage only unless a future implementation PR explicitly adds runtime support under the nine invariants.
 
+Delegation Depth is a V4 concept-stage Depth subdimension (see docs/concepts/DELEGATION_DEPTH.md). It must not be implemented as a new canonical event, standalone score, or person-level label without explicit governance approval.
+
 The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, team ranking, or individual labels from that language.
 
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md) and is implemented in the customer-side transformer path. It does not modify any V1 or V2 invariants.
@@ -116,6 +118,9 @@ Note: each prompt is one PR. Do not combine.
 - Read README.md, docs/contracts/, schemas/, and openspec/ before changing code.
 - For agentic development or harness work, use docs/concepts/AGENTIC_EXECUTION_HARNESS.md as the canonical architecture spine. Provider-specific Cursor, OpenAI Agents SDK, Codex, and Claude docs are adapters back to that spine, not separate sources of truth.
 - Never modify the canonical event set or suppression reason set without an explicit human instruction citing this section.
+- Candidate behavioral signals must pass docs/research/SIGNAL_PROMOTION_CRITERIA.md before they are promoted into concept docs, contracts, or implementation work.
+- Future Codex or agent work must not productize V4 signals unless docs/research/V4_SIGNAL_VALIDATION_GATE.md records `PROMOTE` for that signal. Research probes are not product contracts. Candidate signal docs are not permission to build APIs.
+- V4 Depth Readout Engine is dogfood-only. It is not permission to build V4 economic APIs. Reusable Workflow Propagation remains `HOLD` unless future validation promotes it. Time-Saved Defensibility Range remains blocked until Depth readout stability is demonstrated.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
 - Add LMSYS assurance harness fixtures for every new behavior.

@@ -37,6 +37,12 @@ Economic value confidence requires both.
 
 V4 converts AI activity into economic confidence only when governed aggregate evidence supports it. High activity without integration can be fragile. Deep integration without broad adoption may be valuable but limited. V4 must distinguish activity from durable operating leverage.
 
+[Delegation Depth](./DELEGATION_DEPTH.md) refines the Depth side of this thesis
+by asking whether aggregate activity is retrieval-oriented,
+transformation-oriented, or delegation-oriented. Delegation Depth alone does not
+generate economic value. It only modifies confidence in whether AI use is moving
+toward work delegation.
+
 ## Executive Questions V4 Supports
 
 V4 should help executives ask:
@@ -55,11 +61,19 @@ The Time-Saved Defensibility Range qualifies a raw time-saved estimate using Vel
 
 It is a defensibility range, not a single ROI number.
 
+Delegation Depth can add caveats about whether a time-saved claim is supported
+by retrieval, transformation, or delegated work patterns. It cannot create a
+time-saved claim by itself.
+
 ### AI Value Leakage Map
 
 The AI Value Leakage Map identifies aggregate places where AI investment may not be converting into defensible value. Leakage can come from velocity, depth, reuse, verification, recovery, or friction gaps.
 
 Value leakage is not a performance judgment.
+
+Delegation Depth can help identify places where high aggregate activity remains
+mostly retrieval- or transformation-oriented when the value claim depends on
+delegated work. That interpretation remains role- and workflow-relative.
 
 ### AI Scale Readiness Portfolio
 
@@ -67,11 +81,19 @@ The AI Scale Readiness Portfolio uses Velocity x Depth to identify workflow inve
 
 The portfolio is a workflow investment signal, not a team ranking or employee capability label.
 
+Delegation Depth can inform whether a workflow is ready to scale, harvest,
+coach, redesign, govern, or suppress when delegation is relevant to the
+workflow's value claim.
+
 ### Trust Calibration Index
 
 The Trust Calibration Index interprets verification behavior against workflow risk and evidence quality.
 
 It does not reward maximum verification. It asks whether trust behavior appears appropriate for the work.
+
+Delegation Depth can influence Trust Calibration interpretation because
+delegated work raises different review, recovery, tool-boundary, and override
+questions than retrieval or transformation.
 
 ## Economic Outputs
 

@@ -53,9 +53,12 @@ Implemented as adapters:
 - OpenAI Agents SDK sidecar.
 - Claude and Codex entrypoint aliases.
 
-Documentation-stage:
+Partially implemented:
 
 - Durable agent-run ledger semantics.
+
+Documentation-stage:
+
 - Tool-call approval policy across providers.
 - Eval/replay of completed agent runs.
 - Cross-provider observability dashboards for harness reliability.
@@ -131,7 +134,7 @@ Harness references:
 
 ## Agent-Run Ledger
 
-The agent-run ledger is the future durable record of agentic work. It should store normalized `AR_2026_05` event batches and derived run summaries. It must remain development-harness telemetry only.
+The agent-run ledger is the durable metadata record of agentic work. The current implementation provides a metadata-only schema and local writer; backend persistence and replay APIs remain future work. It should store normalized `AR_2026_05` event batch references and derived run summaries. It must remain development-harness telemetry only.
 
 The ledger may support:
 

@@ -21,8 +21,9 @@ Depth exists to make that distinction explicit without turning FluencyTracr into
 Depth is aggregate evidence that AI use is becoming integrated into real workflows. It is derived from governed aggregate distributions and corroborative signals that indicate whether AI-assisted work is:
 
 - verified when the workflow risk calls for it,
-- spread across a meaningful workflow repertoire,
+- spread across a meaningful workflow and capability repertoire,
 - reused through structured patterns where appropriate,
+- delegated through agents, tools, MCP, or named workflows where the work warrants it,
 - recoverable when AI output is incomplete or wrong, and
 - bounded by human judgment when automation confidence is not warranted.
 
@@ -41,6 +42,33 @@ Citation clicks, feedback, votes, review actions, and other verification signals
 Workflow Repertoire Depth asks whether AI use is concentrated in one narrow action or integrated across a coherent set of workflow contexts.
 
 This dimension should be interpreted with surface taxonomy and business context. Broad use is not automatically better than focused use. The question is whether the observed repertoire supports the claim being made.
+
+### Capability Repertoire Depth
+
+Capability Repertoire Depth asks whether aggregate AI use spans the kinds of
+capabilities the workflow claim depends on. It includes:
+
+- Surface Depth,
+- Workflow Repertoire Depth,
+- Capability Diversity Depth,
+- Agentic Depth,
+- Delegation Depth,
+- Reuse Depth.
+
+These subdimensions are not a universal ladder. Retrieval, transformation,
+delegation, and reuse can each be appropriate depending on role, workflow risk,
+and business context.
+
+### Delegation Depth
+
+Delegation Depth asks whether aggregate activity is moving into
+delegation-oriented surfaces such as autonomous agents, named workflow agents,
+MCP/tool-mediated work, and structured task execution, relative to retrieval and
+transformation-oriented surfaces.
+
+Delegation Depth is a V4 Depth subdimension, not a new canonical event, score,
+person-level label, or standalone product feature. See
+[DELEGATION_DEPTH.md](./DELEGATION_DEPTH.md).
 
 ### Skill / Reuse Depth
 
@@ -127,6 +155,7 @@ Depth can increase confidence only after existing fail-closed gates clear. It ca
 - Which existing aggregate signals should map to each Depth dimension first?
 - Should Depth remain a set of independent dimension bands or support a bounded summary band?
 - How should workflow risk be represented before Trust Calibration exists?
+- What cross-window stability is required before Delegation Depth can inform implementation or contracts?
 - How should reusable Skills be distinguished from brittle automation patterns?
 - What evidence is required before Depth can inform reportability decisions?
 

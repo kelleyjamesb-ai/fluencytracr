@@ -1,0 +1,2 @@
+zone,cohort_size,velocity_p50,depth_p50,velocity_relationship,p10,p50,p90,p99
+high_velocity_high_depth,72,0.74,0.61,usage_proxy,0.27,0.54,0.81,0.972

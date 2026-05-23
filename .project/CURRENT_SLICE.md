@@ -1,73 +1,62 @@
 # Current Slice Contract
 
-- Work item id: `vercel-services-and-supabase-rls-hardening`
-- Title: `Unify Vercel frontend/backend Services deployment and harden Supabase public-table RLS`
+- Work item id: `reuse-propagation-pr275-conflict-reconciliation`
+- Title: `Reconcile PR 275 reusable workflow propagation diagnostic with main`
 - Status: `completed`
 
 ## Summary
 
-Implemented the approved Vercel Services consolidation slice, added a backend service adapter for preserved public routes, disconnected the old backend Vercel project from GitHub, and added a Prisma migration to enable RLS/revoke exposed-role access for public application tables.
+Resolved PR #275 conflicts by preserving `main`'s V4 signal-validation and
+join-key diagnostic updates while keeping the PR's separate reusable workflow
+propagation diagnostic and workflow-granularity coverage fix.
 
 ## Scope Paths
 
-- `.gitignore`
-- `.agents/skills/supabase/SKILL.md`
-- `.agents/skills/supabase-postgres-best-practices/SKILL.md`
-- `skills-lock.json`
-- `vercel.json`
-- `frontend/vercel.json`
-- `backend/vercel.json`
-- `backend/package.json`
-- `backend/tsconfig.json`
-- `backend/src/vercel.ts`
-- `backend/prisma/migrations/20260506120000_enable_rls_on_public_app_tables/migration.sql`
-- `openspec/changes/update-vercel-single-project-services/tasks.md`
-- `artifacts/plan_vercel_supabase_unified_deploy_rls.md`
+- `docs/research/V4_SIGNAL_DISCOVERY_READOUT.md`
+- `sql/dogfood/v4_signal_discovery_reuse_propagation.sql`
+- `sql/dogfood/reuse_propagation_diagnostic.sql`
+- `tests/dogfood/test_velocity_double_count.py`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Vercel Services uses one backend route prefix, so `/auth`, `/health`, and `/orgs` rely on internal rewrites into the backend adapter.
-- Vercel's backend builder resolved workspace TypeScript paths through `shared/src`; `backend/tsconfig.json` now resolves `@learnaire/shared` to `shared/dist`, matching the build config and avoiding a runtime bundle error.
-- Supabase's transaction-pooler URL on port `6543` rejected the reset database password; the working production runtime URL uses the shared pooler on port `5432`.
-- Vercel envs are dashboard state, not repo state, so future clones still need `vercel env pull` for local runtime secrets.
+- Replacing `main`'s join-key diagnostic context could regress the unresolved
+  reusable-workflow finding.
+- Dropping the PR diagnostic would lose candidate/confirmed propagation
+  coverage.
+- The merged SQL contract test must cover both diagnostics without adding
+  customer-facing V4 claims.
 
 ## Planned Checks
 
-- Parse `vercel.json`.
-- Run strict OpenSpec validation for `update-vercel-single-project-services`.
-- Build frontend and backend workspaces.
-- Run Vercel build with Services support.
-- Deploy a canonical frontend-project preview and smoke public routes.
+- Preserve `main`'s V4 signal-discovery probe and join-key readout.
+- Preserve PR #275's reusable workflow propagation diagnostic and distinct
+  workflow coverage counts.
+- Run the focused dogfood SQL contract test.
+- Run the focused V4 signal validation test touched by `main`.
+- Compile the V4 validation harness.
+- Run `git diff --check`.
 
 ## Evaluator Command Profile
 
-`targeted` for this deployment/security slice:
-
-- `node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"`
-- `npx openspec validate update-vercel-single-project-services --strict`
-- `npm run build --workspace frontend`
-- `npm run build --workspace backend`
-- `vercel build`
-- `vercel deploy --prebuilt`
-- production smoke against `learn-air-engable-tool-frontend.vercel.app`
+- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py tests/dogfood/test_v4_signal_validation.py`
+- `.venv/bin/python -m compileall scripts/dogfood/run_v4_signal_validation.py`
+- `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- Root Vercel config defines `frontend` and `backend` services and contains no external backend rewrites.
-- Service-local Vercel configs no longer act as independent deployment authorities.
-- Production deployment from `learn-air-engable-tool-frontend` is READY and aliased.
-- `/` returns frontend HTML; `/health`, `/api/ingest`, and `/orgs/...` reach the backend service; `/auth/token` issues a backend response.
-- Authenticated DB-backed routes return `200` with `db: "ok"` after replacing production Supabase credentials and redeploying.
-- Backend project is disconnected from GitHub so future pushes should not create duplicate backend Vercel checks.
-- RLS migration is applied live and verified enabled on the existing public application tables covered by the migration.
+- PR #275 is no longer merge-conflicted against `main`.
+- Dogfood SQL contract tests include the reusable propagation diagnostic and
+  agent snapshot join-key diagnostic.
+- V4 validation behavior from `main` remains intact.
+- No V4 signal is promoted or productized.
 
 ## Specialists To Consult
 
-- Vercel/deployment specialist if production promotion exposes Services-specific routing differences.
-- Supabase/database specialist when applying the RLS migration to live.
+- Not used for this focused merge reconciliation.
 
 ## Next Handoff Note
 
-Completed: unified Vercel Services production is deployed at `https://learn-air-engable-tool-frontend.vercel.app`, the old backend Vercel project has been disconnected from GitHub, production Supabase envs are replaced in Vercel, authenticated `/health` returns `db: "ok"`, and the live RLS migration has been applied and verified.
+Completed locally: conflicts resolved and focused verification passed. Commit,
+push, and re-check PR #275 mergeability.

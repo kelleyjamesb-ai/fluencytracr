@@ -27,6 +27,7 @@ Each contract preserves the same posture:
 | V3 Production Ingest | [V3_INGEST.md](./V3_INGEST.md) | Replaces manual CSV dogfood with customer-side aggregate transformation, governed calibration references, and immutable verdict replay. |
 | V4 Value Confidence | [V4_VALUE_CONFIDENCE.md](./V4_VALUE_CONFIDENCE.md) and [../../contracts/value-confidence/README.md](../../contracts/value-confidence/README.md) | Composes V3 verdicts, Velocity, Depth, quality, reliability, trust calibration, and outcome evidence into executive economic decision artifacts. |
 | Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate work-integration primitive alongside Velocity. |
+| Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
 
 ## How To Read The Set
 
@@ -52,9 +53,48 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
 1. V3 aggregate verdicts establish whether evidence may surface.
 2. Velocity measures adoption energy.
 3. Depth measures work integration.
-4. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
-5. Outcome Evidence may add customer-attested aggregate context without proving causality.
-6. V4 Value Confidence composes those inputs into bounded executive readouts.
+4. Delegation Depth refines Depth as a research-promoted concept for aggregate
+   retrieval, transformation, and delegation surface mix.
+5. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
+6. Outcome Evidence may add customer-attested aggregate context without proving causality.
+7. V4 Value Confidence composes those inputs into bounded executive readouts.
+
+## Research-Only Signal Discovery
+
+The V4 signal discovery probe pack is research-only and does not change
+production V4 behavior. Candidate behavioral signals must pass the methodology
+gate in [Signal Promotion Criteria](../../research/SIGNAL_PROMOTION_CRITERIA.md)
+before they can become concept docs, contracts, schemas, APIs, or implementation
+work.
+
+- [Signal Promotion Criteria](../../research/SIGNAL_PROMOTION_CRITERIA.md)
+- [V4 Signal Discovery Probes](../../research/V4_SIGNAL_DISCOVERY_PROBES.md)
+- [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
+- [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
+- [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
+
+## V4 Signal Validation Status
+
+V4 signal validation is dogfood-only. It is a governance step before any
+candidate signal can feed a productized V4 API, schema, contract, or
+customer-facing readout.
+
+Promoted signals may later feed V4 Value Confidence after a separate
+productization PR and governance review. Held signals remain research-only.
+Rejected signals must not be used in product readouts unless governance reopens
+them.
+
+## V4 Depth Readout Status
+
+The V4 Depth Readout Engine is dogfood-only. It can compose aggregate Velocity,
+Delegation Depth, and refinement diagnostics into local candidate zones for
+research review, but it does not change production V4 behavior.
+
+- [V4 Depth Readout Runbook](../../research/V4_DEPTH_READOUT_RUNBOOK.md)
+
+Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` pending
+metadata observability. V4 economic readouts remain blocked until Depth readout
+stability is demonstrated across windows or cohorts.
 
 ## Running Multi-Surface Dogfood
 

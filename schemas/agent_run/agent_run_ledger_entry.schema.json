@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/agent_run/agent_run_ledger_entry.schema.json",
+  "title": "AgentRunLedgerEntry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo_id",
+    "run_id",
+    "provider",
+    "harness_surface",
+    "scope_ref",
+    "status",
+    "verification_refs",
+    "required_caveats"
+  ],
+  "properties": {
+    "schema_version": { "const": "AR_LEDGER_2026_05" },
+    "repo_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "provider": { "enum": ["CURSOR", "OPENAI_AGENTS", "CODEX", "CLAUDE", "OTHER"] },
+    "harness_surface": {
+      "enum": ["CURSOR_CLI", "CURSOR_EDITOR", "OPENAI_AGENTS_SDK", "CODEX_CLI", "CLAUDE_CODE", "OTHER"]
+    },
+    "branch_name": { "type": "string", "minLength": 1 },
+    "scope_ref": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["PLANNED", "RUNNING", "COMPLETED", "FAILED", "ABORTED"] },
+    "event_batch_ref": { "type": "string", "minLength": 1 },
+    "verification_refs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "handoff_ref": { "type": "string", "minLength": 1 },
+    "pr_ref": { "type": "string", "minLength": 1 },
+    "required_caveats": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
