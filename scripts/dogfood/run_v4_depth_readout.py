@@ -101,6 +101,37 @@ FORBIDDEN_FIELDS = {
     "event_row",
     "event_rows",
 }
+FORBIDDEN_FIELD_TOKENS = {
+    "email",
+    "name",
+    "prompt",
+    "output",
+    "transcript",
+}
+FORBIDDEN_FIELD_SUFFIXES = (
+    "_id",
+    "_ids",
+    "_email",
+    "_emails",
+    "_name",
+    "_names",
+    "_prompt",
+    "_prompts",
+    "_output",
+    "_outputs",
+    "_transcript",
+    "_transcripts",
+)
+AGGREGATE_SAFE_IDENTIFIER_HEADERS = {
+    "workflow_id",
+    "surface_id",
+    "surface_category",
+    "workflow_family",
+    "surface_family",
+    "delegation_bucket",
+    "adopter_bucket",
+    "population",
+}
 
 OUTPUT_COLUMNS = [
     "surface_id",
@@ -150,6 +181,18 @@ class CsvInput:
 
 def normalize_header(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+
+
+def is_forbidden_header(header: str) -> bool:
+    normalized = normalize_header(header)
+    if normalized in AGGREGATE_SAFE_IDENTIFIER_HEADERS:
+        return False
+    tokens = set(normalized.split("_"))
+    return (
+        normalized in FORBIDDEN_FIELDS
+        or normalized.endswith(FORBIDDEN_FIELD_SUFFIXES)
+        or bool(tokens & FORBIDDEN_FIELD_TOKENS)
+    )
 
 
 def parse_float(value: Any) -> float | None:
@@ -209,7 +252,9 @@ def load_inputs(input_dir: Path) -> tuple[list[CsvInput], list[str], list[str], 
             continue
         csv_input = read_csv(path, family)
         normalized_headers = {normalize_header(header) for header in csv_input.headers}
-        forbidden_present = forbidden_present or bool(normalized_headers & FORBIDDEN_FIELDS)
+        forbidden_present = forbidden_present or any(
+            is_forbidden_header(header) for header in csv_input.headers
+        )
         missing_columns.update(
             f"{name}:{column}"
             for column in REQUIRED_COLUMNS[family]
