@@ -105,6 +105,7 @@ data/
 # Agent runtime memory and harness checkpoints (generated)
 agent_memory.json
 **/agent_memory.json
+.claude/worktrees/
 artifacts/runtime/*
 !artifacts/runtime/.gitkeep
 artifacts/harness/checkpoints/*
