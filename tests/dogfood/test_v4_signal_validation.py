@@ -129,6 +129,13 @@ def write_complete_input(input_dir: Path) -> None:
     write_family_windows(input_dir, "velocity_depth", velocity_depth_row)
 
 
+def display_header_row(row: dict[str, object]) -> dict[str, object]:
+    return {
+        key.replace("_", " ").title(): value
+        for key, value in row.items()
+    }
+
+
 def test_three_stable_windows_can_recommend_promote_without_person_fields(tmp_path: Path) -> None:
     assert FIXTURE_ROOT.exists()
     input_dir = tmp_path / "input"
@@ -198,6 +205,27 @@ def test_three_stable_windows_can_recommend_promote_without_person_fields(tmp_pa
     }
     decisions = {row["decision"] for row in rows}
     assert {"PROMOTE", "HOLD", "REJECT"}.issubset(decisions)
+
+
+def test_header_format_variants_still_feed_metric_readers(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    for window in range(1, 4):
+        write_csv(input_dir / f"v4_refinement_window_{window}.csv", [display_header_row(refinement_row())])
+        write_csv(input_dir / f"v4_delegation_window_{window}.csv", [delegation_row()])
+        write_csv(input_dir / f"v4_reuse_propagation_window_{window}.csv", [display_header_row(reuse_row())])
+        write_csv(input_dir / f"v4_velocity_depth_window_{window}.csv", [velocity_depth_row()])
+
+    completed = run_validator(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    assert summary["signals"]["rapid_refinement"]["decision"] == "PROMOTE"
+    assert summary["signals"]["rapid_refinement"]["stability"]["p50_window_values"] == [2.0, 2.0, 2.0]
+    assert summary["signals"]["rapid_refinement"]["coverage_summary"]["observed_event_count"] == 110.0
+    assert summary["signals"]["reusable_workflow_propagation"]["decision"] == "PROMOTE"
+    assert summary["signals"]["reusable_workflow_propagation"]["stability"]["p50_window_values"] == [8.0, 8.0, 8.0]
+    assert summary["signals"]["reusable_workflow_propagation"]["coverage_summary"]["workflow_count"] == 18.0
 
 
 def test_forbidden_person_level_field_fails_closed(tmp_path: Path) -> None:

@@ -182,7 +182,15 @@ def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
         reader = csv.DictReader(handle)
         if reader.fieldnames is None:
             raise InputError(f"{path.name}: CSV input must include a header row")
-        return list(reader.fieldnames), [dict(row) for row in reader]
+        rows = [
+            {
+                normalize_header(key): value
+                for key, value in row.items()
+                if key is not None
+            }
+            for row in reader
+        ]
+        return list(reader.fieldnames), rows
 
 
 def window_number(path: Path, file_stem: str) -> int:
