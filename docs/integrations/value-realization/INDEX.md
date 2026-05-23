@@ -56,6 +56,17 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
 5. Outcome Evidence may add customer-attested aggregate context without proving causality.
 6. V4 Value Confidence composes those inputs into bounded executive readouts.
 
+## Research-Only Signal Discovery
+
+The V4 signal discovery probe pack is research-only and does not change
+production V4 behavior. Candidate behavioral signals must pass the methodology
+gate in [Signal Promotion Criteria](../../research/SIGNAL_PROMOTION_CRITERIA.md)
+before they can become concept docs, contracts, schemas, APIs, or implementation
+work.
+
+- [Signal Promotion Criteria](../../research/SIGNAL_PROMOTION_CRITERIA.md)
+- [V4 Signal Discovery Probes](../../research/V4_SIGNAL_DISCOVERY_PROBES.md)
+
 ## Running Multi-Surface Dogfood
 
 1. Export BigQuery surface aggregates to CSV with the columns shown in [`examples/dogfood/example_multi_surface_input.csv`](../../../examples/dogfood/example_multi_surface_input.csv).
