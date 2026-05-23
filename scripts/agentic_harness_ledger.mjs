@@ -48,6 +48,15 @@ function assertString(value, key) {
   }
 }
 
+function assertStringArray(value, key, { minItems = 0 } = {}) {
+  if (!Array.isArray(value) || value.length < minItems) {
+    throw new Error(`invalid ledger field: ${key}`);
+  }
+  if (!value.every((item) => typeof item === "string" && item.length > 0)) {
+    throw new Error(`invalid ledger field: ${key}`);
+  }
+}
+
 function rejectForbiddenKeys(value, pathParts = []) {
   if (!value || typeof value !== "object") {
     return;
@@ -85,12 +94,8 @@ export function validateLedgerEntry(entry) {
   if (!STATUSES.has(entry.status)) {
     throw new Error("invalid ledger field: status");
   }
-  if (!Array.isArray(entry.verification_refs)) {
-    throw new Error("invalid ledger field: verification_refs");
-  }
-  if (!Array.isArray(entry.required_caveats) || entry.required_caveats.length === 0) {
-    throw new Error("invalid ledger field: required_caveats");
-  }
+  assertStringArray(entry.verification_refs, "verification_refs");
+  assertStringArray(entry.required_caveats, "required_caveats", { minItems: 1 });
 
   return {
     ...entry,

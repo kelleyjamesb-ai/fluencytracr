@@ -59,3 +59,38 @@ test("writeLedgerEntry rejects forbidden raw fields before writing", async () =>
   );
   assert.equal(fs.existsSync(path.join(root, relativePath)), false);
 });
+
+test("writeLedgerEntry rejects non-string ledger array values before writing", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "ft-ledger-"));
+  const relativePath = defaultLedgerPath("run-test-array");
+
+  await assert.rejects(
+    () =>
+      writeLedgerEntry({
+        root,
+        relativePath,
+        entry: {
+          ...validEntry,
+          run_id: "run-test-array",
+          verification_refs: [42]
+        }
+      }),
+    /invalid ledger field: verification_refs/
+  );
+
+  await assert.rejects(
+    () =>
+      writeLedgerEntry({
+        root,
+        relativePath,
+        entry: {
+          ...validEntry,
+          run_id: "run-test-array",
+          required_caveats: [null]
+        }
+      }),
+    /invalid ledger field: required_caveats/
+  );
+
+  assert.equal(fs.existsSync(path.join(root, relativePath)), false);
+});

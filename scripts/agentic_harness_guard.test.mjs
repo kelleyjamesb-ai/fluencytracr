@@ -10,9 +10,20 @@ import {
 } from "./agentic_harness_guard.mjs";
 
 test("findTrackedProviderWorktrees flags committed local provider worktree files", () => {
-  assert.deepEqual(findTrackedProviderWorktrees([".claude/worktrees/demo/README.md", "docs/agent/README.md"]), [
-    ".claude/worktrees/demo/README.md"
-  ]);
+  assert.deepEqual(
+    findTrackedProviderWorktrees([
+      ".claude/worktrees/demo/README.md",
+      ".codex/worktrees/demo/README.md",
+      ".cursor/worktrees/demo/README.md",
+      ".github/workflows/ci.yml",
+      "docs/agent/README.md"
+    ]),
+    [
+      ".claude/worktrees/demo/README.md",
+      ".codex/worktrees/demo/README.md",
+      ".cursor/worktrees/demo/README.md"
+    ]
+  );
 });
 
 test("findDuplicateLiveStatePaths only allows canonical live state paths", () => {

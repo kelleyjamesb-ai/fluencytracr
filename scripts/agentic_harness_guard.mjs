@@ -9,11 +9,22 @@ const DEFAULT_DOC_EXTENSIONS = new Set([".md", ".mdc", ".txt", ".json"]);
 const DEFAULT_DOC_ROOTS = ["docs", "harness", "agents", ".cursor", ".project"];
 const DEFAULT_ROOT_FILES = ["README.md", "AGENTS.md", "CLAUDE.md", "CODEX.md", "SCOPE_GUARDRAILS.md"];
 const CANONICAL_LIVE_STATE = new Set([".project/WORK_QUEUE.json", ".project/PROGRESS.md"]);
+const PROVIDER_WORKTREE_PREFIXES = [
+  ".claude/worktrees/",
+  ".codex/worktrees/",
+  ".cursor/worktrees/",
+  ".windsurf/worktrees/",
+  ".continue/worktrees/",
+  ".gemini/worktrees/",
+  ".roo/worktrees/",
+  ".qoder/worktrees/",
+  ".trae/worktrees/"
+];
 
 const toPosix = (value) => value.split(path.sep).join("/");
 
 export function findTrackedProviderWorktrees(trackedFiles) {
-  return trackedFiles.filter((file) => file.startsWith(".claude/worktrees/"));
+  return trackedFiles.filter((file) => PROVIDER_WORKTREE_PREFIXES.some((prefix) => file.startsWith(prefix)));
 }
 
 export function findDuplicateLiveStatePaths(trackedFiles) {
