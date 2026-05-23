@@ -20,8 +20,8 @@ WITH source AS (
   SELECT
     COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
+      NULLIF(TRIM(jsonPayload.user.id), ''),
+      NULLIF(TRIM(jsonPayload.user.canonicalid), '')
     ) AS user_key,
     COALESCE(
       NULLIF(TRIM(jsonPayload.workflowrun.feature), ''),
@@ -68,10 +68,11 @@ WITH source AS (
   FROM `{project}.{dataset}.{table}`
   WHERE timestamp >= TIMESTAMP('{window_start}')
     AND timestamp < TIMESTAMP('{window_end}')
+    AND UPPER(COALESCE(NULLIF(TRIM(jsonPayload.type), ''), '')) != 'PRODUCT_SNAPSHOT'
     AND COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
-      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
+      NULLIF(TRIM(jsonPayload.user.id), ''),
+      NULLIF(TRIM(jsonPayload.user.canonicalid), '')
     ) IS NOT NULL
 ),
 per_user_surface AS (
