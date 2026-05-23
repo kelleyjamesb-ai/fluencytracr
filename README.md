@@ -9,7 +9,8 @@ It exists because the current time-saved pipeline can show acceleration while
 leaving a critical question unanswered: roughly 64% of chat runs have no
 quality signal today.
 
-FluencyTracr sits on top of that pipeline as five bounded evidence services:
+FluencyTracr sits on top of that pipeline as bounded evidence services and
+documented value-realization layers:
 
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
@@ -27,10 +28,10 @@ FluencyTracr sits on top of that pipeline as five bounded evidence services:
   the same fail-closed gates clear. Dogfood velocity coverage now follows the
   full surface taxonomy in [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md),
   spanning workflow and standalone AI surfaces without adding person-level output.
-- **Maturity:** frames post-saturation depth: verification, workflow repertoire,
+- **Depth:** frames work integration through verification, workflow repertoire,
   reusable workflow creation, agent relationship mix, and recovery discipline.
-  It explains whether high adoption is becoming sophisticated enough to support
-  defensible value claims.
+  Depth is aggregate evidence that adoption is becoming durable enough to
+  support defensible value claims.
 - **AGENT sub-surfaces:** V2.3 splits AGENT into `agent:autonomous`,
   `agent:workflow_named`, and `agent:ephemeral` so delegation, reusable Skill,
   and exploratory agent behavior can be evaluated independently.
@@ -38,6 +39,11 @@ FluencyTracr sits on top of that pipeline as five bounded evidence services:
   customer-side transformer in the customer's cloud, sending only aggregate
   cohort distributions to FluencyTracr, and storing immutable verdicts against
   governed calibration baselines.
+- **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
+  verdicts to qualify the defensibility of AI value claims.
+
+V4 is the Value Confidence Layer. It combines Velocity and Depth with governed
+V3 verdicts to qualify the defensibility of AI value claims.
 
 The aggregate verdict layer uses AIVM vocabulary consistently: `value_type`
 communicates the kind of value claim, and `evidence_grade` communicates whether
@@ -103,12 +109,22 @@ is not the lead positioning for this repository.
 - Glean live-data decision gate: [docs/integrations/glean/07-live-data-access-decision-gate.md](docs/integrations/glean/07-live-data-access-decision-gate.md)
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - V3 production ingest walkthrough: [docs/integrations/value-realization/V3_INGEST.md](docs/integrations/value-realization/V3_INGEST.md)
+- V4 value confidence integration: [docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md](docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
+- Depth concept and V4 reference: [docs/concepts/DEPTH.md](docs/concepts/DEPTH.md)
+- V4 Value Confidence Layer concept: [docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md](docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md)
 - Maturity concept: [docs/concepts/MATURITY.md](docs/concepts/MATURITY.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)
 - Production ingest concept: [docs/concepts/INGEST.md](docs/concepts/INGEST.md)
 - Calibration governance concept: [docs/concepts/CALIBRATION.md](docs/concepts/CALIBRATION.md)
+- Depth readout contract: [docs/contracts/depth/README.md](docs/contracts/depth/README.md)
+- Value Confidence contract: [docs/contracts/value-confidence/README.md](docs/contracts/value-confidence/README.md)
+- Time-Saved Defensibility Range: [docs/contracts/value-confidence/time-saved-defensibility-range.md](docs/contracts/value-confidence/time-saved-defensibility-range.md)
+- Trust Calibration Index: [docs/contracts/value-confidence/trust-calibration-index.md](docs/contracts/value-confidence/trust-calibration-index.md)
+- AI Value Leakage Map: [docs/contracts/value-confidence/value-leakage-map.md](docs/contracts/value-confidence/value-leakage-map.md)
+- AI Scale Readiness Portfolio: [docs/contracts/value-confidence/scale-readiness-portfolio.md](docs/contracts/value-confidence/scale-readiness-portfolio.md)
+- V4 validation plan: [docs/research/V4_VALIDATION_PLAN.md](docs/research/V4_VALIDATION_PLAN.md)
 - Velocity Index contract: [docs/contracts/velocity-index.md](docs/contracts/velocity-index.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)

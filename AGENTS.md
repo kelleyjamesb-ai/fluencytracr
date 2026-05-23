@@ -58,19 +58,27 @@ Future expansions require a governance-grade concept doc in docs/concepts/ befor
 - Individual user attribution under any framing
 - Admin UI for adjusting thresholds
 
-### Future V2 Concepts
+### Implemented and Future Concepts
 
 Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemented as three aggregate-distribution canonical events plus a Velocity Index output. It preserves the V1 suppression reasons, fail-closed posture, and no-individual-scoring invariant.
 
-Maturity is a defined future concept (see docs/concepts/MATURITY.md). It frames post-saturation depth through verification, workflow repertoire, reusable workflow creation, agent relationship mix, and recovery discipline. It is not yet implemented and does not modify canonical events, suppression reasons, or fail-closed gates.
+Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames work integration through verification, workflow repertoire, reusable workflow creation, agent relationship mix, recovery discipline, and judgment behavior. It is documentation-stage only unless a future implementation PR explicitly adds runtime support under the nine invariants.
 
-Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md). It is not yet implemented and does not modify any V1 or V2 invariants. Implementation will require a separate governance review and explicit AGENTS.md update.
+The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, team ranking, or individual labels from that language.
 
-Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Implemented workflow surface labels replace the single AGENT bucket with `agent:autonomous`, `agent:workflow_named`, and `agent:ephemeral`; they do not modify any canonical observation events or suppression reasons.
+Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md) and is implemented in the customer-side transformer path. It does not modify any V1 or V2 invariants.
 
-Production ingest is a defined V3 concept (see docs/concepts/INGEST.md). It is not yet implemented and establishes the customer-side-transformer privacy boundary: raw GCE remains in the customer environment, and only aggregate cohort distributions cross into FluencyTracr.
+Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Implemented workflow surface labels split the single AGENT bucket into governed sub-surfaces such as `workflow:agent:autonomous`, `workflow:agent:workflow_named`, and `workflow:agent:ephemeral`; they do not modify any canonical observation events or suppression reasons.
 
-Calibration governance is a defined V3 concept (see docs/concepts/CALIBRATION.md). It is not yet implemented and distinguishes immutable, versioned reference baselines from prohibited tunable thresholds.
+Production ingest is a defined and implemented V3 concept (see docs/concepts/INGEST.md and docs/integrations/value-realization/V3_INGEST.md). It establishes the customer-side-transformer privacy boundary: raw GCE remains in the customer environment, and only aggregate cohort distributions cross into FluencyTracr.
+
+Calibration governance is a defined and implemented V3 concept (see docs/concepts/CALIBRATION.md). It distinguishes immutable, versioned reference baselines from prohibited tunable thresholds.
+
+### V4 Value Confidence Layer
+
+V4 is the Value Confidence Layer (see docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md). It is documentation-stage only unless implementation already exists in a future branch. V4 combines Velocity, Depth, governed V3 verdicts, Quality Multiplier, Reliability Factor, Outcome Evidence, and Trust Calibration into executive economic decision artifacts.
+
+V4 must not implement ROI calculation, customer-facing prediction claims, scoring, ranking, individual attribution, productivity measurement, admin overrides, tunable thresholds, new canonical events, or new suppression reasons. Future V4 implementation must preserve all nine invariants exactly.
 
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
 
@@ -80,7 +88,8 @@ Calibration governance is a defined V3 concept (see docs/concepts/CALIBRATION.md
 - Reliability Factor: composite of abandonment, friction loop, recovery, verification
 - Outcome Evidence: customer-attested aggregate KPI ingestion (storage only)
 - Velocity Index: V2 aggregate-distribution output across frequency, engagement, and breadth
-- Maturity: future aggregate-depth lens for post-saturation AI use, including verification, reusable workflows, workflow repertoire, agent mix, and recovery discipline
+- Depth: V4 aggregate work-integration lens, including verification, reusable workflows, workflow repertoire, agent mix, recovery discipline, and judgment behavior
+- Value Confidence Layer: V4 documentation-stage executive decision layer for bounded, caveated, aggregate economic confidence
 
 ## 8. Repositioning Context
 

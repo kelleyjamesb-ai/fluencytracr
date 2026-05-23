@@ -25,3 +25,14 @@ Any new data source or feature must satisfy all of the following:
 - [ ] Data is aggregated before storage.
 - [ ] Clear opt-in and disclosure is documented.
 - [ ] Retention limits are defined.
+
+## V4 Value Confidence guardrails
+
+V4 may qualify the defensibility of AI value claims, but it must not create:
+
+- Realized ROI claims.
+- Causal productivity lift claims.
+- Forecasting claims without held-out validation.
+- Maturity scoring.
+- Team or individual rankings.
+- Suppressed economics, including hidden dollar values, hours saved, upside estimates, or portfolio totals.

@@ -117,6 +117,20 @@ At Glean, all three sub-surfaces have meaningful volume. At customers, the mix b
 
 These are hypotheses, not verdict claims. Customer interpretation must still pass suppression gates and preserve aggregate-only outputs.
 
+## 10a. Relationship to Depth
+
+`agent:workflow_named` and reusable Skills may contribute to reuse depth when
+aggregate evidence shows repeatable workflow integration.
+
+`agent:autonomous` may contribute to delegation depth only if supported by
+aggregate evidence such as recovery, verification, quality, and outcome context.
+
+`agent:ephemeral` may indicate exploratory use, incident response, or bespoke
+work. It must not be judged negatively without context.
+
+AGENT sub-surfaces must never become person-level maturity labels, ranking
+signals, or performance claims.
+
 ## 11. Open Questions
 
 These questions are deliberately open and must be resolved before V2.3 production hardening:

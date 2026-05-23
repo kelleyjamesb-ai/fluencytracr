@@ -207,3 +207,14 @@ It does not include:
 - Customer Evidence Appendix: customer-facing explanation of the reportability decision.
 - Reportability Gate: downstream integration boundary for requested claims. See [integration-boundary.md](integration-boundary.md).
 - Operating handoff: practical adoption rules for reporting systems. See [operating-handoff.md](operating-handoff.md).
+
+## Relationship to V4 Value Confidence
+
+V4 Value Confidence may become an upstream source for reportability decisions by
+providing defensible value ranges, leakage maps, scale readiness, and trust
+calibration caveats.
+
+Reportability remains the claim-safety boundary. V4 artifacts must preserve
+reportability's blocked claims, fail-closed suppression, aggregate-only posture,
+and caveat propagation. Suppressed V4 evidence cannot make a reportable claim
+or expose economic values.

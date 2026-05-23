@@ -125,6 +125,18 @@ Today many FluencyTracr verdicts remain at `evidence_grade = QUALITATIVE` becaus
 
 Joining those signals to parent workflow runs or search sessions can lift evidence quality for surfaces with sufficient verification volume. The important boundary is that verification signals improve the parent record; they do not become standalone surface count.
 
+## 9a. Relationship to Depth
+
+Surface breadth contributes to Velocity by showing how widely a cohort uses
+available AI touchpoints.
+
+Verification and feedback attribution contribute to Depth by showing whether
+workflows carry corroborative evidence of review, correction, or confidence.
+
+Sub-events remain corroborative and must not inflate either Velocity or Depth.
+PRODUCT_SNAPSHOT, LLM_CALL, CLIENT_EVENT, and ACTION can enrich parent
+interpretation only when governed taxonomy rules allow it.
+
 ## 10. Open Questions
 
 These questions are deliberately open and must be resolved before V2.1 implementation:
