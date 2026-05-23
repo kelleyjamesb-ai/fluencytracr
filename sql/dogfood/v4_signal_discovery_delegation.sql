@@ -16,17 +16,8 @@ WITH source_events AS (
     timestamp AS event_ts,
     jsonPayload.type AS event_type,
     NULLIF(TRIM(jsonPayload.workflowrun.feature), '') AS workflow_feature,
-    NULLIF(TRIM(COALESCE(
-      jsonPayload.workflowrun.rootworkflowid,
-      jsonPayload.workflowrun.rootWorkflowId,
-      jsonPayload.workflowrun.workflowid,
-      jsonPayload.workflowrun.workflowId
-    )), '') AS root_workflow_id,
-    NULLIF(TRIM(COALESCE(
-      jsonPayload.workflowrun.runid,
-      jsonPayload.workflowrun.runId,
-      jsonPayload.workflowrun.id
-    )), '') AS workflow_run_id,
+    NULLIF(TRIM(jsonPayload.workflowrun.rootworkflowid), '') AS root_workflow_id,
+    NULLIF(TRIM(jsonPayload.workflowrun.runid), '') AS workflow_run_id,
     COALESCE(
       NULLIF(TRIM(jsonPayload.workflowrun.sessiontrackingtoken), ''),
       NULLIF(TRIM(jsonPayload.chat.sessiontrackingtoken), ''),
@@ -37,8 +28,6 @@ WITH source_events AS (
     ) AS session_token,
     COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
-      NULLIF(TRIM(jsonPayload.user.id), ''),
-      NULLIF(TRIM(jsonPayload.user.canonicalid), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
     ) AS user_key
