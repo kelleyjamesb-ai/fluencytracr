@@ -57,17 +57,6 @@ it("returns 12 points for 12w range", async () => {
       is_user_count: false,
       suppressed: false
     });
-    store.metrics.set(`org-1:org:${bucket}:fluency_index:`, {
-      orgId: "org-1",
-      group_key: "org",
-      group_type: "org",
-      vendor: "all",
-      bucket_start: bucket,
-      metric_name: "fluency_index",
-      metric_value: 75,
-      is_user_count: false,
-      suppressed: false
-    });
   }
 
   const server = await startServer();

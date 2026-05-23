@@ -239,29 +239,21 @@ type EmployeeRecord = {
 
 ---
 
-### 7. Fluency Computation
+### 7. Deprecated Legacy Score Quarantine
 
 **Location**: `backend/src/fluency_service.ts`
 
-**Job**: `runFluencyIndexJob(orgId: string)` (line 586 in app.ts)
+**Status**: Deprecated and quarantined. The historical job
+`runFluencyIndexJob(orgId: string)` remains only as a no-op compatibility
+boundary so old imports fail closed.
 
-**Formula**:
-```
-F = 0.20C + 0.40D + 0.25J + 0.15V
+The previous weighted formula is intentionally not documented as an active
+product contract. FluencyTracr now exposes aggregate value-realization evidence
+through fail-closed `SURFACE` / `SUPPRESS` verdicts, Quality Multiplier,
+Reliability Factor, Causal Delta, Outcome Evidence, and Velocity Index outputs.
 
-Where:
-  C (Coverage): Ratio of weekly active users to roster size
-  D (Depth): Weighted interaction score
-  J (Judgment): Compliance score
-  V (Velocity): Delta of depth post-enablement
-```
-
-**Data Sources**:
-1. Metrics from `store.metrics` (filtered by `metric_name`)
-2. Enablement events from `store.enablementEvents`
-3. Spread rollups from `store.spreadRollups`
-
-**Triggers**: Automatically runs after metrics import (line 586)
+**Do not re-enable** a general index, weighted interaction score, dashboard
+score export, team ranking, or productivity score from connector metrics.
 
 ---
 
@@ -276,7 +268,7 @@ Where:
 **Test Files** (`backend/tests/`):
 - `ingest.test.ts` - Ingest validation
 - `suppression.test.ts` - Privacy suppression
-- `fluency_index.test.ts` - Fluency calculation
+- `fluency_index.test.ts` - Deprecated legacy score quarantine regression
 - `behavioral_signals.test.ts` - Behavioral signals (18 tests)
 - `behavioral_patterns.test.ts` - Pattern detection (18 tests)
 - ~15 more test files

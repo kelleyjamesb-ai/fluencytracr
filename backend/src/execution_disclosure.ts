@@ -11,9 +11,7 @@ export const FLUENCY_SUPPRESSION_NEUTRAL: SuppressionDecision = {
 };
 
 /** Minimum events before interpretive signals/patterns may be disclosed (PRD Phase 3). */
-export const MIN_EVENT_COUNT_FOR_DISCLOSURE = Number(
-  process.env.FLUENCY_MIN_EXECUTION_EVENTS_FOR_DISCLOSURE ?? 2
-);
+export const MIN_EVENT_COUNT_FOR_DISCLOSURE = 2;
 
 export type DisclosureState = "ALLOWED" | "SUPPRESSED";
 

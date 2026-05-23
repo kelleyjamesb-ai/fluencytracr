@@ -72,7 +72,7 @@ import { ensureToolClass, ensureUsageShape, normalizeUsageTimestamp } from "./us
 import { runSpreadRollupForOrg } from "./spread_metrics";
 import { importRoster } from "./roster";
 import { suppressAndRollup } from "./suppression";
-import { runFluencyIndexJob } from "./fluency_service";
+import { clearLegacyFluencyIndexArtifacts } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
@@ -1966,7 +1966,7 @@ app.post("/orgs/:orgId/metrics/import", strictLimiter, schemaVersionMiddleware, 
     }
   });
 
-  runFluencyIndexJob(org.id);
+  clearLegacyFluencyIndexArtifacts(org.id);
   return res.json({ inserted, updated, rejected });
 });
 
@@ -3392,7 +3392,7 @@ app.get(
       metadata: { format: "csv" }
     });
     res.setHeader("content-type", "text/csv; charset=utf-8");
-    return res.status(200).send("metric_name,metric_value\nfluency_index,0\n");
+    return res.status(200).send("metric_name,metric_value\naggregate_evidence_status,not_computed\n");
   }
 );
 

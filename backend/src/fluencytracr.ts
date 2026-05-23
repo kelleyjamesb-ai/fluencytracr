@@ -27,8 +27,8 @@ export const WINDOW_DAYS: Record<FluencyWindow, number> = {
   "12m": 365
 };
 
-export const MIN_COHORT_SIZE = Number(process.env.MIN_COHORT_SIZE ?? 5);
-export const COVERAGE_THRESHOLD = Number(process.env.COVERAGE_THRESHOLD ?? 0.5);
+export const MIN_COHORT_SIZE = 5;
+export const COVERAGE_THRESHOLD = 0.5;
 
 export const windowStart = (window: FluencyWindow, now = new Date()) => {
   const start = new Date(now);
