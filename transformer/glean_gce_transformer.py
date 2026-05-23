@@ -16,26 +16,54 @@ from typing import Any
 
 
 VELOCITY_SQL = """
-WITH source AS (
+WITH source_events AS (
   SELECT
+    timestamp AS event_ts,
+    DATE(timestamp) AS event_day,
+    jsonPayload.type AS event_type,
+    NULLIF(TRIM(jsonPayload.workflowrun.feature), '') AS workflow_feature,
+    NULLIF(TRIM(jsonPayload.workflowrun.rootworkflowid), '') AS root_workflow_id,
+    NULLIF(TRIM(jsonPayload.workflowrun.runid), '') AS workflow_run_id,
+    COALESCE(
+      NULLIF(TRIM(jsonPayload.workflowrun.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chat.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.autocomplete.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.search.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.action.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.voicechat.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.gleanbotactivity.eventtrackingtoken), '')
+    ) AS session_token,
+    COALESCE(
+      NULLIF(TRIM(jsonPayload.search.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.autocomplete.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.aianswer.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.aisummary.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatcitationclick.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatcitations.workflowrunid), ''),
+      NULLIF(TRIM(jsonPayload.chatcitations.chatsessionid), ''),
+      NULLIF(TRIM(jsonPayload.aianswervote.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.aisummaryvote.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.searchfeedback.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.runid), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.workflowid), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.chatsessionid), '')
+    ) AS tracking_token,
     COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
     ) AS user_key,
     COALESCE(
-      NULLIF(TRIM(jsonPayload.workflowrun.feature), ''),
-      NULLIF(TRIM(jsonPayload.chat.feature), ''),
-      NULLIF(TRIM(jsonPayload.voicechat.feature), ''),
-      NULLIF(TRIM(jsonPayload.llmcall.feature), ''),
-      NULLIF(TRIM(jsonPayload.type), '')
-    ) AS workflow_id,
-    DATE(timestamp) AS event_day,
-    COALESCE(
       jsonPayload.workflow.workflowexecutionstatus,
       (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
       jsonPayload.action.executionstatus,
-      jsonPayload.mcpusage.status
+      jsonPayload.mcpusage.status,
+      CASE
+        WHEN jsonPayload.type IN ('SEARCH', 'AUTOCOMPLETE', 'AI_SUMMARY', 'GLEAN_BOT_ACTIVITY') THEN 'completed'
+        WHEN jsonPayload.type = 'MCP_USAGE' AND jsonPayload.mcpusage.status IS NULL THEN 'completed'
+        ELSE NULL
+      END
     ) AS status,
     SAFE_CAST(COALESCE(
       jsonPayload.workflowrun.totalexecutionlatency,
@@ -47,12 +75,13 @@ WITH source AS (
       jsonPayload.mcpusage.durationms,
       jsonPayload.action.endtimems - jsonPayload.action.starttimems
     ) AS INT64) AS latency_ms,
-    jsonPayload.type IN (
-      'CHAT_CITATION_CLICK',
-      'AI_ANSWER_VOTE',
-      'AI_SUMMARY_VOTE',
-      'SEARCH_FEEDBACK'
-    ) AS verification_present,
+    EXISTS (
+      SELECT 1
+      FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution
+      WHERE execution.errortype IS NOT NULL
+    )
+    OR jsonPayload.action.errortype IS NOT NULL
+    OR jsonPayload.mcpusage.errorcode IS NOT NULL AS has_error,
     EXISTS (
       SELECT 1
       FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution
@@ -74,39 +103,191 @@ WITH source AS (
       NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
     ) IS NOT NULL
 ),
+
+product_snapshot_events AS (
+  SELECT
+    timestamp AS snapshot_ts,
+    NULLIF(TRIM(jsonPayload.productsnapshot.workflow.workflowid), '') AS snapshot_workflow_id,
+    jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
+    NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
+    COALESCE(jsonPayload.productsnapshot.workflow.unlisted, FALSE) AS snapshot_unlisted
+  FROM `{project}.{dataset}.{table}`
+  WHERE timestamp < TIMESTAMP('{window_end}')
+    AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
+),
+
+product_snapshots AS (
+  SELECT
+    snapshot_workflow_id,
+    ARRAY_AGG(
+      STRUCT(
+        snapshot_is_autonomous AS is_autonomous,
+        snapshot_workflow_name AS workflow_name,
+        snapshot_unlisted AS unlisted
+      )
+      ORDER BY snapshot_ts DESC
+      LIMIT 1
+    )[OFFSET(0)] AS snapshot
+  FROM product_snapshot_events
+  WHERE snapshot_workflow_id IS NOT NULL
+  GROUP BY snapshot_workflow_id
+),
+
+workflow_sessions AS (
+  SELECT DISTINCT session_token
+  FROM source_events
+  WHERE event_type = 'WORKFLOW_RUN'
+    AND session_token IS NOT NULL
+),
+
+workflow_surfaces AS (
+  SELECT
+    run.user_key,
+    run.event_day,
+    run.session_token,
+    run.tracking_token,
+    COALESCE(
+      run.workflow_run_id,
+      run.root_workflow_id,
+      run.session_token,
+      run.tracking_token,
+      CONCAT(run.user_key, ':', CAST(run.event_ts AS STRING), ':', run.event_type)
+    ) AS surface_join_key,
+    CASE
+      WHEN UPPER(run.workflow_feature) = 'AGENT' AND snapshot.snapshot.is_autonomous IS TRUE THEN 'workflow:agent:autonomous'
+      WHEN UPPER(run.workflow_feature) = 'AGENT'
+        AND snapshot.snapshot.is_autonomous IS FALSE
+        AND snapshot.snapshot.workflow_name IS NOT NULL
+        AND snapshot.snapshot.unlisted IS FALSE THEN 'workflow:agent:workflow_named'
+      WHEN UPPER(run.workflow_feature) = 'AGENT' THEN 'workflow:agent:ephemeral'
+      ELSE CONCAT('workflow:', run.workflow_feature)
+    END AS workflow_id,
+    run.status,
+    run.latency_ms,
+    run.has_error,
+    run.recovered
+  FROM source_events AS run
+  LEFT JOIN product_snapshots AS snapshot
+    ON snapshot.snapshot_workflow_id = run.root_workflow_id
+  WHERE run.event_type = 'WORKFLOW_RUN'
+    AND run.workflow_feature IS NOT NULL
+),
+
+standalone_surfaces AS (
+  SELECT
+    event.user_key,
+    event.event_day,
+    event.session_token,
+    event.tracking_token,
+    COALESCE(
+      event.workflow_run_id,
+      event.session_token,
+      event.tracking_token,
+      CONCAT(event.user_key, ':', CAST(event.event_ts AS STRING), ':', event.event_type)
+    ) AS surface_join_key,
+    CASE event.event_type
+      WHEN 'SEARCH' THEN 'standalone:SEARCH'
+      WHEN 'AUTOCOMPLETE' THEN 'standalone:AUTOCOMPLETE'
+      WHEN 'MCP_USAGE' THEN 'standalone:MCP_USAGE'
+      WHEN 'AI_SUMMARY' THEN 'standalone:AI_SUMMARY'
+      WHEN 'GLEAN_BOT_ACTIVITY' THEN 'standalone:GLEAN_BOT_ACTIVITY'
+    END AS workflow_id,
+    event.status,
+    event.latency_ms,
+    event.has_error,
+    event.recovered
+  FROM source_events AS event
+  WHERE event.event_type IN ('SEARCH', 'AUTOCOMPLETE', 'MCP_USAGE', 'AI_SUMMARY', 'GLEAN_BOT_ACTIVITY')
+    AND event.workflow_feature IS NULL
+    AND (
+      event.event_type != 'GLEAN_BOT_ACTIVITY'
+      OR event.session_token IS NULL
+      OR NOT EXISTS (
+        SELECT 1
+        FROM workflow_sessions AS workflow_session
+        WHERE workflow_session.session_token = event.session_token
+      )
+    )
+),
+
+taxonomy_surfaces AS (
+  SELECT * FROM workflow_surfaces
+  UNION ALL
+  SELECT * FROM standalone_surfaces
+),
+
+surface_join_aliases AS (
+  SELECT DISTINCT user_key, workflow_id, surface_join_key, surface_join_key AS attribution_join_key
+  FROM taxonomy_surfaces
+  UNION DISTINCT
+  SELECT DISTINCT user_key, workflow_id, surface_join_key, session_token AS attribution_join_key
+  FROM taxonomy_surfaces
+  WHERE session_token IS NOT NULL
+  UNION DISTINCT
+  SELECT DISTINCT user_key, workflow_id, surface_join_key, tracking_token AS attribution_join_key
+  FROM taxonomy_surfaces
+  WHERE tracking_token IS NOT NULL
+),
+
+verification_signals AS (
+  SELECT
+    user_key,
+    COALESCE(workflow_run_id, session_token, tracking_token) AS attribution_join_key,
+    event_type AS verification_event_type
+  FROM source_events
+  WHERE event_type IN (
+      'CHAT_CITATION_CLICK',
+      'CHAT_CITATIONS',
+      'AI_ANSWER_VOTE',
+      'AI_SUMMARY_VOTE',
+      'SEARCH_FEEDBACK',
+      'CHAT_FEEDBACK'
+    )
+    AND COALESCE(workflow_run_id, session_token, tracking_token) IS NOT NULL
+),
+
+surface_verification AS (
+  SELECT
+    alias.workflow_id,
+    COUNT(*) AS verification_signal_count,
+    COUNT(DISTINCT alias.surface_join_key) AS verified_surface_count
+  FROM surface_join_aliases AS alias
+  JOIN verification_signals AS verification
+    ON verification.user_key = alias.user_key
+    AND verification.attribution_join_key = alias.attribution_join_key
+  GROUP BY alias.workflow_id
+),
+
 per_user_surface AS (
   SELECT
     workflow_id,
     user_key,
-    COUNT(*) AS total_events,
+    COUNT(DISTINCT surface_join_key) AS total_events,
     COUNT(DISTINCT event_day) AS active_days,
-    SAFE_DIVIDE(COUNT(*), COUNT(DISTINCT event_day)) AS runs_per_active_day
-  FROM source
-  WHERE workflow_id IS NOT NULL
+    SAFE_DIVIDE(COUNT(DISTINCT surface_join_key), COUNT(DISTINCT event_day)) AS runs_per_active_day
+  FROM taxonomy_surfaces
   GROUP BY workflow_id, user_key
 ),
 per_user_breadth AS (
   SELECT
     user_key,
     COUNT(DISTINCT workflow_id) AS breadth
-  FROM source
-  WHERE workflow_id IS NOT NULL
+  FROM taxonomy_surfaces
   GROUP BY user_key
 ),
 quality AS (
   SELECT
     workflow_id,
-    COUNT(*) AS real_cohort_size,
     COUNT(DISTINCT user_key) AS cohort_size,
     AVG(CASE WHEN LOWER(status) IN ('completed', 'complete', 'success', 'succeeded') THEN 1 ELSE 0 END) AS completion_rate,
-    AVG(CASE WHEN LOWER(status) IN ('error', 'errored', 'failed', 'failure') THEN 1 ELSE 0 END) AS error_rate,
+    AVG(CASE WHEN has_error OR LOWER(status) IN ('error', 'errored', 'failed', 'failure') THEN 1 ELSE 0 END) AS error_rate,
     AVG(CASE WHEN LOWER(status) IN ('abandoned', 'cancelled', 'canceled', 'timeout') THEN 1 ELSE 0 END) AS abandonment_rate,
     AVG(CASE WHEN recovered THEN 1 ELSE 0 END) AS recovery_rate,
-    AVG(CASE WHEN verification_present THEN 1 ELSE 0 END) AS verification_rate,
+    SAFE_DIVIDE(COALESCE(MAX(verification.verified_surface_count), 0), COUNT(DISTINCT surface_join_key)) AS verification_rate,
     APPROX_QUANTILES(latency_ms, 100)[OFFSET(50)] AS p50_latency_ms,
     APPROX_QUANTILES(latency_ms, 100)[OFFSET(95)] AS p95_latency_ms
-  FROM source
-  WHERE workflow_id IS NOT NULL
+  FROM taxonomy_surfaces
+  LEFT JOIN surface_verification AS verification USING (workflow_id)
   GROUP BY workflow_id
 )
 SELECT

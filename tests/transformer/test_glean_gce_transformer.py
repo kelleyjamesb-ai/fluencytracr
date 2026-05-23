@@ -34,6 +34,45 @@ def test_transformer_sql_uses_struct_access_for_jsonpayload():
     assert "jsonPayload.user.userid" in transformer.VELOCITY_SQL
 
 
+def test_transformer_sql_enforces_surface_taxonomy():
+    transformer = load_transformer_module()
+    sql = transformer.VELOCITY_SQL
+
+    assert "jsonPayload.llmcall.feature" not in sql
+    assert "NULLIF(TRIM(jsonPayload.type), '')" not in sql
+    assert "taxonomy_surfaces" in sql
+    assert "verification_signals" in sql
+    assert "surface_verification" in sql
+
+    for standalone in [
+        "standalone:SEARCH",
+        "standalone:AUTOCOMPLETE",
+        "standalone:MCP_USAGE",
+        "standalone:AI_SUMMARY",
+        "standalone:GLEAN_BOT_ACTIVITY",
+    ]:
+        assert standalone in sql
+
+    for verification_event in [
+        "CHAT_CITATION_CLICK",
+        "CHAT_CITATIONS",
+        "AI_ANSWER_VOTE",
+        "AI_SUMMARY_VOTE",
+        "SEARCH_FEEDBACK",
+        "CHAT_FEEDBACK",
+    ]:
+        assert verification_event in sql
+        assert f"standalone:{verification_event}" not in sql
+        assert f"workflow:{verification_event}" not in sql
+
+    for agent_surface in [
+        "workflow:agent:autonomous",
+        "workflow:agent:workflow_named",
+        "workflow:agent:ephemeral",
+    ]:
+        assert agent_surface in sql
+
+
 def test_transformer_writes_aggregate_payloads_from_preaggregated_csv(tmp_path):
     source = tmp_path / "aggregates.csv"
     output_dir = tmp_path / "out"
