@@ -3,6 +3,7 @@
 ## Last Completed
 
 - Reuse propagation diagnostic review fix: updated `snapshot_join_coverage` so candidate and unmatched coverage fields count distinct workflows instead of runs; focused SQL contract test passed.
+- PR #275 conflict reconciliation: merged current `main` into `dogfood/fix-reuse-propagation-diagnostic`, preserving `main`'s V4 join-key diagnostic/readout and keeping the PR's separate reusable workflow propagation diagnostic plus workflow-granularity coverage test.
 - V4 signal discovery review fix: corrected the delegation probe so `bucket_event_share` uses the full taxonomy-event denominator and named workflow agents can contribute to both `structured_delegation` and `reusable_leverage`; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.
 - V4 signal discovery probe pack: added research-only signal promotion criteria, V4 discovery probe framing, and aggregate-only BigQuery probes for rapid refinement behavior, delegation depth, and reusable workflow propagation; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.
 - PR #255 ingest concept conflict resolution: merged current `main` into `docs/ingest-concept`, preserving the V3 ingest privacy-boundary concept alongside the newly merged calibration concept and links.

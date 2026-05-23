@@ -1,15 +1,19 @@
 # Current Slice Contract
 
-- Work item id: `reuse-propagation-diagnostic-review-fix`
-- Title: `Count reuse propagation coverage metrics at workflow granularity`
+- Work item id: `reuse-propagation-pr275-conflict-reconciliation`
+- Title: `Reconcile PR 275 reusable workflow propagation diagnostic with main`
 - Status: `completed`
 
 ## Summary
 
-Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmatched metrics counted runs instead of distinct workflows. This remains a dogfood diagnostic-only SQL contract fix.
+Resolved PR #275 conflicts by preserving `main`'s V4 signal-validation and
+join-key diagnostic updates while keeping the PR's separate reusable workflow
+propagation diagnostic and workflow-granularity coverage fix.
 
 ## Scope Paths
 
+- `docs/research/V4_SIGNAL_DISCOVERY_READOUT.md`
+- `sql/dogfood/v4_signal_discovery_reuse_propagation.sql`
 - `sql/dogfood/reuse_propagation_diagnostic.sql`
 - `tests/dogfood/test_velocity_double_count.py`
 - `.project/CURRENT_SLICE.md`
@@ -17,32 +21,42 @@ Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmat
 
 ## Key Risks
 
-- Candidate and unmatched workflow metrics can be overstated when one workflow has multiple runs.
-- SQL must remain aggregate-only and research/dogfood scoped.
-- Tests should verify the intended workflow-granularity contract without requiring BigQuery execution.
+- Replacing `main`'s join-key diagnostic context could regress the unresolved
+  reusable-workflow finding.
+- Dropping the PR diagnostic would lose candidate/confirmed propagation
+  coverage.
+- The merged SQL contract test must cover both diagnostics without adding
+  customer-facing V4 claims.
 
 ## Planned Checks
 
-- Change coverage metrics to conditional distinct workflow counts.
-- Add/extend SQL contract coverage for workflow-granularity counts.
+- Preserve `main`'s V4 signal-discovery probe and join-key readout.
+- Preserve PR #275's reusable workflow propagation diagnostic and distinct
+  workflow coverage counts.
 - Run the focused dogfood SQL contract test.
+- Run the focused V4 signal validation test touched by `main`.
+- Compile the V4 validation harness.
 - Run `git diff --check`.
 
 ## Evaluator Command Profile
 
-- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py`
+- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py tests/dogfood/test_v4_signal_validation.py`
+- `.venv/bin/python -m compileall scripts/dogfood/run_v4_signal_validation.py`
 - `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- `named_candidate_count`, `confirmed_reusable_candidate_count`, and `unmatched_agent_workflow_count` count distinct `workflow_key` values.
-- Existing dogfood SQL contract tests still pass.
-- No unrelated SQL or product behavior changes are introduced.
+- PR #275 is no longer merge-conflicted against `main`.
+- Dogfood SQL contract tests include the reusable propagation diagnostic and
+  agent snapshot join-key diagnostic.
+- V4 validation behavior from `main` remains intact.
+- No V4 signal is promoted or productized.
 
 ## Specialists To Consult
 
-- Not used for this narrow review fix.
+- Not used for this focused merge reconciliation.
 
 ## Next Handoff Note
 
-Completed: `named_candidate_count`, `confirmed_reusable_candidate_count`, and `unmatched_agent_workflow_count` now use conditional distinct `workflow_key` counts; focused dogfood SQL contract verification passed.
+Completed locally: conflicts resolved and focused verification passed. Commit,
+push, and re-check PR #275 mergeability.

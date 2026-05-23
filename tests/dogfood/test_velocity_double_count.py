@@ -10,8 +10,9 @@ REUSE_SQL = ROOT / "sql" / "dogfood" / "reuse_propagation_diagnostic.sql"
 V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.sql"
 V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
 V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
+AGENT_JOIN_KEY_SQL = ROOT / "sql" / "dogfood" / "agent_snapshot_join_key_diagnostic.sql"
 
-DOGFOOD_DIAGNOSTIC_SQL = [
+DOGFOOD_SQL = [
     SQL,
     AGENT_SQL,
     DELEGATION_SQL,
@@ -20,6 +21,7 @@ DOGFOOD_DIAGNOSTIC_SQL = [
     V4_DELEGATION_SQL,
     V4_REFINEMENT_SQL,
     V4_REUSE_SQL,
+    AGENT_JOIN_KEY_SQL,
 ]
 
 
@@ -128,8 +130,8 @@ def test_agent_type_diagnostic_reports_sub_surface_aggregates() -> None:
         assert field in sql
 
 
-def test_dogfood_diagnostics_use_native_struct_paths_for_scio_prod() -> None:
-    invalid_alias_paths = [
+def test_dogfood_sql_uses_valid_scio_prod_struct_paths() -> None:
+    invalid_paths = [
         "jsonPayload.workflowrun.rootWorkflowId",
         "jsonPayload.workflowrun.workflowid",
         "jsonPayload.workflowrun.workflowId",
@@ -140,14 +142,10 @@ def test_dogfood_diagnostics_use_native_struct_paths_for_scio_prod() -> None:
         "JSON_VALUE(jsonPayload",
     ]
 
-    for path in DOGFOOD_DIAGNOSTIC_SQL:
+    for path in DOGFOOD_SQL:
         sql = path.read_text()
-
-        for invalid_path in invalid_alias_paths:
-            assert invalid_path not in sql, f"{path} uses invalid scio-prod alias path {invalid_path}"
-
-        assert "jsonPayload.workflowrun.rootworkflowid" in sql
-        assert "jsonPayload.workflowrun.runid" in sql
+        for invalid_path in invalid_paths:
+            assert invalid_path not in sql, f"{path} uses invalid scio-prod path {invalid_path}"
 
 
 def test_reuse_propagation_diagnostic_reports_candidate_and_coverage_metrics() -> None:
@@ -199,3 +197,37 @@ def test_reuse_propagation_diagnostic_reports_candidate_and_coverage_metrics() -
         "COUNT(DISTINCT IF(NOT has_snapshot_match, workflow_key, NULL)) "
         "AS unmatched_agent_workflow_count"
     ) in sql
+
+
+def test_agent_snapshot_join_key_diagnostic_compares_aggregate_candidates() -> None:
+    sql = AGENT_JOIN_KEY_SQL.read_text()
+
+    for candidate in [
+        "rootworkflowid",
+        "runid",
+        "sessiontrackingtoken",
+    ]:
+        assert candidate in sql
+
+    for field in [
+        "candidate_join_key_name",
+        "agent_run_rows",
+        "distinct_agent_workflows",
+        "candidate_key_present_rows",
+        "product_snapshot_match_rows",
+        "product_snapshot_match_rate",
+        "matched_rows_with_workflow_name",
+        "matched_rows_unlisted_false",
+        "matched_rows_isdraftonly_false",
+        "matched_rows_autonomous_true",
+        "matched_rows_autonomous_false",
+        "named_candidate_rows",
+        "named_not_draft_candidate_rows",
+        "notes",
+    ]:
+        assert field in sql
+
+    assert "UNNEST(jsonPayload.workflowrun.workflowexecutions)" in sql
+    assert "jsonPayload.productsnapshot.workflow.isdraftonly" in sql
+    assert "jsonPayload.productsnapshot.workflow.name" in sql
+    assert "jsonPayload.productsnapshot.workflow.workflowid" in sql
