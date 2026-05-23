@@ -18,6 +18,18 @@ MIN_PROMOTION_WINDOWS = 3
 STABILITY_MAX_P50_SPREAD = 1.5
 MIN_NONEMPTY_ROWS = 1
 MIN_COVERAGE_VALUE = 1.0
+SUMMARY_FILENAME = "v4_signal_validation_summary.json"
+READOUT_FILENAME = "V4_SIGNAL_VALIDATION_READOUT.md"
+PROMOTION_TABLE_FILENAME = "v4_signal_promotion_table.csv"
+PROMOTION_TABLE_COLUMNS = [
+    "signal_name",
+    "decision",
+    "confidence",
+    "evidence_summary",
+    "primary_reason",
+    "product_destination",
+    "required_followup",
+]
 
 FORBIDDEN_FIELDS = {
     "user_id",
@@ -52,7 +64,7 @@ class InputError(ValueError):
 class SignalSpec:
     family: str
     signal_name: str
-    file_stem: str
+    file_stem: str | None
     required_columns: tuple[str, ...]
     coverage_columns: tuple[str, ...]
     nonempty_columns: tuple[str, ...]
@@ -60,6 +72,14 @@ class SignalSpec:
 
 
 SIGNAL_SPECS = [
+    SignalSpec(
+        family="depth",
+        signal_name="depth",
+        file_stem=None,
+        required_columns=(),
+        coverage_columns=(),
+        nonempty_columns=(),
+    ),
     SignalSpec(
         family="refinement",
         signal_name="rapid_refinement",
@@ -172,6 +192,12 @@ def window_number(path: Path, file_stem: str) -> int:
     return int(match.group(1))
 
 
+def expected_window_files(spec: SignalSpec) -> list[str]:
+    if spec.file_stem is None:
+        return []
+    return [f"v4_{spec.file_stem}_window_{window}.csv" for window in range(1, 4)]
+
+
 def percentile_value(row: dict[str, str], percentile: str) -> float | None:
     candidates = [percentile, f"adopter_count_{percentile}"]
     for candidate in candidates:
@@ -249,6 +275,35 @@ def velocity_relationship_ok(spec: SignalSpec, rows: list[dict[str, str]]) -> bo
 
 
 def evaluate_signal(input_dir: Path, spec: SignalSpec) -> dict[str, Any]:
+    if spec.file_stem is None:
+        return {
+            "signal_name": spec.signal_name,
+            "family": spec.family,
+            "decision": "HOLD",
+            "confidence": "low",
+            "primary_reason": "no dedicated aggregate depth export in this harness",
+            "product_destination": "Research Only",
+            "required_followup": "Evaluate Depth through governed depth readouts or future aggregate exports.",
+            "windows_present": 0,
+            "input_files_found": [],
+            "input_files_missing": [],
+            "row_count": 0,
+            "missing_columns": [],
+            "forbidden_field_count": 0,
+            "forbidden_field_detected": False,
+            "distribution_summary": summarize_distribution([]),
+            "coverage_summary": {},
+            "stability": {
+                "classification": "inconclusive_or_unstable",
+                "reason": "not_directly_exported",
+                "p50_window_values": [],
+            },
+            "non_empty": False,
+            "coverage_sufficient": False,
+            "adds_interpretation_beyond_velocity": True,
+            "evidence_summary": "0 window(s); 0 aggregate row(s); held for direct Depth validation",
+        }
+
     files = sorted(input_dir.glob(f"v4_{spec.file_stem}_window_*.csv"))
     windows: list[dict[str, Any]] = []
     missing_columns: set[str] = set()
@@ -274,6 +329,10 @@ def evaluate_signal(input_dir: Path, spec: SignalSpec) -> dict[str, Any]:
         )
         all_rows.extend(rows)
 
+    found_file_names = [window["path"] for window in windows]
+    missing_window_files = [
+        expected for expected in expected_window_files(spec) if expected not in found_file_names
+    ]
     windows_present = len(windows)
     row_count = len(all_rows)
     nonempty_total = total_for_columns(all_rows, spec.nonempty_columns)
@@ -347,10 +406,12 @@ def evaluate_signal(input_dir: Path, spec: SignalSpec) -> dict[str, Any]:
         "product_destination": destination,
         "required_followup": required_followup,
         "windows_present": windows_present,
-        "window_files": [window["path"] for window in windows],
+        "input_files_found": found_file_names,
+        "input_files_missing": missing_window_files,
         "row_count": row_count,
         "missing_columns": sorted(missing_columns),
-        "forbidden_fields": sorted(forbidden_fields),
+        "forbidden_field_count": len(forbidden_fields),
+        "forbidden_field_detected": bool(forbidden_fields),
         "distribution_summary": distribution,
         "coverage_summary": coverage,
         "stability": {
@@ -400,35 +461,61 @@ def evidence_summary(
 
 
 def render_readout(signals: dict[str, dict[str, Any]], status: str) -> str:
+    inputs_found = sorted(
+        {
+            file_name
+            for signal in signals.values()
+            for file_name in signal["input_files_found"]
+        }
+    )
+    inputs_missing = sorted(
+        {
+            file_name
+            for signal in signals.values()
+            for file_name in signal["input_files_missing"]
+        }
+    )
     lines = [
         "# V4 Signal Validation Readout",
         "",
-        "This is dogfood validation only.",
+        "## Executive Summary",
         "",
         f"Run Date: {date.today().isoformat()}",
         f"Status: {status}",
         "",
-        "## Signal Promotion Table",
+        "This is dogfood validation only. PROMOTE means eligible for later productization review, not automatically productized.",
         "",
-        "| signal_name | decision | confidence | evidence_summary | primary_reason | product_destination | required_followup |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "## Signals Evaluated",
+        "",
     ]
-    for signal in signals.values():
-        lines.append(
-            "| {signal_name} | {decision} | {confidence} | {evidence_summary} | "
-            "{primary_reason} | {product_destination} | {required_followup} |".format(**signal)
-        )
+    for signal_name in signals:
+        lines.append(f"- {signal_name}")
     lines.extend(
         [
             "",
-            "## Governance Notes",
+            "## Inputs Found",
             "",
-            "- Aggregate-only output.",
-            "- No user IDs, emails, names, raw prompts, raw outputs, transcripts, or raw event rows are emitted.",
-            "- No canonical events, suppression reasons, tunable thresholds, admin overrides, APIs, schemas, migrations, or frontend surfaces are added.",
-            "- No individual scoring, team ranking, maturity scoring, productivity scoring, ROI, causal, or prediction claims are made.",
+        ]
+    )
+    if inputs_found:
+        lines.extend(f"- {file_name}" for file_name in inputs_found)
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
             "",
-            "## Stability Notes",
+            "## Inputs Missing",
+            "",
+        ]
+    )
+    if inputs_missing:
+        lines.extend(f"- {file_name}" for file_name in inputs_missing)
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Multi-Window Stability Summary",
             "",
         ]
     )
@@ -442,7 +529,95 @@ def render_readout(signals: dict[str, dict[str, Any]], status: str) -> str:
                 values=stability["p50_window_values"],
             )
         )
+    lines.extend(
+        [
+            "",
+            "## Distribution Shape Summary",
+            "",
+        ]
+    )
+    for signal in signals.values():
+        p50 = signal["distribution_summary"]["p50"]
+        p90 = signal["distribution_summary"]["p90"]
+        p99 = signal["distribution_summary"]["p99"]
+        lines.append(
+            f"- {signal['signal_name']}: p50={p50['mean']}, p90={p90['mean']}, p99={p99['mean']}"
+        )
+    lines.extend(
+        [
+            "",
+            "## Coverage Summary",
+            "",
+        ]
+    )
+    for signal in signals.values():
+        coverage = ", ".join(
+            f"{key}={value}" for key, value in signal["coverage_summary"].items()
+        )
+        lines.append(f"- {signal['signal_name']}: {coverage or 'no direct coverage export'}")
+    lines.extend(
+        [
+            "",
+            "## Velocity Relationship Summary",
+            "",
+        ]
+    )
+    for signal in signals.values():
+        relationship = (
+            "documented"
+            if signal["adds_interpretation_beyond_velocity"]
+            else "missing_or_pure_usage_proxy"
+        )
+        lines.append(f"- {signal['signal_name']}: {relationship}")
+    lines.extend(
+        [
+            "",
+            "## Governance Safety Review",
+            "",
+            "- Aggregate-only output.",
+            "- Export validation fails closed when person-level fields are present.",
+            "- No canonical events, suppression reasons, tunable thresholds, admin overrides, APIs, schemas, migrations, or frontend surfaces are added.",
+            "- No individual scoring, team ranking, maturity scoring, productivity scoring, ROI calculation, causal claim, or prediction claim is added.",
+            "",
+            "## Promotion Decision Table",
+            "",
+            "| signal_name | decision | confidence | evidence_summary | primary_reason | product_destination | required_followup |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ]
+    )
+    for signal in signals.values():
+        lines.append(
+            "| {signal_name} | {decision} | {confidence} | {evidence_summary} | "
+            "{primary_reason} | {product_destination} | {required_followup} |".format(**signal)
+        )
+    lines.extend(
+        [
+            "",
+            "## Recommended Next Phase",
+            "",
+            "- PROMOTE: complete manual governance review before any product contract, API, schema, or customer-facing readout work.",
+            "- HOLD: keep the signal research-only and collect more comparable aggregate windows or mapping evidence.",
+            "- REJECT: do not use the signal in product readouts unless governance reopens it.",
+            "",
+            "## Required Caveats",
+            "",
+            "- One diagnostic run is not enough for product promotion.",
+            "- Distribution shape is not proof of signal validity.",
+            "- Dogfood validation does not create customer-facing economic evidence.",
+            "- Suppressed, unsafe, incomplete, or ambiguous inputs must not be rescued by manual override.",
+            "- Signals remain aggregate-only and must not be used for employee, team, manager, or department comparison.",
+            "",
+        ]
+    )
     return "\n".join(lines) + "\n"
+
+
+def write_promotion_table(path: Path, signals: dict[str, dict[str, Any]]) -> None:
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=PROMOTION_TABLE_COLUMNS)
+        writer.writeheader()
+        for signal in signals.values():
+            writer.writerow({column: signal[column] for column in PROMOTION_TABLE_COLUMNS})
 
 
 def run(input_dir: Path, output_dir: Path) -> dict[str, Any]:
@@ -451,14 +626,14 @@ def run(input_dir: Path, output_dir: Path) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     evaluated = {spec.signal_name: evaluate_signal(input_dir, spec) for spec in SIGNAL_SPECS}
     has_failure = any(
-        signal["forbidden_fields"] or signal["missing_columns"] for signal in evaluated.values()
+        signal["forbidden_field_detected"] or signal["missing_columns"] for signal in evaluated.values()
     )
     status = "FAIL" if has_failure else "PASS"
     summary = {
         "status": status,
         "governance": {
             "person_level_fields_present": any(
-                bool(signal["forbidden_fields"]) for signal in evaluated.values()
+                signal["forbidden_field_detected"] for signal in evaluated.values()
             ),
             "output_is_aggregate_only": True,
             "dogfood_only": True,
@@ -471,10 +646,11 @@ def run(input_dir: Path, output_dir: Path) -> dict[str, Any]:
         },
         "signals": evaluated,
     }
-    (output_dir / "validation_summary.json").write_text(
+    (output_dir / SUMMARY_FILENAME).write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n"
     )
-    (output_dir / "VALIDATION_READOUT.md").write_text(render_readout(evaluated, status))
+    (output_dir / READOUT_FILENAME).write_text(render_readout(evaluated, status))
+    write_promotion_table(output_dir / PROMOTION_TABLE_FILENAME, evaluated)
     return summary
 
 
@@ -495,7 +671,7 @@ def main() -> int:
 
     failures: list[str] = []
     for signal in summary["signals"].values():
-        if signal["forbidden_fields"]:
+        if signal["forbidden_field_detected"]:
             failures.append(f"{signal['signal_name']}: forbidden person-level fields")
         if signal["missing_columns"]:
             failures.append(f"{signal['signal_name']}: missing required columns")

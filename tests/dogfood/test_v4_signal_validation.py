@@ -8,6 +8,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DRIVER = ROOT / "scripts" / "dogfood" / "run_v4_signal_validation.py"
 FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "v4_signal_validation"
+SUMMARY_OUTPUT = "v4_signal_validation_summary.json"
+READOUT_OUTPUT = "V4_SIGNAL_VALIDATION_READOUT.md"
+PROMOTION_TABLE_OUTPUT = "v4_signal_promotion_table.csv"
+PROMOTION_COLUMNS = [
+    "signal_name",
+    "decision",
+    "confidence",
+    "evidence_summary",
+    "primary_reason",
+    "product_destination",
+    "required_followup",
+]
 
 
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
@@ -34,6 +46,12 @@ def run_validator(input_dir: Path, output_dir: Path) -> subprocess.CompletedProc
         text=True,
         timeout=20,
     )
+
+
+def copy_fixture_dir(source: Path, target: Path) -> None:
+    target.mkdir(parents=True, exist_ok=True)
+    for path in source.glob("*.csv"):
+        (target / path.name).write_text(path.read_text())
 
 
 def refinement_row(p50: float = 2.0) -> dict[str, object]:
@@ -115,57 +133,100 @@ def test_three_stable_windows_can_recommend_promote_without_person_fields(tmp_pa
     assert FIXTURE_ROOT.exists()
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
-    write_complete_input(input_dir)
+    copy_fixture_dir(FIXTURE_ROOT / "complete", input_dir)
 
     completed = run_validator(input_dir, output_dir)
 
     assert completed.returncode == 0, completed.stderr
-    summary = json.loads((output_dir / "validation_summary.json").read_text())
+    assert (output_dir / SUMMARY_OUTPUT).exists()
+    assert (output_dir / READOUT_OUTPUT).exists()
+    assert (output_dir / PROMOTION_TABLE_OUTPUT).exists()
+    summary_text = (output_dir / SUMMARY_OUTPUT).read_text()
+    summary = json.loads(summary_text)
     assert summary["status"] == "PASS"
     assert summary["governance"]["person_level_fields_present"] is False
     assert summary["governance"]["output_is_aggregate_only"] is True
+    assert summary["signals"]["depth"]["decision"] == "HOLD"
     assert summary["signals"]["delegation_depth"]["decision"] == "PROMOTE"
     assert summary["signals"]["rapid_refinement"]["decision"] == "PROMOTE"
     assert summary["signals"]["reusable_workflow_propagation"]["decision"] == "PROMOTE"
-    assert summary["signals"]["velocity_depth_zone"]["decision"] == "PROMOTE"
+    assert summary["signals"]["velocity_depth_zone"]["decision"] == "REJECT"
+    assert "user_id" not in summary_text
+    assert "email" not in summary_text
 
-    readout = (output_dir / "VALIDATION_READOUT.md").read_text()
+    readout = (output_dir / READOUT_OUTPUT).read_text()
+    for heading in [
+        "## Executive Summary",
+        "## Signals Evaluated",
+        "## Inputs Found",
+        "## Inputs Missing",
+        "## Multi-Window Stability Summary",
+        "## Distribution Shape Summary",
+        "## Coverage Summary",
+        "## Velocity Relationship Summary",
+        "## Governance Safety Review",
+        "## Promotion Decision Table",
+        "## Recommended Next Phase",
+        "## Required Caveats",
+    ]:
+        assert heading in readout
     assert "| delegation_depth | PROMOTE |" in readout
+    assert "| depth | HOLD |" in readout
+    assert "| velocity_depth_zone | REJECT |" in readout
     assert "This is dogfood validation only." in readout
     assert "u-123" not in readout
+    assert "No individual scoring, team ranking, maturity scoring, productivity scoring" in readout
+    for prohibited_claim in [
+        "realized roi is",
+        "causal productivity lift is",
+        "customer-facing prediction is",
+        "individual score:",
+        "team rank:",
+        "maturity score:",
+    ]:
+        assert prohibited_claim not in readout.lower()
+
+    with (output_dir / PROMOTION_TABLE_OUTPUT).open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert list(rows[0].keys()) == PROMOTION_COLUMNS
+    assert {row["signal_name"] for row in rows} == {
+        "depth",
+        "delegation_depth",
+        "reusable_workflow_propagation",
+        "rapid_refinement",
+        "velocity_depth_zone",
+    }
+    decisions = {row["decision"] for row in rows}
+    assert {"PROMOTE", "HOLD", "REJECT"}.issubset(decisions)
 
 
 def test_forbidden_person_level_field_fails_closed(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
-    write_complete_input(input_dir)
-    unsafe = delegation_row()
-    unsafe["user_id"] = "u-123"
-    write_csv(input_dir / "v4_delegation_window_2.csv", [unsafe])
+    copy_fixture_dir(FIXTURE_ROOT / "forbidden_field", input_dir)
 
     completed = run_validator(input_dir, output_dir)
 
     assert completed.returncode == 1
     assert "forbidden person-level fields" in completed.stderr
-    summary = json.loads((output_dir / "validation_summary.json").read_text())
+    summary_text = (output_dir / SUMMARY_OUTPUT).read_text()
+    summary = json.loads(summary_text)
     assert summary["status"] == "FAIL"
     assert summary["signals"]["delegation_depth"]["decision"] == "REJECT"
-    assert "user_id" in summary["signals"]["delegation_depth"]["forbidden_fields"]
+    assert summary["signals"]["delegation_depth"]["forbidden_field_detected"] is True
+    assert "user_id" not in summary_text
 
 
 def test_missing_required_column_fails_closed(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
-    write_complete_input(input_dir)
-    incomplete = delegation_row()
-    incomplete.pop("bucket_event_share")
-    write_csv(input_dir / "v4_delegation_window_1.csv", [incomplete])
+    copy_fixture_dir(FIXTURE_ROOT / "incomplete", input_dir)
 
     completed = run_validator(input_dir, output_dir)
 
     assert completed.returncode == 1
     assert "missing required columns" in completed.stderr
-    summary = json.loads((output_dir / "validation_summary.json").read_text())
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
     assert summary["status"] == "FAIL"
     assert summary["signals"]["delegation_depth"]["decision"] == "REJECT"
     assert "bucket_event_share" in summary["signals"]["delegation_depth"]["missing_columns"]
@@ -174,12 +235,12 @@ def test_missing_required_column_fails_closed(tmp_path: Path) -> None:
 def test_fewer_than_three_windows_holds_not_promotes(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
-    write_family_windows(input_dir, "refinement", refinement_row, windows=2)
+    copy_fixture_dir(FIXTURE_ROOT / "two_windows", input_dir)
 
     completed = run_validator(input_dir, output_dir)
 
     assert completed.returncode == 0, completed.stderr
-    summary = json.loads((output_dir / "validation_summary.json").read_text())
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
     assert summary["status"] == "PASS"
     assert summary["signals"]["rapid_refinement"]["decision"] == "HOLD"
     assert summary["signals"]["rapid_refinement"]["windows_present"] == 2

@@ -3,12 +3,14 @@
 ## Purpose
 
 This runbook prepares weekend validation for V4 candidate signals. It explains
-how to produce aggregate BigQuery exports, name them consistently, run the
-follow-up local validator, and prepare the manual review needed before any
-candidate can move beyond research.
+how to produce aggregate BigQuery exports, name them consistently, run the local
+validator, and prepare the manual review needed before any candidate can move
+beyond research.
 
-This runbook does not add scripts, SQL, tests, schemas, APIs, migrations, or
-frontend surfaces. The validation script is a follow-up PR.
+This runbook does not add SQL, schemas, APIs, migrations, or frontend
+surfaces. The dogfood validation harness exists under
+`scripts/dogfood/run_v4_signal_validation.py` and remains a local validation
+tool, not a product API or customer-facing readout.
 
 Use this runbook with:
 
@@ -117,7 +119,7 @@ operator notes in the readout artifact instead.
 
 ## Local Validation Command
 
-After the follow-up validation script PR lands, run:
+Run:
 
 ```bash
 python3 scripts/dogfood/run_v4_signal_validation.py \
@@ -125,11 +127,28 @@ python3 scripts/dogfood/run_v4_signal_validation.py \
   --output-dir dogfood-output/v4-signal-validation
 ```
 
-This runbook prepares weekend validation; the validation script is a follow-up
-PR.
+The harness prepares weekend validation outputs. The generated readout remains
+dogfood-only and must still be reviewed against the manual checklist before any
+promotion decision is accepted.
 
-Until that script exists, use the manual review checklist and the readout
-template as the durable validation artifact.
+## Harness Implementation
+
+The local harness command now exists. It validates aggregate CSV exports,
+detects the refinement, delegation, reusable workflow propagation, and Velocity
+x Depth input families, and emits a five-signal promotion table covering:
+
+- `depth`,
+- `delegation_depth`,
+- `reusable_workflow_propagation`,
+- `rapid_refinement`,
+- `velocity_depth_zone`.
+
+The harness fails closed when required aggregate columns are missing or when an
+export includes forbidden person-level fields such as user IDs, emails, names,
+raw prompts, raw outputs, transcripts, or raw event rows.
+
+The harness does not productize V4 signals. `PROMOTE` means eligible for later
+productization review, not automatically productized.
 
 ## Expected Outputs
 
@@ -141,11 +160,13 @@ dogfood-output/v4-signal-validation
 
 Expected outputs should include:
 
-- one consolidated validation summary,
-- one per-signal stability section,
-- one coverage section,
-- one governance safety section,
-- one decision recommendation table,
+- `V4_SIGNAL_VALIDATION_READOUT.md`,
+- `v4_signal_validation_summary.json`,
+- `v4_signal_promotion_table.csv`,
+- one per-signal stability section in the Markdown readout,
+- one coverage section in the Markdown readout,
+- one governance safety section in the Markdown readout,
+- one decision recommendation table in Markdown and CSV form,
 - no raw event rows,
 - no person-level fields,
 - no hidden reconstructed suppressed values.
@@ -228,7 +249,6 @@ The validation process must not add:
 - suppression reasons,
 - tunable thresholds,
 - admin overrides,
-- scripts in this PR,
 - SQL in this PR,
 - schemas,
 - APIs,
