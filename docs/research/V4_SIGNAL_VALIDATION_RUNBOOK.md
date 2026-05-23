@@ -2,204 +2,238 @@
 
 ## Purpose
 
-This runbook describes how to execute a dogfood validation pass for V4 candidate
-signals before any productization work begins.
+This runbook prepares weekend validation for V4 candidate signals. It explains
+how to produce aggregate BigQuery exports, name them consistently, run the
+follow-up local validator, and prepare the manual review needed before any
+candidate can move beyond research.
 
-Use it with:
+This runbook does not add scripts, SQL, tests, schemas, APIs, migrations, or
+frontend surfaces. The validation script is a follow-up PR.
+
+Use this runbook with:
 
 - [V4_SIGNAL_VALIDATION_GATE.md](./V4_SIGNAL_VALIDATION_GATE.md)
 - [V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md](./V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
 - [SIGNAL_PROMOTION_CRITERIA.md](./SIGNAL_PROMOTION_CRITERIA.md)
 - [V4_SIGNAL_DISCOVERY_PROBES.md](./V4_SIGNAL_DISCOVERY_PROBES.md)
 
-## Scope
+## Prerequisites
 
-This is dogfood validation only. It does not create product APIs, schemas,
-contracts, customer-facing readouts, SQL, scripts, tests, migrations, or
-frontend surfaces.
+Before running validation, confirm:
 
-## Candidate Signals
+- the candidate signals are limited to the current V4 validation set,
+- the BigQuery source is approved for dogfood validation,
+- three comparable windows or cohorts are available,
+- each SQL probe uses aggregate-safe final output,
+- the operator can export CSV files to `dogfood-input/v4-signal-validation`,
+- no raw prompts, raw outputs, transcripts, person-level rows, direct
+  identifiers, or raw event extracts will be exported.
 
-Validate only the current V4 candidates:
+If fewer than three comparable windows are available, the output must default to
+HOLD, not PROMOTE.
 
-- Depth,
-- Delegation Depth,
-- Reusable Workflow Propagation,
-- Rapid Refinement,
-- Velocity x Depth Zone.
+## BigQuery Inputs
 
-New candidates require an updated research plan before they enter this runbook.
+Use approved dogfood BigQuery sources only. Record the project, dataset, table,
+cohort definition, and date boundaries in the readout artifact.
 
-## Inputs
+The expected probe inputs are:
 
-Before starting, identify:
+- refinement probe output,
+- delegation probe output,
+- reusable workflow propagation probe output,
+- velocity x depth zone output.
 
-- candidate signal,
-- source query or diagnostic output,
+The velocity x depth zone export may come from an approved existing diagnostic
+or manually assembled aggregate output until a dedicated probe exists. It must
+remain aggregate-only.
+
+## Required Windows
+
+Use three fixed, comparable windows:
+
+- `window_1`
+- `window_2`
+- `window_3`
+
+The windows should be equal length unless the readout explicitly documents why
+they are comparable. One 60-day diagnostic window is insufficient for product
+promotion.
+
+Record for each window:
+
+- start timestamp,
+- end timestamp,
+- cohort definition,
 - source table or export,
-- cohort definition,
-- fixed windows or comparable cohorts,
-- eligible surfaces,
-- known taxonomy exclusions,
-- value-realization decision the signal might support.
-
-Do not include raw prompts, raw outputs, transcripts, person-level rows, direct
-identifiers, or raw event extracts in the readout artifact.
-
-## Step 1: Confirm Governance Eligibility
-
-Confirm the candidate does not require:
-
-- new canonical events,
-- new suppression reasons,
-- tunable thresholds,
-- admin overrides,
-- person-level output,
-- team or manager comparisons,
-- productivity measurement,
-- ROI calculation,
-- causal proof,
-- prediction output.
-
-If any item is required, stop and mark the candidate `REJECT` or send it back to
-governance before analysis.
-
-## Step 2: Select Comparable Windows Or Cohorts
-
-Choose multiple comparable windows or cohorts.
-
-One 60-day diagnostic window is insufficient for product promotion. Use at
-least three fixed windows or comparable cohorts unless the run is explicitly
-marked exploratory and cannot result in `PROMOTE`.
-
-Record:
-
-- window start and end dates,
-- cohort definition,
-- table or export source,
 - taxonomy version,
 - known instrumentation changes.
 
-## Step 3: Run Existing Diagnostics
+## SQL Probe Execution
 
-Use existing dogfood diagnostics or already-approved analysis outputs. This
-runbook does not add new SQL or scripts.
+For each window, run the existing SQL probes with `window_start` and
+`window_end` set to that window.
 
-For candidate signals from the discovery pack, run the relevant existing probe
-against each fixed window or cohort and preserve aggregate outputs only.
+Use the existing dogfood probes for:
 
-## Step 4: Check Distribution Shape
+- rapid refinement,
+- delegation,
+- reusable workflow propagation.
 
-Document aggregate shape:
+For Velocity x Depth Zone, use an approved aggregate diagnostic that preserves
+Velocity's frequency, engagement, and breadth dimensions and Depth's aggregate
+work-integration evidence. Do not collapse them into a score.
 
-- p50,
-- p90,
-- p99,
-- spread ratios where useful,
-- share metrics where useful,
-- surfaced/suppressed counts,
-- notable surface or workflow-family variance.
+The final SQL outputs must be aggregate-only. Intermediate warehouse logic may
+compute over person-level rows only inside the approved environment.
 
-State what the distribution can and cannot prove. Heavy-tail variance is
-evidence of possible signal, not proof of signal.
+## Export Naming Convention
 
-## Step 5: Check Multi-Window Stability
+Export CSV files into:
 
-Compare shape and interpretation across windows or cohorts.
+```text
+dogfood-input/v4-signal-validation
+```
 
-Classify stability as:
+Use exactly these names:
 
-- `stable`,
-- `directionally_stable`,
-- `unstable`,
-- `inconclusive`.
+```text
+v4_refinement_window_1.csv
+v4_refinement_window_2.csv
+v4_refinement_window_3.csv
+v4_delegation_window_1.csv
+v4_delegation_window_2.csv
+v4_delegation_window_3.csv
+v4_reuse_propagation_window_1.csv
+v4_reuse_propagation_window_2.csv
+v4_reuse_propagation_window_3.csv
+v4_velocity_depth_window_1.csv
+v4_velocity_depth_window_2.csv
+v4_velocity_depth_window_3.csv
+```
 
-Document whether changes appear behavioral, taxonomic, instrumentation-driven,
-or unexplained.
+Do not add extra suffixes, dates, or local notes to the filenames. Put
+operator notes in the readout artifact instead.
 
-## Step 6: Check Coverage
+## Local Validation Command
 
-Document coverage:
+After the follow-up validation script PR lands, run:
 
-- cohort size,
-- eligible event counts,
-- included surfaces,
-- excluded surfaces,
-- unmapped surfaces,
-- ambiguous attribution,
-- suppressed windows or slices.
+```bash
+python3 scripts/dogfood/run_v4_signal_validation.py \
+  --input-dir dogfood-input/v4-signal-validation \
+  --output-dir dogfood-output/v4-signal-validation
+```
 
-Coverage gaps should usually produce `HOLD`, not promotion.
+This runbook prepares weekend validation; the validation script is a follow-up
+PR.
 
-## Step 7: Check Relationship To Velocity
+Until that script exists, use the manual review checklist and the readout
+template as the durable validation artifact.
 
-State whether the candidate is independent of, complementary to, dependent on,
-or confounded by Velocity.
+## Expected Outputs
 
-Keep Velocity dimensions separate:
+The follow-up validator should produce aggregate-only outputs under:
 
-- frequency,
-- engagement,
-- breadth.
+```text
+dogfood-output/v4-signal-validation
+```
 
-Do not collapse Velocity and the candidate into a score.
+Expected outputs should include:
 
-## Step 8: Check Value-Realization Relationship
+- one consolidated validation summary,
+- one per-signal stability section,
+- one coverage section,
+- one governance safety section,
+- one decision recommendation table,
+- no raw event rows,
+- no person-level fields,
+- no hidden reconstructed suppressed values.
 
-Name the specific decision the candidate supports. Examples:
+If validation inputs are incomplete, unsafe, or unstable, the expected output is
+`HOLD` or `REJECT`, not `PROMOTE`.
 
-- scale,
-- harvest,
-- coach,
-- redesign,
-- govern,
-- suppress,
-- mapping improvement,
-- transformer enhancement.
+## Manual Review Checklist
 
-State whether the candidate can inform Quality Multiplier, Reliability Factor,
-Causal Delta, Outcome Evidence interpretation, Time-Saved Defensibility Range,
-AI Value Leakage Map, AI Scale Readiness Portfolio, or Trust Calibration Index.
+Before any promotion meeting, manually confirm:
 
-## Step 9: Complete Safety Review
+- all twelve required CSV files are present,
+- all three windows are comparable,
+- no export contains user IDs, emails, names, raw prompts, raw outputs,
+  transcripts, or raw event rows,
+- final outputs are aggregate-only,
+- each signal has p50, p90, p99, share, or coverage evidence as applicable,
+- ambiguous mappings are documented,
+- suppressed windows or slices are documented,
+- Velocity dimensions are not collapsed into a score,
+- Depth and Delegation Depth are not treated as maturity labels,
+- no signal is framed as ROI, causal proof, prediction, or productivity.
 
-Confirm the candidate remains:
+Any export containing user IDs, emails, names, raw prompts, raw outputs,
+transcripts, or raw event rows must fail validation.
 
-- aggregate-only,
-- fail-closed,
-- taxonomy-aligned,
-- non-causal by default,
-- non-predictive unless separately validated,
-- free of ranking, scoring, productivity, ROI, and employee-evaluation claims.
+## Promotion Decision Meeting Checklist
 
-If safety review fails, mark `REJECT`.
+The decision meeting must answer:
 
-## Step 10: Decide Outcome
+- Does each signal have evidence across three comparable windows?
+- Is distribution shape meaningful and stable enough to interpret?
+- Is coverage sufficient?
+- Is the taxonomy mapping defensible?
+- Is the relationship to Velocity documented?
+- Is the relationship to value-realization primitives specific?
+- Does the signal support a concrete executive or product decision?
+- Does the governance safety review pass?
+- Is the correct outcome `PROMOTE`, `HOLD`, or `REJECT`?
 
-Use one outcome:
+`PROMOTE` means eligible for later productization, not automatically
+productized.
 
-- `PROMOTE`: eligible for later productization, not automatically productized.
-- `HOLD`: research-only.
-- `REJECT`: must not be used in product readouts unless governance reopens it.
+`HOLD` means research-only.
 
-Do not choose `PROMOTE` when any required evidence is missing.
+`REJECT` means must not be used in product readouts unless governance reopens
+it.
 
-## Step 11: Write The Readout Artifact
+## Known Failure Modes
 
-Complete
-[V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md](./V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md).
+Known failure modes include:
 
-The readout is the durable artifact. Do not rely on chat-only conclusions.
+- fewer than three comparable windows,
+- missing one or more required exports,
+- inconsistent window lengths without justification,
+- user IDs, emails, names, prompts, outputs, transcripts, or raw rows in CSVs,
+- taxonomy drift between windows,
+- unmapped surfaces silently included in numerators,
+- Velocity and Depth collapsed into a score,
+- reusable workflow evidence based on unlisted or ephemeral workflows,
+- rapid same-surface reuse overclaimed as confirmed refinement,
+- distribution shape interpreted as product proof,
+- coverage gaps treated as successful validation,
+- output recommending `PROMOTE` when evidence is incomplete.
 
-## Completion Checklist
+If fewer than three comparable windows are available, the output must default to
+HOLD, not PROMOTE.
 
-- [ ] Multiple comparable windows or cohorts documented.
-- [ ] Distribution shape documented.
-- [ ] Multi-window stability classified.
-- [ ] Coverage documented.
-- [ ] Velocity relationship documented.
-- [ ] Value-realization relationship documented.
-- [ ] Governance safety review completed.
-- [ ] Decision outcome selected.
-- [ ] Readout artifact written.
-- [ ] No product code, schema, API, SQL, migration, test, or frontend surface added.
+## Governance Constraints
+
+This is dogfood validation only.
+
+No signal may be promoted if it creates individual scoring, team ranking,
+prohibited maturity scoring, productivity scoring, ROI claims, causal claims,
+or prediction claims.
+
+The validation process must not add:
+
+- canonical events,
+- suppression reasons,
+- tunable thresholds,
+- admin overrides,
+- scripts in this PR,
+- SQL in this PR,
+- schemas,
+- APIs,
+- Prisma migrations,
+- frontend product surfaces,
+- customer-facing readouts.
+
+All readouts must remain aggregate-only and fail-closed.
