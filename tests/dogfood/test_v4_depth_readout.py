@@ -55,6 +55,18 @@ def output_text(output_dir: Path) -> str:
     )
 
 
+def remove_column_from_csv(path: Path, column: str) -> None:
+    with path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        original_fieldnames = list(rows[0].keys())
+        fieldnames = [field for field in original_fieldnames if field != column]
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row[field] for field in fieldnames})
+
+
 def test_depth_readout_generates_outputs_and_all_zones(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
@@ -128,6 +140,27 @@ def test_depth_readout_generates_outputs_and_all_zones(tmp_path: Path) -> None:
         "productivity score:",
     ]:
         assert prohibited_claim not in combined
+
+
+def test_bucket_level_delegation_does_not_drive_surface_depth(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    copy_fixture_dir(FIXTURE_ROOT / "complete", input_dir)
+    for path in input_dir.glob("v4_delegation_window_*.csv"):
+        remove_column_from_csv(path, "workflow_id")
+
+    completed = run_depth_readout(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    with (output_dir / BY_SURFACE_OUTPUT).open(newline="") as handle:
+        rows = {row["surface_id"]: row for row in csv.DictReader(handle)}
+
+    unmapped = rows["workflow:UNMAPPED"]
+    assert unmapped["zone"] == "INSUFFICIENT_EVIDENCE"
+    assert unmapped["depth_index"] == ""
+    assert unmapped["delegation_depth_index"] == ""
+    assert rows["workflow:agent:autonomous"]["zone"] == "OPERATING_LEVERAGE_CANDIDATE"
+    assert "Delegation export is bucket-level" in (output_dir / READOUT_OUTPUT).read_text()
 
 
 def test_forbidden_person_level_fields_fail_closed(tmp_path: Path) -> None:

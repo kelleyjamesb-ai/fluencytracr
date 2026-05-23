@@ -358,7 +358,7 @@ def build_surface_rows(inputs: list[CsvInput]) -> list[dict[str, Any]]:
     for surface_id in sorted(velocity):
         velocity_row = velocity[surface_id]
         refinement_row = refinement.get(surface_id)
-        delegation_row = delegation.get(surface_id) or delegation.get("__aggregate__")
+        delegation_row = delegation.get(surface_id)
         combined_depth = depth_index(refinement_row, delegation_row)
         row = {
             "surface_id": surface_id,
@@ -501,7 +501,7 @@ def run(input_dir: Path, output_dir: Path) -> tuple[dict[str, Any], list[dict[st
     rows = [] if (missing_required or missing_columns or forbidden_present) else build_surface_rows(csv_inputs)
     reuse_status = aggregate_reuse_status(csv_inputs)
     evidence_gaps = []
-    if any(row.get("delegation_source") == "aggregate" for row in rows):
+    if "__aggregate__" in aggregate_delegation(csv_inputs):
         evidence_gaps.append("Delegation export is bucket-level for one or more surfaces.")
     if any(row["zone"] == "INSUFFICIENT_EVIDENCE" for row in rows):
         evidence_gaps.append("One or more velocity surfaces lack matching depth evidence.")
