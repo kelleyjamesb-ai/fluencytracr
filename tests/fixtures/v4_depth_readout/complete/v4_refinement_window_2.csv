@@ -1,0 +1,6 @@
+surface_family,workflow_family,refinement_evidence_type,aggregate_join_key_count,observed_event_count,repeated_event_count,p50,p90,p99
+workflow,workflow:agent:autonomous,confirmed_same_session_refinement,62,310,218,5,9,12
+workflow,workflow:CHAT,rapid_same_surface_reuse,72,330,32,1,2,3
+workflow,workflow:agent:workflow_named,confirmed_same_session_refinement,33,155,116,4,8,10
+standalone,standalone:SEARCH,rapid_same_surface_reuse,56,220,19,1,2,2
+workflow,workflow:SPARSE,confirmed_same_session_refinement,3,16,12,3,5,6

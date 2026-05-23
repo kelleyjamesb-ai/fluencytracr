@@ -84,6 +84,18 @@ productization PR and governance review. Held signals remain research-only.
 Rejected signals must not be used in product readouts unless governance reopens
 them.
 
+## V4 Depth Readout Status
+
+The V4 Depth Readout Engine is dogfood-only. It can compose aggregate Velocity,
+Delegation Depth, and refinement diagnostics into local candidate zones for
+research review, but it does not change production V4 behavior.
+
+- [V4 Depth Readout Runbook](../../research/V4_DEPTH_READOUT_RUNBOOK.md)
+
+Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` pending
+metadata observability. V4 economic readouts remain blocked until Depth readout
+stability is demonstrated across windows or cohorts.
+
 ## Running Multi-Surface Dogfood
 
 1. Export BigQuery surface aggregates to CSV with the columns shown in [`examples/dogfood/example_multi_surface_input.csv`](../../../examples/dogfood/example_multi_surface_input.csv).
