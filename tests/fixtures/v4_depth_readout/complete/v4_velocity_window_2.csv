@@ -1,0 +1,7 @@
+workflow_id,surface_category,cohort_size,window_days,surface_interaction_count,freq_p50,engagement_p50,breadth_p50
+workflow:agent:autonomous,workflow,82,60,820,84,51,8
+workflow:CHAT,workflow,92,60,910,85,51,8
+workflow:agent:workflow_named,workflow,46,60,190,17,21,3
+standalone:SEARCH,standalone,72,60,220,16,17,2
+workflow:UNMAPPED,workflow,61,60,430,80,47,8
+workflow:SPARSE,workflow,3,60,11,84,51,8

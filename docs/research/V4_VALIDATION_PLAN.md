@@ -23,11 +23,24 @@ Canonical validation gate documents:
 - [V4 Signal Validation Gate](./V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](./V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](./V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
+- [V4 Depth Readout Runbook](./V4_DEPTH_READOUT_RUNBOOK.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
 means a signal is eligible for later productization review, not automatically
 productized.
+
+## V4 Depth Readout Gate
+
+The V4 Depth Readout Engine is dogfood-only. It may be used to study how
+aggregate Velocity and Depth evidence interact across workflow or surface
+aggregates, but it does not authorize V4 economic APIs, customer-facing
+readouts, schemas, or frontend product surfaces.
+
+Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
+future validation promotes them. Time-Saved Defensibility Range and other V4
+economic readouts remain blocked until Depth readout stability is demonstrated
+across windows or cohorts.
 
 ## Candidate Predictive Tests
 
