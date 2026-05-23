@@ -4,6 +4,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SQL = ROOT / "sql" / "dogfood" / "velocity_diagnostic.sql"
 AGENT_SQL = ROOT / "sql" / "dogfood" / "agent_type_diagnostic.sql"
+DELEGATION_SQL = ROOT / "sql" / "dogfood" / "delegation_depth_diagnostic.sql"
+REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "refinement_depth_diagnostic.sql"
+REUSE_SQL = ROOT / "sql" / "dogfood" / "reuse_propagation_diagnostic.sql"
+V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.sql"
+V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
+V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
+
+DOGFOOD_DIAGNOSTIC_SQL = [
+    SQL,
+    AGENT_SQL,
+    DELEGATION_SQL,
+    REFINEMENT_SQL,
+    REUSE_SQL,
+    V4_DELEGATION_SQL,
+    V4_REFINEMENT_SQL,
+    V4_REUSE_SQL,
+]
 
 
 def test_glean_bot_activity_anti_double_count_is_enforced_in_sql() -> None:
@@ -109,3 +126,64 @@ def test_agent_type_diagnostic_reports_sub_surface_aggregates() -> None:
         "p95_latency_ms",
     ]:
         assert field in sql
+
+
+def test_dogfood_diagnostics_use_native_struct_paths_for_scio_prod() -> None:
+    invalid_alias_paths = [
+        "jsonPayload.workflowrun.rootWorkflowId",
+        "jsonPayload.workflowrun.workflowid",
+        "jsonPayload.workflowrun.workflowId",
+        "jsonPayload.workflowrun.runId",
+        "jsonPayload.workflowrun.id",
+        "jsonPayload.user.id",
+        "jsonPayload.user.canonicalid",
+        "JSON_VALUE(jsonPayload",
+    ]
+
+    for path in DOGFOOD_DIAGNOSTIC_SQL:
+        sql = path.read_text()
+
+        for invalid_path in invalid_alias_paths:
+            assert invalid_path not in sql, f"{path} uses invalid scio-prod alias path {invalid_path}"
+
+        assert "jsonPayload.workflowrun.rootworkflowid" in sql
+        assert "jsonPayload.workflowrun.runid" in sql
+
+
+def test_reuse_propagation_diagnostic_reports_candidate_and_coverage_metrics() -> None:
+    sql = REUSE_SQL.read_text()
+
+    for population in [
+        "named_workflow_candidate",
+        "confirmed_reusable_candidate",
+        "autonomous_agent",
+        "ephemeral_or_unlisted_agent",
+        "unclassified_agent_workflow",
+        "unmatched_agent_workflow",
+    ]:
+        assert population in sql
+
+    for output_field in [
+        "population",
+        "adopter_bucket",
+        "workflow_count",
+        "run_count",
+        "summed_workflow_adopters",
+        "workflow_share",
+        "run_share",
+        "adopter_count_p50",
+        "adopter_count_p90",
+        "adopter_count_p99",
+        "bucket_adopter_count_p50",
+        "bucket_adopter_count_p90",
+        "bucket_adopter_count_p99",
+        "snapshot_match_rate",
+        "named_candidate_count",
+        "confirmed_reusable_candidate_count",
+        "unmatched_agent_workflow_count",
+    ]:
+        assert output_field in sql
+
+    assert "named_workflow_candidate AS (" in sql
+    assert "confirmed_reusable_candidate AS (" in sql
+    assert "snapshot_join_coverage AS (" in sql
