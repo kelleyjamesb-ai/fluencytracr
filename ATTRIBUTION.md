@@ -47,6 +47,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day velocity diagnostic across 1,553 internal Glean users and 13 workflow surfaces
 - Used in: V2 Velocity concept document, V2 canonical velocity events, and Velocity Index implementation
 
+### Maturity as post-saturation depth
+- Source: James Kelley, post-saturation maturity framing for AI value realization
+- Empirical grounding: scio-prod dogfood diagnostics showing high adoption can still have emerging verification depth, workflow reuse, and agent relationship maturity
+- Used in: Maturity concept document
+
 ### Surface taxonomy across AI touchpoints
 - Source: James Kelley, surface-taxonomy insight that AI fluency must be measured across every AI touchpoint, not within an arbitrarily scoped subset
 - Empirical grounding: scio-prod 60-day surface diagnostic showing V1 captured roughly 3.3M of an addressable ~28M first-class AI-use events

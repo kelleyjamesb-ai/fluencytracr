@@ -27,6 +27,10 @@ FluencyTracr sits on top of that pipeline as five bounded evidence services:
   the same fail-closed gates clear. Dogfood velocity coverage now follows the
   full surface taxonomy in [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md),
   spanning workflow and standalone AI surfaces without adding person-level output.
+- **Maturity:** frames post-saturation depth: verification, workflow repertoire,
+  reusable workflow creation, agent relationship mix, and recovery discipline.
+  It explains whether high adoption is becoming sophisticated enough to support
+  defensible value claims.
 - **AGENT sub-surfaces:** V2.3 splits AGENT into `agent:autonomous`,
   `agent:workflow_named`, and `agent:ephemeral` so delegation, reusable Skill,
   and exploratory agent behavior can be evaluated independently.
@@ -100,6 +104,7 @@ is not the lead positioning for this repository.
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - V3 production ingest walkthrough: [docs/integrations/value-realization/V3_INGEST.md](docs/integrations/value-realization/V3_INGEST.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
+- Maturity concept: [docs/concepts/MATURITY.md](docs/concepts/MATURITY.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)
 - Production ingest concept: [docs/concepts/INGEST.md](docs/concepts/INGEST.md)

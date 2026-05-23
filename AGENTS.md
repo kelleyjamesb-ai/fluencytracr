@@ -62,6 +62,8 @@ Future expansions require a governance-grade concept doc in docs/concepts/ befor
 
 Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemented as three aggregate-distribution canonical events plus a Velocity Index output. It preserves the V1 suppression reasons, fail-closed posture, and no-individual-scoring invariant.
 
+Maturity is a defined future concept (see docs/concepts/MATURITY.md). It frames post-saturation depth through verification, workflow repertoire, reusable workflow creation, agent relationship mix, and recovery discipline. It is not yet implemented and does not modify canonical events, suppression reasons, or fail-closed gates.
+
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md). It is not yet implemented and does not modify any V1 or V2 invariants. Implementation will require a separate governance review and explicit AGENTS.md update.
 
 Split of AGENT surface into autonomous / named-workflow / ephemeral sub-surfaces is a defined V2.3 concept (see docs/concepts/AGENT_TYPES.md). Implemented workflow surface labels replace the single AGENT bucket with `agent:autonomous`, `agent:workflow_named`, and `agent:ephemeral`; they do not modify any canonical observation events or suppression reasons.
@@ -78,6 +80,7 @@ Calibration governance is a defined V3 concept (see docs/concepts/CALIBRATION.md
 - Reliability Factor: composite of abandonment, friction loop, recovery, verification
 - Outcome Evidence: customer-attested aggregate KPI ingestion (storage only)
 - Velocity Index: V2 aggregate-distribution output across frequency, engagement, and breadth
+- Maturity: future aggregate-depth lens for post-saturation AI use, including verification, reusable workflows, workflow repertoire, agent mix, and recovery discipline
 
 ## 8. Repositioning Context
 
