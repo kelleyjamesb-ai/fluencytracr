@@ -12,8 +12,7 @@ integration.
 
 The older Maturity framing overlapped with Depth and could be mistaken for a
 stage model, capability label, or scoring system. That creates semantic risk
-because FluencyTracr is an aggregate-only value-realization evidence layer, not
-a maturity scorer.
+because FluencyTracr is an aggregate-only value-realization evidence layer, not a maturity scorer.
 
 Depth preserves the useful part of the old concept - verification, workflow
 repertoire, reusable patterns, recovery, and judgment behavior - while making

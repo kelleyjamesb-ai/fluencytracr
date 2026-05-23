@@ -252,8 +252,7 @@ product contract. FluencyTracr now exposes aggregate value-realization evidence
 through fail-closed `SURFACE` / `SUPPRESS` verdicts, Quality Multiplier,
 Reliability Factor, Causal Delta, Outcome Evidence, and Velocity Index outputs.
 
-**Do not re-enable** a general index, weighted interaction score, dashboard
-score export, team ranking, or productivity score from connector metrics.
+**Do not re-enable** a general index, weighted interaction score, dashboard score export, team ranking, or productivity score from connector metrics.
 
 ---
 
