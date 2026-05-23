@@ -119,6 +119,7 @@ Note: each prompt is one PR. Do not combine.
 - For agentic development or harness work, use docs/concepts/AGENTIC_EXECUTION_HARNESS.md as the canonical architecture spine. Provider-specific Cursor, OpenAI Agents SDK, Codex, and Claude docs are adapters back to that spine, not separate sources of truth.
 - Never modify the canonical event set or suppression reason set without an explicit human instruction citing this section.
 - Candidate behavioral signals must pass docs/research/SIGNAL_PROMOTION_CRITERIA.md before they are promoted into concept docs, contracts, or implementation work.
+- Future Codex or agent work must not productize V4 signals unless docs/research/V4_SIGNAL_VALIDATION_GATE.md records `PROMOTE` for that signal. Research probes are not product contracts. Candidate signal docs are not permission to build APIs.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
 - Add LMSYS assurance harness fixtures for every new behavior.

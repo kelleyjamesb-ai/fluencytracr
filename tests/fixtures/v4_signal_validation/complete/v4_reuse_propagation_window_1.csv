@@ -1,0 +1,2 @@
+population,adopter_bucket,workflow_count,run_count,summed_workflow_adopters,workflow_share,run_share,adopter_count_p50,adopter_count_p90,adopter_count_p99
+named_reusable_workflows,team_scale_reuse,18,360,144,0.36,0.41,8,16,24
