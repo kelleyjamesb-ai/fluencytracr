@@ -18,20 +18,61 @@ from typing import Any
 VELOCITY_SQL = """
 WITH source AS (
   SELECT
-    JSON_VALUE(jsonPayload, '$.actor.user_id') AS user_key,
     COALESCE(
-      JSON_VALUE(jsonPayload, '$.workflowrun.feature'),
-      JSON_VALUE(jsonPayload, '$.type')
+      NULLIF(TRIM(jsonPayload.user.userid), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
+    ) AS user_key,
+    COALESCE(
+      NULLIF(TRIM(jsonPayload.workflowrun.feature), ''),
+      NULLIF(TRIM(jsonPayload.chat.feature), ''),
+      NULLIF(TRIM(jsonPayload.voicechat.feature), ''),
+      NULLIF(TRIM(jsonPayload.llmcall.feature), ''),
+      NULLIF(TRIM(jsonPayload.type), '')
     ) AS workflow_id,
     DATE(timestamp) AS event_day,
-    JSON_VALUE(jsonPayload, '$.status') AS status,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.latency_ms') AS INT64) AS latency_ms,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.verification_present') AS BOOL) AS verification_present,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.recovered') AS BOOL) AS recovered
+    COALESCE(
+      jsonPayload.workflow.workflowexecutionstatus,
+      (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
+      jsonPayload.action.executionstatus,
+      jsonPayload.mcpusage.status
+    ) AS status,
+    SAFE_CAST(COALESCE(
+      jsonPayload.workflowrun.totalexecutionlatency,
+      jsonPayload.workflowrun.totalresponsemillis,
+      jsonPayload.chat.totalresponsemillis,
+      jsonPayload.search.backendmillis,
+      jsonPayload.autocomplete.backendmillis,
+      jsonPayload.voicechat.totaltextresponsems,
+      jsonPayload.mcpusage.durationms,
+      jsonPayload.action.endtimems - jsonPayload.action.starttimems
+    ) AS INT64) AS latency_ms,
+    jsonPayload.type IN (
+      'CHAT_CITATION_CLICK',
+      'AI_ANSWER_VOTE',
+      'AI_SUMMARY_VOTE',
+      'SEARCH_FEEDBACK'
+    ) AS verification_present,
+    EXISTS (
+      SELECT 1
+      FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution
+      WHERE execution.errortype IS NOT NULL
+    )
+    AND LOWER(COALESCE(
+      jsonPayload.workflow.workflowexecutionstatus,
+      (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
+      jsonPayload.action.executionstatus,
+      jsonPayload.mcpusage.status,
+      ''
+    )) IN ('completed', 'complete', 'success', 'succeeded') AS recovered
   FROM `{project}.{dataset}.{table}`
   WHERE timestamp >= TIMESTAMP('{window_start}')
     AND timestamp < TIMESTAMP('{window_end}')
-    AND JSON_VALUE(jsonPayload, '$.actor.user_id') IS NOT NULL
+    AND COALESCE(
+      NULLIF(TRIM(jsonPayload.user.userid), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
+    ) IS NOT NULL
 ),
 per_user_surface AS (
   SELECT
@@ -57,9 +98,9 @@ quality AS (
     workflow_id,
     COUNT(*) AS real_cohort_size,
     COUNT(DISTINCT user_key) AS cohort_size,
-    AVG(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completion_rate,
-    AVG(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS error_rate,
-    AVG(CASE WHEN status = 'abandoned' THEN 1 ELSE 0 END) AS abandonment_rate,
+    AVG(CASE WHEN LOWER(status) IN ('completed', 'complete', 'success', 'succeeded') THEN 1 ELSE 0 END) AS completion_rate,
+    AVG(CASE WHEN LOWER(status) IN ('error', 'errored', 'failed', 'failure') THEN 1 ELSE 0 END) AS error_rate,
+    AVG(CASE WHEN LOWER(status) IN ('abandoned', 'cancelled', 'canceled', 'timeout') THEN 1 ELSE 0 END) AS abandonment_rate,
     AVG(CASE WHEN recovered THEN 1 ELSE 0 END) AS recovery_rate,
     AVG(CASE WHEN verification_present THEN 1 ELSE 0 END) AS verification_rate,
     APPROX_QUANTILES(latency_ms, 100)[OFFSET(50)] AS p50_latency_ms,

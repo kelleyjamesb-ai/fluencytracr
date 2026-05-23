@@ -1,4 +1,5 @@
 import csv
+import importlib.util
 import json
 import subprocess
 import sys
@@ -7,6 +8,30 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "transformer" / "glean_gce_transformer.py"
+
+
+def load_transformer_module():
+    spec = importlib.util.spec_from_file_location("glean_gce_transformer", SCRIPT)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_transformer_sql_uses_struct_access_for_jsonpayload():
+    transformer = load_transformer_module()
+    sql_sources = [
+        ("transformer", transformer.VELOCITY_SQL),
+        ("velocity diagnostic", (ROOT / "sql" / "dogfood" / "velocity_diagnostic.sql").read_text()),
+        ("agent type diagnostic", (ROOT / "sql" / "dogfood" / "agent_type_diagnostic.sql").read_text()),
+    ]
+
+    for name, sql in sql_sources:
+        assert "JSON_VALUE(jsonPayload" not in sql, f"{name} still treats jsonPayload as JSON text"
+
+    assert "jsonPayload.workflowrun.feature" in transformer.VELOCITY_SQL
+    assert "jsonPayload.user.userid" in transformer.VELOCITY_SQL
 
 
 def test_transformer_writes_aggregate_payloads_from_preaggregated_csv(tmp_path):
