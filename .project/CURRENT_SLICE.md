@@ -1,45 +1,43 @@
 # Current Slice Contract
 
-- Work item id: `v4-signal-validation-review-fixes`
-- Title: `Tighten V4 signal validation header handling and governance review comments`
+- Work item id: `reuse-propagation-diagnostic-review-fix`
+- Title: `Count reuse propagation coverage metrics at workflow granularity`
 - Status: `completed`
 
 ## Summary
 
-Addressed the actionable V4 signal validation review finding by normalizing CSV row keys at ingestion so downstream metric readers use the same canonical headers as schema validation. Rechecked the runbook predictive-claims comment; the flagged `non-predictive unless separately validated` language is already absent from this branch.
+Addressed the review finding that `snapshot_join_coverage` named/confirmed/unmatched metrics counted runs instead of distinct workflows. This remains a dogfood diagnostic-only SQL contract fix.
 
 ## Scope Paths
 
-- `scripts/dogfood/run_v4_signal_validation.py`
-- `tests/dogfood/test_v4_signal_validation.py`
+- `sql/dogfood/reuse_propagation_diagnostic.sql`
+- `tests/dogfood/test_velocity_double_count.py`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Header schema validation could pass while metric readers silently miss values if row keys remain raw.
-- Display-style headers such as `P50` or `Adopter Count P50` must not downgrade valid aggregate exports to HOLD.
-- V4 validation outputs must preserve aggregate-only, fail-closed, non-predictive governance constraints.
+- Candidate and unmatched workflow metrics can be overstated when one workflow has multiple runs.
+- SQL must remain aggregate-only and research/dogfood scoped.
+- Tests should verify the intended workflow-granularity contract without requiring BigQuery execution.
 
 ## Planned Checks
 
-- Confirm the runbook no longer contains the predictive exception.
-- Add regression coverage for case/format header variants.
-- Run the focused V4 signal validation dogfood tests.
-- Compile the V4 validation harness.
+- Change coverage metrics to conditional distinct workflow counts.
+- Add/extend SQL contract coverage for workflow-granularity counts.
+- Run the focused dogfood SQL contract test.
 - Run `git diff --check`.
 
 ## Evaluator Command Profile
 
-- `.venv/bin/python -m pytest tests/dogfood/test_v4_signal_validation.py`
-- `.venv/bin/python -m compileall scripts/dogfood/run_v4_signal_validation.py`
+- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py`
 - `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- Variant CSV headers feed p50, coverage, and non-empty calculations.
-- Existing governance/fail-closed tests still pass.
-- No predictive exception language remains in the V4 signal validation runbook.
+- `named_candidate_count`, `confirmed_reusable_candidate_count`, and `unmatched_agent_workflow_count` count distinct `workflow_key` values.
+- Existing dogfood SQL contract tests still pass.
+- No unrelated SQL or product behavior changes are introduced.
 
 ## Specialists To Consult
 
@@ -47,4 +45,4 @@ Addressed the actionable V4 signal validation review finding by normalizing CSV 
 
 ## Next Handoff Note
 
-Completed: row keys now normalize during CSV ingestion, display-style header variants are covered by regression tests, and focused verification passed.
+Completed: `named_candidate_count`, `confirmed_reusable_candidate_count`, and `unmatched_agent_workflow_count` now use conditional distinct `workflow_key` counts; focused dogfood SQL contract verification passed.

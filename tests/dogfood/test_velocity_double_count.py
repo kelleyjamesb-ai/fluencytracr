@@ -187,3 +187,15 @@ def test_reuse_propagation_diagnostic_reports_candidate_and_coverage_metrics() -
     assert "named_workflow_candidate AS (" in sql
     assert "confirmed_reusable_candidate AS (" in sql
     assert "snapshot_join_coverage AS (" in sql
+    assert (
+        "COUNT(DISTINCT IF(is_named_workflow_candidate, workflow_key, NULL)) "
+        "AS named_candidate_count"
+    ) in sql
+    assert (
+        "COUNT(DISTINCT IF(is_confirmed_reusable_candidate, workflow_key, NULL)) "
+        "AS confirmed_reusable_candidate_count"
+    ) in sql
+    assert (
+        "COUNT(DISTINCT IF(NOT has_snapshot_match, workflow_key, NULL)) "
+        "AS unmatched_agent_workflow_count"
+    ) in sql

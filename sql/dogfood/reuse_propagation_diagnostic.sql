@@ -113,9 +113,9 @@ snapshot_join_coverage AS (
     COUNT(DISTINCT workflow_key) AS total_agent_workflow_count,
     COUNTIF(has_snapshot_match) AS snapshot_matched_run_count,
     SAFE_DIVIDE(COUNTIF(has_snapshot_match), COUNT(*)) AS snapshot_match_rate,
-    COUNTIF(is_named_workflow_candidate) AS named_candidate_count,
-    COUNTIF(is_confirmed_reusable_candidate) AS confirmed_reusable_candidate_count,
-    COUNTIF(NOT has_snapshot_match) AS unmatched_agent_workflow_count
+    COUNT(DISTINCT IF(is_named_workflow_candidate, workflow_key, NULL)) AS named_candidate_count,
+    COUNT(DISTINCT IF(is_confirmed_reusable_candidate, workflow_key, NULL)) AS confirmed_reusable_candidate_count,
+    COUNT(DISTINCT IF(NOT has_snapshot_match, workflow_key, NULL)) AS unmatched_agent_workflow_count
   FROM agent_workflow_runs
 ),
 
