@@ -40,6 +40,14 @@ Calibration IDs are governed reference versions, not tunable thresholds.
 
 The transformer is designed to run in the customer's environment:
 
+The BigQuery path enforces the governed surface taxonomy before writing
+payloads. It emits workflow-run surfaces plus SEARCH, AUTOCOMPLETE, MCP_USAGE,
+AI_SUMMARY, and non-overlapping GLEAN_BOT_ACTIVITY. CLIENT_EVENT,
+PRODUCT_SNAPSHOT, LLM_CALL, and ACTION stay corroborative only. Verification
+and feedback signals are joined to parent surfaces, and AGENT is split into
+`workflow:agent:autonomous`, `workflow:agent:workflow_named`, and
+`workflow:agent:ephemeral`.
+
 ```bash
 python transformer/glean_gce_transformer.py \
   --project "$GCE_PROJECT" \
