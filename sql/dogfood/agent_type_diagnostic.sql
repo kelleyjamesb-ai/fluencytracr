@@ -10,30 +10,62 @@ WITH source_events AS (
   SELECT
     timestamp AS event_ts,
     DATE(timestamp) AS event_date,
-    JSON_VALUE(jsonPayload, '$.type') AS event_type,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.workflowrun.feature')), '') AS workflow_feature,
+    jsonPayload.type AS event_type,
+    NULLIF(TRIM(jsonPayload.workflowrun.feature), '') AS workflow_feature,
     NULLIF(TRIM(COALESCE(
-      JSON_VALUE(jsonPayload, '$.workflowrun.rootworkflowid'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.rootWorkflowId'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.workflowid'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.workflowId')
+      jsonPayload.workflowrun.rootworkflowid,
+      jsonPayload.workflowrun.rootWorkflowId,
+      jsonPayload.workflowrun.workflowid,
+      jsonPayload.workflowrun.workflowId
     )), '') AS root_workflow_id,
     NULLIF(TRIM(COALESCE(
-      JSON_VALUE(jsonPayload, '$.workflowrun.runId'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.id'),
-      JSON_VALUE(jsonPayload, '$.workflow_run_id'),
-      JSON_VALUE(jsonPayload, '$.run_id')
+      jsonPayload.workflowrun.runid,
+      jsonPayload.workflowrun.runId,
+      jsonPayload.workflowrun.id
     )), '') AS workflow_run_id,
     COALESCE(
-      JSON_VALUE(jsonPayload, '$.actor.stable_user_key'),
-      JSON_VALUE(jsonPayload, '$.user.stable_user_key'),
-      JSON_VALUE(jsonPayload, '$.user_id')
+      NULLIF(TRIM(jsonPayload.user.userid), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
     ) AS user_key,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.completed') AS BOOL) AS completed,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.error') AS BOOL) AS errored,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.abandoned') AS BOOL) AS abandoned,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.recovered') AS BOOL) AS recovered,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.workflowrun.latency_ms') AS INT64) AS latency_ms
+    LOWER(COALESCE(
+      jsonPayload.workflow.workflowexecutionstatus,
+      (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
+      jsonPayload.action.executionstatus,
+      jsonPayload.mcpusage.status,
+      ''
+    )) IN ('completed', 'complete', 'success', 'succeeded') AS completed,
+    LOWER(COALESCE(
+      jsonPayload.workflow.workflowexecutionstatus,
+      (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
+      jsonPayload.action.executionstatus,
+      jsonPayload.mcpusage.status,
+      ''
+    )) IN ('error', 'errored', 'failed', 'failure') AS errored,
+    LOWER(COALESCE(
+      jsonPayload.workflow.workflowexecutionstatus,
+      (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
+      jsonPayload.action.executionstatus,
+      jsonPayload.mcpusage.status,
+      ''
+    )) IN ('abandoned', 'cancelled', 'canceled', 'timeout') AS abandoned,
+    EXISTS (
+      SELECT 1
+      FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution
+      WHERE execution.errortype IS NOT NULL
+    )
+    AND LOWER(COALESCE(
+      jsonPayload.workflow.workflowexecutionstatus,
+      (SELECT ANY_VALUE(execution.status) FROM UNNEST(jsonPayload.workflowrun.workflowexecutions) AS execution),
+      jsonPayload.action.executionstatus,
+      jsonPayload.mcpusage.status,
+      ''
+    )) IN ('completed', 'complete', 'success', 'succeeded') AS recovered,
+    SAFE_CAST(COALESCE(
+      jsonPayload.workflowrun.totalexecutionlatency,
+      jsonPayload.workflowrun.totalresponsemillis,
+      jsonPayload.workflowrun.firstresponsetokenmillis
+    ) AS INT64) AS latency_ms
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp >= window_start
     AND timestamp < window_end
@@ -42,13 +74,13 @@ WITH source_events AS (
 product_snapshot_events AS (
   SELECT
     timestamp AS snapshot_ts,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.workflowid')), '') AS snapshot_workflow_id,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.isautonomousagent') AS BOOL) AS snapshot_is_autonomous,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.name')), '') AS snapshot_workflow_name,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.unlisted') AS BOOL) AS snapshot_unlisted
+    NULLIF(TRIM(jsonPayload.productsnapshot.workflow.workflowid), '') AS snapshot_workflow_id,
+    jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
+    NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
+    jsonPayload.productsnapshot.workflow.unlisted AS snapshot_unlisted
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp < window_end
-    AND JSON_VALUE(jsonPayload, '$.type') = 'PRODUCT_SNAPSHOT'
+    AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
 ),
 
 product_snapshot_latest AS (

@@ -11,25 +11,23 @@ WITH source_events AS (
   SELECT
     timestamp AS event_ts,
     DATE(timestamp) AS event_date,
-    JSON_VALUE(jsonPayload, '$.type') AS event_type,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.workflowrun.feature')), '') AS workflow_feature,
-    NULLIF(TRIM(COALESCE(
-      JSON_VALUE(jsonPayload, '$.workflowrun.rootworkflowid'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.rootWorkflowId'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.workflowid'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.workflowId')
-    )), '') AS root_workflow_id,
-    NULLIF(TRIM(COALESCE(
-      JSON_VALUE(jsonPayload, '$.workflowrun.runId'),
-      JSON_VALUE(jsonPayload, '$.workflowrun.id'),
-      JSON_VALUE(jsonPayload, '$.workflow_run_id'),
-      JSON_VALUE(jsonPayload, '$.run_id')
-    )), '') AS workflow_run_id,
-    JSON_VALUE(jsonPayload, '$.session_token') AS session_token,
+    jsonPayload.type AS event_type,
+    NULLIF(TRIM(jsonPayload.workflowrun.feature), '') AS workflow_feature,
+    NULLIF(TRIM(jsonPayload.workflowrun.rootworkflowid), '') AS root_workflow_id,
+    NULLIF(TRIM(jsonPayload.workflowrun.runid), '') AS workflow_run_id,
     COALESCE(
-      JSON_VALUE(jsonPayload, '$.actor.stable_user_key'),
-      JSON_VALUE(jsonPayload, '$.user.stable_user_key'),
-      JSON_VALUE(jsonPayload, '$.user_id')
+      NULLIF(TRIM(jsonPayload.workflowrun.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chat.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.autocomplete.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.action.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.search.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.voicechat.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.gleanbotactivity.eventtrackingtoken), '')
+    ) AS session_token,
+    COALESCE(
+      NULLIF(TRIM(jsonPayload.user.userid), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
+      NULLIF(TRIM(jsonPayload.productsnapshot.user.canonicalid), '')
     ) AS user_key
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp >= window_start
@@ -39,13 +37,13 @@ WITH source_events AS (
 product_snapshot_events AS (
   SELECT
     timestamp AS snapshot_ts,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.workflowid')), '') AS snapshot_workflow_id,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.isautonomousagent') AS BOOL) AS snapshot_is_autonomous,
-    NULLIF(TRIM(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.name')), '') AS snapshot_workflow_name,
-    SAFE_CAST(JSON_VALUE(jsonPayload, '$.productsnapshot.workflow.unlisted') AS BOOL) AS snapshot_unlisted
+    NULLIF(TRIM(jsonPayload.productsnapshot.workflow.workflowid), '') AS snapshot_workflow_id,
+    jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
+    NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
+    jsonPayload.productsnapshot.workflow.unlisted AS snapshot_unlisted
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp < window_end
-    AND JSON_VALUE(jsonPayload, '$.type') = 'PRODUCT_SNAPSHOT'
+    AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
 ),
 
 product_snapshot_latest AS (
