@@ -137,6 +137,16 @@ Canonical harness sources are:
 
 Do not commit local provider worktrees or duplicate repository copies. Use pointer docs or symlink aliases when a provider needs its own entrypoint.
 
+### Repo-Backed Workflows and Commands
+
+- For every long-form coding session, start with `docs/agent/SESSION_START.md`, then use `.project/WORK_QUEUE.json` and `.project/PROGRESS.md` for active scope; update durable state before stopping.
+- For mechanical Python verification, run `./harness/scripts/bootstrap.sh` and `./harness/scripts/verify.sh`; when touching V1 contracts, suppression, or governance-sensitive paths, also run `python scripts/ci_v1_governance_gates.py`.
+- For backend/frontend/shared changes, use `npm run build --workspace shared`, `npm run test:ci --workspace backend`, and `npm test --workspace frontend` as applicable. Use `npm run build --workspace backend` or `npm run build --workspace frontend` for build-only deployment checks.
+- For OpenSpec-backed work, validate the named change with `npx openspec validate <change-id> --strict` before merge.
+- For dogfood or multi-surface verdict work, keep checks narrow and canonical: `python3 -m unittest tests.test_dogfood_e2e`, relevant `tests/dogfood/*` tests, and `python3 -m compileall scripts/dogfood/run_multi_surface.py` are known-good fallbacks when full `pytest` is unavailable.
+- For Vercel Services or production-routing work, use the current slice command profile as the source of truth: parse `vercel.json`, run relevant workspace builds, use `vercel build` / `vercel deploy --prebuilt` when deployment proof is required, and smoke the canonical project `learn-air-engable-tool-frontend.vercel.app`.
+- For GitHub/Vercel merge follow-through, do not treat a merged PR as live proof. Confirm the latest `main` deployment in the `learn-air-engable-tool-frontend` Vercel project is current and `READY` before reporting production readiness.
+
 ## 11. When in Doubt
 
 If a request appears to violate any invariant, stop and ask the human. Do not soften invariants under feature pressure. The governance posture is the product.
