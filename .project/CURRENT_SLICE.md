@@ -1,73 +1,50 @@
 # Current Slice Contract
 
-- Work item id: `vercel-services-and-supabase-rls-hardening`
-- Title: `Unify Vercel frontend/backend Services deployment and harden Supabase public-table RLS`
+- Work item id: `v4-signal-validation-review-fixes`
+- Title: `Tighten V4 signal validation header handling and governance review comments`
 - Status: `completed`
 
 ## Summary
 
-Implemented the approved Vercel Services consolidation slice, added a backend service adapter for preserved public routes, disconnected the old backend Vercel project from GitHub, and added a Prisma migration to enable RLS/revoke exposed-role access for public application tables.
+Addressed the actionable V4 signal validation review finding by normalizing CSV row keys at ingestion so downstream metric readers use the same canonical headers as schema validation. Rechecked the runbook predictive-claims comment; the flagged `non-predictive unless separately validated` language is already absent from this branch.
 
 ## Scope Paths
 
-- `.gitignore`
-- `.agents/skills/supabase/SKILL.md`
-- `.agents/skills/supabase-postgres-best-practices/SKILL.md`
-- `skills-lock.json`
-- `vercel.json`
-- `frontend/vercel.json`
-- `backend/vercel.json`
-- `backend/package.json`
-- `backend/tsconfig.json`
-- `backend/src/vercel.ts`
-- `backend/prisma/migrations/20260506120000_enable_rls_on_public_app_tables/migration.sql`
-- `openspec/changes/update-vercel-single-project-services/tasks.md`
-- `artifacts/plan_vercel_supabase_unified_deploy_rls.md`
+- `scripts/dogfood/run_v4_signal_validation.py`
+- `tests/dogfood/test_v4_signal_validation.py`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Vercel Services uses one backend route prefix, so `/auth`, `/health`, and `/orgs` rely on internal rewrites into the backend adapter.
-- Vercel's backend builder resolved workspace TypeScript paths through `shared/src`; `backend/tsconfig.json` now resolves `@learnaire/shared` to `shared/dist`, matching the build config and avoiding a runtime bundle error.
-- Supabase's transaction-pooler URL on port `6543` rejected the reset database password; the working production runtime URL uses the shared pooler on port `5432`.
-- Vercel envs are dashboard state, not repo state, so future clones still need `vercel env pull` for local runtime secrets.
+- Header schema validation could pass while metric readers silently miss values if row keys remain raw.
+- Display-style headers such as `P50` or `Adopter Count P50` must not downgrade valid aggregate exports to HOLD.
+- V4 validation outputs must preserve aggregate-only, fail-closed, non-predictive governance constraints.
 
 ## Planned Checks
 
-- Parse `vercel.json`.
-- Run strict OpenSpec validation for `update-vercel-single-project-services`.
-- Build frontend and backend workspaces.
-- Run Vercel build with Services support.
-- Deploy a canonical frontend-project preview and smoke public routes.
+- Confirm the runbook no longer contains the predictive exception.
+- Add regression coverage for case/format header variants.
+- Run the focused V4 signal validation dogfood tests.
+- Compile the V4 validation harness.
+- Run `git diff --check`.
 
 ## Evaluator Command Profile
 
-`targeted` for this deployment/security slice:
-
-- `node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"`
-- `npx openspec validate update-vercel-single-project-services --strict`
-- `npm run build --workspace frontend`
-- `npm run build --workspace backend`
-- `vercel build`
-- `vercel deploy --prebuilt`
-- production smoke against `learn-air-engable-tool-frontend.vercel.app`
+- `.venv/bin/python -m pytest tests/dogfood/test_v4_signal_validation.py`
+- `.venv/bin/python -m compileall scripts/dogfood/run_v4_signal_validation.py`
+- `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- Root Vercel config defines `frontend` and `backend` services and contains no external backend rewrites.
-- Service-local Vercel configs no longer act as independent deployment authorities.
-- Production deployment from `learn-air-engable-tool-frontend` is READY and aliased.
-- `/` returns frontend HTML; `/health`, `/api/ingest`, and `/orgs/...` reach the backend service; `/auth/token` issues a backend response.
-- Authenticated DB-backed routes return `200` with `db: "ok"` after replacing production Supabase credentials and redeploying.
-- Backend project is disconnected from GitHub so future pushes should not create duplicate backend Vercel checks.
-- RLS migration is applied live and verified enabled on the existing public application tables covered by the migration.
+- Variant CSV headers feed p50, coverage, and non-empty calculations.
+- Existing governance/fail-closed tests still pass.
+- No predictive exception language remains in the V4 signal validation runbook.
 
 ## Specialists To Consult
 
-- Vercel/deployment specialist if production promotion exposes Services-specific routing differences.
-- Supabase/database specialist when applying the RLS migration to live.
+- Not used for this narrow review fix.
 
 ## Next Handoff Note
 
-Completed: unified Vercel Services production is deployed at `https://learn-air-engable-tool-frontend.vercel.app`, the old backend Vercel project has been disconnected from GitHub, production Supabase envs are replaced in Vercel, authenticated `/health` returns `db: "ok"`, and the live RLS migration has been applied and verified.
+Completed: row keys now normalize during CSV ingestion, display-style header variants are covered by regression tests, and focused verification passed.
