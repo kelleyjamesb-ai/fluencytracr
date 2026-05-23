@@ -5,6 +5,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.transformer.gce_fixtures import (
+    glean_bot_activity,
+    non_surface_event,
+    product_snapshot,
+    verification_signal,
+    workflow_run,
+)
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "transformer" / "glean_gce_transformer.py"
@@ -165,3 +173,124 @@ def test_transformer_writes_aggregate_payloads_from_preaggregated_csv(tmp_path):
     assert payload["workflow_id"] == "workflow:CHAT"
     assert payload["velocity"]["frequency"]["p50"] == 10
     assert payload["privacy"]["person_level_fields_included"] is False
+
+
+def payloads_by_workflow(rows):
+    transformer = load_transformer_module()
+    payloads = transformer.aggregate_gce_rows_to_payloads(
+        rows,
+        cohort_id="semantic-fixture-cohort",
+        calibration_id="scio-prod-60d-2026-05",
+        window_start="2026-03-23T00:00:00Z",
+        window_end="2026-05-22T00:00:00Z",
+    )
+    return {payload["workflow_id"]: payload for payload in payloads}
+
+
+def assert_aggregate_only_payload(payload):
+    assert payload["schema_version"] == "FT_V3_2026_05"
+    assert payload["privacy"] == {"person_level_fields_included": False}
+    for forbidden in [
+        "user_id",
+        "user",
+        "email",
+        "name",
+        "prompt",
+        "output",
+        "transcript",
+        "raw_events",
+        "rows",
+    ]:
+        assert forbidden not in payload
+    assert set(payload["velocity"]) == {"frequency", "engagement", "breadth"}
+    assert set(payload["quality_signals"]) == {
+        "completion_rate",
+        "error_rate",
+        "abandonment_rate",
+        "recovery_rate",
+        "verification_rate",
+        "p50_latency_ms",
+        "p95_latency_ms",
+    }
+
+
+def test_semantic_fixture_classifies_autonomous_agent():
+    payloads = payloads_by_workflow([
+        product_snapshot(workflow_id="agent-auto", is_autonomous=True),
+        workflow_run(feature="AGENT", root_workflow_id="agent-auto", run_id="run-auto"),
+    ])
+
+    assert set(payloads) == {"workflow:agent:autonomous"}
+    assert_aggregate_only_payload(payloads["workflow:agent:autonomous"])
+
+
+def test_semantic_fixture_classifies_named_workflow_agent():
+    payloads = payloads_by_workflow([
+        product_snapshot(
+            workflow_id="agent-named",
+            is_autonomous=False,
+            name="Research assistant",
+            unlisted=False,
+        ),
+        workflow_run(feature="AGENT", root_workflow_id="agent-named", run_id="run-named"),
+    ])
+
+    assert set(payloads) == {"workflow:agent:workflow_named"}
+
+
+def test_semantic_fixture_classifies_ephemeral_agent_without_usable_snapshot():
+    payloads = payloads_by_workflow([
+        workflow_run(feature="AGENT", root_workflow_id="agent-missing-snapshot", run_id="run-ephemeral-1"),
+        product_snapshot(workflow_id="agent-unlisted", is_autonomous=False, name="Draft", unlisted=True),
+        workflow_run(feature="AGENT", root_workflow_id="agent-unlisted", run_id="run-ephemeral-2", session_token="session-2"),
+        product_snapshot(workflow_id="agent-missing-name", is_autonomous=False, name=None, unlisted=False),
+        workflow_run(feature="AGENT", root_workflow_id="agent-missing-name", run_id="run-ephemeral-3", session_token="session-3"),
+    ])
+
+    assert set(payloads) == {"workflow:agent:ephemeral"}
+    assert payloads["workflow:agent:ephemeral"]["cohort_size"] == 1
+    assert payloads["workflow:agent:ephemeral"]["velocity"]["frequency"]["p50"] == 3
+
+
+def test_semantic_fixture_avoids_glean_bot_double_count_when_workflow_session_exists():
+    payloads = payloads_by_workflow([
+        workflow_run(feature="CHAT", root_workflow_id="chat", run_id="run-chat", session_token="shared-session"),
+        glean_bot_activity(session_token="shared-session"),
+    ])
+
+    assert set(payloads) == {"workflow:CHAT"}
+    assert payloads["workflow:CHAT"]["velocity"]["frequency"]["p50"] == 1
+
+
+def test_semantic_fixture_emits_standalone_glean_bot_without_workflow_overlap():
+    payloads = payloads_by_workflow([
+        glean_bot_activity(session_token="bot-only-session"),
+    ])
+
+    assert set(payloads) == {"standalone:GLEAN_BOT_ACTIVITY"}
+
+
+def test_semantic_fixture_attributes_verification_without_creating_surface_volume():
+    payloads = payloads_by_workflow([
+        workflow_run(feature="CHAT", root_workflow_id="chat", run_id="run-chat", session_token="chat-session"),
+        verification_signal("CHAT_CITATION_CLICK", run_id="run-chat"),
+        verification_signal("AI_ANSWER_VOTE", session_token="chat-session", offset_minutes=2),
+        verification_signal("AI_SUMMARY_VOTE", session_token="chat-session", offset_minutes=3),
+        verification_signal("SEARCH_FEEDBACK", session_token="chat-session", offset_minutes=4),
+        verification_signal("CHAT_FEEDBACK", session_token="chat-session", offset_minutes=5),
+    ])
+
+    assert set(payloads) == {"workflow:CHAT"}
+    assert payloads["workflow:CHAT"]["quality_signals"]["verification_rate"] == 1
+    assert payloads["workflow:CHAT"]["velocity"]["frequency"]["p50"] == 1
+
+
+def test_semantic_fixture_ignores_non_surface_telemetry_when_alone():
+    payloads = payloads_by_workflow([
+        product_snapshot(workflow_id="snapshot-only", is_autonomous=True),
+        non_surface_event("LLM_CALL"),
+        non_surface_event("CLIENT_EVENT"),
+        non_surface_event("ACTION"),
+    ])
+
+    assert payloads == {}

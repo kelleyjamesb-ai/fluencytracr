@@ -12,6 +12,7 @@ import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 
@@ -377,6 +378,316 @@ def row_to_payload(row: dict[str, Any], args: argparse.Namespace) -> dict[str, A
 def read_csv(path: Path) -> list[dict[str, Any]]:
     with path.open(newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def _nested(value: dict[str, Any], *path: str) -> Any:
+    current: Any = value
+    for key in path:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(key)
+    return current
+
+
+def _first_text(value: dict[str, Any], paths: list[tuple[str, ...]]) -> str | None:
+    for path in paths:
+        raw = _nested(value, *path)
+        if raw is None:
+            continue
+        text = str(raw).strip()
+        if text:
+            return text
+    return None
+
+
+def _event_day(row: dict[str, Any]) -> str:
+    timestamp = str(row["timestamp"]).replace("Z", "+00:00")
+    return datetime.fromisoformat(timestamp).astimezone(timezone.utc).date().isoformat()
+
+
+def _status(payload: dict[str, Any]) -> str | None:
+    status = _first_text(payload, [
+        ("workflow", "workflowexecutionstatus"),
+        ("action", "executionstatus"),
+        ("mcpusage", "status"),
+    ])
+    if status:
+        return status
+    executions = _nested(payload, "workflowrun", "workflowexecutions")
+    if isinstance(executions, list):
+        for execution in executions:
+            if isinstance(execution, dict) and execution.get("status"):
+                return str(execution["status"])
+    if payload.get("type") in {"SEARCH", "AUTOCOMPLETE", "AI_SUMMARY", "GLEAN_BOT_ACTIVITY", "MCP_USAGE"}:
+        return "completed"
+    return None
+
+
+def _latency_ms(payload: dict[str, Any]) -> int:
+    raw = _first_text(payload, [
+        ("workflowrun", "totalexecutionlatency"),
+        ("workflowrun", "totalresponsemillis"),
+        ("chat", "totalresponsemillis"),
+        ("search", "backendmillis"),
+        ("autocomplete", "backendmillis"),
+        ("voicechat", "totaltextresponsems"),
+        ("mcpusage", "durationms"),
+    ])
+    if raw is None:
+        return 0
+    return int(float(raw))
+
+
+def _has_error(payload: dict[str, Any]) -> bool:
+    if _nested(payload, "action", "errortype") or _nested(payload, "mcpusage", "errorcode"):
+        return True
+    executions = _nested(payload, "workflowrun", "workflowexecutions")
+    return isinstance(executions, list) and any(
+        isinstance(execution, dict) and execution.get("errortype") for execution in executions
+    )
+
+
+def _percentile(values: list[float], percentile: int) -> float:
+    if not values:
+        return 0
+    ordered = sorted(values)
+    index = round((len(ordered) - 1) * percentile / 100)
+    return float(ordered[index])
+
+
+def _distribution(values: list[float]) -> dict[str, float]:
+    return {
+        "p10": _percentile(values, 10),
+        "p50": _percentile(values, 50),
+        "p90": _percentile(values, 90),
+        "p99": _percentile(values, 99),
+    }
+
+
+def _agent_workflow_id(feature: str, snapshot: dict[str, Any] | None) -> str:
+    if feature.upper() != "AGENT":
+        return f"workflow:{feature}"
+    if snapshot and snapshot.get("is_autonomous") is True:
+        return "workflow:agent:autonomous"
+    if (
+        snapshot
+        and snapshot.get("is_autonomous") is False
+        and snapshot.get("workflow_name") is not None
+        and snapshot.get("unlisted") is False
+    ):
+        return "workflow:agent:workflow_named"
+    return "workflow:agent:ephemeral"
+
+
+def _source_event(row: dict[str, Any]) -> dict[str, Any]:
+    payload = row.get("jsonPayload", {})
+    event_type = payload.get("type")
+    workflow_feature = _first_text(payload, [("workflowrun", "feature")])
+    workflow_run_id = _first_text(payload, [("workflowrun", "runid")])
+    session_token = _first_text(payload, [
+        ("workflowrun", "sessiontrackingtoken"),
+        ("chat", "sessiontrackingtoken"),
+        ("autocomplete", "sessiontrackingtoken"),
+        ("search", "sessiontrackingtoken"),
+        ("action", "sessiontrackingtoken"),
+        ("voicechat", "sessiontrackingtoken"),
+        ("chatfeedback", "sessiontrackingtoken"),
+        ("gleanbotactivity", "eventtrackingtoken"),
+    ])
+    tracking_token = _first_text(payload, [
+        ("search", "trackingtoken"),
+        ("autocomplete", "trackingtoken"),
+        ("aianswer", "trackingtoken"),
+        ("aisummary", "trackingtoken"),
+        ("chatcitationclick", "trackingtoken"),
+        ("chatcitations", "workflowrunid"),
+        ("chatcitations", "chatsessionid"),
+        ("aianswervote", "trackingtoken"),
+        ("aisummaryvote", "trackingtoken"),
+        ("searchfeedback", "trackingtoken"),
+        ("chatfeedback", "runid"),
+        ("chatfeedback", "workflowid"),
+        ("chatfeedback", "chatsessionid"),
+    ])
+    return {
+        "row": row,
+        "payload": payload,
+        "event_type": event_type,
+        "event_day": _event_day(row),
+        "workflow_feature": workflow_feature,
+        "root_workflow_id": _first_text(payload, [("workflowrun", "rootworkflowid")]),
+        "workflow_run_id": workflow_run_id,
+        "session_token": session_token,
+        "tracking_token": tracking_token,
+        "user_key": _first_text(payload, [
+            ("user", "userid"),
+            ("user", "id"),
+            ("user", "canonicalid"),
+            ("productsnapshot", "user", "id"),
+            ("productsnapshot", "user", "canonicalid"),
+        ]),
+        "status": _status(payload),
+        "latency_ms": _latency_ms(payload),
+        "has_error": _has_error(payload),
+    }
+
+
+def _surface_join_key(event: dict[str, Any]) -> str:
+    return (
+        event["workflow_run_id"]
+        or event["root_workflow_id"]
+        or event["session_token"]
+        or event["tracking_token"]
+        or f"{event['user_key']}:{event['row']['timestamp']}:{event['event_type']}"
+    )
+
+
+def aggregate_gce_rows_to_payloads(
+    rows: list[dict[str, Any]],
+    *,
+    cohort_id: str,
+    calibration_id: str,
+    window_start: str,
+    window_end: str,
+) -> list[dict[str, Any]]:
+    """Aggregate synthetic GCE-shaped rows using the customer-side taxonomy rules.
+
+    This helper is intentionally aggregate-only: per-user rows are local
+    intermediates and never appear in returned V3 payloads.
+    """
+    events = [_source_event(row) for row in rows]
+    snapshots: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if event["event_type"] != "PRODUCT_SNAPSHOT":
+            continue
+        workflow_id = _first_text(event["payload"], [("productsnapshot", "workflow", "workflowid")])
+        if workflow_id is None:
+            continue
+        snapshots[workflow_id] = {
+            "is_autonomous": _nested(event["payload"], "productsnapshot", "workflow", "isautonomousagent"),
+            "workflow_name": _first_text(event["payload"], [("productsnapshot", "workflow", "name")]),
+            "unlisted": bool(_nested(event["payload"], "productsnapshot", "workflow", "unlisted") or False),
+        }
+
+    workflow_sessions = {
+        event["session_token"]
+        for event in events
+        if event["event_type"] == "WORKFLOW_RUN" and event["session_token"] is not None
+    }
+    surfaces: list[dict[str, Any]] = []
+    for event in events:
+        if event["user_key"] is None:
+            continue
+        if event["event_type"] == "WORKFLOW_RUN" and event["workflow_feature"] is not None:
+            surfaces.append({
+                **event,
+                "workflow_id": _agent_workflow_id(
+                    event["workflow_feature"],
+                    snapshots.get(event["root_workflow_id"] or ""),
+                ),
+                "surface_join_key": _surface_join_key(event),
+            })
+            continue
+        standalone_ids = {
+            "SEARCH": "standalone:SEARCH",
+            "AUTOCOMPLETE": "standalone:AUTOCOMPLETE",
+            "MCP_USAGE": "standalone:MCP_USAGE",
+            "AI_SUMMARY": "standalone:AI_SUMMARY",
+            "GLEAN_BOT_ACTIVITY": "standalone:GLEAN_BOT_ACTIVITY",
+        }
+        if event["event_type"] not in standalone_ids or event["workflow_feature"] is not None:
+            continue
+        if event["event_type"] == "GLEAN_BOT_ACTIVITY" and event["session_token"] in workflow_sessions:
+            continue
+        surfaces.append({
+            **event,
+            "workflow_id": standalone_ids[event["event_type"]],
+            "surface_join_key": _surface_join_key(event),
+        })
+
+    if not surfaces:
+        return []
+
+    verification_events = {
+        "CHAT_CITATION_CLICK",
+        "CHAT_CITATIONS",
+        "AI_ANSWER_VOTE",
+        "AI_SUMMARY_VOTE",
+        "SEARCH_FEEDBACK",
+        "CHAT_FEEDBACK",
+    }
+    aliases: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for surface in surfaces:
+        for alias in {surface["surface_join_key"], surface["session_token"], surface["tracking_token"]}:
+            if alias is not None:
+                aliases.setdefault((surface["user_key"], alias), []).append(surface)
+
+    verified_surface_keys: dict[str, set[str]] = {}
+    for event in events:
+        if event["event_type"] not in verification_events or event["user_key"] is None:
+            continue
+        attribution_key = event["workflow_run_id"] or event["session_token"] or event["tracking_token"]
+        if attribution_key is None:
+            continue
+        for surface in aliases.get((event["user_key"], attribution_key), []):
+            verified_surface_keys.setdefault(surface["workflow_id"], set()).add(surface["surface_join_key"])
+
+    rows_for_payload: list[dict[str, Any]] = []
+    workflow_ids = sorted({surface["workflow_id"] for surface in surfaces})
+    breadth_by_user: dict[str, int] = {}
+    for user_key in {surface["user_key"] for surface in surfaces}:
+        breadth_by_user[user_key] = len({
+            surface["workflow_id"] for surface in surfaces if surface["user_key"] == user_key
+        })
+
+    for workflow_id in workflow_ids:
+        group = [surface for surface in surfaces if surface["workflow_id"] == workflow_id]
+        user_keys = sorted({surface["user_key"] for surface in group})
+        surface_keys = {surface["surface_join_key"] for surface in group}
+        per_user_runs: list[float] = []
+        per_user_days: list[float] = []
+        per_user_breadth: list[float] = []
+        for user_key in user_keys:
+            user_group = [surface for surface in group if surface["user_key"] == user_key]
+            active_days = {surface["event_day"] for surface in user_group}
+            per_user_days.append(float(len(active_days)))
+            per_user_runs.append(float(len({surface["surface_join_key"] for surface in user_group}) / len(active_days)))
+            per_user_breadth.append(float(breadth_by_user[user_key]))
+
+        status_values = [str(surface["status"] or "").lower() for surface in group]
+        completion_rate = sum(status in {"completed", "complete", "success", "succeeded"} for status in status_values) / len(group)
+        error_rate = sum(
+            surface["has_error"] or status in {"error", "errored", "failed", "failure"}
+            for surface, status in zip(group, status_values)
+        ) / len(group)
+        abandonment_rate = sum(status in {"abandoned", "cancelled", "canceled", "timeout"} for status in status_values) / len(group)
+        row = {
+            "workflow_id": workflow_id,
+            "cohort_size": len(user_keys),
+            "completion_rate": completion_rate,
+            "error_rate": error_rate,
+            "abandonment_rate": abandonment_rate,
+            "recovery_rate": 0,
+            "verification_rate": len(verified_surface_keys.get(workflow_id, set())) / len(surface_keys),
+            "p50_latency_ms": _percentile([surface["latency_ms"] for surface in group], 50),
+            "p95_latency_ms": _percentile([surface["latency_ms"] for surface in group], 95),
+        }
+        for prefix, values in [
+            ("freq", per_user_runs),
+            ("engagement", per_user_days),
+            ("breadth", per_user_breadth),
+        ]:
+            for key, value in _distribution(values).items():
+                row[f"{prefix}_{key}"] = value
+        rows_for_payload.append(row)
+
+    args = SimpleNamespace(
+        cohort_id=cohort_id,
+        calibration_id=calibration_id,
+        window_start=window_start,
+        window_end=window_end,
+    )
+    return [row_to_payload(row, args) for row in rows_for_payload]
 
 
 def read_bigquery(args: argparse.Namespace) -> list[dict[str, Any]]:
