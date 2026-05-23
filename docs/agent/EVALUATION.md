@@ -52,9 +52,10 @@ This validates the optional development sidecar only. It does not replace the re
 
 ## Cursor rules and agent-run contract
 
-When changing `.cursor/rules/`, `shared/src/agentRunSchemas.ts`, `schemas/agent_run/`, or `docs/contracts/agent-run/`:
+When changing `.cursor/rules/`, `shared/src/agentRunSchemas.ts`, `schemas/agent_run/`, `scripts/agentic_harness_*.mjs`, or `docs/contracts/agent-run/`:
 
 ```bash
+npm run test:agentic-harness
 npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts
 npm run build --workspace shared
 bash scripts/ci_docs_contract_sweep.sh

@@ -9,9 +9,15 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 const harnessDocuments = {
   session_start: "docs/agent/SESSION_START.md",
+  agentic_harness: "docs/concepts/AGENTIC_EXECUTION_HARNESS.md",
   harness_readme: "harness/README.md",
   evaluation: "docs/agent/EVALUATION.md",
   task_contract: "docs/agent/TASK_CONTRACT.md",
+  project_governance: ".project/GOVERNANCE.md",
+  project_work_queue: ".project/WORK_QUEUE.json",
+  project_progress: ".project/PROGRESS.md",
+  agent_run_contract: "docs/contracts/agent-run/README.md",
+  agent_run_ledger: "docs/contracts/agent-run/ledger.md",
   agent_progress: "harness/agent-progress.txt",
   feature_list: "harness/feature_list.json",
 } as const;

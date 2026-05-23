@@ -147,3 +147,46 @@ export const AgentRunEventBatchSchema = z
   .strict();
 
 export type AgentRunEventBatch = z.infer<typeof AgentRunEventBatchSchema>;
+
+export const AgentRunLedgerSchemaVersionSchema = z.literal("AR_LEDGER_2026_05");
+export type AgentRunLedgerSchemaVersion = z.infer<typeof AgentRunLedgerSchemaVersionSchema>;
+
+export const AgentRunLedgerStatusSchema = z.enum([
+  "PLANNED",
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+  "ABORTED"
+]);
+export type AgentRunLedgerStatus = z.infer<typeof AgentRunLedgerStatusSchema>;
+
+export const AgentRunLedgerEntrySchema = z
+  .object({
+    schema_version: AgentRunLedgerSchemaVersionSchema,
+    repo_id: z.string().min(1),
+    run_id: z.string().min(1),
+    provider: AgentRunProviderSchema,
+    harness_surface: AgentRunHarnessSurfaceSchema,
+    branch_name: z.string().min(1).optional(),
+    scope_ref: z.string().min(1),
+    status: AgentRunLedgerStatusSchema,
+    event_batch_ref: z.string().min(1).optional(),
+    verification_refs: z.array(z.string().min(1)),
+    handoff_ref: z.string().min(1).optional(),
+    pr_ref: z.string().min(1).optional(),
+    required_caveats: z.array(z.string().min(1)).min(1)
+  })
+  .strict()
+  .superRefine((entry, ctx) => {
+    rejectForbiddenPayloadKeys(entry, ctx);
+  });
+
+export type AgentRunLedgerEntry = z.infer<typeof AgentRunLedgerEntrySchema>;
+
+export const AgentRunLedgerBatchSchema = z
+  .object({
+    entries: z.array(AgentRunLedgerEntrySchema).min(1)
+  })
+  .strict();
+
+export type AgentRunLedgerBatch = z.infer<typeof AgentRunLedgerBatchSchema>;

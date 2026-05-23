@@ -8,7 +8,7 @@ This is a contract framing document. It does not add storage, routes, schemas, p
 
 ## Contract Status
 
-Status: documentation-stage.
+Status: local schema and writer implemented; durable backend persistence and replay APIs are future work.
 
 The current machine-validated contract remains `AR_2026_05` in:
 
@@ -16,7 +16,14 @@ The current machine-validated contract remains `AR_2026_05` in:
 - `schemas/agent_run/agent_run_event.schema.json`
 - `docs/contracts/agent-run/README.md`
 
-Future implementation must update those files and tests in the same PR.
+The local ledger entry contract is implemented in:
+
+- `shared/src/agentRunSchemas.ts`
+- `schemas/agent_run/agent_run_ledger_entry.schema.json`
+- `scripts/agentic_harness_ledger.mjs`
+- `scripts/agentic_harness_replay.mjs`
+
+Future backend persistence must update those files and tests in the same PR.
 
 ## Source Events
 
@@ -124,12 +131,10 @@ The ledger does not:
 - bypass repo review or verification
 - replace human-owned scope decisions
 
-## Future Schema Work
+## Future Work
 
 Future implementation should add:
 
-- a Zod schema and JSON Schema for ledger entries
-- backend tests that reject forbidden payload keys
 - a redaction test for provider trace adapters
-- a replay fixture showing a completed run from start to verification
 - documentation for retention and export boundaries
+- backend persistence, if needed, behind the same metadata-only schema
