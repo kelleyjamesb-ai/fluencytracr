@@ -52,6 +52,10 @@ calibration values, or defaults. V4 economic readouts, Time-Saved Defensibility
 Range, and value-confidence APIs remain blocked from depending on Depth
 Repertoire until a later value-confidence review explicitly allows it.
 
+The current value-confidence review for Depth Repertoire records
+`HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next phase is calibration planning,
+not implementation.
+
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
 economic readouts remain blocked until Depth readout stability is demonstrated
