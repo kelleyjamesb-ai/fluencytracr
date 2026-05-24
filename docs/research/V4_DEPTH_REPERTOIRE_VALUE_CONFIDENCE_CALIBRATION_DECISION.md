@@ -141,8 +141,8 @@ Generate the following for at least three matching 60-day cohort/window keys:
 
 - Depth Repertoire,
 - Velocity Index,
-- Quality Multiplier,
-- Reliability Factor,
+- taxonomy-aware Quality Multiplier inputs,
+- taxonomy-aware Reliability Factor inputs,
 - V3 verdict metadata,
 - Outcome Evidence only where customer-attested aggregate evidence exists.
 
@@ -158,6 +158,11 @@ If historical data is available, the preferred test design is three rolling
 60-day windows so each primitive is eligible to surface under its existing
 gates. The previously exported 20-day windows remain useful stability evidence,
 but they should not be used to promote value-confidence dependency.
+
+The taxonomy-aware QM/RF input bridge is
+[`sql/dogfood/taxonomy_qm_rf_diagnostic.sql`](../../sql/dogfood/taxonomy_qm_rf_diagnostic.sql).
+It is dogfood/research-only and exists to align QM/RF calibration with the same
+surface and work-mode boundaries used by Velocity and Depth.
 
 ## Governance Safety Review
 

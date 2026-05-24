@@ -17,6 +17,7 @@ V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.s
 V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
 V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
 AGENT_JOIN_KEY_SQL = ROOT / "sql" / "dogfood" / "agent_snapshot_join_key_diagnostic.sql"
+TAXONOMY_QM_RF_SQL = ROOT / "sql" / "dogfood" / "taxonomy_qm_rf_diagnostic.sql"
 
 DOGFOOD_SQL = [
     SQL,
@@ -33,6 +34,7 @@ DOGFOOD_SQL = [
     V4_REFINEMENT_SQL,
     V4_REUSE_SQL,
     AGENT_JOIN_KEY_SQL,
+    TAXONOMY_QM_RF_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [
@@ -320,3 +322,48 @@ def test_depth_repertoire_diagnostic_reports_aggregate_repertoire_and_repeat_met
     assert "LLM_CALL" not in sql
     assert "ACTION" not in sql
     assert "GROUP BY user_key, surface_id" in sql
+
+
+def test_taxonomy_qm_rf_diagnostic_emits_work_mode_aggregate_inputs() -> None:
+    sql = TAXONOMY_QM_RF_SQL.read_text()
+
+    for output_field in [
+        "workflow_id",
+        "surface_category",
+        "work_mode",
+        "real_cohort_size",
+        "distinct_users",
+        "window_days",
+        "completion_rate",
+        "error_rate",
+        "abandonment_rate",
+        "recovery_rate",
+        "verification_rate",
+        "p50_latency_ms",
+        "p95_latency_ms",
+        "metric_sources",
+    ]:
+        assert output_field in sql
+
+    for work_mode in [
+        "retrieval",
+        "conversational_work",
+        "synthesis_transformation",
+        "embedded_assist",
+        "delegated_execution",
+        "reusable_workflow_skill",
+        "exploratory_agent_work",
+        "specialized_workflow",
+    ]:
+        assert work_mode in sql
+
+    assert "standalone:GLEAN_BOT_ACTIVITY" in sql
+    assert "NOT EXISTS" in sql
+    assert "workflow_session.session_token = bot.session_token" in sql
+    assert "CHAT_CITATION_CLICK" in sql
+    assert "CHAT_FEEDBACK" in sql
+    assert "AI_ANSWER_VOTE" in sql
+    assert "AI_SUMMARY_VOTE" in sql
+    assert "SEARCH_FEEDBACK" in sql
+    assert "observed_event_proxy" in sql
+    assert "workflow_status" in sql

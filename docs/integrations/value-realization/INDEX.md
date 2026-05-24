@@ -137,6 +137,29 @@ The CSV files are the current developer dogfood adapter. They should be replaced
 by a direct aggregate feed when this moves toward real-time internal data, using
 the same aggregate-only fields and suppression posture.
 
+## Running Taxonomy-Aware QM/RF Calibration
+
+Use [`sql/dogfood/taxonomy_qm_rf_diagnostic.sql`](../../../sql/dogfood/taxonomy_qm_rf_diagnostic.sql)
+when the calibration question is whether Quality Multiplier and Reliability
+Factor tell the same story after they adopt the same surface taxonomy as
+Velocity and Depth.
+
+The diagnostic emits aggregate rows only:
+
+- governed `workflow_id`,
+- `surface_category`,
+- `work_mode`,
+- `real_cohort_size`,
+- `distinct_users`,
+- completion, error, abandonment, recovery, verification, and latency fields,
+- metric source notes indicating whether the row comes from workflow status or
+  observed-event proxy logic.
+
+Standalone surfaces are included so Search, Autocomplete, MCP, AI Summary, and
+eligible Glean Bot Activity can be calibrated instead of appearing only as
+Velocity context. The output is dogfood/research-only until a later calibration
+decision promotes a specific use.
+
 ### Agent Sub-Surface Composition
 
 When AGENT sub-surfaces are present, the consolidated readout includes:
