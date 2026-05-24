@@ -66,8 +66,15 @@ Inputs reviewed:
 - [V4_VALIDATION_PLAN.md](./V4_VALIDATION_PLAN.md)
 - [`sql/dogfood/depth_repertoire_diagnostic.sql`](../../sql/dogfood/depth_repertoire_diagnostic.sql)
 
-The current evidence is one live scio-prod dogfood observation from a 60-day
-window. Three fixed-window outputs are not yet available for this signal.
+The current evidence includes one live scio-prod dogfood observation from a
+60-day window plus three fixed-window exports generated from the same
+aggregate-only diagnostic.
+
+Fixed-window exports reviewed:
+
+- `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_1.csv`
+- `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_2.csv`
+- `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_3.csv`
 
 ## Current Dogfood Finding
 
@@ -88,11 +95,12 @@ be used to rank customers, teams, departments, managers, or individuals.
 
 ## Required Fixed-Window Validation
 
-Depth Repertoire cannot be promoted from one dogfood window.
+Status: complete for the current dogfood cohort.
 
-Validation requires running
+Depth Repertoire cannot be promoted from one dogfood window. The required
+validation was to run
 [`sql/dogfood/depth_repertoire_diagnostic.sql`](../../sql/dogfood/depth_repertoire_diagnostic.sql)
-across at least three fixed windows and comparing:
+across at least three fixed windows and compare:
 
 - p50/p90/p99 by window,
 - stability of the distribution shape,
@@ -101,6 +109,14 @@ across at least three fixed windows and comparing:
 - whether Depth Repertoire changes interpretation beyond Velocity alone,
 - whether the candidate should be promoted, held, narrowed, or rejected.
 
+The fixed windows used were:
+
+| Window | Start | End |
+| --- | --- | --- |
+| 1 | `2026-03-23T00:00:00Z` | `2026-04-12T00:00:00Z` |
+| 2 | `2026-04-12T00:00:00Z` | `2026-05-02T00:00:00Z` |
+| 3 | `2026-05-02T00:00:00Z` | `2026-05-22T00:00:00Z` |
+
 The core validation question is:
 
 ```text
@@ -108,11 +124,38 @@ Does Depth Repertoire explain something Velocity alone does not, or is it
 merely another usage intensity proxy?
 ```
 
-The fixed-window exports should use names such as:
+Fixed-window results:
 
-- `v4_depth_repertoire_window_1.csv`
-- `v4_depth_repertoire_window_2.csv`
-- `v4_depth_repertoire_window_3.csv`
+| Window | Cohort size | Repertoire p50/p90/p99 | Repeated surfaces p50/p90/p99 | Multi-day surfaces p50/p90/p99 | Depth candidate p50/p90/p99 |
+| --- | ---: | --- | --- | --- | --- |
+| 1 | 1,869,820 | 2 / 5 / 7 | 1 / 5 / 6 | 1 / 4 / 6 | 1 / 25 / 48 |
+| 2 | 1,915,311 | 2 / 5 / 7 | 1 / 5 / 7 | 1 / 4 / 6 | 2 / 25 / 49 |
+| 3 | 1,901,222 | 2 / 5 / 7 | 1 / 5 / 7 | 1 / 5 / 6 | 3 / 25 / 49 |
+
+The p90 and p99 shapes are stable across all three windows. The p50 depth
+candidate rises from 1 to 3, but the distribution shape remains interpretable:
+the upper half and tail remain essentially unchanged.
+
+Bucket-level medians also separate cleanly and repeatably:
+
+| Repertoire segment | Window 1 depth p50 | Window 2 depth p50 | Window 3 depth p50 |
+| --- | ---: | ---: | ---: |
+| Single surface | 1 | 1 | 1 |
+| Two to three surfaces | 6 | 6 | 6 |
+| Four to six surfaces | 16 | 16 | 16 |
+| Seven to ten surfaces | 48 | 49 | 49 |
+| Eleven plus surfaces | 120 | 110 | 110 |
+
+This is the strongest evidence so far that Depth Repertoire is not merely a
+volume counter. It preserves the surface breadth question from Velocity, but it
+adds a return-use requirement. A cohort can touch several surfaces once and
+still fail to show high Depth Repertoire; repeated return use is required for
+the candidate to rise.
+
+The remaining caveat is that this comparison is against Velocity breadth and
+usage intensity conceptually. A later productization review should still verify
+how Depth Repertoire interacts with the full Velocity Index before any economic
+readout depends on it.
 
 ## Stability Decision Framework
 
@@ -123,20 +166,24 @@ toward contract hardening:
 | --- | --- |
 | Behavioral face validity | Promising. Surface repertoire plus repeated use is a defensible work-integration candidate. |
 | Alignment with governed taxonomy | Promising. The diagnostic uses workflow and standalone surfaces from the governed taxonomy. |
-| Meaningful distribution variance | Promising in one window. The p90 and p99 spread indicates possible signal. |
-| Stability across windows or cohorts | Not yet established. Three fixed-window exports are required. |
+| Meaningful distribution variance | Passed for the dogfood cohort. The p90 and p99 spread remains meaningful across windows. |
+| Stability across windows or cohorts | Passed for the dogfood cohort. Three fixed-window exports show stable p90/p99 shape and stable bucket medians. |
 | Support for a specific decision | Promising. It may help decide whether high activity is broad work integration or narrow repeated use. |
 | Aggregate-safe surfacing without misuse | Preserved if outputs stay percentile-only and avoid ranking or economic claims. |
 
 ## Promotion Decision
 
-Decision: `HOLD_FOR_FIXED_WINDOW_VALIDATION`
+Decision: `PROMOTE_DEPTH_REPERTOIRE_CONTRACT_HARDENING`
 
-Rationale: the current observation is promising, but one 60-day dogfood window is
-not enough to promote the signal. Depth Repertoire needs fixed-window stability
-evidence before it can move toward Depth contract hardening.
+Rationale: Depth Repertoire now has fixed-window dogfood evidence that is
+stable, interpretable, aggregate-only, and meaningfully more discriminating than
+the broad Depth readout.
 
-This hold is not a rejection. It is a research boundary.
+This decision is narrow. It permits Depth Repertoire contract hardening. It does
+not authorize APIs, schemas, frontend surfaces, runtime services,
+customer-facing economic readouts, Time-Saved Defensibility Range
+implementation, ROI calculation, causal claims, prediction claims, individual
+scoring, team comparisons, productivity scoring, or prohibited maturity labels.
 
 ## Governance Safety Review
 
@@ -149,12 +196,12 @@ This readout preserves the nine invariants:
 - No person-level fields, raw prompts, raw outputs, transcripts, or raw event
   rows are surfaced.
 - No individual scoring is introduced.
-- No team, department, manager, customer, or employee ranking is introduced.
+- No team, department, manager, customer, or employee comparison is introduced.
 - No productivity scoring is introduced.
 - No maturity scoring is introduced.
 - No ROI calculation, causal productivity claim, or prediction claim is made.
-- The signal remains dogfood/research-only until fixed-window validation is
-  complete.
+- The signal may move to contract hardening, but only as an aggregate-only V4
+  Depth component.
 
 ## Relationship to Broader Depth Readout
 
@@ -176,45 +223,47 @@ it is stable, interpretable, and aggregate-safe.
 
 ## What Remains Blocked
 
-The following remain blocked while the decision is
-`HOLD_FOR_FIXED_WINDOW_VALIDATION`:
+The following remain blocked after this decision:
 
 - V4 economic readouts that depend on Depth Repertoire.
 - Time-Saved Defensibility Range use of Depth Repertoire.
 - Value-confidence APIs or product surfaces that depend on Depth Repertoire.
-- Depth contract hardening based on this candidate.
 - Customer-facing claims that use the current Glean dogfood values.
 - Any product threshold, calibration value, schema default, or universal concept
   value derived from the Glean dogfood observation.
 
-No economic value range should be built from Depth Repertoire until stability is
-demonstrated.
+No economic value range should be built from Depth Repertoire until contract
+hardening and later value-confidence review are complete.
 
 ## Required Next Step
 
-Run `sql/dogfood/depth_repertoire_diagnostic.sql` across three fixed windows and
-export the results as:
+Open a separate contract-hardening PR for Depth Repertoire.
 
-- `v4_depth_repertoire_window_1.csv`
-- `v4_depth_repertoire_window_2.csv`
-- `v4_depth_repertoire_window_3.csv`
+That PR should define:
 
-Then update this readout with:
+- the minimal aggregate output shape,
+- allowed bands or statuses,
+- required caveats,
+- suppression behavior,
+- example surfaced and suppressed readouts,
+- explicit language that Glean dogfood values are evidence used for promotion,
+  not thresholds, calibration values, or defaults.
 
-- p50/p90/p99 by window,
-- stability of distribution shape,
-- whether Depth Repertoire changes interpretation beyond Velocity alone,
-- whether the signal should be promoted, held, narrowed, or rejected.
+The contract-hardening PR must not add an API, runtime service, frontend surface,
+Prisma migration, customer-facing economic readout, ROI calculation, causal
+claim, prediction claim, individual scoring, team comparison, productivity
+scoring, or prohibited maturity labels.
 
 ## Open Questions
 
-- Does Depth Repertoire remain stable across adjacent fixed windows?
-- Does it add interpretation beyond Velocity breadth, or does it mostly restate
-  Velocity with a repeat-use multiplier?
+- How should a future contract express Depth Repertoire without converting it
+  into a universal score?
+- How should the contract preserve both components instead of collapsing them
+  into a single opaque value?
+- How should Depth Repertoire interact with the full Velocity Index in later
+  value-confidence review?
 - Which surface categories create the strongest spread: workflow, standalone,
   AGENT sub-surfaces, or mixed use?
 - Does repeat use need same-session refinement, multi-day return use, or both?
-- Should future contract hardening use the product of repertoire and repeated
-  surfaces, or preserve the two components independently?
 - What level of coverage is required before this signal can inform any V4 value
   confidence artifact?

@@ -45,11 +45,12 @@ whole Depth construct unless it is paired with a non-saturated component such as
 surface repertoire, verification, delegation, or reuse evidence.
 
 Depth Repertoire is the current research candidate for that non-saturated spine:
-`Surface Repertoire x Repeat Use / Refinement`. It remains
-`HOLD_FOR_FIXED_WINDOW_VALIDATION` until the dedicated stability readout is
-updated with at least three fixed-window exports. Glean dogfood values from that
-readout must not be embedded into universal concepts, contracts, schemas,
-thresholds, calibration values, or defaults.
+`Surface Repertoire x Repeat Use / Refinement`. The dedicated stability readout
+promotes it for contract hardening only. Glean dogfood values from that readout
+must not be embedded into universal concepts, contracts, schemas, thresholds,
+calibration values, or defaults. V4 economic readouts, Time-Saved Defensibility
+Range, and value-confidence APIs remain blocked from depending on Depth
+Repertoire until a later value-confidence review explicitly allows it.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4

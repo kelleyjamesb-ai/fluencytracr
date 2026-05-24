@@ -102,7 +102,7 @@ metadata observability. V4 economic readouts remain blocked until Depth readout
 stability is demonstrated across windows or cohorts and the stability decision
 promotes contract hardening.
 
-Depth Repertoire remains `HOLD_FOR_FIXED_WINDOW_VALIDATION`. Its internal Glean
+Depth Repertoire is promoted for contract hardening only. Its internal Glean
 dogfood values are research observations only and must not be used as customer
 benchmarks, production defaults, product thresholds, or V4 economic inputs.
 
