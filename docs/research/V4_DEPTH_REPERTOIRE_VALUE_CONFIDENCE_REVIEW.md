@@ -133,7 +133,9 @@ This review also preserves the V4 value-confidence boundary:
 
 ## Required Next Phase
 
-The next phase is a value-confidence calibration plan, not an implementation.
+The next phase is the
+[V4 Depth Repertoire Value Confidence Calibration Plan](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md),
+not an implementation.
 
 That plan should define how to test whether Depth Repertoire can safely affect:
 

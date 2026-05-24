@@ -56,6 +56,12 @@ The current value-confidence review for Depth Repertoire records
 `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next phase is calibration planning,
 not implementation.
 
+The calibration plan is
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
+It must produce a later calibration decision before any economic contract,
+runtime implementation, or customer-facing artifact can depend on Depth
+Repertoire.
+
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
 economic readouts remain blocked until Depth readout stability is demonstrated
