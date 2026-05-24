@@ -62,7 +62,11 @@ The current calibration decision is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md),
 which records `HOLD_FOR_MORE_CALIBRATION`. No economic contract, runtime
 implementation, or customer-facing artifact can depend on Depth Repertoire until
-a later calibration decision explicitly promotes that use.
+a later calibration decision explicitly promotes that use. That decision also
+records a window-compatibility blocker: the existing three 20-day Depth
+Repertoire stability windows are not sufficient for value-confidence
+calibration because the other primitives require 60-day-compliant windows to
+surface.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4

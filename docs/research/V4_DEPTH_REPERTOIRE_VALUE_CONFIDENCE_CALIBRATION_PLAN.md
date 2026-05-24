@@ -67,6 +67,14 @@ Calibration requires aggregate-only inputs:
 Inputs must not include user IDs, emails, names, raw prompts, raw outputs,
 transcripts, raw event rows, or person-level metrics.
 
+Calibration windows must also satisfy the gates of the primitives being
+compared. The three 20-day Depth Repertoire stability windows are valid for
+distribution-shape research, but they are not valid for value-confidence
+calibration because Velocity, Quality Multiplier, Reliability Factor, and V3
+verdict paths require 60-day-compliant windows to surface. A same-key 20-day
+calibration would only test suppression behavior, not value-confidence
+interpretation.
+
 ## Test Matrix
 
 Each test compares Depth Repertoire against an existing value-confidence
@@ -134,7 +142,7 @@ It also preserves V4 boundaries:
 
 ## Required Procedure
 
-1. Select at least three aggregate cohorts or fixed windows.
+1. Select at least three aggregate cohorts or 60-day-compliant fixed windows.
 2. Generate Depth Repertoire, Velocity, Quality Multiplier, Reliability Factor,
    and V3 verdict outputs for the same cohort/window keys.
 3. Add Outcome Evidence only where customer-attested aggregate data exists.
