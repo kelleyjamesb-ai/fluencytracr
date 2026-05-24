@@ -14,8 +14,9 @@ to the documentation-stage
 
 This is a research and contract decision record. It adds no APIs, schemas,
 Prisma migrations, runtime services, frontend surfaces, customer-facing
-economic readouts, ROI calculation, causal claim, prediction claim, individual
-evaluation, group ranking, productivity measurement, or maturity labels.
+economic readouts, ROI calculation, causal claim, prediction claim,
+person-level evaluation, group comparison, productivity measurement, or
+maturity labels.
 
 ## Inputs Reviewed
 
@@ -94,10 +95,10 @@ This review confirms the contract does not authorize:
 - realized ROI,
 - causal productivity lift,
 - customer-facing prediction,
-- individual scoring,
-- team, department, manager, customer, or cohort ranking,
-- no productivity scoring,
-- no maturity scoring,
+- person-level evaluation,
+- team, department, manager, customer, or cohort comparison,
+- productivity measurement,
+- maturity labels,
 - economic dependency on Depth Repertoire,
 - Time-Saved Defensibility Range adjustment from Depth Repertoire.
 
