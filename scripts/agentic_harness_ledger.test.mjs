@@ -28,6 +28,13 @@ test("defaultLedgerPath writes under harness checkpoints", () => {
   );
 });
 
+test("defaultLedgerPath rejects traversal run ids", () => {
+  assert.throws(
+    () => defaultLedgerPath("../../outside"),
+    /invalid ledger field: run_id/
+  );
+});
+
 test("writeLedgerEntry validates and writes metadata-only ledger JSON", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "ft-ledger-"));
   const relativePath = defaultLedgerPath(validEntry.run_id);
@@ -38,6 +45,22 @@ test("writeLedgerEntry validates and writes metadata-only ledger JSON", async ()
   assert.equal(result.path, relativePath);
   assert.equal(written.run_id, validEntry.run_id);
   assert.deepEqual(written.verification_refs, validEntry.verification_refs);
+});
+
+test("writeLedgerEntry rejects output paths outside the repository root", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "ft-ledger-"));
+  const outsidePath = path.join("..", "outside.ledger.json");
+
+  await assert.rejects(
+    () =>
+      writeLedgerEntry({
+        root,
+        relativePath: outsidePath,
+        entry: validEntry
+      }),
+    /ledger output path escapes repository root/
+  );
+  assert.equal(fs.existsSync(path.resolve(root, outsidePath)), false);
 });
 
 test("writeLedgerEntry rejects forbidden raw fields before writing", async () => {
