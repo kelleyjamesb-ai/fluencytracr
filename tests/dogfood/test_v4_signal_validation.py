@@ -228,6 +228,29 @@ def test_header_format_variants_still_feed_metric_readers(tmp_path: Path) -> Non
     assert summary["signals"]["reusable_workflow_propagation"]["coverage_summary"]["workflow_count"] == 18.0
 
 
+def test_sparse_coverage_in_any_required_column_holds_not_promotes(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    write_complete_input(input_dir)
+    sparse_delegation = {
+        **delegation_row(),
+        "aggregate_user_count": 64,
+        "aggregate_bucket_events": 0,
+        "aggregate_taxonomy_events": 1200,
+    }
+    for window in range(1, 4):
+        write_csv(input_dir / f"v4_delegation_window_{window}.csv", [sparse_delegation])
+
+    completed = run_validator(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    delegation = summary["signals"]["delegation_depth"]
+    assert delegation["decision"] == "HOLD"
+    assert delegation["primary_reason"] == "coverage too sparse"
+    assert delegation["coverage_sufficient"] is False
+
+
 def test_forbidden_person_level_field_fails_closed(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
