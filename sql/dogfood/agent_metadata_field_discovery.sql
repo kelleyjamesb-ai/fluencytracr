@@ -3,6 +3,8 @@
 -- Dogfood/research-only. This query inspects matched AGENT workflow snapshots
 -- to discover which native scio-prod STRUCT fields can support reusable or
 -- named AGENT workflow classification. Final output is aggregate-only.
+-- Do not filter the discovery cohort by user fields; metadata availability
+-- should be measured on AGENT runs with joinable workflow snapshot evidence.
 --
 -- Replace `PROJECT.DATASET.gce_events` with the approved GCE export table.
 
@@ -20,7 +22,6 @@ WITH agent_workflow_runs AS (
     AND timestamp < window_end
     AND jsonPayload.type = 'WORKFLOW_RUN'
     AND UPPER(NULLIF(TRIM(jsonPayload.workflowrun.feature), '')) = 'AGENT'
-    AND jsonPayload.user.userid IS NOT NULL
 ),
 
 product_snapshot_events AS (

@@ -1,0 +1,2 @@
+population,adopter_bucket,workflow_count,run_count,summed_workflow_adopters,workflow_share,run_share,adopter_count_p50,adopter_count_p90,adopter_count_p99,promotion_status,reliable_aggregate_metadata
+confirmed_reusable_candidate,team_scale_reuse,4,120,38,0.08,0.07,8,16,20,HOLD,false

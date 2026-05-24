@@ -120,6 +120,7 @@ Note: each prompt is one PR. Do not combine.
 - Never modify the canonical event set or suppression reason set without an explicit human instruction citing this section.
 - Candidate behavioral signals must pass docs/research/SIGNAL_PROMOTION_CRITERIA.md before they are promoted into concept docs, contracts, or implementation work.
 - Future Codex or agent work must not productize V4 signals unless docs/research/V4_SIGNAL_VALIDATION_GATE.md records `PROMOTE` for that signal. Research probes are not product contracts. Candidate signal docs are not permission to build APIs.
+- V4 Depth Readout Engine is dogfood-only. It is not permission to build V4 economic APIs. Reusable Workflow Propagation remains `HOLD` unless future validation promotes it. Time-Saved Defensibility Range remains blocked until Depth readout stability is demonstrated.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
 - Add LMSYS assurance harness fixtures for every new behavior.

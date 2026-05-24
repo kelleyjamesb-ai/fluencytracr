@@ -228,6 +228,29 @@ def test_header_format_variants_still_feed_metric_readers(tmp_path: Path) -> Non
     assert summary["signals"]["reusable_workflow_propagation"]["coverage_summary"]["workflow_count"] == 18.0
 
 
+def test_sparse_coverage_in_any_required_column_holds_not_promotes(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    write_complete_input(input_dir)
+    sparse_delegation = {
+        **delegation_row(),
+        "aggregate_user_count": 64,
+        "aggregate_bucket_events": 0,
+        "aggregate_taxonomy_events": 1200,
+    }
+    for window in range(1, 4):
+        write_csv(input_dir / f"v4_delegation_window_{window}.csv", [sparse_delegation])
+
+    completed = run_validator(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    delegation = summary["signals"]["delegation_depth"]
+    assert delegation["decision"] == "HOLD"
+    assert delegation["primary_reason"] == "coverage too sparse"
+    assert delegation["coverage_sufficient"] is False
+
+
 def test_forbidden_person_level_field_fails_closed(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
@@ -274,3 +297,22 @@ def test_fewer_than_three_windows_holds_not_promotes(tmp_path: Path) -> None:
     assert summary["signals"]["rapid_refinement"]["windows_present"] == 2
     assert summary["signals"]["delegation_depth"]["decision"] == "HOLD"
     assert summary["signals"]["velocity_depth_zone"]["decision"] == "HOLD"
+
+
+def test_non_contiguous_fixed_windows_hold_not_promote(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    write_complete_input(input_dir)
+    (input_dir / "v4_refinement_window_1.csv").unlink()
+    write_csv(input_dir / "v4_refinement_window_4.csv", [refinement_row()])
+
+    completed = run_validator(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    refinement = summary["signals"]["rapid_refinement"]
+    assert refinement["decision"] == "HOLD"
+    assert refinement["primary_reason"] == "missing required fixed windows"
+    assert "v4_refinement_window_1.csv" in refinement["input_files_missing"]
+    assert "v4_refinement_window_4.csv" in refinement["input_files_found"]
+    assert refinement["stability"]["p50_window_values"] == [2.0, 2.0, 2.0]
