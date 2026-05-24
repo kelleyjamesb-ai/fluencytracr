@@ -52,13 +52,38 @@ exports are valid for distribution-shape research, but they cannot calibrate a
 value-confidence dependency. Value-confidence calibration requires aligned
 60-day-compliant windows.
 
+A taxonomy-aware QM/RF diagnostic was then run for
+`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z`, using the work-mode
+taxonomy and the same governed surface boundaries as Velocity and Depth. The
+dry run validated against the native scio-prod STRUCT table and estimated
+approximately 2.99 TB scanned. The full query produced 30 aggregate surface
+rows: 25 workflow surfaces and 5 standalone surfaces.
+
+Those QM/RF rows were then passed to the multi-surface dogfood driver with the
+matching 60-day Velocity rows. The run produced:
+
+| Metric | Result |
+| --- | ---: |
+| Weighted Reliability Factor | 0.730 |
+| Weighted Quality Multiplier | 1.228 |
+| Weighted Velocity-Adjusted Quality Multiplier | 0.860 |
+
+The result is the strongest aligned dogfood run so far because QM/RF and
+Velocity now share surface IDs for the same 60-day window. It also exposed a
+clear limitation: standalone surfaces entered the QM/RF input, but all five
+standalone rows suppressed for `NO_CONVERGENCE` because the current
+`observed_event_proxy` path has volume and Velocity but not enough quality /
+reliability evidence to surface. That is a useful finding, not a failure.
+Standalone activity can be visible to Velocity and Depth before it is
+defensible for QM/RF.
+
 ## Calibration Test Results
 
 | Test | Result | Evidence |
 | --- | --- | --- |
-| Depth Repertoire x Velocity | Blocked by window compatibility | Depth Repertoire has stable fixed-window shape, but the three windows are 20 days. Velocity would suppress for `INSUFFICIENT_TIME`; calibration needs 60-day-compliant matching keys. |
-| Depth Repertoire x Quality Multiplier | Blocked by window compatibility | Quality Multiplier exists in the 60-day multi-surface readout, but not for matching 60-day Depth Repertoire keys. |
-| Depth Repertoire x Reliability Factor | Blocked by window compatibility | Reliability Factor exists in the 60-day multi-surface readout, but not for matching 60-day Depth Repertoire keys. |
+| Depth Repertoire x Velocity | Partially tested | The original three Depth Repertoire stability windows are 20 days and cannot calibrate Velocity, but a same-window 60-day Velocity run exists for the scio-prod 60-day window. |
+| Depth Repertoire x Quality Multiplier | Partially tested | Taxonomy-aware QM input now exists for one 60-day scio-prod window, but not yet for three matching 60-day windows. |
+| Depth Repertoire x Reliability Factor | Partially tested | Taxonomy-aware RF input now exists for one 60-day scio-prod window, but not yet for three matching 60-day windows. |
 | Depth Repertoire x Outcome Evidence | Not tested | No customer-attested aggregate outcome evidence was available for this calibration pass. |
 | Suppressed Depth Repertoire | Partially tested by contract | The Depth Repertoire contract defines suppressed values as null or absent, but no full downstream economic artifact exists to test caveat propagation end to end. |
 
@@ -80,6 +105,17 @@ The additional dry-run check also proved that the existing 20-day windows should
 not be reused as economic calibration windows. They intentionally stress
 short-window stability, while Velocity, Quality Multiplier, Reliability Factor,
 and V3 verdict paths require 60-day-compliant evidence to surface.
+
+The one-window taxonomy-aware QM/RF run proved that surface-language alignment
+is technically viable. It moved the dogfood readout from older workflow-only
+surface inputs to governed workflow and standalone surface rows. The weighted
+Velocity-adjusted Quality Multiplier dropped to 0.860, which is materially more
+conservative than the unadjusted taxonomy-aware Quality Multiplier of 1.228.
+
+The same run also proved that standalone surfaces need richer quality and
+reliability joins before they can support QM/RF. Treating observed standalone
+events as completed proxy records is enough to test the adapter boundary, but
+not enough to clear convergence gates.
 
 ## What The Test Did Not Prove
 
@@ -106,11 +142,12 @@ interpretation when the other primitives are eligible to surface.
 Decision: `HOLD_FOR_MORE_CALIBRATION`
 
 Rationale: Depth Repertoire remains promising and stable, but this calibration
-pass does not include the full required input set and the available fixed-window
-exports are not compatible with the 60-day gates used by the other primitives.
-The safest current use is as a Depth contract component and research caveat
-source. It should not yet affect V4 confidence bands, surfacing eligibility, or
-economic artifacts.
+pass still does not include the full required input set. The first same-window
+taxonomy-aware QM/RF run confirms the calibration path is real, but it is only
+one 60-day window and standalone surfaces still lack enough quality /
+reliability evidence to surface. The safest current use is as a Depth contract
+component and research caveat source. It should not yet affect V4 confidence
+bands, surfacing eligibility, or economic artifacts.
 
 This decision supersedes neither the stability promotion nor the contract
 hardening. It preserves them while holding economic dependency.
@@ -145,6 +182,12 @@ Generate the following for at least three matching 60-day cohort/window keys:
 - taxonomy-aware Reliability Factor inputs,
 - V3 verdict metadata,
 - Outcome Evidence only where customer-attested aggregate evidence exists.
+
+The next run should also distinguish workflow rows backed by `workflow_status`
+from standalone rows backed only by `observed_event_proxy`. Standalone rows
+should remain visible as aggregate context, but should not be treated as QM/RF
+evidence until verification, feedback, recovery, or other parent-quality joins
+make them converge.
 
 Then repeat the calibration matrix and produce a new decision:
 

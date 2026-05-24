@@ -152,10 +152,10 @@ taxonomy_surface_events AS (
       ELSE FALSE
     END AS completed,
     CASE
-      WHEN event.execution_status IN ('error', 'errored', 'failed', 'failure')
-        OR event.has_execution_error THEN TRUE
+      WHEN event.execution_status IN ('error', 'errored', 'failed', 'failure') THEN TRUE
       ELSE FALSE
     END AS errored,
+    event.has_execution_error AS has_error_marker,
     CASE
       WHEN event.execution_status IN ('abandoned', 'cancelled', 'canceled', 'timeout') THEN TRUE
       ELSE FALSE
@@ -194,6 +194,7 @@ taxonomy_surface_events AS (
     END AS work_mode,
     TRUE AS completed,
     FALSE AS errored,
+    FALSE AS has_error_marker,
     FALSE AS abandoned,
     FALSE AS recovered,
     NULL AS latency_ms,
@@ -220,6 +221,7 @@ taxonomy_surface_events AS (
     'conversational_work' AS work_mode,
     TRUE AS completed,
     FALSE AS errored,
+    FALSE AS has_error_marker,
     FALSE AS abandoned,
     FALSE AS recovered,
     NULL AS latency_ms,
@@ -304,8 +306,8 @@ surface_aggregates AS (
     SAFE_DIVIDE(COUNTIF(surface.errored), COUNT(*)) AS error_rate,
     SAFE_DIVIDE(COUNTIF(surface.abandoned), COUNT(*)) AS abandonment_rate,
     CASE
-      WHEN COUNTIF(surface.errored) = 0 THEN 1.0
-      ELSE SAFE_DIVIDE(COUNTIF(surface.recovered), COUNTIF(surface.errored))
+      WHEN COUNTIF(surface.errored OR surface.has_error_marker) = 0 THEN 1.0
+      ELSE SAFE_DIVIDE(COUNTIF(surface.recovered), COUNTIF(surface.errored OR surface.has_error_marker))
     END AS recovery_rate,
     SAFE_DIVIDE(
       COALESCE(MAX(verification.verified_surface_count), 0),
