@@ -80,6 +80,7 @@ work.
 - [V4 Depth Repertoire Value Confidence Calibration Plan](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
 - [V4 Depth Repertoire Value Confidence Calibration Decision](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
 - [V4 Value Confidence Caveat Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+- [V4 TSDR Caveat Propagation Decision](../../research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
@@ -123,6 +124,13 @@ Before any V4 artifact moves beyond caveat-only use, it must pass the
 [V4 Value Confidence Caveat Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md).
 Passing caveat propagation does not authorize economic dependency; it only
 proves that caveats travel without becoming hidden behavior.
+
+The [V4 TSDR Caveat Propagation Decision](../../research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+records `PASS_CAVEAT_PROPAGATION` for caveat/context behavior. That pass keeps
+TSDR in documentation-stage contract hardening only; it does not authorize
+runtime implementation, schemas, endpoints, range adjustment, confidence-band
+adjustment, surfacing eligibility changes, or Depth Repertoire as an economic
+dependency.
 
 ## Running Multi-Surface Dogfood
 

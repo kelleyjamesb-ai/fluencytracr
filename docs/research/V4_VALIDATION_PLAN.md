@@ -28,6 +28,7 @@ Canonical validation gate documents:
 - [V4 Depth Repertoire Stability Readout](./V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 - [Work Mode Taxonomy](../concepts/WORK_MODES.md)
 - [V4 Value Confidence Caveat Propagation Runbook](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+- [V4 TSDR Caveat Propagation Decision](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -69,6 +70,13 @@ Any V4 artifact that carries Depth Repertoire caveat/context must pass
 before further contract hardening. Passing caveat propagation does not
 authorize economic dependency; it only proves that context does not alter
 values, bands, zones, eligibility, or blocked claims.
+
+The Time-Saved Defensibility Range contract has passed caveat propagation in
+[V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md).
+That decision permits documentation-stage TSDR contract hardening only. It does
+not authorize runtime implementation, schema hardening, economic dependency,
+range adjustment, confidence-band adjustment, eligibility use, ROI, causality,
+prediction, productivity, maturity, or ranking claims.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
