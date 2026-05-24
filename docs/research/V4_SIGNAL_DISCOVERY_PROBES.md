@@ -15,6 +15,7 @@ The research candidates are:
 
 - rapid refinement behavior,
 - delegation depth,
+- depth repertoire,
 - reusable workflow propagation.
 
 These candidates are not fluency dimensions. They are not product signals. They
@@ -58,7 +59,23 @@ numerators rather than inventing semantics.
 
 SQL: [v4_signal_discovery_delegation.sql](../../sql/dogfood/v4_signal_discovery_delegation.sql)
 
-## Probe 3: Reusable Workflow Propagation
+## Probe 3: Depth Repertoire
+
+Depth repertoire asks whether aggregate AI use combines surface breadth with
+repeated use. It tests the V4 Depth spine:
+
+```text
+Depth = Surface Repertoire x Repeat Use / Refinement
+```
+
+The probe computes person-level intermediate statistics inside BigQuery, then
+emits only aggregate bucket counts and percentile distributions. It is designed
+to distinguish single-surface habitual use from repeated cross-surface work
+integration without exposing individual rows.
+
+SQL: [depth_repertoire_diagnostic.sql](../../sql/dogfood/depth_repertoire_diagnostic.sql)
+
+## Probe 4: Reusable Workflow Propagation
 
 Reusable workflow propagation asks whether named, non-unlisted, reusable
 workflows spread across adopters.
@@ -126,6 +143,7 @@ Rationale:
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | rapid refinement behavior |  |  |  |  |  |  |  |  |
 | delegation depth |  |  |  |  |  |  |  |  |
+| depth repertoire |  |  |  |  |  |  |  |  |
 | reusable workflow propagation |  |  |  |  |  |  |  |  |
 
 ## Governance Constraints

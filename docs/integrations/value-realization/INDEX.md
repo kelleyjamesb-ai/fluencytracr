@@ -70,6 +70,7 @@ work.
 
 - [Signal Promotion Criteria](../../research/SIGNAL_PROMOTION_CRITERIA.md)
 - [V4 Signal Discovery Probes](../../research/V4_SIGNAL_DISCOVERY_PROBES.md)
+- [Depth Repertoire Diagnostic](../../../sql/dogfood/depth_repertoire_diagnostic.sql)
 - [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)

@@ -69,6 +69,21 @@ Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD`
 pending metadata observability. They are not used as Depth score drivers in
 this readout.
 
+## Depth Repertoire Diagnostic
+
+Use `sql/dogfood/depth_repertoire_diagnostic.sql` when the research question is
+whether Depth has observable shape before running the full Depth Readout Engine.
+It emits aggregate repertoire buckets and percentile distributions for:
+
+- surface repertoire,
+- repeated surfaces,
+- multi-day surfaces,
+- a candidate repertoire x repeat-use Depth shape.
+
+This diagnostic is dogfood/research-only. It is not an input contract for the
+Depth Readout Engine yet and must not be used as a customer-facing score,
+ranking, economic readout, or product API.
+
 ## Command
 
 ```bash
