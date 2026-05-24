@@ -40,11 +40,24 @@ Velocity adjusts confidence based on adoption energy. Low Velocity may narrow th
 
 ### Depth
 
-Depth adjusts confidence based on work integration. Low Depth may indicate that activity has not yet become durable operating leverage.
+Depth qualifies interpretation based on aggregate work-integration evidence. Low
+Depth may require stronger caveats that activity has not yet become durable
+operating leverage.
 
 Depth Repertoire is currently approved only as aggregate caveat/context. It must
 not adjust the range, confidence band, surfacing eligibility, or any economic
 number unless a later calibration decision explicitly promotes that use.
+
+## Depth Repertoire Boundary
+
+Depth Repertoire may be cited only as aggregate caveat/context about
+cross-surface return use. It must not adjust this readout's conservative,
+expected, or upside values; confidence band; surfacing eligibility; or economic
+interpretation unless a later calibration decision explicitly promotes that
+use.
+
+Suppressed or insufficient Depth Repertoire evidence must remain null or absent
+and must not be reconstructed through range language.
 
 ### Quality
 

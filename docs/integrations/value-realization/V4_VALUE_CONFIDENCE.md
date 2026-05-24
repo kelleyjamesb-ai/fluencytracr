@@ -42,6 +42,13 @@ Depth measures work integration through aggregate evidence of verification, work
 
 Depth helps V4 distinguish raw activity from durable operating leverage.
 
+Depth Repertoire is currently approved only as aggregate caveat/context in V4
+value-confidence artifacts. It must not change confidence bands, surfacing
+eligibility, Time-Saved Defensibility Range, leakage severity, scale-readiness
+zones, trust labels, ROI language, causal claims, prediction claims, or any
+customer-facing economic number unless a later calibration decision explicitly
+promotes that use.
+
 ## Output: Time-Saved Defensibility Range
 
 The Time-Saved Defensibility Range qualifies the raw time-saved estimate using governed aggregate evidence.
@@ -112,6 +119,8 @@ Caveat: This readout qualifies the Glean time-saved estimate. It does not prove 
 ## Implementation Readiness Checklist
 
 - [ ] V4 Markdown concepts and contracts are reviewed.
+- [ ] Caveat propagation is validated with [V4 Value Confidence Caveat
+      Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md).
 - [ ] Suppressed economics behavior is specified and tested before implementation.
 - [ ] Depth mapping is defined from existing aggregate evidence only.
 - [ ] Trust Calibration interpretation is risk-adjusted and caveated.

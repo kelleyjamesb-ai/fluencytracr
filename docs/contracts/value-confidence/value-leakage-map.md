@@ -36,6 +36,17 @@ Friction, abandonment, or failed attempts are not followed by recoverable workfl
 
 High friction limits the conversion of AI activity into defensible value.
 
+## Depth Repertoire Boundary
+
+Depth Repertoire may be cited only as aggregate caveat/context about
+cross-surface return use. It must not adjust leakage types, aggregate severity,
+scenario-based value-at-risk labels, surfacing eligibility, or economic
+interpretation unless a later calibration decision explicitly promotes that
+use.
+
+Suppressed or insufficient Depth Repertoire evidence must remain null or absent
+and must not be reconstructed through leakage narratives.
+
 ## Inputs
 
 - V3 aggregate verdicts.

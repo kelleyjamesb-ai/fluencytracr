@@ -79,6 +79,7 @@ work.
 - [V4 Depth Repertoire Value Confidence Review](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
 - [V4 Depth Repertoire Value Confidence Calibration Plan](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
 - [V4 Depth Repertoire Value Confidence Calibration Decision](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
+- [V4 Value Confidence Caveat Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
 - [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
@@ -117,6 +118,11 @@ language, causal claims, prediction claims, or any customer-facing economic
 number. Internal Glean dogfood values are research observations only and must
 not be used as customer benchmarks, production defaults, product thresholds, or
 V4 economic inputs.
+
+Before any V4 artifact moves beyond caveat-only use, it must pass the
+[V4 Value Confidence Caveat Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md).
+Passing caveat propagation does not authorize economic dependency; it only
+proves that caveats travel without becoming hidden behavior.
 
 ## Running Multi-Surface Dogfood
 

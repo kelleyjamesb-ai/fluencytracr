@@ -27,6 +27,7 @@ Canonical validation gate documents:
 - [V4 Depth Stability Decision](./V4_DEPTH_STABILITY_DECISION.md)
 - [V4 Depth Repertoire Stability Readout](./V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 - [Work Mode Taxonomy](../concepts/WORK_MODES.md)
+- [V4 Value Confidence Caveat Propagation Runbook](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -53,10 +54,6 @@ calibration values, or defaults. V4 economic readouts, Time-Saved Defensibility
 Range, and value-confidence APIs remain blocked from depending on Depth
 Repertoire until a later value-confidence review explicitly allows it.
 
-The current value-confidence review for Depth Repertoire records
-`HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next phase is calibration planning,
-not implementation.
-
 The calibration plan is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
 The current calibration decision is
@@ -66,6 +63,12 @@ Depth Repertoire only as aggregate caveat/context. It must not modify
 confidence bands, surfacing eligibility, Time-Saved Defensibility Range, ROI
 language, causal claims, prediction claims, or any customer-facing economic
 number unless a later calibration decision explicitly promotes that use.
+
+Any V4 artifact that carries Depth Repertoire caveat/context must pass
+[V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+before further contract hardening. Passing caveat propagation does not
+authorize economic dependency; it only proves that context does not alter
+values, bands, zones, eligibility, or blocked claims.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
