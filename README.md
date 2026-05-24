@@ -131,6 +131,7 @@ is not the lead positioning for this repository.
 - Production ingest concept: [docs/concepts/INGEST.md](docs/concepts/INGEST.md)
 - Calibration governance concept: [docs/concepts/CALIBRATION.md](docs/concepts/CALIBRATION.md)
 - Depth readout contract: [docs/contracts/depth/README.md](docs/contracts/depth/README.md)
+- Depth Repertoire contract: [docs/contracts/depth/depth-repertoire.md](docs/contracts/depth/depth-repertoire.md)
 - Value Confidence contract: [docs/contracts/value-confidence/README.md](docs/contracts/value-confidence/README.md)
 - Time-Saved Defensibility Range: [docs/contracts/value-confidence/time-saved-defensibility-range.md](docs/contracts/value-confidence/time-saved-defensibility-range.md)
 - Trust Calibration Index: [docs/contracts/value-confidence/trust-calibration-index.md](docs/contracts/value-confidence/trust-calibration-index.md)
