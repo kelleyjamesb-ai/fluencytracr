@@ -52,6 +52,20 @@ exports are valid for distribution-shape research, but they cannot calibrate a
 value-confidence dependency. Value-confidence calibration requires aligned
 60-day-compliant windows.
 
+A single 60-day Depth Repertoire sanity check was then run for
+`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z`. It produced aggregate
+rows only and confirmed that the 60-day Depth Repertoire diagnostic path is
+live:
+
+| Segment | Cohort size | Repertoire p50/p90/p99 | Repeated surfaces p50/p90/p99 | Depth candidate p50/p90/p99 |
+| --- | ---: | --- | --- | --- |
+| overall | 2,238,571 | 2 / 6 / 9 | 2 / 5 / 8 | 4 / 30 / 64 |
+
+This confirms the 60-day Depth Repertoire spine itself, but it is still only
+one Depth-only window. It does not supply aligned Velocity, Quality Multiplier,
+Reliability Factor, V3 verdict metadata, or Outcome Evidence for the same
+calibration key.
+
 ## Calibration Test Results
 
 | Test | Result | Evidence |
@@ -80,6 +94,10 @@ The additional dry-run check also proved that the existing 20-day windows should
 not be reused as economic calibration windows. They intentionally stress
 short-window stability, while Velocity, Quality Multiplier, Reliability Factor,
 and V3 verdict paths require 60-day-compliant evidence to surface.
+
+The single 60-day sanity check confirms the 60-day Depth Repertoire diagnostic
+can run against scio-prod and reproduces the expected overall shape. It does not
+replace the required multi-window value-confidence calibration.
 
 ## What The Test Did Not Prove
 
