@@ -4,7 +4,8 @@
 
 Depth is a first-class V4 concept for FluencyTracr. It describes whether aggregate AI use is becoming integrated into real workflows deeply enough to make value-realization claims more defensible.
 
-Depth complements Velocity. Velocity measures adoption energy. Depth measures work integration. Economic value confidence requires both.
+Depth complements Velocity. Velocity measures adoption energy. Depth measures
+cross-surface work integration. Economic value confidence requires both.
 
 This document defines the concept before implementation. It does not add canonical events, suppression reasons, thresholds, routes, schemas, storage, or product surfaces.
 
@@ -18,10 +19,27 @@ Depth exists to make that distinction explicit without turning FluencyTracr into
 
 ## Definition: What Depth Is
 
-Depth is aggregate evidence that AI use is becoming integrated into real workflows. It is derived from governed aggregate distributions and corroborative signals that indicate whether AI-assisted work is:
+Depth is aggregate evidence that AI use is becoming integrated into real
+workflows through surface repertoire and repeated meaningful use. The core
+question is not only whether a cohort uses AI often, or whether it uses many AI
+surfaces once. The question is whether the cohort repeatedly brings multiple AI
+surfaces into work over time in a pattern that looks durable enough to qualify a
+value claim.
 
+In shorthand:
+
+```text
+Depth = Surface Repertoire x Repeat Use / Refinement
+```
+
+Additional evidence can increase interpretive confidence when it shows that the
+repertoire is delegated, verified, reusable, recoverable, or judgment-aware. It
+is derived from governed aggregate distributions and corroborative signals that
+indicate whether AI-assisted work is:
+
+- distributed across a meaningful surface and workflow repertoire,
+- repeated or refined enough to show more than one-off experimentation,
 - verified when the workflow risk calls for it,
-- spread across a meaningful workflow and capability repertoire,
 - reused through structured patterns where appropriate,
 - delegated through agents, tools, MCP, or named workflows where the work warrants it,
 - recoverable when AI output is incomplete or wrong, and
@@ -30,6 +48,32 @@ Depth is aggregate evidence that AI use is becoming integrated into real workflo
 Depth is not skill, maturity, or performance. It is an aggregate evidence primitive used to qualify claim safety.
 
 ## Depth Dimensions
+
+### Surface Repertoire Depth
+
+Surface Repertoire Depth asks whether the cohort repeatedly uses more than one
+AI surface in the governed taxonomy. It is the behavioral counterpart to the
+intuition that durable AI work integration shows up as cross-surface use, not
+only high volume in one tool.
+
+This dimension may require per-user computation inside the customer-side
+transformer, but FluencyTracr may surface only cohort distributions such as p10,
+p50, p90, and p99. It must never expose an individual surface count or identify
+which person used which surface.
+
+Surface Repertoire Depth is not a reward for tool sprawl. Broad use is evidence
+only when the surface mix is coherent for the workflow or cohort being examined.
+
+### Repeat / Refinement Depth
+
+Repeat / Refinement Depth asks whether the cohort returns to AI surfaces across
+the window and, where session evidence exists, refines within a surface enough
+to suggest embedded work behavior rather than isolated experimentation.
+
+This dimension is important but insufficient on its own. Repeat use in one
+surface can indicate habit, convenience, or workflow embedding; it does not by
+itself prove deeper work integration. Repeat / Refinement Depth should therefore
+qualify Surface Repertoire Depth, not replace it.
 
 ### Verification Depth
 
@@ -48,7 +92,8 @@ This dimension should be interpreted with surface taxonomy and business context.
 Capability Repertoire Depth asks whether aggregate AI use spans the kinds of
 capabilities the workflow claim depends on. It includes:
 
-- Surface Depth,
+- Surface Repertoire Depth,
+- Repeat / Refinement Depth,
 - Workflow Repertoire Depth,
 - Capability Diversity Depth,
 - Agentic Depth,
@@ -112,7 +157,14 @@ Depth is not a way to rescue suppressed evidence.
 
 Velocity measures adoption energy. Depth measures work integration.
 
-High Velocity without Depth may indicate fragile scale: many interactions, but limited reuse, verification, recovery, or workflow embedding.
+Velocity's breadth dimension can show how many surfaces appear in aggregate
+usage distributions. Depth asks the harder follow-on question: whether surface
+repertoire persists and combines with repeated or refined use in a way that
+supports a value claim.
+
+High Velocity without Depth may indicate fragile scale: many interactions, but
+limited cross-surface repertoire, repeat / refinement behavior, reuse,
+verification, recovery, or workflow embedding.
 
 High Depth with low Velocity may indicate focused expertise, constrained rollout, or a narrow but important workflow. It should not be treated as weak adoption without context.
 
@@ -126,9 +178,17 @@ More verification is not always better. Low verification may reflect earned trus
 
 ## Relationship to Economic Value
 
-Depth strengthens the defensibility of economic claims when it shows that AI use is integrated into repeatable, recoverable, risk-aware work. It does not calculate realized ROI or prove causality.
+Depth strengthens the defensibility of economic claims when it shows that AI use
+is integrated into repeatable, cross-surface, recoverable, risk-aware work. It
+does not calculate realized ROI or prove causality.
 
 Depth should help V4 decide whether a time-saved claim is better treated as strong, caveated, scenario-based, or suppressed.
+
+Depth should not support economic interpretation when the only stable signal is
+repeat or refinement volume. A future value-confidence layer needs at least one
+additional non-saturated Depth component, such as surface repertoire,
+verification, delegation, or reuse evidence, before Depth can carry economic
+claim weight.
 
 ## Governance Invariants
 
@@ -152,7 +212,11 @@ Depth can increase confidence only after existing fail-closed gates clear. It ca
 
 ## Open Questions
 
+- Should Surface Repertoire x Repeat / Refinement become the first formal
+  Depth spine?
 - Which existing aggregate signals should map to each Depth dimension first?
+- How should Surface Repertoire Depth distinguish coherent work integration
+  from incoherent tool sprawl?
 - Should Depth remain a set of independent dimension bands or support a bounded summary band?
 - How should workflow risk be represented before Trust Calibration exists?
 - What cross-window stability is required before Delegation Depth can inform implementation or contracts?
@@ -161,4 +225,4 @@ Depth can increase confidence only after existing fail-closed gates clear. It ca
 
 ## Attribution
 
-See [ATTRIBUTION.md](../../ATTRIBUTION.md) for intellectual provenance. The V4 Depth concept is credited to James Kelley: economic value confidence requires both adoption energy and work integration, with all interpretation constrained by aggregate-only claim safety.
+See [ATTRIBUTION.md](../../ATTRIBUTION.md) for intellectual provenance. The V4 Depth concept is credited to James Kelley: economic value confidence requires both adoption energy and cross-surface work integration, with all interpretation constrained by aggregate-only claim safety.

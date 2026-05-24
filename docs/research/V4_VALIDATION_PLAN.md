@@ -38,6 +38,11 @@ aggregate Velocity and Depth evidence interact across workflow or surface
 aggregates, but it does not authorize V4 economic APIs, customer-facing
 readouts, schemas, or frontend product surfaces.
 
+Depth validation must distinguish surface repertoire from repeat/refinement
+volume. Repeat/refinement evidence is useful, but it must not be treated as the
+whole Depth construct unless it is paired with a non-saturated component such as
+surface repertoire, verification, delegation, or reuse evidence.
+
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
 economic readouts remain blocked until Depth readout stability is demonstrated

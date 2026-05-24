@@ -28,10 +28,11 @@ documented value-realization layers:
   the same fail-closed gates clear. Dogfood velocity coverage now follows the
   full surface taxonomy in [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md),
   spanning workflow and standalone AI surfaces without adding person-level output.
-- **Depth:** frames work integration through verification, workflow repertoire,
-  reusable workflow creation, agent relationship mix, and recovery discipline.
-  Depth is aggregate evidence that adoption is becoming durable enough to
-  support defensible value claims.
+- **Depth:** frames cross-surface work integration through surface repertoire
+  and repeated meaningful use, then qualifies that evidence with verification,
+  delegation, reuse, recovery, and judgment behavior. Depth is aggregate
+  evidence that adoption is becoming durable enough to support defensible value
+  claims.
 - **AGENT sub-surfaces:** V2.3 splits AGENT into `agent:autonomous`,
   `agent:workflow_named`, and `agent:ephemeral` so delegation, reusable Skill,
   and exploratory agent behavior can be evaluated independently.
