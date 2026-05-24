@@ -4,7 +4,9 @@
 
 The Depth readout contract defines how FluencyTracr may represent aggregate evidence that AI use is becoming integrated into real workflows.
 
-Depth is not skill, maturity, or performance. It is a governed aggregate input to V4 value confidence.
+Depth is not skill, maturity, or performance. It is a governed aggregate input
+to V4 value confidence, anchored in surface repertoire and repeated meaningful
+use.
 
 ## Contract Status
 
@@ -23,6 +25,8 @@ Depth may consume governed aggregate evidence from:
 - V3 aggregate verdicts,
 - verification and feedback attribution,
 - workflow and surface taxonomy,
+- cohort surface-repertoire distributions,
+- repeat-use and refinement distributions,
 - AGENT sub-surface composition,
 - reusable workflow or Skill aggregate usage,
 - recovery and friction-loop aggregate evidence,
@@ -48,13 +52,19 @@ Suppressed readouts must keep dimension values null or absent.
 
 ## Depth Dimensions
 
+- `surface_repertoire_depth`
+- `repeat_refinement_depth`
 - `verification_depth`
 - `workflow_repertoire_depth`
 - `skill_reuse_depth`
 - `recovery_depth`
 - `judgment_override_depth`
 
-Each dimension should be expressed as a governed band or aggregate status. A future schema may add bounded aggregate fields, but it must not expose person-level records.
+Each dimension should be expressed as a governed band or aggregate status. A
+future schema may add bounded aggregate fields, but it must not expose
+person-level records. Repeat/refinement evidence is not sufficient by itself to
+represent total Depth; it must be interpreted alongside surface repertoire or
+another non-saturated Depth component.
 
 ## Allowed Bands
 
@@ -134,6 +144,8 @@ Depth does not override suppression.
   "verdict": "SURFACE",
   "suppression_reason": null,
   "depth": {
+    "surface_repertoire_depth": "HIGH",
+    "repeat_refinement_depth": "MEDIUM",
     "verification_depth": "MEDIUM",
     "workflow_repertoire_depth": "HIGH",
     "skill_reuse_depth": "LOW",

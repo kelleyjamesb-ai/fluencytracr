@@ -62,7 +62,7 @@ Future expansions require a governance-grade concept doc in docs/concepts/ befor
 
 Velocity is a defined V2 concept (see docs/concepts/VELOCITY.md) and is implemented as three aggregate-distribution canonical events plus a Velocity Index output. It preserves the V1 suppression reasons, fail-closed posture, and no-individual-scoring invariant.
 
-Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames work integration through verification, workflow repertoire, reusable workflow creation, agent relationship mix, recovery discipline, and judgment behavior. It is documentation-stage only unless a future implementation PR explicitly adds runtime support under the nine invariants.
+Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames cross-surface work integration through surface repertoire and repeated meaningful use, then qualifies that evidence with verification, delegation, reuse, recovery, and judgment behavior. It is documentation-stage only unless a future implementation PR explicitly adds runtime support under the nine invariants.
 
 Delegation Depth is a V4 concept-stage Depth subdimension (see docs/concepts/DELEGATION_DEPTH.md). It must not be implemented as a new canonical event, standalone score, or person-level label without explicit governance approval.
 
@@ -90,7 +90,7 @@ V4 must not implement ROI calculation, customer-facing prediction claims, scorin
 - Reliability Factor: composite of abandonment, friction loop, recovery, verification
 - Outcome Evidence: customer-attested aggregate KPI ingestion (storage only)
 - Velocity Index: V2 aggregate-distribution output across frequency, engagement, and breadth
-- Depth: V4 aggregate work-integration lens, including verification, reusable workflows, workflow repertoire, agent mix, recovery discipline, and judgment behavior
+- Depth: V4 aggregate cross-surface work-integration lens, anchored in surface repertoire and repeated meaningful use, with verification, delegation, reuse, recovery, and judgment behavior as confidence layers
 - Value Confidence Layer: V4 documentation-stage executive decision layer for bounded, caveated, aggregate economic confidence
 
 ## 8. Repositioning Context

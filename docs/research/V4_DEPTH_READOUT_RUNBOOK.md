@@ -124,6 +124,11 @@ The readout can help identify where Velocity and Depth appear aligned or
 misaligned across aggregate surfaces. Those patterns may inform later mapping
 improvements, transformer enhancements, validation design, or concept review.
 
+Current dogfood Depth evidence must be read carefully: repeat/refinement volume
+is only one component of Depth. A stable future Depth readout needs
+surface-repertoire evidence or another non-saturated component before it can
+support economic interpretation.
+
 Any later V4 product contract still requires explicit governance approval,
 multi-window stability evidence, and a separate implementation PR.
 

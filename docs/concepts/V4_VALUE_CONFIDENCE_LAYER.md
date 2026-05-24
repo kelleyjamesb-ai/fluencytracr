@@ -31,11 +31,17 @@ V4 composes V3 outputs. It does not replace V3 ingest, bypass suppression gates,
 
 Velocity measures adoption energy.
 
-Depth measures work integration.
+Depth measures cross-surface work integration: surface repertoire and repeated
+meaningful use, qualified by verification, delegation, reuse, recovery, and
+judgment behavior.
 
 Economic value confidence requires both.
 
-V4 converts AI activity into economic confidence only when governed aggregate evidence supports it. High activity without integration can be fragile. Deep integration without broad adoption may be valuable but limited. V4 must distinguish activity from durable operating leverage.
+V4 converts AI activity into economic confidence only when governed aggregate
+evidence supports it. High activity without integration can be fragile. Repeated
+use without surface repertoire can be habit rather than durable leverage. Deep
+integration without broad adoption may be valuable but limited. V4 must
+distinguish activity from durable operating leverage.
 
 [Delegation Depth](./DELEGATION_DEPTH.md) refines the Depth side of this thesis
 by asking whether aggregate activity is retrieval-oriented,
