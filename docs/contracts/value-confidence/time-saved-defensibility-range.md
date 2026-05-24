@@ -42,6 +42,10 @@ Velocity adjusts confidence based on adoption energy. Low Velocity may narrow th
 
 Depth adjusts confidence based on work integration. Low Depth may indicate that activity has not yet become durable operating leverage.
 
+Depth Repertoire is currently approved only as aggregate caveat/context. It must
+not adjust the range, confidence band, surfacing eligibility, or any economic
+number unless a later calibration decision explicitly promotes that use.
+
 ### Quality
 
 Quality evidence adjusts confidence in the time-saved estimate by reflecting completion, verification, recovery, friction, and abandonment patterns.

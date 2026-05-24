@@ -27,7 +27,7 @@ Each contract preserves the same posture:
 | V3 Production Ingest | [V3_INGEST.md](./V3_INGEST.md) | Replaces manual CSV dogfood with customer-side aggregate transformation, governed calibration references, and immutable verdict replay. |
 | V4 Value Confidence | [V4_VALUE_CONFIDENCE.md](./V4_VALUE_CONFIDENCE.md) and [../../contracts/value-confidence/README.md](../../contracts/value-confidence/README.md) | Composes V3 verdicts, Velocity, Depth, quality, reliability, trust calibration, and outcome evidence into executive economic decision artifacts. |
 | Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate cross-surface work-integration primitive alongside Velocity. |
-| Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; not yet an economic input. |
+| Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; approved only as caveat/context, not an economic input. |
 | Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
 | Work Mode Taxonomy | [../../concepts/WORK_MODES.md](../../concepts/WORK_MODES.md) | Maps governed surfaces into durable AI work patterns and evidence roles for taxonomy-aware calibration. |
 
@@ -54,8 +54,9 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
 
 1. V3 aggregate verdicts establish whether evidence may surface.
 2. Velocity measures adoption energy.
-3. Depth measures cross-surface work integration: surface repertoire multiplied
-   by repeated meaningful use, then qualified by higher-confidence signals.
+3. Depth measures cross-surface work integration through surface repertoire and
+   repeated meaningful use, then qualifies interpretation with
+   higher-confidence signals.
 4. Delegation Depth refines Depth as a research-promoted concept for aggregate
    retrieval, transformation, and delegation surface mix.
 5. Work Mode Taxonomy maps governed surfaces into AI work patterns so taxonomy-aware calibration can compare like with like.
