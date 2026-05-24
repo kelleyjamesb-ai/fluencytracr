@@ -1,62 +1,68 @@
 # Current Slice Contract
 
-- Work item id: `reuse-propagation-pr275-conflict-reconciliation`
-- Title: `Reconcile PR 275 reusable workflow propagation diagnostic with main`
+- Work item id: `security-check-auth-token-hardening`
+- Title: `Run security check and fix critical auth token minting issue`
 - Status: `completed`
 
 ## Summary
 
-Resolved PR #275 conflicts by preserving `main`'s V4 signal-validation and
-join-key diagnostic updates while keeping the PR's separate reusable workflow
-propagation diagnostic and workflow-granularity coverage fix.
+Ran a repository-wide high-impact security check and fixed the critical backend
+auth issue where `POST /auth/token` could mint privileged bearer tokens before
+authentication. Token minting now requires a server-side issuer secret outside
+local development/test, and managed/production runtimes fail closed without
+`JWT_SECRET`. A follow-up regression removed the undocumented token-minting
+escape hatch from production runtimes.
 
 ## Scope Paths
 
-- `docs/research/V4_SIGNAL_DISCOVERY_READOUT.md`
-- `sql/dogfood/v4_signal_discovery_reuse_propagation.sql`
-- `sql/dogfood/reuse_propagation_diagnostic.sql`
-- `tests/dogfood/test_velocity_double_count.py`
+- `backend/src/app.ts`
+- `backend/src/auth_secret.ts`
+- `backend/tests/auth_secret.test.ts`
+- `backend/tests/auth_token_api.test.ts`
+- `backend/.env.example`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Replacing `main`'s join-key diagnostic context could regress the unresolved
-  reusable-workflow finding.
-- Dropping the PR diagnostic would lose candidate/confirmed propagation
-  coverage.
-- The merged SQL contract test must cover both diagnostics without adding
-  customer-facing V4 claims.
+- Token minting must fail closed in production and managed runtimes.
+- Local/test auth workflows must remain usable for existing backend tests.
+- The fix must not change FluencyTracr event, suppression, schema, or V4 signal contracts.
 
 ## Planned Checks
 
-- Preserve `main`'s V4 signal-discovery probe and join-key readout.
-- Preserve PR #275's reusable workflow propagation diagnostic and distinct
-  workflow coverage counts.
-- Run the focused dogfood SQL contract test.
-- Run the focused V4 signal validation test touched by `main`.
-- Compile the V4 validation harness.
+- Run targeted auth tests.
+- Run full backend CI.
+- Run backend build.
+- Run npm audit for critical dependency advisories.
+- Run targeted tracked-secret scan.
 - Run `git diff --check`.
 
 ## Evaluator Command Profile
 
-- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py tests/dogfood/test_v4_signal_validation.py`
-- `.venv/bin/python -m compileall scripts/dogfood/run_v4_signal_validation.py`
+- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend -- --runTestsByPath tests/auth_secret.test.ts tests/auth_token_api.test.ts tests/auth_hardening.test.ts`
+- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend`
+- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run build --workspace backend`
+- `/usr/local/bin/npm audit --audit-level=critical --json`
+- `/usr/local/bin/npm audit --omit=dev --audit-level=critical --json`
 - `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- PR #275 is no longer merge-conflicted against `main`.
-- Dogfood SQL contract tests include the reusable propagation diagnostic and
-  agent snapshot join-key diagnostic.
-- V4 validation behavior from `main` remains intact.
-- No V4 signal is promoted or productized.
+- Auth token minting rejects missing or wrong issuer secrets outside local/test.
+- Production does not resolve the fallback JWT signing secret.
+- Backend tests and build pass.
+- No open critical npm advisories remain from the scan.
 
 ## Specialists To Consult
 
-- Not used for this focused merge reconciliation.
+- Codex Security `security-scan` workflow.
 
 ## Next Handoff Note
 
-Completed locally: conflicts resolved and focused verification passed. Commit,
-push, and re-check PR #275 mergeability.
+Completed locally. Critical auth token minting issue is fixed and verified.
+Security scan report: `/tmp/codex-security-scans/FluencyTracr/c7bfb4a_20260524T070208Z/report.md`.
+Follow-up hardening also verified that production cannot bypass the issuer-secret
+gate with `ALLOW_INSECURE_AUTH_TOKEN_MINTING`.
+High, non-critical dependency advisories remain deferred for a separate
+dependency-update slice.

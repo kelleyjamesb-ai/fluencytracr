@@ -181,7 +181,7 @@ import {
 } from "./workflow_registry";
 import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
-import { resolveJwtSecret } from "./auth_secret";
+import { isAuthTokenIssuerAuthorized, resolveJwtSecret } from "./auth_secret";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -223,6 +223,10 @@ const signHs256Jwt = (payload: Record<string, unknown>, secret: string) => {
 };
 
 app.post("/auth/token", (req, res) => {
+  if (!isAuthTokenIssuerAuthorized(req.header("x-auth-token-issuer-secret"))) {
+    return res.status(403).json({ error: "Token minting is disabled for this runtime" });
+  }
+
   const parsed = AuthTokenRequestSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid auth token request" });

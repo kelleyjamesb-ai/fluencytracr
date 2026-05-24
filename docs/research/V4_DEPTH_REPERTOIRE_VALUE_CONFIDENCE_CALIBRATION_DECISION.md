@@ -44,40 +44,54 @@ exports are valid for distribution-shape research, but they cannot calibrate a
 value-confidence dependency. Value-confidence calibration requires aligned
 60-day-compliant windows.
 
-A taxonomy-aware QM/RF diagnostic was then run for
-`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z`, using the work-mode
-taxonomy and the same governed surface boundaries as Velocity and Depth. The
-dry run validated against the native scio-prod STRUCT table and estimated
-approximately 2.99 TB scanned. The full query produced 30 aggregate surface
-rows: 25 workflow surfaces and 5 standalone surfaces.
+A single 60-day Depth Repertoire sanity check was then run for
+`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z`. It produced aggregate
+rows only and confirmed that the 60-day Depth Repertoire diagnostic path is
+live:
 
-Those QM/RF rows were then passed to the multi-surface dogfood driver with the
-matching 60-day Velocity rows. The run produced:
+| Segment | Cohort size | Repertoire p50/p90/p99 | Repeated surfaces p50/p90/p99 | Depth candidate p50/p90/p99 |
+| --- | ---: | --- | --- | --- |
+| overall | 2,238,571 | 2 / 6 / 9 | 2 / 5 / 8 | 4 / 30 / 64 |
+
+This confirms the 60-day Depth Repertoire spine itself, but it is still only
+one Depth-only window. It does not supply aligned Velocity, Quality Multiplier,
+Reliability Factor, V3 verdict metadata, or Outcome Evidence for the same
+calibration key.
+
+A same-window 60-day Velocity diagnostic was then run for the same
+`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z` window. The dry run
+validated and estimated approximately 2.96 TB scanned. The full query produced
+30 aggregate surface rows: 5 standalone surfaces and 25 workflow surfaces.
+
+The generated Velocity rows were then passed to the existing multi-surface
+dogfood driver alongside the existing 60-day scio-prod surface input. This
+produced:
 
 | Metric | Result |
 | --- | ---: |
-| Weighted Reliability Factor | 0.730 |
-| Weighted Quality Multiplier | 1.228 |
-| Weighted Velocity-Adjusted Quality Multiplier | 0.860 |
+| Weighted Reliability Factor | 0.712 |
+| Weighted Quality Multiplier | 1.207 |
+| Weighted Velocity-Adjusted Quality Multiplier | 1.056 |
 
-The result is the strongest aligned dogfood run so far because QM/RF and
-Velocity now share surface IDs for the same 60-day window. It also exposed a
-clear limitation: standalone surfaces entered the QM/RF input, but all five
-standalone rows suppressed for `NO_CONVERGENCE` because the current
-`observed_event_proxy` path has volume and Velocity but not enough quality /
-reliability evidence to surface. That is a useful finding, not a failure.
-Standalone activity can be visible to Velocity and Depth before it is
-defensible for QM/RF.
+The velocity-aware pass materially discounted the workflow-weighted Quality
+Multiplier in this dogfood run. However, the result is not yet sufficient for
+value-confidence promotion because the inputs are not fully aligned:
 
-A follow-up calibration pass then generated rolling 60-day Depth Repertoire,
-Velocity, and taxonomy-aware QM/RF outputs for:
+- Depth Repertoire and Velocity are taxonomy-aware.
+- The base Quality Multiplier and Reliability Factor input remains the older
+  workflow aggregate surface export.
+- Standalone surfaces produced Velocity rows, but they had no matching base
+  Quality Multiplier or Reliability Factor rows.
+- `AGENT` remains mismatched: the base input has legacy `AGENT`, while the
+  Velocity diagnostic emits `workflow:agent:autonomous` and
+  `workflow:agent:ephemeral`. No `workflow:agent:workflow_named` row appeared,
+  consistent with the unresolved named-workflow metadata observability gap.
+- Outcome Evidence was still absent.
 
-- `2026-03-23` through `2026-05-22`
-- `2026-02-21` through `2026-04-22`
-- `2026-01-22` through `2026-03-23`
-
-The generated CSVs remain temporary dogfood outputs and are not committed. The
-decision evidence recorded here is aggregate-only.
+This is the strongest calibration evidence so far: Velocity can change the
+interpretation materially when it is available. It is still a one-window,
+partially aligned dogfood result, so it supports continued calibration rather
+than promotion.
 
 ## Calibration Test Results
 
@@ -108,50 +122,16 @@ not be reused as economic calibration windows. They intentionally stress
 short-window stability, while Velocity, Quality Multiplier, Reliability Factor,
 and V3 verdict paths require 60-day-compliant evidence to surface.
 
-The one-window taxonomy-aware QM/RF run proved that surface-language alignment
-is technically viable. It moved the dogfood readout from older workflow-only
-surface inputs to governed workflow and standalone surface rows. The weighted
-Velocity-adjusted Quality Multiplier dropped to 0.860, which is materially more
-conservative than the unadjusted taxonomy-aware Quality Multiplier of 1.228.
+The single 60-day sanity check confirms the 60-day Depth Repertoire diagnostic
+can run against scio-prod and reproduces the expected overall shape. It does not
+replace the required multi-window value-confidence calibration.
 
-The same run also proved that standalone surfaces need richer quality and
-reliability joins before they can support QM/RF. Treating observed standalone
-events as completed proxy records is enough to test the adapter boundary, but
-not enough to clear convergence gates.
-
-The additional rolling 60-day Depth Repertoire pass reinforced the same
-distribution shape:
-
-| Window | Cohort size | Repertoire p50/p90/p99 | Repeated surfaces p50/p90/p99 | Depth candidate p50/p90/p99 |
-| --- | ---: | --- | --- | --- |
-| 2026-03-23 to 2026-05-22 | 2,238,571 | 2 / 6 / 9 | 2 / 5 / 8 | 4 / 30 / 64 |
-| 2026-02-21 to 2026-04-22 | 2,222,551 | 2 / 6 / 8 | 1 / 5 / 7 | 3 / 28 / 63 |
-| 2026-01-22 to 2026-03-23 | 2,219,505 | 1 / 6 / 8 | 1 / 5 / 7 | 1 / 25 / 63 |
-
-That shape is not identical, but it is interpretable: upper-tail Depth remains
-stable while the median moves with cohort/window composition. This supports
-using Depth Repertoire as caveat context, not as a threshold or multiplier.
-
-The three completed aligned Velocity windows also show the same dominant
-surface pattern. `standalone:GLEAN_BOT_ACTIVITY`,
-`standalone:AUTOCOMPLETE`, `standalone:SEARCH`, `workflow:CHAT`, and
-`workflow:agent:ephemeral` remain the largest interaction contributors in each
-window. This suggests Depth Repertoire is not merely discovering a different
-surface universe than Velocity; it is asking a different question about return
-use across that same surface universe.
-
-The three taxonomy-aware dogfood runs also produced stable headline metrics:
-
-| Window | Weighted Reliability Factor | Weighted Quality Multiplier | Weighted Velocity-Adjusted Quality Multiplier |
-| --- | ---: | ---: | ---: |
-| 2026-03-23 to 2026-05-22 | 0.730 | 1.228 | 0.860 |
-| 2026-02-21 to 2026-04-22 | 0.731 | 1.229 | 0.860 |
-| 2026-01-22 to 2026-03-23 | 0.741 | 1.240 | 0.868 |
-
-This is sufficient to permit caveat-only use: Depth Repertoire may explain
-whether high-volume behavior represents repeated cross-surface work integration
-or narrower usage concentration. It is not sufficient to change confidence
-bands, eligibility, or economic ranges.
+The same-window Velocity pass adds a second useful finding: the velocity-aware
+driver path can run over the 60-day window and changes the weighted Quality
+Multiplier from 1.207 to 1.056 in the current dogfood setup. That proves the
+calibration question is worth pursuing. It does not prove the dependency is
+ready, because the base surface export still lacks full taxonomy alignment and
+Outcome Evidence.
 
 ## What The Test Did Not Prove
 
@@ -185,12 +165,14 @@ taxonomy-aware Reliability Factor, Quality Multiplier, and Velocity-adjusted
 Quality Multiplier outputs. That is enough for aggregate caveat/context use in
 V4 value-confidence artifacts.
 
-The decision is deliberately narrow. Depth Repertoire may explain the shape of
-AI work integration; it may not change confidence bands, surfacing eligibility,
-Time-Saved Defensibility Range, ROI language, causal claims, prediction claims,
-or any customer-facing economic number. Standalone surfaces also still lack
-enough quality / reliability evidence to surface in QM/RF and must remain
-caveated separately.
+Rationale: Depth Repertoire remains promising and stable, but this calibration
+pass does not include the full required input set and the available fixed-window
+exports are not compatible with the 60-day gates used by the other primitives.
+The 60-day sanity checks show the aligned path is technically viable and that
+Velocity materially changes the dogfood Quality Multiplier interpretation, but
+the test remains one-window and only partially aligned. The safest current use
+is as a Depth contract component and research caveat source. It should not yet
+affect V4 confidence bands, surfacing eligibility, or economic artifacts.
 
 This decision supersedes neither the stability promotion nor the contract
 hardening. It preserves them while holding economic dependency.
@@ -222,12 +204,12 @@ The next phase is caveat contract hardening, not economic implementation.
 Define how a V4 value-confidence artifact may include Depth Repertoire as
 aggregate caveat/context while preserving:
 
-- no confidence-band adjustment,
-- no eligibility adjustment,
-- no Time-Saved Defensibility Range dependency,
-- no customer benchmark from Glean dogfood values,
-- no hidden multiplier,
-- no reconstruction of suppressed values.
+- Depth Repertoire,
+- Velocity Index,
+- taxonomy-aware Quality Multiplier inputs,
+- taxonomy-aware Reliability Factor inputs,
+- V3 verdict metadata,
+- Outcome Evidence only where customer-attested aggregate evidence exists.
 
 Future promotion beyond caveat-only still requires a new decision:
 

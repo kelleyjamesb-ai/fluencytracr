@@ -22,6 +22,8 @@ describe("auth token api", () => {
   const originalJwtSecret = process.env.JWT_SECRET;
   const originalJwtTtl = process.env.JWT_TTL_SECONDS;
   const originalRequireAuthLockdown = process.env.REQUIRE_AUTH_LOCKDOWN;
+  const originalIssuerSecret = process.env.AUTH_TOKEN_ISSUER_SECRET;
+  const issuerSecret = "auth-token-issuer-test-secret";
 
   beforeEach(() => {
     store.reset();
@@ -36,6 +38,7 @@ describe("auth token api", () => {
     process.env.JWT_SECRET = "auth-token-test-secret";
     process.env.JWT_TTL_SECONDS = "900";
     process.env.REQUIRE_AUTH_LOCKDOWN = "1";
+    process.env.AUTH_TOKEN_ISSUER_SECRET = issuerSecret;
   });
 
   afterAll(() => {
@@ -43,13 +46,17 @@ describe("auth token api", () => {
     process.env.JWT_SECRET = originalJwtSecret;
     process.env.JWT_TTL_SECONDS = originalJwtTtl;
     process.env.REQUIRE_AUTH_LOCKDOWN = originalRequireAuthLockdown;
+    process.env.AUTH_TOKEN_ISSUER_SECRET = originalIssuerSecret;
   });
 
   it("mints a token that can access protected endpoints", async () => {
     const server = await startServer();
     const mintResponse = await fetch(`${server.url}/auth/token`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-auth-token-issuer-secret": issuerSecret
+      },
       body: JSON.stringify({
         email: "admin@fluencytracr.com",
         org_id: "org-1",
@@ -76,7 +83,10 @@ describe("auth token api", () => {
     const server = await startServer();
     const response = await fetch(`${server.url}/auth/token`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-auth-token-issuer-secret": issuerSecret
+      },
       body: JSON.stringify({
         email: "admin@fluencytracr.com",
         org_id: "org-1",
@@ -93,7 +103,10 @@ describe("auth token api", () => {
     const server = await startServer();
     const response = await fetch(`${server.url}/auth/token`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-auth-token-issuer-secret": issuerSecret
+      },
       body: JSON.stringify({
         email: "admin@fluencytracr.com",
         org_id: "org-1",
@@ -103,5 +116,40 @@ describe("auth token api", () => {
     await server.close();
 
     expect(response.status).toBe(500);
+  });
+
+  it("rejects token minting in production lockdown without the issuer secret", async () => {
+    const server = await startServer();
+    const response = await fetch(`${server.url}/auth/token`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: "admin@fluencytracr.com",
+        org_id: "org-1",
+        role: "ADMIN"
+      })
+    });
+    await server.close();
+
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects token minting in production lockdown with the wrong issuer secret", async () => {
+    const server = await startServer();
+    const response = await fetch(`${server.url}/auth/token`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-auth-token-issuer-secret": "wrong-secret"
+      },
+      body: JSON.stringify({
+        email: "admin@fluencytracr.com",
+        org_id: "org-1",
+        role: "ADMIN"
+      })
+    });
+    await server.close();
+
+    expect(response.status).toBe(403);
   });
 });
