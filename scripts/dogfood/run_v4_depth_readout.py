@@ -165,6 +165,7 @@ VELOCITY_BASELINE = {
     "breadth_p50": 7.0,
 }
 DELEGATION_SHARE_REFERENCE = 0.20
+EXPECTED_WINDOW_COUNT = 3
 
 
 class InputError(ValueError):
@@ -286,16 +287,21 @@ def aggregate_velocity(inputs: list[CsvInput]) -> dict[str, dict[str, Any]]:
 
     result: dict[str, dict[str, Any]] = {}
     for surface_id, rows in grouped.items():
-        indexes = [value for value in (velocity_index(row) for row in rows) if value is not None]
-        cohorts = [value for value in (parse_float(row.get("cohort_size")) for row in rows) if value is not None]
+        raw_indexes = [velocity_index(row) for row in rows]
+        raw_cohorts = [parse_float(row.get("cohort_size")) for row in rows]
+        has_complete_windows = len(rows) == EXPECTED_WINDOW_COUNT
+        has_complete_velocity = has_complete_windows and all(value is not None for value in raw_indexes)
+        has_complete_cohort = has_complete_windows and all(value is not None for value in raw_cohorts)
+        indexes = [value for value in raw_indexes if value is not None]
+        cohorts = [value for value in raw_cohorts if value is not None]
         interactions = [
             value for value in (parse_float(row.get("surface_interaction_count")) for row in rows) if value is not None
         ]
         result[surface_id] = {
             "surface_category": rows[0].get("surface_category", "unknown"),
-            "velocity_index": mean(indexes),
-            "cohort_size": mean(cohorts),
-            "minimum_cohort_size": min(cohorts) if cohorts else None,
+            "velocity_index": mean(indexes) if has_complete_velocity else None,
+            "cohort_size": mean(cohorts) if has_complete_cohort else None,
+            "minimum_cohort_size": min(cohorts) if has_complete_cohort else None,
             "surface_interaction_count": mean(interactions),
             "window_count": len(rows),
         }
@@ -380,7 +386,7 @@ def depth_index(
 
 
 def classify_zone(row: dict[str, Any]) -> str:
-    if row["minimum_cohort_size"] is not None and row["minimum_cohort_size"] < MIN_COHORT_SIZE:
+    if row["minimum_cohort_size"] is None or row["minimum_cohort_size"] < MIN_COHORT_SIZE:
         return "SUPPRESSED"
     if row["velocity_index"] is None or row["depth_index"] is None:
         return "INSUFFICIENT_EVIDENCE"

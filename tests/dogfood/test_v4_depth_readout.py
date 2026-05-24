@@ -79,6 +79,19 @@ def add_columns_to_csv(path: Path, columns: dict[str, str]) -> None:
             writer.writerow({**row, **columns})
 
 
+def update_csv_cell(path: Path, match_column: str, match_value: str, target_column: str, value: str) -> None:
+    with path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fieldnames = list(rows[0].keys())
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            if row[match_column] == match_value:
+                row[target_column] = value
+            writer.writerow(row)
+
+
 def test_depth_readout_generates_outputs_and_all_zones(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
@@ -173,6 +186,52 @@ def test_bucket_level_delegation_does_not_drive_surface_depth(tmp_path: Path) ->
     assert unmapped["delegation_depth_index"] == ""
     assert rows["workflow:agent:autonomous"]["zone"] == "OPERATING_LEVERAGE_CANDIDATE"
     assert "Delegation export is bucket-level" in (output_dir / READOUT_OUTPUT).read_text()
+
+
+def test_missing_cohort_size_suppresses_surface(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    copy_fixture_dir(FIXTURE_ROOT / "complete", input_dir)
+    update_csv_cell(
+        input_dir / "v4_velocity_window_2.csv",
+        "workflow_id",
+        "workflow:agent:autonomous",
+        "cohort_size",
+        "",
+    )
+
+    completed = run_depth_readout(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    with (output_dir / BY_SURFACE_OUTPUT).open(newline="") as handle:
+        rows = {row["surface_id"]: row for row in csv.DictReader(handle)}
+    autonomous = rows["workflow:agent:autonomous"]
+    assert autonomous["zone"] == "SUPPRESSED"
+    assert autonomous["evidence_status"] == "suppressed_for_sparse_cohort"
+    assert autonomous["cohort_size"] == ""
+
+
+def test_incomplete_velocity_metric_window_is_insufficient_evidence(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    copy_fixture_dir(FIXTURE_ROOT / "complete", input_dir)
+    update_csv_cell(
+        input_dir / "v4_velocity_window_2.csv",
+        "workflow_id",
+        "workflow:agent:autonomous",
+        "freq_p50",
+        "",
+    )
+
+    completed = run_depth_readout(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    with (output_dir / BY_SURFACE_OUTPUT).open(newline="") as handle:
+        rows = {row["surface_id"]: row for row in csv.DictReader(handle)}
+    autonomous = rows["workflow:agent:autonomous"]
+    assert autonomous["zone"] == "INSUFFICIENT_EVIDENCE"
+    assert autonomous["evidence_status"] == "missing_depth_evidence"
+    assert autonomous["velocity_index"] == ""
 
 
 def test_forbidden_person_level_fields_fail_closed(tmp_path: Path) -> None:
