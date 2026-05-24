@@ -81,6 +81,43 @@ Time-Saved Defensibility Range implementation, or Depth-dependent economic
 readout may start. Depth contract hardening is allowed only if the decision is
 `PROMOTE_DEPTH_CONTRACT_HARDENING`.
 
+## V4 Scale Readiness To Economic Value Gate
+
+The next V4 planning layer is documented in:
+
+- [AI Scale Readiness Portfolio](../concepts/AI_SCALE_READINESS_PORTFOLIO.md),
+- [Organizational Segmentation](../concepts/ORG_SEGMENTATION.md),
+- [Economic Impact Bridge](../concepts/ECONOMIC_IMPACT_BRIDGE.md).
+
+These are concept documents, not implementation approval. They define how V4
+should eventually answer where to scale AI, where to coach, where to redesign
+workflows, where to calibrate trust, and where evidence is too weak to act.
+
+The current caveat propagation decisions are:
+
+- [V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md](./V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
+  records `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+- [V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
+  records `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+- [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
+  records the overall current decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+
+The required next evidence step is a Glean internal dogfood run across three
+60-day-compliant windows:
+
+| Window | Start | End |
+| --- | --- | --- |
+| 1 | 2026-03-23 | 2026-05-22 |
+| 2 | 2026-02-21 | 2026-04-22 |
+| 3 | 2026-01-22 | 2026-03-23 |
+
+That run must align V3 verdict metadata, Velocity, Quality Multiplier,
+Reliability Factor, Depth Repertoire, Trust Calibration evidence, data readiness
+gates, and safe segmentation coverage to the same cohort/window keys. Until the
+dogfood decision promotes a scope, no V4 economic API, customer-facing readout,
+Time-Saved Defensibility Range productization, Organizational Segmentation
+runtime support, or Economic Impact Bridge runtime support may start.
+
 ## Candidate Predictive Tests
 
 ### Skill Catalyst vs Selection Test

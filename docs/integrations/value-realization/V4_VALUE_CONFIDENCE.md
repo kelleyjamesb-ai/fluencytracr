@@ -58,7 +58,12 @@ Leakage may reflect velocity, depth, reuse, verification, recovery, or friction 
 
 The AI Scale Readiness Portfolio maps workflows into investment zones such as scale, harvest, coach, redesign, govern, or suppress.
 
-This is a workflow investment signal. It is not a team ranking, employee capability label, or maturity score.
+This is a workflow investment signal. It is not a comparative team evaluation, employee capability label, or maturity label.
+
+The expanded concept is
+[AI_SCALE_READINESS_PORTFOLIO.md](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md).
+It frames readiness zones as action postures: scale, enable, redesign,
+calibrate trust, expand adoption, or hold.
 
 ## Output: Trust Calibration Index
 
@@ -75,6 +80,24 @@ Every V4 readout should carry CFO-safe caveats:
 - Estimates are bounded by evidence grade and suppression state.
 - Customer-stated assumptions cannot upgrade evidence grade.
 - Outcome evidence can strengthen confidence but does not automatically establish causality.
+
+## Organizational Segmentation And Economic Impact Bridge
+
+Organizational Segmentation may make V4 action planning more useful, but only as
+aggregate intervention context. HRIS, Workday, or directory joins must happen
+inside the customer or Glean boundary, and every segment must suppress
+independently. See
+[ORG_SEGMENTATION.md](../../concepts/ORG_SEGMENTATION.md).
+
+The Economic Impact Bridge maps readiness patterns to customer-owned value
+investigations. It does not calculate realized ROI, prove causality, predict
+future outcomes, or infer employee performance. See
+[ECONOMIC_IMPACT_BRIDGE.md](../../concepts/ECONOMIC_IMPACT_BRIDGE.md).
+
+Current dogfood status is
+`HOLD_FOR_60_DAY_GLEAN_DOGFOOD`; no V4 economic API or customer-facing readout
+may depend on these concepts until the dogfood decision promotes the relevant
+scope.
 
 ## What Glean Can Claim
 

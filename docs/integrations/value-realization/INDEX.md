@@ -29,6 +29,9 @@ Each contract preserves the same posture:
 | Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate cross-surface work-integration primitive alongside Velocity. |
 | Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; not yet an economic input. |
 | Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
+| AI Scale Readiness Portfolio | [../../concepts/AI_SCALE_READINESS_PORTFOLIO.md](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md) and [../../contracts/value-confidence/scale-readiness-portfolio.md](../../contracts/value-confidence/scale-readiness-portfolio.md) | Defines aggregate action postures for scale, enablement, workflow redesign, trust calibration, adoption expansion, or hold. |
+| Organizational Segmentation | [../../concepts/ORG_SEGMENTATION.md](../../concepts/ORG_SEGMENTATION.md) | Defines aggregate-only cohort context for intervention planning, with HR and directory joins kept inside the customer or Glean boundary. |
+| Economic Impact Bridge | [../../concepts/ECONOMIC_IMPACT_BRIDGE.md](../../concepts/ECONOMIC_IMPACT_BRIDGE.md) | Maps readiness patterns to customer-owned value investigations without calculating ROI or proving causality. |
 
 ## How To Read The Set
 
@@ -113,6 +116,26 @@ artifacts until a later calibration decision explicitly allows it. Internal
 Glean dogfood values are research observations only and must not be used as
 customer benchmarks, production defaults, product thresholds, or V4 economic
 inputs.
+
+## V4 Scale Readiness To Economic Value Status
+
+The next V4 layer is concept-defined but held for 60-day Glean dogfood
+validation:
+
+- [AI Scale Readiness Portfolio](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md)
+- [Organizational Segmentation](../../concepts/ORG_SEGMENTATION.md)
+- [Economic Impact Bridge](../../concepts/ECONOMIC_IMPACT_BRIDGE.md)
+- [V4 Scale Readiness caveat propagation decision](../../research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 Glean dogfood scale readiness readout](../../research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
+- [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md)
+
+Current decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+
+No customer-facing V4 economic readout, API, frontend surface, Time-Saved
+Defensibility Range productization, Organizational Segmentation runtime support,
+or Economic Impact Bridge runtime support may start until the dogfood decision
+promotes the relevant scope.
 
 ## Running Multi-Surface Dogfood
 

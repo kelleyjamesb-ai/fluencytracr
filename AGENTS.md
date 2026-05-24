@@ -66,7 +66,7 @@ Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames cross-
 
 Delegation Depth is a V4 concept-stage Depth subdimension (see docs/concepts/DELEGATION_DEPTH.md). It must not be implemented as a new canonical event, standalone score, or person-level label without explicit governance approval.
 
-The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, team ranking, or individual labels from that language.
+The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, comparative team evaluation, or individual labels from that language.
 
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md) and is implemented in the customer-side transformer path. It does not modify any V1 or V2 invariants.
 
@@ -80,6 +80,12 @@ Calibration governance is a defined and implemented V3 concept (see docs/concept
 
 V4 is the Value Confidence Layer (see docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md). It is documentation-stage only unless implementation already exists in a future branch. V4 combines Velocity, Depth, governed V3 verdicts, Quality Multiplier, Reliability Factor, Outcome Evidence, and Trust Calibration into executive economic decision artifacts.
 
+AI Scale Readiness Portfolio is a defined V4 concept (see docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md). It frames aggregate readiness zones as action postures for scale, enablement, workflow design, trust calibration, adoption expansion, or hold. It is not a scorecard, comparative team evaluation, maturity label, productivity measurement, ROI calculation, prediction, or causal claim.
+
+Organizational Segmentation is a defined V4 concept (see docs/concepts/ORG_SEGMENTATION.md). It allows approved aggregate cohort slices such as function, role family, level band, manager/IC, region, tenure, Velocity band, and Depth Repertoire band only when computed inside the customer or Glean boundary and independently suppressed. Segments are intervention contexts, not performance groups.
+
+Economic Impact Bridge is a defined V4 concept (see docs/concepts/ECONOMIC_IMPACT_BRIDGE.md). It maps aggregate readiness patterns to value hypotheses and customer-owned economic investigations. It does not calculate dollarized ROI, prove causality, predict outcomes, or infer employee performance.
+
 V4 must not implement ROI calculation, customer-facing prediction claims, scoring, ranking, individual attribution, productivity measurement, admin overrides, tunable thresholds, new canonical events, or new suppression reasons. Future V4 implementation must preserve all nine invariants exactly.
 
 ## 7. Value-Realization Vocabulary (use this language in code, docs, and commits)
@@ -92,6 +98,9 @@ V4 must not implement ROI calculation, customer-facing prediction claims, scorin
 - Velocity Index: V2 aggregate-distribution output across frequency, engagement, and breadth
 - Depth: V4 aggregate cross-surface work-integration lens, anchored in surface repertoire and repeated meaningful use, with verification, delegation, reuse, recovery, and judgment behavior as confidence layers
 - Value Confidence Layer: V4 documentation-stage executive decision layer for bounded, caveated, aggregate economic confidence
+- AI Scale Readiness Portfolio: V4 aggregate action-posture readout for where to scale, coach, redesign, calibrate trust, expand adoption, or hold
+- Organizational Segmentation: V4 aggregate-only cohort context for intervention planning; never a performance group or ranking surface
+- Economic Impact Bridge: V4 concept for mapping aggregate readiness patterns to customer-owned value investigations without ROI proof or causality claims
 
 ## 8. Repositioning Context
 
@@ -123,6 +132,7 @@ Note: each prompt is one PR. Do not combine.
 - V4 Depth Readout Engine is dogfood-only. It is not permission to build V4 economic APIs. Reusable Workflow Propagation remains `HOLD` unless future validation promotes it. Time-Saved Defensibility Range remains blocked until Depth readout stability is demonstrated.
 - V4 economic readouts remain blocked until docs/research/V4_DEPTH_STABILITY_DECISION.md promotes contract hardening. No V4 economic API, Time-Saved Defensibility Range implementation, or Depth-dependent economic readout may start unless the decision is exactly `PROMOTE_DEPTH_CONTRACT_HARDENING`. All other decision states, including `HOLD_FOR_MORE_WINDOWS`, `HOLD_FOR_SIGNAL_REFINEMENT`, `NARROW_TO_SUBSIGNALS`, and `REJECT_CURRENT_READOUT`, remain blocking states.
 - Depth Repertoire is promoted for contract hardening only by docs/research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md and hardened in docs/contracts/depth/depth-repertoire.md. docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`, and docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md records `HOLD_FOR_MORE_CALIBRATION`: no V4 economic readout, Time-Saved Defensibility Range, or value-confidence API may depend on Depth Repertoire until a later calibration decision explicitly allows it. That calibration must use 60-day-compliant windows because the existing 20-day stability windows cannot surface Velocity, Quality Multiplier, Reliability Factor, or V3 verdict paths under the `INSUFFICIENT_TIME` gate. Glean dogfood values must not be embedded into universal V4 concepts, contracts, schemas, thresholds, or defaults. Depth Repertoire must remain aggregate-only and must not rank individuals, teams, departments, customers, or managers.
+- AI Scale Readiness Portfolio and Trust Calibration Index remain held for 60-day Glean dogfood caveat propagation by docs/research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md and docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md. No V4 contract hardening, economic API, customer-facing readout, Time-Saved Defensibility Range productization, Organizational Segmentation runtime support, or Economic Impact Bridge runtime support may start until docs/research/V4_GLEAN_DOGFOOD_DECISION.md promotes the relevant scope.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
 - Add LMSYS assurance harness fixtures for every new behavior.
