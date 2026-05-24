@@ -75,6 +75,7 @@ work.
 - [V4 Depth Repertoire Stability Readout](../../research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 - [V4 Depth Repertoire Value Confidence Review](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
 - [V4 Depth Repertoire Value Confidence Calibration Plan](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
+- [V4 Depth Repertoire Value Confidence Calibration Decision](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
 - [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
@@ -106,11 +107,12 @@ stability is demonstrated across windows or cohorts and the stability decision
 promotes contract hardening.
 
 Depth Repertoire is promoted for contract hardening only. The value-confidence
-review records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`, so it must not feed V4
-economic artifacts until a later calibration decision explicitly allows it. The
-calibration plan defines the required next evidence step. Internal Glean dogfood
-values are research observations only and must not be used as customer
-benchmarks, production defaults, product thresholds, or V4 economic inputs.
+review records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`, and the calibration
+decision records `HOLD_FOR_MORE_CALIBRATION`, so it must not feed V4 economic
+artifacts until a later calibration decision explicitly allows it. Internal
+Glean dogfood values are research observations only and must not be used as
+customer benchmarks, production defaults, product thresholds, or V4 economic
+inputs.
 
 ## Running Multi-Surface Dogfood
 

@@ -58,9 +58,11 @@ not implementation.
 
 The calibration plan is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
-It must produce a later calibration decision before any economic contract,
-runtime implementation, or customer-facing artifact can depend on Depth
-Repertoire.
+The current calibration decision is
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md),
+which records `HOLD_FOR_MORE_CALIBRATION`. No economic contract, runtime
+implementation, or customer-facing artifact can depend on Depth Repertoire until
+a later calibration decision explicitly promotes that use.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
