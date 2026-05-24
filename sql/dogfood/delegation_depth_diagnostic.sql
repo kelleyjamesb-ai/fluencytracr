@@ -43,12 +43,7 @@ product_snapshot_events AS (
     jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
     NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
     COALESCE(jsonPayload.productsnapshot.workflow.unlisted, FALSE) AS snapshot_unlisted,
-    COALESCE(
-      jsonPayload.productsnapshot.workflow.published,
-      jsonPayload.productsnapshot.workflow.ispublished,
-      jsonPayload.productsnapshot.workflow.reusable,
-      FALSE
-    ) AS snapshot_reusable
+    COALESCE(jsonPayload.productsnapshot.workflow.isdraftonly, TRUE) AS snapshot_isdraftonly
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp < window_end
     AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
@@ -62,7 +57,7 @@ product_snapshots AS (
         snapshot_is_autonomous AS is_autonomous,
         snapshot_workflow_name AS workflow_name,
         snapshot_unlisted AS unlisted,
-        snapshot_reusable AS reusable
+        snapshot_isdraftonly AS isdraftonly
       )
       ORDER BY snapshot_ts DESC
       LIMIT 1
@@ -101,7 +96,7 @@ taxonomy_events AS (
       WHEN event.event_type = 'GLEAN_BOT_ACTIVITY' THEN 'standalone:GLEAN_BOT_ACTIVITY'
     END AS surface_id,
     snapshot.snapshot.workflow_name AS workflow_name,
-    COALESCE(snapshot.snapshot.reusable, FALSE) AS reusable
+    COALESCE(snapshot.snapshot.isdraftonly, TRUE) AS isdraftonly
   FROM source_events AS event
   LEFT JOIN product_snapshots AS snapshot
     ON snapshot.snapshot_workflow_id = event.root_workflow_id
@@ -129,7 +124,7 @@ taxonomy_events AS (
 -- or workflow features whose delegation meaning depends on local context.
 -- Buckets are not mutually exclusive: named workflow agents intentionally
 -- remain in structured_delegation while also contributing to reusable_leverage
--- when reusable fields support that narrower interpretation.
+-- when validated metadata supports that narrower interpretation.
 bucketed_events AS (
   SELECT
     user_key,
@@ -183,7 +178,8 @@ bucketed_events AS (
     'reusable_leverage' AS delegation_bucket
   FROM taxonomy_events
   WHERE surface_id = 'workflow:agent:workflow_named'
-    AND (workflow_name IS NOT NULL OR reusable IS TRUE)
+    AND workflow_name IS NOT NULL
+    AND isdraftonly IS FALSE
 ),
 
 per_user_bucket AS (

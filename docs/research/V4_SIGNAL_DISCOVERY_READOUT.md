@@ -1,5 +1,40 @@
 # V4 Signal Discovery Readout
 
+## AGENT Metadata Field Discovery Status
+
+Status: `HOLD`
+
+The root workflow snapshot join is validated for the current scio-prod export:
+`WORKFLOW_RUN.rootworkflowid` matched `PRODUCT_SNAPSHOT.workflow.workflowid` for
+99.89% of AGENT workflow-run rows in the observed 60-day window.
+
+That means the join itself is healthy. The blocker is metadata availability:
+`productsnapshot.workflow.name` is not populated for matched AGENT runs in this
+export path. The current absence of named reusable workflow rows is therefore an
+observability gap, not evidence that named reusable workflows are absent.
+
+The metadata discovery diagnostic at
+`sql/dogfood/agent_metadata_field_discovery.sql` inspects matched AGENT
+snapshots only and reports aggregate field presence for known-valid native
+STRUCT paths:
+
+- `productsnapshot.workflow.name`
+- `productsnapshot.workflow.isautonomousagent`
+- `productsnapshot.workflow.unlisted`
+- `productsnapshot.workflow.isdraftonly`
+- `workflowrun.workflowexecutions`
+
+Reusable Workflow Propagation remains `HOLD` until a reliable metadata field is
+found for named or reusable AGENT workflow classification. Delegation Depth can
+still use autonomous vs non-autonomous and exploratory vs structured buckets,
+but named reusable leverage must remain unresolved.
+
+This readout is dogfood/research-only. It does not add canonical events,
+suppression reasons, thresholds, APIs, schemas, product surfaces, customer-facing
+claims, or economic-value calculations. Outputs must remain aggregate-only and
+must not emit user IDs, emails, names, prompts, outputs, transcripts, or raw
+event rows.
+
 ## Purpose
 
 This readout records dogfood findings for the V4 signal discovery probes. It is
@@ -109,17 +144,17 @@ across fixed windows. The propagation diagnostic separates:
 
 - named workflow candidates: non-autonomous AGENT workflows with a populated
   workflow name and `unlisted = FALSE`;
-- confirmed reusable candidates: named workflow candidates with `published`,
-  `ispublished`, or `reusable` set to true;
+- confirmed reusable candidates: named workflow candidates with `isdraftonly =
+  FALSE`;
 - autonomous agents;
 - ephemeral or unlisted agents;
 - unclassified agent workflows;
 - unmatched workflow runs.
 
-This separation matters because requiring reusable flags for all named workflow
-analysis can hide named workflow behavior when reusable, published, or draft
-metadata is sparse, delayed, or unavailable. The candidate layer should be
-inspected before the confirmed reusable layer is interpreted.
+This separation matters because requiring a not-draft proxy for all named
+workflow analysis can hide named workflow behavior when draft-state metadata is
+sparse, delayed, or unavailable. The candidate layer should be inspected before
+the confirmed reusable layer is interpreted.
 
 The diagnostic also reports snapshot join coverage, including
 `snapshot_match_rate`, `named_candidate_count`,

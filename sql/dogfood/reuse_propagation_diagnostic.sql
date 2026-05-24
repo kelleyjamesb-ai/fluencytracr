@@ -1,8 +1,8 @@
 -- Reusable workflow propagation diagnostic for FluencyTracr dogfood.
 --
 -- Research-only. This query tests whether named workflow candidates and
--- confirmed reusable candidates spread across adopters without productizing a
--- V4 signal. It emits aggregate rows only; person-level rows remain inside
+-- not-draft named candidates spread across adopters without productizing a V4
+-- signal. It emits aggregate rows only; person-level rows remain inside
 -- BigQuery.
 --
 -- Replace `PROJECT.DATASET.gce_events` with the approved GCE export table.
@@ -38,9 +38,7 @@ product_snapshot_events AS (
     NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
     jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
     COALESCE(jsonPayload.productsnapshot.workflow.unlisted, FALSE) AS snapshot_unlisted,
-    COALESCE(jsonPayload.productsnapshot.workflow.published, FALSE) AS snapshot_published,
-    COALESCE(jsonPayload.productsnapshot.workflow.ispublished, FALSE) AS snapshot_ispublished,
-    COALESCE(jsonPayload.productsnapshot.workflow.reusable, FALSE) AS snapshot_reusable
+    COALESCE(jsonPayload.productsnapshot.workflow.isdraftonly, TRUE) AS snapshot_isdraftonly
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp < window_end
     AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
@@ -54,9 +52,7 @@ product_snapshots AS (
         snapshot_workflow_name AS workflow_name,
         snapshot_is_autonomous AS is_autonomous,
         snapshot_unlisted AS unlisted,
-        snapshot_published AS published,
-        snapshot_ispublished AS ispublished,
-        snapshot_reusable AS reusable
+        snapshot_isdraftonly AS isdraftonly
       )
       ORDER BY snapshot_ts DESC
       LIMIT 1
@@ -79,9 +75,7 @@ agent_workflow_runs AS (
     snapshot.snapshot.workflow_name AS workflow_name,
     snapshot.snapshot.is_autonomous AS is_autonomous,
     COALESCE(snapshot.snapshot.unlisted, FALSE) AS unlisted,
-    COALESCE(snapshot.snapshot.published, FALSE) AS published,
-    COALESCE(snapshot.snapshot.ispublished, FALSE) AS ispublished,
-    COALESCE(snapshot.snapshot.reusable, FALSE) AS reusable,
+    COALESCE(snapshot.snapshot.isdraftonly, TRUE) AS isdraftonly,
     (
       snapshot.snapshot_workflow_id IS NOT NULL
       AND snapshot.snapshot.is_autonomous IS FALSE
@@ -93,11 +87,7 @@ agent_workflow_runs AS (
       AND snapshot.snapshot.is_autonomous IS FALSE
       AND snapshot.snapshot.workflow_name IS NOT NULL
       AND COALESCE(snapshot.snapshot.unlisted, FALSE) IS FALSE
-      AND (
-        COALESCE(snapshot.snapshot.published, FALSE) IS TRUE
-        OR COALESCE(snapshot.snapshot.ispublished, FALSE) IS TRUE
-        OR COALESCE(snapshot.snapshot.reusable, FALSE) IS TRUE
-      )
+      AND COALESCE(snapshot.snapshot.isdraftonly, TRUE) IS FALSE
     ) AS is_confirmed_reusable_candidate
   FROM source_events AS event
   LEFT JOIN product_snapshots AS snapshot

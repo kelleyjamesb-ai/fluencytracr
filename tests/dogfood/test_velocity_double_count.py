@@ -1,12 +1,17 @@
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SQL = ROOT / "sql" / "dogfood" / "velocity_diagnostic.sql"
 AGENT_SQL = ROOT / "sql" / "dogfood" / "agent_type_diagnostic.sql"
-DELEGATION_SQL = ROOT / "sql" / "dogfood" / "delegation_depth_diagnostic.sql"
-REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "refinement_depth_diagnostic.sql"
-REUSE_SQL = ROOT / "sql" / "dogfood" / "reuse_propagation_diagnostic.sql"
+DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.sql"
+REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
+REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
+AGENT_METADATA_SQL = ROOT / "sql" / "dogfood" / "agent_metadata_field_discovery.sql"
+DEPTH_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "delegation_depth_diagnostic.sql"
+DEPTH_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "refinement_depth_diagnostic.sql"
+DEPTH_REUSE_SQL = ROOT / "sql" / "dogfood" / "reuse_propagation_diagnostic.sql"
 V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.sql"
 V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
 V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
@@ -18,10 +23,28 @@ DOGFOOD_SQL = [
     DELEGATION_SQL,
     REFINEMENT_SQL,
     REUSE_SQL,
+    AGENT_METADATA_SQL,
+    DEPTH_DELEGATION_SQL,
+    DEPTH_REFINEMENT_SQL,
+    DEPTH_REUSE_SQL,
     V4_DELEGATION_SQL,
     V4_REFINEMENT_SQL,
     V4_REUSE_SQL,
     AGENT_JOIN_KEY_SQL,
+]
+
+INVALID_STRUCT_PATHS = [
+    "jsonPayload.workflowrun.rootWorkflowId",
+    "jsonPayload.workflowrun.workflowid",
+    "jsonPayload.workflowrun.workflowId",
+    "jsonPayload.workflowrun.runId",
+    "jsonPayload.workflowrun.id",
+    "jsonPayload.user.id",
+    "jsonPayload.user.canonicalid",
+    "productsnapshot.workflow.published",
+    "productsnapshot.workflow.ispublished",
+    "productsnapshot.workflow.reusable",
+    "JSON_VALUE(jsonPayload",
 ]
 
 
@@ -131,25 +154,45 @@ def test_agent_type_diagnostic_reports_sub_surface_aggregates() -> None:
 
 
 def test_dogfood_sql_uses_valid_scio_prod_struct_paths() -> None:
-    invalid_paths = [
-        "jsonPayload.workflowrun.rootWorkflowId",
-        "jsonPayload.workflowrun.workflowid",
-        "jsonPayload.workflowrun.workflowId",
-        "jsonPayload.workflowrun.runId",
-        "jsonPayload.workflowrun.id",
-        "jsonPayload.user.id",
-        "jsonPayload.user.canonicalid",
-        "JSON_VALUE(jsonPayload",
-    ]
-
     for path in DOGFOOD_SQL:
         sql = path.read_text()
-        for invalid_path in invalid_paths:
-            assert invalid_path not in sql, f"{path} uses invalid scio-prod path {invalid_path}"
+        for invalid_path in INVALID_STRUCT_PATHS:
+            assert not re.search(
+                rf"(?<![A-Za-z0-9_]){re.escape(invalid_path)}(?![A-Za-z0-9_])",
+                sql,
+            ), f"{path} uses invalid scio-prod path {invalid_path}"
+
+
+def test_agent_metadata_field_discovery_is_aggregate_only() -> None:
+    sql = AGENT_METADATA_SQL.read_text()
+
+    assert "jsonPayload.workflowrun.rootworkflowid" in sql
+    assert "jsonPayload.productsnapshot.workflow.workflowid" in sql
+    assert "jsonPayload.productsnapshot.workflow.name" in sql
+    assert "jsonPayload.productsnapshot.workflow.isautonomousagent" in sql
+    assert "jsonPayload.productsnapshot.workflow.unlisted" in sql
+    assert "jsonPayload.productsnapshot.workflow.isdraftonly" in sql
+    for field in [
+        "metadata_field",
+        "populated_rows",
+        "populated_rate",
+        "distinct_value_count",
+        "agent_run_rows",
+        "autonomous_true_rows",
+        "autonomous_false_rows",
+        "unlisted_false_rows",
+        "isdraftonly_false_rows",
+        "notes",
+        "candidate_classifier",
+        "candidate_rows",
+        "candidate_rate",
+        "explanation",
+    ]:
+        assert field in sql
 
 
 def test_reuse_propagation_diagnostic_reports_candidate_and_coverage_metrics() -> None:
-    sql = REUSE_SQL.read_text()
+    sql = DEPTH_REUSE_SQL.read_text()
 
     for population in [
         "named_workflow_candidate",
