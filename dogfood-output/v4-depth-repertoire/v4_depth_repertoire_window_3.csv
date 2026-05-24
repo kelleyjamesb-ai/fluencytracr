@@ -1,0 +1,7 @@
+segment,cohort_size,repertoire_p10,repertoire_p50,repertoire_p90,repertoire_p99,repeated_surface_p10,repeated_surface_p50,repeated_surface_p90,repeated_surface_p99,multi_day_surface_p10,multi_day_surface_p50,multi_day_surface_p90,multi_day_surface_p99,depth_candidate_p50,depth_candidate_p90,depth_candidate_p99,workflow_surface_p50,standalone_surface_p50
+01_single_surface,884981,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1
+02_two_to_three_surfaces,374680,2,3,3,3,1,2,3,3,0,2,3,3,6,9,9,1,2
+03_four_to_six_surfaces,592397,4,5,6,6,3,4,5,6,3,4,5,6,16,30,36,2,3
+04_seven_to_ten_surfaces,48355,7,7,9,10,5,7,8,9,4,6,7,9,49,64,90,4,3
+05_eleven_plus_surfaces,809,11,11,13,15,8,10,12,14,7,9,11,13,110,144,196,7,4
+overall,1901222,1,2,5,7,1,1,5,7,1,1,5,6,3,25,49,0,2

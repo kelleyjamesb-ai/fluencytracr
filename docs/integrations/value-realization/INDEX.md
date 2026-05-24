@@ -27,6 +27,7 @@ Each contract preserves the same posture:
 | V3 Production Ingest | [V3_INGEST.md](./V3_INGEST.md) | Replaces manual CSV dogfood with customer-side aggregate transformation, governed calibration references, and immutable verdict replay. |
 | V4 Value Confidence | [V4_VALUE_CONFIDENCE.md](./V4_VALUE_CONFIDENCE.md) and [../../contracts/value-confidence/README.md](../../contracts/value-confidence/README.md) | Composes V3 verdicts, Velocity, Depth, quality, reliability, trust calibration, and outcome evidence into executive economic decision artifacts. |
 | Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate cross-surface work-integration primitive alongside Velocity. |
+| Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; not yet an economic input. |
 | Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
 
 ## How To Read The Set
@@ -102,7 +103,7 @@ metadata observability. V4 economic readouts remain blocked until Depth readout
 stability is demonstrated across windows or cohorts and the stability decision
 promotes contract hardening.
 
-Depth Repertoire remains `HOLD_FOR_FIXED_WINDOW_VALIDATION`. Its internal Glean
+Depth Repertoire is promoted for contract hardening only. Its internal Glean
 dogfood values are research observations only and must not be used as customer
 benchmarks, production defaults, product thresholds, or V4 economic inputs.
 
