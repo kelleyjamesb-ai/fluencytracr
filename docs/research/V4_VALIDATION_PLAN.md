@@ -25,6 +25,7 @@ Canonical validation gate documents:
 - [V4 Signal Validation Readout Template](./V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
 - [V4 Depth Readout Runbook](./V4_DEPTH_READOUT_RUNBOOK.md)
 - [V4 Depth Stability Decision](./V4_DEPTH_STABILITY_DECISION.md)
+- [V4 Depth Repertoire Stability Readout](./V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -42,6 +43,13 @@ Depth validation must distinguish surface repertoire from repeat/refinement
 volume. Repeat/refinement evidence is useful, but it must not be treated as the
 whole Depth construct unless it is paired with a non-saturated component such as
 surface repertoire, verification, delegation, or reuse evidence.
+
+Depth Repertoire is the current research candidate for that non-saturated spine:
+`Surface Repertoire x Repeat Use / Refinement`. It remains
+`HOLD_FOR_FIXED_WINDOW_VALIDATION` until the dedicated stability readout is
+updated with at least three fixed-window exports. Glean dogfood values from that
+readout must not be embedded into universal concepts, contracts, schemas,
+thresholds, calibration values, or defaults.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
