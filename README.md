@@ -127,6 +127,7 @@ is not the lead positioning for this repository.
 - V4 Depth Repertoire stability readout: [docs/research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md](docs/research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 - V4 Depth Repertoire value-confidence review: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
 - V4 Depth Repertoire calibration plan: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
+- V4 Depth Repertoire calibration decision: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
 - V4 validation plan: [docs/research/V4_VALIDATION_PLAN.md](docs/research/V4_VALIDATION_PLAN.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)

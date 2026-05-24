@@ -158,6 +158,9 @@ The calibration run must produce:
 
 No generated raw event data should be committed.
 
+The current decision record is
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md).
+
 ## What Remains Blocked
 
 Until a calibration decision promotes a specific use, the following remain

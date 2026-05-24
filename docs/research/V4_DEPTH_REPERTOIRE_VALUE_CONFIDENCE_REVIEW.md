@@ -137,6 +137,8 @@ The next phase is the
 [V4 Depth Repertoire Value Confidence Calibration Plan](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md),
 not an implementation.
 
+The current calibration decision records `HOLD_FOR_MORE_CALIBRATION`.
+
 That plan should define how to test whether Depth Repertoire can safely affect:
 
 - confidence bands,
