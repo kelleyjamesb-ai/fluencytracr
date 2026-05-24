@@ -66,6 +66,8 @@ Depth is a first-class V4 concept (see docs/concepts/DEPTH.md). It frames cross-
 
 Delegation Depth is a V4 concept-stage Depth subdimension (see docs/concepts/DELEGATION_DEPTH.md). It must not be implemented as a new canonical event, standalone score, or person-level label without explicit governance approval.
 
+Work Mode Taxonomy is a V4 concept-stage interpretation layer (see docs/concepts/WORK_MODES.md). It maps governed surfaces into durable AI work patterns for taxonomy-aware calibration. It adds no canonical events, suppression reasons, thresholds, APIs, schemas, or economic readouts.
+
 The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, team ranking, or individual labels from that language.
 
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md) and is implemented in the customer-side transformer path. It does not modify any V1 or V2 invariants.
@@ -91,6 +93,7 @@ V4 must not implement ROI calculation, customer-facing prediction claims, scorin
 - Outcome Evidence: customer-attested aggregate KPI ingestion (storage only)
 - Velocity Index: V2 aggregate-distribution output across frequency, engagement, and breadth
 - Depth: V4 aggregate cross-surface work-integration lens, anchored in surface repertoire and repeated meaningful use, with verification, delegation, reuse, recovery, and judgment behavior as confidence layers
+- Work Mode Taxonomy: V4 mapping layer from governed surface IDs to AI work patterns and evidence roles
 - Value Confidence Layer: V4 documentation-stage executive decision layer for bounded, caveated, aggregate economic confidence
 
 ## 8. Repositioning Context

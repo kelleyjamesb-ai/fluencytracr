@@ -35,6 +35,11 @@ Velocity measures adoption energy across frequency, engagement, and breadth dist
 
 Depth measures work integration through verification, repertoire, reuse, recovery, and judgment evidence.
 
+Work Mode Taxonomy maps governed surface IDs into durable AI work patterns and
+evidence roles. It is a documentation-stage interpretation layer for
+taxonomy-aware calibration; it does not add events, gates, thresholds, schemas,
+APIs, or economic readouts.
+
 Depth Repertoire is hardened as a Depth sub-contract, but
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
 records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next evidence step is

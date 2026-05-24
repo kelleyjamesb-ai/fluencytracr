@@ -29,6 +29,7 @@ Each contract preserves the same posture:
 | Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate cross-surface work-integration primitive alongside Velocity. |
 | Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; not yet an economic input. |
 | Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
+| Work Mode Taxonomy | [../../concepts/WORK_MODES.md](../../concepts/WORK_MODES.md) | Maps governed surfaces into durable AI work patterns and evidence roles for taxonomy-aware calibration. |
 
 ## How To Read The Set
 
@@ -57,9 +58,10 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
    by repeated meaningful use, then qualified by higher-confidence signals.
 4. Delegation Depth refines Depth as a research-promoted concept for aggregate
    retrieval, transformation, and delegation surface mix.
-5. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
-6. Outcome Evidence may add customer-attested aggregate context without proving causality.
-7. V4 Value Confidence composes those inputs into bounded executive readouts.
+5. Work Mode Taxonomy maps governed surfaces into AI work patterns so taxonomy-aware calibration can compare like with like.
+6. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
+7. Outcome Evidence may add customer-attested aggregate context without proving causality.
+8. V4 Value Confidence composes those inputs into bounded executive readouts.
 
 ## Research-Only Signal Discovery
 
