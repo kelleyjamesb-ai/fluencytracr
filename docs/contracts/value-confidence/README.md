@@ -35,6 +35,16 @@ Velocity measures adoption energy across frequency, engagement, and breadth dist
 
 Depth measures work integration through verification, repertoire, reuse, recovery, and judgment evidence.
 
+Depth Repertoire is hardened as a Depth sub-contract, but
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
+records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next evidence step is
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
+The current calibration decision records `HOLD_FOR_MORE_CALIBRATION`. Depth
+Repertoire is not yet approved as an input to V4 economic readouts. A later
+calibration decision must explicitly allow it before Time-Saved Defensibility
+Range, AI Value Leakage Map, AI Scale Readiness Portfolio, Trust Calibration
+Index, or any customer-facing economic artifact may depend on it.
+
 ### Quality Multiplier
 
 Quality Multiplier qualifies time-saved estimates using aggregate workflow quality evidence.

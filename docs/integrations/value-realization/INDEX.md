@@ -27,6 +27,7 @@ Each contract preserves the same posture:
 | V3 Production Ingest | [V3_INGEST.md](./V3_INGEST.md) | Replaces manual CSV dogfood with customer-side aggregate transformation, governed calibration references, and immutable verdict replay. |
 | V4 Value Confidence | [V4_VALUE_CONFIDENCE.md](./V4_VALUE_CONFIDENCE.md) and [../../contracts/value-confidence/README.md](../../contracts/value-confidence/README.md) | Composes V3 verdicts, Velocity, Depth, quality, reliability, trust calibration, and outcome evidence into executive economic decision artifacts. |
 | Depth | [../../concepts/DEPTH.md](../../concepts/DEPTH.md) and [../../contracts/depth/README.md](../../contracts/depth/README.md) | Adds a V4 aggregate cross-surface work-integration primitive alongside Velocity. |
+| Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; not yet an economic input. |
 | Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
 
 ## How To Read The Set
@@ -72,6 +73,9 @@ work.
 - [V4 Signal Discovery Probes](../../research/V4_SIGNAL_DISCOVERY_PROBES.md)
 - [Depth Repertoire Diagnostic](../../../sql/dogfood/depth_repertoire_diagnostic.sql)
 - [V4 Depth Repertoire Stability Readout](../../research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
+- [V4 Depth Repertoire Value Confidence Review](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
+- [V4 Depth Repertoire Value Confidence Calibration Plan](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
+- [V4 Depth Repertoire Value Confidence Calibration Decision](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
 - [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
@@ -102,9 +106,13 @@ metadata observability. V4 economic readouts remain blocked until Depth readout
 stability is demonstrated across windows or cohorts and the stability decision
 promotes contract hardening.
 
-Depth Repertoire is promoted for contract hardening only. Its internal Glean
-dogfood values are research observations only and must not be used as customer
-benchmarks, production defaults, product thresholds, or V4 economic inputs.
+Depth Repertoire is promoted for contract hardening only. The value-confidence
+review records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`, and the calibration
+decision records `HOLD_FOR_MORE_CALIBRATION`, so it must not feed V4 economic
+artifacts until a later calibration decision explicitly allows it. Internal
+Glean dogfood values are research observations only and must not be used as
+customer benchmarks, production defaults, product thresholds, or V4 economic
+inputs.
 
 ## Running Multi-Surface Dogfood
 

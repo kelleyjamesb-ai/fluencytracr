@@ -12,6 +12,10 @@ use.
 
 Status: documentation-stage concept contract. No runtime implementation exists in this PR.
 
+The first hardened sub-contract is
+[Depth Repertoire](./depth-repertoire.md), promoted from dogfood stability
+research for contract hardening only.
+
 ## Schema Version
 
 Proposed schema version: `FT_DEPTH_2026_05_DOCS_ONLY`.

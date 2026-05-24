@@ -1,0 +1,40 @@
+{
+  "schema_version": "FT_DEPTH_REPERTOIRE_2026_05_DOCS_ONLY",
+  "cohort_id": "customer-aiom-60d",
+  "window_start": "2026-03-23T00:00:00Z",
+  "window_end": "2026-05-22T00:00:00Z",
+  "verdict": "SURFACE",
+  "suppression_reason": null,
+  "cohort_size": 12345,
+  "surface_repertoire": {
+    "p10": 1,
+    "p50": 2,
+    "p90": 5,
+    "p99": 7
+  },
+  "repeat_use_refinement": {
+    "repeated_surfaces": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 5,
+      "p99": 7
+    },
+    "multi_day_surfaces": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 4,
+      "p99": 6
+    }
+  },
+  "depth_repertoire_candidate": {
+    "p50": 2,
+    "p90": 25,
+    "p99": 49
+  },
+  "band": "INTERPRETABLE",
+  "required_caveats": [
+    "Depth Repertoire is aggregate evidence of cross-surface return use.",
+    "Dogfood values are not thresholds, calibration values, defaults, or customer benchmarks.",
+    "Economic interpretation requires later V4 value-confidence review."
+  ]
+}

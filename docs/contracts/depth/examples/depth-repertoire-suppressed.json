@@ -1,0 +1,17 @@
+{
+  "schema_version": "FT_DEPTH_REPERTOIRE_2026_05_DOCS_ONLY",
+  "cohort_id": "customer-aiom-60d",
+  "window_start": "2026-03-23T00:00:00Z",
+  "window_end": "2026-05-22T00:00:00Z",
+  "verdict": "SUPPRESS",
+  "suppression_reason": "INSUFFICIENT_VOLUME",
+  "cohort_size": 4,
+  "surface_repertoire": null,
+  "repeat_use_refinement": null,
+  "depth_repertoire_candidate": null,
+  "band": "SUPPRESSED",
+  "required_caveats": [
+    "Suppressed Depth Repertoire readouts must not expose reconstructed values.",
+    "Suppressed evidence cannot support economic interpretation."
+  ]
+}
