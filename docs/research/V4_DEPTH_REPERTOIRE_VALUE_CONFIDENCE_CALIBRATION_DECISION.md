@@ -77,11 +77,20 @@ reliability evidence to surface. That is a useful finding, not a failure.
 Standalone activity can be visible to Velocity and Depth before it is
 defensible for QM/RF.
 
+A follow-up calibration pass then generated additional rolling 60-day Depth
+Repertoire outputs for `2026-02-21` through `2026-04-22` and `2026-01-22`
+through `2026-03-23`. It also generated a matching Velocity output for
+`2026-02-21` through `2026-04-22`. The remaining Velocity and QM/RF outputs
+were interrupted by local BigQuery authentication refresh, so they are not used
+as decision evidence here. The completed rows are still useful because they
+show whether the behavioral spine is stable before it is compared to the
+economic-confidence primitives.
+
 ## Calibration Test Results
 
 | Test | Result | Evidence |
 | --- | --- | --- |
-| Depth Repertoire x Velocity | Partially tested | The original three Depth Repertoire stability windows are 20 days and cannot calibrate Velocity, but a same-window 60-day Velocity run exists for the scio-prod 60-day window. |
+| Depth Repertoire x Velocity | Partially tested | The original three Depth Repertoire stability windows are 20 days and cannot calibrate Velocity. A same-window 60-day Velocity run exists for the scio-prod 60-day window, and a second rolling 60-day Velocity run shows consistent top-surface behavior. A third complete Velocity window is still required. |
 | Depth Repertoire x Quality Multiplier | Partially tested | Taxonomy-aware QM input now exists for one 60-day scio-prod window, but not yet for three matching 60-day windows. |
 | Depth Repertoire x Reliability Factor | Partially tested | Taxonomy-aware RF input now exists for one 60-day scio-prod window, but not yet for three matching 60-day windows. |
 | Depth Repertoire x Outcome Evidence | Not tested | No customer-attested aggregate outcome evidence was available for this calibration pass. |
@@ -117,6 +126,28 @@ reliability joins before they can support QM/RF. Treating observed standalone
 events as completed proxy records is enough to test the adapter boundary, but
 not enough to clear convergence gates.
 
+The additional rolling 60-day Depth Repertoire pass reinforced the same
+distribution shape:
+
+| Window | Cohort size | Repertoire p50/p90/p99 | Repeated surfaces p50/p90/p99 | Depth candidate p50/p90/p99 |
+| --- | ---: | --- | --- | --- |
+| 2026-03-23 to 2026-05-22 | 2,238,571 | 2 / 6 / 9 | 2 / 5 / 8 | 4 / 30 / 64 |
+| 2026-02-21 to 2026-04-22 | 2,222,551 | 2 / 6 / 8 | 1 / 5 / 7 | 3 / 28 / 63 |
+| 2026-01-22 to 2026-03-23 | 2,219,505 | 1 / 6 / 8 | 1 / 5 / 7 | 1 / 25 / 63 |
+
+That shape is not identical, but it is interpretable: upper-tail Depth remains
+stable while the median moves with cohort/window composition. This supports
+using Depth Repertoire as caveat context, not as a threshold or multiplier.
+
+The two completed aligned Velocity windows also show the same dominant surface
+pattern. `standalone:GLEAN_BOT_ACTIVITY`, `standalone:AUTOCOMPLETE`,
+`standalone:SEARCH`, `workflow:CHAT`, and `workflow:agent:ephemeral` remain the
+largest interaction contributors in both complete windows. This suggests Depth
+Repertoire is not merely discovering a different surface universe than
+Velocity; it is asking a different question about return use across that same
+surface universe. The third Velocity window and two more QM/RF windows are
+still required before any stronger value-confidence decision can be made.
+
 ## What The Test Did Not Prove
 
 The available evidence does not yet prove that Depth Repertoire should affect:
@@ -144,10 +175,12 @@ Decision: `HOLD_FOR_MORE_CALIBRATION`
 Rationale: Depth Repertoire remains promising and stable, but this calibration
 pass still does not include the full required input set. The first same-window
 taxonomy-aware QM/RF run confirms the calibration path is real, but it is only
-one 60-day window and standalone surfaces still lack enough quality /
-reliability evidence to surface. The safest current use is as a Depth contract
-component and research caveat source. It should not yet affect V4 confidence
-bands, surfacing eligibility, or economic artifacts.
+one 60-day window. The additional rolling Depth and Velocity outputs reinforce
+the behavioral signal, but they do not supply the missing QM/RF and verdict
+evidence. Standalone surfaces also still lack enough quality / reliability
+evidence to surface. The safest current use is as a Depth contract component
+and research caveat source. It should not yet affect V4 confidence bands,
+surfacing eligibility, or economic artifacts.
 
 This decision supersedes neither the stability promotion nor the contract
 hardening. It preserves them while holding economic dependency.
@@ -174,7 +207,8 @@ Not allowed:
 The next phase is an aligned aggregate calibration run over 60-day-compliant
 windows.
 
-Generate the following for at least three matching 60-day cohort/window keys:
+Complete the remaining outputs for at least three matching 60-day cohort/window
+keys:
 
 - Depth Repertoire,
 - Velocity Index,
@@ -206,6 +240,16 @@ The taxonomy-aware QM/RF input bridge is
 [`sql/dogfood/taxonomy_qm_rf_diagnostic.sql`](../../sql/dogfood/taxonomy_qm_rf_diagnostic.sql).
 It is dogfood/research-only and exists to align QM/RF calibration with the same
 surface and work-mode boundaries used by Velocity and Depth.
+
+Operationally, the next run should resume with the missing aligned outputs
+rather than rerunning completed evidence:
+
+- Velocity for `2026-01-22` through `2026-03-23`.
+- Taxonomy-aware QM/RF for `2026-02-21` through `2026-04-22`.
+- Taxonomy-aware QM/RF for `2026-01-22` through `2026-03-23`.
+
+Those three outputs are enough to rerun the driver for windows 2 and 3 and
+replace this hold with a stronger calibration decision.
 
 ## Governance Safety Review
 
