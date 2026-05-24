@@ -55,6 +55,30 @@ def output_text(output_dir: Path) -> str:
     )
 
 
+def remove_column_from_csv(path: Path, column: str) -> None:
+    with path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        original_fieldnames = list(rows[0].keys())
+        fieldnames = [field for field in original_fieldnames if field != column]
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row[field] for field in fieldnames})
+
+
+def add_columns_to_csv(path: Path, columns: dict[str, str]) -> None:
+    with path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        original_fieldnames = list(rows[0].keys())
+    fieldnames = original_fieldnames + list(columns.keys())
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({**row, **columns})
+
+
 def test_depth_readout_generates_outputs_and_all_zones(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
@@ -130,6 +154,27 @@ def test_depth_readout_generates_outputs_and_all_zones(tmp_path: Path) -> None:
         assert prohibited_claim not in combined
 
 
+def test_bucket_level_delegation_does_not_drive_surface_depth(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    copy_fixture_dir(FIXTURE_ROOT / "complete", input_dir)
+    for path in input_dir.glob("v4_delegation_window_*.csv"):
+        remove_column_from_csv(path, "workflow_id")
+
+    completed = run_depth_readout(input_dir, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    with (output_dir / BY_SURFACE_OUTPUT).open(newline="") as handle:
+        rows = {row["surface_id"]: row for row in csv.DictReader(handle)}
+
+    unmapped = rows["workflow:UNMAPPED"]
+    assert unmapped["zone"] == "INSUFFICIENT_EVIDENCE"
+    assert unmapped["depth_index"] == ""
+    assert unmapped["delegation_depth_index"] == ""
+    assert rows["workflow:agent:autonomous"]["zone"] == "OPERATING_LEVERAGE_CANDIDATE"
+    assert "Delegation export is bucket-level" in (output_dir / READOUT_OUTPUT).read_text()
+
+
 def test_forbidden_person_level_fields_fail_closed(tmp_path: Path) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "out"
@@ -145,6 +190,32 @@ def test_forbidden_person_level_fields_fail_closed(tmp_path: Path) -> None:
     assert summary["governance"]["person_level_fields_present"] is True
     assert "user_id" not in summary_text
     assert "unsafe-user" not in summary_text
+
+
+def test_forbidden_person_field_variants_fail_closed(tmp_path: Path) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "out"
+    copy_fixture_dir(FIXTURE_ROOT / "complete", input_dir)
+    add_columns_to_csv(
+        input_dir / "v4_velocity_window_1.csv",
+        {
+            "owner_email": "owner@example.com",
+            "user_name": "Unsafe Name",
+            "employee_email": "employee@example.com",
+        },
+    )
+
+    completed = run_depth_readout(input_dir, output_dir)
+
+    assert completed.returncode == 1
+    assert "forbidden person-level fields" in completed.stderr
+    summary_text = (output_dir / SUMMARY_OUTPUT).read_text()
+    summary = json.loads(summary_text)
+    assert summary["status"] == "FAIL"
+    assert summary["governance"]["person_level_fields_present"] is True
+    assert "owner_email" not in summary_text
+    assert "owner@example.com" not in summary_text
+    assert "Unsafe Name" not in summary_text
 
 
 def test_missing_required_file_fails_closed(tmp_path: Path) -> None:

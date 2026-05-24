@@ -26,9 +26,34 @@ v4_velocity_window_2.csv
 v4_velocity_window_3.csv
 ```
 
+These are the real dogfood input names for the Depth Readout Engine. They are
+different from the V4 Signal Validation Harness names, which use
+`v4_velocity_depth_window_*.csv` under `dogfood-input/v4-signal-validation`.
+
 Each export must be aggregate-only. Any export containing user IDs, emails,
 names, raw prompts, raw outputs, transcripts, or raw event rows must fail
 validation.
+
+## Naming Map
+
+| Location | File pattern | Meaning |
+| --- | --- | --- |
+| `dogfood-input/v4-depth-readout/` | `v4_velocity_window_*.csv` | Real Velocity inputs for the Depth Readout Engine. |
+| `dogfood-input/v4-depth-readout/` | `v4_delegation_window_*.csv` | Real Delegation Depth inputs for the Depth Readout Engine. |
+| `dogfood-input/v4-depth-readout/` | `v4_refinement_window_*.csv` | Real Refinement Depth inputs for the Depth Readout Engine. |
+| `dogfood-output/v4-depth-readout/` | `V4_DEPTH_READOUT.md`, `v4_depth_summary.json`, `v4_depth_by_surface.csv` | Generated dogfood outputs used for stability review. |
+| `tests/fixtures/v4_depth_readout/complete/` | `v4_*_window_*.csv` | Synthetic test fixtures only; do not treat as real dogfood input. |
+| `tests/fixtures/v4_depth_readout/missing_required_file/` | `v4_velocity_window_*.csv` | Negative test fixture proving missing-file fail-closed behavior. |
+| `tests/fixtures/v4_depth_readout/forbidden_field/` | `v4_velocity_window_1.csv` | Negative test fixture proving person-level field rejection. |
+
+If a file lives under `tests/fixtures/`, it exists to test the engine. Real
+BigQuery exports should live under `dogfood-input/v4-depth-readout/`, and
+generated outputs should live under `dogfood-output/v4-depth-readout/`.
+
+Do not substitute V4 Signal Validation Harness inputs for Depth Readout Engine
+inputs. The validation harness uses a different file family because it evaluates
+promotion readiness across multiple candidate signals, not only the local Depth
+readout.
 
 ## Optional Inputs
 

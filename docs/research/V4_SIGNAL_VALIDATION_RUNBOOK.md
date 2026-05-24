@@ -114,6 +114,13 @@ v4_velocity_depth_window_2.csv
 v4_velocity_depth_window_3.csv
 ```
 
+The `v4_velocity_depth_window_*.csv` files are specific to the V4 Signal
+Validation Harness. They are not interchangeable with the Depth Readout
+Engine's `v4_velocity_window_*.csv` files under
+`dogfood-input/v4-depth-readout/`. The validation harness evaluates promotion
+readiness across several candidate signals; the Depth Readout Engine composes a
+local dogfood readout from Velocity, Delegation Depth, and refinement inputs.
+
 Do not add extra suffixes, dates, or local notes to the filenames. Put
 operator notes in the readout artifact instead.
 
