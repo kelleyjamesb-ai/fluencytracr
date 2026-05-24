@@ -109,12 +109,13 @@ stability is demonstrated across windows or cohorts and the stability decision
 promotes contract hardening.
 
 Depth Repertoire is promoted for contract hardening only. The value-confidence
-review records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`, and the calibration
-decision records `HOLD_FOR_MORE_CALIBRATION`, so it must not feed V4 economic
-artifacts until a later calibration decision explicitly allows it. Internal
-Glean dogfood values are research observations only and must not be used as
-customer benchmarks, production defaults, product thresholds, or V4 economic
-inputs.
+calibration decision records `PROMOTE_CAVEAT_ONLY`, so it may appear only as
+aggregate caveat/context in V4 value-confidence artifacts. It must not modify
+confidence bands, surfacing eligibility, Time-Saved Defensibility Range, ROI
+language, causal claims, prediction claims, or any customer-facing economic
+number. Internal Glean dogfood values are research observations only and must
+not be used as customer benchmarks, production defaults, product thresholds, or
+V4 economic inputs.
 
 ## Running Multi-Surface Dogfood
 
