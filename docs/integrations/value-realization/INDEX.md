@@ -71,6 +71,7 @@ work.
 - [Signal Promotion Criteria](../../research/SIGNAL_PROMOTION_CRITERIA.md)
 - [V4 Signal Discovery Probes](../../research/V4_SIGNAL_DISCOVERY_PROBES.md)
 - [Depth Repertoire Diagnostic](../../../sql/dogfood/depth_repertoire_diagnostic.sql)
+- [V4 Depth Repertoire Stability Readout](../../research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 - [V4 Signal Validation Gate](../../research/V4_SIGNAL_VALIDATION_GATE.md)
 - [V4 Signal Validation Runbook](../../research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](../../research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
@@ -94,11 +95,16 @@ research review, but it does not change production V4 behavior.
 
 - [V4 Depth Readout Runbook](../../research/V4_DEPTH_READOUT_RUNBOOK.md)
 - [V4 Depth Stability Decision](../../research/V4_DEPTH_STABILITY_DECISION.md)
+- [V4 Depth Repertoire Stability Readout](../../research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` pending
 metadata observability. V4 economic readouts remain blocked until Depth readout
 stability is demonstrated across windows or cohorts and the stability decision
 promotes contract hardening.
+
+Depth Repertoire remains `HOLD_FOR_FIXED_WINDOW_VALIDATION`. Its internal Glean
+dogfood values are research observations only and must not be used as customer
+benchmarks, production defaults, product thresholds, or V4 economic inputs.
 
 ## Running Multi-Surface Dogfood
 
