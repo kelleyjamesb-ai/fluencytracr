@@ -16,6 +16,12 @@ Velocity measures adoption energy.
 
 Depth measures work integration.
 
+Depth Repertoire may appear only as aggregate caveat/context about
+cross-surface return use. It must not assign or adjust any matrix position,
+decision zone, readiness label, surfacing eligibility, portfolio total, or
+economic interpretation unless a later calibration decision explicitly promotes
+that use.
+
 The matrix combines both:
 
 | Velocity | Depth | Interpretation |
@@ -25,6 +31,13 @@ The matrix combines both:
 | Low | High | Focused integration may be valuable but narrow. |
 | Low | Low | Workflow likely needs coaching, redesign, or more evidence. |
 | Suppressed | Any | No economic or portfolio interpretation. |
+
+## Depth Repertoire Boundary
+
+Suppressed or insufficient Depth Repertoire evidence must remain null or absent
+and must not be reconstructed through scale-readiness language. Internal Glean
+dogfood values must not become readiness thresholds, benchmarks, defaults, or
+scores.
 
 ## Decision Zones
 

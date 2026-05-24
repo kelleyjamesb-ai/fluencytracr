@@ -35,6 +35,6 @@
   "required_caveats": [
     "Depth Repertoire is aggregate evidence of cross-surface return use.",
     "Dogfood values are not thresholds, calibration values, defaults, or customer benchmarks.",
-    "Economic interpretation requires later V4 value-confidence review."
+    "Economic dependency requires a later promotion decision; current approved use is caveat-only context."
   ]
 }

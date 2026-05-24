@@ -137,6 +137,22 @@ Sub-events remain corroborative and must not inflate either Velocity or Depth.
 PRODUCT_SNAPSHOT, LLM_CALL, CLIENT_EVENT, and ACTION can enrich parent
 interpretation only when governed taxonomy rules allow it.
 
+## 9b. Relationship to Work Modes
+
+Surface taxonomy defines what counts as a governed AI surface. Work Mode
+Taxonomy defines what kind of AI work that surface represents.
+
+See [WORK_MODES.md](./WORK_MODES.md) for the V4 interpretation layer that maps
+governed surfaces into retrieval, conversational work, synthesis /
+transformation, embedded assist, delegated execution, reusable workflow use,
+exploratory agent work, specialized workflow, verification / feedback, and
+corroborative telemetry.
+
+The distinction is intentional. Surface IDs remain the deterministic telemetry
+boundary. Work modes support taxonomy-aware interpretation for Velocity, Depth,
+Quality Multiplier, and Reliability Factor calibration without adding new
+surface volume or weakening per-surface gates.
+
 ## 10. Open Questions
 
 These questions are deliberately open and must be resolved before V2.1 implementation:

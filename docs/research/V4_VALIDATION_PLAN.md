@@ -26,6 +26,10 @@ Canonical validation gate documents:
 - [V4 Depth Readout Runbook](./V4_DEPTH_READOUT_RUNBOOK.md)
 - [V4 Depth Stability Decision](./V4_DEPTH_STABILITY_DECISION.md)
 - [V4 Depth Repertoire Stability Readout](./V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
+- [Work Mode Taxonomy](../concepts/WORK_MODES.md)
+- [V4 Value Confidence Caveat Propagation Runbook](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+- [V4 TSDR Caveat Propagation Decision](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 AI Value Leakage Map Caveat Propagation Decision](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -52,21 +56,36 @@ calibration values, or defaults. V4 economic readouts, Time-Saved Defensibility
 Range, and value-confidence APIs remain blocked from depending on Depth
 Repertoire until a later value-confidence review explicitly allows it.
 
-The current value-confidence review for Depth Repertoire records
-`HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next phase is calibration planning,
-not implementation.
-
 The calibration plan is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
 The current calibration decision is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md),
-which records `HOLD_FOR_MORE_CALIBRATION`. No economic contract, runtime
-implementation, or customer-facing artifact can depend on Depth Repertoire until
-a later calibration decision explicitly promotes that use. That decision also
-records a window-compatibility blocker: the existing three 20-day Depth
-Repertoire stability windows are not sufficient for value-confidence
-calibration because the other primitives require 60-day-compliant windows to
-surface.
+which records `PROMOTE_CAVEAT_ONLY`. V4 value-confidence artifacts may use
+Depth Repertoire only as aggregate caveat/context. It must not modify
+confidence bands, surfacing eligibility, Time-Saved Defensibility Range, ROI
+language, causal claims, prediction claims, or any customer-facing economic
+number unless a later calibration decision explicitly promotes that use.
+
+Any V4 artifact that carries Depth Repertoire caveat/context must pass
+[V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+before further contract hardening. Passing caveat propagation does not
+authorize economic dependency; it only proves that context does not alter
+values, bands, zones, eligibility, or blocked claims.
+
+The Time-Saved Defensibility Range contract has passed caveat propagation in
+[V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md).
+That decision permits documentation-stage TSDR contract hardening only. It does
+not authorize runtime implementation, schema hardening, economic dependency,
+range adjustment, confidence-band adjustment, eligibility use, ROI, causality,
+prediction, productivity, maturity, or ranking claims.
+
+The AI Value Leakage Map contract has passed caveat propagation in
+[V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md).
+That decision permits documentation-stage leakage-map contract hardening only.
+It does not authorize runtime implementation, schema hardening, economic
+dependency, leakage severity adjustment, value-at-risk adjustment,
+confidence-band adjustment, eligibility use, ROI, causality, prediction,
+productivity, maturity, or ranking claims.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
@@ -115,6 +134,7 @@ Candidate features may include:
 - Velocity distributions,
 - Depth dimensions,
 - surface breadth,
+- work mode distributions,
 - AGENT sub-surface mix,
 - verification attribution,
 - recovery and abandonment evidence,

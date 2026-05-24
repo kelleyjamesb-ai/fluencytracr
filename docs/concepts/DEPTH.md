@@ -170,6 +170,23 @@ High Depth with low Velocity may indicate focused expertise, constrained rollout
 
 Economic confidence requires both. V4 should use Velocity and Depth together to distinguish activity from durable operating leverage.
 
+## Relationship to Work Modes
+
+Depth depends on the surface taxonomy, but surface names alone are not enough
+for value-confidence interpretation. Work modes describe the kind of AI work a
+surface represents: retrieval, conversational work, synthesis / transformation,
+embedded assist, delegated execution, reusable workflow use, exploratory agent
+work, specialized workflow, verification / feedback, or corroborative telemetry.
+
+See [WORK_MODES.md](./WORK_MODES.md).
+
+Work modes help Depth distinguish cross-surface work integration from raw tool
+sprawl. A cohort that repeatedly uses Search, Chat, AI Summary, MCP, and an
+autonomous agent is showing a different aggregate pattern than a cohort with the
+same number of interactions concentrated in one embedded-assist surface. This
+interpretation must remain aggregate-only and must not override per-surface
+suppression gates.
+
 ## Relationship to Trust Calibration
 
 Depth provides inputs to Trust Calibration, especially verification, recovery, and judgment behavior. Trust Calibration interprets those signals against workflow risk.

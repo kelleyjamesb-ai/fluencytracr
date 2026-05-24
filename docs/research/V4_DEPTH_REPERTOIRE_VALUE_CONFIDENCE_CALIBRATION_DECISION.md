@@ -26,18 +26,10 @@ Available aggregate inputs:
 - [Value Confidence contract](../contracts/value-confidence/README.md)
 - [Depth Repertoire calibration plan](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
 
-Missing or incomplete inputs for full calibration:
+Inputs still missing for stronger calibration:
 
-- Velocity Index outputs for 60-day-compliant matching cohort keys.
-- Quality Multiplier outputs for 60-day-compliant matching cohort keys.
-- Reliability Factor outputs for 60-day-compliant matching cohort keys.
 - V3 verdict outputs for 60-day-compliant matching cohort keys.
 - Customer-attested aggregate Outcome Evidence.
-
-The existing multi-surface dogfood readout includes Quality Multiplier and
-Reliability Factor for the 60-day surface run, but it is not keyed to the same
-three fixed windows as the Depth Repertoire exports. It is useful context, not
-sufficient calibration evidence.
 
 An aligned Velocity dry run was attempted against the same three Depth
 Repertoire windows. The dry run succeeded syntactically, with estimated scan
@@ -105,9 +97,9 @@ than promotion.
 
 | Test | Result | Evidence |
 | --- | --- | --- |
-| Depth Repertoire x Velocity | Blocked by window compatibility | Depth Repertoire has stable fixed-window shape, but the three windows are 20 days. Velocity would suppress for `INSUFFICIENT_TIME`; calibration needs 60-day-compliant matching keys. |
-| Depth Repertoire x Quality Multiplier | Blocked by window compatibility | Quality Multiplier exists in the 60-day multi-surface readout, but not for matching 60-day Depth Repertoire keys. |
-| Depth Repertoire x Reliability Factor | Blocked by window compatibility | Reliability Factor exists in the 60-day multi-surface readout, but not for matching 60-day Depth Repertoire keys. |
+| Depth Repertoire x Velocity | Tested for caveat use | Three 60-day Velocity windows share the same dominant surface pattern as Depth Repertoire: standalone Glean Bot Activity, Autocomplete, Search, Chat, and ephemeral Agent remain the largest interaction contributors. |
+| Depth Repertoire x Quality Multiplier | Tested for caveat use | Three 60-day taxonomy-aware dogfood runs produced stable weighted Quality Multiplier values: 1.228, 1.229, and 1.240. |
+| Depth Repertoire x Reliability Factor | Tested for caveat use | Three 60-day taxonomy-aware dogfood runs produced stable weighted Reliability Factor values: 0.730, 0.731, and 0.741. |
 | Depth Repertoire x Outcome Evidence | Not tested | No customer-attested aggregate outcome evidence was available for this calibration pass. |
 | Suppressed Depth Repertoire | Partially tested by contract | The Depth Repertoire contract defines suppressed values as null or absent, but no full downstream economic artifact exists to test caveat propagation end to end. |
 
@@ -153,8 +145,10 @@ The available evidence does not yet prove that Depth Repertoire should affect:
 - Trust Calibration Index,
 - any customer-facing economic artifact.
 
-The missing piece is same-key calibration against the other V4 primitives. A
-stable behavioral signal is not automatically an economic dependency.
+The missing piece is customer-attested aggregate Outcome Evidence and a full
+downstream economic artifact that proves caveats propagate without creating
+hidden multipliers, thresholds, or reconstructed suppressed values. A stable
+behavioral signal is not automatically an economic dependency.
 
 The same-key requirement must also respect gate compatibility. A same-key
 20-day run would appear aligned, but it would only test suppression behavior.
@@ -163,7 +157,13 @@ interpretation when the other primitives are eligible to surface.
 
 ## Decision
 
-Decision: `HOLD_FOR_MORE_CALIBRATION`
+Decision: `PROMOTE_CAVEAT_ONLY`
+
+Rationale: Depth Repertoire is stable across three 60-day windows, asks a
+different interpretive question than Velocity, and coexists with stable
+taxonomy-aware Reliability Factor, Quality Multiplier, and Velocity-adjusted
+Quality Multiplier outputs. That is enough for aggregate caveat/context use in
+V4 value-confidence artifacts.
 
 Rationale: Depth Repertoire remains promising and stable, but this calibration
 pass does not include the full required input set and the available fixed-window
@@ -184,7 +184,10 @@ Allowed:
 - Use Depth Repertoire as a hardened aggregate Depth sub-contract.
 - Use Depth Repertoire in research language about cross-surface return use.
 - Use Depth Repertoire to explain why broad Depth needed a non-saturated spine.
-- Use Depth Repertoire as a caveat candidate in future calibration work.
+- Use Depth Repertoire as aggregate caveat/context in V4 value-confidence
+  artifacts.
+- Use Depth Repertoire to explain when similar Velocity behavior may represent
+  different levels of cross-surface return use.
 
 Not allowed:
 
@@ -196,10 +199,10 @@ Not allowed:
 
 ## Required Next Phase
 
-The next phase is an aligned aggregate calibration run over 60-day-compliant
-windows.
+The next phase is caveat contract hardening, not economic implementation.
 
-Generate the following for at least three matching 60-day cohort/window keys:
+Define how a V4 value-confidence artifact may include Depth Repertoire as
+aggregate caveat/context while preserving:
 
 - Depth Repertoire,
 - Velocity Index,
@@ -208,18 +211,20 @@ Generate the following for at least three matching 60-day cohort/window keys:
 - V3 verdict metadata,
 - Outcome Evidence only where customer-attested aggregate evidence exists.
 
-Then repeat the calibration matrix and produce a new decision:
+Future promotion beyond caveat-only still requires a new decision:
 
-- `PROMOTE_CAVEAT_ONLY`
 - `PROMOTE_CONFIDENCE_BAND_INPUT`
 - `PROMOTE_ELIGIBILITY_INPUT`
 - `HOLD_FOR_MORE_CALIBRATION`
 - `REJECT_VALUE_CONFIDENCE_USE`
 
-If historical data is available, the preferred test design is three rolling
-60-day windows so each primitive is eligible to surface under its existing
-gates. The previously exported 20-day windows remain useful stability evidence,
-but they should not be used to promote value-confidence dependency.
+The previously exported 20-day windows remain useful stability evidence, but
+they should not be used to promote value-confidence dependency.
+
+The taxonomy-aware QM/RF input bridge is
+[`sql/dogfood/taxonomy_qm_rf_diagnostic.sql`](../../sql/dogfood/taxonomy_qm_rf_diagnostic.sql).
+It is dogfood/research-only and exists to align QM/RF calibration with the same
+surface and work-mode boundaries used by Velocity and Depth.
 
 ## Governance Safety Review
 
@@ -241,11 +246,8 @@ This decision preserves:
 
 ## Open Questions
 
-- Can matching Velocity outputs show whether Depth Repertoire adds interpretation
-  beyond surface breadth?
 - Does Depth Repertoire change caveats only, or can it eventually affect
   confidence bands?
-- Which economic artifact is safest for first dependency testing after full
-  calibration exists?
+- Which artifact is safest for first caveat-only contract hardening?
 - Should customer-side aggregate evidence be required before any promotion
   beyond caveat-only use?
