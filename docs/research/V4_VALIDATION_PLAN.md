@@ -24,6 +24,7 @@ Canonical validation gate documents:
 - [V4 Signal Validation Runbook](./V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - [V4 Signal Validation Readout Template](./V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
 - [V4 Depth Readout Runbook](./V4_DEPTH_READOUT_RUNBOOK.md)
+- [V4 Depth Stability Decision](./V4_DEPTH_STABILITY_DECISION.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -41,6 +42,14 @@ Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
 economic readouts remain blocked until Depth readout stability is demonstrated
 across windows or cohorts.
+
+The canonical decision record is
+[V4_DEPTH_STABILITY_DECISION.md](./V4_DEPTH_STABILITY_DECISION.md). If that
+decision is `HOLD_FOR_MORE_WINDOWS`, `HOLD_FOR_SIGNAL_REFINEMENT`,
+`NARROW_TO_SUBSIGNALS`, or `REJECT_CURRENT_READOUT`, no V4 economic API,
+Time-Saved Defensibility Range implementation, or Depth-dependent economic
+readout may start. Depth contract hardening is allowed only if the decision is
+`PROMOTE_DEPTH_CONTRACT_HARDENING`.
 
 ## Candidate Predictive Tests
 

@@ -91,10 +91,12 @@ Delegation Depth, and refinement diagnostics into local candidate zones for
 research review, but it does not change production V4 behavior.
 
 - [V4 Depth Readout Runbook](../../research/V4_DEPTH_READOUT_RUNBOOK.md)
+- [V4 Depth Stability Decision](../../research/V4_DEPTH_STABILITY_DECISION.md)
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` pending
 metadata observability. V4 economic readouts remain blocked until Depth readout
-stability is demonstrated across windows or cohorts.
+stability is demonstrated across windows or cohorts and the stability decision
+promotes contract hardening.
 
 ## Running Multi-Surface Dogfood
 
