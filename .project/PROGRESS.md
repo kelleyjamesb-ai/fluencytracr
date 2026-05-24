@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Security check auth hardening: fixed critical `POST /auth/token` exposure by requiring a server-side issuer secret outside local development/test, making production/managed runtime JWT signing fail closed without `JWT_SECRET`, documenting `AUTH_TOKEN_ISSUER_SECRET`, removing the token-minting escape hatch from production runtimes, and preserving local/test fallback behavior only for development. Scan report: `/tmp/codex-security-scans/FluencyTracr/c7bfb4a_20260524T070208Z/report.md`.
 - Reuse propagation diagnostic review fix: updated `snapshot_join_coverage` so candidate and unmatched coverage fields count distinct workflows instead of runs; focused SQL contract test passed.
 - PR #275 conflict reconciliation: merged current `main` into `dogfood/fix-reuse-propagation-diagnostic`, preserving `main`'s V4 join-key diagnostic/readout and keeping the PR's separate reusable workflow propagation diagnostic plus workflow-granularity coverage test.
 - V4 signal discovery review fix: corrected the delegation probe so `bucket_event_share` uses the full taxonomy-event denominator and named workflow agents can contribute to both `structured_delegation` and `reusable_leverage`; no runtime, schema, endpoint, migration, frontend, canonical event, or suppression reason changes.
@@ -42,6 +43,7 @@
 
 ## Current Status
 
+- Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.
 - Queue uses **7 phased items** aligned with blueprint **§17** (`WORK_QUEUE.json` → `blueprint_ref`).
 - All 7 phased queue items are marked **done** in `WORK_QUEUE.json`; no durable queue item is currently `in_progress`.
 - Temporary frontend CI repair slice is complete; no original blueprint phase remains active.
@@ -71,7 +73,7 @@
 
 ## Blockers
 
-- None for the completed Vercel/Supabase slice.
+- None for the completed security check.
 
 ## Next Step
 
