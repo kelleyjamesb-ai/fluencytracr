@@ -35,6 +35,23 @@ work. The first may show volume. The second may show broader work integration.
 That interpretation remains provisional until the signal is validated across
 fixed windows.
 
+## Why Broad Depth Was Too Blunt
+
+The first broad Depth readout was useful because it showed the research engine
+could compose Velocity, Delegation Depth, and refinement evidence without
+violating the aggregate-only boundary. It was not discriminating enough for
+contract hardening.
+
+Most surfaced outputs landed in the same zone. That means broad Depth looked
+directionally plausible, but it did not separate surface patterns clearly enough
+to support a durable product contract.
+
+Depth Repertoire is the narrower candidate that responds to that finding. It
+tests whether AI use spans multiple surfaces and returns to those surfaces
+repeatedly. That is closer to the behavioral question V4 needs to answer: is AI
+use becoming cross-surface work integration, or is it mostly narrow activity
+volume?
+
 ## Evidence Reviewed
 
 Inputs reviewed:
@@ -52,27 +69,6 @@ Inputs reviewed:
 The current evidence is one live scio-prod dogfood observation from a 60-day
 window. Three fixed-window outputs are not yet available for this signal.
 
-## Required Fixed-Window Validation
-
-Depth Repertoire cannot be promoted from one dogfood window.
-
-Validation requires running
-[`sql/dogfood/depth_repertoire_diagnostic.sql`](../../sql/dogfood/depth_repertoire_diagnostic.sql)
-across at least three fixed windows and comparing:
-
-- p50/p90/p99 by window,
-- stability of the distribution shape,
-- cohort size and coverage by window,
-- whether taxonomy mapping changed between windows,
-- whether the signal changes interpretation beyond Velocity alone,
-- whether the candidate should be promoted, held, narrowed, or rejected.
-
-The fixed-window exports should use names such as:
-
-- `v4_depth_repertoire_window_1.csv`
-- `v4_depth_repertoire_window_2.csv`
-- `v4_depth_repertoire_window_3.csv`
-
 ## Current Dogfood Finding
 
 Current live scio-prod dogfood observation:
@@ -89,6 +85,34 @@ defaults.
 
 They do not prove causality, ROI, productivity lift, or maturity. They must not
 be used to rank customers, teams, departments, managers, or individuals.
+
+## Required Fixed-Window Validation
+
+Depth Repertoire cannot be promoted from one dogfood window.
+
+Validation requires running
+[`sql/dogfood/depth_repertoire_diagnostic.sql`](../../sql/dogfood/depth_repertoire_diagnostic.sql)
+across at least three fixed windows and comparing:
+
+- p50/p90/p99 by window,
+- stability of the distribution shape,
+- cohort size and coverage by window,
+- whether taxonomy mapping changed between windows,
+- whether Depth Repertoire changes interpretation beyond Velocity alone,
+- whether the candidate should be promoted, held, narrowed, or rejected.
+
+The core validation question is:
+
+```text
+Does Depth Repertoire explain something Velocity alone does not, or is it
+merely another usage intensity proxy?
+```
+
+The fixed-window exports should use names such as:
+
+- `v4_depth_repertoire_window_1.csv`
+- `v4_depth_repertoire_window_2.csv`
+- `v4_depth_repertoire_window_3.csv`
 
 ## Stability Decision Framework
 
@@ -179,7 +203,7 @@ Then update this readout with:
 
 - p50/p90/p99 by window,
 - stability of distribution shape,
-- whether the signal changes interpretation beyond Velocity alone,
+- whether Depth Repertoire changes interpretation beyond Velocity alone,
 - whether the signal should be promoted, held, narrowed, or rejected.
 
 ## Open Questions
