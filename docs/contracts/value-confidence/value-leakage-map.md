@@ -6,6 +6,20 @@ The AI Value Leakage Map identifies aggregate places where AI investment may not
 
 It is the CFO-safe version of a gap map: focused on claim safety, aggregate evidence, and scenario caveats.
 
+## Contract Status
+
+Status: documentation-stage contract. No runtime implementation exists in this
+PR.
+
+Caveat propagation source:
+[V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](../../research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
+
+That decision records `PASS_CAVEAT_PROPAGATION` for caveat/context behavior
+only. It does not authorize runtime implementation, schema hardening, economic
+dependency, severity adjustment, value-at-risk adjustment, confidence-band
+adjustment, surfacing eligibility changes, ROI, causality, prediction,
+productivity, maturity, or ranking claims.
+
 ## Executive Question
 
 Where might AI activity be failing to convert into defensible value, and which caveats or interventions should executives consider?
@@ -47,6 +61,12 @@ use.
 Suppressed or insufficient Depth Repertoire evidence must remain null or absent
 and must not be reconstructed through leakage narratives.
 
+Depth Repertoire caveat context must state that it did not change the leakage
+map's values, severity, value-at-risk labels, eligibility, or economic
+interpretation. Internal Glean dogfood values must not appear as customer
+benchmarks, defaults, product thresholds, calibration values, or implied
+leakage scores.
+
 ## Inputs
 
 - V3 aggregate verdicts.
@@ -68,8 +88,15 @@ A leakage map should include:
 - leakage types present,
 - aggregate severity band,
 - scenario-based value-at-risk label when allowed,
+- `depth_repertoire_caveat_context` when surfaced and applicable,
 - required caveats,
 - blocked claims.
+
+`depth_repertoire_caveat_context` is optional, documentation-stage, and
+non-economic. It may appear only when the underlying Depth Repertoire readout is
+itself `SURFACE` and `INTERPRETABLE`; suppressed or insufficient Depth
+Repertoire values must remain null or absent and must not be reconstructed
+downstream.
 
 ## Economic Interpretation
 
@@ -83,6 +110,15 @@ Suppressed evidence must not produce leakage values, value-at-risk estimates, ho
 
 Suppression reasons remain the existing five. This contract does not add suppression reasons.
 
+If Depth Repertoire is suppressed or insufficient while the AI Value Leakage Map
+itself surfaces, `depth_repertoire_caveat_context` must be null or absent. The
+readout may not infer, summarize, or reconstruct the missing Depth Repertoire
+value.
+
+Suppressed or insufficient Depth Repertoire does not suppress or surface this
+readout by itself. It may only remove `depth_repertoire_caveat_context` or add a
+required caveat that Depth Repertoire context is unavailable.
+
 ## Required Caveats
 
 Every leakage map should state:
@@ -91,6 +127,9 @@ Every leakage map should state:
 - Scenario-based estimates are not realized value.
 - Outcome evidence may strengthen confidence but does not automatically establish causality.
 - Suppressed slices cannot contribute economic values.
+- Depth Repertoire, when included, is aggregate caveat/context only and did not
+  adjust leakage types, severity, value-at-risk labels, eligibility, or economic
+  interpretation.
 
 ## Examples
 
@@ -101,10 +140,29 @@ Every leakage map should state:
   "verdict": "SURFACE",
   "leakage_types": ["DEPTH_GAP", "REUSE_GAP"],
   "aggregate_severity": "MEDIUM",
+  "depth_repertoire_caveat_context": {
+    "status": "CAVEAT_ONLY",
+    "allowed_use": "aggregate_context",
+    "blocked_uses": [
+      "leakage_type_adjustment",
+      "severity_adjustment",
+      "value_at_risk_adjustment",
+      "surfacing_eligibility",
+      "economic_number_adjustment"
+    ],
+    "summary": "Depth Repertoire surfaced as cross-surface return-use context only."
+  },
   "economic_interpretation": "Scenario-based leakage risk; outcome validation not present.",
   "required_caveats": [
     "Value leakage is not a performance judgment.",
-    "Any potential value estimate is scenario-based unless validated by outcome evidence."
+    "Any potential value estimate is scenario-based unless validated by outcome evidence.",
+    "Depth Repertoire is included only as aggregate caveat/context and did not adjust leakage severity or value-at-risk labels."
+  ],
+  "blocked_claims": [
+    "realized ROI",
+    "causal productivity lift",
+    "customer-facing prediction",
+    "group comparison"
   ]
 }
 ```
@@ -120,3 +178,6 @@ The leakage map does not calculate realized ROI.
 The leakage map does not prove causal impact.
 
 The leakage map does not expose suppressed economics.
+
+The leakage map does not use Depth Repertoire as a hidden multiplier,
+threshold, benchmark, default, score, or calibration value.

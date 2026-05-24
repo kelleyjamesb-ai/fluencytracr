@@ -29,6 +29,7 @@ Canonical validation gate documents:
 - [Work Mode Taxonomy](../concepts/WORK_MODES.md)
 - [V4 Value Confidence Caveat Propagation Runbook](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
 - [V4 TSDR Caveat Propagation Decision](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 AI Value Leakage Map Caveat Propagation Decision](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -77,6 +78,14 @@ That decision permits documentation-stage TSDR contract hardening only. It does
 not authorize runtime implementation, schema hardening, economic dependency,
 range adjustment, confidence-band adjustment, eligibility use, ROI, causality,
 prediction, productivity, maturity, or ranking claims.
+
+The AI Value Leakage Map contract has passed caveat propagation in
+[V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md).
+That decision permits documentation-stage leakage-map contract hardening only.
+It does not authorize runtime implementation, schema hardening, economic
+dependency, leakage severity adjustment, value-at-risk adjustment,
+confidence-band adjustment, eligibility use, ROI, causality, prediction,
+productivity, maturity, or ranking claims.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4

@@ -134,6 +134,7 @@ is not the lead positioning for this repository.
 - V4 Depth Repertoire calibration decision: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
 - V4 value-confidence caveat propagation runbook: [docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
 - V4 TSDR caveat propagation decision: [docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+- V4 AI Value Leakage Map caveat propagation decision: [docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 - V4 validation plan: [docs/research/V4_VALIDATION_PLAN.md](docs/research/V4_VALIDATION_PLAN.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)

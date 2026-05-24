@@ -61,6 +61,13 @@ The AI Value Leakage Map shows where AI investment may not be converting into de
 
 Leakage may reflect velocity, depth, reuse, verification, recovery, or friction gaps. Any estimate based on potential value must be labeled scenario-based unless validated by outcome evidence.
 
+Depth Repertoire may appear in the leakage map only as aggregate
+caveat/context. The
+[V4 AI Value Leakage Map Caveat Propagation Decision](../../research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
+records `PASS_CAVEAT_PROPAGATION` for that narrow use; it does not authorize
+leakage severity adjustment, value-at-risk adjustment, surfacing eligibility
+changes, or economic dependency.
+
 ## Output: AI Scale Readiness Portfolio
 
 The AI Scale Readiness Portfolio maps workflows into investment zones such as scale, harvest, coach, redesign, govern, or suppress.
@@ -121,6 +128,9 @@ Caveat: This readout qualifies the Glean time-saved estimate. It does not prove 
 - [ ] V4 Markdown concepts and contracts are reviewed.
 - [ ] Caveat propagation is validated with [V4 Value Confidence Caveat
       Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md).
+- [ ] Readout-specific caveat decisions are recorded, including
+      [TSDR](../../research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md) and
+      [AI Value Leakage Map](../../research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md).
 - [ ] Suppressed economics behavior is specified and tested before implementation.
 - [ ] Depth mapping is defined from existing aggregate evidence only.
 - [ ] Trust Calibration interpretation is risk-adjusted and caveated.
