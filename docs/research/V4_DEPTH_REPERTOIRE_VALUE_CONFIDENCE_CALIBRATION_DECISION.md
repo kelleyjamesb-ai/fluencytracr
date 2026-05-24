@@ -52,6 +52,55 @@ exports are valid for distribution-shape research, but they cannot calibrate a
 value-confidence dependency. Value-confidence calibration requires aligned
 60-day-compliant windows.
 
+A single 60-day Depth Repertoire sanity check was then run for
+`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z`. It produced aggregate
+rows only and confirmed that the 60-day Depth Repertoire diagnostic path is
+live:
+
+| Segment | Cohort size | Repertoire p50/p90/p99 | Repeated surfaces p50/p90/p99 | Depth candidate p50/p90/p99 |
+| --- | ---: | --- | --- | --- |
+| overall | 2,238,571 | 2 / 6 / 9 | 2 / 5 / 8 | 4 / 30 / 64 |
+
+This confirms the 60-day Depth Repertoire spine itself, but it is still only
+one Depth-only window. It does not supply aligned Velocity, Quality Multiplier,
+Reliability Factor, V3 verdict metadata, or Outcome Evidence for the same
+calibration key.
+
+A same-window 60-day Velocity diagnostic was then run for the same
+`2026-03-23T00:00:00Z` through `2026-05-22T00:00:00Z` window. The dry run
+validated and estimated approximately 2.96 TB scanned. The full query produced
+30 aggregate surface rows: 5 standalone surfaces and 25 workflow surfaces.
+
+The generated Velocity rows were then passed to the existing multi-surface
+dogfood driver alongside the existing 60-day scio-prod surface input. This
+produced:
+
+| Metric | Result |
+| --- | ---: |
+| Weighted Reliability Factor | 0.712 |
+| Weighted Quality Multiplier | 1.207 |
+| Weighted Velocity-Adjusted Quality Multiplier | 1.056 |
+
+The velocity-aware pass materially discounted the workflow-weighted Quality
+Multiplier in this dogfood run. However, the result is not yet sufficient for
+value-confidence promotion because the inputs are not fully aligned:
+
+- Depth Repertoire and Velocity are taxonomy-aware.
+- The base Quality Multiplier and Reliability Factor input remains the older
+  workflow aggregate surface export.
+- Standalone surfaces produced Velocity rows, but they had no matching base
+  Quality Multiplier or Reliability Factor rows.
+- `AGENT` remains mismatched: the base input has legacy `AGENT`, while the
+  Velocity diagnostic emits `workflow:agent:autonomous` and
+  `workflow:agent:ephemeral`. No `workflow:agent:workflow_named` row appeared,
+  consistent with the unresolved named-workflow metadata observability gap.
+- Outcome Evidence was still absent.
+
+This is the strongest calibration evidence so far: Velocity can change the
+interpretation materially when it is available. It is still a one-window,
+partially aligned dogfood result, so it supports continued calibration rather
+than promotion.
+
 ## Calibration Test Results
 
 | Test | Result | Evidence |
@@ -81,6 +130,17 @@ not be reused as economic calibration windows. They intentionally stress
 short-window stability, while Velocity, Quality Multiplier, Reliability Factor,
 and V3 verdict paths require 60-day-compliant evidence to surface.
 
+The single 60-day sanity check confirms the 60-day Depth Repertoire diagnostic
+can run against scio-prod and reproduces the expected overall shape. It does not
+replace the required multi-window value-confidence calibration.
+
+The same-window Velocity pass adds a second useful finding: the velocity-aware
+driver path can run over the 60-day window and changes the weighted Quality
+Multiplier from 1.207 to 1.056 in the current dogfood setup. That proves the
+calibration question is worth pursuing. It does not prove the dependency is
+ready, because the base surface export still lacks full taxonomy alignment and
+Outcome Evidence.
+
 ## What The Test Did Not Prove
 
 The available evidence does not yet prove that Depth Repertoire should affect:
@@ -108,9 +168,11 @@ Decision: `HOLD_FOR_MORE_CALIBRATION`
 Rationale: Depth Repertoire remains promising and stable, but this calibration
 pass does not include the full required input set and the available fixed-window
 exports are not compatible with the 60-day gates used by the other primitives.
-The safest current use is as a Depth contract component and research caveat
-source. It should not yet affect V4 confidence bands, surfacing eligibility, or
-economic artifacts.
+The 60-day sanity checks show the aligned path is technically viable and that
+Velocity materially changes the dogfood Quality Multiplier interpretation, but
+the test remains one-window and only partially aligned. The safest current use
+is as a Depth contract component and research caveat source. It should not yet
+affect V4 confidence bands, surfacing eligibility, or economic artifacts.
 
 This decision supersedes neither the stability promotion nor the contract
 hardening. It preserves them while holding economic dependency.
@@ -141,8 +203,8 @@ Generate the following for at least three matching 60-day cohort/window keys:
 
 - Depth Repertoire,
 - Velocity Index,
-- Quality Multiplier,
-- Reliability Factor,
+- taxonomy-aware Quality Multiplier inputs,
+- taxonomy-aware Reliability Factor inputs,
 - V3 verdict metadata,
 - Outcome Evidence only where customer-attested aggregate evidence exists.
 
