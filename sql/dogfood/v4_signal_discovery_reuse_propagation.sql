@@ -37,7 +37,7 @@ product_snapshot_events AS (
     NULLIF(TRIM(jsonPayload.productsnapshot.workflow.name), '') AS snapshot_workflow_name,
     jsonPayload.productsnapshot.workflow.isautonomousagent AS snapshot_is_autonomous,
     COALESCE(jsonPayload.productsnapshot.workflow.unlisted, FALSE) AS snapshot_unlisted,
-    COALESCE(jsonPayload.productsnapshot.workflow.isdraftonly IS FALSE, FALSE) AS snapshot_reusable
+    COALESCE(jsonPayload.productsnapshot.workflow.isdraftonly, TRUE) AS snapshot_isdraftonly
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp < window_end
     AND jsonPayload.type = 'PRODUCT_SNAPSHOT'
@@ -51,7 +51,7 @@ product_snapshots AS (
         snapshot_workflow_name AS workflow_name,
         snapshot_is_autonomous AS is_autonomous,
         snapshot_unlisted AS unlisted,
-        snapshot_reusable AS reusable
+        snapshot_isdraftonly AS isdraftonly
       )
       ORDER BY snapshot_ts DESC
       LIMIT 1
@@ -77,7 +77,7 @@ workflow_runs AS (
       ELSE 'non_agent_workflow'
     END AS workflow_classification,
     snapshot.snapshot.workflow_name AS workflow_name,
-    COALESCE(snapshot.snapshot.reusable, FALSE) AS reusable_flag
+    COALESCE(snapshot.snapshot.isdraftonly, TRUE) AS isdraftonly
   FROM source_events AS event
   LEFT JOIN product_snapshots AS snapshot
     ON snapshot.snapshot_workflow_id = event.root_workflow_id
@@ -94,7 +94,7 @@ named_reusable_workflows AS (
   FROM workflow_runs
   WHERE workflow_classification = 'named_reusable_workflow'
     AND workflow_name IS NOT NULL
-    AND reusable_flag IS TRUE
+    AND isdraftonly IS FALSE
   GROUP BY workflow_key
 ),
 
@@ -107,7 +107,7 @@ excluded_or_separate_workflows AS (
   FROM workflow_runs
   WHERE workflow_classification != 'named_reusable_workflow'
      OR workflow_name IS NULL
-     OR reusable_flag IS FALSE
+     OR isdraftonly IS TRUE
   GROUP BY workflow_classification
 ),
 
