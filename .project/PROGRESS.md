@@ -43,9 +43,9 @@
 ## Current Status
 
 - Queue uses **7 phased items** aligned with blueprint **§17** (`WORK_QUEUE.json` → `blueprint_ref`).
-- **`phase-03-fsc-min-signal`** is **in_progress** (FSC + minimum signal gates before classification).
-- Temporary frontend CI repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
-- Temporary backend tenant-isolation repair slice is complete; durable queue focus remains **`phase-03-fsc-min-signal`**.
+- All 7 phased queue items are marked **done** in `WORK_QUEUE.json`; no durable queue item is currently `in_progress`.
+- Temporary frontend CI repair slice is complete; no original blueprint phase remains active.
+- Temporary backend tenant-isolation repair slice is complete; no original blueprint phase remains active.
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
 - The seeded readiness generator addition was completed as a bounded user-requested slice; queue status was not changed.
 - Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
@@ -75,9 +75,7 @@
 
 ## Next Step
 
-- Finish **phase-03**: §18 FSC evaluator, §20 minimum signal gate, wire §21 steps 1–2 with reasons `INCOMPLETE_EXECUTION` / `INSUFFICIENT_SIGNAL`; tests.
-- Then **phase-04** → **phase-05** → **phase-06** → **phase-07** per `WORK_QUEUE.json` order.
-- Phases **01–02**: confirm against repo vs blueprint done criteria; flip to `done` when verified, without skipping tests.
+- Add a new bounded queue item before starting the next durable implementation track; the original 7-phase blueprint queue is complete.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
 - If the human accepts the Glean Value Evidence program as a queue track, add bounded `glean-value-*` queue items before further implementation; remaining hardening should include full-suite verification, optional linkcheck, and review/archive decisions for completed OpenSpec changes.

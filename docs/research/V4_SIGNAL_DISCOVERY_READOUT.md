@@ -57,9 +57,51 @@ causal claims, or prediction.
 
 | Probe | Current disposition | Reason |
 | --- | --- | --- |
+| Depth Repertoire | HOLD, promising | Strong aggregate distribution variance across surface-repertoire buckets; needs multi-window stability before promotion. |
 | Delegation Depth | HOLD, promising | Strong aggregate distribution spread, but reusable leverage still needs join/path validation. |
 | Rapid Refinement Behavior | HOLD, promising | Repeat-depth evidence appears on multiple surfaces, but interpretation needs stability checks and clearer same-session boundaries. |
 | Reusable Workflow Propagation | UNRESOLVED | Current join/path does not yet surface named workflow volume reliably; propagation diagnostics must be repeated before interpretation. |
+
+## Depth Repertoire Diagnostic
+
+The depth repertoire diagnostic at
+`sql/dogfood/depth_repertoire_diagnostic.sql` succeeded against the 60-day
+scio-prod window. It scanned about 0.72 TB and returned aggregate bucket rows
+only.
+
+The diagnostic directly tests the V4 Depth spine:
+
+```text
+Depth = Surface Repertoire x Repeat Use / Refinement
+```
+
+Overall aggregate findings:
+
+| Metric | p50 | p90 | p99 |
+| --- | ---: | ---: | ---: |
+| Surface repertoire | 2 | 6 | 9 |
+| Repeated surfaces | 2 | 5 | 8 |
+| Multi-day surfaces | 1 | 5 | 7 |
+| Depth candidate | 4 | 30 | 64 |
+
+Repertoire bucket findings:
+
+| Segment | Users | Repertoire p50 | Repeated surfaces p50 | Depth candidate p50 |
+| --- | ---: | ---: | ---: | ---: |
+| Single surface | 995,800 | 1 | 1 | 1 |
+| 2-3 surfaces | 388,962 | 3 | 2 | 6 |
+| 4-6 surfaces | 730,335 | 5 | 4 | 20 |
+| 7-10 surfaces | 119,875 | 7 | 7 | 49 |
+| 11+ surfaces | 3,599 | 11 | 10 | 110 |
+
+Interpretation: HOLD, promising. The result shows meaningful variance that does
+not collapse into generic usage volume. It separates single-surface habitual use
+from repeated cross-surface work integration. Promotion would require the same
+shape to hold across additional fixed windows or comparable cohorts.
+
+This is not a customer-facing score, rank, maturity label, productivity
+measure, ROI claim, causal claim, or prediction. It is aggregate-only research
+evidence that the revised Depth definition is observable.
 
 ## Named Reusable Workflow Join-Key Status
 

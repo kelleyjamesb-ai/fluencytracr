@@ -11,6 +11,7 @@ REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sq
 AGENT_METADATA_SQL = ROOT / "sql" / "dogfood" / "agent_metadata_field_discovery.sql"
 DEPTH_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "delegation_depth_diagnostic.sql"
 DEPTH_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "refinement_depth_diagnostic.sql"
+DEPTH_REPERTOIRE_SQL = ROOT / "sql" / "dogfood" / "depth_repertoire_diagnostic.sql"
 DEPTH_REUSE_SQL = ROOT / "sql" / "dogfood" / "reuse_propagation_diagnostic.sql"
 V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.sql"
 V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
@@ -26,6 +27,7 @@ DOGFOOD_SQL = [
     AGENT_METADATA_SQL,
     DEPTH_DELEGATION_SQL,
     DEPTH_REFINEMENT_SQL,
+    DEPTH_REPERTOIRE_SQL,
     DEPTH_REUSE_SQL,
     V4_DELEGATION_SQL,
     V4_REFINEMENT_SQL,
@@ -274,3 +276,47 @@ def test_agent_snapshot_join_key_diagnostic_compares_aggregate_candidates() -> N
     assert "jsonPayload.productsnapshot.workflow.isdraftonly" in sql
     assert "jsonPayload.productsnapshot.workflow.name" in sql
     assert "jsonPayload.productsnapshot.workflow.workflowid" in sql
+
+
+def test_depth_repertoire_diagnostic_reports_aggregate_repertoire_and_repeat_metrics() -> None:
+    sql = DEPTH_REPERTOIRE_SQL.read_text()
+
+    for field in [
+        "segment",
+        "cohort_size",
+        "repertoire_p10",
+        "repertoire_p50",
+        "repertoire_p90",
+        "repertoire_p99",
+        "repeated_surface_p10",
+        "repeated_surface_p50",
+        "repeated_surface_p90",
+        "repeated_surface_p99",
+        "multi_day_surface_p10",
+        "multi_day_surface_p50",
+        "multi_day_surface_p90",
+        "multi_day_surface_p99",
+        "depth_candidate_p50",
+        "depth_candidate_p90",
+        "depth_candidate_p99",
+        "workflow_surface_p50",
+        "standalone_surface_p50",
+    ]:
+        assert field in sql
+
+    for segment in [
+        "overall",
+        "01_single_surface",
+        "02_two_to_three_surfaces",
+        "03_four_to_six_surfaces",
+        "04_seven_to_ten_surfaces",
+        "05_eleven_plus_surfaces",
+    ]:
+        assert segment in sql
+
+    assert "surface_repertoire * repeated_surface_count" in sql
+    assert "CLIENT_EVENT" not in sql
+    assert "PRODUCT_SNAPSHOT" not in sql
+    assert "LLM_CALL" not in sql
+    assert "ACTION" not in sql
+    assert "GROUP BY user_key, surface_id" in sql
