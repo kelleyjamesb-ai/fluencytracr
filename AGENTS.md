@@ -121,7 +121,7 @@ Note: each prompt is one PR. Do not combine.
 - Candidate behavioral signals must pass docs/research/SIGNAL_PROMOTION_CRITERIA.md before they are promoted into concept docs, contracts, or implementation work.
 - Future Codex or agent work must not productize V4 signals unless docs/research/V4_SIGNAL_VALIDATION_GATE.md records `PROMOTE` for that signal. Research probes are not product contracts. Candidate signal docs are not permission to build APIs.
 - V4 Depth Readout Engine is dogfood-only. It is not permission to build V4 economic APIs. Reusable Workflow Propagation remains `HOLD` unless future validation promotes it. Time-Saved Defensibility Range remains blocked until Depth readout stability is demonstrated.
-- V4 economic readouts remain blocked until docs/research/V4_DEPTH_STABILITY_DECISION.md promotes contract hardening. If the decision is `HOLD`, no V4 economic API or Time-Saved Defensibility Range implementation may be started. Depth contract hardening is allowed only if the decision is `PROMOTE_DEPTH_CONTRACT_HARDENING`.
+- V4 economic readouts remain blocked until docs/research/V4_DEPTH_STABILITY_DECISION.md promotes contract hardening. No V4 economic API, Time-Saved Defensibility Range implementation, or Depth-dependent economic readout may start unless the decision is exactly `PROMOTE_DEPTH_CONTRACT_HARDENING`. All other decision states, including `HOLD_FOR_MORE_WINDOWS`, `HOLD_FOR_SIGNAL_REFINEMENT`, `NARROW_TO_SUBSIGNALS`, and `REJECT_CURRENT_READOUT`, remain blocking states.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
 - Add LMSYS assurance harness fixtures for every new behavior.
