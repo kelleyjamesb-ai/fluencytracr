@@ -39,6 +39,11 @@ Full dogfood rehearsal:
 
 - `v4-full-dogfood-rehearsal/v4_rehearsal_summary.csv`
 
+Trust and behavior cohort classification:
+
+- `v4-trust-cohort-classification/v4_trust_classification_summary_safe.csv`
+- `v4-trust-cohort-classification/v4_behavior_cohort_readiness_summary.csv`
+
 ## QA-Only Aggregate Attribution CSVs
 
 These files are tracked for narrow attribution QA only. They may include
@@ -63,6 +68,13 @@ Trust attribution refinement QA:
 - `v4-trust-attribution-refinement/v4_trust_attribution_window_2.csv`
 - `v4-trust-attribution-refinement/v4_trust_attribution_window_3.csv`
 - `v4-trust-attribution-refinement/v4_trust_attribution_all_windows.csv`
+
+Trust classification QA:
+
+- `v4-trust-cohort-classification/v4_trust_classification_window_1.csv`
+- `v4-trust-cohort-classification/v4_trust_classification_window_2.csv`
+- `v4-trust-cohort-classification/v4_trust_classification_window_3.csv`
+- `v4-trust-cohort-classification/v4_trust_classification_all_windows.csv`
 
 ## Excluded Scratch Files
 

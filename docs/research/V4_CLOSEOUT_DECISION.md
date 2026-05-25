@@ -109,6 +109,10 @@ in [V4_INTERNAL_READOUT_RUNBOOK.md](./V4_INTERNAL_READOUT_RUNBOOK.md), with a
 tracked rehearsal in [V4_INTERNAL_READOUT_REHEARSAL.md](./V4_INTERNAL_READOUT_REHEARSAL.md).
 The first numbers-backed local rehearsal is recorded in
 [V4_FULL_DOGFOOD_REHEARSAL_READOUT.md](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md).
+The behavior cohort classification pass is recorded in
+[V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md),
+and the current data-analysis stopping point is recorded in
+[V4_DATA_ANALYSIS_CLOSEOUT.md](./V4_DATA_ANALYSIS_CLOSEOUT.md).
 
 After that process is complete, choose one of three paths:
 

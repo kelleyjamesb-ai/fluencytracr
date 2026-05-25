@@ -156,6 +156,8 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Glean dogfood scale readiness readout](../../research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
 - [V4 full dogfood rehearsal readout](../../research/V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
+- [V4 behavior cohort classification readout](../../research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
+- [V4 data analysis closeout](../../research/V4_DATA_ANALYSIS_CLOSEOUT.md)
 - [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md)
 - [V4 closeout decision](../../research/V4_CLOSEOUT_DECISION.md)
 - [V4 internal readout runbook](../../research/V4_INTERNAL_READOUT_RUNBOOK.md)

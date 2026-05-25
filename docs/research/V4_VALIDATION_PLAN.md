@@ -32,6 +32,9 @@ Canonical validation gate documents:
 - [V4 AI Value Leakage Map Caveat Propagation Decision](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Internal Readout Runbook](./V4_INTERNAL_READOUT_RUNBOOK.md)
 - [V4 Internal Readout Rehearsal](./V4_INTERNAL_READOUT_REHEARSAL.md)
+- [V4 Full Dogfood Rehearsal Readout](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
+- [V4 Behavior Cohort Classification Readout](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
+- [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
