@@ -16,9 +16,14 @@ Status: documentation-stage hardened contract.
 Promotion source:
 [V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md](../../research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
 
-Depth Repertoire was promoted for contract hardening only. It is not approved as
-an input to V4 economic readouts, Time-Saved Defensibility Range, or
-value-confidence APIs.
+Value-confidence calibration source:
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
+
+Depth Repertoire was promoted for contract hardening and later approved only as
+aggregate caveat/context in V4 value-confidence artifacts. It is not approved as
+an economic dependency and must not adjust confidence bands, surfacing
+eligibility, Time-Saved Defensibility Range, ROI language, causal claims,
+prediction claims, or any customer-facing economic number.
 
 ## Signal Definition
 
@@ -97,6 +102,25 @@ contract output must contain only aggregate percentile distributions.
 
 `schema_version` is a documentation marker. It is not a shipped API schema.
 
+## Value-Confidence Caveat Use
+
+Depth Repertoire may be included in V4 value-confidence artifacts only as
+aggregate context explaining cross-surface return use. The context must preserve
+the visible components: `surface_repertoire`, `repeat_use_refinement`, and
+`depth_repertoire_candidate` when emitted.
+
+Depth Repertoire caveat context must not:
+
+- alter confidence bands,
+- determine surfacing eligibility,
+- adjust Time-Saved Defensibility Range,
+- create ROI, causal, prediction, or productivity claims,
+- become a hidden multiplier, threshold, benchmark, default, or score,
+- reconstruct suppressed values downstream.
+
+Suppressed or insufficient Depth Repertoire evidence must remain null or absent
+in any value-confidence artifact.
+
 ## Allowed Bands
 
 ### INTERPRETABLE
@@ -134,7 +158,8 @@ Every surfaced Depth Repertoire readout must include caveats stating:
   behavior.
 - Depth Repertoire must not be used to evaluate specific people, managers,
   departments, or customers.
-- Economic interpretation requires later V4 value-confidence review.
+- Economic dependency requires a later promotion decision; current approved use
+  is caveat-only context.
 
 ## Non-Capabilities
 
@@ -149,6 +174,8 @@ Depth Repertoire does not create person-level labels.
 Depth Repertoire does not override suppression.
 
 Depth Repertoire does not authorize Time-Saved Defensibility Range.
+
+Depth Repertoire does not modify value-confidence bands or eligibility.
 
 ## Future Work
 

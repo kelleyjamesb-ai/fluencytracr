@@ -150,8 +150,10 @@ Every candidate must state whether it can inform:
 - Trust Calibration Index.
 
 The relationship must be specific and caveated. A candidate can modify
-confidence or caveats only after fail-closed evidence clears. It cannot produce
-ROI, causality, prediction, or suppressed economics.
+confidence only after fail-closed evidence clears and a promotion decision
+explicitly authorizes confidence use. A `PROMOTE_CAVEAT_ONLY` decision permits
+caveats/context only. It cannot produce ROI, causality, prediction, suppressed
+economics, or hidden confidence adjustments.
 
 ## Governance Safety Review
 
