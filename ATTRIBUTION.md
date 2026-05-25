@@ -62,6 +62,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day agent diagnostic showing autonomous agents represented 42% of AGENT volume
 - Used in: V2.3 AGENT_TYPES concept document and V2.3 AGENT sub-surface implementation
 
+### Work mode taxonomy
+- Source: James Kelley, first-principles framing that value-confidence calibration should classify AI work by behavioral intent and evidence role, not by event names alone
+- Empirical grounding: scio-prod 60-day calibration work showing Velocity and Depth are taxonomy-aware while Quality Multiplier and Reliability Factor still need aligned surface semantics
+- Used in: V4 Work Mode Taxonomy concept document
+
 ### Customer-side transformer privacy boundary
 - Source: James Kelley, architectural choice that production ingest should keep raw GCE inside the customer environment
 - Governance grounding: structural privacy boundary where only cohort percentile distributions cross into FluencyTracr

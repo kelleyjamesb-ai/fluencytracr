@@ -50,6 +50,9 @@ documented value-realization layers:
   bands; never person, manager, or comparative team evaluation.
 - **Economic Impact Bridge:** future V4 concept that maps readiness patterns to
   customer-owned value investigations without proving ROI or causality.
+- **Work Mode Taxonomy:** maps governed surfaces into durable AI work patterns
+  such as retrieval, conversation, transformation, embedded assist, delegation,
+  reuse, exploration, verification, and corroborative telemetry.
 
 V4 is the Value Confidence Layer. It combines Velocity and Depth with governed
 V3 verdicts to qualify the defensibility of AI value claims.
@@ -124,6 +127,7 @@ is not the lead positioning for this repository.
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
 - Depth concept and V4 reference: [docs/concepts/DEPTH.md](docs/concepts/DEPTH.md)
 - Delegation Depth concept and V4 Depth subdimension: [docs/concepts/DELEGATION_DEPTH.md](docs/concepts/DELEGATION_DEPTH.md)
+- Work Mode Taxonomy concept: [docs/concepts/WORK_MODES.md](docs/concepts/WORK_MODES.md)
 - V4 Value Confidence Layer concept: [docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md](docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md)
 - AI Scale Readiness Portfolio concept: [docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md](docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md)
 - Organizational Segmentation concept: [docs/concepts/ORG_SEGMENTATION.md](docs/concepts/ORG_SEGMENTATION.md)
@@ -143,6 +147,9 @@ is not the lead positioning for this repository.
 - V4 Trust Calibration caveat propagation decision: [docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
 - V4 Glean dogfood scale readiness readout: [docs/research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md](docs/research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
 - V4 Glean dogfood decision: [docs/research/V4_GLEAN_DOGFOOD_DECISION.md](docs/research/V4_GLEAN_DOGFOOD_DECISION.md)
+- V4 value-confidence caveat propagation runbook: [docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+- V4 TSDR caveat propagation decision: [docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+- V4 AI Value Leakage Map caveat propagation decision: [docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 - V4 validation plan: [docs/research/V4_VALIDATION_PLAN.md](docs/research/V4_VALIDATION_PLAN.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)

@@ -30,9 +30,7 @@ remain aggregate.
 
 Depth Repertoire may inform research language about cross-surface return use,
 but it is not approved as a V4 economic input while the calibration decision
-remains `HOLD_FOR_MORE_CALIBRATION`. Trust Calibration must therefore avoid
-using Depth Repertoire to modify confidence bands, determine eligibility, or
-support customer-facing economic claims.
+records `PROMOTE_CAVEAT_ONLY`. Trust Calibration may cite Depth Repertoire only as aggregate caveat/context and must not use it to modify bands, determine eligibility, or support customer-facing economic claims.
 
 ## Decision
 
@@ -66,8 +64,8 @@ Any Trust Calibration artifact must state:
 - Low verification is ambiguous without workflow risk and quality context.
 - Verification signals must enrich parent surfaces, not become standalone
   surface volume.
-- Depth Repertoire is not approved as an economic input while calibration is
-  held.
+- Depth Repertoire is approved only as aggregate caveat/context, not as an
+  economic input.
 - Suppressed slices cannot expose hidden values.
 - The index must not rank people, managers, teams, departments, or customers.
 

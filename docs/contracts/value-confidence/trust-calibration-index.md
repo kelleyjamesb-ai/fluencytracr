@@ -73,9 +73,13 @@ Depth supplies aggregate evidence about verification, recovery, and judgment beh
 
 Depth asks whether work integration exists. Trust Calibration asks whether the trust pattern is appropriate.
 
-Depth Repertoire may appear only as research context or caveat language until a
-later 60-day-compliant value-confidence calibration decision explicitly allows
-economic use.
+Depth Repertoire may be cited only as aggregate caveat/context about
+cross-surface return use. It must not assign or adjust trust bands, risk labels,
+verification interpretation, surfacing eligibility, or economic interpretation
+unless a later calibration decision explicitly promotes that use.
+
+Suppressed or insufficient Depth Repertoire evidence must remain null or absent
+and must not be reconstructed through trust-calibration language.
 
 ## Relationship to Defensible Value
 

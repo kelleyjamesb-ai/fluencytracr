@@ -28,7 +28,7 @@ The portfolio composes existing and future-governed aggregate evidence:
 - Outcome Evidence when customer-attested and aggregate,
 - surface taxonomy and AGENT sub-surface context.
 
-Depth Repertoire is currently hardened as a Depth sub-contract but remains held from value-confidence dependency until a later 60-day-compliant calibration decision explicitly allows it. Until that happens, the portfolio may reference Depth Repertoire as research context or caveat source only.
+Depth Repertoire is hardened as a Depth sub-contract and promoted for aggregate caveat/context use. It still must not modify confidence bands, surfacing eligibility, economic values, or customer-facing economic interpretation unless a later calibration decision explicitly promotes that use.
 
 ## 4. Readiness Zones
 

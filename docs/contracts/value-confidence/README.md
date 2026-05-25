@@ -45,15 +45,20 @@ Velocity measures adoption energy across frequency, engagement, and breadth dist
 
 Depth measures work integration through verification, repertoire, reuse, recovery, and judgment evidence.
 
-Depth Repertoire is hardened as a Depth sub-contract, but
-[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
-records `HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next evidence step is
-[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
-The current calibration decision records `HOLD_FOR_MORE_CALIBRATION`. Depth
-Repertoire is not yet approved as an input to V4 economic readouts. A later
-calibration decision must explicitly allow it before Time-Saved Defensibility
+Work Mode Taxonomy maps governed surface IDs into durable AI work patterns and
+evidence roles. It is a documentation-stage interpretation layer for
+taxonomy-aware calibration; it does not add events, gates, thresholds, schemas,
+APIs, or economic readouts.
+
+Depth Repertoire is hardened as a Depth sub-contract. The current calibration
+decision in
+[V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](../../research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
+records `PROMOTE_CAVEAT_ONLY`. V4 value-confidence artifacts may include Depth
+Repertoire only as aggregate caveat/context. It must not change
+`confidence_band`, `verdict`, surfacing eligibility, Time-Saved Defensibility
 Range, AI Value Leakage Map, AI Scale Readiness Portfolio, Trust Calibration
-Index, or any customer-facing economic artifact may depend on it.
+Index, ROI language, causal claims, prediction claims, or any customer-facing
+economic number.
 
 ### Quality Multiplier
 
@@ -85,11 +90,18 @@ A Value Confidence readout should include:
 - `causality_status`,
 - `evidence_grade`,
 - `confidence_band`,
+- `depth_repertoire_caveat_context` when surfaced and applicable,
 - readout-specific aggregate fields,
 - `required_caveats`,
 - `blocked_claims`.
 
 Suppressed readouts must not include economic values, hours saved, upside estimates, or portfolio totals.
+
+`depth_repertoire_caveat_context` is optional, documentation-stage, and
+non-economic. It may appear only when the underlying Depth Repertoire readout is
+itself `SURFACE` and `INTERPRETABLE`; suppressed or insufficient Depth
+Repertoire values must remain null or absent and must not be reconstructed
+downstream.
 
 ## Causality Status
 
@@ -131,6 +143,12 @@ Every economic readout must carry caveats. Caveats should state:
 - whether any estimate is scenario-based,
 - what claims remain blocked.
 
+When Depth Repertoire appears in a V4 artifact, it belongs in caveat/context
+language only. The caveat must state that Depth Repertoire is aggregate evidence
+of cross-surface return use, that internal Glean dogfood values are not
+benchmarks or defaults, and that the signal did not adjust the confidence band,
+eligibility, Time-Saved Defensibility Range, or any economic number.
+
 ## Suppression Rules
 
 Default verdict is `SUPPRESS`.
@@ -151,6 +169,8 @@ V4 blocks claims that imply:
 - team or manager ranking,
 - productivity measurement,
 - customer-facing prediction without validation,
+- hidden Depth Repertoire multiplier, threshold, benchmark, score, or
+  confidence-band adjustment,
 - hidden reconstruction of suppressed economics.
 
 ## Non-Capabilities
@@ -179,6 +199,17 @@ V4 is not a replacement for Glean's time-saved pipeline.
   "causality_status": "NOT_CAUSAL",
   "evidence_grade": "CALIBRATED",
   "confidence_band": "MEDIUM",
+  "depth_repertoire_caveat_context": {
+    "status": "CAVEAT_ONLY",
+    "allowed_use": "aggregate_context",
+    "blocked_uses": [
+      "confidence_band_adjustment",
+      "surfacing_eligibility",
+      "time_saved_range_adjustment",
+      "economic_number_adjustment"
+    ],
+    "summary": "Depth Repertoire surfaced as cross-surface return-use context only."
+  },
   "time_saved_defensibility_range": {
     "unit": "hours",
     "conservative": 120,
@@ -188,6 +219,7 @@ V4 is not a replacement for Glean's time-saved pipeline.
   "required_caveats": [
     "This range qualifies a claimed time-saved estimate; it does not prove realized financial ROI.",
     "Default causality status is NOT_CAUSAL.",
+    "Depth Repertoire is included only as aggregate caveat/context and did not adjust this range.",
     "Every downstream claim must preserve these caveats."
   ],
   "blocked_claims": [

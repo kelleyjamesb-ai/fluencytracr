@@ -55,9 +55,7 @@ Decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
 
 Rationale: the concept and governance boundaries are now defined, but the
 required dogfood evidence has not been generated. The current Depth Repertoire
-calibration decision also remains `HOLD_FOR_MORE_CALIBRATION`, so V4 economic
-readouts must not depend on Depth Repertoire until the aligned 60-day test is
-complete and a later decision explicitly promotes that use.
+calibration decision records `PROMOTE_CAVEAT_ONLY`, so V4 readouts may cite Depth Repertoire as aggregate caveat/context but must not depend on it for economic confidence, eligibility, or customer-facing economic values until a later decision explicitly promotes that use.
 
 ## Decision Criteria For Promotion
 

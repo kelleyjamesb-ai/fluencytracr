@@ -26,13 +26,11 @@ Reviewed inputs:
 
 Depth Repertoire is hardened as an aggregate Depth sub-contract, but it remains
 held from V4 economic dependency. The current calibration decision records
-`HOLD_FOR_MORE_CALIBRATION` because the available fixed-window Depth Repertoire
-exports are not 60-day-compliant with Velocity, Quality Multiplier, Reliability
-Factor, and V3 verdict gates.
+`PROMOTE_CAVEAT_ONLY`, allowing Depth Repertoire to appear as aggregate caveat/context while still blocking economic dependency.
 
 The AI Scale Readiness Portfolio may therefore reference Depth Repertoire only
-as research context or caveat language until a later calibration decision
-explicitly promotes that use.
+as aggregate caveat/context until a later calibration decision explicitly
+promotes economic use.
 
 ## Decision
 
@@ -70,7 +68,7 @@ Any AI Scale Readiness artifact must state:
 
 - Scale readiness is an aggregate action posture, not a score.
 - Decision zones require business context before action.
-- Depth Repertoire is not approved as an economic input while calibration is held.
+- Depth Repertoire is approved only as aggregate caveat/context, not as an economic input.
 - Suppressed slices cannot contribute portfolio totals.
 - Missing metadata is an evidence gap, not low readiness.
 - The portfolio does not prove ROI, causality, productivity lift, or future value.

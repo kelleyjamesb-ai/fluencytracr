@@ -103,9 +103,9 @@ The readout must answer:
 > Does Depth Repertoire explain something Velocity alone does not?
 
 Because the current value-confidence calibration decision is
-`HOLD_FOR_MORE_CALIBRATION`, Depth Repertoire may appear only as research
-context or caveat language until a later decision explicitly promotes economic
-use.
+`PROMOTE_CAVEAT_ONLY`, Depth Repertoire may appear as aggregate caveat/context
+but must not modify confidence bands, eligibility, or economic values until a
+later decision explicitly promotes economic use.
 
 ## Trust Calibration Findings
 
