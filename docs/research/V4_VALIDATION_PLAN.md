@@ -140,6 +140,9 @@ The current caveat propagation decisions are:
   records `PASS_INTERNAL_READOUT_CONTEXT_ONLY`.
 - [V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
   records `HOLD_FOR_ATTRIBUTION_REFINEMENT`.
+- [V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](./V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md)
+  records the next research path: classify narrow trust evidence and test
+  behavior-derived cohorts before any org metadata cohort is used.
 - [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
   records the overall current decision:
   `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`.
@@ -164,6 +167,12 @@ productization, Organizational Segmentation runtime support, Economic Impact
 Bridge runtime support, Trust Calibration governed readout, or Skill Read
 Evidence reuse-depth interpretation may start until a later decision promotes
 that exact scope.
+
+Behavior-derived cohort classification may be tested in research using
+Velocity band, Depth Repertoire band, AGENT delegation band, and skill-read
+presence band. Department, function, level, manager/IC, leader, region, and
+other org metadata cohorts remain held until an approved aggregate join path
+exists and the segment coverage gate passes.
 
 ## V4 Closeout Test Plan
 

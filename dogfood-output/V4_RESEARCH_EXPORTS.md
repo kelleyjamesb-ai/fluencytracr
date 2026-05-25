@@ -20,6 +20,10 @@ Trust signal availability:
 
 - `v4-trust-signal-availability/trust_signal_availability_summary_safe.csv`
 
+Trust attribution refinement:
+
+- `v4-trust-attribution-refinement/v4_trust_attribution_summary.csv`
+
 AGENT feedback availability:
 
 - `v4-trust-signal-availability/agent-feedback/agent_feedback_summary_safe.csv`
@@ -48,6 +52,13 @@ AGENT feedback QA:
 
 - `v4-trust-signal-availability/agent-feedback/agent_feedback_probe_window_1.csv`
 - `v4-trust-signal-availability/agent-feedback/agent_feedback_vote_probe_window_1.csv`
+
+Trust attribution refinement QA:
+
+- `v4-trust-attribution-refinement/v4_trust_attribution_window_1.csv`
+- `v4-trust-attribution-refinement/v4_trust_attribution_window_2.csv`
+- `v4-trust-attribution-refinement/v4_trust_attribution_window_3.csv`
+- `v4-trust-attribution-refinement/v4_trust_attribution_all_windows.csv`
 
 ## Excluded Scratch Files
 

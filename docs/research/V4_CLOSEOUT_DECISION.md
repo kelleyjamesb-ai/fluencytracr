@@ -116,7 +116,12 @@ After that process is complete, choose one of three paths:
    The first fixed-window test is recorded in
    [V4_TRUST_ATTRIBUTION_TEST_READOUT.md](./V4_TRUST_ATTRIBUTION_TEST_READOUT.md)
    and narrows the next trust phase to strict/session-attributable signals.
-3. Validate Skill Read Evidence identity and join coverage without emitting raw
+3. Run the behavior-derived cohort and trust classification plan in
+   [V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](./V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md).
+   This starts with Velocity, Depth Repertoire, AGENT delegation, and
+   skill-read presence bands; org metadata segments remain held until an
+   approved aggregate join exists.
+4. Validate Skill Read Evidence identity and join coverage without emitting raw
    skill names.
 
 Customer-facing economic output should wait until at least one later decision
