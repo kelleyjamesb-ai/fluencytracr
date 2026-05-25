@@ -142,6 +142,19 @@ surface_join_aliases AS (
 
 verification_signals AS (
   SELECT
+    TO_HEX(SHA256(CONCAT(
+      COALESCE(user_key, ''),
+      '|',
+      COALESCE(event_type, ''),
+      '|',
+      COALESCE(workflow_run_id, ''),
+      '|',
+      COALESCE(session_token, ''),
+      '|',
+      COALESCE(tracking_token, ''),
+      '|',
+      CAST(event_ts AS STRING)
+    ))) AS signal_key,
     user_key,
     event_type AS verification_event_type,
     CASE event_type
@@ -173,7 +186,7 @@ signal_availability AS (
   SELECT
     verification_event_type,
     expected_parent_surface,
-    COUNT(*) AS total_signal_count,
+    COUNT(DISTINCT signal_key) AS total_signal_count,
     COUNTIF(user_key IS NOT NULL) AS signal_count_with_user_key,
     COUNTIF(attribution_join_key IS NOT NULL) AS signal_count_with_join_key,
     COUNT(DISTINCT user_key) AS distinct_signal_users
@@ -186,7 +199,7 @@ signal_joinability AS (
     verification.verification_event_type,
     verification.expected_parent_surface,
     alias.workflow_id AS joined_parent_surface,
-    COUNT(*) AS joined_signal_count,
+    COUNT(DISTINCT verification.signal_key) AS joined_signal_count,
     COUNT(DISTINCT alias.surface_join_key) AS joined_surface_count,
     COUNT(DISTINCT verification.user_key) AS joined_user_count
   FROM verification_signals AS verification
