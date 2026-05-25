@@ -156,6 +156,7 @@ is not the lead positioning for this repository.
 - V4 Trust Calibration caveat propagation decision: [docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
 - V4 Glean dogfood scale readiness readout: [docs/research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md](docs/research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
 - V4 Glean dogfood decision: [docs/research/V4_GLEAN_DOGFOOD_DECISION.md](docs/research/V4_GLEAN_DOGFOOD_DECISION.md)
+- V4 closeout decision: [docs/research/V4_CLOSEOUT_DECISION.md](docs/research/V4_CLOSEOUT_DECISION.md)
 - V4 value-confidence caveat propagation runbook: [docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
 - V4 TSDR caveat propagation decision: [docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
 - V4 AI Value Leakage Map caveat propagation decision: [docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
