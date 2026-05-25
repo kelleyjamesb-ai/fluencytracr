@@ -111,7 +111,8 @@ tracked rehearsal in [V4_INTERNAL_READOUT_REHEARSAL.md](./V4_INTERNAL_READOUT_RE
 After that process is complete, choose one of three paths:
 
 1. Harden the internal AI Scale Readiness readout contract only.
-2. Run strict parent-attribution refinement for trust and verification signals.
+2. Run strict parent-attribution refinement for trust and verification signals
+   using [V4_TRUST_ATTRIBUTION_METHOD.md](./V4_TRUST_ATTRIBUTION_METHOD.md).
 3. Validate Skill Read Evidence identity and join coverage without emitting raw
    skill names.
 

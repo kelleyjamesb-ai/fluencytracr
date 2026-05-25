@@ -93,6 +93,8 @@ This decision preserves:
 Run a strict parent-attribution refinement pass for the trust and verification
 signals already observed in the Glean dogfood run. The next pass should prove
 join coverage by parent surface and continue to emit aggregate-only results.
+Use [V4_TRUST_ATTRIBUTION_METHOD.md](./V4_TRUST_ATTRIBUTION_METHOD.md) as the
+governing method for attribution tiers and promotion boundaries.
 Then update
 [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
 with a promote, narrow, or continued hold decision.

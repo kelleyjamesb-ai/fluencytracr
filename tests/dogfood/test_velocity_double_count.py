@@ -19,6 +19,7 @@ V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation
 AGENT_JOIN_KEY_SQL = ROOT / "sql" / "dogfood" / "agent_snapshot_join_key_diagnostic.sql"
 TAXONOMY_QM_RF_SQL = ROOT / "sql" / "dogfood" / "taxonomy_qm_rf_diagnostic.sql"
 SKILL_READ_SQL = ROOT / "sql" / "dogfood" / "skill_read_availability_diagnostic.sql"
+TRUST_ATTRIBUTION_SQL = ROOT / "sql" / "dogfood" / "trust_attribution_refinement_diagnostic.sql"
 SCALE_READINESS_CONTRACT = ROOT / "docs" / "contracts" / "value-confidence" / "scale-readiness-portfolio.md"
 
 DOGFOOD_SQL = [
@@ -38,6 +39,7 @@ DOGFOOD_SQL = [
     AGENT_JOIN_KEY_SQL,
     TAXONOMY_QM_RF_SQL,
     SKILL_READ_SQL,
+    TRUST_ATTRIBUTION_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [
@@ -394,6 +396,38 @@ def test_skill_read_availability_diagnostic_is_aggregate_only() -> None:
     assert "observed_skill_name" not in final_select
     assert "GROUP BY observed_skill_name" not in sql
     assert "COUNT(DISTINCT IF(skill_name_status = 'specified', observed_skill_name, NULL))" in sql
+
+
+def test_trust_attribution_refinement_diagnostic_is_tiered_and_aggregate_only() -> None:
+    sql = TRUST_ATTRIBUTION_SQL.read_text()
+
+    for required in [
+        "EXACT_PARENT_KEY",
+        "SESSION_PARENT_KEY",
+        "PROXIMITY_RESEARCH_ONLY",
+        "STRICT_PARENT_ATTRIBUTION",
+        "SESSION_PARENT_ATTRIBUTION",
+        "AMBIGUOUS_PARENT",
+        "CROSS_SURFACE_ALIAS",
+        "NO_PARENT",
+        "SMALL_CELL_SUPPRESSED",
+        "TRUST_ATTRIBUTION_STRICT",
+        "TRUST_ATTRIBUTION_SESSION",
+        "TRUST_ATTRIBUTION_RESEARCH_ONLY",
+    ]:
+        assert required in sql
+
+    final_select = sql.split("SELECT\n  DATE(window_start)", 1)[1]
+    for forbidden in [
+        "user_key,",
+        "signal_key,",
+        "parent_record_key,",
+        "direct_parent_key,",
+    ]:
+        assert forbidden not in final_select
+
+    assert "distinct_signal_users >= 5" in sql
+    assert "CASE WHEN clears_small_cell_gate THEN signal_count END" in sql
 
 
 def test_scale_readiness_contract_carries_depth_context_without_runtime_promotion() -> None:
