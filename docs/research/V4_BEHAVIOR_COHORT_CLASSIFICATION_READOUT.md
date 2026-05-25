@@ -128,6 +128,7 @@ event rows, or action rows may be emitted.
 
 ## Recommended Next Step
 
-Create a minimal `behavior_cohort_joint_distribution_diagnostic.sql` for
-dogfood/research only. It should compute the needed joint distributions inside
-BigQuery and output aggregate rows that can be saved to CSV for local replay.
+Run `sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql` for
+dogfood/research only across the three fixed windows. It should compute the
+needed joint distributions inside BigQuery and output aggregate rows that can
+be saved to CSV for local replay.
