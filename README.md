@@ -36,15 +36,23 @@ documented value-realization layers:
 - **AGENT sub-surfaces:** V2.3 splits AGENT into `agent:autonomous`,
   `agent:workflow_named`, and `agent:ephemeral` so delegation, reusable Skill,
   and exploratory agent behavior can be evaluated independently.
+- **Skill Read Evidence:** V4 research path for Skills usage in agent span
+  logs. It treats raw span skill-reader attributes, legacy skill-name inputs
+  where present, plus dbt
+  `skill_reader_skill_name`, as availability signals only until
+  unspecified-share, parent attribution, canonical identity, versioning,
+  invocation mode, UGC coverage, and personal/shared/org Skill separation are
+  validated.
 - **V3 production ingest:** moves beyond manual CSV dogfood by running a
   customer-side transformer in the customer's cloud, sending only aggregate
   cohort distributions to FluencyTracr, and storing immutable verdicts against
   governed calibration baselines.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
-- **AI Scale Readiness Portfolio:** future V4 concept that turns aggregate
-  evidence into action postures for scale, enablement, workflow redesign, trust
-  calibration, adoption expansion, or hold.
+- **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
+  aggregate evidence into action postures for scale, enablement, workflow
+  redesign, trust calibration, adoption expansion, value investigation, or hold.
+  It is not customer-facing and does not calculate economic value.
 - **Organizational Segmentation:** future V4 concept for aggregate-only
   intervention contexts such as tenure, function, role family, or behavior
   bands; never person, manager, or comparative team evaluation.
@@ -134,6 +142,7 @@ is not the lead positioning for this repository.
 - Economic Impact Bridge concept: [docs/concepts/ECONOMIC_IMPACT_BRIDGE.md](docs/concepts/ECONOMIC_IMPACT_BRIDGE.md)
 - Signal promotion criteria: [docs/research/SIGNAL_PROMOTION_CRITERIA.md](docs/research/SIGNAL_PROMOTION_CRITERIA.md)
 - V4 signal discovery probes: [docs/research/V4_SIGNAL_DISCOVERY_PROBES.md](docs/research/V4_SIGNAL_DISCOVERY_PROBES.md)
+- V4 signal discovery readout: [docs/research/V4_SIGNAL_DISCOVERY_READOUT.md](docs/research/V4_SIGNAL_DISCOVERY_READOUT.md)
 - V4 signal validation gate: [docs/research/V4_SIGNAL_VALIDATION_GATE.md](docs/research/V4_SIGNAL_VALIDATION_GATE.md)
 - V4 signal validation runbook: [docs/research/V4_SIGNAL_VALIDATION_RUNBOOK.md](docs/research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - V4 signal validation readout template: [docs/research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md](docs/research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)

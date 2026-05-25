@@ -92,6 +92,26 @@ future validation promotes them. Time-Saved Defensibility Range and other V4
 economic readouts remain blocked until Depth readout stability is demonstrated
 across windows or cohorts.
 
+Skill Read Evidence is now a separate research path. Internal runtime
+instrumentation indicates that Skills usage may be observable through agent
+span logs via raw span skill-reader attributes and legacy skill-name inputs
+where present, not through the GCE
+`PRODUCT_SNAPSHOT` workflow metadata path used by earlier reusable-workflow
+diagnostics. This moves Skills from "not observable" to
+`AVAILABLE_BUT_NOT_GOVERNED` for research purposes only. Reusable Workflow
+Propagation and Named Workflow Leverage remain `HOLD` until the agent-span path
+passes fixed-window validation for unspecified-share, parent join coverage,
+canonical identity, versioning, invocation mode, and personal/shared/org Skill
+separation.
+
+For usage analytics, BigQuery is the right source. The first-pass usage path is
+`scio-apps.scrubbed_agentspan.scrubbed_agentspan_*`, with dbt fact-table support
+through `action_runs_v2` / `action_runs` and the `skill_reader_skill_name`
+column. Definition and eligibility sources such as `data/skills/`,
+`data/plugin_skills/`, PluginSkillStore, `metadata.textpb`, `glean.yaml`, and
+UGC `ListAccessibleSkills` are catalog layers. They may become join targets
+later, but they are not the primary usage source for V4 dogfood.
+
 The canonical decision record is
 [V4_DEPTH_STABILITY_DECISION.md](./V4_DEPTH_STABILITY_DECISION.md). If that
 decision is `HOLD_FOR_MORE_WINDOWS`, `HOLD_FOR_SIGNAL_REFINEMENT`,
@@ -137,11 +157,165 @@ dogfood decision promotes a scope, no V4 economic API, customer-facing readout,
 Time-Saved Defensibility Range productization, Organizational Segmentation
 runtime support, or Economic Impact Bridge runtime support may start.
 
+## V4 Closeout Test Plan
+
+The near-term goal is to close the dogfood/research phase, not expand the
+product surface. V4 remains inside the existing FluencyTracr guardrails:
+
+- no new canonical events,
+- no new suppression reasons,
+- no tunable thresholds,
+- no admin overrides,
+- no individual scoring,
+- no team, department, manager, customer, or skill ranking,
+- no raw skill names in outputs,
+- no raw prompts, outputs, transcripts, user IDs, emails, or action rows,
+- no ROI calculation,
+- no causal productivity claim,
+- no prediction claim,
+- no customer-facing economic readout.
+
+Closeout should proceed in this order:
+
+1. Confirm the fixed-window CSV fixtures are present and reusable. The tracked
+   Depth Repertoire fixtures are:
+   - `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_1.csv`
+   - `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_2.csv`
+   - `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_3.csv`
+2. Keep generated trust-signal and agent-feedback exports out of git unless a
+   future PR deliberately promotes sanitized fixtures. They are research caches,
+   not contract fixtures.
+3. Run only aggregate-only diagnostics needed to resolve the current holds:
+   trust-signal attribution, Skill Read Evidence availability, and reusable
+   workflow observability.
+4. Update the Glean dogfood readout with evidence status, not new product
+   behavior.
+5. Update the Glean dogfood decision with one of the existing hold/promote
+   options.
+6. Stop before runtime buildout. API, schema, or contract work is not
+   permanently off the table, but it must be sparse, explicitly promoted by the
+   dogfood decision, and limited to the smallest surface needed to preserve the
+   governed evidence boundary. No UI, economic ranges, or automated
+   recommendations should start unless the decision explicitly promotes that
+   scope.
+
+The closeout question is:
+
+> Does V4 provide enough aggregate evidence to guide internal scale-readiness
+> decisions, and which parts must remain held?
+
+It is not:
+
+> Can V4 produce a scorecard, ranking, ROI estimate, or productivity claim?
+
+Skill Read Evidence availability has now been tested across the three fixed
+60-day dogfood windows. The diagnostic found specified skill-read rows with high
+parent join coverage in every window, but volume changed sharply across windows.
+That result moves Skill Read Evidence from "possibly unavailable" to "available
+but not governed." It does not promote Reusable Workflow Propagation.
+
+## Depth Repertoire To Economic Readout Test
+
+Depth Repertoire is the strongest current bridge from behavior to economic
+investigation, but it should not become an economic readout by itself. The next
+test is whether Depth Repertoire can identify where a value investigation is
+worth running, while leaving dollar assumptions and outcome validation outside
+FluencyTracr.
+
+Allowed interpretation:
+
+- high Depth Repertoire plus stable Velocity may identify candidate workflows
+  where AI use looks integrated enough to investigate economic value;
+- high Velocity with low Depth Repertoire may identify adoption that is active
+  but shallow, where enablement or workflow redesign should precede economic
+  claims;
+- low Velocity with high Depth Repertoire may identify focused, potentially
+  high-value pockets that need business-context review before scale decisions;
+- unstable Depth Repertoire should remain a caveat and should not support
+  economic interpretation.
+
+Not allowed:
+
+- converting Depth Repertoire into dollars,
+- using Depth Repertoire as a productivity measure,
+- using Depth Repertoire as a maturity label,
+- comparing departments, teams, managers, customers, individuals, or skills,
+- treating Glean dogfood values as thresholds, defaults, benchmarks, or
+  calibration constants.
+
+The usable-impact question is:
+
+> Does Depth Repertoire help leaders choose the next intervention: scale,
+> enable, redesign, calibrate trust, investigate value, or hold?
+
+If yes, the next promoted artifact should be a narrow contract for the decision
+shape, not a broad product API. If no, Depth Repertoire should remain caveat
+context only.
+
+## Current V4 Classification Framework
+
+The closeout decision should use classifications as action postures, not as
+ratings or comparative labels.
+
+Depth Repertoire classifications:
+
+| Classification | Meaning | Allowed use |
+| --- | --- | --- |
+| Integrated Repertoire | Cross-surface repertoire and repeated use are stable enough for context | Candidate value investigation |
+| Active But Shallow | Activity is present but repertoire or repeat depth is weak | Enablement or workflow redesign |
+| Focused Integration | Repertoire is coherent despite lower volume | Business-context review |
+| Unstable / Insufficient | Evidence is sparse, unstable, or suppressed | Hold interpretation |
+
+Trust classifications:
+
+| Classification | Meaning | Allowed use |
+| --- | --- | --- |
+| Trust Evidence Available | Feedback or verification volume exists | Continue testing |
+| Attribution Hold | Signals exist but parent attribution is noisy | Caveat only |
+| Parent Attribution Ready | Signals attach to one governed parent surface | Eligible for trust review |
+| Trust Calibration Ready | Stable attribution plus risk context exists | Future governed readout candidate |
+
+Reusable leverage classifications:
+
+| Classification | Meaning | Allowed use |
+| --- | --- | --- |
+| Workflow Metadata Hold | GCE workflow metadata does not expose reuse reliably | Do not interpret reuse spread |
+| Skill Read Evidence Available | Agent span logs may expose skill reads | Run aggregate availability tests |
+| Skill Read Ungoverned | Reads lack governed identity or clean attribution | Caveat only |
+| Governed Reuse Ready | Canonical identity, versioning, invocation mode, and joins are stable | Future reuse-depth candidate |
+
+Fallback rule: when Trust Calibration or Reusable Workflow Propagation remains
+held, V4 should fall back to existing V1/V2 behavior evidence: completion,
+abandonment, recovery, verification presence where valid, Quality Multiplier,
+Reliability Factor, Velocity, and Depth Repertoire context. Held trust or reuse
+signals must not be interpreted as negative evidence.
+
 ## Candidate Predictive Tests
 
 ### Skill Catalyst vs Selection Test
 
-Test whether reusable Skills cause later depth or whether already-deep cohorts are simply more likely to create Skills.
+Test whether Skill Read Evidence adds interpretation beyond Velocity and Depth
+Repertoire, or whether already-deep cohorts are simply more likely to trigger
+skill reads.
+
+This test must use aggregate-only agent-span exports. It must not output raw
+skill names, user identifiers, action rows, prompts, outputs, or transcripts.
+Before any catalyst or selection interpretation is allowed, the diagnostic must
+first establish:
+
+- skill-read volume by legacy and shell-based read mechanisms,
+- share of reads logged as `unspecified`,
+- parent workflow/action/session join coverage,
+- stability across fixed windows,
+- whether native/platform skill coverage is sufficient despite enum/mapping
+  requirements,
+- whether UGC/user-created Skills remain outside canonical usage logging,
+- whether Plugin/MCP `find_skills` creates repeat-use gaps after downloads,
+- whether canonical `skill_id`, version, entrypoint, invocation mode, and
+  trigger method become available.
+
+If those conditions fail, Skill Read Evidence remains a data-readiness caveat,
+not a Depth, readiness, or economic-value signal.
 
 ### Time-to-Depth Curve
 

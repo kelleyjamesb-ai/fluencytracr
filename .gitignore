@@ -113,3 +113,7 @@ artifacts/harness/checkpoints/*
 .vercel
 .env*.local
 supabase/.temp/
+
+# Generated dogfood CSV caches
+dogfood-output/v4-trust-signal-availability/
+dogfood-output/v4-skill-read-availability/
