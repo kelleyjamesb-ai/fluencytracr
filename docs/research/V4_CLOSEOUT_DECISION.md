@@ -114,7 +114,7 @@ The behavior cohort classification pass is recorded in
 and the current data-analysis stopping point is recorded in
 [V4_DATA_ANALYSIS_CLOSEOUT.md](./V4_DATA_ANALYSIS_CLOSEOUT.md).
 
-After that process is complete, choose one of three paths:
+After that process is complete, choose one of four paths:
 
 1. Harden the internal AI Scale Readiness readout contract only.
 2. Run strict parent-attribution refinement for trust and verification signals
