@@ -28,7 +28,8 @@ The next V4 planning concepts are:
 - [Economic Impact Bridge](../../concepts/ECONOMIC_IMPACT_BRIDGE.md).
 
 They are concept-stage only. The current Glean dogfood decision records
-`HOLD_FOR_60_DAY_GLEAN_DOGFOOD`, so these concepts do not authorize APIs,
+`PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`, which authorizes
+docs-only internal AI Scale Readiness readout shape. It does not authorize APIs,
 schemas, customer-facing readouts, product surfaces, or economic calculation.
 
 ## Inputs
@@ -239,10 +240,12 @@ Future work may add minimal schemas for each readout after the Markdown contract
 
 The current gate for Scale Readiness to Economic Value is:
 
-- [V4 Scale Readiness caveat propagation decision](../../research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
-- [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
-- [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+- [V4 Scale Readiness caveat propagation decision](../../research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md): `PASS_INTERNAL_READOUT_CONTEXT_ONLY`
+- [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_ATTRIBUTION_REFINEMENT`
+- [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md): `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`
 
-Until that decision promotes a scope, no V4 economic artifact may depend on
-Depth Repertoire, Organizational Segmentation, or the Economic Impact Bridge for
-customer-facing value claims.
+This promotes only the internal AI Scale Readiness readout shape with Depth
+Repertoire context and investigation-routing language. No V4 economic artifact
+may depend on Depth Repertoire, Organizational Segmentation, or the Economic
+Impact Bridge for customer-facing value claims until a later decision explicitly
+promotes that use.

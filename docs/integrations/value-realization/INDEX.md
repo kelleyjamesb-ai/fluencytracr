@@ -145,8 +145,9 @@ Repertoire as an economic dependency.
 
 ## V4 Scale Readiness To Economic Value Status
 
-The next V4 layer is concept-defined but held for 60-day Glean dogfood
-validation:
+The current V4 dogfood phase is closed for internal readout scope. The promoted
+boundary is internal AI Scale Readiness readout shape with Depth Repertoire
+context and Economic Impact Bridge investigation-routing language only:
 
 - [AI Scale Readiness Portfolio](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md)
 - [Organizational Segmentation](../../concepts/ORG_SEGMENTATION.md)
@@ -155,13 +156,17 @@ validation:
 - [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Glean dogfood scale readiness readout](../../research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
 - [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md)
+- [V4 closeout decision](../../research/V4_CLOSEOUT_DECISION.md)
+- [V4 internal readout runbook](../../research/V4_INTERNAL_READOUT_RUNBOOK.md)
+- [V4 internal readout rehearsal](../../research/V4_INTERNAL_READOUT_REHEARSAL.md)
 
-Current decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+Current decision: `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`.
 
-No customer-facing V4 economic readout, API, frontend surface, Time-Saved
+Trust Calibration, Reusable Leverage, Skill Read Evidence as a governed signal,
+customer-facing economic output, APIs, frontend surfaces, Time-Saved
 Defensibility Range productization, Organizational Segmentation runtime support,
-or Economic Impact Bridge runtime support may start until the dogfood decision
-promotes the relevant scope.
+and Economic Impact Bridge runtime support remain held or blocked until a later
+decision promotes the exact scope.
 
 ## Running Multi-Surface Dogfood
 

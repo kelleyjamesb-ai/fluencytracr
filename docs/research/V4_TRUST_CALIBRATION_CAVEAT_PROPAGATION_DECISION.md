@@ -34,13 +34,14 @@ records `PROMOTE_CAVEAT_ONLY`. Trust Calibration may cite Depth Repertoire only 
 
 ## Decision
 
-Decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+Decision: `HOLD_FOR_ATTRIBUTION_REFINEMENT`
 
-Rationale: Trust Calibration is conceptually necessary for V4, but caveat
-propagation has not been tested against aligned 60-day dogfood outputs. The
-readout must prove that verification and feedback signals are available,
-properly joined, aggregate-only, and interpreted without rewarding maximum
-verification or penalizing low verification when risk context is missing.
+Rationale: the aligned 60-day dogfood outputs show that verification and
+feedback signals exist, including chat citation activity, answer votes, summary
+votes, search feedback, chat feedback, and AGENT-related explicit feedback.
+However, parent attribution is not yet strict enough to promote Trust
+Calibration as a governed readout. Signals must join to exactly one governed
+parent surface before they can shape trust interpretation.
 
 ## Required Dogfood Evidence
 
@@ -89,11 +90,12 @@ This decision preserves:
 
 ## Required Next Phase
 
-Run the Glean dogfood fixed-window test and include Trust Calibration evidence
-in [V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md](./V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md).
+Run a strict parent-attribution refinement pass for the trust and verification
+signals already observed in the Glean dogfood run. The next pass should prove
+join coverage by parent surface and continue to emit aggregate-only results.
 Then update
 [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
-with a promote, narrow, or hold decision.
+with a promote, narrow, or continued hold decision.
 
 ## What Remains Blocked
 

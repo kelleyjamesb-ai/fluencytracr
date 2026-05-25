@@ -34,20 +34,23 @@ promotes economic use.
 
 ## Decision
 
-Decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+Decision: `PASS_INTERNAL_READOUT_CONTEXT_ONLY`
 
-Rationale: the portfolio concept is governance-safe, but caveat propagation has
-not been proven against aligned 60-day dogfood outputs. Scale readiness cannot
-depend on Depth Repertoire, alter economic confidence, or support customer-facing
-portfolio claims until the planned Glean dogfood run tests the full evidence set.
+Rationale: the three-window Glean dogfood run has now produced enough aggregate
+evidence to carry Depth Repertoire into the AI Scale Readiness Portfolio as
+internal readout context. Depth Repertoire adds useful interpretation beyond
+Velocity alone by distinguishing activity volume from repeated cross-surface
+repertoire.
 
-This hold is not a rejection. It preserves the concept while blocking premature
-contract hardening and productization.
+This pass is intentionally narrow. It does not authorize runtime APIs, schemas,
+customer-facing portfolio surfaces, economic output, Time-Saved Defensibility
+Range productization, automated recommendations, or customer-facing claims.
+Depth Repertoire may support internal intervention selection and investigation
+routing only.
 
 ## Required Dogfood Evidence
 
-The next validation pass must use at least three matching 60-day windows and
-include:
+The dogfood validation pass reviewed three matching 60-day windows and included:
 
 - V3 verdict metadata,
 - Velocity,
@@ -59,8 +62,10 @@ include:
 - data readiness gate results,
 - segment coverage where safe.
 
-The readout must show whether readiness zones are stable, interpretable, and
-different from Velocity alone.
+The readout showed that Depth Repertoire is interpretable enough to support
+internal scale-readiness context. It also showed that Trust Calibration and
+Reusable Workflow Leverage remain held, so those signals must travel only as
+classification caveats.
 
 ## Required Caveats
 
@@ -94,19 +99,22 @@ This decision preserves:
 
 ## Required Next Phase
 
-Run the Glean dogfood fixed-window test and produce
-[V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md](./V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md).
-Then update
-[V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
-with a promote, narrow, or hold decision.
+Harden the docs-only internal readout contract in
+[scale-readiness-portfolio.md](../contracts/value-confidence/scale-readiness-portfolio.md).
+The contract may define Depth Repertoire context classifications, Trust
+classification caveats, Reusable Leverage classification caveats, and
+investigation-routing language. It must not create runtime behavior or
+customer-facing economic output.
 
 ## What Remains Blocked
 
-- AI Scale Readiness contract hardening beyond documentation-stage language.
-- Any API, schema, or customer-facing portfolio surface.
+- Runtime API or schema implementation.
+- Customer-facing portfolio surfaces.
 - Any portfolio dependency on Depth Repertoire for economic confidence.
-- Any portfolio use of Glean dogfood values as thresholds, defaults, calibration
-  values, or customer benchmarks.
+- Time-Saved Defensibility Range productization.
+- Automated recommendations.
+- Any portfolio use of Glean dogfood values as thresholds, defaults,
+  calibration values, or customer benchmarks.
 
 ## Open Questions
 

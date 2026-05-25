@@ -18,6 +18,8 @@ V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.s
 V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
 AGENT_JOIN_KEY_SQL = ROOT / "sql" / "dogfood" / "agent_snapshot_join_key_diagnostic.sql"
 TAXONOMY_QM_RF_SQL = ROOT / "sql" / "dogfood" / "taxonomy_qm_rf_diagnostic.sql"
+SKILL_READ_SQL = ROOT / "sql" / "dogfood" / "skill_read_availability_diagnostic.sql"
+SCALE_READINESS_CONTRACT = ROOT / "docs" / "contracts" / "value-confidence" / "scale-readiness-portfolio.md"
 
 DOGFOOD_SQL = [
     SQL,
@@ -35,6 +37,7 @@ DOGFOOD_SQL = [
     V4_REUSE_SQL,
     AGENT_JOIN_KEY_SQL,
     TAXONOMY_QM_RF_SQL,
+    SKILL_READ_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [
@@ -367,3 +370,52 @@ def test_taxonomy_qm_rf_diagnostic_emits_work_mode_aggregate_inputs() -> None:
     assert "SEARCH_FEEDBACK" in sql
     assert "observed_event_proxy" in sql
     assert "workflow_status" in sql
+
+
+def test_skill_read_availability_diagnostic_is_aggregate_only() -> None:
+    sql = SKILL_READ_SQL.read_text()
+
+    for field in [
+        "jsonPayload.action.agentmetadata.inputs",
+        "jsonPayload.action.spaninfo.inputs",
+        "jsonPayload.action.skill_reader_attributes.skill_name",
+        "read_mechanism",
+        "skill_name_status",
+        "parent_join_status",
+        "skill_read_rows",
+        "distinct_specified_skill_names",
+        "overall_unspecified_share",
+        "overall_parent_join_key_share",
+        "availability_status",
+    ]:
+        assert field in sql
+
+    final_select = sql.split("SELECT\n  DATE(window_start)", 1)[1]
+    assert "observed_skill_name" not in final_select
+    assert "GROUP BY observed_skill_name" not in sql
+    assert "COUNT(DISTINCT IF(skill_name_status = 'specified', observed_skill_name, NULL))" in sql
+
+
+def test_scale_readiness_contract_carries_depth_context_without_runtime_promotion() -> None:
+    contract = SCALE_READINESS_CONTRACT.read_text()
+
+    for required in [
+        "PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT",
+        "INTEGRATED_REPERTOIRE",
+        "ACTIVE_BUT_SHALLOW",
+        "FOCUSED_INTEGRATION",
+        "UNSTABLE_OR_INSUFFICIENT",
+        "TRUST_ATTRIBUTION_HOLD",
+        "SKILL_READ_EVIDENCE_AVAILABLE",
+        "PROMOTE_INVESTIGATION_ROUTING_ONLY",
+        "This contract is approved for internal Glean dogfood readout shape only.",
+        "does not approve runtime APIs, schemas, customer-facing readouts",
+    ]:
+        assert required in contract
+
+    for blocked in [
+        "hidden multiplier",
+        "Raw skill names must not appear",
+        "does not produce economic output",
+    ]:
+        assert blocked in contract
