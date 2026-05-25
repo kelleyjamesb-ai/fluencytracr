@@ -82,6 +82,40 @@ Supporting decisions:
 - Reusable Workflow Leverage: `HOLD_FOR_GOVERNED_IDENTITY_AND_JOIN_COVERAGE`
 - Economic Impact Bridge: `PROMOTE_INVESTIGATION_ROUTING_ONLY`
 
+## Promotion Lock
+
+This decision locks the promoted V4 scope to internal AI Scale Readiness
+readout shape only.
+
+Promoted:
+
+- AI Scale Readiness internal readout shape,
+- Depth Repertoire as aggregate context for action posture selection,
+- Economic Impact Bridge language for value-investigation routing only,
+- docs-only contract hardening for the internal readout boundary.
+
+Held:
+
+- Trust Calibration as a governed readout,
+- Skill Read Evidence as governed reusable leverage,
+- Reusable Workflow Propagation and Named Workflow Leverage,
+- Organizational Segmentation runtime support,
+- customer-facing V4 economic output,
+- Time-Saved Defensibility Range productization,
+- automated recommendations.
+
+Allowed next work must stay inside one of these paths:
+
+- docs-only internal AI Scale Readiness contract refinement,
+- dogfood/research attribution diagnostics for trust and verification signals,
+- dogfood/research Skill Read Evidence diagnostics that emit aggregate
+  availability only and no raw skill names,
+- design discussion for customer-facing economic output, without implementation.
+
+Any API, schema, endpoint, product surface, customer-facing economic output, or
+runtime implementation remains blocked until a later decision explicitly
+promotes that exact scope.
+
 ## Decision Criteria For Promotion
 
 A later update may promote only if the dogfood readout shows:

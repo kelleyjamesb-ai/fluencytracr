@@ -241,7 +241,7 @@ Future work may add minimal schemas for each readout after the Markdown contract
 The current gate for Scale Readiness to Economic Value is:
 
 - [V4 Scale Readiness caveat propagation decision](../../research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md): `PASS_INTERNAL_READOUT_CONTEXT_ONLY`
-- [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+- [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_ATTRIBUTION_REFINEMENT`
 - [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md): `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`
 
 This promotes only the internal AI Scale Readiness readout shape with Depth

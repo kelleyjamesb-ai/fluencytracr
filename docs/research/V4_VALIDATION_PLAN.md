@@ -135,13 +135,14 @@ workflows, where to calibrate trust, and where evidence is too weak to act.
 The current caveat propagation decisions are:
 
 - [V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md](./V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
-  records `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+  records `PASS_INTERNAL_READOUT_CONTEXT_ONLY`.
 - [V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
-  records `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+  records `HOLD_FOR_ATTRIBUTION_REFINEMENT`.
 - [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
-  records the overall current decision: `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`.
+  records the overall current decision:
+  `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`.
 
-The required next evidence step is a Glean internal dogfood run across three
+The required fixed-window Glean internal dogfood run has completed across three
 60-day-compliant windows:
 
 | Window | Start | End |
@@ -150,12 +151,17 @@ The required next evidence step is a Glean internal dogfood run across three
 | 2 | 2026-02-21 | 2026-04-22 |
 | 3 | 2026-01-22 | 2026-03-23 |
 
-That run must align V3 verdict metadata, Velocity, Quality Multiplier,
-Reliability Factor, Depth Repertoire, Trust Calibration evidence, data readiness
-gates, and safe segmentation coverage to the same cohort/window keys. Until the
-dogfood decision promotes a scope, no V4 economic API, customer-facing readout,
-Time-Saved Defensibility Range productization, Organizational Segmentation
-runtime support, or Economic Impact Bridge runtime support may start.
+That run aligned V3 verdict metadata, Velocity, Quality Multiplier, Reliability
+Factor, Depth Repertoire, trust-signal availability, data readiness gates, and
+safe aggregate context to the same cohort/window keys. The promotion is locked
+to internal AI Scale Readiness readout shape with Depth Repertoire context and
+value-investigation routing language only.
+
+No V4 economic API, customer-facing readout, Time-Saved Defensibility Range
+productization, Organizational Segmentation runtime support, Economic Impact
+Bridge runtime support, Trust Calibration governed readout, or Skill Read
+Evidence reuse-depth interpretation may start until a later decision promotes
+that exact scope.
 
 ## V4 Closeout Test Plan
 
