@@ -1,0 +1,2 @@
+window_start,window_end,read_mechanism,skill_name_status,parent_join_status,skill_read_rows,distinct_specified_skill_names,rows_with_workflow_run_id,rows_with_action_run_id,rows_with_session_token,distinct_workflow_runs,distinct_action_runs,distinct_sessions,skill_read_share,overall_unspecified_share,overall_parent_join_key_share,availability_status
+2026-03-23,2026-05-22,shell_skill_reader_attributes,specified,has_parent_join_key,1473686,85,793514,1473686,0,4343,1472481,0,1.0,0.0,1.0,SKILL_READ_EVIDENCE_AVAILABLE
