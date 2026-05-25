@@ -1,0 +1,23 @@
+area,metric,window_1,window_2,window_3,three_window_total,result
+Depth Repertoire,overall cohort,1869820,1915311,1901222,,stable
+Depth Repertoire,overall depth p50,1,2,3,,stable
+Depth Repertoire,overall depth p90,25,25,25,,stable
+Depth Repertoire,overall depth p99,48,49,49,,stable
+Trust Availability,CHAT_CITATION_CLICK,1211558,127143,248304,1587005,available attribution held
+Trust Availability,CHAT_CITATIONS,281920,439811,289950,1011681,available attribution held
+Trust Availability,CHAT_FEEDBACK,312589,313122,243439,869150,available attribution held
+Trust Availability,AI_ANSWER_VOTE,3422,3643,4424,11489,available attribution held
+Trust Availability,AI_SUMMARY_VOTE,320,393,501,1214,available attribution held
+Trust Availability,SEARCH_FEEDBACK,2616,3158,8675,14449,available attribution held
+Trust Attribution,CHAT_FEEDBACK strict/session attributed,,,,375674,narrow candidate
+Trust Attribution,SEARCH_FEEDBACK strict attributed,,,,2663,narrow candidate
+Trust Attribution,CHAT_CITATION_CLICK strict/session attributed,,,,0,hold aliasing
+Trust Attribution,AI_ANSWER_VOTE strict/session attributed,,,,0,hold aliasing
+AGENT Feedback,AGENT_RELATED_TIME_SAVED_FEEDBACK,,,,57892,available attribution held
+AGENT Feedback,AGENT_RELATED_UPVOTE_STYLE_FEEDBACK,,,,43070,available attribution held
+AGENT Feedback,AGENT_RELATED_DOWNVOTE_STYLE_FEEDBACK,,,,33257,available attribution held
+Skill Read Evidence,skill reads with parent join,1473686,596761,140167,,available not trust
+Skill Read Evidence,parent join share,100.00%,99.27%,96.35%,,available not trust
+Cohorts,behavior-derived cohorts,,,,,ready for next test
+Cohorts,org metadata cohorts,,,,,held for approved aggregate join
+Economic Bridge,customer-facing economic output,,,,,held

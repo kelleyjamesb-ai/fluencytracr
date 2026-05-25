@@ -35,6 +35,10 @@ Skill Read Evidence availability:
 - `v4-skill-read-availability/skill_read_availability_window_3.csv`
 - `v4-skill-read-availability/skill_read_availability_all_windows.csv`
 
+Full dogfood rehearsal:
+
+- `v4-full-dogfood-rehearsal/v4_rehearsal_summary.csv`
+
 ## QA-Only Aggregate Attribution CSVs
 
 These files are tracked for narrow attribution QA only. They may include

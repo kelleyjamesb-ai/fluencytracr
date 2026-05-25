@@ -107,6 +107,8 @@ investigation is warranted.
 The next phase should not broaden V4. The internal operating process is defined
 in [V4_INTERNAL_READOUT_RUNBOOK.md](./V4_INTERNAL_READOUT_RUNBOOK.md), with a
 tracked rehearsal in [V4_INTERNAL_READOUT_REHEARSAL.md](./V4_INTERNAL_READOUT_REHEARSAL.md).
+The first numbers-backed local rehearsal is recorded in
+[V4_FULL_DOGFOOD_REHEARSAL_READOUT.md](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md).
 
 After that process is complete, choose one of three paths:
 
