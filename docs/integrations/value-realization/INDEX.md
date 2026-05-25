@@ -157,6 +157,8 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 Glean dogfood scale readiness readout](../../research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
 - [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md)
 - [V4 closeout decision](../../research/V4_CLOSEOUT_DECISION.md)
+- [V4 internal readout runbook](../../research/V4_INTERNAL_READOUT_RUNBOOK.md)
+- [V4 internal readout rehearsal](../../research/V4_INTERNAL_READOUT_REHEARSAL.md)
 
 Current decision: `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`.
 

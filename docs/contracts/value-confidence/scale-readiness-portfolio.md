@@ -13,6 +13,8 @@ Status: docs-only internal readout contract. The governing concept is
 The current dogfood decision records
 `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT` in
 [V4_GLEAN_DOGFOOD_DECISION.md](../../research/V4_GLEAN_DOGFOOD_DECISION.md).
+The final closeout decision records `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`
+in [V4_CLOSEOUT_DECISION.md](../../research/V4_CLOSEOUT_DECISION.md).
 
 This contract is approved for internal Glean dogfood readout shape only. It
 does not approve runtime APIs, schemas, customer-facing readouts, frontend
@@ -183,6 +185,24 @@ A portfolio readout should include:
 - investigation route,
 - required caveats,
 - blocked claims.
+
+## Operational Controls
+
+The repeatable process is governed by
+[V4_INTERNAL_READOUT_RUNBOOK.md](../../research/V4_INTERNAL_READOUT_RUNBOOK.md).
+Reusable operator templates live under
+[docs/research/templates/](../../research/templates/).
+
+Before any internal readout is used, the operator must complete:
+
+- input checklist,
+- evidence-gap checklist,
+- aggregate-only safety review,
+- held-signal review,
+- decision memo.
+
+These controls are operational process artifacts. They do not add runtime
+fields, APIs, schemas, product surfaces, or customer-facing economic output.
 
 ## Required Caveats
 

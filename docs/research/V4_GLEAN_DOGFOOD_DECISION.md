@@ -132,11 +132,12 @@ A later update may promote only if the dogfood readout shows:
 
 ## Required Next Phase
 
-Create a narrow internal readout contract for AI Scale Readiness with Depth
-Repertoire context. The contract should define the decision shape, caveats,
-classification states, and blocked claims. It should not add runtime behavior
-unless a later implementation PR explicitly promotes the smallest necessary API
-or schema surface.
+Maintain and harden the narrow internal readout contract for AI Scale Readiness
+with Depth Repertoire context. The contract defines the decision shape,
+caveats, classification states, and blocked claims. The repeatable operating
+process is defined in [V4_INTERNAL_READOUT_RUNBOOK.md](./V4_INTERNAL_READOUT_RUNBOOK.md).
+It should not add runtime behavior unless a later implementation PR explicitly
+promotes the smallest necessary API or schema surface.
 
 Parallel research can continue on:
 

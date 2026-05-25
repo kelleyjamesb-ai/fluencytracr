@@ -30,6 +30,8 @@ Canonical validation gate documents:
 - [V4 Value Confidence Caveat Propagation Runbook](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
 - [V4 TSDR Caveat Propagation Decision](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 AI Value Leakage Map Caveat Propagation Decision](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 Internal Readout Runbook](./V4_INTERNAL_READOUT_RUNBOOK.md)
+- [V4 Internal Readout Rehearsal](./V4_INTERNAL_READOUT_REHEARSAL.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -198,7 +200,9 @@ Closeout should proceed in this order:
    behavior.
 5. Update the Glean dogfood decision with one of the existing hold/promote
    options.
-6. Stop before runtime buildout. API, schema, or contract work is not
+6. Complete the internal readout runbook, templates, and rehearsal from tracked
+   aggregate exports.
+7. Stop before runtime buildout. API, schema, or contract work is not
    permanently off the table, but it must be sparse, explicitly promoted by the
    dogfood decision, and limited to the smallest surface needed to preserve the
    governed evidence boundary. No UI, economic ranges, or automated

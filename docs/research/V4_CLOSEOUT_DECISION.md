@@ -95,7 +95,7 @@ Blocked until a later decision explicitly promotes the exact scope:
 V4 can now close the current dogfood phase with a defensible landing point:
 
 > FluencyTracr can use aggregate behavioral evidence to identify where internal
-> Glean AI Scale Readiness appears strong, shallow, frictioned, trust-limited,
+> Glean AI Scale Readiness appears strong, shallow, frictioned, trust-held,
 > expansion-ready, or insufficient.
 
 That is not yet a customer-facing economic product. It is an internal decision
@@ -104,7 +104,11 @@ investigation is warranted.
 
 ## Required Next Phase
 
-The next phase should not broaden V4. It should choose one of three paths:
+The next phase should not broaden V4. The internal operating process is defined
+in [V4_INTERNAL_READOUT_RUNBOOK.md](./V4_INTERNAL_READOUT_RUNBOOK.md), with a
+tracked rehearsal in [V4_INTERNAL_READOUT_REHEARSAL.md](./V4_INTERNAL_READOUT_REHEARSAL.md).
+
+After that process is complete, choose one of three paths:
 
 1. Harden the internal AI Scale Readiness readout contract only.
 2. Run strict parent-attribution refinement for trust and verification signals.

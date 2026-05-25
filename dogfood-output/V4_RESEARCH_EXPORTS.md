@@ -5,7 +5,10 @@ model review. These files are internal Glean dogfood observations, not customer
 benchmarks, thresholds, defaults, calibration values, or customer-facing
 economic outputs.
 
-## Included CSVs
+## Readout And Broad LM-Review CSVs
+
+This list is the explicit allowlist for V4 internal readout rehearsal and broad
+LM review. Do not load every CSV under `dogfood-output/`.
 
 Depth Repertoire:
 
@@ -15,15 +18,11 @@ Depth Repertoire:
 
 Trust signal availability:
 
-- `v4-trust-signal-availability/trust_signal_availability_window_1.csv`
-- `v4-trust-signal-availability/trust_signal_availability_window_2.csv`
-- `v4-trust-signal-availability/trust_signal_availability_window_3.csv`
-- `v4-trust-signal-availability/trust_signal_availability_all_windows.csv`
+- `v4-trust-signal-availability/trust_signal_availability_summary_safe.csv`
 
 AGENT feedback availability:
 
-- `v4-trust-signal-availability/agent-feedback/agent_feedback_probe_window_1.csv`
-- `v4-trust-signal-availability/agent-feedback/agent_feedback_vote_probe_window_1.csv`
+- `v4-trust-signal-availability/agent-feedback/agent_feedback_summary_safe.csv`
 
 Skill Read Evidence availability:
 
@@ -32,13 +31,38 @@ Skill Read Evidence availability:
 - `v4-skill-read-availability/skill_read_availability_window_3.csv`
 - `v4-skill-read-availability/skill_read_availability_all_windows.csv`
 
+## QA-Only Aggregate Attribution CSVs
+
+These files are tracked for narrow attribution QA only. They may include
+low-count join rows or diagnostic details and must not be used as broad
+LM-review inputs or narrative readout tables.
+
+Trust attribution QA:
+
+- `v4-trust-signal-availability/trust_signal_availability_window_1.csv`
+- `v4-trust-signal-availability/trust_signal_availability_window_2.csv`
+- `v4-trust-signal-availability/trust_signal_availability_window_3.csv`
+- `v4-trust-signal-availability/trust_signal_availability_all_windows.csv`
+
+AGENT feedback QA:
+
+- `v4-trust-signal-availability/agent-feedback/agent_feedback_probe_window_1.csv`
+- `v4-trust-signal-availability/agent-feedback/agent_feedback_vote_probe_window_1.csv`
+
 ## Excluded Scratch Files
 
 Some ignored local `.csv` files contain copied SQL text or scratch query output
 and are not valid data exports. They are intentionally not tracked.
+
+Older dogfood CSVs and QA-only attribution CSVs are not part of the V4 internal
+readout rehearsal unless a later manifest explicitly promotes a sanitized
+summary.
 
 ## Guardrails
 
 The tracked research exports must remain aggregate-only. They must not contain
 raw user IDs, emails, raw skill names, prompts, outputs, transcripts, action
 rows, or raw event rows.
+
+Narrative readouts and broad LM-review bundles must not surface rows with user
+or cohort counts below 5.

@@ -7,7 +7,7 @@ Readiness to Economic Value plan. It records what the three-window evidence
 shows, what remains blocked, and what V4 can safely claim before any contract
 hardening decision.
 
-Current status: `DOGFOOD_EXPORTS_REVIEWED`
+Current status: `CLOSED_PROMOTED_INTERNAL_READOUT`
 
 This readout is not customer-facing. It adds no runtime behavior, APIs, schemas,
 Prisma migrations, frontend surfaces, ROI calculation, causal claim, prediction
@@ -34,8 +34,10 @@ Aggregate-only BigQuery exports were produced for:
 - Reliability Factor inputs,
 - Trust Calibration evidence where observable.
 
-The run scanned approximately 17.49 TB. Generated CSV outputs were written
-outside the repository and were not committed.
+The run scanned approximately 17.49 TB. The aggregate CSV exports needed for
+rehearsal are tracked in
+[dogfood-output/V4_RESEARCH_EXPORTS.md](../../dogfood-output/V4_RESEARCH_EXPORTS.md).
+Scratch `.csv` files that contain copied SQL text remain excluded.
 
 ## Data Readiness Status
 
@@ -205,7 +207,7 @@ promote Trust Calibration until strict one-parent attribution is validated.
 The correct conclusion is:
 
 > Trust signals exist, but the current attribution logic is not precise enough
-> to score, rank, or interpret trust behavior.
+> for governed trust interpretation.
 
 Trust Calibration remains blocked until verification and feedback joins are
 validated with stricter parent-surface attribution. It may become a data
@@ -402,5 +404,7 @@ Supporting decisions:
 - Reusable Workflow Leverage: `HOLD_FOR_GOVERNED_IDENTITY_AND_JOIN_COVERAGE`,
 - Economic Impact Bridge: `PROMOTE_INVESTIGATION_ROUTING_ONLY`.
 
-The next durable artifact is the internal readout contract in
+The durable internal readout contract is
 [scale-readiness-portfolio.md](../contracts/value-confidence/scale-readiness-portfolio.md).
+The repeatable operating process is defined in
+[V4_INTERNAL_READOUT_RUNBOOK.md](./V4_INTERNAL_READOUT_RUNBOOK.md).
