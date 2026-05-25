@@ -2,6 +2,8 @@
 
 ## Last Completed
 
+- PR #304 review fixes: deduplicated trust-signal join counts by internal signal key so alias fanout cannot inflate join rates, added a zero-volume Skill Read Evidence scaffold row that emits `NO_SKILL_READ_VOLUME`, and pinned both cases in `tests/dogfood/test_velocity_double_count.py`.
+- PR #304 conflict reconciliation: merged current `main` into `codex/OrgFluency-v4-scale-readiness-economic-value`, preserving the branch's V4 trust-attribution, behavior-cohort, full-rehearsal, and data-analysis closeout artifacts while carrying forward the current V4 caveat and internal-readout governance; verified with the dogfood SQL contract test, V1 governance gates, docs contract sweep, semantic drift guard, conflict-marker scan, and diff whitespace checks.
 - Security check auth hardening: fixed critical `POST /auth/token` exposure by requiring a server-side issuer secret outside local development/test, making production/managed runtime JWT signing fail closed without `JWT_SECRET`, documenting `AUTH_TOKEN_ISSUER_SECRET`, removing the token-minting escape hatch from production runtimes, and preserving local/test fallback behavior only for development. Scan report: `/tmp/codex-security-scans/FluencyTracr/c7bfb4a_20260524T070208Z/report.md`.
 - Reuse propagation diagnostic review fix: updated `snapshot_join_coverage` so candidate and unmatched coverage fields count distinct workflows instead of runs; focused SQL contract test passed.
 - PR #275 conflict reconciliation: merged current `main` into `dogfood/fix-reuse-propagation-diagnostic`, preserving `main`'s V4 join-key diagnostic/readout and keeping the PR's separate reusable workflow propagation diagnostic plus workflow-granularity coverage test.

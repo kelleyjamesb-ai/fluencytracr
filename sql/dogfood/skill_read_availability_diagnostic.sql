@@ -124,23 +124,42 @@ overall AS (
     COUNTIF(skill_name_status = 'specified') AS specified_skill_read_rows,
     COUNTIF(parent_join_status = 'has_parent_join_key') AS rows_with_parent_join_key
   FROM classified_reads
+),
+
+aggregate_output AS (
+  SELECT * FROM aggregate_by_path
+  UNION ALL
+  SELECT
+    'no_skill_read_volume' AS read_mechanism,
+    'missing' AS skill_name_status,
+    'missing_parent_join_key' AS parent_join_status,
+    0 AS skill_read_rows,
+    0 AS distinct_specified_skill_names,
+    0 AS rows_with_workflow_run_id,
+    0 AS rows_with_action_run_id,
+    0 AS rows_with_session_token,
+    0 AS distinct_workflow_runs,
+    0 AS distinct_action_runs,
+    0 AS distinct_sessions
+  FROM overall
+  WHERE overall.total_skill_read_rows = 0
 )
 
 SELECT
   DATE(window_start) AS window_start,
   DATE(window_end) AS window_end,
-  aggregate_by_path.read_mechanism,
-  aggregate_by_path.skill_name_status,
-  aggregate_by_path.parent_join_status,
-  aggregate_by_path.skill_read_rows,
-  aggregate_by_path.distinct_specified_skill_names,
-  aggregate_by_path.rows_with_workflow_run_id,
-  aggregate_by_path.rows_with_action_run_id,
-  aggregate_by_path.rows_with_session_token,
-  aggregate_by_path.distinct_workflow_runs,
-  aggregate_by_path.distinct_action_runs,
-  aggregate_by_path.distinct_sessions,
-  SAFE_DIVIDE(aggregate_by_path.skill_read_rows, overall.total_skill_read_rows) AS skill_read_share,
+  aggregate_output.read_mechanism,
+  aggregate_output.skill_name_status,
+  aggregate_output.parent_join_status,
+  aggregate_output.skill_read_rows,
+  aggregate_output.distinct_specified_skill_names,
+  aggregate_output.rows_with_workflow_run_id,
+  aggregate_output.rows_with_action_run_id,
+  aggregate_output.rows_with_session_token,
+  aggregate_output.distinct_workflow_runs,
+  aggregate_output.distinct_action_runs,
+  aggregate_output.distinct_sessions,
+  SAFE_DIVIDE(aggregate_output.skill_read_rows, overall.total_skill_read_rows) AS skill_read_share,
   SAFE_DIVIDE(overall.unspecified_skill_read_rows, overall.total_skill_read_rows) AS overall_unspecified_share,
   SAFE_DIVIDE(overall.rows_with_parent_join_key, overall.total_skill_read_rows) AS overall_parent_join_key_share,
   CASE
@@ -151,9 +170,9 @@ SELECT
       THEN 'HOLD_LOW_PARENT_JOIN_COVERAGE'
     ELSE 'SKILL_READ_EVIDENCE_AVAILABLE'
   END AS availability_status
-FROM aggregate_by_path
+FROM aggregate_output
 CROSS JOIN overall
 ORDER BY
-  aggregate_by_path.read_mechanism,
-  aggregate_by_path.skill_name_status,
-  aggregate_by_path.parent_join_status;
+  aggregate_output.read_mechanism,
+  aggregate_output.skill_name_status,
+  aggregate_output.parent_join_status;

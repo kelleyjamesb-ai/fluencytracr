@@ -38,6 +38,11 @@ Describe any caveat-only or availability-only use.
 
 Do not surface low-count rows as examples.
 
+For trust attribution diagnostics, use the tier language from
+[V4_TRUST_ATTRIBUTION_METHOD.md](../V4_TRUST_ATTRIBUTION_METHOD.md):
+`EXACT_PARENT_KEY`, `SESSION_PARENT_KEY`, `PROXIMITY_RESEARCH_ONLY`,
+`AMBIGUOUS_PARENT`, `CROSS_SURFACE_ALIAS`, and `NO_PARENT`.
+
 ## Blocked Use
 
 List what this signal must not do while held.

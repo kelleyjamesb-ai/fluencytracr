@@ -145,6 +145,8 @@ Why:
 Trust evidence is present, but its parent joins are noisy. Cleaning attribution
 is the highest-leverage next validation because it could convert trust from a
 caveat into a governed readiness input without broadening the product surface.
+The governing method is
+[V4_TRUST_ATTRIBUTION_METHOD.md](./V4_TRUST_ATTRIBUTION_METHOD.md).
 
 Second action:
 

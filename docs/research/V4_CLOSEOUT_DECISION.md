@@ -107,12 +107,27 @@ investigation is warranted.
 The next phase should not broaden V4. The internal operating process is defined
 in [V4_INTERNAL_READOUT_RUNBOOK.md](./V4_INTERNAL_READOUT_RUNBOOK.md), with a
 tracked rehearsal in [V4_INTERNAL_READOUT_REHEARSAL.md](./V4_INTERNAL_READOUT_REHEARSAL.md).
+The first numbers-backed local rehearsal is recorded in
+[V4_FULL_DOGFOOD_REHEARSAL_READOUT.md](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md).
+The behavior cohort classification pass is recorded in
+[V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md),
+and the current data-analysis stopping point is recorded in
+[V4_DATA_ANALYSIS_CLOSEOUT.md](./V4_DATA_ANALYSIS_CLOSEOUT.md).
 
-After that process is complete, choose one of three paths:
+After that process is complete, choose one of four paths:
 
 1. Harden the internal AI Scale Readiness readout contract only.
-2. Run strict parent-attribution refinement for trust and verification signals.
-3. Validate Skill Read Evidence identity and join coverage without emitting raw
+2. Run strict parent-attribution refinement for trust and verification signals
+   using [V4_TRUST_ATTRIBUTION_METHOD.md](./V4_TRUST_ATTRIBUTION_METHOD.md).
+   The first fixed-window test is recorded in
+   [V4_TRUST_ATTRIBUTION_TEST_READOUT.md](./V4_TRUST_ATTRIBUTION_TEST_READOUT.md)
+   and narrows the next trust phase to strict/session-attributable signals.
+3. Run the behavior-derived cohort and trust classification plan in
+   [V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](./V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md).
+   This starts with Velocity, Depth Repertoire, AGENT delegation, and
+   skill-read presence bands; org metadata segments remain held until an
+   approved aggregate join exists.
+4. Validate Skill Read Evidence identity and join coverage without emitting raw
    skill names.
 
 Customer-facing economic output should wait until at least one later decision

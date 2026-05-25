@@ -129,6 +129,11 @@ Allowed decisions:
 Do not use this runbook to promote customer-facing economic output. That
 requires a later governance decision.
 
+Trust attribution refinement should follow
+[V4_TRUST_ATTRIBUTION_METHOD.md](./V4_TRUST_ATTRIBUTION_METHOD.md) and the
+dogfood SQL diagnostic
+[trust_attribution_refinement_diagnostic.sql](../../sql/dogfood/trust_attribution_refinement_diagnostic.sql).
+
 ## Validation Commands
 
 Run:

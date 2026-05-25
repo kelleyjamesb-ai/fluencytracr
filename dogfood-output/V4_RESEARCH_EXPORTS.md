@@ -20,6 +20,10 @@ Trust signal availability:
 
 - `v4-trust-signal-availability/trust_signal_availability_summary_safe.csv`
 
+Trust attribution refinement:
+
+- `v4-trust-attribution-refinement/v4_trust_attribution_summary.csv`
+
 AGENT feedback availability:
 
 - `v4-trust-signal-availability/agent-feedback/agent_feedback_summary_safe.csv`
@@ -30,6 +34,15 @@ Skill Read Evidence availability:
 - `v4-skill-read-availability/skill_read_availability_window_2.csv`
 - `v4-skill-read-availability/skill_read_availability_window_3.csv`
 - `v4-skill-read-availability/skill_read_availability_all_windows.csv`
+
+Full dogfood rehearsal:
+
+- `v4-full-dogfood-rehearsal/v4_rehearsal_summary.csv`
+
+Trust and behavior cohort classification:
+
+- `v4-trust-cohort-classification/v4_trust_classification_summary_safe.csv`
+- `v4-trust-cohort-classification/v4_behavior_cohort_readiness_summary.csv`
 
 ## QA-Only Aggregate Attribution CSVs
 
@@ -48,6 +61,20 @@ AGENT feedback QA:
 
 - `v4-trust-signal-availability/agent-feedback/agent_feedback_probe_window_1.csv`
 - `v4-trust-signal-availability/agent-feedback/agent_feedback_vote_probe_window_1.csv`
+
+Trust attribution refinement QA:
+
+- `v4-trust-attribution-refinement/v4_trust_attribution_window_1.csv`
+- `v4-trust-attribution-refinement/v4_trust_attribution_window_2.csv`
+- `v4-trust-attribution-refinement/v4_trust_attribution_window_3.csv`
+- `v4-trust-attribution-refinement/v4_trust_attribution_all_windows.csv`
+
+Trust classification QA:
+
+- `v4-trust-cohort-classification/v4_trust_classification_window_1.csv`
+- `v4-trust-cohort-classification/v4_trust_classification_window_2.csv`
+- `v4-trust-cohort-classification/v4_trust_classification_window_3.csv`
+- `v4-trust-cohort-classification/v4_trust_classification_all_windows.csv`
 
 ## Excluded Scratch Files
 

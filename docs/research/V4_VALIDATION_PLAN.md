@@ -32,6 +32,9 @@ Canonical validation gate documents:
 - [V4 AI Value Leakage Map Caveat Propagation Decision](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Internal Readout Runbook](./V4_INTERNAL_READOUT_RUNBOOK.md)
 - [V4 Internal Readout Rehearsal](./V4_INTERNAL_READOUT_REHEARSAL.md)
+- [V4 Full Dogfood Rehearsal Readout](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
+- [V4 Behavior Cohort Classification Readout](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
+- [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -140,6 +143,9 @@ The current caveat propagation decisions are:
   records `PASS_INTERNAL_READOUT_CONTEXT_ONLY`.
 - [V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
   records `HOLD_FOR_ATTRIBUTION_REFINEMENT`.
+- [V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](./V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md)
+  records the next research path: classify narrow trust evidence and test
+  behavior-derived cohorts before any org metadata cohort is used.
 - [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
   records the overall current decision:
   `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`.
@@ -164,6 +170,12 @@ productization, Organizational Segmentation runtime support, Economic Impact
 Bridge runtime support, Trust Calibration governed readout, or Skill Read
 Evidence reuse-depth interpretation may start until a later decision promotes
 that exact scope.
+
+Behavior-derived cohort classification may be tested in research using
+Velocity band, Depth Repertoire band, AGENT delegation band, and skill-read
+presence band. Department, function, level, manager/IC, leader, region, and
+other org metadata cohorts remain held until an approved aggregate join path
+exists and the segment coverage gate passes.
 
 ## V4 Closeout Test Plan
 
