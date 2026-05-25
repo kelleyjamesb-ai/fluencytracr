@@ -68,7 +68,7 @@ Delegation Depth is a V4 concept-stage Depth subdimension (see docs/concepts/DEL
 
 Work Mode Taxonomy is a V4 concept-stage interpretation layer (see docs/concepts/WORK_MODES.md). It maps governed surfaces into durable AI work patterns for taxonomy-aware calibration. It adds no canonical events, suppression reasons, thresholds, APIs, schemas, or economic readouts.
 
-The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, team ranking, or individual labels from that language.
+The older maturity concept is superseded for new work by Depth. Do not introduce maturity scoring, comparative team evaluation, or individual labels from that language.
 
 Expanded surface taxonomy is a defined V2.1 concept (see docs/concepts/SURFACES.md) and is implemented in the customer-side transformer path. It does not modify any V1 or V2 invariants.
 
@@ -81,6 +81,12 @@ Calibration governance is a defined and implemented V3 concept (see docs/concept
 ### V4 Value Confidence Layer
 
 V4 is the Value Confidence Layer (see docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md). It is documentation-stage only unless implementation already exists in a future branch. V4 combines Velocity, Depth, governed V3 verdicts, Quality Multiplier, Reliability Factor, Outcome Evidence, and Trust Calibration into executive economic decision artifacts.
+
+AI Scale Readiness Portfolio is a defined V4 concept (see docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md). It frames aggregate readiness zones as action postures for scale, enablement, workflow design, trust calibration, adoption expansion, or hold. It is not a scorecard, comparative team evaluation, maturity label, productivity measurement, ROI calculation, prediction, or causal claim.
+
+Organizational Segmentation is a defined V4 concept (see docs/concepts/ORG_SEGMENTATION.md). It allows approved aggregate cohort slices such as function, role family, level band, manager/IC, region, tenure, Velocity band, and Depth Repertoire band only when computed inside the customer or Glean boundary and independently suppressed. Segments are intervention contexts, not performance groups.
+
+Economic Impact Bridge is a defined V4 concept (see docs/concepts/ECONOMIC_IMPACT_BRIDGE.md). It maps aggregate readiness patterns to value hypotheses and customer-owned economic investigations. It does not calculate dollarized ROI, prove causality, predict outcomes, or infer employee performance.
 
 V4 must not implement ROI calculation, customer-facing prediction claims, scoring, ranking, individual attribution, productivity measurement, admin overrides, tunable thresholds, new canonical events, or new suppression reasons. Future V4 implementation must preserve all nine invariants exactly.
 
@@ -95,6 +101,9 @@ V4 must not implement ROI calculation, customer-facing prediction claims, scorin
 - Depth: V4 aggregate cross-surface work-integration lens, anchored in surface repertoire and repeated meaningful use, with verification, delegation, reuse, recovery, and judgment behavior as confidence layers
 - Work Mode Taxonomy: V4 mapping layer from governed surface IDs to AI work patterns and evidence roles
 - Value Confidence Layer: V4 documentation-stage executive decision layer for bounded, caveated, aggregate economic confidence
+- AI Scale Readiness Portfolio: V4 aggregate action-posture readout for where to scale, coach, redesign, calibrate trust, expand adoption, or hold
+- Organizational Segmentation: V4 aggregate-only cohort context for intervention planning; never a performance group or ranking surface
+- Economic Impact Bridge: V4 concept for mapping aggregate readiness patterns to customer-owned value investigations without ROI proof or causality claims
 
 ## 8. Repositioning Context
 
@@ -129,6 +138,7 @@ Note: each prompt is one PR. Do not combine.
 - Any V4 artifact that includes Depth Repertoire caveat/context must pass docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md before further contract hardening. Passing caveat propagation does not authorize economic dependency; it only proves that caveats did not become hidden behavior.
 - docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md records `PASS_CAVEAT_PROPAGATION` for the Time-Saved Defensibility Range contract. This permits docs-only TSDR contract hardening for caveat/context behavior, but it does not authorize runtime implementation, schemas, endpoints, confidence-band adjustment, range adjustment, eligibility use, or customer-facing economic output.
 - docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md records `PASS_CAVEAT_PROPAGATION` for the AI Value Leakage Map contract. This permits docs-only leakage-map contract hardening for caveat/context behavior, but it does not authorize runtime implementation, schemas, endpoints, leakage severity adjustment, value-at-risk adjustment, eligibility use, ROI, causal claims, prediction claims, or customer-facing economic output.
+- AI Scale Readiness Portfolio and Trust Calibration Index remain held for 60-day Glean dogfood caveat propagation by docs/research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md and docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md. No V4 contract hardening, economic API, customer-facing readout, Time-Saved Defensibility Range productization, Organizational Segmentation runtime support, or Economic Impact Bridge runtime support may start until docs/research/V4_GLEAN_DOGFOOD_DECISION.md promotes the relevant scope.
 - Every new endpoint must respect existing fail-closed gates.
 - Every new field must be additive - do not break existing consumers.
 - Add LMSYS assurance harness fixtures for every new behavior.

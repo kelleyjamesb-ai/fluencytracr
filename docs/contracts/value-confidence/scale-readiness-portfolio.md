@@ -4,7 +4,15 @@
 
 The AI Scale Readiness Portfolio defines an executive workflow investment view using Velocity x Depth.
 
-Scale readiness is a workflow investment signal. It is not a team ranking, employee capability label, or maturity score.
+Scale readiness is a workflow investment signal. It is not a comparative team evaluation, employee capability label, or maturity label.
+
+## Contract Status
+
+Status: documentation-stage contract. The governing concept is
+[AI_SCALE_READINESS_PORTFOLIO.md](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md).
+The current caveat propagation decision records
+`HOLD_FOR_60_DAY_GLEAN_DOGFOOD`; no API, schema, customer-facing readout, or
+contract hardening beyond documentation-stage language is approved.
 
 ## Executive Question
 
@@ -75,6 +83,9 @@ Fail-closed gates block interpretation. No economic or portfolio values should b
 - Trust Calibration.
 - Outcome Evidence when available.
 
+Depth Repertoire may appear only as research context or caveat language until a
+later calibration decision explicitly promotes economic use.
+
 ## Output Shape
 
 A portfolio readout should include:
@@ -93,9 +104,11 @@ A portfolio readout should include:
 Every portfolio readout should state:
 
 - The output supports decisions about where to scale, coach, redesign, or govern.
-- It is not a team ranking, employee capability label, or maturity score.
+- It is not a comparative team evaluation, employee capability label, or maturity label.
 - Suppressed workflows cannot contribute portfolio totals.
 - Decision zones require business context before action.
+- Missing surface, segment, verification, AGENT metadata, reusable workflow, or
+  organization metadata coverage is a data readiness gap, not low readiness.
 
 ## Examples
 

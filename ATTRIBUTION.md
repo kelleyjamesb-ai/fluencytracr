@@ -77,6 +77,21 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: calibration baselines are immutable reference artifacts, not tunable thresholds or admin overrides
 - Used in: V3 calibration concept document
 
+### AI Scale Readiness Portfolio
+- Source: James Kelley, scale-readiness portfolio framing for V4 value realization
+- Governance grounding: aggregate readiness zones should guide where to scale, coach, redesign, calibrate trust, expand adoption, or hold without becoming a scorecard, ranking, ROI claim, or productivity measure
+- Used in: V4 AI Scale Readiness Portfolio concept and dogfood decision plan
+
+### Organizational Segmentation as intervention context
+- Source: James Kelley, organizational segmentation framing for internal V4 dogfood
+- Governance grounding: function, role, level, tenure, and behavior-derived segments are intervention contexts only; HR and directory joins must remain inside the customer or Glean boundary and emit aggregate distributions only
+- Used in: V4 Organizational Segmentation concept and dogfood decision plan
+
+### Economic Impact Bridge
+- Source: James Kelley, economic-impact bridge framing for V4 value realization
+- Governance grounding: aggregate readiness patterns may support customer-owned value investigations, but they do not prove ROI, causality, productivity lift, prediction, or employee performance
+- Used in: V4 Economic Impact Bridge concept and dogfood decision plan
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative

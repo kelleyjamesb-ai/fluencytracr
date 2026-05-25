@@ -85,7 +85,13 @@ delegated work. That interpretation remains role- and workflow-relative.
 
 The AI Scale Readiness Portfolio uses Velocity x Depth to identify workflow investment zones: scale, harvest, coach, redesign, govern, or suppress.
 
-The portfolio is a workflow investment signal, not a team ranking or employee capability label.
+The portfolio is a workflow investment signal, not a comparative team evaluation or employee capability label.
+
+The expanded concept is defined in
+[AI_SCALE_READINESS_PORTFOLIO.md](./AI_SCALE_READINESS_PORTFOLIO.md). It
+reframes the portfolio as aggregate action postures: Ready To Scale, Enablement
+Opportunity, Workflow Design Opportunity, Trust Calibration Opportunity,
+Adoption Expansion Opportunity, or Hold / Insufficient Evidence.
 
 Delegation Depth can inform whether a workflow is ready to scale, harvest,
 coach, redesign, govern, or suppress when delegation is relevant to the
@@ -112,6 +118,13 @@ V4 may define executive economic decision artifacts such as:
 - required caveats for customer-facing value claims.
 
 Suppressed evidence cannot produce dollar values, hours saved, upside estimates, or portfolio totals.
+
+Organizational Segmentation may help localize action only as aggregate
+intervention context. See [ORG_SEGMENTATION.md](./ORG_SEGMENTATION.md).
+
+The Economic Impact Bridge may map readiness patterns to customer-owned value
+investigations, but it does not calculate realized ROI or prove causality. See
+[ECONOMIC_IMPACT_BRIDGE.md](./ECONOMIC_IMPACT_BRIDGE.md).
 
 ## Baseline Strategy
 

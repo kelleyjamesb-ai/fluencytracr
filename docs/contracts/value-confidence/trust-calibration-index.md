@@ -6,6 +6,13 @@ The Trust Calibration Index evaluates whether verification behavior appears appr
 
 Trust Calibration does not reward maximum verification. It evaluates whether verification behavior appears appropriate for workflow risk and available evidence.
 
+## Contract Status
+
+Status: documentation-stage contract. The current caveat propagation decision
+records `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`; no API, schema, customer-facing
+readout, economic confidence adjustment, or contract hardening beyond
+documentation-stage language is approved.
+
 ## Why Verification Volume Alone Is Insufficient
 
 High verification volume can indicate careful review, lack of trust, confusing outputs, high workflow risk, or required compliance checks.

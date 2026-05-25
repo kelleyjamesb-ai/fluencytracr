@@ -21,6 +21,16 @@ V4 may support:
 
 Each readout is aggregate-only, caveated, and fail-closed.
 
+The next V4 planning concepts are:
+
+- [AI Scale Readiness Portfolio](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md),
+- [Organizational Segmentation](../../concepts/ORG_SEGMENTATION.md),
+- [Economic Impact Bridge](../../concepts/ECONOMIC_IMPACT_BRIDGE.md).
+
+They are concept-stage only. The current Glean dogfood decision records
+`HOLD_FOR_60_DAY_GLEAN_DOGFOOD`, so these concepts do not authorize APIs,
+schemas, customer-facing readouts, product surfaces, or economic calculation.
+
 ## Inputs
 
 ### V3 aggregate verdicts
@@ -224,3 +234,15 @@ V4 is not a replacement for Glean's time-saved pipeline.
 ## Future Schema Work
 
 Future work may add minimal schemas for each readout after the Markdown contracts stabilize. Schema work must preserve fail-closed suppression, aggregate-only outputs, and caveat propagation.
+
+## Current Dogfood Decision Gate
+
+The current gate for Scale Readiness to Economic Value is:
+
+- [V4 Scale Readiness caveat propagation decision](../../research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+- [V4 Trust Calibration caveat propagation decision](../../research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+- [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md): `HOLD_FOR_60_DAY_GLEAN_DOGFOOD`
+
+Until that decision promotes a scope, no V4 economic artifact may depend on
+Depth Repertoire, Organizational Segmentation, or the Economic Impact Bridge for
+customer-facing value claims.
