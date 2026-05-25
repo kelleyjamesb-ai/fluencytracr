@@ -31,7 +31,10 @@ gap.
 
 ## Attribution Tiers
 
-The diagnostic uses a tiered attribution model.
+The method uses a tiered attribution model. The default full-window dogfood
+diagnostic currently runs only exact-key and session-key attribution; proximity
+attribution is retained as a research-only candidate that requires a narrower
+sample or a staged table before it can be tested safely.
 
 | Tier | Meaning | Allowed interpretation |
 | --- | --- | --- |
@@ -40,8 +43,9 @@ The diagnostic uses a tiered attribution model.
 | `PROXIMITY_RESEARCH_ONLY` | Signal joins by same user, expected surface, and close event time. | Research-only; not sufficient for promotion by itself. |
 | `NO_PARENT` | No governed parent record is found. | Hold. |
 
-The tiers are ordered. Exact parent attribution wins over session attribution,
-and session attribution wins over proximity attribution.
+The tiers are ordered. Exact parent attribution wins over session attribution.
+Proximity attribution is not part of the default fixed-window export because it
+creates an expensive many-to-many same-user/time-window join over 60-day data.
 
 ## Attribution Results
 
@@ -51,7 +55,7 @@ Each signal is classified into one result.
 | --- | --- | --- |
 | `STRICT_PARENT_ATTRIBUTION` | Exactly one expected parent is found by exact key. | Candidate for Trust Attribution review. |
 | `SESSION_PARENT_ATTRIBUTION` | Exactly one expected parent is found by session key. | Candidate for further review. |
-| `PROXIMITY_RESEARCH_ONLY` | Exactly one expected parent is found by proximity only. | Research-only. |
+| `PROXIMITY_RESEARCH_ONLY` | Exactly one expected parent is found by proximity only. | Research-only; not emitted by the default full-window diagnostic. |
 | `AMBIGUOUS_PARENT` | Multiple possible parents are found. | Hold. |
 | `CROSS_SURFACE_ALIAS` | Join points to a surface other than the expected parent. | Hold and inspect aliasing. |
 | `NO_PARENT` | No parent is found. | Hold. |

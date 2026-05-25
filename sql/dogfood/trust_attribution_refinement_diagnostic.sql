@@ -4,6 +4,11 @@
 -- running. This is research-only SQL. It emits aggregate rows only and is meant
 -- to determine whether verification/feedback signals attach to exactly one
 -- governed parent surface. It does not score trust behavior.
+--
+-- Full-window runs intentionally use exact-key and session-key attribution only.
+-- Proximity attribution remains a research-only method candidate, but it is not
+-- part of this diagnostic because a 60-day same-user/time-window join is too
+-- expensive for repeatable dogfood exports.
 
 DECLARE window_start TIMESTAMP DEFAULT TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY);
 DECLARE window_end TIMESTAMP DEFAULT CURRENT_TIMESTAMP();
@@ -51,6 +56,20 @@ WITH source_events AS (
   FROM `PROJECT.DATASET.gce_events`
   WHERE timestamp >= window_start
     AND timestamp < window_end
+    AND jsonPayload.type IN (
+      'WORKFLOW_RUN',
+      'SEARCH',
+      'AUTOCOMPLETE',
+      'MCP_USAGE',
+      'AI_SUMMARY',
+      'GLEAN_BOT_ACTIVITY',
+      'CHAT_CITATION_CLICK',
+      'CHAT_CITATIONS',
+      'CHAT_FEEDBACK',
+      'AI_ANSWER_VOTE',
+      'AI_SUMMARY_VOTE',
+      'SEARCH_FEEDBACK'
+    )
 ),
 
 workflow_sessions AS (
@@ -124,6 +143,37 @@ taxonomy_surfaces AS (
   SELECT * FROM standalone_surfaces
 ),
 
+parent_join_aliases AS (
+  SELECT DISTINCT
+    user_key,
+    workflow_id,
+    parent_record_key,
+    attribution_join_key
+  FROM (
+    SELECT user_key, workflow_id, parent_record_key, parent_record_key AS attribution_join_key
+    FROM taxonomy_surfaces
+    WHERE parent_record_key IS NOT NULL
+
+    UNION ALL
+
+    SELECT user_key, workflow_id, parent_record_key, workflow_run_id AS attribution_join_key
+    FROM taxonomy_surfaces
+    WHERE workflow_run_id IS NOT NULL
+
+    UNION ALL
+
+    SELECT user_key, workflow_id, parent_record_key, root_workflow_id AS attribution_join_key
+    FROM taxonomy_surfaces
+    WHERE root_workflow_id IS NOT NULL
+
+    UNION ALL
+
+    SELECT user_key, workflow_id, parent_record_key, tracking_token AS attribution_join_key
+    FROM taxonomy_surfaces
+    WHERE tracking_token IS NOT NULL
+  )
+),
+
 verification_signals AS (
   SELECT
     CONCAT(user_key, ':', event_type, ':', CAST(event_ts AS STRING), ':', COALESCE(workflow_run_id, root_workflow_id, session_token, tracking_token, 'NO_KEY')) AS signal_key,
@@ -174,15 +224,10 @@ exact_parent_candidates AS (
     'EXACT_PARENT_KEY' AS attribution_tier,
     1 AS attribution_priority
   FROM verification_signals AS signal
-  JOIN taxonomy_surfaces AS parent
+  JOIN parent_join_aliases AS parent
     ON parent.user_key = signal.user_key
     AND signal.direct_parent_key IS NOT NULL
-    AND signal.direct_parent_key IN (
-      parent.parent_record_key,
-      parent.workflow_run_id,
-      parent.root_workflow_id,
-      parent.tracking_token
-    )
+    AND signal.direct_parent_key = parent.attribution_join_key
 ),
 
 session_parent_candidates AS (
@@ -203,29 +248,10 @@ session_parent_candidates AS (
     AND parent.workflow_id = signal.expected_parent_surface
 ),
 
-proximity_parent_candidates AS (
-  SELECT
-    signal.signal_key,
-    signal.verification_event_type,
-    signal.expected_parent_surface,
-    signal.user_key,
-    parent.workflow_id AS joined_parent_surface,
-    parent.parent_record_key,
-    'PROXIMITY_RESEARCH_ONLY' AS attribution_tier,
-    3 AS attribution_priority
-  FROM verification_signals AS signal
-  JOIN taxonomy_surfaces AS parent
-    ON parent.user_key = signal.user_key
-    AND parent.workflow_id = signal.expected_parent_surface
-    AND ABS(TIMESTAMP_DIFF(signal.event_ts, parent.event_ts, SECOND)) <= 300
-),
-
 all_candidates AS (
   SELECT * FROM exact_parent_candidates
   UNION ALL
   SELECT * FROM session_parent_candidates
-  UNION ALL
-  SELECT * FROM proximity_parent_candidates
 ),
 
 best_candidate_priority AS (
@@ -266,11 +292,6 @@ signal_classification AS (
         AND COUNT(DISTINCT IF(best.joined_parent_surface = signal.expected_parent_surface, best.parent_record_key, NULL)) = 1
         AND MIN(best.attribution_tier) = 'SESSION_PARENT_KEY'
         THEN 'SESSION_PARENT_ATTRIBUTION'
-      WHEN COUNT(DISTINCT best.parent_record_key) = 1
-        AND COUNT(DISTINCT best.joined_parent_surface) = 1
-        AND COUNT(DISTINCT IF(best.joined_parent_surface = signal.expected_parent_surface, best.parent_record_key, NULL)) = 1
-        AND MIN(best.attribution_tier) = 'PROXIMITY_RESEARCH_ONLY'
-        THEN 'PROXIMITY_RESEARCH_ONLY'
       WHEN COUNT(DISTINCT IF(best.joined_parent_surface = signal.expected_parent_surface, best.parent_record_key, NULL)) = 0
         THEN 'CROSS_SURFACE_ALIAS'
       ELSE 'AMBIGUOUS_PARENT'
@@ -294,8 +315,7 @@ aggregate_results AS (
     COUNT(*) AS signal_count,
     COUNTIF(attribution_result IN (
       'STRICT_PARENT_ATTRIBUTION',
-      'SESSION_PARENT_ATTRIBUTION',
-      'PROXIMITY_RESEARCH_ONLY'
+      'SESSION_PARENT_ATTRIBUTION'
     )) AS attributed_signal_count,
     COUNT(DISTINCT user_key) AS distinct_signal_users,
     SUM(candidate_parent_count) AS candidate_parent_count,
@@ -340,7 +360,6 @@ SELECT
     WHEN NOT clears_small_cell_gate THEN 'SMALL_CELL_SUPPRESSED'
     WHEN attribution_result = 'STRICT_PARENT_ATTRIBUTION' THEN 'TRUST_ATTRIBUTION_STRICT'
     WHEN attribution_result = 'SESSION_PARENT_ATTRIBUTION' THEN 'TRUST_ATTRIBUTION_SESSION'
-    WHEN attribution_result = 'PROXIMITY_RESEARCH_ONLY' THEN 'TRUST_ATTRIBUTION_RESEARCH_ONLY'
     WHEN attribution_result = 'AMBIGUOUS_PARENT' THEN 'TRUST_ATTRIBUTION_AMBIGUOUS'
     WHEN attribution_result = 'CROSS_SURFACE_ALIAS' THEN 'TRUST_ATTRIBUTION_CROSS_SURFACE_ALIAS'
     ELSE 'TRUST_ATTRIBUTION_NO_PARENT'

@@ -160,6 +160,7 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 internal readout runbook](../../research/V4_INTERNAL_READOUT_RUNBOOK.md)
 - [V4 internal readout rehearsal](../../research/V4_INTERNAL_READOUT_REHEARSAL.md)
 - [V4 Trust Attribution method](../../research/V4_TRUST_ATTRIBUTION_METHOD.md)
+- [V4 Trust Attribution test readout](../../research/V4_TRUST_ATTRIBUTION_TEST_READOUT.md)
 
 Current decision: `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`.
 

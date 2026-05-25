@@ -113,6 +113,9 @@ After that process is complete, choose one of three paths:
 1. Harden the internal AI Scale Readiness readout contract only.
 2. Run strict parent-attribution refinement for trust and verification signals
    using [V4_TRUST_ATTRIBUTION_METHOD.md](./V4_TRUST_ATTRIBUTION_METHOD.md).
+   The first fixed-window test is recorded in
+   [V4_TRUST_ATTRIBUTION_TEST_READOUT.md](./V4_TRUST_ATTRIBUTION_TEST_READOUT.md)
+   and narrows the next trust phase to strict/session-attributable signals.
 3. Validate Skill Read Evidence identity and join coverage without emitting raw
    skill names.
 

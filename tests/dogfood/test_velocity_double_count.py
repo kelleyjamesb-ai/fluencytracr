@@ -404,7 +404,6 @@ def test_trust_attribution_refinement_diagnostic_is_tiered_and_aggregate_only() 
     for required in [
         "EXACT_PARENT_KEY",
         "SESSION_PARENT_KEY",
-        "PROXIMITY_RESEARCH_ONLY",
         "STRICT_PARENT_ATTRIBUTION",
         "SESSION_PARENT_ATTRIBUTION",
         "AMBIGUOUS_PARENT",
@@ -413,7 +412,7 @@ def test_trust_attribution_refinement_diagnostic_is_tiered_and_aggregate_only() 
         "SMALL_CELL_SUPPRESSED",
         "TRUST_ATTRIBUTION_STRICT",
         "TRUST_ATTRIBUTION_SESSION",
-        "TRUST_ATTRIBUTION_RESEARCH_ONLY",
+        "Proximity attribution remains a research-only method candidate",
     ]:
         assert required in sql
 
