@@ -167,6 +167,9 @@ Required aggregate outputs:
 - suppression counts,
 - stability summary.
 
+The behavior-cohort joint-distribution scaffold for this test lives at
+`sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`.
+
 Recommended local CSV bundle:
 
 - `dogfood-output/v4-trust-cohort-classification/v4_trust_classification_window_1.csv`

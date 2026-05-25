@@ -76,8 +76,10 @@ AGENT evidence, or different skill-read presence.
 
 ## Required Next Data Test
 
-The only additional BigQuery work I recommend is a narrow dogfood/research
-joint-distribution diagnostic.
+The only additional BigQuery work I recommend is the narrow dogfood/research
+joint-distribution diagnostic now scaffolded at:
+
+`sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`
 
 It should output aggregate rows by:
 
@@ -106,7 +108,7 @@ joint-distribution export.
 
 ## Recommended Next Phase
 
-Create and run one narrow diagnostic:
+Run the narrow diagnostic across the three fixed windows:
 
 `sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`
 
