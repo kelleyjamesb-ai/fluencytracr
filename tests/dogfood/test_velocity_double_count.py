@@ -484,6 +484,8 @@ def test_behavior_cohort_joint_distribution_diagnostic_outputs_aggregate_joint_r
 
     assert "FROM `PROJECT.DATASET.gce_events`" in sql
     assert "FROM `PROJECT.DATASET.scrubbed_agentspan_*`" in sql
+    assert "CREATE TEMP TABLE source_events AS" in sql
+    assert "CREATE TEMP TABLE privacy_screened_results AS" in sql
     assert "COUNT(DISTINCT user_key) AS cohort_size" in sql
     assert "CASE WHEN cohort_size >= 5 THEN cohort_size END AS cohort_size" in sql
 
