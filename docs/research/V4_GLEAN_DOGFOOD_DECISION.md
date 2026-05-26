@@ -26,6 +26,7 @@ Current inputs:
 - [V4 Scale Readiness Caveat Propagation Decision](./V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Trust Calibration Caveat Propagation Decision](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Depth Repertoire Value Confidence Calibration Decision](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
+- [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
 - [V4 Glean Dogfood Scale Readiness Readout](./V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
 
 Inputs reviewed from the dogfood run:
@@ -78,6 +79,7 @@ override suppression, or become a customer-facing economic readout.
 Supporting decisions:
 
 - Depth Repertoire: `PROMOTE_SCALE_READINESS_CONTEXT`
+- Behavior cohorts: `PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES`
 - Trust Calibration: `HOLD_FOR_ATTRIBUTION_REFINEMENT`
 - Reusable Workflow Leverage: `HOLD_FOR_GOVERNED_IDENTITY_AND_JOIN_COVERAGE`
 - Economic Impact Bridge: `PROMOTE_INVESTIGATION_ROUTING_ONLY`
@@ -91,6 +93,7 @@ Promoted:
 
 - AI Scale Readiness internal readout shape,
 - Depth Repertoire as aggregate context for action posture selection,
+- Velocity and Depth Repertoire as internal aggregate behavior-cohort axes,
 - Economic Impact Bridge language for value-investigation routing only,
 - docs-only contract hardening for the internal readout boundary.
 
@@ -98,6 +101,8 @@ Held:
 
 - Trust Calibration as a governed readout,
 - Skill Read Evidence as governed reusable leverage,
+- Skill Read presence as a standalone promoted behavior-cohort axis,
+- AGENT delegation as a standalone promoted behavior-cohort axis,
 - Reusable Workflow Propagation and Named Workflow Leverage,
 - Organizational Segmentation runtime support,
 - customer-facing V4 economic output,

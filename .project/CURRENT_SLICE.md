@@ -1,68 +1,69 @@
 # Current Slice Contract
 
-- Work item id: `security-check-auth-token-hardening`
-- Title: `Run security check and fix critical auth token minting issue`
+- Work item id: `v4-promote-behavior-cohort-axes`
+- Title: `Promote Velocity and Depth Repertoire behavior-cohort axes`
 - Status: `completed`
 
 ## Summary
 
-Ran a repository-wide high-impact security check and fixed the critical backend
-auth issue where `POST /auth/token` could mint privileged bearer tokens before
-authentication. Token minting now requires a server-side issuer secret outside
-local development/test, and managed/production runtimes fail closed without
-`JWT_SECRET`. A follow-up regression removed the undocumented token-minting
-escape hatch from production runtimes.
+Promote the saved V4 behavior-cohort joint-distribution result into a durable
+research decision: Velocity band and Depth Repertoire band are internal
+behavior-cohort axes for Glean dogfood portfolio review. AGENT delegation and
+Skill Read presence remain context-only. Economic interpretation remains
+limited to non-dollarized value-investigation routing.
 
 ## Scope Paths
 
-- `backend/src/app.ts`
-- `backend/src/auth_secret.ts`
-- `backend/tests/auth_secret.test.ts`
-- `backend/tests/auth_token_api.test.ts`
-- `backend/.env.example`
+- `docs/research/V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md`
+- `docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md`
+- `docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md`
+- `docs/research/V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md`
+- `docs/research/V4_VALIDATION_PLAN.md`
+- `docs/research/V4_CLOSEOUT_DECISION.md`
+- `docs/research/V4_GLEAN_DOGFOOD_DECISION.md`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Token minting must fail closed in production and managed runtimes.
-- Local/test auth workflows must remain usable for existing backend tests.
-- The fix must not change FluencyTracr event, suppression, schema, or V4 signal contracts.
+- The promotion must not authorize customer-facing V4 economic output.
+- The promotion must not convert Velocity or Depth into productivity,
+  maturity, ROI, ranking, or prediction claims.
+- Skill Read presence and AGENT delegation must remain context-only.
+- Economic suggestions must remain investigation routing, not dollarized
+  recommendations.
 
 ## Planned Checks
 
-- Run targeted auth tests.
-- Run full backend CI.
-- Run backend build.
-- Run npm audit for critical dependency advisories.
-- Run targeted tracked-secret scan.
-- Run `git diff --check`.
+- Run docs contract sweep.
+- Run semantic drift guard.
+- Run V1 governance gates.
+- Run diff whitespace check.
+- Scan for conflict markers.
 
 ## Evaluator Command Profile
 
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend -- --runTestsByPath tests/auth_secret.test.ts tests/auth_token_api.test.ts tests/auth_hardening.test.ts`
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend`
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run build --workspace backend`
-- `/usr/local/bin/npm audit --audit-level=critical --json`
-- `/usr/local/bin/npm audit --omit=dev --audit-level=critical --json`
+- `scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `python3 scripts/ci_v1_governance_gates.py`
 - `git diff --check`
+- `rg -n "^(<<<<<<<|=======|>>>>>>>)"`
 
 ## Evaluator Pass Criteria
 
-- Auth token minting rejects missing or wrong issuer secrets outside local/test.
-- Production does not resolve the fallback JWT signing secret.
-- Backend tests and build pass.
-- No open critical npm advisories remain from the scan.
+- Promotion decision is documented and linked from the governing V4 research
+  docs.
+- Guardrails remain explicit: no ROI, no productivity, no customer-facing
+  economic output, no rankings, no raw skill names, no org metadata segments.
+- Verification commands pass.
 
 ## Specialists To Consult
 
-- Codex Security `security-scan` workflow.
+- None for this documentation-only decision slice.
 
 ## Next Handoff Note
 
-Completed locally. Critical auth token minting issue is fixed and verified.
-Security scan report: `/tmp/codex-security-scans/FluencyTracr/c7bfb4a_20260524T070208Z/report.md`.
-Follow-up hardening also verified that production cannot bypass the issuer-secret
-gate with `ALLOW_INSECURE_AUTH_TOKEN_MINTING`.
-High, non-critical dependency advisories remain deferred for a separate
-dependency-update slice.
+Completed locally. Velocity band and Depth Repertoire band are promoted as
+internal aggregate behavior-cohort axes. AGENT delegation and Skill Read
+presence remain context-only, and economic suggestions remain limited to
+non-dollarized investigation routing.

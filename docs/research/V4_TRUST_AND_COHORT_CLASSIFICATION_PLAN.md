@@ -19,7 +19,7 @@ comparative department evaluation, productivity measurement, or maturity label.
 
 Proceed with behavior-derived cohorts first.
 
-Approved for the next research test:
+Approved for the first research test:
 
 - Velocity band,
 - Depth Repertoire band,
@@ -41,6 +41,24 @@ The held group is valuable, but it requires an approved HRIS, Workday,
 directory, or customer-owned metadata join. That join must happen inside the
 customer or Glean boundary, and only aggregate segment distributions may cross
 into FluencyTracr.
+
+The first fixed-window joint-distribution test has now completed. The follow-up
+decision is recorded in
+[V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md).
+
+Promoted for internal behavior-cohort review:
+
+- Velocity band,
+- Depth Repertoire band.
+
+Held as context-only research inputs:
+
+- AGENT delegation band,
+- Skill-read presence band.
+
+This promotion is not permission to build customer-facing readouts, economic
+outputs, ROI ranges, productivity claims, automated recommendations, or org
+metadata segmentation.
 
 ## Why Behavior Cohorts First
 
@@ -177,6 +195,7 @@ Recommended local CSV bundle:
 - `dogfood-output/v4-trust-cohort-classification/v4_trust_classification_window_3.csv`
 - `dogfood-output/v4-trust-cohort-classification/v4_trust_classification_all_windows.csv`
 - `dogfood-output/v4-trust-cohort-classification/v4_trust_classification_summary_safe.csv`
+- `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_summary_safe.csv`
 
 ## Promotion Boundary
 
@@ -196,7 +215,11 @@ Promotion can be considered only if:
 
 ## Decision Options After Test
 
-The next readout should choose one:
+The first readout chose:
+
+- `PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES`
+
+Later readouts may still choose one:
 
 - `PROMOTE_NARROW_TRUST_CLASSIFICATIONS`
 - `PROMOTE_BEHAVIOR_COHORT_CLASSIFICATIONS`
