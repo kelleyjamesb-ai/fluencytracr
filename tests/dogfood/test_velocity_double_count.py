@@ -503,6 +503,18 @@ def test_behavior_cohort_joint_distribution_diagnostic_outputs_aggregate_joint_r
         assert forbidden not in final_select
 
 
+def test_behavior_cohort_joint_distribution_uses_value_based_velocity_bands() -> None:
+    sql = BEHAVIOR_COHORT_JOINT_SQL.read_text()
+
+    assert "NTILE(" not in sql
+    assert "velocity_ntile" not in sql
+    assert "velocity_boundaries" in sql
+    assert "APPROX_QUANTILES(total_interactions, 3)" in sql
+    assert "behavior.total_interactions > boundaries.high_velocity_boundary" in sql
+    assert "behavior.total_interactions > boundaries.low_velocity_boundary" in sql
+    assert "velocity_band AS behavior_cohort_band" in sql
+
+
 def test_velocity_depth_zone_diagnostic_outputs_joined_aggregate_zones() -> None:
     sql = VELOCITY_DEPTH_ZONE_SQL.read_text()
 
