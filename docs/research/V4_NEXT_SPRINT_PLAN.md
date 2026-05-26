@@ -189,8 +189,9 @@ preserving the same internal-only, non-dollarized, aggregate readout boundary.
 
 Strategy-layer status: V0 is complete as an internal strategy-routing layer. It
 maps zones to scale, coach/redesign, study/package, repair-trust-loop,
-fix-instrumentation, or hold postures. It also records CFO value questions and
-required monetary-value evidence while explicitly blocking dollarized output.
+fix-instrumentation, or hold postures. It also records stakeholder value
+questions, stakeholder evidence needs, and required monetary-value evidence
+while explicitly blocking dollarized output.
 
 ## Workstream 4: Team Demo Artifact
 

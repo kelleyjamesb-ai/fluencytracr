@@ -7,8 +7,9 @@
 ## Summary
 
 Add the V0 strategy-routing layer that turns aggregate FluencyTracr zones into
-human-reviewed value-realization strategy postures, CFO value questions, and
-required monetary-value evidence without calculating dollars or ROI.
+human-reviewed value-realization strategy postures, stakeholder value
+questions, stakeholder evidence needs, and required monetary-value evidence
+without calculating dollars or ROI.
 
 ## Scope Paths
 
@@ -27,7 +28,7 @@ required monetary-value evidence without calculating dollars or ROI.
 ## Key Risks
 
 - Strategy routing must not become automated recommendations.
-- CFO value questions must not become monetary value claims.
+- Stakeholder value questions must not become monetary value claims.
 - The layer must not calculate ROI, expected savings, productivity lift,
   causality, prediction, ranking, or customer-facing economic output.
 - Suppressed or held rows must not be upgraded.
@@ -55,9 +56,9 @@ required monetary-value evidence without calculating dollars or ROI.
 
 ## Evaluator Pass Criteria
 
-- The strategy layer maps zones to strategy posture, value mechanism, CFO value
-  question, required outcome evidence, required customer-owned assumptions, and
-  blocked claims.
+- The strategy layer maps zones to strategy posture, value mechanism,
+  stakeholder value question, stakeholder evidence needs, required outcome
+  evidence, required customer-owned assumptions, and blocked claims.
 - The retained strategy CSV is saved in `dogfood-output/`.
 - The layer explicitly blocks monetary value calculation in V0.
 - Guardrails remain explicit: no ROI, no productivity, no customer-facing

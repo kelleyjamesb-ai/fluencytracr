@@ -133,6 +133,6 @@ turns these hypotheses into internal action postures: scale-and-measure,
 coach-or-redesign, study-and-package, repair trust loops, fix instrumentation,
 or hold interpretation.
 
-That strategy layer may state the CFO value question and required
-monetary-value evidence. It must not calculate monetary value from behavior
-evidence alone.
+That strategy layer may state stakeholder value questions, stakeholder evidence
+needs, and required monetary-value evidence. It must not calculate monetary
+value from behavior evidence alone.

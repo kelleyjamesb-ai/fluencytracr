@@ -511,6 +511,18 @@ def test_behavior_cohort_joint_distribution_diagnostic_outputs_aggregate_joint_r
         assert forbidden not in final_select
 
 
+def test_behavior_cohort_joint_distribution_uses_value_based_velocity_bands() -> None:
+    sql = BEHAVIOR_COHORT_JOINT_SQL.read_text()
+
+    assert "NTILE(" not in sql
+    assert "velocity_ntile" not in sql
+    assert "velocity_boundaries" in sql
+    assert "APPROX_QUANTILES(total_interactions, 3)" in sql
+    assert "behavior.total_interactions > boundaries.high_velocity_boundary" in sql
+    assert "behavior.total_interactions > boundaries.low_velocity_boundary" in sql
+    assert "velocity_band AS behavior_cohort_band" in sql
+
+
 def test_velocity_depth_zone_diagnostic_outputs_joined_aggregate_zones() -> None:
     sql = VELOCITY_DEPTH_ZONE_SQL.read_text()
 
@@ -555,7 +567,12 @@ def test_value_realization_strategy_layer_routes_without_monetary_claims() -> No
         "Value Realization Strategy Layer",
         "strategy posture",
         "value mechanism",
-        "CFO value question",
+        "stakeholder value question",
+        "stakeholder evidence needs",
+        "CFO monetary track",
+        "CIO operating track",
+        "AI operator track",
+        "business owner track",
         "customer-owned economic model",
         "does not calculate monetary value",
         "SCALE_AND_MEASURE",
@@ -579,7 +596,9 @@ def test_value_realization_strategy_csv_is_aggregate_only() -> None:
         "strategy_posture",
         "strategy_motion",
         "value_mechanism",
-        "cfo_value_question",
+        "stakeholder_value_question",
+        "stakeholder_evidence_needs",
+        "primary_stakeholder_tracks",
         "required_outcome_evidence",
         "required_customer_owned_assumptions",
         "monetary_value_status",
@@ -602,16 +621,23 @@ def test_value_realization_strategy_csv_is_aggregate_only() -> None:
     }
     assert forbidden_columns.isdisjoint({column.lower() for column in rows[0]})
 
-    strategy_by_zone = {
-        row["readout_zone_test_result"]: row["strategy_posture"]
-        for row in rows
-        if row["window_count"] == "3"
+    expected_strategy_by_zone = {
+        "SCALE_CANDIDATE": "SCALE_AND_MEASURE",
+        "SHALLOW_ADOPTION": "COACH_OR_REDESIGN",
+        "FOCUSED_EXPERT_USE": "STUDY_AND_PACKAGE",
+        "TRUST_EVIDENCE_GAP": "REPAIR_TRUST_LOOP",
+        "SUPPRESSED": "HOLD_NO_INTERPRETATION",
     }
-    assert strategy_by_zone["SCALE_CANDIDATE"] == "SCALE_AND_MEASURE"
-    assert strategy_by_zone["SHALLOW_ADOPTION"] == "COACH_OR_REDESIGN"
-    assert strategy_by_zone["FOCUSED_EXPERT_USE"] == "STUDY_AND_PACKAGE"
-    assert strategy_by_zone["TRUST_EVIDENCE_GAP"] == "REPAIR_TRUST_LOOP"
-    assert strategy_by_zone["SUPPRESSED"] == "HOLD_NO_INTERPRETATION"
+    three_window_rows = [row for row in rows if row["window_count"] == "3"]
+    assert three_window_rows
+    assert set(expected_strategy_by_zone).issubset(
+        {row["readout_zone_test_result"] for row in three_window_rows}
+    )
+
+    for row in three_window_rows:
+        zone = row["readout_zone_test_result"]
+        assert zone in expected_strategy_by_zone
+        assert row["strategy_posture"] == expected_strategy_by_zone[zone]
 
     for row in rows:
         assert row["monetary_value_status"] in {

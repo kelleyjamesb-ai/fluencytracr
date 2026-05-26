@@ -215,8 +215,9 @@ The first execution slice for that sprint is complete in documentation form:
 - [V4_VALUE_HYPOTHESIS_MAP.md](./V4_VALUE_HYPOTHESIS_MAP.md) maps zones to
   non-dollarized AIVM value hypotheses and required customer-owned evidence.
 - [V4_VALUE_REALIZATION_STRATEGY_LAYER.md](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
-  maps aggregate zones to internal strategy postures, CFO value questions, and
-  required monetary-value evidence without calculating monetary value.
+  maps aggregate zones to internal strategy postures, stakeholder value
+  questions, stakeholder evidence needs, and required monetary-value evidence
+  without calculating monetary value.
 - [V4_READOUT_ZONE_DATA_TEST.md](./V4_READOUT_ZONE_DATA_TEST.md) tests those
   artifacts against retained aggregate CSVs and records the Velocity x Depth
   join gap before strict `SCALE_CANDIDATE` assignment is allowed.
