@@ -1,3 +1,4 @@
+import csv
 import re
 from pathlib import Path
 
@@ -23,6 +24,13 @@ TRUST_SIGNAL_SQL = ROOT / "sql" / "dogfood" / "trust_signal_availability_diagnos
 TRUST_ATTRIBUTION_SQL = ROOT / "sql" / "dogfood" / "trust_attribution_refinement_diagnostic.sql"
 BEHAVIOR_COHORT_JOINT_SQL = ROOT / "sql" / "dogfood" / "behavior_cohort_joint_distribution_diagnostic.sql"
 VELOCITY_DEPTH_ZONE_SQL = ROOT / "sql" / "dogfood" / "velocity_depth_zone_diagnostic.sql"
+VALUE_STRATEGY_DOC = ROOT / "docs" / "research" / "V4_VALUE_REALIZATION_STRATEGY_LAYER.md"
+VALUE_STRATEGY_SUMMARY_CSV = (
+    ROOT
+    / "dogfood-output"
+    / "v4-value-realization-strategy"
+    / "v4_value_realization_strategy_summary.csv"
+)
 SCALE_READINESS_CONTRACT = ROOT / "docs" / "contracts" / "value-confidence" / "scale-readiness-portfolio.md"
 
 DOGFOOD_SQL = [
@@ -538,6 +546,87 @@ def test_velocity_depth_zone_diagnostic_outputs_joined_aggregate_zones() -> None
         "email",
     ]:
         assert forbidden not in final_select
+
+
+def test_value_realization_strategy_layer_routes_without_monetary_claims() -> None:
+    doc = VALUE_STRATEGY_DOC.read_text()
+
+    for required in [
+        "Value Realization Strategy Layer",
+        "strategy posture",
+        "value mechanism",
+        "stakeholder value question",
+        "stakeholder evidence needs",
+        "CFO monetary track",
+        "CIO operating track",
+        "AI operator track",
+        "business owner track",
+        "customer-owned economic model",
+        "does not calculate monetary value",
+        "SCALE_AND_MEASURE",
+        "COACH_OR_REDESIGN",
+        "STUDY_AND_PACKAGE",
+        "REPAIR_TRUST_LOOP",
+        "FIX_INSTRUMENTATION",
+        "HOLD_NO_INTERPRETATION",
+        "BLOCKED_CFO_MONETARY_VALUE",
+    ]:
+        assert required in doc
+
+
+def test_value_realization_strategy_csv_is_aggregate_only() -> None:
+    with VALUE_STRATEGY_SUMMARY_CSV.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert rows
+    required_columns = {
+        "readout_zone_test_result",
+        "strategy_posture",
+        "strategy_motion",
+        "value_mechanism",
+        "stakeholder_value_question",
+        "stakeholder_evidence_needs",
+        "primary_stakeholder_tracks",
+        "required_outcome_evidence",
+        "required_customer_owned_assumptions",
+        "monetary_value_status",
+        "blocked_claims",
+    }
+    assert required_columns.issubset(rows[0])
+
+    forbidden_columns = {
+        "user_key",
+        "user_id",
+        "email",
+        "name",
+        "raw_skill",
+        "skill_name",
+        "prompt",
+        "output",
+        "transcript",
+        "action_row",
+        "raw_event",
+    }
+    assert forbidden_columns.isdisjoint({column.lower() for column in rows[0]})
+
+    strategy_by_zone = {
+        row["readout_zone_test_result"]: row["strategy_posture"]
+        for row in rows
+        if row["window_count"] == "3"
+    }
+    assert strategy_by_zone["SCALE_CANDIDATE"] == "SCALE_AND_MEASURE"
+    assert strategy_by_zone["SHALLOW_ADOPTION"] == "COACH_OR_REDESIGN"
+    assert strategy_by_zone["FOCUSED_EXPERT_USE"] == "STUDY_AND_PACKAGE"
+    assert strategy_by_zone["TRUST_EVIDENCE_GAP"] == "REPAIR_TRUST_LOOP"
+    assert strategy_by_zone["SUPPRESSED"] == "HOLD_NO_INTERPRETATION"
+
+    for row in rows:
+        assert row["monetary_value_status"] in {
+            "BLOCKED_PENDING_OUTCOME_EVIDENCE",
+            "BLOCKED_PENDING_TRUST_EVIDENCE",
+            "BLOCKED_PENDING_SOURCE_COVERAGE",
+            "BLOCKED_SUPPRESSED",
+        }
 
 
 def test_scale_readiness_contract_carries_depth_context_without_runtime_promotion() -> None:
