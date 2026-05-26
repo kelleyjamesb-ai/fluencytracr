@@ -21,6 +21,7 @@ TAXONOMY_QM_RF_SQL = ROOT / "sql" / "dogfood" / "taxonomy_qm_rf_diagnostic.sql"
 SKILL_READ_SQL = ROOT / "sql" / "dogfood" / "skill_read_availability_diagnostic.sql"
 TRUST_SIGNAL_SQL = ROOT / "sql" / "dogfood" / "trust_signal_availability_diagnostic.sql"
 TRUST_ATTRIBUTION_SQL = ROOT / "sql" / "dogfood" / "trust_attribution_refinement_diagnostic.sql"
+BEHAVIOR_COHORT_JOINT_SQL = ROOT / "sql" / "dogfood" / "behavior_cohort_joint_distribution_diagnostic.sql"
 SCALE_READINESS_CONTRACT = ROOT / "docs" / "contracts" / "value-confidence" / "scale-readiness-portfolio.md"
 
 DOGFOOD_SQL = [
@@ -42,6 +43,7 @@ DOGFOOD_SQL = [
     SKILL_READ_SQL,
     TRUST_SIGNAL_SQL,
     TRUST_ATTRIBUTION_SQL,
+    BEHAVIOR_COHORT_JOINT_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [
@@ -452,6 +454,49 @@ def test_trust_attribution_refinement_diagnostic_is_tiered_and_aggregate_only() 
 
     assert "distinct_signal_users >= 5" in sql
     assert "CASE WHEN clears_small_cell_gate THEN signal_count END" in sql
+
+
+def test_behavior_cohort_joint_distribution_diagnostic_outputs_aggregate_joint_rows() -> None:
+    sql = BEHAVIOR_COHORT_JOINT_SQL.read_text()
+
+    for required in [
+        "behavior_cohort_dimension",
+        "behavior_cohort_band",
+        "trust_classification",
+        "agent_delegation_classification",
+        "skill_read_presence_classification",
+        "cohort_size",
+        "signal_count",
+        "suppression_status",
+        "suppression_reason",
+        "SURFACE_ELIGIBLE_RESEARCH_ONLY",
+        "INSUFFICIENT_VOLUME",
+    ]:
+        assert required in sql
+
+    for cohort in [
+        "velocity_band",
+        "depth_repertoire_band",
+        "agent_delegation_band",
+        "skill_read_presence_band",
+    ]:
+        assert cohort in sql
+
+    assert "FROM `PROJECT.DATASET.gce_events`" in sql
+    assert "FROM `PROJECT.DATASET.scrubbed_agentspan_*`" in sql
+    assert "COUNT(DISTINCT user_key) AS cohort_size" in sql
+    assert "CASE WHEN cohort_size >= 5 THEN cohort_size END AS cohort_size" in sql
+
+    final_select = sql.split("SELECT\n  DATE(window_start)", 1)[1]
+    for forbidden in [
+        "user_key",
+        "observed_skill_name",
+        "raw_skill",
+        "prompt",
+        "transcript",
+        "email",
+    ]:
+        assert forbidden not in final_select
 
 
 def test_scale_readiness_contract_carries_depth_context_without_runtime_promotion() -> None:
