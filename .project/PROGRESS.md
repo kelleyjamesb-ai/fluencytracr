@@ -2,6 +2,8 @@
 
 ## Last Completed
 
+- Org-agnostic AI Work Evidence planning slice: added the concept-stage source-neutral AI Work Evidence core, separated reusable FluencyTracr primitives from Glean dogfood/value-evidence adapters, documented surfaces/workflows/cohorts/approved aggregate segments/customer-declared interventions/trust/source coverage/outcome evidence/value hypotheses, and made explicit that no runtime behavior, schema, endpoint, SQL, UI, canonical event, suppression reason, individual scoring, ranking, survey or stated-evidence join, enablement-system assumption, HR-system assumption, or ROI calculation changed.
+- Org-agnostic AI Work Evidence pilot package: added docs-only source-neutral intake templates for source coverage, surface mapping, workflows, approved aggregate segments, customer-declared interventions, outcome evidence, and value hypotheses; added a synthetic pilot readout shape, a Glean-as-adapter mapping, live pilot readiness checklist, and stop conditions. No runtime behavior, schema, endpoint, SQL, UI, canonical event, suppression reason, individual scoring, ranking, survey or stated-evidence join, enablement-system assumption, HR-system assumption, or ROI calculation changed.
 - PR #313 assurance harness fix: moved the LMSYS seed self-test before backend startup so rebuilding `shared/dist` cannot trigger `ts-node-dev` restarts between the Postgres health check and `seed:lmsys:sample`.
 - V4 value realization strategy layer V0: added an internal strategy-routing layer that maps aggregate zones to strategy posture, value mechanism, stakeholder value question, stakeholder evidence needs, required outcome evidence, customer-owned assumptions, and blocked claims without calculating monetary value. Saved the retained strategy CSV under `dogfood-output/v4-value-realization-strategy/`; stable rows map to 12 scale-and-measure, 6 coach/redesign, 3 study/package, 92 repair-trust-loop, and 3 hold/no-interpretation postures.
 - PR #311 conflict reconciliation: merged current `main` into `codex/v4-behavior-cohort-joint-diagnostic`, preserved the branch's behavior-cohort joint export history alongside newer V4 readout entries, kept the current promoted cohort docs, and carried forward the regression guard that rejects row-position `NTILE` velocity banding.
@@ -89,6 +91,7 @@
 
 ## Next Step
 
+- If the human accepts the org-agnostic commercialization track, the next bounded step is review/commit/PR for the docs-only AI Work Evidence concept and pilot package. Keep any later live customer pilot blocked until customer-side aggregate transformation, source coverage declarations, approved aggregate labels, and customer-owned outcome metrics are available.
 - Add a new bounded queue item before starting the next durable implementation track; the original 7-phase blueprint queue is complete.
 - Archive or review the Glean readiness OpenSpec changes after human approval; do not implement live Glean ingestion until the Phase 8 gate evidence is confirmed.
 - Use `docs/integrations/glean/prototypes/executive-readiness-demo.html` for the executive clickable demo; keep it synthetic until live-data gate evidence is approved.
