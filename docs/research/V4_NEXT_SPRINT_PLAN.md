@@ -45,6 +45,10 @@ By the end of the sprint, the team should have:
 5. A team demo artifact that can be presented as a valuable tool for Glean
    value-realization teams.
 
+Current slice note: the first execution slice covers Workstreams 1-3 only.
+Workstreams 4-5 remain future work until the team reviews the zone model,
+feature backlog, and value-hypothesis map.
+
 ## Sprint Boundaries
 
 Allowed:
@@ -97,6 +101,10 @@ Deliverables:
 - A one-page narrative that says why this is a value-realization operating map,
   not an adoption leaderboard.
 
+Output artifact:
+
+- [V4 Readout Zone Model](./V4_READOUT_ZONE_MODEL.md)
+
 Acceptance criteria:
 
 - Every zone is aggregate-only and fail-closed.
@@ -131,6 +139,10 @@ Deferred features:
 These can return only after the readout proves the aggregate rule-based layer is
 stable and an outcome variable is available.
 
+Output artifact:
+
+- [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
+
 ## Workstream 3: Value Hypothesis Map
 
 Goal: attach economic questions after aggregate behavior evidence, not before.
@@ -160,6 +172,19 @@ Acceptance criteria:
 - No hypothesis implies causality.
 - No hypothesis upgrades a suppressed or held row.
 - Every hypothesis states what a customer must provide before dollarization.
+
+Output artifact:
+
+- [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
+
+Saved-data test:
+
+- [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
+- [V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md)
+
+Follow-up status: the Velocity x Depth aggregate export is complete. It proves
+that strict `SCALE_CANDIDATE` rows exist across all three fixed windows, while
+preserving the same internal-only, non-dollarized, aggregate readout boundary.
 
 ## Workstream 4: Team Demo Artifact
 
