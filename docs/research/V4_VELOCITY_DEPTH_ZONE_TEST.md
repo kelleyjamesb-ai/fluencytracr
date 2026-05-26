@@ -146,3 +146,8 @@ to five aggregate examples from the safe summary:
 
 Each example must state the action posture, value hypothesis, missing outcome
 evidence, and blocked claims.
+
+The strategy-routing follow-up is now recorded in
+[V4 Value Realization Strategy Layer](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md),
+with retained output at
+`dogfood-output/v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`.
