@@ -621,16 +621,23 @@ def test_value_realization_strategy_csv_is_aggregate_only() -> None:
     }
     assert forbidden_columns.isdisjoint({column.lower() for column in rows[0]})
 
-    strategy_by_zone = {
-        row["readout_zone_test_result"]: row["strategy_posture"]
-        for row in rows
-        if row["window_count"] == "3"
+    expected_strategy_by_zone = {
+        "SCALE_CANDIDATE": "SCALE_AND_MEASURE",
+        "SHALLOW_ADOPTION": "COACH_OR_REDESIGN",
+        "FOCUSED_EXPERT_USE": "STUDY_AND_PACKAGE",
+        "TRUST_EVIDENCE_GAP": "REPAIR_TRUST_LOOP",
+        "SUPPRESSED": "HOLD_NO_INTERPRETATION",
     }
-    assert strategy_by_zone["SCALE_CANDIDATE"] == "SCALE_AND_MEASURE"
-    assert strategy_by_zone["SHALLOW_ADOPTION"] == "COACH_OR_REDESIGN"
-    assert strategy_by_zone["FOCUSED_EXPERT_USE"] == "STUDY_AND_PACKAGE"
-    assert strategy_by_zone["TRUST_EVIDENCE_GAP"] == "REPAIR_TRUST_LOOP"
-    assert strategy_by_zone["SUPPRESSED"] == "HOLD_NO_INTERPRETATION"
+    three_window_rows = [row for row in rows if row["window_count"] == "3"]
+    assert three_window_rows
+    assert set(expected_strategy_by_zone).issubset(
+        {row["readout_zone_test_result"] for row in three_window_rows}
+    )
+
+    for row in three_window_rows:
+        zone = row["readout_zone_test_result"]
+        assert zone in expected_strategy_by_zone
+        assert row["strategy_posture"] == expected_strategy_by_zone[zone]
 
     for row in rows:
         assert row["monetary_value_status"] in {
