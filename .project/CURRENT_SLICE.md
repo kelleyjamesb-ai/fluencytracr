@@ -1,37 +1,33 @@
 # Current Slice Contract
 
-- Work item id: `v4-promote-behavior-cohort-axes`
-- Title: `Promote Velocity and Depth Repertoire behavior-cohort axes`
+- Work item id: `v4-next-sprint-plan`
+- Title: `Plan next V4 operating readout sprint`
 - Status: `completed`
 
 ## Summary
 
-Promote the saved V4 behavior-cohort joint-distribution result into a durable
-research decision: Velocity band and Depth Repertoire band are internal
-behavior-cohort axes for Glean dogfood portfolio review. AGENT delegation and
-Skill Read presence remain context-only. Economic interpretation remains
-limited to non-dollarized value-investigation routing.
+Create a bounded next-sprint plan that moves from aggregate AI operating
+fluency evidence to non-dollarized economic value hypotheses. The plan must be
+usable for team presentation and future client-pilot framing while preserving
+all current V1-V4 governance boundaries.
 
 ## Scope Paths
 
-- `docs/research/V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md`
-- `docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md`
-- `docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md`
-- `docs/research/V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md`
+- `docs/research/V4_NEXT_SPRINT_PLAN.md`
 - `docs/research/V4_VALIDATION_PLAN.md`
-- `docs/research/V4_CLOSEOUT_DECISION.md`
-- `docs/research/V4_GLEAN_DOGFOOD_DECISION.md`
+- `README.md`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- The promotion must not authorize customer-facing V4 economic output.
-- The promotion must not convert Velocity or Depth into productivity,
-  maturity, ROI, ranking, or prediction claims.
-- Skill Read presence and AGENT delegation must remain context-only.
-- Economic suggestions must remain investigation routing, not dollarized
-  recommendations.
+- The plan must not authorize customer-facing economic output.
+- The plan must not create a score, ranking, maturity label, productivity
+  claim, ROI claim, causal claim, or prediction claim.
+- The plan must preserve the locked canonical event and suppression reason
+  sets.
+- The plan must make economic value hypotheses downstream of aggregate
+  behavior evidence, not a substitute for outcome validation.
 
 ## Planned Checks
 
@@ -51,10 +47,9 @@ limited to non-dollarized value-investigation routing.
 
 ## Evaluator Pass Criteria
 
-- Promotion decision is documented and linked from the governing V4 research
-  docs.
+- Sprint plan is documented and linked from the relevant V4 planning docs.
 - Guardrails remain explicit: no ROI, no productivity, no customer-facing
-  economic output, no rankings, no raw skill names, no org metadata segments.
+  economic output, no rankings, no raw skill names, and no person-level fields.
 - Verification commands pass.
 
 ## Specialists To Consult
@@ -63,7 +58,6 @@ limited to non-dollarized value-investigation routing.
 
 ## Next Handoff Note
 
-Completed locally. Velocity band and Depth Repertoire band are promoted as
-internal aggregate behavior-cohort axes. AGENT delegation and Skill Read
-presence remain context-only, and economic suggestions remain limited to
-non-dollarized investigation routing.
+Completed locally. Added the V4 next sprint plan, linked it from the validation
+plan and README, and kept the sprint docs/research-first with no runtime,
+economic, scoring, ranking, or customer-facing implementation approval.
