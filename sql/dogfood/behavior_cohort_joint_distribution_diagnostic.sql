@@ -86,8 +86,9 @@ source_skill_spans AS (
       NULLIF(TRIM(jsonPayload.action.spaninfo.sessioninfo.sessiontrackingtoken), '')
     ) AS session_token,
     COALESCE(
-      NULLIF(TRIM(jsonPayload.action.agentmetadata.userid), ''),
-      NULLIF(TRIM(jsonPayload.action.spaninfo.userid), '')
+      NULLIF(TRIM(jsonPayload.action.user_id), ''),
+      NULLIF(TRIM(jsonPayload.spaninfo.userid), ''),
+      NULLIF(TRIM(jsonPayload.span_info.user_id), '')
     ) AS user_key
   FROM `PROJECT.DATASET.scrubbed_agentspan_*`
   WHERE timestamp >= window_start
