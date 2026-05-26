@@ -27,7 +27,7 @@ The following analyses are complete from saved aggregate CSVs:
 | Skill Read Evidence availability | Complete | Skill-read evidence is observable with strong parent join coverage. |
 | Full local rehearsal | Complete | V4 can produce a numbers-backed internal research readout. |
 | Trust classification | Complete | `CHAT_FEEDBACK` and `SEARCH_FEEDBACK` are candidate narrow trust signals. |
-| Behavior cohort readiness | Complete | Cohort concept is valid, and fixed-window joint distributions are now saved for review. |
+| Behavior cohort readiness | Complete | Velocity and Depth Repertoire are promoted as internal behavior-cohort review axes; AGENT delegation and Skill Read presence remain context-only. |
 
 ## Valid Current Findings
 
@@ -108,29 +108,35 @@ The combined export has 515 aggregate rows: 495 rows are
 `SURFACE_ELIGIBLE_RESEARCH_ONLY`, and 20 rows remain `SUPPRESS` behind
 `INSUFFICIENT_VOLUME`.
 
+The reviewed promotion decision is recorded in
+[V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md).
+It promotes `velocity_band` and `depth_repertoire_band` for internal
+behavior-cohort review only.
+
 ## Decision
 
 `DATA_ANALYSIS_COMPLETE_FOR_SAVED_EXPORTS`
 
-`BEHAVIOR_COHORT_JOINT_DISTRIBUTION_EXPORTED_FOR_REVIEW`
+`PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES`
 
 We should stop mining the earlier saved CSVs for more precision. The next
-incremental value comes from reviewing the saved joint-distribution export and
-choosing a classification decision.
+incremental value comes from running the promoted Velocity and Depth Repertoire
+axes through an internal Glean-wide portfolio readout and using the Economic
+Impact Bridge only for non-dollarized value-investigation routing.
 
 ## Recommended Next Phase
 
-Review the saved joint-distribution outputs from:
+Run the next internal readout using:
 
-`sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`
+- Velocity band,
+- Depth Repertoire band,
+- narrow trust classifications,
+- AGENT delegation as context only,
+- Skill Read presence as context only.
 
-After that, update the V4 decision with one of:
-
-- `PROMOTE_BEHAVIOR_COHORT_CLASSIFICATIONS`,
-- `HOLD_FOR_SIGNAL_STABILITY`,
-- `HOLD_FOR_ATTRIBUTION_REFINEMENT`,
-- `HOLD_FOR_ORG_METADATA_JOIN`,
-- `REJECT_CURRENT_CLASSIFICATION_SET`.
+The readout may produce candidate economic investigations and evidence gaps.
+It must not produce dollarized ranges, ROI, productivity lift, customer-facing
+economic output, or automated recommendations.
 
 ## Stopping Rule
 
