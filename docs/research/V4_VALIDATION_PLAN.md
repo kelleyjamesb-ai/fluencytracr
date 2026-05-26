@@ -36,6 +36,7 @@ Canonical validation gate documents:
 - [V4 Behavior Cohort Classification Readout](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
 - [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
 - [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
+- [V4 Next Sprint Plan](./V4_NEXT_SPRINT_PLAN.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -192,6 +193,12 @@ customer-owned assumption, and caveat. It does not authorize dollarized ROI,
 customer-facing economic readouts, Time-Saved Defensibility Range
 productization, confidence-band changes, automated recommendations,
 productivity lift, causality, prediction, or ranking.
+
+The next planning boundary is recorded in
+[V4_NEXT_SPRINT_PLAN.md](./V4_NEXT_SPRINT_PLAN.md). That plan keeps the next
+sprint docs/research-first: define an aggregate operating readout, rehearse it
+from retained CSVs, attach non-dollarized value hypotheses, and specify the
+client-pilot gate before any implementation surface is considered.
 
 ## V4 Closeout Test Plan
 

@@ -158,6 +158,7 @@ is not the lead positioning for this repository.
 - V4 full dogfood rehearsal readout: [docs/research/V4_FULL_DOGFOOD_REHEARSAL_READOUT.md](docs/research/V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
 - V4 behavior cohort classification readout: [docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md](docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
 - V4 data analysis closeout: [docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md](docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md)
+- V4 next sprint plan: [docs/research/V4_NEXT_SPRINT_PLAN.md](docs/research/V4_NEXT_SPRINT_PLAN.md)
 - V4 Glean dogfood decision: [docs/research/V4_GLEAN_DOGFOOD_DECISION.md](docs/research/V4_GLEAN_DOGFOOD_DECISION.md)
 - V4 closeout decision: [docs/research/V4_CLOSEOUT_DECISION.md](docs/research/V4_CLOSEOUT_DECISION.md)
 - V4 internal readout runbook: [docs/research/V4_INTERNAL_READOUT_RUNBOOK.md](docs/research/V4_INTERNAL_READOUT_RUNBOOK.md)
