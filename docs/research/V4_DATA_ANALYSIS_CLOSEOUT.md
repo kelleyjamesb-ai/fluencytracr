@@ -27,7 +27,7 @@ The following analyses are complete from saved aggregate CSVs:
 | Skill Read Evidence availability | Complete | Skill-read evidence is observable with strong parent join coverage. |
 | Full local rehearsal | Complete | V4 can produce a numbers-backed internal research readout. |
 | Trust classification | Complete | `CHAT_FEEDBACK` and `SEARCH_FEEDBACK` are candidate narrow trust signals. |
-| Behavior cohort readiness | Complete | Cohort concept is valid, but true cohort analysis needs joint distributions. |
+| Behavior cohort readiness | Complete | Cohort concept is valid, and fixed-window joint distributions are now saved for review. |
 
 ## Valid Current Findings
 
@@ -62,26 +62,26 @@ The current data does not support:
 - skill-name readouts,
 - org metadata segmentation.
 
-## Remaining Data Gap
+## Prior Data Gap
 
-The remaining core data gap is not another broad scan. It is a specific missing
-shape:
+The core data gap after the first saved-export pass was not another broad scan.
+It was a specific missing shape:
 
 > joint aggregate distributions by behavior cohort.
 
-The saved CSVs are mostly separate summaries. They can tell us that Depth is
-stable, trust signals exist, and skill-read evidence is available. They cannot
-tell us whether high-Depth cohorts also have better trust attribution, stronger
-AGENT evidence, or different skill-read presence.
+The earlier saved CSVs were mostly separate summaries. They could tell us that
+Depth was stable, trust signals existed, and skill-read evidence was available.
+They could not tell us whether high-Depth cohorts also had better trust
+attribution, stronger AGENT evidence, or different skill-read presence. The
+new joint-distribution export fills that shape for review.
 
-## Required Next Data Test
+## Completed Joint-Distribution Data Test
 
-The only additional BigQuery work I recommend is the narrow dogfood/research
-joint-distribution diagnostic now scaffolded at:
+The narrow dogfood/research joint-distribution diagnostic is scaffolded at:
 
 `sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`
 
-It should output aggregate rows by:
+It was run against the three fixed 60-day windows and outputs aggregate rows by:
 
 - fixed window,
 - behavior cohort dimension,
@@ -96,29 +96,33 @@ It should output aggregate rows by:
 It should not emit user IDs, emails, names, prompts, outputs, transcripts, raw
 skill names, raw event rows, action rows, or raw HR fields.
 
-## Decision
-
-`DATA_ANALYSIS_COMPLETE_FOR_SAVED_EXPORTS`
-
-`HOLD_FOR_BEHAVIOR_COHORT_JOINT_DISTRIBUTION`
-
-We should stop mining the current saved CSVs for more precision. They have
-yielded the right conclusions. The next incremental value comes only from the
-joint-distribution export.
-
-## Recommended Next Phase
-
-Run the narrow diagnostic across the three fixed windows:
-
-`sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`
-
-Then save:
+Saved outputs:
 
 - `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_window_1.csv`
 - `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_window_2.csv`
 - `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_window_3.csv`
 - `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_all_windows.csv`
 - `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_summary_safe.csv`
+
+The combined export has 515 aggregate rows: 495 rows are
+`SURFACE_ELIGIBLE_RESEARCH_ONLY`, and 20 rows remain `SUPPRESS` behind
+`INSUFFICIENT_VOLUME`.
+
+## Decision
+
+`DATA_ANALYSIS_COMPLETE_FOR_SAVED_EXPORTS`
+
+`BEHAVIOR_COHORT_JOINT_DISTRIBUTION_EXPORTED_FOR_REVIEW`
+
+We should stop mining the earlier saved CSVs for more precision. The next
+incremental value comes from reviewing the saved joint-distribution export and
+choosing a classification decision.
+
+## Recommended Next Phase
+
+Review the saved joint-distribution outputs from:
+
+`sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql`
 
 After that, update the V4 decision with one of:
 
