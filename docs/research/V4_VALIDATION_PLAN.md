@@ -37,6 +37,9 @@ Canonical validation gate documents:
 - [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
 - [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
 - [V4 Next Sprint Plan](./V4_NEXT_SPRINT_PLAN.md)
+- [V4 Readout Zone Model](./V4_READOUT_ZONE_MODEL.md)
+- [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
+- [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -199,6 +202,15 @@ The next planning boundary is recorded in
 sprint docs/research-first: define an aggregate operating readout, rehearse it
 from retained CSVs, attach non-dollarized value hypotheses, and specify the
 client-pilot gate before any implementation surface is considered.
+
+The first execution slice for that sprint is complete in documentation form:
+
+- [V4_READOUT_ZONE_MODEL.md](./V4_READOUT_ZONE_MODEL.md) defines aggregate
+  readout zones and action postures.
+- [V4_BEHAVIOR_FEATURE_BACKLOG.md](./V4_BEHAVIOR_FEATURE_BACKLOG.md) defines
+  the derived behavior-feature backlog without changing canonical events.
+- [V4_VALUE_HYPOTHESIS_MAP.md](./V4_VALUE_HYPOTHESIS_MAP.md) maps zones to
+  non-dollarized AIVM value hypotheses and required customer-owned evidence.
 
 ## V4 Closeout Test Plan
 
