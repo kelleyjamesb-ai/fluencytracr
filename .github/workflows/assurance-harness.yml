@@ -85,6 +85,9 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate --schema backend/prisma/schema.prisma
 
+      - name: Run seed self-test
+        run: npm run test:seed
+
       - name: Start backend
         run: |
           npm run dev --workspace backend > backend.log 2>&1 &
@@ -111,9 +114,6 @@ jobs:
           console.error("Backend did not report db: postgres before timeout");
           process.exit(1);
           NODE
-
-      - name: Run seed self-test
-        run: npm run test:seed
 
       - name: Install synthetic LMSYS CI fixture
         run: |
