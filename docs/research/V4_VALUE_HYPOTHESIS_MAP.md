@@ -124,3 +124,15 @@ interpretation" only after all of the following exist:
 Even then, FluencyTracr should describe the economic interpretation as
 customer-owned and evidence-bound. It should not compute or claim dollarized
 ROI unless a later governance decision explicitly authorizes a separate scope.
+
+## Relationship To Strategy Routing
+
+The companion
+[V4 Value Realization Strategy Layer](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
+turns these hypotheses into internal action postures: scale-and-measure,
+coach-or-redesign, study-and-package, repair trust loops, fix instrumentation,
+or hold interpretation.
+
+That strategy layer may state the CFO value question and required
+monetary-value evidence. It must not calculate monetary value from behavior
+evidence alone.

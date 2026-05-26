@@ -40,6 +40,7 @@ Canonical validation gate documents:
 - [V4 Readout Zone Model](./V4_READOUT_ZONE_MODEL.md)
 - [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
 - [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
+- [V4 Value Realization Strategy Layer](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
 - [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
 - [V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md)
 
@@ -213,6 +214,9 @@ The first execution slice for that sprint is complete in documentation form:
   the derived behavior-feature backlog without changing canonical events.
 - [V4_VALUE_HYPOTHESIS_MAP.md](./V4_VALUE_HYPOTHESIS_MAP.md) maps zones to
   non-dollarized AIVM value hypotheses and required customer-owned evidence.
+- [V4_VALUE_REALIZATION_STRATEGY_LAYER.md](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
+  maps aggregate zones to internal strategy postures, CFO value questions, and
+  required monetary-value evidence without calculating monetary value.
 - [V4_READOUT_ZONE_DATA_TEST.md](./V4_READOUT_ZONE_DATA_TEST.md) tests those
   artifacts against retained aggregate CSVs and records the Velocity x Depth
   join gap before strict `SCALE_CANDIDATE` assignment is allowed.

@@ -176,6 +176,7 @@ Acceptance criteria:
 Output artifact:
 
 - [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
+- [V4 Value Realization Strategy Layer](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
 
 Saved-data test:
 
@@ -185,6 +186,11 @@ Saved-data test:
 Follow-up status: the Velocity x Depth aggregate export is complete. It proves
 that strict `SCALE_CANDIDATE` rows exist across all three fixed windows, while
 preserving the same internal-only, non-dollarized, aggregate readout boundary.
+
+Strategy-layer status: V0 is complete as an internal strategy-routing layer. It
+maps zones to scale, coach/redesign, study/package, repair-trust-loop,
+fix-instrumentation, or hold postures. It also records CFO value questions and
+required monetary-value evidence while explicitly blocking dollarized output.
 
 ## Workstream 4: Team Demo Artifact
 
