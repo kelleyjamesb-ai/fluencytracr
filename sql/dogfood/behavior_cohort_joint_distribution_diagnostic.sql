@@ -16,8 +16,10 @@
 DECLARE window_start TIMESTAMP DEFAULT TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY);
 DECLARE window_end TIMESTAMP DEFAULT CURRENT_TIMESTAMP();
 
-WITH source_events AS (
-  SELECT
+-- BigQuery plans this diagnostic more reliably as staged temp tables than as a single CTE tree.
+
+CREATE TEMP TABLE source_events AS
+SELECT
     timestamp AS event_ts,
     DATE(timestamp) AS event_date,
     jsonPayload.type AS event_type,
@@ -73,11 +75,10 @@ WITH source_events AS (
       'AI_ANSWER_VOTE',
       'AI_SUMMARY_VOTE',
       'SEARCH_FEEDBACK'
-    )
-),
+    );
 
-source_skill_spans AS (
-  SELECT
+CREATE TEMP TABLE source_skill_spans AS
+SELECT
     timestamp AS span_ts,
     NULLIF(TRIM(jsonPayload.action.workflow_id), '') AS workflow_run_id,
     NULLIF(TRIM(jsonPayload.action.action_run_id), '') AS action_run_id,
@@ -109,18 +110,16 @@ source_skill_spans AS (
         WHERE input.name = 'skill_name'
           AND NULLIF(TRIM(input.value), '') IS NOT NULL
       )
-    )
-),
+    );
 
-workflow_sessions AS (
-  SELECT DISTINCT session_token
+CREATE TEMP TABLE workflow_sessions AS
+SELECT DISTINCT session_token
   FROM source_events
   WHERE event_type = 'WORKFLOW_RUN'
-    AND session_token IS NOT NULL
-),
+    AND session_token IS NOT NULL;
 
-workflow_surfaces AS (
-  SELECT
+CREATE TEMP TABLE workflow_surfaces AS
+SELECT
     event_ts,
     event_date,
     user_key,
@@ -140,11 +139,10 @@ workflow_surfaces AS (
   FROM source_events
   WHERE event_type = 'WORKFLOW_RUN'
     AND workflow_feature IS NOT NULL
-    AND user_key IS NOT NULL
-),
+    AND user_key IS NOT NULL;
 
-standalone_surfaces AS (
-  SELECT
+CREATE TEMP TABLE standalone_surfaces AS
+SELECT
     event_ts,
     event_date,
     user_key,
@@ -184,48 +182,67 @@ standalone_surfaces AS (
         FROM workflow_sessions AS workflow_session
         WHERE workflow_session.session_token = event.session_token
       )
-    )
-),
+    );
 
-taxonomy_surfaces AS (
-  SELECT * FROM workflow_surfaces
+CREATE TEMP TABLE taxonomy_surfaces AS
+SELECT * FROM workflow_surfaces
   UNION ALL
-  SELECT * FROM standalone_surfaces
-),
+  SELECT * FROM standalone_surfaces;
 
-parent_join_aliases AS (
-  SELECT DISTINCT
+CREATE TEMP TABLE deduped_taxonomy_surfaces AS
+SELECT DISTINCT
+    event_date,
+    user_key,
+    session_token,
+    tracking_token,
+    root_workflow_id,
+    workflow_run_id,
+    parent_record_key,
+    workflow_id,
+    surface_id
+  FROM taxonomy_surfaces;
+
+CREATE TEMP TABLE session_parent_surfaces AS
+SELECT DISTINCT
+    user_key,
+    session_token,
+    workflow_id,
+    parent_record_key
+  FROM deduped_taxonomy_surfaces
+  WHERE session_token IS NOT NULL;
+
+CREATE TEMP TABLE parent_join_aliases AS
+SELECT DISTINCT
     user_key,
     workflow_id,
     parent_record_key,
     attribution_join_key
   FROM (
     SELECT user_key, workflow_id, parent_record_key, parent_record_key AS attribution_join_key
-    FROM taxonomy_surfaces
+    FROM deduped_taxonomy_surfaces
     WHERE parent_record_key IS NOT NULL
 
     UNION ALL
 
     SELECT user_key, workflow_id, parent_record_key, workflow_run_id AS attribution_join_key
-    FROM taxonomy_surfaces
+    FROM deduped_taxonomy_surfaces
     WHERE workflow_run_id IS NOT NULL
 
     UNION ALL
 
     SELECT user_key, workflow_id, parent_record_key, root_workflow_id AS attribution_join_key
-    FROM taxonomy_surfaces
+    FROM deduped_taxonomy_surfaces
     WHERE root_workflow_id IS NOT NULL
 
     UNION ALL
 
     SELECT user_key, workflow_id, parent_record_key, tracking_token AS attribution_join_key
-    FROM taxonomy_surfaces
+    FROM deduped_taxonomy_surfaces
     WHERE tracking_token IS NOT NULL
-  )
-),
+  );
 
-verification_signals AS (
-  SELECT
+CREATE TEMP TABLE verification_signals AS
+SELECT
     TO_HEX(SHA256(CONCAT(
       COALESCE(user_key, ''),
       '|',
@@ -270,11 +287,10 @@ verification_signals AS (
       'AI_SUMMARY_VOTE',
       'SEARCH_FEEDBACK'
     )
-    AND user_key IS NOT NULL
-),
+    AND user_key IS NOT NULL;
 
-exact_parent_candidates AS (
-  SELECT
+CREATE TEMP TABLE exact_parent_candidates AS
+SELECT
     signal.signal_key,
     signal.expected_parent_surface,
     signal.user_key,
@@ -286,11 +302,10 @@ exact_parent_candidates AS (
   JOIN parent_join_aliases AS parent
     ON parent.user_key = signal.user_key
     AND signal.direct_parent_key IS NOT NULL
-    AND signal.direct_parent_key = parent.attribution_join_key
-),
+    AND signal.direct_parent_key = parent.attribution_join_key;
 
-session_parent_candidates AS (
-  SELECT
+CREATE TEMP TABLE session_parent_candidates AS
+SELECT
     signal.signal_key,
     signal.expected_parent_surface,
     signal.user_key,
@@ -299,37 +314,33 @@ session_parent_candidates AS (
     'SESSION_PARENT_KEY' AS attribution_tier,
     2 AS attribution_priority
   FROM verification_signals AS signal
-  JOIN taxonomy_surfaces AS parent
+  JOIN session_parent_surfaces AS parent
     ON parent.user_key = signal.user_key
     AND signal.session_token IS NOT NULL
     AND parent.session_token = signal.session_token
-    AND parent.workflow_id = signal.expected_parent_surface
-),
+    AND parent.workflow_id = signal.expected_parent_surface;
 
-all_candidates AS (
-  SELECT * FROM exact_parent_candidates
+CREATE TEMP TABLE all_candidates AS
+SELECT * FROM exact_parent_candidates
   UNION ALL
-  SELECT * FROM session_parent_candidates
-),
+  SELECT * FROM session_parent_candidates;
 
-best_candidate_priority AS (
-  SELECT
+CREATE TEMP TABLE best_candidate_priority AS
+SELECT
     signal_key,
     MIN(attribution_priority) AS attribution_priority
   FROM all_candidates
-  GROUP BY signal_key
-),
+  GROUP BY signal_key;
 
-best_candidates AS (
-  SELECT candidate.*
+CREATE TEMP TABLE best_candidates AS
+SELECT candidate.*
   FROM all_candidates AS candidate
   JOIN best_candidate_priority AS best
     ON best.signal_key = candidate.signal_key
-    AND best.attribution_priority = candidate.attribution_priority
-),
+    AND best.attribution_priority = candidate.attribution_priority;
 
-signal_classification AS (
-  SELECT
+CREATE TEMP TABLE signal_classification AS
+SELECT
     signal.signal_key,
     signal.user_key,
     CASE
@@ -354,11 +365,10 @@ signal_classification AS (
   GROUP BY
     signal.signal_key,
     signal.expected_parent_surface,
-    signal.user_key
-),
+    signal.user_key;
 
-per_user_trust AS (
-  SELECT
+CREATE TEMP TABLE per_user_trust AS
+SELECT
     user_key,
     COUNT(DISTINCT signal_key) AS trust_signal_count,
     COUNT(DISTINCT IF(attribution_result IN (
@@ -375,11 +385,10 @@ per_user_trust AS (
       ELSE 'INSUFFICIENT_TRUST_EVIDENCE'
     END AS trust_classification
   FROM signal_classification
-  GROUP BY user_key
-),
+  GROUP BY user_key;
 
-per_user_surface AS (
-  SELECT
+CREATE TEMP TABLE per_user_surface AS
+SELECT
     user_key,
     surface_id,
     COUNT(DISTINCT event_date) AS active_days_on_surface,
@@ -388,23 +397,21 @@ per_user_surface AS (
       LOWER(surface_id) = 'workflow:agent'
       OR STARTS_WITH(LOWER(surface_id), 'workflow:agent:')
     ) AS agent_surface_events
-  FROM taxonomy_surfaces
-  GROUP BY user_key, surface_id
-),
+  FROM deduped_taxonomy_surfaces
+  GROUP BY user_key, surface_id;
 
-per_user_depth AS (
-  SELECT
+CREATE TEMP TABLE per_user_depth AS
+SELECT
     user_key,
     COUNT(DISTINCT surface_id) AS surface_repertoire,
     COUNTIF(interactions_on_surface >= 2) AS repeated_surface_count,
     SUM(interactions_on_surface) AS total_interactions,
     SUM(agent_surface_events) AS agent_interactions
   FROM per_user_surface
-  GROUP BY user_key
-),
+  GROUP BY user_key;
 
-per_user_skill AS (
-  SELECT
+CREATE TEMP TABLE per_user_skill AS
+SELECT
     user_key,
     COUNT(*) AS skill_read_rows,
     COUNTIF(
@@ -414,19 +421,17 @@ per_user_skill AS (
     ) AS skill_read_rows_with_parent_key
   FROM source_skill_spans
   WHERE user_key IS NOT NULL
-  GROUP BY user_key
-),
+  GROUP BY user_key;
 
-all_behavior_users AS (
-  SELECT user_key FROM per_user_depth
+CREATE TEMP TABLE all_behavior_users AS
+SELECT user_key FROM per_user_depth
   UNION DISTINCT
   SELECT user_key FROM per_user_trust
   UNION DISTINCT
-  SELECT user_key FROM per_user_skill
-),
+  SELECT user_key FROM per_user_skill;
 
-per_user_behavior AS (
-  SELECT
+CREATE TEMP TABLE per_user_behavior AS
+SELECT
     user.user_key,
     COALESCE(depth.surface_repertoire, 0) AS surface_repertoire,
     COALESCE(depth.repeated_surface_count, 0) AS repeated_surface_count,
@@ -443,13 +448,25 @@ per_user_behavior AS (
   LEFT JOIN per_user_skill AS skill
     ON skill.user_key = user.user_key
   LEFT JOIN per_user_trust AS trust
-    ON trust.user_key = user.user_key
-),
+    ON trust.user_key = user.user_key;
 
-per_user_banded AS (
-  SELECT
-    *,
-    NTILE(3) OVER (ORDER BY total_interactions, user_key) AS velocity_ntile,
+CREATE TEMP TABLE velocity_boundaries AS
+SELECT
+    quantiles[OFFSET(1)] AS low_velocity_boundary,
+    quantiles[OFFSET(2)] AS high_velocity_boundary
+  FROM (
+    SELECT APPROX_QUANTILES(total_interactions, 3) AS quantiles
+    FROM per_user_behavior
+  );
+
+CREATE TEMP TABLE per_user_banded AS
+SELECT
+    behavior.*,
+    CASE
+      WHEN behavior.total_interactions > boundaries.high_velocity_boundary THEN 'HIGH_VELOCITY'
+      WHEN behavior.total_interactions > boundaries.low_velocity_boundary THEN 'MEDIUM_VELOCITY'
+      ELSE 'LOW_VELOCITY'
+    END AS velocity_band,
     CASE
       WHEN agent_interactions >= 2 THEN 'AGENT_DELEGATION_REPEATED'
       WHEN agent_interactions = 1 THEN 'AGENT_DELEGATION_PRESENT'
@@ -459,18 +476,14 @@ per_user_banded AS (
       WHEN skill_read_rows > 0 THEN 'SKILL_READ_PRESENT'
       ELSE 'SKILL_READ_ABSENT'
     END AS skill_read_presence_classification
-  FROM per_user_behavior
-),
+  FROM per_user_behavior AS behavior
+  CROSS JOIN velocity_boundaries AS boundaries;
 
-cohort_members AS (
-  SELECT
+CREATE TEMP TABLE cohort_members AS
+SELECT
     user_key,
     'velocity_band' AS behavior_cohort_dimension,
-    CASE velocity_ntile
-      WHEN 3 THEN 'HIGH_VELOCITY'
-      WHEN 2 THEN 'MEDIUM_VELOCITY'
-      ELSE 'LOW_VELOCITY'
-    END AS behavior_cohort_band,
+    velocity_band AS behavior_cohort_band,
     trust_classification,
     agent_delegation_classification,
     skill_read_presence_classification,
@@ -528,11 +541,10 @@ cohort_members AS (
     attributed_signal_count,
     agent_interactions,
     skill_read_rows
-  FROM per_user_banded
-),
+  FROM per_user_banded;
 
-aggregate_joint_distribution AS (
-  SELECT
+CREATE TEMP TABLE aggregate_joint_distribution AS
+SELECT
     behavior_cohort_dimension,
     behavior_cohort_band,
     trust_classification,
@@ -549,15 +561,13 @@ aggregate_joint_distribution AS (
     behavior_cohort_band,
     trust_classification,
     agent_delegation_classification,
-    skill_read_presence_classification
-),
+    skill_read_presence_classification;
 
-privacy_screened_results AS (
-  SELECT
+CREATE TEMP TABLE privacy_screened_results AS
+SELECT
     *,
     cohort_size >= 5 AS clears_small_cell_gate
-  FROM aggregate_joint_distribution
-)
+  FROM aggregate_joint_distribution;
 
 SELECT
   DATE(window_start) AS window_start,
