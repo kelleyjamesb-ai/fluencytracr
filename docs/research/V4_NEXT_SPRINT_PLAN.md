@@ -180,6 +180,11 @@ Output artifact:
 Saved-data test:
 
 - [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
+- [V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md)
+
+Follow-up status: the Velocity x Depth aggregate export is complete. It proves
+that strict `SCALE_CANDIDATE` rows exist across all three fixed windows, while
+preserving the same internal-only, non-dollarized, aggregate readout boundary.
 
 ## Workstream 4: Team Demo Artifact
 

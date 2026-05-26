@@ -48,6 +48,10 @@ Behavior cohort joint distribution:
 
 - `v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_summary_safe.csv`
 
+Velocity x Depth readout-zone test:
+
+- `v4-velocity-depth-zone/v4_velocity_depth_zone_summary_safe.csv`
+
 ## QA-Only Aggregate Attribution CSVs
 
 These files are tracked for narrow attribution QA only. They may include
@@ -86,6 +90,13 @@ Behavior cohort joint distribution QA:
 - `v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_window_2.csv`
 - `v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_window_3.csv`
 - `v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_all_windows.csv`
+
+Velocity x Depth readout-zone QA:
+
+- `v4-velocity-depth-zone/v4_velocity_depth_zone_window_1.csv`
+- `v4-velocity-depth-zone/v4_velocity_depth_zone_window_2.csv`
+- `v4-velocity-depth-zone/v4_velocity_depth_zone_window_3.csv`
+- `v4-velocity-depth-zone/v4_velocity_depth_zone_all_windows.csv`
 
 ## Excluded Scratch Files
 

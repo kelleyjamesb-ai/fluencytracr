@@ -105,20 +105,21 @@ remain `UNCLASSIFIED` friction investigations. Trust gaps remain trust-loop
 investigations. Suppressed and instrumentation-held rows produce no value
 hypothesis.
 
-## Next Data Test Needed
+## Follow-Up Data Test Completed
 
-The next retained-data test should add one aggregate export:
+The follow-up data test added the needed aggregate export:
 
 ```text
 velocity_band x depth_repertoire_band x trust_classification x
 agent_delegation_classification x skill_read_presence_classification
 ```
 
-That export would use existing evidence only. It would not add canonical
-events, suppression reasons, thresholds, raw identifiers, raw skill names, or
-economic calculations.
+The result is recorded in
+[V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md), with retained
+CSV outputs under `dogfood-output/v4-velocity-depth-zone/`.
 
-It is the minimum additional data shape needed to test whether
-`SCALE_CANDIDATE` exists in the retained Glean dogfood evidence, or whether the
-visible high-Velocity rows are actually shallow, trust-held, or
-instrumentation-held once Depth Repertoire is joined.
+That export uses existing evidence only. It does not add canonical events,
+suppression reasons, thresholds, raw identifiers, raw skill names, or economic
+calculations. It confirms that strict `SCALE_CANDIDATE` rows exist in the
+retained Glean dogfood evidence once Velocity and Depth Repertoire are joined,
+while trust gaps remain the dominant hold state.

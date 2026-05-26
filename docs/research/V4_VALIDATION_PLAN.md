@@ -41,6 +41,7 @@ Canonical validation gate documents:
 - [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
 - [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
 - [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
+- [V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -215,6 +216,10 @@ The first execution slice for that sprint is complete in documentation form:
 - [V4_READOUT_ZONE_DATA_TEST.md](./V4_READOUT_ZONE_DATA_TEST.md) tests those
   artifacts against retained aggregate CSVs and records the Velocity x Depth
   join gap before strict `SCALE_CANDIDATE` assignment is allowed.
+- [V4_VELOCITY_DEPTH_ZONE_TEST.md](./V4_VELOCITY_DEPTH_ZONE_TEST.md) closes
+  that join gap with a dedicated aggregate BigQuery export and records 12
+  stable strict `SCALE_CANDIDATE` rows across the three fixed windows. This is
+  internal investigation routing only and does not authorize economic output.
 
 ## V4 Closeout Test Plan
 

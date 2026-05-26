@@ -22,6 +22,7 @@ SKILL_READ_SQL = ROOT / "sql" / "dogfood" / "skill_read_availability_diagnostic.
 TRUST_SIGNAL_SQL = ROOT / "sql" / "dogfood" / "trust_signal_availability_diagnostic.sql"
 TRUST_ATTRIBUTION_SQL = ROOT / "sql" / "dogfood" / "trust_attribution_refinement_diagnostic.sql"
 BEHAVIOR_COHORT_JOINT_SQL = ROOT / "sql" / "dogfood" / "behavior_cohort_joint_distribution_diagnostic.sql"
+VELOCITY_DEPTH_ZONE_SQL = ROOT / "sql" / "dogfood" / "velocity_depth_zone_diagnostic.sql"
 SCALE_READINESS_CONTRACT = ROOT / "docs" / "contracts" / "value-confidence" / "scale-readiness-portfolio.md"
 
 DOGFOOD_SQL = [
@@ -44,6 +45,7 @@ DOGFOOD_SQL = [
     TRUST_SIGNAL_SQL,
     TRUST_ATTRIBUTION_SQL,
     BEHAVIOR_COHORT_JOINT_SQL,
+    VELOCITY_DEPTH_ZONE_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [
@@ -488,6 +490,43 @@ def test_behavior_cohort_joint_distribution_diagnostic_outputs_aggregate_joint_r
     assert "CREATE TEMP TABLE privacy_screened_results AS" in sql
     assert "COUNT(DISTINCT user_key) AS cohort_size" in sql
     assert "CASE WHEN cohort_size >= 5 THEN cohort_size END AS cohort_size" in sql
+
+    final_select = sql.split("SELECT\n  DATE(window_start)", 1)[1]
+    for forbidden in [
+        "user_key",
+        "observed_skill_name",
+        "raw_skill",
+        "prompt",
+        "transcript",
+        "email",
+    ]:
+        assert forbidden not in final_select
+
+
+def test_velocity_depth_zone_diagnostic_outputs_joined_aggregate_zones() -> None:
+    sql = VELOCITY_DEPTH_ZONE_SQL.read_text()
+
+    for required in [
+        "velocity_band",
+        "depth_repertoire_band",
+        "trust_classification",
+        "agent_delegation_classification",
+        "skill_read_presence_classification",
+        "SCALE_CANDIDATE",
+        "SHALLOW_ADOPTION",
+        "FOCUSED_EXPERT_USE",
+        "TRUST_EVIDENCE_GAP",
+        "INSTRUMENTATION_HOLD_UNSTABLE_DEPTH",
+        "SUPPRESSED",
+        "ACCELERATION_OR_QUALITY_PREMIUM_CANDIDATE_REQUIRES_OUTCOME_EVIDENCE",
+        "COUNT(DISTINCT user_key) AS cohort_size",
+        "CASE WHEN cohort_size >= 5 THEN cohort_size END AS cohort_size",
+    ]:
+        assert required in sql
+
+    assert "FROM `PROJECT.DATASET.gce_events`" in sql
+    assert "FROM `PROJECT.DATASET.scrubbed_agentspan_*`" in sql
+    assert "CREATE TEMP TABLE aggregate_velocity_depth_distribution AS" in sql
 
     final_select = sql.split("SELECT\n  DATE(window_start)", 1)[1]
     for forbidden in [
