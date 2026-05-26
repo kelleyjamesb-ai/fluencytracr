@@ -40,6 +40,7 @@ Canonical validation gate documents:
 - [V4 Readout Zone Model](./V4_READOUT_ZONE_MODEL.md)
 - [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
 - [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
+- [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -211,6 +212,9 @@ The first execution slice for that sprint is complete in documentation form:
   the derived behavior-feature backlog without changing canonical events.
 - [V4_VALUE_HYPOTHESIS_MAP.md](./V4_VALUE_HYPOTHESIS_MAP.md) maps zones to
   non-dollarized AIVM value hypotheses and required customer-owned evidence.
+- [V4_READOUT_ZONE_DATA_TEST.md](./V4_READOUT_ZONE_DATA_TEST.md) tests those
+  artifacts against retained aggregate CSVs and records the Velocity x Depth
+  join gap before strict `SCALE_CANDIDATE` assignment is allowed.
 
 ## V4 Closeout Test Plan
 

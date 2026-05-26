@@ -1,38 +1,41 @@
 # Current Slice Contract
 
-- Work item id: `v4-readout-workstreams-1-3`
-- Title: `Define V4 readout zones, behavior features, and value hypotheses`
+- Work item id: `v4-readout-zone-data-test`
+- Title: `Test V4 readout zones against retained aggregate data`
 - Status: `completed`
 
 ## Summary
 
-Execute Workstreams 1-3 from the V4 next sprint plan and then stop for team
-review. The slice should produce durable docs for the aggregate readout zone
-model, derived behavior-feature backlog, and non-dollarized value-hypothesis
-map while preserving all current V1-V4 governance boundaries.
+Test the Workstreams 1-3 artifacts against retained aggregate dogfood CSVs and
+record what can be assigned now, what remains held, and what data shape is
+needed before strict Scale Candidate assignment is allowed.
 
 ## Scope Paths
 
 - `docs/research/V4_READOUT_ZONE_MODEL.md`
 - `docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md`
 - `docs/research/V4_VALUE_HYPOTHESIS_MAP.md`
+- `docs/research/V4_READOUT_ZONE_DATA_TEST.md`
 - `docs/research/V4_NEXT_SPRINT_PLAN.md`
 - `docs/research/V4_VALIDATION_PLAN.md`
+- `dogfood-output/v4-readout-zone-data-test/v4_readout_zone_data_test_all_windows.csv`
+- `dogfood-output/v4-readout-zone-data-test/v4_readout_zone_data_test_summary.csv`
+- `dogfood-output/v4-readout-zone-data-test/v4_readout_zone_data_test_by_dimension.csv`
 - `README.md`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- The docs must not authorize customer-facing economic output.
-- The docs must not create a score, ranking, maturity label, productivity
+- The data test must not authorize customer-facing economic output.
+- The data test must not create a score, ranking, maturity label, productivity
   claim, ROI claim, causal claim, prediction claim, or automated economic
   recommendation.
-- The docs must preserve the locked canonical event and suppression reason
+- The data test must preserve the locked canonical event and suppression reason
   sets.
 - Value hypotheses must stay downstream of aggregate behavior evidence,
   customer-owned assumptions, and customer-attested aggregate outcomes.
-- Workstreams 4-5 remain out of scope for this slice.
+- Derived CSVs must remain aggregate-only and preserve small-cell suppression.
 
 ## Planned Checks
 
@@ -52,11 +55,12 @@ map while preserving all current V1-V4 governance boundaries.
 
 ## Evaluator Pass Criteria
 
-- Workstreams 1-3 have durable artifacts and are linked from the sprint plan,
-  validation plan, and README.
+- The retained aggregate CSVs have been tested against the zone and hypothesis
+  grammar.
+- Derived aggregate outputs are saved in `dogfood-output/`.
+- The result clearly distinguishes assignable zones from data-shape gaps.
 - Guardrails remain explicit: no ROI, no productivity, no customer-facing
   economic output, no rankings, no raw skill names, and no person-level fields.
-- Workstreams 4-5 are not implemented.
 - Verification commands pass.
 
 ## Specialists To Consult
@@ -65,6 +69,7 @@ map while preserving all current V1-V4 governance boundaries.
 
 ## Next Handoff Note
 
-Completed locally. Added durable artifacts for Workstreams 1-3 and stopped
-before the team-demo artifact and client-pilot gate so the team can review the
-zone model, feature backlog, and value-hypothesis language before continuing.
+Completed locally. Tested the zone and hypothesis grammar against retained
+aggregate CSVs, saved derived aggregate CSVs, and recorded that strict
+`SCALE_CANDIDATE` assignment needs a Velocity x Depth aggregate join before it
+can be used.

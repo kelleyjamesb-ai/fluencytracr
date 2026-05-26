@@ -177,6 +177,10 @@ Output artifact:
 
 - [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
 
+Saved-data test:
+
+- [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.
