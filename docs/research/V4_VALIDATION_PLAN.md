@@ -35,6 +35,7 @@ Canonical validation gate documents:
 - [V4 Full Dogfood Rehearsal Readout](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
 - [V4 Behavior Cohort Classification Readout](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
 - [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
+- [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
@@ -176,6 +177,21 @@ Velocity band, Depth Repertoire band, AGENT delegation band, and skill-read
 presence band. Department, function, level, manager/IC, leader, region, and
 other org metadata cohorts remain held until an approved aggregate join path
 exists and the segment coverage gate passes.
+
+The first saved joint-distribution review is complete. It records
+`PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES` in
+[V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md).
+Velocity band and Depth Repertoire band may now be used as internal aggregate
+behavior-cohort axes for AI Scale Readiness and Economic Impact Bridge
+investigation routing. AGENT delegation band and Skill Read presence band
+remain context-only research inputs.
+
+This promotion authorizes non-dollarized economic investigation suggestions
+only: candidate impact area, value hypothesis, evidence gap, required
+customer-owned assumption, and caveat. It does not authorize dollarized ROI,
+customer-facing economic readouts, Time-Saved Defensibility Range
+productization, confidence-band changes, automated recommendations,
+productivity lift, causality, prediction, or ranking.
 
 ## V4 Closeout Test Plan
 

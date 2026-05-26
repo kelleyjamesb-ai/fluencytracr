@@ -26,6 +26,7 @@ The decision reviewed:
 - [V4 Scale Readiness Caveat Propagation Decision](./V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Trust Calibration Caveat Propagation Decision](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
 - [V4 Research Export Bundle](../../dogfood-output/V4_RESEARCH_EXPORTS.md)
+- [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
 
 The dogfood evidence includes three fixed 60-day windows for Depth Repertoire,
 same-window value-realization context, trust-signal availability probes,
@@ -39,6 +40,7 @@ Promoted:
 
 - AI Scale Readiness internal readout shape.
 - Depth Repertoire as aggregate context for action posture selection.
+- Velocity and Depth Repertoire as internal aggregate behavior-cohort axes.
 - Economic Impact Bridge language for value-investigation routing only.
 - Docs-only internal contract hardening for the promoted readout boundary.
 
@@ -58,6 +60,8 @@ Held:
 
 - Trust Calibration as a governed readout.
 - Skill Read Evidence as a governed reusable-leverage signal.
+- Skill Read presence as a standalone promoted behavior-cohort axis.
+- AGENT delegation as a standalone promoted behavior-cohort axis.
 - Reusable Workflow Propagation and Named Workflow Leverage.
 - Organizational Segmentation runtime support.
 - Customer-facing V4 economic output.
@@ -111,8 +115,10 @@ The first numbers-backed local rehearsal is recorded in
 [V4_FULL_DOGFOOD_REHEARSAL_READOUT.md](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md).
 The behavior cohort classification pass is recorded in
 [V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md),
-and the current data-analysis stopping point is recorded in
-[V4_DATA_ANALYSIS_CLOSEOUT.md](./V4_DATA_ANALYSIS_CLOSEOUT.md).
+the current data-analysis stopping point is recorded in
+[V4_DATA_ANALYSIS_CLOSEOUT.md](./V4_DATA_ANALYSIS_CLOSEOUT.md), and the
+promotion decision for the current cohort axes is recorded in
+[V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md).
 
 After that process is complete, choose one of four paths:
 
@@ -122,11 +128,10 @@ After that process is complete, choose one of four paths:
    The first fixed-window test is recorded in
    [V4_TRUST_ATTRIBUTION_TEST_READOUT.md](./V4_TRUST_ATTRIBUTION_TEST_READOUT.md)
    and narrows the next trust phase to strict/session-attributable signals.
-3. Run the behavior-derived cohort and trust classification plan in
-   [V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](./V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md).
-   This starts with Velocity, Depth Repertoire, AGENT delegation, and
-   skill-read presence bands; org metadata segments remain held until an
-   approved aggregate join exists.
+3. Run the internal Glean-wide portfolio readout with Velocity and Depth
+   Repertoire as promoted behavior-cohort axes. Carry AGENT delegation and
+   skill-read presence as context only; org metadata segments remain held until
+   an approved aggregate join exists.
 4. Validate Skill Read Evidence identity and join coverage without emitting raw
    skill names.
 
@@ -160,8 +165,8 @@ This closeout preserves:
 Decision: `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`
 
 The promoted artifact is the internal AI Scale Readiness readout shape with
-Depth Repertoire context and Economic Impact Bridge investigation-routing
-language.
+Depth Repertoire context, Velocity and Depth Repertoire behavior-cohort axes,
+and Economic Impact Bridge investigation-routing language.
 
 Trust Calibration, Reusable Leverage, Skill Read Evidence as a governed signal,
 Organizational Segmentation runtime support, and customer-facing economic output

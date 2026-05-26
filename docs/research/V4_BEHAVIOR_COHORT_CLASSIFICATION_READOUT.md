@@ -32,6 +32,10 @@ Derived outputs:
 - `dogfood-output/v4-trust-cohort-classification/v4_behavior_cohort_readiness_summary.csv`
 - `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_summary_safe.csv`
 
+Follow-up decision:
+
+- [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
+
 ## Trust Classification Results
 
 The saved attribution output supports narrow trust evidence classification:
@@ -61,10 +65,10 @@ across Depth, Velocity, Trust, AGENT, and Skills.
 
 | Cohort dimension | Status | Decision | Required next input |
 | --- | --- | --- | --- |
-| `depth_repertoire_band` | Joint distribution exported | Review for behavior-cohort promotion | Stability and interpretation review |
+| `depth_repertoire_band` | Joint distribution reviewed | Promote for internal behavior-cohort review | Glean-wide internal portfolio readout |
 | `skill_read_presence_band` | Joint distribution exported | Continue research input | Confirm it remains presence-only, no skill names |
 | `agent_delegation_band` | Joint distribution exported | Continue research input | AGENT trust interpretation remains held |
-| `velocity_band` | Joint distribution exported | Review for behavior-cohort promotion | Stability and interpretation review |
+| `velocity_band` | Joint distribution reviewed | Promote for internal behavior-cohort review | Glean-wide internal portfolio readout |
 | `tenure_cohort` | Missing export | Optional hold | First-active-date buckets computed inside approved boundary |
 | `department/function` | Org metadata held | Hold for approved join | Approved aggregate HRIS/directory join |
 | `manager/IC/leader` | Org metadata held | Hold for approved join | Approved aggregate HRIS/directory join |
@@ -92,11 +96,12 @@ The export remains aggregate-only and does not emit user rows.
 
 Also:
 
-`BEHAVIOR_COHORT_CLASSIFICATIONS_EXPORTED_FOR_REVIEW`
+`PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES`
 
 The trust evidence classification layer is useful now. The behavior cohort
-classification layer is ready for review from the saved aggregate
-joint-distribution export.
+classification layer has crossed the internal-review bar for Velocity and
+Depth Repertoire. Skill Read presence and AGENT delegation remain context-only
+research inputs.
 
 ## What Remains Blocked
 
@@ -110,6 +115,7 @@ joint-distribution export.
 
 ## Recommended Next Step
 
-Review `dogfood-output/v4-behavior-cohort-joint-distribution/` and choose the
-next behavior-cohort decision. The export is dogfood/research only and remains
-aggregate CSV replay data, not a runtime product surface.
+Use Velocity and Depth Repertoire as the two promoted behavior-cohort axes in
+the next Glean-wide internal portfolio readout. The readout may route economic
+investigations, but it must not produce dollarized ROI, productivity lift,
+customer-facing economic output, or automated recommendations.
