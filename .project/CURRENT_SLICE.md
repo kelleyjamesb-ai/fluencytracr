@@ -1,68 +1,83 @@
 # Current Slice Contract
 
-- Work item id: `security-check-auth-token-hardening`
-- Title: `Run security check and fix critical auth token minting issue`
+- Work item id: `v4-velocity-depth-zone-test`
+- Title: `Test strict V4 scale-candidate zones with joined Velocity and Depth`
 - Status: `completed`
 
 ## Summary
 
-Ran a repository-wide high-impact security check and fixed the critical backend
-auth issue where `POST /auth/token` could mint privileged bearer tokens before
-authentication. Token minting now requires a server-side issuer secret outside
-local development/test, and managed/production runtimes fail closed without
-`JWT_SECRET`. A follow-up regression removed the undocumented token-minting
-escape hatch from production runtimes.
+Run the next V4 data test requested by the readout-zone data test: produce a
+Velocity x Depth Repertoire aggregate export, save the CSVs, and record whether
+strict `SCALE_CANDIDATE` rows exist across the three fixed dogfood windows.
 
 ## Scope Paths
 
-- `backend/src/app.ts`
-- `backend/src/auth_secret.ts`
-- `backend/tests/auth_secret.test.ts`
-- `backend/tests/auth_token_api.test.ts`
-- `backend/.env.example`
+- `sql/dogfood/velocity_depth_zone_diagnostic.sql`
+- `tests/dogfood/test_velocity_double_count.py`
+- `docs/research/V4_VELOCITY_DEPTH_ZONE_TEST.md`
+- `docs/research/V4_READOUT_ZONE_DATA_TEST.md`
+- `docs/research/V4_NEXT_SPRINT_PLAN.md`
+- `docs/research/V4_VALIDATION_PLAN.md`
+- `dogfood-output/V4_RESEARCH_EXPORTS.md`
+- `dogfood-output/v4-velocity-depth-zone/v4_velocity_depth_zone_window_1.csv`
+- `dogfood-output/v4-velocity-depth-zone/v4_velocity_depth_zone_window_2.csv`
+- `dogfood-output/v4-velocity-depth-zone/v4_velocity_depth_zone_window_3.csv`
+- `dogfood-output/v4-velocity-depth-zone/v4_velocity_depth_zone_all_windows.csv`
+- `dogfood-output/v4-velocity-depth-zone/v4_velocity_depth_zone_summary_safe.csv`
+- `README.md`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Token minting must fail closed in production and managed runtimes.
-- Local/test auth workflows must remain usable for existing backend tests.
-- The fix must not change FluencyTracr event, suppression, schema, or V4 signal contracts.
+- The test must not authorize customer-facing economic output.
+- The test must not create a score, ranking, maturity label, productivity
+  claim, ROI claim, causal claim, prediction claim, or automated economic
+  recommendation.
+- The test must preserve the locked canonical event and suppression reason
+  sets.
+- Value hypotheses must stay downstream of aggregate behavior evidence,
+  customer-owned assumptions, and customer-attested aggregate outcomes.
+- Derived CSVs must remain aggregate-only and preserve small-cell suppression.
+- Suppressed rows may redact metric values and must not be reconstructed.
 
 ## Planned Checks
 
-- Run targeted auth tests.
-- Run full backend CI.
-- Run backend build.
-- Run npm audit for critical dependency advisories.
-- Run targeted tracked-secret scan.
-- Run `git diff --check`.
+- Run the targeted dogfood SQL contract test.
+- Run docs contract sweep.
+- Run semantic drift guard.
+- Run V1 governance gates.
+- Run diff whitespace check.
+- Scan for conflict markers.
+- Scan generated CSV headers for forbidden raw fields.
 
 ## Evaluator Command Profile
 
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend -- --runTestsByPath tests/auth_secret.test.ts tests/auth_token_api.test.ts tests/auth_hardening.test.ts`
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend`
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run build --workspace backend`
-- `/usr/local/bin/npm audit --audit-level=critical --json`
-- `/usr/local/bin/npm audit --omit=dev --audit-level=critical --json`
+- `python3 -m unittest tests.dogfood.test_velocity_double_count`
+- `scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `python3 scripts/ci_v1_governance_gates.py`
 - `git diff --check`
+- `rg -n "^(<<<<<<<|=======|>>>>>>>)"`
 
 ## Evaluator Pass Criteria
 
-- Auth token minting rejects missing or wrong issuer secrets outside local/test.
-- Production does not resolve the fallback JWT signing secret.
-- Backend tests and build pass.
-- No open critical npm advisories remain from the scan.
+- The Velocity x Depth diagnostic emits aggregate-only joined rows.
+- The three fixed-window CSVs plus all-window and safe-summary outputs are
+  retained in `dogfood-output/`.
+- The result clearly distinguishes strict scale candidates from shallow
+  adoption, focused expert use, trust gaps, and suppressed rows.
+- Guardrails remain explicit: no ROI, no productivity, no customer-facing
+  economic output, no rankings, no raw skill names, and no person-level fields.
+- Verification commands pass.
 
 ## Specialists To Consult
 
-- Codex Security `security-scan` workflow.
+- None for this research-only decision slice.
 
 ## Next Handoff Note
 
-Completed locally. Critical auth token minting issue is fixed and verified.
-Security scan report: `/tmp/codex-security-scans/FluencyTracr/c7bfb4a_20260524T070208Z/report.md`.
-Follow-up hardening also verified that production cannot bypass the issuer-secret
-gate with `ALLOW_INSECURE_AUTH_TOKEN_MINTING`.
-High, non-critical dependency advisories remain deferred for a separate
-dependency-update slice.
+Completed locally. The joined Velocity x Depth export found 12 stable strict
+`SCALE_CANDIDATE` aggregate rows across all three fixed windows, while trust
+gaps remained the dominant hold state. Proceed next to the team-demo artifact
+from Workstream 4 only after review.

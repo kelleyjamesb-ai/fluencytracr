@@ -1,0 +1,20 @@
+scope,zone_test_result,aggregate_row_count,strict_zone_assignable,value_hypothesis_test_result,test_note
+all_window_rows,FOCUSED_EXPERT_USE,18,true,NET_NEW_OR_QUALITY_PREMIUM_CANDIDATE_REQUIRES_BUSINESS_CONTEXT,"Depth Repertoire is strong with attributable trust, but Velocity is not joined in this export."
+all_window_rows,INSTRUMENTATION_HOLD_CONTEXT_ONLY_AXIS,144,true,NO_VALUE_HYPOTHESIS_SOURCE_READINESS_REMEDIATION,AGENT delegation and Skill Read presence are context-only axes in the current decision.
+all_window_rows,SHALLOW_ADOPTION,11,true,UNCLASSIFIED_FRICTION_INVESTIGATION,Depth Repertoire is active but shallow with attributable trust; economic posture remains UNCLASSIFIED.
+all_window_rows,SUPPRESSED,20,true,NO_VALUE_HYPOTHESIS,Existing suppression gate blocks interpretation.
+all_window_rows,TRUST_EVIDENCE_GAP,272,true,UNCLASSIFIED_TRUST_LOOP_INVESTIGATION,"Behavior evidence exists, but trust classification is not attributable."
+all_window_rows,UNASSIGNED_NEEDS_DEPTH_JOIN_FOR_FOCUSED_OR_HOLD,14,false,NO_STRICT_HYPOTHESIS_REQUIRES_VELOCITY_DEPTH_JOIN,"Velocity evidence is low, but strict zone assignment needs a Velocity x Depth join."
+all_window_rows,UNASSIGNED_NEEDS_DEPTH_JOIN_FOR_SCALE_OR_SHALLOW,36,false,NO_STRICT_HYPOTHESIS_REQUIRES_VELOCITY_DEPTH_JOIN,"Velocity evidence is present, but strict zone assignment needs a Velocity x Depth join."
+safe_summary_rows_all,FOCUSED_EXPERT_USE,6,true,NET_NEW_OR_QUALITY_PREMIUM_CANDIDATE_REQUIRES_BUSINESS_CONTEXT,"Depth Repertoire is strong with attributable trust, but Velocity is not joined in this export."
+safe_summary_rows_all,INSTRUMENTATION_HOLD_CONTEXT_ONLY_AXIS,48,true,NO_VALUE_HYPOTHESIS_SOURCE_READINESS_REMEDIATION,AGENT delegation and Skill Read presence are context-only axes in the current decision.
+safe_summary_rows_all,SHALLOW_ADOPTION,4,true,UNCLASSIFIED_FRICTION_INVESTIGATION,Depth Repertoire is active but shallow with attributable trust; economic posture remains UNCLASSIFIED.
+safe_summary_rows_all,TRUST_EVIDENCE_GAP,97,true,UNCLASSIFIED_TRUST_LOOP_INVESTIGATION,"Behavior evidence exists, but trust classification is not attributable."
+safe_summary_rows_all,UNASSIGNED_NEEDS_DEPTH_JOIN_FOR_FOCUSED_OR_HOLD,6,false,NO_STRICT_HYPOTHESIS_REQUIRES_VELOCITY_DEPTH_JOIN,"Velocity evidence is low, but strict zone assignment needs a Velocity x Depth join."
+safe_summary_rows_all,UNASSIGNED_NEEDS_DEPTH_JOIN_FOR_SCALE_OR_SHALLOW,12,false,NO_STRICT_HYPOTHESIS_REQUIRES_VELOCITY_DEPTH_JOIN,"Velocity evidence is present, but strict zone assignment needs a Velocity x Depth join."
+stable_safe_summary_rows_window_count_3,FOCUSED_EXPERT_USE,6,true,NET_NEW_OR_QUALITY_PREMIUM_CANDIDATE_REQUIRES_BUSINESS_CONTEXT,"Depth Repertoire is strong with attributable trust, but Velocity is not joined in this export."
+stable_safe_summary_rows_window_count_3,INSTRUMENTATION_HOLD_CONTEXT_ONLY_AXIS,48,true,NO_VALUE_HYPOTHESIS_SOURCE_READINESS_REMEDIATION,AGENT delegation and Skill Read presence are context-only axes in the current decision.
+stable_safe_summary_rows_window_count_3,SHALLOW_ADOPTION,3,true,UNCLASSIFIED_FRICTION_INVESTIGATION,Depth Repertoire is active but shallow with attributable trust; economic posture remains UNCLASSIFIED.
+stable_safe_summary_rows_window_count_3,TRUST_EVIDENCE_GAP,86,true,UNCLASSIFIED_TRUST_LOOP_INVESTIGATION,"Behavior evidence exists, but trust classification is not attributable."
+stable_safe_summary_rows_window_count_3,UNASSIGNED_NEEDS_DEPTH_JOIN_FOR_FOCUSED_OR_HOLD,4,false,NO_STRICT_HYPOTHESIS_REQUIRES_VELOCITY_DEPTH_JOIN,"Velocity evidence is low, but strict zone assignment needs a Velocity x Depth join."
+stable_safe_summary_rows_window_count_3,UNASSIGNED_NEEDS_DEPTH_JOIN_FOR_SCALE_OR_SHALLOW,12,false,NO_STRICT_HYPOTHESIS_REQUIRES_VELOCITY_DEPTH_JOIN,"Velocity evidence is present, but strict zone assignment needs a Velocity x Depth join."

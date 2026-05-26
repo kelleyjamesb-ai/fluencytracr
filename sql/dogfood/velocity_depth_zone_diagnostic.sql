@@ -1,13 +1,13 @@
--- Behavior cohort joint-distribution diagnostic for FluencyTracr V4 dogfood.
+-- Velocity x Depth zone diagnostic for FluencyTracr V4 dogfood.
 --
 -- Replace `PROJECT.DATASET.gce_events` with the approved GCE export table and
 -- `PROJECT.DATASET.scrubbed_agentspan_*` with the scrubbed agent span wildcard
 -- table before running.
 --
 -- This is research-only SQL. It emits aggregate rows only and is meant to test
--- whether behavior-derived cohorts make the internal AI Scale Readiness readout
--- more actionable. It does not add a product surface, economic output, trust
--- score, ROI calculation, prediction, productivity claim, or ranking.
+-- whether promoted Velocity and Depth Repertoire bands can be joined into the
+-- readout-zone grammar. It does not add a product surface, economic output,
+-- trust score, ROI calculation, prediction, productivity claim, or ranking.
 --
 -- The query may use person-level intermediate rows inside BigQuery, but the
 -- final output suppresses small cells and never emits user IDs, emails, names,
@@ -468,6 +468,12 @@ SELECT
       ELSE 'LOW_VELOCITY'
     END AS velocity_band,
     CASE
+      WHEN surface_repertoire >= 4 AND repeated_surface_count >= 2 THEN 'INTEGRATED_REPERTOIRE'
+      WHEN surface_repertoire >= 2 THEN 'ACTIVE_BUT_SHALLOW'
+      WHEN surface_repertoire = 1 AND repeated_surface_count >= 1 THEN 'FOCUSED_INTEGRATION'
+      ELSE 'UNSTABLE_OR_INSUFFICIENT'
+    END AS depth_repertoire_band,
+    CASE
       WHEN agent_interactions >= 2 THEN 'AGENT_DELEGATION_REPEATED'
       WHEN agent_interactions = 1 THEN 'AGENT_DELEGATION_PRESENT'
       ELSE 'AGENT_DELEGATION_ABSENT'
@@ -479,74 +485,10 @@ SELECT
   FROM per_user_behavior AS behavior
   CROSS JOIN velocity_boundaries AS boundaries;
 
-CREATE TEMP TABLE cohort_members AS
+CREATE TEMP TABLE aggregate_velocity_depth_distribution AS
 SELECT
-    user_key,
-    'velocity_band' AS behavior_cohort_dimension,
-    velocity_band AS behavior_cohort_band,
-    trust_classification,
-    agent_delegation_classification,
-    skill_read_presence_classification,
-    trust_signal_count,
-    attributed_signal_count,
-    agent_interactions,
-    skill_read_rows
-  FROM per_user_banded
-
-  UNION ALL
-
-  SELECT
-    user_key,
-    'depth_repertoire_band' AS behavior_cohort_dimension,
-    CASE
-      WHEN surface_repertoire >= 4 AND repeated_surface_count >= 2 THEN 'INTEGRATED_REPERTOIRE'
-      WHEN surface_repertoire >= 2 THEN 'ACTIVE_BUT_SHALLOW'
-      WHEN surface_repertoire = 1 AND repeated_surface_count >= 1 THEN 'FOCUSED_INTEGRATION'
-      ELSE 'UNSTABLE_OR_INSUFFICIENT'
-    END AS behavior_cohort_band,
-    trust_classification,
-    agent_delegation_classification,
-    skill_read_presence_classification,
-    trust_signal_count,
-    attributed_signal_count,
-    agent_interactions,
-    skill_read_rows
-  FROM per_user_banded
-
-  UNION ALL
-
-  SELECT
-    user_key,
-    'agent_delegation_band' AS behavior_cohort_dimension,
-    agent_delegation_classification AS behavior_cohort_band,
-    trust_classification,
-    agent_delegation_classification,
-    skill_read_presence_classification,
-    trust_signal_count,
-    attributed_signal_count,
-    agent_interactions,
-    skill_read_rows
-  FROM per_user_banded
-
-  UNION ALL
-
-  SELECT
-    user_key,
-    'skill_read_presence_band' AS behavior_cohort_dimension,
-    skill_read_presence_classification AS behavior_cohort_band,
-    trust_classification,
-    agent_delegation_classification,
-    skill_read_presence_classification,
-    trust_signal_count,
-    attributed_signal_count,
-    agent_interactions,
-    skill_read_rows
-  FROM per_user_banded;
-
-CREATE TEMP TABLE aggregate_joint_distribution AS
-SELECT
-    behavior_cohort_dimension,
-    behavior_cohort_band,
+    velocity_band,
+    depth_repertoire_band,
     trust_classification,
     agent_delegation_classification,
     skill_read_presence_classification,
@@ -555,25 +497,25 @@ SELECT
     SUM(attributed_signal_count) AS attributed_signal_count,
     COUNTIF(agent_interactions > 0) AS agent_delegation_user_count,
     COUNTIF(skill_read_rows > 0) AS skill_read_user_count
-  FROM cohort_members
+  FROM per_user_banded
   GROUP BY
-    behavior_cohort_dimension,
-    behavior_cohort_band,
+    velocity_band,
+    depth_repertoire_band,
     trust_classification,
     agent_delegation_classification,
     skill_read_presence_classification;
 
 CREATE TEMP TABLE privacy_screened_results AS
-SELECT
+  SELECT
     *,
     cohort_size >= 5 AS clears_small_cell_gate
-  FROM aggregate_joint_distribution;
+  FROM aggregate_velocity_depth_distribution;
 
 SELECT
   DATE(window_start) AS window_start,
   DATE(window_end) AS window_end,
-  behavior_cohort_dimension,
-  behavior_cohort_band,
+  velocity_band,
+  depth_repertoire_band,
   trust_classification,
   agent_delegation_classification,
   skill_read_presence_classification,
@@ -594,18 +536,59 @@ SELECT
   END AS suppression_reason,
   CASE
     WHEN NOT clears_small_cell_gate THEN 'HOLD_SMALL_CELL_SUPPRESSED'
-    WHEN trust_classification = 'ATTRIBUTABLE_TRUST_SIGNAL'
-      AND behavior_cohort_dimension IN ('velocity_band', 'depth_repertoire_band')
-      THEN 'PROMOTE_FOR_BEHAVIOR_COHORT_REVIEW'
-    WHEN agent_delegation_classification = 'AGENT_DELEGATION_REPEATED'
-      OR skill_read_presence_classification = 'SKILL_READ_PRESENT'
-      THEN 'CONTINUE_RESEARCH'
+    WHEN trust_classification != 'ATTRIBUTABLE_TRUST_SIGNAL' THEN 'HOLD_FOR_TRUST_EVIDENCE_GAP'
+    WHEN depth_repertoire_band = 'UNSTABLE_OR_INSUFFICIENT' THEN 'HOLD_FOR_EVIDENCE_GAPS'
+    WHEN velocity_band IN ('HIGH_VELOCITY', 'MEDIUM_VELOCITY')
+      AND depth_repertoire_band = 'INTEGRATED_REPERTOIRE'
+      THEN 'PROMOTE_FOR_SCALE_CANDIDATE_STABILITY_REVIEW'
+    WHEN depth_repertoire_band = 'ACTIVE_BUT_SHALLOW' THEN 'CONTINUE_AS_SHALLOW_ADOPTION_REVIEW'
+    WHEN depth_repertoire_band = 'FOCUSED_INTEGRATION'
+      OR (
+        velocity_band = 'LOW_VELOCITY'
+        AND depth_repertoire_band = 'INTEGRATED_REPERTOIRE'
+      )
+      THEN 'PROMOTE_FOR_FOCUSED_USE_REVIEW'
     ELSE 'HOLD_FOR_EVIDENCE_GAPS'
-  END AS readiness_decision
+  END AS readiness_decision,
+  CASE
+    WHEN NOT clears_small_cell_gate THEN 'SUPPRESSED'
+    WHEN trust_classification != 'ATTRIBUTABLE_TRUST_SIGNAL' THEN 'TRUST_EVIDENCE_GAP'
+    WHEN depth_repertoire_band = 'UNSTABLE_OR_INSUFFICIENT' THEN 'INSTRUMENTATION_HOLD_UNSTABLE_DEPTH'
+    WHEN velocity_band IN ('HIGH_VELOCITY', 'MEDIUM_VELOCITY')
+      AND depth_repertoire_band = 'INTEGRATED_REPERTOIRE'
+      THEN 'SCALE_CANDIDATE'
+    WHEN depth_repertoire_band = 'ACTIVE_BUT_SHALLOW' THEN 'SHALLOW_ADOPTION'
+    WHEN depth_repertoire_band = 'FOCUSED_INTEGRATION'
+      OR (
+        velocity_band = 'LOW_VELOCITY'
+        AND depth_repertoire_band = 'INTEGRATED_REPERTOIRE'
+      )
+      THEN 'FOCUSED_EXPERT_USE'
+    ELSE 'INSTRUMENTATION_HOLD'
+  END AS readout_zone_test_result,
+  CASE
+    WHEN NOT clears_small_cell_gate THEN 'NO_VALUE_HYPOTHESIS'
+    WHEN trust_classification != 'ATTRIBUTABLE_TRUST_SIGNAL'
+      THEN 'UNCLASSIFIED_TRUST_LOOP_INVESTIGATION'
+    WHEN depth_repertoire_band = 'UNSTABLE_OR_INSUFFICIENT'
+      THEN 'NO_VALUE_HYPOTHESIS_SOURCE_OR_STABILITY_REMEDIATION'
+    WHEN velocity_band IN ('HIGH_VELOCITY', 'MEDIUM_VELOCITY')
+      AND depth_repertoire_band = 'INTEGRATED_REPERTOIRE'
+      THEN 'ACCELERATION_OR_QUALITY_PREMIUM_CANDIDATE_REQUIRES_OUTCOME_EVIDENCE'
+    WHEN depth_repertoire_band = 'ACTIVE_BUT_SHALLOW'
+      THEN 'UNCLASSIFIED_FRICTION_INVESTIGATION'
+    WHEN depth_repertoire_band = 'FOCUSED_INTEGRATION'
+      OR (
+        velocity_band = 'LOW_VELOCITY'
+        AND depth_repertoire_band = 'INTEGRATED_REPERTOIRE'
+      )
+      THEN 'NET_NEW_OR_QUALITY_PREMIUM_CANDIDATE_REQUIRES_BUSINESS_CONTEXT'
+    ELSE 'NO_VALUE_HYPOTHESIS_SOURCE_READINESS_REMEDIATION'
+  END AS value_hypothesis_test_result
 FROM privacy_screened_results
 ORDER BY
-  behavior_cohort_dimension,
-  behavior_cohort_band,
+  velocity_band,
+  depth_repertoire_band,
   trust_classification,
   agent_delegation_classification,
   skill_read_presence_classification;

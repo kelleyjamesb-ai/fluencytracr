@@ -3,8 +3,8 @@
 ## Purpose
 
 This readout tests the next step after the full V4 rehearsal: whether saved
-aggregate CSVs are sufficient to classify trust evidence and behavior-derived
-cohort readiness without running new BigQuery queries.
+aggregate CSVs can classify trust evidence, behavior-derived cohort readiness,
+and joint behavior-cohort distributions.
 
 This is research-only. It adds no APIs, schemas, Prisma migrations, runtime
 services, frontend surfaces, customer-facing economic outputs, ROI
@@ -30,6 +30,11 @@ Derived outputs:
 - `dogfood-output/v4-trust-cohort-classification/v4_trust_classification_all_windows.csv`
 - `dogfood-output/v4-trust-cohort-classification/v4_trust_classification_summary_safe.csv`
 - `dogfood-output/v4-trust-cohort-classification/v4_behavior_cohort_readiness_summary.csv`
+- `dogfood-output/v4-behavior-cohort-joint-distribution/v4_behavior_cohort_joint_summary_safe.csv`
+
+Follow-up decision:
+
+- [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
 
 ## Trust Classification Results
 
@@ -54,16 +59,16 @@ real but too narrow or too dominated by unresolved rows to promote broadly.
 
 ## Behavior Cohort Readiness
 
-The saved files can evaluate readiness of cohort dimensions, but they cannot
-yet produce true joint cohort classifications across Depth, Velocity, Trust,
-AGENT, and Skills.
+The original saved files evaluated readiness of cohort dimensions. The
+follow-up joint-distribution export now produces true aggregate cross-tabs
+across Depth, Velocity, Trust, AGENT, and Skills.
 
 | Cohort dimension | Status | Decision | Required next input |
 | --- | --- | --- | --- |
-| `depth_repertoire_band` | Ready from saved exports | Promote as context | Joint distribution needed for cross-signal analysis |
-| `skill_read_presence_band` | Ready for presence only | Promote as research input | Skill-read presence x AGENT/depth/reliability aggregate CSV |
-| `agent_delegation_band` | Partial availability only | Hold for attribution | AGENT sub-surface x feedback attribution x reliability/depth aggregate CSV |
-| `velocity_band` | Missing joint export | Hold for export | Velocity band x depth/trust/skill/agent aggregate CSV |
+| `depth_repertoire_band` | Joint distribution reviewed | Promote for internal behavior-cohort review | Glean-wide internal portfolio readout |
+| `skill_read_presence_band` | Joint distribution exported | Continue research input | Confirm it remains presence-only, no skill names |
+| `agent_delegation_band` | Joint distribution exported | Continue research input | AGENT trust interpretation remains held |
+| `velocity_band` | Joint distribution reviewed | Promote for internal behavior-cohort review | Glean-wide internal portfolio readout |
 | `tenure_cohort` | Missing export | Optional hold | First-active-date buckets computed inside approved boundary |
 | `department/function` | Org metadata held | Hold for approved join | Approved aggregate HRIS/directory join |
 | `manager/IC/leader` | Org metadata held | Hold for approved join | Approved aggregate HRIS/directory join |
@@ -78,13 +83,12 @@ That means this question can be answered from saved files:
 
 > Which signals are attributable, held, aliased, or missing?
 
-This question cannot yet be answered from saved files:
+This question can now be reviewed from the saved joint-distribution files:
 
 > Do high-Depth or high-Velocity cohorts show different trust, AGENT, or
 > Skill-assisted behavior?
 
-Answering that requires a new aggregate joint-distribution export. It should
-still be aggregate-only and should not emit user rows.
+The export remains aggregate-only and does not emit user rows.
 
 ## Decision
 
@@ -92,29 +96,12 @@ still be aggregate-only and should not emit user rows.
 
 Also:
 
-`HOLD_BEHAVIOR_COHORT_CLASSIFICATIONS_FOR_JOINT_EXPORT`
+`PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES`
 
 The trust evidence classification layer is useful now. The behavior cohort
-classification layer is conceptually right but needs a purpose-built aggregate
-export.
-
-## Required Next Export
-
-If we continue testing cohorts, the next BigQuery export should be narrow and
-purpose-built. It should emit aggregate rows by:
-
-- fixed window,
-- behavior cohort dimension,
-- behavior cohort band,
-- trust classification,
-- AGENT delegation classification,
-- skill-read presence classification,
-- cohort size,
-- signal count,
-- suppression status.
-
-No user IDs, emails, names, prompts, outputs, transcripts, raw skill names, raw
-event rows, or action rows may be emitted.
+classification layer has crossed the internal-review bar for Velocity and
+Depth Repertoire. Skill Read presence and AGENT delegation remain context-only
+research inputs.
 
 ## What Remains Blocked
 
@@ -128,7 +115,7 @@ event rows, or action rows may be emitted.
 
 ## Recommended Next Step
 
-Run `sql/dogfood/behavior_cohort_joint_distribution_diagnostic.sql` for
-dogfood/research only across the three fixed windows. It should compute the
-needed joint distributions inside BigQuery and output aggregate rows that can
-be saved to CSV for local replay.
+Use Velocity and Depth Repertoire as the two promoted behavior-cohort axes in
+the next Glean-wide internal portfolio readout. The readout may route economic
+investigations, but it must not produce dollarized ROI, productivity lift,
+customer-facing economic output, or automated recommendations.
