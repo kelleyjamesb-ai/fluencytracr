@@ -23,6 +23,8 @@ Each contract preserves the same posture:
 | Causal Delta | [../../contracts/causal-delta.md](../../contracts/causal-delta.md) | Compares pre/post aggregate workflow patterns around a rollout or change moment without claiming statistical causality. |
 | Reliability Factor | [reliability-factor.md](./reliability-factor.md) and [../../contracts/reliability-factor.md](../../contracts/reliability-factor.md) | Qualifies whether surfaced evidence looks operationally dependable based on verification, recovery, abandonment, and friction-loop behavior. |
 | Outcome Evidence | [outcome-evidence.md](./outcome-evidence.md) | Stores and replays customer-attested aggregate systems-of-record metrics next to unchanged workflow verdicts. |
+| AI Work Evidence | [../../concepts/AI_WORK_EVIDENCE.md](../../concepts/AI_WORK_EVIDENCE.md) | Defines the org-agnostic core layer for surfaces, workflows, approved cohorts, interventions, trust evidence, source coverage, outcome evidence, and value hypotheses; source adapters such as Glean map into this core. |
+| AI Work Evidence Pilot Package | [AI_WORK_EVIDENCE_PILOT_PACKAGE.md](./AI_WORK_EVIDENCE_PILOT_PACKAGE.md) | Provides source-neutral pilot templates, synthetic readout shape, Glean adapter mapping, live readiness criteria, and stop conditions for commercialization conversations. |
 | Velocity Index | [../../contracts/velocity-index.md](../../contracts/velocity-index.md) | Adds V2 aggregate velocity context through frequency, engagement, and breadth distributions, surfaced only after fail-closed gates clear. |
 | V3 Production Ingest | [V3_INGEST.md](./V3_INGEST.md) | Replaces manual CSV dogfood with customer-side aggregate transformation, governed calibration references, and immutable verdict replay. |
 | V4 Value Confidence | [V4_VALUE_CONFIDENCE.md](./V4_VALUE_CONFIDENCE.md) and [../../contracts/value-confidence/README.md](../../contracts/value-confidence/README.md) | Composes V3 verdicts, Velocity, Depth, quality, reliability, trust calibration, and outcome evidence into executive economic decision artifacts. |
@@ -48,6 +50,14 @@ time saved from defensible value realization. Velocity Index adds a governed V2
 behavioral-distribution layer for teams that need adoption depth context without
 person-level reporting.
 
+AI Work Evidence is the source-neutral layer that keeps those primitives from
+becoming Glean-only. Glean dogfood and Value Evidence artifacts are adapter
+examples; future source adapters should map their local telemetry, source
+coverage, and claim language into the same aggregate core without inheriting
+Glean-specific ontology as universal product behavior.
+The pilot package turns that layer into docs-only intake templates, synthetic
+readout examples, and live-readiness stop conditions.
+
 V4 does not replace existing V3 ingest or value-realization primitives. It
 composes them into executive economic decision artifacts: Time-Saved
 Defensibility Range, AI Value Leakage Map, AI Scale Readiness Portfolio, and
@@ -55,17 +65,20 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
 
 ## Conceptual Stack
 
-1. V3 aggregate verdicts establish whether evidence may surface.
-2. Velocity measures adoption energy.
-3. Depth measures cross-surface work integration through surface repertoire and
+1. AI Work Evidence defines source-neutral surfaces, workflows, approved
+   cohorts, interventions, source coverage, trust evidence, outcome evidence,
+   and value hypotheses.
+2. V3 aggregate verdicts establish whether evidence may surface.
+3. Velocity measures adoption energy.
+4. Depth measures cross-surface work integration through surface repertoire and
    repeated meaningful use, then qualifies interpretation with
    higher-confidence signals.
-4. Delegation Depth refines Depth as a research-promoted concept for aggregate
+5. Delegation Depth refines Depth as a research-promoted concept for aggregate
    retrieval, transformation, and delegation surface mix.
-5. Work Mode Taxonomy maps governed surfaces into AI work patterns so taxonomy-aware calibration can compare like with like.
-6. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
-7. Outcome Evidence may add customer-attested aggregate context without proving causality.
-8. V4 Value Confidence composes those inputs into bounded executive readouts.
+6. Work Mode Taxonomy maps governed surfaces into AI work patterns so taxonomy-aware calibration can compare like with like.
+7. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
+8. Outcome Evidence may add customer-attested aggregate context without proving causality.
+9. V4 Value Confidence composes those inputs into bounded executive readouts.
 
 ## Research-Only Signal Discovery
 

@@ -12,6 +12,12 @@ quality signal today.
 FluencyTracr sits on top of that pipeline as bounded evidence services and
 documented value-realization layers:
 
+- **AI Work Evidence:** org-agnostic core layer that separates reusable
+  aggregate evidence primitives from source-specific adapters such as Glean
+  dogfood and value-evidence mappings. It defines surfaces, workflows,
+  approved cohorts, interventions, trust evidence, source coverage, outcome
+  evidence, and value hypotheses without adding events, suppression reasons,
+  individual scoring, rankings, or ROI calculation.
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
 - **Causal Delta:** compares pre/post workflow patterns around a known change
@@ -132,6 +138,8 @@ is not the lead positioning for this repository.
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - V3 production ingest walkthrough: [docs/integrations/value-realization/V3_INGEST.md](docs/integrations/value-realization/V3_INGEST.md)
 - V4 value confidence integration: [docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md](docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md)
+- AI Work Evidence concept: [docs/concepts/AI_WORK_EVIDENCE.md](docs/concepts/AI_WORK_EVIDENCE.md)
+- AI Work Evidence pilot package: [docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md](docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
 - Depth concept and V4 reference: [docs/concepts/DEPTH.md](docs/concepts/DEPTH.md)
 - Delegation Depth concept and V4 Depth subdimension: [docs/concepts/DELEGATION_DEPTH.md](docs/concepts/DELEGATION_DEPTH.md)
