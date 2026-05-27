@@ -1,0 +1,4 @@
+outcome_domain,source_table,candidate_metric_family,window_id,ticket_count,rows_with_created_at,rows_with_status,rows_with_priority,rows_with_org_key,rows_with_days_elapsed,rows_with_business_first_response,rows_with_calendar_first_response,p50_days_elapsed,p90_days_elapsed,p50_business_minutes_to_first_response,p50_calendar_minutes_to_first_response
+support,dashboards.zendesk_ticket_details,ticket_response_and_age_metrics,window_1,4469,4469,4469,4469,4469,4469,4392,4392,13,26,183,191
+support,dashboards.zendesk_ticket_details,ticket_response_and_age_metrics,window_2,4549,4549,4549,4549,4549,4549,4485,4485,15,35,212,223
+support,dashboards.zendesk_ticket_details,ticket_response_and_age_metrics,window_3,4163,4163,4163,4163,4163,4163,4095,4095,15,43,218,235

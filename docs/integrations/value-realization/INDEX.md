@@ -32,6 +32,7 @@ Each contract preserves the same posture:
 | Depth Repertoire | [../../contracts/depth/depth-repertoire.md](../../contracts/depth/depth-repertoire.md) | Hardens the aggregate surface-repertoire x repeat-use sub-contract; approved only as caveat/context, not an economic input. |
 | Delegation Depth | [../../concepts/DELEGATION_DEPTH.md](../../concepts/DELEGATION_DEPTH.md) | Adds a V4 Depth subdimension for aggregate retrieval, transformation, and delegation surface mix. |
 | AI Scale Readiness Portfolio | [../../concepts/AI_SCALE_READINESS_PORTFOLIO.md](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md) and [../../contracts/value-confidence/scale-readiness-portfolio.md](../../contracts/value-confidence/scale-readiness-portfolio.md) | Defines aggregate action postures for scale, enablement, workflow redesign, trust calibration, adoption expansion, or hold. |
+| Internal Scale Readiness Readout | [../../contracts/value-confidence/internal-scale-readiness-readout.md](../../contracts/value-confidence/internal-scale-readiness-readout.md) | Hardens the docs-only internal record shape promoted by the V4 canonical contract decision. |
 | Organizational Segmentation | [../../concepts/ORG_SEGMENTATION.md](../../concepts/ORG_SEGMENTATION.md) | Defines aggregate-only cohort context for intervention planning, with HR and directory joins kept inside the customer or Glean boundary. |
 | Economic Impact Bridge | [../../concepts/ECONOMIC_IMPACT_BRIDGE.md](../../concepts/ECONOMIC_IMPACT_BRIDGE.md) | Maps readiness patterns to customer-owned value investigations without calculating ROI or proving causality. |
 | Work Mode Taxonomy | [../../concepts/WORK_MODES.md](../../concepts/WORK_MODES.md) | Maps governed surfaces into durable AI work patterns and evidence roles for taxonomy-aware calibration. |
@@ -173,6 +174,8 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 data analysis closeout](../../research/V4_DATA_ANALYSIS_CLOSEOUT.md)
 - [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md)
 - [V4 closeout decision](../../research/V4_CLOSEOUT_DECISION.md)
+- [V4 canonical contract decision](../../research/V4_CANONICAL_CONTRACT_DECISION.md)
+- [Internal Scale Readiness Readout contract](../../contracts/value-confidence/internal-scale-readiness-readout.md)
 - [V4 internal readout runbook](../../research/V4_INTERNAL_READOUT_RUNBOOK.md)
 - [V4 internal readout rehearsal](../../research/V4_INTERNAL_READOUT_REHEARSAL.md)
 - [V4 Trust Attribution method](../../research/V4_TRUST_ATTRIBUTION_METHOD.md)
@@ -180,6 +183,11 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 Trust and Cohort classification plan](../../research/V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md)
 
 Current decision: `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`.
+
+Canonical contract closeout promotes internal readout contract hardening only.
+It does not authorize economic APIs, Time-Saved Defensibility Range output,
+ROI, productivity claims, causal claims, prediction, or ranking unless a later
+decision promotes that exact scope.
 
 Trust Calibration, Reusable Leverage, Skill Read Evidence as a governed signal,
 customer-facing economic output, APIs, frontend surfaces, Time-Saved

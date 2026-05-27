@@ -52,6 +52,39 @@ Velocity x Depth readout-zone test:
 
 - `v4-velocity-depth-zone/v4_velocity_depth_zone_summary_safe.csv`
 
+Segment overlay test:
+
+- `v4-segment-overlay-test/v4_segment_overlay_summary.csv`
+
+Intervention tracking readiness:
+
+- `v4-intervention-tracking-test/v4_intervention_tracking_readiness.csv`
+
+Outcome join readiness:
+
+- `v4-outcome-join-test/v4_outcome_join_readiness.csv`
+
+Outcome source inventory:
+
+- `v4-outcome-source-inventory/zendesk_support_outcome_inventory.csv`
+- `v4-outcome-source-inventory/rocketlane_project_outcome_inventory.csv`
+
+Support outcome join:
+
+- `v4-support-outcome-join/v4_support_outcome_join_window_summary.csv`
+- `v4-support-outcome-join/v4_support_outcome_join_by_zone.csv`
+- `v4-support-outcome-join/v4_support_outcome_comparison_fixture.csv`
+
+Support join-key test:
+
+- `v4-support-join-key-test/v4_support_join_key_candidate_inventory.csv`
+- `v4-support-join-key-test/v4_gce_org_metadata_join_coverage.csv`
+
+Time-Saved Defensibility Range readiness:
+
+- `v4-time-saved-defensibility-test/v4_time_saved_defensibility_readiness.csv`
+- `v4-time-saved-defensibility-test/v4_time_saved_defensibility_blocked_fixture.csv`
+
 Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`
