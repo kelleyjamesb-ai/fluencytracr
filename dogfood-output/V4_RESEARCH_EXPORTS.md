@@ -56,6 +56,10 @@ Segment overlay test:
 
 - `v4-segment-overlay-test/v4_segment_overlay_summary.csv`
 
+Intervention tracking readiness:
+
+- `v4-intervention-tracking-test/v4_intervention_tracking_readiness.csv`
+
 Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`

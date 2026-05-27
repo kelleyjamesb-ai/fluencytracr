@@ -190,7 +190,7 @@ held until an approved aggregate join exists.
 
 ### Step 3: Intervention Tracking Model
 
-Status: design next after segment overlay.
+Status: research design tested; actual movement test held for ledger source.
 
 Question:
 
@@ -222,11 +222,28 @@ Expected research shape:
 - trust or reliability movement where available,
 - evidence caveat.
 
+Test artifact:
+
+- [V4 Intervention Tracking Research Design](./V4_INTERVENTION_TRACKING_RESEARCH_DESIGN.md)
+
 Promotion gate:
 
 The model can promote only if it remains descriptive. It may show movement
 after an intervention, but it must not claim the intervention caused the
 movement without a separately approved causal design.
+
+Current test decision:
+
+`PROMOTE_INTERVENTION_TRACKING_RESEARCH_DESIGN`
+
+Also:
+
+`HOLD_FOR_INTERVENTION_LEDGER_SOURCE`
+
+The current saved V4 outputs can support movement review dimensions, but they
+do not include intervention identity, intervention timing, source owner, target
+scope, or expected movement. Actual intervention movement testing remains held
+until a governed aggregate intervention ledger exists.
 
 ### Step 4: Outcome Metric Join
 
@@ -401,11 +418,10 @@ Decision target:
 
 The safest remaining order is:
 
-1. Intervention tracking.
-2. Outcome metric join.
-3. Time-saved defensibility range.
-4. Economic hypothesis map update.
-5. Canonical contract decision.
+1. Outcome metric join.
+2. Time-saved defensibility range.
+3. Economic hypothesis map update.
+4. Canonical contract decision.
 
 That order keeps the story honest:
 

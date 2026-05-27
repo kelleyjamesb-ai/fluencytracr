@@ -210,6 +210,11 @@ band, Depth Repertoire band, and readout zone can be used as internal research
 overlays. Org metadata segmentation remains held until an approved aggregate
 join exists.
 
+Intervention-tracking status: the research design is complete (see
+[V4 Intervention Tracking Research Design](./V4_INTERVENTION_TRACKING_RESEARCH_DESIGN.md)).
+The design is safe for descriptive aggregate movement review, but actual
+movement testing is held until a governed aggregate intervention ledger exists.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.
