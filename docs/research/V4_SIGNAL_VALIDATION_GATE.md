@@ -59,6 +59,16 @@ Velocity x Depth Zone is a research candidate for combining adoption energy
 with work-integration evidence. It must preserve Velocity and Depth as
 independent aggregate signals and must not collapse them into a score.
 
+### Trust Episode Boundary
+
+Trust Episode Boundary is a V4 candidate for aggregate Trust Calibration
+context. It asks whether AI-assisted work episodes resolve with corroboration,
+resolve without explicit verification signal, recover after friction, stall
+after AI assistance, carry explicit feedback, or lack enough downstream evidence
+to interpret trust behavior. It must not become a person trace, trust score,
+employee score, citation-click metric, ROI input, causal claim, or standalone
+customer-facing readout without separate product contract approval.
+
 ## Required Evidence Before Promotion
 
 Every candidate signal must show:
