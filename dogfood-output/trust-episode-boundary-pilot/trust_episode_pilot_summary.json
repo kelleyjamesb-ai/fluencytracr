@@ -1,0 +1,56 @@
+{
+  "customer_label": "Glean dogfood aggregate run-first sample",
+  "governance": {
+    "adds_canonical_events": false,
+    "adds_runtime_api": false,
+    "adds_suppression_reasons": false,
+    "calculates_roi": false,
+    "establishes_causality": false,
+    "identifies_or_scores_employees": false,
+    "output_is_aggregate_only": true,
+    "ranks_teams_or_managers": false,
+    "requires_customer_approved_aggregate_scope": true
+  },
+  "patterns": {
+    "evidence_gap": {
+      "episode_count": 37484844,
+      "label": "Evidence gap remains",
+      "share": 0.425825
+    },
+    "explicit_negative_feedback": {
+      "episode_count": 2,
+      "label": "Explicit negative feedback appeared",
+      "share": 0.0
+    },
+    "recovered_after_failure": {
+      "episode_count": 15826000,
+      "label": "Work recovered after friction",
+      "share": 0.179782
+    },
+    "resolved_with_confidence": {
+      "episode_count": 3567326,
+      "label": "Work resolved with corroboration",
+      "share": 0.040525
+    },
+    "resolved_without_verification_signal": {
+      "episode_count": 30676071,
+      "label": "Work resolved without explicit verification",
+      "share": 0.348478
+    },
+    "stalled_after_ai_assist": {
+      "episode_count": 474414,
+      "label": "Work stalled after AI assistance",
+      "share": 0.005389
+    }
+  },
+  "required_citations": [
+    "docs/contracts/value-confidence/trust-episode-boundary-input.md",
+    "docs/research/V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md",
+    "dogfood-output/trust-episode-boundary/TRUST_EPISODE_BOUNDARY_BIGQUERY_READOUT.md",
+    "dogfood-output/trust-episode-boundary/TRUST_PRODUCT_EPISODE_DEDUP_BIGQUERY_READOUT.md",
+    "dogfood-output/trust-episode-boundary/TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md"
+  ],
+  "status": "EVIDENCE_CONTEXT_ONLY",
+  "total_episode_count": 88028657,
+  "window_label": "Seven approved business days"
+}

@@ -91,6 +91,7 @@
 - Trust Key Confidence readout is complete as a bounded dogfood research slice: preserving the deduped product-episode definition shows about 99.95% of episodes have trace/run/action coverage, recovered-after-failure remains about 18% inside that high-confidence coverage, medium tracking-token-only and low session/workflow-only tiers are negligible, and the evidence gap remains about 42%.
 - Trust Episode Boundary V4 validation is complete with decision `PROMOTE`: the signal is eligible for later Trust Calibration productization review, not automatically productized; the validation readout records seven comparable business-day windows, high trace/run/action coverage, stable recovered-after-failure behavior, aggregate-only governance, customer-safe output language, and required follow-up product contract work.
 - Trust Episode Boundary input contract proposal is complete as a bounded docs-only productization step: it codifies Trust Calibration evidence handling, fail-closed evidence-gap behavior, customer-safe output language, citation requirements, and explicit non-goals without adding runtime output, schemas, APIs, canonical events, suppression reasons, ROI, or causality claims.
+- Trust Episode Boundary pilot runner slice is complete locally: added an aggregate CSV-to-executive-readout generator, retained a real dogfood run-first aggregate input/output package, and documented the BigQuery-export workflow. This remains API-free, schema-free, aggregate-only, and does not ingest raw traces, add canonical events or suppression reasons, calculate ROI, establish causality, or rank/score employees, teams, or managers.
 
 ## Blockers
 
@@ -106,4 +107,4 @@
 - Review/archive OpenSpec `add-qbr-narrative-view` after human approval.
 - Stage 2 for Source Evidence Import should define the reviewer workflow around uploaded aggregate packages before implementing any persistence or live source connection.
 - Next Source Evidence Import step should decide whether to add a reviewer upload/workspace for sanitized aggregate packages, or first define the exact Glean/customer export templates needed for survey, external outcomes, financial approvals, and customer-level product telemetry.
-- Next Trust Episode Boundary step, if approved by the human, is a separate readout implementation or executive artifact wiring pass that uses the contract proposal; do not add schemas, APIs, new canonical events, new suppression reasons, ROI, or causality claims without another explicit approval.
+- Next Trust Episode Boundary step, if approved by the human, is executive artifact wiring from the generated pilot readout into a shareable deck/doc. Keep it API-free unless a later product decision explicitly approves aggregate result persistence or serving.

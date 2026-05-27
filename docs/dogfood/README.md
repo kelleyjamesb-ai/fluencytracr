@@ -66,6 +66,12 @@ python scripts/dogfood/run_end_to_end.py --fixture /tmp/manager-review-writer.js
 
 Use `--json` for machine-readable output.
 
+## Run A Trust Episode Boundary Pilot
+
+Trust Episode Boundary pilot readouts use aggregate BigQuery CSV exports, not
+raw traces or backend APIs. See
+[TRUST_EPISODE_PILOT_RUNBOOK.md](./TRUST_EPISODE_PILOT_RUNBOOK.md).
+
 ## Add A New Scenario
 
 1. Add a deterministic scenario builder in
