@@ -98,11 +98,13 @@ A future range test requires all of the following:
 - customer-owned recapture or scenario assumption,
 - surfaced aggregate behavior evidence,
 - support or other outcome context where available,
-- approved aggregate behavior-to-outcome join key, or explicit caveat that no
-  attribution is claimed,
+- approved aggregate behavior-to-outcome join key,
 - `NOT_CAUSAL` status unless a separately governed causal design exists.
 
-If any required input is missing, the range must be null or absent.
+If any required input is missing, the range must be null or absent. An explicit
+no-attribution caveat is not an alternate eligibility path for range output; it
+only allows outcome context to travel as caveated investigation context while
+the range remains held.
 
 ## Decision
 
