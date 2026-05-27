@@ -1,0 +1,4 @@
+window_id,event_rows,distinct_users,users_with_department,users_with_job_function,users_with_department_id,users_with_title,users_with_manager_id,distinct_department_values,distinct_job_function_values,distinct_department_id_values,distinct_title_values,distinct_manager_id_values
+window_1,2230686292,2238618,0,0,2238618,0,0,0,0,22804,0,0
+window_2,2304281866,2222648,0,0,2222648,0,0,0,0,22146,0,0
+window_3,2171557169,2219652,0,0,2219652,0,0,0,0,20538,0,0

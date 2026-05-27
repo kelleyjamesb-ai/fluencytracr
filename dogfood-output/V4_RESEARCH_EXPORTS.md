@@ -75,6 +75,11 @@ Support outcome join:
 - `v4-support-outcome-join/v4_support_outcome_join_by_zone.csv`
 - `v4-support-outcome-join/v4_support_outcome_comparison_fixture.csv`
 
+Support join-key test:
+
+- `v4-support-join-key-test/v4_support_join_key_candidate_inventory.csv`
+- `v4-support-join-key-test/v4_gce_org_metadata_join_coverage.csv`
+
 Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`

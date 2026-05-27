@@ -282,6 +282,7 @@ Test artifact:
 - [V4 Outcome Join Test Plan](./V4_OUTCOME_JOIN_TEST_PLAN.md)
 - [V4 Outcome Source Inventory Readout](./V4_OUTCOME_SOURCE_INVENTORY_READOUT.md)
 - [V4 Support Outcome Join Test Readout](./V4_SUPPORT_OUTCOME_JOIN_TEST_READOUT.md)
+- [V4 Support Join-Key Test Readout](./V4_SUPPORT_JOIN_KEY_TEST_READOUT.md)
 
 Promotion gate:
 
@@ -340,6 +341,21 @@ windows as V4 behavior evidence. It shows descriptive support movement from the
 earliest to latest window, but it remains window-context only. It can support
 value investigation routing, not ROI, causality, productivity measurement,
 prediction, or behavior-to-outcome attribution.
+
+Support join-key decision:
+
+`HOLD_SUPPORT_BEHAVIOR_ATTRIBUTION`
+
+Also:
+
+`PROMOTE_SUPPORT_JOIN_KEY_REQUIREMENTS`
+
+The live support table exposes customer/account outcome keys, while the retained
+V4 behavior exports expose only fixed-window and behavior-band keys. GCE
+`department_id` is populated, but department names, job functions, titles, and
+manager IDs are not available in this export path. Support can remain an outcome
+context source, but attribution to internal behavior cohorts requires a separate
+approved aggregate segment or department-ID mapping.
 
 ### Step 5: Time-Saved Defensibility Range
 

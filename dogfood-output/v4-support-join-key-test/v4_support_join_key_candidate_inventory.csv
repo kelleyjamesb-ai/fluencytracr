@@ -1,0 +1,16 @@
+window_id,candidate_join_key_name,aggregate_key_count,ticket_count,keys_meeting_min5,keys_below_min5,min_key_ticket_count,p50_key_ticket_count,p90_key_ticket_count,max_key_ticket_count,median_key_p50_days_elapsed,median_key_p50_business_minutes_to_first_response
+window_1,account_id,521,4455,242,279,1,4,20,179,12,168
+window_1,org_id,527,4469,242,285,1,4,20,179,12,166
+window_1,tags_present,1,4469,1,0,4469,4469,4469,4469,13,183
+window_1,ticket_priority,4,4469,4,0,100,166,2619,2619,10,135
+window_1,ticket_status,6,4469,6,0,29,170,3324,3324,8,184
+window_2,account_id,524,4540,258,266,1,4,21,163,14,201
+window_2,org_id,528,4549,258,270,1,4,21,163,14,201
+window_2,tags_present,1,4549,1,0,4549,4549,4549,4549,15,212
+window_2,ticket_priority,4,4549,4,0,122,177,2585,2585,12,165
+window_2,ticket_status,6,4549,6,0,12,37,4377,4377,35,222
+window_3,account_id,498,4141,223,275,1,4,20,129,15,215
+window_3,org_id,503,4163,224,279,1,4,20,129,14,213
+window_3,tags_present,1,4163,1,0,4163,4163,4163,4163,15,218
+window_3,ticket_priority,4,4163,4,0,99,176,2412,2412,14,158
+window_3,ticket_status,6,4163,6,0,12,14,4080,4080,64,217

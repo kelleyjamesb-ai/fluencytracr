@@ -237,6 +237,13 @@ It promotes support outcome context for Economic Impact Bridge routing, but
 holds behavior-to-outcome attribution until an approved aggregate join key
 exists.
 
+Support join-key status: the first join-key test is complete (see
+[V4 Support Join-Key Test Readout](./V4_SUPPORT_JOIN_KEY_TEST_READOUT.md)).
+Support behavior attribution remains held. The current safe path is support
+outcome context by fixed window; promotion beyond that requires an approved
+aggregate support segment, department-ID mapping, or customer/account behavior
+context.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.
