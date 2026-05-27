@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Trust Episode pilot runner invalid-input review fix: invalid reruns now remove stale Markdown and pattern CSV outputs from the target directory after writing the `INVALID_INPUT` JSON summary, preventing rejected inputs from leaving shareable prior readouts beside the failure state.
 - Trust Episode pilot runner identity-column review fix: expanded CSV header rejection to fail closed on common user/name identity columns such as `user_name`, `username`, `full_name`, and `display_name`, with regression coverage proving those inputs do not emit external readouts.
 - Trust Episode pilot runner coverage review fix: routed non-gap rows with incomplete, ambiguous, undocumented, candidate, overlap, or trace-context coverage into evidence-gap caveat handling before external readout generation; regenerated retained pilot Markdown/CSV/JSON/chart/DOCX artifacts so the ambiguous stalled trace-context row is no longer emitted as a precise pattern value.
 - Trust Episode pilot runner review fix: added a small-cell safety floor to fold sub-5 aggregate pattern cells into evidence-gap caveat language before external readout generation, regenerated retained pilot Markdown/CSV/JSON/chart/DOCX artifacts, and expanded tests so rare pattern counts are not emitted in shareable outputs.

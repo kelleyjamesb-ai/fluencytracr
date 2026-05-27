@@ -278,6 +278,28 @@ def test_identity_name_columns_fail_closed(tmp_path: Path) -> None:
         assert "Jane Example" not in (output_dir / SUMMARY_OUTPUT).read_text()
 
 
+def test_invalid_input_removes_stale_shareable_outputs(tmp_path: Path) -> None:
+    input_csv = tmp_path / "trust_episode_export.csv"
+    output_dir = tmp_path / "out"
+    write_csv(input_csv, aggregate_rows())
+
+    valid = run_pilot(input_csv, output_dir)
+    assert valid.returncode == 0, valid.stderr
+    assert (output_dir / READOUT_OUTPUT).exists()
+    assert (output_dir / PATTERN_OUTPUT).exists()
+
+    unsafe_rows = aggregate_rows()
+    unsafe_rows[0]["user_email"] = "person@example.com"
+    write_csv(input_csv, unsafe_rows)
+    invalid = run_pilot(input_csv, output_dir)
+
+    assert invalid.returncode == 1
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    assert summary["status"] == "INVALID_INPUT"
+    assert not (output_dir / READOUT_OUTPUT).exists()
+    assert not (output_dir / PATTERN_OUTPUT).exists()
+
+
 def test_missing_source_coverage_folds_to_evidence_gap(tmp_path: Path) -> None:
     input_csv = tmp_path / "undocumented_coverage.csv"
     output_dir = tmp_path / "out"

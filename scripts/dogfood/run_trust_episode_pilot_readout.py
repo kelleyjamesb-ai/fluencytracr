@@ -467,6 +467,9 @@ def write_outputs(output_dir: Path, summary: dict[str, Any], readout: str | None
     if readout is not None:
         (output_dir / READOUT_OUTPUT).write_text(readout)
         write_pattern_csv(output_dir / PATTERN_OUTPUT, summary)
+    else:
+        for stale_output in (READOUT_OUTPUT, PATTERN_OUTPUT):
+            (output_dir / stale_output).unlink(missing_ok=True)
 
 
 def run(args: argparse.Namespace) -> int:
