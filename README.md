@@ -157,6 +157,8 @@ is not the lead positioning for this repository.
 - Trust Episode Boundary research: [docs/research/TRUST_EPISODE_BOUNDARY.md](docs/research/TRUST_EPISODE_BOUNDARY.md)
 - Trust Episode Boundary validation readout: [docs/research/V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md](docs/research/V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md)
 - Trust Episode Boundary input contract proposal: [docs/contracts/value-confidence/trust-episode-boundary-input.md](docs/contracts/value-confidence/trust-episode-boundary-input.md)
+- Trust Episode Boundary pilot runbook: [docs/dogfood/TRUST_EPISODE_PILOT_RUNBOOK.md](docs/dogfood/TRUST_EPISODE_PILOT_RUNBOOK.md)
+- Trust Calibration external pilot brief: [output/doc/FluencyTracr_Trust_Calibration_Pilot_Brief.docx](output/doc/FluencyTracr_Trust_Calibration_Pilot_Brief.docx)
 - V4 Depth readout runbook: [docs/research/V4_DEPTH_READOUT_RUNBOOK.md](docs/research/V4_DEPTH_READOUT_RUNBOOK.md)
 - V4 Depth stability decision: [docs/research/V4_DEPTH_STABILITY_DECISION.md](docs/research/V4_DEPTH_STABILITY_DECISION.md)
 - V4 Depth Repertoire stability readout: [docs/research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md](docs/research/V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)

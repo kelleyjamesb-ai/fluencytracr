@@ -1,0 +1,71 @@
+{
+  "customer_label": "Glean dogfood aggregate run-first sample",
+  "governance": {
+    "adds_canonical_events": false,
+    "adds_runtime_api": false,
+    "adds_suppression_reasons": false,
+    "calculates_roi": false,
+    "establishes_causality": false,
+    "identifies_or_scores_employees": false,
+    "output_is_aggregate_only": true,
+    "ranks_teams_or_managers": false,
+    "requires_customer_approved_aggregate_scope": true
+  },
+  "patterns": {
+    "evidence_gap": {
+      "episode_count": 37959260,
+      "label": "Evidence gap remains",
+      "share": 0.431215
+    },
+    "explicit_negative_feedback": {
+      "episode_count": 0,
+      "label": "Explicit negative feedback appeared",
+      "share": 0.0
+    },
+    "recovered_after_failure": {
+      "episode_count": 15826000,
+      "label": "Work recovered after friction",
+      "share": 0.179782
+    },
+    "resolved_with_confidence": {
+      "episode_count": 3567326,
+      "label": "Work resolved with corroboration",
+      "share": 0.040525
+    },
+    "resolved_without_verification_signal": {
+      "episode_count": 30676071,
+      "label": "Work resolved without explicit verification",
+      "share": 0.348478
+    },
+    "stalled_after_ai_assist": {
+      "episode_count": 0,
+      "label": "Work stalled after AI assistance",
+      "share": 0.0
+    }
+  },
+  "required_citations": [
+    "docs/contracts/value-confidence/trust-episode-boundary-input.md",
+    "docs/research/V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md",
+    "dogfood-output/trust-episode-boundary/TRUST_EPISODE_BOUNDARY_BIGQUERY_READOUT.md",
+    "dogfood-output/trust-episode-boundary/TRUST_PRODUCT_EPISODE_DEDUP_BIGQUERY_READOUT.md",
+    "dogfood-output/trust-episode-boundary/TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md"
+  ],
+  "small_cell_policy": {
+    "caveat": "Rare pattern cells below the aggregate safety floor are withheld from pattern rows and carried into evidence-gap caveat language.",
+    "emits_sub_floor_pattern_values": false,
+    "folds_sub_floor_pattern_values_into_evidence_gap": true,
+    "minimum_aggregate_pattern_count": 5
+  },
+  "source_coverage_policy": {
+    "adequate_pattern_boundary_layers": [
+      "immediate_episode",
+      "same_session_continuation"
+    ],
+    "caveat": "Rows with incomplete, ambiguous, or undocumented source coverage are withheld from pattern rows and carried into evidence-gap caveat language.",
+    "emits_ambiguous_coverage_pattern_values": false,
+    "folds_unsafe_coverage_rows_into_evidence_gap": true
+  },
+  "status": "EVIDENCE_CONTEXT_ONLY",
+  "total_episode_count": 88028657,
+  "window_label": "Seven approved business days"
+}
