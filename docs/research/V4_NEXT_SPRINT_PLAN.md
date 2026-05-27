@@ -199,9 +199,10 @@ questions, stakeholder evidence needs, and required monetary-value evidence
 while explicitly blocking dollarized output.
 
 Measurement-build status: Velocity x Depth is the first promoted behavior
-cohort axis pair. The next sequence is segment overlay, intervention tracking,
-outcome metric join, Time-Saved Defensibility Range testing, and Economic
-Impact Bridge update, each as a separate research-and-test step before
+cohort axis pair. Segment overlay, intervention tracking, and outcome metric
+join have now been tested as research slices. The remaining sequence is
+Time-Saved Defensibility Range testing, Economic Impact Bridge update, and a
+canonical contract decision, each as a separate research-and-test step before
 canonicalization.
 
 Segment-overlay status: the initial behavior-segment overlay is complete (see
@@ -214,6 +215,13 @@ Intervention-tracking status: the research design is complete (see
 [V4 Intervention Tracking Research Design](./V4_INTERVENTION_TRACKING_RESEARCH_DESIGN.md)).
 The design is safe for descriptive aggregate movement review, but actual
 movement testing is held until a governed aggregate intervention ledger exists.
+
+Outcome-join status: the research design is tested (see
+[V4 Outcome Join Test Plan](./V4_OUTCOME_JOIN_TEST_PLAN.md)). Saved V4 behavior
+exports are ready to receive an aggregate outcome join, but real outcome metrics,
+window-aligned baselines, customer-owned assumptions, and causal design are not
+present in the retained exports. Outcome interpretation remains held until a
+support or onboarding aggregate source is approved.
 
 ## Workstream 4: Team Demo Artifact
 

@@ -90,9 +90,11 @@ Current test decision:
 
 `PASS_INITIAL_MEASUREMENT_BUILD_TEST`
 
-Allowed next step:
+Follow-on steps completed since this initial test:
 
-Proceed to Segment Overlay Test Plan.
+- Segment Overlay Test Plan,
+- Intervention Tracking Research Design,
+- Outcome Join Test Plan.
 
 Still blocked:
 
@@ -247,7 +249,7 @@ until a governed aggregate intervention ledger exists.
 
 ### Step 4: Outcome Metric Join
 
-Status: research design.
+Status: research design tested; outcome interpretation held for source data.
 
 Question:
 
@@ -275,11 +277,38 @@ Expected export shape:
 - coverage status,
 - customer-owned assumption status.
 
+Test artifact:
+
+- [V4 Outcome Join Test Plan](./V4_OUTCOME_JOIN_TEST_PLAN.md)
+
 Promotion gate:
 
 Outcome joins can promote only as aggregate outcome evidence. They do not prove
 ROI or causality. They support correlation, trend review, and customer-owned
 value investigation.
+
+Current test decision:
+
+`PROMOTE_OUTCOME_JOIN_RESEARCH_DESIGN`
+
+Also:
+
+`HOLD_FOR_CUSTOMER_OWNED_OUTCOME_SOURCE`
+
+The saved V4 behavior exports are ready to receive an aggregate outcome metric
+join, but they do not contain real business outcome metrics, window-aligned
+outcome baselines, customer-owned assumptions, or a causal design. The Value
+Realization Strategy Layer already reflects this: 26 rows are blocked pending
+outcome evidence, 37 are suppressed, and 111 are blocked pending trust evidence.
+
+Recommended first bounded test:
+
+- support outcome metric, or
+- onboarding outcome metric.
+
+Sales should come later because stage velocity, pipeline, and win-rate movement
+are more strategically valuable but also easier to overread without stronger
+controls.
 
 ### Step 5: Time-Saved Defensibility Range
 
@@ -366,9 +395,9 @@ hardening:
 
 If any gate fails, the measurement remains research-only or is rejected.
 
-## Recommended Next Three PRs
+## Completed Measurement Slices
 
-### PR 1: Segment Overlay Test Plan
+### Slice 1: Segment Overlay Test Plan
 
 Create:
 
@@ -379,11 +408,11 @@ Purpose:
 Define safe aggregate segmentation, required source coverage, and the first
 test shape for segment x Velocity x Depth analysis.
 
-Decision target:
+Decision:
 
-`HOLD_FOR_APPROVED_SEGMENT_EXPORT` or `PROMOTE_SEGMENT_OVERLAY_TESTING`
+`PROMOTE_BEHAVIOR_SEGMENT_OVERLAY_TESTING`
 
-### PR 2: Intervention Tracking Research Design
+### Slice 2: Intervention Tracking Research Design
 
 Create:
 
@@ -393,21 +422,45 @@ Purpose:
 
 Define how interventions are recorded and tested without causal claims.
 
-Decision target:
+Decision:
 
-`PROMOTE_INTERVENTION_LEDGER_RESEARCH_TEST` or `HOLD_FOR_INTERVENTION_SOURCE`
+`PROMOTE_INTERVENTION_TRACKING_RESEARCH_DESIGN`
 
-### PR 3: Outcome Join And Time-Saved Range Test
+Also:
+
+`HOLD_FOR_INTERVENTION_LEDGER_SOURCE`
+
+### Slice 3: Outcome Join Test Plan
 
 Create:
 
 - `docs/research/V4_OUTCOME_JOIN_TEST_PLAN.md`
+
+Purpose:
+
+Define one support or onboarding outcome join and the exact conditions required
+before external business metrics can support value investigation.
+
+Decision:
+
+`PROMOTE_OUTCOME_JOIN_RESEARCH_DESIGN`
+
+Also:
+
+`HOLD_FOR_CUSTOMER_OWNED_OUTCOME_SOURCE`
+
+## Recommended Next Slice
+
+### Time-Saved Defensibility Range Test
+
+Create:
+
 - `docs/research/V4_TIME_SAVED_DEFENSIBILITY_TEST_PLAN.md`
 
 Purpose:
 
-Define one support or onboarding outcome join and the exact conditions under
-which time saved can become a defensibility range.
+Define the exact conditions under which time saved can become a caveated
+defensibility range without becoming ROI, productivity measurement, or causality.
 
 Decision target:
 
@@ -418,10 +471,9 @@ Decision target:
 
 The safest remaining order is:
 
-1. Outcome metric join.
-2. Time-saved defensibility range.
-3. Economic hypothesis map update.
-4. Canonical contract decision.
+1. Time-saved defensibility range.
+2. Economic hypothesis map update.
+3. Canonical contract decision.
 
 That order keeps the story honest:
 
