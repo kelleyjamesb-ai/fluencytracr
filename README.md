@@ -172,6 +172,7 @@ is not the lead positioning for this repository.
 - V4 behavior cohort classification readout: [docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md](docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
 - V4 data analysis closeout: [docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md](docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md)
 - V4 next sprint plan: [docs/research/V4_NEXT_SPRINT_PLAN.md](docs/research/V4_NEXT_SPRINT_PLAN.md)
+- V4 measurement build plan: [docs/research/V4_MEASUREMENT_BUILD_PLAN.md](docs/research/V4_MEASUREMENT_BUILD_PLAN.md)
 - V4 readout zone model: [docs/research/V4_READOUT_ZONE_MODEL.md](docs/research/V4_READOUT_ZONE_MODEL.md)
 - V4 behavior feature backlog: [docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md](docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md)
 - V4 value hypothesis map: [docs/research/V4_VALUE_HYPOTHESIS_MAP.md](docs/research/V4_VALUE_HYPOTHESIS_MAP.md)

@@ -49,6 +49,11 @@ Current slice note: the first execution slice covers Workstreams 1-3 only.
 Workstreams 4-5 remain future work until the team reviews the zone model,
 feature backlog, and value-hypothesis map.
 
+Measurement-build note: the follow-on sequence is governed by the
+[V4 Measurement Build Plan](./V4_MEASUREMENT_BUILD_PLAN.md). Every added
+measurement must start as research, pass aggregate dogfood testing, and earn a
+promotion decision before any canonical contract work begins.
+
 ## Sprint Boundaries
 
 Allowed:
@@ -192,6 +197,12 @@ maps zones to scale, coach/redesign, study/package, repair-trust-loop,
 fix-instrumentation, or hold postures. It also records stakeholder value
 questions, stakeholder evidence needs, and required monetary-value evidence
 while explicitly blocking dollarized output.
+
+Measurement-build status: Velocity x Depth is the first promoted behavior
+cohort axis pair. The next sequence is segment overlay, intervention tracking,
+outcome metric join, Time-Saved Defensibility Range testing, and Economic
+Impact Bridge update, each as a separate research-and-test step before
+canonicalization.
 
 ## Workstream 4: Team Demo Artifact
 
