@@ -61,6 +61,11 @@ only. Customer-facing economic output, Time-Saved Defensibility Range output,
 ROI, productivity claims, causal claims, prediction, and ranking remain held or
 blocked.
 
+Contract-hardening status: the internal record-shape contract is
+[Internal Scale Readiness Readout](../contracts/value-confidence/internal-scale-readiness-readout.md).
+The next step after contract review is an internal template rehearsal from
+retained aggregate CSVs, not runtime implementation.
+
 ## Sprint Boundaries
 
 Allowed:

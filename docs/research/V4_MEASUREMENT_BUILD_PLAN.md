@@ -573,6 +573,12 @@ Also:
 
 `HOLD_CUSTOMER_FACING_ECONOMIC_OUTPUT`
 
+Contract status:
+
+[Internal Scale Readiness Readout](../contracts/value-confidence/internal-scale-readiness-readout.md)
+defines the docs-only internal record shape. The next step is a template
+rehearsal decision using retained aggregate CSVs.
+
 ## Recommended Order
 
 The safest remaining order is now:

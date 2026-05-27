@@ -181,6 +181,9 @@ Recommended next artifact:
 docs/contracts/value-confidence/internal-scale-readiness-readout.md
 ```
 
+Status: created as
+[Internal Scale Readiness Readout](../contracts/value-confidence/internal-scale-readiness-readout.md).
+
 That artifact should define:
 
 - allowed fields,
@@ -235,3 +238,8 @@ Also:
 The current V4 phase is complete enough to move from research readout design to
 internal contract hardening. It is not complete enough to build customer-facing
 economic outputs or productized Time-Saved Defensibility ranges.
+
+After the internal contract is reviewed, the next decision is whether to run an
+internal readout template rehearsal from retained aggregate CSVs. That rehearsal
+still must not create runtime behavior, customer-facing economic output, ROI,
+productivity claims, causality, prediction, ranking, or Time-Saved range values.

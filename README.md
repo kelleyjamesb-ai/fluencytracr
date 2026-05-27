@@ -138,6 +138,7 @@ is not the lead positioning for this repository.
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - V3 production ingest walkthrough: [docs/integrations/value-realization/V3_INGEST.md](docs/integrations/value-realization/V3_INGEST.md)
 - V4 value confidence integration: [docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md](docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md)
+- Internal Scale Readiness Readout contract: [docs/contracts/value-confidence/internal-scale-readiness-readout.md](docs/contracts/value-confidence/internal-scale-readiness-readout.md)
 - AI Work Evidence concept: [docs/concepts/AI_WORK_EVIDENCE.md](docs/concepts/AI_WORK_EVIDENCE.md)
 - AI Work Evidence pilot package: [docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md](docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)

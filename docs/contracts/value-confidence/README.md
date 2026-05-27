@@ -17,6 +17,7 @@ V4 may support:
 - Time-Saved Defensibility Range,
 - AI Value Leakage Map,
 - AI Scale Readiness Portfolio,
+- Internal Scale Readiness Readout,
 - Trust Calibration Index.
 
 Each readout is aggregate-only, caveated, and fail-closed.
@@ -31,6 +32,10 @@ They are concept-stage only. The current Glean dogfood decision records
 `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`, which authorizes
 docs-only internal AI Scale Readiness readout shape. It does not authorize APIs,
 schemas, customer-facing readouts, product surfaces, or economic calculation.
+The current canonical contract decision records
+`PROMOTE_INTERNAL_READOUT_CONTRACT_HARDENING`, which authorizes
+[Internal Scale Readiness Readout](./internal-scale-readiness-readout.md)
+contract hardening for internal readout shape only.
 
 ## Inputs
 
