@@ -72,6 +72,9 @@ Trust Episode Boundary pilot readouts use aggregate BigQuery CSV exports, not
 raw traces or backend APIs. See
 [TRUST_EPISODE_PILOT_RUNBOOK.md](./TRUST_EPISODE_PILOT_RUNBOOK.md).
 
+The generated external pilot brief is available at
+[FluencyTracr_Trust_Calibration_Pilot_Brief.docx](../../output/doc/FluencyTracr_Trust_Calibration_Pilot_Brief.docx).
+
 ## Add A New Scenario
 
 1. Add a deterministic scenario builder in
