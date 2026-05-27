@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Trust Episode pilot runner coverage review fix: routed non-gap rows with incomplete, ambiguous, undocumented, candidate, overlap, or trace-context coverage into evidence-gap caveat handling before external readout generation; regenerated retained pilot Markdown/CSV/JSON/chart/DOCX artifacts so the ambiguous stalled trace-context row is no longer emitted as a precise pattern value.
 - Trust Episode pilot runner review fix: added a small-cell safety floor to fold sub-5 aggregate pattern cells into evidence-gap caveat language before external readout generation, regenerated retained pilot Markdown/CSV/JSON/chart/DOCX artifacts, and expanded tests so rare pattern counts are not emitted in shareable outputs.
 - Trust Episode Boundary research slice: added aggregate-only V4 research framing for AI work episodes, a dogfood BigQuery diagnostic for trust episode pattern shape, and regression checks preserving research-only governance. The live one-day BigQuery probe validated against scrubbed Glean customer-event and agent-span tables and produced an interpretable aggregate episode matrix; counts remain candidate episode-key counts, not deduplicated product episode totals.
 - Trust Episode Boundary BigQuery readout: ran the diagnostic across three comparable business-day windows (2026-05-20, 2026-05-21, 2026-05-22) and recorded the aggregate pattern summary in `dogfood-output/trust-episode-boundary/TRUST_EPISODE_BOUNDARY_BIGQUERY_READOUT.md`; result remains `HOLD_FOR_RESEARCH` pending deduplication and formal V4 validation.

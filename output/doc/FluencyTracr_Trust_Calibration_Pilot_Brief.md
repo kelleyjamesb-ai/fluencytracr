@@ -17,16 +17,17 @@ This is Trust Calibration Context. It is not a trust score, not a citation-click
 - Work resolved with corroboration: 3,567,326 aggregate episodes (4.1%).
 - Work resolved without explicit verification: 30,676,071 aggregate episodes (34.8%).
 - Work recovered after friction: 15,826,000 aggregate episodes (18.0%).
-- Work stalled after AI assistance: 474,414 aggregate episodes (0.5%).
-- Evidence gap remains: 37,484,846 aggregate episodes (42.6%).
+- Evidence gap remains: 37,959,260 aggregate episodes (43.1%).
 
 Rare pattern cells below the aggregate safety floor are withheld from pattern rows and carried into evidence-gap caveat language.
+
+Rows with incomplete, ambiguous, or undocumented source coverage are withheld from pattern rows and carried into evidence-gap caveat language.
 
 Three signals matter most for leaders:
 
 - Recovery after friction appears in 18.0% of aggregate episodes. This suggests AI-assisted work often continues after failure, pause, skip, cancellation, or other friction.
 - Work resolved without explicit verification appears in 34.8% of aggregate episodes. This can be healthy in low-risk workflows, but it needs workflow-risk and source-coverage context.
-- The evidence gap remains 42.6%. Missing evidence and rare withheld pattern cells must stay visible as caveated evidence context and must not be upgraded into healthy trust, poor trust, value, or causality.
+- The evidence gap remains 43.1%. Missing evidence, rare withheld pattern cells, and ambiguous source-coverage rows must stay visible as caveated evidence context and must not be upgraded into healthy trust, poor trust, value, or causality.
 
 ![How the Pilot Works](trust_episode_evidence_flow.png)
 

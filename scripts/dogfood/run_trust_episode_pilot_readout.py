@@ -21,6 +21,25 @@ SMALL_CELL_CAVEAT = (
     "Rare pattern cells below the aggregate safety floor are withheld from "
     "pattern rows and carried into evidence-gap caveat language."
 )
+SOURCE_COVERAGE_CAVEAT = (
+    "Rows with incomplete, ambiguous, or undocumented source coverage are "
+    "withheld from pattern rows and carried into evidence-gap caveat language."
+)
+ADEQUATE_PATTERN_BOUNDARY_LAYERS = {
+    "immediate_episode",
+    "same_session_continuation",
+}
+AMBIGUOUS_COVERAGE_TOKENS = (
+    "ambiguous",
+    "candidate",
+    "incomplete",
+    "insufficient",
+    "may overlap",
+    "not documented",
+    "overlap",
+    "partial",
+    "unknown",
+)
 
 REQUIRED_COLUMNS = {
     "episode_pattern",
@@ -209,13 +228,30 @@ def aggregate_patterns(csv_input: CsvInput) -> dict[str, int]:
         if pattern not in PATTERN_LABELS:
             unknown_count += 1
             continue
-        counts[pattern] += parse_count(row.get("episode_count"), PATTERN_LABELS[pattern])
+        count = parse_count(row.get("episode_count"), PATTERN_LABELS[pattern])
+        if has_unsafe_source_coverage(row, pattern):
+            counts["evidence_gap"] += count
+            continue
+        counts[pattern] += count
 
     if unknown_count:
         raise InputError("unknown Trust Episode Boundary pattern")
     if sum(counts.values()) <= 0:
         raise InputError("input CSV must contain at least one aggregate episode")
     return counts
+
+
+def has_unsafe_source_coverage(row: dict[str, str], pattern: str) -> bool:
+    if pattern == "evidence_gap":
+        return False
+    boundary_layer = str(row.get("boundary_layer", "")).strip().lower()
+    coverage_caveat = str(row.get("coverage_caveat", "")).strip().lower()
+    return (
+        not boundary_layer
+        or boundary_layer not in ADEQUATE_PATTERN_BOUNDARY_LAYERS
+        or not coverage_caveat
+        or any(token in coverage_caveat for token in AMBIGUOUS_COVERAGE_TOKENS)
+    )
 
 
 def apply_small_cell_safety_floor(counts: dict[str, int]) -> dict[str, int]:
@@ -258,6 +294,12 @@ def build_summary(
             "emits_sub_floor_pattern_values": False,
             "folds_sub_floor_pattern_values_into_evidence_gap": True,
             "caveat": SMALL_CELL_CAVEAT,
+        },
+        "source_coverage_policy": {
+            "adequate_pattern_boundary_layers": sorted(ADEQUATE_PATTERN_BOUNDARY_LAYERS),
+            "emits_ambiguous_coverage_pattern_values": False,
+            "folds_unsafe_coverage_rows_into_evidence_gap": True,
+            "caveat": SOURCE_COVERAGE_CAVEAT,
         },
         "governance": {
             "output_is_aggregate_only": True,
@@ -333,6 +375,8 @@ def build_readout(summary: dict[str, Any]) -> str:
         [
             "",
             SMALL_CELL_CAVEAT,
+            "",
+            SOURCE_COVERAGE_CAVEAT,
             "",
             "## Trust Calibration Context",
             "",

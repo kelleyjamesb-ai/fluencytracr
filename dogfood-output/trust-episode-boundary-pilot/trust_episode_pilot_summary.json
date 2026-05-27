@@ -13,9 +13,9 @@
   },
   "patterns": {
     "evidence_gap": {
-      "episode_count": 37484846,
+      "episode_count": 37959260,
       "label": "Evidence gap remains",
-      "share": 0.425825
+      "share": 0.431215
     },
     "explicit_negative_feedback": {
       "episode_count": 0,
@@ -38,9 +38,9 @@
       "share": 0.348478
     },
     "stalled_after_ai_assist": {
-      "episode_count": 474414,
+      "episode_count": 0,
       "label": "Work stalled after AI assistance",
-      "share": 0.005389
+      "share": 0.0
     }
   },
   "required_citations": [
@@ -55,6 +55,15 @@
     "emits_sub_floor_pattern_values": false,
     "folds_sub_floor_pattern_values_into_evidence_gap": true,
     "minimum_aggregate_pattern_count": 5
+  },
+  "source_coverage_policy": {
+    "adequate_pattern_boundary_layers": [
+      "immediate_episode",
+      "same_session_continuation"
+    ],
+    "caveat": "Rows with incomplete, ambiguous, or undocumented source coverage are withheld from pattern rows and carried into evidence-gap caveat language.",
+    "emits_ambiguous_coverage_pattern_values": false,
+    "folds_unsafe_coverage_rows_into_evidence_gap": true
   },
   "status": "EVIDENCE_CONTEXT_ONLY",
   "total_episode_count": 88028657,

@@ -23,10 +23,11 @@ The export contains 88,028,657 aggregate AI work episodes.
 - Work resolved with corroboration: 3,567,326 aggregate episodes (4.1%).
 - Work resolved without explicit verification: 30,676,071 aggregate episodes (34.8%).
 - Work recovered after friction: 15,826,000 aggregate episodes (18.0%).
-- Work stalled after AI assistance: 474,414 aggregate episodes (0.5%).
-- Evidence gap remains: 37,484,846 aggregate episodes (42.6%).
+- Evidence gap remains: 37,959,260 aggregate episodes (43.1%).
 
 Rare pattern cells below the aggregate safety floor are withheld from pattern rows and carried into evidence-gap caveat language.
+
+Rows with incomplete, ambiguous, or undocumented source coverage are withheld from pattern rows and carried into evidence-gap caveat language.
 
 ## Trust Calibration Context
 
@@ -34,7 +35,7 @@ Work recovered after friction appears in 18.0% of aggregate episodes. This is ev
 
 Work resolved without explicit verification appears in 34.8% of aggregate episodes. This can be normal in low-risk work, but it needs workflow-risk and source-coverage context before interpretation.
 
-The evidence gap appears in 42.6% of aggregate episodes. Missing evidence must stay visible and must not be upgraded into healthy trust, poor trust, value, or causality.
+The evidence gap appears in 43.1% of aggregate episodes. Missing evidence must stay visible and must not be upgraded into healthy trust, poor trust, value, or causality.
 
 ## Source Coverage And Caveats
 

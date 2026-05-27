@@ -171,10 +171,13 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
     assert summary["window_label"] == "Seven approved business days"
     assert summary["total_episode_count"] == 10000
     assert summary["patterns"]["recovered_after_failure"]["share"] == 0.18
+    assert summary["patterns"]["stalled_after_ai_assist"]["episode_count"] == 0
     assert summary["patterns"]["explicit_negative_feedback"]["episode_count"] == 0
-    assert summary["patterns"]["evidence_gap"]["episode_count"] == 4340
+    assert summary["patterns"]["evidence_gap"]["episode_count"] == 4400
     assert summary["small_cell_policy"]["emits_sub_floor_pattern_values"] is False
     assert summary["small_cell_policy"]["folds_sub_floor_pattern_values_into_evidence_gap"] is True
+    assert summary["source_coverage_policy"]["emits_ambiguous_coverage_pattern_values"] is False
+    assert summary["source_coverage_policy"]["folds_unsafe_coverage_rows_into_evidence_gap"] is True
     assert summary["governance"]["output_is_aggregate_only"] is True
     assert summary["governance"]["requires_customer_approved_aggregate_scope"] is True
     assert summary["governance"]["adds_runtime_api"] is False
@@ -203,8 +206,11 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
         "TRUST_PRODUCT_EPISODE_DEDUP_BIGQUERY_READOUT.md",
         "TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md",
         "Rare pattern cells below the aggregate safety floor",
+        "Rows with incomplete, ambiguous, or undocumented source coverage",
     ]:
         assert phrase in readout
+    assert "Work stalled after AI assistance" not in readout
+    assert "60 aggregate episodes" not in readout
     assert "Explicit negative feedback appeared" not in readout
     assert "2 aggregate episodes" not in readout
     for raw_code in [
@@ -230,6 +236,9 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
         rows = list(csv.DictReader(handle))
     assert rows[0]["pattern_label"] == "Work resolved with corroboration"
     assert rows[2]["pattern_label"] == "Work recovered after friction"
+    assert "Work stalled after AI assistance" not in {
+        row["pattern_label"] for row in rows
+    }
     assert "Explicit negative feedback appeared" not in {
         row["pattern_label"] for row in rows
     }
@@ -250,6 +259,26 @@ def test_forbidden_person_level_columns_fail_closed(tmp_path: Path) -> None:
     assert summary["status"] == "INVALID_INPUT"
     assert summary["governance"]["output_is_aggregate_only"] is False
     assert "person@example.com" not in (output_dir / SUMMARY_OUTPUT).read_text()
+
+
+def test_missing_source_coverage_folds_to_evidence_gap(tmp_path: Path) -> None:
+    input_csv = tmp_path / "undocumented_coverage.csv"
+    output_dir = tmp_path / "out"
+    rows = aggregate_rows()
+    rows[0]["boundary_layer"] = ""
+    rows[0]["coverage_caveat"] = ""
+    write_csv(input_csv, rows)
+
+    completed = run_pilot(input_csv, output_dir)
+
+    assert completed.returncode == 0, completed.stderr
+    summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+    assert summary["patterns"]["resolved_with_confidence"]["episode_count"] == 0
+    assert summary["patterns"]["evidence_gap"]["episode_count"] == 4800
+
+    readout = (output_dir / READOUT_OUTPUT).read_text()
+    assert "Work resolved with corroboration" not in readout
+    assert "Rows with incomplete, ambiguous, or undocumented source coverage" in readout
 
 
 def test_unknown_pattern_fails_closed_without_readout_values(tmp_path: Path) -> None:
@@ -293,13 +322,16 @@ def test_retained_dogfood_pilot_output_uses_real_aggregate_counts() -> None:
     assert summary["customer_label"] == "Glean dogfood aggregate run-first sample"
     assert summary["total_episode_count"] == 88028657
     assert summary["patterns"]["recovered_after_failure"]["episode_count"] == 15826000
+    assert summary["patterns"]["stalled_after_ai_assist"]["episode_count"] == 0
     assert summary["patterns"]["explicit_negative_feedback"]["episode_count"] == 0
-    assert summary["patterns"]["evidence_gap"]["episode_count"] == 37484846
+    assert summary["patterns"]["evidence_gap"]["episode_count"] == 37959260
     assert summary["governance"]["adds_runtime_api"] is False
 
     assert "88,028,657 aggregate AI work episodes" in readout
     assert "15,826,000 aggregate episodes" in readout
-    assert "37,484,846 aggregate episodes" in readout
+    assert "37,959,260 aggregate episodes" in readout
+    assert "Work stalled after AI assistance" not in readout
+    assert "474,414 aggregate episodes" not in readout
     assert "Explicit negative feedback appeared" not in readout
     assert "2 aggregate episodes" not in readout
     assert "not a trust score" in readout
