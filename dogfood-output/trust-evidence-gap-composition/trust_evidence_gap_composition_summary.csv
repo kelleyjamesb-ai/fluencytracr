@@ -1,0 +1,4 @@
+component_label,episode_count,episode_share_of_gap,caveat
+True downstream-evidence gap,37484844,0.987502,episode has insufficient downstream evidence for trust interpretation
+Ambiguous boundary fold-in,474414,0.012498,"candidate episode-key count; trace, run, and session keys may overlap"
+Small-cell safety fold-in,WITHHELD,WITHHELD,rare aggregate cell below output floor

@@ -33,6 +33,9 @@ VALUE_STRATEGY_SUMMARY_CSV = (
 )
 SCALE_READINESS_CONTRACT = ROOT / "docs" / "contracts" / "value-confidence" / "scale-readiness-portfolio.md"
 TRUST_EPISODE_SQL = ROOT / "sql" / "dogfood" / "trust_episode_boundary_diagnostic.sql"
+TRUST_GAP_COMPOSITION_SQL = (
+    ROOT / "sql" / "dogfood" / "trust_evidence_gap_composition_diagnostic.sql"
+)
 TRUST_EPISODE_DOC = ROOT / "docs" / "research" / "TRUST_EPISODE_BOUNDARY.md"
 TRUST_EPISODE_VALIDATION_READOUT = (
     ROOT / "docs" / "research" / "V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md"
@@ -63,6 +66,7 @@ DOGFOOD_SQL = [
     BEHAVIOR_COHORT_JOINT_SQL,
     VELOCITY_DEPTH_ZONE_SQL,
     TRUST_EPISODE_SQL,
+    TRUST_GAP_COMPOSITION_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [

@@ -1,5 +1,34 @@
 {
   "customer_label": "Glean dogfood aggregate run-first sample",
+  "evidence_gap_composition": {
+    "ambiguous_boundary_folded": {
+      "episode_count": 474414,
+      "label": "Ambiguous boundary fold-in",
+      "share_of_gap": 0.012498,
+      "withheld_below_floor": false
+    },
+    "raw_gap_insufficient_downstream_evidence": {
+      "episode_count": 37484844,
+      "label": "True downstream-evidence gap",
+      "share_of_gap": 0.987502,
+      "withheld_below_floor": false
+    },
+    "small_cell_withheld": {
+      "episode_count": null,
+      "label": "Small-cell safety fold-in",
+      "share_of_gap": null,
+      "withheld_below_floor": true
+    }
+  },
+  "evidence_quality_reliability": {
+    "boundary_ambiguity_share_of_total": 0.005389,
+    "caveat": "Evidence quality describes aggregate measurement readiness only; it is not output correctness, ROI, causality, or employee fluency.",
+    "evidence_gap_share": 0.431215,
+    "high_confidence_coverage_share": 0.9995,
+    "interpretable_episode_share": 0.568785,
+    "product_episode_dedup_ratio": 2.805,
+    "raw_candidate_key_count": 246962102
+  },
   "governance": {
     "adds_canonical_events": false,
     "adds_runtime_api": false,

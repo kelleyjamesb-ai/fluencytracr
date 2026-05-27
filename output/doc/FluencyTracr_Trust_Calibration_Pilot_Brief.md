@@ -19,6 +19,19 @@ This is Trust Calibration Context. It is not a trust score, not a citation-click
 - Work recovered after friction: 15,826,000 aggregate episodes (18.0%).
 - Evidence gap remains: 37,959,260 aggregate episodes (43.1%).
 
+Evidence gap composition:
+
+- True downstream-evidence gap: 37,484,844 aggregate episodes. These episodes exist, but the aggregate record does not show enough downstream behavior to interpret whether AI-assisted work resolved, recovered, stalled, or was verified.
+- Ambiguous boundary fold-in: 474,414 aggregate episodes. This ambiguous boundary fold-in stays inside evidence-gap language because trace, run, session, or action keys may overlap.
+- Small-cell safety fold-in: present below the aggregate safety floor; exact count withheld.
+
+Evidence quality and reliability:
+
+- Product-episode normalization: 246,962,102 raw candidate keys were compressed to 88,028,657 aggregate AI work episodes, preventing a 2.8x overcount from entering the executive readout.
+- Key-confidence coverage: 99.95% high-confidence trace, run, or action coverage.
+- Interpretation completeness: 56.9% of episodes have enough aggregate evidence to classify as resolved, resolved without explicit verification, or recovered after friction.
+- Boundary ambiguity: 0.5% of all episodes were folded into evidence-gap language instead of being published as precise stalled values.
+
 Rare pattern cells below the aggregate safety floor are withheld from pattern rows and carried into evidence-gap caveat language.
 
 Rows with incomplete, ambiguous, or undocumented source coverage are withheld from pattern rows and carried into evidence-gap caveat language.
@@ -27,7 +40,7 @@ Three signals matter most for leaders:
 
 - Recovery after friction appears in 18.0% of aggregate episodes. This suggests AI-assisted work often continues after failure, pause, skip, cancellation, or other friction.
 - Work resolved without explicit verification appears in 34.8% of aggregate episodes. This can be healthy in low-risk workflows, but it needs workflow-risk and source-coverage context.
-- The evidence gap remains 43.1%. Missing evidence, rare withheld pattern cells, and ambiguous source-coverage rows must stay visible as caveated evidence context and must not be upgraded into healthy trust, poor trust, value, or causality.
+- The evidence gap remains 43.1%. It is mostly a true downstream-evidence gap, with ambiguous boundary rows and small-cell safety fold-ins kept in caveated evidence context. It must not be upgraded into healthy trust, poor trust, value, or causality.
 
 ![How the Pilot Works](trust_episode_evidence_flow.png)
 
