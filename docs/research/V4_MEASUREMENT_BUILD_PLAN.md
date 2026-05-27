@@ -359,7 +359,7 @@ approved aggregate segment or department-ID mapping.
 
 ### Step 5: Time-Saved Defensibility Range
 
-Status: contract exists, productization blocked.
+Status: research gate tested; range output held.
 
 Question:
 
@@ -390,6 +390,29 @@ Promotion gate:
 Time-Saved Defensibility Range remains blocked from productization until an
 outcome-join test proves that the caveats travel without creating ROI,
 productivity, or causality claims.
+
+Test artifact:
+
+- [V4 Time-Saved Defensibility Test Plan](./V4_TIME_SAVED_DEFENSIBILITY_TEST_PLAN.md)
+
+Current test decision:
+
+`PROMOTE_TSDR_RESEARCH_GATE`
+
+Also:
+
+`HOLD_TSDR_RANGE_OUTPUT`
+
+The current V4 evidence state can route a value investigation, but it cannot
+emit range hours. Raw time-saved claims and customer-owned assumptions are
+missing, support attribution remains held, and no causal design exists. The
+correct behavior is to suppress range values while preserving the reusable
+org-wide gate:
+
+```text
+behavior evidence + outcome context + customer-owned assumptions + approved
+aggregate join key -> range eligibility decision
+```
 
 ### Step 6: Economic Hypothesis Map
 
@@ -496,11 +519,9 @@ Also:
 
 `HOLD_FOR_CUSTOMER_OWNED_OUTCOME_SOURCE`
 
-## Recommended Next Slice
+### Slice 4: Time-Saved Defensibility Range Test
 
-### Time-Saved Defensibility Range Test
-
-Create:
+Created:
 
 - `docs/research/V4_TIME_SAVED_DEFENSIBILITY_TEST_PLAN.md`
 
@@ -509,18 +530,34 @@ Purpose:
 Define the exact conditions under which time saved can become a caveated
 defensibility range without becoming ROI, productivity measurement, or causality.
 
+Decision:
+
+`PROMOTE_TSDR_RESEARCH_GATE`
+
+Also:
+
+`HOLD_TSDR_RANGE_OUTPUT`
+
+## Recommended Next Slice
+
+### Economic Hypothesis Map Update
+
+Purpose:
+
+Update the Economic Impact Bridge / hypothesis map to reflect what the
+measurement tests now prove, hold, and block.
+
 Decision target:
 
-`PROMOTE_TIME_SAVED_RANGE_RESEARCH_TEST` or
-`HOLD_FOR_CUSTOMER_OWNED_ASSUMPTIONS`
+`PROMOTE_ECONOMIC_BRIDGE_INVESTIGATION_ROUTING` or
+`HOLD_FOR_ASSUMPTION_LEDGER_AND_ATTRIBUTION`
 
 ## Recommended Order
 
 The safest remaining order is:
 
-1. Time-saved defensibility range.
-2. Economic hypothesis map update.
-3. Canonical contract decision.
+1. Economic hypothesis map update.
+2. Canonical contract decision.
 
 That order keeps the story honest:
 

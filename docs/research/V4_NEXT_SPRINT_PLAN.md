@@ -244,6 +244,13 @@ outcome context by fixed window; promotion beyond that requires an approved
 aggregate support segment, department-ID mapping, or customer/account behavior
 context.
 
+Time-Saved Defensibility status: the first range-readiness gate is complete
+(see [V4 Time-Saved Defensibility Test Plan](./V4_TIME_SAVED_DEFENSIBILITY_TEST_PLAN.md)).
+The method is promoted as a research gate, but range output remains held because
+raw time-saved claims, customer-owned assumptions, behavior-to-support
+attribution, and causal design are missing or held. This gate should be reused
+across the org only when valid aggregate joins and assumptions exist.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.
