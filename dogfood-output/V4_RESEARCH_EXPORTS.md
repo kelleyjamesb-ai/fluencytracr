@@ -64,6 +64,11 @@ Outcome join readiness:
 
 - `v4-outcome-join-test/v4_outcome_join_readiness.csv`
 
+Outcome source inventory:
+
+- `v4-outcome-source-inventory/zendesk_support_outcome_inventory.csv`
+- `v4-outcome-source-inventory/rocketlane_project_outcome_inventory.csv`
+
 Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`

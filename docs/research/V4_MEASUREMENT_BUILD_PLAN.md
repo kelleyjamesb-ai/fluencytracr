@@ -280,6 +280,7 @@ Expected export shape:
 Test artifact:
 
 - [V4 Outcome Join Test Plan](./V4_OUTCOME_JOIN_TEST_PLAN.md)
+- [V4 Outcome Source Inventory Readout](./V4_OUTCOME_SOURCE_INVENTORY_READOUT.md)
 
 Promotion gate:
 
@@ -309,6 +310,21 @@ Recommended first bounded test:
 Sales should come later because stage velocity, pipeline, and win-rate movement
 are more strategically valuable but also easier to overread without stronger
 controls.
+
+Source-inventory decision:
+
+`PROMOTE_SUPPORT_OUTCOME_SOURCE_TEST`
+
+Also:
+
+`HOLD_FOR_BEHAVIOR_TO_OUTCOME_JOIN_KEY`
+
+The first BigQuery inventory found a live aggregate support source in
+`dashboards.zendesk_ticket_details` and a usable secondary onboarding source in
+`rocketlane.project`. Support is the best first outcome-context source, but a
+stronger behavior-to-outcome interpretation remains held until an approved
+aggregate join key connects support movement to Velocity, Depth Repertoire, AI
+Scale Readiness zone, or organizational segment.
 
 ### Step 5: Time-Saved Defensibility Range
 

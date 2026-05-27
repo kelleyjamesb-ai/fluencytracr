@@ -223,6 +223,14 @@ window-aligned baselines, customer-owned assumptions, and causal design are not
 present in the retained exports. Outcome interpretation remains held until a
 support or onboarding aggregate source is approved.
 
+Outcome-source inventory status: the first BigQuery source inventory is complete
+(see [V4 Outcome Source Inventory Readout](./V4_OUTCOME_SOURCE_INVENTORY_READOUT.md)).
+Support is the best first outcome-context source via
+`dashboards.zendesk_ticket_details`; Rocketlane is usable as a secondary
+onboarding/project-delivery source. A stronger behavior-to-outcome
+interpretation remains held until an approved aggregate join key connects
+outcome movement to behavior cohorts or organizational segments.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.

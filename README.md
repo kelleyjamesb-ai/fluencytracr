@@ -176,6 +176,7 @@ is not the lead positioning for this repository.
 - V4 segment overlay test plan: [docs/research/V4_SEGMENT_OVERLAY_TEST_PLAN.md](docs/research/V4_SEGMENT_OVERLAY_TEST_PLAN.md)
 - V4 intervention tracking research design: [docs/research/V4_INTERVENTION_TRACKING_RESEARCH_DESIGN.md](docs/research/V4_INTERVENTION_TRACKING_RESEARCH_DESIGN.md)
 - V4 outcome join test plan: [docs/research/V4_OUTCOME_JOIN_TEST_PLAN.md](docs/research/V4_OUTCOME_JOIN_TEST_PLAN.md)
+- V4 outcome source inventory readout: [docs/research/V4_OUTCOME_SOURCE_INVENTORY_READOUT.md](docs/research/V4_OUTCOME_SOURCE_INVENTORY_READOUT.md)
 - V4 readout zone model: [docs/research/V4_READOUT_ZONE_MODEL.md](docs/research/V4_READOUT_ZONE_MODEL.md)
 - V4 behavior feature backlog: [docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md](docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md)
 - V4 value hypothesis map: [docs/research/V4_VALUE_HYPOTHESIS_MAP.md](docs/research/V4_VALUE_HYPOTHESIS_MAP.md)
