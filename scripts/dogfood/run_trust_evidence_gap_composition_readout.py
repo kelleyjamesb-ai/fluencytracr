@@ -354,6 +354,7 @@ def write_outputs(
         writer = csv.DictWriter(
             handle,
             fieldnames=["component_label", "episode_count", "episode_share_of_gap", "caveat"],
+            lineterminator="\n",
         )
         writer.writeheader()
         writer.writerows(rows)
