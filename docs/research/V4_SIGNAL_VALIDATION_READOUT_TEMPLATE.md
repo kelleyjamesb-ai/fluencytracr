@@ -38,6 +38,7 @@ If fewer than three comparable windows are available, decision must default to
 - [ ] reusable_workflow_propagation
 - [ ] rapid_refinement
 - [ ] velocity_depth_zone
+- [ ] trust_episode_boundary
 
 ## Signal Promotion Table
 
@@ -57,6 +58,7 @@ Allowed `product_destination` values:
 | reusable_workflow_propagation |  |  |  |  |  |  |
 | rapid_refinement |  |  |  |  |  |  |
 | velocity_depth_zone |  |  |  |  |  |  |
+| trust_episode_boundary |  |  |  |  |  |  |
 
 Allowed decisions:
 

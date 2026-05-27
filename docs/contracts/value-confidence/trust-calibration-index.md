@@ -25,6 +25,8 @@ The readout must remain caveated when evidence cannot distinguish these cases.
 ## Inputs
 
 - Verification and feedback attribution.
+- Trust Episode Boundary aggregate episode evidence after promotion by
+  governance.
 - Workflow risk context.
 - Quality Multiplier evidence.
 - Reliability Factor evidence.
@@ -37,6 +39,20 @@ The readout must remain caveated when evidence cannot distinguish these cases.
 Trust behavior must be interpreted relative to workflow risk. A low-risk summary workflow and a high-risk regulated workflow should not share the same interpretation.
 
 The index should explain whether evidence is calibrated, under-corroborated, undertrusted, insufficient, or suppressed.
+
+Trust episode evidence can inform this interpretation only as aggregate context:
+whether work resolved with corroboration, resolved without explicit verification,
+recovered after failure, stalled after AI assistance, carried explicit negative
+feedback, or lacked enough downstream evidence. The signal is promoted for later
+productization review by
+[V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md](../../research/V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md),
+but that does not make it a person trace, trust score, citation-click metric,
+standalone product readout, ROI input, or causal claim.
+
+The product-contract proposal for this input is
+[trust-episode-boundary-input.md](./trust-episode-boundary-input.md). It defines
+the evidence handling sequence, customer-safe output language, and citation
+requirements for any later Trust Calibration use.
 
 ## Bands
 
@@ -96,3 +112,5 @@ Trust Calibration does not label individuals or teams.
 Trust Calibration does not establish causality.
 
 Trust Calibration does not override suppression.
+
+Trust Calibration does not require citation clicks as proof of healthy trust.

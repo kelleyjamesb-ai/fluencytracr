@@ -17,6 +17,14 @@ V4_DELEGATION_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_delegation.s
 V4_REFINEMENT_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_refinement.sql"
 V4_REUSE_SQL = ROOT / "sql" / "dogfood" / "v4_signal_discovery_reuse_propagation.sql"
 AGENT_JOIN_KEY_SQL = ROOT / "sql" / "dogfood" / "agent_snapshot_join_key_diagnostic.sql"
+TRUST_EPISODE_SQL = ROOT / "sql" / "dogfood" / "trust_episode_boundary_diagnostic.sql"
+TRUST_EPISODE_DOC = ROOT / "docs" / "research" / "TRUST_EPISODE_BOUNDARY.md"
+TRUST_EPISODE_VALIDATION_READOUT = (
+    ROOT / "docs" / "research" / "V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md"
+)
+TRUST_EPISODE_INPUT_CONTRACT = (
+    ROOT / "docs" / "contracts" / "value-confidence" / "trust-episode-boundary-input.md"
+)
 
 DOGFOOD_SQL = [
     SQL,
@@ -33,6 +41,7 @@ DOGFOOD_SQL = [
     V4_REFINEMENT_SQL,
     V4_REUSE_SQL,
     AGENT_JOIN_KEY_SQL,
+    TRUST_EPISODE_SQL,
 ]
 
 INVALID_STRUCT_PATHS = [
@@ -276,6 +285,185 @@ def test_agent_snapshot_join_key_diagnostic_compares_aggregate_candidates() -> N
     assert "jsonPayload.productsnapshot.workflow.isdraftonly" in sql
     assert "jsonPayload.productsnapshot.workflow.name" in sql
     assert "jsonPayload.productsnapshot.workflow.workflowid" in sql
+
+
+def test_trust_episode_boundary_doc_preserves_research_governance() -> None:
+    doc = TRUST_EPISODE_DOC.read_text()
+
+    for phrase in [
+        "research-only",
+        "AI Work Episode Boundary",
+        "No individual scoring",
+        "no new canonical events",
+        "no new suppression reasons",
+        "no ROI calculation",
+        "not a citation-click metric",
+        "citations are optional corroboration",
+        "aggregate-only",
+    ]:
+        assert phrase in doc
+
+    for pattern in [
+        "resolved_with_confidence",
+        "resolved_without_verification_signal",
+        "recovered_after_failure",
+        "stalled_after_ai_assist",
+        "explicit_negative_feedback",
+        "evidence_gap",
+    ]:
+        assert pattern in doc
+
+
+def test_trust_episode_boundary_diagnostic_is_aggregate_only() -> None:
+    sql = TRUST_EPISODE_SQL.read_text()
+
+    for phrase in [
+        "Research-only",
+        "AI Work Episode Boundary",
+        "episodes AS",
+        "episode_patterns AS",
+        "aggregate_episode_matrix AS",
+        "feedback_signal",
+        "agent_completion",
+        "post_failure_behavior",
+        "post_skill_behavior",
+        "verification_source_behavior",
+        "citation_click_episode_count",
+    ]:
+        assert phrase in sql
+
+    for pattern in [
+        "resolved_with_confidence",
+        "resolved_without_verification_signal",
+        "recovered_after_failure",
+        "stalled_after_ai_assist",
+        "explicit_negative_feedback",
+        "evidence_gap",
+    ]:
+        assert pattern in sql
+
+    final_select = sql.rsplit("SELECT", 1)[1]
+    for forbidden in [
+        "user_key",
+        "user_id",
+        "useremail",
+        "email",
+        "person",
+        "manager",
+        "department",
+        "team",
+        "raw_prompt",
+        "raw_output",
+        "transcript",
+        "trust_score",
+        "roi",
+    ]:
+        assert forbidden not in final_select.lower()
+
+    assert "PROJECT.DATASET.gce_events" in sql
+    assert "PROJECT.DATASET.agent_span_events" in sql
+    assert "APPROX_QUANTILES" in sql
+
+
+def test_trust_episode_boundary_validation_promotes_without_productizing() -> None:
+    readout = TRUST_EPISODE_VALIDATION_READOUT.read_text()
+
+    for phrase in [
+        "Candidate signal: Trust Episode Boundary",
+        "Decision: `PROMOTE`",
+        "eligible for later productization",
+        "not automatically productized",
+        "Trust Calibration Index",
+        "recovered-after-failure",
+        "99.95%",
+        "about 18%",
+        "about 42%",
+        "Citation behavior is optional corroboration",
+        "No individual scoring",
+        "No team, manager, department, or employee ranking",
+        "No ROI claim",
+        "No causal claim",
+        "No prediction claim",
+        "No new canonical events",
+        "No new suppression reasons",
+    ]:
+        assert phrase in readout
+
+    for forbidden in [
+        "calculates ROI",
+        "proves causality",
+        "proves output correctness",
+        "scores employees",
+        "ranks teams",
+        "ranks managers",
+        "productivity lift claim",
+    ]:
+        assert forbidden not in readout.lower()
+
+
+def test_trust_episode_boundary_validation_has_customer_safe_output_language() -> None:
+    readout = TRUST_EPISODE_VALIDATION_READOUT.read_text()
+
+    assert "Customer-Safe Output Language" in readout
+    assert "aggregate AI work episodes" in readout
+    assert "resolves, recovers after friction, stalls" in readout
+    assert "cannot prove output correctness, ROI, productivity lift, or causality" in readout
+    assert "does not identify, score, rank, or evaluate employees" in readout
+
+
+def test_trust_episode_boundary_input_contract_codifies_output_sequence() -> None:
+    contract = TRUST_EPISODE_INPUT_CONTRACT.read_text()
+
+    for phrase in [
+        "Status: `PRODUCT_CONTRACT_PROPOSAL`",
+        "Trust Calibration Index",
+        "Customer-Safe Output Language",
+        "Citation Requirements",
+        "Evidence Handling Sequence",
+        "Do not emit Trust Episode Boundary pattern values",
+        "must cite the validation readout",
+        "must cite the supporting dogfood BigQuery readouts",
+        "does not add canonical events",
+        "does not add suppression reasons",
+        "does not calculate ROI",
+        "does not establish causality",
+    ]:
+        assert phrase in contract
+
+    for evidence_path in [
+        "V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md",
+        "TRUST_EPISODE_BOUNDARY_BIGQUERY_READOUT.md",
+        "TRUST_PRODUCT_EPISODE_DEDUP_BIGQUERY_READOUT.md",
+        "TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md",
+    ]:
+        assert evidence_path in contract
+
+
+def test_trust_episode_boundary_input_contract_keeps_output_aggregate_safe() -> None:
+    contract = TRUST_EPISODE_INPUT_CONTRACT.read_text().lower()
+
+    for required in [
+        "aggregate ai work episodes",
+        "recovers after friction",
+        "stalls",
+        "lacks enough evidence",
+        "not identify, score, rank, or evaluate employees",
+        "not a trust score",
+        "not a citation-click metric",
+        "not a correctness detector",
+    ]:
+        assert required in contract
+
+    for forbidden in [
+        "calculates roi",
+        "proves causality",
+        "proves output correctness",
+        "scores employees",
+        "ranks teams",
+        "ranks managers",
+        "individual productivity",
+    ]:
+        assert forbidden not in contract
 
 
 def test_depth_repertoire_diagnostic_reports_aggregate_repertoire_and_repeat_metrics() -> None:

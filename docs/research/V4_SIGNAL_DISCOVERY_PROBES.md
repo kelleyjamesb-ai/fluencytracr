@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document frames three V4 signal discovery probes as research candidates,
+This document frames V4 signal discovery probes as research candidates,
 not productized V4 dimensions.
 
 The probes test whether candidate behavioral patterns are worth future
@@ -16,10 +16,12 @@ The research candidates are:
 - rapid refinement behavior,
 - delegation depth,
 - depth repertoire,
-- reusable workflow propagation.
+- reusable workflow propagation,
+- trust episode boundary.
 
-These candidates are not fluency dimensions. They are not product signals. They
-are not customer-facing claims.
+These candidates are not fluency dimensions. They are not automatically
+productized signals, and they are not customer-facing claims. A `PROMOTE`
+decision only makes a candidate eligible for later productization review.
 
 ## Probe 1: Rapid Refinement Behavior
 
@@ -87,6 +89,43 @@ across-adopter language.
 
 SQL: [v4_signal_discovery_reuse_propagation.sql](../../sql/dogfood/v4_signal_discovery_reuse_propagation.sql)
 
+## Probe 5: Trust Episode Boundary
+
+Trust episode boundary asks whether aggregate AI work episodes show calibrated
+trust behavior without relying on citation clicks as the primary trust proxy.
+
+The probe groups evidence into five families:
+
+- feedback signal: thumbs up/down, rating, time-saved feedback, answer votes,
+  and summary votes;
+- agent completion: successful action, completed agent run, error, pause,
+  cancellation, or skipped step;
+- post-failure behavior: continuation or successful action after failure,
+  pause, cancellation, or skipped step;
+- post-skill behavior: Skill use followed by continuation, action completion,
+  feedback, or abandonment;
+- verification/source behavior: citations available, citation clicked, or
+  source-backed action.
+
+The output buckets are neutral aggregate patterns:
+
+- `resolved_with_confidence`,
+- `resolved_without_verification_signal`,
+- `recovered_after_failure`,
+- `stalled_after_ai_assist`,
+- `explicit_negative_feedback`,
+- `evidence_gap`.
+
+Citation behavior is optional corroboration. The probe is explicitly not a
+citation-click metric and must not become a person-level trust score.
+
+Research doc: [TRUST_EPISODE_BOUNDARY.md](./TRUST_EPISODE_BOUNDARY.md)
+
+SQL: [trust_episode_boundary_diagnostic.sql](../../sql/dogfood/trust_episode_boundary_diagnostic.sql)
+
+Validation readout:
+[V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md](./V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md)
+
 ## How To Run The Probes
 
 1. Replace `PROJECT.DATASET.gce_events` in each SQL file with the approved GCE
@@ -145,6 +184,7 @@ Rationale:
 | delegation depth |  |  |  |  |  |  |  |  |
 | depth repertoire |  |  |  |  |  |  |  |  |
 | reusable workflow propagation |  |  |  |  |  |  |  |  |
+| trust episode boundary | pass | pass | pass | pass | pass | pass | PROMOTE | Promoted for later Trust Calibration productization review, not automatically productized. |
 
 ## Governance Constraints
 

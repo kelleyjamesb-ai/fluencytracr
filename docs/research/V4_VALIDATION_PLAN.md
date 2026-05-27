@@ -26,6 +26,7 @@ Canonical validation gate documents:
 - [V4 Depth Readout Runbook](./V4_DEPTH_READOUT_RUNBOOK.md)
 - [V4 Depth Stability Decision](./V4_DEPTH_STABILITY_DECISION.md)
 - [V4 Depth Repertoire Stability Readout](./V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
+- [V4 Trust Episode Boundary Validation Readout](./V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision

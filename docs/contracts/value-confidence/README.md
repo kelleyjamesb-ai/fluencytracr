@@ -53,6 +53,13 @@ Quality Multiplier qualifies time-saved estimates using aggregate workflow quali
 
 Reliability Factor qualifies whether surfaced evidence is operationally dependable.
 
+### Trust Episode Boundary
+
+Trust Episode Boundary is a promoted product-contract proposal for aggregate
+Trust Calibration context. See
+[trust-episode-boundary-input.md](./trust-episode-boundary-input.md). It is not
+a runtime schema, score, ROI input, citation-click metric, or causal claim.
+
 ### Outcome Evidence
 
 Outcome Evidence stores customer-attested aggregate KPI evidence. Outcome evidence may strengthen confidence but does not automatically establish causality.
