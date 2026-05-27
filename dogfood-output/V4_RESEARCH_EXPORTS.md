@@ -69,6 +69,12 @@ Outcome source inventory:
 - `v4-outcome-source-inventory/zendesk_support_outcome_inventory.csv`
 - `v4-outcome-source-inventory/rocketlane_project_outcome_inventory.csv`
 
+Support outcome join:
+
+- `v4-support-outcome-join/v4_support_outcome_join_window_summary.csv`
+- `v4-support-outcome-join/v4_support_outcome_join_by_zone.csv`
+- `v4-support-outcome-join/v4_support_outcome_comparison_fixture.csv`
+
 Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`

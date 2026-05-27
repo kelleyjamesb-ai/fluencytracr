@@ -231,6 +231,12 @@ onboarding/project-delivery source. A stronger behavior-to-outcome
 interpretation remains held until an approved aggregate join key connects
 outcome movement to behavior cohorts or organizational segments.
 
+Support outcome join status: the first support join is complete (see
+[V4 Support Outcome Join Test Readout](./V4_SUPPORT_OUTCOME_JOIN_TEST_READOUT.md)).
+It promotes support outcome context for Economic Impact Bridge routing, but
+holds behavior-to-outcome attribution until an approved aggregate join key
+exists.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.

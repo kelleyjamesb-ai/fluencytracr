@@ -281,6 +281,7 @@ Test artifact:
 
 - [V4 Outcome Join Test Plan](./V4_OUTCOME_JOIN_TEST_PLAN.md)
 - [V4 Outcome Source Inventory Readout](./V4_OUTCOME_SOURCE_INVENTORY_READOUT.md)
+- [V4 Support Outcome Join Test Readout](./V4_SUPPORT_OUTCOME_JOIN_TEST_READOUT.md)
 
 Promotion gate:
 
@@ -325,6 +326,20 @@ The first BigQuery inventory found a live aggregate support source in
 stronger behavior-to-outcome interpretation remains held until an approved
 aggregate join key connects support movement to Velocity, Depth Repertoire, AI
 Scale Readiness zone, or organizational segment.
+
+Support join decision:
+
+`PROMOTE_SUPPORT_OUTCOME_CONTEXT_JOIN`
+
+Also:
+
+`HOLD_BEHAVIOR_TO_OUTCOME_ATTRIBUTION`
+
+The first support join attaches Zendesk outcome context to the same fixed
+windows as V4 behavior evidence. It shows descriptive support movement from the
+earliest to latest window, but it remains window-context only. It can support
+value investigation routing, not ROI, causality, productivity measurement,
+prediction, or behavior-to-outcome attribution.
 
 ### Step 5: Time-Saved Defensibility Range
 
