@@ -36,6 +36,10 @@ def run_pilot(input_csv: Path, output_dir: Path) -> subprocess.CompletedProcess[
             "Northstar aggregate pilot",
             "--window-label",
             "Seven approved business days",
+            "--raw-candidate-key-count",
+            "28000",
+            "--high-confidence-coverage-share",
+            "0.9995",
         ],
         cwd=ROOT,
         capture_output=True,
@@ -174,6 +178,15 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
     assert summary["patterns"]["stalled_after_ai_assist"]["episode_count"] == 0
     assert summary["patterns"]["explicit_negative_feedback"]["episode_count"] == 0
     assert summary["patterns"]["evidence_gap"]["episode_count"] == 4400
+    assert summary["evidence_gap_composition"]["raw_gap_insufficient_downstream_evidence"]["episode_count"] == 4338
+    assert summary["evidence_gap_composition"]["ambiguous_boundary_folded"]["episode_count"] == 60
+    assert summary["evidence_gap_composition"]["small_cell_withheld"]["episode_count"] is None
+    assert summary["evidence_gap_composition"]["small_cell_withheld"]["withheld_below_floor"] is True
+    assert summary["evidence_quality_reliability"]["raw_candidate_key_count"] == 28000
+    assert summary["evidence_quality_reliability"]["product_episode_dedup_ratio"] == 2.8
+    assert summary["evidence_quality_reliability"]["high_confidence_coverage_share"] == 0.9995
+    assert summary["evidence_quality_reliability"]["interpretable_episode_share"] == 0.56
+    assert summary["evidence_quality_reliability"]["boundary_ambiguity_share_of_total"] == 0.006
     assert summary["small_cell_policy"]["emits_sub_floor_pattern_values"] is False
     assert summary["small_cell_policy"]["folds_sub_floor_pattern_values_into_evidence_gap"] is True
     assert summary["source_coverage_policy"]["emits_ambiguous_coverage_pattern_values"] is False
@@ -207,10 +220,18 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
         "TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md",
         "Rare pattern cells below the aggregate safety floor",
         "Rows with incomplete, ambiguous, or undocumented source coverage",
+        "## Evidence Gap Composition",
+        "True downstream-evidence gap: 4,338 aggregate episodes",
+        "Ambiguous boundary fold-in: 60 aggregate episodes",
+        "Small-cell safety fold-in: present below the aggregate safety floor; exact count withheld",
+        "## Evidence Quality And Reliability",
+        "Product-episode normalization: 28,000 raw candidate keys were compressed to 10,000 aggregate AI work episodes",
+        "Key-confidence coverage: 100.0% of episodes have high-confidence trace, run, or action coverage",
+        "Interpretation completeness: 56.0% of episodes have enough aggregate evidence",
+        "Boundary ambiguity: 0.6% of all episodes were folded into evidence-gap language",
     ]:
         assert phrase in readout
     assert "Work stalled after AI assistance" not in readout
-    assert "60 aggregate episodes" not in readout
     assert "Explicit negative feedback appeared" not in readout
     assert "2 aggregate episodes" not in readout
     for raw_code in [
@@ -364,13 +385,27 @@ def test_retained_dogfood_pilot_output_uses_real_aggregate_counts() -> None:
     assert summary["patterns"]["stalled_after_ai_assist"]["episode_count"] == 0
     assert summary["patterns"]["explicit_negative_feedback"]["episode_count"] == 0
     assert summary["patterns"]["evidence_gap"]["episode_count"] == 37959260
+    assert summary["evidence_gap_composition"]["raw_gap_insufficient_downstream_evidence"]["episode_count"] == 37484844
+    assert summary["evidence_gap_composition"]["ambiguous_boundary_folded"]["episode_count"] == 474414
+    assert summary["evidence_gap_composition"]["small_cell_withheld"]["episode_count"] is None
+    assert summary["evidence_quality_reliability"]["raw_candidate_key_count"] == 246962102
+    assert summary["evidence_quality_reliability"]["product_episode_dedup_ratio"] == 2.805
+    assert summary["evidence_quality_reliability"]["high_confidence_coverage_share"] == 0.9995
     assert summary["governance"]["adds_runtime_api"] is False
 
     assert "88,028,657 aggregate AI work episodes" in readout
     assert "15,826,000 aggregate episodes" in readout
     assert "37,959,260 aggregate episodes" in readout
+    assert "## Evidence Gap Composition" in readout
+    assert "True downstream-evidence gap: 37,484,844 aggregate episodes" in readout
+    assert "Ambiguous boundary fold-in: 474,414 aggregate episodes" in readout
+    assert "Small-cell safety fold-in: present below the aggregate safety floor; exact count withheld" in readout
+    assert "## Evidence Quality And Reliability" in readout
+    assert "246,962,102 raw candidate keys were compressed to 88,028,657 aggregate AI work episodes" in readout
+    assert "Key-confidence coverage: 100.0% of episodes have high-confidence trace, run, or action coverage" in readout
+    assert "Interpretation completeness: 56.9% of episodes have enough aggregate evidence" in readout
+    assert "Boundary ambiguity: 0.5% of all episodes were folded into evidence-gap language" in readout
     assert "Work stalled after AI assistance" not in readout
-    assert "474,414 aggregate episodes" not in readout
     assert "Explicit negative feedback appeared" not in readout
     assert "2 aggregate episodes" not in readout
     assert "not a trust score" in readout

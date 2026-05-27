@@ -26,8 +26,21 @@ def assert_external_brief_contract(text: str) -> None:
         "88,028,657 aggregate AI work episodes",
         "15,826,000 aggregate episodes",
         "37,959,260 aggregate episodes",
+        "37,484,844 aggregate episodes",
+        "474,414 aggregate episodes",
         "18.0%",
         "43.1%",
+        "Evidence gap composition",
+        "true downstream-evidence gap",
+        "ambiguous boundary fold-in",
+        "Small-cell safety fold-in",
+        "exact count withheld",
+        "Evidence quality and reliability",
+        "246,962,102 raw candidate keys",
+        "2.8x overcount",
+        "99.95% high-confidence trace, run, or action coverage",
+        "56.9% of episodes have enough aggregate evidence",
+        "0.5% of all episodes were folded into evidence-gap language",
         "Rare pattern cells below the aggregate safety floor",
         "Rows with incomplete, ambiguous, or undocumented source coverage",
         "does not identify, score, rank, or evaluate employees",
@@ -43,10 +56,8 @@ def assert_external_brief_contract(text: str) -> None:
     for withheld_phrase in [
         "Explicit negative feedback appeared",
         "2 aggregate episodes",
-        "37,484,844 aggregate episodes",
         "37,484,846 aggregate episodes",
         "Work stalled after AI assistance",
-        "474,414 aggregate episodes",
     ]:
         assert withheld_phrase not in text
 

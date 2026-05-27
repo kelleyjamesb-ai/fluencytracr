@@ -1,0 +1,94 @@
+{
+  "components": {
+    "ai_activity_without_terminal_outcome": {
+      "coverage_caveats": [],
+      "episode_count": 0,
+      "label": "AI activity without terminal outcome",
+      "share": 0.0,
+      "withheld_below_floor": false
+    },
+    "ambiguous_boundary_folded": {
+      "coverage_caveats": [
+        "candidate episode-key count; trace, run, and session keys may overlap"
+      ],
+      "episode_count": 474414,
+      "label": "Ambiguous boundary fold-in",
+      "share": 0.012498,
+      "withheld_below_floor": false
+    },
+    "other_evidence_gap": {
+      "coverage_caveats": [],
+      "episode_count": 0,
+      "label": "Other aggregate evidence gap",
+      "share": 0.0,
+      "withheld_below_floor": false
+    },
+    "raw_gap_insufficient_downstream_evidence": {
+      "coverage_caveats": [
+        "episode has insufficient downstream evidence for trust interpretation"
+      ],
+      "episode_count": 37484844,
+      "label": "True downstream-evidence gap",
+      "share": 0.987502,
+      "withheld_below_floor": false
+    },
+    "skill_or_agent_activity_without_downstream_outcome": {
+      "coverage_caveats": [],
+      "episode_count": 0,
+      "label": "Skill or agent activity without downstream outcome",
+      "share": 0.0,
+      "withheld_below_floor": false
+    },
+    "small_cell_withheld": {
+      "coverage_caveats": [
+        "rare aggregate cell below output floor"
+      ],
+      "episode_count": null,
+      "label": "Small-cell safety fold-in",
+      "share": null,
+      "withheld_below_floor": true
+    },
+    "span_or_llm_activity_without_governed_outcome": {
+      "coverage_caveats": [],
+      "episode_count": 0,
+      "label": "Span or LLM activity without governed outcome",
+      "share": 0.0,
+      "withheld_below_floor": false
+    },
+    "verification_or_feedback_without_observed_resolution": {
+      "coverage_caveats": [],
+      "episode_count": 0,
+      "label": "Verification signal without observed resolution",
+      "share": 0.0,
+      "withheld_below_floor": false
+    },
+    "weak_parent_linkage": {
+      "coverage_caveats": [],
+      "episode_count": 0,
+      "label": "Weak parent linkage",
+      "share": 0.0,
+      "withheld_below_floor": false
+    }
+  },
+  "customer_label": "Glean dogfood aggregate run-first sample",
+  "gap_share_of_pilot": 0.431215,
+  "governance": {
+    "adds_canonical_events": false,
+    "adds_runtime_api": false,
+    "adds_suppression_reasons": false,
+    "calculates_roi": false,
+    "establishes_causality": false,
+    "identifies_or_scores_employees": false,
+    "output_is_aggregate_only": true,
+    "ranks_teams_or_managers": false
+  },
+  "pilot_total_episode_count": 88028657,
+  "small_cell_policy": {
+    "caveat": "Sub-floor composition cells are reported as present but their exact episode counts are withheld.",
+    "emits_sub_floor_component_values": false,
+    "minimum_aggregate_component_count": 5
+  },
+  "status": "RESEARCH_CONTEXT_ONLY",
+  "total_gap_episode_count": 37959260,
+  "window_label": "Seven approved business days"
+}

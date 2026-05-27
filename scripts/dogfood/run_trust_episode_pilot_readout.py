@@ -153,6 +153,12 @@ class CsvInput:
     rows: list[dict[str, str]]
 
 
+@dataclass(frozen=True)
+class AggregateResult:
+    counts: dict[str, int]
+    gap_composition: dict[str, int]
+
+
 def normalize_header(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
 
@@ -186,6 +192,24 @@ def parse_count(value: Any, label: str) -> int:
     if parsed < 0 or int(parsed) != parsed:
         raise InputError(f"{label}: episode_count must be a non-negative integer")
     return int(parsed)
+
+
+def parse_optional_positive_int(value: Any, label: str) -> int | None:
+    parsed = parse_float(value)
+    if parsed is None:
+        return None
+    if parsed <= 0 or int(parsed) != parsed:
+        raise InputError(f"{label} must be a positive integer")
+    return int(parsed)
+
+
+def parse_optional_share(value: Any, label: str) -> float | None:
+    parsed = parse_float(value)
+    if parsed is None:
+        return None
+    if parsed < 0 or parsed > 1:
+        raise InputError(f"{label} must be between 0 and 1")
+    return parsed
 
 
 def read_csv(path: Path) -> CsvInput:
@@ -232,7 +256,7 @@ def invalid_summary(reason: str) -> dict[str, Any]:
     }
 
 
-def aggregate_patterns(csv_input: CsvInput) -> dict[str, int]:
+def aggregate_patterns(csv_input: CsvInput) -> AggregateResult:
     normalized_headers = {normalize_header(header) for header in csv_input.headers}
     missing = sorted(REQUIRED_COLUMNS - normalized_headers)
     if missing:
@@ -243,6 +267,11 @@ def aggregate_patterns(csv_input: CsvInput) -> dict[str, int]:
         raise InputError("forbidden person-level fields are present")
 
     counts = {pattern: 0 for pattern in PATTERN_ORDER}
+    gap_composition = {
+        "raw_gap_insufficient_downstream_evidence": 0,
+        "ambiguous_boundary_folded": 0,
+        "small_cell_withheld": 0,
+    }
     unknown_count = 0
     for row in csv_input.rows:
         pattern = str(row.get("episode_pattern", "")).strip()
@@ -250,7 +279,10 @@ def aggregate_patterns(csv_input: CsvInput) -> dict[str, int]:
             unknown_count += 1
             continue
         count = parse_count(row.get("episode_count"), PATTERN_LABELS[pattern])
+        if pattern == "evidence_gap":
+            gap_composition["raw_gap_insufficient_downstream_evidence"] += count
         if has_unsafe_source_coverage(row, pattern):
+            gap_composition["ambiguous_boundary_folded"] += count
             counts["evidence_gap"] += count
             continue
         counts[pattern] += count
@@ -259,7 +291,10 @@ def aggregate_patterns(csv_input: CsvInput) -> dict[str, int]:
         raise InputError("unknown Trust Episode Boundary pattern")
     if sum(counts.values()) <= 0:
         raise InputError("input CSV must contain at least one aggregate episode")
-    return counts
+    for pattern, count in counts.items():
+        if pattern != "evidence_gap" and 0 < count < MIN_AGGREGATE_PATTERN_COUNT:
+            gap_composition["small_cell_withheld"] += count
+    return AggregateResult(counts=counts, gap_composition=gap_composition)
 
 
 def has_unsafe_source_coverage(row: dict[str, str], pattern: str) -> bool:
@@ -293,6 +328,9 @@ def build_summary(
     customer_label: str,
     window_label: str,
     counts: dict[str, int],
+    gap_composition: dict[str, int],
+    raw_candidate_key_count: int | None = None,
+    high_confidence_coverage_share: float | None = None,
 ) -> dict[str, Any]:
     counts = apply_small_cell_safety_floor(counts)
     total = sum(counts.values())
@@ -304,12 +342,69 @@ def build_summary(
         }
         for pattern, count in counts.items()
     }
+    composition = {
+        "raw_gap_insufficient_downstream_evidence": {
+            "label": "True downstream-evidence gap",
+            "episode_count": gap_composition["raw_gap_insufficient_downstream_evidence"],
+            "share_of_gap": round(
+                gap_composition["raw_gap_insufficient_downstream_evidence"]
+                / counts["evidence_gap"],
+                6,
+            )
+            if counts["evidence_gap"]
+            else 0,
+            "withheld_below_floor": False,
+        },
+        "ambiguous_boundary_folded": {
+            "label": "Ambiguous boundary fold-in",
+            "episode_count": gap_composition["ambiguous_boundary_folded"],
+            "share_of_gap": round(gap_composition["ambiguous_boundary_folded"] / counts["evidence_gap"], 6)
+            if counts["evidence_gap"]
+            else 0,
+            "withheld_below_floor": False,
+        },
+        "small_cell_withheld": {
+            "label": "Small-cell safety fold-in",
+            "episode_count": None
+            if 0 < gap_composition["small_cell_withheld"] < MIN_AGGREGATE_PATTERN_COUNT
+            else gap_composition["small_cell_withheld"],
+            "share_of_gap": None
+            if 0 < gap_composition["small_cell_withheld"] < MIN_AGGREGATE_PATTERN_COUNT
+            else (
+                round(gap_composition["small_cell_withheld"] / counts["evidence_gap"], 6)
+                if counts["evidence_gap"]
+                else 0
+            ),
+            "withheld_below_floor": 0
+            < gap_composition["small_cell_withheld"]
+            < MIN_AGGREGATE_PATTERN_COUNT,
+        },
+    }
+    quality_reliability: dict[str, Any] = {
+        "raw_candidate_key_count": raw_candidate_key_count,
+        "product_episode_dedup_ratio": round(raw_candidate_key_count / total, 3)
+        if raw_candidate_key_count is not None
+        else None,
+        "high_confidence_coverage_share": high_confidence_coverage_share,
+        "interpretable_episode_share": round(1 - (counts["evidence_gap"] / total), 6),
+        "boundary_ambiguity_share_of_total": round(
+            gap_composition["ambiguous_boundary_folded"] / total,
+            6,
+        ),
+        "evidence_gap_share": round(counts["evidence_gap"] / total, 6),
+        "caveat": (
+            "Evidence quality describes aggregate measurement readiness only; "
+            "it is not output correctness, ROI, causality, or employee fluency."
+        ),
+    }
     return {
         "status": "EVIDENCE_CONTEXT_ONLY",
         "customer_label": customer_label,
         "window_label": window_label,
         "total_episode_count": total,
         "patterns": patterns,
+        "evidence_gap_composition": composition,
+        "evidence_quality_reliability": quality_reliability,
         "small_cell_policy": {
             "minimum_aggregate_pattern_count": MIN_AGGREGATE_PATTERN_COUNT,
             "emits_sub_floor_pattern_values": False,
@@ -366,6 +461,8 @@ def build_readout(summary: dict[str, Any]) -> str:
     recovered_share = counts["recovered_after_failure"] / total
     evidence_gap_share = counts["evidence_gap"] / total
     resolved_without_share = counts["resolved_without_verification_signal"] / total
+    gap_composition = summary["evidence_gap_composition"]
+    evidence_quality = summary["evidence_quality_reliability"]
 
     lines = [
         "# Trust Episode Boundary Pilot Executive Readout",
@@ -407,6 +504,38 @@ def build_readout(summary: dict[str, Any]) -> str:
             "",
             f"The evidence gap appears in {format_share(evidence_gap_share)} of aggregate episodes. Missing evidence must stay visible and must not be upgraded into healthy trust, poor trust, value, or causality.",
             "",
+            "## Evidence Gap Composition",
+            "",
+            f"True downstream-evidence gap: {format_count(int(gap_composition['raw_gap_insufficient_downstream_evidence']['episode_count']))} aggregate episodes. These episodes exist, but the aggregate record does not show enough downstream behavior to interpret whether AI-assisted work resolved, recovered, stalled, or was verified.",
+            "",
+            f"Ambiguous boundary fold-in: {format_count(int(gap_composition['ambiguous_boundary_folded']['episode_count']))} aggregate episodes. These rows stay inside evidence-gap language because trace, run, session, or action keys may overlap.",
+            "",
+            "Small-cell safety fold-in: present below the aggregate safety floor; exact count withheld. Rare cells are acknowledged without publishing exact values.",
+            "",
+        ]
+    )
+    if (
+        evidence_quality["raw_candidate_key_count"] is not None
+        and evidence_quality["high_confidence_coverage_share"] is not None
+    ):
+        lines.extend(
+            [
+                "## Evidence Quality And Reliability",
+                "",
+                f"Product-episode normalization: {format_count(int(evidence_quality['raw_candidate_key_count']))} raw candidate keys were compressed to {format_count(total)} aggregate AI work episodes, preventing a {evidence_quality['product_episode_dedup_ratio']:.1f}x overcount from entering the executive readout.",
+                "",
+                f"Key-confidence coverage: {format_share(float(evidence_quality['high_confidence_coverage_share']))} of episodes have high-confidence trace, run, or action coverage.",
+                "",
+                f"Interpretation completeness: {format_share(float(evidence_quality['interpretable_episode_share']))} of episodes have enough aggregate evidence to classify as resolved, resolved without explicit verification, or recovered after friction.",
+                "",
+                f"Boundary ambiguity: {format_share(float(evidence_quality['boundary_ambiguity_share_of_total']))} of all episodes were folded into evidence-gap language instead of being published as precise stalled values.",
+                "",
+                evidence_quality["caveat"],
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "## Source Coverage And Caveats",
             "",
             "- Citation behavior is optional corroboration, not the trust anchor.",
@@ -476,11 +605,20 @@ def run(args: argparse.Namespace) -> int:
     output_dir = Path(args.output_dir)
     try:
         csv_input = read_csv(Path(args.input_csv))
-        counts = aggregate_patterns(csv_input)
+        aggregate = aggregate_patterns(csv_input)
         summary = build_summary(
             customer_label=args.customer_label,
             window_label=args.window_label,
-            counts=counts,
+            counts=aggregate.counts,
+            gap_composition=aggregate.gap_composition,
+            raw_candidate_key_count=parse_optional_positive_int(
+                args.raw_candidate_key_count,
+                "--raw-candidate-key-count",
+            ),
+            high_confidence_coverage_share=parse_optional_share(
+                args.high_confidence_coverage_share,
+                "--high-confidence-coverage-share",
+            ),
         )
         write_outputs(output_dir, summary, build_readout(summary))
         return 0
@@ -498,6 +636,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", required=True, help="Directory for Markdown, JSON, and CSV outputs.")
     parser.add_argument("--customer-label", default="customer aggregate pilot")
     parser.add_argument("--window-label", default="approved aggregate window")
+    parser.add_argument(
+        "--raw-candidate-key-count",
+        help="Optional aggregate count of pre-dedup candidate keys used to show product-episode normalization.",
+    )
+    parser.add_argument(
+        "--high-confidence-coverage-share",
+        help="Optional aggregate share of product episodes with high-confidence trace, run, or action coverage.",
+    )
     return parser
 
 

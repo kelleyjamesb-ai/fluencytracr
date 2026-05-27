@@ -56,6 +56,11 @@ Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`
 
+Trust Evidence Gap Composition:
+
+- `trust-evidence-gap-composition/trust_evidence_gap_composition_summary.csv`
+- `trust-evidence-gap-composition/TRUST_EVIDENCE_GAP_COMPOSITION_READOUT.md`
+
 ## QA-Only Aggregate Attribution CSVs
 
 These files are tracked for narrow attribution QA only. They may include
@@ -87,6 +92,18 @@ Trust classification QA:
 - `v4-trust-cohort-classification/v4_trust_classification_window_2.csv`
 - `v4-trust-cohort-classification/v4_trust_classification_window_3.csv`
 - `v4-trust-cohort-classification/v4_trust_classification_all_windows.csv`
+
+Trust Evidence Gap Composition QA:
+
+- `trust-evidence-gap-composition/trust_evidence_gap_composition_input_run_first.csv`
+- `trust-evidence-gap-composition/bigquery-candidate-key/trust_evidence_gap_composition_candidate_key_summary.csv`
+- `trust-evidence-gap-composition/bigquery-candidate-key/trust_evidence_gap_composition_candidate_key_summary.json`
+- `trust-evidence-gap-composition/bigquery-candidate-key/trust_evidence_gap_composition_candidate_key_all_windows.csv`
+
+The `bigquery-candidate-key/` files are QA-only. They are not directly
+comparable to the deduped 43.1% product-episode pilot gap until the
+product-episode dedup overlay is applied. Sub-floor component values must remain
+withheld in tracked outputs.
 
 Behavior cohort joint distribution QA:
 

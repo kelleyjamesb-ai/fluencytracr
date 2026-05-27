@@ -1,0 +1,4 @@
+gap_component,episode_count,coverage_caveat
+raw_gap_insufficient_downstream_evidence,37484844,episode has insufficient downstream evidence for trust interpretation
+ambiguous_boundary_folded,474414,"candidate episode-key count; trace, run, and session keys may overlap"
+small_cell_withheld,2,rare aggregate cell below output floor

@@ -56,6 +56,42 @@ Outputs:
 - `trust_episode_pilot_summary.json`
 - `trust_episode_pilot_pattern_summary.csv`
 
+## Evidence Gap Composition
+
+If the pilot evidence gap is large, run the aggregate-only gap composition
+diagnostic before adding executive interpretation.
+
+1. Run
+   [`trust_evidence_gap_composition_diagnostic.sql`](../../sql/dogfood/trust_evidence_gap_composition_diagnostic.sql)
+   in BigQuery using the same approved aggregate source tables and window.
+2. Export only the final aggregate rows as CSV.
+3. Generate the research context readout locally:
+
+```bash
+python scripts/dogfood/run_trust_evidence_gap_composition_readout.py \
+  --input-csv dogfood-output/trust-evidence-gap-composition/trust_evidence_gap_composition_input_run_first.csv \
+  --output-dir dogfood-output/trust-evidence-gap-composition \
+  --customer-label "Glean dogfood aggregate run-first sample" \
+  --window-label "Seven approved business days" \
+  --pilot-total-episodes 88028657
+```
+
+Outputs:
+
+- `TRUST_EVIDENCE_GAP_COMPOSITION_READOUT.md`
+- `trust_evidence_gap_composition_summary.json`
+- `trust_evidence_gap_composition_summary.csv`
+
+The BigQuery diagnostic emits aggregate candidate-key composition. To compare
+its deeper source-readiness buckets directly with the deduped public pilot gap,
+apply the same run-first or trace-first product-episode dedup overlay used by
+the Trust Product Episode Dedup readout before interpreting totals.
+
+Gap composition buckets are diagnostic labels only. They are not canonical
+events, suppression reasons, trust scores, correctness claims, ROI claims, or
+productivity claims. Exact sub-floor component values must not be emitted in
+shareable Markdown or CSV output.
+
 ## Governance Boundary
 
 Use only customer-approved aggregate scope: workflow, AI surface, cohort,

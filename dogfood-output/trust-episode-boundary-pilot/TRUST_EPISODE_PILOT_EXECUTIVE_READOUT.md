@@ -37,6 +37,26 @@ Work resolved without explicit verification appears in 34.8% of aggregate episod
 
 The evidence gap appears in 43.1% of aggregate episodes. Missing evidence must stay visible and must not be upgraded into healthy trust, poor trust, value, or causality.
 
+## Evidence Gap Composition
+
+True downstream-evidence gap: 37,484,844 aggregate episodes. These episodes exist, but the aggregate record does not show enough downstream behavior to interpret whether AI-assisted work resolved, recovered, stalled, or was verified.
+
+Ambiguous boundary fold-in: 474,414 aggregate episodes. These rows stay inside evidence-gap language because trace, run, session, or action keys may overlap.
+
+Small-cell safety fold-in: present below the aggregate safety floor; exact count withheld. Rare cells are acknowledged without publishing exact values.
+
+## Evidence Quality And Reliability
+
+Product-episode normalization: 246,962,102 raw candidate keys were compressed to 88,028,657 aggregate AI work episodes, preventing a 2.8x overcount from entering the executive readout.
+
+Key-confidence coverage: 100.0% of episodes have high-confidence trace, run, or action coverage.
+
+Interpretation completeness: 56.9% of episodes have enough aggregate evidence to classify as resolved, resolved without explicit verification, or recovered after friction.
+
+Boundary ambiguity: 0.5% of all episodes were folded into evidence-gap language instead of being published as precise stalled values.
+
+Evidence quality describes aggregate measurement readiness only; it is not output correctness, ROI, causality, or employee fluency.
+
 ## Source Coverage And Caveats
 
 - Citation behavior is optional corroboration, not the trust anchor.
