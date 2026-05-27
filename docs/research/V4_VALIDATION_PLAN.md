@@ -43,6 +43,7 @@ Canonical validation gate documents:
 - [V4 Value Realization Strategy Layer](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
 - [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
 - [V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md)
+- [V4 Trust Episode Boundary Validation Readout](./V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
 promotion decisions are made through the validation gate. A `PROMOTE` decision
