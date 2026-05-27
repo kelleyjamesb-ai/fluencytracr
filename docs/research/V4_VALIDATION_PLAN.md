@@ -36,6 +36,7 @@ Canonical validation gate documents:
 - [V4 Behavior Cohort Classification Readout](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
 - [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
 - [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
+- [V4 Canonical Contract Decision](./V4_CANONICAL_CONTRACT_DECISION.md)
 - [V4 Next Sprint Plan](./V4_NEXT_SPRINT_PLAN.md)
 - [V4 Readout Zone Model](./V4_READOUT_ZONE_MODEL.md)
 - [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
@@ -279,6 +280,11 @@ The closeout question is:
 It is not:
 
 > Can V4 produce a scorecard, ranking, ROI estimate, or productivity claim?
+
+The final contract-readiness closeout is recorded in
+[V4_CANONICAL_CONTRACT_DECISION.md](./V4_CANONICAL_CONTRACT_DECISION.md). That
+decision is the controlling record for whether the current V4 measurement build
+remains internal-readout-only or advances to a later contract-hardening phase.
 
 Skill Read Evidence availability has now been tested across the three fixed
 60-day dogfood windows. The diagnostic found specified skill-read rows with high

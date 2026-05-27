@@ -173,6 +173,7 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 data analysis closeout](../../research/V4_DATA_ANALYSIS_CLOSEOUT.md)
 - [V4 Glean dogfood decision](../../research/V4_GLEAN_DOGFOOD_DECISION.md)
 - [V4 closeout decision](../../research/V4_CLOSEOUT_DECISION.md)
+- [V4 canonical contract decision](../../research/V4_CANONICAL_CONTRACT_DECISION.md)
 - [V4 internal readout runbook](../../research/V4_INTERNAL_READOUT_RUNBOOK.md)
 - [V4 internal readout rehearsal](../../research/V4_INTERNAL_READOUT_REHEARSAL.md)
 - [V4 Trust Attribution method](../../research/V4_TRUST_ATTRIBUTION_METHOD.md)
@@ -180,6 +181,11 @@ context and Economic Impact Bridge investigation-routing language only:
 - [V4 Trust and Cohort classification plan](../../research/V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md)
 
 Current decision: `PROMOTE_INTERNAL_SCALE_READINESS_READOUT`.
+
+Canonical contract closeout promotes internal readout contract hardening only.
+It does not authorize economic APIs, Time-Saved Defensibility Range output,
+ROI, productivity claims, causal claims, prediction, or ranking unless a later
+decision promotes that exact scope.
 
 Trust Calibration, Reusable Leverage, Skill Read Evidence as a governed signal,
 customer-facing economic output, APIs, frontend surfaces, Time-Saved

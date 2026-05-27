@@ -551,25 +551,33 @@ Also:
 
 `HOLD_TSDR_RANGE_OUTPUT`
 
-## Recommended Next Slice
+## Final Closeout Slice
 
-### Economic Hypothesis Map Update
+### Canonical Contract Decision
+
+Created:
+
+- `docs/research/V4_CANONICAL_CONTRACT_DECISION.md`
 
 Purpose:
 
-Update the Economic Impact Bridge / hypothesis map to reflect what the
-measurement tests now prove, hold, and block.
+Record what can move from research into documentation-first internal contract
+hardening, and what remains held or blocked before any customer-facing economic
+output can be built.
 
-Decision target:
+Decision:
 
-`PROMOTE_ECONOMIC_BRIDGE_INVESTIGATION_ROUTING` or
-`HOLD_FOR_ASSUMPTION_LEDGER_AND_ATTRIBUTION`
+`PROMOTE_INTERNAL_READOUT_CONTRACT_HARDENING`
+
+Also:
+
+`HOLD_CUSTOMER_FACING_ECONOMIC_OUTPUT`
 
 ## Recommended Order
 
-The safest remaining order is:
+The safest remaining order is now:
 
-1. Canonical contract decision.
+1. Internal readout contract hardening only.
 
 That order keeps the story honest:
 
@@ -585,6 +593,10 @@ Who is using AI differently?
 
 `PROMOTE_MEASUREMENT_BUILD_AS_RESEARCH_SEQUENCE`
 
-Velocity x Depth is already safe enough for internal behavior-cohort review.
-The next measurements must remain research-only until each one passes the
-test-before-canonical checklist above.
+Velocity x Depth is safe enough for internal behavior-cohort review, support is
+safe enough as outcome context, Time-Saved Defensibility is safe enough as a
+gate, and the Economic Hypothesis Map is safe enough for investigation routing.
+The canonical closeout decision now limits the next phase to documentation-first
+internal readout contract hardening. Customer-facing economics, ROI,
+productivity claims, causal claims, prediction, and Time-Saved range output
+remain held or blocked.

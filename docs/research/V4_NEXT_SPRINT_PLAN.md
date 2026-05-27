@@ -54,6 +54,13 @@ Measurement-build note: the follow-on sequence is governed by the
 measurement must start as research, pass aggregate dogfood testing, and earn a
 promotion decision before any canonical contract work begins.
 
+Current closeout status: the sprint has reached its canonical contract decision
+in [V4 Canonical Contract Decision](./V4_CANONICAL_CONTRACT_DECISION.md). The
+next allowed phase is documentation-first internal readout contract hardening
+only. Customer-facing economic output, Time-Saved Defensibility Range output,
+ROI, productivity claims, causal claims, prediction, and ranking remain held or
+blocked.
+
 ## Sprint Boundaries
 
 Allowed:

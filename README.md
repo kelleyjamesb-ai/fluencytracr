@@ -188,6 +188,7 @@ is not the lead positioning for this repository.
 - V4 Velocity x Depth zone test: [docs/research/V4_VELOCITY_DEPTH_ZONE_TEST.md](docs/research/V4_VELOCITY_DEPTH_ZONE_TEST.md)
 - V4 Glean dogfood decision: [docs/research/V4_GLEAN_DOGFOOD_DECISION.md](docs/research/V4_GLEAN_DOGFOOD_DECISION.md)
 - V4 closeout decision: [docs/research/V4_CLOSEOUT_DECISION.md](docs/research/V4_CLOSEOUT_DECISION.md)
+- V4 canonical contract decision: [docs/research/V4_CANONICAL_CONTRACT_DECISION.md](docs/research/V4_CANONICAL_CONTRACT_DECISION.md)
 - V4 internal readout runbook: [docs/research/V4_INTERNAL_READOUT_RUNBOOK.md](docs/research/V4_INTERNAL_READOUT_RUNBOOK.md)
 - V4 internal readout rehearsal: [docs/research/V4_INTERNAL_READOUT_REHEARSAL.md](docs/research/V4_INTERNAL_READOUT_REHEARSAL.md)
 - V4 Trust Attribution method: [docs/research/V4_TRUST_ATTRIBUTION_METHOD.md](docs/research/V4_TRUST_ATTRIBUTION_METHOD.md)
