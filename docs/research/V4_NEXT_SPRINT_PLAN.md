@@ -251,6 +251,11 @@ raw time-saved claims, customer-owned assumptions, behavior-to-support
 attribution, and causal design are missing or held. This gate should be reused
 across the org only when valid aggregate joins and assumptions exist.
 
+Economic Hypothesis Map status: updated after the support outcome and
+Time-Saved tests (see [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)).
+Economic Bridge use is promoted for internal investigation routing only.
+Customer-facing economic output remains held.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.

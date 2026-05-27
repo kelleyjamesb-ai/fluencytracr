@@ -416,7 +416,7 @@ aggregate join key -> range eligibility decision
 
 ### Step 6: Economic Hypothesis Map
 
-Status: available as research strategy layer.
+Status: updated with tested support and Time-Saved evidence state.
 
 Question:
 
@@ -446,6 +446,19 @@ Promotion gate:
 The Economic Impact Bridge can promote only as investigation routing until a
 separate monetary-value decision proves that outcome evidence, assumptions,
 and caveats are safe enough for customer-facing use.
+
+Current bridge decision:
+
+`PROMOTE_ECONOMIC_BRIDGE_INVESTIGATION_ROUTING`
+
+Also:
+
+`HOLD_CUSTOMER_FACING_ECONOMIC_OUTPUT`
+
+The Economic Hypothesis Map now reflects the tested measurement sequence:
+Velocity x Depth can route readiness, support can provide outcome context,
+Time-Saved Defensibility can gate range readiness, and economic output remains
+blocked until assumptions, attribution, and governed caveats exist.
 
 ## Test Before Canonical Checklist
 
@@ -556,8 +569,7 @@ Decision target:
 
 The safest remaining order is:
 
-1. Economic hypothesis map update.
-2. Canonical contract decision.
+1. Canonical contract decision.
 
 That order keeps the story honest:
 
