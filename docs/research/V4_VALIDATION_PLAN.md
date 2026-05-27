@@ -26,6 +26,23 @@ Canonical validation gate documents:
 - [V4 Depth Readout Runbook](./V4_DEPTH_READOUT_RUNBOOK.md)
 - [V4 Depth Stability Decision](./V4_DEPTH_STABILITY_DECISION.md)
 - [V4 Depth Repertoire Stability Readout](./V4_DEPTH_REPERTOIRE_STABILITY_READOUT.md)
+- [Work Mode Taxonomy](../concepts/WORK_MODES.md)
+- [V4 Value Confidence Caveat Propagation Runbook](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+- [V4 TSDR Caveat Propagation Decision](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 AI Value Leakage Map Caveat Propagation Decision](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
+- [V4 Internal Readout Runbook](./V4_INTERNAL_READOUT_RUNBOOK.md)
+- [V4 Internal Readout Rehearsal](./V4_INTERNAL_READOUT_REHEARSAL.md)
+- [V4 Full Dogfood Rehearsal Readout](./V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
+- [V4 Behavior Cohort Classification Readout](./V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
+- [V4 Data Analysis Closeout](./V4_DATA_ANALYSIS_CLOSEOUT.md)
+- [V4 Behavior Cohort Promotion Decision](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md)
+- [V4 Next Sprint Plan](./V4_NEXT_SPRINT_PLAN.md)
+- [V4 Readout Zone Model](./V4_READOUT_ZONE_MODEL.md)
+- [V4 Behavior Feature Backlog](./V4_BEHAVIOR_FEATURE_BACKLOG.md)
+- [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)
+- [V4 Value Realization Strategy Layer](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
+- [V4 Readout Zone Data Test](./V4_READOUT_ZONE_DATA_TEST.md)
+- [V4 Velocity x Depth Zone Test](./V4_VELOCITY_DEPTH_ZONE_TEST.md)
 - [V4 Trust Episode Boundary Validation Readout](./V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md)
 
 Forecasting remains out of scope. Product APIs remain out of scope until signal
@@ -53,26 +70,61 @@ calibration values, or defaults. V4 economic readouts, Time-Saved Defensibility
 Range, and value-confidence APIs remain blocked from depending on Depth
 Repertoire until a later value-confidence review explicitly allows it.
 
-The current value-confidence review for Depth Repertoire records
-`HOLD_FOR_VALUE_CONFIDENCE_CALIBRATION`. The next phase is calibration planning,
-not implementation.
-
 The calibration plan is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md).
 The current calibration decision is
 [V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](./V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md),
-which records `HOLD_FOR_MORE_CALIBRATION`. No economic contract, runtime
-implementation, or customer-facing artifact can depend on Depth Repertoire until
-a later calibration decision explicitly promotes that use. That decision also
-records a window-compatibility blocker: the existing three 20-day Depth
-Repertoire stability windows are not sufficient for value-confidence
-calibration because the other primitives require 60-day-compliant windows to
-surface.
+which records `PROMOTE_CAVEAT_ONLY`. V4 value-confidence artifacts may use
+Depth Repertoire only as aggregate caveat/context. It must not modify
+confidence bands, surfacing eligibility, Time-Saved Defensibility Range, ROI
+language, causal claims, prediction claims, or any customer-facing economic
+number unless a later calibration decision explicitly promotes that use.
+
+Any V4 artifact that carries Depth Repertoire caveat/context must pass
+[V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](./V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+before further contract hardening. Passing caveat propagation does not
+authorize economic dependency; it only proves that context does not alter
+values, bands, zones, eligibility, or blocked claims.
+
+The Time-Saved Defensibility Range contract has passed caveat propagation in
+[V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](./V4_TSDR_CAVEAT_PROPAGATION_DECISION.md).
+That decision permits documentation-stage TSDR contract hardening only. It does
+not authorize runtime implementation, schema hardening, economic dependency,
+range adjustment, confidence-band adjustment, eligibility use, ROI, causality,
+prediction, productivity, maturity, or ranking claims.
+
+The AI Value Leakage Map contract has passed caveat propagation in
+[V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md).
+That decision permits documentation-stage leakage-map contract hardening only.
+It does not authorize runtime implementation, schema hardening, economic
+dependency, leakage severity adjustment, value-at-risk adjustment,
+confidence-band adjustment, eligibility use, ROI, causality, prediction,
+productivity, maturity, or ranking claims.
 
 Reusable Workflow Propagation and Named Workflow Leverage remain `HOLD` unless
 future validation promotes them. Time-Saved Defensibility Range and other V4
 economic readouts remain blocked until Depth readout stability is demonstrated
 across windows or cohorts.
+
+Skill Read Evidence is now a separate research path. Internal runtime
+instrumentation indicates that Skills usage may be observable through agent
+span logs via raw span skill-reader attributes and legacy skill-name inputs
+where present, not through the GCE
+`PRODUCT_SNAPSHOT` workflow metadata path used by earlier reusable-workflow
+diagnostics. This moves Skills from "not observable" to
+`AVAILABLE_BUT_NOT_GOVERNED` for research purposes only. Reusable Workflow
+Propagation and Named Workflow Leverage remain `HOLD` until the agent-span path
+passes fixed-window validation for unspecified-share, parent join coverage,
+canonical identity, versioning, invocation mode, and personal/shared/org Skill
+separation.
+
+For usage analytics, BigQuery is the right source. The first-pass usage path is
+`scio-apps.scrubbed_agentspan.scrubbed_agentspan_*`, with dbt fact-table support
+through `action_runs_v2` / `action_runs` and the `skill_reader_skill_name`
+column. Definition and eligibility sources such as `data/skills/`,
+`data/plugin_skills/`, PluginSkillStore, `metadata.textpb`, `glean.yaml`, and
+UGC `ListAccessibleSkills` are catalog layers. They may become join targets
+later, but they are not the primary usage source for V4 dogfood.
 
 The canonical decision record is
 [V4_DEPTH_STABILITY_DECISION.md](./V4_DEPTH_STABILITY_DECISION.md). If that
@@ -82,11 +134,260 @@ Time-Saved Defensibility Range implementation, or Depth-dependent economic
 readout may start. Depth contract hardening is allowed only if the decision is
 `PROMOTE_DEPTH_CONTRACT_HARDENING`.
 
+## V4 Scale Readiness To Economic Value Gate
+
+The next V4 planning layer is documented in:
+
+- [AI Scale Readiness Portfolio](../concepts/AI_SCALE_READINESS_PORTFOLIO.md),
+- [Organizational Segmentation](../concepts/ORG_SEGMENTATION.md),
+- [Economic Impact Bridge](../concepts/ECONOMIC_IMPACT_BRIDGE.md).
+
+These are concept documents, not implementation approval. They define how V4
+should eventually answer where to scale AI, where to coach, where to redesign
+workflows, where to calibrate trust, and where evidence is too weak to act.
+
+The current caveat propagation decisions are:
+
+- [V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md](./V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
+  records `PASS_INTERNAL_READOUT_CONTEXT_ONLY`.
+- [V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](./V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
+  records `HOLD_FOR_ATTRIBUTION_REFINEMENT`.
+- [V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](./V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md)
+  records the next research path: classify narrow trust evidence and test
+  behavior-derived cohorts before any org metadata cohort is used.
+- [V4_GLEAN_DOGFOOD_DECISION.md](./V4_GLEAN_DOGFOOD_DECISION.md)
+  records the overall current decision:
+  `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`.
+
+The required fixed-window Glean internal dogfood run has completed across three
+60-day-compliant windows:
+
+| Window | Start | End |
+| --- | --- | --- |
+| 1 | 2026-03-23 | 2026-05-22 |
+| 2 | 2026-02-21 | 2026-04-22 |
+| 3 | 2026-01-22 | 2026-03-23 |
+
+That run aligned V3 verdict metadata, Velocity, Quality Multiplier, Reliability
+Factor, Depth Repertoire, trust-signal availability, data readiness gates, and
+safe aggregate context to the same cohort/window keys. The promotion is locked
+to internal AI Scale Readiness readout shape with Depth Repertoire context and
+value-investigation routing language only.
+
+No V4 economic API, customer-facing readout, Time-Saved Defensibility Range
+productization, Organizational Segmentation runtime support, Economic Impact
+Bridge runtime support, Trust Calibration governed readout, or Skill Read
+Evidence reuse-depth interpretation may start until a later decision promotes
+that exact scope.
+
+Behavior-derived cohort classification may be tested in research using
+Velocity band, Depth Repertoire band, AGENT delegation band, and skill-read
+presence band. Department, function, level, manager/IC, leader, region, and
+other org metadata cohorts remain held until an approved aggregate join path
+exists and the segment coverage gate passes.
+
+The first saved joint-distribution review is complete. It records
+`PROMOTE_DEPTH_AND_VELOCITY_BEHAVIOR_COHORT_AXES` in
+[V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md](./V4_BEHAVIOR_COHORT_PROMOTION_DECISION.md).
+Velocity band and Depth Repertoire band may now be used as internal aggregate
+behavior-cohort axes for AI Scale Readiness and Economic Impact Bridge
+investigation routing. AGENT delegation band and Skill Read presence band
+remain context-only research inputs.
+
+This promotion authorizes non-dollarized economic investigation suggestions
+only: candidate impact area, value hypothesis, evidence gap, required
+customer-owned assumption, and caveat. It does not authorize dollarized ROI,
+customer-facing economic readouts, Time-Saved Defensibility Range
+productization, confidence-band changes, automated recommendations,
+productivity lift, causality, prediction, or ranking.
+
+The next planning boundary is recorded in
+[V4_NEXT_SPRINT_PLAN.md](./V4_NEXT_SPRINT_PLAN.md). That plan keeps the next
+sprint docs/research-first: define an aggregate operating readout, rehearse it
+from retained CSVs, attach non-dollarized value hypotheses, and specify the
+client-pilot gate before any implementation surface is considered.
+
+The first execution slice for that sprint is complete in documentation form:
+
+- [V4_READOUT_ZONE_MODEL.md](./V4_READOUT_ZONE_MODEL.md) defines aggregate
+  readout zones and action postures.
+- [V4_BEHAVIOR_FEATURE_BACKLOG.md](./V4_BEHAVIOR_FEATURE_BACKLOG.md) defines
+  the derived behavior-feature backlog without changing canonical events.
+- [V4_VALUE_HYPOTHESIS_MAP.md](./V4_VALUE_HYPOTHESIS_MAP.md) maps zones to
+  non-dollarized AIVM value hypotheses and required customer-owned evidence.
+- [V4_VALUE_REALIZATION_STRATEGY_LAYER.md](./V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
+  maps aggregate zones to internal strategy postures, stakeholder value
+  questions, stakeholder evidence needs, and required monetary-value evidence
+  without calculating monetary value.
+- [V4_READOUT_ZONE_DATA_TEST.md](./V4_READOUT_ZONE_DATA_TEST.md) tests those
+  artifacts against retained aggregate CSVs and records the Velocity x Depth
+  join gap before strict `SCALE_CANDIDATE` assignment is allowed.
+- [V4_VELOCITY_DEPTH_ZONE_TEST.md](./V4_VELOCITY_DEPTH_ZONE_TEST.md) closes
+  that join gap with a dedicated aggregate BigQuery export and records 12
+  stable strict `SCALE_CANDIDATE` rows across the three fixed windows. This is
+  internal investigation routing only and does not authorize economic output.
+
+## V4 Closeout Test Plan
+
+The near-term goal is to close the dogfood/research phase, not expand the
+product surface. V4 remains inside the existing FluencyTracr guardrails:
+
+- no new canonical events,
+- no new suppression reasons,
+- no tunable thresholds,
+- no admin overrides,
+- no individual scoring,
+- no team, department, manager, customer, or skill ranking,
+- no raw skill names in outputs,
+- no raw prompts, outputs, transcripts, user IDs, emails, or action rows,
+- no ROI calculation,
+- no causal productivity claim,
+- no prediction claim,
+- no customer-facing economic readout.
+
+Closeout should proceed in this order:
+
+1. Confirm the fixed-window CSV fixtures are present and reusable. The tracked
+   Depth Repertoire fixtures are:
+   - `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_1.csv`
+   - `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_2.csv`
+   - `dogfood-output/v4-depth-repertoire/v4_depth_repertoire_window_3.csv`
+2. Keep generated trust-signal and agent-feedback exports out of git unless a
+   future PR deliberately promotes sanitized fixtures. They are research caches,
+   not contract fixtures.
+3. Run only aggregate-only diagnostics needed to resolve the current holds:
+   trust-signal attribution, Skill Read Evidence availability, and reusable
+   workflow observability.
+4. Update the Glean dogfood readout with evidence status, not new product
+   behavior.
+5. Update the Glean dogfood decision with one of the existing hold/promote
+   options.
+6. Complete the internal readout runbook, templates, and rehearsal from tracked
+   aggregate exports.
+7. Stop before runtime buildout. API, schema, or contract work is not
+   permanently off the table, but it must be sparse, explicitly promoted by the
+   dogfood decision, and limited to the smallest surface needed to preserve the
+   governed evidence boundary. No UI, economic ranges, or automated
+   recommendations should start unless the decision explicitly promotes that
+   scope.
+
+The closeout question is:
+
+> Does V4 provide enough aggregate evidence to guide internal scale-readiness
+> decisions, and which parts must remain held?
+
+It is not:
+
+> Can V4 produce a scorecard, ranking, ROI estimate, or productivity claim?
+
+Skill Read Evidence availability has now been tested across the three fixed
+60-day dogfood windows. The diagnostic found specified skill-read rows with high
+parent join coverage in every window, but volume changed sharply across windows.
+That result moves Skill Read Evidence from "possibly unavailable" to "available
+but not governed." It does not promote Reusable Workflow Propagation.
+
+## Depth Repertoire To Economic Readout Test
+
+Depth Repertoire is the strongest current bridge from behavior to economic
+investigation, but it should not become an economic readout by itself. The next
+test is whether Depth Repertoire can identify where a value investigation is
+worth running, while leaving dollar assumptions and outcome validation outside
+FluencyTracr.
+
+Allowed interpretation:
+
+- high Depth Repertoire plus stable Velocity may identify candidate workflows
+  where AI use looks integrated enough to investigate economic value;
+- high Velocity with low Depth Repertoire may identify adoption that is active
+  but shallow, where enablement or workflow redesign should precede economic
+  claims;
+- low Velocity with high Depth Repertoire may identify focused, potentially
+  high-value pockets that need business-context review before scale decisions;
+- unstable Depth Repertoire should remain a caveat and should not support
+  economic interpretation.
+
+Not allowed:
+
+- converting Depth Repertoire into dollars,
+- using Depth Repertoire as a productivity measure,
+- using Depth Repertoire as a maturity label,
+- comparing departments, teams, managers, customers, individuals, or skills,
+- treating Glean dogfood values as thresholds, defaults, benchmarks, or
+  calibration constants.
+
+The usable-impact question is:
+
+> Does Depth Repertoire help leaders choose the next intervention: scale,
+> enable, redesign, calibrate trust, investigate value, or hold?
+
+If yes, the next promoted artifact should be a narrow contract for the decision
+shape, not a broad product API. If no, Depth Repertoire should remain caveat
+context only.
+
+## Current V4 Classification Framework
+
+The closeout decision should use classifications as action postures, not as
+ratings or comparative labels.
+
+Depth Repertoire classifications:
+
+| Classification | Meaning | Allowed use |
+| --- | --- | --- |
+| Integrated Repertoire | Cross-surface repertoire and repeated use are stable enough for context | Candidate value investigation |
+| Active But Shallow | Activity is present but repertoire or repeat depth is weak | Enablement or workflow redesign |
+| Focused Integration | Repertoire is coherent despite lower volume | Business-context review |
+| Unstable / Insufficient | Evidence is sparse, unstable, or suppressed | Hold interpretation |
+
+Trust classifications:
+
+| Classification | Meaning | Allowed use |
+| --- | --- | --- |
+| Trust Evidence Available | Feedback or verification volume exists | Continue testing |
+| Attribution Hold | Signals exist but parent attribution is noisy | Caveat only |
+| Parent Attribution Ready | Signals attach to one governed parent surface | Eligible for trust review |
+| Trust Calibration Ready | Stable attribution plus risk context exists | Future governed readout candidate |
+
+Reusable leverage classifications:
+
+| Classification | Meaning | Allowed use |
+| --- | --- | --- |
+| Workflow Metadata Hold | GCE workflow metadata does not expose reuse reliably | Do not interpret reuse spread |
+| Skill Read Evidence Available | Agent span logs may expose skill reads | Run aggregate availability tests |
+| Skill Read Ungoverned | Reads lack governed identity or clean attribution | Caveat only |
+| Governed Reuse Ready | Canonical identity, versioning, invocation mode, and joins are stable | Future reuse-depth candidate |
+
+Fallback rule: when Trust Calibration or Reusable Workflow Propagation remains
+held, V4 should fall back to existing V1/V2 behavior evidence: completion,
+abandonment, recovery, verification presence where valid, Quality Multiplier,
+Reliability Factor, Velocity, and Depth Repertoire context. Held trust or reuse
+signals must not be interpreted as negative evidence.
+
 ## Candidate Predictive Tests
 
 ### Skill Catalyst vs Selection Test
 
-Test whether reusable Skills cause later depth or whether already-deep cohorts are simply more likely to create Skills.
+Test whether Skill Read Evidence adds interpretation beyond Velocity and Depth
+Repertoire, or whether already-deep cohorts are simply more likely to trigger
+skill reads.
+
+This test must use aggregate-only agent-span exports. It must not output raw
+skill names, user identifiers, action rows, prompts, outputs, or transcripts.
+Before any catalyst or selection interpretation is allowed, the diagnostic must
+first establish:
+
+- skill-read volume by legacy and shell-based read mechanisms,
+- share of reads logged as `unspecified`,
+- parent workflow/action/session join coverage,
+- stability across fixed windows,
+- whether native/platform skill coverage is sufficient despite enum/mapping
+  requirements,
+- whether UGC/user-created Skills remain outside canonical usage logging,
+- whether Plugin/MCP `find_skills` creates repeat-use gaps after downloads,
+- whether canonical `skill_id`, version, entrypoint, invocation mode, and
+  trigger method become available.
+
+If those conditions fail, Skill Read Evidence remains a data-readiness caveat,
+not a Depth, readiness, or economic-value signal.
 
 ### Time-to-Depth Curve
 
@@ -116,6 +417,7 @@ Candidate features may include:
 - Velocity distributions,
 - Depth dimensions,
 - surface breadth,
+- work mode distributions,
 - AGENT sub-surface mix,
 - verification attribution,
 - recovery and abandonment evidence,

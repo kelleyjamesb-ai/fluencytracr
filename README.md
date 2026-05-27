@@ -12,6 +12,12 @@ quality signal today.
 FluencyTracr sits on top of that pipeline as bounded evidence services and
 documented value-realization layers:
 
+- **AI Work Evidence:** org-agnostic core layer that separates reusable
+  aggregate evidence primitives from source-specific adapters such as Glean
+  dogfood and value-evidence mappings. It defines surfaces, workflows,
+  approved cohorts, interventions, trust evidence, source coverage, outcome
+  evidence, and value hypotheses without adding events, suppression reasons,
+  individual scoring, rankings, or ROI calculation.
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
 - **Causal Delta:** compares pre/post workflow patterns around a known change
@@ -36,12 +42,31 @@ documented value-realization layers:
 - **AGENT sub-surfaces:** V2.3 splits AGENT into `agent:autonomous`,
   `agent:workflow_named`, and `agent:ephemeral` so delegation, reusable Skill,
   and exploratory agent behavior can be evaluated independently.
+- **Skill Read Evidence:** V4 research path for Skills usage in agent span
+  logs. It treats raw span skill-reader attributes, legacy skill-name inputs
+  where present, plus dbt
+  `skill_reader_skill_name`, as availability signals only until
+  unspecified-share, parent attribution, canonical identity, versioning,
+  invocation mode, UGC coverage, and personal/shared/org Skill separation are
+  validated.
 - **V3 production ingest:** moves beyond manual CSV dogfood by running a
   customer-side transformer in the customer's cloud, sending only aggregate
   cohort distributions to FluencyTracr, and storing immutable verdicts against
   governed calibration baselines.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
+- **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
+  aggregate evidence into action postures for scale, enablement, workflow
+  redesign, trust calibration, adoption expansion, value investigation, or hold.
+  It is not customer-facing and does not calculate economic value.
+- **Organizational Segmentation:** future V4 concept for aggregate-only
+  intervention contexts such as tenure, function, role family, or behavior
+  bands; never person, manager, or comparative team evaluation.
+- **Economic Impact Bridge:** future V4 concept that maps readiness patterns to
+  customer-owned value investigations without proving ROI or causality.
+- **Work Mode Taxonomy:** maps governed surfaces into durable AI work patterns
+  such as retrieval, conversation, transformation, embedded assist, delegation,
+  reuse, exploration, verification, and corroborative telemetry.
 
 V4 is the Value Confidence Layer. It combines Velocity and Depth with governed
 V3 verdicts to qualify the defensibility of AI value claims.
@@ -113,12 +138,19 @@ is not the lead positioning for this repository.
 - Value-realization contract index: [docs/integrations/value-realization/INDEX.md](docs/integrations/value-realization/INDEX.md)
 - V3 production ingest walkthrough: [docs/integrations/value-realization/V3_INGEST.md](docs/integrations/value-realization/V3_INGEST.md)
 - V4 value confidence integration: [docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md](docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md)
+- AI Work Evidence concept: [docs/concepts/AI_WORK_EVIDENCE.md](docs/concepts/AI_WORK_EVIDENCE.md)
+- AI Work Evidence pilot package: [docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md](docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md)
 - Velocity concept and V2 reference: [docs/concepts/VELOCITY.md](docs/concepts/VELOCITY.md)
 - Depth concept and V4 reference: [docs/concepts/DEPTH.md](docs/concepts/DEPTH.md)
 - Delegation Depth concept and V4 Depth subdimension: [docs/concepts/DELEGATION_DEPTH.md](docs/concepts/DELEGATION_DEPTH.md)
+- Work Mode Taxonomy concept: [docs/concepts/WORK_MODES.md](docs/concepts/WORK_MODES.md)
 - V4 Value Confidence Layer concept: [docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md](docs/concepts/V4_VALUE_CONFIDENCE_LAYER.md)
+- AI Scale Readiness Portfolio concept: [docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md](docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md)
+- Organizational Segmentation concept: [docs/concepts/ORG_SEGMENTATION.md](docs/concepts/ORG_SEGMENTATION.md)
+- Economic Impact Bridge concept: [docs/concepts/ECONOMIC_IMPACT_BRIDGE.md](docs/concepts/ECONOMIC_IMPACT_BRIDGE.md)
 - Signal promotion criteria: [docs/research/SIGNAL_PROMOTION_CRITERIA.md](docs/research/SIGNAL_PROMOTION_CRITERIA.md)
 - V4 signal discovery probes: [docs/research/V4_SIGNAL_DISCOVERY_PROBES.md](docs/research/V4_SIGNAL_DISCOVERY_PROBES.md)
+- V4 signal discovery readout: [docs/research/V4_SIGNAL_DISCOVERY_READOUT.md](docs/research/V4_SIGNAL_DISCOVERY_READOUT.md)
 - V4 signal validation gate: [docs/research/V4_SIGNAL_VALIDATION_GATE.md](docs/research/V4_SIGNAL_VALIDATION_GATE.md)
 - V4 signal validation runbook: [docs/research/V4_SIGNAL_VALIDATION_RUNBOOK.md](docs/research/V4_SIGNAL_VALIDATION_RUNBOOK.md)
 - V4 signal validation readout template: [docs/research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md](docs/research/V4_SIGNAL_VALIDATION_READOUT_TEMPLATE.md)
@@ -131,6 +163,29 @@ is not the lead positioning for this repository.
 - V4 Depth Repertoire value-confidence review: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_REVIEW.md)
 - V4 Depth Repertoire calibration plan: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_PLAN.md)
 - V4 Depth Repertoire calibration decision: [docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md](docs/research/V4_DEPTH_REPERTOIRE_VALUE_CONFIDENCE_CALIBRATION_DECISION.md)
+- V4 Scale Readiness caveat propagation decision: [docs/research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_SCALE_READINESS_CAVEAT_PROPAGATION_DECISION.md)
+- V4 Trust Calibration caveat propagation decision: [docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TRUST_CALIBRATION_CAVEAT_PROPAGATION_DECISION.md)
+- V4 Glean dogfood scale readiness readout: [docs/research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md](docs/research/V4_GLEAN_DOGFOOD_SCALE_READINESS_READOUT.md)
+- V4 full dogfood rehearsal readout: [docs/research/V4_FULL_DOGFOOD_REHEARSAL_READOUT.md](docs/research/V4_FULL_DOGFOOD_REHEARSAL_READOUT.md)
+- V4 behavior cohort classification readout: [docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md](docs/research/V4_BEHAVIOR_COHORT_CLASSIFICATION_READOUT.md)
+- V4 data analysis closeout: [docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md](docs/research/V4_DATA_ANALYSIS_CLOSEOUT.md)
+- V4 next sprint plan: [docs/research/V4_NEXT_SPRINT_PLAN.md](docs/research/V4_NEXT_SPRINT_PLAN.md)
+- V4 readout zone model: [docs/research/V4_READOUT_ZONE_MODEL.md](docs/research/V4_READOUT_ZONE_MODEL.md)
+- V4 behavior feature backlog: [docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md](docs/research/V4_BEHAVIOR_FEATURE_BACKLOG.md)
+- V4 value hypothesis map: [docs/research/V4_VALUE_HYPOTHESIS_MAP.md](docs/research/V4_VALUE_HYPOTHESIS_MAP.md)
+- V4 value realization strategy layer: [docs/research/V4_VALUE_REALIZATION_STRATEGY_LAYER.md](docs/research/V4_VALUE_REALIZATION_STRATEGY_LAYER.md)
+- V4 readout zone data test: [docs/research/V4_READOUT_ZONE_DATA_TEST.md](docs/research/V4_READOUT_ZONE_DATA_TEST.md)
+- V4 Velocity x Depth zone test: [docs/research/V4_VELOCITY_DEPTH_ZONE_TEST.md](docs/research/V4_VELOCITY_DEPTH_ZONE_TEST.md)
+- V4 Glean dogfood decision: [docs/research/V4_GLEAN_DOGFOOD_DECISION.md](docs/research/V4_GLEAN_DOGFOOD_DECISION.md)
+- V4 closeout decision: [docs/research/V4_CLOSEOUT_DECISION.md](docs/research/V4_CLOSEOUT_DECISION.md)
+- V4 internal readout runbook: [docs/research/V4_INTERNAL_READOUT_RUNBOOK.md](docs/research/V4_INTERNAL_READOUT_RUNBOOK.md)
+- V4 internal readout rehearsal: [docs/research/V4_INTERNAL_READOUT_REHEARSAL.md](docs/research/V4_INTERNAL_READOUT_REHEARSAL.md)
+- V4 Trust Attribution method: [docs/research/V4_TRUST_ATTRIBUTION_METHOD.md](docs/research/V4_TRUST_ATTRIBUTION_METHOD.md)
+- V4 Trust Attribution test readout: [docs/research/V4_TRUST_ATTRIBUTION_TEST_READOUT.md](docs/research/V4_TRUST_ATTRIBUTION_TEST_READOUT.md)
+- V4 Trust and Cohort classification plan: [docs/research/V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md](docs/research/V4_TRUST_AND_COHORT_CLASSIFICATION_PLAN.md)
+- V4 value-confidence caveat propagation runbook: [docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md](docs/research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md)
+- V4 TSDR caveat propagation decision: [docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md)
+- V4 AI Value Leakage Map caveat propagation decision: [docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](docs/research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
 - V4 validation plan: [docs/research/V4_VALIDATION_PLAN.md](docs/research/V4_VALIDATION_PLAN.md)
 - Surface taxonomy concept: [docs/concepts/SURFACES.md](docs/concepts/SURFACES.md)
 - Agent types concept: [docs/concepts/AGENT_TYPES.md](docs/concepts/AGENT_TYPES.md)

@@ -42,6 +42,13 @@ Depth measures work integration through aggregate evidence of verification, work
 
 Depth helps V4 distinguish raw activity from durable operating leverage.
 
+Depth Repertoire is currently approved only as aggregate caveat/context in V4
+value-confidence artifacts. It must not change confidence bands, surfacing
+eligibility, Time-Saved Defensibility Range, leakage severity, scale-readiness
+zones, trust labels, ROI language, causal claims, prediction claims, or any
+customer-facing economic number unless a later calibration decision explicitly
+promotes that use.
+
 ## Output: Time-Saved Defensibility Range
 
 The Time-Saved Defensibility Range qualifies the raw time-saved estimate using governed aggregate evidence.
@@ -54,11 +61,23 @@ The AI Value Leakage Map shows where AI investment may not be converting into de
 
 Leakage may reflect velocity, depth, reuse, verification, recovery, or friction gaps. Any estimate based on potential value must be labeled scenario-based unless validated by outcome evidence.
 
+Depth Repertoire may appear in the leakage map only as aggregate
+caveat/context. The
+[V4 AI Value Leakage Map Caveat Propagation Decision](../../research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md)
+records `PASS_CAVEAT_PROPAGATION` for that narrow use; it does not authorize
+leakage severity adjustment, value-at-risk adjustment, surfacing eligibility
+changes, or economic dependency.
+
 ## Output: AI Scale Readiness Portfolio
 
 The AI Scale Readiness Portfolio maps workflows into investment zones such as scale, harvest, coach, redesign, govern, or suppress.
 
-This is a workflow investment signal. It is not a team ranking, employee capability label, or maturity score.
+This is a workflow investment signal. It is not a comparative team evaluation, employee capability label, or maturity label.
+
+The expanded concept is
+[AI_SCALE_READINESS_PORTFOLIO.md](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md).
+It frames readiness zones as action postures: scale, enable, redesign,
+calibrate trust, expand adoption, or hold.
 
 ## Output: Trust Calibration Index
 
@@ -75,6 +94,24 @@ Every V4 readout should carry CFO-safe caveats:
 - Estimates are bounded by evidence grade and suppression state.
 - Customer-stated assumptions cannot upgrade evidence grade.
 - Outcome evidence can strengthen confidence but does not automatically establish causality.
+
+## Organizational Segmentation And Economic Impact Bridge
+
+Organizational Segmentation may make V4 action planning more useful, but only as
+aggregate intervention context. HRIS, Workday, or directory joins must happen
+inside the customer or Glean boundary, and every segment must suppress
+independently. See
+[ORG_SEGMENTATION.md](../../concepts/ORG_SEGMENTATION.md).
+
+The Economic Impact Bridge maps readiness patterns to customer-owned value
+investigations. It does not calculate realized ROI, prove causality, predict
+future outcomes, or infer employee performance. See
+[ECONOMIC_IMPACT_BRIDGE.md](../../concepts/ECONOMIC_IMPACT_BRIDGE.md).
+
+Current dogfood status is
+`HOLD_FOR_60_DAY_GLEAN_DOGFOOD`; no V4 economic API or customer-facing readout
+may depend on these concepts until the dogfood decision promotes the relevant
+scope.
 
 ## What Glean Can Claim
 
@@ -112,6 +149,11 @@ Caveat: This readout qualifies the Glean time-saved estimate. It does not prove 
 ## Implementation Readiness Checklist
 
 - [ ] V4 Markdown concepts and contracts are reviewed.
+- [ ] Caveat propagation is validated with [V4 Value Confidence Caveat
+      Propagation Runbook](../../research/V4_VALUE_CONFIDENCE_CAVEAT_PROPAGATION_RUNBOOK.md).
+- [ ] Readout-specific caveat decisions are recorded, including
+      [TSDR](../../research/V4_TSDR_CAVEAT_PROPAGATION_DECISION.md) and
+      [AI Value Leakage Map](../../research/V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md).
 - [ ] Suppressed economics behavior is specified and tested before implementation.
 - [ ] Depth mapping is defined from existing aggregate evidence only.
 - [ ] Trust Calibration interpretation is risk-adjusted and caveated.

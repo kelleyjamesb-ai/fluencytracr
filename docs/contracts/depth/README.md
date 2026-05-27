@@ -29,6 +29,7 @@ Depth may consume governed aggregate evidence from:
 - V3 aggregate verdicts,
 - verification and feedback attribution,
 - workflow and surface taxonomy,
+- work mode taxonomy,
 - cohort surface-repertoire distributions,
 - repeat-use and refinement distributions,
 - AGENT sub-surface composition,

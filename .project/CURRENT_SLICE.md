@@ -1,68 +1,77 @@
 # Current Slice Contract
 
-- Work item id: `security-check-auth-token-hardening`
-- Title: `Run security check and fix critical auth token minting issue`
+- Work item id: `v4-value-realization-strategy-layer-v0`
+- Title: `Add V0 value realization strategy routing`
 - Status: `completed`
 
 ## Summary
 
-Ran a repository-wide high-impact security check and fixed the critical backend
-auth issue where `POST /auth/token` could mint privileged bearer tokens before
-authentication. Token minting now requires a server-side issuer secret outside
-local development/test, and managed/production runtimes fail closed without
-`JWT_SECRET`. A follow-up regression removed the undocumented token-minting
-escape hatch from production runtimes.
+Add the V0 strategy-routing layer that turns aggregate FluencyTracr zones into
+human-reviewed value-realization strategy postures, stakeholder value
+questions, stakeholder evidence needs, and required monetary-value evidence
+without calculating dollars or ROI.
 
 ## Scope Paths
 
-- `backend/src/app.ts`
-- `backend/src/auth_secret.ts`
-- `backend/tests/auth_secret.test.ts`
-- `backend/tests/auth_token_api.test.ts`
-- `backend/.env.example`
+- `docs/research/V4_VALUE_REALIZATION_STRATEGY_LAYER.md`
+- `docs/research/V4_VALUE_HYPOTHESIS_MAP.md`
+- `docs/research/V4_VELOCITY_DEPTH_ZONE_TEST.md`
+- `docs/research/V4_NEXT_SPRINT_PLAN.md`
+- `docs/research/V4_VALIDATION_PLAN.md`
+- `dogfood-output/V4_RESEARCH_EXPORTS.md`
+- `dogfood-output/v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`
+- `tests/dogfood/test_velocity_double_count.py`
+- `README.md`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Token minting must fail closed in production and managed runtimes.
-- Local/test auth workflows must remain usable for existing backend tests.
-- The fix must not change FluencyTracr event, suppression, schema, or V4 signal contracts.
+- Strategy routing must not become automated recommendations.
+- Stakeholder value questions must not become monetary value claims.
+- The layer must not calculate ROI, expected savings, productivity lift,
+  causality, prediction, ranking, or customer-facing economic output.
+- Suppressed or held rows must not be upgraded.
+- The retained strategy CSV must remain aggregate-only and avoid raw user,
+  email, prompt, transcript, action, event, or skill-name fields.
 
 ## Planned Checks
 
-- Run targeted auth tests.
-- Run full backend CI.
-- Run backend build.
-- Run npm audit for critical dependency advisories.
-- Run targeted tracked-secret scan.
-- Run `git diff --check`.
+- Run the targeted dogfood strategy/SQL contract test.
+- Run docs contract sweep.
+- Run semantic drift guard.
+- Run V1 governance gates.
+- Run diff whitespace check.
+- Scan for conflict markers.
+- Scan generated CSV headers for forbidden raw fields.
 
 ## Evaluator Command Profile
 
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend -- --runTestsByPath tests/auth_secret.test.ts tests/auth_token_api.test.ts tests/auth_hardening.test.ts`
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run test:ci --workspace backend`
-- `PATH=/usr/local/bin:/opt/homebrew/bin:$PATH /usr/local/bin/npm run build --workspace backend`
-- `/usr/local/bin/npm audit --audit-level=critical --json`
-- `/usr/local/bin/npm audit --omit=dev --audit-level=critical --json`
+- `.venv/bin/python -m pytest tests/dogfood/test_velocity_double_count.py -q`
+- `scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `python3 scripts/ci_v1_governance_gates.py`
 - `git diff --check`
+- `rg -n "^(<<<<<<<|=======|>>>>>>>)"`
 
 ## Evaluator Pass Criteria
 
-- Auth token minting rejects missing or wrong issuer secrets outside local/test.
-- Production does not resolve the fallback JWT signing secret.
-- Backend tests and build pass.
-- No open critical npm advisories remain from the scan.
+- The strategy layer maps zones to strategy posture, value mechanism,
+  stakeholder value question, stakeholder evidence needs, required outcome
+  evidence, required customer-owned assumptions, and blocked claims.
+- The retained strategy CSV is saved in `dogfood-output/`.
+- The layer explicitly blocks monetary value calculation in V0.
+- Guardrails remain explicit: no ROI, no productivity, no customer-facing
+  economic output, no rankings, no raw skill names, and no person-level fields.
+- Verification commands pass.
 
 ## Specialists To Consult
 
-- Codex Security `security-scan` workflow.
+- None for this research-only strategy-routing slice.
 
 ## Next Handoff Note
 
-Completed locally. Critical auth token minting issue is fixed and verified.
-Security scan report: `/tmp/codex-security-scans/FluencyTracr/c7bfb4a_20260524T070208Z/report.md`.
-Follow-up hardening also verified that production cannot bypass the issuer-secret
-gate with `ALLOW_INSECURE_AUTH_TOKEN_MINTING`.
-High, non-critical dependency advisories remain deferred for a separate
-dependency-update slice.
+Completed locally. V0 maps stable strategy rows from the retained Velocity x
+Depth summary: 12 scale-and-measure, 6 coach/redesign, 3 study/package, 92
+repair-trust-loop, and 3 hold/no-interpretation rows across all three fixed
+windows. Proceed next to the team-demo artifact only after review.

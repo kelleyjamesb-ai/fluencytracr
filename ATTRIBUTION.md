@@ -62,6 +62,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day agent diagnostic showing autonomous agents represented 42% of AGENT volume
 - Used in: V2.3 AGENT_TYPES concept document and V2.3 AGENT sub-surface implementation
 
+### Work mode taxonomy
+- Source: James Kelley, first-principles framing that value-confidence calibration should classify AI work by behavioral intent and evidence role, not by event names alone
+- Empirical grounding: scio-prod 60-day calibration work showing Velocity and Depth are taxonomy-aware while Quality Multiplier and Reliability Factor still need aligned surface semantics
+- Used in: V4 Work Mode Taxonomy concept document
+
 ### Customer-side transformer privacy boundary
 - Source: James Kelley, architectural choice that production ingest should keep raw GCE inside the customer environment
 - Governance grounding: structural privacy boundary where only cohort percentile distributions cross into FluencyTracr
@@ -71,6 +76,21 @@ not necessarily reviewed or approved FluencyTracr.
 - Source: James Kelley, calibration-as-versioned-baseline governance pattern
 - Governance grounding: calibration baselines are immutable reference artifacts, not tunable thresholds or admin overrides
 - Used in: V3 calibration concept document
+
+### AI Scale Readiness Portfolio
+- Source: James Kelley, scale-readiness portfolio framing for V4 value realization
+- Governance grounding: aggregate readiness zones should guide where to scale, coach, redesign, calibrate trust, expand adoption, or hold without becoming a scorecard, ranking, ROI claim, or productivity measure
+- Used in: V4 AI Scale Readiness Portfolio concept and dogfood decision plan
+
+### Organizational Segmentation as intervention context
+- Source: James Kelley, organizational segmentation framing for internal V4 dogfood
+- Governance grounding: function, role, level, tenure, and behavior-derived segments are intervention contexts only; HR and directory joins must remain inside the customer or Glean boundary and emit aggregate distributions only
+- Used in: V4 Organizational Segmentation concept and dogfood decision plan
+
+### Economic Impact Bridge
+- Source: James Kelley, economic-impact bridge framing for V4 value realization
+- Governance grounding: aggregate readiness patterns may support customer-owned value investigations, but they do not prove ROI, causality, productivity lift, prediction, or employee performance
+- Used in: V4 Economic Impact Bridge concept and dogfood decision plan
 
 ## Framing influences (not directly implemented)
 
