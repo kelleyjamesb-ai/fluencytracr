@@ -2,6 +2,7 @@
 
 ## Last Completed
 
+- Trust Episode pilot runner identity-column review fix: expanded CSV header rejection to fail closed on common user/name identity columns such as `user_name`, `username`, `full_name`, and `display_name`, with regression coverage proving those inputs do not emit external readouts.
 - Trust Episode pilot runner coverage review fix: routed non-gap rows with incomplete, ambiguous, undocumented, candidate, overlap, or trace-context coverage into evidence-gap caveat handling before external readout generation; regenerated retained pilot Markdown/CSV/JSON/chart/DOCX artifacts so the ambiguous stalled trace-context row is no longer emitted as a precise pattern value.
 - Trust Episode pilot runner review fix: added a small-cell safety floor to fold sub-5 aggregate pattern cells into evidence-gap caveat language before external readout generation, regenerated retained pilot Markdown/CSV/JSON/chart/DOCX artifacts, and expanded tests so rare pattern counts are not emitted in shareable outputs.
 - Trust Episode Boundary research slice: added aggregate-only V4 research framing for AI work episodes, a dogfood BigQuery diagnostic for trust episode pattern shape, and regression checks preserving research-only governance. The live one-day BigQuery probe validated against scrubbed Glean customer-event and agent-span tables and produced an interpretable aggregate episode matrix; counts remain candidate episode-key counts, not deduplicated product episode totals.

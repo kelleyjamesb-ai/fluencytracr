@@ -261,6 +261,23 @@ def test_forbidden_person_level_columns_fail_closed(tmp_path: Path) -> None:
     assert "person@example.com" not in (output_dir / SUMMARY_OUTPUT).read_text()
 
 
+def test_identity_name_columns_fail_closed(tmp_path: Path) -> None:
+    for header in ["user_name", "username", "full_name", "display_name"]:
+        input_csv = tmp_path / f"{header}.csv"
+        output_dir = tmp_path / f"out_{header}"
+        rows = aggregate_rows()
+        rows[0][header] = "Jane Example"
+        write_csv(input_csv, rows)
+
+        completed = run_pilot(input_csv, output_dir)
+
+        assert completed.returncode == 1
+        assert "forbidden person-level fields" in completed.stderr
+        summary = json.loads((output_dir / SUMMARY_OUTPUT).read_text())
+        assert summary["status"] == "INVALID_INPUT"
+        assert "Jane Example" not in (output_dir / SUMMARY_OUTPUT).read_text()
+
+
 def test_missing_source_coverage_folds_to_evidence_gap(tmp_path: Path) -> None:
     input_csv = tmp_path / "undocumented_coverage.csv"
     output_dir = tmp_path / "out"
