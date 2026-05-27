@@ -49,6 +49,23 @@ Current slice note: the first execution slice covers Workstreams 1-3 only.
 Workstreams 4-5 remain future work until the team reviews the zone model,
 feature backlog, and value-hypothesis map.
 
+Measurement-build note: the follow-on sequence is governed by the
+[V4 Measurement Build Plan](./V4_MEASUREMENT_BUILD_PLAN.md). Every added
+measurement must start as research, pass aggregate dogfood testing, and earn a
+promotion decision before any canonical contract work begins.
+
+Current closeout status: the sprint has reached its canonical contract decision
+in [V4 Canonical Contract Decision](./V4_CANONICAL_CONTRACT_DECISION.md). The
+next allowed phase is documentation-first internal readout contract hardening
+only. Customer-facing economic output, Time-Saved Defensibility Range output,
+ROI, productivity claims, causal claims, prediction, and ranking remain held or
+blocked.
+
+Contract-hardening status: the internal record-shape contract is
+[Internal Scale Readiness Readout](../contracts/value-confidence/internal-scale-readiness-readout.md).
+The next step after contract review is an internal template rehearsal from
+retained aggregate CSVs, not runtime implementation.
+
 ## Sprint Boundaries
 
 Allowed:
@@ -192,6 +209,64 @@ maps zones to scale, coach/redesign, study/package, repair-trust-loop,
 fix-instrumentation, or hold postures. It also records stakeholder value
 questions, stakeholder evidence needs, and required monetary-value evidence
 while explicitly blocking dollarized output.
+
+Measurement-build status: Velocity x Depth is the first promoted behavior
+cohort axis pair. Segment overlay, intervention tracking, and outcome metric
+join have now been tested as research slices. The remaining sequence is
+Time-Saved Defensibility Range testing, Economic Impact Bridge update, and a
+canonical contract decision, each as a separate research-and-test step before
+canonicalization.
+
+Segment-overlay status: the initial behavior-segment overlay is complete (see
+[V4 Segment Overlay Test Plan](./V4_SEGMENT_OVERLAY_TEST_PLAN.md)). Velocity
+band, Depth Repertoire band, and readout zone can be used as internal research
+overlays. Org metadata segmentation remains held until an approved aggregate
+join exists.
+
+Intervention-tracking status: the research design is complete (see
+[V4 Intervention Tracking Research Design](./V4_INTERVENTION_TRACKING_RESEARCH_DESIGN.md)).
+The design is safe for descriptive aggregate movement review, but actual
+movement testing is held until a governed aggregate intervention ledger exists.
+
+Outcome-join status: the research design is tested (see
+[V4 Outcome Join Test Plan](./V4_OUTCOME_JOIN_TEST_PLAN.md)). Saved V4 behavior
+exports are ready to receive an aggregate outcome join, but real outcome metrics,
+window-aligned baselines, customer-owned assumptions, and causal design are not
+present in the retained exports. Outcome interpretation remains held until a
+support or onboarding aggregate source is approved.
+
+Outcome-source inventory status: the first BigQuery source inventory is complete
+(see [V4 Outcome Source Inventory Readout](./V4_OUTCOME_SOURCE_INVENTORY_READOUT.md)).
+Support is the best first outcome-context source via
+`dashboards.zendesk_ticket_details`; Rocketlane is usable as a secondary
+onboarding/project-delivery source. A stronger behavior-to-outcome
+interpretation remains held until an approved aggregate join key connects
+outcome movement to behavior cohorts or organizational segments.
+
+Support outcome join status: the first support join is complete (see
+[V4 Support Outcome Join Test Readout](./V4_SUPPORT_OUTCOME_JOIN_TEST_READOUT.md)).
+It promotes support outcome context for Economic Impact Bridge routing, but
+holds behavior-to-outcome attribution until an approved aggregate join key
+exists.
+
+Support join-key status: the first join-key test is complete (see
+[V4 Support Join-Key Test Readout](./V4_SUPPORT_JOIN_KEY_TEST_READOUT.md)).
+Support behavior attribution remains held. The current safe path is support
+outcome context by fixed window; promotion beyond that requires an approved
+aggregate support segment, department-ID mapping, or customer/account behavior
+context.
+
+Time-Saved Defensibility status: the first range-readiness gate is complete
+(see [V4 Time-Saved Defensibility Test Plan](./V4_TIME_SAVED_DEFENSIBILITY_TEST_PLAN.md)).
+The method is promoted as a research gate, but range output remains held because
+raw time-saved claims, customer-owned assumptions, behavior-to-support
+attribution, and causal design are missing or held. This gate should be reused
+across the org only when valid aggregate joins and assumptions exist.
+
+Economic Hypothesis Map status: updated after the support outcome and
+Time-Saved tests (see [V4 Value Hypothesis Map](./V4_VALUE_HYPOTHESIS_MAP.md)).
+Economic Bridge use is promoted for internal investigation routing only.
+Customer-facing economic output remains held.
 
 ## Workstream 4: Team Demo Artifact
 
