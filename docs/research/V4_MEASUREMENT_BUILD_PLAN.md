@@ -142,7 +142,7 @@ Blocked use:
 
 ### Step 2: Segment Overlay
 
-Status: next build.
+Status: initial behavior-segment overlay tested.
 
 Question:
 
@@ -161,7 +161,7 @@ Allowed segment sources:
 
 Test artifact:
 
-`docs/research/V4_SEGMENT_OVERLAY_TEST_PLAN.md`
+- [V4 Segment Overlay Test Plan](./V4_SEGMENT_OVERLAY_TEST_PLAN.md)
 
 Expected export shape:
 
@@ -179,6 +179,14 @@ Promotion gate:
 
 Segment overlay can promote only if it shows stable aggregate differences
 without becoming a person, manager, department, region, or team ranking.
+
+Current test decision:
+
+`PROMOTE_BEHAVIOR_SEGMENT_OVERLAY_TESTING`
+
+The promoted scope is limited to Velocity band, Depth Repertoire band, and
+readout zone as internal research overlays. Org metadata segmentation remains
+held until an approved aggregate join exists.
 
 ### Step 3: Intervention Tracking Model
 
@@ -391,14 +399,13 @@ Decision target:
 
 ## Recommended Order
 
-The safest order is:
+The safest remaining order is:
 
-1. Segment overlay.
-2. Intervention tracking.
-3. Outcome metric join.
-4. Time-saved defensibility range.
-5. Economic hypothesis map update.
-6. Canonical contract decision.
+1. Intervention tracking.
+2. Outcome metric join.
+3. Time-saved defensibility range.
+4. Economic hypothesis map update.
+5. Canonical contract decision.
 
 That order keeps the story honest:
 

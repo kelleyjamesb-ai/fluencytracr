@@ -204,6 +204,12 @@ outcome metric join, Time-Saved Defensibility Range testing, and Economic
 Impact Bridge update, each as a separate research-and-test step before
 canonicalization.
 
+Segment-overlay status: the initial behavior-segment overlay is complete (see
+[V4 Segment Overlay Test Plan](./V4_SEGMENT_OVERLAY_TEST_PLAN.md)). Velocity
+band, Depth Repertoire band, and readout zone can be used as internal research
+overlays. Org metadata segmentation remains held until an approved aggregate
+join exists.
+
 ## Workstream 4: Team Demo Artifact
 
 Goal: produce one artifact the team can react to.

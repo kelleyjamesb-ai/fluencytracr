@@ -52,6 +52,10 @@ Velocity x Depth readout-zone test:
 
 - `v4-velocity-depth-zone/v4_velocity_depth_zone_summary_safe.csv`
 
+Segment overlay test:
+
+- `v4-segment-overlay-test/v4_segment_overlay_summary.csv`
+
 Value realization strategy layer:
 
 - `v4-value-realization-strategy/v4_value_realization_strategy_summary.csv`
