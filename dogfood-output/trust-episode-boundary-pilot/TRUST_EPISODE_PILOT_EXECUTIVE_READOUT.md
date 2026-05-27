@@ -24,8 +24,9 @@ The export contains 88,028,657 aggregate AI work episodes.
 - Work resolved without explicit verification: 30,676,071 aggregate episodes (34.8%).
 - Work recovered after friction: 15,826,000 aggregate episodes (18.0%).
 - Work stalled after AI assistance: 474,414 aggregate episodes (0.5%).
-- Explicit negative feedback appeared: 2 aggregate episodes (<0.1%).
-- Evidence gap remains: 37,484,844 aggregate episodes (42.6%).
+- Evidence gap remains: 37,484,846 aggregate episodes (42.6%).
+
+Rare pattern cells below the aggregate safety floor are withheld from pattern rows and carried into evidence-gap caveat language.
 
 ## Trust Calibration Context
 

@@ -16,6 +16,11 @@ from typing import Any
 SUMMARY_OUTPUT = "trust_episode_pilot_summary.json"
 READOUT_OUTPUT = "TRUST_EPISODE_PILOT_EXECUTIVE_READOUT.md"
 PATTERN_OUTPUT = "trust_episode_pilot_pattern_summary.csv"
+MIN_AGGREGATE_PATTERN_COUNT = 5
+SMALL_CELL_CAVEAT = (
+    "Rare pattern cells below the aggregate safety floor are withheld from "
+    "pattern rows and carried into evidence-gap caveat language."
+)
 
 REQUIRED_COLUMNS = {
     "episode_pattern",
@@ -213,12 +218,26 @@ def aggregate_patterns(csv_input: CsvInput) -> dict[str, int]:
     return counts
 
 
+def apply_small_cell_safety_floor(counts: dict[str, int]) -> dict[str, int]:
+    safe_counts = dict(counts)
+    folded_count = 0
+    for pattern, count in counts.items():
+        if pattern == "evidence_gap" or count == 0 or count >= MIN_AGGREGATE_PATTERN_COUNT:
+            continue
+        safe_counts[pattern] = 0
+        folded_count += count
+    if folded_count:
+        safe_counts["evidence_gap"] += folded_count
+    return safe_counts
+
+
 def build_summary(
     *,
     customer_label: str,
     window_label: str,
     counts: dict[str, int],
 ) -> dict[str, Any]:
+    counts = apply_small_cell_safety_floor(counts)
     total = sum(counts.values())
     patterns = {
         pattern: {
@@ -234,6 +253,12 @@ def build_summary(
         "window_label": window_label,
         "total_episode_count": total,
         "patterns": patterns,
+        "small_cell_policy": {
+            "minimum_aggregate_pattern_count": MIN_AGGREGATE_PATTERN_COUNT,
+            "emits_sub_floor_pattern_values": False,
+            "folds_sub_floor_pattern_values_into_evidence_gap": True,
+            "caveat": SMALL_CELL_CAVEAT,
+        },
         "governance": {
             "output_is_aggregate_only": True,
             "requires_customer_approved_aggregate_scope": True,
@@ -259,6 +284,14 @@ def pattern_line(pattern: str, count: int, total: int) -> str:
     label = PATTERN_LABELS[pattern]
     share = count / total
     return f"- {label}: {format_count(count)} aggregate episodes ({format_share(share)})."
+
+
+def visible_patterns(summary: dict[str, Any]) -> list[str]:
+    return [
+        pattern
+        for pattern in PATTERN_ORDER
+        if int(summary["patterns"][pattern]["episode_count"]) > 0
+    ]
 
 
 def build_readout(summary: dict[str, Any]) -> str:
@@ -295,9 +328,11 @@ def build_readout(summary: dict[str, Any]) -> str:
         f"The export contains {format_count(total)} aggregate AI work episodes.",
         "",
     ]
-    lines.extend(pattern_line(pattern, counts[pattern], total) for pattern in PATTERN_ORDER)
+    lines.extend(pattern_line(pattern, counts[pattern], total) for pattern in visible_patterns(summary))
     lines.extend(
         [
+            "",
+            SMALL_CELL_CAVEAT,
             "",
             "## Trust Calibration Context",
             "",
@@ -347,9 +382,10 @@ def write_pattern_csv(path: Path, summary: dict[str, Any]) -> None:
                 "episode_count",
                 "episode_share",
             ],
+            lineterminator="\n",
         )
         writer.writeheader()
-        for pattern in PATTERN_ORDER:
+        for pattern in visible_patterns(summary):
             value = summary["patterns"][pattern]
             writer.writerow(
                 {

@@ -119,11 +119,29 @@ def aggregate_rows() -> list[dict[str, object]]:
             "coverage_caveat": "candidate episode-key count; trace, run, and session keys may overlap",
         },
         {
+            "episode_pattern": "explicit_negative_feedback",
+            "boundary_layer": "same_session_continuation",
+            "primary_evidence_family": "feedback_signal",
+            "episode_count": 2,
+            "episode_share": 0.0002,
+            "explicit_feedback_episode_count": 2,
+            "negative_feedback_episode_count": 2,
+            "positive_feedback_episode_count": 0,
+            "agent_completion_episode_count": 0,
+            "failure_or_friction_episode_count": 2,
+            "post_failure_continuation_episode_count": 0,
+            "skill_episode_count": 0,
+            "post_skill_continuation_episode_count": 0,
+            "citation_click_episode_count": 0,
+            "citation_available_episode_count": 0,
+            "coverage_caveat": "rare aggregate cell below output floor",
+        },
+        {
             "episode_pattern": "evidence_gap",
             "boundary_layer": "unknown_boundary",
             "primary_evidence_family": "evidence_gap",
-            "episode_count": 4340,
-            "episode_share": 0.434,
+            "episode_count": 4338,
+            "episode_share": 0.4338,
             "explicit_feedback_episode_count": 0,
             "negative_feedback_episode_count": 0,
             "positive_feedback_episode_count": 0,
@@ -153,6 +171,10 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
     assert summary["window_label"] == "Seven approved business days"
     assert summary["total_episode_count"] == 10000
     assert summary["patterns"]["recovered_after_failure"]["share"] == 0.18
+    assert summary["patterns"]["explicit_negative_feedback"]["episode_count"] == 0
+    assert summary["patterns"]["evidence_gap"]["episode_count"] == 4340
+    assert summary["small_cell_policy"]["emits_sub_floor_pattern_values"] is False
+    assert summary["small_cell_policy"]["folds_sub_floor_pattern_values_into_evidence_gap"] is True
     assert summary["governance"]["output_is_aggregate_only"] is True
     assert summary["governance"]["requires_customer_approved_aggregate_scope"] is True
     assert summary["governance"]["adds_runtime_api"] is False
@@ -180,8 +202,11 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
         "V4_TRUST_EPISODE_BOUNDARY_VALIDATION_READOUT.md",
         "TRUST_PRODUCT_EPISODE_DEDUP_BIGQUERY_READOUT.md",
         "TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md",
+        "Rare pattern cells below the aggregate safety floor",
     ]:
         assert phrase in readout
+    assert "Explicit negative feedback appeared" not in readout
+    assert "2 aggregate episodes" not in readout
     for raw_code in [
         "resolved_with_confidence",
         "resolved_without_verification_signal",
@@ -205,6 +230,9 @@ def test_aggregate_csv_generates_executive_safe_readout(tmp_path: Path) -> None:
         rows = list(csv.DictReader(handle))
     assert rows[0]["pattern_label"] == "Work resolved with corroboration"
     assert rows[2]["pattern_label"] == "Work recovered after friction"
+    assert "Explicit negative feedback appeared" not in {
+        row["pattern_label"] for row in rows
+    }
 
 
 def test_forbidden_person_level_columns_fail_closed(tmp_path: Path) -> None:
@@ -265,12 +293,15 @@ def test_retained_dogfood_pilot_output_uses_real_aggregate_counts() -> None:
     assert summary["customer_label"] == "Glean dogfood aggregate run-first sample"
     assert summary["total_episode_count"] == 88028657
     assert summary["patterns"]["recovered_after_failure"]["episode_count"] == 15826000
-    assert summary["patterns"]["evidence_gap"]["episode_count"] == 37484844
+    assert summary["patterns"]["explicit_negative_feedback"]["episode_count"] == 0
+    assert summary["patterns"]["evidence_gap"]["episode_count"] == 37484846
     assert summary["governance"]["adds_runtime_api"] is False
 
     assert "88,028,657 aggregate AI work episodes" in readout
     assert "15,826,000 aggregate episodes" in readout
-    assert "37,484,844 aggregate episodes" in readout
+    assert "37,484,846 aggregate episodes" in readout
+    assert "Explicit negative feedback appeared" not in readout
+    assert "2 aggregate episodes" not in readout
     assert "not a trust score" in readout
     assert "does not calculate ROI" in readout
     assert "does not establish causality" in readout

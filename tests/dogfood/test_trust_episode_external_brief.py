@@ -25,9 +25,10 @@ def assert_external_brief_contract(text: str) -> None:
         "Trust Calibration Context",
         "88,028,657 aggregate AI work episodes",
         "15,826,000 aggregate episodes",
-        "37,484,844 aggregate episodes",
+        "37,484,846 aggregate episodes",
         "18.0%",
         "42.6%",
+        "Rare pattern cells below the aggregate safety floor",
         "does not identify, score, rank, or evaluate employees",
         "not a trust score",
         "not a citation-click metric",
@@ -37,6 +38,13 @@ def assert_external_brief_contract(text: str) -> None:
         "No API is required for this pilot phase",
     ]:
         assert phrase in text
+
+    for withheld_phrase in [
+        "Explicit negative feedback appeared",
+        "2 aggregate episodes",
+        "37,484,844 aggregate episodes",
+    ]:
+        assert withheld_phrase not in text
 
     for raw_code in [
         "resolved_with_confidence",

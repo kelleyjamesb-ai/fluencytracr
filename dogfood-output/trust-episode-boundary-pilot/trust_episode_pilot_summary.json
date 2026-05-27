@@ -13,12 +13,12 @@
   },
   "patterns": {
     "evidence_gap": {
-      "episode_count": 37484844,
+      "episode_count": 37484846,
       "label": "Evidence gap remains",
       "share": 0.425825
     },
     "explicit_negative_feedback": {
-      "episode_count": 2,
+      "episode_count": 0,
       "label": "Explicit negative feedback appeared",
       "share": 0.0
     },
@@ -50,6 +50,12 @@
     "dogfood-output/trust-episode-boundary/TRUST_PRODUCT_EPISODE_DEDUP_BIGQUERY_READOUT.md",
     "dogfood-output/trust-episode-boundary/TRUST_KEY_CONFIDENCE_BIGQUERY_READOUT.md"
   ],
+  "small_cell_policy": {
+    "caveat": "Rare pattern cells below the aggregate safety floor are withheld from pattern rows and carried into evidence-gap caveat language.",
+    "emits_sub_floor_pattern_values": false,
+    "folds_sub_floor_pattern_values_into_evidence_gap": true,
+    "minimum_aggregate_pattern_count": 5
+  },
   "status": "EVIDENCE_CONTEXT_ONLY",
   "total_episode_count": 88028657,
   "window_label": "Seven approved business days"
