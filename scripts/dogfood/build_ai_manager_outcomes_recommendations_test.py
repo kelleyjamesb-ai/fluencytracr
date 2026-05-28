@@ -243,9 +243,9 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
         record["window_id"] = "internal_pilot_2026_05_28"
         record["cohort_key"] = "aggregate_internal_pilot"
         record["verdict"] = "SUPPRESS" if suppressed else "SURFACE"
-        record["suppression_reason"] = (
-            record["recommendation_readiness"] if suppressed else ""
-        )
+        # Suppression reasons must stay within the five canonical codes. Both the
+        # small-cell and no-observed-pattern cases are volume-driven.
+        record["suppression_reason"] = "INSUFFICIENT_VOLUME" if suppressed else ""
         record["blocked_claims"] = "ROI calculation;causal impact;productivity lift;workforce assessment;comparative group evaluation;raw content inspection"
     return records
 

@@ -299,15 +299,33 @@ def test_semantic_fixture_attributes_verification_via_run_id_when_session_differ
     assert payloads["workflow:CHAT"]["quality_signals"]["verification_rate"] == 1
 
 
-def test_transformer_sql_attributes_verification_on_any_shared_key():
+def test_semantic_fixture_does_not_alias_verification_across_same_session_surfaces():
+    # Two workflow runs share one session. A feedback event for only run-1
+    # carries that shared session token plus run-1's precise run id. Precise
+    # keys must win, so only run-1's surface is verified -- attributing through
+    # the session alias would wrongly mark both runs verified.
+    payloads = payloads_by_workflow([
+        workflow_run(feature="CHAT", root_workflow_id="chat-1", run_id="run-1", session_token="sess-A"),
+        workflow_run(feature="CHAT", root_workflow_id="chat-2", run_id="run-2", session_token="sess-A", offset_minutes=1),
+        verification_signal("CHAT_FEEDBACK", session_token="sess-A", run_id="run-1", offset_minutes=2),
+    ])
+
+    assert set(payloads) == {"workflow:CHAT"}
+    assert payloads["workflow:CHAT"]["quality_signals"]["verification_rate"] == 0.5
+
+
+def test_transformer_sql_prefers_precise_keys_before_session_aliases():
     transformer = load_transformer_module()
     sql = transformer.VELOCITY_SQL
 
     # Verification attribution must expand candidate keys rather than collapsing
-    # to a single COALESCE'd value, so a citation/feedback event links to its
-    # parent surface on any shared identifier.
+    # to a single COALESCE'd value, but it must prefer precise run/workflow keys
+    # and only fall back to broad session/tracking aliases when no precise key
+    # is present, so a feedback event cannot verify every same-session surface.
     assert "COALESCE(workflow_run_id, session_token, tracking_token) AS attribution_join_key" not in sql
-    assert "UNNEST([workflow_run_id, root_workflow_id, session_token, tracking_token])" in sql
+    assert "workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL" in sql
+    assert "[workflow_run_id, root_workflow_id, tracking_token]" in sql
+    assert "[session_token]" in sql
 
 
 def test_semantic_fixture_ignores_non_surface_telemetry_when_alone():

@@ -77,7 +77,7 @@ def test_small_cell_volume_suppresses_every_recommendation():
     suppressed_states = {"HOLD_SMALL_CELL_SUPPRESSED", "NO_OBSERVED_PATTERN"}
     assert all(row["verdict"] == "SUPPRESS" for row in rows)
     assert all(row["recommendation_readiness"] in suppressed_states for row in rows)
-    assert all(row["suppression_reason"] == row["recommendation_readiness"] for row in rows)
+    assert all(row["suppression_reason"] == "INSUFFICIENT_VOLUME" for row in rows)
 
 
 def test_curated_held_states_survive_when_gates_pass():

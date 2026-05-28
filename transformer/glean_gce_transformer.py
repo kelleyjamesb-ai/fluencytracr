@@ -237,7 +237,13 @@ verification_signals AS (
     attribution_join_key,
     event_type AS verification_event_type
   FROM source_events,
-    UNNEST([workflow_run_id, root_workflow_id, session_token, tracking_token]) AS attribution_join_key
+    UNNEST(
+      IF(
+        workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL,
+        [workflow_run_id, root_workflow_id, tracking_token],
+        [session_token]
+      )
+    ) AS attribution_join_key
   WHERE event_type IN (
       'CHAT_CITATION_CLICK',
       'CHAT_CITATIONS',
@@ -627,12 +633,22 @@ def aggregate_gce_rows_to_payloads(
     for event in events:
         if event["event_type"] not in verification_events or event["user_key"] is None:
             continue
-        candidate_keys = {
-            event["workflow_run_id"],
-            event["root_workflow_id"],
-            event["session_token"],
-            event["tracking_token"],
-        }
+        # Prefer precise run/workflow keys (the run id arrives as tracking_token
+        # for citation/feedback events). Only fall back to the broad session
+        # alias when no precise key is present, so a feedback event for one run
+        # does not verify every same-session surface.
+        if (
+            event["workflow_run_id"] is not None
+            or event["root_workflow_id"] is not None
+            or event["tracking_token"] is not None
+        ):
+            candidate_keys = {
+                event["workflow_run_id"],
+                event["root_workflow_id"],
+                event["tracking_token"],
+            }
+        else:
+            candidate_keys = {event["session_token"]}
         for attribution_key in candidate_keys:
             if attribution_key is None:
                 continue
