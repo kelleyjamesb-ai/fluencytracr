@@ -1,10 +1,41 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
-import {
-  Presentation,
-  PresentationFile,
-} from "/Users/jkelley/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/@oai/artifact-tool/dist/artifact_tool.mjs";
+import { pathToFileURL } from "node:url";
+
+async function loadArtifactTool() {
+  const candidates = [
+    process.env.ARTIFACT_TOOL_MODULE,
+    "@oai/artifact-tool/dist/artifact_tool.mjs",
+    path.join(
+      os.homedir(),
+      ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/@oai/artifact-tool/dist/artifact_tool.mjs",
+    ),
+  ].filter(Boolean);
+
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      const specifier = candidate.startsWith(".") || candidate.startsWith("/")
+        ? pathToFileURL(path.resolve(candidate)).href
+        : candidate;
+      return await import(specifier);
+    } catch (error) {
+      errors.push(`${candidate}: ${error.message}`);
+    }
+  }
+
+  throw new Error(
+    [
+      "Unable to load @oai/artifact-tool.",
+      "Install it in the local Node environment or set ARTIFACT_TOOL_MODULE to artifact_tool.mjs.",
+      ...errors.map((error) => `- ${error}`),
+    ].join("\n"),
+  );
+}
+
+const { Presentation, PresentationFile } = await loadArtifactTool();
 
 const ROOT = process.cwd();
 const OUT_DIR = path.join(ROOT, "output/internal-pilot-packet-2026-05-28");

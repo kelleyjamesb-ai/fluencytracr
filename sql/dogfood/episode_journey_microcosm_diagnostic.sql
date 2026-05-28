@@ -337,42 +337,44 @@ SELECT
 FROM sampled_events
 GROUP BY window_id, user_key, surface_id;
 
+CREATE TEMP TABLE per_user_surface_repeat_counts AS
+SELECT
+  window_id,
+  user_key,
+  COUNTIF(surface_events >= 2) AS repeated_surface_count,
+  COUNTIF(surface_events >= 3) AS heavily_repeated_surface_count
+FROM per_user_surface_repeat
+GROUP BY window_id, user_key;
+
+CREATE TEMP TABLE per_user_post_friction_counts AS
+SELECT
+  base.window_id,
+  base.user_key,
+  COUNTIF(event.event_ts > base.first_friction_ts AND event.has_continuation_or_resolution) AS post_friction_continuation_events,
+  COUNTIF(event.event_ts > base.first_friction_ts AND (event.has_action_success OR event.has_agent_completion)) AS post_friction_success_events
+FROM per_user_window_base AS base
+LEFT JOIN sampled_events AS event
+  ON event.window_id = base.window_id
+ AND event.user_key = base.user_key
+GROUP BY base.window_id, base.user_key;
+
 CREATE TEMP TABLE per_user_window AS
 SELECT
   base.*,
-  COUNTIF(surface.surface_events >= 2) AS repeated_surface_count,
-  COUNTIF(surface.surface_events >= 3) AS heavily_repeated_surface_count,
-  COUNTIF(event.event_ts > base.first_friction_ts AND event.has_continuation_or_resolution) AS post_friction_continuation_events,
-  COUNTIF(event.event_ts > base.first_friction_ts AND (event.has_action_success OR event.has_agent_completion)) AS post_friction_success_events,
+  COALESCE(surface.repeated_surface_count, 0) AS repeated_surface_count,
+  COALESCE(surface.heavily_repeated_surface_count, 0) AS heavily_repeated_surface_count,
+  COALESCE(friction.post_friction_continuation_events, 0) AS post_friction_continuation_events,
+  COALESCE(friction.post_friction_success_events, 0) AS post_friction_success_events,
   SAFE_DIVIDE(base.total_events, NULLIF(base.active_days, 0)) AS frequency_runs_per_active_day,
   base.active_days AS engagement_active_days,
   base.distinct_surfaces AS breadth_distinct_surfaces
 FROM per_user_window_base AS base
-LEFT JOIN per_user_surface_repeat AS surface
+LEFT JOIN per_user_surface_repeat_counts AS surface
   ON surface.window_id = base.window_id
  AND surface.user_key = base.user_key
-LEFT JOIN sampled_events AS event
-  ON event.window_id = base.window_id
- AND event.user_key = base.user_key
-GROUP BY
-  base.window_id,
-  base.window_index,
-  base.user_key,
-  base.total_events,
-  base.ai_activity_events,
-  base.active_days,
-  base.distinct_surfaces,
-  base.feedback_events,
-  base.citation_click_events,
-  base.citation_available_events,
-  base.terminal_success_events,
-  base.friction_events,
-  base.explicit_abandon_events,
-  base.llm_call_events,
-  base.skill_use_events,
-  base.agent_events,
-  base.first_friction_ts,
-  base.journey_motif;
+LEFT JOIN per_user_post_friction_counts AS friction
+  ON friction.window_id = base.window_id
+ AND friction.user_key = base.user_key;
 
 CREATE TEMP TABLE scored_user_windows AS
 SELECT
