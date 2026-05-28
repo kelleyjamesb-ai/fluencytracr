@@ -17,6 +17,70 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_VERSION = "FT_AI_MANAGER_OUTCOMES_RECOMMENDATIONS_2026_05_DOCS_ONLY"
 
+# Falsifiable gate thresholds. These let a recommendation be withheld or
+# downgraded based on the data, instead of always emitting the same held state.
+# MIN_PATTERN_VOLUME mirrors the small-cell discipline used elsewhere: a pattern
+# with too little aggregate volume cannot anchor a recommendation.
+MIN_PATTERN_VOLUME = 50
+# A trust-dependent recommendation can only treat trust as usable evidence when
+# the majority of trust signals are actually attributed to a parent surface.
+# With the current pilot, ~53% of signals are stranded in the cross-surface
+# aliasing bucket (0 attributed), so attributed share sits at ~0.11 and the gate
+# fails -> the recommendation is held for trust attribution. Once the verifier
+# join recovers the aliased signals, attributed share crosses this floor and the
+# same record advances on its own.
+TRUST_ATTRIBUTION_MAJORITY = 0.5
+
+
+def trust_attribution_share(summary: dict) -> float:
+    trust = summary.get("trust_summary", {})
+    total = sum(float(v.get("signals", 0)) for v in trust.values())
+    attributed = sum(float(v.get("attributed", 0)) for v in trust.values())
+    return attributed / total if total else 0.0
+
+
+def evaluate_record(record: dict[str, str], trust_share: float) -> None:
+    """Derive readiness, the gate summary, and the quality-gate result from data.
+
+    Mutates the record in place. Precedence is most-conservative-first so a
+    failing gate always wins over the curated held state.
+    """
+    volume = int(record["evidence_count"])
+    requires_trust = record.pop("_requires_trust_attribution", False)
+    base_readiness = record.pop("_base_readiness")
+    base_quality_gate = record.pop("_base_quality_gate")
+
+    gates = {
+        "pattern_fit": "PASS" if volume > 0 else "FAIL",
+        "outcome_fit": "PASS",
+        "source_plausibility": "PASS",
+        "aggregate_safety": "PASS" if volume >= MIN_PATTERN_VOLUME else "FAIL",
+        "formula_clarity": "PASS",
+        "confounder_awareness": "PASS",
+        "governance_safety": "PASS",
+    }
+    if requires_trust:
+        gates["trust_attribution"] = (
+            "PASS" if trust_share >= TRUST_ATTRIBUTION_MAJORITY else "FAIL"
+        )
+
+    if gates["pattern_fit"] == "FAIL":
+        readiness = "NO_OBSERVED_PATTERN"
+        quality_gate_result = "BLOCKED_NO_OBSERVED_PATTERN"
+    elif gates["aggregate_safety"] == "FAIL":
+        readiness = "HOLD_SMALL_CELL_SUPPRESSED"
+        quality_gate_result = "BLOCKED_SMALL_CELL"
+    elif gates.get("trust_attribution") == "FAIL":
+        readiness = "TRUST_ATTRIBUTION_HOLD"
+        quality_gate_result = "PASS_RECOMMENDATION_HELD_FOR_TRUST_ATTRIBUTION"
+    else:
+        readiness = base_readiness
+        quality_gate_result = base_quality_gate
+
+    record["recommendation_readiness"] = readiness
+    record["quality_gate_result"] = quality_gate_result
+    record["quality_gates"] = ";".join(f"{name}={result}" for name, result in gates.items())
+
 
 def fmt_int(value: float | int) -> str:
     return f"{int(round(value)):,}"
@@ -56,8 +120,8 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "support_system",
             "formula_family": "cycle_time_delta;friction_rate_delta",
             "formula_template": "baseline median resolution time minus AI-assisted median resolution time; baseline escalation or reopen rate minus AI-assisted escalation or reopen rate",
-            "recommendation_readiness": "OUTCOME_EVIDENCE_MISSING",
-            "quality_gate_result": "PASS_RECOMMENDATION_HELD_FOR_OUTCOME_DATA",
+            "_base_readiness": "OUTCOME_EVIDENCE_MISSING",
+            "_base_quality_gate": "PASS_RECOMMENDATION_HELD_FOR_OUTCOME_DATA",
             "confounders": "support volume mix;staffing changes;channel mix;missing approved behavior-to-outcome attribution",
             "executive_next_action": "Request an aggregate support outcome export for the same window and approved workflow slice.",
             "interpretation_boundary": "Tests whether AI-assisted support work aligns with lower friction; does not prove causality or ROI.",
@@ -73,8 +137,8 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "operations_or_workflow_system;CRM;support_system",
             "formula_family": "throughput_delta;cycle_time_delta;sales_cycle_delta",
             "formula_template": "AI-assisted completed work per period minus baseline completed work per period; baseline median workflow cycle time minus AI-assisted median workflow cycle time",
-            "recommendation_readiness": "OUTCOME_EVIDENCE_MISSING",
-            "quality_gate_result": "PASS_RECOMMENDATION_HELD_FOR_OUTCOME_DATA",
+            "_base_readiness": "OUTCOME_EVIDENCE_MISSING",
+            "_base_quality_gate": "PASS_RECOMMENDATION_HELD_FOR_OUTCOME_DATA",
             "confounders": "workflow mix;volume mix;process change;missing approved workflow-to-outcome join",
             "executive_next_action": "Select the business workflow family first, then request its aggregate completion, cycle-time, or stage-movement metric.",
             "interpretation_boundary": "Tests capacity or movement in an approved workflow; does not calculate productivity or economic value.",
@@ -90,8 +154,9 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "QA_or_review_system;support_system;governance_or_audit_system",
             "formula_family": "quality_rate_delta;exception_rate_delta;trust_coverage_share",
             "formula_template": "baseline defect, reopen, correction, or QA-fail rate minus AI-assisted defect, reopen, correction, or QA-fail rate",
-            "recommendation_readiness": "TRUST_ATTRIBUTION_HOLD",
-            "quality_gate_result": "PASS_RECOMMENDATION_HELD_FOR_TRUST_ATTRIBUTION",
+            "_base_readiness": "OUTCOME_EVIDENCE_MISSING",
+            "_base_quality_gate": "PASS_RECOMMENDATION_HELD_FOR_OUTCOME_DATA",
+            "_requires_trust_attribution": True,
             "confounders": "review policy changes;quality rubric changes;low verification volume;parent attribution gaps",
             "executive_next_action": "Repair parent trust attribution before using quality or risk outcome signals in a value test.",
             "interpretation_boundary": "Identifies a quality/risk test candidate; does not infer trust from citation clicks or missing citation behavior.",
@@ -107,8 +172,8 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "customer_selected_system_of_record",
             "formula_family": "customer_selected_delta",
             "formula_template": "customer-owned baseline aggregate KPI minus or compared with AI-assisted aggregate KPI for the same approved slice",
-            "recommendation_readiness": "FORMULA_REVIEW_REQUIRED",
-            "quality_gate_result": "PASS_RECOMMENDATION_REQUIRES_BUSINESS_OWNER_FORMULA_SELECTION",
+            "_base_readiness": "FORMULA_REVIEW_REQUIRED",
+            "_base_quality_gate": "PASS_RECOMMENDATION_REQUIRES_BUSINESS_OWNER_FORMULA_SELECTION",
             "confounders": "business context unknown;metric definition unknown;missing customer-owned assumption ledger",
             "executive_next_action": "Ask the business owner which value route the scale-candidate workflow should test first.",
             "interpretation_boundary": "A scale candidate supports choosing an outcome test; it does not determine the economic formula by itself.",
@@ -124,8 +189,8 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "AI_telemetry_source;QA_or_review_system;governance_system",
             "formula_family": "trust_coverage_share",
             "formula_template": "verified, approved, corrected, recovered, or feedback-attached episodes divided by interpretable AI work episodes",
-            "recommendation_readiness": "SOURCE_COVERAGE_HOLD",
-            "quality_gate_result": "PASS_RECOMMENDATION_HELD_FOR_SOURCE_COVERAGE",
+            "_base_readiness": "SOURCE_COVERAGE_HOLD",
+            "_base_quality_gate": "PASS_RECOMMENDATION_HELD_FOR_SOURCE_COVERAGE",
             "confounders": "ambiguous parent boundary;missing downstream evidence;incomplete verification capture",
             "executive_next_action": "Treat as proof-loop repair before economic testing.",
             "interpretation_boundary": "Recommends trust evidence repair; does not test cost or revenue value yet.",
@@ -141,8 +206,8 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "operations_or_workflow_system",
             "formula_family": "workflow_completion_context",
             "formula_template": "first attach assistive surface activity to an approved workflow completion or cycle-time metric",
-            "recommendation_readiness": "RESEARCH_ONLY",
-            "quality_gate_result": "HELD_PATTERN_TOO_BROAD_FOR_VALUE_ROUTE",
+            "_base_readiness": "RESEARCH_ONLY",
+            "_base_quality_gate": "HELD_PATTERN_TOO_BROAD_FOR_VALUE_ROUTE",
             "confounders": "surface volume can reflect navigation or light assistance rather than work completion",
             "executive_next_action": "Use volume as source coverage context, not as a value recommendation until workflow evidence is attached.",
             "interpretation_boundary": "Broad AI presence is useful context but not enough for an economic test.",
@@ -158,23 +223,30 @@ def recommendation_records(summary: dict) -> list[dict[str, str]]:
             "recommended_source_types": "AI_telemetry_source",
             "formula_family": "source_coverage_repair",
             "formula_template": "repair source coverage and join completeness before outcome testing",
-            "recommendation_readiness": "SOURCE_COVERAGE_HOLD",
-            "quality_gate_result": "HELD_SOURCE_LINKAGE_TOO_WEAK",
+            "_base_readiness": "SOURCE_COVERAGE_HOLD",
+            "_base_quality_gate": "HELD_SOURCE_LINKAGE_TOO_WEAK",
             "confounders": "overlapping keys;ambiguous boundary;missing metadata",
             "executive_next_action": "Fix source coverage before asking for customer outcome data.",
             "interpretation_boundary": "This is an instrumentation recommendation, not a value test.",
         },
     ]
 
+    trust_share = trust_attribution_share(summary)
     for record in records:
+        evaluate_record(record, trust_share)
+        suppressed = record["recommendation_readiness"] in {
+            "NO_OBSERVED_PATTERN",
+            "HOLD_SMALL_CELL_SUPPRESSED",
+        }
         record["schema_version"] = SCHEMA_VERSION
         record["readout_type"] = "AI_MANAGER_OUTCOMES_RECOMMENDATIONS"
         record["window_id"] = "internal_pilot_2026_05_28"
         record["cohort_key"] = "aggregate_internal_pilot"
-        record["verdict"] = "SURFACE"
-        record["suppression_reason"] = ""
+        record["verdict"] = "SUPPRESS" if suppressed else "SURFACE"
+        record["suppression_reason"] = (
+            record["recommendation_readiness"] if suppressed else ""
+        )
         record["blocked_claims"] = "ROI calculation;causal impact;productivity lift;workforce assessment;comparative group evaluation;raw content inspection"
-        record["quality_gates"] = "pattern_fit=PASS;outcome_fit=PASS;source_plausibility=PASS;aggregate_safety=PASS;formula_clarity=PASS;confounder_awareness=PASS;governance_safety=PASS"
     return records
 
 
@@ -202,6 +274,21 @@ def write_markdown(path: Path, summary: dict, rows: list[dict[str, str]]) -> Non
     for row in rows:
         ready_counts[row["recommendation_readiness"]] = ready_counts.get(row["recommendation_readiness"], 0) + 1
 
+    surfaced = [row for row in rows if row["verdict"] == "SURFACE"]
+    if not surfaced:
+        test_result = "FAIL_NO_RECOMMENDATION_SURFACED"
+        test_result_note = "No observed pattern cleared the volume and trust gates, so the layer produced no surfaced recommendation on this data."
+    else:
+        test_result = "PASS_AS_RECOMMENDATION_LAYER_HELD_FOR_OUTCOME_EVIDENCE"
+        test_result_note = (
+            "The model holds as a FluencyTracr output because the existing data produces "
+            "specific next-data recommendations and formula templates. It does not yet hold "
+            "as an economic outcome proof because customer-owned outcome metrics, assumptions, "
+            "and approved behavior-to-outcome joins are missing or held. Readiness and gate "
+            "results above are derived from the pilot data, so a different input can withhold, "
+            "suppress, or advance any record."
+        )
+
     lines = [
         "# AI Manager Outcomes Recommendations Test Readout",
         "",
@@ -213,9 +300,9 @@ def write_markdown(path: Path, summary: dict, rows: list[dict[str, str]]) -> Non
         "",
         "## Test Result",
         "",
-        "`PASS_AS_RECOMMENDATION_LAYER_HELD_FOR_OUTCOME_EVIDENCE`",
+        f"`{test_result}`",
         "",
-        "The model holds as a FluencyTracr output because the existing data produces specific next-data recommendations and formula templates. It does not yet hold as an economic outcome proof because customer-owned outcome metrics, assumptions, and approved behavior-to-outcome joins are missing or held.",
+        test_result_note,
         "",
         "## What The Existing Data Supports",
         "",
@@ -249,6 +336,8 @@ def write_markdown(path: Path, summary: dict, rows: list[dict[str, str]]) -> Non
         "FORMULA_REVIEW_REQUIRED": "Business owner must choose the value route and formula family.",
         "SOURCE_COVERAGE_HOLD": "Source coverage or linkage must be repaired before outcome testing.",
         "RESEARCH_ONLY": "Pattern is useful context but too broad for a value route.",
+        "HOLD_SMALL_CELL_SUPPRESSED": "Aggregate volume is below the small-cell floor; suppressed.",
+        "NO_OBSERVED_PATTERN": "No observed pattern, so no recommendation can be made.",
     }
     for readiness, count in sorted(ready_counts.items()):
         lines.append(f"| {readiness} | {count} | {meanings.get(readiness, '')} |")

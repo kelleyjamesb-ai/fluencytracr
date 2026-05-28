@@ -285,6 +285,31 @@ def test_semantic_fixture_attributes_verification_without_creating_surface_volum
     assert payloads["workflow:CHAT"]["velocity"]["frequency"]["p50"] == 1
 
 
+def test_semantic_fixture_attributes_verification_via_run_id_when_session_differs():
+    # Feedback often arrives in a later session but still references the original
+    # run id. The verification event therefore shares the surface's run id
+    # (tracking_token) while carrying a different session token. Attribution must
+    # match on any shared identifier, not only the first non-null key.
+    payloads = payloads_by_workflow([
+        workflow_run(feature="CHAT", root_workflow_id="chat", run_id="run-1", session_token="sess-A"),
+        verification_signal("CHAT_FEEDBACK", session_token="sess-B", run_id="run-1", offset_minutes=2),
+    ])
+
+    assert set(payloads) == {"workflow:CHAT"}
+    assert payloads["workflow:CHAT"]["quality_signals"]["verification_rate"] == 1
+
+
+def test_transformer_sql_attributes_verification_on_any_shared_key():
+    transformer = load_transformer_module()
+    sql = transformer.VELOCITY_SQL
+
+    # Verification attribution must expand candidate keys rather than collapsing
+    # to a single COALESCE'd value, so a citation/feedback event links to its
+    # parent surface on any shared identifier.
+    assert "COALESCE(workflow_run_id, session_token, tracking_token) AS attribution_join_key" not in sql
+    assert "UNNEST([workflow_run_id, root_workflow_id, session_token, tracking_token])" in sql
+
+
 def test_semantic_fixture_ignores_non_surface_telemetry_when_alone():
     payloads = payloads_by_workflow([
         product_snapshot(workflow_id="snapshot-only", is_autonomous=True),

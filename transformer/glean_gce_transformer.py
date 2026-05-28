@@ -234,9 +234,10 @@ surface_join_aliases AS (
 verification_signals AS (
   SELECT
     user_key,
-    COALESCE(workflow_run_id, session_token, tracking_token) AS attribution_join_key,
+    attribution_join_key,
     event_type AS verification_event_type
-  FROM source_events
+  FROM source_events,
+    UNNEST([workflow_run_id, root_workflow_id, session_token, tracking_token]) AS attribution_join_key
   WHERE event_type IN (
       'CHAT_CITATION_CLICK',
       'CHAT_CITATIONS',
@@ -245,7 +246,7 @@ verification_signals AS (
       'SEARCH_FEEDBACK',
       'CHAT_FEEDBACK'
     )
-    AND COALESCE(workflow_run_id, session_token, tracking_token) IS NOT NULL
+    AND attribution_join_key IS NOT NULL
 ),
 
 surface_verification AS (
@@ -626,11 +627,17 @@ def aggregate_gce_rows_to_payloads(
     for event in events:
         if event["event_type"] not in verification_events or event["user_key"] is None:
             continue
-        attribution_key = event["workflow_run_id"] or event["session_token"] or event["tracking_token"]
-        if attribution_key is None:
-            continue
-        for surface in aliases.get((event["user_key"], attribution_key), []):
-            verified_surface_keys.setdefault(surface["workflow_id"], set()).add(surface["surface_join_key"])
+        candidate_keys = {
+            event["workflow_run_id"],
+            event["root_workflow_id"],
+            event["session_token"],
+            event["tracking_token"],
+        }
+        for attribution_key in candidate_keys:
+            if attribution_key is None:
+                continue
+            for surface in aliases.get((event["user_key"], attribution_key), []):
+                verified_surface_keys.setdefault(surface["workflow_id"], set()).add(surface["surface_join_key"])
 
     rows_for_payload: list[dict[str, Any]] = []
     workflow_ids = sorted({surface["workflow_id"] for surface in surfaces})
