@@ -18,6 +18,7 @@ V4 may support:
 - AI Value Leakage Map,
 - AI Scale Readiness Portfolio,
 - Internal Scale Readiness Readout,
+- AI Manager Outcomes Recommendations,
 - Trust Calibration Index.
 
 Each readout is aggregate-only, caveated, and fail-closed.
@@ -26,7 +27,8 @@ The next V4 planning concepts are:
 
 - [AI Scale Readiness Portfolio](../../concepts/AI_SCALE_READINESS_PORTFOLIO.md),
 - [Organizational Segmentation](../../concepts/ORG_SEGMENTATION.md),
-- [Economic Impact Bridge](../../concepts/ECONOMIC_IMPACT_BRIDGE.md).
+- [Economic Impact Bridge](../../concepts/ECONOMIC_IMPACT_BRIDGE.md),
+- [AI Manager Outcomes Recommendations](../../concepts/AI_MANAGER_OUTCOMES_RECOMMENDATIONS.md).
 
 They are concept-stage only. The current Glean dogfood decision records
 `PROMOTE_AI_SCALE_READINESS_WITH_DEPTH_REPERTOIRE_CONTEXT`, which authorizes
@@ -36,6 +38,14 @@ The current canonical contract decision records
 `PROMOTE_INTERNAL_READOUT_CONTRACT_HARDENING`, which authorizes
 [Internal Scale Readiness Readout](./internal-scale-readiness-readout.md)
 contract hardening for internal readout shape only.
+
+[AI Manager Outcomes Recommendations](./ai-manager-outcomes-recommendations.md)
+is a docs-only recommendation contract for internal pilot language, examples,
+and checklists. It recommends customer-owned outcome signals and aggregate
+formula templates to test value hypotheses. It does not authorize runtime
+schemas, APIs, automated recommendation engines, formula execution, outcome
+joins, customer-facing economic output, ROI, productivity, causality,
+prediction, HR analytics, or ranking surfaces.
 
 ## Inputs
 

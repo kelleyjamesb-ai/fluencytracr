@@ -50,7 +50,7 @@ Build the external-facing executive rehearsal deck/report from this packet, then
 - **Trust evidence:** Aggregate signs that people verified, continued, corrected, recovered, or gave feedback after AI assistance.
 - **Trust attribution:** Whether a trust signal can be attached to a workflow path with enough confidence to interpret it.
 - **Evidence gap:** A place where activity exists but the supporting source coverage, attribution, or downstream context is not strong enough to interpret.
-- **Motif tier:** A plain-language bucket that separates raw activity from stronger workflow, verification, or source-coverage evidence.
+- **AI work pattern tier:** A plain-language bucket that separates raw AI activity from stronger workflow, verification, or source-coverage evidence.
 - **Value-readiness zone:** An executive action lane that says what to do next, such as scale, redesign, repair trust loops, or hold interpretation.
 - **Outcome evidence:** Customer-owned aggregate business context, such as a KPI window, that can be attached later without claiming causality by default.
 - **Value hypothesis:** A testable idea about where AI may create value, such as acceleration, quality premium, or net-new work. It is not ROI proof.

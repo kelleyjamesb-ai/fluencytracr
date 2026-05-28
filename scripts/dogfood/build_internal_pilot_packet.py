@@ -76,8 +76,8 @@ GLOSSARY = [
         "A place where activity exists but the supporting source coverage, attribution, or downstream context is not strong enough to interpret.",
     ),
     (
-        "Motif tier",
-        "A plain-language bucket that separates raw activity from stronger workflow, verification, or source-coverage evidence.",
+        "AI work pattern tier",
+        "A plain-language bucket that separates raw AI activity from stronger workflow, verification, or source-coverage evidence.",
     ),
     (
         "Value-readiness zone",
@@ -98,6 +98,69 @@ GLOSSARY = [
     (
         "Suppressed",
         "A fail-closed result where FluencyTracr withholds interpretation because the governed evidence bar is not met.",
+    ),
+]
+
+AI_SERVICE_WORKFLOW_FAMILIES = {
+    "HIGH_VOLUME_ASSISTIVE_SURFACE": "Assistive search or answer surface",
+    "POST_FRICTION_CONTINUATION": "Search-to-agent workflow",
+    "EXECUTION_LINKED_WORKFLOW": "Agent or action execution workflow",
+    "SEARCH_TO_AGENT_ESCALATION": "Search-to-agent workflow",
+    "WEAK_LINKAGE_CONTEXT": "Source-linkage or boundary repair",
+    "VERIFICATION_ATTACHED_WORKFLOW": "Verification or feedback-attached workflow",
+    "OTHER_LINKED_CONTEXT": "Residual linked context",
+}
+
+PATTERN_INTERPRETATIONS = {
+    "HIGH_VOLUME_ASSISTIVE_SURFACE": "Reach and surface coverage; weak workflow evidence by itself.",
+    "POST_FRICTION_CONTINUATION": "Recovery-like evidence: work continues after friction without claiming intent.",
+    "EXECUTION_LINKED_WORKFLOW": "AI is attached to actual workflow execution.",
+    "SEARCH_TO_AGENT_ESCALATION": "Navigation from search into agent context; not outcome evidence yet.",
+    "WEAK_LINKAGE_CONTEXT": "Source-coverage caveat lane.",
+    "VERIFICATION_ATTACHED_WORKFLOW": "Strongest trust-adjacent workflow lane.",
+    "OTHER_LINKED_CONTEXT": "Residual linked context.",
+}
+
+RECOMMENDATION_ENGINE_ROWS = [
+    (
+        "Support friction value test",
+        "Search-to-agent workflow",
+        "Search-to-agent escalation plus post-friction continuation",
+        "Resolution time, escalation rate, reopen rate, backlog movement, CSAT",
+        "Cost, experience, quality",
+        "Outcome evidence missing",
+    ),
+    (
+        "Workflow execution capacity test",
+        "Agent or action execution workflow",
+        "Execution-linked workflow",
+        "Completed work volume, cycle time, backlog movement, stage progression",
+        "Capacity, cost, revenue",
+        "Outcome evidence missing",
+    ),
+    (
+        "Verification quality and risk test",
+        "Verification or feedback-attached workflow",
+        "Verification-attached workflow",
+        "QA pass rate, defect rate, correction rate, reopen rate, approval coverage",
+        "Quality, risk",
+        "Trust attribution hold",
+    ),
+    (
+        "Proof-loop repair agenda",
+        "Trust-evidence repair workflow",
+        "Trust evidence gap",
+        "Verification coverage, feedback-loop coverage, unresolved trust-gap rate",
+        "Risk, quality",
+        "Source coverage hold",
+    ),
+    (
+        "Source-linkage repair",
+        "Source-linkage or boundary repair",
+        "Weak linkage context",
+        "Source coverage, join completeness, metadata completeness",
+        "Instrumentation",
+        "Source coverage hold",
     ),
 ]
 
@@ -342,6 +405,11 @@ def write_markdown(summary: dict, out_dir: Path) -> None:
     motif_total = sum(summary["motif_totals"].values())
     zone = summary["zone_summary"]
     trust_gap = summary["trust_gap"]
+    search_agent = summary["motif_totals"].get("SEARCH_TO_AGENT_ESCALATION", 0)
+    post_friction = summary["motif_totals"].get("POST_FRICTION_CONTINUATION", 0)
+    execution = summary["motif_totals"].get("EXECUTION_LINKED_WORKFLOW", 0)
+    verification = summary["motif_totals"].get("VERIFICATION_ATTACHED_WORKFLOW", 0)
+    high_volume = summary["motif_totals"].get("HIGH_VOLUME_ASSISTIVE_SURFACE", 0)
     lines = [
         "# FluencyTracr Internal Pilot Packet",
         "",
@@ -351,28 +419,63 @@ def write_markdown(summary: dict, out_dir: Path) -> None:
         "",
         "This packet uses company-owned aggregate dogfood exports and a fresh BigQuery run. It is designed to show what FluencyTracr can deliver without asking a client for additional inputs at the start of a pilot.",
         "",
-        "## Executive Readout",
+        "## Executive Summary",
         "",
-        "FluencyTracr can already produce a meaningful aggregate AI work evidence package from observed telemetry. The strongest current value is not ROI calculation; it is separating activity volume from workflow evidence, trust evidence, source coverage, and value-investigation readiness.",
+        "FluencyTracr can already produce a meaningful aggregate AI work evidence package from observed telemetry. The strongest current value is not ROI calculation; it is a governed recommendation engine that separates activity volume from workflow evidence, trust evidence, source coverage, and value-investigation readiness.",
         "",
-        "The internal data shows three distinct realities:",
+        "Top findings:",
         "",
-        "- AI is broadly present through high-volume assistive surfaces.",
-        "- A smaller but more valuable lane shows AI attached to workflow execution, post-friction continuation, and verification evidence.",
-        "- The largest commercialization blocker is not lack of activity; it is missing or weak downstream evidence that would connect behavior to business outcomes.",
+        f"- AI is broadly present: {fmt_int(high_volume)} high-volume assistive work patterns show reach and surface coverage.",
+        f"- Workflow-grade evidence exists but is smaller: {fmt_int(search_agent + post_friction + execution + verification)} aggregate patterns show search-to-agent movement, post-friction continuation, execution-linked workflow, or verification-attached workflow.",
+        f"- The strongest immediate value test is support friction: {fmt_int(search_agent + post_friction)} aggregate patterns combine search-to-agent escalation with post-friction continuation.",
+        f"- The biggest trust/product gap remains evidence quality: {fmt_int(trust_gap['public_gap_episodes'])} aggregate product episodes sit in the public evidence gap.",
+        "- The current blocker is not telemetry volume; it is governed outcome evidence, attribution, and customer-owned assumptions.",
         "",
-        "## Fresh Data Run",
+        "## Executive Outcomes And Strategies",
         "",
-        f"- BigQuery job: `{summary['fresh_job']['job_id']}`",
-        f"- Duration: `{summary['fresh_job']['duration']}`",
-        f"- Bytes processed: `{fmt_int(summary['fresh_job']['bytes_processed'])}`",
-        f"- Source: {summary['fresh_job']['source']}",
+        "| Outcome | What it means | Strategy |",
+        "| --- | --- | --- |",
+        "| Evidence layer is viable | Existing aggregate telemetry can produce a structured AI Work Evidence packet. | Sell the pilot as evidence readiness and recommendation routing, not as ROI proof. |",
+        "| Workflow evidence is differentiated | FluencyTracr can distinguish broad AI use from execution-linked, verification-linked, and recovery-like work paths. | Lead with workflow/service families rather than adoption volume. |",
+        "| Trust remains the proof-loop problem | Verification and continuation exist, but attribution gaps are still material. | Make trust-loop repair a strategic workstream before quality/risk claims. |",
+        "| Outcome data should be requested selectively | The recommendation engine can name the smallest next outcome data needed. | Ask for support, CRM, QA, or workflow metrics only when the observed pattern justifies it. |",
+        "| ROI remains blocked | No governed outcome join or assumption ledger is present in this packet. | Provide formulas for customer testing, not dollarized claims. |",
         "",
-        "### Microcosm Framework Results",
+        "## Recommendation Engine Design",
         "",
-        "| Window | Sampled aggregate windows | Frequency | Engagement | Breadth | Reliability | Quality multiplier |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "Yes: this packet now contains a docs-only recommendation engine shape based on the FluencyTracr frameworks. It consumes aggregate AI Work Evidence, AI-service workflow families, Velocity x Depth context, behavioral primitives, trust/source coverage, and value-readiness zones. It emits recommended customer-owned outcome signals, formula families, readiness states, caveats, and blocked claims.",
+        "",
+        "It is not a runtime engine yet. It does not add APIs, schemas, canonical events, suppression reasons, scores, ROI calculation, causality claims, productivity claims, or people/team ranking.",
+        "",
+        "| Recommendation | AI-service workflow family | Observed pattern | Outcome data to request | Value route | Current readiness |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
+    for row in RECOMMENDATION_ENGINE_ROWS:
+        lines.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} |")
+    lines.extend(
+        [
+            "",
+            "## Recommended Executive Strategy",
+            "",
+            "1. Start the client pilot with the AI Work Evidence packet, not an ROI promise.",
+            "2. Use the recommendation engine to identify which outcome system should be connected next.",
+            "3. Prioritize a support friction value test if the client has support outcomes available.",
+            "4. Treat high-volume assistive use as reach, not value, until workflow completion evidence is attached.",
+            "5. Keep trust evidence repair explicit before using quality, risk, or reliability language externally.",
+            "",
+            "## Appendix A: Fresh Data Run",
+            "",
+            f"- BigQuery job: `{summary['fresh_job']['job_id']}`",
+            f"- Duration: `{summary['fresh_job']['duration']}`",
+            f"- Bytes processed: `{fmt_int(summary['fresh_job']['bytes_processed'])}`",
+            f"- Source: {summary['fresh_job']['source']}",
+            "",
+            "### Microcosm Framework Results",
+            "",
+            "| Window | Sampled aggregate windows | Frequency | Engagement | Breadth | Reliability | Quality multiplier |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
     for row in summary["framework"]:
         lines.append(
             f"| {row['window']} | {row['sampled_windows']} | {row['avg_frequency']:.1f} | {row['avg_engagement']:.1f} | {row['avg_breadth']:.1f} | {row['avg_reliability']:.2f} | {row['avg_quality']:.2f} |"
@@ -380,27 +483,18 @@ def write_markdown(summary: dict, out_dir: Path) -> None:
     lines.extend(
         [
             "",
-            "### Motif Tier Distribution",
+            "### AI Work Pattern Distribution",
             "",
-            "| Tier | Aggregate motifs | Share | Interpretation |",
-            "| --- | ---: | ---: | --- |",
+            "| AI-service workflow family | Pattern tier | Aggregate AI work patterns | Share | Interpretation |",
+            "| --- | --- | ---: | ---: | --- |",
         ]
     )
-    interpretations = {
-        "HIGH_VOLUME_ASSISTIVE_SURFACE": "Reach and surface coverage; weak workflow evidence by itself.",
-        "POST_FRICTION_CONTINUATION": "Recovery-like evidence: work continues after friction without claiming intent.",
-        "EXECUTION_LINKED_WORKFLOW": "AI is attached to actual workflow execution.",
-        "SEARCH_TO_AGENT_ESCALATION": "Navigation from search into agent context; not outcome evidence yet.",
-        "WEAK_LINKAGE_CONTEXT": "Source-coverage caveat lane.",
-        "VERIFICATION_ATTACHED_WORKFLOW": "Strongest trust-adjacent workflow lane.",
-        "OTHER_LINKED_CONTEXT": "Residual linked context.",
-    }
     for tier, count in summary["motif_totals"].items():
-        lines.append(f"| {tier.replace('_', ' ').title()} | {fmt_int(count)} | {fmt_pct(count / motif_total)} | {interpretations.get(tier, '')} |")
+        lines.append(f"| {AI_SERVICE_WORKFLOW_FAMILIES.get(tier, 'Other aggregate context')} | {tier.replace('_', ' ').title()} | {fmt_int(count)} | {fmt_pct(count / motif_total)} | {PATTERN_INTERPRETATIONS.get(tier, '')} |")
     lines.extend(
         [
             "",
-            "## Value Realization Readiness",
+            "## Appendix B: Value Realization Readiness",
             "",
             "| Readout zone | Aggregate cohort rows | Signal rows | Attributed signal rows | Executive action |",
             "| --- | ---: | ---: | ---: | --- |",
@@ -418,7 +512,7 @@ def write_markdown(summary: dict, out_dir: Path) -> None:
     lines.extend(
         [
             "",
-            "## Trust And Source Coverage",
+            "## Appendix C: Trust And Source Coverage",
             "",
             f"- Seven-business-day trust pilot: {fmt_int(trust_gap['high_confidence_episodes'])} high-confidence aggregate product episodes.",
             f"- High-confidence coverage: {fmt_pct(trust_gap['high_confidence_episode_share'])}.",
@@ -429,7 +523,7 @@ def write_markdown(summary: dict, out_dir: Path) -> None:
             "",
             "Trust evidence is strongest when verification or continuation attaches to workflow-linked paths. Citation clicks and explicit feedback are useful corroboration, but they are too sparse or too attribution-sensitive to carry the trust story alone.",
             "",
-            "## Outcome And ROI Boundary",
+            "## Appendix D: Outcome And ROI Boundary",
             "",
             "The current company-owned telemetry is strong enough for value-investigation routing, but not for ROI calculation.",
             "",
@@ -441,21 +535,21 @@ def write_markdown(summary: dict, out_dir: Path) -> None:
             "",
             "This should be presented as an evidence-readiness product, not a dollarized ROI product.",
             "",
-            "## Pilot Decision Memo",
+            "## Appendix E: Pilot Decision Memo",
             "",
             "Decision: continue to a customer-facing rehearsal packet, but keep the claim narrow.",
             "",
             "Recommended posture:",
             "",
             "1. Lead with aggregate AI work evidence, not adoption dashboards.",
-            "2. Show motif tiers so executives can distinguish reach, workflow execution, recovery-like continuation, verification, and weak-linkage gaps.",
+            "2. Show AI work pattern tiers so executives can distinguish reach, workflow execution, recovery-like continuation, verification, and weak-linkage gaps.",
             "3. Use Velocity x Depth as the operating map.",
             "4. Use Trust Evidence Gap as the proof-loop repair agenda.",
             "5. Treat ROI as blocked until outcome metrics and assumptions are available inside the governed evidence layer.",
             "",
             "Non-goals: no individual scoring, no team ranking, no manager ranking, no productivity claim, no causality claim, no ROI calculation, no raw prompt or output inspection.",
             "",
-            "## Glossary",
+            "## Appendix F: Glossary",
             "",
         ]
     )
@@ -585,9 +679,9 @@ def build_packet(input_dir: Path, out_dir: Path) -> None:
 
     draw_bar_chart(
         chart_dir / "motif_tier_distribution.png",
-        "Aggregate Motif Tiers",
+        "Aggregate AI Work Patterns",
         summary["motif_totals"],
-        "Fresh 90-day internal microcosm run; aggregate motifs only.",
+        "Fresh 90-day internal microcosm run; aggregate work patterns only.",
     )
     draw_bar_chart(
         chart_dir / "readout_zone_distribution.png",
@@ -606,7 +700,7 @@ def build_packet(input_dir: Path, out_dir: Path) -> None:
         "Data Readiness",
         [
             ("AI surfaces and workflow events", "READY", "Observed in scrubbed GCE events and agent spans."),
-            ("Motif tiers and Velocity x Depth", "READY", "Fresh run plus retained V4 aggregate exports."),
+            ("AI work patterns and Velocity x Depth", "READY", "Fresh run plus retained V4 aggregate exports."),
             ("Trust verification and feedback", "PARTIAL", "Available, but attribution gaps remain material."),
             ("Skill-read evidence", "READY", f"{fmt_pct(summary['skill_read']['parent_join_share'])} of retained skill-read rows have parent join keys."),
             ("Outcome and assumption data", "MISSING", "No governed outcome metric or assumption ledger in saved exports."),

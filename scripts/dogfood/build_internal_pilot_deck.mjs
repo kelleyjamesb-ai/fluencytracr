@@ -75,12 +75,20 @@ const glossary = [
   ["Trust evidence", "Aggregate signs that people verified, continued, corrected, recovered, or gave feedback after AI assistance."],
   ["Trust attribution", "Whether a trust signal can be attached to a workflow path with enough confidence to interpret it."],
   ["Evidence gap", "Activity exists, but source coverage, attribution, or downstream context is too weak to interpret."],
-  ["Motif tier", "A plain-language bucket separating raw activity from stronger workflow, verification, or coverage evidence."],
+  ["AI work pattern tier", "A plain-language bucket separating raw AI activity from stronger workflow, verification, or coverage evidence."],
   ["Value-readiness zone", "An executive action lane: scale, redesign, repair trust loops, or hold interpretation."],
   ["Outcome evidence", "Customer-owned aggregate business context that can be attached later without claiming causality by default."],
   ["Value hypothesis", "A testable idea about possible value, such as acceleration, quality premium, or net-new work; not ROI proof."],
   ["Source coverage", "How complete and unambiguous the available telemetry is for a given aggregate interpretation."],
   ["Suppressed", "A fail-closed result where FluencyTracr withholds interpretation because the evidence bar is not met."],
+];
+
+const recommendationRows = [
+  ["Support friction value test", "Search-to-agent workflow", "Resolution time, escalation rate, reopen rate, backlog movement, CSAT", "Outcome evidence missing"],
+  ["Workflow execution capacity test", "Agent/action execution workflow", "Completed work volume, cycle time, backlog movement, stage progression", "Outcome evidence missing"],
+  ["Verification quality and risk test", "Verification or feedback-attached workflow", "QA pass rate, defect rate, correction rate, approval coverage", "Trust attribution hold"],
+  ["Proof-loop repair agenda", "Trust-evidence repair workflow", "Verification coverage, feedback-loop coverage, unresolved trust-gap rate", "Source coverage hold"],
+  ["Source-linkage repair", "Source-linkage or boundary repair", "Source coverage, join completeness, metadata completeness", "Source coverage hold"],
 ];
 
 function fmtInt(n) {
@@ -168,6 +176,13 @@ function addGlossarySlide(deck, title, terms) {
 
 function createDeck() {
   const deck = Presentation.create();
+  const motif = summary.motif_totals || {};
+  const workflowGradeCount = Number(motif.POST_FRICTION_CONTINUATION || 0)
+    + Number(motif.EXECUTION_LINKED_WORKFLOW || 0)
+    + Number(motif.SEARCH_TO_AGENT_ESCALATION || 0)
+    + Number(motif.VERIFICATION_ATTACHED_WORKFLOW || 0);
+  const supportFrictionCount = Number(motif.POST_FRICTION_CONTINUATION || 0)
+    + Number(motif.SEARCH_TO_AGENT_ESCALATION || 0);
 
   let slide = deck.slides.add({ width: W, height: H });
   addHeader(slide, "INTERNAL PILOT REHEARSAL", "FluencyTracr AI Work Evidence Packet", "A full aggregate run using company-owned telemetry to show what an executive-ready pilot can deliver before ROI claims.");
@@ -183,13 +198,66 @@ function createDeck() {
   addFooter(slide);
 
   slide = deck.slides.add({ width: W, height: H });
+  addHeader(slide, "EXECUTIVE SUMMARY", "What Leaders Should Take Away", "High-level outcomes and strategies come first; detailed evidence sits in the appendix.");
+  const takeaways = [
+    ["1", "Evidence layer is viable", "Existing aggregate telemetry can produce a structured AI Work Evidence packet without starting with client HR, survey, or finance data."],
+    ["2", "The recommendation engine is the product", "FluencyTracr turns observed AI work patterns into the next outcome data, formula family, caveat, and blocked claim."],
+    ["3", "Workflow evidence beats adoption volume", `${fmtInt(workflowGradeCount)} workflow/trust patterns are more executive-useful than broad activity alone.`],
+    ["4", "ROI stays held", "The packet recommends value tests, but does not calculate ROI or claim causality without governed outcomes and assumptions."],
+  ];
+  takeaways.forEach((item, i) => {
+    const y = 220 + i * 140;
+    addShape(slide, { x: 90, y, w: 1420, h: 108, fill: "#F8FAFC", line: C.line, radius: 18 });
+    addShape(slide, { x: 120, y: y + 25, w: 58, h: 58, fill: i === 1 ? C.green : C.blue, line: "none", radius: 29 });
+    addText(slide, item[0], { x: 120, y: y + 34, w: 58, h: 36, size: 27, color: C.white, bold: true, align: "center" });
+    addText(slide, item[1], { x: 205, y: y + 20, w: 430, h: 34, size: 27, color: C.navy, bold: true });
+    addText(slide, item[2], { x: 205, y: y + 59, w: 1240, h: 38, size: 22, color: C.slate });
+  });
+  addFooter(slide);
+
+  slide = deck.slides.add({ width: W, height: H });
+  addHeader(slide, "RECOMMENDATION ENGINE", "From AI Work Evidence to Executive Action", "The engine is framework-driven: observe aggregate patterns, route the value hypothesis, then name the smallest outcome evidence needed next.");
+  const flow = [
+    ["1", "Observe", "Surfaces, workflow keys, behavioral primitives, trust signals, source coverage"],
+    ["2", "Classify", "Velocity x Depth, AI-service workflow family, value-readiness zone"],
+    ["3", "Recommend", "Outcome signal, source family, formula template, caveat, blocked claim"],
+    ["4", "Hold or test", "Proceed only when aggregate outcome evidence and assumptions are governed"],
+  ];
+  flow.forEach((item, i) => {
+    const x = 80 + i * 375;
+    addShape(slide, { x, y: 245, w: 330, h: 205, fill: i === 2 ? "#ECFDF5" : "#F8FAFC", line: i === 2 ? "#86EFAC" : C.line, radius: 20 });
+    addText(slide, item[0], { x: x + 22, y: 268, w: 48, h: 40, size: 32, color: i === 2 ? C.green : C.blue, bold: true });
+    addText(slide, item[1], { x: x + 78, y: 270, w: 220, h: 36, size: 27, color: C.navy, bold: true });
+    addText(slide, item[2], { x: x + 28, y: 330, w: 275, h: 88, size: 21, color: C.slate });
+    if (i < 3) addText(slide, "→", { x: x + 335, y: 320, w: 40, h: 60, size: 42, color: C.blue, bold: true, align: "center" });
+  });
+  addShape(slide, { x: 120, y: 525, w: 1360, h: 160, fill: C.navy, line: C.navy, radius: 24 });
+  addText(slide, "Example output", { x: 160, y: 552, w: 250, h: 32, size: 24, color: C.white, bold: true });
+  addText(slide, `Support friction is the first value test candidate: ${fmtInt(supportFrictionCount)} aggregate patterns combine search-to-agent movement and post-friction continuation. Request resolution time, escalation rate, reopen rate, backlog movement, and CSAT. Do not claim causality or ROI yet.`, {
+    x: 160, y: 598, w: 1260, h: 60, size: 26, color: C.white,
+  });
+  addFooter(slide);
+
+  slide = deck.slides.add({ width: W, height: H });
+  addHeader(slide, "STRATEGIC RECOMMENDATIONS", "Where This Points a Client Next", "Each recommendation names the outcome evidence needed to test value without overclaiming value.");
+  recommendationRows.forEach((row, i) => {
+    const y = 215 + i * 112;
+    addShape(slide, { x: 80, y, w: 1440, h: 84, fill: "#FFFFFF", line: C.line, radius: 16 });
+    addText(slide, row[0], { x: 110, y: y + 14, w: 315, h: 30, size: 21, color: C.navy, bold: true });
+    addText(slide, row[1], { x: 445, y: y + 14, w: 290, h: 30, size: 19, color: C.blue, bold: true });
+    addText(slide, row[2], { x: 755, y: y + 14, w: 500, h: 50, size: 18, color: C.slate });
+    addText(slide, row[3], { x: 1285, y: y + 14, w: 190, h: 42, size: 18, color: row[3].includes("hold") ? C.orange : C.slate, bold: true });
+  });
+  addFooter(slide);
+
+  slide = deck.slides.add({ width: W, height: H });
   addHeader(slide, "WHAT THE RUN OBSERVED", "Observable Variables, Not Client Requirements", "The rehearsal starts from variables already visible in company-owned telemetry, then names gaps as product readiness work.");
   const columns = [
     ["Surfaces", "Search, autocomplete, workflow runs, AI summary, bot activity, MCP, agent spans."],
     ["Workflow keys", "Run/action keys, session tokens, trace/tracking keys, workflow context."],
     ["Behavior primitives", "Frequency, engagement, breadth, iteration/refinement, recovery-like continuation, verification."],
     ["Trust signals", "Feedback, citations, citation clicks, action success, post-friction continuation."],
-    ["Value context", "Velocity x Depth zones, motif tiers, source coverage, outcome-readiness gates."],
+    ["Value context", "Velocity x Depth zones, AI work pattern tiers, source coverage, outcome-readiness gates."],
     ["Held evidence", "Outcome joins, assumption ledger, causality design, monetary range values."],
   ];
   columns.forEach((item, i) => {
@@ -222,7 +290,7 @@ function createDeck() {
   addFooter(slide);
 
   slide = deck.slides.add({ width: W, height: H });
-  addHeader(slide, "MOTIF TIERS", "Activity Is Not the Same as Workflow Evidence", "Tiering prevents high-volume assistive events from drowning out the stronger workflow and trust evidence.");
+  addHeader(slide, "AI WORK PATTERNS", "Activity Is Not the Same as Workflow Evidence", "Work pattern tiers prevent high-volume assistive events from drowning out stronger workflow and trust evidence.");
   slide._pendingImage = ["motif_tier_distribution.png", { x: 70, y: 205, w: 1460, h: 600 }];
   addFooter(slide);
 
