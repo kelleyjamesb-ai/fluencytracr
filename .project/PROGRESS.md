@@ -2,6 +2,15 @@
 
 ## Last Completed
 
+- Episode Journey Microcosm motif-tier diagnostic: extended the aggregate-only
+  BigQuery research SQL with `MOTIF_TIER_SUMMARY`, reran the full package
+  against the approved scrubbed Glean event/span sources, and retained the
+  cleaned aggregate CSV plus motif-tier readout. The new tiering separates
+  high-volume assistive surfaces from execution-linked workflow evidence,
+  post-friction continuation, verification-attached workflow, search-to-agent
+  escalation, and weak-linkage context. This remains research/readout-only and
+  does not add APIs, schemas, canonical events, suppression reasons, ROI,
+  causality, productivity claims, or individual/team scoring.
 - Trust Evidence Gap Composition diagnostic: added an aggregate-only dogfood SQL diagnostic, CSV-to-readout runner, retained run-first composition artifacts, research doc, and pilot runbook instructions. The retained readout explains the 37,959,260-episode public pilot evidence gap as mostly true downstream-evidence gap plus 474,414 ambiguous-boundary folded episodes and a sub-floor safety fold-in whose exact value is withheld from shareable Markdown/CSV output. BigQuery dry-run and seven-business-day candidate-key QA run completed; the QA output shows 199,050,906 visible candidate gap keys after sub-floor withholding, dominated by ambiguous-boundary fold-in and span/LLM-without-governed-outcome buckets. Deeper source-readiness bucket counts must receive the same product-episode dedup overlay before comparison to the 43.1% pilot gap.
 - Trust Episode pilot runner invalid-input review fix: invalid reruns now remove stale Markdown and pattern CSV outputs from the target directory after writing the `INVALID_INPUT` JSON summary, preventing rejected inputs from leaving shareable prior readouts beside the failure state.
 - Trust Episode pilot runner identity-column review fix: expanded CSV header rejection to fail closed on common user/name identity columns such as `user_name`, `username`, `full_name`, and `display_name`, with regression coverage proving those inputs do not emit external readouts.
