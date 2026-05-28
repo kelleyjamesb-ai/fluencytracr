@@ -58,6 +58,7 @@ Reusable FluencyTracr primitives include:
 - AI Scale Readiness;
 - Organizational Segmentation;
 - Economic Impact Bridge;
+- AI Manager Outcomes Recommendations;
 - V4 value-hypothesis and strategy-routing language.
 
 Mixed artifacts that need clearer separation include:
@@ -247,6 +248,39 @@ A value hypothesis must include:
 No value hypothesis may include dollars, ROI, guaranteed savings, causality,
 prediction, productivity lift, or ranking language.
 
+### AI Manager Outcomes Recommendations
+
+AI Manager Outcomes Recommendations are the next-step evidence prescriptions
+that may follow an AI Work Evidence readout. They recommend which
+customer-owned outcome signals and aggregate formulas should be used to test a
+value hypothesis.
+
+"AI Manager" means the AI program owner, AIOM, value-realization leader, CIO
+staff, or business sponsor. It does not mean a people manager and must not
+become manager scoring, employee assessment, HR analytics, or surveillance.
+
+Allowed recommendation content includes:
+
+- observed aggregate AI work pattern;
+- likely value route such as cost, revenue, quality, capacity, risk, or
+  experience;
+- recommended customer-owned outcome signal;
+- recommended source type;
+- aggregate formula template;
+- interpretation boundary and confounders;
+- blocked claims.
+
+Blocked recommendation content includes:
+
+- ROI calculation;
+- causal impact;
+- productivity lift;
+- employee scoring;
+- team, manager, department, customer, or skill ranking;
+- required HRIS, survey, enablement, training, finance, or person-level data
+  at pilot start;
+- customer-facing economic output from behavior-only evidence.
+
 ## 4. Org-Agnostic Readout Grammar
 
 AI Work Evidence should preserve the existing V4 strategy grammar while making
@@ -277,6 +311,9 @@ pilot package:
 4. Require customer-side aggregate transformation for any live customer pilot.
 5. Keep monetary interpretation blocked until customer-owned outcome evidence,
    assumptions, and governance approval exist.
+6. Recommend the smallest customer-owned outcome signal and aggregate formula
+   needed to test each value hypothesis, without requiring broad internal data
+   access before the first pilot.
 
 ## 6. Non-Goals
 

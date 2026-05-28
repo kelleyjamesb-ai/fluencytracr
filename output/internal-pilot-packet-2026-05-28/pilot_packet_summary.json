@@ -1,0 +1,623 @@
+{
+  "generated_on": "2026-05-28",
+  "fresh_job": {
+    "job_id": "scio-apps:bqjob_r68a7577f065e48e5_0000019e6ee2c806_1",
+    "duration": "0:06:00.970000",
+    "bytes_processed": 4926181266149,
+    "source": "scrubbed GCE customer events + scrubbed agent spans"
+  },
+  "framework": [
+    {
+      "window": "Window 1",
+      "sampled_windows": 13,
+      "avg_frequency": 70.2367,
+      "avg_engagement": 17.3077,
+      "avg_breadth": 5.6923,
+      "avg_reliability": 0.7115,
+      "avg_quality": 1.2192
+    },
+    {
+      "window": "Window 2",
+      "sampled_windows": 15,
+      "avg_frequency": 62.3198,
+      "avg_engagement": 15.7333,
+      "avg_breadth": 5.0667,
+      "avg_reliability": 0.6417,
+      "avg_quality": 1.1183
+    },
+    {
+      "window": "Window 3",
+      "sampled_windows": 13,
+      "avg_frequency": 80.6251,
+      "avg_engagement": 20.6154,
+      "avg_breadth": 6.4615,
+      "avg_reliability": 0.6923,
+      "avg_quality": 1.1846
+    }
+  ],
+  "motif_by_window": {
+    "Window 1": [
+      {
+        "window": "Window 1",
+        "tier": "HIGH_VOLUME_ASSISTIVE_SURFACE",
+        "count": 8117.0,
+        "motif_shapes": 2.0,
+        "avg_linked_events": 1.0,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 1",
+        "tier": "POST_FRICTION_CONTINUATION",
+        "count": 206.0,
+        "motif_shapes": 124.0,
+        "avg_linked_events": 27.7218,
+        "friction_rate": 1.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 0.4489
+      },
+      {
+        "window": "Window 1",
+        "tier": "VERIFICATION_ATTACHED_WORKFLOW",
+        "count": 146.0,
+        "motif_shapes": 54.0,
+        "avg_linked_events": 25.1296,
+        "friction_rate": 0.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 0.9815
+      },
+      {
+        "window": "Window 1",
+        "tier": "SEARCH_TO_AGENT_ESCALATION",
+        "count": 103.0,
+        "motif_shapes": 41.0,
+        "avg_linked_events": 7.2195,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 1",
+        "tier": "EXECUTION_LINKED_WORKFLOW",
+        "count": 84.0,
+        "motif_shapes": 42.0,
+        "avg_linked_events": 23.0238,
+        "friction_rate": 0.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 1",
+        "tier": "OTHER_LINKED_CONTEXT",
+        "count": 60.0,
+        "motif_shapes": 8.0,
+        "avg_linked_events": 8.625,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 1",
+        "tier": "WEAK_LINKAGE_CONTEXT",
+        "count": 16.0,
+        "motif_shapes": 2.0,
+        "avg_linked_events": 1.5,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      }
+    ],
+    "Window 2": [
+      {
+        "window": "Window 2",
+        "tier": "HIGH_VOLUME_ASSISTIVE_SURFACE",
+        "count": 7792.0,
+        "motif_shapes": 2.0,
+        "avg_linked_events": 1.0,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 2",
+        "tier": "POST_FRICTION_CONTINUATION",
+        "count": 301.0,
+        "motif_shapes": 222.0,
+        "avg_linked_events": 25.7217,
+        "friction_rate": 1.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 0.518
+      },
+      {
+        "window": "Window 2",
+        "tier": "SEARCH_TO_AGENT_ESCALATION",
+        "count": 142.0,
+        "motif_shapes": 42.0,
+        "avg_linked_events": 7.7619,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 2",
+        "tier": "WEAK_LINKAGE_CONTEXT",
+        "count": 117.0,
+        "motif_shapes": 9.0,
+        "avg_linked_events": 4.4444,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 2",
+        "tier": "EXECUTION_LINKED_WORKFLOW",
+        "count": 57.0,
+        "motif_shapes": 11.0,
+        "avg_linked_events": 10.7273,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.9091,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 2",
+        "tier": "VERIFICATION_ATTACHED_WORKFLOW",
+        "count": 46.0,
+        "motif_shapes": 16.0,
+        "avg_linked_events": 23.0938,
+        "friction_rate": 0.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 1.0
+      },
+      {
+        "window": "Window 2",
+        "tier": "OTHER_LINKED_CONTEXT",
+        "count": 14.0,
+        "motif_shapes": 4.0,
+        "avg_linked_events": 6.0,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      }
+    ],
+    "Window 3": [
+      {
+        "window": "Window 3",
+        "tier": "HIGH_VOLUME_ASSISTIVE_SURFACE",
+        "count": 9172.0,
+        "motif_shapes": 2.0,
+        "avg_linked_events": 1.0,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 3",
+        "tier": "POST_FRICTION_CONTINUATION",
+        "count": 384.0,
+        "motif_shapes": 180.0,
+        "avg_linked_events": 34.5741,
+        "friction_rate": 1.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 0.5632
+      },
+      {
+        "window": "Window 3",
+        "tier": "EXECUTION_LINKED_WORKFLOW",
+        "count": 337.0,
+        "motif_shapes": 14.0,
+        "avg_linked_events": 7.0714,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.9286,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 3",
+        "tier": "WEAK_LINKAGE_CONTEXT",
+        "count": 255.0,
+        "motif_shapes": 9.0,
+        "avg_linked_events": 3.6667,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 3",
+        "tier": "SEARCH_TO_AGENT_ESCALATION",
+        "count": 197.0,
+        "motif_shapes": 61.0,
+        "avg_linked_events": 8.9672,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.0,
+        "verification_rate": 0.0
+      },
+      {
+        "window": "Window 3",
+        "tier": "OTHER_LINKED_CONTEXT",
+        "count": 22.0,
+        "motif_shapes": 6.0,
+        "avg_linked_events": 47.8333,
+        "friction_rate": 0.0,
+        "continuation_rate": 0.5,
+        "verification_rate": 0.5
+      },
+      {
+        "window": "Window 3",
+        "tier": "VERIFICATION_ATTACHED_WORKFLOW",
+        "count": 22.0,
+        "motif_shapes": 12.0,
+        "avg_linked_events": 22.9167,
+        "friction_rate": 0.0,
+        "continuation_rate": 1.0,
+        "verification_rate": 1.0
+      }
+    ]
+  },
+  "motif_totals": {
+    "HIGH_VOLUME_ASSISTIVE_SURFACE": 25081.0,
+    "POST_FRICTION_CONTINUATION": 891.0,
+    "EXECUTION_LINKED_WORKFLOW": 478.0,
+    "SEARCH_TO_AGENT_ESCALATION": 442.0,
+    "WEAK_LINKAGE_CONTEXT": 388.0,
+    "VERIFICATION_ATTACHED_WORKFLOW": 214.0,
+    "OTHER_LINKED_CONTEXT": 96.0
+  },
+  "strategy_posture": {
+    "REPAIR_TRUST_LOOP": {
+      "rows": 304.0,
+      "cohort": 6537249.0,
+      "signals": 2754490.0,
+      "attributed": 0.0
+    },
+    "SCALE_AND_MEASURE": {
+      "rows": 36.0,
+      "cohort": 125100.0,
+      "signals": 683340.0,
+      "attributed": 337775.0
+    },
+    "COACH_OR_REDESIGN": {
+      "rows": 21.0,
+      "cohort": 17241.0,
+      "signals": 54116.0,
+      "attributed": 41060.0
+    },
+    "STUDY_AND_PACKAGE": {
+      "rows": 12.0,
+      "cohort": 1250.0,
+      "signals": 2004.0,
+      "attributed": 1782.0
+    },
+    "HOLD_NO_INTERPRETATION": {
+      "rows": 51.0,
+      "cohort": 0.0,
+      "signals": 0.0,
+      "attributed": 0.0
+    }
+  },
+  "zone_summary": {
+    "TRUST_EVIDENCE_GAP": {
+      "rows": 304.0,
+      "cohort": 6537249.0,
+      "signals": 2754490.0,
+      "attributed": 0.0
+    },
+    "SCALE_CANDIDATE": {
+      "rows": 36.0,
+      "cohort": 125100.0,
+      "signals": 683340.0,
+      "attributed": 337775.0
+    },
+    "SHALLOW_ADOPTION": {
+      "rows": 21.0,
+      "cohort": 17241.0,
+      "signals": 54116.0,
+      "attributed": 41060.0
+    },
+    "FOCUSED_EXPERT_USE": {
+      "rows": 12.0,
+      "cohort": 1250.0,
+      "signals": 2004.0,
+      "attributed": 1782.0
+    },
+    "SUPPRESSED": {
+      "rows": 51.0,
+      "cohort": 0.0,
+      "signals": 0.0,
+      "attributed": 0.0
+    }
+  },
+  "trust_summary": {
+    "TRUST_ATTRIBUTION_CROSS_SURFACE_ALIAS": {
+      "signals": 1842074.0,
+      "attributed": 0.0
+    },
+    "TRUST_ATTRIBUTION_NO_PARENT": {
+      "signals": 1263643.0,
+      "attributed": 0.0
+    },
+    "TRUST_ATTRIBUTION_STRICT": {
+      "signals": 380128.0,
+      "attributed": 380128.0
+    },
+    "TRUST_ATTRIBUTION_AMBIGUOUS": {
+      "signals": 8170.0,
+      "attributed": 0.0
+    },
+    "TRUST_ATTRIBUTION_SESSION": {
+      "signals": 538.0,
+      "attributed": 538.0
+    },
+    "SMALL_CELL_SUPPRESSED": {
+      "signals": 0.0,
+      "attributed": 0.0
+    }
+  },
+  "trust_readout": {
+    "hold": {
+      "signals": 3113887.0,
+      "attributed": 0.0
+    },
+    "candidate": {
+      "signals": 378337.0,
+      "attributed": 378337.0
+    },
+    "narrow_review": {
+      "signals": 2329.0,
+      "attributed": 2329.0
+    }
+  },
+  "skill_read": {
+    "total_rows": 2220341.0,
+    "rows_with_parent_join": 2210614.0,
+    "parent_join_share": 0.9956191413841388,
+    "rows": [
+      {
+        "window_start": "2026-03-23",
+        "window_end": "2026-05-22",
+        "read_mechanism": "shell_skill_reader_attributes",
+        "skill_name_status": "specified",
+        "parent_join_status": "has_parent_join_key",
+        "skill_read_rows": "1473686",
+        "distinct_specified_skill_names": "85",
+        "rows_with_workflow_run_id": "793514",
+        "rows_with_action_run_id": "1473686",
+        "rows_with_session_token": "0",
+        "distinct_workflow_runs": "4343",
+        "distinct_action_runs": "1472481",
+        "distinct_sessions": "0",
+        "skill_read_share": "1.0",
+        "overall_unspecified_share": "0.0",
+        "overall_parent_join_key_share": "1.0",
+        "availability_status": "SKILL_READ_EVIDENCE_AVAILABLE"
+      },
+      {
+        "window_start": "2026-02-21",
+        "window_end": "2026-04-22",
+        "read_mechanism": "shell_skill_reader_attributes",
+        "skill_name_status": "specified",
+        "parent_join_status": "has_parent_join_key",
+        "skill_read_rows": "596761",
+        "distinct_specified_skill_names": "75",
+        "rows_with_workflow_run_id": "0",
+        "rows_with_action_run_id": "596761",
+        "rows_with_session_token": "0",
+        "distinct_workflow_runs": "0",
+        "distinct_action_runs": "596739",
+        "distinct_sessions": "0",
+        "skill_read_share": "0.99265275841764",
+        "overall_unspecified_share": "0.0",
+        "overall_parent_join_key_share": "0.99265275841764",
+        "availability_status": "SKILL_READ_EVIDENCE_AVAILABLE"
+      },
+      {
+        "window_start": "2026-02-21",
+        "window_end": "2026-04-22",
+        "read_mechanism": "shell_skill_reader_attributes",
+        "skill_name_status": "specified",
+        "parent_join_status": "missing_parent_join_key",
+        "skill_read_rows": "4417",
+        "distinct_specified_skill_names": "3",
+        "rows_with_workflow_run_id": "0",
+        "rows_with_action_run_id": "0",
+        "rows_with_session_token": "0",
+        "distinct_workflow_runs": "0",
+        "distinct_action_runs": "0",
+        "distinct_sessions": "0",
+        "skill_read_share": "0.007347241582359967",
+        "overall_unspecified_share": "0.0",
+        "overall_parent_join_key_share": "0.99265275841764",
+        "availability_status": "SKILL_READ_EVIDENCE_AVAILABLE"
+      },
+      {
+        "window_start": "2026-01-22",
+        "window_end": "2026-03-23",
+        "read_mechanism": "shell_skill_reader_attributes",
+        "skill_name_status": "specified",
+        "parent_join_status": "has_parent_join_key",
+        "skill_read_rows": "140167",
+        "distinct_specified_skill_names": "14",
+        "rows_with_workflow_run_id": "0",
+        "rows_with_action_run_id": "140167",
+        "rows_with_session_token": "0",
+        "distinct_workflow_runs": "0",
+        "distinct_action_runs": "140159",
+        "distinct_sessions": "0",
+        "skill_read_share": "0.9634993847824742",
+        "overall_unspecified_share": "0.0",
+        "overall_parent_join_key_share": "0.9634993847824742",
+        "availability_status": "SKILL_READ_EVIDENCE_AVAILABLE"
+      },
+      {
+        "window_start": "2026-01-22",
+        "window_end": "2026-03-23",
+        "read_mechanism": "shell_skill_reader_attributes",
+        "skill_name_status": "specified",
+        "parent_join_status": "missing_parent_join_key",
+        "skill_read_rows": "5310",
+        "distinct_specified_skill_names": "4",
+        "rows_with_workflow_run_id": "0",
+        "rows_with_action_run_id": "0",
+        "rows_with_session_token": "0",
+        "distinct_workflow_runs": "0",
+        "distinct_action_runs": "0",
+        "distinct_sessions": "0",
+        "skill_read_share": "0.036500615217525796",
+        "overall_unspecified_share": "0.0",
+        "overall_parent_join_key_share": "0.9634993847824742",
+        "availability_status": "SKILL_READ_EVIDENCE_AVAILABLE"
+      }
+    ]
+  },
+  "outcome_checks": {
+    "behavior_evidence_alignment": {
+      "readiness_check": "behavior_evidence_alignment",
+      "required_evidence": "Velocity x Depth zones, behavior cohorts, segment overlay rows",
+      "current_saved_export_status": "READY",
+      "current_observation": "Saved V4 exports contain 174 Velocity x Depth strategy rows and 7 behavior-segment overlay rows.",
+      "result": "PROMOTE_OUTCOME_JOIN_RESEARCH_DESIGN",
+      "interpretation": "Behavior evidence is ready to receive an aggregate outcome metric join."
+    },
+    "outcome_metric_identity": {
+      "readiness_check": "outcome_metric_identity",
+      "required_evidence": "outcome_domain, outcome_metric_name, source_system, outcome_unit",
+      "current_saved_export_status": "MISSING_IN_SAVED_V4_EXPORTS",
+      "current_observation": "No retained V4 CSV contains a real support, onboarding, sales, revenue, ticket, cycle-time, conversion, backlog, escalation, or KPI metric column.",
+      "result": "HOLD_FOR_CUSTOMER_OWNED_OUTCOME_SOURCE",
+      "interpretation": "Outcome evidence is missing; low value cannot be inferred from missing outcome data."
+    },
+    "outcome_window_alignment": {
+      "readiness_check": "outcome_window_alignment",
+      "required_evidence": "baseline_window, comparison_window, fixed_window_id",
+      "current_saved_export_status": "PARTIAL_BEHAVIOR_WINDOWS_ONLY",
+      "current_observation": "Behavior windows exist, but no outcome baseline or comparison windows are attached.",
+      "result": "HOLD_FOR_WINDOW_ALIGNED_OUTCOME_EXPORT",
+      "interpretation": "Outcome joins require the business metric to use the same fixed-window logic."
+    },
+    "customer_owned_assumptions": {
+      "readiness_check": "customer_owned_assumptions",
+      "required_evidence": "baseline time, cost, volume, capacity, or accepted KPI assumption",
+      "current_saved_export_status": "MISSING",
+      "current_observation": "The value strategy layer lists required customer-owned assumptions, but no assumption ledger is present in saved exports.",
+      "result": "HOLD_FOR_CUSTOMER_OWNED_ASSUMPTIONS",
+      "interpretation": "No dollarized or time-saved range can be built without explicit customer-owned assumptions."
+    },
+    "monetary_value_status": {
+      "readiness_check": "monetary_value_status",
+      "required_evidence": "eligible monetary status supported by outcome evidence",
+      "current_saved_export_status": "BLOCKED",
+      "current_observation": "Value strategy rows are blocked: 26 pending outcome evidence, 37 suppressed, and 111 pending trust evidence.",
+      "result": "HOLD_ECONOMIC_OUTPUT",
+      "interpretation": "Current saved data supports value investigation routing, not economic output."
+    },
+    "causality_design": {
+      "readiness_check": "causality_design",
+      "required_evidence": "approved pre/post, holdout, or counterfactual design",
+      "current_saved_export_status": "NOT_PRESENT",
+      "current_observation": "No saved export contains a causal design identifier or intervention ledger join.",
+      "result": "NOT_CAUSAL_ONLY",
+      "interpretation": "Outcome movement, once joined, can support descriptive investigation but not causal claims."
+    },
+    "aggregation_boundary": {
+      "readiness_check": "aggregation_boundary",
+      "required_evidence": "aggregate segment or workflow key only, cohort size, suppression status",
+      "current_saved_export_status": "READY_AS_DESIGN_CONSTRAINT",
+      "current_observation": "Current research outputs are aggregate-only and avoid user identifiers.",
+      "result": "PROMOTE_AGGREGATE_ONLY_JOIN_SHAPE",
+      "interpretation": "The outcome join can be designed without individual-level output."
+    },
+    "recommended_first_domain": {
+      "readiness_check": "recommended_first_domain",
+      "required_evidence": "support or onboarding outcome source",
+      "current_saved_export_status": "RECOMMENDED",
+      "current_observation": "Support and onboarding have cleaner operational metrics than sales for a first bounded test.",
+      "result": "PROMOTE_SUPPORT_OR_ONBOARDING_FIRST_TEST",
+      "interpretation": "Start with aggregate support or onboarding metrics before sales or revenue-linked analysis."
+    }
+  },
+  "tsdr_checks": {
+    "raw_time_saved_claim": {
+      "readiness_check": "raw_time_saved_claim",
+      "required_evidence": "raw Glean time-saved claim scoped to the same fixed window",
+      "current_status": "MISSING",
+      "current_observation": "No retained V4 export contains a raw time-saved claim for the support outcome window.",
+      "result": "HOLD_RANGE_OUTPUT",
+      "interpretation": "A range cannot be computed without a source time-saved claim."
+    },
+    "customer_owned_assumptions": {
+      "readiness_check": "customer_owned_assumptions",
+      "required_evidence": "workflow volume, baseline time, recapture, accepted scenario assumptions",
+      "current_status": "MISSING",
+      "current_observation": "No customer-owned assumption ledger is present in the saved exports.",
+      "result": "HOLD_FOR_CUSTOMER_OWNED_ASSUMPTIONS",
+      "interpretation": "FluencyTracr must not invent baseline time, cost, volume, or recapture assumptions."
+    },
+    "behavior_evidence": {
+      "readiness_check": "behavior_evidence",
+      "required_evidence": "Velocity x Depth behavior zones and strategy layer",
+      "current_status": "READY",
+      "current_observation": "Saved V4 behavior exports contain stable Velocity x Depth zones and value-investigation postures.",
+      "result": "USE_AS_CAVEAT_CONTEXT_ONLY",
+      "interpretation": "Behavior evidence can qualify the claim narrative but cannot produce a time-saved range by itself."
+    },
+    "support_outcome_context": {
+      "readiness_check": "support_outcome_context",
+      "required_evidence": "window-aligned support outcome context",
+      "current_status": "READY",
+      "current_observation": "Zendesk support context exists for the same three fixed windows.",
+      "result": "USE_AS_OUTCOME_CONTEXT_ONLY",
+      "interpretation": "Support movement can inform value investigation but does not prove attribution."
+    },
+    "behavior_to_outcome_attribution": {
+      "readiness_check": "behavior_to_outcome_attribution",
+      "required_evidence": "approved aggregate join key connecting behavior cohorts to support outcomes",
+      "current_status": "HELD",
+      "current_observation": "Support join-key test found customer/account keys and GCE department_id, but no approved aggregate behavior-to-support join.",
+      "result": "HOLD_BEHAVIOR_TO_OUTCOME_ATTRIBUTION",
+      "interpretation": "Support context must not become a behavior-attribution claim."
+    },
+    "causality_design": {
+      "readiness_check": "causality_design",
+      "required_evidence": "approved causal, holdout, pre/post, or counterfactual design",
+      "current_status": "NOT_PRESENT",
+      "current_observation": "No causal design or intervention ledger is attached.",
+      "result": "NOT_CAUSAL_ONLY",
+      "interpretation": "Any movement remains descriptive."
+    },
+    "depth_repertoire_role": {
+      "readiness_check": "depth_repertoire_role",
+      "required_evidence": "Depth Repertoire surfaced only as caveat/context",
+      "current_status": "READY_AS_CAVEAT_ONLY",
+      "current_observation": "Depth Repertoire is promoted for aggregate context but not economic adjustment.",
+      "result": "PASS_CAVEAT_ONLY_BOUNDARY",
+      "interpretation": "Depth Repertoire must not adjust range values, confidence, eligibility, or economic output."
+    },
+    "economic_output": {
+      "readiness_check": "economic_output",
+      "required_evidence": "range hours, dollarized output, ROI, productivity, prediction",
+      "current_status": "BLOCKED",
+      "current_observation": "Range prerequisites are missing or held.",
+      "result": "SUPPRESS_RANGE_VALUES",
+      "interpretation": "No time-saved range values should be emitted for the current data state."
+    },
+    "org_wide_reuse_path": {
+      "readiness_check": "org_wide_reuse_path",
+      "required_evidence": "repeatable org-wide method once joins and assumptions are approved",
+      "current_status": "DESIGN_READY",
+      "current_observation": "The same readiness gate can be reused across support, onboarding, sales, and approved segments.",
+      "result": "PROMOTE_METHOD_FOR_ORG_WIDE_TESTING_WHEN_VALID",
+      "interpretation": "Use this as a reusable validation pattern, not as a current economic result."
+    }
+  },
+  "trust_gap": {
+    "public_gap_episodes": 37959260,
+    "public_gap_share": 0.431,
+    "true_downstream_gap": 37484844,
+    "ambiguous_boundary_fold_in": 474414,
+    "high_confidence_episode_share": 0.9995,
+    "recovered_after_failure_share": 0.1799,
+    "high_confidence_episodes": 87985613,
+    "citation_available_high_confidence": 12386039,
+    "citation_click_high_confidence": 509226,
+    "explicit_feedback_high_confidence": 64681
+  }
+}

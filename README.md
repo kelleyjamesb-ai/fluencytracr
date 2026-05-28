@@ -64,6 +64,11 @@ documented value-realization layers:
   bands; never person, manager, or comparative team evaluation.
 - **Economic Impact Bridge:** future V4 concept that maps readiness patterns to
   customer-owned value investigations without proving ROI or causality.
+- **AI Manager Outcomes Recommendations:** docs-first V4 layer that recommends
+  which customer-owned outcome signals and aggregate formulas to use next when
+  testing cost, revenue, quality, capacity, risk, or experience value routes.
+  "AI Manager" means AI program owner or value-realization leader, not people
+  manager scoring.
 - **Work Mode Taxonomy:** maps governed surfaces into durable AI work patterns
   such as retrieval, conversation, transformation, embedded assist, delegation,
   reuse, exploration, verification, and corroborative telemetry.
@@ -149,6 +154,9 @@ is not the lead positioning for this repository.
 - AI Scale Readiness Portfolio concept: [docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md](docs/concepts/AI_SCALE_READINESS_PORTFOLIO.md)
 - Organizational Segmentation concept: [docs/concepts/ORG_SEGMENTATION.md](docs/concepts/ORG_SEGMENTATION.md)
 - Economic Impact Bridge concept: [docs/concepts/ECONOMIC_IMPACT_BRIDGE.md](docs/concepts/ECONOMIC_IMPACT_BRIDGE.md)
+- AI Manager Outcomes Recommendations concept: [docs/concepts/AI_MANAGER_OUTCOMES_RECOMMENDATIONS.md](docs/concepts/AI_MANAGER_OUTCOMES_RECOMMENDATIONS.md)
+- AI Manager Outcomes Recommendations contract: [docs/contracts/value-confidence/ai-manager-outcomes-recommendations.md](docs/contracts/value-confidence/ai-manager-outcomes-recommendations.md)
+- AI Manager Outcomes Recommendations pilot readout: [docs/research/AI_MANAGER_OUTCOMES_RECOMMENDATIONS_PILOT_READOUT.md](docs/research/AI_MANAGER_OUTCOMES_RECOMMENDATIONS_PILOT_READOUT.md)
 - Signal promotion criteria: [docs/research/SIGNAL_PROMOTION_CRITERIA.md](docs/research/SIGNAL_PROMOTION_CRITERIA.md)
 - V4 signal discovery probes: [docs/research/V4_SIGNAL_DISCOVERY_PROBES.md](docs/research/V4_SIGNAL_DISCOVERY_PROBES.md)
 - V4 signal discovery readout: [docs/research/V4_SIGNAL_DISCOVERY_READOUT.md](docs/research/V4_SIGNAL_DISCOVERY_READOUT.md)
@@ -210,6 +218,7 @@ is not the lead positioning for this repository.
 - Trust Calibration Index: [docs/contracts/value-confidence/trust-calibration-index.md](docs/contracts/value-confidence/trust-calibration-index.md)
 - AI Value Leakage Map: [docs/contracts/value-confidence/value-leakage-map.md](docs/contracts/value-confidence/value-leakage-map.md)
 - AI Scale Readiness Portfolio: [docs/contracts/value-confidence/scale-readiness-portfolio.md](docs/contracts/value-confidence/scale-readiness-portfolio.md)
+- AI Manager Outcomes Recommendations: [docs/contracts/value-confidence/ai-manager-outcomes-recommendations.md](docs/contracts/value-confidence/ai-manager-outcomes-recommendations.md)
 - Velocity Index contract: [docs/contracts/velocity-index.md](docs/contracts/velocity-index.md)
 - Behavioral Signals spec: [docs/BEHAVIORAL_SIGNALS_SPEC.md](docs/BEHAVIORAL_SIGNALS_SPEC.md)
 - MCP adapter server: [docs/mcp/fluencytracr-mcp-server.md](docs/mcp/fluencytracr-mcp-server.md)
