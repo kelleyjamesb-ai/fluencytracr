@@ -18,8 +18,12 @@ Support outcome inputs:
 
 - `scio-apps.dashboards.zendesk_ticket_details`
 - `scio-apps.zendesk.all_tickets`
-- `scio-apps.dbt_jma.stg_zendesk_tickets`
-- `scio-apps.dbt_cchallagulla.stg_zendesk_tickets`
+- `redacted_person_scoped_zendesk_staging_alias_a`
+- `redacted_person_scoped_zendesk_staging_alias_b`
+
+Person-scoped staging schema names are intentionally redacted in this retained
+readout. Use governed source aliases for research artifacts unless a source name
+is approved for aggregate output.
 
 Behavior and metadata inputs:
 

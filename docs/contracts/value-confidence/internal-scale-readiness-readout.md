@@ -61,7 +61,10 @@ The internal readout record should include:
 - `readout_type`,
 - `window_id`,
 - `cohort_key`,
+- `suppression_bucket_key`,
 - `workflow_id` or approved aggregate surface key,
+- `jbtd_id`,
+- `persona_id`,
 - `verdict`,
 - `suppression_reason`,
 - `velocity_band`,
@@ -105,12 +108,48 @@ An aggregate cohort key. It must not contain user IDs, emails, names, employee
 IDs, raw prompts, raw outputs, transcripts, raw event rows, raw ticket rows, or
 raw skill names.
 
+The cohort key alone is not sufficient to prove suppression isolation. If the
+source slice used optional `jbtd_id` or `persona_id` keys, those keys must either
+travel as explicit nullable fields in the readout or be encoded into
+`suppression_bucket_key` exactly as the underlying suppression bucket was
+evaluated.
+
+### `suppression_bucket_key`
+
+Required aggregate key that identifies the exact suppression bucket used before
+readout generation.
+
+The bucket must preserve the existing invariant that suppression gates apply
+independently per `(workflow_id, jbtd_id, persona_id)` slice. It must not merge
+multiple suppression buckets into one surfaced readout row. Acceptable forms are:
+
+- explicit `workflow_id`, nullable `jbtd_id`, and nullable `persona_id` fields,
+  plus a deterministic bucket key derived from those fields, or
+- an approved aggregate surface key only when that key is the actual governed
+  suppression bucket and no optional JBTD/persona slice keys were used.
+
+If the source cannot prove the exact suppression bucket, the row must remain
+`SUPPRESS` or carry evidence-gap language only.
+
 ### `workflow_id`
 
 A governed workflow or surface key. The key may be a workflow surface,
 standalone surface, or approved aggregate surface family. It must not expose
 person-level, team-ranking, department-ranking, manager-ranking, customer-
 ranking, or skill-ranking semantics.
+
+### `jbtd_id`
+
+Optional opaque aggregate slice key. When present in the source verdict path, it
+must be preserved in the readout shape or encoded into `suppression_bucket_key`.
+It must not introduce a built-in job taxonomy or person-level label.
+
+### `persona_id`
+
+Optional opaque aggregate slice key. When present in the source verdict path, it
+must be preserved in the readout shape or encoded into `suppression_bucket_key`.
+It must not introduce a built-in persona taxonomy, employee label, team ranking,
+or manager ranking.
 
 ### `verdict`
 
