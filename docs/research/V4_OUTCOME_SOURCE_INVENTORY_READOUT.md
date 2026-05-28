@@ -22,10 +22,14 @@ onboarding, and later sales analysis.
 | --- | --- | --- |
 | Support | `dashboards.zendesk_ticket_details` | Best first source for aggregate outcome testing |
 | Support | `zendesk.all_tickets` | Semantically useful, but external-table read needs Drive-scoped CLI access |
-| Support | `dbt_jma.stg_zendesk_tickets` | Stale for the V4 fixed windows |
-| Support | `dbt_cchallagulla.stg_zendesk_tickets` | Stale for the V4 fixed windows |
+| Support | `redacted_person_scoped_zendesk_staging_alias_a` | Stale for the V4 fixed windows |
+| Support | `redacted_person_scoped_zendesk_staging_alias_b` | Stale for the V4 fixed windows |
 | Onboarding | `rocketlane.project` | Usable as secondary source, but smaller volume |
 | Sales | `salesforce.opportunity` | Rich source, but held for later because attribution is noisier |
+
+Person-scoped staging schema names were redacted from this retained readout.
+Future source inventories should use governed source aliases unless a source name
+is approved for aggregate research output.
 
 Saved aggregate exports:
 
