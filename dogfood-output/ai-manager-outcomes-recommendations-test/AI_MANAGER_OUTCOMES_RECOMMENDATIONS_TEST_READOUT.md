@@ -10,7 +10,7 @@ It does not calculate ROI, prove causality, measure productivity, assess people,
 
 `PASS_AS_RECOMMENDATION_LAYER_HELD_FOR_OUTCOME_EVIDENCE`
 
-The model holds as a FluencyTracr output because the existing data produces specific next-data recommendations and formula templates. It does not yet hold as an economic outcome proof because customer-owned outcome metrics, assumptions, and approved behavior-to-outcome joins are missing or held.
+The model holds as a FluencyTracr output because the existing data produces specific next-data recommendations and formula templates. It does not yet hold as an economic outcome proof because customer-owned outcome metrics, assumptions, and approved behavior-to-outcome joins are missing or held. Readiness and gate results above are derived from the pilot data, so a different input can withhold, suppress, or advance any record.
 
 ## What The Existing Data Supports
 
