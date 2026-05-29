@@ -103,6 +103,7 @@ workflow_surfaces AS (
     user_key,
     event_date,
     session_token,
+    tracking_token,
     COALESCE(
       workflow_run_id,
       session_token,
@@ -136,6 +137,7 @@ standalone_search AS (
     user_key,
     event_date,
     session_token,
+    tracking_token,
     COALESCE(
       workflow_run_id,
       session_token,
@@ -154,6 +156,7 @@ standalone_autocomplete AS (
     user_key,
     event_date,
     session_token,
+    tracking_token,
     COALESCE(
       workflow_run_id,
       session_token,
@@ -172,6 +175,7 @@ standalone_mcp_usage AS (
     user_key,
     event_date,
     session_token,
+    tracking_token,
     COALESCE(
       workflow_run_id,
       session_token,
@@ -190,6 +194,7 @@ standalone_ai_summary AS (
     user_key,
     event_date,
     session_token,
+    tracking_token,
     COALESCE(
       workflow_run_id,
       session_token,
@@ -208,6 +213,7 @@ standalone_glean_bot_activity AS (
     bot.user_key,
     bot.event_date,
     bot.session_token,
+    bot.tracking_token,
     COALESCE(
       bot.workflow_run_id,
       bot.session_token,
@@ -253,6 +259,13 @@ surface_join_aliases AS (
     session_token AS attribution_join_key
   FROM taxonomy_surfaces
   WHERE session_token IS NOT NULL
+  UNION DISTINCT
+  SELECT DISTINCT
+    user_key,
+    surface_join_key,
+    tracking_token AS attribution_join_key
+  FROM taxonomy_surfaces
+  WHERE tracking_token IS NOT NULL
 ),
 
 verification_signals AS (

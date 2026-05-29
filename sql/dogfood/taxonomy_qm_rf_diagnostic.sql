@@ -127,6 +127,7 @@ taxonomy_surface_events AS (
     event.event_date,
     event.event_ts,
     event.session_token,
+    event.tracking_token,
     COALESCE(
       event.workflow_run_id,
       event.root_workflow_id,
@@ -197,6 +198,7 @@ taxonomy_surface_events AS (
     event.event_date,
     event.event_ts,
     event.session_token,
+    event.tracking_token,
     COALESCE(
       event.workflow_run_id,
       event.session_token,
@@ -230,6 +232,7 @@ taxonomy_surface_events AS (
     bot.event_date,
     bot.event_ts,
     bot.session_token,
+    bot.tracking_token,
     COALESCE(
       bot.workflow_run_id,
       bot.session_token,
@@ -272,6 +275,13 @@ surface_join_aliases AS (
     session_token AS attribution_join_key
   FROM taxonomy_surface_events
   WHERE session_token IS NOT NULL
+  UNION DISTINCT
+  SELECT DISTINCT
+    user_key,
+    surface_join_key,
+    tracking_token AS attribution_join_key
+  FROM taxonomy_surface_events
+  WHERE tracking_token IS NOT NULL
 ),
 
 verification_signals AS (
