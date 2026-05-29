@@ -166,10 +166,14 @@ verification_signals AS (
       WHEN 'SEARCH_FEEDBACK' THEN 'standalone:SEARCH'
       ELSE 'unknown'
     END AS expected_parent_surface,
+    -- Prefer precise run/workflow keys before the session token. The run id
+    -- arrives as tracking_token (e.g. chatfeedback.runid), so session_token
+    -- must come last or it would over-attribute to every surface in a session.
     COALESCE(
       workflow_run_id,
-      session_token,
-      tracking_token
+      root_workflow_id,
+      tracking_token,
+      session_token
     ) AS attribution_join_key
   FROM source_events
   WHERE event_type IN (

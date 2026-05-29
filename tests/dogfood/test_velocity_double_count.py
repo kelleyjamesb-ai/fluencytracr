@@ -143,6 +143,20 @@ def test_verification_signals_join_back_to_parent_surfaces() -> None:
     assert "verification_rate" in sql
 
 
+def test_velocity_verification_prefers_precise_keys_before_session() -> None:
+    sql = SQL.read_text()
+
+    # The run id arrives as tracking_token, so verification attribution must try
+    # the precise run/workflow keys first and only fall back to session_token.
+    # The old COALESCE(workflow_run_id, session_token, ...) in verification_signals
+    # collapsed to session and over-attributed every surface in a session.
+    verification_block = sql.split("verification_signals AS", 1)[1].split("surface_verification AS", 1)[0]
+    assert "session_token,\n      CONCAT(" not in verification_block
+    assert "workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL" in sql
+    assert "[workflow_run_id, root_workflow_id, tracking_token]" in sql
+    assert "[session_token]" in sql
+
+
 def test_velocity_sql_splits_agent_into_sub_surfaces() -> None:
     sql = SQL.read_text()
 
@@ -580,6 +594,16 @@ def test_taxonomy_qm_rf_diagnostic_emits_work_mode_aggregate_inputs() -> None:
     assert "workflow_status" in sql
 
 
+def test_taxonomy_qm_rf_verification_prefers_precise_keys_before_session() -> None:
+    sql = TAXONOMY_QM_RF_SQL.read_text()
+
+    verification_block = sql.split("verification_signals AS", 1)[1].split("surface_verification AS", 1)[0]
+    assert "session_token,\n      CONCAT(" not in verification_block
+    assert "workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL" in sql
+    assert "[workflow_run_id, root_workflow_id, tracking_token]" in sql
+    assert "[session_token]" in sql
+
+
 def test_skill_read_availability_diagnostic_is_aggregate_only() -> None:
     sql = SKILL_READ_SQL.read_text()
 
@@ -622,6 +646,18 @@ def test_trust_signal_availability_diagnostic_deduplicates_joined_signals() -> N
     assert "COUNT(DISTINCT signal_key) AS total_signal_count" in sql
     assert "COUNT(DISTINCT verification.signal_key) AS joined_signal_count" in sql
     assert "COUNT(*) AS joined_signal_count" not in sql
+
+
+def test_trust_signal_availability_prefers_precise_keys_before_session() -> None:
+    sql = TRUST_SIGNAL_SQL.read_text()
+
+    # Single-key COALESCE design (the signal_key dedup CTE breaks under UNNEST),
+    # so precise keys must simply precede session_token in the COALESCE order.
+    assert "COALESCE(\n      workflow_run_id,\n      session_token," not in sql
+    assert (
+        "COALESCE(\n      workflow_run_id,\n      root_workflow_id,\n      tracking_token,\n      session_token\n    ) AS attribution_join_key"
+        in sql
+    )
 
     final_select = sql.split("SELECT\n  DATE(window_start)", 1)[1]
     assert "signal_key" not in final_select
