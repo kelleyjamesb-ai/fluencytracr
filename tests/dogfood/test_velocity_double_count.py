@@ -155,6 +155,10 @@ def test_velocity_verification_prefers_precise_keys_before_session() -> None:
     assert "workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL" in sql
     assert "[workflow_run_id, root_workflow_id, tracking_token]" in sql
     assert "[session_token]" in sql
+    # Parent surfaces must expose tracking_token as an alias, or precise-key
+    # feedback/vote events (SEARCH_FEEDBACK, AI_SUMMARY_VOTE) that no longer fall
+    # back to session would fail to join and undercount verification.
+    assert "tracking_token AS attribution_join_key" in sql
 
 
 def test_velocity_sql_splits_agent_into_sub_surfaces() -> None:
@@ -602,6 +606,10 @@ def test_taxonomy_qm_rf_verification_prefers_precise_keys_before_session() -> No
     assert "workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL" in sql
     assert "[workflow_run_id, root_workflow_id, tracking_token]" in sql
     assert "[session_token]" in sql
+    # Parent surfaces must expose tracking_token as an alias, or precise-key
+    # feedback/vote events (SEARCH_FEEDBACK, AI_SUMMARY_VOTE) that no longer fall
+    # back to session would fail to join and undercount verification.
+    assert "tracking_token AS attribution_join_key" in sql
 
 
 def test_skill_read_availability_diagnostic_is_aggregate_only() -> None:
