@@ -28,8 +28,27 @@ WITH source_events AS (
       NULLIF(TRIM(jsonPayload.action.sessiontrackingtoken), ''),
       NULLIF(TRIM(jsonPayload.search.sessiontrackingtoken), ''),
       NULLIF(TRIM(jsonPayload.voicechat.sessiontrackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.sessiontrackingtoken), ''),
       NULLIF(TRIM(jsonPayload.gleanbotactivity.eventtrackingtoken), '')
     ) AS session_token,
+    -- Precise run/workflow identifier for verification events. The run id
+    -- arrives here as tracking_token (e.g. chatfeedback.runid), NOT as
+    -- workflow_run_id, so attribution must prefer it before the session token.
+    COALESCE(
+      NULLIF(TRIM(jsonPayload.search.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.autocomplete.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.aianswer.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.aisummary.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatcitationclick.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatcitations.workflowrunid), ''),
+      NULLIF(TRIM(jsonPayload.chatcitations.chatsessionid), ''),
+      NULLIF(TRIM(jsonPayload.aianswervote.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.aisummaryvote.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.searchfeedback.trackingtoken), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.runid), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.workflowid), ''),
+      NULLIF(TRIM(jsonPayload.chatfeedback.chatsessionid), '')
+    ) AS tracking_token,
     COALESCE(
       NULLIF(TRIM(jsonPayload.user.userid), ''),
       NULLIF(TRIM(jsonPayload.productsnapshot.user.id), ''),
@@ -258,21 +277,26 @@ surface_join_aliases AS (
 verification_signals AS (
   SELECT
     user_key,
-    COALESCE(
-      workflow_run_id,
-      session_token,
-      CONCAT(user_key, ':', CAST(event_ts AS STRING), ':', event_type)
-    ) AS attribution_join_key,
+    attribution_join_key,
     event_type AS verification_event_type
-  FROM source_events
+  FROM source_events,
+    UNNEST(
+      IF(
+        workflow_run_id IS NOT NULL OR root_workflow_id IS NOT NULL OR tracking_token IS NOT NULL,
+        [workflow_run_id, root_workflow_id, tracking_token],
+        [session_token]
+      )
+    ) AS attribution_join_key
   WHERE event_type IN (
       'CHAT_CITATION_CLICK',
+      'CHAT_CITATIONS',
       'CHAT_FEEDBACK',
       'AI_ANSWER_VOTE',
       'AI_SUMMARY_VOTE',
       'SEARCH_FEEDBACK'
     )
     AND user_key IS NOT NULL
+    AND attribution_join_key IS NOT NULL
 ),
 
 surface_verification AS (
