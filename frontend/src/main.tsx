@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
+import { AIValueWorkspace } from "./pages/AIValueWorkspace";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
 import { MethodologyReviewWorkspace } from "./pages/MethodologyReviewWorkspace";
@@ -41,6 +42,14 @@ createRoot(container).render(
           element={
             <ProtectedRoute>
               <GovernanceConcept />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-value-workspace"
+          element={
+            <ProtectedRoute>
+              <AIValueWorkspace />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,119 @@
+{
+  "schema_version": "FT_AI_VALUE_EXECUTIVE_PACKET_2026_06",
+  "packet_id": "executive_packet_customer_support_v1",
+  "workflow_family": "customer_support_case_resolution",
+  "workflow_name": "Customer support case resolution",
+  "value_route": "CAPACITY_CREATION",
+  "decision": "HOLD_FOR_ASSUMPTIONS",
+  "claim_state": "INTERNAL_ONLY",
+  "customer_facing_economic_output": false,
+  "source_refs": {
+    "blueprint_id": "bp_customer_support_case_resolution",
+    "metrics_library_id": "metrics_customer_support_v1",
+    "scenario_id": "scenario_customer_support_capacity_v1",
+    "readiness_id": "readiness_customer_support_v1",
+    "claim_boundary_id": "claim_boundary_customer_support_v1"
+  },
+  "sections": {
+    "workflow": {
+      "hypothesis": "AI-assisted support work may be associated with faster case resolution, lower escalation, and improved knowledge reuse.",
+      "current_state_steps": [
+        "Support agent searches knowledge sources",
+        "Support agent drafts response",
+        "Support agent escalates unresolved cases"
+      ],
+      "future_state_steps": [
+        "Support agent uses Search and Assistant for knowledge access",
+        "Approved Skills and agents support repeatable resolution workflows",
+        "Verification and recovery signals are reviewed in aggregate"
+      ]
+    },
+    "metrics": [
+      {
+        "metric_id": "support_median_resolution_hours",
+        "name": "Median resolution time",
+        "value_route": "CAPACITY_CREATION",
+        "measurement_unit": "hours",
+        "owner": "support_operations"
+      },
+      {
+        "metric_id": "support_backlog_count",
+        "name": "Open backlog count",
+        "value_route": "CAPACITY_CREATION",
+        "measurement_unit": "cases",
+        "owner": "support_operations"
+      }
+    ],
+    "scenario": {
+      "scenario_id": "scenario_customer_support_capacity_v1",
+      "bands": [
+        {
+          "band": "CONSERVATIVE",
+          "interpretation": "Directional capacity scenario using the narrowest customer-owned assumption set.",
+          "included_metric_ids": [
+            "support_median_resolution_hours"
+          ]
+        },
+        {
+          "band": "BASE_CASE",
+          "interpretation": "Directional capacity scenario using all recommended capacity metrics.",
+          "included_metric_ids": [
+            "support_median_resolution_hours",
+            "support_backlog_count"
+          ]
+        },
+        {
+          "band": "EXPANDED",
+          "interpretation": "Directional capacity scenario for later customer-owned validation after assumptions are reviewed.",
+          "included_metric_ids": [
+            "support_median_resolution_hours",
+            "support_backlog_count"
+          ]
+        }
+      ],
+      "output_units": [
+        "hours",
+        "cases"
+      ]
+    },
+    "readiness": {
+      "decision": "HOLD_FOR_ASSUMPTIONS",
+      "checks": {
+        "workflow_state": "PRESENT",
+        "metric_state": "PRESENT",
+        "baseline_state": "PRESENT",
+        "assumption_state": "CAVEATED",
+        "scenario_state": "PRESENT",
+        "governance_state": "PRESENT"
+      },
+      "rationale": [
+        "Material customer-owned assumptions are still missing or caveated."
+      ]
+    },
+    "claim_boundary": {
+      "claim_state": "INTERNAL_ONLY",
+      "safe_claims": [
+        "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
+      ],
+      "caveated_claims": [
+        "Customer-owned assumptions must be reviewed before executive validation."
+      ],
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement",
+        "customer_facing_economic_output"
+      ],
+      "required_caveats": [
+        "This is a pre-ROI planning artifact.",
+        "Missing or caveated assumptions prevent external economic claims."
+      ]
+    },
+    "next_actions": [
+      "Review missing staffing, channel mix, process, knowledge, metric definition, and rollout assumptions with customer owners."
+    ]
+  }
+}

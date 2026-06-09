@@ -1,0 +1,36 @@
+{
+  "schema_version": "FT_AI_VALUE_CLAIM_BOUNDARY_2026_06",
+  "claim_boundary_id": "claim_boundary_customer_support_v1",
+  "workflow_family": "customer_support_case_resolution",
+  "value_route": "CAPACITY_CREATION",
+  "source_readiness_id": "readiness_customer_support_v1",
+  "claim_state": "INTERNAL_ONLY",
+  "safe_claims": [
+    "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
+  ],
+  "caveated_claims": [
+    "Customer-owned assumptions must be reviewed before executive validation."
+  ],
+  "blocked_claims": [
+    "roi_proof",
+    "causality_claim",
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "customer_facing_economic_output"
+  ],
+  "required_caveats": [
+    "This is a pre-ROI planning artifact.",
+    "Missing or caveated assumptions prevent external economic claims."
+  ],
+  "review_state": "READY_FOR_INTERNAL_REVIEW",
+  "governance_boundaries": {
+    "customer_facing_economic_output": false,
+    "realized_roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "hr_analytics": false,
+    "productivity_measurement": false
+  }
+}

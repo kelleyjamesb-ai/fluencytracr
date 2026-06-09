@@ -426,6 +426,57 @@ Phase 9.5 artifacts:
 - [`scripts/validate_ai_value_agent_harness.mjs`](../../scripts/validate_ai_value_agent_harness.mjs)
 - [`scripts/validate_ai_value_agent_harness.test.mjs`](../../scripts/validate_ai_value_agent_harness.test.mjs)
 
+### Phase 10: Evidence Readiness Engine
+
+Convert Evidence Readiness into reusable local software that decides whether a
+validated workflow can move toward claim review.
+
+Phase 10 artifacts:
+
+- [evidence-readiness.schema.json](../../schemas/ai-value-intelligence/evidence-readiness.schema.json)
+- [customer-support-evidence-readiness.json](../contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json)
+- [`scripts/validate_ai_value_readiness.mjs`](../../scripts/validate_ai_value_readiness.mjs)
+- [`scripts/validate_ai_value_readiness.test.mjs`](../../scripts/validate_ai_value_readiness.test.mjs)
+
+### Phase 11: Claim Boundary Engine
+
+Convert readiness decisions into safe, caveated, blocked, and required-caveat
+language before any executive packet is generated.
+
+Phase 11 artifacts:
+
+- [claim-boundary.schema.json](../../schemas/ai-value-intelligence/claim-boundary.schema.json)
+- [customer-support-claim-boundary.json](../contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json)
+- [`scripts/validate_ai_value_claim_boundary.mjs`](../../scripts/validate_ai_value_claim_boundary.mjs)
+- [`scripts/validate_ai_value_claim_boundary.test.mjs`](../../scripts/validate_ai_value_claim_boundary.test.mjs)
+
+### Phase 12: Executive Validation Packet Generator
+
+Generate a local JSON and Markdown packet from the validated V1 spine.
+
+Phase 12 artifacts:
+
+- [executive-packet.schema.json](../../schemas/ai-value-intelligence/executive-packet.schema.json)
+- [customer-support-executive-packet.json](../contracts/ai-value-intelligence/examples/customer-support-executive-packet.json)
+- [customer-support-executive-packet.md](../contracts/ai-value-intelligence/examples/customer-support-executive-packet.md)
+- [`scripts/generate_ai_value_executive_packet.mjs`](../../scripts/generate_ai_value_executive_packet.mjs)
+- [`scripts/generate_ai_value_executive_packet.test.mjs`](../../scripts/generate_ai_value_executive_packet.test.mjs)
+- [`scripts/ai_value_v1_spine.test.mjs`](../../scripts/ai_value_v1_spine.test.mjs)
+
+### Phase 13: Local Workspace UI
+
+Add a local React workspace that exposes the V1 spine as a usable work surface.
+
+Phase 13 artifacts:
+
+- [`frontend/src/pages/AIValueWorkspace.tsx`](../../frontend/src/pages/AIValueWorkspace.tsx)
+- [`frontend/src/pages/AIValueWorkspace.test.tsx`](../../frontend/src/pages/AIValueWorkspace.test.tsx)
+- [`frontend/src/constants/aiValueWorkspace.ts`](../../frontend/src/constants/aiValueWorkspace.ts)
+
+Phase 10-13 remains local V1 software. It does not add production connectors,
+customer-facing economic output, causality claims, individual scoring, HR
+analytics, or realized ROI.
+
 ## 12. Quality Gates
 
 No pilot readout should be generated unless these questions pass:

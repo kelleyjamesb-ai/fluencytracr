@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/executive-packet.schema.json",
+  "title": "AI Value Executive Validation Packet",
+  "description": "Docs-backed local schema for a governed AI Value executive validation packet. This is not customer-facing economic output.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "packet_id",
+    "workflow_family",
+    "workflow_name",
+    "value_route",
+    "decision",
+    "claim_state",
+    "customer_facing_economic_output",
+    "source_refs",
+    "sections"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_EXECUTIVE_PACKET_2026_06"
+    },
+    "packet_id": { "type": "string" },
+    "workflow_family": { "type": "string" },
+    "workflow_name": { "type": "string" },
+    "value_route": { "type": "string" },
+    "decision": {
+      "enum": [
+        "READY_FOR_EXECUTIVE_VALIDATION",
+        "HOLD_FOR_ASSUMPTIONS",
+        "HOLD_FOR_SOURCE_COVERAGE",
+        "HOLD_FOR_BASELINE",
+        "STOP_FOR_GOVERNANCE_REVIEW"
+      ]
+    },
+    "claim_state": {
+      "enum": ["CAVEATED", "INTERNAL_ONLY", "MISSING", "BLOCKED"]
+    },
+    "customer_facing_economic_output": { "const": false },
+    "source_refs": {
+      "type": "object",
+      "required": [
+        "blueprint_id",
+        "metrics_library_id",
+        "scenario_id",
+        "readiness_id",
+        "claim_boundary_id"
+      ]
+    },
+    "sections": {
+      "type": "object",
+      "required": [
+        "workflow",
+        "metrics",
+        "scenario",
+        "readiness",
+        "claim_boundary",
+        "next_actions"
+      ]
+    }
+  }
+}
