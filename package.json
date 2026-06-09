@@ -14,6 +14,8 @@
     "test:ai-value-blueprint": "node --test scripts/validate_ai_value_blueprint.test.mjs",
     "validate:ai-value-metrics": "node scripts/validate_ai_value_metrics.mjs",
     "test:ai-value-metrics": "node --test scripts/validate_ai_value_metrics.test.mjs",
+    "validate:ai-value-scenario": "node scripts/validate_ai_value_scenario.mjs",
+    "test:ai-value-scenario": "node --test scripts/validate_ai_value_scenario.test.mjs",
     "validate:agents": "npm run build --workspace @learnaire/openai-agents-harness",
     "seed:lmsys": "node scripts/seed_lmsys.mjs",
     "seed:lmsys:sample": "node scripts/seed_lmsys_sample.mjs",

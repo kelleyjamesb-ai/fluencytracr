@@ -57,6 +57,15 @@ with the seeded Customer Support metrics fixture in
 and schema in
 [`schemas/ai-value-intelligence/metric-definition.schema.json`](../../../schemas/ai-value-intelligence/metric-definition.schema.json).
 
+For the Phase 9 Value Scenario Engine, use
+[`scripts/validate_ai_value_scenario.mjs`](../../../scripts/validate_ai_value_scenario.mjs)
+with the seeded Customer Support scenario fixture in
+[`examples/customer-support-value-scenario.json`](./examples/customer-support-value-scenario.json)
+and schemas in
+[`schemas/ai-value-intelligence/value-scenario-input.schema.json`](../../../schemas/ai-value-intelligence/value-scenario-input.schema.json)
+and
+[`schemas/ai-value-intelligence/value-scenario-output.schema.json`](../../../schemas/ai-value-intelligence/value-scenario-output.schema.json).
+
 ## Required Inputs
 
 The generator consumes only aggregate, privacy-safe inputs:
@@ -313,6 +322,38 @@ Verify:
 ```bash
 npm run test:ai-value-metrics
 ```
+
+## Phase 9 Value Scenario Engine
+
+The Phase 9 Value Scenario Engine converts value calculator guidance into a
+governed local software object that can draft a pre-ROI scenario from a
+validated Blueprint and Metrics Library recommendation:
+
+- structured value scenario input schema;
+- structured value scenario output schema;
+- seeded Customer Support value scenario fixture;
+- local scenario validator;
+- adapter from Blueprint plus Metrics Library recommendation to a governed
+  Value Scenario draft;
+- tests for workflow family, value route, metric references, customer-owned
+  assumptions, scenario bands, output units, claim state, blocked claims,
+  governance boundaries, and unsafe economic fields.
+
+Run:
+
+```bash
+npm run validate:ai-value-scenario
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-scenario
+```
+
+Phase 9 is planning software only. It does not produce realized ROI,
+causality, productivity, HR analytics, individual scoring, runtime services,
+dashboards, production connectors, or customer-facing economic output.
 
 ## Relationship To FluencyTracr Concepts
 

@@ -42,7 +42,7 @@ validate, or report on one of these objects.
 | Day-in-the-Life workshop | Workflow discovery engine for current state, future state, time/friction points, tools, tasks, and business consequences. |
 | Process mapping library | Seed library of reusable workflow templates by function, role, industry, and work pattern. |
 | Metrics library | Governed catalog of allowed metrics, definitions, source systems, measurement rules, and value routes. |
-| ROI/value calculator | Customer-owned scenario engine for cost, capacity, revenue, productivity, TCO, payback, and assumptions. |
+| ROI/value calculator | Customer-owned governed scenario engine for cost, capacity, revenue, quality, risk, experience, technology consolidation, and assumptions; pre-ROI until customer evidence and claim governance approve more. |
 | Executive validation checklist | Stage-gate workflow for pre-work, meeting execution, post-work, ownership, and decision path. |
 | Business-case readout | Generated artifact composed from validated objects and claim boundaries. |
 
@@ -195,6 +195,10 @@ Required fields:
 Value scenarios may model cost, capacity, revenue, quality, risk, experience, or
 technology consolidation. They must not claim causality or realized ROI without
 customer-owned evidence and explicit claim governance.
+
+Phase 9 implements the local pre-ROI version of this object with governed input
+and output schemas, a Customer Support fixture, a validator, and an adapter that
+combines Blueprint and Metrics Library recommendations into a scenario draft.
 
 ### Evidence Readiness
 

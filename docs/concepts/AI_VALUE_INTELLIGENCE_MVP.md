@@ -365,6 +365,37 @@ Phase 8 artifacts:
 - [`scripts/validate_ai_value_metrics.mjs`](../../scripts/validate_ai_value_metrics.mjs)
 - [`scripts/validate_ai_value_metrics.test.mjs`](../../scripts/validate_ai_value_metrics.test.mjs)
 
+### Phase 9: Value Scenario Engine
+
+Convert the value calculator concept into reusable governed software that can
+draft pre-ROI value scenarios from a validated Blueprint and Metrics Library
+recommendation.
+
+Deliverables:
+
+- structured value scenario input schema;
+- structured value scenario output schema;
+- seeded Customer Support value scenario fixture;
+- local scenario validator;
+- tests for workflow family, value route, metric references, customer-owned
+  assumptions, scenario bands, output units, claim state, blocked claims, and
+  governance boundaries;
+- adapter from Blueprint plus Metrics Library recommendation to a governed
+  Value Scenario draft.
+
+Phase 9 remains local and pre-readout. It does not create production
+connectors, dashboards, realized ROI calculations, causality claims,
+individual scoring, HR analytics, runtime services, or customer-facing
+economic output.
+
+Phase 9 artifacts:
+
+- [value-scenario-input.schema.json](../../schemas/ai-value-intelligence/value-scenario-input.schema.json)
+- [value-scenario-output.schema.json](../../schemas/ai-value-intelligence/value-scenario-output.schema.json)
+- [customer-support-value-scenario.json](../contracts/ai-value-intelligence/examples/customer-support-value-scenario.json)
+- [`scripts/validate_ai_value_scenario.mjs`](../../scripts/validate_ai_value_scenario.mjs)
+- [`scripts/validate_ai_value_scenario.test.mjs`](../../scripts/validate_ai_value_scenario.test.mjs)
+
 ## 12. Quality Gates
 
 No pilot readout should be generated unless these questions pass:
