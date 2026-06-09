@@ -1,0 +1,252 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">From AI Fluency to Defensible Business Value</title>
+  <desc id="desc">An executive infographic showing how inputs, evidence layers, confidence layers, and executive outputs connect to customer-safe value realization.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7fbff; }
+      .navy { fill: #06255a; }
+      .navy2 { fill: #0a3475; }
+      .ink { fill: #061a3a; font-family: Inter, Arial, sans-serif; }
+      .muted { fill: #40506a; font-family: Inter, Arial, sans-serif; }
+      .white { fill: #ffffff; font-family: Inter, Arial, sans-serif; }
+      .h1 { font-size: 48px; font-weight: 800; }
+      .subtitle { font-size: 22px; font-weight: 500; }
+      .panel-title { font-size: 22px; font-weight: 800; }
+      .card-title { font-size: 20px; font-weight: 800; }
+      .body { font-size: 15px; font-weight: 500; }
+      .small { font-size: 13px; font-weight: 500; }
+      .tiny { font-size: 12px; font-weight: 600; }
+      .label { font-size: 18px; font-weight: 800; }
+      .panel { fill: #ffffff; stroke: #0a3475; stroke-width: 2; }
+      .soft-blue { fill: #eef6ff; stroke: #90bdf2; stroke-width: 1.4; }
+      .soft-green { fill: #edf8ef; stroke: #7cc78c; stroke-width: 1.4; }
+      .soft-orange { fill: #fff5e6; stroke: #f2b960; stroke-width: 1.4; }
+      .soft-purple { fill: #f3efff; stroke: #b9a6ef; stroke-width: 1.4; }
+      .soft-red { fill: #fff0f0; stroke: #ee8b8b; stroke-width: 1.4; }
+      .soft-teal { fill: #eaf8f7; stroke: #7ecdc5; stroke-width: 1.4; }
+      .chip { fill: #ffffff; stroke: #2a6ac8; stroke-width: 1.2; }
+      .shadow { filter: drop-shadow(0px 8px 16px rgba(6,26,58,0.12)); }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 z" fill="#06255a"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="900"/>
+
+  <text class="ink h1" x="800" y="56" text-anchor="middle">From AI Fluency to Defensible Business Value</text>
+  <text class="muted subtitle" x="800" y="88" text-anchor="middle">How Glean connects employee capability, workflow behavior, and business outcomes into customer-safe value claims.</text>
+
+  <!-- Left column -->
+  <g class="shadow">
+    <rect class="panel" x="45" y="120" width="325" height="615" rx="10"/>
+    <path class="navy" d="M55 120 h305 a10 10 0 0 1 10 10 v38 h-325 v-38 a10 10 0 0 1 10-10z"/>
+    <text class="white panel-title" x="207" y="148" text-anchor="middle">Inputs</text>
+  </g>
+
+  <g>
+    <rect class="soft-blue" x="65" y="185" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="216" r="22" fill="#d8ebff"/>
+    <path d="M86 223 h20 M86 216 h20 M86 209 h20" stroke="#06255a" stroke-width="4" stroke-linecap="round"/>
+    <text class="ink card-title" x="132" y="207">Business Priorities</text>
+    <text class="muted body" x="132" y="229">growth, cost, risk, CX, capacity</text>
+
+    <rect class="soft-blue" x="65" y="261" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="292" r="22" fill="#d8ebff"/>
+    <path d="M84 304 L96 280 L108 304 Z" fill="#06255a"/>
+    <circle cx="96" cy="278" r="5" fill="#06255a"/>
+    <text class="ink card-title" x="132" y="283">Process Maps</text>
+    <text class="muted body" x="132" y="305">current state, pain points, handoffs</text>
+
+    <rect class="soft-blue" x="65" y="337" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="368" r="22" fill="#d8ebff"/>
+    <rect x="84" y="367" width="8" height="15" fill="#06255a"/>
+    <rect x="96" y="358" width="8" height="24" fill="#06255a"/>
+    <rect x="108" y="348" width="8" height="34" fill="#06255a"/>
+    <text class="ink card-title" x="132" y="359">Use Case Metrics</text>
+    <text class="muted body" x="132" y="381">cycle time, throughput, quality</text>
+
+    <rect class="soft-purple" x="65" y="413" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="444" r="22" fill="#e8e0ff"/>
+    <path d="M84 454 q12-25 24 0" fill="none" stroke="#06255a" stroke-width="4"/>
+    <circle cx="96" cy="438" r="7" fill="#06255a"/>
+    <text class="ink card-title" x="132" y="435">AI Fluency Instrument</text>
+    <text class="muted body" x="132" y="457">confidence, intent, perceived impact</text>
+
+    <rect class="soft-green" x="65" y="489" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="520" r="22" fill="#dff3e4"/>
+    <path d="M82 520 h28 M96 506 v28 M86 510 l20 20 M106 510 l-20 20" stroke="#0b6b26" stroke-width="4" stroke-linecap="round"/>
+    <text class="ink card-title" x="132" y="511">Glean Telemetry</text>
+    <text class="muted body" x="132" y="533">Search, Assistant, Agents, Skills, MCP</text>
+
+    <rect class="soft-teal" x="65" y="565" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="596" r="22" fill="#d9f1ef"/>
+    <ellipse cx="96" cy="586" rx="15" ry="6" fill="#086b67"/>
+    <path d="M81 586 v18 c0 4 30 4 30 0 v-18" fill="#0f8f89"/>
+    <text class="ink card-title" x="132" y="587">Outcome Evidence</text>
+    <text class="muted body" x="132" y="609">customer-owned KPI context</text>
+
+    <rect class="soft-orange" x="65" y="641" width="285" height="63" rx="10"/>
+    <circle cx="96" cy="672" r="22" fill="#fde8c6"/>
+    <path d="M88 683 v-26 l22-7 v26z" fill="#c56800"/>
+    <text class="ink card-title" x="132" y="663">Interventions</text>
+    <text class="muted body" x="132" y="685">launches, enablement, declared events</text>
+  </g>
+
+  <!-- Center evidence engine -->
+  <g class="shadow">
+    <rect class="panel" x="430" y="120" width="690" height="255" rx="10"/>
+    <path class="navy" d="M440 120 h670 a10 10 0 0 1 10 10 v38 h-690 v-38 a10 10 0 0 1 10-10z"/>
+    <text class="white panel-title" x="775" y="148" text-anchor="middle">Evidence Engine</text>
+  </g>
+
+  <g>
+    <rect class="soft-purple" x="455" y="184" width="640" height="48" rx="9"/>
+    <text class="ink card-title" x="480" y="205">Stated Evidence</text>
+    <text class="muted body" x="480" y="222">what people report</text>
+    <g>
+      <rect class="chip" x="685" y="196" width="94" height="24" rx="12"/><text class="ink tiny" x="732" y="213" text-anchor="middle">Confidence</text>
+      <rect class="chip" x="788" y="196" width="76" height="24" rx="12"/><text class="ink tiny" x="826" y="213" text-anchor="middle">Attitude</text>
+      <rect class="chip" x="873" y="196" width="124" height="24" rx="12"/><text class="ink tiny" x="935" y="213" text-anchor="middle">Behavior Change</text>
+      <rect class="chip" x="1006" y="196" width="66" height="24" rx="12"/><text class="ink tiny" x="1039" y="213" text-anchor="middle">Intent</text>
+    </g>
+
+    <rect class="soft-green" x="455" y="243" width="640" height="54" rx="9"/>
+    <text class="ink card-title" x="480" y="264">Behavioral Evidence</text>
+    <text class="muted body" x="480" y="282">what work patterns show</text>
+    <g>
+      <rect class="chip" x="685" y="258" width="76" height="24" rx="12"/><text class="ink tiny" x="723" y="275" text-anchor="middle">Velocity</text>
+      <rect class="chip" x="770" y="258" width="62" height="24" rx="12"/><text class="ink tiny" x="801" y="275" text-anchor="middle">Depth</text>
+      <rect class="chip" x="841" y="258" width="82" height="24" rx="12"/><text class="ink tiny" x="882" y="275" text-anchor="middle">Reliability</text>
+      <rect class="chip" x="932" y="258" width="66" height="24" rx="12"/><text class="ink tiny" x="965" y="275" text-anchor="middle">Quality</text>
+      <rect class="chip" x="1007" y="258" width="58" height="24" rx="12"/><text class="ink tiny" x="1036" y="275" text-anchor="middle">Reuse</text>
+    </g>
+
+    <rect class="soft-teal" x="455" y="308" width="640" height="48" rx="9"/>
+    <text class="ink card-title" x="480" y="329">Business Evidence</text>
+    <text class="muted body" x="480" y="346">what outcomes indicate</text>
+    <g>
+      <rect class="chip" x="685" y="320" width="70" height="24" rx="12"/><text class="ink tiny" x="720" y="337" text-anchor="middle">Revenue</text>
+      <rect class="chip" x="764" y="320" width="76" height="24" rx="12"/><text class="ink tiny" x="802" y="337" text-anchor="middle">Capacity</text>
+      <rect class="chip" x="849" y="320" width="48" height="24" rx="12"/><text class="ink tiny" x="873" y="337" text-anchor="middle">Cost</text>
+      <rect class="chip" x="906" y="320" width="48" height="24" rx="12"/><text class="ink tiny" x="930" y="337" text-anchor="middle">Risk</text>
+      <rect class="chip" x="963" y="320" width="62" height="24" rx="12"/><text class="ink tiny" x="994" y="337" text-anchor="middle">Quality</text>
+    </g>
+  </g>
+
+  <rect class="navy2" x="535" y="385" width="480" height="44" rx="22"/>
+  <text class="white label" x="775" y="414" text-anchor="middle">Fail-closed governance: aggregate only, suppress by default</text>
+
+  <!-- Matrix -->
+  <g class="shadow">
+    <rect class="panel" x="430" y="452" width="690" height="265" rx="10"/>
+    <path class="navy" d="M440 452 h670 a10 10 0 0 1 10 10 v38 h-690 v-38 a10 10 0 0 1 10-10z"/>
+    <text class="white panel-title" x="775" y="480" text-anchor="middle">Value Confidence Lens</text>
+  </g>
+
+  <line x1="525" y1="682" x2="1065" y2="682" stroke="#06255a" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="525" y1="682" x2="525" y2="525" stroke="#06255a" stroke-width="3" marker-end="url(#arrow)"/>
+  <text class="ink label" x="795" y="708" text-anchor="middle">Workflow Integration</text>
+  <text class="ink label" x="486" y="612" text-anchor="middle" transform="rotate(-90 486 612)">Evidence Strength</text>
+  <text class="muted small" x="526" y="704">LOW</text>
+  <text class="muted small" x="1040" y="704">HIGH</text>
+  <text class="muted small" x="486" y="685">LOW</text>
+  <text class="muted small" x="480" y="532">HIGH</text>
+
+  <rect class="soft-orange" x="545" y="520" width="245" height="72" rx="8"/>
+  <text class="ink card-title" x="567" y="544">Evidence Gap</text>
+  <text class="muted small" x="567" y="564">good signals, weak context</text>
+  <text class="muted small" x="567" y="581">validate source coverage</text>
+
+  <rect class="soft-green" x="805" y="520" width="245" height="72" rx="8"/>
+  <text class="ink card-title" x="827" y="544">Ready to Scale</text>
+  <text class="muted small" x="827" y="564">repeatable use, verified work</text>
+  <text class="muted small" x="827" y="581">outcome alignment</text>
+
+  <rect class="soft-red" x="545" y="604" width="245" height="72" rx="8"/>
+  <text class="ink card-title" x="567" y="628">Do Not Claim Yet</text>
+  <text class="muted small" x="567" y="648">thin evidence, unclear outcomes</text>
+  <text class="muted small" x="567" y="665">suppress or investigate</text>
+
+  <rect class="soft-blue" x="805" y="604" width="245" height="72" rx="8"/>
+  <text class="ink card-title" x="827" y="628">Enablement Needed</text>
+  <text class="muted small" x="827" y="648">strong workflow fit, low fluency</text>
+  <text class="muted small" x="827" y="665">coach adoption</text>
+
+  <!-- Right column -->
+  <g class="shadow">
+    <rect class="panel" x="1170" y="120" width="385" height="615" rx="10"/>
+    <path class="navy" d="M1180 120 h365 a10 10 0 0 1 10 10 v38 h-385 v-38 a10 10 0 0 1 10-10z"/>
+    <text class="white panel-title" x="1362" y="148" text-anchor="middle">Confidence Layers</text>
+  </g>
+
+  <g>
+    <rect class="soft-purple" x="1190" y="190" width="345" height="80" rx="10"/>
+    <circle cx="1232" cy="230" r="25" fill="#e8e0ff"/>
+    <text class="ink card-title" x="1278" y="220">Fluency Confidence</text>
+    <text class="muted body" x="1278" y="243">Are people becoming more capable?</text>
+
+    <rect class="soft-green" x="1190" y="282" width="345" height="80" rx="10"/>
+    <circle cx="1232" cy="322" r="25" fill="#dff3e4"/>
+    <text class="ink card-title" x="1278" y="312">Workflow Confidence</text>
+    <text class="muted body" x="1278" y="335">Is AI changing how work gets done?</text>
+
+    <rect class="soft-blue" x="1190" y="374" width="345" height="80" rx="10"/>
+    <circle cx="1232" cy="414" r="25" fill="#d8ebff"/>
+    <text class="ink card-title" x="1278" y="404">Evidence Confidence</text>
+    <text class="muted body" x="1278" y="427">Do survey, telemetry, and outcomes agree?</text>
+
+    <rect class="soft-orange" x="1190" y="466" width="345" height="80" rx="10"/>
+    <circle cx="1232" cy="506" r="25" fill="#fde8c6"/>
+    <text class="ink card-title" x="1278" y="496">Value Confidence</text>
+    <text class="muted body" x="1278" y="519">What can we safely claim?</text>
+
+    <rect class="soft-teal" x="1190" y="558" width="345" height="80" rx="10"/>
+    <circle cx="1232" cy="598" r="25" fill="#d9f1ef"/>
+    <text class="ink card-title" x="1278" y="588">Intervention Confidence</text>
+    <text class="muted body" x="1278" y="611">Where should leaders act next?</text>
+  </g>
+
+  <!-- Arrows -->
+  <line x1="370" y1="420" x2="420" y2="420" stroke="#06255a" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="775" y1="429" x2="775" y2="445" stroke="#06255a" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="1120" y1="420" x2="1160" y2="420" stroke="#06255a" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="775" y1="717" x2="775" y2="750" stroke="#06255a" stroke-width="6" marker-end="url(#arrow)"/>
+
+  <!-- Executive outputs -->
+  <g class="shadow">
+    <rect class="panel" x="45" y="755" width="1510" height="80" rx="10"/>
+    <path class="navy" d="M55 755 h1490 a10 10 0 0 1 10 10 v28 h-1510 v-28 a10 10 0 0 1 10-10z"/>
+    <text class="white panel-title" x="800" y="778" text-anchor="middle">Executive Outputs</text>
+  </g>
+  <g>
+    <text class="ink card-title" x="110" y="813">Scale readiness</text>
+    <text class="muted small" x="110" y="831">where to expand</text>
+    <line x1="323" y1="798" x2="323" y2="832" stroke="#9aa8bd" stroke-dasharray="5 5"/>
+    <text class="ink card-title" x="370" y="813">Trust evidence gaps</text>
+    <text class="muted small" x="370" y="831">what is missing</text>
+    <line x1="608" y1="798" x2="608" y2="832" stroke="#9aa8bd" stroke-dasharray="5 5"/>
+    <text class="ink card-title" x="650" y="813">Workflow redesign needs</text>
+    <text class="muted small" x="650" y="831">where friction slows work</text>
+    <line x1="905" y1="798" x2="905" y2="832" stroke="#9aa8bd" stroke-dasharray="5 5"/>
+    <text class="ink card-title" x="945" y="813">AI fluency priorities</text>
+    <text class="muted small" x="945" y="831">where to coach</text>
+    <line x1="1184" y1="798" x2="1184" y2="832" stroke="#9aa8bd" stroke-dasharray="5 5"/>
+    <text class="ink card-title" x="1225" y="813">Outcome gaps</text>
+    <text class="muted small" x="1225" y="831">what to instrument</text>
+    <text class="ink card-title" x="1395" y="813">Next hypotheses</text>
+    <text class="muted small" x="1395" y="831">what to test</text>
+  </g>
+
+  <!-- Guardrail bar -->
+  <rect class="navy" x="45" y="852" width="1510" height="38" rx="9"/>
+  <text class="white body" x="170" y="877" text-anchor="middle">Signals, not scores</text>
+  <line x1="320" y1="860" x2="320" y2="884" stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <text class="white body" x="480" y="877" text-anchor="middle">Organizational, not individual</text>
+  <line x1="660" y1="860" x2="660" y2="884" stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <text class="white body" x="850" y="877" text-anchor="middle">Evidence confidence, not ROI truth</text>
+  <line x1="1065" y1="860" x2="1065" y2="884" stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <text class="white body" x="1230" y="877" text-anchor="middle">No unsupported causality</text>
+  <line x1="1390" y1="860" x2="1390" y2="884" stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <text class="white body" x="1470" y="877" text-anchor="middle">No team ranking</text>
+</svg>
