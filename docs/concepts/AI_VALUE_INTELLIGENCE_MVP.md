@@ -396,6 +396,36 @@ Phase 9 artifacts:
 - [`scripts/validate_ai_value_scenario.mjs`](../../scripts/validate_ai_value_scenario.mjs)
 - [`scripts/validate_ai_value_scenario.test.mjs`](../../scripts/validate_ai_value_scenario.test.mjs)
 
+### Phase 9.5: Agentic Platform Harness
+
+Define the development-infrastructure harness that lets specialist agents work
+on AI Value objects through structured handoffs, validators, and local ledger
+references.
+
+Deliverables:
+
+- provider-neutral AI Value agent handoff schema;
+- seeded Customer Support scenario-to-readiness handoff fixture;
+- local handoff validator;
+- tests for agent role definitions, object handoff payloads, model-selection
+  policy, tool-permission boundaries, verification routing, ledger references,
+  blocked data capture, and governance boundaries;
+- concept doc that maps future OpenAI Agents SDK, Codex, Cursor, Claude, Glean,
+  Waldo, or MCP adapters back to one local handoff shape.
+
+Phase 9.5 is development infrastructure only. It does not create customer
+telemetry, production agent runtime, autonomous customer actions, raw prompt or
+response storage, direct identifier capture, ROI calculation, causality claims,
+individual scoring, HR analytics, or customer-facing economic output.
+
+Phase 9.5 artifacts:
+
+- [AI_VALUE_AGENTIC_PLATFORM_HARNESS.md](./AI_VALUE_AGENTIC_PLATFORM_HARNESS.md)
+- [agent-handoff.schema.json](../../schemas/ai-value-intelligence/agent-handoff.schema.json)
+- [customer-support-agent-handoff.json](../contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json)
+- [`scripts/validate_ai_value_agent_harness.mjs`](../../scripts/validate_ai_value_agent_harness.mjs)
+- [`scripts/validate_ai_value_agent_harness.test.mjs`](../../scripts/validate_ai_value_agent_harness.test.mjs)
+
 ## 12. Quality Gates
 
 No pilot readout should be generated unless these questions pass:

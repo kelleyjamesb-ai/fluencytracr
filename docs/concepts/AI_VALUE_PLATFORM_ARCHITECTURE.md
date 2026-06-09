@@ -34,6 +34,13 @@ Client Context
 Every deck, spreadsheet, worksheet, and checklist should either create, enrich,
 validate, or report on one of these objects.
 
+Agentic development can accelerate this spine, but agents must coordinate
+through validated object references rather than raw conversation. Phase 9.5
+adds the local handoff harness for this pattern: specialist agents work on
+Blueprint, Metrics, Value Scenario, Evidence Readiness, Claim Boundary, and
+Executive Readout objects through structured handoffs, validators, and local
+ledger references.
+
 ## Source Artifact Roles
 
 | Source artifact | Software role |
