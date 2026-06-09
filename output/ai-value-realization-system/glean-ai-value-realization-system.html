@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glean AI Value Realization System</title>
+  <style>
+    :root {
+      --ink: #101b33;
+      --muted: #536174;
+      --line: #d8deea;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --blue: #0c4bd7;
+      --navy: #08245c;
+      --green: #0b7d54;
+      --amber: #bd7100;
+      --red: #b83c3c;
+      --purple: #6144d9;
+      --teal: #007c78;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.42;
+    }
+
+    .deck {
+      width: min(1220px, calc(100vw - 48px));
+      margin: 32px auto 64px;
+    }
+
+    .sheet {
+      min-height: 790px;
+      margin-bottom: 28px;
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 18px 50px rgba(16, 27, 51, 0.08);
+      page-break-after: always;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.12; letter-spacing: 0; }
+    h1 { font-size: 38px; max-width: 980px; }
+    h2 { font-size: 31px; max-width: 1040px; }
+    h3 { font-size: 16px; margin-bottom: 7px; }
+    p { margin: 9px 0 0; color: var(--muted); }
+
+    .summary {
+      max-width: 1040px;
+      margin-top: 12px;
+      font-size: 18px;
+      color: #334155;
+    }
+
+    .system-map {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1.05fr 1fr 1fr 1.1fr 1.1fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .step {
+      position: relative;
+      min-height: 164px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fff, #fbfcff);
+    }
+
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 42%;
+      right: -15px;
+      z-index: 2;
+      color: var(--blue);
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      margin-bottom: 10px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--blue);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .pill.navy { background: var(--navy); }
+    .pill.green { background: var(--green); }
+    .pill.amber { background: var(--amber); }
+    .pill.purple { background: var(--purple); }
+    .pill.teal { background: var(--teal); }
+    .pill.red { background: var(--red); }
+
+    .layer-band {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .card {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .callout {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #c8d7ff;
+      border-radius: 8px;
+      background: #f2f6ff;
+      color: #334155;
+    }
+
+    .matrix {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .matrix th {
+      padding: 10px;
+      border: 1px solid var(--line);
+      background: #edf3ff;
+      color: var(--ink);
+      text-align: left;
+    }
+
+    .matrix td {
+      padding: 10px;
+      border: 1px solid var(--line);
+      color: #334155;
+      vertical-align: top;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .missing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .missing {
+      min-height: 150px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--amber);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .missing.done { border-left-color: var(--green); }
+    .missing.held { border-left-color: var(--red); }
+    .missing.partial { border-left-color: var(--purple); }
+
+    .footer {
+      margin-top: 22px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    li { margin: 5px 0; }
+
+    .formula {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fafcff;
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .deck { width: auto; margin: 0; }
+      .sheet {
+        min-height: auto;
+        box-shadow: none;
+        border: 0;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="sheet">
+      <p class="eyebrow">Page 1 · Whole AI value proposition</p>
+      <h1>Glean’s value system needs three layers: model value, measure readiness, and validate behavior.</h1>
+      <p class="summary">
+        ROIbot, the AI Fluency Instrument, and FluencyTracr should not compete. Together they create a stronger value-realization motion:
+        estimate value, understand human readiness, observe aggregate behavior, then validate business outcomes.
+      </p>
+
+      <div class="system-map">
+        <div class="step">
+          <span class="pill navy">Business priority</span>
+          <h3>What outcome matters?</h3>
+          <p>Start with the customer’s goal: growth, cycle time, support quality, onboarding, cost avoidance, risk, or capacity.</p>
+        </div>
+        <div class="step">
+          <span class="pill amber">ROIbot</span>
+          <h3>Value model</h3>
+          <p>Packages assumptions, time saved, cost avoided, capacity created, and scenario-based value estimates.</p>
+        </div>
+        <div class="step">
+          <span class="pill purple">AI Fluency Instrument</span>
+          <h3>Human readiness</h3>
+          <p>Measures confidence, usage quality, behavior change, leadership reinforcement, capability growth, intent, and perceived impact.</p>
+        </div>
+        <div class="step">
+          <span class="pill green">FluencyTracr</span>
+          <h3>Observed work evidence</h3>
+          <p>Measures aggregate velocity, depth, breadth, quality, reliability, trust gaps, and whether AI use is becoming embedded in workflows.</p>
+        </div>
+        <div class="step">
+          <span class="pill teal">Outcome validation</span>
+          <h3>Business proof path</h3>
+          <p>Connects to customer-owned systems of record: Salesforce, ServiceNow, Jira, Zendesk, Workday, support systems, and finance context.</p>
+        </div>
+      </div>
+
+      <div class="formula">
+        Usage + Fluency + Workflow Evidence + Outcome Context = Defensible Value Investigation
+      </div>
+
+      <div class="layer-band">
+        <div class="card">
+          <strong>What this solves</strong>
+          The value motion stops being only “hours saved” and becomes “where AI changes work, creates capacity, and warrants value investigation.”
+        </div>
+        <div class="card">
+          <strong>Why it matters</strong>
+          It protects Glean from overclaiming while giving customers a clearer path from adoption to work redesign and business impact.
+        </div>
+        <div class="card">
+          <strong>Best positioning</strong>
+          ROIbot is the modeling layer. The AI Fluency Instrument is the human-change layer. FluencyTracr is the behavioral evidence layer.
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Executive takeaway:</strong>
+        The full value proposition is not “AI saved time.” It is “AI created capacity, the organization was ready to use it, behavior changed in observable workflows, and the evidence is strong enough to investigate business impact.”
+      </div>
+    </section>
+
+    <section class="sheet">
+      <p class="eyebrow">Page 2 · What each component contributes</p>
+      <h2>The pieces are complementary if each one owns a clear job.</h2>
+      <p class="summary">
+        The cleanest operating model is a shared evidence chain. Each component contributes a different type of signal, and the Value Playbook governs what claims can be made.
+      </p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Primary job</th>
+            <th>Signal type</th>
+            <th>What it can say</th>
+            <th>What it cannot say alone</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ROIbot</td>
+            <td>Value modeling and packaging</td>
+            <td>Assumptions, time saved, cost avoided, recapture, scenario estimates</td>
+            <td>“Here is the modeled value hypothesis.”</td>
+            <td>“This value was realized.”</td>
+          </tr>
+          <tr>
+            <td>AI Fluency Instrument</td>
+            <td>Human readiness and behavior-change measurement</td>
+            <td>Confidence, usage quality, behavior change, leadership reinforcement, capability growth, intent, perceived impact</td>
+            <td>“People are more or less ready to change how they work with AI.”</td>
+            <td>“The business impact happened.”</td>
+          </tr>
+          <tr>
+            <td>FluencyTracr / AI Work Evidence</td>
+            <td>Observed aggregate AI behavior evidence</td>
+            <td>Velocity, breadth, Depth Repertoire, quality, reliability, trust evidence gaps, scale readiness zones</td>
+            <td>“AI use is broad, repeated, reliable, shallow, frictioned, or held.”</td>
+            <td>“AI caused ROI or productivity lift.”</td>
+          </tr>
+          <tr>
+            <td>Metrics Library</td>
+            <td>KPI selection by function and use case</td>
+            <td>Sales, support, engineering, HR, marketing, product, CS metrics</td>
+            <td>“These are plausible business metrics to test.”</td>
+            <td>“These metrics moved because of Glean.”</td>
+          </tr>
+          <tr>
+            <td>Process Library</td>
+            <td>Current-state and future-state workflow design</td>
+            <td>Workflow steps, handoffs, bottlenecks, time assumptions</td>
+            <td>“Here is where work could be redesigned.”</td>
+            <td>“The redesign was adopted and sustained.”</td>
+          </tr>
+          <tr>
+            <td>Value Playbook</td>
+            <td>Governance and operating model</td>
+            <td>Evidence tiers, baselines, claim rules, handoff motion, review cadence</td>
+            <td>“This is what we are allowed to claim at this stage.”</td>
+            <td>“The data is complete.”</td>
+          </tr>
+          <tr>
+            <td>Business systems of record</td>
+            <td>Outcome validation</td>
+            <td>Ticket deflection, MTTR, win rate, cycle time, onboarding, cost, quality</td>
+            <td>“This business metric moved.”</td>
+            <td>“Glean caused the movement without an approved design.”</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="two-col">
+        <div class="card">
+          <strong>The combined narrative</strong>
+          <ul>
+            <li>ROIbot creates a value hypothesis.</li>
+            <li>AI Fluency Instrument shows whether people are ready and changing.</li>
+            <li>FluencyTracr shows whether behavior is changing in aggregate workflows.</li>
+            <li>Business systems validate whether outcomes moved.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>The governance rule</strong>
+          <ul>
+            <li>Survey-only means directional.</li>
+            <li>Telemetry-only means evidence-backed behavior.</li>
+            <li>System-of-record alignment means stronger value investigation.</li>
+            <li>ROI requires customer-owned assumptions and evidence tiers.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>How to describe this simply:</strong>
+        ROIbot estimates the value. The AI Fluency Instrument measures whether people are ready to realize it.
+        FluencyTracr checks whether the work behavior is actually changing. Customer systems validate the business outcome.
+      </div>
+    </section>
+
+    <section class="sheet">
+      <p class="eyebrow">Page 3 · What is missing based on the PPTs</p>
+      <h2>The PPTs already define the ambition. The missing work is evidence discipline and operational stitching.</h2>
+      <p class="summary">
+        The materials are strong on value narrative, workflow examples, metric libraries, and ROI modeling. The remaining gaps are mostly about proof, attribution, baselines, and where each signal lives in the operating model.
+      </p>
+
+      <div class="missing-grid">
+        <div class="missing partial">
+          <span class="pill purple">Partial</span>
+          <h3>Evidence tiers</h3>
+          <p>Need a clear distinction between estimate, evidence-backed hypothesis, and customer-validated impact.</p>
+        </div>
+        <div class="missing partial">
+          <span class="pill purple">Partial</span>
+          <h3>Baseline capture</h3>
+          <p>Need pre-go-live baseline for workflow time, KPI state, fluency, and current-state process pain.</p>
+        </div>
+        <div class="missing held">
+          <span class="pill red">Held</span>
+          <h3>Outcome joins</h3>
+          <p>Need governed connection to Salesforce, ServiceNow, Jira, Zendesk, Workday, or other systems of record.</p>
+        </div>
+        <div class="missing partial">
+          <span class="pill purple">Partial</span>
+          <h3>Capacity recapture</h3>
+          <p>Need to show how saved time is redeployed into named higher-value work, not just counted as hours.</p>
+        </div>
+        <div class="missing done">
+          <span class="pill green">Started</span>
+          <h3>Workflow evidence</h3>
+          <p>FluencyTracr can help test whether AI use is broad, repeated, and embedded in aggregate workflows.</p>
+        </div>
+        <div class="missing held">
+          <span class="pill red">Held</span>
+          <h3>Trust attribution</h3>
+          <p>Verification, feedback, and citation behavior exist, but need stricter parent attribution before governed trust claims.</p>
+        </div>
+        <div class="missing held">
+          <span class="pill red">Held</span>
+          <h3>Reusable leverage</h3>
+          <p>Need better skill/workflow metadata before claiming reusable organizational leverage from skills, agents, or templates.</p>
+        </div>
+        <div class="missing partial">
+          <span class="pill purple">Partial</span>
+          <h3>Segmentation</h3>
+          <p>Need approved aggregate joins for department, role, tenure, level, region, or behavior bands without ranking risk.</p>
+        </div>
+      </div>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Missing layer</th>
+            <th>Why it matters</th>
+            <th>Recommended owner / system</th>
+            <th>Next practical move</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Evidence-readiness layer</td>
+            <td>Prevents ROIbot from overclaiming when evidence is thin.</td>
+            <td>Value team + FluencyTracr</td>
+            <td>Define claim levels: directional, evidence-backed, validated.</td>
+          </tr>
+          <tr>
+            <td>Workflow redesign loop</td>
+            <td>Turns time saved into redesigned work and capacity redeployment.</td>
+            <td>Blueprint + AIOM + Process Library</td>
+            <td>Attach current/future workflow IDs to post-sales measurement plans.</td>
+          </tr>
+          <tr>
+            <td>Human readiness baseline</td>
+            <td>Explains why two customers with similar usage may realize different value.</td>
+            <td>AI Fluency Instrument</td>
+            <td>Run baseline and follow-up pulse for Glean Go / The Atlantic pilot.</td>
+          </tr>
+          <tr>
+            <td>Observed behavior validation</td>
+            <td>Shows whether users return to AI across surfaces and workflows.</td>
+            <td>FluencyTracr</td>
+            <td>Promote internal scale-readiness readout; keep trust and skills held.</td>
+          </tr>
+          <tr>
+            <td>Customer outcome validation</td>
+            <td>Business impact requires customer-owned KPIs, not behavior data alone.</td>
+            <td>Customer systems + BVC + AIOM</td>
+            <td>Select 3-5 KPIs per pilot and define data owner, baseline, cadence.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Recommended landing point:</strong>
+        Do not position FluencyTracr as a standalone replacement. Position it as the observed-behavior and evidence-readiness layer inside the broader Glean value realization system.
+      </div>
+
+      <div class="footer">
+        Guardrails: no individual scoring, no team ranking, no unsupported ROI, no causal productivity claim, and no customer-facing economic readout until governed outcome evidence exists.
+      </div>
+    </section>
+  </main>
+</body>
+</html>

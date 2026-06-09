@@ -1,0 +1,189 @@
+{
+  "schema_version": "FT_AI_VALUE_METRICS_LIBRARY_2026_06",
+  "library_id": "metrics_customer_support_v1",
+  "workflow_family": "customer_support_case_resolution",
+  "metrics": [
+    {
+      "metric_id": "support_median_resolution_hours",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "Median resolution time",
+      "definition": "Median elapsed hours from support case creation to resolved state for eligible aggregate support cases.",
+      "value_route": "CAPACITY_CREATION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "hours",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "support_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "support_backlog_count",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "Open backlog count",
+      "definition": "Count of eligible unresolved support cases remaining open at the end of the approved measurement window.",
+      "value_route": "CAPACITY_CREATION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "cases",
+      "baseline_rule": "Compare against an approved pre-period backlog count for the same workflow family.",
+      "comparison_rule": "Compare post-period backlog directionally with volume and staffing caveats attached.",
+      "owner": "support_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "support_escalation_rate",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "Escalation rate",
+      "definition": "Share of eligible support cases escalated from first-line support to advanced support.",
+      "value_route": "COST_REDUCTION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period escalation rate.",
+      "comparison_rule": "Compare post-period escalation share directionally with caveats.",
+      "owner": "support_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "support_reopen_rate",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "Reopen rate",
+      "definition": "Share of eligible resolved support cases reopened within the approved measurement window.",
+      "value_route": "QUALITY_IMPROVEMENT",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period reopen rate.",
+      "comparison_rule": "Compare post-period reopen share directionally with caveats.",
+      "owner": "support_quality",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "support_first_contact_resolution_rate",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "First contact resolution rate",
+      "definition": "Share of eligible support cases resolved during the first support interaction without escalation or reopen.",
+      "value_route": "EXPERIENCE_IMPROVEMENT",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period first contact resolution rate.",
+      "comparison_rule": "Compare post-period rate directionally; do not attribute change to AI without separate validation.",
+      "owner": "support_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "support_csat_score",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "Customer satisfaction score",
+      "definition": "Aggregate customer satisfaction score for eligible support interactions in the approved measurement window.",
+      "value_route": "EXPERIENCE_IMPROVEMENT",
+      "metric_priority": "P2",
+      "source_system": {
+        "source_type": "survey_aggregate",
+        "source_name": "Customer support satisfaction survey",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "score",
+      "baseline_rule": "Compare against an approved pre-period aggregate CSAT score.",
+      "comparison_rule": "Compare post-period score directionally with response-rate and sample caveats.",
+      "owner": "customer_experience",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "support_verification_coverage",
+      "workflow_family": "customer_support_case_resolution",
+      "name": "Verification coverage",
+      "definition": "Share of aggregate AI-assisted support episodes with verification or corroboration behavior attached.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "ai_work_evidence",
+        "source_name": "Aggregate AI Work Evidence",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period or reference-window aggregate verification coverage rate.",
+      "comparison_rule": "Compare post-period verification coverage directionally; use as trust context, not outcome proof.",
+      "owner": "ai_value_program_owner",
+      "allowed_claim_level": "SOURCE_READINESS_ONLY",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    }
+  ]
+}
