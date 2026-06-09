@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -6,9 +6,14 @@ import { Dashboard } from "./pages/Dashboard";
 import { AIValueWorkspace } from "./pages/AIValueWorkspace";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
-import { MethodologyReviewWorkspace } from "./pages/MethodologyReviewWorkspace";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import "./styles.css";
+
+const MethodologyReviewWorkspace = lazy(() =>
+  import("./pages/MethodologyReviewWorkspace").then((module) => ({
+    default: module.MethodologyReviewWorkspace
+  }))
+);
 
 const container = document.getElementById("root");
 
@@ -57,7 +62,9 @@ createRoot(container).render(
           path="/methodology-review"
           element={
             <ProtectedRoute>
-              <MethodologyReviewWorkspace />
+              <Suspense fallback={<main className="main">Loading workspace...</main>}>
+                <MethodologyReviewWorkspace />
+              </Suspense>
             </ProtectedRoute>
           }
         />
