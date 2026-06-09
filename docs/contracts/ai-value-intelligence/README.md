@@ -66,6 +66,13 @@ and schemas in
 and
 [`schemas/ai-value-intelligence/value-scenario-output.schema.json`](../../../schemas/ai-value-intelligence/value-scenario-output.schema.json).
 
+For the Phase 9.5 Agentic Platform Harness, use
+[`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)
+with the seeded Customer Support handoff fixture in
+[`examples/customer-support-agent-handoff.json`](./examples/customer-support-agent-handoff.json)
+and schema in
+[`schemas/ai-value-intelligence/agent-handoff.schema.json`](../../../schemas/ai-value-intelligence/agent-handoff.schema.json).
+
 ## Required Inputs
 
 The generator consumes only aggregate, privacy-safe inputs:
@@ -354,6 +361,37 @@ npm run test:ai-value-scenario
 Phase 9 is planning software only. It does not produce realized ROI,
 causality, productivity, HR analytics, individual scoring, runtime services,
 dashboards, production connectors, or customer-facing economic output.
+
+## Phase 9.5 Agentic Platform Harness
+
+The Phase 9.5 Agentic Platform Harness converts agent coordination into a
+governed local handoff contract:
+
+- specialist agent roles for Blueprint, Metrics, Scenario, Evidence Readiness,
+  Claim Boundary, Executive Readout, Review, Evaluation, and Integration;
+- structured object handoffs instead of raw agent messages;
+- model-selection policy;
+- tool-permission boundaries;
+- verification routing;
+- local agent-run ledger references;
+- blocked data capture protections.
+
+Run:
+
+```bash
+npm run validate:ai-value-agent-harness
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-agent-harness
+```
+
+Phase 9.5 is development infrastructure only. It does not create customer
+telemetry, production agent runtime, autonomous customer action, raw prompt or
+response storage, direct identifiers, ROI calculation, causality claims,
+individual scoring, or customer-facing economic output.
 
 ## Relationship To FluencyTracr Concepts
 
