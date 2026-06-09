@@ -2101,6 +2101,10 @@ body {
   overflow-wrap: anywhere;
 }
 
+.ai-value-evidence-row {
+  grid-template-columns: 0.8fr auto 1.6fr;
+}
+
 .ai-value-band-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2150,6 +2154,10 @@ body {
   }
 
   .ai-value-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-value-evidence-row {
     grid-template-columns: 1fr;
   }
 }

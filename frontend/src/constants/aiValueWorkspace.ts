@@ -1,90 +1,124 @@
 export const aiValueWorkspace = {
-  packetId: "executive_packet_customer_support_v1",
-  title: "Customer Support AI Value Validation Packet",
+  title: "AI Value Workshop",
   workflowName: "Customer support case resolution",
-  workflowFamily: "customer_support_case_resolution",
-  valueRoute: "CAPACITY_CREATION",
-  decision: "HOLD_FOR_ASSUMPTIONS",
-  claimState: "INTERNAL_ONLY",
-  blueprint: {
-    hypothesis:
-      "AI-assisted support work may be associated with faster case resolution, lower escalation, and improved knowledge reuse.",
-    currentStateSteps: [
-      "Support agent searches knowledge sources",
-      "Support agent drafts response",
-      "Support agent escalates unresolved cases"
+  valueRouteLabel: "Capacity creation",
+  decisionLabel: "Needs client assumptions",
+  claimModeLabel: "Internal planning only",
+  workshopSummary:
+    "Build the client workflow canvas, connect it to approved value signals, and prepare sponsor-ready language without overstating ROI or causality.",
+  canvas: {
+    clientQuestion: "Where should AI make support resolution measurably easier?",
+    today: [
+      "Agent searches across knowledge sources before responding",
+      "Agent drafts the customer response and verifies the answer",
+      "Unresolved cases move to escalation or specialist review"
     ],
-    futureStateSteps: [
-      "Support agent uses Search and Assistant for knowledge access",
-      "Approved Skills and agents support repeatable resolution workflows",
-      "Verification and recovery signals are reviewed in aggregate"
+    target: [
+      "Glean Search and Assistant reduce time spent locating trusted answers",
+      "Approved Skills support repeatable case-resolution workflows",
+      "Aggregate FluencyTracr evidence shows whether the workflow is being adopted safely"
+    ],
+    openDecisions: [
+      "Which case categories are in scope for the pilot?",
+      "Which support owner signs off on baseline and comparison windows?",
+      "What process changes happened during the same period?"
     ]
   },
-  metrics: [
+  valueSignals: [
     {
-      metricId: "support_median_resolution_hours",
-      name: "Median resolution time",
-      unit: "hours",
-      owner: "support_operations"
+      question: "Are cases resolving faster?",
+      measure: "Median time to resolution",
+      source: "Support case management system",
+      status: "Ready to map"
     },
     {
-      metricId: "support_backlog_count",
-      name: "Open backlog count",
-      unit: "cases",
-      owner: "support_operations"
+      question: "Is the open backlog moving down?",
+      measure: "Open backlog count",
+      source: "Support operations reporting",
+      status: "Ready to map"
+    },
+    {
+      question: "Are fewer cases escalating?",
+      measure: "Escalation rate",
+      source: "Escalation reporting",
+      status: "Recommended next"
+    },
+    {
+      question: "Is answer quality holding steady?",
+      measure: "Reopen or quality-review rate",
+      source: "Quality review process",
+      status: "Needs owner"
     }
   ],
-  scenarioBands: [
+  valueStory: [
     {
-      band: "CONSERVATIVE",
-      interpretation:
-        "Directional capacity scenario using the narrowest customer-owned assumption set."
+      label: "Most cautious",
+      interpretation: "Use only resolution-time movement and present it as an internal planning signal."
     },
     {
-      band: "BASE_CASE",
-      interpretation: "Directional capacity scenario using all recommended capacity metrics."
+      label: "Working case",
+      interpretation:
+        "Combine resolution time, backlog, and rollout timing to frame a capacity-creation hypothesis."
     },
     {
-      band: "EXPANDED",
+      label: "Expansion case",
       interpretation:
-        "Directional capacity scenario for later customer-owned validation after assumptions are reviewed."
+        "Add escalation and quality signals after the customer validates the operating assumptions."
     }
   ],
-  readinessChecks: [
-    ["workflow_state", "PRESENT"],
-    ["metric_state", "PRESENT"],
-    ["baseline_state", "PRESENT"],
-    ["assumption_state", "CAVEATED"],
-    ["scenario_state", "PRESENT"],
-    ["governance_state", "PRESENT"]
+  evidenceChecks: [
+    {
+      label: "Workflow canvas",
+      state: "Ready",
+      detail: "The customer support resolution workflow has a draft current and target state."
+    },
+    {
+      label: "Glean work evidence",
+      state: "Ready",
+      detail: "Aggregate Search, Assistant, Skills, and agent activity can support adoption context."
+    },
+    {
+      label: "Outcome source",
+      state: "Ready",
+      detail: "Support case data can provide resolution, backlog, escalation, and quality signals."
+    },
+    {
+      label: "Client assumptions",
+      state: "Needs input",
+      detail: "Staffing, channel mix, case routing, and rollout timing need business-owner review."
+    },
+    {
+      label: "Governance review",
+      state: "Ready",
+      detail: "The workspace stays aggregate-only and avoids ROI proof, causality, and people scoring."
+    }
   ],
-  safeClaims: [
-    "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
-  ],
-  caveatedClaims: [
-    "Customer-owned assumptions must be reviewed before executive validation."
-  ],
-  requiredCaveats: [
-    "This is a pre-ROI planning artifact.",
-    "Missing or caveated assumptions prevent external economic claims."
-  ],
-  blockedClaims: [
-    "roi_proof",
-    "causality_claim",
-    "individual_scoring",
-    "team_or_manager_ranking",
-    "hr_analytics",
-    "productivity_measurement",
-    "customer_facing_economic_output"
-  ],
-  nextActions: [
-    "Review missing staffing, channel mix, process, knowledge, metric definition, and rollout assumptions with customer owners."
-  ],
-  markdownPreview: `# Customer Support AI Value Validation Packet
-
-Decision: HOLD_FOR_ASSUMPTIONS
-
-Claim state: INTERNAL_ONLY
-
-Required caveat: Missing or caveated assumptions prevent external economic claims.`
+  safeLanguage: {
+    canSay: [
+      "The pilot has enough aggregate evidence to support an internal value-planning discussion.",
+      "The strongest current route is capacity creation in support case resolution.",
+      "External value claims should wait until the customer validates assumptions."
+    ],
+    needsValidation: [
+      "Baseline and comparison windows",
+      "Staffing and channel mix",
+      "Concurrent support process changes",
+      "Definition of in-scope case categories"
+    ],
+    cannotSay: [
+      "ROI proof",
+      "Causal productivity claims",
+      "Employee, manager, or team scoring",
+      "HR or performance analytics"
+    ]
+  },
+  executiveBrief: {
+    sponsorDecision: "Hold for assumptions before external value claims",
+    sponsorQuestion:
+      "Do we have customer-approved assumptions and outcome definitions for a defensible value readout?",
+    nextAction:
+      "Run a 45-minute value mapping session with Support Operations, AI program ownership, and the Glean account team.",
+    summary:
+      "The workshop is ready for internal planning. The next step is client validation of assumptions before any external economic narrative."
+  }
 };
