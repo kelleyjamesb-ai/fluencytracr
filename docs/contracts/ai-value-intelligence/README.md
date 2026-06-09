@@ -73,6 +73,16 @@ with the seeded Customer Support handoff fixture in
 and schema in
 [`schemas/ai-value-intelligence/agent-handoff.schema.json`](../../../schemas/ai-value-intelligence/agent-handoff.schema.json).
 
+For Phase 10 Evidence Readiness, Phase 11 Claim Boundary, Phase 12 Executive
+Packet, and Phase 13 Local Workspace UI, use the local validators and V1 spine
+test:
+
+- [`scripts/validate_ai_value_readiness.mjs`](../../../scripts/validate_ai_value_readiness.mjs)
+- [`scripts/validate_ai_value_claim_boundary.mjs`](../../../scripts/validate_ai_value_claim_boundary.mjs)
+- [`scripts/generate_ai_value_executive_packet.mjs`](../../../scripts/generate_ai_value_executive_packet.mjs)
+- [`scripts/ai_value_v1_spine.test.mjs`](../../../scripts/ai_value_v1_spine.test.mjs)
+- [`frontend/src/pages/AIValueWorkspace.tsx`](../../../frontend/src/pages/AIValueWorkspace.tsx)
+
 ## Required Inputs
 
 The generator consumes only aggregate, privacy-safe inputs:
@@ -392,6 +402,49 @@ Phase 9.5 is development infrastructure only. It does not create customer
 telemetry, production agent runtime, autonomous customer action, raw prompt or
 response storage, direct identifiers, ROI calculation, causality claims,
 individual scoring, or customer-facing economic output.
+
+## Phase 10-13 Local V1 Spine
+
+The remaining V1 phases connect the object model into a local product path:
+
+```text
+Blueprint
+-> Metrics
+-> Value Scenario
+-> Evidence Readiness
+-> Claim Boundary
+-> Executive Packet
+-> Local Workspace UI
+```
+
+Run:
+
+```bash
+npm run validate:ai-value-readiness
+npm run validate:ai-value-claim-boundary
+npm run generate:ai-value-executive-packet
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-readiness
+npm run test:ai-value-claim-boundary
+npm run test:ai-value-executive-packet
+npm run test:ai-value-v1-spine
+npm test --workspace frontend -- AIValueWorkspace.test.tsx
+```
+
+The local workspace route is:
+
+```text
+/ai-value-workspace
+```
+
+This V1 remains local and governed. It does not authorize production
+connectors, customer-facing economic output, realized ROI calculation,
+causality claims, HR analytics, individual scoring, or productivity
+measurement.
 
 ## Relationship To FluencyTracr Concepts
 
