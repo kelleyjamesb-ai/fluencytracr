@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/value-scenario-output.schema.json",
+  "title": "AI Value Scenario Output",
+  "description": "Docs-backed local schema for governed value scenario outputs. This is not a production API contract or customer-facing economic output.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "scenario_id",
+    "source",
+    "input",
+    "output",
+    "blocked_claims",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_SCENARIO_2026_06"
+    },
+    "scenario_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["blueprint_id", "metrics_library_id"],
+      "properties": {
+        "blueprint_id": {
+          "type": "string"
+        },
+        "metrics_library_id": {
+          "type": "string"
+        }
+      }
+    },
+    "input": {
+      "$ref": "value-scenario-input.schema.json"
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "claim_state",
+        "scenario_summary",
+        "required_caveats",
+        "safe_claims"
+      ],
+      "properties": {
+        "claim_state": {
+          "enum": [
+            "CAVEATED_VALUE_INVESTIGATION",
+            "SOURCE_READINESS_ONLY",
+            "INTERNAL_ONLY",
+            "BLOCKED"
+          ]
+        },
+        "scenario_summary": {
+          "type": "string"
+        },
+        "required_caveats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "safe_claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "roi_proof",
+          "causality_claim",
+          "individual_scoring",
+          "team_or_manager_ranking",
+          "hr_analytics",
+          "productivity_measurement",
+          "realized_roi_calculation",
+          "customer_facing_economic_output"
+        ]
+      }
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requires_connector": {
+          "const": false
+        },
+        "requires_dashboard": {
+          "const": false
+        },
+        "requires_realized_roi_calculation": {
+          "const": false
+        },
+        "requires_causality_claim": {
+          "const": false
+        },
+        "requires_individual_scoring": {
+          "const": false
+        },
+        "requires_hr_analytics": {
+          "const": false
+        },
+        "requires_runtime_service": {
+          "const": false
+        },
+        "customer_facing_economic_output": {
+          "const": false
+        }
+      }
+    }
+  }
+}
