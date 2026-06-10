@@ -280,6 +280,14 @@ Purpose: store and validate the objects listed above.
 This is the platform spine. UI modules should read and write these objects
 instead of directly manipulating deck-like structures.
 
+Resolved decision: the Canonical Object Layer is owned by the local
+deterministic AI Value Engine. Validators, generators, the agent handoff
+harness, and the local workspace UI should delegate object validation,
+pipeline ordering, and governance gating to the engine instead of
+re-implementing those rules. See
+[AI_VALUE_ENGINE_CONTRACT.md](./AI_VALUE_ENGINE_CONTRACT.md) and OpenSpec
+change `add-ai-value-engine-architecture`.
+
 ### 3. Library Layer
 
 Purpose: provide reusable templates.
