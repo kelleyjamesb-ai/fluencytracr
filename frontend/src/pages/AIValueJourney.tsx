@@ -157,10 +157,12 @@ export const AIValueJourney = () => {
         <article className="ai-value-panel ai-value-opportunity-panel">
           <div className="ai-value-section-head">
             <div>
-              <h2>ROI / Value Opportunity Map</h2>
+              <p className="eyebrow">Metrics Library Engine</p>
+              <h2>Outcome &amp; ROI Opportunity Mapping</h2>
               <p>
-                Potential ROI points Glean can help investigate. Each row separates
-                Glean evidence from customer-owned outcome data.
+                Convert the Blueprint route into measurable business outcomes. Each
+                card separates what Glean can show from the customer-owned data needed
+                before value language gets stronger.
               </p>
             </div>
             <StatusPill
@@ -172,24 +174,16 @@ export const AIValueJourney = () => {
               tone={journey.opportunities.length > 0 ? "good" : "warn"}
             />
           </div>
-          <div className="ai-value-opportunity-table">
-            <div className="ai-value-opportunity-row ai-value-opportunity-header" role="row">
-              <span>ROI point</span>
-              <span>Glean evidence</span>
-              <span>Customer data needed</span>
-              <span>Status</span>
-            </div>
+          <div className="ai-value-opportunity-board">
             {journey.opportunities.length > 0 ? (
               journey.opportunities.map((opportunity) => (
-                <div className="ai-value-opportunity-row" role="row" key={opportunity.id}>
-                  <span>
-                    <strong>{opportunity.valueRouteLabel}</strong>
-                    <small>{opportunity.metricName}</small>
-                    <small>{opportunity.roiPoint}</small>
-                  </span>
-                  <span>{opportunity.gleanEvidence}</span>
-                  <span>{opportunity.customerDataNeeded}</span>
-                  <span>
+                <article className="ai-value-opportunity-card" key={opportunity.id}>
+                  <div className="ai-value-opportunity-card-head">
+                    <div>
+                      <span className="ai-value-map-label">Blueprint value route</span>
+                      <h3>{opportunity.valueRouteLabel}</h3>
+                      <p>{opportunity.workflowName}</p>
+                    </div>
                     <StatusPill
                       label={opportunity.status}
                       tone={
@@ -198,10 +192,36 @@ export const AIValueJourney = () => {
                           : "warn"
                       }
                     />
-                    <small>{opportunity.claimBoundary}</small>
-                    <small>{opportunity.nextValidationStep}</small>
-                  </span>
-                </div>
+                  </div>
+
+                  <div className="ai-value-map-grid">
+                    <div className="ai-value-map-cell">
+                      <span className="ai-value-map-label">Outcome metric</span>
+                      <strong>{opportunity.metricName}</strong>
+                      <p>{opportunity.measurementUnit}</p>
+                      <small>{opportunity.roiPoint}</small>
+                    </div>
+                    <div className="ai-value-map-cell">
+                      <span className="ai-value-map-label">Customer system to connect</span>
+                      <strong>{opportunity.sourceSystem}</strong>
+                      <p>{opportunity.approvedGrain}</p>
+                      <small>{opportunity.baselineRule}</small>
+                    </div>
+                    <div className="ai-value-map-cell">
+                      <span className="ai-value-map-label">What Glean can show</span>
+                      <p>{opportunity.gleanEvidence}</p>
+                    </div>
+                    <div className="ai-value-map-cell">
+                      <span className="ai-value-map-label">Scenario handoff</span>
+                      <p>{opportunity.scenarioHandoff}</p>
+                    </div>
+                    <div className="ai-value-map-cell ai-value-map-cell-wide">
+                      <span className="ai-value-map-label">Claim boundary</span>
+                      <p>{opportunity.claimBoundary}</p>
+                      <small>{opportunity.nextValidationStep}</small>
+                    </div>
+                  </div>
+                </article>
               ))
             ) : (
               <p>

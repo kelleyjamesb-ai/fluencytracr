@@ -194,6 +194,29 @@ describe("AIValueJourney", () => {
     );
   });
 
+  it("turns metrics into outcome and ROI opportunity mapping cards", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("heading", { name: /Outcome & ROI Opportunity Mapping/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Blueprint value route/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Outcome metric/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Customer system to connect/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/What Glean can show/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Scenario handoff/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Claim boundary/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Support case resolution/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/aggregate workflow window/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Model as a governed value scenario/i).length).toBeGreaterThan(0);
+
+    expect(container.textContent).not.toMatch(
+      /metric_id|metrics_library|schema_version|Glean proved ROI|causality proof|productivity score/i
+    );
+  });
+
   it("lets a reviewer accept submitted evidence", async () => {
     renderPage();
     await waitFor(() => {

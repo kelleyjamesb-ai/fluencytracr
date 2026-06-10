@@ -41,13 +41,19 @@ export interface EvidenceReviewItem {
 
 export interface ValueOpportunity {
   id: string;
+  workflowName: string;
   metricName: string;
+  measurementUnit: string;
   valueRouteLabel: string;
   roiPoint: string;
   gleanEvidence: string;
+  sourceSystem: string;
+  approvedGrain: string;
+  baselineRule: string;
   customerDataNeeded: string;
   status: string;
   nextValidationStep: string;
+  scenarioHandoff: string;
   claimBoundary: string;
 }
 
@@ -128,6 +134,16 @@ const sourceName = (metric: Record<string, any>): string =>
 const approvedGrain = (metric: Record<string, any>): string =>
   String(metric?.source_system?.approved_grain ?? "approved aggregate window");
 
+const workflowLabel = (
+  blueprint: Record<string, any> | null,
+  metricsLibrary: Record<string, any> | null
+): string =>
+  String(
+    blueprint?.workflow_name ??
+      metricsLibrary?.workflow_name ??
+      humanize(blueprint?.workflow_family ?? metricsLibrary?.workflow_family)
+  );
+
 const gleanEvidenceFor = (metric: Record<string, any>): string => {
   const sourceType = String(metric?.source_system?.source_type ?? "");
   if (sourceType === "ai_work_evidence") {
@@ -197,17 +213,24 @@ function buildValueOpportunities(
           : "Modeled opportunity, needs customer data";
       return {
         id: String(metric.metric_id ?? metric.name),
+        workflowName: workflowLabel(blueprint, metricsLibrary),
         metricName: String(metric.name ?? "Outcome signal"),
+        measurementUnit: String(metric.measurement_unit ?? "customer-approved unit"),
         valueRouteLabel: VALUE_ROUTE_LABELS[route] ?? VALUE_ROUTE_LABELS.UNCLASSIFIED,
         roiPoint: ROI_POINT_BY_ROUTE[route] ?? ROI_POINT_BY_ROUTE.UNCLASSIFIED,
         gleanEvidence: gleanEvidenceFor(metric),
+        sourceSystem: sourceName(metric),
+        approvedGrain: approvedGrain(metric),
+        baselineRule: String(metric.baseline_rule ?? "Baseline window required."),
         customerDataNeeded: `${sourceName(metric)} at ${approvedGrain(metric)}; ${String(
-          metric.baseline_rule ?? "baseline window required"
+          metric.baseline_rule ?? "Baseline window required."
         )}`,
         status,
         nextValidationStep: acceptedEvidence
           ? "Review whether the attached customer outcome evidence supports a caveated readout."
           : "Ask the customer data owner for baseline and comparison exports for this metric.",
+        scenarioHandoff:
+          "Model as a governed value scenario after the customer owner confirms baseline, comparison, assumptions, and source coverage.",
         claimBoundary:
           CLAIM_LABELS[String(metric.allowed_claim_level ?? "")] ??
           "Governance review required before this becomes customer-facing."

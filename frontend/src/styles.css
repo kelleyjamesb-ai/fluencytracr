@@ -2138,6 +2138,70 @@ body {
   gap: 8px;
 }
 
+.ai-value-opportunity-board {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-value-opportunity-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #fbfbff;
+}
+
+.ai-value-opportunity-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ai-value-opportunity-card-head h3 {
+  margin: 2px 0 4px;
+  font-size: 18px;
+}
+
+.ai-value-opportunity-card-head p {
+  margin: 0;
+}
+
+.ai-value-map-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-map-cell {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e4e6ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-map-cell-wide {
+  grid-column: 1 / -1;
+}
+
+.ai-value-map-cell p,
+.ai-value-map-cell small {
+  display: block;
+  margin: 4px 0 0;
+}
+
+.ai-value-map-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #59637c;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .ai-value-opportunity-row {
   display: grid;
   grid-template-columns: minmax(180px, 0.9fr) minmax(220px, 1.1fr) minmax(220px, 1.1fr) minmax(180px, 0.9fr);
@@ -2312,8 +2376,13 @@ body {
   }
 
   .ai-value-opportunity-row,
-  .ai-value-review-card {
+  .ai-value-review-card,
+  .ai-value-map-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ai-value-opportunity-card-head {
+    flex-direction: column;
   }
 
   .ai-value-evidence-row {
