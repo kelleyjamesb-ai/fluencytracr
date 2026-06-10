@@ -79,7 +79,7 @@
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.
 - Queue uses **7 phased items** aligned with blueprint **§17** (`WORK_QUEUE.json` → `blueprint_ref`).
-- All 7 phased queue items are marked **done** in `WORK_QUEUE.json`; no durable queue item is currently `in_progress`.
+- All 7 original phased queue items are marked **done** in `WORK_QUEUE.json`; `ai-value-platform-product-spine-v1` is the next pending AI Value Platform item and no durable queue item is currently `in_progress`.
 - Temporary frontend CI repair slice is complete; no original blueprint phase remains active.
 - Temporary backend tenant-isolation repair slice is complete; no original blueprint phase remains active.
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
@@ -123,7 +123,7 @@
 
 ## Next Step
 
-- AI Value Platform: human review/PR of the four phase commits on `codex/FluencyTracr-ai-value-platform`; decide production migration posture for `ai_value_objects` (local dev DB has the table; Supabase deploy needs baseline or `prisma db execute`), the readout export surface, and whether to scaffold OpenSpec `add-ai-value-engine-core` as the formal record of the completed migration.
+- AI Value Platform: start `ai-value-platform-product-spine-v1` from `main`. Use `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md` as the north star and make `/ai-value-journey` the client-facing product spine for Human Readiness -> Blueprint -> Execution Instrumentation -> Evidence And Measurement -> Value Realization -> Whole-System Outcomes. Keep FluencyTracr as the aggregate evidence layer; introduce ROI-style output only through a future governed value-modeling contract with customer-owned assumptions/evidence and explicit claim review.
 
 - If the human accepts the org-agnostic commercialization track, the next bounded step is review/commit/PR for the docs-only AI Work Evidence concept and pilot package. Keep any later live customer pilot blocked until customer-side aggregate transformation, source coverage declarations, approved aggregate labels, and customer-owned outcome metrics are available.
 - Add a new bounded queue item before starting the next durable implementation track; the original 7-phase blueprint queue is complete.
