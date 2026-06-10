@@ -99,3 +99,6 @@ export type {
   SpineStageResult,
   SpineStageStatus
 } from "./spine";
+
+export { renderExecutiveReadoutHtml } from "./readoutHtml";
+export type { RenderExecutiveReadoutInputs } from "./readoutHtml";
