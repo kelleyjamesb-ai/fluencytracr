@@ -360,7 +360,7 @@ describe("AI value spine run API", () => {
         `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
       )
       .set(writeAuth)
-      .send({ decision: "ACCEPTED", reviewer_role: "enablement_lead" });
+      .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" });
     expect(review.status).toBe(200);
     expect(review.body.review_state).toBe("ACCEPTED");
 
@@ -386,16 +386,49 @@ describe("AI value spine run API", () => {
         `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
       )
       .set(writeAuth)
-      .send({ decision: "REJECTED", reviewer_role: "enablement_lead" });
+      .send({ decision: "REJECTED", reviewer_role: "ADMIN" });
     expect(secondReview.status).toBe(409);
+
+    const resubmit = await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(outcomeExport);
+    expect(resubmit.status).toBe(409);
+    expect(resubmit.body.reason).toBe("TERMINAL_REVIEW_STATE");
   });
 
-  it("requires a reviewer role for evidence review", async () => {
+  it("rejects unsafe reviewer role text for evidence review", async () => {
+    const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+    await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(outcomeExport)
+      .expect(201);
+
     const response = await request(app)
-      .post("/api/v1/ai-value/objects/outcome_evidence_export/x/review")
-      .set(readAuth)
-      .send({ decision: "ACCEPTED", reviewer_role: "exec" });
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "person@example.com" });
+    expect(response.status).toBe(400);
+    expect(response.body.reason).toBe("INVALID_REVIEW_DECISION");
+  });
+
+  it("rejects outcome evidence exports outside the authenticated org", async () => {
+    const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+    const otherOrgExport = {
+      ...outcomeExport,
+      org_id: "org-2"
+    };
+
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(otherOrgExport);
+
     expect(response.status).toBe(403);
+    expect(response.body.message).toBe("Token org scope does not match request org");
   });
 
   it("requires a write role to run the spine", async () => {

@@ -55,6 +55,50 @@ const FORBIDDEN_KEY_PATTERNS = [
 
 const FORBIDDEN_KEY_EXCEPTIONS = new Set(["source_name"]);
 
+const ALLOWED_ATTESTATION_FIELDS = new Set([
+  "exported_by_role",
+  "approved_by_role",
+  "export_date",
+  "contains_person_level_data",
+  "contains_raw_content"
+]);
+
+const ALLOWED_REVIEWER_ROLES = new Set([
+  "ADMIN",
+  "ENABLEMENT_LEAD",
+  "GOV_OPERATOR",
+  "admin",
+  "enablement_lead",
+  "gov_operator"
+]);
+
+const FORBIDDEN_SOURCE_METADATA_PATTERNS = [
+  /employee/i,
+  /\buser(?:_id|_email)?\b/i,
+  /^user[A-Z]/,
+  /email/i,
+  /person/i,
+  /raw/i,
+  /ticket_text/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /file_content/i,
+  /hris/i
+];
+
+const FORBIDDEN_MONETARY_UNIT_PATTERNS = [
+  /\busd\b/i,
+  /\beur\b/i,
+  /\bgbp\b/i,
+  /currency/i,
+  /dollar/i,
+  /monetary/i,
+  /amount/i,
+  /revenue/i,
+  /cost/i
+];
+
 export interface OutcomeEvidenceExportValidationResult {
   schema_version: string;
   export_id: string | null;
@@ -91,11 +135,34 @@ function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Se
     return fields;
   }
   for (const [key, nested] of Object.entries(value)) {
-    if (key === "attestation") continue;
+    if (key === "attestation") {
+      for (const attestationKey of Object.keys(nested ?? {})) {
+        if (!ALLOWED_ATTESTATION_FIELDS.has(attestationKey)) {
+          fields.add(`attestation.${attestationKey} is not allowed`);
+        }
+      }
+      continue;
+    }
     if (isForbiddenKey(key)) fields.add(key);
     collectForbiddenFields(nested, fields);
   }
   return fields;
+}
+
+function containsForbiddenSourceMetadata(value: any): boolean {
+  return FORBIDDEN_SOURCE_METADATA_PATTERNS.some((pattern) =>
+    pattern.test(String(value ?? ""))
+  );
+}
+
+function isForbiddenMonetaryUnit(value: any): boolean {
+  return FORBIDDEN_MONETARY_UNIT_PATTERNS.some((pattern) =>
+    pattern.test(String(value ?? ""))
+  );
+}
+
+function isAllowedReviewerRole(value: any): boolean {
+  return typeof value === "string" && ALLOWED_REVIEWER_ROLES.has(value);
 }
 
 export function reviewStateOf(exportObject: any): string {
@@ -125,6 +192,15 @@ function collectBaseGaps(exportObject: any): string[] {
   for (const field of ["source_type", "source_name", "approved_grain"]) {
     if (!source[field]) gaps.push(`source_system.${field} is missing`);
   }
+  if (
+    [
+      source.source_type,
+      source.source_name,
+      source.approved_grain
+    ].some((value) => containsForbiddenSourceMetadata(value))
+  ) {
+    gaps.push("source_system contains forbidden identifier metadata");
+  }
 
   const attestation = exportObject?.attestation ?? {};
   for (const field of ["exported_by_role", "approved_by_role", "export_date"]) {
@@ -148,6 +224,9 @@ function collectBaseGaps(exportObject: any): string[] {
         const path = `metrics[${index}]`;
         if (!metric?.metric_id) gaps.push(`${path}.metric_id is missing`);
         if (!metric?.measurement_unit) gaps.push(`${path}.measurement_unit is missing`);
+        if (isForbiddenMonetaryUnit(metric?.measurement_unit)) {
+          gaps.push(`${path}.measurement_unit is a forbidden monetary unit`);
+        }
         for (const field of ["baseline_value", "comparison_value"]) {
           if (typeof metric?.[field] !== "number" || !Number.isFinite(metric[field])) {
             gaps.push(`${path}.${field} must be a number`);
@@ -168,12 +247,19 @@ function collectBaseGaps(exportObject: any): string[] {
     }
     if (review?.review_state === "ACCEPTED" || review?.review_state === "REJECTED") {
       if (!review?.reviewer_role) gaps.push("review.reviewer_role is missing");
+      if (review?.reviewer_role && !isAllowedReviewerRole(review.reviewer_role)) {
+        gaps.push(`review.reviewer_role is invalid: ${review.reviewer_role}`);
+      }
       if (!review?.reviewed_at) gaps.push("review.reviewed_at is missing");
     }
   }
 
   for (const field of [...collectForbiddenFields(exportObject)].sort()) {
-    gaps.push(`Forbidden field detected: ${field}`);
+    gaps.push(
+      field.includes(".") && field.endsWith(" is not allowed")
+        ? field
+        : `Forbidden field detected: ${field}`
+    );
   }
   return gaps;
 }
@@ -185,7 +271,9 @@ function collectCrossCheckGaps(
   const gaps: string[] = [];
 
   const library = context.metricsLibrary;
-  if (library) {
+  if (!library) {
+    gaps.push("metrics library context is required before evidence attachment");
+  } else {
     const libraryMetrics = new Map(
       (library.metrics ?? []).map((metric: any) => [metric.metric_id, metric])
     );
@@ -200,6 +288,16 @@ function collectCrossCheckGaps(
           `metric ${metric.metric_id} unit ${metric.measurement_unit} does not match library unit ${match.measurement_unit}`
         );
       }
+      const expectedWorkflow = match.workflow_family ?? library.workflow_family;
+      if (
+        expectedWorkflow &&
+        exportObject?.workflow_family &&
+        expectedWorkflow !== exportObject.workflow_family
+      ) {
+        gaps.push(
+          `metric ${metric.metric_id} belongs to workflow ${expectedWorkflow}, export declares ${exportObject.workflow_family}`
+        );
+      }
       if (match.source_system?.source_type &&
           exportObject?.source_system?.source_type &&
           match.source_system.source_type !== exportObject.source_system.source_type) {
@@ -207,11 +305,27 @@ function collectCrossCheckGaps(
           `metric ${metric.metric_id} expects source type ${match.source_system.source_type}, export declares ${exportObject.source_system.source_type}`
         );
       }
+      if (match.source_system?.source_name &&
+          exportObject?.source_system?.source_name &&
+          match.source_system.source_name !== exportObject.source_system.source_name) {
+        gaps.push(
+          `metric ${metric.metric_id} expects source name ${match.source_system.source_name}, export declares ${exportObject.source_system.source_name}`
+        );
+      }
+      if (match.source_system?.approved_grain &&
+          exportObject?.source_system?.approved_grain &&
+          match.source_system.approved_grain !== exportObject.source_system.approved_grain) {
+        gaps.push(
+          `metric ${metric.metric_id} expects approved grain ${match.source_system.approved_grain}, export declares ${exportObject.source_system.approved_grain}`
+        );
+      }
     }
   }
 
   const blueprint = context.blueprint;
-  if (blueprint) {
+  if (!blueprint) {
+    gaps.push("blueprint context is required before evidence attachment");
+  } else {
     if (blueprint.workflow_family !== exportObject?.workflow_family) {
       gaps.push(
         `export workflow_family ${exportObject?.workflow_family} does not match blueprint ${blueprint.workflow_family}`
@@ -277,6 +391,9 @@ export function applyOutcomeEvidenceReview(
   }
   if (!reviewerRole) {
     return { exportObject: null, error: "reviewer_role is required" };
+  }
+  if (!isAllowedReviewerRole(reviewerRole)) {
+    return { exportObject: null, error: `reviewer_role is invalid: ${reviewerRole}` };
   }
   const currentState = reviewStateOf(exportObject);
   if (currentState !== "SUBMITTED") {

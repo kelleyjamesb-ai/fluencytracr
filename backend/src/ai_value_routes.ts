@@ -136,6 +136,20 @@ export function registerAiValueRoutes(app: Express): void {
       }
 
       if (objectType === "outcome_evidence_export") {
+        if (payload.org_id !== orgId) {
+          return res.status(403).json({
+            error: "Outcome evidence export org_id must match authenticated org",
+            reason: "ORG_SCOPE_MISMATCH"
+          });
+        }
+        const existing = await getAiValueObject(orgId, objectType, objectId);
+        const existingReviewState = aiValueEngine.reviewStateOf(existing?.payload);
+        if (existingReviewState === "ACCEPTED" || existingReviewState === "REJECTED") {
+          return res.status(409).json({
+            error: `outcome evidence export is ${existingReviewState} and cannot be resubmitted`,
+            reason: "TERMINAL_REVIEW_STATE"
+          });
+        }
         // Uploads always enter as SUBMITTED; acceptance is reviewer-only.
         payload.review = { review_state: "SUBMITTED" };
       }
@@ -236,10 +250,19 @@ export function registerAiValueRoutes(app: Express): void {
       const { objectId } = req.params;
       const body = (req.body ?? {}) as Record<string, unknown>;
       const decision = body.decision;
-      const reviewerRole = body.reviewer_role;
+      const reviewerRole = req.role;
       if (decision !== "ACCEPTED" && decision !== "REJECTED") {
         return res.status(400).json({
           error: "decision must be ACCEPTED or REJECTED",
+          reason: "INVALID_REVIEW_DECISION"
+        });
+      }
+      if (
+        body.reviewer_role !== undefined &&
+        body.reviewer_role !== reviewerRole
+      ) {
+        return res.status(400).json({
+          error: "reviewer_role must match the authenticated role",
           reason: "INVALID_REVIEW_DECISION"
         });
       }
