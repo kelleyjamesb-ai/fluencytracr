@@ -60,6 +60,13 @@ const objects = [
     validation: {}
   },
   {
+    object_type: "roi_scenario",
+    object_id: "roi_support",
+    workflow_family: "customer_support_case_resolution",
+    valid: true,
+    validation: {}
+  },
+  {
     object_type: "fluency_baseline",
     object_id: "baseline_v1",
     workflow_family: null,
@@ -187,6 +194,113 @@ const detailPayloads: Record<string, Record<string, unknown>> = {
       scenario_summary:
         "Governed value scenario draft for customer-owned validation of aggregate workflow metrics."
     }
+  },
+  "roi_scenario/roi_support": {
+    roi_scenario_id: "roi_support",
+    workflow: {
+      workflow_family: "customer_support_case_resolution",
+      workflow_name: "Support case resolution",
+      value_route: "CAPACITY_CREATION"
+    },
+    evidence_status: {
+      readiness_decision: "HOLD_FOR_ASSUMPTIONS",
+      outcome_evidence_review_state: "SUBMITTED",
+      source_coverage: {
+        ai_activity: "PRESENT",
+        workflow: "PRESENT",
+        outcome: "PRESENT",
+        baseline: "PRESENT",
+        trust: "PRESENT",
+        assumptions: "CAVEATED",
+        suppression: "PRESENT"
+      }
+    },
+    baseline_comparison: {
+      baseline_window: {
+        state: "PRESENT",
+        owner: "support_operations",
+        rule: "Compare against an approved pre-period window for the same workflow family."
+      },
+      comparison_window: {
+        state: "PRESENT",
+        owner: "support_operations",
+        rule: "Compare against the approved post-period window; report directional movement only."
+      }
+    },
+    metric_models: [
+      {
+        metric_id: "support_median_resolution_hours",
+        name: "Median resolution time",
+        value_route: "CAPACITY_CREATION",
+        measurement_unit: "hours",
+        source_system: {
+          source_type: "support_system",
+          source_name: "Support case management system",
+          approved_grain: "aggregate_workflow_window"
+        },
+        baseline_rule: "Compare against an approved pre-period window.",
+        comparison_rule: "Compare against the approved post-period window.",
+        formula_template: "aggregate comparison only; customer computes directional delta",
+        allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION",
+        value_model_role: "PRIMARY"
+      }
+    ],
+    customer_owned_assumptions: [
+      {
+        assumption_id: "case_mix_stability",
+        state: "PRESENT",
+        owner: "support_operations"
+      },
+      {
+        assumption_id: "staffing_and_coverage_context",
+        state: "MISSING",
+        owner: "support_leader"
+      }
+    ],
+    scenario_bands: [
+      {
+        band: "CONSERVATIVE",
+        interpretation: "Use the narrowest customer-owned assumption set.",
+        included_metric_ids: ["support_median_resolution_hours"]
+      },
+      {
+        band: "BASE_CASE",
+        interpretation: "Use approved baseline and comparison windows with current caveats.",
+        included_metric_ids: ["support_median_resolution_hours"]
+      },
+      {
+        band: "EXPANDED",
+        interpretation: "Use only after customer assumptions and outcome evidence are accepted.",
+        included_metric_ids: ["support_median_resolution_hours"]
+      }
+    ],
+    safe_value_language: {
+      allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION",
+      allowed_phrases: [
+        "Potential capacity-creation opportunity for customer-owned validation.",
+        "Aggregate support metrics can support a caveated capacity investigation."
+      ],
+      required_caveats: [
+        "Scenario bands are planning ranges, not realized ROI.",
+        "This artifact does not create customer-facing economic output."
+      ],
+      blocked_claims: [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement",
+        "realized_roi_calculation",
+        "customer_facing_economic_output"
+      ]
+    },
+    economic_output_policy: {
+      mode: "MODELED_RANGE_ONLY",
+      customer_facing_economic_output: false,
+      dollarized_output: false,
+      realized_roi_calculation: false
+    }
   }
 };
 
@@ -244,7 +358,7 @@ describe("AIValueJourney", () => {
 
     expect(screen.getByText(/Needs client assumptions/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Escalation rate/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
     expect(
@@ -345,13 +459,13 @@ describe("AIValueJourney", () => {
     expect(screen.getByText(/Needs client evidence/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Value scenario/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Safe value language/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Next client action/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Next client action/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/FluencyTracr aggregate evidence/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Baseline window and comparison period/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Conservative/i)).toBeInTheDocument();
-    expect(screen.getByText(/Base case/i)).toBeInTheDocument();
-    expect(screen.getByText(/Expanded/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Conservative/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Base case/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Expanded/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Caveated value investigation/i).length).toBeGreaterThan(0);
 
     expectNoUnsafeUiLanguage(container.textContent, [
@@ -392,6 +506,42 @@ describe("AIValueJourney", () => {
       uiTerm("FT", "_", "AI", "_", "VALUE"),
       uiTerm("employee", " ", "scoring"),
       uiTerm("department", " ", "ranking")
+    ]);
+  });
+
+  it("surfaces ROI scenario readiness without exposing internal contract language", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
+    expect(
+      within(readiness).getByRole("heading", { name: /ROI Scenario Readiness/i })
+    ).toBeInTheDocument();
+    expect(within(readiness).getByText(/Ready for governed value modeling/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/Support case management system/i)).toBeInTheDocument();
+    expect(within(readiness).getAllByText(/Baseline window/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getAllByText(/Comparison window/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getAllByText(/Customer-owned assumptions/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getByText(/Scenario bands are planning ranges, not proof/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expect(
+      within(readiness).getByText(/Review customer assumptions and submitted outcome evidence before stronger value language/i)
+    ).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("object", "_", "id"),
+      uiTerm("workflow", "_", "family"),
+      uiTerm("FT", "_", "AI", "_", "VALUE"),
+      uiTerm("CAVEATED", "_", "VALUE", "_", "INVESTIGATION"),
+      uiTerm("MODELED", "_", "RANGE", "_", "ONLY")
     ]);
   });
 

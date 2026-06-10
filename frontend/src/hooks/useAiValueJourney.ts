@@ -109,6 +109,23 @@ export interface WorkflowHandoff {
   nextAction: string;
 }
 
+export interface RoiScenarioReadiness {
+  available: boolean;
+  statusLabel: string;
+  workflowName: string;
+  valueRouteLabel: string;
+  evidenceStatus: string;
+  metricName: string;
+  sourceSystem: string;
+  sourceGrain: string;
+  inputs: ScenarioInputStatus[];
+  scenarioBands: ScenarioBandPlan[];
+  safeValueLanguage: string[];
+  blockedOutputs: string[];
+  nextAction: string;
+  executiveHandoff: string;
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
@@ -118,6 +135,7 @@ export interface AiValueJourney {
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
+  roiScenarioReadiness: RoiScenarioReadiness;
   executivePlan: ExecutiveOperatingPlan;
   packetIds: string[];
   errorMessage: string | null;
@@ -181,6 +199,17 @@ const CLAIM_STATE_LABELS: Record<string, string> = {
     "Blocked from value language until evidence, assumptions, and governance gaps are resolved."
 };
 
+const BLOCKED_OUTPUT_LABELS: Record<string, string> = {
+  roi_proof: "No realized ROI claim",
+  realized_roi_calculation: "No realized ROI claim",
+  customer_facing_economic_output: "No customer-facing economic figures",
+  causality_claim: "No causality claim",
+  individual_scoring: "No individual scoring",
+  team_or_manager_ranking: "No team or manager ranking",
+  hr_analytics: "No HR analytics",
+  productivity_measurement: "No productivity measurement"
+};
+
 const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
 
 const reviewStateOf = (summary: AiValueObjectSummary): string =>
@@ -201,6 +230,11 @@ const humanize = (value: string | null | undefined): string => {
 const compact = (items: Array<string | false | null | undefined>): string[] =>
   items.filter(Boolean) as string[];
 
+const unique = (items: string[]): string[] => Array.from(new Set(items));
+
+const presentableGrain = (value: string | null | undefined): string =>
+  humanize(value).replace(/\bId\b/g, "ID");
+
 const sourceName = (metric: Record<string, any>): string =>
   String(metric?.source_system?.source_name ?? "Customer-owned outcome system");
 
@@ -215,6 +249,31 @@ const scenarioStatusFromCoverage = (state: string): ScenarioInputStatus["status"
   if (state === "CAVEATED") return "Needs owner review";
   return "Missing input";
 };
+
+const stateStatus = (state: unknown): ScenarioInputStatus["status"] =>
+  scenarioStatusFromCoverage(String(state ?? "MISSING").toUpperCase());
+
+const reviewStateLabel = (state: unknown): string => {
+  const normalized = String(state ?? "MISSING").toUpperCase();
+  if (normalized === "ACCEPTED") return "Outcome evidence accepted";
+  if (normalized === "SUBMITTED") return "Customer export awaiting review";
+  if (normalized === "REJECTED") return "Customer export rejected";
+  return "Customer outcome export missing";
+};
+
+const requiredCaveatLabel = (caveat: unknown): string => {
+  const text = String(caveat ?? "").trim();
+  if (/scenario bands are planning ranges/i.test(text)) {
+    return "Scenario bands are planning ranges, not proof.";
+  }
+  if (/customer-facing economic output/i.test(text)) {
+    return "This artifact does not create customer-facing economic output.";
+  }
+  return text;
+};
+
+const blockedOutputLabel = (claim: unknown): string =>
+  BLOCKED_OUTPUT_LABELS[String(claim ?? "")] ?? humanize(String(claim ?? "Blocked output"));
 
 const workflowLabel = (
   blueprint: Record<string, any> | null,
@@ -577,6 +636,164 @@ function buildWorkflowHandoff(params: {
   };
 }
 
+function buildRoiScenarioReadiness(params: {
+  roiScenario: Record<string, any> | null;
+  workflowHandoff: WorkflowHandoff;
+}): RoiScenarioReadiness {
+  const { roiScenario, workflowHandoff } = params;
+  if (!roiScenario) {
+    return {
+      available: false,
+      statusLabel: "Value modeling not ready yet",
+      workflowName: workflowHandoff.workflowName,
+      valueRouteLabel: workflowHandoff.valueRouteLabel,
+      evidenceStatus: workflowHandoff.evidenceStatus,
+      metricName: "No outcome metric selected",
+      sourceSystem: "Customer data source not selected",
+      sourceGrain: "Approved aggregate export not attached",
+      inputs: [
+        {
+          label: "Baseline window",
+          status: "Missing input",
+          detail: "Choose the customer-owned baseline period for this workflow."
+        },
+        {
+          label: "Comparison window",
+          status: "Missing input",
+          detail: "Choose the customer-owned comparison period for this workflow."
+        },
+        {
+          label: "Customer-owned assumptions",
+          status: "Missing input",
+          detail: "Confirm staffing, rollout, process, and metric assumptions with the client owner."
+        }
+      ],
+      scenarioBands: [],
+      safeValueLanguage: [
+        "Modeled value language is paused until the workflow, outcome metric, baseline, comparison, and assumptions are ready."
+      ],
+      blockedOutputs: [
+        "No realized ROI claim",
+        "No customer-facing economic figures",
+        "No causality claim"
+      ],
+      nextAction:
+        "Finish Blueprint, outcome mapping, baseline, comparison, and assumptions before presenting stronger value language.",
+      executiveHandoff:
+        "Executive packet should hold value language until the governed scenario is ready."
+    };
+  }
+
+  const workflow = roiScenario.workflow ?? {};
+  const valueRoute = String(workflow.value_route ?? "UNCLASSIFIED");
+  const metric = Array.isArray(roiScenario.metric_models)
+    ? roiScenario.metric_models[0] ?? {}
+    : {};
+  const evidenceStatus = roiScenario.evidence_status ?? {};
+  const baseline = roiScenario.baseline_comparison?.baseline_window ?? {};
+  const comparison = roiScenario.baseline_comparison?.comparison_window ?? {};
+  const assumptions = Array.isArray(roiScenario.customer_owned_assumptions)
+    ? roiScenario.customer_owned_assumptions
+    : [];
+  const assumptionStates = assumptions.map((assumption: Record<string, any>) =>
+    String(assumption.state ?? "MISSING").toUpperCase()
+  );
+  const assumptionStatus: ScenarioInputStatus["status"] = assumptionStates.includes("MISSING") ||
+    assumptionStates.includes("BLOCKED") ||
+    assumptionStates.includes("SUPPRESSED")
+    ? "Missing input"
+    : assumptionStates.includes("CAVEATED")
+      ? "Needs owner review"
+      : "Ready to model";
+  const needsAssumptionReview = assumptionStatus !== "Ready to model";
+  const reviewLabel = reviewStateLabel(evidenceStatus.outcome_evidence_review_state);
+  const scenarioBands = (Array.isArray(roiScenario.scenario_bands)
+    ? roiScenario.scenario_bands
+    : []
+  ).map((band: Record<string, any>) => ({
+    label: SCENARIO_BAND_LABELS[String(band.band)] ?? humanize(String(band.band ?? "Scenario")),
+    interpretation: String(band.interpretation ?? "Scenario interpretation needs client review.")
+  }));
+  const caveats = unique(
+    (Array.isArray(roiScenario.safe_value_language?.required_caveats)
+      ? roiScenario.safe_value_language.required_caveats
+      : []
+    )
+      .map(requiredCaveatLabel)
+      .filter(Boolean)
+  );
+  const allowedPhrases = unique(
+    (Array.isArray(roiScenario.safe_value_language?.allowed_phrases)
+      ? roiScenario.safe_value_language.allowed_phrases
+      : []
+    ).map((phrase: unknown) => String(phrase ?? "").trim()).filter(Boolean)
+  );
+  const blockedOutputs = unique([
+    ...(Array.isArray(roiScenario.safe_value_language?.blocked_claims)
+      ? roiScenario.safe_value_language.blocked_claims.map(blockedOutputLabel)
+      : []),
+    roiScenario.economic_output_policy?.realized_roi_calculation === false && "No realized ROI claim",
+    roiScenario.economic_output_policy?.customer_facing_economic_output === false &&
+      "No customer-facing economic figures"
+  ].filter(Boolean) as string[]);
+
+  const inputs: ScenarioInputStatus[] = [
+    {
+      label: "Baseline window",
+      status: stateStatus(baseline.state),
+      detail: String(baseline.rule ?? "Baseline rule needs customer owner review.")
+    },
+    {
+      label: "Comparison window",
+      status: stateStatus(comparison.state),
+      detail: String(comparison.rule ?? "Comparison rule needs customer owner review.")
+    },
+    {
+      label: "Customer-owned assumptions",
+      status: assumptionStatus,
+      detail:
+        needsAssumptionReview
+          ? "Review customer-owned assumptions before stronger value language."
+          : "Customer-owned assumptions are ready for governed modeling."
+    },
+    {
+      label: "Outcome evidence",
+      status:
+        String(evidenceStatus.outcome_evidence_review_state ?? "").toUpperCase() === "ACCEPTED"
+          ? "Ready to model"
+          : String(evidenceStatus.outcome_evidence_review_state ?? "").toUpperCase() === "SUBMITTED"
+            ? "Awaiting review"
+            : "Missing input",
+      detail: reviewLabel
+    }
+  ];
+
+  const waitingOnReview =
+    String(evidenceStatus.outcome_evidence_review_state ?? "").toUpperCase() === "SUBMITTED";
+  const nextAction =
+    waitingOnReview || needsAssumptionReview
+      ? "Review customer assumptions and submitted outcome evidence before stronger value language."
+      : "Move the modeled value language into the Executive Operating Packet with caveats.";
+
+  return {
+    available: true,
+    statusLabel: "Ready for governed value modeling",
+    workflowName: String(workflow.workflow_name ?? workflowHandoff.workflowName),
+    valueRouteLabel: VALUE_ROUTE_LABELS[valueRoute] ?? VALUE_ROUTE_LABELS.UNCLASSIFIED,
+    evidenceStatus: reviewLabel,
+    metricName: String(metric.name ?? "Outcome metric selected"),
+    sourceSystem: String(metric.source_system?.source_name ?? "Customer-owned outcome system"),
+    sourceGrain: presentableGrain(metric.source_system?.approved_grain ?? "approved aggregate export"),
+    inputs,
+    scenarioBands,
+    safeValueLanguage: unique([...allowedPhrases, ...caveats]),
+    blockedOutputs,
+    nextAction,
+    executiveHandoff:
+      "Executive packet can reference governed value modeling only with caveats and blocked-output language attached."
+  };
+}
+
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
@@ -589,6 +806,7 @@ function deriveStages(params: {
   const readiness = byType.evidence_readiness ?? [];
   const exportsList = byType.outcome_evidence_export ?? [];
   const scenarios = byType.value_scenario ?? [];
+  const roiScenarios = byType.roi_scenario ?? [];
   const packets = byType.executive_packet ?? [];
 
   const latestReadiness = latest(readiness);
@@ -708,17 +926,27 @@ function deriveStages(params: {
     {
       key: "scenario",
       label: "Governed Value Scenario",
-      state: scenarios.length > 0 ? "done" : opportunities.length > 0 ? "attention" : "todo",
+      state: roiScenarios.length > 0 || scenarios.length > 0
+        ? "done"
+        : opportunities.length > 0
+          ? "attention"
+          : "todo",
       detail:
-        scenarios.length > 0
-          ? "Scenario bands and assumptions are available."
+        roiScenarios.length > 0
+          ? "Governed value-modeling readiness is available."
+          : scenarios.length > 0
+            ? "Scenario bands and assumptions are available."
           : opportunities.length > 0
             ? "ROI opportunities are mapped. Build a governed scenario."
             : "Scenario depends on ROI opportunity mapping.",
       objectLabel: "Modeled value, not ROI proof",
-      captured: compact([scenarios.length > 0 && "Scenario bands and customer-owned assumptions"]),
+      captured: compact([
+        scenarios.length > 0 && "Scenario bands and customer-owned assumptions",
+        roiScenarios.length > 0 && "Governed ROI scenario readiness"
+      ]),
       missing: compact([
-        scenarios.length === 0 && "Customer-owned assumptions and scenario bands",
+        scenarios.length === 0 && roiScenarios.length === 0 &&
+          "Customer-owned assumptions and scenario bands",
         accepted.length === 0 && "Outcome evidence before stronger claims"
       ]),
       feedsNext: "Scenario status and safe value language compose the executive readout.",
@@ -764,6 +992,16 @@ export const useAiValueJourney = (): AiValueJourney => {
         opportunities: []
       })
     );
+  const [roiScenarioReadiness, setRoiScenarioReadiness] = useState<RoiScenarioReadiness>(() =>
+    buildRoiScenarioReadiness({
+      roiScenario: null,
+      workflowHandoff: buildWorkflowHandoff({
+        blueprint: null,
+        metricsLibrary: null,
+        opportunities: []
+      })
+    })
+  );
   const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
     buildExecutiveOperatingPlan({
       packetCount: 0,
@@ -792,18 +1030,23 @@ export const useAiValueJourney = (): AiValueJourney => {
       }
 
       const items = buildEvidenceItems(byType);
-      const [engagement, blueprint, metricsLibrary, readiness, scenario] = await Promise.all([
+      const [engagement, blueprint, metricsLibrary, readiness, scenario, roiScenario] = await Promise.all([
         maybeFetchPayload(role, latest(byType.engagement)),
         maybeFetchPayload(role, latest(byType.blueprint)),
         maybeFetchPayload(role, latest(byType.metrics_library)),
         maybeFetchPayload(role, latest(byType.evidence_readiness)),
-        maybeFetchPayload(role, latest(byType.value_scenario))
+        maybeFetchPayload(role, latest(byType.value_scenario)),
+        maybeFetchPayload(role, latest(byType.roi_scenario))
       ]);
       const mappedOpportunities = buildValueOpportunities(metricsLibrary, blueprint, items);
       const handoff = buildWorkflowHandoff({
         blueprint,
         metricsLibrary,
         opportunities: mappedOpportunities
+      });
+      const roiReadiness = buildRoiScenarioReadiness({
+        roiScenario,
+        workflowHandoff: handoff
       });
       const plan = buildEvidenceScenarioPlan({
         readiness,
@@ -829,6 +1072,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
       setEvidenceScenarioPlan(plan);
+      setRoiScenarioReadiness(roiReadiness);
       setExecutivePlan(executivePlan);
       setPacketIds(packetIds);
 
@@ -889,6 +1133,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     evidenceItems,
     opportunities,
     evidenceScenarioPlan,
+    roiScenarioReadiness,
     executivePlan,
     packetIds,
     errorMessage,

@@ -351,6 +351,13 @@ describe("AIValueWorkspace journey continuity", () => {
       workflow_family: "customer_support_case_resolution",
       valid: true,
       validation: { review_state: "SUBMITTED" }
+    },
+    {
+      object_type: "roi_scenario",
+      object_id: "roi_support",
+      workflow_family: "customer_support_case_resolution",
+      valid: true,
+      validation: {}
     }
   ];
 
@@ -391,6 +398,112 @@ describe("AIValueWorkspace journey continuity", () => {
       next_actions: [
         "Review missing staffing, rollout, baseline, and metric assumptions with customer owners."
       ]
+    },
+    "roi_scenario/roi_support": {
+      roi_scenario_id: "roi_support",
+      workflow: {
+        workflow_family: "customer_support_case_resolution",
+        workflow_name: "Support case resolution",
+        value_route: "CAPACITY_CREATION"
+      },
+      evidence_status: {
+        readiness_decision: "HOLD_FOR_ASSUMPTIONS",
+        outcome_evidence_review_state: "SUBMITTED",
+        source_coverage: {
+          ai_activity: "PRESENT",
+          workflow: "PRESENT",
+          outcome: "PRESENT",
+          baseline: "PRESENT",
+          trust: "PRESENT",
+          assumptions: "CAVEATED",
+          suppression: "PRESENT"
+        }
+      },
+      baseline_comparison: {
+        baseline_window: {
+          state: "PRESENT",
+          owner: "support_operations",
+          rule: "Compare against an approved pre-period window."
+        },
+        comparison_window: {
+          state: "PRESENT",
+          owner: "support_operations",
+          rule: "Compare against the approved post-period window; report directional movement only."
+        }
+      },
+      metric_models: [
+        {
+          metric_id: "support_median_resolution_hours",
+          name: "Median resolution time",
+          value_route: "CAPACITY_CREATION",
+          measurement_unit: "hours",
+          source_system: {
+            source_type: "support_system",
+            source_name: "Support case management system",
+            approved_grain: "aggregate_workflow_window"
+          },
+          baseline_rule: "Compare against an approved pre-period window.",
+          comparison_rule: "Compare against the approved post-period window.",
+          formula_template: "aggregate comparison only; customer computes directional delta",
+          allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION",
+          value_model_role: "PRIMARY"
+        }
+      ],
+      customer_owned_assumptions: [
+        {
+          assumption_id: "case_mix_stability",
+          state: "PRESENT",
+          owner: "support_operations"
+        },
+        {
+          assumption_id: "staffing_and_coverage_context",
+          state: "MISSING",
+          owner: "support_leader"
+        }
+      ],
+      scenario_bands: [
+        {
+          band: "CONSERVATIVE",
+          interpretation: "Use the narrowest customer-owned assumption set.",
+          included_metric_ids: ["support_median_resolution_hours"]
+        },
+        {
+          band: "BASE_CASE",
+          interpretation: "Use approved baseline and comparison windows with current caveats.",
+          included_metric_ids: ["support_median_resolution_hours"]
+        },
+        {
+          band: "EXPANDED",
+          interpretation: "Use only after customer assumptions and outcome evidence are accepted.",
+          included_metric_ids: ["support_median_resolution_hours"]
+        }
+      ],
+      safe_value_language: {
+        allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION",
+        allowed_phrases: [
+          "Potential capacity-creation opportunity for customer-owned validation."
+        ],
+        required_caveats: [
+          "Scenario bands are planning ranges, not realized ROI.",
+          "This artifact does not create customer-facing economic output."
+        ],
+        blocked_claims: [
+          "roi_proof",
+          "causality_claim",
+          "individual_scoring",
+          "team_or_manager_ranking",
+          "hr_analytics",
+          "productivity_measurement",
+          "realized_roi_calculation",
+          "customer_facing_economic_output"
+        ]
+      },
+      economic_output_policy: {
+        mode: "MODELED_RANGE_ONLY",
+        customer_facing_economic_output: false,
+        dollarized_output: false,
+        realized_roi_calculation: false
+      }
     }
   };
 
@@ -445,6 +558,32 @@ describe("AIValueWorkspace journey continuity", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
+  it("shows ROI scenario readiness for the selected workflow", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
+    expect(within(readiness).getByText(/Ready for governed value modeling/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(readiness).getAllByText(/Baseline window/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getAllByText(/Comparison window/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getAllByText(/Customer-owned assumptions/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(within(readiness).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(readiness).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("FT", "_", "AI", "_", "VALUE")
+    ]);
+  });
+
   it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {
     stubJourneyFetch([]);
     const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
@@ -459,6 +598,11 @@ describe("AIValueWorkspace journey continuity", () => {
       within(handoff).getByText(/Finish the Blueprint workshop to choose the first client workflow before modeling value/i)
     ).toBeInTheDocument();
     expect(within(handoff).getByRole("link", { name: /Open Blueprint workshop/i })).toBeInTheDocument();
+    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
+    expect(within(readiness).getByText(/Value modeling not ready yet/i)).toBeInTheDocument();
+    expect(
+      within(readiness).getByText(/Finish Blueprint, outcome mapping, baseline, comparison, and assumptions before presenting stronger value language/i)
+    ).toBeInTheDocument();
     expectNoUnsafeUiLanguage(container.textContent);
   });
 });

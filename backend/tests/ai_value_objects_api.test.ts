@@ -24,9 +24,11 @@ const readExample = (name: string): Record<string, unknown> =>
 
 const blueprint = readExample("customer-support-blueprint.json");
 const metricsLibrary = readExample("customer-support-metrics-library.json");
+const roiScenario = readExample("customer-support-roi-scenario.json");
 
 const blueprintId = blueprint.blueprint_id as string;
 const metricsLibraryId = metricsLibrary.library_id as string;
+const roiScenarioId = roiScenario.roi_scenario_id as string;
 
 beforeEach(() => {
   store.reset();
@@ -141,6 +143,28 @@ describe("AI value object API", () => {
       .set(readAuth);
     expect(filtered.body.objects).toHaveLength(1);
     expect(filtered.body.objects[0].object_type).toBe("blueprint");
+  });
+
+  it("stores a governed ROI scenario as a reusable value-modeling object", async () => {
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/roi_scenario/${roiScenarioId}`)
+      .set(writeAuth)
+      .send(roiScenario);
+
+    expect(response.status).toBe(201);
+    expect(response.body.object_type).toBe("roi_scenario");
+    expect(response.body.object_id).toBe(roiScenarioId);
+    expect(response.body.valid).toBe(true);
+    expect(response.body.workflow_family).toBe("customer_support_case_resolution");
+    expect(response.body.validation.feeds.customer_facing_economic_output).toBe(false);
+
+    const fetched = await request(app)
+      .get(`/api/v1/ai-value/objects/roi_scenario/${roiScenarioId}`)
+      .set(readAuth);
+
+    expect(fetched.status).toBe(200);
+    expect(fetched.body.payload.roi_scenario_id).toBe(roiScenarioId);
+    expect(fetched.body.payload.economic_output_policy.customer_facing_economic_output).toBe(false);
   });
 });
 

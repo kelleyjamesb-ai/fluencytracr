@@ -41,6 +41,10 @@ const OBJECT_TYPES: Record<string, ObjectTypeConfig> = {
     idField: "scenario_id",
     validate: (payload) => aiValueEngine.validateValueScenario(payload)
   },
+  roi_scenario: {
+    idField: "roi_scenario_id",
+    validate: (payload) => aiValueEngine.validateRoiScenario(payload)
+  },
   evidence_readiness: {
     idField: "readiness_id",
     validate: (payload) => aiValueEngine.validateEvidenceReadiness(payload)
@@ -76,6 +80,10 @@ const workflowFamilyOf = (payload: Record<string, unknown>): string | null => {
   const input = payload.input as Record<string, unknown> | undefined;
   if (input && typeof input.workflow_family === "string") {
     return input.workflow_family;
+  }
+  const workflow = payload.workflow as Record<string, unknown> | undefined;
+  if (workflow && typeof workflow.workflow_family === "string") {
+    return workflow.workflow_family;
   }
   return null;
 };

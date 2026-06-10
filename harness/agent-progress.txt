@@ -284,3 +284,9 @@
 - Completed: Added `FT_AI_VALUE_ROI_SCENARIO_2026_06` as a governed local value-modeling object with shared engine validator/builder, CLI wrapper, package scripts, seeded Customer Support fixture, and JSON schema.
 - Verified: RED missing-module test first, then ROI scenario tests/validator, adjacent AI value scenario/readiness/agent-harness suites, full AI value engine, V1 spine, docs sweep, semantic drift guard, Glean value governance gates, and diff whitespace check.
 - Next focus: Surface ROI Scenario Readiness in Journey/Workspace and connect it to Executive Operating Packet language without customer-facing dollarized output.
+
+## 2026-06-10 (UTC) — Codex (AI Value ROI scenario readiness UI)
+
+- Completed: Surfaced governed ROI Scenario Readiness in `/ai-value-journey` and `/ai-value-workspace`, backed by latest `roi_scenario` objects and backend object API support. The UI translates baseline/comparison windows, assumptions, outcome evidence review, scenario bands, metric/source details, safe language, and blocked outputs into sponsor-readable value-modeling handoff language.
+- Verified: focused Journey/Workspace ROI readiness tests, full frontend suite/build, backend AI value object API test, full backend CI suite, ROI scenario and agent-harness scripts, docs sweep, semantic drift guard, Glean value governance gate, diff whitespace, and mocked browser checks with no unsafe internal terms, no console errors, and no overflow at 390px/1440px.
+- Next focus: Customer Evidence Request Packet from ROI Scenario Readiness so clients know which aggregate data export, owner, baseline/comparison windows, and review steps are needed before stronger value language.

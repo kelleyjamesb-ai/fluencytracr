@@ -20,6 +20,14 @@ const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutra
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
 );
 
+const scenarioInputTone = (status: string): "good" | "warn" | "neutral" => {
+  if (status === "Ready to model") return "good";
+  if (status === "Missing input" || status === "Awaiting review" || status === "Needs owner review") {
+    return "warn";
+  }
+  return "neutral";
+};
+
 export const AIValueWorkspace = () => {
   const [activeTab, setActiveTab] = useState<Tab>("Workflow Canvas");
   const activeIndex = useMemo(() => tabs.indexOf(activeTab), [activeTab]);
@@ -111,6 +119,73 @@ export const AIValueWorkspace = () => {
                 Open Blueprint workshop
               </Link>
             )}
+          </div>
+        </section>
+      )}
+
+      {!journey.loading && (
+        <section className="ai-value-panel ai-value-roi-readiness-panel" aria-label="ROI scenario readiness">
+          <div className="ai-value-section-head">
+            <div>
+              <p className="eyebrow">Value Modeling Handoff</p>
+              <h2>ROI Scenario Readiness</h2>
+              <p>
+                This panel turns Blueprint, outcome mapping, evidence readiness,
+                assumptions, and scenario bands into the value language that can
+                safely move toward the sponsor packet.
+              </p>
+            </div>
+            <StatusPill
+              label={journey.roiScenarioReadiness.statusLabel}
+              tone={journey.roiScenarioReadiness.available ? "good" : "warn"}
+            />
+          </div>
+          <div className="ai-value-map-grid">
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Workflow</span>
+              <strong>{journey.roiScenarioReadiness.workflowName}</strong>
+              <p>{journey.roiScenarioReadiness.valueRouteLabel}</p>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Outcome signal</span>
+              <strong>{journey.roiScenarioReadiness.metricName}</strong>
+              <p>{journey.roiScenarioReadiness.sourceSystem}</p>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Evidence status</span>
+              <p>{journey.roiScenarioReadiness.evidenceStatus}</p>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Next client action</span>
+              <p>{journey.roiScenarioReadiness.nextAction}</p>
+            </div>
+            <div className="ai-value-map-cell ai-value-map-cell-wide">
+              <span className="ai-value-map-label">Value modeling inputs</span>
+              <div className="ai-value-scenario-input-grid">
+                {journey.roiScenarioReadiness.inputs.map((input) => (
+                  <div className="ai-value-scenario-input" key={input.label}>
+                    <div>
+                      <strong>{input.label}</strong>
+                      <p>{input.detail}</p>
+                    </div>
+                    <StatusPill label={input.status} tone={scenarioInputTone(input.status)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="ai-value-map-cell ai-value-map-cell-wide">
+              <span className="ai-value-map-label">Safe value language</span>
+              <ul>
+                {journey.roiScenarioReadiness.safeValueLanguage.map((language) => (
+                  <li key={language}>{language}</li>
+                ))}
+              </ul>
+              <div className="ai-value-chip-row">
+                {journey.roiScenarioReadiness.blockedOutputs.map((output) => (
+                  <StatusPill key={output} label={output} />
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       )}

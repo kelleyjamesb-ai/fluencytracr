@@ -93,41 +93,89 @@ What is now in place:
   HR/people analytics, individual scoring, productivity fields, and autonomous
   customer actions.
 
-Recommended next slice:
+Latest completed slice:
 
 ```text
 ROI Scenario Readiness in Journey / Workspace
 ```
 
+What is now in place:
+
+- Backend AI value objects support `roi_scenario` through the governed
+  `validateRoiScenario` path and derive `workflow_family` from the ROI scenario
+  workflow payload.
+- `useAiValueJourney` now builds a `RoiScenarioReadiness` view model from the
+  latest governed ROI scenario object.
+- `/ai-value-journey` shows ROI Scenario Readiness with workflow, value route,
+  outcome signal, source system, baseline/comparison state, customer-owned
+  assumptions, outcome evidence review state, scenario bands, safe value
+  language, blocked outputs, and executive handoff language.
+- `/ai-value-workspace` shows the same readiness handoff above the workshop tabs
+  so the value-modeling state follows the user into the working surface.
+- Tests verify the UI stays sponsor-readable and does not expose internal
+  contract/database language.
+
+Verification completed:
+
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts`
+- `npm run test:ci --workspace backend`
+- `npm run test:ai-value-roi-scenario`
+- `npm run test:ai-value-agent-harness`
+- `bash scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- Browser smoke with mocked governed objects: Journey and Workspace render ROI
+  Scenario Readiness, show `Median resolution time`, show safe caveat language,
+  expose no unsafe/internal terms, have no console errors, and have no
+  horizontal overflow at 390px or 1440px.
+
+Recommended next slice:
+
+```text
+Customer Evidence Request Packet from ROI Scenario Readiness
+```
+
 Goal:
 
-Make the governed ROI scenario contract visible in the product experience. The
-Journey and Value Workshop should show whether the selected workflow is ready
-for value modeling, which inputs are still missing, and what safe value language
-can move into the Executive Operating Packet.
+Turn the ROI Scenario Readiness handoff into reusable software that tells a
+client exactly what aggregate evidence is needed to strengthen the value model:
+which customer system export, metric, approved grain, baseline window,
+comparison window, owner, review state, and remaining claim limits are required.
+This should make the value conversation operational without building a
+production connector or producing customer-facing economic output.
 
 Acceptance criteria:
 
-- Journey shows a plain-English ROI Scenario Readiness section sourced from the
-  governed ROI scenario object or derived view model.
-- Workspace shows baseline/comparison, assumptions, evidence status, scenario
-  bands, safe value language, and blocked outputs without database labels.
-- Executive Operating Packet language can reference governed value modeling, but
-  still cannot claim realized ROI, causality, individual scoring, HR analytics,
-  productivity ranking, or customer-facing economic figures.
-- Missing states make the client data request obvious.
-- Focused frontend tests cover ready and missing-state behavior.
-- Existing AI value engine, ROI scenario, agent harness, frontend, build, and
-  governance checks remain green.
+- Add a governed local request-packet view model or schema derived from
+  Blueprint + Metrics Library + ROI Scenario Readiness + Outcome Evidence state.
+- Journey and/or Workspace show a client-readable "Customer Evidence Request"
+  panel with required aggregate export, source system, metric, baseline and
+  comparison window needs, owner, review step, and what language remains
+  blocked until evidence is reviewed.
+- Missing states are actionable: "ask Support Ops for aggregate resolution-time
+  export for these windows" rather than internal object/schema language.
+- Executive Operating Packet can reference the request packet as the next
+  action, but still cannot claim realized ROI, causality, individual scoring, HR
+  analytics, productivity ranking, or customer-facing economic figures.
+- Add focused tests for complete and missing request states.
+- Keep ROI scenario, agent harness, frontend, backend object API, build, and
+  governance checks green.
 
 Suggested files:
 
 - `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/hooks/useAiValueJourney.ts`
-- `frontend/src/lib/aiValueViewModel.ts`
-- `shared/src/aiValueEngine/*`
-- `frontend/src/components/AiValueJourneyRail.tsx`
 - `frontend/src/pages/AIValueWorkspace.tsx`
+- `frontend/src/pages/AIValueJourney.test.tsx`
+- `frontend/src/pages/AIValueWorkspace.test.tsx`
+- Optional if a reusable contract is needed:
+  `shared/src/aiValueEngine/*`,
+  `docs/contracts/ai-value-intelligence/`,
+  `scripts/validate_ai_value_*`
 - `docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json`
 
 ## Next-Agent Prompt
@@ -135,24 +183,24 @@ Suggested files:
 Use this prompt to continue:
 
 ```text
-Create the ROI Scenario Readiness product slice for the AI Value Platform.
-Surface the governed `FT_AI_VALUE_ROI_SCENARIO_2026_06` object in
-`/ai-value-journey` and `/ai-value-workspace` so a client can see whether the
-selected Blueprint workflow is ready for value modeling, which
-baseline/comparison, assumptions, evidence, and source-coverage inputs are
-missing, and what safe value language can move into the Executive Operating
-Packet. Keep all language client-facing. Do not add production connectors,
-autonomous customer actions, raw prompts/responses, direct identifiers,
-unsupported ROI proof, causality claims, individual scoring, HR analytics,
-productivity ranking, or customer-facing dollarized output. Add focused
-frontend tests and keep ROI scenario, AI value engine, frontend, build, and
-agent-harness checks green.
+Create the Customer Evidence Request Packet product slice for the AI Value
+Platform. Use the existing Blueprint, Metrics Library, ROI Scenario Readiness,
+and Outcome Evidence state to show the client which aggregate data export is
+needed to strengthen the value model: source system, metric, approved grain,
+baseline window, comparison window, owner, review state, and remaining blocked
+claims. Surface it in `/ai-value-journey` and/or `/ai-value-workspace` in
+plain client language, and let the Executive Operating Packet reference it as
+the next action. Do not add production connectors, autonomous customer actions,
+raw prompts/responses, direct identifiers, unsupported ROI proof, causality
+claims, individual scoring, HR analytics, productivity ranking, or
+customer-facing dollarized output. Add focused tests and keep ROI scenario,
+agent-harness, frontend, backend object API, build, and governance checks green.
 ```
 
 ## What To Validate First
 
-Validate the user experience before adding more engines.
+Validate the data request experience before adding more engines.
 
-The current biggest risk is that the software has many correct objects but the
-client cannot understand what they are doing or why they matter. A clearer
-journey surface will expose which backend objects are actually needed next.
+The current biggest risk is that the platform can say "value modeling needs
+evidence" but cannot tell the client, in operational language, exactly what to
+export, who owns it, and how it changes the safe value story.
