@@ -72,31 +72,46 @@ not bury ROI math inside the executive packet or UI.
 
 ## Next Build Slice
 
+Completed latest slice:
+
+```text
+Governed ROI / Value Scenario UX
+```
+
+What is now in place:
+
+- `/ai-value-journey` includes a sponsor-readable Governed Scenario Builder.
+- The builder shows customer-owned assumptions, baseline/comparison window
+  status, customer outcome export status, scenario-band readiness, and unlock
+  conditions for stronger value language.
+- Scenario bands are explicitly framed as planning ranges, not proof.
+- The view model derives this from existing readiness, scenario, evidence-review,
+  and opportunity objects.
+
 Recommended next slice:
 
 ```text
-AI Value Platform Product Spine V1
+Discovery -> Journey continuity
 ```
 
 Goal:
 
-Make `/ai-value-journey` the clear first-screen product experience that turns
-the diagrams into a usable, phase-based client workflow.
+Make the first workflow selected in Discovery / Blueprint visibly carry into
+the Journey, Value Workshop, Scenario Builder, and Executive Operating Packet so
+the software feels like one guided client workspace instead of adjacent modules.
 
 Acceptance criteria:
 
-- The journey shows the six operating phases in plain client language.
-- Each phase has inputs, current outputs, missing capabilities, and next action.
-- Blueprint is presented as a collaborative workflow-design workspace.
-- Metrics are presented as outcome signals and value routes, not abstract
-  database columns.
-- FluencyTracr evidence is presented as aggregate evidence readiness and safe
-  interpretation, not raw telemetry.
-- Value realization shows scenario/readiness status, not unsupported ROI proof.
-- Each phase uses the previous phase's object outputs where available.
-- The experience makes it obvious what the next user action is.
-- Tests cover the journey state, missing-data states, and link paths into
-  discovery/workspace/readout surfaces.
+- The selected Blueprint workflow appears consistently across Discovery,
+  Journey, Value Workshop, Scenario Builder, and Executive Packet.
+- The Journey explains which workflow object feeds each downstream object.
+- The Value Workshop opens with the same workflow, value route, and evidence
+  status the Journey just summarized.
+- Empty/missing states tell the client what to finish in Blueprint before
+  modeling value.
+- No unsupported ROI proof, causality claim, individual scoring, HR analytics,
+  productivity ranking, or customer-facing dollarized output is introduced.
+- Tests cover the handoff path and missing-workflow states.
 
 Suggested files:
 
@@ -116,20 +131,17 @@ Suggested files:
 Use this prompt to continue:
 
 ```text
-Create AI Value Platform Product Spine V1. Turn the attached whole-system
-diagrams into a clear client-facing phase experience. Start from main. Make
-/ai-value-journey the product home for the value-realization lifecycle:
-Human Readiness -> Blueprint -> Execution Instrumentation -> Evidence And
-Measurement -> Value Realization -> Whole-System Outcomes. Each phase should
-show what has been captured, what is missing, what object feeds the next phase,
-and the next user action. Rename technical/internal labels into client
-language. Make Blueprint feel like a collaborative workshop, Metrics feel like
-outcome signals/value routes, and FluencyTracr feel like the aggregate evidence
-governance layer. Keep ROI governed: scenario/readiness language is allowed,
-but no unsupported ROI proof, causality claims, individual scoring, HR
-analytics, productivity ranking, or customer-facing dollar output. Add focused
-frontend/shared tests and keep existing AI value engine and governance tests
-green.
+Create the Discovery -> Journey continuity slice for the AI Value Platform.
+Make the first selected Blueprint workflow carry cleanly into /ai-value-journey,
+/ai-value-workspace, the Governed Scenario Builder, and the Executive Operating
+Packet. The user should understand which workflow was chosen with the client,
+which value route it maps to, what Glean/FluencyTracr can show now, what
+customer-owned evidence is missing, and what the next action is. Keep all
+language client-facing. Keep ROI governed: scenario/readiness language is
+allowed, but no unsupported ROI proof, causality claims, individual scoring, HR
+analytics, productivity ranking, autonomous customer actions, or customer-facing
+dollar output. Add focused frontend tests and keep existing AI value and
+agent-harness checks green.
 ```
 
 ## What To Validate First

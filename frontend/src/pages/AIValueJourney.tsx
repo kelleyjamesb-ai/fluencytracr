@@ -29,6 +29,14 @@ const EvidenceStatePill = ({ state }: { state: string }) => {
   return <StatusPill label="Rejected" />;
 };
 
+const scenarioInputTone = (status: string): "good" | "warn" | "neutral" => {
+  if (status === "Ready to model") return "good";
+  if (status === "Missing input" || status === "Awaiting review" || status === "Needs owner review") {
+    return "warn";
+  }
+  return "neutral";
+};
+
 export const AIValueJourney = () => {
   const journey = useAiValueJourney();
   const completeCount = journey.stages.filter((stage) => stage.state === "done").length;
@@ -310,6 +318,38 @@ export const AIValueJourney = () => {
             <div className="ai-value-map-cell">
               <span className="ai-value-map-label">Next client action</span>
               <p>{journey.evidenceScenarioPlan.nextClientAction}</p>
+            </div>
+            <div className="ai-value-map-cell ai-value-map-cell-wide ai-value-scenario-builder">
+              <span className="ai-value-map-label">Value scenario controls</span>
+              <div className="ai-value-scenario-builder-head">
+                <div>
+                  <h3>Governed Scenario Builder</h3>
+                  <p>
+                    Track the client-owned inputs that let the opportunity move
+                    from planning range to caveated sponsor language.
+                  </p>
+                </div>
+                <StatusPill label="Modeled range, not proof" tone="warn" />
+              </div>
+              <div className="ai-value-scenario-input-grid">
+                {journey.evidenceScenarioPlan.scenarioInputs.map((input) => (
+                  <div className="ai-value-scenario-input" key={input.label}>
+                    <div>
+                      <strong>{input.label}</strong>
+                      <p>{input.detail}</p>
+                    </div>
+                    <StatusPill label={input.status} tone={scenarioInputTone(input.status)} />
+                  </div>
+                ))}
+              </div>
+              <div className="ai-value-unlock-list">
+                <h4>What unlocks stronger value language</h4>
+                <ul>
+                  {journey.evidenceScenarioPlan.unlockConditions.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </article>

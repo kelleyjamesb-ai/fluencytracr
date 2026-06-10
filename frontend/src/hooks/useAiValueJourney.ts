@@ -62,14 +62,22 @@ export interface ScenarioBandPlan {
   interpretation: string;
 }
 
+export interface ScenarioInputStatus {
+  label: string;
+  status: "Ready to model" | "Awaiting review" | "Needs owner review" | "Missing input";
+  detail: string;
+}
+
 export interface EvidenceScenarioPlan {
   decisionLabel: string;
   canTrust: string[];
   needsClientEvidence: string[];
+  scenarioInputs: ScenarioInputStatus[];
   scenarioBands: ScenarioBandPlan[];
   scenarioSummary: string;
   safeValueLanguage: string;
   nextClientAction: string;
+  unlockConditions: string[];
 }
 
 export interface ExecutiveHandoff {
@@ -191,6 +199,12 @@ const approvedGrain = (metric: Record<string, any>): string =>
 
 const coverageState = (payload: Record<string, any> | null, lane: string): string =>
   String(payload?.source_coverage?.[lane] ?? "MISSING").toUpperCase();
+
+const scenarioStatusFromCoverage = (state: string): ScenarioInputStatus["status"] => {
+  if (state === "PRESENT") return "Ready to model";
+  if (state === "CAVEATED") return "Needs owner review";
+  return "Missing input";
+};
 
 const workflowLabel = (
   blueprint: Record<string, any> | null,
@@ -333,12 +347,63 @@ function buildEvidenceScenarioPlan(params: {
     interpretation: String(band.interpretation ?? "Scenario interpretation needs client review.")
   }));
 
+  const hasAggregateEvidence = ["ai_activity", "workflow", "trust", "suppression"].some(
+    (lane) => coverageState(readiness, lane) === "PRESENT"
+  );
+  const scenarioInputs: ScenarioInputStatus[] = [
+    {
+      label: "AI work evidence",
+      status: hasAggregateEvidence ? "Ready to model" : "Missing input",
+      detail:
+        "Aggregate Glean and FluencyTracr work patterns can shape the scenario; they are not outcome proof."
+    },
+    {
+      label: "Customer outcome export",
+      status: acceptedEvidence
+        ? "Ready to model"
+        : submittedEvidence
+          ? "Awaiting review"
+          : "Missing input",
+      detail: acceptedEvidence
+        ? "Customer-owned outcome evidence is attached for caveated value review."
+        : submittedEvidence
+          ? "Accept or reject the submitted customer outcome export before strengthening value language."
+          : "Attach an aggregate customer outcome export for the selected metric."
+    },
+    {
+      label: "Baseline and comparison window",
+      status: scenarioStatusFromCoverage(coverageState(readiness, "baseline")),
+      detail:
+        "The customer-owned baseline and comparison windows define the range being modeled."
+    },
+    {
+      label: "Customer-owned assumptions",
+      status: scenarioStatusFromCoverage(coverageState(readiness, "assumptions")),
+      detail:
+        "Staffing, rollout, process, and metric assumptions must be approved by the customer owner."
+    },
+    {
+      label: "Scenario bands",
+      status: scenarioBands.length > 0 ? "Ready to model" : "Missing input",
+      detail: "Scenario bands are ranges for planning, not proof."
+    }
+  ];
+
   const claimState = String(scenario?.output?.claim_state ?? "BLOCKED");
   const nextAction = Array.isArray(readiness?.next_actions) && readiness.next_actions.length > 0
     ? String(readiness.next_actions[0])
     : submittedEvidence
       ? "Review submitted customer evidence with the data owner."
       : "Collect baseline, comparison, assumptions, and source coverage before strengthening value language.";
+  const unlockConditions = compact([
+    submittedEvidence && !acceptedEvidence && "Accept or reject the submitted customer outcome export.",
+    !acceptedEvidence && !submittedEvidence && "Attach a customer outcome export for the selected metric.",
+    coverageState(readiness, "baseline") !== "PRESENT" &&
+      "Attach baseline and comparison windows from the customer-owned system.",
+    coverageState(readiness, "assumptions") !== "PRESENT" &&
+      "Approve staffing, rollout, process, and metric assumptions with the customer owner.",
+    "Run claim review before presenting stronger value language."
+  ]);
 
   return {
     decisionLabel:
@@ -356,6 +421,7 @@ function buildEvidenceScenarioPlan(params: {
       needsClientEvidence.length > 0
         ? needsClientEvidence
         : ["No major evidence gap for the current scenario."],
+    scenarioInputs,
     scenarioBands,
     scenarioSummary: String(
       scenario?.output?.scenario_summary ??
@@ -363,7 +429,8 @@ function buildEvidenceScenarioPlan(params: {
     ),
     safeValueLanguage:
       CLAIM_STATE_LABELS[claimState] ?? CLAIM_STATE_LABELS.BLOCKED,
-    nextClientAction: nextAction
+    nextClientAction: nextAction,
+    unlockConditions
   };
 }
 

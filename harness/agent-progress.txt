@@ -266,3 +266,9 @@
 - Completed: Engagements now carry a portfolio of measurable business objectives (`business_objectives`, 1+, legacy single `business_objective` still accepted): each objective takes optional `success_measures` ({measure, expected_direction IMPROVE/REDUCE/MAINTAIN}); duplicate objective ids rejected; use cases optionally link `objective_id` and the link is validated. Discovery step 1 became the ROI-conversation builder (objective cards with measures, "Add another objective", use-case-to-objective selector); the workspace kickoff panel shows "What the sponsor will measure"; the executive readout opens with "Client objectives and the value review" rendering every objective and its measures. Fixture upgraded to two objectives (capacity + quality).
 - Verified: engine 32/32 (37 with readout suite), backend ai-value 17/17, frontend 24/24 + build, docs sweep, semantic drift guard, live save through the running engine (objective_count 2), browser-verified discovery step.
 - Next focus: tie success_measures to metrics-library recommendations (measure -> metric mapping) so the value review and the evidence chain converge; PR merge.
+
+## 2026-06-10 (UTC) — Codex (AI Value governed scenario builder)
+
+- Completed: Added a Governed Scenario Builder to `/ai-value-journey` that shows customer-owned assumptions, baseline/comparison window status, customer outcome export status, scenario-band readiness, and unlock conditions for stronger value language.
+- Verified: targeted Journey red/green test, full Journey test file, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright desktop/mobile mocked-route checks with no console errors or horizontal overflow.
+- Next focus: Discovery -> Journey continuity so the client-selected Blueprint workflow carries into Journey, Value Workshop, Scenario Builder, and Executive Operating Packet.

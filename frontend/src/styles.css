@@ -2286,6 +2286,63 @@ body {
   margin: 4px 0 0;
 }
 
+.ai-value-scenario-builder {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-value-scenario-builder-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-value-scenario-builder-head h3,
+.ai-value-scenario-builder-head p,
+.ai-value-unlock-list h4 {
+  margin: 0;
+}
+
+.ai-value-scenario-builder-head p,
+.ai-value-scenario-input p {
+  color: #59637c;
+}
+
+.ai-value-scenario-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-scenario-input {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-scenario-input p {
+  margin: 4px 0 0;
+}
+
+.ai-value-unlock-list {
+  padding: 10px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-value-unlock-list ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .ai-value-map-cell p,
 .ai-value-map-cell small {
   display: block;
@@ -2482,11 +2539,17 @@ body {
   .ai-value-evidence-plan-grid,
   .ai-value-executive-plan-grid,
   .ai-value-scenario-band-list,
+  .ai-value-scenario-input-grid,
   .ai-value-agent-handoff-grid {
     grid-template-columns: 1fr;
   }
 
   .ai-value-opportunity-card-head {
+    flex-direction: column;
+  }
+
+  .ai-value-scenario-builder-head,
+  .ai-value-scenario-input {
     flex-direction: column;
   }
 

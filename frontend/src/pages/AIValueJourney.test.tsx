@@ -338,6 +338,39 @@ describe("AIValueJourney", () => {
     ]);
   });
 
+  it("shows a governed scenario builder with assumptions, evidence gates, and unlock conditions", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("heading", { name: /Governed Scenario Builder/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Customer-owned assumptions/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Baseline and comparison window/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Customer outcome export/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Scenario bands/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Ready to model/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Needs owner review/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Missing input/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/What unlocks stronger value language/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/Accept or reject the submitted customer outcome export/i).length
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(/Attach baseline and comparison windows/i)).toBeInTheDocument();
+    expect(screen.getByText(/Approve staffing, rollout, process, and metric assumptions/i)).toBeInTheDocument();
+    expect(screen.getByText(/Scenario bands are ranges for planning, not proof/i)).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("scenario", "_", "state"),
+      uiTerm("claim", "_", "boundary"),
+      uiTerm("HOLD", "_", "FOR"),
+      uiTerm("FT", "_", "AI", "_", "VALUE"),
+      uiTerm("employee", " ", "scoring"),
+      uiTerm("department", " ", "ranking")
+    ]);
+  });
+
   it("shows a sponsor operating packet with governed agentic follow-up", async () => {
     const { container } = renderPage();
 
