@@ -63,6 +63,10 @@
 - JBTD/persona join-key slice: added optional opaque `jbtd_id` / `persona_id` across ingest schemas, persistence columns, classification aggregates, observability, Quality Multiplier, Causal Delta, and contract docs; cohort gates now apply per `(workflow_id, jbtd_id, persona_id)` slice and suppressed keyed slices are hidden from public observability.
 - Outcome Evidence ingestion contract slice: added storage-only `POST`/`GET /api/v1/outcome-evidence`, Prisma `outcome_evidence` persistence, aggregate-only gates, OpenAPI/schema/OpenSpec/docs, attribution/README updates, and LMSYS assurance scenarios for `SURFACE + outcomes`, `SUPPRESS + outcomes`, and `no outcomes`.
 
+- AI Value Platform phases 1-4 (user-authorized, 2026-06-09): the AI Value Engine now lives in `shared/src/aiValueEngine` as the single canonical object layer (six stage validators, deterministic builders, fail-closed `runSpine`); the six ai-value scripts are engine-backed wrappers with unchanged CLIs and tests; an org-scoped `ai_value_objects` data layer plus `/api/v1/ai-value` routes store only engine-validated objects and run the spine server-side; the AI Value Workspace gains a client-facing live evidence mode; and a workshop intake adapter plus sales-pipeline-hygiene fixtures prove the spine is domain-agnostic. No ROI calculation, causality claims, person-level fields, or customer-facing economic output were added; every write path fails closed.
+
+- Full value chain slice (user-authorized, 2026-06-10): the engine now covers the chain from kickoff to readout — a composite `engagement` object (client, objective, workstream, use cases) with blueprint traceability gating, an aggregate-only `fluency_baseline` object for the Explore Your AI Fluency kickoff instrument (cohort minimums, suppression, no respondent identifiers, governance flags explicitly false), `runValueChain` ordering, a value-chain API endpoint, fixtures, and a client kickoff panel in the workspace. No individual scoring, ranking, ROI, or causality was added.
+
 ## Current Status
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.
@@ -110,6 +114,8 @@
 - None for the completed security check.
 
 ## Next Step
+
+- AI Value Platform: human review/PR of the four phase commits on `codex/FluencyTracr-ai-value-platform`; decide production migration posture for `ai_value_objects` (local dev DB has the table; Supabase deploy needs baseline or `prisma db execute`), the readout export surface, and whether to scaffold OpenSpec `add-ai-value-engine-core` as the formal record of the completed migration.
 
 - If the human accepts the org-agnostic commercialization track, the next bounded step is review/commit/PR for the docs-only AI Work Evidence concept and pilot package. Keep any later live customer pilot blocked until customer-side aggregate transformation, source coverage declarations, approved aggregate labels, and customer-owned outcome metrics are available.
 - Add a new bounded queue item before starting the next durable implementation track; the original 7-phase blueprint queue is complete.

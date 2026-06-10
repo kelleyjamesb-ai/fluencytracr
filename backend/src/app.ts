@@ -37,6 +37,7 @@ import {
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@learnaire/shared";import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
+import { registerAiValueRoutes } from "./ai_value_routes";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
@@ -5649,6 +5650,8 @@ app.get("/health", async (_req, res) => {
     details: process.env.NODE_ENV === "production" ? undefined : readiness.error
   });
 });
+
+registerAiValueRoutes(app);
 
 // Global error handler middleware - must be defined last
 // Catches any unhandled errors from route handlers and middleware

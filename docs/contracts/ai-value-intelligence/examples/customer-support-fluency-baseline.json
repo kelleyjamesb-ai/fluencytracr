@@ -1,0 +1,55 @@
+{
+  "schema_version": "FT_AI_VALUE_FLUENCY_BASELINE_2026_06",
+  "baseline_id": "fluency_baseline_northstar_support_kickoff",
+  "org_id": "org-northstar-enterprise",
+  "instrument": {
+    "instrument_id": "ai_fluency_long_v1",
+    "item_count": 24
+  },
+  "window": "2026-03-15_to_2026-03-31",
+  "collection_mode": "kickoff",
+  "cohorts": [
+    {
+      "cohort_id": "cohort_support_agents",
+      "cohort_label": "Support agents",
+      "respondent_count": 142,
+      "construct_scores": {
+        "confidence": { "mean": 3.1 },
+        "usage_quality": { "mean": 2.8 },
+        "behavior_change": { "mean": 2.6 },
+        "leadership_reinforcement": { "mean": 3.4 },
+        "capability_growth": { "mean": 3.0 },
+        "ai_attitude": { "mean": 3.6 },
+        "behavioral_intent": { "mean": 3.9 },
+        "perceived_ai_impact": { "mean": 2.9 }
+      }
+    },
+    {
+      "cohort_id": "cohort_support_specialists",
+      "cohort_label": "Support specialists",
+      "respondent_count": 38,
+      "construct_scores": {
+        "confidence": { "mean": 3.5 },
+        "usage_quality": { "mean": 3.2 },
+        "behavior_change": { "mean": 3.0 },
+        "leadership_reinforcement": { "mean": 3.3 },
+        "capability_growth": { "mean": 3.4 },
+        "ai_attitude": { "mean": 3.8 },
+        "behavioral_intent": { "mean": 4.1 },
+        "perceived_ai_impact": { "mean": 3.3 }
+      }
+    },
+    {
+      "cohort_id": "cohort_knowledge_owners",
+      "cohort_label": "Knowledge owners",
+      "respondent_count": 4,
+      "suppressed": true
+    }
+  ],
+  "governance": {
+    "respondent_identifiers_included": false,
+    "person_level_results_shared": false,
+    "used_for_individual_scoring": false,
+    "used_for_team_ranking": false
+  }
+}

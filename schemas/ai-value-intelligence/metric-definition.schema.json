@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/metric-definition.schema.json",
+  "title": "AI Value Metric Definition",
+  "description": "Docs-backed local schema for governed AI Value Intelligence metric definitions. This is not a production API contract.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "library_id",
+    "workflow_family",
+    "metrics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_METRICS_LIBRARY_2026_06"
+    },
+    "library_id": {
+      "type": "string"
+    },
+    "workflow_family": {
+      "type": "string"
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "metric_id",
+          "name",
+          "definition",
+          "value_route",
+          "metric_priority",
+          "source_system",
+          "measurement_unit",
+          "baseline_rule",
+          "comparison_rule",
+          "owner",
+          "allowed_claim_level",
+          "blocked_claims"
+        ],
+        "properties": {
+          "metric_id": {
+            "type": "string"
+          },
+          "workflow_family": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "value_route": {
+            "enum": [
+              "COST_REDUCTION",
+              "CAPACITY_CREATION",
+              "QUALITY_IMPROVEMENT",
+              "RISK_REDUCTION",
+              "EXPERIENCE_IMPROVEMENT",
+              "REVENUE_EXPANSION",
+              "UNCLASSIFIED"
+            ]
+          },
+          "metric_priority": {
+            "enum": ["P0", "P1", "P2"]
+          },
+          "source_system": {
+            "type": "object",
+            "required": ["source_type", "source_name", "approved_grain"],
+            "properties": {
+              "source_type": {
+                "type": "string"
+              },
+              "source_name": {
+                "type": "string"
+              },
+              "approved_grain": {
+                "type": "string"
+              }
+            }
+          },
+          "measurement_unit": {
+            "type": "string"
+          },
+          "baseline_rule": {
+            "type": "string"
+          },
+          "comparison_rule": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "allowed_claim_level": {
+            "enum": [
+              "CAVEATED_VALUE_INVESTIGATION",
+              "SOURCE_READINESS_ONLY",
+              "INTERNAL_ONLY",
+              "BLOCKED"
+            ]
+          },
+          "blocked_claims": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "roi_proof",
+                "causality_claim",
+                "individual_scoring",
+                "team_or_manager_ranking",
+                "hr_analytics",
+                "productivity_measurement"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -92,6 +92,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: aggregate readiness patterns may support customer-owned value investigations, but they do not prove ROI, causality, productivity lift, prediction, or employee performance
 - Used in: V4 Economic Impact Bridge concept and dogfood decision plan
 
+### AI Value Intelligence MVP
+- Source: James Kelley, whole-system AI value intelligence framing
+- Governance grounding: AI activity, workflow evidence, outcome signals, and systems-of-record context should produce governed value evidence and claim confidence, not automatic ROI proof or productivity measurement
+- Used in: AI Value Intelligence MVP concept and first support-workflow pilot plan
+
 ## Framing influences (not directly implemented)
 
 ### Trace Learning narrative

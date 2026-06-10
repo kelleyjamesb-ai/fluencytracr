@@ -1,0 +1,95 @@
+{
+  "schema_version": "FT_AI_VALUE_AGENT_HANDOFF_2026_06",
+  "handoff_id": "handoff_support_scenario_to_readiness_v1",
+  "workflow_family": "customer_support_case_resolution",
+  "value_route": "CAPACITY_CREATION",
+  "source_agent_role": "SCENARIO_AGENT",
+  "target_agent_role": "EVIDENCE_READINESS_AGENT",
+  "object_type": "VALUE_SCENARIO",
+  "object_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json",
+  "task_contract": {
+    "objective": "Evaluate whether the Customer Support value scenario is ready for executive validation.",
+    "expected_output_type": "EVIDENCE_READINESS",
+    "expected_output_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json",
+    "validator_command": "npm run validate:ai-value-readiness"
+  },
+  "model_selection": {
+    "policy": "DEFAULT_INHERIT",
+    "allowed_model_tiers": [
+      "BALANCED",
+      "FRONTIER"
+    ],
+    "selected_model_tier": "BALANCED",
+    "escalation_allowed": true,
+    "escalation_rule": "Escalate only for ambiguous governance, schema, or adapter failures."
+  },
+  "tool_permissions": {
+    "read_scopes": [
+      "docs/contracts/ai-value-intelligence/",
+      "schemas/ai-value-intelligence/",
+      "scripts/"
+    ],
+    "write_scopes": [
+      "docs/contracts/ai-value-intelligence/examples/"
+    ],
+    "allowed_tools": [
+      "filesystem_read",
+      "filesystem_write",
+      "local_validator",
+      "test_runner"
+    ],
+    "network_access": false,
+    "production_access": false,
+    "secrets_access": false,
+    "customer_data_access": false
+  },
+  "verification_routing": {
+    "required_validators": [
+      "npm run validate:ai-value-readiness"
+    ],
+    "required_tests": [
+      "npm run test:ai-value-readiness"
+    ],
+    "reviewer_roles": [
+      "REVIEWER_AGENT",
+      "EVALUATOR_AGENT"
+    ]
+  },
+  "ledger": {
+    "schema_version": "AR_LEDGER_2026_05",
+    "scope_ref": "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+    "handoff_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json",
+    "verification_refs": [
+      "npm run test:ai-value-agent-harness"
+    ],
+    "required_caveats": [
+      "Development-harness telemetry only."
+    ]
+  },
+  "blocked_data_capture": [
+    "raw_prompt",
+    "raw_response",
+    "message_text",
+    "file_content",
+    "diff",
+    "patch",
+    "email",
+    "user_id",
+    "person_id",
+    "customer_telemetry",
+    "roi_calculation",
+    "causality_claim",
+    "individual_scoring"
+  ],
+  "governance_boundaries": {
+    "customer_telemetry": false,
+    "production_agent_runtime": false,
+    "autonomous_customer_action": false,
+    "raw_prompt_or_response_storage": false,
+    "direct_identifier_capture": false,
+    "roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "customer_facing_economic_output": false
+  }
+}

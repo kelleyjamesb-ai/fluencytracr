@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/agent-handoff.schema.json",
+  "title": "AI Value Agent Handoff",
+  "description": "Docs-backed local schema for governed AI Value Platform specialist-agent handoffs. This is development infrastructure only, not a production agent runtime.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "handoff_id",
+    "workflow_family",
+    "value_route",
+    "source_agent_role",
+    "target_agent_role",
+    "object_type",
+    "object_ref",
+    "task_contract",
+    "model_selection",
+    "tool_permissions",
+    "verification_routing",
+    "ledger",
+    "blocked_data_capture",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_AGENT_HANDOFF_2026_06"
+    },
+    "handoff_id": {
+      "type": "string"
+    },
+    "workflow_family": {
+      "type": "string"
+    },
+    "value_route": {
+      "type": "string"
+    },
+    "source_agent_role": {
+      "enum": [
+        "BLUEPRINT_AGENT",
+        "METRICS_AGENT",
+        "SCENARIO_AGENT",
+        "EVIDENCE_READINESS_AGENT",
+        "CLAIM_BOUNDARY_AGENT",
+        "EXECUTIVE_READOUT_AGENT",
+        "REVIEWER_AGENT",
+        "EVALUATOR_AGENT",
+        "INTEGRATOR_AGENT"
+      ]
+    },
+    "target_agent_role": {
+      "enum": [
+        "BLUEPRINT_AGENT",
+        "METRICS_AGENT",
+        "SCENARIO_AGENT",
+        "EVIDENCE_READINESS_AGENT",
+        "CLAIM_BOUNDARY_AGENT",
+        "EXECUTIVE_READOUT_AGENT",
+        "REVIEWER_AGENT",
+        "EVALUATOR_AGENT",
+        "INTEGRATOR_AGENT"
+      ]
+    },
+    "object_type": {
+      "enum": [
+        "BLUEPRINT",
+        "METRICS_MAPPING",
+        "VALUE_SCENARIO",
+        "EVIDENCE_READINESS",
+        "CLAIM_BOUNDARY",
+        "EXECUTIVE_READOUT"
+      ]
+    },
+    "object_ref": {
+      "type": "string"
+    },
+    "task_contract": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "objective",
+        "expected_output_type",
+        "expected_output_ref",
+        "validator_command"
+      ],
+      "properties": {
+        "objective": {
+          "type": "string"
+        },
+        "expected_output_type": {
+          "enum": [
+            "BLUEPRINT",
+            "METRICS_MAPPING",
+            "VALUE_SCENARIO",
+            "EVIDENCE_READINESS",
+            "CLAIM_BOUNDARY",
+            "EXECUTIVE_READOUT"
+          ]
+        },
+        "expected_output_ref": {
+          "type": "string"
+        },
+        "validator_command": {
+          "type": "string"
+        }
+      }
+    },
+    "model_selection": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "policy",
+        "allowed_model_tiers",
+        "selected_model_tier",
+        "escalation_allowed",
+        "escalation_rule"
+      ],
+      "properties": {
+        "policy": {
+          "enum": [
+            "DEFAULT_INHERIT",
+            "SMALL_FAST_VALIDATOR",
+            "SPECIALIST_UPGRADE",
+            "FRONTIER_REVIEW"
+          ]
+        },
+        "allowed_model_tiers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["FAST", "BALANCED", "FRONTIER"]
+          }
+        },
+        "selected_model_tier": {
+          "enum": ["FAST", "BALANCED", "FRONTIER"]
+        },
+        "escalation_allowed": {
+          "type": "boolean"
+        },
+        "escalation_rule": {
+          "type": "string"
+        }
+      }
+    },
+    "tool_permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "read_scopes",
+        "write_scopes",
+        "allowed_tools",
+        "network_access",
+        "production_access",
+        "secrets_access",
+        "customer_data_access"
+      ],
+      "properties": {
+        "read_scopes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "write_scopes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_tools": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "network_access": {
+          "const": false
+        },
+        "production_access": {
+          "const": false
+        },
+        "secrets_access": {
+          "const": false
+        },
+        "customer_data_access": {
+          "const": false
+        }
+      }
+    },
+    "verification_routing": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["required_validators", "required_tests", "reviewer_roles"],
+      "properties": {
+        "required_validators": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_tests": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewer_roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["REVIEWER_AGENT", "EVALUATOR_AGENT"]
+          }
+        }
+      }
+    },
+    "ledger": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema_version",
+        "scope_ref",
+        "handoff_ref",
+        "verification_refs",
+        "required_caveats"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "AR_LEDGER_2026_05"
+        },
+        "scope_ref": {
+          "type": "string"
+        },
+        "handoff_ref": {
+          "type": "string"
+        },
+        "verification_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_caveats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "blocked_data_capture": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "raw_prompt",
+          "raw_response",
+          "message_text",
+          "file_content",
+          "diff",
+          "patch",
+          "email",
+          "user_id",
+          "person_id",
+          "customer_telemetry",
+          "roi_calculation",
+          "causality_claim",
+          "individual_scoring"
+        ]
+      }
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer_telemetry": {
+          "const": false
+        },
+        "production_agent_runtime": {
+          "const": false
+        },
+        "autonomous_customer_action": {
+          "const": false
+        },
+        "raw_prompt_or_response_storage": {
+          "const": false
+        },
+        "direct_identifier_capture": {
+          "const": false
+        },
+        "roi_calculation": {
+          "const": false
+        },
+        "causality_claim": {
+          "const": false
+        },
+        "individual_scoring": {
+          "const": false
+        },
+        "customer_facing_economic_output": {
+          "const": false
+        }
+      }
+    }
+  }
+}

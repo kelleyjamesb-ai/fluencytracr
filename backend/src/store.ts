@@ -13,6 +13,19 @@ import {
   resolveFluencyExecutionId} from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
+export type AiValueObjectStoredRecord = {
+  org_id: string;
+  object_type: string;
+  object_id: string;
+  schema_version: string;
+  workflow_family: string | null;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  valid: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type OrgRecord = {
   id: string;
   name: string;
@@ -473,6 +486,7 @@ class MemoryStore {
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
   workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
   workflowRegistryAudit = new Map<string, WorkflowRegistryAuditRecord>();
+  aiValueObjects = new Map<string, AiValueObjectStoredRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
   baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
@@ -515,6 +529,7 @@ class MemoryStore {
     this.workflowRegistry.clear();
     this.workflowRegistryCurrent.clear();
     this.workflowRegistryAudit.clear();
+    this.aiValueObjects.clear();
     this.workflowVisibilityPolicyConfigs.clear();
     this.baselineResetEvents.clear();
   }

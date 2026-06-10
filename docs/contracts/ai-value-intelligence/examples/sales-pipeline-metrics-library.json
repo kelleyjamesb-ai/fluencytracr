@@ -1,0 +1,111 @@
+{
+  "schema_version": "FT_AI_VALUE_METRICS_LIBRARY_2026_06",
+  "library_id": "metrics_sales_pipeline_v1",
+  "workflow_family": "sales_pipeline_hygiene",
+  "metrics": [
+    {
+      "metric_id": "sales_next_step_completeness_share",
+      "workflow_family": "sales_pipeline_hygiene",
+      "name": "Next-step completeness",
+      "definition": "Share of eligible open opportunities with a current next step recorded, measured in aggregate per workflow window.",
+      "value_route": "QUALITY_IMPROVEMENT",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "crm_system",
+        "source_name": "CRM opportunity reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "sales_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "sales_stale_opportunity_count",
+      "workflow_family": "sales_pipeline_hygiene",
+      "name": "Stale opportunity count",
+      "definition": "Count of eligible open opportunities without an update inside the agreed freshness window, measured in aggregate.",
+      "value_route": "QUALITY_IMPROVEMENT",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "crm_system",
+        "source_name": "CRM opportunity reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "count",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "sales_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "sales_record_update_lag_hours",
+      "workflow_family": "sales_pipeline_hygiene",
+      "name": "Record update lag",
+      "definition": "Median elapsed hours between a qualifying account event and the matching opportunity update, measured in aggregate.",
+      "value_route": "QUALITY_IMPROVEMENT",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "crm_system",
+        "source_name": "CRM activity reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "hours",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "revenue_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "sales_forecast_exception_rate",
+      "workflow_family": "sales_pipeline_hygiene",
+      "name": "Forecast review exception rate",
+      "definition": "Share of opportunities flagged for data issues during forecast review, measured in aggregate per window.",
+      "value_route": "QUALITY_IMPROVEMENT",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "revenue_reporting",
+        "source_name": "Forecast review reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "rate",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "revenue_operations",
+      "allowed_claim_level": "SOURCE_READINESS_ONLY",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/value-scenario-input.schema.json",
+  "title": "AI Value Scenario Input",
+  "description": "Docs-backed local schema for governed value scenario inputs. This is not a production API contract.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "workflow_family",
+    "value_route",
+    "metric_references",
+    "customer_owned_assumptions",
+    "scenario_bands",
+    "output_units"
+  ],
+  "properties": {
+    "workflow_family": {
+      "type": "string"
+    },
+    "value_route": {
+      "enum": [
+        "COST_REDUCTION",
+        "CAPACITY_CREATION",
+        "QUALITY_IMPROVEMENT",
+        "RISK_REDUCTION",
+        "EXPERIENCE_IMPROVEMENT",
+        "REVENUE_EXPANSION",
+        "UNCLASSIFIED"
+      ]
+    },
+    "metric_references": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["metric_id", "measurement_unit", "allowed_claim_level"],
+        "properties": {
+          "metric_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value_route": {
+            "type": "string"
+          },
+          "measurement_unit": {
+            "type": "string"
+          },
+          "allowed_claim_level": {
+            "enum": [
+              "CAVEATED_VALUE_INVESTIGATION",
+              "SOURCE_READINESS_ONLY",
+              "INTERNAL_ONLY",
+              "BLOCKED"
+            ]
+          }
+        }
+      }
+    },
+    "customer_owned_assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["assumption_id", "state", "owner"],
+        "properties": {
+          "assumption_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scenario_bands": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["band", "interpretation", "included_metric_ids"],
+        "properties": {
+          "band": {
+            "enum": ["CONSERVATIVE", "BASE_CASE", "EXPANDED"]
+          },
+          "interpretation": {
+            "type": "string"
+          },
+          "included_metric_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "output_units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "hours",
+          "cases",
+          "share",
+          "score",
+          "rate",
+          "count",
+          "directional_index"
+        ]
+      }
+    }
+  }
+}
