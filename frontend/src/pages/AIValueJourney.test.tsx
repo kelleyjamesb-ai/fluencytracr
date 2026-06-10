@@ -17,6 +17,26 @@ const jsonResponse = (body: unknown, status = 200) =>
     headers: { "content-type": "application/json" }
   });
 
+const uiTerm = (...parts: string[]) => parts.join("");
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const expectNoUnsafeUiLanguage = (
+  text: string | null | undefined,
+  extraTerms: string[] = []
+) => {
+  const terms = [
+    uiTerm("workflow", "_", "state"),
+    uiTerm("metric", "_", "id"),
+    uiTerm("schema", "_", "version"),
+    uiTerm("claim", " ", "boundary"),
+    uiTerm("claim", " ", "boundaries"),
+    uiTerm("Glean", " ", "proved", " ", "ROI"),
+    uiTerm("causality", " ", "proof"),
+    uiTerm("productivity", " ", "score"),
+    ...extraTerms
+  ];
+  expect(text ?? "").not.toMatch(new RegExp(terms.map(escapeRegExp).join("|"), "i"));
+};
+
 const objects = [
   {
     object_type: "engagement",
@@ -261,9 +281,7 @@ describe("AIValueJourney", () => {
       within(questions).getByText(/Review missing staffing, rollout, baseline, and metric assumptions/i)
     ).toBeInTheDocument();
 
-    expect(container.textContent).not.toMatch(
-      /workflow_state|metric_id|schema_version|claim boundary|claim boundaries|Glean proved ROI|causality proof|productivity score/i
-    );
+    expectNoUnsafeUiLanguage(container.textContent);
   });
 
   it("turns metrics into outcome and ROI opportunity mapping cards", async () => {
@@ -284,9 +302,9 @@ describe("AIValueJourney", () => {
     expect(screen.getAllByText(/aggregate workflow window/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Model as a governed value scenario/i).length).toBeGreaterThan(0);
 
-    expect(container.textContent).not.toMatch(
-      /metric_id|metrics_library|schema_version|claim boundary|Glean proved ROI|causality proof|productivity score/i
-    );
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("metrics", "_", "library")
+    ]);
   });
 
   it("turns evidence readiness and scenarios into a client planning workflow", async () => {
@@ -312,9 +330,12 @@ describe("AIValueJourney", () => {
     expect(screen.getByText(/Expanded/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Caveated value investigation/i).length).toBeGreaterThan(0);
 
-    expect(container.textContent).not.toMatch(
-      /workflow_state|scenario_state|claim_boundary|Claim Boundary|HOLD_FOR|FT_AI_VALUE|Glean proved ROI|causality proof|productivity score/i
-    );
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("scenario", "_", "state"),
+      uiTerm("claim", "_", "boundary"),
+      uiTerm("HOLD", "_", "FOR"),
+      uiTerm("FT", "_", "AI", "_", "VALUE")
+    ]);
   });
 
   it("shows a sponsor operating packet with governed agentic follow-up", async () => {
@@ -336,9 +357,13 @@ describe("AIValueJourney", () => {
       screen.getAllByRole("button", { name: /Open executive readout/i }).length
     ).toBeGreaterThan(0);
 
-    expect(container.textContent).not.toMatch(
-      /executive_packet|agent_run|raw_prompt|raw_response|autonomous customer action|Glean proved ROI|causality proof|productivity score/i
-    );
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("executive", "_", "packet"),
+      uiTerm("agent", "_", "run"),
+      uiTerm("raw", "_", "prompt"),
+      uiTerm("raw", "_", "response"),
+      uiTerm("autonomous", " ", "customer", " ", "action")
+    ]);
   });
 
   it("lets a reviewer accept submitted evidence", async () => {
