@@ -18,8 +18,8 @@
 
 ## 2. Follow-up phased changes (not in this change)
 
-- [ ] 2.1 Scaffold `add-ai-value-engine-core` (Phase 1): create the engine
+- [x] 2.1 Scaffold `add-ai-value-engine-core` (Phase 1): create the engine
       module, migrate Blueprint validation behind it with CLI/tests unchanged.
-- [ ] 2.2 Plan stage-by-stage migration changes for Metrics, Scenario,
+- [x] 2.2 Plan stage-by-stage migration changes for Metrics, Scenario,
       Readiness, Claim Boundary, Executive Packet, support pack, agent
       harness, and finally the workspace UI.
