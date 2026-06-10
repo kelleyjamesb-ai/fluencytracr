@@ -5,6 +5,7 @@ import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
+import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 
 const tabs = [
   "Workflow Canvas",
@@ -193,6 +194,13 @@ export const AIValueWorkspace = () => {
 
       {!journey.loading && (
         <CustomerEvidenceRequestPanel request={journey.customerEvidenceRequest} />
+      )}
+
+      {!journey.loading && (
+        <CustomerEvidenceReviewWorkbench
+          review={journey.customerEvidenceReview}
+          onReview={(exportId, decision) => void journey.review(exportId, decision)}
+        />
       )}
 
       {errorMessage && (

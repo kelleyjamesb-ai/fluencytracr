@@ -304,38 +304,63 @@ const detailPayloads: Record<string, Record<string, unknown>> = {
   }
 };
 
+const cloneDetails = () =>
+  JSON.parse(JSON.stringify(detailPayloads)) as Record<string, Record<string, unknown>>;
+
+const withOutcomeReviewState = (state: "MISSING" | "SUBMITTED" | "ACCEPTED" | "REJECTED") => {
+  const nextDetails = cloneDetails();
+  const roiScenario = nextDetails["roi_scenario/roi_support"] as Record<string, any>;
+  roiScenario.evidence_status.outcome_evidence_review_state = state;
+  const nextObjects =
+    state === "MISSING"
+      ? objects.filter((item) => item.object_type !== "outcome_evidence_export")
+      : objects.map((item) =>
+          item.object_type === "outcome_evidence_export"
+            ? { ...item, validation: { review_state: state } }
+            : item
+        );
+  return { objects: nextObjects, details: nextDetails };
+};
+
+const stubJourneyFetch = (
+  objectList: Array<Record<string, unknown>> = objects,
+  payloads: Record<string, Record<string, unknown>> = detailPayloads
+) => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/review")) {
+        return jsonResponse({ review_state: "ACCEPTED" });
+      }
+      for (const [path, payload] of Object.entries(payloads)) {
+        if (url.includes(`/ai-value/objects/${path}`)) {
+          const [object_type, object_id] = path.split("/");
+          return jsonResponse({
+            object_type,
+            object_id,
+            schema_version: "test",
+            workflow_family: "customer_support_case_resolution",
+            valid: true,
+            validation: {},
+            updated_at: "2026-06-10T00:00:00Z",
+            payload
+          });
+        }
+      }
+      if (url.includes("/ai-value/objects")) {
+        if (init?.method === undefined || init.method === "GET") {
+          return jsonResponse({ objects: objectList });
+        }
+      }
+      return jsonResponse({ objects: [] });
+    })
+  );
+};
+
 describe("AIValueJourney", () => {
   beforeEach(() => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.includes("/review")) {
-          return jsonResponse({ review_state: "ACCEPTED" });
-        }
-        for (const [path, payload] of Object.entries(detailPayloads)) {
-          if (url.includes(`/ai-value/objects/${path}`)) {
-            const [object_type, object_id] = path.split("/");
-            return jsonResponse({
-              object_type,
-              object_id,
-              schema_version: "test",
-              workflow_family: "customer_support_case_resolution",
-              valid: true,
-              validation: {},
-              updated_at: "2026-06-10T00:00:00Z",
-              payload
-            });
-          }
-        }
-        if (url.includes("/ai-value/objects")) {
-          if (init?.method === undefined || init.method === "GET") {
-            return jsonResponse({ objects });
-          }
-        }
-        return jsonResponse({ objects: [] });
-      })
-    );
+    stubJourneyFetch();
   });
 
   afterEach(() => {
@@ -583,6 +608,112 @@ describe("AIValueJourney", () => {
       uiTerm("source", "_", "system"),
       uiTerm("approved", "_", "grain")
     ]);
+  });
+
+  it("shows a customer evidence review workbench for a submitted export", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const review = screen.getByRole("region", { name: /Customer evidence review/i });
+    expect(
+      within(review).getByRole("heading", { name: /Customer Evidence Review/i })
+    ).toBeInTheDocument();
+    expect(within(review).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(
+      within(review).getByText(/Review the submitted aggregate export against Median resolution time/i)
+    ).toBeInTheDocument();
+    expect(within(review).getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
+    expect(within(review).getAllByText(/Aggregate Workflow Window/i).length).toBeGreaterThan(0);
+    expect(within(review).getByText(/Support Operations reviews the submitted export/i)).toBeInTheDocument();
+    expect(within(review).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(review).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expect(within(review).getByRole("button", { name: /^Accept$/ })).toBeInTheDocument();
+    expect(within(review).getByRole("button", { name: /^Reject$/ })).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("object", "_", "id"),
+      uiTerm("workflow", "_", "family"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("FT", "_", "AI", "_", "VALUE"),
+      uiTerm("CAVEATED", "_", "VALUE", "_", "INVESTIGATION"),
+      uiTerm("MODELED", "_", "RANGE", "_", "ONLY"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it("shows customer evidence review waiting state when the export is missing", async () => {
+    const missing = withOutcomeReviewState("MISSING");
+    stubJourneyFetch(missing.objects, missing.details);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const review = screen.getByRole("region", { name: /Customer evidence review/i });
+    expect(within(review).getByText(/Waiting for customer export/i)).toBeInTheDocument();
+    expect(
+      within(review).getByText(/Ask Support Operations for the aggregate Median resolution time export/i)
+    ).toBeInTheDocument();
+    expect(within(review).queryByRole("button", { name: /^Accept$/ })).not.toBeInTheDocument();
+    expect(within(review).queryByRole("button", { name: /^Reject$/ })).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it("shows customer evidence review accepted state without reviewer actions", async () => {
+    const accepted = withOutcomeReviewState("ACCEPTED");
+    stubJourneyFetch(accepted.objects, accepted.details);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const review = screen.getByRole("region", { name: /Customer evidence review/i });
+    expect(within(review).getByText(/Customer export accepted/i)).toBeInTheDocument();
+    expect(
+      within(review).getByText(/Accepted evidence can support caveated value review/i)
+    ).toBeInTheDocument();
+    expect(within(review).queryByRole("button", { name: /^Accept$/ })).not.toBeInTheDocument();
+    expect(within(review).queryByRole("button", { name: /^Reject$/ })).not.toBeInTheDocument();
+    expect(within(review).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it("shows customer evidence review rejected state with a resubmission action", async () => {
+    const rejected = withOutcomeReviewState("REJECTED");
+    stubJourneyFetch(rejected.objects, rejected.details);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const review = screen.getByRole("region", { name: /Customer evidence review/i });
+    expect(within(review).getByText(/Customer export rejected/i)).toBeInTheDocument();
+    expect(
+      within(review).getByText(/Ask Support Operations to resubmit the aggregate export/i)
+    ).toBeInTheDocument();
+    expect(within(review).queryByRole("button", { name: /^Accept$/ })).not.toBeInTheDocument();
+    expect(within(review).queryByRole("button", { name: /^Reject$/ })).not.toBeInTheDocument();
+    expect(within(review).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
   it("shows a sponsor operating packet with governed agentic follow-up", async () => {

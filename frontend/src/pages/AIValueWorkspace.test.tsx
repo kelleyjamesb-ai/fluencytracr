@@ -615,6 +615,33 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
+  it("shows the customer evidence review workbench beside the request packet", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const review = screen.getByRole("region", { name: /Customer evidence review/i });
+    expect(within(review).getByRole("heading", { name: /Customer Evidence Review/i })).toBeInTheDocument();
+    expect(within(review).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(
+      within(review).getByText(/Review the submitted aggregate export against Median resolution time/i)
+    ).toBeInTheDocument();
+    expect(within(review).getByText(/Support Operations reviews the submitted export/i)).toBeInTheDocument();
+    expect(within(review).getByRole("button", { name: /^Accept$/ })).toBeInTheDocument();
+    expect(within(review).getByRole("button", { name: /^Reject$/ })).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
   it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {
     stubJourneyFetch([]);
     const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);

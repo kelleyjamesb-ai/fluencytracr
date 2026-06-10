@@ -83,7 +83,7 @@
       "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "In progress 2026-06-10: Customer Evidence Request Packet now surfaces in Journey/Workspace from governed roi_scenario readiness with export ask, owners, windows, review step, caveat, and blocked value language. Tests/build/governance/browser smoke green. Next slice: customer evidence review workbench for submitted/accepted/rejected exports."
+      "last_note": "In progress 2026-06-10: Customer Evidence Review Workbench now surfaces in Journey/Workspace from request packet + outcome export review state, with missing/submitted/accepted/rejected states, reviewer, match checks, blocked language, and submitted-only actions. Tests/build/governance/browser smoke green. Next slice: connect accepted evidence into executive readout cadence."
     }
   ]
 }

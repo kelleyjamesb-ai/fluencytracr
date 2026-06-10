@@ -96,30 +96,34 @@ What is now in place:
 Latest completed slice:
 
 ```text
-Customer Evidence Request Packet from ROI Scenario Readiness
+Customer Evidence Review Workbench from the Request Packet
 ```
 
 What is now in place:
 
-- `useAiValueJourney` now builds a `CustomerEvidenceRequest` view model from
-  the latest governed ROI scenario object and selected Blueprint handoff.
-- `/ai-value-journey` and `/ai-value-workspace` show a client-readable
-  "Customer Evidence Request" panel with the exact aggregate export to ask for,
-  customer system, outcome metric, approved export level, baseline/comparison
-  window rules, data owners, review step, caveat, and blocked value language.
-- The Executive Operating Packet and Client Value Questions now use the request
-  packet as the recommended next client action when a mapped opportunity exists.
-- Missing states remain actionable: finish Blueprint and outcome mapping before
-  asking the client for an aggregate export.
-- The implementation stays UI/view-model only: no production connector, no
-  autonomous customer action, no ROI proof, no causality claim, no individual
-  scoring, no HR analytics, no productivity ranking, and no customer-facing
-  dollarized output.
+- `useAiValueJourney` now builds a `CustomerEvidenceReviewWorkbench` view model
+  from Customer Evidence Request, governed ROI Scenario Readiness, and
+  `outcome_evidence_export` review state.
+- `/ai-value-journey` replaces the raw export-card list with a sponsor-readable
+  "Customer Evidence Review" workbench.
+- `/ai-value-workspace` shows the same review workbench beside the Customer
+  Evidence Request Packet.
+- The workbench shows whether the requested export is missing, submitted,
+  accepted, or rejected; who reviews it; whether it matches requested metric,
+  customer system, export level, and baseline/comparison windows; and what value
+  language remains blocked.
+- Accept and Reject actions appear only for submitted evidence and still call
+  the existing role-gated review API. Export IDs are no longer primary UI copy.
+- Accepted evidence remains caveated support only. No production connector,
+  autonomous customer action, ROI proof, causality claim, individual scoring, HR
+  analytics, productivity ranking, or customer-facing dollarized output was
+  added.
 
 Verification completed:
 
 - Red test first:
-  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "customer evidence request"`
+  `npm test --workspace frontend -- AIValueJourney.test.tsx -t "customer evidence review"`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "customer evidence review"`
 - `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
 - `npm test --workspace frontend`
 - `npm run build --workspace frontend`
@@ -131,48 +135,46 @@ Verification completed:
 - `node scripts/ci_glean_value_governance_gates.mjs`
 - `git diff --check`
 - Browser smoke with mocked governed objects: Journey and Workspace render
-  Customer Evidence Request, show the Support Operations export ask, show
-  blocked value language, expose no unsafe/internal terms, have no console
-  warnings/errors, and have no horizontal overflow at 390px or 1440px.
+  Customer Evidence Request plus Customer Evidence Review, show the Support
+  Operations review workflow, expose no unsafe/internal terms, have no console
+  warnings/errors after stubbing the local-preview Speed Insights script, and
+  have no horizontal overflow at 390px or 1440px.
 
 Recommended next slice:
 
 ```text
-Customer Evidence Review Workbench from the Request Packet
+Evidence-Aware Executive Operating Cadence
 ```
 
 Goal:
 
-Turn the submitted/accepted/rejected outcome evidence state into a clearer
-review workbench that answers whether the requested customer export has arrived,
-who must review it, whether it matches the request packet, and what language is
-still blocked before the sponsor readout. This should make the evidence-review
-step feel like an operating workflow instead of a raw object list.
+Connect the accepted/rejected/missing evidence-review result into the executive
+operating packet, client value questions, and agentic follow-up so the sponsor
+can see whether value language can remain caveated, must be held, or needs
+corrected/resubmitted evidence.
 
 Acceptance criteria:
 
-- Replace the current raw-feeling "Customer Evidence Review" area with a
-  sponsor-readable review workbench derived from Customer Evidence Request plus
-  `outcome_evidence_export` review state.
-- Show whether the requested export is missing, submitted, accepted, or rejected
-  in client language, including what is safe to do next for each state.
-- Surface reviewer action buttons only for submitted evidence and preserve the
-  existing role-gated review API behavior.
-- Reference the request packet fields rather than internal export IDs wherever
-  possible; if an export ID remains visible, it should be secondary/supporting
-  detail, not the primary label.
-- Keep accepted evidence as caveated support only. Do not calculate ROI, claim
-  causality, rank people/teams/managers, introduce HR analytics, create a
-  production connector, or emit customer-facing dollarized output.
-- Add focused tests for missing, submitted, accepted, and rejected states where
-  feasible, plus the existing Journey/Workspace and governance checks.
+- Executive Operating Packet should use the Customer Evidence Review state, not
+  only the request packet, when choosing sponsor decision and recommended next
+  action.
+- Client Value Questions should distinguish "export requested" from "export
+  accepted", "awaiting review", and "rejected/resubmit."
+- Agentic follow-up should route accepted evidence to caveated readout prep,
+  submitted evidence to reviewer action, rejected evidence to corrected-export
+  request, and missing evidence to data-owner request.
+- Keep accepted evidence caveated. Do not calculate ROI, emit dollarized output,
+  claim causality, rank people/teams/managers, introduce HR analytics, create a
+  production connector, or add autonomous customer actions.
+- Add focused Journey/Workspace tests for accepted, submitted, rejected, and
+  missing executive-cadence language.
 
 Suggested files:
 
 - `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/hooks/useAiValueJourney.ts`
 - `frontend/src/pages/AIValueWorkspace.tsx`
-- `frontend/src/components/CustomerEvidenceRequestPanel.tsx`
+- `frontend/src/components/CustomerEvidenceReviewWorkbench.tsx`
 - `frontend/src/pages/AIValueJourney.test.tsx`
 - `frontend/src/pages/AIValueWorkspace.test.tsx`
 
@@ -181,24 +183,24 @@ Suggested files:
 Use this prompt to continue:
 
 ```text
-Create the Customer Evidence Review Workbench product slice for the AI Value
-Platform. Use the existing Customer Evidence Request, ROI Scenario Readiness,
-and Outcome Evidence review state to show whether the requested aggregate export
-is missing, submitted, accepted, or rejected; who needs to review it; whether it
-matches the requested metric/source/window/grain; and what value language
-remains blocked. Surface this in `/ai-value-journey` and keep `/ai-value-workspace`
-aligned if useful. Preserve the existing role-gated review API for submitted
-exports. Do not add production connectors, autonomous customer actions, raw
-prompts/responses, direct identifiers, unsupported ROI proof, causality claims,
-individual scoring, HR analytics, productivity ranking, or customer-facing
-dollarized output. Add focused tests and keep ROI scenario, agent-harness,
-frontend, backend object API, build, and governance checks green.
+Create the Evidence-Aware Executive Operating Cadence product slice for the AI
+Value Platform. Use the Customer Evidence Review Workbench state to update the
+Executive Operating Packet, Client Value Questions, and agentic handoff language
+so accepted, submitted, rejected, and missing exports produce different sponsor
+next actions. Accepted evidence may support caveated value review only; rejected
+or missing evidence must hold stronger value language. Do not add production
+connectors, autonomous customer actions, raw prompts/responses, direct
+identifiers, unsupported ROI proof, causality claims, individual scoring, HR
+analytics, productivity ranking, or customer-facing dollarized output. Add
+focused tests and keep ROI scenario, agent-harness, frontend, backend object
+API, build, and governance checks green.
 ```
 
 ## What To Validate First
 
-Validate the evidence-review experience before adding more engines.
+Validate that the executive packet is now driven by actual evidence-review
+state, not merely by the existence of a request packet.
 
-The current biggest risk is that the platform can now ask for the right export
-but still makes review feel like a raw object list. The next slice should make
-the evidence-review step operational, readable, and visibly governed.
+The current biggest risk is that the platform can request and review evidence,
+but the sponsor-facing next action still sounds the same regardless of whether
+the customer export is missing, submitted, accepted, or rejected.

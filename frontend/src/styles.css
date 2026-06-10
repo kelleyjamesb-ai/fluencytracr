@@ -2448,6 +2448,46 @@ body {
   justify-content: flex-start;
 }
 
+.ai-value-review-workbench {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-value-review-summary {
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-review-summary p {
+  margin: 4px 0 0;
+}
+
+.ai-value-review-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-review-fact {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-review-fact p,
+.ai-value-review-fact small {
+  display: block;
+  margin: 4px 0 0;
+}
+
+.ai-value-review-actions {
+  justify-content: flex-start;
+}
+
 .ai-value-boundary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2583,7 +2623,8 @@ body {
   .ai-value-executive-plan-grid,
   .ai-value-scenario-band-list,
   .ai-value-scenario-input-grid,
-  .ai-value-agent-handoff-grid {
+  .ai-value-agent-handoff-grid,
+  .ai-value-review-fact-grid {
     grid-template-columns: 1fr;
   }
 

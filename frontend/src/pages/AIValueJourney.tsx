@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAiValueJourney, type JourneyStageState } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
+import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 
 const StatusPill = ({
   label,
@@ -22,12 +23,6 @@ const STATE_LABELS: Record<JourneyStageState, string> = {
   done: "Ready",
   attention: "Needs input",
   todo: "Not started"
-};
-
-const EvidenceStatePill = ({ state }: { state: string }) => {
-  if (state === "ACCEPTED") return <StatusPill label="Accepted" tone="good" />;
-  if (state === "SUBMITTED") return <StatusPill label="Awaiting review" tone="warn" />;
-  return <StatusPill label="Rejected" />;
 };
 
 const scenarioInputTone = (status: string): "good" | "warn" | "neutral" => {
@@ -476,47 +471,10 @@ export const AIValueJourney = () => {
 
         <CustomerEvidenceRequestPanel request={journey.customerEvidenceRequest} />
 
-        <article className="ai-value-panel">
-          <h2>Customer Evidence Review</h2>
-          <p>
-            Outcome exports stay customer-owned and only attach after human review.
-            Accepted evidence can support caveated value language; pending or rejected
-            evidence never silently upgrades a claim.
-          </p>
-          {journey.evidenceItems.length > 0 ? (
-            <div className="ai-value-review-list">
-              {journey.evidenceItems.map((item) => (
-                <div className="ai-value-review-card" key={item.exportId}>
-                  <div>
-                    <strong>{(item.workflowFamily ?? item.exportId).replace(/_/g, " ")}</strong>
-                    <p>{item.exportId}</p>
-                  </div>
-                  <EvidenceStatePill state={item.reviewState} />
-                  {item.reviewState === "SUBMITTED" && (
-                    <span className="ai-value-chip-row">
-                      <button
-                        type="button"
-                        className="ai-value-step"
-                        onClick={() => void journey.review(item.exportId, "ACCEPTED")}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        type="button"
-                        className="ai-value-step"
-                        onClick={() => void journey.review(item.exportId, "REJECTED")}
-                      >
-                        Reject
-                      </button>
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No customer outcome export has been submitted for this journey yet.</p>
-          )}
-        </article>
+        <CustomerEvidenceReviewWorkbench
+          review={journey.customerEvidenceReview}
+          onReview={(exportId, decision) => void journey.review(exportId, decision)}
+        />
 
         <article className="ai-value-panel ai-value-executive-plan-panel">
           <div className="ai-value-section-head">

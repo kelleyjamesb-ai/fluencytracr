@@ -148,6 +148,28 @@ export interface CustomerEvidenceRequest {
   caveat: string;
 }
 
+export interface CustomerEvidenceReviewFact {
+  label: string;
+  value: string;
+  detail: string;
+}
+
+export interface CustomerEvidenceReviewWorkbench {
+  available: boolean;
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  reviewState: "MISSING" | "SUBMITTED" | "ACCEPTED" | "REJECTED";
+  summary: string;
+  reviewer: string;
+  reviewerDetail: string;
+  matchSummary: string;
+  nextAction: string;
+  facts: CustomerEvidenceReviewFact[];
+  remainingBlockedLanguage: string[];
+  reviewableExportId: string | null;
+  canReview: boolean;
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
@@ -159,6 +181,7 @@ export interface AiValueJourney {
   evidenceScenarioPlan: EvidenceScenarioPlan;
   roiScenarioReadiness: RoiScenarioReadiness;
   customerEvidenceRequest: CustomerEvidenceRequest;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
   executivePlan: ExecutiveOperatingPlan;
   packetIds: string[];
   errorMessage: string | null;
@@ -939,6 +962,166 @@ function buildCustomerEvidenceRequest(params: {
   };
 }
 
+const normalizeReviewState = (state: unknown): CustomerEvidenceReviewWorkbench["reviewState"] => {
+  const normalized = String(state ?? "MISSING").toUpperCase();
+  if (normalized === "ACCEPTED") return "ACCEPTED";
+  if (normalized === "SUBMITTED") return "SUBMITTED";
+  if (normalized === "REJECTED") return "REJECTED";
+  return "MISSING";
+};
+
+function buildCustomerEvidenceReviewWorkbench(params: {
+  customerEvidenceRequest: CustomerEvidenceRequest;
+  evidenceItems: EvidenceReviewItem[];
+  roiScenario: Record<string, any> | null;
+}): CustomerEvidenceReviewWorkbench {
+  const { customerEvidenceRequest, evidenceItems, roiScenario } = params;
+  const workflowFamily = String(roiScenario?.workflow?.workflow_family ?? "");
+  const matchingEvidence =
+    evidenceItems.filter((item) => !workflowFamily || item.workflowFamily === workflowFamily);
+  const submittedExport =
+    matchingEvidence[matchingEvidence.length - 1] ?? evidenceItems[evidenceItems.length - 1] ?? null;
+  const reviewState = normalizeReviewState(
+    submittedExport?.reviewState ?? roiScenario?.evidence_status?.outcome_evidence_review_state
+  );
+  const reviewer =
+    customerEvidenceRequest.owners.find((owner) => /baseline/i.test(owner.label))?.owner ??
+    customerEvidenceRequest.owners[0]?.owner ??
+    "Customer data owner";
+  const metricName = customerEvidenceRequest.metricName;
+  const sourceSystem = customerEvidenceRequest.sourceSystem;
+  const approvedGrain = customerEvidenceRequest.approvedGrain;
+  const hasRequest = customerEvidenceRequest.available;
+
+  if (!hasRequest) {
+    return {
+      available: false,
+      statusLabel: "Evidence review not ready yet",
+      statusTone: "warn",
+      reviewState: "MISSING",
+      summary: "Finish the Customer Evidence Request before reviewing exports.",
+      reviewer,
+      reviewerDetail: "Assign the reviewer after the aggregate export request is ready.",
+      matchSummary: "No requested metric, source, export level, or window has been approved yet.",
+      nextAction: customerEvidenceRequest.nextAction,
+      facts: [
+        {
+          label: "Review prerequisite",
+          value: "Customer Evidence Request",
+          detail: "Finish the request before evidence can be accepted or rejected."
+        }
+      ],
+      remainingBlockedLanguage: customerEvidenceRequest.remainingBlockedLanguage,
+      reviewableExportId: null,
+      canReview: false
+    };
+  }
+
+  const matchSummary =
+    `Review the submitted aggregate export against ${metricName}, ${sourceSystem}, ` +
+    `${approvedGrain}, and approved baseline/comparison windows.`;
+  const facts: CustomerEvidenceReviewFact[] = [
+    {
+      label: "Requested metric",
+      value: metricName,
+      detail: "The export should use the same outcome signal named in the request."
+    },
+    {
+      label: "Requested customer system",
+      value: sourceSystem,
+      detail: "The export should come from the approved customer-owned source."
+    },
+    {
+      label: "Requested export level",
+      value: approvedGrain,
+      detail: "The export should stay aggregate and match the approved grain."
+    },
+    {
+      label: "Requested window rule",
+      value: "Approved baseline and comparison windows",
+      detail: "The export should match the same pre-period and post-period rules."
+    }
+  ];
+
+  if (reviewState === "ACCEPTED") {
+    return {
+      available: true,
+      statusLabel: "Customer export accepted",
+      statusTone: "good",
+      reviewState,
+      summary:
+        "Accepted evidence can support caveated value review; blocked language still travels with the packet.",
+      reviewer,
+      reviewerDetail: `${reviewer} reviewed the submitted aggregate export.`,
+      matchSummary,
+      nextAction:
+        "Carry accepted evidence into the sponsor readout with caveats and blocked value language attached.",
+      facts,
+      remainingBlockedLanguage: customerEvidenceRequest.remainingBlockedLanguage,
+      reviewableExportId: null,
+      canReview: false
+    };
+  }
+
+  if (reviewState === "REJECTED") {
+    return {
+      available: true,
+      statusLabel: "Customer export rejected",
+      statusTone: "warn",
+      reviewState,
+      summary:
+        `Ask ${reviewer} to resubmit the aggregate export matching ${metricName}, ` +
+        `${sourceSystem}, ${approvedGrain}, and approved windows.`,
+      reviewer,
+      reviewerDetail: `${reviewer} needs to correct and resubmit the aggregate export.`,
+      matchSummary,
+      nextAction:
+        "Keep stronger value language blocked until a corrected export is accepted.",
+      facts,
+      remainingBlockedLanguage: customerEvidenceRequest.remainingBlockedLanguage,
+      reviewableExportId: null,
+      canReview: false
+    };
+  }
+
+  if (reviewState === "SUBMITTED" && submittedExport) {
+    return {
+      available: true,
+      statusLabel: "Customer export awaiting review",
+      statusTone: "warn",
+      reviewState,
+      summary:
+        "A customer export has arrived and needs human review before it changes value language.",
+      reviewer,
+      reviewerDetail: `${reviewer} reviews the submitted export before value language changes.`,
+      matchSummary,
+      nextAction:
+        "Accept the export only if the metric, source, export level, baseline window, and comparison window match the request.",
+      facts,
+      remainingBlockedLanguage: customerEvidenceRequest.remainingBlockedLanguage,
+      reviewableExportId: submittedExport.exportId,
+      canReview: true
+    };
+  }
+
+  return {
+    available: true,
+    statusLabel: "Waiting for customer export",
+    statusTone: "neutral",
+    reviewState: "MISSING",
+    summary:
+      `Ask ${reviewer} for the aggregate ${metricName} export from ${sourceSystem} before review can start.`,
+    reviewer,
+    reviewerDetail: `${reviewer} owns the aggregate export request.`,
+    matchSummary,
+    nextAction: customerEvidenceRequest.nextAction,
+    facts,
+    remainingBlockedLanguage: customerEvidenceRequest.remainingBlockedLanguage,
+    reviewableExportId: null,
+    canReview: false
+  };
+}
+
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
@@ -1158,6 +1341,21 @@ export const useAiValueJourney = (): AiValueJourney => {
         })
       })
     );
+  const [customerEvidenceReview, setCustomerEvidenceReview] =
+    useState<CustomerEvidenceReviewWorkbench>(() =>
+      buildCustomerEvidenceReviewWorkbench({
+        customerEvidenceRequest: buildCustomerEvidenceRequest({
+          roiScenario: null,
+          workflowHandoff: buildWorkflowHandoff({
+            blueprint: null,
+            metricsLibrary: null,
+            opportunities: []
+          })
+        }),
+        evidenceItems: [],
+        roiScenario: null
+      })
+    );
   const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
     buildExecutiveOperatingPlan({
       packetCount: 0,
@@ -1208,6 +1406,11 @@ export const useAiValueJourney = (): AiValueJourney => {
         roiScenario,
         workflowHandoff: handoff
       });
+      const evidenceReview = buildCustomerEvidenceReviewWorkbench({
+        customerEvidenceRequest: evidenceRequest,
+        evidenceItems: items,
+        roiScenario
+      });
       const plan = buildEvidenceScenarioPlan({
         readiness,
         scenario,
@@ -1235,6 +1438,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setEvidenceScenarioPlan(plan);
       setRoiScenarioReadiness(roiReadiness);
       setCustomerEvidenceRequest(evidenceRequest);
+      setCustomerEvidenceReview(evidenceReview);
       setExecutivePlan(executivePlan);
       setPacketIds(packetIds);
 
@@ -1297,6 +1501,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     evidenceScenarioPlan,
     roiScenarioReadiness,
     customerEvidenceRequest,
+    customerEvidenceReview,
     executivePlan,
     packetIds,
     errorMessage,
