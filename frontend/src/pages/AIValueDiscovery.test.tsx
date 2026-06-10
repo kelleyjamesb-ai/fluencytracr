@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -77,6 +77,31 @@ describe("AIValueDiscovery", () => {
 
     expect(container.textContent).not.toMatch(
       /schema_version|workflow_state|FT_AI_VALUE|engagement_id|priority_state/
+    );
+  });
+
+  it("renders the blueprint step as a client workshop canvas that feeds value mapping", () => {
+    const { container } = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Load example engagement/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Blueprint Workshop/i }));
+
+    const canvas = screen.getByRole("region", { name: /Blueprint workshop canvas/i });
+    expect(screen.getByRole("heading", { name: /Blueprint workshop canvas/i })).toBeInTheDocument();
+    expect(within(canvas).getByText(/Current workflow/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/Future workflow/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/Friction, handoffs, and systems/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/AI intervention candidates/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/Feeds Metrics and ROI opportunity mapping/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/Feeds Evidence readiness/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/Feeds governed value scenario/i)).toBeInTheDocument();
+
+    expect(within(canvas).getByText(/Knowledge lives in many disconnected systems/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/support_case_management/i)).toBeInTheDocument();
+    expect(within(canvas).getByText(/median_resolution_hours/i)).toBeInTheDocument();
+    expect(within(canvas).getAllByText(/Capacity creation/i).length).toBeGreaterThan(0);
+    expect(container.textContent).not.toMatch(
+      /schema_version|workflow_state|FT_AI_VALUE|engagement_id|priority_state|claim_boundary/
     );
   });
 

@@ -75,11 +75,13 @@
 
 - Multi-objective engagements (user-requested, 2026-06-10): engagements hold multiple measurable business objectives with sponsor-accepted success measures and directions; use cases link to the objective they serve; the discovery experience, workspace kickoff, and executive readout all anchor on the objective portfolio as the standing value-review frame.
 
+- AI Value Platform product spine slice (user-requested, 2026-06-10): Blueprint Discovery now includes a client-facing workshop canvas that previews current workflow, future workflow, friction/handoffs/systems, AI intervention candidates, and the handoff into Metrics/ROI opportunity mapping, Evidence readiness, and governed value scenario work. The saved blueprint payload is unchanged and remains governed; the UI explicitly says it can model opportunity but cannot prove ROI or causality on its own. Verification: `npm test --workspace frontend -- AIValueDiscovery.test.tsx`, `npm test --workspace frontend`, `npm run build --workspace frontend`, `git diff --check`, Playwright desktop/mobile render checks with no mobile horizontal overflow.
+
 ## Current Status
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.
 - Queue uses **7 phased items** aligned with blueprint **§17** (`WORK_QUEUE.json` → `blueprint_ref`).
-- All 7 original phased queue items are marked **done** in `WORK_QUEUE.json`; `ai-value-platform-product-spine-v1` is the next pending AI Value Platform item and no durable queue item is currently `in_progress`.
+- All 7 original phased queue items are marked **done** in `WORK_QUEUE.json`; `ai-value-platform-product-spine-v1` is currently `in_progress`.
 - Temporary frontend CI repair slice is complete; no original blueprint phase remains active.
 - Temporary backend tenant-isolation repair slice is complete; no original blueprint phase remains active.
 - The Glean readiness addition was completed as a bounded user-requested slice; queue status was not changed.
@@ -123,7 +125,7 @@
 
 ## Next Step
 
-- AI Value Platform: start `ai-value-platform-product-spine-v1` from `main`. Use `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md` as the north star and make `/ai-value-journey` the client-facing product spine for Human Readiness -> Blueprint -> Execution Instrumentation -> Evidence And Measurement -> Value Realization -> Whole-System Outcomes. Keep FluencyTracr as the aggregate evidence layer; introduce ROI-style output only through a future governed value-modeling contract with customer-owned assumptions/evidence and explicit claim review.
+- AI Value Platform: continue `ai-value-platform-product-spine-v1`. Product Spine V1 and the Blueprint workshop canvas are now in place; next bounded slice should make Metrics feel like outcome/ROI opportunity mapping software and connect it more directly to the Blueprint canvas, evidence readiness, governed value scenario, and executive readout. Keep FluencyTracr as the aggregate evidence layer; ROI-style output stays bounded to governed opportunity/scenario language with customer-owned assumptions/evidence and explicit claim review.
 
 - If the human accepts the org-agnostic commercialization track, the next bounded step is review/commit/PR for the docs-only AI Work Evidence concept and pilot package. Keep any later live customer pilot blocked until customer-side aggregate transformation, source coverage declarations, approved aggregate labels, and customer-owned outcome metrics are available.
 - Add a new bounded queue item before starting the next durable implementation track; the original 7-phase blueprint queue is complete.
