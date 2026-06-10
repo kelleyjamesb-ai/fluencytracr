@@ -1,0 +1,145 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import {
+  runSpine,
+  validateBlueprint,
+  validateMetricsLibrary,
+  validateValueScenario,
+  validateEvidenceReadiness,
+  validateClaimBoundary,
+  validateExecutivePacket
+} from "../shared/dist/aiValueEngine/index.js";
+
+function readExample(name) {
+  return JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        `docs/contracts/ai-value-intelligence/examples/${name}`
+      ),
+      "utf8"
+    )
+  );
+}
+
+const blueprint = readExample("customer-support-blueprint.json");
+const metricsLibrary = readExample("customer-support-metrics-library.json");
+
+test("engine exposes the six per-stage contract entry points", () => {
+  for (const entry of [
+    validateBlueprint,
+    validateMetricsLibrary,
+    validateValueScenario,
+    validateEvidenceReadiness,
+    validateClaimBoundary,
+    validateExecutivePacket
+  ]) {
+    assert.equal(typeof entry, "function");
+  }
+});
+
+test("runSpine runs the Customer Support fixtures through every stage", () => {
+  const run = runSpine({ blueprint, metricsLibrary });
+  assert.equal(run.halted_at, null);
+  assert.equal(run.customer_facing_economic_output, false);
+  for (const stage of Object.values(run.stages)) {
+    assert.equal(stage.status, "VALID");
+  }
+  assert.equal(run.decision, run.stages.readiness.object.decision);
+  assert.equal(run.stages.executive_packet.validation.valid, true);
+});
+
+test("runSpine is deterministic for identical inputs", () => {
+  const first = runSpine({ blueprint, metricsLibrary });
+  const second = runSpine({ blueprint, metricsLibrary });
+  assert.deepEqual(first, second);
+});
+
+test("runSpine halts at blueprint when the blueprint is invalid", () => {
+  const run = runSpine({ blueprint: { blueprint_id: "broken" }, metricsLibrary });
+  assert.equal(run.halted_at, "blueprint");
+  assert.equal(run.decision, "HOLD_FOR_BLUEPRINT");
+  assert.equal(run.stages.blueprint.status, "INVALID");
+  assert.equal(run.stages.metrics.status, "NOT_RUN");
+  assert.equal(run.stages.scenario.status, "NOT_RUN");
+  assert.equal(run.stages.executive_packet.status, "NOT_RUN");
+});
+
+test("runSpine holds at metrics when no metric maps to the blueprint routes", () => {
+  const foreignLibrary = {
+    ...metricsLibrary,
+    workflow_family: "some_other_family",
+    metrics: metricsLibrary.metrics.map((metric) => {
+      const { workflow_family: _unused, ...rest } = metric;
+      return rest;
+    })
+  };
+  const run = runSpine({ blueprint, metricsLibrary: foreignLibrary });
+  assert.equal(run.halted_at, "metrics");
+  assert.equal(run.decision, "HOLD_FOR_METRIC_MAPPING");
+  assert.equal(run.stages.metrics.status, "HELD");
+  assert.equal(run.stages.scenario.status, "NOT_RUN");
+});
+
+test("runSpine halts a provided scenario that fails validation", () => {
+  const run = runSpine({
+    blueprint,
+    metricsLibrary,
+    scenario: { scenario_id: "bad_scenario" }
+  });
+  assert.equal(run.halted_at, "scenario");
+  assert.equal(run.decision, "HOLD_FOR_SCENARIO");
+  assert.equal(run.stages.scenario.status, "INVALID");
+  assert.equal(run.stages.readiness.status, "NOT_RUN");
+});
+
+test("runSpine holds the claim boundary when readiness blocks progression", () => {
+  const heldBlueprint = JSON.parse(JSON.stringify(blueprint));
+  heldBlueprint.source_requirements.source_coverage.baseline = "MISSING";
+  const run = runSpine({ blueprint: heldBlueprint, metricsLibrary });
+  assert.equal(run.halted_at, "claim_boundary");
+  assert.equal(run.decision, "HOLD_FOR_BASELINE");
+  assert.equal(run.stages.claim_boundary.status, "HELD");
+  assert.equal(run.stages.executive_packet.status, "NOT_RUN");
+});
+
+test("runSpine id overrides keep the spine domain-agnostic", () => {
+  const run = runSpine({
+    blueprint,
+    metricsLibrary,
+    ids: {
+      readinessId: "readiness_other_domain_v1",
+      claimBoundaryId: "claim_boundary_other_domain_v1",
+      packetId: "executive_packet_other_domain_v1"
+    }
+  });
+  assert.equal(run.stages.readiness.object.readiness_id, "readiness_other_domain_v1");
+  assert.equal(
+    run.stages.claim_boundary.object.claim_boundary_id,
+    "claim_boundary_other_domain_v1"
+  );
+  assert.equal(
+    run.stages.executive_packet.object.packet_id,
+    "executive_packet_other_domain_v1"
+  );
+});
+
+test("runSpine never emits customer-facing economic output", () => {
+  const run = runSpine({ blueprint, metricsLibrary });
+  assert.equal(run.customer_facing_economic_output, false);
+  assert.equal(
+    run.stages.executive_packet.object.customer_facing_economic_output,
+    false
+  );
+  assert.equal(
+    run.stages.scenario.validation.feeds.customer_facing_economic_output,
+    false
+  );
+  assert.equal(
+    run.stages.readiness.validation.feeds.customer_facing_economic_output,
+    false
+  );
+});
