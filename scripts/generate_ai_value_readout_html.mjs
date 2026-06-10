@@ -179,6 +179,9 @@ function fluencySection(summary) {
   </section>`;
 }
 
+const stripTrailingSpaces = (html) =>
+  html.split("\n").map((line) => line.replace(/\s+$/, "")).join("\n");
+
 export function renderExecutiveReadoutHtml({ packet, engagement, fluencySummary }) {
   const sections = packet.sections;
   const decisionLabel = DECISION_LABELS[packet.decision] ?? packet.decision;
@@ -206,7 +209,7 @@ export function renderExecutiveReadoutHtml({ packet, engagement, fluencySummary 
     )
     .join("");
 
-  return `<!DOCTYPE html>
+  return stripTrailingSpaces(`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -286,7 +289,7 @@ export function renderExecutiveReadoutHtml({ packet, engagement, fluencySummary 
   </footer>
 </body>
 </html>
-`;
+`);
 }
 
 function readJson(path) {
