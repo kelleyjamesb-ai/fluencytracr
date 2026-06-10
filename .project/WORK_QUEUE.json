@@ -83,7 +83,7 @@
       "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "In progress 2026-06-10: Discovery -> Journey continuity complete. Selected Blueprint workflow now carries into Journey and Value Workshop handoff with route, evidence status, missing-state guidance, focused tests, build, agent harness, and browser checks green. Next slice: governed value_model/roi_scenario contract."
+      "last_note": "In progress 2026-06-10: governed ROI scenario contract complete with shared validator, seeded fixture, schema, wrapper, tests, docs links, and governance gates green. Next slice: surface ROI scenario readiness in Journey/Workspace and connect it to executive readout language without dollarized output."
     }
   ]
 }

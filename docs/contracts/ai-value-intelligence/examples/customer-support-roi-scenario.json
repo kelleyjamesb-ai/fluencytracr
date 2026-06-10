@@ -1,0 +1,158 @@
+{
+  "schema_version": "FT_AI_VALUE_ROI_SCENARIO_2026_06",
+  "roi_scenario_id": "roi_scenario_customer_support_capacity_v1",
+  "source_refs": {
+    "blueprint_id": "bp_customer_support_case_resolution",
+    "metrics_library_id": "metrics_customer_support_v1",
+    "value_scenario_id": "scenario_customer_support_capacity_v1",
+    "readiness_id": "readiness_customer_support_v1"
+  },
+  "workflow": {
+    "workflow_family": "customer_support_case_resolution",
+    "workflow_name": "Support case resolution",
+    "value_route": "CAPACITY_CREATION"
+  },
+  "evidence_status": {
+    "readiness_decision": "HOLD_FOR_ASSUMPTIONS",
+    "outcome_evidence_review_state": "SUBMITTED",
+    "source_coverage": {
+      "ai_activity": "PRESENT",
+      "workflow": "PRESENT",
+      "outcome": "PRESENT",
+      "baseline": "PRESENT",
+      "trust": "PRESENT",
+      "assumptions": "CAVEATED",
+      "suppression": "PRESENT"
+    }
+  },
+  "baseline_comparison": {
+    "baseline_window": {
+      "state": "PRESENT",
+      "owner": "support_operations",
+      "rule": "Compare against an approved pre-period window for the same workflow family."
+    },
+    "comparison_window": {
+      "state": "PRESENT",
+      "owner": "support_operations",
+      "rule": "Compare against the approved post-period window; report directional movement only."
+    }
+  },
+  "metric_models": [
+    {
+      "metric_id": "support_median_resolution_hours",
+      "name": "Median resolution time",
+      "value_route": "CAPACITY_CREATION",
+      "measurement_unit": "hours",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "formula_template": "aggregate comparison only; customer computes directional delta",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "value_model_role": "PRIMARY"
+    },
+    {
+      "metric_id": "support_backlog_count",
+      "name": "Open backlog count",
+      "value_route": "CAPACITY_CREATION",
+      "measurement_unit": "cases",
+      "source_system": {
+        "source_type": "support_system",
+        "source_name": "Support case management system",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "baseline_rule": "Compare against an approved pre-period backlog count for the same workflow family.",
+      "comparison_rule": "Compare post-period backlog directionally with volume and staffing caveats attached.",
+      "formula_template": "aggregate comparison only; customer computes directional delta",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "value_model_role": "CONTEXT"
+    }
+  ],
+  "customer_owned_assumptions": [
+    {
+      "assumption_id": "case_mix_stability",
+      "state": "PRESENT",
+      "owner": "support_operations"
+    },
+    {
+      "assumption_id": "volume_context",
+      "state": "CAVEATED",
+      "owner": "support_operations"
+    },
+    {
+      "assumption_id": "staffing_and_coverage_context",
+      "state": "MISSING",
+      "owner": "support_leader"
+    }
+  ],
+  "scenario_bands": [
+    {
+      "band": "CONSERVATIVE",
+      "interpretation": "Use the narrowest customer-owned assumption set.",
+      "included_metric_ids": [
+        "support_median_resolution_hours"
+      ]
+    },
+    {
+      "band": "BASE_CASE",
+      "interpretation": "Use approved baseline and comparison windows with current caveats.",
+      "included_metric_ids": [
+        "support_median_resolution_hours",
+        "support_backlog_count"
+      ]
+    },
+    {
+      "band": "EXPANDED",
+      "interpretation": "Use only after customer assumptions and outcome evidence are accepted.",
+      "included_metric_ids": [
+        "support_median_resolution_hours",
+        "support_backlog_count"
+      ]
+    }
+  ],
+  "safe_value_language": {
+    "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+    "allowed_phrases": [
+      "Potential capacity-creation opportunity for customer-owned validation.",
+      "Aggregate support metrics can support a caveated capacity investigation."
+    ],
+    "required_caveats": [
+      "Scenario bands are planning ranges, not realized ROI.",
+      "Outcome movement cannot be attributed to AI without separate customer-owned validation.",
+      "This artifact does not create customer-facing economic output."
+    ],
+    "blocked_claims": [
+      "roi_proof",
+      "causality_claim",
+      "individual_scoring",
+      "team_or_manager_ranking",
+      "hr_analytics",
+      "productivity_measurement",
+      "realized_roi_calculation",
+      "customer_facing_economic_output"
+    ]
+  },
+  "economic_output_policy": {
+    "mode": "MODELED_RANGE_ONLY",
+    "customer_facing_economic_output": false,
+    "dollarized_output": false,
+    "realized_roi_calculation": false
+  },
+  "governance_boundaries": {
+    "production_connector": false,
+    "dashboard": false,
+    "realized_roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "hris_or_people_analytics": false,
+    "productivity_ranking": false,
+    "raw_prompt_or_response_storage": false,
+    "direct_identifiers": false,
+    "runtime_service": false,
+    "autonomous_customer_actions": false,
+    "customer_facing_economic_output": false
+  }
+}

@@ -278,3 +278,9 @@
 - Completed: Added a Journey-derived selected-workflow handoff so the latest Blueprint workflow carries into `/ai-value-journey` and `/ai-value-workspace` with workflow name, value route, evidence status, downstream feed summary, and missing-workflow guidance before value modeling.
 - Verified: focused red/green Journey + Workspace continuity tests, affected page suites, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright CLI mocked-route checks for Journey/Workspace at desktop/mobile widths with no console errors, no unsafe labels, and no horizontal overflow.
 - Next focus: Governed `value_model` / `roi_scenario` contract before any stronger economic or dollarized output.
+
+## 2026-06-10 (UTC) — Codex (AI Value governed ROI scenario contract)
+
+- Completed: Added `FT_AI_VALUE_ROI_SCENARIO_2026_06` as a governed local value-modeling object with shared engine validator/builder, CLI wrapper, package scripts, seeded Customer Support fixture, and JSON schema.
+- Verified: RED missing-module test first, then ROI scenario tests/validator, adjacent AI value scenario/readiness/agent-harness suites, full AI value engine, V1 spine, docs sweep, semantic drift guard, Glean value governance gates, and diff whitespace check.
+- Next focus: Surface ROI Scenario Readiness in Journey/Workspace and connect it to Executive Operating Packet language without customer-facing dollarized output.

@@ -28,6 +28,16 @@ export {
 export type { ScenarioValidationResult } from "./scenario";
 
 export {
+  validateRoiScenario,
+  buildRoiScenarioFromValueObjects,
+  ROI_SCENARIO_SCHEMA_VERSION
+} from "./roiScenario";
+export type {
+  RoiScenarioValidationResult,
+  BuildRoiScenarioInputs
+} from "./roiScenario";
+
+export {
   validateEvidenceReadiness,
   buildEvidenceReadinessFromObjects,
   deriveReadinessDecision

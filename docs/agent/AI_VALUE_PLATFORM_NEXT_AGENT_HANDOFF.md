@@ -75,77 +75,78 @@ not bury ROI math inside the executive packet or UI.
 Completed latest slice:
 
 ```text
-Discovery -> Journey continuity
+Governed value_model / roi_scenario contract
 ```
 
 What is now in place:
 
-- `useAiValueJourney` now derives a selected-workflow handoff from the latest
-  Blueprint, Metrics Library, and evidence-review objects.
-- `/ai-value-journey` shows a Selected Workflow Handoff with workflow name,
-  value route, evidence status, and links to continue or refine the Blueprint.
-- `/ai-value-workspace` opens with the same Journey-derived workflow handoff.
-- Missing-workflow states tell the client to finish Blueprint before modeling
-  value.
-- Browser checks verified the handoff at desktop and mobile widths with mocked
-  AI Value API objects, no console errors, no horizontal overflow, and no unsafe
-  internal labels.
+- Added `FT_AI_VALUE_ROI_SCENARIO_2026_06` as the governed local value-modeling
+  object above `value_scenario` and `evidence_readiness`.
+- Added shared engine validation and builder in `shared/src/aiValueEngine`.
+- Added `scripts/validate_ai_value_roi_scenario.mjs`, package scripts, seeded
+  Customer Support fixture, and JSON schema.
+- The object carries selected Blueprint workflow, value route, metric models,
+  baseline/comparison rules, customer-owned assumptions, evidence status,
+  scenario bands, safe value language, and economic-output policy.
+- The validator rejects realized ROI, dollarized output, customer-facing
+  economic output, causality claims, direct identifiers, raw prompts/responses,
+  HR/people analytics, individual scoring, productivity fields, and autonomous
+  customer actions.
 
 Recommended next slice:
 
 ```text
-Governed value_model / roi_scenario contract
+ROI Scenario Readiness in Journey / Workspace
 ```
 
 Goal:
 
-Define the technical contract for governed ROI/value modeling before the product
-shows any stronger economic output. The contract should make customer-owned
-assumptions, baseline/comparison windows, source coverage, value route, scenario
-bands, allowed language, and blocked claims explicit.
+Make the governed ROI scenario contract visible in the product experience. The
+Journey and Value Workshop should show whether the selected workflow is ready
+for value modeling, which inputs are still missing, and what safe value language
+can move into the Executive Operating Packet.
 
 Acceptance criteria:
 
-- Add a schema or contract for a governed `value_model` / `roi_scenario` object.
-- Validate metric references, value route, baseline/comparison rules,
-  customer-owned assumptions, source coverage, scenario bands, and allowed claim
-  level.
-- Reject raw prompts/responses, direct identifiers, unsupported ROI proof,
-  causality claims, productivity ranking, HR analytics, and individual scoring.
-- Keep all outputs labeled as modeled scenarios or value hypotheses unless
-  customer-owned outcome evidence and human review explicitly support stronger
-  language.
-- Add seeded Customer Support fixtures and focused tests/validators.
-- Do not add production connectors, autonomous agent actions, or customer-facing
-  dollarized output in this slice.
+- Journey shows a plain-English ROI Scenario Readiness section sourced from the
+  governed ROI scenario object or derived view model.
+- Workspace shows baseline/comparison, assumptions, evidence status, scenario
+  bands, safe value language, and blocked outputs without database labels.
+- Executive Operating Packet language can reference governed value modeling, but
+  still cannot claim realized ROI, causality, individual scoring, HR analytics,
+  productivity ranking, or customer-facing economic figures.
+- Missing states make the client data request obvious.
+- Focused frontend tests cover ready and missing-state behavior.
+- Existing AI value engine, ROI scenario, agent harness, frontend, build, and
+  governance checks remain green.
 
 Suggested files:
 
 - `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/hooks/useAiValueJourney.ts`
 - `frontend/src/lib/aiValueViewModel.ts`
-- `schemas/ai-value-intelligence/*`
-- `docs/contracts/ai-value-intelligence/*`
-- `scripts/*ai_value*`
 - `shared/src/aiValueEngine/*`
 - `frontend/src/components/AiValueJourneyRail.tsx`
 - `frontend/src/pages/AIValueWorkspace.tsx`
+- `docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json`
 
 ## Next-Agent Prompt
 
 Use this prompt to continue:
 
 ```text
-Create the governed value_model / roi_scenario contract slice for the AI Value
-Platform. Define the reusable object that turns a selected Blueprint workflow,
-Metrics Library route, customer-owned assumptions, baseline/comparison windows,
-source coverage, scenario bands, evidence status, and safe value language into a
-validated value-modeling artifact. Keep it local and governed: no production
-connector, no autonomous customer actions, no raw prompts/responses, no direct
-identifiers, no unsupported ROI proof, no causality claim, no individual
-scoring, no HR analytics, no productivity ranking, and no customer-facing
-dollarized output. Add schemas/fixtures/validators/tests and keep the existing
-frontend, build, and AI value agent-harness checks green.
+Create the ROI Scenario Readiness product slice for the AI Value Platform.
+Surface the governed `FT_AI_VALUE_ROI_SCENARIO_2026_06` object in
+`/ai-value-journey` and `/ai-value-workspace` so a client can see whether the
+selected Blueprint workflow is ready for value modeling, which
+baseline/comparison, assumptions, evidence, and source-coverage inputs are
+missing, and what safe value language can move into the Executive Operating
+Packet. Keep all language client-facing. Do not add production connectors,
+autonomous customer actions, raw prompts/responses, direct identifiers,
+unsupported ROI proof, causality claims, individual scoring, HR analytics,
+productivity ranking, or customer-facing dollarized output. Add focused
+frontend tests and keep ROI scenario, AI value engine, frontend, build, and
+agent-harness checks green.
 ```
 
 ## What To Validate First
