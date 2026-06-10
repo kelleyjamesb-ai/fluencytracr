@@ -88,6 +88,37 @@ test("seeded Customer Support readiness fixture is valid", () => {
   assert.equal(result.decision, "HOLD_FOR_ASSUMPTIONS");
 });
 
+test("readiness schema declares required source and check lanes", () => {
+  const schema = JSON.parse(
+    readFileSync(
+      "schemas/ai-value-intelligence/evidence-readiness.schema.json",
+      "utf8"
+    )
+  );
+
+  assert.deepEqual(schema.properties.source_coverage.required, [
+    "ai_activity",
+    "workflow",
+    "outcome",
+    "baseline",
+    "trust",
+    "assumptions",
+    "suppression"
+  ]);
+  assert.equal(
+    schema.properties.source_coverage.properties.suppression.enum.includes("SUPPRESSED"),
+    true
+  );
+  assert.deepEqual(schema.properties.readiness_checks.required, [
+    "workflow_state",
+    "metric_state",
+    "baseline_state",
+    "assumption_state",
+    "scenario_state",
+    "governance_state"
+  ]);
+});
+
 test("builds readiness from Blueprint, Metrics Library, and Value Scenario", () => {
   const blueprint = JSON.parse(
     readFileSync(

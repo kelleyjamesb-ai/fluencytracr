@@ -43,11 +43,71 @@
     },
     "source_coverage": {
       "type": "object",
-      "additionalProperties": false
+      "additionalProperties": false,
+      "required": [
+        "ai_activity",
+        "workflow",
+        "outcome",
+        "baseline",
+        "trust",
+        "assumptions",
+        "suppression"
+      ],
+      "properties": {
+        "ai_activity": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "workflow": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "outcome": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "baseline": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "trust": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "assumptions": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "suppression": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        }
+      }
     },
     "readiness_checks": {
       "type": "object",
-      "additionalProperties": false
+      "additionalProperties": false,
+      "required": [
+        "workflow_state",
+        "metric_state",
+        "baseline_state",
+        "assumption_state",
+        "scenario_state",
+        "governance_state"
+      ],
+      "properties": {
+        "workflow_state": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "metric_state": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "baseline_state": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "assumption_state": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "scenario_state": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        },
+        "governance_state": {
+          "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+        }
+      }
     },
     "decision": {
       "enum": [

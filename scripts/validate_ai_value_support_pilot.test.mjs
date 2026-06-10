@@ -133,6 +133,20 @@ test("returns HOLD_FOR_BASELINE when baseline evidence is missing", () => {
   assert.equal(result.gaps.includes("baseline_window is missing"), true);
 });
 
+test("holds pilot readiness when required identity or scope fields are missing", () => {
+  const input = responseWith({
+    org_id: "",
+    workflow_family: ""
+  });
+
+  const result = validateSupportPilotReadiness(input);
+
+  assert.equal(result.decision, "HOLD_FOR_SOURCE_COVERAGE");
+  assert.equal(result.ready, false);
+  assert.equal(result.gaps.includes("org_id is missing"), true);
+  assert.equal(result.gaps.includes("workflow_family is missing"), true);
+});
+
 test("returns STOP_FOR_GOVERNANCE_REVIEW when unsafe fields or stop conditions appear", () => {
   const input = responseWith({
     sample_ticket_text: "Customer asked for a refund.",

@@ -199,6 +199,22 @@ test("rejects unsafe tool permissions", () => {
   assert.equal(result.gaps.includes("tool_permissions.customer_data_access is true"), true);
 });
 
+test("rejects omitted tool permission boundaries", () => {
+  const handoff = structuredClone(baseHandoff);
+  delete handoff.tool_permissions.network_access;
+  delete handoff.tool_permissions.production_access;
+  delete handoff.tool_permissions.secrets_access;
+  delete handoff.tool_permissions.customer_data_access;
+
+  const result = validateAiValueAgentHandoff(handoff);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("tool_permissions.network_access must be false"), true);
+  assert.equal(result.gaps.includes("tool_permissions.production_access must be false"), true);
+  assert.equal(result.gaps.includes("tool_permissions.secrets_access must be false"), true);
+  assert.equal(result.gaps.includes("tool_permissions.customer_data_access must be false"), true);
+});
+
 test("rejects missing verification routing and ledger references", () => {
   const handoff = structuredClone(baseHandoff);
   handoff.verification_routing.required_validators = [];

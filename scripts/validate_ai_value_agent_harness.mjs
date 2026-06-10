@@ -265,6 +265,9 @@ function collectToolPermissionGaps(handoff) {
     }
   }
   for (const boundary of TOOL_PERMISSION_BOUNDARIES) {
+    if (permissions[boundary] !== false) {
+      gaps.push(`tool_permissions.${boundary} must be false`);
+    }
     if (permissions[boundary] === true) {
       gaps.push(`tool_permissions.${boundary} is true`);
     }

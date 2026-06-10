@@ -238,6 +238,9 @@ export function validateSupportPilotReadiness(input) {
   if (governanceGaps.length > 0) {
     decision = "STOP_FOR_GOVERNANCE_REVIEW";
     gaps = [...baseGaps, ...governanceGaps];
+  } else if (baseGaps.length > 0) {
+    decision = "HOLD_FOR_SOURCE_COVERAGE";
+    gaps = baseGaps;
   } else if (baselineGaps.length > 0) {
     decision = "HOLD_FOR_BASELINE";
     gaps = [...baseGaps, ...baselineGaps];

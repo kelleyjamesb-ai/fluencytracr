@@ -85,7 +85,8 @@ test("missing outcome evidence fails closed and emits no safe value claims", () 
 
   const pack = buildSupportValueEvidencePack(input);
 
-  assert.equal(pack.verdict, "SURFACE");
+  assert.equal(pack.verdict, "SUPPRESS");
+  assert.equal(pack.suppression_reason, "HIGH_AMBIGUITY");
   assert.equal(pack.claim_confidence.overall_state, "MISSING");
   assert.equal(
     pack.claim_confidence.claim_states.some((claim) => claim.state === "MISSING"),
@@ -173,21 +174,25 @@ test("requires at least one usable outcome signal before emitting safe claims", 
   const pack = buildSupportValueEvidencePack(input);
 
   assert.equal(pack.claim_confidence.overall_state, "MISSING");
+  assert.equal(pack.verdict, "SUPPRESS");
+  assert.equal(pack.suppression_reason, "HIGH_AMBIGUITY");
   assert.equal(pack.outcome_signal_recommendations[0].signal_id, "support_outcome_export");
   assert.deepEqual(pack.safe_claims, []);
 });
 
-test("direct identifiers or raw text are rejected before packet generation", () => {
+test("direct identifiers, camelCase user identifiers, or raw text are rejected before packet generation", () => {
   const unsafeInput = structuredClone(baseInput);
   unsafeInput.sample_ticket_text = "The customer asked for a password reset.";
   unsafeInput.owner_email = "person@example.com";
+  unsafeInput.ai_work_evidence.aggregate_patterns.userId = "u-123";
 
   const result = validateSupportValueInput(unsafeInput);
 
   assert.equal(result.valid, false);
   assert.deepEqual(result.errors, [
     "Forbidden field detected: owner_email",
-    "Forbidden field detected: sample_ticket_text"
+    "Forbidden field detected: sample_ticket_text",
+    "Forbidden field detected: userId"
   ]);
   assert.throws(
     () => buildSupportValueEvidencePack(unsafeInput),

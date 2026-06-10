@@ -23,6 +23,7 @@ const ALLOWED_AI_WORK_VERDICTS = new Set(["SURFACE", "SUPPRESS"]);
 
 const FORBIDDEN_KEY_PATTERNS = [
   /(^|_)user(_|$)/i,
+  /^user[A-Z]/,
   /email/i,
   /employee/i,
   /manager_chain/i,
@@ -282,8 +283,8 @@ function missingOutcomePack(input, evidenceReadiness) {
     window_id: input.window_id,
     workflow_family: input.workflow_family,
     generated_at: input.generated_at ?? "2026-06-09T12:00:00.000Z",
-    verdict: "SURFACE",
-    suppression_reason: null,
+    verdict: "SUPPRESS",
+    suppression_reason: "HIGH_AMBIGUITY",
     workflow_value_hypothesis: input.workflow_value_hypothesis,
     value_routes: ["UNCLASSIFIED"],
     evidence_readiness: evidenceReadiness,
