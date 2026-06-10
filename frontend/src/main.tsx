@@ -69,6 +69,14 @@ createRoot(container).render(
           }
         />
         <Route
+          path="/ai-value-journey"
+          element={
+            <ProtectedRoute>
+              <AIValueJourney />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/ai-value-discovery"
           element={
             <ProtectedRoute>

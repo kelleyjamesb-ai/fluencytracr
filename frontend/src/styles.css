@@ -2041,6 +2041,157 @@ body {
   gap: 14px;
 }
 
+.ai-value-journey-summary {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 0.85fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.ai-value-phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.ai-value-phase-card {
+  min-width: 0;
+}
+
+.ai-value-phase-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.ai-value-phase-head .ai-value-pill {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.ai-value-phase-number {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ececff;
+  color: #343ced;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ai-value-phase-head p,
+.ai-value-phase-detail,
+.ai-value-feeds-next {
+  margin: 0;
+}
+
+.ai-value-phase-columns {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.ai-value-phase-columns ul,
+.ai-value-boundary-grid ul {
+  padding-left: 18px;
+  margin: 6px 0 0;
+}
+
+.ai-value-phase-action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 12px;
+  text-decoration: none;
+}
+
+.ai-value-workbench-grid {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.25fr) minmax(300px, 0.75fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ai-value-opportunity-panel {
+  grid-row: span 2;
+}
+
+.ai-value-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.ai-value-section-head p {
+  margin: 0;
+}
+
+.ai-value-opportunity-table,
+.ai-value-review-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-value-opportunity-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(220px, 1.1fr) minmax(220px, 1.1fr) minmax(180px, 0.9fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid #e3e3da;
+  border-radius: 8px;
+  background: #fbfbf7;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-opportunity-header {
+  background: #f0f3ff;
+  color: #17215e;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ai-value-opportunity-row small {
+  display: block;
+  margin-top: 6px;
+  color: #555d6d;
+  line-height: 1.35;
+}
+
+.ai-value-review-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid #e3e3da;
+  border-radius: 8px;
+  background: #fbfbf7;
+}
+
+.ai-value-review-card p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.ai-value-review-card .ai-value-chip-row {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+}
+
+.ai-value-boundary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 .ai-value-panel {
   border: 1px solid #d7d7cd;
   border-radius: 8px;
@@ -2141,7 +2292,10 @@ body {
   .ai-value-topbar,
   .ai-value-grid,
   .ai-value-columns,
-  .ai-value-band-grid {
+  .ai-value-band-grid,
+  .ai-value-journey-summary,
+  .ai-value-workbench-grid,
+  .ai-value-boundary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2154,6 +2308,11 @@ body {
   }
 
   .ai-value-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-value-opportunity-row,
+  .ai-value-review-card {
     grid-template-columns: 1fr;
   }
 

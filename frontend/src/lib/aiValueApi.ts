@@ -24,6 +24,10 @@ export interface AiValueObjectSummary {
   updated_at: string;
 }
 
+export interface AiValueObjectDetail extends AiValueObjectSummary {
+  payload: Record<string, unknown>;
+}
+
 export interface AiValueSpineStage {
   status: "VALID" | "INVALID" | "HELD" | "NOT_RUN";
   validation: Record<string, unknown> | null;
@@ -75,6 +79,16 @@ export const listAiValueObjects = (role: string, objectType?: string) =>
     objectType
       ? `/api/v1/ai-value/objects?object_type=${encodeURIComponent(objectType)}`
       : "/api/v1/ai-value/objects"
+  );
+
+export const fetchAiValueObject = (
+  role: string,
+  objectType: string,
+  objectId: string
+) =>
+  requestJson<AiValueObjectDetail>(
+    role,
+    `/api/v1/ai-value/objects/${encodeURIComponent(objectType)}/${encodeURIComponent(objectId)}`
   );
 
 export const putAiValueObject = (
