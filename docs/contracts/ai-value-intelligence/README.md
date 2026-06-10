@@ -70,8 +70,12 @@ For the Phase 9.5 Agentic Platform Harness, use
 [`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)
 with the seeded Customer Support handoff fixture in
 [`examples/customer-support-agent-handoff.json`](./examples/customer-support-agent-handoff.json)
-and schema in
-[`schemas/ai-value-intelligence/agent-handoff.schema.json`](../../../schemas/ai-value-intelligence/agent-handoff.schema.json).
+or the seeded Executive Operating Packet handoff bundle in
+[`examples/customer-support-agent-handoff-bundle.json`](./examples/customer-support-agent-handoff-bundle.json)
+and schemas in
+[`schemas/ai-value-intelligence/agent-handoff.schema.json`](../../../schemas/ai-value-intelligence/agent-handoff.schema.json)
+and
+[`schemas/ai-value-intelligence/agent-handoff-bundle.schema.json`](../../../schemas/ai-value-intelligence/agent-handoff-bundle.schema.json).
 
 For Phase 10 Evidence Readiness, Phase 11 Claim Boundary, Phase 12 Executive
 Packet, and Phase 13 Local Workspace UI, use the local validators and V1 spine
@@ -384,6 +388,7 @@ governed local handoff contract:
 - tool-permission boundaries;
 - verification routing;
 - local agent-run ledger references;
+- Executive Operating Packet handoff bundles for governed follow-up;
 - blocked data capture protections.
 
 Run:

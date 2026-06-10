@@ -4,7 +4,9 @@ import test from "node:test";
 
 import {
   validateAiValueAgentHandoff,
-  buildScenarioToReadinessHandoff
+  buildScenarioToReadinessHandoff,
+  validateAiValueAgentHandoffBundle,
+  buildExecutivePacketHandoffBundle
 } from "./validate_ai_value_agent_harness.mjs";
 
 const requiredBlockedCapture = [
@@ -113,6 +115,81 @@ test("seeded Customer Support agent handoff fixture is valid", () => {
 
   assert.equal(result.valid, true);
   assert.equal(result.handoff_id, "handoff_support_scenario_to_readiness_v1");
+});
+
+test("builds an executive packet handoff bundle for governed agentic follow-up", () => {
+  const packet = JSON.parse(
+    readFileSync(
+      "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+      "utf8"
+    )
+  );
+
+  const bundle = buildExecutivePacketHandoffBundle(packet);
+  const result = validateAiValueAgentHandoffBundle(bundle);
+
+  assert.equal(result.valid, true);
+  assert.equal(bundle.schema_version, "FT_AI_VALUE_AGENT_HANDOFF_BUNDLE_2026_06");
+  assert.equal(bundle.bundle_id, "handoff_bundle_customer_support_case_resolution_executive_v1");
+  assert.equal(bundle.source_packet_ref, "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json");
+  assert.equal(bundle.workflow_family, "customer_support_case_resolution");
+  assert.equal(bundle.value_route, "CAPACITY_CREATION");
+  assert.deepEqual(
+    bundle.handoffs.map((handoff) => handoff.target_agent_role),
+    ["EVIDENCE_READINESS_AGENT", "METRICS_AGENT", "REVIEWER_AGENT"]
+  );
+  assert.deepEqual(
+    bundle.handoffs.map((handoff) => handoff.task_contract.expected_output_type),
+    ["EVIDENCE_READINESS", "METRICS_MAPPING", "EXECUTIVE_READOUT"]
+  );
+  assert.equal(bundle.feeds.local_agent_run_ledger, true);
+  assert.equal(bundle.governance_boundaries.production_agent_runtime, false);
+  assert.equal(bundle.governance_boundaries.autonomous_customer_action, false);
+  assert.equal(bundle.governance_boundaries.roi_calculation, false);
+  assert.equal(bundle.governance_boundaries.causality_claim, false);
+  assert.equal(bundle.governance_boundaries.individual_scoring, false);
+  assert.equal(bundle.governance_boundaries.customer_facing_economic_output, false);
+});
+
+test("seeded executive packet handoff bundle fixture is valid", () => {
+  const fixture = JSON.parse(
+    readFileSync(
+      "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json",
+      "utf8"
+    )
+  );
+
+  const result = validateAiValueAgentHandoffBundle(fixture);
+
+  assert.equal(result.valid, true);
+  assert.equal(result.bundle_id, "handoff_bundle_customer_support_case_resolution_executive_v1");
+  assert.equal(result.handoff_count, 3);
+  assert.equal(result.feeds.local_agent_run_ledger, true);
+  assert.equal(result.feeds.production_agent_runtime, false);
+  assert.equal(result.feeds.customer_telemetry, false);
+});
+
+test("rejects customer telemetry fields outside explicit false feed boundaries", () => {
+  const packet = JSON.parse(
+    readFileSync(
+      "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+      "utf8"
+    )
+  );
+  const bundle = buildExecutivePacketHandoffBundle(packet);
+  bundle.handoffs[0].task_contract.customer_telemetry = false;
+
+  const result = validateAiValueAgentHandoffBundle(bundle);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("handoffs[0]: Forbidden field detected: customer_telemetry"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("Forbidden field detected: customer_telemetry"),
+    true
+  );
 });
 
 test("builds a scenario-to-readiness handoff from a value scenario", () => {

@@ -80,6 +80,19 @@ SCENARIO_AGENT -> EVIDENCE_READINESS_AGENT
 VALUE_SCENARIO -> EVIDENCE_READINESS
 ```
 
+The Executive Operating Packet can also emit a local handoff bundle for the next
+agent loop:
+
+```text
+EXECUTIVE_READOUT_AGENT
+-> EVIDENCE_READINESS_AGENT
+-> METRICS_AGENT
+-> REVIEWER_AGENT
+```
+
+That bundle is a set of local task contracts. It is not a production agent run,
+customer telemetry feed, autonomous action, or value claim.
+
 ## Model Selection Policy
 
 Model selection is policy, not a free-form agent choice.
@@ -169,8 +182,11 @@ become the evidence source for customer value claims.
 ## Current Artifacts
 
 - Schema: `schemas/ai-value-intelligence/agent-handoff.schema.json`
+- Bundle schema: `schemas/ai-value-intelligence/agent-handoff-bundle.schema.json`
 - Seeded handoff: `docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json`
+- Seeded Executive Operating Packet bundle: `docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json`
 - Validator: `scripts/validate_ai_value_agent_harness.mjs`
+- Bundle builder: `buildExecutivePacketHandoffBundle(packet)`
 - Tests: `scripts/validate_ai_value_agent_harness.test.mjs`
 
 ## Next Use
