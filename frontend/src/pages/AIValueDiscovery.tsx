@@ -62,6 +62,7 @@ interface UseCaseDraft {
   dataSources: string;
   uncertainties: string;
   priority: string;
+  objectiveIndex: string;
 }
 
 const emptyUseCase = (): UseCaseDraft => ({
@@ -73,8 +74,50 @@ const emptyUseCase = (): UseCaseDraft => ({
   impactedFunctions: "",
   dataSources: "",
   uncertainties: "",
-  priority: "CANDIDATE"
+  priority: "CANDIDATE",
+  objectiveIndex: "0"
 });
+
+interface ObjectiveDraft {
+  statement: string;
+  challenge: string;
+  initiative: string;
+  outcome: string;
+  timeline: string;
+  ownerRole: string;
+  measures: string;
+}
+
+const emptyObjective = (): ObjectiveDraft => ({
+  statement: "",
+  challenge: "",
+  initiative: "",
+  outcome: "",
+  timeline: "",
+  ownerRole: "",
+  measures: ""
+});
+
+const MEASURE_DIRECTIONS: Record<string, string> = {
+  improve: "IMPROVE",
+  reduce: "REDUCE",
+  hold: "MAINTAIN",
+  maintain: "MAINTAIN"
+};
+
+const parseMeasures = (value: string) =>
+  value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [measure, direction] = line.split("|").map((part) => part.trim());
+      return {
+        measure,
+        expected_direction:
+          MEASURE_DIRECTIONS[(direction ?? "improve").toLowerCase()] ?? "IMPROVE"
+      };
+    });
 
 const slug = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
@@ -96,14 +139,31 @@ const EXAMPLE = {
     "Improve customer retention through faster, higher-quality support\nScale support capacity without proportional headcount growth",
   sponsorRole: "vp_customer_experience",
   championRole: "support_systems_lead",
-  objectiveStatement:
-    "Create support capacity by reducing time spent locating trusted answers and drafting responses.",
-  challenge:
-    "Case volume is growing faster than the support team can scale, and knowledge is fragmented across systems.",
-  initiative: "AI-assisted support workflows on Glean Search, Assistant, and approved Skills.",
-  outcome: "Faster resolution and lower escalation pressure without quality loss.",
-  decisionTimeline: "2026_h2_renewal_cycle",
   ownerRole: "customer_support_business_sponsor",
+  objectives: [
+    {
+      statement:
+        "Create support capacity by reducing time spent locating trusted answers and drafting responses.",
+      challenge:
+        "Case volume is growing faster than the support team can scale, and knowledge is fragmented across systems.",
+      initiative: "AI-assisted support workflows on Glean Search, Assistant, and approved Skills.",
+      outcome: "Faster resolution and lower escalation pressure without quality loss.",
+      timeline: "2026_h2_renewal_cycle",
+      ownerRole: "customer_support_business_sponsor",
+      measures:
+        "Median case resolution time | reduce\nOpen backlog count | reduce\nSupport capacity absorbed without added headcount | improve"
+    },
+    {
+      statement: "Hold or improve answer quality while support work accelerates.",
+      challenge:
+        "Faster responses are only valuable if reopen and escalation behavior does not degrade.",
+      initiative: "Verification-first AI workflows with aggregate quality monitoring.",
+      outcome: "Quality holds steady while resolution accelerates.",
+      timeline: "2026_h2_renewal_cycle",
+      ownerRole: "support_quality_owner",
+      measures: "Reopen rate | hold\nEscalation rate | reduce"
+    }
+  ] as ObjectiveDraft[],
   workstreamFunction: "customer_support",
   roleFamilies: "support_agent, support_specialist, knowledge_owner",
   usersInScope: "240",
@@ -122,7 +182,8 @@ const EXAMPLE = {
       dataSources: "support_case_management, glean_work_evidence",
       uncertainties:
         "Case mix shifts during the comparison window, Concurrent process changes in escalation policy",
-      priority: "PILOT_SELECTED"
+      priority: "PILOT_SELECTED",
+      objectiveIndex: "0"
     },
     {
       name: "Knowledge base upkeep assistance",
@@ -133,7 +194,8 @@ const EXAMPLE = {
       impactedFunctions: "customer_support",
       dataSources: "knowledge_base",
       uncertainties: "Article quality review capacity",
-      priority: "CANDIDATE"
+      priority: "CANDIDATE",
+      objectiveIndex: "1"
     }
   ] as UseCaseDraft[],
   clientQuestion: "Where should AI make support resolution measurably easier?",
@@ -157,7 +219,7 @@ const EXAMPLE = {
 
 export const AIValueDiscovery = () => {
   const [activeStep, setActiveStep] = useState<Step>("Client & Objective");
-  const [form, setForm] = useState({ ...EXAMPLE, useCases: [emptyUseCase()] });
+  const [form, setForm] = useState({ ...EXAMPLE, objectives: [emptyObjective()], useCases: [emptyUseCase()] });
   const [coverage, setCoverage] = useState<Record<string, string>>(
     Object.fromEntries(COVERAGE_LANES.map(({ key }) => [key, key === "assumptions" ? "CAVEATED" : "PRESENT"]))
   );
@@ -173,8 +235,8 @@ export const AIValueDiscovery = () => {
   const startBlank = () => {
     setForm({
       clientName: "", industry: "", companySize: "", strategicObjectives: "",
-      sponsorRole: "", championRole: "", objectiveStatement: "", challenge: "",
-      initiative: "", outcome: "", decisionTimeline: "", ownerRole: "",
+      sponsorRole: "", championRole: "", ownerRole: "",
+      objectives: [emptyObjective()],
       workstreamFunction: "", roleFamilies: "", usersInScope: "", systemsInScope: "",
       useCases: [emptyUseCase()],
       clientQuestion: "", currentSteps: "", futureSteps: "", frictionPoints: "",
@@ -189,7 +251,7 @@ export const AIValueDiscovery = () => {
   };
 
   const loadExample = () => {
-    setForm({ ...EXAMPLE, useCases: EXAMPLE.useCases.map((useCase) => ({ ...useCase })) });
+    setForm({ ...EXAMPLE, objectives: EXAMPLE.objectives.map((objective) => ({ ...objective })), useCases: EXAMPLE.useCases.map((useCase) => ({ ...useCase })) });
     setAssumptions(
       Object.fromEntries(
         ASSUMPTION_ROWS.map(({ id }, index) => [
@@ -212,7 +274,19 @@ export const AIValueDiscovery = () => {
       return { ...prev, useCases };
     });
 
+  const setObjective = (index: number, fieldName: keyof ObjectiveDraft, value: string) =>
+    setForm((prev) => {
+      const objectives = prev.objectives.map((objective, i) =>
+        i === index ? { ...objective, [fieldName]: value } : objective
+      );
+      return { ...prev, objectives };
+    });
+
   const pilotUseCase = form.useCases.find((useCase) => useCase.priority === "PILOT_SELECTED");
+  const objectiveIdAt = (index: number) => {
+    const objective = form.objectives[index];
+    return `objective_${slug(objective?.statement ?? "").slice(0, 40) || `draft_${index + 1}`}`;
+  };
 
   const buildEngagement = () => {
     const orgId = sessionOrgId();
@@ -231,22 +305,27 @@ export const AIValueDiscovery = () => {
         technical_champion_role: form.championRole,
         account_team_roles: ["value_consultant"]
       },
-      business_objective: {
-        objective_id: `objective_${slug(form.objectiveStatement).slice(0, 40) || "objective"}`,
-        objective_statement: form.objectiveStatement,
-        challenge: form.challenge,
-        initiative: form.initiative,
-        positive_business_outcome: form.outcome,
-        decision_timeline: form.decisionTimeline,
-        owner_role: form.ownerRole
-      },
+      business_objectives: form.objectives
+        .filter((objective) => objective.statement)
+        .map((objective, index) => ({
+          objective_id: objectiveIdAt(index),
+          objective_statement: objective.statement,
+          challenge: objective.challenge,
+          initiative: objective.initiative,
+          positive_business_outcome: objective.outcome,
+          decision_timeline: objective.timeline,
+          owner_role: objective.ownerRole,
+          ...(parseMeasures(objective.measures).length > 0
+            ? { success_measures: parseMeasures(objective.measures) }
+            : {})
+        })),
       workstream: {
         workstream_id: `workstream_${slug(form.workstreamFunction) || "workstream"}`,
         function: form.workstreamFunction,
         role_families: csv(form.roleFamilies),
         users_in_scope: Number(form.usersInScope) || 0,
         systems_in_scope: csv(form.systemsInScope),
-        sponsor_role: form.ownerRole || form.sponsorRole
+        sponsor_role: form.objectives[0]?.ownerRole || form.sponsorRole
       },
       use_cases: form.useCases
         .filter((useCase) => useCase.name)
@@ -260,7 +339,8 @@ export const AIValueDiscovery = () => {
           data_sources: csv(useCase.dataSources),
           uncertainties: csv(useCase.uncertainties),
           priority_state: useCase.priority,
-          workflow_family: useCase.workflowFamily || slug(useCase.name)
+          workflow_family: useCase.workflowFamily || slug(useCase.name),
+          objective_id: objectiveIdAt(Number(useCase.objectiveIndex) || 0)
         }))
     };
   };
@@ -304,7 +384,7 @@ export const AIValueDiscovery = () => {
         org_id: sessionOrgId(),
         workflow_family: workflowFamily,
         workflow_name: pilotUseCase.name,
-        business_owner: { role: form.ownerRole || form.sponsorRole, approval_state: "PRESENT" },
+        business_owner: { role: form.objectives[Number(pilotUseCase.objectiveIndex) || 0]?.ownerRole || form.sponsorRole, approval_state: "PRESENT" },
         client_question: form.clientQuestion,
         current_state_steps: lines(form.currentSteps),
         future_state_steps: lines(form.futureSteps),
@@ -423,14 +503,77 @@ export const AIValueDiscovery = () => {
               {field("Company size", "companySize")}
               {field("Executive sponsor (role)", "sponsorRole")}
               {field("Technical champion (role)", "championRole")}
-              {field("Decision timeline", "decisionTimeline")}
             </div>
             {area("Strategic objectives (one per line)", "strategicObjectives")}
-            {area("Objective statement", "objectiveStatement")}
-            {area("The challenge in the client's words", "challenge")}
-            {area("The initiative", "initiative")}
-            {area("Outcome the sponsor cares about", "outcome")}
-            {field("Objective owner (role)", "ownerRole")}
+            <h4>Business objectives — the value review is held against these</h4>
+            <p>
+              Capture every objective the client wants measured. Each one gets owners and the
+              measures the sponsor will accept later.
+            </p>
+            {form.objectives.map((objective, index) => (
+              <div className="ai-value-usecase-card" key={index}>
+                <label>Objective statement</label>
+                <input
+                  aria-label={`Objective ${index + 1} statement`}
+                  value={objective.statement}
+                  onChange={(event) => setObjective(index, "statement", event.target.value)}
+                />
+                <div className="ai-value-field-grid">
+                  <div>
+                    <label>The challenge in the client's words</label>
+                    <input
+                      value={objective.challenge}
+                      onChange={(event) => setObjective(index, "challenge", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>The initiative</label>
+                    <input
+                      value={objective.initiative}
+                      onChange={(event) => setObjective(index, "initiative", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Outcome the sponsor cares about</label>
+                    <input
+                      value={objective.outcome}
+                      onChange={(event) => setObjective(index, "outcome", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Objective owner (role)</label>
+                    <input
+                      value={objective.ownerRole}
+                      onChange={(event) => setObjective(index, "ownerRole", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Decision timeline</label>
+                    <input
+                      value={objective.timeline}
+                      onChange={(event) => setObjective(index, "timeline", event.target.value)}
+                    />
+                  </div>
+                </div>
+                <label>{`What the sponsor will measure (one per line, optionally "| improve", "| reduce", or "| hold")`}</label>
+                <textarea
+                  aria-label={`Objective ${index + 1} measures`}
+                  value={objective.measures}
+                  onChange={(event) => setObjective(index, "measures", event.target.value)}
+                />
+              </div>
+            ))}
+            <div className="ai-value-actions">
+              <button
+                type="button"
+                className="ai-value-step"
+                onClick={() =>
+                  setForm((prev) => ({ ...prev, objectives: [...prev.objectives, emptyObjective()] }))
+                }
+              >
+                Add another objective
+              </button>
+            </div>
           </article>
         )}
 
@@ -492,6 +635,18 @@ export const AIValueDiscovery = () => {
                     />
                   </div>
                 </div>
+                <label htmlFor={`uc-objective-${index}`}>Which objective does this serve?</label>
+                <select
+                  id={`uc-objective-${index}`}
+                  value={useCase.objectiveIndex}
+                  onChange={(event) => setUseCase(index, "objectiveIndex", event.target.value)}
+                >
+                  {form.objectives.map((objective, objectiveIndex) => (
+                    <option key={objectiveIndex} value={String(objectiveIndex)}>
+                      {objective.statement || `Objective ${objectiveIndex + 1}`}
+                    </option>
+                  ))}
+                </select>
                 <label>Open questions (comma separated)</label>
                 <input
                   value={useCase.uncertainties}

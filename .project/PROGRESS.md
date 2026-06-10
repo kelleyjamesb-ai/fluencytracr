@@ -73,6 +73,8 @@
 
 - Client-facing discovery experience (user-requested, 2026-06-10): added `/ai-value-discovery`, a guided Blueprinting and Use Case Discovery flow that captures client/objective/workstream/use cases, prioritizes a pilot, runs the day-in-the-life workshop capture, and creates the blueprint through the governed intake API. Client-facing language throughout; engine gaps surfaced as workshop to-dos.
 
+- Multi-objective engagements (user-requested, 2026-06-10): engagements hold multiple measurable business objectives with sponsor-accepted success measures and directions; use cases link to the objective they serve; the discovery experience, workspace kickoff, and executive readout all anchor on the objective portfolio as the standing value-review frame.
+
 ## Current Status
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.

@@ -110,6 +110,22 @@ export const AIValueWorkspace = () => {
             {live.kickoff.sponsorQuestion && (
               <p>Outcome the sponsor cares about: {live.kickoff.sponsorQuestion}</p>
             )}
+            {live.kickoff.objectiveCount > 1 && (
+              <p>
+                This pilot serves 1 of {live.kickoff.objectiveCount} client objectives in the
+                engagement.
+              </p>
+            )}
+            {live.kickoff.successMeasures.length > 0 && (
+              <>
+                <h4>What the sponsor will measure</h4>
+                <ul>
+                  {live.kickoff.successMeasures.map((measure) => (
+                    <li key={measure}>{measure}</li>
+                  ))}
+                </ul>
+              </>
+            )}
             {live.kickoff.fluency && (
               <>
                 <h4>Fluency check at kickoff</h4>

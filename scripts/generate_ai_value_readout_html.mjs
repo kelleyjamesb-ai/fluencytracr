@@ -112,17 +112,44 @@ function escapeHtml(value) {
 const list = (items) =>
   (items ?? []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
 
+const DIRECTION_LABELS = {
+  IMPROVE: "Improve",
+  REDUCE: "Reduce",
+  MAINTAIN: "Hold steady"
+};
+
 function engagementSection(engagement) {
   if (!engagement) return "";
   const client = engagement.client ?? {};
-  const objective = engagement.business_objective ?? {};
+  const objectives = Array.isArray(engagement.business_objectives)
+    ? engagement.business_objectives
+    : engagement.business_objective
+      ? [engagement.business_objective]
+      : [];
+  const objectiveBlocks = objectives
+    .map((objective) => {
+      const measures = (objective.success_measures ?? [])
+        .map(
+          (entry) =>
+            `<li>${escapeHtml(entry.measure)} &mdash; ${escapeHtml(
+              DIRECTION_LABELS[entry.expected_direction] ?? "Review"
+            )}</li>`
+        )
+        .join("");
+      return `
+      <div class="band">
+        <h4>${escapeHtml(objective.objective_statement)}</h4>
+        <p>${escapeHtml(objective.positive_business_outcome)}</p>
+        <p class="muted">Owner: ${escapeHtml(String(objective.owner_role ?? "").replace(/_/g, " "))} &middot; Decision: ${escapeHtml(String(objective.decision_timeline ?? "").replace(/_/g, " "))}</p>
+        ${measures ? `<p><strong>The value review will measure:</strong></p><ul>${measures}</ul>` : ""}
+      </div>`;
+    })
+    .join("");
   return `
   <section>
-    <h2>Client objective</h2>
-    <p class="lead">${escapeHtml(client.client_name)} &mdash; ${escapeHtml(objective.objective_statement)}</p>
-    <p><strong>Challenge:</strong> ${escapeHtml(objective.challenge)}</p>
-    <p><strong>Outcome the sponsor cares about:</strong> ${escapeHtml(objective.positive_business_outcome)}</p>
-    <p><strong>Decision timeline:</strong> ${escapeHtml(String(objective.decision_timeline ?? "").replace(/_/g, " "))}</p>
+    <h2>Client objectives and the value review</h2>
+    <p class="lead">${escapeHtml(client.client_name)} &mdash; ${escapeHtml(String(objectives.length))} objective${objectives.length === 1 ? "" : "s"} anchor this engagement. Every future value conversation is held against the measures below.</p>
+    ${objectiveBlocks}
   </section>`;
 }
 
