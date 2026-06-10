@@ -494,6 +494,127 @@ describe("AI value spine run API", () => {
     expect(missing.status).toBe(404);
   });
 
+  it.each([
+    [
+      "missing",
+      null,
+      "Customer outcome evidence needed",
+      "Ask the data owner for the approved aggregate export",
+      "Stronger value language stays held until source, window, and metric evidence are attached."
+    ],
+    [
+      "submitted",
+      "SUBMITTED",
+      "Customer export awaiting review",
+      "Review is pending",
+      "Submission alone does not support ROI or causality claims."
+    ],
+    [
+      "accepted",
+      "ACCEPTED",
+      "Customer export accepted for caveated review",
+      "Prepare the caveated sponsor readout with accepted evidence",
+      "Accepted aggregate evidence supports only caveated value review. It is not ROI proof and does not establish causality."
+    ],
+    [
+      "rejected",
+      "REJECTED",
+      "Customer export needs correction",
+      "Request a corrected aggregate export",
+      "Rejected evidence stays out of the value story."
+    ]
+  ])(
+    "renders evidence-aware executive readout language when outcome evidence is %s",
+    async (_label, reviewState, statusText, actionText, caveatText) => {
+      await storeUpstreamObjects();
+      const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+
+      const requestBody: Record<string, unknown> = {
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId
+      };
+
+      if (reviewState) {
+        await request(app)
+          .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+          .set(writeAuth)
+          .send(outcomeExport)
+          .expect(201);
+
+        if (reviewState === "ACCEPTED" || reviewState === "REJECTED") {
+          await request(app)
+            .post(
+              `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+            )
+            .set(writeAuth)
+            .send({ decision: reviewState })
+            .expect(200);
+        }
+
+        requestBody.outcome_evidence_export_id = outcomeExport.export_id;
+      }
+
+      await request(app)
+        .post("/api/v1/ai-value/value-chain/run")
+        .set(writeAuth)
+        .send(requestBody)
+        .expect(200);
+
+      const readout = await request(app)
+        .get(
+          "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+        )
+        .set(readAuth)
+        .expect(200);
+
+      expect(readout.text).toContain(statusText);
+      expect(readout.text).toContain(actionText);
+      expect(readout.text).toContain(caveatText);
+      expect(readout.text).toContain("Pre-ROI planning artifact");
+      expect(readout.text).toContain("What this readout never claims");
+    }
+  );
+
+  it("does not use mismatched accepted evidence as caveated readout support", async () => {
+    await storeUpstreamObjects();
+    const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+    const mismatchedExport = {
+      ...outcomeExport,
+      windows: {
+        ...(outcomeExport.windows as Record<string, unknown>),
+        baseline: "2020-01-01_to_2020-01-31"
+      }
+    };
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(mismatchedExport)
+      .expect(201);
+    await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED" })
+      .expect(200);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const readout = await request(app)
+      .get(
+        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+      )
+      .set(readAuth)
+      .expect(200);
+
+    expect(readout.text).toContain("Customer outcome evidence needed");
+    expect(readout.text).not.toContain("Customer export accepted for caveated review");
+  });
+
   it("renders executive readout context only for the packet workflow", async () => {
     await storeUpstreamObjects();
     const engagement = readExample("customer-support-engagement.json");

@@ -308,3 +308,9 @@
 - Completed: Added a Customer Evidence Review Workbench in `/ai-value-journey` and `/ai-value-workspace`, derived from the Customer Evidence Request plus outcome-evidence review state. The workbench shows missing/submitted/accepted/rejected states, reviewer ownership, request-match checks for metric/source/export level/windows, blocked value language, and submitted-only Accept/Reject actions through the existing role-gated review API.
 - Verified: red/green customer evidence review tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks for Journey/Workspace with no unsafe terms, no console issues after local preview script stub, and no horizontal overflow.
 - Next focus: Evidence-Aware Executive Operating Cadence, so accepted/submitted/rejected/missing evidence drives sponsor next action, client value questions, and agentic handoff language.
+
+## 2026-06-10 (UTC) — Codex (AI Value evidence-aware executive readout HTML)
+
+- Completed: Opened/generated Executive Readout HTML now renders a Customer Outcome Evidence section for missing, submitted, accepted, and rejected aggregate evidence. Accepted evidence is caveated support only, mismatched accepted exports are ignored, and the example readout no longer exposes the internal packet id.
+- Verified: red/green backend readout API test; full backend AI value object API test; backend build; standalone readout renderer test; full frontend tests/build; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; generated HTML internal-term audit; diff whitespace.
+- Next focus: Executive Readout Preview and Share Workflow in Journey/Workspace, so sponsors can understand what will open/share and which caveats must travel with it.

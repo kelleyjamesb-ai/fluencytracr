@@ -64,6 +64,23 @@ const DIRECTION_LABELS: Record<string, string> = {
   MAINTAIN: "Hold steady"
 };
 
+export type ExecutiveReadoutEvidenceReviewState =
+  | "MISSING"
+  | "SUBMITTED"
+  | "ACCEPTED"
+  | "REJECTED";
+
+export interface ExecutiveReadoutEvidenceReview {
+  reviewState?: string | null;
+  metricNames?: string[] | null;
+  sourceSystemName?: string | null;
+  approvedGrain?: string | null;
+  baselineWindow?: string | null;
+  comparisonWindow?: string | null;
+  reviewerRole?: string | null;
+  dataOwner?: string | null;
+}
+
 function engagementSection(engagement: any): string {
   if (!engagement) return "";
   const client = engagement.client ?? {};
@@ -125,6 +142,108 @@ function fluencySection(summary: any): string {
   </section>`;
 }
 
+const humanize = (value: unknown): string =>
+  String(value ?? "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+function normalizeEvidenceReviewState(
+  value: unknown
+): ExecutiveReadoutEvidenceReviewState {
+  const normalized = String(value ?? "").toUpperCase();
+  if (normalized === "ACCEPTED") return "ACCEPTED";
+  if (normalized === "SUBMITTED") return "SUBMITTED";
+  if (normalized === "REJECTED") return "REJECTED";
+  return "MISSING";
+}
+
+function evidenceReviewCopy(
+  review: ExecutiveReadoutEvidenceReview | null | undefined
+): {
+  status: string;
+  sponsorDecision: string;
+  nextAction: string;
+  caveat: string;
+} {
+  const state = normalizeEvidenceReviewState(review?.reviewState);
+  const owner = humanize(review?.dataOwner) || "the data owner";
+  const reviewer = humanize(review?.reviewerRole) || "the reviewer";
+
+  if (state === "ACCEPTED") {
+    return {
+      status: "Customer export accepted for caveated review",
+      sponsorDecision:
+        "Decide whether the accepted evidence is ready for a caveated sponsor readout, expansion planning, or a hold for stronger assumptions.",
+      nextAction:
+        "Prepare the caveated sponsor readout with accepted evidence, customer assumptions, and blocked value language attached.",
+      caveat:
+        "Accepted aggregate evidence supports only caveated value review. It is not ROI proof and does not establish causality."
+    };
+  }
+
+  if (state === "SUBMITTED") {
+    return {
+      status: "Customer export awaiting review",
+      sponsorDecision:
+        "Hold stronger value language until the submitted customer export is accepted or rejected.",
+      nextAction: `Review is pending with ${reviewer}; have them check the submitted aggregate export against the requested metric, source, approved grain, and windows.`,
+      caveat: "Submission alone does not support ROI or causality claims."
+    };
+  }
+
+  if (state === "REJECTED") {
+    return {
+      status: "Customer export needs correction",
+      sponsorDecision:
+        "Keep stronger value language blocked until corrected aggregate evidence is accepted.",
+      nextAction: `Request a corrected aggregate export from ${owner}.`,
+      caveat: "Rejected evidence stays out of the value story."
+    };
+  }
+
+  return {
+    status: "Customer outcome evidence needed",
+    sponsorDecision:
+      "Hold stronger value language until a customer-owned aggregate export is submitted and reviewed.",
+    nextAction: `Ask the data owner for the approved aggregate export for the selected value metric.${owner === "the data owner" ? "" : ` Owner: ${owner}.`}`,
+    caveat:
+      "Stronger value language stays held until source, window, and metric evidence are attached."
+  };
+}
+
+function evidenceReviewSection(
+  review: ExecutiveReadoutEvidenceReview | null | undefined
+): string {
+  const copy = evidenceReviewCopy(review);
+  const details = [
+    Array.isArray(review?.metricNames) && review?.metricNames.length
+      ? `Metric(s): ${review.metricNames.join(", ")}`
+      : null,
+    review?.sourceSystemName ? `Source: ${review.sourceSystemName}` : null,
+    review?.approvedGrain ? `Approved export level: ${humanize(review.approvedGrain)}` : null,
+    review?.baselineWindow && review?.comparisonWindow
+      ? `Windows: ${review.baselineWindow} compared with ${review.comparisonWindow}`
+      : null
+  ].filter(Boolean);
+
+  const detailList = details.length
+    ? `<ul>${details.map((detail) => `<li>${escapeHtml(detail)}</li>`).join("")}</ul>`
+    : "";
+
+  return `
+  <section>
+    <h2>Customer outcome evidence</h2>
+    <div class="band">
+      <h4>${escapeHtml(copy.status)}</h4>
+      <p><strong>Sponsor decision:</strong> ${escapeHtml(copy.sponsorDecision)}</p>
+      <p><strong>Next action:</strong> ${escapeHtml(copy.nextAction)}</p>
+      <p class="muted">${escapeHtml(copy.caveat)}</p>
+      ${detailList}
+    </div>
+  </section>`;
+}
+
 const stripTrailingSpaces = (html: string): string =>
   html.split("\n").map((line) => line.replace(/\s+$/, "")).join("\n");
 
@@ -132,9 +251,15 @@ export interface RenderExecutiveReadoutInputs {
   packet: any;
   engagement?: any | null;
   fluencySummary?: any | null;
+  evidenceReview?: ExecutiveReadoutEvidenceReview | null;
 }
 
-export function renderExecutiveReadoutHtml({ packet, engagement, fluencySummary }: RenderExecutiveReadoutInputs): string {
+export function renderExecutiveReadoutHtml({
+  packet,
+  engagement,
+  fluencySummary,
+  evidenceReview
+}: RenderExecutiveReadoutInputs): string {
   const sections = packet.sections;
   const decisionLabel = DECISION_LABELS[packet.decision] ?? packet.decision;
   const claimLabel = CLAIM_STATE_LABELS[packet.claim_state] ?? packet.claim_state;
@@ -209,6 +334,7 @@ export function renderExecutiveReadoutHtml({ packet, engagement, fluencySummary 
       <div class="band"><h4>Target workflow</h4><ul>${list(sections.workflow.future_state_steps)}</ul></div>
     </div>
   </section>
+  ${evidenceReviewSection(evidenceReview)}
   ${fluencySection(fluencySummary)}
   <section>
     <h2>Value signals to validate</h2>
@@ -237,7 +363,7 @@ export function renderExecutiveReadoutHtml({ packet, engagement, fluencySummary 
     <ul>${list(sections.next_actions)}</ul>
   </section>
   <footer>
-    <p class="muted">Generated from validated AI value objects (${escapeHtml(packet.packet_id)}). Claim governance applied; caveats are part of this document and must travel with it.</p>
+    <p class="muted">Generated from validated AI value packet inputs. Claim governance applied; caveats are part of this document and must travel with it.</p>
   </footer>
 </body>
 </html>

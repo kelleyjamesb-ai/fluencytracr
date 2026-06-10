@@ -120,6 +120,63 @@ const sanitizeIdSegment = (value: string): string =>
 const stringRef = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value : null;
 
+const objectRef = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+
+const humanize = (value: unknown): string | null => {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return value.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+};
+
+const metricNamesFromPacket = (packet: Record<string, unknown>): string[] => {
+  const sections = objectRef(packet.sections);
+  const metrics = Array.isArray(sections?.metrics) ? sections.metrics : [];
+  return metrics
+    .map((metric) => stringRef(objectRef(metric)?.name))
+    .filter((name): name is string => Boolean(name));
+};
+
+const dataOwnerFromPacket = (packet: Record<string, unknown>): string | null => {
+  const sections = objectRef(packet.sections);
+  const metrics = Array.isArray(sections?.metrics) ? sections.metrics : [];
+  for (const metric of metrics) {
+    const owner = humanize(objectRef(metric)?.owner);
+    if (owner) return owner;
+  }
+  return null;
+};
+
+const evidenceReviewForReadout = (
+  packet: Record<string, unknown>,
+  outcomeEvidenceExport: Record<string, unknown> | null
+) => {
+  const metricNames = metricNamesFromPacket(packet);
+  const dataOwner = dataOwnerFromPacket(packet);
+  if (!outcomeEvidenceExport) {
+    return {
+      reviewState: "MISSING",
+      metricNames,
+      dataOwner
+    };
+  }
+
+  const sourceSystem = objectRef(outcomeEvidenceExport.source_system);
+  const windows = objectRef(outcomeEvidenceExport.windows);
+  const review = objectRef(outcomeEvidenceExport.review);
+  return {
+    reviewState: aiValueEngine.reviewStateOf(outcomeEvidenceExport),
+    metricNames,
+    sourceSystemName: stringRef(sourceSystem?.source_name),
+    approvedGrain: stringRef(sourceSystem?.approved_grain),
+    baselineWindow: stringRef(windows?.baseline),
+    comparisonWindow: stringRef(windows?.comparison),
+    reviewerRole: stringRef(review?.reviewer_role) ?? dataOwner,
+    dataOwner
+  };
+};
+
 export function registerAiValueRoutes(app: Express): void {
   app.put(
     "/api/v1/ai-value/objects/:objectType/:objectId",
@@ -282,8 +339,11 @@ export function registerAiValueRoutes(app: Express): void {
         packet.source_refs && typeof packet.source_refs === "object"
           ? packet.source_refs as Record<string, unknown>
           : {};
+      const blueprintRef = stringRef(sourceRefs.blueprint_id);
+      const metricsLibraryRef = stringRef(sourceRefs.metrics_library_id);
       const engagementRef = stringRef(sourceRefs.engagement_id);
       const fluencyBaselineRef = stringRef(sourceRefs.fluency_baseline_id);
+      const readinessRef = stringRef(sourceRefs.readiness_id);
 
       const engagements = await listAiValueObjects(orgId, "engagement");
       let engagementPayload: Record<string, unknown> | null = null;
@@ -316,10 +376,84 @@ export function registerAiValueRoutes(app: Express): void {
         fluencySummary = aiValueEngine.summarizeFluencyBaseline(matchedBaseline.payload);
       }
 
+      const blueprintContextRecord = blueprintRef
+        ? await getAiValueObject(orgId, "blueprint", blueprintRef)
+        : null;
+      const metricsContextRecord = metricsLibraryRef
+        ? await getAiValueObject(orgId, "metrics_library", metricsLibraryRef)
+        : null;
+      const blueprintContext =
+        blueprintContextRecord &&
+        aiValueEngine.validateBlueprint(blueprintContextRecord.payload).valid
+          ? blueprintContextRecord.payload
+          : undefined;
+      const metricsContext =
+        metricsContextRecord &&
+        aiValueEngine.validateMetricsLibrary(metricsContextRecord.payload).valid
+          ? metricsContextRecord.payload
+          : undefined;
+      const validateEvidenceForReadout = (payload: Record<string, unknown>) =>
+        aiValueEngine.validateOutcomeEvidenceExport(payload, {
+          blueprint: blueprintContext,
+          metricsLibrary: metricsContext
+        });
+      const canUseEvidenceForReadout = (payload: Record<string, unknown>) => {
+        const validation = validateEvidenceForReadout(payload);
+        if (!validation.valid) return false;
+        return (
+          validation.review_state !== "ACCEPTED" ||
+          validation.cross_check_gaps.length === 0
+        );
+      };
+
+      let outcomeEvidenceRef: string | null = null;
+      if (readinessRef) {
+        const readinessRecord = await getAiValueObject(
+          orgId,
+          "evidence_readiness",
+          readinessRef
+        );
+        if (
+          readinessRecord &&
+          aiValueEngine.validateEvidenceReadiness(readinessRecord.payload).valid
+        ) {
+          const readinessSourceRefs = objectRef(readinessRecord.payload.source_refs);
+          outcomeEvidenceRef = stringRef(readinessSourceRefs?.outcome_evidence_export_id);
+        }
+      }
+
+      let outcomeEvidencePayload: Record<string, unknown> | null = null;
+      if (outcomeEvidenceRef) {
+        const outcomeEvidenceRecord = await getAiValueObject(
+          orgId,
+          "outcome_evidence_export",
+          outcomeEvidenceRef
+        );
+        if (
+          outcomeEvidenceRecord &&
+          canUseEvidenceForReadout(outcomeEvidenceRecord.payload)
+        ) {
+          outcomeEvidencePayload = outcomeEvidenceRecord.payload;
+        }
+      }
+
+      if (!outcomeEvidencePayload) {
+        const outcomeEvidenceRecords = await listAiValueObjects(
+          orgId,
+          "outcome_evidence_export"
+        );
+        const candidates = outcomeEvidenceRecords
+          .filter((record) => record.workflow_family === packetWorkflowFamily)
+          .filter((record) => canUseEvidenceForReadout(record.payload))
+          .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+        outcomeEvidencePayload = candidates[0]?.payload ?? null;
+      }
+
       const html = aiValueEngine.renderExecutiveReadoutHtml({
         packet,
         engagement: engagementPayload,
-        fluencySummary
+        fluencySummary,
+        evidenceReview: evidenceReviewForReadout(packet, outcomeEvidencePayload)
       });
       res.set("content-type", "text/html; charset=utf-8");
       return res.send(html);

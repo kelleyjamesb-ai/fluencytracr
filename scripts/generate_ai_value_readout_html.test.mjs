@@ -45,6 +45,34 @@ test("renders without optional kickoff context", () => {
   assert.ok(html.includes("Pre-ROI planning artifact"));
 });
 
+test("renders accepted outcome evidence as caveated support only", () => {
+  const html = renderExecutiveReadoutHtml({
+    packet,
+    engagement,
+    fluencySummary: summarizeFluencyBaseline(baseline),
+    evidenceReview: {
+      reviewState: "ACCEPTED",
+      metricNames: ["Median resolution time"],
+      sourceSystemName: "Support case management system",
+      approvedGrain: "aggregate_workflow_window",
+      baselineWindow: "2026-02-01_to_2026-03-31",
+      comparisonWindow: "2026-04-01_to_2026-05-31",
+      reviewerRole: "Support Operations",
+      dataOwner: "Support Operations"
+    }
+  });
+
+  assert.ok(html.includes("Customer export accepted for caveated review"));
+  assert.ok(
+    html.includes(
+      "Accepted aggregate evidence supports only caveated value review. It is not ROI proof and does not establish causality."
+    )
+  );
+  assert.ok(!html.includes("Glean proved ROI"));
+  assert.ok(!html.includes("ACCEPTED"));
+  assert.ok(!html.includes("outcome_evidence_export"));
+});
+
 test("never leaks internal state names into the readout", () => {
   const html = renderExecutiveReadoutHtml({
     packet,

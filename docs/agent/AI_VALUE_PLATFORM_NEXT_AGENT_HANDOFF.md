@@ -139,70 +139,121 @@ Verification completed:
   internal state codes or object terms; have no console warnings/errors; and
   have no horizontal overflow at 390px or 1440px.
 
-Recommended next slice:
+Latest completed slice:
 
 ```text
 Evidence-Aware Executive Readout HTML
 ```
 
+What is now in place:
+
+- The opened/generated Executive Readout HTML now includes a Customer Outcome
+  Evidence section with sponsor decision, next action, and caveat language.
+- Missing evidence routes to a data-owner request.
+- Submitted evidence tells the sponsor review is pending.
+- Accepted evidence routes to caveated sponsor review only; the language
+  explicitly says it is not ROI proof and does not establish causality.
+- Rejected evidence requests corrected aggregate evidence before stronger value
+  language.
+- The backend readout endpoint gathers only sanitized evidence-review context
+  from stored objects and validates accepted evidence against the packet's
+  Blueprint and Metrics Library before rendering it as caveated support.
+- Mismatched accepted exports are ignored, so stale or wrong-window accepted
+  evidence cannot become sponsor-supporting readout language.
+- The generated example HTML was refreshed and no longer exposes the internal
+  packet id in the footer.
+
+Verification completed:
+
+- Red test first:
+  `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts -t "evidence-aware executive readout"`
+- `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts`
+- `npm run build --workspace backend`
+- `node --test scripts/generate_ai_value_readout_html.test.mjs`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run test:ai-value-roi-scenario`
+- `npm run test:ai-value-agent-harness`
+- `bash scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- Generated HTML content audit: no raw packet ids, object type names, uppercase
+  evidence-state codes, schema names, or workflow/metric state keys appear in
+  the checked-in example readout.
+
+Recommended next slice:
+
+```text
+Executive Readout Preview And Share Workflow
+```
+
 Goal:
 
-Make the opened/generated Executive Readout HTML reflect the same evidence-aware
-cadence now shown in Journey and Workspace. The readout itself should tell a
-sponsor whether customer outcome evidence is missing, awaiting review, accepted,
-or rejected, and what that means for caveated value language.
+Make Journey and Workspace show a sponsor-readable preview of the Executive
+Readout before the user opens or shares it. The preview should explain which
+evidence state will control the readout language, what the sponsor can do next,
+and what must remain attached as caveats.
 
 Acceptance criteria:
 
-- The readout HTML should include evidence-aware sponsor decision, next action,
-  and caveat language derived from the current outcome evidence review state.
-- Accepted evidence may appear only as caveated support for sponsor review, not
-  ROI proof.
-- Submitted evidence should tell the sponsor review is pending.
-- Rejected evidence should request corrected aggregate evidence before stronger
-  value language.
-- Missing evidence should route to the data-owner request.
-- Journey/Workspace "Open executive readout" behavior should remain working.
-- Do not calculate ROI, emit dollarized output, claim causality, rank
-  people/teams/managers, introduce HR analytics, create a production connector,
-  or add autonomous customer actions.
-- Add focused backend/readout tests plus any frontend smoke needed to prove the
-  opened packet carries the same cadence as the page panels.
+- Journey and Workspace should show a compact "Executive Readout Preview" or
+  equivalent beside the existing Executive Operating Packet.
+- The preview should use the same Customer Evidence Review state as the opened
+  HTML: accepted, submitted, rejected, or missing.
+- The preview should make the share/open action understandable to a client:
+  what will be included, what is still held, and who owns the next action.
+- Accepted evidence may be described only as caveated support for sponsor
+  review, not ROI proof.
+- Submitted, rejected, and missing evidence must not imply value has been
+  validated.
+- "Open executive readout" must keep working from Journey and Workspace.
+- Do not add production connectors, autonomous customer actions, raw
+  prompts/responses, direct identifiers, unsupported ROI proof, causality
+  claims, individual scoring, HR analytics, productivity ranking, or
+  customer-facing dollarized output.
+- Add focused frontend tests and a browser smoke if visual/interaction behavior
+  changes.
 
 Suggested files:
 
-- `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/hooks/useAiValueJourney.ts`
+- `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/pages/AIValueWorkspace.tsx`
-- `frontend/src/components/CustomerEvidenceReviewWorkbench.tsx`
 - `frontend/src/pages/AIValueJourney.test.tsx`
 - `frontend/src/pages/AIValueWorkspace.test.tsx`
+- `shared/src/aiValueEngine/readoutHtml.ts` only if preview wording should be
+  shared with the renderer instead of duplicated in the view model.
 
 ## Next-Agent Prompt
 
 Use this prompt to continue:
 
 ```text
-Create the Evidence-Aware Executive Readout HTML product slice for the AI Value
-Platform. The opened/generated Executive Readout should use the same Customer
-Evidence Review state now used by Journey and Workspace: accepted evidence
-routes to caveated readout language, submitted evidence routes to reviewer
-action, rejected evidence routes to corrected-export request, and missing
-evidence routes to data-owner request. Accepted evidence may support caveated
-value review only; rejected or missing evidence must hold stronger value
-language. Do not add production connectors, autonomous customer actions, raw
+Create the Executive Readout Preview and Share Workflow product slice for the
+AI Value Platform. Journey and Workspace should show a sponsor-readable preview
+of the readout before opening it, using the same Customer Evidence Review state
+that drives the generated HTML: accepted evidence routes to caveated sponsor
+review, submitted evidence routes to reviewer action, rejected evidence routes
+to corrected-export request, and missing evidence routes to data-owner request.
+The preview should explain what will be included in the packet, what language
+remains held, who owns the next action, and why caveats must travel with the
+readout. Do not add production connectors, autonomous customer actions, raw
 prompts/responses, direct identifiers, unsupported ROI proof, causality claims,
 individual scoring, HR analytics, productivity ranking, or customer-facing
-dollarized output. Add focused tests and keep ROI scenario, agent-harness,
-frontend, backend object API, build, and governance checks green.
+dollarized output. Add focused frontend tests and keep frontend, backend object
+API, ROI scenario, agent-harness, build, and governance checks green.
 ```
 
 ## What To Validate First
 
-Validate where the Executive Readout HTML is rendered from stored objects, then
-thread the evidence-review cadence into that renderer without duplicating
-business rules in an unsafe way.
+Validate the current Journey and Workspace open-readout path and the existing
+Executive Operating Packet / Client Value Questions placement. The preview
+should reduce confusion and should not become another dense panel full of object
+state.
 
-The current biggest risk is that Journey and Workspace now show the correct
-evidence-aware cadence, but the opened executive readout could still sound
-generic or stronger than the evidence state allows.
+The current biggest risk is adding another panel that repeats existing language
+without helping a sponsor understand what they are about to open or share.
+Prefer one compact preview with a clear action, caveat, and owner over a large
+new dashboard section.
