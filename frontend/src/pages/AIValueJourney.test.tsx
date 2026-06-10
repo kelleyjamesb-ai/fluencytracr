@@ -392,7 +392,7 @@ describe("AIValueJourney", () => {
     expect(within(questions).getByText(/do not present realized ROI or causality/i)).toBeInTheDocument();
     expect(within(questions).getByText(/What should the client do next/i)).toBeInTheDocument();
     expect(
-      within(questions).getByText(/Review missing staffing, rollout, baseline, and metric assumptions/i)
+      within(questions).getByText(/Ask Support Operations for an aggregate Median resolution time export/i)
     ).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent);
@@ -542,6 +542,46 @@ describe("AIValueJourney", () => {
       uiTerm("FT", "_", "AI", "_", "VALUE"),
       uiTerm("CAVEATED", "_", "VALUE", "_", "INVESTIGATION"),
       uiTerm("MODELED", "_", "RANGE", "_", "ONLY")
+    ]);
+  });
+
+  it("turns ROI readiness into a customer evidence request packet", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const request = screen.getByRole("region", { name: /Customer evidence request/i });
+    expect(
+      within(request).getByRole("heading", { name: /Customer Evidence Request/i })
+    ).toBeInTheDocument();
+    expect(
+      within(request).getByText(/Ask Support Operations for an aggregate Median resolution time export from Support case management system/i)
+    ).toBeInTheDocument();
+    expect(within(request).getAllByText(/Aggregate Workflow Window/i).length).toBeGreaterThan(0);
+    expect(within(request).getByText(/Baseline window owner/i)).toBeInTheDocument();
+    expect(within(request).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
+    expect(within(request).getByText(/Comparison window owner/i)).toBeInTheDocument();
+    expect(within(request).getByText(/Assumption owner/i)).toBeInTheDocument();
+    expect(within(request).getByText(/Support Leader/i)).toBeInTheDocument();
+    expect(
+      within(request).getByText(/Review submitted customer export with Support Operations before stronger value language/i)
+    ).toBeInTheDocument();
+    expect(within(request).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(request).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expect(
+      within(request).getByText(/This request packet is a client data ask, not customer-facing economic output/i)
+    ).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("object", "_", "id"),
+      uiTerm("workflow", "_", "family"),
+      uiTerm("FT", "_", "AI", "_", "VALUE"),
+      uiTerm("CAVEATED", "_", "VALUE", "_", "INVESTIGATION"),
+      uiTerm("MODELED", "_", "RANGE", "_", "ONLY"),
+      uiTerm("source", "_", "system"),
+      uiTerm("approved", "_", "grain")
     ]);
   });
 

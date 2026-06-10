@@ -126,6 +126,28 @@ export interface RoiScenarioReadiness {
   executiveHandoff: string;
 }
 
+export interface CustomerEvidenceRequestOwner {
+  label: string;
+  owner: string;
+  detail: string;
+}
+
+export interface CustomerEvidenceRequest {
+  available: boolean;
+  statusLabel: string;
+  requestedExport: string;
+  sourceSystem: string;
+  metricName: string;
+  approvedGrain: string;
+  baselineWindow: string;
+  comparisonWindow: string;
+  owners: CustomerEvidenceRequestOwner[];
+  reviewStep: string;
+  remainingBlockedLanguage: string[];
+  nextAction: string;
+  caveat: string;
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
@@ -136,6 +158,7 @@ export interface AiValueJourney {
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
   roiScenarioReadiness: RoiScenarioReadiness;
+  customerEvidenceRequest: CustomerEvidenceRequest;
   executivePlan: ExecutiveOperatingPlan;
   packetIds: string[];
   errorMessage: string | null;
@@ -507,8 +530,9 @@ function buildExecutiveOperatingPlan(params: {
   packetCount: number;
   evidenceScenarioPlan: EvidenceScenarioPlan;
   opportunities: ValueOpportunity[];
+  customerEvidenceRequest?: CustomerEvidenceRequest;
 }): ExecutiveOperatingPlan {
-  const { packetCount, evidenceScenarioPlan, opportunities } = params;
+  const { packetCount, evidenceScenarioPlan, opportunities, customerEvidenceRequest } = params;
   return {
     packetStatus: packetCount > 0 ? "Sponsor packet ready" : "Needs sponsor packet",
     sponsorDecision:
@@ -517,7 +541,7 @@ function buildExecutiveOperatingPlan(params: {
         : "Decide what evidence is still needed before the sponsor packet is generated.",
     recommendedNextAction:
       opportunities.length > 0
-        ? evidenceScenarioPlan.nextClientAction
+        ? customerEvidenceRequest?.nextAction ?? evidenceScenarioPlan.nextClientAction
         : "Finish Blueprint and outcome mapping before assigning follow-up work.",
     handoffs: [
       {
@@ -529,7 +553,7 @@ function buildExecutiveOperatingPlan(params: {
       {
         role: "Evidence readiness agent",
         task:
-          "Track baseline exports, customer owner review, source coverage, and unresolved assumptions.",
+          "Turn the Customer Evidence Request into a data-owner ask, then track baseline exports, customer owner review, source coverage, and unresolved assumptions.",
         guardrail: "No causality claim."
       },
       {
@@ -794,6 +818,127 @@ function buildRoiScenarioReadiness(params: {
   };
 }
 
+function buildCustomerEvidenceRequest(params: {
+  roiScenario: Record<string, any> | null;
+  workflowHandoff: WorkflowHandoff;
+}): CustomerEvidenceRequest {
+  const { roiScenario, workflowHandoff } = params;
+  if (!roiScenario) {
+    const nextAction =
+      "Finish Blueprint and outcome mapping before asking the client for an aggregate export.";
+    return {
+      available: false,
+      statusLabel: "Evidence request not ready yet",
+      requestedExport: nextAction,
+      sourceSystem: "Customer source system not selected",
+      metricName: "Outcome signal not selected",
+      approvedGrain: "Approved aggregate export not attached",
+      baselineWindow: "Baseline window not selected",
+      comparisonWindow: "Comparison window not selected",
+      owners: [
+        {
+          label: "Workflow owner",
+          owner: workflowHandoff.workflowName,
+          detail: "Finish the Blueprint workshop before assigning the data request."
+        }
+      ],
+      reviewStep:
+        "Create the request after the workflow, outcome metric, baseline, comparison, and owner are known.",
+      remainingBlockedLanguage: [
+        "No realized ROI claim",
+        "No customer-facing economic figures",
+        "No causality claim"
+      ],
+      nextAction,
+      caveat:
+        "This request packet is a client data ask, not customer-facing economic output."
+    };
+  }
+
+  const metric = Array.isArray(roiScenario.metric_models)
+    ? roiScenario.metric_models[0] ?? {}
+    : {};
+  const sourceSystem = String(metric.source_system?.source_name ?? "Customer-owned outcome system");
+  const metricName = String(metric.name ?? "selected outcome signal");
+  const approvedGrainLabel = presentableGrain(
+    metric.source_system?.approved_grain ?? "approved aggregate export"
+  );
+  const baseline = roiScenario.baseline_comparison?.baseline_window ?? {};
+  const comparison = roiScenario.baseline_comparison?.comparison_window ?? {};
+  const baselineOwner = humanize(String(baseline.owner ?? "customer data owner"));
+  const comparisonOwner = humanize(
+    String(comparison.owner ?? baseline.owner ?? "customer data owner")
+  );
+  const assumptions = Array.isArray(roiScenario.customer_owned_assumptions)
+    ? roiScenario.customer_owned_assumptions
+    : [];
+  const assumptionForReview =
+    assumptions.find((assumption: Record<string, any>) =>
+      ["MISSING", "CAVEATED", "BLOCKED", "SUPPRESSED"].includes(
+        String(assumption.state ?? "").toUpperCase()
+      )
+    ) ?? assumptions[0] ?? {};
+  const assumptionOwner = humanize(
+    String(assumptionForReview.owner ?? baseline.owner ?? "customer owner")
+  );
+  const reviewState = String(
+    roiScenario.evidence_status?.outcome_evidence_review_state ?? "MISSING"
+  ).toUpperCase();
+  const blockedLanguage = unique([
+    ...(Array.isArray(roiScenario.safe_value_language?.blocked_claims)
+      ? roiScenario.safe_value_language.blocked_claims.map(blockedOutputLabel)
+      : []),
+    roiScenario.economic_output_policy?.realized_roi_calculation === false && "No realized ROI claim",
+    roiScenario.economic_output_policy?.customer_facing_economic_output === false &&
+      "No customer-facing economic figures"
+  ].filter(Boolean) as string[]);
+
+  const requestedExport =
+    `Ask ${baselineOwner} for an aggregate ${metricName} export from ${sourceSystem} ` +
+    `at ${approvedGrainLabel} for the approved baseline and comparison windows.`;
+  const reviewStep =
+    reviewState === "ACCEPTED"
+      ? `Use the accepted customer export with ${baselineOwner}; keep caveats and blocked claims attached.`
+      : reviewState === "SUBMITTED"
+        ? `Review submitted customer export with ${baselineOwner} before stronger value language.`
+        : `Ask ${baselineOwner} to submit the aggregate customer export before strengthening value language.`;
+
+  return {
+    available: true,
+    statusLabel: "Customer export request ready",
+    requestedExport,
+    sourceSystem,
+    metricName,
+    approvedGrain: approvedGrainLabel,
+    baselineWindow: String(baseline.rule ?? "Baseline window rule needs customer owner review."),
+    comparisonWindow: String(
+      comparison.rule ?? "Comparison window rule needs customer owner review."
+    ),
+    owners: [
+      {
+        label: "Baseline window owner",
+        owner: baselineOwner,
+        detail: "Provides the approved pre-period aggregate export."
+      },
+      {
+        label: "Comparison window owner",
+        owner: comparisonOwner,
+        detail: "Provides the approved post-period aggregate export."
+      },
+      {
+        label: "Assumption owner",
+        owner: assumptionOwner,
+        detail: "Confirms staffing, rollout, process, and metric assumptions."
+      }
+    ],
+    reviewStep,
+    remainingBlockedLanguage: blockedLanguage,
+    nextAction: requestedExport,
+    caveat:
+      "This request packet is a client data ask, not customer-facing economic output."
+  };
+}
+
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
@@ -1002,6 +1147,17 @@ export const useAiValueJourney = (): AiValueJourney => {
       })
     })
   );
+  const [customerEvidenceRequest, setCustomerEvidenceRequest] =
+    useState<CustomerEvidenceRequest>(() =>
+      buildCustomerEvidenceRequest({
+        roiScenario: null,
+        workflowHandoff: buildWorkflowHandoff({
+          blueprint: null,
+          metricsLibrary: null,
+          opportunities: []
+        })
+      })
+    );
   const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
     buildExecutiveOperatingPlan({
       packetCount: 0,
@@ -1048,6 +1204,10 @@ export const useAiValueJourney = (): AiValueJourney => {
         roiScenario,
         workflowHandoff: handoff
       });
+      const evidenceRequest = buildCustomerEvidenceRequest({
+        roiScenario,
+        workflowHandoff: handoff
+      });
       const plan = buildEvidenceScenarioPlan({
         readiness,
         scenario,
@@ -1058,7 +1218,8 @@ export const useAiValueJourney = (): AiValueJourney => {
       const executivePlan = buildExecutiveOperatingPlan({
         packetCount: packetIds.length,
         evidenceScenarioPlan: plan,
-        opportunities: mappedOpportunities
+        opportunities: mappedOpportunities,
+        customerEvidenceRequest: evidenceRequest
       });
       const questions = buildClientValueQuestions({
         opportunities: mappedOpportunities,
@@ -1073,6 +1234,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setOpportunities(mappedOpportunities);
       setEvidenceScenarioPlan(plan);
       setRoiScenarioReadiness(roiReadiness);
+      setCustomerEvidenceRequest(evidenceRequest);
       setExecutivePlan(executivePlan);
       setPacketIds(packetIds);
 
@@ -1134,6 +1296,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     opportunities,
     evidenceScenarioPlan,
     roiScenarioReadiness,
+    customerEvidenceRequest,
     executivePlan,
     packetIds,
     errorMessage,

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { useAiValueJourney, type JourneyStageState } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 
 const StatusPill = ({
   label,
@@ -472,6 +473,8 @@ export const AIValueJourney = () => {
             </div>
           </div>
         </section>
+
+        <CustomerEvidenceRequestPanel request={journey.customerEvidenceRequest} />
 
         <article className="ai-value-panel">
           <h2>Customer Evidence Review</h2>

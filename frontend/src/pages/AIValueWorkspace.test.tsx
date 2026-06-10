@@ -584,6 +584,37 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
+  it("shows the customer evidence request packet for the selected workflow", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const request = screen.getByRole("region", { name: /Customer evidence request/i });
+    expect(within(request).getByRole("heading", { name: /Customer Evidence Request/i })).toBeInTheDocument();
+    expect(
+      within(request).getByText(/Ask Support Operations for an aggregate Median resolution time export from Support case management system/i)
+    ).toBeInTheDocument();
+    expect(within(request).getAllByText(/Aggregate Workflow Window/i).length).toBeGreaterThan(0);
+    expect(within(request).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
+    expect(within(request).getByText(/Support Leader/i)).toBeInTheDocument();
+    expect(
+      within(request).getByText(/Review submitted customer export with Support Operations before stronger value language/i)
+    ).toBeInTheDocument();
+    expect(within(request).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(request).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("source", "_", "system"),
+      uiTerm("approved", "_", "grain"),
+      uiTerm("FT", "_", "AI", "_", "VALUE")
+    ]);
+  });
+
   it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {
     stubJourneyFetch([]);
     const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
@@ -602,6 +633,11 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(readiness).getByText(/Value modeling not ready yet/i)).toBeInTheDocument();
     expect(
       within(readiness).getByText(/Finish Blueprint, outcome mapping, baseline, comparison, and assumptions before presenting stronger value language/i)
+    ).toBeInTheDocument();
+    const request = screen.getByRole("region", { name: /Customer evidence request/i });
+    expect(within(request).getByText(/Evidence request not ready yet/i)).toBeInTheDocument();
+    expect(
+      within(request).getByText(/Finish Blueprint and outcome mapping before asking the client for an aggregate export/i)
     ).toBeInTheDocument();
     expectNoUnsafeUiLanguage(container.textContent);
   });
