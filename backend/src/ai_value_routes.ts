@@ -109,6 +109,9 @@ const requireOrg = (req: RequestWithRole, res: Response): string | null => {
 const sanitizeIdSegment = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 
+const stringRef = (value: unknown): string | null =>
+  typeof value === "string" && value.trim() ? value : null;
+
 export function registerAiValueRoutes(app: Express): void {
   app.put(
     "/api/v1/ai-value/objects/:objectType/:objectId",
@@ -265,26 +268,44 @@ export function registerAiValueRoutes(app: Express): void {
         });
       }
 
+      const packet = packetRecord.payload as Record<string, unknown>;
+      const packetWorkflowFamily = stringRef(packet.workflow_family);
+      const sourceRefs =
+        packet.source_refs && typeof packet.source_refs === "object"
+          ? packet.source_refs as Record<string, unknown>
+          : {};
+      const engagementRef = stringRef(sourceRefs.engagement_id);
+      const fluencyBaselineRef = stringRef(sourceRefs.fluency_baseline_id);
+
       const engagements = await listAiValueObjects(orgId, "engagement");
       let engagementPayload: Record<string, unknown> | null = null;
-      if (engagements.length > 0) {
-        const record = await getAiValueObject(orgId, "engagement", engagements[0].object_id);
-        if (record && aiValueEngine.validateEngagement(record.payload).valid) {
+      for (const record of engagements) {
+        const validation = aiValueEngine.validateEngagement(record.payload);
+        const coversPacketWorkflow = aiValueEngine.engagementCoversWorkflowFamily(
+          record.payload,
+          packetWorkflowFamily
+        );
+        const matchesSourceRef = engagementRef ? record.object_id === engagementRef : true;
+        if (validation.valid && coversPacketWorkflow && matchesSourceRef) {
           engagementPayload = record.payload;
+          break;
         }
       }
 
       const baselines = await listAiValueObjects(orgId, "fluency_baseline");
       let fluencySummary: Record<string, unknown> | null = null;
-      if (baselines.length > 0) {
-        const record = await getAiValueObject(orgId, "fluency_baseline", baselines[0].object_id);
-        if (record && aiValueEngine.validateFluencyBaseline(record.payload).valid) {
+      for (const record of baselines) {
+        const matchesSourceRef = fluencyBaselineRef
+          ? record.object_id === fluencyBaselineRef
+          : Boolean(packetWorkflowFamily && record.workflow_family === packetWorkflowFamily);
+        if (matchesSourceRef && aiValueEngine.validateFluencyBaseline(record.payload).valid) {
           fluencySummary = aiValueEngine.summarizeFluencyBaseline(record.payload);
+          break;
         }
       }
 
       const html = aiValueEngine.renderExecutiveReadoutHtml({
-        packet: packetRecord.payload,
+        packet,
         engagement: engagementPayload,
         fluencySummary
       });

@@ -309,8 +309,9 @@ export const AIValueDiscovery = () => {
         account_team_roles: ["value_consultant"]
       },
       business_objectives: form.objectives
-        .filter((objective) => objective.statement)
-        .map((objective, index) => ({
+        .map((objective, index) => ({ objective, index }))
+        .filter(({ objective }) => objective.statement)
+        .map(({ objective, index }) => ({
           objective_id: objectiveIdAt(index),
           objective_statement: objective.statement,
           challenge: objective.challenge,

@@ -468,6 +468,68 @@ describe("AI value spine run API", () => {
     expect(missing.status).toBe(404);
   });
 
+  it("renders executive readout context only for the packet workflow", async () => {
+    await storeUpstreamObjects();
+    const engagement = readExample("customer-support-engagement.json");
+    const foreignEngagement = JSON.parse(JSON.stringify(engagement));
+    foreignEngagement.engagement_id = "engagement_aaa_foreign";
+    foreignEngagement.client.client_name = "Wrong Workflow Corp";
+    foreignEngagement.use_cases = foreignEngagement.use_cases.map((useCase: any) => ({
+      ...useCase,
+      workflow_family: "sales_pipeline_hygiene"
+    }));
+
+    const fluencyBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      workflow_family: "customer_support_case_resolution"
+    };
+    const foreignBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      baseline_id: "fluency_baseline_aaa_foreign",
+      workflow_family: "sales_pipeline_hygiene",
+      window: "1999-01-01_to_1999-01-31"
+    };
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${foreignEngagement.engagement_id}`)
+      .set(writeAuth)
+      .send(foreignEngagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
+      .set(writeAuth)
+      .send(engagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${foreignBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(foreignBaseline)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${fluencyBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(fluencyBaseline)
+      .expect(201);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const readout = await request(app)
+      .get(
+        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+      )
+      .set(readAuth);
+
+    expect(readout.status).toBe(200);
+    expect(readout.text).toContain("Northstar Enterprise");
+    expect(readout.text).not.toContain("Wrong Workflow Corp");
+    expect(readout.text).toContain("Where the team started");
+    expect(readout.text).toContain("2026-03-15_to_2026-03-31");
+    expect(readout.text).not.toContain("1999-01-01_to_1999-01-31");
+  });
+
   it("requires a write role to run the spine", async () => {
     const response = await request(app)
       .post("/api/v1/ai-value/spine/run")
