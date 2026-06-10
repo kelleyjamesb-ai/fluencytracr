@@ -294,14 +294,18 @@ export function registerAiValueRoutes(app: Express): void {
 
       const baselines = await listAiValueObjects(orgId, "fluency_baseline");
       let fluencySummary: Record<string, unknown> | null = null;
-      for (const record of baselines) {
-        const matchesSourceRef = fluencyBaselineRef
-          ? record.object_id === fluencyBaselineRef
-          : Boolean(packetWorkflowFamily && record.workflow_family === packetWorkflowFamily);
-        if (matchesSourceRef && aiValueEngine.validateFluencyBaseline(record.payload).valid) {
-          fluencySummary = aiValueEngine.summarizeFluencyBaseline(record.payload);
-          break;
-        }
+      const validBaselines = baselines.filter((record) =>
+        aiValueEngine.validateFluencyBaseline(record.payload).valid
+      );
+      const matchedBaseline = fluencyBaselineRef
+        ? validBaselines.find((record) => record.object_id === fluencyBaselineRef)
+        : validBaselines.find(
+            (record) =>
+              packetWorkflowFamily && record.workflow_family === packetWorkflowFamily
+          ) ??
+          validBaselines.find((record) => !record.workflow_family);
+      if (matchedBaseline) {
+        fluencySummary = aiValueEngine.summarizeFluencyBaseline(matchedBaseline.payload);
       }
 
       const html = aiValueEngine.renderExecutiveReadoutHtml({

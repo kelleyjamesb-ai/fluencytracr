@@ -460,6 +460,8 @@ describe("AI value spine run API", () => {
     expect(readout.headers["content-type"]).toContain("text/html");
     expect(readout.text).toContain("Pre-ROI planning artifact");
     expect(readout.text).toContain("Northstar Enterprise");
+    expect(readout.text).toContain("Where the team started");
+    expect(readout.text).toContain("2026-03-15_to_2026-03-31");
     expect(readout.text).toContain("What this readout never claims");
 
     const missing = await request(app)
