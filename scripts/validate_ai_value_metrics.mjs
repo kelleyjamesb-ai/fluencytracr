@@ -36,6 +36,20 @@ const REQUIRED_BLOCKED_CLAIMS = [
   "productivity_measurement"
 ];
 
+const FORBIDDEN_SOURCE_METADATA_PATTERNS = [
+  /employee/i,
+  /\buser(?:_id|_email)?\b/i,
+  /email/i,
+  /person/i,
+  /raw/i,
+  /ticket_text/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /file_content/i,
+  /hris/i
+];
+
 function parseArgs(argv) {
   const args = {
     input: DEFAULT_INPUT,
@@ -70,6 +84,12 @@ function requireField(value, path, gaps) {
   if (!value) {
     gaps.push(`${path} is missing`);
   }
+}
+
+function containsForbiddenSourceMetadata(value) {
+  return FORBIDDEN_SOURCE_METADATA_PATTERNS.some((pattern) =>
+    pattern.test(String(value ?? ""))
+  );
 }
 
 function collectTopLevelGaps(library) {
@@ -132,6 +152,15 @@ function collectMetricFieldGaps(metric, index) {
   requireField(source.source_type, `${prefix}.source_system.source_type`, gaps);
   requireField(source.source_name, `${prefix}.source_system.source_name`, gaps);
   requireField(source.approved_grain, `${prefix}.source_system.approved_grain`, gaps);
+  if (
+    [
+      source.source_type,
+      source.source_name,
+      source.approved_grain
+    ].some((value) => containsForbiddenSourceMetadata(value))
+  ) {
+    gaps.push(`${prefix}.source_system contains forbidden identifier metadata`);
+  }
 
   const blockedClaims = new Set(metric?.blocked_claims ?? []);
   for (const claim of REQUIRED_BLOCKED_CLAIMS) {

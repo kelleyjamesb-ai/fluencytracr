@@ -19,6 +19,8 @@ const ALLOWED_SUPPRESSION_REASONS = new Set([
   "HIGH_AMBIGUITY"
 ]);
 
+const ALLOWED_AI_WORK_VERDICTS = new Set(["SURFACE", "SUPPRESS"]);
+
 const FORBIDDEN_KEY_PATTERNS = [
   /(^|_)user(_|$)/i,
   /email/i,
@@ -119,6 +121,16 @@ export function validateSupportValueInput(input) {
   }
   if (!input?.ai_work_evidence?.verdict) {
     errors.push("Missing required field: ai_work_evidence.verdict");
+  } else if (!ALLOWED_AI_WORK_VERDICTS.has(input.ai_work_evidence.verdict)) {
+    errors.push(`Invalid ai_work_evidence.verdict: ${input.ai_work_evidence.verdict}`);
+  }
+  if (input?.ai_work_evidence?.verdict === "SURFACE") {
+    if (Number(input.ai_work_evidence.cohort_size ?? 0) < 5) {
+      errors.push("ai_work_evidence.cohort_size must be at least 5 before SURFACE");
+    }
+    if (Number(input.ai_work_evidence.window_days ?? 0) < 60) {
+      errors.push("ai_work_evidence.window_days must be at least 60 before SURFACE");
+    }
   }
   if (
     input?.ai_work_evidence?.suppression_reason &&
@@ -405,6 +417,10 @@ export function buildSupportValueEvidencePack(input) {
   }
 
   const outcomeSignals = buildOutcomeSignals(input.outcome_evidence);
+  if (outcomeSignals.length === 0) {
+    return missingOutcomePack(input, evidenceReadiness);
+  }
+
   return {
     schema_version: SCHEMA_VERSION,
     org_id: input.org_id,

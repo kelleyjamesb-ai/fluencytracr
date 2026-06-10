@@ -45,10 +45,10 @@
   },
   "verification_routing": {
     "required_validators": [
-      "npm run validate:ai-value-scenario"
+      "npm run validate:ai-value-readiness"
     ],
     "required_tests": [
-      "npm run test:ai-value-scenario"
+      "npm run test:ai-value-readiness"
     ],
     "reviewer_roles": [
       "REVIEWER_AGENT",

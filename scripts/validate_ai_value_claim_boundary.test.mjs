@@ -137,3 +137,31 @@ test("rejects forbidden claim text and unsafe governance boundaries", () => {
     true
   );
 });
+
+test("builds blocked claim boundary for failed readiness decisions", () => {
+  const readiness = {
+    workflow_family: "customer_support_case_resolution",
+    value_route: "CAPACITY_CREATION",
+    readiness_id: "readiness_customer_support_v1",
+    decision: "HOLD_FOR_SOURCE_COVERAGE"
+  };
+
+  const boundary = buildClaimBoundaryFromReadiness(readiness);
+  const result = validateAiValueClaimBoundary(boundary);
+
+  assert.equal(boundary.claim_state, "BLOCKED");
+  assert.equal(boundary.review_state, "STOP_FOR_GOVERNANCE_REVIEW");
+  assert.deepEqual(boundary.safe_claims, []);
+  assert.equal(result.valid, true);
+  assert.equal(result.feeds.executive_packet, false);
+});
+
+test("rejects raw or identifying fields in claim boundaries", () => {
+  const boundary = structuredClone(baseBoundary);
+  boundary.raw_prompt = "not allowed";
+
+  const result = validateAiValueClaimBoundary(boundary);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: raw_prompt"), true);
+});

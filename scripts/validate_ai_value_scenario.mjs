@@ -85,6 +85,17 @@ const FORBIDDEN_KEY_PATTERNS = [
   /causal/i
 ];
 
+const FORBIDDEN_CLAIM_PATTERNS = [
+  /prov(?:ed|es) ROI/i,
+  /caused productivity/i,
+  /caused .*lift/i,
+  /saved money/i,
+  /saved \$?\d/i,
+  /employee/i,
+  /manager/i,
+  /team .*better/i
+];
+
 function parseArgs(argv) {
   const args = {
     input: DEFAULT_INPUT,
@@ -145,6 +156,12 @@ function collectForbiddenFields(value, fields = new Set()) {
     collectForbiddenFields(nested, fields);
   }
   return fields;
+}
+
+function containsForbiddenClaimLanguage(claims) {
+  return (claims ?? []).some((claim) =>
+    FORBIDDEN_CLAIM_PATTERNS.some((pattern) => pattern.test(String(claim)))
+  );
 }
 
 function collectTopLevelGaps(scenario) {
@@ -273,6 +290,8 @@ function collectOutputGaps(scenario) {
   }
   if (!Array.isArray(output.safe_claims)) {
     gaps.push("output.safe_claims must be an array");
+  } else if (containsForbiddenClaimLanguage(output.safe_claims)) {
+    gaps.push("output.safe_claims contains forbidden claim language");
   }
   return gaps;
 }

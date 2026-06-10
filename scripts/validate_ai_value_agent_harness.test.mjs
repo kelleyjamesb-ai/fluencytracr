@@ -63,8 +63,8 @@ const baseHandoff = {
     customer_data_access: false
   },
   verification_routing: {
-    required_validators: ["npm run validate:ai-value-scenario"],
-    required_tests: ["npm run test:ai-value-scenario"],
+    required_validators: ["npm run validate:ai-value-readiness"],
+    required_tests: ["npm run test:ai-value-readiness"],
     reviewer_roles: ["REVIEWER_AGENT", "EVALUATOR_AGENT"]
   },
   ledger: {
@@ -132,6 +132,12 @@ test("builds a scenario-to-readiness handoff from a value scenario", () => {
   assert.equal(handoff.source_agent_role, "SCENARIO_AGENT");
   assert.equal(handoff.target_agent_role, "EVIDENCE_READINESS_AGENT");
   assert.equal(handoff.object_type, "VALUE_SCENARIO");
+  assert.deepEqual(handoff.verification_routing.required_validators, [
+    "npm run validate:ai-value-readiness"
+  ]);
+  assert.deepEqual(handoff.verification_routing.required_tests, [
+    "npm run test:ai-value-readiness"
+  ]);
 });
 
 test("rejects unsupported agent roles and unsupported object types", () => {
@@ -221,6 +227,32 @@ test("rejects missing verification routing and ledger references", () => {
   );
   assert.equal(
     result.gaps.includes("ledger.required_caveats must include at least one caveat"),
+    true
+  );
+});
+
+test("rejects scenario validators for readiness-producing handoffs", () => {
+  const handoff = structuredClone(baseHandoff);
+  handoff.verification_routing.required_validators = [
+    "npm run validate:ai-value-scenario"
+  ];
+  handoff.verification_routing.required_tests = [
+    "npm run test:ai-value-scenario"
+  ];
+
+  const result = validateAiValueAgentHandoff(handoff);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes(
+      "verification_routing.required_validators must include npm run validate:ai-value-readiness"
+    ),
+    true
+  );
+  assert.equal(
+    result.gaps.includes(
+      "verification_routing.required_tests must include npm run test:ai-value-readiness"
+    ),
     true
   );
 });

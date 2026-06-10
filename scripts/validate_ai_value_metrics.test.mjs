@@ -228,3 +228,21 @@ test("recommendation holds when no metric matches a blueprint value route", () =
   assert.equal(recommendation.decision, "HOLD_FOR_METRIC_MAPPING");
   assert.deepEqual(recommendation.recommended_metrics, []);
 });
+
+test("rejects identifying metric source grains and metadata", () => {
+  const result = validateAiValueMetricsLibrary(
+    libraryWithMetricPatch({
+      source_system: {
+        source_type: "support_system",
+        source_name: "Support exports by user_email",
+        approved_grain: "employee_id"
+      }
+    })
+  );
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("metrics[0].source_system contains forbidden identifier metadata"),
+    true
+  );
+});

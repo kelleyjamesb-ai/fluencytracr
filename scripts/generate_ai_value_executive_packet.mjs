@@ -98,7 +98,11 @@ export function buildExecutiveValidationPacket({
   claimBoundary
 }) {
   const recommendedMetrics = metricsLibrary.metrics
-    .filter((metric) => metric.value_route === blueprint.value_routes.primary)
+    .filter(
+      (metric) =>
+        metric.value_route === blueprint.value_routes.primary &&
+        metric.allowed_claim_level !== "BLOCKED"
+    )
     .map((metric) => ({
       metric_id: metric.metric_id,
       name: metric.name,
@@ -178,6 +182,9 @@ export function validateExecutiveValidationPacket(packet) {
   }
   if (packet?.customer_facing_economic_output === true) {
     gaps.push("customer_facing_economic_output is true");
+  }
+  if (packet?.customer_facing_economic_output !== false) {
+    gaps.push("customer_facing_economic_output must be false");
   }
   const sections = packet?.sections ?? {};
   for (const section of REQUIRED_SECTIONS) {

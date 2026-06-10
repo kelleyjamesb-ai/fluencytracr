@@ -98,3 +98,49 @@ test("rejects unsafe claim text inside executive packet", () => {
     true
   );
 });
+
+test("excludes blocked metrics from executive packets", () => {
+  const blueprint = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-blueprint.json"
+  );
+  const metricsLibrary = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-metrics-library.json"
+  );
+  metricsLibrary.metrics[0].allowed_claim_level = "BLOCKED";
+  const packet = buildExecutiveValidationPacket({
+    blueprint,
+    metricsLibrary,
+    scenario: readJson(
+      "docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json"
+    ),
+    readiness: readJson(
+      "docs/contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json"
+    ),
+    claimBoundary: readJson(
+      "docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json"
+    )
+  });
+
+  assert.equal(
+    packet.sections.metrics.some(
+      (metric) => metric.metric_id === metricsLibrary.metrics[0].metric_id
+    ),
+    false
+  );
+});
+
+test("requires explicit non-customer-facing economic output flag", () => {
+  const packet = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json"
+  );
+  delete packet.customer_facing_economic_output;
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("customer_facing_economic_output must be false"),
+    true
+  );
+  assert.equal(result.feeds.local_workspace_ui, false);
+});

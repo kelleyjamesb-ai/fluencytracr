@@ -124,6 +124,59 @@ test("suppressed AI work evidence blocks downstream value language", () => {
   );
 });
 
+test("rejects unsupported AI work verdicts before value claims", () => {
+  const input = structuredClone(baseInput);
+  input.ai_work_evidence.verdict = "SUPPRESSED";
+
+  const result = validateSupportValueInput(input);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.errors.includes("Invalid ai_work_evidence.verdict: SUPPRESSED"),
+    true
+  );
+  assert.throws(
+    () => buildSupportValueEvidencePack(input),
+    /Invalid ai_work_evidence.verdict: SUPPRESSED/
+  );
+});
+
+test("rejects surfaced AI work evidence below volume or time gates", () => {
+  const lowVolume = structuredClone(baseInput);
+  lowVolume.ai_work_evidence.cohort_size = 4;
+  const shortWindow = structuredClone(baseInput);
+  shortWindow.ai_work_evidence.window_days = 59;
+
+  const lowVolumeResult = validateSupportValueInput(lowVolume);
+  const shortWindowResult = validateSupportValueInput(shortWindow);
+
+  assert.equal(lowVolumeResult.valid, false);
+  assert.equal(
+    lowVolumeResult.errors.includes(
+      "ai_work_evidence.cohort_size must be at least 5 before SURFACE"
+    ),
+    true
+  );
+  assert.equal(shortWindowResult.valid, false);
+  assert.equal(
+    shortWindowResult.errors.includes(
+      "ai_work_evidence.window_days must be at least 60 before SURFACE"
+    ),
+    true
+  );
+});
+
+test("requires at least one usable outcome signal before emitting safe claims", () => {
+  const input = structuredClone(baseInput);
+  input.outcome_evidence.metrics = {};
+
+  const pack = buildSupportValueEvidencePack(input);
+
+  assert.equal(pack.claim_confidence.overall_state, "MISSING");
+  assert.equal(pack.outcome_signal_recommendations[0].signal_id, "support_outcome_export");
+  assert.deepEqual(pack.safe_claims, []);
+});
+
 test("direct identifiers or raw text are rejected before packet generation", () => {
   const unsafeInput = structuredClone(baseInput);
   unsafeInput.sample_ticket_text = "The customer asked for a password reset.";

@@ -193,6 +193,16 @@ function collectDecisionGaps(readiness) {
   const gaps = [];
   if (readiness?.decision && !ALLOWED_DECISIONS.has(readiness.decision)) {
     gaps.push(`decision is invalid: ${readiness.decision}`);
+  } else if (readiness?.decision) {
+    const expectedDecision = deriveDecision(
+      readiness?.readiness_checks ?? {},
+      readiness?.source_coverage ?? {}
+    );
+    if (readiness.decision !== expectedDecision) {
+      gaps.push(
+        `decision ${readiness.decision} contradicts readiness checks; expected ${expectedDecision}`
+      );
+    }
   }
   if (!Array.isArray(readiness?.decision_rationale) ||
       readiness.decision_rationale.length === 0) {
@@ -238,14 +248,47 @@ function deriveAssumptionState(assumptions) {
   return states.length > 0 ? "PRESENT" : "MISSING";
 }
 
-function deriveDecision(checks) {
-  if (Object.values(checks).includes("BLOCKED")) return "STOP_FOR_GOVERNANCE_REVIEW";
-  if (checks.baseline_state === "MISSING") return "HOLD_FOR_BASELINE";
-  if (checks.workflow_state === "MISSING" || checks.metric_state === "MISSING") {
+function deriveDecision(checks, sourceCoverage = {}) {
+  const normalizedChecks = Object.fromEntries(
+    Object.entries(checks ?? {}).map(([key, value]) => [key, normalizeState(value)])
+  );
+  const normalizedCoverage = Object.fromEntries(
+    Object.entries(sourceCoverage ?? {}).map(([key, value]) => [key, normalizeState(value)])
+  );
+  if (
+    Object.values(normalizedChecks).includes("BLOCKED") ||
+    Object.values(normalizedCoverage).includes("BLOCKED")
+  ) {
+    return "STOP_FOR_GOVERNANCE_REVIEW";
+  }
+  if (normalizedChecks.baseline_state === "MISSING" ||
+      normalizedCoverage.baseline === "MISSING") {
+    return "HOLD_FOR_BASELINE";
+  }
+  if (
+    normalizedChecks.workflow_state === "MISSING" ||
+    normalizedChecks.metric_state === "MISSING" ||
+    ["ai_activity", "workflow", "outcome", "trust", "suppression"].some(
+      (lane) => normalizedCoverage[lane] !== "PRESENT"
+    )
+  ) {
     return "HOLD_FOR_SOURCE_COVERAGE";
   }
-  if (checks.assumption_state !== "PRESENT") return "HOLD_FOR_ASSUMPTIONS";
+  if (
+    normalizedChecks.assumption_state !== "PRESENT" ||
+    normalizedCoverage.assumptions !== "PRESENT"
+  ) {
+    return "HOLD_FOR_ASSUMPTIONS";
+  }
   return "READY_FOR_EXECUTIVE_VALIDATION";
+}
+
+function decisionBlocksClaimBoundary(decision) {
+  return [
+    "HOLD_FOR_SOURCE_COVERAGE",
+    "HOLD_FOR_BASELINE",
+    "STOP_FOR_GOVERNANCE_REVIEW"
+  ].includes(decision);
 }
 
 export function validateAiValueReadiness(readiness) {
@@ -266,7 +309,8 @@ export function validateAiValueReadiness(readiness) {
     valid: gaps.length === 0,
     gaps,
     feeds: {
-      claim_boundary: gaps.length === 0,
+      claim_boundary:
+        gaps.length === 0 && !decisionBlocksClaimBoundary(readiness?.decision),
       customer_facing_economic_output: false
     }
   };
@@ -277,15 +321,24 @@ export function buildEvidenceReadinessFromObjects(blueprint, metricsLibrary, sce
   const metricsRecommendation = recommendMetricsForBlueprint(blueprint, metricsLibrary);
   const scenarioValidation = validateAiValueScenario(scenario);
   const sourceCoverage = blueprint?.source_requirements?.source_coverage ?? {};
+  const sourceCoverageStates = {
+    ai_activity: normalizeState(sourceCoverage.ai_activity),
+    workflow: normalizeState(sourceCoverage.workflow),
+    outcome: normalizeState(sourceCoverage.outcome),
+    baseline: normalizeState(sourceCoverage.baseline),
+    trust: normalizeState(sourceCoverage.trust),
+    assumptions: normalizeState(sourceCoverage.assumptions),
+    suppression: normalizeState(sourceCoverage.suppression)
+  };
   const readinessChecks = {
     workflow_state: blueprintValidation.valid ? "PRESENT" : "MISSING",
     metric_state: metricsRecommendation.feeds.metrics_mapping ? "PRESENT" : "MISSING",
-    baseline_state: sourceCoverage.baseline === "PRESENT" ? "PRESENT" : "MISSING",
+    baseline_state: sourceCoverageStates.baseline === "PRESENT" ? "PRESENT" : "MISSING",
     assumption_state: deriveAssumptionState(blueprint?.assumption_ledger),
     scenario_state: scenarioValidation.valid ? "PRESENT" : "MISSING",
     governance_state: scenarioValidation.valid && blueprintValidation.valid ? "PRESENT" : "BLOCKED"
   };
-  const decision = deriveDecision(readinessChecks);
+  const decision = deriveDecision(readinessChecks, sourceCoverageStates);
   return {
     schema_version: "FT_AI_VALUE_READINESS_2026_06",
     readiness_id: "readiness_customer_support_v1",
@@ -296,15 +349,7 @@ export function buildEvidenceReadinessFromObjects(blueprint, metricsLibrary, sce
       metrics_library_id: metricsLibrary?.library_id ?? null,
       scenario_id: scenario?.scenario_id ?? null
     },
-    source_coverage: {
-      ai_activity: normalizeState(sourceCoverage.ai_activity),
-      workflow: normalizeState(sourceCoverage.workflow),
-      outcome: normalizeState(sourceCoverage.outcome),
-      baseline: normalizeState(sourceCoverage.baseline),
-      trust: normalizeState(sourceCoverage.trust),
-      assumptions: normalizeState(sourceCoverage.assumptions),
-      suppression: normalizeState(sourceCoverage.suppression)
-    },
+    source_coverage: sourceCoverageStates,
     readiness_checks: readinessChecks,
     decision,
     decision_rationale:

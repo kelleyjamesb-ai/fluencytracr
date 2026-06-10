@@ -287,6 +287,18 @@ function collectVerificationGaps(handoff) {
       "verification_routing.required_tests must include at least one test command"
     );
   }
+  if (handoff?.task_contract?.expected_output_type === "EVIDENCE_READINESS") {
+    if (!routing.required_validators?.includes("npm run validate:ai-value-readiness")) {
+      gaps.push(
+        "verification_routing.required_validators must include npm run validate:ai-value-readiness"
+      );
+    }
+    if (!routing.required_tests?.includes("npm run test:ai-value-readiness")) {
+      gaps.push(
+        "verification_routing.required_tests must include npm run test:ai-value-readiness"
+      );
+    }
+  }
   if (!Array.isArray(routing.reviewer_roles) || routing.reviewer_roles.length === 0) {
     gaps.push("verification_routing.reviewer_roles must include at least one role");
   } else {
@@ -417,8 +429,8 @@ export function buildScenarioToReadinessHandoff(scenario) {
       customer_data_access: false
     },
     verification_routing: {
-      required_validators: ["npm run validate:ai-value-scenario"],
-      required_tests: ["npm run test:ai-value-scenario"],
+      required_validators: ["npm run validate:ai-value-readiness"],
+      required_tests: ["npm run test:ai-value-readiness"],
       reviewer_roles: ["REVIEWER_AGENT", "EVALUATOR_AGENT"]
     },
     ledger: {

@@ -289,3 +289,15 @@ test("rejects realized ROI, dollarized output, direct identifiers, and productiv
   assert.equal(result.gaps.includes("Forbidden field detected: productivity_lift"), true);
   assert.equal(result.gaps.includes("Forbidden field detected: employee_id"), true);
 });
+
+test("rejects unsafe language inside scenario safe claims", () => {
+  const scenario = structuredClone(baseScenario);
+  scenario.output.safe_claims = [
+    "This scenario proves ROI and caused productivity lift."
+  ];
+
+  const result = validateAiValueScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("output.safe_claims contains forbidden claim language"), true);
+});

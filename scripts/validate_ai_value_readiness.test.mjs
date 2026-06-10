@@ -173,3 +173,39 @@ test("rejects missing blocked claims and unsafe governance boundaries", () => {
   );
   assert.equal(result.gaps.includes("governance_boundaries.hr_analytics is true"), true);
 });
+
+test("holds source coverage when outcome trust or suppression lanes are missing", () => {
+  const readiness = structuredClone(baseReadiness);
+  readiness.source_coverage.outcome = "MISSING";
+  readiness.source_coverage.trust = "MISSING";
+  readiness.source_coverage.suppression = "SUPPRESSED";
+  readiness.decision = "READY_FOR_EXECUTIVE_VALIDATION";
+
+  const result = validateAiValueReadiness(readiness);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes(
+      "decision READY_FOR_EXECUTIVE_VALIDATION contradicts readiness checks; expected HOLD_FOR_SOURCE_COVERAGE"
+    ),
+    true
+  );
+  assert.equal(result.feeds.claim_boundary, false);
+});
+
+test("rejects ready decisions when governance checks are blocked", () => {
+  const readiness = structuredClone(baseReadiness);
+  readiness.readiness_checks.governance_state = "BLOCKED";
+  readiness.decision = "READY_FOR_EXECUTIVE_VALIDATION";
+
+  const result = validateAiValueReadiness(readiness);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes(
+      "decision READY_FOR_EXECUTIVE_VALIDATION contradicts readiness checks; expected STOP_FOR_GOVERNANCE_REVIEW"
+    ),
+    true
+  );
+  assert.equal(result.feeds.claim_boundary, false);
+});

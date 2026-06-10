@@ -207,3 +207,16 @@ test("rejects missing blocked claims and unsafe governance boundaries", () => {
   assert.equal(result.gaps.includes("Forbidden field detected: sample_ticket_text"), true);
   assert.equal(result.gaps.includes("governance_boundaries.requires_roi_calculation is true"), true);
 });
+
+test("suppresses support value input unless suppression coverage is present", () => {
+  const blueprint = structuredClone(baseBlueprint);
+  blueprint.source_requirements.source_coverage.suppression = "MISSING";
+
+  const input = blueprintToSupportValueInput(blueprint);
+  const pack = buildSupportValueEvidencePack(input);
+
+  assert.equal(input.ai_work_evidence.verdict, "SUPPRESS");
+  assert.equal(input.ai_work_evidence.suppression_reason, "HIGH_AMBIGUITY");
+  assert.equal(pack.verdict, "SUPPRESS");
+  assert.deepEqual(pack.safe_claims, []);
+});

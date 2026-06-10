@@ -41,7 +41,7 @@ const GOVERNANCE_BOUNDARIES = [
 ];
 
 const FORBIDDEN_CLAIM_PATTERNS = [
-  /proved ROI/i,
+  /prov(?:ed|es) ROI/i,
   /caused productivity/i,
   /caused .*lift/i,
   /saved money/i,
@@ -49,6 +49,22 @@ const FORBIDDEN_CLAIM_PATTERNS = [
   /employee/i,
   /manager/i,
   /team .*better/i
+];
+
+const FORBIDDEN_KEY_PATTERNS = [
+  /prompt/i,
+  /response/i,
+  /message_text/i,
+  /file_content/i,
+  /email/i,
+  /user_id/i,
+  /person_id/i,
+  /employee/i,
+  /manager/i,
+  /customer_telemetry/i,
+  /raw_/i,
+  /ticket_text/i,
+  /hris/i
 ];
 
 function parseArgs(argv) {
@@ -86,6 +102,24 @@ function containsForbiddenClaimLanguage(claims) {
   );
 }
 
+function isForbiddenKey(key) {
+  return FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key));
+}
+
+function collectForbiddenFields(value, fields = new Set()) {
+  if (!value || typeof value !== "object") return fields;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectForbiddenFields(item, fields));
+    return fields;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    if (key === "governance_boundaries") continue;
+    if (isForbiddenKey(key)) fields.add(key);
+    collectForbiddenFields(nested, fields);
+  }
+  return fields;
+}
+
 function collectTopLevelGaps(boundary) {
   const gaps = [];
   for (const field of [
@@ -119,13 +153,14 @@ function collectTopLevelGaps(boundary) {
 
 function collectClaimArrayGaps(boundary) {
   const gaps = [];
-  for (const [field, label] of [
-    ["safe_claims", "claim"],
-    ["required_caveats", "caveat"]
-  ]) {
-    if (!Array.isArray(boundary?.[field]) || boundary[field].length === 0) {
-      gaps.push(`${field} must include at least one ${label}`);
-    }
+  const blockingState = ["BLOCKED", "MISSING"].includes(boundary?.claim_state);
+  if (!Array.isArray(boundary?.safe_claims) ||
+      (!blockingState && boundary.safe_claims.length === 0)) {
+    gaps.push("safe_claims must include at least one claim");
+  }
+  if (!Array.isArray(boundary?.required_caveats) ||
+      boundary.required_caveats.length === 0) {
+    gaps.push("required_caveats must include at least one caveat");
   }
   if (!Array.isArray(boundary?.caveated_claims)) {
     gaps.push("caveated_claims must be an array");
@@ -150,6 +185,9 @@ function collectBlockedClaimGaps(boundary) {
 
 function collectGovernanceGaps(boundary) {
   const gaps = [];
+  for (const field of [...collectForbiddenFields(boundary)].sort()) {
+    gaps.push(`Forbidden field detected: ${field}`);
+  }
   const boundaries = boundary?.governance_boundaries ?? {};
   for (const boundaryName of GOVERNANCE_BOUNDARIES) {
     if (boundaries[boundaryName] === true) {
@@ -175,7 +213,9 @@ export function validateAiValueClaimBoundary(boundary) {
     valid: gaps.length === 0,
     gaps,
     feeds: {
-      executive_packet: gaps.length === 0,
+      executive_packet:
+        gaps.length === 0 &&
+        !["BLOCKED", "MISSING"].includes(boundary?.claim_state),
       customer_facing_economic_output: false
     }
   };
@@ -183,27 +223,42 @@ export function validateAiValueClaimBoundary(boundary) {
 
 export function buildClaimBoundaryFromReadiness(readiness) {
   const heldForAssumptions = readiness?.decision === "HOLD_FOR_ASSUMPTIONS";
+  const readyForExecutive =
+    readiness?.decision === "READY_FOR_EXECUTIVE_VALIDATION";
+  const blocked = !heldForAssumptions && !readyForExecutive;
   return {
     schema_version: "FT_AI_VALUE_CLAIM_BOUNDARY_2026_06",
     claim_boundary_id: "claim_boundary_customer_support_v1",
     workflow_family: readiness?.workflow_family ?? null,
     value_route: readiness?.value_route ?? null,
     source_readiness_id: readiness?.readiness_id ?? null,
-    claim_state: heldForAssumptions ? "INTERNAL_ONLY" : "CAVEATED",
-    safe_claims: [
-      "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
-    ],
-    caveated_claims: heldForAssumptions
-      ? ["Customer-owned assumptions must be reviewed before executive validation."]
-      : ["This claim remains caveated because causality and realized ROI are not established."],
+    claim_state: blocked
+      ? "BLOCKED"
+      : heldForAssumptions
+        ? "INTERNAL_ONLY"
+        : "CAVEATED",
+    safe_claims: blocked
+      ? []
+      : [
+          "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
+        ],
+    caveated_claims: blocked
+      ? []
+      : heldForAssumptions
+        ? ["Customer-owned assumptions must be reviewed before executive validation."]
+        : ["This claim remains caveated because causality and realized ROI are not established."],
     blocked_claims: REQUIRED_BLOCKED_CLAIMS,
     required_caveats: [
       "This is a pre-ROI planning artifact.",
-      heldForAssumptions
+      blocked
+        ? `Readiness decision ${readiness?.decision ?? "MISSING"} blocks claim-boundary progression.`
+        : heldForAssumptions
         ? "Missing or caveated assumptions prevent external economic claims."
         : "Outcome movement cannot be attributed to AI without customer-owned validation."
     ],
-    review_state: heldForAssumptions
+    review_state: blocked
+      ? "STOP_FOR_GOVERNANCE_REVIEW"
+      : heldForAssumptions
       ? "READY_FOR_INTERNAL_REVIEW"
       : "HOLD_FOR_CUSTOMER_INPUT",
     governance_boundaries: {

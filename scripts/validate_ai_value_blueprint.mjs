@@ -299,6 +299,10 @@ export function blueprintToSupportValueInput(blueprint) {
   const aggregateInputs = blueprint.source_requirements.approved_aggregate_inputs;
   const activity = aggregateInputs.ai_activity ?? {};
   const trust = aggregateInputs.trust_and_friction ?? {};
+  const suppressionState = normalizeState(
+    blueprint.source_requirements.source_coverage.suppression
+  );
+  const canSurface = suppressionState === "PRESENT";
   return {
     schema_version: "FT_AI_VALUE_SUPPORT_INPUT_2026_06",
     org_id: blueprint.org_id,
@@ -306,11 +310,8 @@ export function blueprintToSupportValueInput(blueprint) {
     workflow_family: blueprint.workflow_family,
     workflow_value_hypothesis: blueprint.value_hypothesis,
     ai_work_evidence: {
-      verdict:
-        normalizeState(blueprint.source_requirements.source_coverage.suppression) === "SUPPRESSED"
-          ? "SUPPRESS"
-          : "SURFACE",
-      suppression_reason: null,
+      verdict: canSurface ? "SURFACE" : "SUPPRESS",
+      suppression_reason: canSurface ? null : "HIGH_AMBIGUITY",
       cohort_size: aggregateInputs.case_population?.eligible_cases,
       window_days: 61,
       aggregate_patterns: {
