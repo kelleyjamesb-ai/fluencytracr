@@ -272,3 +272,9 @@
 - Completed: Added a Governed Scenario Builder to `/ai-value-journey` that shows customer-owned assumptions, baseline/comparison window status, customer outcome export status, scenario-band readiness, and unlock conditions for stronger value language.
 - Verified: targeted Journey red/green test, full Journey test file, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright desktop/mobile mocked-route checks with no console errors or horizontal overflow.
 - Next focus: Discovery -> Journey continuity so the client-selected Blueprint workflow carries into Journey, Value Workshop, Scenario Builder, and Executive Operating Packet.
+
+## 2026-06-10 (UTC) — Codex (AI Value workflow continuity)
+
+- Completed: Added a Journey-derived selected-workflow handoff so the latest Blueprint workflow carries into `/ai-value-journey` and `/ai-value-workspace` with workflow name, value route, evidence status, downstream feed summary, and missing-workflow guidance before value modeling.
+- Verified: focused red/green Journey + Workspace continuity tests, affected page suites, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright CLI mocked-route checks for Journey/Workspace at desktop/mobile widths with no console errors, no unsafe labels, and no horizontal overflow.
+- Next focus: Governed `value_model` / `roi_scenario` contract before any stronger economic or dollarized output.

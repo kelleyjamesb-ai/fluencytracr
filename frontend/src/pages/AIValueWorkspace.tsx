@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
@@ -74,6 +75,45 @@ export const AIValueWorkspace = () => {
       </header>
 
       <AiValueJourneyRail stages={journey.stages} current="workshop" />
+
+      {!journey.loading && (
+        <section className="ai-value-handoff-panel" aria-label="Selected workflow from Journey">
+          <div>
+            <p className="eyebrow">Journey Handoff</p>
+            <h2>Selected workflow from Journey</h2>
+            <p>
+              {journey.workflowHandoff.selected
+                ? "This is the same workflow selected in Blueprint and summarized in the Journey."
+                : journey.workflowHandoff.summary}
+            </p>
+          </div>
+          <div className="ai-value-handoff-facts">
+            <div>
+              <span className="ai-value-map-label">Workflow</span>
+              <strong>{journey.workflowHandoff.workflowName}</strong>
+            </div>
+            <div>
+              <span className="ai-value-map-label">Value route</span>
+              <strong>{journey.workflowHandoff.valueRouteLabel}</strong>
+            </div>
+            <div>
+              <span className="ai-value-map-label">Evidence status</span>
+              <strong>{journey.workflowHandoff.evidenceStatus}</strong>
+            </div>
+          </div>
+          <div className="ai-value-chip-row">
+            {journey.workflowHandoff.selected ? (
+              <Link className="ai-value-step" to="/ai-value-journey">
+                Back to Journey
+              </Link>
+            ) : (
+              <Link className="ai-value-step" to="/ai-value-discovery">
+                Open Blueprint workshop
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
 
       {errorMessage && (
         <p role="alert" className="ai-value-panel">

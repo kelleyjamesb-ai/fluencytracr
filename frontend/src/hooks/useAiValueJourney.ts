@@ -100,10 +100,20 @@ export interface ClientValueQuestion {
   detail: string;
 }
 
+export interface WorkflowHandoff {
+  selected: boolean;
+  workflowName: string;
+  valueRouteLabel: string;
+  evidenceStatus: string;
+  summary: string;
+  nextAction: string;
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
   stages: JourneyStage[];
+  workflowHandoff: WorkflowHandoff;
   valueQuestions: ClientValueQuestion[];
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
@@ -531,6 +541,42 @@ function buildClientValueQuestions(params: {
   ];
 }
 
+function buildWorkflowHandoff(params: {
+  blueprint: Record<string, any> | null;
+  metricsLibrary: Record<string, any> | null;
+  opportunities: ValueOpportunity[];
+}): WorkflowHandoff {
+  const { blueprint, metricsLibrary, opportunities } = params;
+  if (!blueprint) {
+    return {
+      selected: false,
+      workflowName: "No workflow selected yet",
+      valueRouteLabel: "Choose the first workflow",
+      evidenceStatus: "Value modeling paused",
+      summary: "Finish the Blueprint workshop to choose the first client workflow before modeling value.",
+      nextAction: "Open Blueprint workshop"
+    };
+  }
+
+  const primaryRoute = String(
+    blueprint?.value_routes?.primary ?? opportunities[0]?.valueRouteLabel ?? "UNCLASSIFIED"
+  );
+  const valueRouteLabel =
+    opportunities[0]?.valueRouteLabel ??
+    VALUE_ROUTE_LABELS[primaryRoute] ??
+    VALUE_ROUTE_LABELS.UNCLASSIFIED;
+
+  return {
+    selected: true,
+    workflowName: workflowLabel(blueprint, metricsLibrary),
+    valueRouteLabel,
+    evidenceStatus: opportunities[0]?.status ?? "Outcome mapping not started",
+    summary:
+      "Blueprint workflow feeds outcome mapping, evidence readiness, scenario builder, and executive packet.",
+    nextAction: "Continue in value workshop"
+  };
+}
+
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
@@ -699,6 +745,13 @@ export const useAiValueJourney = (): AiValueJourney => {
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState<string | null>(null);
   const [stages, setStages] = useState<JourneyStage[]>(deriveStages({ byType: {}, opportunities: [] }));
+  const [workflowHandoff, setWorkflowHandoff] = useState<WorkflowHandoff>(() =>
+    buildWorkflowHandoff({
+      blueprint: null,
+      metricsLibrary: null,
+      opportunities: []
+    })
+  );
   const [valueQuestions, setValueQuestions] = useState<ClientValueQuestion[]>([]);
   const [evidenceItems, setEvidenceItems] = useState<EvidenceReviewItem[]>([]);
   const [opportunities, setOpportunities] = useState<ValueOpportunity[]>([]);
@@ -747,6 +800,11 @@ export const useAiValueJourney = (): AiValueJourney => {
         maybeFetchPayload(role, latest(byType.value_scenario))
       ]);
       const mappedOpportunities = buildValueOpportunities(metricsLibrary, blueprint, items);
+      const handoff = buildWorkflowHandoff({
+        blueprint,
+        metricsLibrary,
+        opportunities: mappedOpportunities
+      });
       const plan = buildEvidenceScenarioPlan({
         readiness,
         scenario,
@@ -766,6 +824,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
+      setWorkflowHandoff(handoff);
       setValueQuestions(questions);
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
@@ -825,6 +884,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     loading,
     clientName,
     stages,
+    workflowHandoff,
     valueQuestions,
     evidenceItems,
     opportunities,

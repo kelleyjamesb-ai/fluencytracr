@@ -284,6 +284,30 @@ describe("AIValueJourney", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
+  it("shows the selected Blueprint workflow as the handoff into downstream value work", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const handoff = screen.getByRole("region", { name: /Selected workflow handoff/i });
+    expect(within(handoff).getByRole("heading", { name: /Selected Workflow Handoff/i })).toBeInTheDocument();
+    expect(within(handoff).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(handoff).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(handoff).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(
+      within(handoff).getByText(/Blueprint workflow feeds outcome mapping, evidence readiness, scenario builder, and executive packet/i)
+    ).toBeInTheDocument();
+    expect(within(handoff).getByRole("link", { name: /Continue in value workshop/i })).toBeInTheDocument();
+    expect(within(handoff).getByRole("link", { name: /Refine Blueprint/i })).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("object", "_", "id")
+    ]);
+  });
+
   it("turns metrics into outcome and ROI opportunity mapping cards", async () => {
     const { container } = renderPage();
 

@@ -104,6 +104,36 @@ export const AIValueJourney = () => {
         </article>
       </section>
 
+      <section className="ai-value-handoff-panel" aria-label="Selected workflow handoff">
+        <div>
+          <p className="eyebrow">Blueprint Handoff</p>
+          <h2>Selected Workflow Handoff</h2>
+          <p>{journey.workflowHandoff.summary}</p>
+        </div>
+        <div className="ai-value-handoff-facts">
+          <div>
+            <span className="ai-value-map-label">Workflow</span>
+            <strong>{journey.workflowHandoff.workflowName}</strong>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Value route</span>
+            <strong>{journey.workflowHandoff.valueRouteLabel}</strong>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Evidence status</span>
+            <strong>{journey.workflowHandoff.evidenceStatus}</strong>
+          </div>
+        </div>
+        <div className="ai-value-chip-row">
+          <Link className="ai-value-step" to="/ai-value-workspace">
+            Continue in value workshop
+          </Link>
+          <Link className="ai-value-step" to="/ai-value-discovery">
+            Refine Blueprint
+          </Link>
+        </div>
+      </section>
+
       <section className="ai-value-client-questions" aria-label="Client value questions">
         <div className="ai-value-section-head">
           <div>

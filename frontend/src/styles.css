@@ -2048,6 +2048,47 @@ body {
   margin-bottom: 14px;
 }
 
+.ai-value-handoff-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(300px, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-handoff-panel h2,
+.ai-value-handoff-panel p {
+  margin: 0;
+}
+
+.ai-value-handoff-panel p {
+  color: #4b556b;
+}
+
+.ai-value-handoff-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-handoff-facts div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e4e6ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-handoff-facts strong {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
 .ai-value-client-questions {
   padding: 16px;
   border: 1px solid #dbe0ef;
@@ -2514,6 +2555,7 @@ body {
   .ai-value-grid,
   .ai-value-columns,
   .ai-value-band-grid,
+  .ai-value-handoff-panel,
   .ai-value-journey-summary,
   .ai-value-workbench-grid,
   .ai-value-boundary-grid {
@@ -2534,6 +2576,7 @@ body {
 
   .ai-value-opportunity-row,
   .ai-value-review-card,
+  .ai-value-handoff-facts,
   .ai-value-client-question-grid,
   .ai-value-map-grid,
   .ai-value-evidence-plan-grid,

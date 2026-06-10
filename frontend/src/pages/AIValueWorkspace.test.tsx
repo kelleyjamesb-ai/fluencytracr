@@ -1,7 +1,36 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AIValueWorkspace } from "./AIValueWorkspace";
+
+const uiTerm = (...parts: string[]) => parts.join("");
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const expectNoUnsafeUiLanguage = (
+  text: string | null | undefined,
+  extraTerms: string[] = []
+) => {
+  const terms = [
+    uiTerm("workflow", "_", "state"),
+    uiTerm("metric", "_", "state"),
+    uiTerm("claim", " ", "boundary"),
+    uiTerm("raw", "_", "prompt"),
+    uiTerm("raw", "_", "response"),
+    uiTerm("employee", "_", "id"),
+    uiTerm("user", "_", "id"),
+    uiTerm("manager", "_", "view"),
+    uiTerm("team", "_", "ranking"),
+    uiTerm("productivity", "_", "score"),
+    uiTerm("Glean", " ", "proved", " ", "ROI"),
+    ...extraTerms
+  ];
+  expect(text ?? "").not.toMatch(new RegExp(terms.map(escapeRegExp).join("|"), "i"));
+};
+
+const jsonResponse = (body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json" }
+  });
 
 describe("AIValueWorkspace", () => {
   it("renders a client-facing AI value workshop instead of internal object names", () => {
@@ -128,12 +157,6 @@ describe("AIValueWorkspace live evidence mode", () => {
       }
     }
   };
-
-  const jsonResponse = (body: unknown) =>
-    new Response(JSON.stringify(body), {
-      status: 200,
-      headers: { "content-type": "application/json" }
-    });
 
   beforeEach(() => {
     vi.stubGlobal(
@@ -296,5 +319,146 @@ describe("AIValueWorkspace live evidence mode", () => {
       );
     });
     expect(screen.getByText("Example content", { selector: "span" })).toBeInTheDocument();
+  });
+});
+
+describe("AIValueWorkspace journey continuity", () => {
+  const journeyObjects = [
+    {
+      object_type: "blueprint",
+      object_id: "bp_support",
+      workflow_family: "customer_support_case_resolution",
+      valid: true,
+      validation: {}
+    },
+    {
+      object_type: "metrics_library",
+      object_id: "metrics_support",
+      workflow_family: "customer_support_case_resolution",
+      valid: true,
+      validation: { metric_count: 1 }
+    },
+    {
+      object_type: "evidence_readiness",
+      object_id: "readiness_v1",
+      workflow_family: "customer_support_case_resolution",
+      valid: true,
+      validation: { decision: "HOLD_FOR_ASSUMPTIONS" }
+    },
+    {
+      object_type: "outcome_evidence_export",
+      object_id: "export_v1",
+      workflow_family: "customer_support_case_resolution",
+      valid: true,
+      validation: { review_state: "SUBMITTED" }
+    }
+  ];
+
+  const journeyDetails: Record<string, Record<string, unknown>> = {
+    "blueprint/bp_support": {
+      workflow_family: "customer_support_case_resolution",
+      workflow_name: "Support case resolution",
+      value_routes: { primary: "CAPACITY_CREATION" }
+    },
+    "metrics_library/metrics_support": {
+      workflow_family: "customer_support_case_resolution",
+      metrics: [
+        {
+          metric_id: "support_resolution_hours",
+          workflow_family: "customer_support_case_resolution",
+          name: "Median resolution time",
+          value_route: "CAPACITY_CREATION",
+          source_system: {
+            source_type: "support_system",
+            source_name: "Support case management system",
+            approved_grain: "aggregate workflow window"
+          },
+          measurement_unit: "hours",
+          baseline_rule: "Compare against an approved pre-period window.",
+          allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION"
+        }
+      ]
+    },
+    "evidence_readiness/readiness_v1": {
+      source_coverage: {
+        ai_activity: "PRESENT",
+        workflow: "PRESENT",
+        baseline: "MISSING",
+        assumptions: "CAVEATED",
+        trust: "PRESENT",
+        suppression: "PRESENT"
+      },
+      next_actions: [
+        "Review missing staffing, rollout, baseline, and metric assumptions with customer owners."
+      ]
+    }
+  };
+
+  const stubJourneyFetch = (objects: Array<Record<string, unknown>>) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        for (const [path, payload] of Object.entries(journeyDetails)) {
+          if (url.includes(`/ai-value/objects/${path}`)) {
+            const [object_type, object_id] = path.split("/");
+            return jsonResponse({
+              object_type,
+              object_id,
+              schema_version: "test",
+              workflow_family: "customer_support_case_resolution",
+              valid: true,
+              validation: {},
+              updated_at: "2026-06-10T00:00:00Z",
+              payload
+            });
+          }
+        }
+        if (url.includes("/ai-value/objects")) {
+          return jsonResponse({ objects });
+        }
+        return jsonResponse({ objects: [] });
+      })
+    );
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("opens with the same selected Blueprint workflow summarized by the Journey", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const handoff = screen.getByRole("region", { name: /Selected workflow from Journey/i });
+    expect(within(handoff).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(handoff).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(handoff).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(
+      within(handoff).getByText(/This is the same workflow selected in Blueprint and summarized in the Journey/i)
+    ).toBeInTheDocument();
+    expect(within(handoff).getByRole("link", { name: /Back to Journey/i })).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {
+    stubJourneyFetch([]);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const handoff = screen.getByRole("region", { name: /Selected workflow from Journey/i });
+    expect(within(handoff).getByText(/No workflow selected yet/i)).toBeInTheDocument();
+    expect(
+      within(handoff).getByText(/Finish the Blueprint workshop to choose the first client workflow before modeling value/i)
+    ).toBeInTheDocument();
+    expect(within(handoff).getByRole("link", { name: /Open Blueprint workshop/i })).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent);
   });
 });

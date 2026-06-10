@@ -75,73 +75,77 @@ not bury ROI math inside the executive packet or UI.
 Completed latest slice:
 
 ```text
-Governed ROI / Value Scenario UX
+Discovery -> Journey continuity
 ```
 
 What is now in place:
 
-- `/ai-value-journey` includes a sponsor-readable Governed Scenario Builder.
-- The builder shows customer-owned assumptions, baseline/comparison window
-  status, customer outcome export status, scenario-band readiness, and unlock
-  conditions for stronger value language.
-- Scenario bands are explicitly framed as planning ranges, not proof.
-- The view model derives this from existing readiness, scenario, evidence-review,
-  and opportunity objects.
+- `useAiValueJourney` now derives a selected-workflow handoff from the latest
+  Blueprint, Metrics Library, and evidence-review objects.
+- `/ai-value-journey` shows a Selected Workflow Handoff with workflow name,
+  value route, evidence status, and links to continue or refine the Blueprint.
+- `/ai-value-workspace` opens with the same Journey-derived workflow handoff.
+- Missing-workflow states tell the client to finish Blueprint before modeling
+  value.
+- Browser checks verified the handoff at desktop and mobile widths with mocked
+  AI Value API objects, no console errors, no horizontal overflow, and no unsafe
+  internal labels.
 
 Recommended next slice:
 
 ```text
-Discovery -> Journey continuity
+Governed value_model / roi_scenario contract
 ```
 
 Goal:
 
-Make the first workflow selected in Discovery / Blueprint visibly carry into
-the Journey, Value Workshop, Scenario Builder, and Executive Operating Packet so
-the software feels like one guided client workspace instead of adjacent modules.
+Define the technical contract for governed ROI/value modeling before the product
+shows any stronger economic output. The contract should make customer-owned
+assumptions, baseline/comparison windows, source coverage, value route, scenario
+bands, allowed language, and blocked claims explicit.
 
 Acceptance criteria:
 
-- The selected Blueprint workflow appears consistently across Discovery,
-  Journey, Value Workshop, Scenario Builder, and Executive Packet.
-- The Journey explains which workflow object feeds each downstream object.
-- The Value Workshop opens with the same workflow, value route, and evidence
-  status the Journey just summarized.
-- Empty/missing states tell the client what to finish in Blueprint before
-  modeling value.
-- No unsupported ROI proof, causality claim, individual scoring, HR analytics,
-  productivity ranking, or customer-facing dollarized output is introduced.
-- Tests cover the handoff path and missing-workflow states.
+- Add a schema or contract for a governed `value_model` / `roi_scenario` object.
+- Validate metric references, value route, baseline/comparison rules,
+  customer-owned assumptions, source coverage, scenario bands, and allowed claim
+  level.
+- Reject raw prompts/responses, direct identifiers, unsupported ROI proof,
+  causality claims, productivity ranking, HR analytics, and individual scoring.
+- Keep all outputs labeled as modeled scenarios or value hypotheses unless
+  customer-owned outcome evidence and human review explicitly support stronger
+  language.
+- Add seeded Customer Support fixtures and focused tests/validators.
+- Do not add production connectors, autonomous agent actions, or customer-facing
+  dollarized output in this slice.
 
 Suggested files:
 
 - `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/hooks/useAiValueJourney.ts`
 - `frontend/src/lib/aiValueViewModel.ts`
+- `schemas/ai-value-intelligence/*`
+- `docs/contracts/ai-value-intelligence/*`
+- `scripts/*ai_value*`
+- `shared/src/aiValueEngine/*`
 - `frontend/src/components/AiValueJourneyRail.tsx`
 - `frontend/src/pages/AIValueWorkspace.tsx`
-- `shared/src/aiValueEngine/valueChain.ts`
-- `shared/src/aiValueEngine/readiness.ts`
-- `shared/src/aiValueEngine/executivePacket.ts`
-- `backend/src/ai_value_routes.ts`
-- `docs/contracts/ai-value-intelligence/examples/*`
 
 ## Next-Agent Prompt
 
 Use this prompt to continue:
 
 ```text
-Create the Discovery -> Journey continuity slice for the AI Value Platform.
-Make the first selected Blueprint workflow carry cleanly into /ai-value-journey,
-/ai-value-workspace, the Governed Scenario Builder, and the Executive Operating
-Packet. The user should understand which workflow was chosen with the client,
-which value route it maps to, what Glean/FluencyTracr can show now, what
-customer-owned evidence is missing, and what the next action is. Keep all
-language client-facing. Keep ROI governed: scenario/readiness language is
-allowed, but no unsupported ROI proof, causality claims, individual scoring, HR
-analytics, productivity ranking, autonomous customer actions, or customer-facing
-dollar output. Add focused frontend tests and keep existing AI value and
-agent-harness checks green.
+Create the governed value_model / roi_scenario contract slice for the AI Value
+Platform. Define the reusable object that turns a selected Blueprint workflow,
+Metrics Library route, customer-owned assumptions, baseline/comparison windows,
+source coverage, scenario bands, evidence status, and safe value language into a
+validated value-modeling artifact. Keep it local and governed: no production
+connector, no autonomous customer actions, no raw prompts/responses, no direct
+identifiers, no unsupported ROI proof, no causality claim, no individual
+scoring, no HR analytics, no productivity ranking, and no customer-facing
+dollarized output. Add schemas/fixtures/validators/tests and keep the existing
+frontend, build, and AI value agent-harness checks green.
 ```
 
 ## What To Validate First
