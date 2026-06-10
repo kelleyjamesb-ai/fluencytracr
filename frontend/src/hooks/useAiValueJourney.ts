@@ -57,12 +57,28 @@ export interface ValueOpportunity {
   claimBoundary: string;
 }
 
+export interface ScenarioBandPlan {
+  label: string;
+  interpretation: string;
+}
+
+export interface EvidenceScenarioPlan {
+  decisionLabel: string;
+  canTrust: string[];
+  needsClientEvidence: string[];
+  scenarioBands: ScenarioBandPlan[];
+  scenarioSummary: string;
+  safeValueLanguage: string;
+  nextClientAction: string;
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
   stages: JourneyStage[];
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
+  evidenceScenarioPlan: EvidenceScenarioPlan;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
@@ -108,6 +124,23 @@ const CLAIM_LABELS: Record<string, string> = {
   BLOCKED: "Blocked from value claims."
 };
 
+const SCENARIO_BAND_LABELS: Record<string, string> = {
+  CONSERVATIVE: "Conservative",
+  BASE_CASE: "Base case",
+  EXPANDED: "Expanded"
+};
+
+const CLAIM_STATE_LABELS: Record<string, string> = {
+  CAVEATED_VALUE_INVESTIGATION:
+    "Caveated value investigation: model the opportunity; do not present realized ROI or causality.",
+  SOURCE_READINESS_ONLY:
+    "Source readiness only: use this for planning, not customer-facing value claims.",
+  INTERNAL_ONLY:
+    "Internal planning only: keep the scenario inside the working team until evidence improves.",
+  BLOCKED:
+    "Blocked from value language until evidence, assumptions, and governance gaps are resolved."
+};
+
 const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
 
 const reviewStateOf = (summary: AiValueObjectSummary): string =>
@@ -133,6 +166,9 @@ const sourceName = (metric: Record<string, any>): string =>
 
 const approvedGrain = (metric: Record<string, any>): string =>
   String(metric?.source_system?.approved_grain ?? "approved aggregate window");
+
+const coverageState = (payload: Record<string, any> | null, lane: string): string =>
+  String(payload?.source_coverage?.[lane] ?? "MISSING").toUpperCase();
 
 const workflowLabel = (
   blueprint: Record<string, any> | null,
@@ -236,6 +272,77 @@ function buildValueOpportunities(
           "Governance review required before this becomes customer-facing."
       };
     });
+}
+
+function buildEvidenceScenarioPlan(params: {
+  readiness: Record<string, any> | null;
+  scenario: Record<string, any> | null;
+  evidenceItems: EvidenceReviewItem[];
+  opportunities: ValueOpportunity[];
+}): EvidenceScenarioPlan {
+  const { readiness, scenario, evidenceItems, opportunities } = params;
+  const acceptedEvidence = evidenceItems.some((item) => item.reviewState === "ACCEPTED");
+  const submittedEvidence = evidenceItems.some((item) => item.reviewState === "SUBMITTED");
+
+  const canTrust = compact([
+    ["ai_activity", "workflow", "trust", "suppression"].some(
+      (lane) => coverageState(readiness, lane) === "PRESENT"
+    ) && "FluencyTracr aggregate evidence",
+    opportunities.length > 0 && "Blueprint value route mapped to outcome and ROI opportunities",
+    acceptedEvidence && "Accepted customer outcome export"
+  ]);
+
+  const needsClientEvidence = compact([
+    coverageState(readiness, "baseline") !== "PRESENT" &&
+      "Baseline window and comparison period from the customer system.",
+    !acceptedEvidence &&
+      (submittedEvidence
+        ? "Customer export awaiting review"
+        : "Customer outcome export for the selected metric."),
+    coverageState(readiness, "assumptions") !== "PRESENT" &&
+      "Customer-owned assumptions for staffing, rollout, process, and metric definition."
+  ]);
+
+  const scenarioBands = (Array.isArray(scenario?.input?.scenario_bands)
+    ? scenario.input.scenario_bands
+    : []
+  ).map((band: Record<string, any>) => ({
+    label: SCENARIO_BAND_LABELS[String(band.band)] ?? humanize(String(band.band ?? "Scenario")),
+    interpretation: String(band.interpretation ?? "Scenario interpretation needs client review.")
+  }));
+
+  const claimState = String(scenario?.output?.claim_state ?? "BLOCKED");
+  const nextAction = Array.isArray(readiness?.next_actions) && readiness.next_actions.length > 0
+    ? String(readiness.next_actions[0])
+    : submittedEvidence
+      ? "Review submitted customer evidence with the data owner."
+      : "Collect baseline, comparison, assumptions, and source coverage before strengthening value language.";
+
+  return {
+    decisionLabel:
+      DECISION_LABELS[String(readiness?.decision ?? "")] ??
+      (acceptedEvidence
+        ? "Ready for caveated review"
+        : submittedEvidence
+          ? "Customer evidence awaiting review"
+          : "Needs client evidence"),
+    canTrust:
+      canTrust.length > 0
+        ? canTrust
+        : ["Blueprint and Metrics define the planned evidence path."],
+    needsClientEvidence:
+      needsClientEvidence.length > 0
+        ? needsClientEvidence
+        : ["No major evidence gap for the current scenario."],
+    scenarioBands,
+    scenarioSummary: String(
+      scenario?.output?.scenario_summary ??
+        "Scenario draft will appear after the value opportunity is modeled."
+    ),
+    safeValueLanguage:
+      CLAIM_STATE_LABELS[claimState] ?? CLAIM_STATE_LABELS.BLOCKED,
+    nextClientAction: nextAction
+  };
 }
 
 function deriveStages(params: {
@@ -408,6 +515,15 @@ export const useAiValueJourney = (): AiValueJourney => {
   const [stages, setStages] = useState<JourneyStage[]>(deriveStages({ byType: {}, opportunities: [] }));
   const [evidenceItems, setEvidenceItems] = useState<EvidenceReviewItem[]>([]);
   const [opportunities, setOpportunities] = useState<ValueOpportunity[]>([]);
+  const [evidenceScenarioPlan, setEvidenceScenarioPlan] =
+    useState<EvidenceScenarioPlan>(() =>
+      buildEvidenceScenarioPlan({
+        readiness: null,
+        scenario: null,
+        evidenceItems: [],
+        opportunities: []
+      })
+    );
   const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -424,16 +540,25 @@ export const useAiValueJourney = (): AiValueJourney => {
       }
 
       const items = buildEvidenceItems(byType);
-      const [engagement, blueprint, metricsLibrary] = await Promise.all([
+      const [engagement, blueprint, metricsLibrary, readiness, scenario] = await Promise.all([
         maybeFetchPayload(role, latest(byType.engagement)),
         maybeFetchPayload(role, latest(byType.blueprint)),
-        maybeFetchPayload(role, latest(byType.metrics_library))
+        maybeFetchPayload(role, latest(byType.metrics_library)),
+        maybeFetchPayload(role, latest(byType.evidence_readiness)),
+        maybeFetchPayload(role, latest(byType.value_scenario))
       ]);
       const mappedOpportunities = buildValueOpportunities(metricsLibrary, blueprint, items);
+      const plan = buildEvidenceScenarioPlan({
+        readiness,
+        scenario,
+        evidenceItems: items,
+        opportunities: mappedOpportunities
+      });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
+      setEvidenceScenarioPlan(plan);
       setPacketIds((byType.executive_packet ?? []).map((summary) => summary.object_id));
 
       setClientName(
@@ -490,6 +615,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     stages,
     evidenceItems,
     opportunities,
+    evidenceScenarioPlan,
     packetIds,
     errorMessage,
     refresh,

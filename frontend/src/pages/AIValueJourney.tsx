@@ -216,7 +216,7 @@ export const AIValueJourney = () => {
                       <p>{opportunity.scenarioHandoff}</p>
                     </div>
                     <div className="ai-value-map-cell ai-value-map-cell-wide">
-                      <span className="ai-value-map-label">Claim boundary</span>
+                      <span className="ai-value-map-label">Safe value language</span>
                       <p>{opportunity.claimBoundary}</p>
                       <small>{opportunity.nextValidationStep}</small>
                     </div>
@@ -229,6 +229,64 @@ export const AIValueJourney = () => {
                 capacity, quality, risk, experience, or growth opportunities.
               </p>
             )}
+          </div>
+        </article>
+
+        <article className="ai-value-panel ai-value-evidence-scenario-panel">
+          <div className="ai-value-section-head">
+            <div>
+              <p className="eyebrow">Evidence Readiness</p>
+              <h2>Evidence Readiness &amp; Scenario Plan</h2>
+              <p>
+                Shows what can be trusted now, what the client still needs to
+                provide, and how the ROI opportunity can move into a governed
+                scenario without turning into proof.
+              </p>
+            </div>
+            <StatusPill label={journey.evidenceScenarioPlan.decisionLabel} tone="warn" />
+          </div>
+
+          <div className="ai-value-evidence-plan-grid">
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Can trust now</span>
+              <ul>
+                {journey.evidenceScenarioPlan.canTrust.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Needs client evidence</span>
+              <ul>
+                {journey.evidenceScenarioPlan.needsClientEvidence.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="ai-value-map-cell ai-value-map-cell-wide">
+              <span className="ai-value-map-label">Value scenario</span>
+              <p>{journey.evidenceScenarioPlan.scenarioSummary}</p>
+              <div className="ai-value-scenario-band-list">
+                {journey.evidenceScenarioPlan.scenarioBands.length > 0 ? (
+                  journey.evidenceScenarioPlan.scenarioBands.map((band) => (
+                    <div className="ai-value-scenario-band" key={band.label}>
+                      <strong>{band.label}</strong>
+                      <p>{band.interpretation}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>Scenario bands appear after the first opportunity is modeled.</p>
+                )}
+              </div>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Safe value language</span>
+              <p>{journey.evidenceScenarioPlan.safeValueLanguage}</p>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Next client action</span>
+              <p>{journey.evidenceScenarioPlan.nextClientAction}</p>
+            </div>
           </div>
         </article>
 
@@ -275,7 +333,7 @@ export const AIValueJourney = () => {
         </article>
 
         <article className="ai-value-panel ai-value-boundary-panel">
-          <h2>Claim Boundary</h2>
+          <h2>Safe Value Language</h2>
           <div className="ai-value-boundary-grid">
             <div>
               <h3>Allowed Now</h3>

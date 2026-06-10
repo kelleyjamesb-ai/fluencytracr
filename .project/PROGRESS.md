@@ -79,6 +79,8 @@
 
 - AI Value Platform metrics product slice (user-requested, 2026-06-10): AI Value Journey now renders Metrics as client-facing Outcome & ROI Opportunity Mapping cards instead of a raw internal table. Each card ties the Blueprint value route to an outcome metric, customer system, approved aggregate grain, Glean evidence, scenario handoff, and claim boundary, preserving the distinction between opportunity modeling and customer-owned outcome proof. Verification: `npm test --workspace frontend -- AIValueJourney.test.tsx`, `npm test --workspace frontend`, `npm run build --workspace frontend`, `git diff --check`.
 
+- AI Value Platform evidence/scenario product slice (user-requested, 2026-06-10): AI Value Journey now includes a client-facing Evidence Readiness & Scenario Plan that translates readiness/source-coverage and scenario objects into "can trust now," "needs client evidence," scenario bands, safe value language, and next client action. The visible "Claim Boundary" label was replaced with Safe Value Language while preserving governance boundaries in the underlying model. Verification: red/green `npm test --workspace frontend -- AIValueJourney.test.tsx`, `npm test --workspace frontend`, `npm run build --workspace frontend`, `git diff --check`, and local browser route/render check at `http://127.0.0.1:5173/ai-value-journey`.
+
 ## Current Status
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.
@@ -127,7 +129,7 @@
 
 ## Next Step
 
-- AI Value Platform: continue `ai-value-platform-product-spine-v1`. Product Spine V1, the Blueprint workshop canvas, and Metrics as Outcome & ROI Opportunity Mapping are now in place; next bounded slice should make the Evidence readiness and governed value scenario areas feel like plain-English product workflows fed by Blueprint and Metrics, not internal database states. Keep FluencyTracr as the aggregate evidence layer; ROI-style output stays bounded to governed opportunity/scenario language with customer-owned assumptions/evidence and explicit claim review.
+- AI Value Platform: continue `ai-value-platform-product-spine-v1`. Product Spine V1, the Blueprint workshop canvas, Metrics as Outcome & ROI Opportunity Mapping, and Evidence Readiness & Scenario Plan are now in place. Next bounded slice should make the Executive Readout / next-action experience feel like a sponsor-facing operating packet, with clear handoff into agentic follow-up, renewal/expansion/pilot decisions, and governed value language. Keep FluencyTracr as the aggregate evidence layer; ROI-style output stays bounded to governed opportunity/scenario language with customer-owned assumptions/evidence and explicit claim review.
 
 - If the human accepts the org-agnostic commercialization track, the next bounded step is review/commit/PR for the docs-only AI Work Evidence concept and pilot package. Keep any later live customer pilot blocked until customer-side aggregate transformation, source coverage declarations, approved aggregate labels, and customer-owned outcome metrics are available.
 - Add a new bounded queue item before starting the next durable implementation track; the original 7-phase blueprint queue is complete.

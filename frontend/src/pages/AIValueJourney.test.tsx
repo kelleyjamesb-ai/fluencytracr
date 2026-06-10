@@ -126,6 +126,47 @@ const detailPayloads: Record<string, Record<string, unknown>> = {
         allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION"
       }
     ]
+  },
+  "evidence_readiness/readiness_v1": {
+    readiness_id: "readiness_v1",
+    workflow_family: "customer_support_case_resolution",
+    value_route: "CAPACITY_CREATION",
+    source_coverage: {
+      ai_activity: "PRESENT",
+      workflow: "PRESENT",
+      outcome: "CAVEATED",
+      baseline: "MISSING",
+      trust: "PRESENT",
+      assumptions: "CAVEATED",
+      suppression: "PRESENT"
+    },
+    next_actions: [
+      "Review missing staffing, rollout, baseline, and metric assumptions with customer owners."
+    ]
+  },
+  "value_scenario/scenario_support": {
+    scenario_id: "scenario_support",
+    input: {
+      scenario_bands: [
+        {
+          band: "CONSERVATIVE",
+          interpretation: "Use the narrowest customer-owned assumption set."
+        },
+        {
+          band: "BASE_CASE",
+          interpretation: "Use the approved baseline and comparison window."
+        },
+        {
+          band: "EXPANDED",
+          interpretation: "Use later customer validation after assumptions are reviewed."
+        }
+      ]
+    },
+    output: {
+      claim_state: "CAVEATED_VALUE_INVESTIGATION",
+      scenario_summary:
+        "Governed value scenario draft for customer-owned validation of aggregate workflow metrics."
+    }
   }
 };
 
@@ -207,13 +248,41 @@ describe("AIValueJourney", () => {
     expect(screen.getAllByText(/Customer system to connect/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/What Glean can show/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Scenario handoff/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Claim boundary/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Safe value language/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Support case resolution/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/aggregate workflow window/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Model as a governed value scenario/i).length).toBeGreaterThan(0);
 
     expect(container.textContent).not.toMatch(
-      /metric_id|metrics_library|schema_version|Glean proved ROI|causality proof|productivity score/i
+      /metric_id|metrics_library|schema_version|claim boundary|Glean proved ROI|causality proof|productivity score/i
+    );
+  });
+
+  it("turns evidence readiness and scenarios into a client planning workflow", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByRole("heading", { name: /Evidence Readiness & Scenario Plan/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Can trust now/i)).toBeInTheDocument();
+    expect(screen.getByText(/Needs client evidence/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Value scenario/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Safe value language/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Next client action/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/FluencyTracr aggregate evidence/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Baseline window and comparison period/i)).toBeInTheDocument();
+    expect(screen.getByText(/Conservative/i)).toBeInTheDocument();
+    expect(screen.getByText(/Base case/i)).toBeInTheDocument();
+    expect(screen.getByText(/Expanded/i)).toBeInTheDocument();
+    expect(screen.getByText(/Caveated value investigation/i)).toBeInTheDocument();
+
+    expect(container.textContent).not.toMatch(
+      /workflow_state|scenario_state|claim_boundary|Claim Boundary|HOLD_FOR|FT_AI_VALUE|Glean proved ROI|causality proof|productivity score/i
     );
   });
 

@@ -2186,6 +2186,40 @@ body {
   grid-column: 1 / -1;
 }
 
+.ai-value-evidence-scenario-panel {
+  grid-column: 1 / -1;
+}
+
+.ai-value-evidence-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-evidence-plan-grid ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.ai-value-scenario-band-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ai-value-scenario-band {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-scenario-band p {
+  margin: 4px 0 0;
+}
+
 .ai-value-map-cell p,
 .ai-value-map-cell small {
   display: block;
@@ -2377,7 +2411,9 @@ body {
 
   .ai-value-opportunity-row,
   .ai-value-review-card,
-  .ai-value-map-grid {
+  .ai-value-map-grid,
+  .ai-value-evidence-plan-grid,
+  .ai-value-scenario-band-list {
     grid-template-columns: 1fr;
   }
 
