@@ -2205,3 +2205,54 @@ body {
   flex-wrap: wrap;
   margin-top: 16px;
 }
+
+.ai-value-journey-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0 18px;
+}
+
+.ai-value-journey-home {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #d6dcea;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.ai-value-journey-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #e7ebf3;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #fff;
+}
+
+.ai-value-journey-stage.current {
+  border-color: #4859ff;
+}
+
+.ai-value-journey-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d6dcea;
+}
+
+.ai-value-journey-done { background: #1d9e75; }
+.ai-value-journey-attention { background: #e8930c; }
+.ai-value-journey-todo { background: #d6dcea; }
+
+.ai-value-journey-state {
+  color: #59637c;
+  font-size: 11.5px;
+}

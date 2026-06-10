@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { putAiValueObject, postWorkshopIntake, AiValueApiError } from "../lib/aiValueApi";
+import { useAiValueJourney } from "../hooks/useAiValueJourney";
+import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 
 const steps = [
   "Client & Objective",
@@ -218,6 +220,7 @@ const EXAMPLE = {
 };
 
 export const AIValueDiscovery = () => {
+  const journey = useAiValueJourney();
   const [activeStep, setActiveStep] = useState<Step>("Client & Objective");
   const [form, setForm] = useState({ ...EXAMPLE, objectives: [emptyObjective()], useCases: [emptyUseCase()] });
   const [coverage, setCoverage] = useState<Record<string, string>>(
@@ -465,6 +468,8 @@ export const AIValueDiscovery = () => {
           </button>
         </div>
       </header>
+
+      <AiValueJourneyRail stages={journey.stages} current="discovery" />
 
       {notice && <p role="status" className="ai-value-panel">{notice}</p>}
       {gaps.length > 0 && (

@@ -240,6 +240,59 @@ export function registerAiValueRoutes(app: Express): void {
     }
   );
 
+  app.get(
+    "/api/v1/ai-value/readout/:packetId/html",
+    rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const { packetId } = req.params;
+      const packetRecord = await getAiValueObject(orgId, "executive_packet", packetId);
+      if (!packetRecord) {
+        return res.status(404).json({
+          error: "executive packet not found",
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      const packetValidation = aiValueEngine.validateExecutivePacket(packetRecord.payload);
+      if (!packetValidation.valid) {
+        // Fail closed: a stored packet that no longer validates never renders.
+        return res.status(422).json({
+          error: "executive packet failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          gaps: packetValidation.gaps
+        });
+      }
+
+      const engagements = await listAiValueObjects(orgId, "engagement");
+      let engagementPayload: Record<string, unknown> | null = null;
+      if (engagements.length > 0) {
+        const record = await getAiValueObject(orgId, "engagement", engagements[0].object_id);
+        if (record && aiValueEngine.validateEngagement(record.payload).valid) {
+          engagementPayload = record.payload;
+        }
+      }
+
+      const baselines = await listAiValueObjects(orgId, "fluency_baseline");
+      let fluencySummary: Record<string, unknown> | null = null;
+      if (baselines.length > 0) {
+        const record = await getAiValueObject(orgId, "fluency_baseline", baselines[0].object_id);
+        if (record && aiValueEngine.validateFluencyBaseline(record.payload).valid) {
+          fluencySummary = aiValueEngine.summarizeFluencyBaseline(record.payload);
+        }
+      }
+
+      const html = aiValueEngine.renderExecutiveReadoutHtml({
+        packet: packetRecord.payload,
+        engagement: engagementPayload,
+        fluencySummary
+      });
+      res.set("content-type", "text/html; charset=utf-8");
+      return res.send(html);
+    }
+  );
+
   app.post(
     "/api/v1/ai-value/objects/outcome_evidence_export/:objectId/review",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),

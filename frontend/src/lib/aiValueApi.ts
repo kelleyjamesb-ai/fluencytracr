@@ -93,6 +93,32 @@ export const putAiValueObject = (
     }
   );
 
+export const reviewOutcomeEvidence = (
+  role: string,
+  exportId: string,
+  decision: "ACCEPTED" | "REJECTED"
+) =>
+  requestJson<AiValueObjectSummary & { review_state: string }>(
+    role,
+    `/api/v1/ai-value/objects/outcome_evidence_export/${encodeURIComponent(exportId)}/review`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ decision })
+    }
+  );
+
+export const fetchReadoutHtml = async (role: string, packetId: string): Promise<string> => {
+  const response = await authFetch(
+    role,
+    withApiBase(`/api/v1/ai-value/readout/${encodeURIComponent(packetId)}/html`)
+  );
+  if (!response.ok) {
+    throw new AiValueApiError(`Readout request failed: ${response.status}`, response.status);
+  }
+  return response.text();
+};
+
 export const postWorkshopIntake = (
   role: string,
   intake: Record<string, unknown>

@@ -431,6 +431,43 @@ describe("AI value spine run API", () => {
     expect(response.body.message).toBe("Token org scope does not match request org");
   });
 
+  it("renders the executive readout HTML from stored objects", async () => {
+    await storeUpstreamObjects();
+    const engagement = readExample("customer-support-engagement.json");
+    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
+      .set(writeAuth)
+      .send(engagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${fluencyBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(fluencyBaseline)
+      .expect(201);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const readout = await request(app)
+      .get(
+        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+      )
+      .set(readAuth);
+    expect(readout.status).toBe(200);
+    expect(readout.headers["content-type"]).toContain("text/html");
+    expect(readout.text).toContain("Pre-ROI planning artifact");
+    expect(readout.text).toContain("Northstar Enterprise");
+    expect(readout.text).toContain("What this readout never claims");
+
+    const missing = await request(app)
+      .get("/api/v1/ai-value/readout/not_a_packet/html")
+      .set(readAuth);
+    expect(missing.status).toBe(404);
+  });
+
   it("requires a write role to run the spine", async () => {
     const response = await request(app)
       .post("/api/v1/ai-value/spine/run")

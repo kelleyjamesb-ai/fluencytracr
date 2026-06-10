@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
+import { useAiValueJourney } from "../hooks/useAiValueJourney";
+import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 
 const tabs = [
   "Workflow Canvas",
@@ -21,6 +23,7 @@ export const AIValueWorkspace = () => {
   const [activeTab, setActiveTab] = useState<Tab>("Workflow Canvas");
   const activeIndex = useMemo(() => tabs.indexOf(activeTab), [activeTab]);
   const { mode, live, errorMessage, connectLiveEvidence } = useAiValueWorkspace();
+  const journey = useAiValueJourney();
 
   const workflowName = live?.workflowName ?? aiValueWorkspace.workflowName;
   const valueRouteLabel = live?.valueRouteLabel ?? aiValueWorkspace.valueRouteLabel;
@@ -69,6 +72,8 @@ export const AIValueWorkspace = () => {
           </button>
         </div>
       </header>
+
+      <AiValueJourneyRail stages={journey.stages} current="workshop" />
 
       {errorMessage && (
         <p role="alert" className="ai-value-panel">

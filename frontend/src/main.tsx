@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Dashboard } from "./pages/Dashboard";
 import { AIValueWorkspace } from "./pages/AIValueWorkspace";
 import { AIValueDiscovery } from "./pages/AIValueDiscovery";
+import { AIValueJourney } from "./pages/AIValueJourney";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -56,6 +57,14 @@ createRoot(container).render(
           element={
             <ProtectedRoute>
               <AIValueWorkspace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-value"
+          element={
+            <ProtectedRoute>
+              <AIValueJourney />
             </ProtectedRoute>
           }
         />
