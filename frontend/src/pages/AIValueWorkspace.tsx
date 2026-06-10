@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
+import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
 
 const tabs = [
   "Workflow Canvas",
@@ -19,6 +20,24 @@ const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutra
 export const AIValueWorkspace = () => {
   const [activeTab, setActiveTab] = useState<Tab>("Workflow Canvas");
   const activeIndex = useMemo(() => tabs.indexOf(activeTab), [activeTab]);
+  const { mode, live, errorMessage, connectLiveEvidence } = useAiValueWorkspace();
+
+  const workflowName = live?.workflowName ?? aiValueWorkspace.workflowName;
+  const valueRouteLabel = live?.valueRouteLabel ?? aiValueWorkspace.valueRouteLabel;
+  const decisionLabel = live?.decisionLabel ?? aiValueWorkspace.decisionLabel;
+  const claimModeLabel = live?.claimModeLabel ?? aiValueWorkspace.claimModeLabel;
+  const valueSignals = live?.valueSignals ?? aiValueWorkspace.valueSignals;
+  const valueStory = live?.valueStory ?? aiValueWorkspace.valueStory;
+  const evidenceChecks = live?.evidenceChecks ?? aiValueWorkspace.evidenceChecks;
+  const safeLanguage = live?.safeLanguage ?? aiValueWorkspace.safeLanguage;
+  const executiveBrief = live
+    ? {
+        sponsorDecision: live.executiveBrief.sponsorDecision,
+        summary: live.executiveBrief.summary,
+        sponsorQuestion: aiValueWorkspace.executiveBrief.sponsorQuestion,
+        nextAction: live.executiveBrief.nextAction
+      }
+    : aiValueWorkspace.executiveBrief;
 
   return (
     <main className="ai-value-shell">
@@ -26,14 +45,36 @@ export const AIValueWorkspace = () => {
         <div>
           <p className="eyebrow">Client Value Workshop</p>
           <h1>{aiValueWorkspace.title}</h1>
-          <p>{aiValueWorkspace.workflowName}</p>
+          <p>{workflowName}</p>
         </div>
         <div className="ai-value-status-strip" aria-label="Workspace status">
-          <StatusPill label={aiValueWorkspace.valueRouteLabel} tone="good" />
-          <StatusPill label={aiValueWorkspace.decisionLabel} tone="warn" />
-          <StatusPill label={aiValueWorkspace.claimModeLabel} />
+          <StatusPill label={valueRouteLabel} tone="good" />
+          <StatusPill label={decisionLabel} tone="warn" />
+          <StatusPill label={claimModeLabel} />
+          <StatusPill
+            label={mode === "live" ? "Live evidence" : "Example content"}
+            tone={mode === "live" ? "good" : "neutral"}
+          />
+          <button
+            type="button"
+            className="ai-value-step"
+            onClick={() => void connectLiveEvidence()}
+            disabled={mode === "loading"}
+          >
+            {mode === "loading"
+              ? "Connecting…"
+              : mode === "live"
+                ? "Refresh live evidence"
+                : "Connect live evidence"}
+          </button>
         </div>
       </header>
+
+      {errorMessage && (
+        <p role="alert" className="ai-value-panel">
+          {errorMessage}
+        </p>
+      )}
 
       <section className="ai-value-spine" aria-label="AI value workshop flow">
         {tabs.map((tab, index) => (
@@ -94,7 +135,7 @@ export const AIValueWorkspace = () => {
           <article className="ai-value-panel">
             <h3>Value signals to map</h3>
             <div className="ai-value-table" role="table" aria-label="Recommended value signals">
-              {aiValueWorkspace.valueSignals.map((signal) => (
+              {valueSignals.map((signal) => (
                 <div className="ai-value-row" role="row" key={signal.question}>
                   <span>{signal.question}</span>
                   <span>{signal.measure}</span>
@@ -110,7 +151,7 @@ export const AIValueWorkspace = () => {
           <article className="ai-value-panel">
             <h3>Value story options</h3>
             <div className="ai-value-band-grid">
-              {aiValueWorkspace.valueStory.map((band) => (
+              {valueStory.map((band) => (
                 <div className="ai-value-band" key={band.label}>
                   <h4>{band.label}</h4>
                   <p>{band.interpretation}</p>
@@ -124,7 +165,7 @@ export const AIValueWorkspace = () => {
           <article className="ai-value-panel">
             <h3>Evidence check</h3>
             <div className="ai-value-table" role="table" aria-label="Evidence checks">
-              {aiValueWorkspace.evidenceChecks.map((check) => (
+              {evidenceChecks.map((check) => (
                 <div className="ai-value-row ai-value-evidence-row" role="row" key={check.label}>
                   <span>{check.label}</span>
                   <StatusPill label={check.state} tone={check.state === "Needs input" ? "warn" : "good"} />
@@ -140,19 +181,19 @@ export const AIValueWorkspace = () => {
             <h3>Safe language</h3>
             <h4>What we can say now</h4>
             <ul>
-              {aiValueWorkspace.safeLanguage.canSay.map((claim) => (
+              {safeLanguage.canSay.map((claim) => (
                 <li key={claim}>{claim}</li>
               ))}
             </ul>
             <h4>What needs client validation</h4>
             <ul>
-              {aiValueWorkspace.safeLanguage.needsValidation.map((caveat) => (
+              {safeLanguage.needsValidation.map((caveat) => (
                 <li key={caveat}>{caveat}</li>
               ))}
             </ul>
             <h4>What we cannot say</h4>
             <div className="ai-value-chip-row">
-              {aiValueWorkspace.safeLanguage.cannotSay.map((claim) => (
+              {safeLanguage.cannotSay.map((claim) => (
                 <StatusPill key={claim} label={claim} />
               ))}
             </div>
@@ -163,13 +204,13 @@ export const AIValueWorkspace = () => {
           <article className="ai-value-panel">
             <h3>Decision for the sponsor</h3>
             <div className="ai-value-band">
-              <h4>{aiValueWorkspace.executiveBrief.sponsorDecision}</h4>
-              <p>{aiValueWorkspace.executiveBrief.summary}</p>
+              <h4>{executiveBrief.sponsorDecision}</h4>
+              <p>{executiveBrief.summary}</p>
             </div>
             <h4>Sponsor question</h4>
-            <p>{aiValueWorkspace.executiveBrief.sponsorQuestion}</p>
+            <p>{executiveBrief.sponsorQuestion}</p>
             <h4>Next action</h4>
-            <p>{aiValueWorkspace.executiveBrief.nextAction}</p>
+            <p>{executiveBrief.nextAction}</p>
           </article>
         )}
       </section>
