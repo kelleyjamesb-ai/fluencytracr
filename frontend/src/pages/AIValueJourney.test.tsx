@@ -227,7 +227,9 @@ describe("AIValueJourney", () => {
     expect(screen.getByText(/Median resolution time/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Escalation rate/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Open executive readout/i })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Open executive readout/i }).length
+    ).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /Open Blueprint workshop/i })).toBeInTheDocument();
 
     expect(container.textContent).not.toMatch(
@@ -283,6 +285,30 @@ describe("AIValueJourney", () => {
 
     expect(container.textContent).not.toMatch(
       /workflow_state|scenario_state|claim_boundary|Claim Boundary|HOLD_FOR|FT_AI_VALUE|Glean proved ROI|causality proof|productivity score/i
+    );
+  });
+
+  it("shows a sponsor operating packet with governed agentic follow-up", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("heading", { name: /Executive Operating Packet/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Sponsor decision/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Recommended next action/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Agentic follow-up/i)).toBeInTheDocument();
+    expect(screen.getByText(/Value-readout agent/i)).toBeInTheDocument();
+    expect(screen.getByText(/Evidence readiness agent/i)).toBeInTheDocument();
+    expect(screen.getByText(/Blueprint and metrics agent/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/No realized ROI claim/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", { name: /Open executive readout/i }).length
+    ).toBeGreaterThan(0);
+
+    expect(container.textContent).not.toMatch(
+      /executive_packet|agent_run|raw_prompt|raw_response|autonomous customer action|Glean proved ROI|causality proof|productivity score/i
     );
   });
 

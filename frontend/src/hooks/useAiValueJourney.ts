@@ -72,6 +72,20 @@ export interface EvidenceScenarioPlan {
   nextClientAction: string;
 }
 
+export interface ExecutiveHandoff {
+  role: string;
+  task: string;
+  guardrail: string;
+}
+
+export interface ExecutiveOperatingPlan {
+  packetStatus: string;
+  sponsorDecision: string;
+  recommendedNextAction: string;
+  handoffs: ExecutiveHandoff[];
+  guardrails: string[];
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
@@ -79,6 +93,7 @@ export interface AiValueJourney {
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
+  executivePlan: ExecutiveOperatingPlan;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
@@ -345,6 +360,51 @@ function buildEvidenceScenarioPlan(params: {
   };
 }
 
+function buildExecutiveOperatingPlan(params: {
+  packetCount: number;
+  evidenceScenarioPlan: EvidenceScenarioPlan;
+  opportunities: ValueOpportunity[];
+}): ExecutiveOperatingPlan {
+  const { packetCount, evidenceScenarioPlan, opportunities } = params;
+  return {
+    packetStatus: packetCount > 0 ? "Sponsor packet ready" : "Needs sponsor packet",
+    sponsorDecision:
+      packetCount > 0
+        ? "Decide whether to expand the workflow pilot, collect stronger customer evidence, or hold external value language."
+        : "Decide what evidence is still needed before the sponsor packet is generated.",
+    recommendedNextAction:
+      opportunities.length > 0
+        ? evidenceScenarioPlan.nextClientAction
+        : "Finish Blueprint and outcome mapping before assigning follow-up work.",
+    handoffs: [
+      {
+        role: "Value-readout agent",
+        task:
+          "Prepare the sponsor narrative from Blueprint, outcome mapping, evidence readiness, scenario bands, and safe value language.",
+        guardrail: "No realized ROI claim."
+      },
+      {
+        role: "Evidence readiness agent",
+        task:
+          "Track baseline exports, customer owner review, source coverage, and unresolved assumptions.",
+        guardrail: "No causality claim."
+      },
+      {
+        role: "Blueprint and metrics agent",
+        task:
+          "Carry sponsor decisions back into the workflow canvas and ROI opportunity mapping.",
+        guardrail: "No individual or manager scoring."
+      }
+    ],
+    guardrails: [
+      "No realized ROI claim",
+      "No causality claim",
+      "No individual or manager scoring",
+      "No productivity ranking"
+    ]
+  };
+}
+
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
@@ -524,6 +584,18 @@ export const useAiValueJourney = (): AiValueJourney => {
         opportunities: []
       })
     );
+  const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
+    buildExecutiveOperatingPlan({
+      packetCount: 0,
+      evidenceScenarioPlan: buildEvidenceScenarioPlan({
+        readiness: null,
+        scenario: null,
+        evidenceItems: [],
+        opportunities: []
+      }),
+      opportunities: []
+    })
+  );
   const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -554,12 +626,19 @@ export const useAiValueJourney = (): AiValueJourney => {
         evidenceItems: items,
         opportunities: mappedOpportunities
       });
+      const packetIds = (byType.executive_packet ?? []).map((summary) => summary.object_id);
+      const executivePlan = buildExecutiveOperatingPlan({
+        packetCount: packetIds.length,
+        evidenceScenarioPlan: plan,
+        opportunities: mappedOpportunities
+      });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
       setEvidenceScenarioPlan(plan);
-      setPacketIds((byType.executive_packet ?? []).map((summary) => summary.object_id));
+      setExecutivePlan(executivePlan);
+      setPacketIds(packetIds);
 
       setClientName(
         typeof engagement?.client?.client_name === "string"
@@ -616,6 +695,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     evidenceItems,
     opportunities,
     evidenceScenarioPlan,
+    executivePlan,
     packetIds,
     errorMessage,
     refresh,

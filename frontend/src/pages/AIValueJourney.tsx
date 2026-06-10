@@ -332,6 +332,62 @@ export const AIValueJourney = () => {
           )}
         </article>
 
+        <article className="ai-value-panel ai-value-executive-plan-panel">
+          <div className="ai-value-section-head">
+            <div>
+              <p className="eyebrow">Executive Readout</p>
+              <h2>Executive Operating Packet</h2>
+              <p>
+                Turns the journey into a sponsor decision and a governed follow-up
+                plan. Agents can carry work forward, but only through bounded tasks
+                and safe value language.
+              </p>
+            </div>
+            <StatusPill label={journey.executivePlan.packetStatus} tone="good" />
+          </div>
+
+          <div className="ai-value-executive-plan-grid">
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Sponsor decision</span>
+              <p>{journey.executivePlan.sponsorDecision}</p>
+            </div>
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Recommended next action</span>
+              <p>{journey.executivePlan.recommendedNextAction}</p>
+            </div>
+            <div className="ai-value-map-cell ai-value-map-cell-wide">
+              <span className="ai-value-map-label">Agentic follow-up</span>
+              <div className="ai-value-agent-handoff-grid">
+                {journey.executivePlan.handoffs.map((handoff) => (
+                  <div className="ai-value-agent-handoff" key={handoff.role}>
+                    <strong>{handoff.role}</strong>
+                    <p>{handoff.task}</p>
+                    <small>{handoff.guardrail}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="ai-value-map-cell ai-value-map-cell-wide">
+              <span className="ai-value-map-label">Guardrails that travel with the packet</span>
+              <div className="ai-value-chip-row">
+                {journey.executivePlan.guardrails.map((guardrail) => (
+                  <StatusPill key={guardrail} label={guardrail} />
+                ))}
+              </div>
+              {journey.packetIds.map((packetId) => (
+                <button
+                  type="button"
+                  className="ai-value-step ai-value-phase-action"
+                  key={packetId}
+                  onClick={() => void journey.openReadout(packetId)}
+                >
+                  Open executive readout
+                </button>
+              ))}
+            </div>
+          </div>
+        </article>
+
         <article className="ai-value-panel ai-value-boundary-panel">
           <h2>Safe Value Language</h2>
           <div className="ai-value-boundary-grid">

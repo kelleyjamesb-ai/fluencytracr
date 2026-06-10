@@ -2190,7 +2190,17 @@ body {
   grid-column: 1 / -1;
 }
 
+.ai-value-executive-plan-panel {
+  grid-column: 1 / -1;
+}
+
 .ai-value-evidence-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-executive-plan-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -2199,6 +2209,27 @@ body {
 .ai-value-evidence-plan-grid ul {
   margin: 8px 0 0;
   padding-left: 18px;
+}
+
+.ai-value-agent-handoff-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ai-value-agent-handoff {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-agent-handoff p,
+.ai-value-agent-handoff small {
+  display: block;
+  margin: 4px 0 0;
 }
 
 .ai-value-scenario-band-list {
@@ -2413,7 +2444,9 @@ body {
   .ai-value-review-card,
   .ai-value-map-grid,
   .ai-value-evidence-plan-grid,
-  .ai-value-scenario-band-list {
+  .ai-value-executive-plan-grid,
+  .ai-value-scenario-band-list,
+  .ai-value-agent-handoff-grid {
     grid-template-columns: 1fr;
   }
 
