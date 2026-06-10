@@ -38,7 +38,11 @@
     "seed:lmsys:assurance": "node scripts/seed_lmsys_assurance.mjs",
     "verify:assurance": "node scripts/verify_lmsys_assurance.mjs",
     "test:seed": "npm run build --workspace shared && node --test scripts/lmsys_harness_selftest.mjs",
-    "test:ai-value-engine": "npm run build --workspace shared && node --test scripts/ai_value_engine.test.mjs"
+    "test:ai-value-engine": "npm run build --workspace shared && node --test scripts/ai_value_engine.test.mjs",
+    "aggregate:ai-fluency-sessions": "npm run build --workspace shared && node scripts/aggregate_ai_fluency_sessions.mjs",
+    "test:ai-fluency-aggregator": "npm run build --workspace shared && node --test scripts/aggregate_ai_fluency_sessions.test.mjs",
+    "generate:ai-value-readout": "npm run build --workspace shared && node scripts/generate_ai_value_readout_html.mjs",
+    "test:ai-value-readout": "npm run build --workspace shared && node --test scripts/generate_ai_value_readout_html.test.mjs"
   },
   "devDependencies": {
     "@fission-ai/openspec": "^1.2.0",
