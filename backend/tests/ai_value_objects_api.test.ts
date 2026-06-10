@@ -218,6 +218,50 @@ describe("AI value spine run API", () => {
     expect(response.body.reason).toBe("OBJECT_NOT_FOUND");
   });
 
+  it("accepts a workshop intake and runs a second domain end to end", async () => {
+    const intake = readExample("sales-pipeline-workshop-intake.json");
+    const salesLibrary = readExample("sales-pipeline-metrics-library.json");
+
+    const intakeResponse = await request(app)
+      .post("/api/v1/ai-value/intake/workshop")
+      .set(writeAuth)
+      .send(intake);
+    expect(intakeResponse.status).toBe(201);
+    expect(intakeResponse.body.blueprint.object_id).toBe("bp_sales_pipeline_hygiene");
+    expect(intakeResponse.body.blueprint.valid).toBe(true);
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/metrics_library/${salesLibrary.library_id}`)
+      .set(writeAuth)
+      .send(salesLibrary)
+      .expect(201);
+
+    const run = await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({
+        blueprint_id: "bp_sales_pipeline_hygiene",
+        metrics_library_id: salesLibrary.library_id
+      });
+    expect(run.status).toBe(200);
+    expect(run.body.run.decision).toBe("READY_FOR_EXECUTIVE_VALIDATION");
+    expect(run.body.run.halted_at).toBeNull();
+  });
+
+  it("fails closed on incomplete workshop intakes", async () => {
+    const response = await request(app)
+      .post("/api/v1/ai-value/intake/workshop")
+      .set(writeAuth)
+      .send({ intake_id: "broken", org_id: ORG_ID });
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("INTAKE_VALIDATION_FAILED");
+
+    const list = await request(app)
+      .get("/api/v1/ai-value/objects?object_type=blueprint")
+      .set(readAuth);
+    expect(list.body.objects).toHaveLength(0);
+  });
+
   it("requires a write role to run the spine", async () => {
     const response = await request(app)
       .post("/api/v1/ai-value/spine/run")

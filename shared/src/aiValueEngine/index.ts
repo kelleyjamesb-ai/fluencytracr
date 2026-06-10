@@ -53,6 +53,12 @@ export type {
   BuildExecutivePacketInputs
 } from "./executivePacket";
 
+export {
+  buildBlueprintDraftFromWorkshopIntake,
+  WORKSHOP_INTAKE_SCHEMA_VERSION
+} from "./intake";
+export type { WorkshopIntakeResult } from "./intake";
+
 export { runSpine, SPINE_RESULT_SCHEMA_VERSION } from "./spine";
 export type {
   SpineRunInput,

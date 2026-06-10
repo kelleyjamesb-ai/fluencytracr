@@ -1,0 +1,122 @@
+{
+  "schema_version": "FT_AI_VALUE_WORKSHOP_INTAKE_2026_06",
+  "intake_id": "intake_sales_pipeline_hygiene_v1",
+  "org_id": "org-northstar-enterprise",
+  "workflow_family": "sales_pipeline_hygiene",
+  "workflow_name": "Sales pipeline hygiene",
+  "business_owner": {
+    "role": "sales_operations_sponsor",
+    "approval_state": "PRESENT"
+  },
+  "client_question": "Where should AI make pipeline upkeep measurably easier for the sales team?",
+  "current_state_steps": [
+    "Seller reviews open opportunities and hunts for context across systems",
+    "Seller updates next steps, stages, and close dates by hand",
+    "Operations chases stale opportunities before forecast reviews"
+  ],
+  "future_state_steps": [
+    "Search and Assistant surface account context beside the opportunity",
+    "Approved Skills draft next-step updates for seller review",
+    "Aggregate work evidence shows whether hygiene workflows are adopted safely"
+  ],
+  "friction_points": [
+    "Context for an opportunity lives in many disconnected systems",
+    "Hygiene work competes with selling time and slips before reviews"
+  ],
+  "expected_work_change": "Routine pipeline upkeep shifts from manual hunting to review-and-confirm.",
+  "value_hypothesis": "AI-assisted pipeline upkeep may be associated with more complete opportunity records and fewer stale opportunities at forecast time.",
+  "value_routes": {
+    "primary": "QUALITY_IMPROVEMENT",
+    "secondary": ["CAPACITY_CREATION"]
+  },
+  "windows": {
+    "baseline": "2026-02-01_to_2026-03-31",
+    "comparison": "2026-04-01_to_2026-05-31"
+  },
+  "source_coverage": {
+    "ai_activity": "PRESENT",
+    "workflow": "PRESENT",
+    "outcome": "PRESENT",
+    "baseline": "PRESENT",
+    "trust": "PRESENT",
+    "assumptions": "PRESENT",
+    "suppression": "PRESENT"
+  },
+  "approved_aggregate_inputs": {
+    "case_population": {
+      "total_cases": 1860,
+      "eligible_cases": 1715,
+      "excluded_cases": 145
+    },
+    "ai_activity": {
+      "assistant_sessions": 1320,
+      "search_sessions": 1980,
+      "skill_invocations": 264,
+      "agent_runs": 102
+    },
+    "trust_and_friction": {
+      "verification_attached_episodes": 612,
+      "recovery_episodes": 74,
+      "abandonment_episodes": 38
+    },
+    "outcome_signals": {
+      "next_step_completeness_share": {
+        "baseline": 0.58,
+        "comparison": 0.71,
+        "unit": "share"
+      },
+      "stale_opportunity_count": {
+        "baseline": 412,
+        "comparison": 348,
+        "unit": "count"
+      },
+      "record_update_lag_hours": {
+        "baseline": 64.0,
+        "comparison": 47.5,
+        "unit": "hours"
+      }
+    }
+  },
+  "assumptions": [
+    {
+      "assumption_id": "case_mix_stability",
+      "state": "PRESENT",
+      "owner": "sales_operations"
+    },
+    {
+      "assumption_id": "volume_context",
+      "state": "PRESENT",
+      "owner": "sales_operations"
+    },
+    {
+      "assumption_id": "staffing_and_coverage_context",
+      "state": "PRESENT",
+      "owner": "sales_operations_sponsor"
+    },
+    {
+      "assumption_id": "channel_mix_context",
+      "state": "PRESENT",
+      "owner": "sales_operations"
+    },
+    {
+      "assumption_id": "process_or_policy_context",
+      "state": "PRESENT",
+      "owner": "sales_operations_sponsor"
+    },
+    {
+      "assumption_id": "knowledge_base_context",
+      "state": "PRESENT",
+      "owner": "enablement_owner"
+    },
+    {
+      "assumption_id": "metric_definition_stability",
+      "state": "PRESENT",
+      "owner": "revenue_operations"
+    },
+    {
+      "assumption_id": "ai_rollout_context",
+      "state": "PRESENT",
+      "owner": "sales_operations_sponsor"
+    }
+  ]
+}

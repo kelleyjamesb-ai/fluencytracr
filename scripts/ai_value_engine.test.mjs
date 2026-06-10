@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 
 import {
   runSpine,
+  buildBlueprintDraftFromWorkshopIntake,
   validateBlueprint,
   validateMetricsLibrary,
   validateValueScenario,
@@ -124,6 +125,52 @@ test("runSpine id overrides keep the spine domain-agnostic", () => {
   assert.equal(
     run.stages.executive_packet.object.packet_id,
     "executive_packet_other_domain_v1"
+  );
+});
+
+test("workshop intake builds a valid blueprint for a second domain", () => {
+  const intake = readExample("sales-pipeline-workshop-intake.json");
+  const result = buildBlueprintDraftFromWorkshopIntake(intake);
+  assert.deepEqual(result.intake_gaps, []);
+  assert.equal(result.blueprint.blueprint_id, "bp_sales_pipeline_hygiene");
+  assert.equal(result.blueprint_validation.valid, true);
+});
+
+test("workshop intake fails closed on missing fields", () => {
+  const result = buildBlueprintDraftFromWorkshopIntake({ intake_id: "broken" });
+  assert.ok(result.intake_gaps.length > 0);
+  assert.equal(result.blueprint, null);
+  assert.equal(result.blueprint_validation, null);
+});
+
+test("workshop intake always attaches engine-owned governance", () => {
+  const intake = readExample("sales-pipeline-workshop-intake.json");
+  const tampered = { ...intake, blocked_claims: [], governance_boundaries: { requires_raw_data: true } };
+  const result = buildBlueprintDraftFromWorkshopIntake(tampered);
+  assert.equal(result.blueprint.governance_boundaries.requires_raw_data, false);
+  assert.ok(result.blueprint.blocked_claims.includes("roi_proof"));
+});
+
+test("the spine is domain-agnostic: sales pipeline runs end to end", () => {
+  const intake = readExample("sales-pipeline-workshop-intake.json");
+  const salesLibrary = readExample("sales-pipeline-metrics-library.json");
+  const { blueprint: salesBlueprint } = buildBlueprintDraftFromWorkshopIntake(intake);
+  const run = runSpine({
+    blueprint: salesBlueprint,
+    metricsLibrary: salesLibrary,
+    ids: {
+      readinessId: "readiness_sales_pipeline_hygiene_v1",
+      claimBoundaryId: "claim_boundary_sales_pipeline_hygiene_v1",
+      packetId: "executive_packet_sales_pipeline_hygiene_v1"
+    }
+  });
+  assert.equal(run.halted_at, null);
+  assert.equal(run.decision, "READY_FOR_EXECUTIVE_VALIDATION");
+  assert.equal(run.stages.claim_boundary.object.claim_state, "CAVEATED");
+  assert.equal(run.stages.executive_packet.object.packet_id, "executive_packet_sales_pipeline_hygiene_v1");
+  assert.equal(
+    run.stages.executive_packet.object.customer_facing_economic_output,
+    false
   );
 });
 

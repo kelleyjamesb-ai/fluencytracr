@@ -210,6 +210,60 @@ export function registerAiValueRoutes(app: Express): void {
   );
 
   app.post(
+    "/api/v1/ai-value/intake/workshop",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const intake = req.body;
+      if (!intake || typeof intake !== "object" || Array.isArray(intake)) {
+        return res.status(400).json({
+          error: "Intake payload must be a JSON object",
+          reason: "INVALID_PAYLOAD"
+        });
+      }
+
+      const result = aiValueEngine.buildBlueprintDraftFromWorkshopIntake(intake);
+      if (result.intake_gaps.length > 0 || !result.blueprint) {
+        return res.status(422).json({
+          error: "Workshop intake failed engine validation",
+          reason: "INTAKE_VALIDATION_FAILED",
+          intake_id: result.intake_id,
+          gaps: result.intake_gaps
+        });
+      }
+      if (!result.blueprint_validation?.valid) {
+        // Fail closed: a structurally complete intake whose blueprint draft
+        // fails the Blueprint stage is rejected and never stored.
+        return res.status(422).json({
+          error: "Workshop intake produced an invalid blueprint draft",
+          reason: "ENGINE_VALIDATION_FAILED",
+          intake_id: result.intake_id,
+          gaps: result.blueprint_validation?.gaps ?? []
+        });
+      }
+
+      const blueprint = result.blueprint as Record<string, unknown>;
+      const record = await upsertAiValueObject({
+        orgId,
+        objectType: "blueprint",
+        objectId: String(blueprint.blueprint_id),
+        schemaVersion: String(blueprint.schema_version ?? "UNKNOWN"),
+        workflowFamily: workflowFamilyOf(blueprint),
+        payload: blueprint,
+        validation: result.blueprint_validation as unknown as Record<string, unknown>,
+        valid: true
+      });
+
+      return res.status(201).json({
+        intake_id: result.intake_id,
+        blueprint: recordSummary(record)
+      });
+    }
+  );
+
+  app.post(
     "/api/v1/ai-value/spine/run",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
     async (req: RequestWithRole, res) => {
