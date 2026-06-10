@@ -22,6 +22,10 @@ import {
   summarizeFluencyBaseline,
   FluencyBaselineValidationResult
 } from "./fluencyBaseline";
+import {
+  validateOutcomeEvidenceExport,
+  OutcomeEvidenceExportValidationResult
+} from "./outcomeEvidenceExport";
 import { runSpine, SpineRunInput, SpineRunResult, SpineStageResult } from "./spine";
 
 export const VALUE_CHAIN_RESULT_SCHEMA_VERSION = "FT_AI_VALUE_CHAIN_RUN_2026_06";
@@ -31,6 +35,8 @@ export interface ValueChainRunInput extends SpineRunInput {
   engagement?: any;
   /** Optional aggregate kickoff fluency baseline. */
   fluencyBaseline?: any;
+  /** Optional customer outcome evidence export; only ACCEPTED exports attach. */
+  outcomeEvidenceExport?: any;
 }
 
 export interface ValueChainRunResult {
@@ -43,6 +49,9 @@ export interface ValueChainRunResult {
   };
   fluency_baseline: SpineStageResult<FluencyBaselineValidationResult> & {
     summary: any | null;
+  };
+  outcome_evidence: SpineStageResult<OutcomeEvidenceExportValidationResult> & {
+    attached: boolean;
   };
   spine: SpineRunResult | null;
 }
@@ -63,6 +72,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     customer_facing_economic_output: false,
     engagement: { ...notRun(), covers_workflow_family: null },
     fluency_baseline: { ...notRun(), summary: null },
+    outcome_evidence: { ...notRun(), attached: false },
     spine: null
   };
 
@@ -115,12 +125,62 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     }
   }
 
+  // Stage 0c: customer outcome evidence (optional; only ACCEPTED attaches).
+  let sourceCoverageOverrides: Record<string, string> | undefined;
+  let evidenceRefs: Record<string, string> | undefined;
+  if (input.outcomeEvidenceExport !== undefined) {
+    const validation = validateOutcomeEvidenceExport(input.outcomeEvidenceExport, {
+      metricsLibrary: input.metricsLibrary,
+      blueprint: input.blueprint
+    });
+    const attached = validation.feeds.evidence_attachment;
+    const pendingReview = validation.valid && validation.review_state === "SUBMITTED";
+    result.outcome_evidence = {
+      status: validation.valid ? (attached ? "VALID" : "HELD") : "INVALID",
+      validation,
+      object: input.outcomeEvidenceExport,
+      generated: false,
+      hold_reason: attached
+        ? null
+        : !validation.valid
+          ? "outcome evidence export validation gaps"
+          : pendingReview
+            ? "export is awaiting human review"
+            : validation.review_state === "REJECTED"
+              ? "export was rejected in review"
+              : "cross-check gaps block evidence attachment",
+      attached
+    };
+    if (!validation.valid) {
+      result.decision = "HOLD_FOR_OUTCOME_EVIDENCE";
+      result.halted_at = "outcome_evidence";
+      return result;
+    }
+    if (validation.review_state === "ACCEPTED" && validation.cross_check_gaps.length > 0) {
+      // Accepted evidence that does not align with the blueprint or library
+      // is a governance problem, not ignorable context.
+      result.decision = "HOLD_FOR_EVIDENCE_ALIGNMENT";
+      result.halted_at = "outcome_evidence";
+      return result;
+    }
+    if (attached) {
+      sourceCoverageOverrides = { outcome: "PRESENT" };
+      evidenceRefs = {
+        outcome_evidence_export_id: String(input.outcomeEvidenceExport.export_id)
+      };
+    }
+    // SUBMITTED or REJECTED exports never halt the chain; the spine simply
+    // runs without the evidence upgrade.
+  }
+
   // Stages 1-6: the canonical object spine.
   const spine = runSpine({
     blueprint: input.blueprint,
     metricsLibrary: input.metricsLibrary,
     scenario: input.scenario,
-    ids: input.ids
+    ids: input.ids,
+    sourceCoverageOverrides,
+    evidenceRefs
   });
   result.spine = spine;
   result.decision = spine.decision;

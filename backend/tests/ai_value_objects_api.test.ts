@@ -311,6 +311,93 @@ describe("AI value spine run API", () => {
     ).toBe(true);
   });
 
+  it("runs the evidence lifecycle: submit, accept, attach to the chain", async () => {
+    const evidenceGapBlueprint = JSON.parse(JSON.stringify(blueprint));
+    evidenceGapBlueprint.source_requirements.source_coverage.outcome = "MISSING";
+    await request(app)
+      .put(`/api/v1/ai-value/objects/blueprint/${blueprintId}`)
+      .set(writeAuth)
+      .send(evidenceGapBlueprint)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/metrics_library/${metricsLibraryId}`)
+      .set(writeAuth)
+      .send(metricsLibrary)
+      .expect(201);
+
+    const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+    // Self-asserted acceptance must be ignored: uploads enter as SUBMITTED.
+    const selfAccepted = JSON.parse(JSON.stringify(outcomeExport));
+    selfAccepted.review = {
+      review_state: "ACCEPTED",
+      reviewer_role: "self",
+      reviewed_at: "2026-06-10T00:00:00.000Z"
+    };
+    const submitted = await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(selfAccepted);
+    expect(submitted.status).toBe(201);
+    expect(submitted.body.validation.review_state).toBe("SUBMITTED");
+
+    // Without acceptance, evidence is pending and the chain holds for coverage.
+    const pendingRun = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        outcome_evidence_export_id: outcomeExport.export_id,
+        persist: false
+      });
+    expect(pendingRun.status).toBe(200);
+    expect(pendingRun.body.run.outcome_evidence.status).toBe("HELD");
+    expect(pendingRun.body.run.decision).toBe("HOLD_FOR_SOURCE_COVERAGE");
+
+    // Accept, then the chain attaches the evidence and upgrades the lane.
+    const review = await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "enablement_lead" });
+    expect(review.status).toBe(200);
+    expect(review.body.review_state).toBe("ACCEPTED");
+
+    const acceptedRun = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        outcome_evidence_export_id: outcomeExport.export_id
+      });
+    expect(acceptedRun.status).toBe(200);
+    expect(acceptedRun.body.run.outcome_evidence.attached).toBe(true);
+    expect(acceptedRun.body.run.decision).toBe("HOLD_FOR_ASSUMPTIONS");
+    expect(
+      acceptedRun.body.run.spine.stages.readiness.object.source_refs
+        .outcome_evidence_export_id
+    ).toBe(outcomeExport.export_id);
+
+    // Terminal review: a second decision is rejected.
+    const secondReview = await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "REJECTED", reviewer_role: "enablement_lead" });
+    expect(secondReview.status).toBe(409);
+  });
+
+  it("requires a reviewer role for evidence review", async () => {
+    const response = await request(app)
+      .post("/api/v1/ai-value/objects/outcome_evidence_export/x/review")
+      .set(readAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "exec" });
+    expect(response.status).toBe(403);
+  });
+
   it("requires a write role to run the spine", async () => {
     const response = await request(app)
       .post("/api/v1/ai-value/spine/run")

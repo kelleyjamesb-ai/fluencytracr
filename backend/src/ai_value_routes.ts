@@ -60,6 +60,10 @@ const OBJECT_TYPES: Record<string, ObjectTypeConfig> = {
   fluency_baseline: {
     idField: "baseline_id",
     validate: (payload) => aiValueEngine.validateFluencyBaseline(payload)
+  },
+  outcome_evidence_export: {
+    idField: "export_id",
+    validate: (payload) => aiValueEngine.validateOutcomeEvidenceExport(payload)
   }
 };
 
@@ -129,6 +133,11 @@ export function registerAiValueRoutes(app: Express): void {
           error: "Payload must be a JSON object",
           reason: "INVALID_PAYLOAD"
         });
+      }
+
+      if (objectType === "outcome_evidence_export") {
+        // Uploads always enter as SUBMITTED; acceptance is reviewer-only.
+        payload.review = { review_state: "SUBMITTED" };
       }
 
       if (payload[config.idField] !== objectId) {
@@ -218,6 +227,78 @@ export function registerAiValueRoutes(app: Express): void {
   );
 
   app.post(
+    "/api/v1/ai-value/objects/outcome_evidence_export/:objectId/review",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const { objectId } = req.params;
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const decision = body.decision;
+      const reviewerRole = body.reviewer_role;
+      if (decision !== "ACCEPTED" && decision !== "REJECTED") {
+        return res.status(400).json({
+          error: "decision must be ACCEPTED or REJECTED",
+          reason: "INVALID_REVIEW_DECISION"
+        });
+      }
+      if (typeof reviewerRole !== "string" || reviewerRole.length === 0) {
+        return res.status(400).json({
+          error: "reviewer_role is required",
+          reason: "INVALID_REVIEW_DECISION"
+        });
+      }
+
+      const record = await getAiValueObject(orgId, "outcome_evidence_export", objectId);
+      if (!record) {
+        return res.status(404).json({
+          error: "outcome evidence export not found",
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+
+      const reviewed = aiValueEngine.applyOutcomeEvidenceReview(
+        record.payload,
+        decision,
+        reviewerRole,
+        new Date().toISOString()
+      );
+      if (reviewed.error || !reviewed.exportObject) {
+        return res.status(409).json({
+          error: reviewed.error ?? "review could not be applied",
+          reason: "REVIEW_NOT_APPLICABLE"
+        });
+      }
+
+      const validation = aiValueEngine.validateOutcomeEvidenceExport(reviewed.exportObject);
+      if (!validation.valid) {
+        return res.status(422).json({
+          error: "reviewed export failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          gaps: validation.gaps
+        });
+      }
+
+      const updated = await upsertAiValueObject({
+        orgId,
+        objectType: "outcome_evidence_export",
+        objectId,
+        schemaVersion: String(reviewed.exportObject.schema_version ?? "UNKNOWN"),
+        workflowFamily: workflowFamilyOf(reviewed.exportObject),
+        payload: reviewed.exportObject,
+        validation: validation as unknown as Record<string, unknown>,
+        valid: true
+      });
+
+      return res.json({
+        ...recordSummary(updated),
+        review_state: validation.review_state
+      });
+    }
+  );
+
+  app.post(
     "/api/v1/ai-value/value-chain/run",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
     async (req: RequestWithRole, res) => {
@@ -229,6 +310,7 @@ export function registerAiValueRoutes(app: Express): void {
       const metricsLibraryId = body.metrics_library_id;
       const engagementId = body.engagement_id;
       const fluencyBaselineId = body.fluency_baseline_id;
+      const outcomeEvidenceExportId = body.outcome_evidence_export_id;
       const scenarioId = body.scenario_id;
       const persist = body.persist !== false;
 
@@ -260,6 +342,11 @@ export function registerAiValueRoutes(app: Express): void {
       if (engagementPayload === null) return;
       const fluencyPayload = await load("fluency_baseline", fluencyBaselineId);
       if (fluencyPayload === null) return;
+      const outcomeEvidencePayload = await load(
+        "outcome_evidence_export",
+        outcomeEvidenceExportId
+      );
+      if (outcomeEvidencePayload === null) return;
       const scenarioPayload = await load("value_scenario", scenarioId);
       if (scenarioPayload === null) return;
 
@@ -270,6 +357,7 @@ export function registerAiValueRoutes(app: Express): void {
       const run = aiValueEngine.runValueChain({
         engagement: engagementPayload,
         fluencyBaseline: fluencyPayload,
+        outcomeEvidenceExport: outcomeEvidencePayload,
         blueprint: blueprintPayload,
         metricsLibrary: metricsPayload,
         scenario: scenarioPayload,

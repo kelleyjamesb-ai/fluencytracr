@@ -310,6 +310,17 @@ export function validateEvidenceReadiness(readiness: any): ReadinessValidationRe
 
 export interface BuildReadinessOptions {
   readinessId?: string;
+  /**
+   * Evidence-backed lane upgrades (e.g. an ACCEPTED outcome evidence export
+   * upgrades the outcome lane). Only PRESENT upgrades are honored; overrides
+   * can never downgrade a lane below what the blueprint declares.
+   */
+  sourceCoverageOverrides?: Partial<Record<
+    "ai_activity" | "workflow" | "outcome" | "baseline" | "trust" | "assumptions" | "suppression",
+    string
+  >>;
+  /** Recorded on the readiness object so evidence provenance is traceable. */
+  evidenceRefs?: Record<string, string>;
 }
 
 export function buildEvidenceReadinessFromObjects(
@@ -331,6 +342,14 @@ export function buildEvidenceReadinessFromObjects(
     assumptions: normalizeState(sourceCoverage.assumptions),
     suppression: normalizeState(sourceCoverage.suppression)
   };
+  for (const [lane, state] of Object.entries(options.sourceCoverageOverrides ?? {})) {
+    // Upgrades only: evidence can lift a lane to PRESENT, never lower one.
+    if (normalizeState(state) === "PRESENT" &&
+        lane in sourceCoverageStates &&
+        sourceCoverageStates[lane as keyof typeof sourceCoverageStates] !== "BLOCKED") {
+      sourceCoverageStates[lane as keyof typeof sourceCoverageStates] = "PRESENT";
+    }
+  }
   const readinessChecks = {
     workflow_state: blueprintValidation.valid ? "PRESENT" : "MISSING",
     metric_state: metricsRecommendation.feeds.metrics_mapping ? "PRESENT" : "MISSING",
@@ -351,7 +370,8 @@ export function buildEvidenceReadinessFromObjects(
     source_refs: {
       blueprint_id: blueprint?.blueprint_id ?? null,
       metrics_library_id: metricsLibrary?.library_id ?? null,
-      scenario_id: scenario?.scenario_id ?? null
+      scenario_id: scenario?.scenario_id ?? null,
+      ...(options.evidenceRefs ?? {})
     },
     source_coverage: sourceCoverageStates,
     readiness_checks: readinessChecks,

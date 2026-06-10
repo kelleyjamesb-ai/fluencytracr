@@ -69,6 +69,8 @@
 
 - Phase 5 slices 1+3 (user-authorized, 2026-06-10): added the fluency-session aggregate exporter (instrument sessions -> governed FT_AI_VALUE_FLUENCY_BASELINE_2026_06 package; suppression at export; respondent data never crosses the boundary) and the executive readout HTML exporter (validated packet + optional engagement/fluency context -> sponsor-ready self-contained artifact with non-removable pre-ROI banner and claim governance rendered into the document). Slice 2 (customer outcome-evidence export template) is intentionally pending human input.
 
+- Phase 5 slice 2 (user-decided design, 2026-06-10): customer outcome evidence export contract implemented end to end — generic metrics-library-keyed template, fail-closed upload (always SUBMITTED), explicit ADMIN/ENABLEMENT_LEAD accept, exact blueprint window match, and accepted evidence upgrading only the outcome lane with provenance recorded. No ROI, causality, dollarization, or person-level data; rejected/pending evidence never silently attaches.
+
 ## Current Status
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.
