@@ -86,10 +86,17 @@ export interface ExecutiveOperatingPlan {
   guardrails: string[];
 }
 
+export interface ClientValueQuestion {
+  question: string;
+  answer: string;
+  detail: string;
+}
+
 export interface AiValueJourney {
   loading: boolean;
   clientName: string | null;
   stages: JourneyStage[];
+  valueQuestions: ClientValueQuestion[];
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
@@ -405,6 +412,58 @@ function buildExecutiveOperatingPlan(params: {
   };
 }
 
+function buildClientValueQuestions(params: {
+  opportunities: ValueOpportunity[];
+  evidenceScenarioPlan: EvidenceScenarioPlan;
+  executivePlan: ExecutiveOperatingPlan;
+}): ClientValueQuestion[] {
+  const { opportunities, evidenceScenarioPlan, executivePlan } = params;
+  const primaryOpportunity = opportunities[0] ?? null;
+  const workflow = primaryOpportunity?.workflowName ?? "Select the first workflow in Blueprint.";
+  const roiOpportunity = primaryOpportunity
+    ? `${primaryOpportunity.valueRouteLabel}: ${primaryOpportunity.roiPoint}`
+    : "Map the Blueprint to an outcome metric before modeling an ROI opportunity.";
+  const gleanEvidence = primaryOpportunity
+    ? `${primaryOpportunity.gleanEvidence} Use this as aggregate AI-enabled work evidence, not outcome proof.`
+    : "Once instrumentation is mapped, FluencyTracr can show aggregate AI-enabled work patterns around the selected workflow.";
+  const missingProof =
+    evidenceScenarioPlan.needsClientEvidence[0] ??
+    "No major evidence gap for the current scenario.";
+
+  return [
+    {
+      question: "What workflow should change first?",
+      answer: workflow,
+      detail: "Use the Blueprint workshop to agree on the operating workflow, handoffs, and where AI should intervene."
+    },
+    {
+      question: "Where is the ROI opportunity?",
+      answer: roiOpportunity,
+      detail: "Treat this as a value hypothesis until the customer-owned baseline, comparison window, and assumptions are reviewed."
+    },
+    {
+      question: "What can Glean show now?",
+      answer: gleanEvidence,
+      detail: "Glean and FluencyTracr can support the work-pattern story; customer outcome systems carry outcome proof."
+    },
+    {
+      question: "What proof is still missing?",
+      answer: missingProof,
+      detail: "Missing evidence becomes the client data request, not a reason to overstate the claim."
+    },
+    {
+      question: "What can we safely say?",
+      answer: evidenceScenarioPlan.safeValueLanguage,
+      detail: "Safe language travels with the packet so modeled opportunity does not become unsupported ROI proof."
+    },
+    {
+      question: "What should the client do next?",
+      answer: executivePlan.recommendedNextAction,
+      detail: "This is the next operating action for the sponsor, data owner, or workflow owner."
+    }
+  ];
+}
+
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
@@ -549,7 +608,7 @@ function deriveStages(params: {
         scenarios.length === 0 && "Customer-owned assumptions and scenario bands",
         accepted.length === 0 && "Outcome evidence before stronger claims"
       ]),
-      feedsNext: "Scenario status and claim boundaries compose the executive readout.",
+      feedsNext: "Scenario status and safe value language compose the executive readout.",
       nextAction: scenarios.length > 0 ? "Prepare executive validation." : "Draft scenario with caveats."
     },
     {
@@ -573,6 +632,7 @@ export const useAiValueJourney = (): AiValueJourney => {
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState<string | null>(null);
   const [stages, setStages] = useState<JourneyStage[]>(deriveStages({ byType: {}, opportunities: [] }));
+  const [valueQuestions, setValueQuestions] = useState<ClientValueQuestion[]>([]);
   const [evidenceItems, setEvidenceItems] = useState<EvidenceReviewItem[]>([]);
   const [opportunities, setOpportunities] = useState<ValueOpportunity[]>([]);
   const [evidenceScenarioPlan, setEvidenceScenarioPlan] =
@@ -632,8 +692,14 @@ export const useAiValueJourney = (): AiValueJourney => {
         evidenceScenarioPlan: plan,
         opportunities: mappedOpportunities
       });
+      const questions = buildClientValueQuestions({
+        opportunities: mappedOpportunities,
+        evidenceScenarioPlan: plan,
+        executivePlan
+      });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
+      setValueQuestions(questions);
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
       setEvidenceScenarioPlan(plan);
@@ -692,6 +758,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     loading,
     clientName,
     stages,
+    valueQuestions,
     evidenceItems,
     opportunities,
     evidenceScenarioPlan,

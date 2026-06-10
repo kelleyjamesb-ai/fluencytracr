@@ -2048,6 +2048,41 @@ body {
   margin-bottom: 14px;
 }
 
+.ai-value-client-questions {
+  padding: 16px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+  margin-bottom: 16px;
+}
+
+.ai-value-client-question-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-client-question-card {
+  min-width: 0;
+  min-height: 150px;
+  padding: 12px;
+  border: 1px solid #e4e6ef;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-client-question-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.ai-value-client-question-card p {
+  margin: 8px 0 0;
+}
+
 .ai-value-phase-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -2442,6 +2477,7 @@ body {
 
   .ai-value-opportunity-row,
   .ai-value-review-card,
+  .ai-value-client-question-grid,
   .ai-value-map-grid,
   .ai-value-evidence-plan-grid,
   .ai-value-executive-plan-grid,

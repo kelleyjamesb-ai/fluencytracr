@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -237,6 +237,35 @@ describe("AIValueJourney", () => {
     );
   });
 
+  it("answers client value questions in plain language", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const questions = screen.getByRole("region", { name: /Client value questions/i });
+    expect(within(questions).getByRole("heading", { name: /Client value questions/i })).toBeInTheDocument();
+    expect(within(questions).getByText(/What workflow should change first/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/What can Glean show now/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/aggregate AI-enabled work/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/What proof is still missing/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/Baseline window and comparison period/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/What can we safely say/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/do not present realized ROI or causality/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/What should the client do next/i)).toBeInTheDocument();
+    expect(
+      within(questions).getByText(/Review missing staffing, rollout, baseline, and metric assumptions/i)
+    ).toBeInTheDocument();
+
+    expect(container.textContent).not.toMatch(
+      /workflow_state|metric_id|schema_version|claim boundary|claim boundaries|Glean proved ROI|causality proof|productivity score/i
+    );
+  });
+
   it("turns metrics into outcome and ROI opportunity mapping cards", async () => {
     const { container } = renderPage();
 
@@ -277,11 +306,11 @@ describe("AIValueJourney", () => {
     expect(screen.getByText(/Next client action/i)).toBeInTheDocument();
     expect(screen.getAllByText(/FluencyTracr aggregate evidence/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Baseline window and comparison period/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Baseline window and comparison period/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Conservative/i)).toBeInTheDocument();
     expect(screen.getByText(/Base case/i)).toBeInTheDocument();
     expect(screen.getByText(/Expanded/i)).toBeInTheDocument();
-    expect(screen.getByText(/Caveated value investigation/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Caveated value investigation/i).length).toBeGreaterThan(0);
 
     expect(container.textContent).not.toMatch(
       /workflow_state|scenario_state|claim_boundary|Claim Boundary|HOLD_FOR|FT_AI_VALUE|Glean proved ROI|causality proof|productivity score/i

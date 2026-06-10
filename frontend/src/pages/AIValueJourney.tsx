@@ -96,6 +96,30 @@ export const AIValueJourney = () => {
         </article>
       </section>
 
+      <section className="ai-value-client-questions" aria-label="Client value questions">
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Sponsor View</p>
+            <h2>Client Value Questions</h2>
+            <p>
+              The Journey should make the value conversation obvious: what to change,
+              where value may appear, what evidence exists, and what must still be
+              validated before stronger ROI language is used.
+            </p>
+          </div>
+          <StatusPill label="Governed opportunity view" tone="warn" />
+        </div>
+        <div className="ai-value-client-question-grid">
+          {journey.valueQuestions.map((item) => (
+            <article className="ai-value-client-question-card" key={item.question}>
+              <span className="ai-value-map-label">{item.question}</span>
+              <strong>{item.answer}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="ai-value-phase-grid" aria-label="AI value platform phases">
         {journey.stages.map((stage, index) => (
           <article className="ai-value-panel ai-value-phase-card" key={stage.key}>
