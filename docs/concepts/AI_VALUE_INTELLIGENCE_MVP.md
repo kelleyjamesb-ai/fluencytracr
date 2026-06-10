@@ -55,8 +55,8 @@ Secondary users:
 - operations analysts;
 - customer success and renewal teams.
 
-The system is not for employee productivity management, manager comparison,
-team ranking, or surveillance.
+The system must not be used for employee productivity management, manager
+comparison, rank-ordering groups, or surveillance.
 
 ## 4. Core Questions
 

@@ -29,8 +29,8 @@ Rationale:
   confirmed before any stronger executive value narrative.
 
 Do not use this dry run to claim realized ROI, savings, causality,
-productivity lift, individual performance, team ranking, manager comparison, or
-HR analytics.
+productivity lift, individual performance, ranked group comparison, manager
+comparison, or HR analytics.
 
 ## Approved Scope
 

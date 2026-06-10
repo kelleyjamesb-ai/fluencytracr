@@ -261,7 +261,7 @@ The pilot packet is ready only when all criteria are true:
 - missing evidence produces `MISSING`, `HELD`, or `SUPPRESSED` language;
 - suppressed AI work evidence blocks downstream value language;
 - no claim says ROI, savings, causality, productivity lift, individual scoring,
-  team ranking, manager comparison, or HR analytics.
+  ranked group comparison, manager comparison, or HR analytics.
 
 ## Stop Conditions
 
