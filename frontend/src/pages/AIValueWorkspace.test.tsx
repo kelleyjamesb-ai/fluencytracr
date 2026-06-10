@@ -507,12 +507,33 @@ describe("AIValueWorkspace journey continuity", () => {
     }
   };
 
-  const stubJourneyFetch = (objects: Array<Record<string, unknown>>) => {
+  const cloneJourneyDetails = () =>
+    JSON.parse(JSON.stringify(journeyDetails)) as Record<string, Record<string, unknown>>;
+
+  const withOutcomeReviewState = (state: "MISSING" | "SUBMITTED" | "ACCEPTED" | "REJECTED") => {
+    const nextDetails = cloneJourneyDetails();
+    const roiScenario = nextDetails["roi_scenario/roi_support"] as Record<string, any>;
+    roiScenario.evidence_status.outcome_evidence_review_state = state;
+    const nextObjects =
+      state === "MISSING"
+        ? journeyObjects.filter((item) => item.object_type !== "outcome_evidence_export")
+        : journeyObjects.map((item) =>
+            item.object_type === "outcome_evidence_export"
+              ? { ...item, validation: { review_state: state } }
+              : item
+          );
+    return { objects: nextObjects, details: nextDetails };
+  };
+
+  const stubJourneyFetch = (
+    objects: Array<Record<string, unknown>>,
+    details: Record<string, Record<string, unknown>> = journeyDetails
+  ) => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        for (const [path, payload] of Object.entries(journeyDetails)) {
+        for (const [path, payload] of Object.entries(details)) {
           if (url.includes(`/ai-value/objects/${path}`)) {
             const [object_type, object_id] = path.split("/");
             return jsonResponse({
@@ -640,6 +661,66 @@ describe("AIValueWorkspace journey continuity", () => {
       "export_v1"
     ]);
     expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it.each([
+    {
+      state: "ACCEPTED" as const,
+      proofAnswer: /Accepted customer evidence is attached for caveated sponsor review/i,
+      sponsorDecision: /Decide whether the accepted evidence is ready for a caveated sponsor readout/i,
+      nextAction: /Prepare the caveated sponsor readout with accepted evidence/i,
+      agentAction: /prepare the caveated readout/i
+    },
+    {
+      state: "SUBMITTED" as const,
+      proofAnswer: /A customer export is awaiting reviewer acceptance before stronger value language/i,
+      sponsorDecision: /Hold stronger value language until the submitted customer export is accepted or rejected/i,
+      nextAction: /Have Support Operations review the submitted aggregate export/i,
+      agentAction: /route reviewer action/i
+    },
+    {
+      state: "REJECTED" as const,
+      proofAnswer: /A corrected aggregate customer export is still needed/i,
+      sponsorDecision: /Hold stronger value language and request a corrected aggregate export/i,
+      nextAction: /Ask Support Operations to resubmit the aggregate Median resolution time export/i,
+      agentAction: /request the corrected aggregate export/i
+    },
+    {
+      state: "MISSING" as const,
+      proofAnswer: /The aggregate customer export has not arrived yet/i,
+      sponsorDecision: /Hold stronger value language until the data owner submits the requested aggregate export/i,
+      nextAction: /Ask Support Operations for an aggregate Median resolution time export/i,
+      agentAction: /send the data-owner request/i
+    }
+  ])("carries $state evidence into workspace executive cadence", async ({
+    state,
+    proofAnswer,
+    sponsorDecision,
+    nextAction,
+    agentAction
+  }) => {
+    const fixture = withOutcomeReviewState(state);
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText(proofAnswer).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(sponsorDecision).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(nextAction).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(agentAction).length).toBeGreaterThan(0);
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
   it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {

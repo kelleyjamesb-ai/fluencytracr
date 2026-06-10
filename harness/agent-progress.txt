@@ -218,6 +218,12 @@
 - Verified: `npm run build --workspace shared`; targeted backend tests for aggregate import and real-source readiness (9 tests); targeted frontend Methodology Review Workspace tests (4 tests); `npm run build --workspace frontend`; full frontend tests (17 tests); `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`. Strict OpenSpec validation was attempted but blocked by restricted network fetching `@fission-ai/openspec`.
 - Next focus: Stage 2 should make the aggregate package review workflow more operational before any persistence, live Glean connection, or claim-readiness effect is introduced.
 
+## 2026-06-10 (UTC) — Codex (AI Value Platform evidence-aware cadence)
+
+- Completed: Added Evidence-Aware Executive Operating Cadence for the AI Value Platform. Journey and Workspace now use Customer Evidence Review state to change Client Value Questions, sponsor decision, recommended next action, and agentic follow-up for accepted, submitted, rejected, and missing customer evidence. Workspace now also renders the sponsor-facing Client Value Questions and Executive Operating Packet.
+- Verified: Red/green `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "executive cadence"`; affected Journey/Workspace suites; full frontend tests; frontend build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; `git diff --check`; Playwright CLI mocked-route checks for Journey/Workspace at 1440px and 390px with no unsafe internal state codes or object terms, no console errors/warnings, and no horizontal overflow.
+- Next focus: Make the opened/generated Executive Readout HTML evidence-aware so the readout packet itself reflects accepted, submitted, rejected, or missing customer evidence with caveated-only value language.
+
 ## 2026-05-08 (UTC) — Codex (Nielsen Source Evidence Trial Stage 2)
 
 - Completed: Added `NSETR_2026_05`, a review-only Nielsen Source Evidence Trial that maps sanitized Nielsen deck and Time-Saves packet references into document-derived claim candidates and a generated Aggregate Evidence Import package. The sample maps 6 candidates: 2 accepted for review and 4 withheld behind survey export, external outcome export, financial approval, and customer-level telemetry gaps.

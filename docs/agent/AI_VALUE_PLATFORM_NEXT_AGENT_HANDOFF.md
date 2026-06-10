@@ -96,24 +96,24 @@ What is now in place:
 Latest completed slice:
 
 ```text
-Customer Evidence Review Workbench from the Request Packet
+Evidence-Aware Executive Operating Cadence
 ```
 
 What is now in place:
 
-- `useAiValueJourney` now builds a `CustomerEvidenceReviewWorkbench` view model
-  from Customer Evidence Request, governed ROI Scenario Readiness, and
-  `outcome_evidence_export` review state.
-- `/ai-value-journey` replaces the raw export-card list with a sponsor-readable
-  "Customer Evidence Review" workbench.
-- `/ai-value-workspace` shows the same review workbench beside the Customer
-  Evidence Request Packet.
-- The workbench shows whether the requested export is missing, submitted,
-  accepted, or rejected; who reviews it; whether it matches requested metric,
-  customer system, export level, and baseline/comparison windows; and what value
-  language remains blocked.
-- Accept and Reject actions appear only for submitted evidence and still call
-  the existing role-gated review API. Export IDs are no longer primary UI copy.
+- `useAiValueJourney` now uses `CustomerEvidenceReviewWorkbench.reviewState`
+  when building the Executive Operating Packet and Client Value Questions.
+- Accepted evidence routes to caveated sponsor readout prep with blocked value
+  language still attached.
+- Submitted evidence routes to reviewer action before stronger value language.
+- Rejected evidence routes to corrected-export request and keeps stronger value
+  language held.
+- Missing evidence routes to the data-owner request.
+- `/ai-value-workspace` now renders the sponsor-facing Client Value Questions
+  and Executive Operating Packet, so the workshop carries the same cadence as
+  `/ai-value-journey`.
+- Agentic follow-up now changes by evidence state: caveated readout prep,
+  reviewer action, corrected-export request, or data-owner request.
 - Accepted evidence remains caveated support only. No production connector,
   autonomous customer action, ROI proof, causality claim, individual scoring, HR
   analytics, productivity ranking, or customer-facing dollarized output was
@@ -122,8 +122,7 @@ What is now in place:
 Verification completed:
 
 - Red test first:
-  `npm test --workspace frontend -- AIValueJourney.test.tsx -t "customer evidence review"`
-- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "customer evidence review"`
+  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "executive cadence"`
 - `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
 - `npm test --workspace frontend`
 - `npm run build --workspace frontend`
@@ -135,39 +134,40 @@ Verification completed:
 - `node scripts/ci_glean_value_governance_gates.mjs`
 - `git diff --check`
 - Browser smoke with mocked governed objects: Journey and Workspace render
-  Customer Evidence Request plus Customer Evidence Review, show the Support
-  Operations review workflow, expose no unsafe/internal terms, have no console
-  warnings/errors after stubbing the local-preview Speed Insights script, and
+  Customer Evidence Review, Client Value Questions, and Executive Operating
+  Packet; show the Support Operations reviewer-action cadence; expose no unsafe
+  internal state codes or object terms; have no console warnings/errors; and
   have no horizontal overflow at 390px or 1440px.
 
 Recommended next slice:
 
 ```text
-Evidence-Aware Executive Operating Cadence
+Evidence-Aware Executive Readout HTML
 ```
 
 Goal:
 
-Connect the accepted/rejected/missing evidence-review result into the executive
-operating packet, client value questions, and agentic follow-up so the sponsor
-can see whether value language can remain caveated, must be held, or needs
-corrected/resubmitted evidence.
+Make the opened/generated Executive Readout HTML reflect the same evidence-aware
+cadence now shown in Journey and Workspace. The readout itself should tell a
+sponsor whether customer outcome evidence is missing, awaiting review, accepted,
+or rejected, and what that means for caveated value language.
 
 Acceptance criteria:
 
-- Executive Operating Packet should use the Customer Evidence Review state, not
-  only the request packet, when choosing sponsor decision and recommended next
-  action.
-- Client Value Questions should distinguish "export requested" from "export
-  accepted", "awaiting review", and "rejected/resubmit."
-- Agentic follow-up should route accepted evidence to caveated readout prep,
-  submitted evidence to reviewer action, rejected evidence to corrected-export
-  request, and missing evidence to data-owner request.
-- Keep accepted evidence caveated. Do not calculate ROI, emit dollarized output,
-  claim causality, rank people/teams/managers, introduce HR analytics, create a
-  production connector, or add autonomous customer actions.
-- Add focused Journey/Workspace tests for accepted, submitted, rejected, and
-  missing executive-cadence language.
+- The readout HTML should include evidence-aware sponsor decision, next action,
+  and caveat language derived from the current outcome evidence review state.
+- Accepted evidence may appear only as caveated support for sponsor review, not
+  ROI proof.
+- Submitted evidence should tell the sponsor review is pending.
+- Rejected evidence should request corrected aggregate evidence before stronger
+  value language.
+- Missing evidence should route to the data-owner request.
+- Journey/Workspace "Open executive readout" behavior should remain working.
+- Do not calculate ROI, emit dollarized output, claim causality, rank
+  people/teams/managers, introduce HR analytics, create a production connector,
+  or add autonomous customer actions.
+- Add focused backend/readout tests plus any frontend smoke needed to prove the
+  opened packet carries the same cadence as the page panels.
 
 Suggested files:
 
@@ -183,24 +183,26 @@ Suggested files:
 Use this prompt to continue:
 
 ```text
-Create the Evidence-Aware Executive Operating Cadence product slice for the AI
-Value Platform. Use the Customer Evidence Review Workbench state to update the
-Executive Operating Packet, Client Value Questions, and agentic handoff language
-so accepted, submitted, rejected, and missing exports produce different sponsor
-next actions. Accepted evidence may support caveated value review only; rejected
-or missing evidence must hold stronger value language. Do not add production
-connectors, autonomous customer actions, raw prompts/responses, direct
-identifiers, unsupported ROI proof, causality claims, individual scoring, HR
-analytics, productivity ranking, or customer-facing dollarized output. Add
-focused tests and keep ROI scenario, agent-harness, frontend, backend object
-API, build, and governance checks green.
+Create the Evidence-Aware Executive Readout HTML product slice for the AI Value
+Platform. The opened/generated Executive Readout should use the same Customer
+Evidence Review state now used by Journey and Workspace: accepted evidence
+routes to caveated readout language, submitted evidence routes to reviewer
+action, rejected evidence routes to corrected-export request, and missing
+evidence routes to data-owner request. Accepted evidence may support caveated
+value review only; rejected or missing evidence must hold stronger value
+language. Do not add production connectors, autonomous customer actions, raw
+prompts/responses, direct identifiers, unsupported ROI proof, causality claims,
+individual scoring, HR analytics, productivity ranking, or customer-facing
+dollarized output. Add focused tests and keep ROI scenario, agent-harness,
+frontend, backend object API, build, and governance checks green.
 ```
 
 ## What To Validate First
 
-Validate that the executive packet is now driven by actual evidence-review
-state, not merely by the existence of a request packet.
+Validate where the Executive Readout HTML is rendered from stored objects, then
+thread the evidence-review cadence into that renderer without duplicating
+business rules in an unsafe way.
 
-The current biggest risk is that the platform can request and review evidence,
-but the sponsor-facing next action still sounds the same regardless of whether
-the customer export is missing, submitted, accepted, or rejected.
+The current biggest risk is that Journey and Workspace now show the correct
+evidence-aware cadence, but the opened executive readout could still sound
+generic or stronger than the evidence state allows.

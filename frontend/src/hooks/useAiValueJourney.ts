@@ -554,28 +554,93 @@ function buildExecutiveOperatingPlan(params: {
   evidenceScenarioPlan: EvidenceScenarioPlan;
   opportunities: ValueOpportunity[];
   customerEvidenceRequest?: CustomerEvidenceRequest;
+  customerEvidenceReview?: CustomerEvidenceReviewWorkbench;
 }): ExecutiveOperatingPlan {
-  const { packetCount, evidenceScenarioPlan, opportunities, customerEvidenceRequest } = params;
+  const {
+    packetCount,
+    evidenceScenarioPlan,
+    opportunities,
+    customerEvidenceRequest,
+    customerEvidenceReview
+  } = params;
+  const reviewer = customerEvidenceReview?.reviewer ?? "Customer data owner";
+  const metricName = customerEvidenceRequest?.metricName ?? "selected outcome signal";
+  const sourceSystem = customerEvidenceRequest?.sourceSystem ?? "customer-owned outcome system";
+  const approvedGrain = customerEvidenceRequest?.approvedGrain ?? "approved aggregate export";
+  const requestReady = customerEvidenceRequest?.available === true;
+
+  const defaultRecommendedAction =
+    opportunities.length > 0
+      ? customerEvidenceRequest?.nextAction ?? evidenceScenarioPlan.nextClientAction
+      : "Finish Blueprint and outcome mapping before assigning follow-up work.";
+  const defaultSponsorDecision =
+    packetCount > 0
+      ? "Decide whether to expand the workflow pilot, collect stronger customer evidence, or hold external value language."
+      : "Decide what evidence is still needed before the sponsor packet is generated.";
+
+  const reviewState = requestReady ? customerEvidenceReview?.reviewState ?? "MISSING" : null;
+  const evidenceCadence =
+    reviewState === "ACCEPTED"
+      ? {
+          sponsorDecision:
+            "Decide whether the accepted evidence is ready for a caveated sponsor readout, expansion planning, or a hold for stronger assumptions.",
+          recommendedNextAction:
+            "Prepare the caveated sponsor readout with accepted evidence, customer assumptions, and blocked value language attached.",
+          valueReadoutTask:
+            "Use Blueprint, outcome mapping, accepted evidence, assumptions, and safe language to prepare the caveated readout.",
+          evidenceReadinessTask:
+            "Confirm the accepted aggregate export stays attached to the packet with source, window, and blocked-claim caveats visible."
+        }
+      : reviewState === "SUBMITTED"
+        ? {
+            sponsorDecision:
+              "Hold stronger value language until the submitted customer export is accepted or rejected.",
+            recommendedNextAction:
+              `Have ${reviewer} review the submitted aggregate export against ${metricName}, ${sourceSystem}, ${approvedGrain}, and approved windows.`,
+            valueReadoutTask:
+              "Keep the sponsor readout in draft status; prepare only caveats and blocked language until review completes.",
+            evidenceReadinessTask:
+              `Route reviewer action: have ${reviewer} accept or reject the submitted aggregate export against the request.`
+          }
+        : reviewState === "REJECTED"
+          ? {
+              sponsorDecision:
+                "Hold stronger value language and request a corrected aggregate export.",
+              recommendedNextAction:
+                `Ask ${reviewer} to resubmit the aggregate ${metricName} export from ${sourceSystem} at ${approvedGrain} for the approved windows.`,
+              valueReadoutTask:
+                "Keep the readout blocked from stronger value language until corrected evidence is accepted.",
+              evidenceReadinessTask:
+                `Use the Customer Evidence Request to request the corrected aggregate export from ${reviewer}.`
+            }
+          : reviewState === "MISSING"
+            ? {
+                sponsorDecision:
+                  "Hold stronger value language until the data owner submits the requested aggregate export.",
+                recommendedNextAction: defaultRecommendedAction,
+                valueReadoutTask:
+                  "Keep the readout in planning status and carry only modeled opportunity language with caveats.",
+                evidenceReadinessTask:
+                  `Use the Customer Evidence Request to send the data-owner request to ${reviewer}.`
+              }
+            : null;
+
   return {
     packetStatus: packetCount > 0 ? "Sponsor packet ready" : "Needs sponsor packet",
-    sponsorDecision:
-      packetCount > 0
-        ? "Decide whether to expand the workflow pilot, collect stronger customer evidence, or hold external value language."
-        : "Decide what evidence is still needed before the sponsor packet is generated.",
-    recommendedNextAction:
-      opportunities.length > 0
-        ? customerEvidenceRequest?.nextAction ?? evidenceScenarioPlan.nextClientAction
-        : "Finish Blueprint and outcome mapping before assigning follow-up work.",
+    sponsorDecision: evidenceCadence?.sponsorDecision ?? defaultSponsorDecision,
+    recommendedNextAction: evidenceCadence?.recommendedNextAction ?? defaultRecommendedAction,
     handoffs: [
       {
         role: "Value-readout agent",
         task:
+          evidenceCadence?.valueReadoutTask ??
           "Prepare the sponsor narrative from Blueprint, outcome mapping, evidence readiness, scenario bands, and safe value language.",
         guardrail: "No realized ROI claim."
       },
       {
         role: "Evidence readiness agent",
         task:
+          evidenceCadence?.evidenceReadinessTask ??
           "Turn the Customer Evidence Request into a data-owner ask, then track baseline exports, customer owner review, source coverage, and unresolved assumptions.",
         guardrail: "No causality claim."
       },
@@ -599,8 +664,16 @@ function buildClientValueQuestions(params: {
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
   executivePlan: ExecutiveOperatingPlan;
+  customerEvidenceRequest?: CustomerEvidenceRequest;
+  customerEvidenceReview?: CustomerEvidenceReviewWorkbench;
 }): ClientValueQuestion[] {
-  const { opportunities, evidenceScenarioPlan, executivePlan } = params;
+  const {
+    opportunities,
+    evidenceScenarioPlan,
+    executivePlan,
+    customerEvidenceRequest,
+    customerEvidenceReview
+  } = params;
   const primaryOpportunity = opportunities[0] ?? null;
   const workflow = primaryOpportunity?.workflowName ?? "Select the first workflow in Blueprint.";
   const roiOpportunity = primaryOpportunity
@@ -609,9 +682,22 @@ function buildClientValueQuestions(params: {
   const gleanEvidence = primaryOpportunity
     ? `${primaryOpportunity.gleanEvidence} Use this as aggregate AI-enabled work evidence, not outcome proof.`
     : "Once instrumentation is mapped, FluencyTracr can show aggregate AI-enabled work patterns around the selected workflow.";
+  const reviewer = customerEvidenceReview?.reviewer ?? "customer data owner";
+  const reviewState =
+    customerEvidenceRequest?.available === true
+      ? customerEvidenceReview?.reviewState ?? "MISSING"
+      : null;
   const missingProof =
-    evidenceScenarioPlan.needsClientEvidence[0] ??
-    "No major evidence gap for the current scenario.";
+    reviewState === "ACCEPTED"
+      ? "Accepted customer evidence is attached for caveated sponsor review; assumptions, caveats, and blocked value language still travel with the packet."
+      : reviewState === "SUBMITTED"
+        ? "A customer export is awaiting reviewer acceptance before stronger value language can be used."
+        : reviewState === "REJECTED"
+          ? "A corrected aggregate customer export is still needed before the packet can move into caveated readout."
+          : reviewState === "MISSING"
+            ? `The aggregate customer export has not arrived yet; ${reviewer} should provide the requested metric, source, export level, and windows.`
+            : evidenceScenarioPlan.needsClientEvidence[0] ??
+              "No major evidence gap for the current scenario.";
 
   return [
     {
@@ -1422,12 +1508,15 @@ export const useAiValueJourney = (): AiValueJourney => {
         packetCount: packetIds.length,
         evidenceScenarioPlan: plan,
         opportunities: mappedOpportunities,
-        customerEvidenceRequest: evidenceRequest
+        customerEvidenceRequest: evidenceRequest,
+        customerEvidenceReview: evidenceReview
       });
       const questions = buildClientValueQuestions({
         opportunities: mappedOpportunities,
         evidenceScenarioPlan: plan,
-        executivePlan
+        executivePlan,
+        customerEvidenceRequest: evidenceRequest,
+        customerEvidenceReview: evidenceReview
       });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));

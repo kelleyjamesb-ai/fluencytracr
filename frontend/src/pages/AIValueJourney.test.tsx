@@ -412,12 +412,14 @@ describe("AIValueJourney", () => {
     expect(within(questions).getByText(/What can Glean show now/i)).toBeInTheDocument();
     expect(within(questions).getByText(/aggregate AI-enabled work/i)).toBeInTheDocument();
     expect(within(questions).getByText(/What proof is still missing/i)).toBeInTheDocument();
-    expect(within(questions).getByText(/Baseline window and comparison period/i)).toBeInTheDocument();
+    expect(
+      within(questions).getByText(/customer export is awaiting reviewer acceptance/i)
+    ).toBeInTheDocument();
     expect(within(questions).getByText(/What can we safely say/i)).toBeInTheDocument();
     expect(within(questions).getByText(/do not present realized ROI or causality/i)).toBeInTheDocument();
     expect(within(questions).getByText(/What should the client do next/i)).toBeInTheDocument();
     expect(
-      within(questions).getByText(/Ask Support Operations for an aggregate Median resolution time export/i)
+      within(questions).getByText(/Have Support Operations review the submitted aggregate export/i)
     ).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent);
@@ -742,6 +744,66 @@ describe("AIValueJourney", () => {
       uiTerm("raw", "_", "response"),
       uiTerm("autonomous", " ", "customer", " ", "action")
     ]);
+  });
+
+  it.each([
+    {
+      state: "ACCEPTED" as const,
+      proofAnswer: /Accepted customer evidence is attached for caveated sponsor review/i,
+      sponsorDecision: /Decide whether the accepted evidence is ready for a caveated sponsor readout/i,
+      nextAction: /Prepare the caveated sponsor readout with accepted evidence/i,
+      agentAction: /prepare the caveated readout/i
+    },
+    {
+      state: "SUBMITTED" as const,
+      proofAnswer: /A customer export is awaiting reviewer acceptance before stronger value language/i,
+      sponsorDecision: /Hold stronger value language until the submitted customer export is accepted or rejected/i,
+      nextAction: /Have Support Operations review the submitted aggregate export/i,
+      agentAction: /route reviewer action/i
+    },
+    {
+      state: "REJECTED" as const,
+      proofAnswer: /A corrected aggregate customer export is still needed/i,
+      sponsorDecision: /Hold stronger value language and request a corrected aggregate export/i,
+      nextAction: /Ask Support Operations to resubmit the aggregate Median resolution time export/i,
+      agentAction: /request the corrected aggregate export/i
+    },
+    {
+      state: "MISSING" as const,
+      proofAnswer: /The aggregate customer export has not arrived yet/i,
+      sponsorDecision: /Hold stronger value language until the data owner submits the requested aggregate export/i,
+      nextAction: /Ask Support Operations for an aggregate Median resolution time export/i,
+      agentAction: /send the data-owner request/i
+    }
+  ])("routes $state evidence into executive cadence language", async ({
+    state,
+    proofAnswer,
+    sponsorDecision,
+    nextAction,
+    agentAction
+  }) => {
+    const fixture = withOutcomeReviewState(state);
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const questions = screen.getByRole("region", { name: /Client value questions/i });
+    expect(within(questions).getByText(/What proof is still missing/i)).toBeInTheDocument();
+    expect(within(questions).getByText(proofAnswer)).toBeInTheDocument();
+
+    expect(screen.getAllByText(sponsorDecision).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(nextAction).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(agentAction).length).toBeGreaterThan(0);
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
   it("lets a reviewer accept submitted evidence", async () => {
