@@ -59,6 +59,26 @@ export {
 } from "./intake";
 export type { WorkshopIntakeResult } from "./intake";
 
+export {
+  validateEngagement,
+  engagementCoversWorkflowFamily,
+  ENGAGEMENT_SCHEMA_VERSION
+} from "./engagement";
+export type { EngagementValidationResult } from "./engagement";
+
+export {
+  validateFluencyBaseline,
+  summarizeFluencyBaseline,
+  FLUENCY_BASELINE_SCHEMA_VERSION,
+  FLUENCY_MIN_COHORT_SIZE,
+  FLUENCY_CONSTRUCTS,
+  FLUENCY_INSTRUMENT_IDS
+} from "./fluencyBaseline";
+export type { FluencyBaselineValidationResult } from "./fluencyBaseline";
+
+export { runValueChain, VALUE_CHAIN_RESULT_SCHEMA_VERSION } from "./valueChain";
+export type { ValueChainRunInput, ValueChainRunResult } from "./valueChain";
+
 export { runSpine, SPINE_RESULT_SCHEMA_VERSION } from "./spine";
 export type {
   SpineRunInput,

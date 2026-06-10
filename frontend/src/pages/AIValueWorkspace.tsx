@@ -100,6 +100,44 @@ export const AIValueWorkspace = () => {
           </div>
         </article>
 
+        {activeTab === "Workflow Canvas" && live?.kickoff && (
+          <article className="ai-value-panel">
+            <h3>Client kickoff</h3>
+            <div className="ai-value-band">
+              <h4>{live.kickoff.clientName}</h4>
+              <p>{live.kickoff.objectiveStatement}</p>
+            </div>
+            {live.kickoff.sponsorQuestion && (
+              <p>Outcome the sponsor cares about: {live.kickoff.sponsorQuestion}</p>
+            )}
+            {live.kickoff.fluency && (
+              <>
+                <h4>Fluency check at kickoff</h4>
+                <div className="ai-value-chip-row">
+                  <StatusPill
+                    label={`${live.kickoff.fluency.respondents} participants`}
+                    tone="good"
+                  />
+                  <StatusPill
+                    label={`Strongest: ${live.kickoff.fluency.strongest}`}
+                    tone="good"
+                  />
+                  <StatusPill
+                    label={`Biggest gap: ${live.kickoff.fluency.biggestGap}`}
+                    tone="warn"
+                  />
+                  {live.kickoff.fluency.withheldGroups > 0 && (
+                    <StatusPill
+                      label={`${live.kickoff.fluency.withheldGroups} small group withheld`}
+                    />
+                  )}
+                </div>
+                <p>{live.kickoff.fluency.note}</p>
+              </>
+            )}
+          </article>
+        )}
+
         {activeTab === "Workflow Canvas" && (
           <article className="ai-value-panel">
             <h3>Build the workshop canvas with the client</h3>

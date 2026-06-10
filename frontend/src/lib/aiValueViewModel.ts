@@ -5,7 +5,21 @@
  */
 import type { AiValueSpineRun } from "./aiValueApi";
 
+export interface AiValueKickoffContext {
+  clientName: string;
+  objectiveStatement: string;
+  sponsorQuestion: string;
+  fluency: {
+    respondents: number;
+    strongest: string;
+    biggestGap: string;
+    withheldGroups: number;
+    note: string;
+  } | null;
+}
+
 export interface AiValueWorkspaceViewModel {
+  kickoff?: AiValueKickoffContext | null;
   workflowName: string;
   valueRouteLabel: string;
   decisionLabel: string;
@@ -112,6 +126,51 @@ const humanizeWorkflowFamily = (family: string): string => {
   const text = family.replace(/_/g, " ").trim();
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
+
+const CONSTRUCT_LABELS: Record<string, string> = {
+  confidence: "Confidence",
+  usage_quality: "Usage quality",
+  behavior_change: "Behavior change",
+  leadership_reinforcement: "Leadership reinforcement",
+  capability_growth: "Capability growth",
+  ai_attitude: "AI attitude",
+  behavioral_intent: "Intent to use AI more",
+  perceived_ai_impact: "Perceived AI impact"
+};
+
+export function buildKickoffContext(
+  engagement: Record<string, any> | null,
+  fluencySummary: Record<string, any> | null
+): AiValueKickoffContext | null {
+  if (!engagement) return null;
+  let fluency: AiValueKickoffContext["fluency"] = null;
+  const means = (fluencySummary?.construct_means ?? {}) as Record<string, number | null>;
+  const scored = Object.entries(means).filter(([, value]) => typeof value === "number") as Array<[
+    string,
+    number
+  ]>;
+  if (fluencySummary && scored.length > 0) {
+    const sorted = [...scored].sort((a, b) => b[1] - a[1]);
+    fluency = {
+      respondents: Number(fluencySummary.total_respondents ?? 0),
+      strongest: CONSTRUCT_LABELS[sorted[0][0]] ?? sorted[0][0],
+      biggestGap: CONSTRUCT_LABELS[sorted[sorted.length - 1][0]] ?? sorted[sorted.length - 1][0],
+      withheldGroups: Number(fluencySummary.suppressed_cohorts ?? 0),
+      note: "Directional kickoff signal from the fluency check. Never used to score or compare people."
+    };
+  }
+  return {
+    clientName: String(engagement?.client?.client_name ?? "Client"),
+    objectiveStatement: String(
+      engagement?.business_objective?.objective_statement ??
+        "Connect this workflow to a client objective."
+    ),
+    sponsorQuestion: String(
+      engagement?.business_objective?.positive_business_outcome ?? ""
+    ),
+    fluency
+  };
+}
 
 export function spineRunToViewModel(run: AiValueSpineRun): AiValueWorkspaceViewModel {
   const blueprint = (run.stages.blueprint.object ?? {}) as Record<string, any>;

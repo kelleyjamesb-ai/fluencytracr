@@ -52,6 +52,14 @@ const OBJECT_TYPES: Record<string, ObjectTypeConfig> = {
   executive_packet: {
     idField: "packet_id",
     validate: (payload) => aiValueEngine.validateExecutivePacket(payload)
+  },
+  engagement: {
+    idField: "engagement_id",
+    validate: (payload) => aiValueEngine.validateEngagement(payload)
+  },
+  fluency_baseline: {
+    idField: "baseline_id",
+    validate: (payload) => aiValueEngine.validateFluencyBaseline(payload)
   }
 };
 
@@ -206,6 +214,102 @@ export function registerAiValueRoutes(app: Express): void {
         ...recordSummary(record),
         payload: record.payload
       });
+    }
+  );
+
+  app.post(
+    "/api/v1/ai-value/value-chain/run",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const blueprintId = body.blueprint_id;
+      const metricsLibraryId = body.metrics_library_id;
+      const engagementId = body.engagement_id;
+      const fluencyBaselineId = body.fluency_baseline_id;
+      const scenarioId = body.scenario_id;
+      const persist = body.persist !== false;
+
+      if (typeof blueprintId !== "string" || typeof metricsLibraryId !== "string") {
+        return res.status(400).json({
+          error: "blueprint_id and metrics_library_id are required",
+          reason: "INVALID_VALUE_CHAIN_REQUEST"
+        });
+      }
+
+      const load = async (objectType: string, objectId: unknown) => {
+        if (typeof objectId !== "string") return undefined;
+        const record = await getAiValueObject(orgId, objectType, objectId);
+        if (!record) {
+          res.status(404).json({
+            error: `${objectType} ${objectId} not found`,
+            reason: "OBJECT_NOT_FOUND"
+          });
+          return null;
+        }
+        return record.payload;
+      };
+
+      const blueprintPayload = await load("blueprint", blueprintId);
+      if (blueprintPayload === null) return;
+      const metricsPayload = await load("metrics_library", metricsLibraryId);
+      if (metricsPayload === null) return;
+      const engagementPayload = await load("engagement", engagementId);
+      if (engagementPayload === null) return;
+      const fluencyPayload = await load("fluency_baseline", fluencyBaselineId);
+      if (fluencyPayload === null) return;
+      const scenarioPayload = await load("value_scenario", scenarioId);
+      if (scenarioPayload === null) return;
+
+      const familySegment = sanitizeIdSegment(
+        (blueprintPayload as Record<string, unknown>).workflow_family as string ??
+          (blueprintId as string)
+      );
+      const run = aiValueEngine.runValueChain({
+        engagement: engagementPayload,
+        fluencyBaseline: fluencyPayload,
+        blueprint: blueprintPayload,
+        metricsLibrary: metricsPayload,
+        scenario: scenarioPayload,
+        ids: {
+          readinessId: `readiness_${familySegment}_v1`,
+          claimBoundaryId: `claim_boundary_${familySegment}_v1`,
+          packetId: `executive_packet_${familySegment}_v1`
+        }
+      });
+
+      const persisted: Array<{ object_type: string; object_id: string }> = [];
+      if (persist && run.spine) {
+        const generatedStages: Array<{ stage: "scenario" | "readiness" | "claim_boundary" | "executive_packet"; objectType: string; idField: string }> = [
+          { stage: "scenario", objectType: "value_scenario", idField: "scenario_id" },
+          { stage: "readiness", objectType: "evidence_readiness", idField: "readiness_id" },
+          { stage: "claim_boundary", objectType: "claim_boundary", idField: "claim_boundary_id" },
+          { stage: "executive_packet", objectType: "executive_packet", idField: "packet_id" }
+        ];
+        for (const { stage, objectType, idField } of generatedStages) {
+          const stageResult = run.spine.stages[stage];
+          if (stageResult.status !== "VALID" || !stageResult.generated || !stageResult.object) {
+            continue;
+          }
+          const objectPayload = stageResult.object as Record<string, unknown>;
+          const objectId = String(objectPayload[idField]);
+          await upsertAiValueObject({
+            orgId,
+            objectType,
+            objectId,
+            schemaVersion: String(objectPayload.schema_version ?? "UNKNOWN"),
+            workflowFamily: workflowFamilyOf(objectPayload),
+            payload: objectPayload,
+            validation: stageResult.validation as unknown as Record<string, unknown>,
+            valid: true
+          });
+          persisted.push({ object_type: objectType, object_id: objectId });
+        }
+      }
+
+      return res.json({ run, persisted });
     }
   );
 

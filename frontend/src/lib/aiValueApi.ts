@@ -93,6 +93,40 @@ export const putAiValueObject = (
     }
   );
 
+export interface AiValueChainRun {
+  schema_version: string;
+  decision: string;
+  halted_at: string | null;
+  customer_facing_economic_output: false;
+  engagement: AiValueSpineStage & { covers_workflow_family: boolean | null };
+  fluency_baseline: AiValueSpineStage & { summary: Record<string, unknown> | null };
+  spine: AiValueSpineRun | null;
+}
+
+export const runAiValueChain = (
+  role: string,
+  params: {
+    blueprintId: string;
+    metricsLibraryId: string;
+    engagementId?: string;
+    fluencyBaselineId?: string;
+  }
+) =>
+  requestJson<{ run: AiValueChainRun; persisted: Array<{ object_type: string; object_id: string }> }>(
+    role,
+    "/api/v1/ai-value/value-chain/run",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        blueprint_id: params.blueprintId,
+        metrics_library_id: params.metricsLibraryId,
+        engagement_id: params.engagementId,
+        fluency_baseline_id: params.fluencyBaselineId
+      })
+    }
+  );
+
 export const runAiValueSpine = (
   role: string,
   blueprintId: string,

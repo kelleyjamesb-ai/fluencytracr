@@ -4,10 +4,12 @@ import {
   listAiValueObjects,
   putAiValueObject,
   runAiValueSpine,
+  runAiValueChain,
   AiValueApiError
 } from "../lib/aiValueApi";
 import {
   spineRunToViewModel,
+  buildKickoffContext,
   type AiValueWorkspaceViewModel
 } from "../lib/aiValueViewModel";
 import seedBlueprint from "../../../docs/contracts/ai-value-intelligence/examples/customer-support-blueprint.json";
@@ -69,8 +71,30 @@ export const useAiValueWorkspace = (): AiValueWorkspaceState => {
         throw new Error("No workshop objects available");
       }
 
-      const { run } = await runAiValueSpine(role, blueprintId, libraryId);
-      setLive(spineRunToViewModel(run));
+      // Prefer the full value chain when kickoff objects exist for this org.
+      const engagements = (await listAiValueObjects(role, "engagement")).objects;
+      const baselines = (await listAiValueObjects(role, "fluency_baseline")).objects;
+
+      if (engagements.length > 0) {
+        const { run } = await runAiValueChain(role, {
+          blueprintId,
+          metricsLibraryId: libraryId,
+          engagementId: engagements[0].object_id,
+          fluencyBaselineId: baselines[0]?.object_id
+        });
+        if (!run.spine) {
+          throw new Error(`Value chain held at ${run.halted_at ?? "kickoff"}`);
+        }
+        const viewModel = spineRunToViewModel(run.spine);
+        viewModel.kickoff = buildKickoffContext(
+          (run.engagement.object as Record<string, unknown>) ?? null,
+          run.fluency_baseline.summary
+        );
+        setLive(viewModel);
+      } else {
+        const { run } = await runAiValueSpine(role, blueprintId, libraryId);
+        setLive(spineRunToViewModel(run));
+      }
       setMode("live");
     } catch (error) {
       setMode("error");

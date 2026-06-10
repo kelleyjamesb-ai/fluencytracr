@@ -5,6 +5,10 @@ import { resolve } from "node:path";
 
 import {
   runSpine,
+  runValueChain,
+  validateEngagement,
+  validateFluencyBaseline,
+  summarizeFluencyBaseline,
   buildBlueprintDraftFromWorkshopIntake,
   validateBlueprint,
   validateMetricsLibrary,
@@ -172,6 +176,89 @@ test("the spine is domain-agnostic: sales pipeline runs end to end", () => {
     run.stages.executive_packet.object.customer_facing_economic_output,
     false
   );
+});
+
+const engagement = readExample("customer-support-engagement.json");
+const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+
+test("engagement context validates and traces to the blueprint workflow family", () => {
+  const validation = validateEngagement(engagement);
+  assert.equal(validation.valid, true);
+  assert.equal(validation.use_case_count, 2);
+});
+
+test("fluency baseline validates with suppressed small cohorts", () => {
+  const validation = validateFluencyBaseline(fluencyBaseline);
+  assert.equal(validation.valid, true);
+  assert.equal(validation.suppressed_cohort_count, 1);
+  assert.equal(validation.feeds.value_chain_context, true);
+  assert.equal(validation.feeds.individual_scoring, false);
+});
+
+test("fluency baseline fails closed on small unsuppressed cohorts", () => {
+  const tampered = JSON.parse(JSON.stringify(fluencyBaseline));
+  tampered.cohorts[2] = {
+    cohort_id: "cohort_tiny",
+    cohort_label: "Tiny cohort",
+    respondent_count: 3,
+    construct_scores: { confidence: { mean: 4.0 } }
+  };
+  const validation = validateFluencyBaseline(tampered);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.gaps.some((gap) => gap.includes("must be marked suppressed")));
+});
+
+test("fluency baseline rejects respondent identifiers", () => {
+  const tampered = JSON.parse(JSON.stringify(fluencyBaseline));
+  tampered.cohorts[0].respondent_ids = ["r-1", "r-2"];
+  const validation = validateFluencyBaseline(tampered);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.gaps.some((gap) => gap.includes("Forbidden field")));
+});
+
+test("fluency baseline summary only reports unsuppressed cohorts", () => {
+  const summary = summarizeFluencyBaseline(fluencyBaseline);
+  assert.equal(summary.reported_cohorts, 2);
+  assert.equal(summary.suppressed_cohorts, 1);
+  assert.equal(summary.total_respondents, 180);
+  assert.ok(summary.construct_means.confidence >= 1 && summary.construct_means.confidence <= 5);
+});
+
+test("runValueChain runs kickoff through executive packet", () => {
+  const run = runValueChain({ engagement, fluencyBaseline, blueprint, metricsLibrary });
+  assert.equal(run.engagement.status, "VALID");
+  assert.equal(run.engagement.covers_workflow_family, true);
+  assert.equal(run.fluency_baseline.status, "VALID");
+  assert.ok(run.fluency_baseline.summary);
+  assert.equal(run.spine.halted_at, null);
+  assert.equal(run.decision, run.spine.decision);
+  assert.equal(run.customer_facing_economic_output, false);
+});
+
+test("runValueChain halts when the engagement does not cover the workflow", () => {
+  const foreign = JSON.parse(JSON.stringify(engagement));
+  for (const useCase of foreign.use_cases) useCase.workflow_family = "some_other_family";
+  const run = runValueChain({ engagement: foreign, blueprint, metricsLibrary });
+  assert.equal(run.halted_at, "engagement");
+  assert.equal(run.decision, "HOLD_FOR_USE_CASE_TRACEABILITY");
+  assert.equal(run.engagement.status, "HELD");
+  assert.equal(run.spine, null);
+});
+
+test("runValueChain halts on an invalid fluency baseline instead of dropping it", () => {
+  const broken = { baseline_id: "broken" };
+  const run = runValueChain({ engagement, fluencyBaseline: broken, blueprint, metricsLibrary });
+  assert.equal(run.halted_at, "fluency_baseline");
+  assert.equal(run.decision, "HOLD_FOR_FLUENCY_BASELINE");
+  assert.equal(run.spine, null);
+});
+
+test("runValueChain without kickoff context behaves like the spine", () => {
+  const chain = runValueChain({ blueprint, metricsLibrary });
+  const spine = runSpine({ blueprint, metricsLibrary });
+  assert.equal(chain.engagement.status, "NOT_RUN");
+  assert.equal(chain.fluency_baseline.status, "NOT_RUN");
+  assert.deepEqual(chain.spine, spine);
 });
 
 test("runSpine never emits customer-facing economic output", () => {

@@ -190,6 +190,96 @@ describe("AIValueWorkspace live evidence mode", () => {
     );
   });
 
+  it("shows the client kickoff context when the full value chain is available", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("object_type=blueprint")) {
+          return jsonResponse({
+            objects: [{ object_type: "blueprint", object_id: "bp_sales_pipeline" }]
+          });
+        }
+        if (url.includes("object_type=metrics_library")) {
+          return jsonResponse({
+            objects: [{ object_type: "metrics_library", object_id: "ml_sales" }]
+          });
+        }
+        if (url.includes("object_type=engagement")) {
+          return jsonResponse({
+            objects: [{ object_type: "engagement", object_id: "engagement_v1" }]
+          });
+        }
+        if (url.includes("object_type=fluency_baseline")) {
+          return jsonResponse({
+            objects: [{ object_type: "fluency_baseline", object_id: "baseline_v1" }]
+          });
+        }
+        if (url.includes("/value-chain/run")) {
+          return jsonResponse({
+            run: {
+              schema_version: "FT_AI_VALUE_CHAIN_RUN_2026_06",
+              decision: fakeRun.decision,
+              halted_at: null,
+              customer_facing_economic_output: false,
+              engagement: {
+                status: "VALID",
+                generated: false,
+                hold_reason: null,
+                validation: {},
+                covers_workflow_family: true,
+                object: {
+                  client: { client_name: "Northstar Enterprise" },
+                  business_objective: {
+                    objective_statement:
+                      "Create support capacity by reducing time spent locating trusted answers.",
+                    positive_business_outcome:
+                      "Faster resolution without quality loss."
+                  }
+                }
+              },
+              fluency_baseline: {
+                status: "VALID",
+                generated: false,
+                hold_reason: null,
+                validation: {},
+                object: {},
+                summary: {
+                  total_respondents: 180,
+                  suppressed_cohorts: 1,
+                  construct_means: {
+                    behavioral_intent: 3.94,
+                    usage_quality: 2.88
+                  }
+                }
+              },
+              spine: fakeRun
+            },
+            persisted: []
+          });
+        }
+        return jsonResponse({ objects: [] });
+      })
+    );
+
+    const { container } = render(<AIValueWorkspace />);
+    fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Live evidence", { selector: "span" })).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Client kickoff/i)).toBeInTheDocument();
+    expect(screen.getByText(/Northstar Enterprise/i)).toBeInTheDocument();
+    expect(screen.getByText(/Create support capacity/i)).toBeInTheDocument();
+    expect(screen.getByText(/180 participants/i)).toBeInTheDocument();
+    expect(screen.getByText(/Strongest: Intent to use AI more/i)).toBeInTheDocument();
+    expect(screen.getByText(/Biggest gap: Usage quality/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 small group withheld/i)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(
+      /behavioral_intent|usage_quality|construct_means|respondent_id|cohort_id/
+    );
+  });
+
   it("shows a friendly error when the evidence engine is unreachable", async () => {
     vi.stubGlobal(
       "fetch",

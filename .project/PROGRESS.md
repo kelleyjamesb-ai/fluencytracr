@@ -65,6 +65,8 @@
 
 - AI Value Platform phases 1-4 (user-authorized, 2026-06-09): the AI Value Engine now lives in `shared/src/aiValueEngine` as the single canonical object layer (six stage validators, deterministic builders, fail-closed `runSpine`); the six ai-value scripts are engine-backed wrappers with unchanged CLIs and tests; an org-scoped `ai_value_objects` data layer plus `/api/v1/ai-value` routes store only engine-validated objects and run the spine server-side; the AI Value Workspace gains a client-facing live evidence mode; and a workshop intake adapter plus sales-pipeline-hygiene fixtures prove the spine is domain-agnostic. No ROI calculation, causality claims, person-level fields, or customer-facing economic output were added; every write path fails closed.
 
+- Full value chain slice (user-authorized, 2026-06-10): the engine now covers the chain from kickoff to readout — a composite `engagement` object (client, objective, workstream, use cases) with blueprint traceability gating, an aggregate-only `fluency_baseline` object for the Explore Your AI Fluency kickoff instrument (cohort minimums, suppression, no respondent identifiers, governance flags explicitly false), `runValueChain` ordering, a value-chain API endpoint, fixtures, and a client kickoff panel in the workspace. No individual scoring, ranking, ROI, or causality was added.
+
 ## Current Status
 
 - Out-of-band security check is complete. One critical auth issue was fixed and production token minting cannot bypass the issuer-secret gate; no critical npm advisories were open. Two high, non-critical transitive dependency advisories remain deferred for a separate dependency-update slice.

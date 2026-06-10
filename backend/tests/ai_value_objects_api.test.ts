@@ -262,6 +262,55 @@ describe("AI value spine run API", () => {
     expect(list.body.objects).toHaveLength(0);
   });
 
+  it("runs the full value chain from engagement and fluency kickoff to packet", async () => {
+    await storeUpstreamObjects();
+    const engagement = readExample("customer-support-engagement.json");
+    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
+      .set(writeAuth)
+      .send(engagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${fluencyBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(fluencyBaseline)
+      .expect(201);
+
+    const response = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        engagement_id: engagement.engagement_id,
+        fluency_baseline_id: fluencyBaseline.baseline_id,
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.run.engagement.status).toBe("VALID");
+    expect(response.body.run.engagement.covers_workflow_family).toBe(true);
+    expect(response.body.run.fluency_baseline.status).toBe("VALID");
+    expect(response.body.run.fluency_baseline.summary.suppressed_cohorts).toBe(1);
+    expect(response.body.run.spine.halted_at).toBeNull();
+    expect(response.body.persisted.length).toBe(4);
+  });
+
+  it("rejects fluency baselines with respondent identifiers", async () => {
+    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+    const tainted = JSON.parse(JSON.stringify(fluencyBaseline));
+    tainted.cohorts[0].respondent_ids = ["r-1"];
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${tainted.baseline_id}`)
+      .set(writeAuth)
+      .send(tainted);
+    expect(response.status).toBe(422);
+    expect(
+      response.body.gaps.some((gap: string) => gap.includes("Forbidden field"))
+    ).toBe(true);
+  });
+
   it("requires a write role to run the spine", async () => {
     const response = await request(app)
       .post("/api/v1/ai-value/spine/run")
