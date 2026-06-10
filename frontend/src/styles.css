@@ -2161,3 +2161,47 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.ai-value-discovery label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+
+.ai-value-discovery input,
+.ai-value-discovery textarea,
+.ai-value-discovery select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d6dcea;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13.5px;
+  background: #fff;
+}
+
+.ai-value-discovery textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.ai-value-discovery .ai-value-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 16px;
+}
+
+.ai-value-discovery .ai-value-usecase-card {
+  border: 1px solid #d6dcea;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+
+.ai-value-discovery .ai-value-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}

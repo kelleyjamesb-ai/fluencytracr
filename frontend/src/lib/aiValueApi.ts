@@ -93,6 +93,20 @@ export const putAiValueObject = (
     }
   );
 
+export const postWorkshopIntake = (
+  role: string,
+  intake: Record<string, unknown>
+) =>
+  requestJson<{ intake_id: string; blueprint: AiValueObjectSummary }>(
+    role,
+    "/api/v1/ai-value/intake/workshop",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(intake)
+    }
+  );
+
 export interface AiValueChainRun {
   schema_version: string;
   decision: string;
