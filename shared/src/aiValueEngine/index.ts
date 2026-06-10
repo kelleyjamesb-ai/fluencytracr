@@ -76,6 +76,18 @@ export {
 } from "./fluencyBaseline";
 export type { FluencyBaselineValidationResult } from "./fluencyBaseline";
 
+export {
+  validateOutcomeEvidenceExport,
+  applyOutcomeEvidenceReview,
+  reviewStateOf,
+  OUTCOME_EVIDENCE_EXPORT_SCHEMA_VERSION,
+  OUTCOME_EVIDENCE_REVIEW_STATES
+} from "./outcomeEvidenceExport";
+export type {
+  OutcomeEvidenceExportValidationResult,
+  OutcomeEvidenceCrossCheckContext
+} from "./outcomeEvidenceExport";
+
 export { runValueChain, VALUE_CHAIN_RESULT_SCHEMA_VERSION } from "./valueChain";
 export type { ValueChainRunInput, ValueChainRunResult } from "./valueChain";
 

@@ -61,6 +61,10 @@ export interface SpineRunInput {
     claimBoundaryId?: string;
     packetId?: string;
   };
+  /** Evidence-backed lane upgrades, forwarded to the readiness builder. */
+  sourceCoverageOverrides?: Record<string, string>;
+  /** Evidence provenance, recorded on the readiness object's source refs. */
+  evidenceRefs?: Record<string, string>;
 }
 
 export interface SpineRunResult {
@@ -156,7 +160,11 @@ export function runSpine(input: SpineRunInput): SpineRunResult {
     input.blueprint,
     input.metricsLibrary,
     scenarioObject,
-    { readinessId: input.ids?.readinessId }
+    {
+      readinessId: input.ids?.readinessId,
+      sourceCoverageOverrides: input.sourceCoverageOverrides,
+      evidenceRefs: input.evidenceRefs
+    }
   );
   const readinessValidation = validateEvidenceReadiness(readinessObject);
   stages.readiness = {

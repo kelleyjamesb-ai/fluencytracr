@@ -9,6 +9,8 @@ import {
   validateEngagement,
   validateFluencyBaseline,
   summarizeFluencyBaseline,
+  validateOutcomeEvidenceExport,
+  applyOutcomeEvidenceReview,
   buildBlueprintDraftFromWorkshopIntake,
   validateBlueprint,
   validateMetricsLibrary,
@@ -259,6 +261,144 @@ test("runValueChain without kickoff context behaves like the spine", () => {
   assert.equal(chain.engagement.status, "NOT_RUN");
   assert.equal(chain.fluency_baseline.status, "NOT_RUN");
   assert.deepEqual(chain.spine, spine);
+});
+
+const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+
+test("outcome evidence export validates with metrics library and blueprint context", () => {
+  const validation = validateOutcomeEvidenceExport(outcomeExport, {
+    metricsLibrary,
+    blueprint
+  });
+  assert.equal(validation.valid, true);
+  assert.deepEqual(validation.cross_check_gaps, []);
+  assert.equal(validation.review_state, "SUBMITTED");
+  assert.equal(validation.feeds.evidence_attachment, false);
+  assert.equal(validation.feeds.roi_proof, false);
+});
+
+test("outcome evidence export rejects raw content, identifiers, and window drift", () => {
+  const tainted = JSON.parse(JSON.stringify(outcomeExport));
+  tainted.sample_ticket_text = "raw text";
+  const taintedValidation = validateOutcomeEvidenceExport(tainted);
+  assert.equal(taintedValidation.valid, false);
+  assert.ok(taintedValidation.gaps.some((gap) => gap.includes("Forbidden field")));
+
+  const drifted = JSON.parse(JSON.stringify(outcomeExport));
+  drifted.windows.comparison = "2026-04-01_to_2026-06-30";
+  const driftValidation = validateOutcomeEvidenceExport(drifted, { blueprint });
+  assert.ok(
+    driftValidation.cross_check_gaps.some((gap) => gap.includes("must exactly match"))
+  );
+
+  const unattested = JSON.parse(JSON.stringify(outcomeExport));
+  unattested.attestation.contains_person_level_data = true;
+  const attestValidation = validateOutcomeEvidenceExport(unattested);
+  assert.ok(
+    attestValidation.gaps.some((gap) => gap.includes("must be explicitly false"))
+  );
+});
+
+test("review lifecycle: only SUBMITTED exports can be reviewed, accept attaches", () => {
+  const accepted = applyOutcomeEvidenceReview(
+    outcomeExport,
+    "ACCEPTED",
+    "enablement_lead",
+    "2026-06-10T17:00:00.000Z"
+  );
+  assert.equal(accepted.error, null);
+  const validation = validateOutcomeEvidenceExport(accepted.exportObject, {
+    metricsLibrary,
+    blueprint
+  });
+  assert.equal(validation.feeds.evidence_attachment, true);
+
+  const again = applyOutcomeEvidenceReview(
+    accepted.exportObject,
+    "REJECTED",
+    "enablement_lead",
+    "2026-06-10T18:00:00.000Z"
+  );
+  assert.ok(again.error.includes("only SUBMITTED"));
+});
+
+test("accepted evidence upgrades the outcome lane in the value chain", () => {
+  const evidenceGapBlueprint = JSON.parse(JSON.stringify(blueprint));
+  evidenceGapBlueprint.source_requirements.source_coverage.outcome = "MISSING";
+
+  const withoutEvidence = runValueChain({
+    blueprint: evidenceGapBlueprint,
+    metricsLibrary
+  });
+  assert.equal(withoutEvidence.decision, "HOLD_FOR_SOURCE_COVERAGE");
+
+  const { exportObject: accepted } = applyOutcomeEvidenceReview(
+    outcomeExport,
+    "ACCEPTED",
+    "enablement_lead",
+    "2026-06-10T17:00:00.000Z"
+  );
+  const withEvidence = runValueChain({
+    blueprint: evidenceGapBlueprint,
+    metricsLibrary,
+    outcomeEvidenceExport: accepted
+  });
+  assert.equal(withEvidence.outcome_evidence.status, "VALID");
+  assert.equal(withEvidence.outcome_evidence.attached, true);
+  assert.equal(withEvidence.decision, "HOLD_FOR_ASSUMPTIONS");
+  assert.equal(
+    withEvidence.spine.stages.readiness.object.source_refs.outcome_evidence_export_id,
+    outcomeExport.export_id
+  );
+});
+
+test("submitted evidence is pending and never halts; invalid evidence halts", () => {
+  const pending = runValueChain({
+    blueprint,
+    metricsLibrary,
+    outcomeEvidenceExport: outcomeExport
+  });
+  assert.equal(pending.outcome_evidence.status, "HELD");
+  assert.equal(pending.outcome_evidence.attached, false);
+  assert.ok(pending.outcome_evidence.hold_reason.includes("awaiting human review"));
+  assert.notEqual(pending.spine, null);
+
+  const broken = runValueChain({
+    blueprint,
+    metricsLibrary,
+    outcomeEvidenceExport: { export_id: "broken" }
+  });
+  assert.equal(broken.halted_at, "outcome_evidence");
+  assert.equal(broken.decision, "HOLD_FOR_OUTCOME_EVIDENCE");
+  assert.equal(broken.spine, null);
+});
+
+test("accepted evidence that fails cross-checks halts for alignment", () => {
+  const { exportObject: accepted } = applyOutcomeEvidenceReview(
+    outcomeExport,
+    "ACCEPTED",
+    "enablement_lead",
+    "2026-06-10T17:00:00.000Z"
+  );
+  const misaligned = JSON.parse(JSON.stringify(accepted));
+  misaligned.windows.comparison = "2026-04-01_to_2026-06-30";
+  const run = runValueChain({
+    blueprint,
+    metricsLibrary,
+    outcomeEvidenceExport: misaligned
+  });
+  assert.equal(run.halted_at, "outcome_evidence");
+  assert.equal(run.decision, "HOLD_FOR_EVIDENCE_ALIGNMENT");
+});
+
+test("evidence overrides can never downgrade a lane", () => {
+  const run = runSpine({
+    blueprint,
+    metricsLibrary,
+    sourceCoverageOverrides: { outcome: "MISSING", trust: "SUPPRESSED" }
+  });
+  assert.equal(run.stages.readiness.object.source_coverage.outcome, "PRESENT");
+  assert.equal(run.stages.readiness.object.source_coverage.trust, "PRESENT");
 });
 
 test("runSpine never emits customer-facing economic output", () => {
