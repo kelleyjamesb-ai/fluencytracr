@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AIValueWorkspace } from "./AIValueWorkspace";
 
 describe("AIValueWorkspace", () => {
   it("renders a client-facing AI value workshop instead of internal object names", () => {
-    const { container } = render(<AIValueWorkspace />);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
 
     expect(screen.getByRole("heading", { name: /AI Value Workshop/i })).toBeInTheDocument();
     expect(screen.getByText(/Customer support case resolution/i)).toBeInTheDocument();
@@ -31,7 +32,7 @@ describe("AIValueWorkspace", () => {
   });
 
   it("lets users move from value story to executive brief without database language", () => {
-    render(<AIValueWorkspace />);
+    render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
 
     fireEvent.click(screen.getByRole("button", { name: /Value Story/i }));
     expect(screen.getByText(/Most cautious/i)).toBeInTheDocument();
@@ -162,7 +163,7 @@ describe("AIValueWorkspace live evidence mode", () => {
   });
 
   it("connects to the evidence engine and shows client-facing live content", async () => {
-    const { container } = render(<AIValueWorkspace />);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
 
     fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
 
@@ -262,7 +263,7 @@ describe("AIValueWorkspace live evidence mode", () => {
       })
     );
 
-    const { container } = render(<AIValueWorkspace />);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
 
     await waitFor(() => {
@@ -286,7 +287,7 @@ describe("AIValueWorkspace live evidence mode", () => {
       vi.fn(async () => new Response("{}", { status: 500 }))
     );
 
-    render(<AIValueWorkspace />);
+    render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
 
     await waitFor(() => {

@@ -187,6 +187,42 @@ test("engagement context validates and traces to the blueprint workflow family",
   const validation = validateEngagement(engagement);
   assert.equal(validation.valid, true);
   assert.equal(validation.use_case_count, 2);
+  assert.equal(validation.objective_count, 2);
+});
+
+test("engagements require at least one measurable objective", () => {
+  const noObjectives = JSON.parse(JSON.stringify(engagement));
+  delete noObjectives.business_objectives;
+  const validation = validateEngagement(noObjectives);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.gaps.some((gap) => gap.includes("at least one objective")));
+});
+
+test("objective success measures and use case links are validated", () => {
+  const badMeasure = JSON.parse(JSON.stringify(engagement));
+  badMeasure.business_objectives[0].success_measures[0].expected_direction = "WIN";
+  const measureValidation = validateEngagement(badMeasure);
+  assert.ok(
+    measureValidation.gaps.some((gap) => gap.includes("expected_direction is invalid"))
+  );
+
+  const badLink = JSON.parse(JSON.stringify(engagement));
+  badLink.use_cases[0].objective_id = "objective_that_does_not_exist";
+  const linkValidation = validateEngagement(badLink);
+  assert.ok(
+    linkValidation.gaps.some((gap) => gap.includes("does not match any business objective"))
+  );
+});
+
+test("legacy single business_objective engagements still validate", () => {
+  const legacy = JSON.parse(JSON.stringify(engagement));
+  const [first] = legacy.business_objectives;
+  delete legacy.business_objectives;
+  legacy.business_objective = first;
+  for (const useCase of legacy.use_cases) delete useCase.objective_id;
+  const validation = validateEngagement(legacy);
+  assert.equal(validation.valid, true);
+  assert.equal(validation.objective_count, 1);
 });
 
 test("fluency baseline validates with suppressed small cohorts", () => {
@@ -297,6 +333,33 @@ test("outcome evidence export rejects raw content, identifiers, and window drift
   assert.ok(
     attestValidation.gaps.some((gap) => gap.includes("must be explicitly false"))
   );
+
+  const attestationExtra = JSON.parse(JSON.stringify(outcomeExport));
+  attestationExtra.attestation.approver_email = "person@example.com";
+  const attestationValidation = validateOutcomeEvidenceExport(attestationExtra);
+  assert.ok(
+    attestationValidation.gaps.some((gap) =>
+      gap.includes("attestation.approver_email is not allowed")
+    )
+  );
+
+  const identifyingSource = JSON.parse(JSON.stringify(outcomeExport));
+  identifyingSource.source_system.source_name = "person@example.com";
+  const sourceValidation = validateOutcomeEvidenceExport(identifyingSource);
+  assert.ok(
+    sourceValidation.gaps.some((gap) =>
+      gap.includes("source_system contains forbidden identifier metadata")
+    )
+  );
+
+  const currencyMetric = JSON.parse(JSON.stringify(outcomeExport));
+  currencyMetric.metrics[0].measurement_unit = "currency_usd";
+  const currencyValidation = validateOutcomeEvidenceExport(currencyMetric);
+  assert.ok(
+    currencyValidation.gaps.some((gap) =>
+      gap.includes("metrics[0].measurement_unit is a forbidden monetary unit")
+    )
+  );
 });
 
 test("review lifecycle: only SUBMITTED exports can be reviewed, accept attaches", () => {
@@ -313,6 +376,15 @@ test("review lifecycle: only SUBMITTED exports can be reviewed, accept attaches"
   });
   assert.equal(validation.feeds.evidence_attachment, true);
 
+  const noContextValidation = validateOutcomeEvidenceExport(accepted.exportObject);
+  assert.equal(noContextValidation.valid, true);
+  assert.equal(noContextValidation.feeds.evidence_attachment, false);
+  assert.ok(
+    noContextValidation.cross_check_gaps.some((gap) =>
+      gap.includes("metrics library context is required")
+    )
+  );
+
   const again = applyOutcomeEvidenceReview(
     accepted.exportObject,
     "REJECTED",
@@ -320,6 +392,66 @@ test("review lifecycle: only SUBMITTED exports can be reviewed, accept attaches"
     "2026-06-10T18:00:00.000Z"
   );
   assert.ok(again.error.includes("only SUBMITTED"));
+
+  const invalidReviewer = applyOutcomeEvidenceReview(
+    outcomeExport,
+    "ACCEPTED",
+    "person@example.com",
+    "2026-06-10T18:00:00.000Z"
+  );
+  assert.ok(invalidReviewer.error.includes("reviewer_role is invalid"));
+});
+
+test("outcome evidence cross-checks workflow and source metadata", () => {
+  const { exportObject: accepted } = applyOutcomeEvidenceReview(
+    outcomeExport,
+    "ACCEPTED",
+    "enablement_lead",
+    "2026-06-10T17:00:00.000Z"
+  );
+
+  const sourceNameDrift = JSON.parse(JSON.stringify(accepted));
+  sourceNameDrift.source_system.source_name = "Different support system";
+  const sourceNameValidation = validateOutcomeEvidenceExport(sourceNameDrift, {
+    metricsLibrary,
+    blueprint
+  });
+  assert.ok(
+    sourceNameValidation.cross_check_gaps.some((gap) =>
+      gap.includes("expects source name")
+    )
+  );
+  assert.equal(sourceNameValidation.feeds.evidence_attachment, false);
+
+  const grainDrift = JSON.parse(JSON.stringify(accepted));
+  grainDrift.source_system.approved_grain = "case_and_user";
+  const grainValidation = validateOutcomeEvidenceExport(grainDrift, {
+    metricsLibrary,
+    blueprint
+  });
+  assert.ok(
+    grainValidation.cross_check_gaps.some((gap) =>
+      gap.includes("expects approved grain")
+    )
+  );
+
+  const foreignWorkflow = JSON.parse(JSON.stringify(accepted));
+  foreignWorkflow.metrics[0].metric_id = "metric_foreign_workflow";
+  const mixedLibrary = JSON.parse(JSON.stringify(metricsLibrary));
+  mixedLibrary.metrics.push({
+    ...mixedLibrary.metrics[0],
+    metric_id: "metric_foreign_workflow",
+    workflow_family: "sales_pipeline_hygiene"
+  });
+  const workflowValidation = validateOutcomeEvidenceExport(foreignWorkflow, {
+    metricsLibrary: mixedLibrary,
+    blueprint
+  });
+  assert.ok(
+    workflowValidation.cross_check_gaps.some((gap) =>
+      gap.includes("belongs to workflow sales_pipeline_hygiene")
+    )
+  );
 });
 
 test("accepted evidence upgrades the outcome lane in the value chain", () => {

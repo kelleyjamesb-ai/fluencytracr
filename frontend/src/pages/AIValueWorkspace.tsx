@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
+import { useAiValueJourney } from "../hooks/useAiValueJourney";
+import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 
 const tabs = [
   "Workflow Canvas",
@@ -21,6 +23,7 @@ export const AIValueWorkspace = () => {
   const [activeTab, setActiveTab] = useState<Tab>("Workflow Canvas");
   const activeIndex = useMemo(() => tabs.indexOf(activeTab), [activeTab]);
   const { mode, live, errorMessage, connectLiveEvidence } = useAiValueWorkspace();
+  const journey = useAiValueJourney();
 
   const workflowName = live?.workflowName ?? aiValueWorkspace.workflowName;
   const valueRouteLabel = live?.valueRouteLabel ?? aiValueWorkspace.valueRouteLabel;
@@ -70,6 +73,8 @@ export const AIValueWorkspace = () => {
         </div>
       </header>
 
+      <AiValueJourneyRail stages={journey.stages} current="workshop" />
+
       {errorMessage && (
         <p role="alert" className="ai-value-panel">
           {errorMessage}
@@ -109,6 +114,22 @@ export const AIValueWorkspace = () => {
             </div>
             {live.kickoff.sponsorQuestion && (
               <p>Outcome the sponsor cares about: {live.kickoff.sponsorQuestion}</p>
+            )}
+            {live.kickoff.objectiveCount > 1 && (
+              <p>
+                This pilot serves 1 of {live.kickoff.objectiveCount} client objectives in the
+                engagement.
+              </p>
+            )}
+            {live.kickoff.successMeasures.length > 0 && (
+              <>
+                <h4>What the sponsor will measure</h4>
+                <ul>
+                  {live.kickoff.successMeasures.map((measure) => (
+                    <li key={measure}>{measure}</li>
+                  ))}
+                </ul>
+              </>
             )}
             {live.kickoff.fluency && (
               <>

@@ -13,23 +13,70 @@
     ],
     "executive_sponsor_role": "vp_customer_experience",
     "technical_champion_role": "support_systems_lead",
-    "account_team_roles": ["account_executive", "solutions_architect", "value_consultant"]
+    "account_team_roles": [
+      "account_executive",
+      "solutions_architect",
+      "value_consultant"
+    ]
   },
-  "business_objective": {
-    "objective_id": "objective_support_capacity_v1",
-    "objective_statement": "Create support capacity by reducing time spent locating trusted answers and drafting responses.",
-    "challenge": "Case volume is growing faster than the support team can scale, and knowledge is fragmented across systems.",
-    "initiative": "AI-assisted support workflows on Glean Search, Assistant, and approved Skills.",
-    "positive_business_outcome": "Faster resolution and lower escalation pressure without quality loss.",
-    "decision_timeline": "2026_h2_renewal_cycle",
-    "owner_role": "customer_support_business_sponsor"
-  },
+  "business_objectives": [
+    {
+      "objective_id": "objective_support_capacity_v1",
+      "objective_statement": "Create support capacity by reducing time spent locating trusted answers and drafting responses.",
+      "challenge": "Case volume is growing faster than the support team can scale, and knowledge is fragmented across systems.",
+      "initiative": "AI-assisted support workflows on Glean Search, Assistant, and approved Skills.",
+      "positive_business_outcome": "Faster resolution and lower escalation pressure without quality loss.",
+      "decision_timeline": "2026_h2_renewal_cycle",
+      "owner_role": "customer_support_business_sponsor",
+      "success_measures": [
+        {
+          "measure": "Median case resolution time",
+          "expected_direction": "REDUCE"
+        },
+        {
+          "measure": "Open backlog count",
+          "expected_direction": "REDUCE"
+        },
+        {
+          "measure": "Support capacity absorbed without added headcount",
+          "expected_direction": "IMPROVE"
+        }
+      ]
+    },
+    {
+      "objective_id": "objective_support_quality_v1",
+      "objective_statement": "Hold or improve answer quality while support work accelerates.",
+      "challenge": "Faster responses are only valuable if reopen and escalation behavior does not degrade.",
+      "initiative": "Verification-first AI workflows with aggregate quality monitoring.",
+      "positive_business_outcome": "Quality holds steady while resolution accelerates.",
+      "decision_timeline": "2026_h2_renewal_cycle",
+      "owner_role": "support_quality_owner",
+      "success_measures": [
+        {
+          "measure": "Reopen rate",
+          "expected_direction": "MAINTAIN"
+        },
+        {
+          "measure": "Escalation rate",
+          "expected_direction": "REDUCE"
+        }
+      ]
+    }
+  ],
   "workstream": {
     "workstream_id": "workstream_customer_support_v1",
     "function": "customer_support",
-    "role_families": ["support_agent", "support_specialist", "knowledge_owner"],
+    "role_families": [
+      "support_agent",
+      "support_specialist",
+      "knowledge_owner"
+    ],
     "users_in_scope": 240,
-    "systems_in_scope": ["support_case_management", "knowledge_base", "glean_assistant"],
+    "systems_in_scope": [
+      "support_case_management",
+      "knowledge_base",
+      "glean_assistant"
+    ],
     "sponsor_role": "customer_support_business_sponsor"
   },
   "use_cases": [
@@ -37,28 +84,41 @@
       "use_case_id": "uc_support_case_resolution",
       "name": "AI-assisted case resolution",
       "description": "Agents use Search, Assistant, and approved Skills to locate trusted answers and draft responses for review.",
-      "impacted_functions": ["customer_support"],
+      "impacted_functions": [
+        "customer_support"
+      ],
       "impact_rationale": "Resolution time and escalation pressure are the largest drivers of support capacity.",
       "effort_rationale": "Workflows and knowledge sources already exist; change is concentrated in agent work habits.",
-      "data_sources": ["support_case_management", "glean_work_evidence"],
+      "data_sources": [
+        "support_case_management",
+        "glean_work_evidence"
+      ],
       "uncertainties": [
         "Case mix shifts during the comparison window",
         "Concurrent process changes in escalation policy"
       ],
       "priority_state": "PILOT_SELECTED",
-      "workflow_family": "customer_support_case_resolution"
+      "workflow_family": "customer_support_case_resolution",
+      "objective_id": "objective_support_capacity_v1"
     },
     {
       "use_case_id": "uc_support_knowledge_upkeep",
       "name": "Knowledge base upkeep assistance",
       "description": "Knowledge owners use AI drafting support to keep trusted articles current.",
-      "impacted_functions": ["customer_support"],
+      "impacted_functions": [
+        "customer_support"
+      ],
       "impact_rationale": "Stale knowledge drives repeat lookups and escalations.",
       "effort_rationale": "Smaller population; depends on the case-resolution pilot landing first.",
-      "data_sources": ["knowledge_base"],
-      "uncertainties": ["Article quality review capacity"],
+      "data_sources": [
+        "knowledge_base"
+      ],
+      "uncertainties": [
+        "Article quality review capacity"
+      ],
       "priority_state": "CANDIDATE",
-      "workflow_family": "support_knowledge_upkeep"
+      "workflow_family": "support_knowledge_upkeep",
+      "objective_id": "objective_support_quality_v1"
     }
   ]
 }

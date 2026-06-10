@@ -62,6 +62,7 @@ export type { WorkshopIntakeResult } from "./intake";
 export {
   validateEngagement,
   engagementCoversWorkflowFamily,
+  objectivesOf,
   ENGAGEMENT_SCHEMA_VERSION
 } from "./engagement";
 export type { EngagementValidationResult } from "./engagement";
@@ -98,3 +99,6 @@ export type {
   SpineStageResult,
   SpineStageStatus
 } from "./spine";
+
+export { renderExecutiveReadoutHtml } from "./readoutHtml";
+export type { RenderExecutiveReadoutInputs } from "./readoutHtml";

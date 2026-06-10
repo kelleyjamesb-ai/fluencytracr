@@ -9,6 +9,8 @@ export interface AiValueKickoffContext {
   clientName: string;
   objectiveStatement: string;
   sponsorQuestion: string;
+  objectiveCount: number;
+  successMeasures: string[];
   fluency: {
     respondents: number;
     strongest: string;
@@ -159,15 +161,41 @@ export function buildKickoffContext(
       note: "Directional kickoff signal from the fluency check. Never used to score or compare people."
     };
   }
+  const objectives: Array<Record<string, any>> = Array.isArray(
+    engagement?.business_objectives
+  )
+    ? engagement.business_objectives
+    : engagement?.business_objective
+      ? [engagement.business_objective]
+      : [];
+  const pilotObjectiveId = (engagement?.use_cases ?? []).find(
+    (useCase: any) => useCase?.priority_state === "PILOT_SELECTED"
+  )?.objective_id;
+  const primaryObjective =
+    objectives.find((objective) => objective.objective_id === pilotObjectiveId) ??
+    objectives[0];
+
+  const DIRECTION_LABELS: Record<string, string> = {
+    IMPROVE: "improve",
+    REDUCE: "reduce",
+    MAINTAIN: "hold steady"
+  };
+  const successMeasures = objectives.flatMap((objective) =>
+    (objective.success_measures ?? []).map(
+      (entry: any) =>
+        `${entry.measure} (${DIRECTION_LABELS[entry.expected_direction] ?? "review"})`
+    )
+  );
+
   return {
     clientName: String(engagement?.client?.client_name ?? "Client"),
     objectiveStatement: String(
-      engagement?.business_objective?.objective_statement ??
+      primaryObjective?.objective_statement ??
         "Connect this workflow to a client objective."
     ),
-    sponsorQuestion: String(
-      engagement?.business_objective?.positive_business_outcome ?? ""
-    ),
+    sponsorQuestion: String(primaryObjective?.positive_business_outcome ?? ""),
+    objectiveCount: objectives.length,
+    successMeasures,
     fluency
   };
 }

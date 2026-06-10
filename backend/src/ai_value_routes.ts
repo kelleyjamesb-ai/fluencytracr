@@ -136,6 +136,20 @@ export function registerAiValueRoutes(app: Express): void {
       }
 
       if (objectType === "outcome_evidence_export") {
+        if (payload.org_id !== orgId) {
+          return res.status(403).json({
+            error: "Outcome evidence export org_id must match authenticated org",
+            reason: "ORG_SCOPE_MISMATCH"
+          });
+        }
+        const existing = await getAiValueObject(orgId, objectType, objectId);
+        const existingReviewState = aiValueEngine.reviewStateOf(existing?.payload);
+        if (existingReviewState === "ACCEPTED" || existingReviewState === "REJECTED") {
+          return res.status(409).json({
+            error: `outcome evidence export is ${existingReviewState} and cannot be resubmitted`,
+            reason: "TERMINAL_REVIEW_STATE"
+          });
+        }
         // Uploads always enter as SUBMITTED; acceptance is reviewer-only.
         payload.review = { review_state: "SUBMITTED" };
       }
@@ -226,6 +240,59 @@ export function registerAiValueRoutes(app: Express): void {
     }
   );
 
+  app.get(
+    "/api/v1/ai-value/readout/:packetId/html",
+    rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const { packetId } = req.params;
+      const packetRecord = await getAiValueObject(orgId, "executive_packet", packetId);
+      if (!packetRecord) {
+        return res.status(404).json({
+          error: "executive packet not found",
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      const packetValidation = aiValueEngine.validateExecutivePacket(packetRecord.payload);
+      if (!packetValidation.valid) {
+        // Fail closed: a stored packet that no longer validates never renders.
+        return res.status(422).json({
+          error: "executive packet failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          gaps: packetValidation.gaps
+        });
+      }
+
+      const engagements = await listAiValueObjects(orgId, "engagement");
+      let engagementPayload: Record<string, unknown> | null = null;
+      if (engagements.length > 0) {
+        const record = await getAiValueObject(orgId, "engagement", engagements[0].object_id);
+        if (record && aiValueEngine.validateEngagement(record.payload).valid) {
+          engagementPayload = record.payload;
+        }
+      }
+
+      const baselines = await listAiValueObjects(orgId, "fluency_baseline");
+      let fluencySummary: Record<string, unknown> | null = null;
+      if (baselines.length > 0) {
+        const record = await getAiValueObject(orgId, "fluency_baseline", baselines[0].object_id);
+        if (record && aiValueEngine.validateFluencyBaseline(record.payload).valid) {
+          fluencySummary = aiValueEngine.summarizeFluencyBaseline(record.payload);
+        }
+      }
+
+      const html = aiValueEngine.renderExecutiveReadoutHtml({
+        packet: packetRecord.payload,
+        engagement: engagementPayload,
+        fluencySummary
+      });
+      res.set("content-type", "text/html; charset=utf-8");
+      return res.send(html);
+    }
+  );
+
   app.post(
     "/api/v1/ai-value/objects/outcome_evidence_export/:objectId/review",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
@@ -236,10 +303,19 @@ export function registerAiValueRoutes(app: Express): void {
       const { objectId } = req.params;
       const body = (req.body ?? {}) as Record<string, unknown>;
       const decision = body.decision;
-      const reviewerRole = body.reviewer_role;
+      const reviewerRole = req.role;
       if (decision !== "ACCEPTED" && decision !== "REJECTED") {
         return res.status(400).json({
           error: "decision must be ACCEPTED or REJECTED",
+          reason: "INVALID_REVIEW_DECISION"
+        });
+      }
+      if (
+        body.reviewer_role !== undefined &&
+        body.reviewer_role !== reviewerRole
+      ) {
+        return res.status(400).json({
+          error: "reviewer_role must match the authenticated role",
           reason: "INVALID_REVIEW_DECISION"
         });
       }
