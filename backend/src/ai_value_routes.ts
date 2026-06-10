@@ -1,0 +1,312 @@
+/**
+ * AI Value canonical object API.
+ *
+ * Persistence and serving layer for the AI Value Engine object spine.
+ * The engine (shared/src/aiValueEngine) owns validation, ordering, and claim
+ * governance; this layer is fail-closed: objects that do not pass their
+ * stage validator are rejected with 422 and never stored, and spine runs
+ * only persist stage objects that validated cleanly.
+ */
+import type { Express, Response } from "express";
+import { aiValueEngine } from "@learnaire/shared";
+
+import { rbacMiddleware, type RequestWithRole } from "./rbac";
+import {
+  getAiValueObject,
+  listAiValueObjects,
+  upsertAiValueObject
+} from "./repositories/ai-value-object.repository";
+
+type StageValidation = {
+  valid: boolean;
+  gaps: string[];
+  schema_version: string;
+};
+
+interface ObjectTypeConfig {
+  idField: string;
+  validate: (payload: unknown) => StageValidation;
+}
+
+const OBJECT_TYPES: Record<string, ObjectTypeConfig> = {
+  blueprint: {
+    idField: "blueprint_id",
+    validate: (payload) => aiValueEngine.validateBlueprint(payload)
+  },
+  metrics_library: {
+    idField: "library_id",
+    validate: (payload) => aiValueEngine.validateMetricsLibrary(payload)
+  },
+  value_scenario: {
+    idField: "scenario_id",
+    validate: (payload) => aiValueEngine.validateValueScenario(payload)
+  },
+  evidence_readiness: {
+    idField: "readiness_id",
+    validate: (payload) => aiValueEngine.validateEvidenceReadiness(payload)
+  },
+  claim_boundary: {
+    idField: "claim_boundary_id",
+    validate: (payload) => aiValueEngine.validateClaimBoundary(payload)
+  },
+  executive_packet: {
+    idField: "packet_id",
+    validate: (payload) => aiValueEngine.validateExecutivePacket(payload)
+  }
+};
+
+export const AI_VALUE_OBJECT_TYPES = Object.keys(OBJECT_TYPES);
+
+const workflowFamilyOf = (payload: Record<string, unknown>): string | null => {
+  if (typeof payload.workflow_family === "string") {
+    return payload.workflow_family;
+  }
+  const input = payload.input as Record<string, unknown> | undefined;
+  if (input && typeof input.workflow_family === "string") {
+    return input.workflow_family;
+  }
+  return null;
+};
+
+const recordSummary = (record: {
+  object_type: string;
+  object_id: string;
+  schema_version: string;
+  workflow_family: string | null;
+  valid: boolean;
+  validation: Record<string, unknown>;
+  updated_at: string;
+}) => ({
+  object_type: record.object_type,
+  object_id: record.object_id,
+  schema_version: record.schema_version,
+  workflow_family: record.workflow_family,
+  valid: record.valid,
+  validation: record.validation,
+  updated_at: record.updated_at
+});
+
+const requireOrg = (req: RequestWithRole, res: Response): string | null => {
+  if (!req.authOrgId) {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
+  }
+  return req.authOrgId;
+};
+
+const sanitizeIdSegment = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+
+export function registerAiValueRoutes(app: Express): void {
+  app.put(
+    "/api/v1/ai-value/objects/:objectType/:objectId",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const { objectType, objectId } = req.params;
+      const config = OBJECT_TYPES[objectType];
+      if (!config) {
+        return res.status(400).json({
+          error: "Unknown AI value object type",
+          reason: "UNKNOWN_OBJECT_TYPE",
+          allowed_types: AI_VALUE_OBJECT_TYPES
+        });
+      }
+
+      const payload = req.body;
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        return res.status(400).json({
+          error: "Payload must be a JSON object",
+          reason: "INVALID_PAYLOAD"
+        });
+      }
+
+      if (payload[config.idField] !== objectId) {
+        return res.status(400).json({
+          error: `Payload ${config.idField} must match the object id in the path`,
+          reason: "OBJECT_ID_MISMATCH"
+        });
+      }
+
+      const validation = config.validate(payload);
+      if (!validation.valid) {
+        // Fail closed: invalid objects are rejected, never stored.
+        return res.status(422).json({
+          error: "AI value object failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          object_type: objectType,
+          object_id: objectId,
+          gaps: validation.gaps
+        });
+      }
+
+      const record = await upsertAiValueObject({
+        orgId,
+        objectType,
+        objectId,
+        schemaVersion: String(payload.schema_version ?? "UNKNOWN"),
+        workflowFamily: workflowFamilyOf(payload),
+        payload,
+        validation: validation as unknown as Record<string, unknown>,
+        valid: validation.valid
+      });
+
+      return res.status(201).json(recordSummary(record));
+    }
+  );
+
+  app.get(
+    "/api/v1/ai-value/objects",
+    rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const objectType =
+        typeof req.query.object_type === "string" ? req.query.object_type : undefined;
+      if (objectType && !OBJECT_TYPES[objectType]) {
+        return res.status(400).json({
+          error: "Unknown AI value object type",
+          reason: "UNKNOWN_OBJECT_TYPE",
+          allowed_types: AI_VALUE_OBJECT_TYPES
+        });
+      }
+      const records = await listAiValueObjects(orgId, objectType);
+      return res.json({
+        objects: records.map(recordSummary)
+      });
+    }
+  );
+
+  app.get(
+    "/api/v1/ai-value/objects/:objectType/:objectId",
+    rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const { objectType, objectId } = req.params;
+      if (!OBJECT_TYPES[objectType]) {
+        return res.status(400).json({
+          error: "Unknown AI value object type",
+          reason: "UNKNOWN_OBJECT_TYPE",
+          allowed_types: AI_VALUE_OBJECT_TYPES
+        });
+      }
+      const record = await getAiValueObject(orgId, objectType, objectId);
+      if (!record) {
+        return res.status(404).json({
+          error: "AI value object not found",
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      return res.json({
+        ...recordSummary(record),
+        payload: record.payload
+      });
+    }
+  );
+
+  app.post(
+    "/api/v1/ai-value/spine/run",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const blueprintId = body.blueprint_id;
+      const metricsLibraryId = body.metrics_library_id;
+      const scenarioId = body.scenario_id;
+      const persist = body.persist !== false;
+
+      if (typeof blueprintId !== "string" || typeof metricsLibraryId !== "string") {
+        return res.status(400).json({
+          error: "blueprint_id and metrics_library_id are required",
+          reason: "INVALID_SPINE_REQUEST"
+        });
+      }
+
+      const blueprintRecord = await getAiValueObject(orgId, "blueprint", blueprintId);
+      if (!blueprintRecord) {
+        return res.status(404).json({
+          error: `blueprint ${blueprintId} not found`,
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      const metricsRecord = await getAiValueObject(
+        orgId,
+        "metrics_library",
+        metricsLibraryId
+      );
+      if (!metricsRecord) {
+        return res.status(404).json({
+          error: `metrics_library ${metricsLibraryId} not found`,
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      let scenarioPayload: Record<string, unknown> | undefined;
+      if (typeof scenarioId === "string") {
+        const scenarioRecord = await getAiValueObject(orgId, "value_scenario", scenarioId);
+        if (!scenarioRecord) {
+          return res.status(404).json({
+            error: `value_scenario ${scenarioId} not found`,
+            reason: "OBJECT_NOT_FOUND"
+          });
+        }
+        scenarioPayload = scenarioRecord.payload;
+      }
+
+      const familySegment = sanitizeIdSegment(
+        blueprintRecord.workflow_family ?? blueprintId
+      );
+      const run = aiValueEngine.runSpine({
+        blueprint: blueprintRecord.payload,
+        metricsLibrary: metricsRecord.payload,
+        scenario: scenarioPayload,
+        ids: {
+          readinessId: `readiness_${familySegment}_v1`,
+          claimBoundaryId: `claim_boundary_${familySegment}_v1`,
+          packetId: `executive_packet_${familySegment}_v1`
+        }
+      });
+
+      const persisted: Array<{ object_type: string; object_id: string }> = [];
+      if (persist) {
+        const generatedStages: Array<{ stage: keyof typeof run.stages; objectType: string; idField: string }> = [
+          { stage: "scenario", objectType: "value_scenario", idField: "scenario_id" },
+          { stage: "readiness", objectType: "evidence_readiness", idField: "readiness_id" },
+          { stage: "claim_boundary", objectType: "claim_boundary", idField: "claim_boundary_id" },
+          { stage: "executive_packet", objectType: "executive_packet", idField: "packet_id" }
+        ];
+        for (const { stage, objectType, idField } of generatedStages) {
+          const stageResult = run.stages[stage];
+          // Fail closed: only stage objects that validated cleanly are stored.
+          if (stageResult.status !== "VALID" || !stageResult.generated || !stageResult.object) {
+            continue;
+          }
+          const objectPayload = stageResult.object as Record<string, unknown>;
+          const objectId = String(objectPayload[idField]);
+          await upsertAiValueObject({
+            orgId,
+            objectType,
+            objectId,
+            schemaVersion: String(objectPayload.schema_version ?? "UNKNOWN"),
+            workflowFamily: workflowFamilyOf(objectPayload),
+            payload: objectPayload,
+            validation: stageResult.validation as unknown as Record<string, unknown>,
+            valid: true
+          });
+          persisted.push({ object_type: objectType, object_id: objectId });
+        }
+      }
+
+      return res.json({
+        run,
+        persisted
+      });
+    }
+  );
+}

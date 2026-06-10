@@ -487,3 +487,22 @@ model FluencyTracrVerdict {
   @@index([orgId, calibrationId])
   @@map("fluencytracr_verdicts")
 }
+
+model AiValueObject {
+  id             String   @id @default(uuid()) @db.Uuid
+  orgId          String   @map("org_id")
+  objectType     String   @map("object_type")
+  objectId       String   @map("object_id")
+  schemaVersion  String   @map("schema_version")
+  workflowFamily String?  @map("workflow_family")
+  payloadJson    Json     @map("payload_json")
+  validationJson Json     @map("validation_json")
+  valid          Boolean
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([orgId, objectType, objectId], name: "ai_value_objects_unique_key")
+  @@index([orgId, objectType])
+  @@index([orgId, workflowFamily])
+  @@map("ai_value_objects")
+}
