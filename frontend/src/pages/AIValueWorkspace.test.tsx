@@ -1101,6 +1101,67 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
+  it("shows a guided sponsor operating workflow across readout and decisions", async () => {
+    stubJourneyFetch(journeyObjects);
+    const readout = renderWorkspace("/ai-value-workspace/readout");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Sponsor operating workflow/i })).toBeInTheDocument();
+    });
+
+    const readoutWorkflow = screen.getByRole("region", { name: /Sponsor operating workflow/i });
+    expect(within(readoutWorkflow).getByRole("heading", { name: /Sponsor Operating Workflow/i })).toBeInTheDocument();
+    expect(within(readoutWorkflow).getByText(/Readout preview/i)).toBeInTheDocument();
+    expect(within(readoutWorkflow).getAllByText(/Sponsor decision/i).length).toBeGreaterThan(0);
+    expect(within(readoutWorkflow).getByText(/Handoff draft/i)).toBeInTheDocument();
+    expect(within(readoutWorkflow).getAllByText(/Next operating loop/i).length).toBeGreaterThan(0);
+    expect(within(readoutWorkflow).getAllByText(/Review pending/i).length).toBeGreaterThan(0);
+    expect(within(readoutWorkflow).getAllByText(/Reviewer action needed/i).length).toBeGreaterThan(0);
+    expect(within(readoutWorkflow).getByText(/Recommended: Collect stronger evidence/i)).toBeInTheDocument();
+    expect(
+      within(readoutWorkflow).getByText(/Customer Evidence Request and Evidence Review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(readoutWorkflow).getByText(/No task is created; no customer action is automated/i)
+    ).toBeInTheDocument();
+    expect(within(readoutWorkflow).getByRole("link", { name: /Open Sponsor decisions/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/decisions"
+    );
+    expectNoUnsafeUiLanguage(readout.container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("executive", "_", "packet"),
+      "export_v1"
+    ]);
+    readout.unmount();
+
+    stubJourneyFetch(journeyObjects);
+    const decisions = renderWorkspace("/ai-value-workspace/decisions");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Sponsor operating workflow/i })).toBeInTheDocument();
+    });
+
+    const decisionsWorkflow = screen.getByRole("region", { name: /Sponsor operating workflow/i });
+    expect(within(decisionsWorkflow).getByRole("heading", { name: /Sponsor Operating Workflow/i })).toBeInTheDocument();
+    expect(within(decisionsWorkflow).getByRole("link", { name: /Open Executive readout/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/readout"
+    );
+    expectNoUnsafeUiLanguage(decisions.container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(decisions.container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
   it.each([
     {
       state: "ACCEPTED" as const,

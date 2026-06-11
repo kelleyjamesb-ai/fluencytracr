@@ -75,21 +75,21 @@ not bury ROI math inside the executive packet or UI.
 Completed latest slice:
 
 ```text
-Evidence To Value Language Path
+Guided Sponsor Operating Workflow
 ```
 
 What is now in place:
 
-- `/ai-value-workspace/evidence` and `/ai-value-workspace/scenario` now share
-  an Evidence to Value Language Path panel.
-- The panel connects aggregate work evidence, customer outcome evidence,
-  scenario readiness, safe value language, blocked stronger claims, and the next
-  governed action.
-- The panel gives explicit handoff links to Scenario Builder and Executive
-  Readout so Evidence and Scenario feel like one governed path rather than two
-  disconnected panels.
-- Blocked value language keeps the highest-risk boundaries visible: no realized
-  ROI claim, no customer-facing economic figures, and no causality claim.
+- `/ai-value-workspace/readout` and `/ai-value-workspace/decisions` now share a
+  Sponsor Operating Workflow panel.
+- The panel connects Readout preview, Sponsor decision, Handoff draft, and Next
+  operating loop so the sponsor path feels like one operating workflow rather
+  than disconnected panels.
+- The panel derives from existing Executive Readout Preview and Sponsor Decision
+  Loop objects only; it does not add a new backend object, schema, runtime
+  service, or connector.
+- The footer keeps the handoff boundary explicit: no task is created and no
+  customer action is automated.
 - This is UI/comprehension work only. No production connector, runtime service,
   autonomous customer action, unsupported ROI proof, causality claim, individual
   scoring, HR analytics, productivity ranking, raw prompt/response storage,
@@ -98,29 +98,50 @@ What is now in place:
 Verification completed:
 
 - Red test first:
-  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "governed path from evidence to safe value language" --reporter=basic`
+  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "guided sponsor operating workflow" --reporter=basic`
 - `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
 - `npm test --workspace frontend -- --reporter=basic`
 - `npm run build --workspace frontend`
 - `node scripts/ci_semantic_drift_guard.mjs`
 - `node scripts/ci_glean_value_governance_gates.mjs`
 - `git diff --check`
-- In-app browser smoke for `/ai-value-workspace/evidence` and
-  `/ai-value-workspace/scenario` at 1440px and 390px: governed path present, no
-  unsafe internal terms/state codes, no console warnings/errors, and no
-  horizontal overflow.
+- In-app browser smoke for `/ai-value-workspace/readout` and
+  `/ai-value-workspace/decisions` at 1440px and 390px: sponsor workflow present,
+  required workflow steps present, no unsafe internal terms/state codes, no
+  console warnings/errors, and no horizontal overflow.
 
 Recommended next slice:
 
 ```text
-Guided Sponsor Operating Workflow
+Final Product Spine Audit
 ```
 
-Make `/ai-value-workspace/readout` and `/ai-value-workspace/decisions` feel like
-one sponsor operating workflow rather than separate panels. Keep the same
-governance boundary: no ROI proof, no causality, no individual scoring, no HR
-analytics, no productivity ranking, and no customer-facing dollar output unless
-a later governed value-modeling contract explicitly promotes that exact scope.
+Review `/ai-value-workspace` and all focused pages as one client-facing
+operating system. Check navigation clarity, page purpose, client-readable
+language, missing handoffs, mobile fit, and whether each page clearly answers
+what the client does next. Keep the same governance boundary: no ROI proof, no
+causality, no individual scoring, no HR analytics, no productivity ranking, and
+no customer-facing dollar output unless a later governed value-modeling contract
+explicitly promotes that exact scope.
+
+Previously completed slice:
+
+```text
+Evidence To Value Language Path
+```
+
+What is in place:
+
+- `/ai-value-workspace/evidence` and `/ai-value-workspace/scenario` share an
+  Evidence to Value Language Path panel.
+- The panel connects aggregate work evidence, customer outcome evidence,
+  scenario readiness, safe value language, blocked stronger claims, and the next
+  governed action.
+- The panel gives explicit handoff links to Scenario Builder and Executive
+  Readout so Evidence and Scenario feel like one governed path rather than two
+  disconnected panels.
+- Blocked value language keeps the highest-risk boundaries visible: no realized
+  ROI claim, no customer-facing economic figures, and no causality claim.
 
 Previously completed slice:
 

@@ -806,6 +806,90 @@ const EvidenceToValuePathPanel = ({ journey }: { journey: Journey }) => {
   );
 };
 
+const SponsorOperatingWorkflowPanel = ({ journey }: { journey: Journey }) => {
+  const recommendedOption = journey.sponsorDecisionLoop.options.find(
+    (option) => option.recommended
+  );
+  const handoffTarget =
+    recommendedOption?.feedsNext.length === 2
+      ? `${recommendedOption.feedsNext[0]} and ${recommendedOption.feedsNext[1]}`
+      : recommendedOption?.feedsNext.join(", ") ?? "Executive Readout and Sponsor Decisions";
+  const handoffAction =
+    recommendedOption?.action ?? journey.sponsorDecisionLoop.nextAction;
+
+  const steps = [
+    {
+      label: "Readout preview",
+      status: journey.executiveReadoutPreview.statusLabel,
+      detail: journey.executiveReadoutPreview.whatWillOpen,
+      feedsNext: "Feeds sponsor decision"
+    },
+    {
+      label: "Sponsor decision",
+      status: journey.sponsorDecisionLoop.statusLabel,
+      detail: `Recommended: ${journey.sponsorDecisionLoop.recommendedOptionLabel}`,
+      feedsNext: journey.sponsorDecisionLoop.recommendedReason
+    },
+    {
+      label: "Handoff draft",
+      status: handoffTarget,
+      detail: handoffAction,
+      feedsNext: "Feeds the next owner without creating a task."
+    },
+    {
+      label: "Next operating loop",
+      status: "Governed follow-up",
+      detail: journey.sponsorDecisionLoop.nextAction,
+      feedsNext: journey.sponsorDecisionLoop.caveat
+    }
+  ];
+
+  return (
+    <section
+      className="ai-value-panel ai-value-sponsor-workflow-panel"
+      aria-label="Sponsor operating workflow"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Sponsor Workflow</p>
+          <h3>Sponsor Operating Workflow</h3>
+          <p>
+            Turn the readout into a sponsor decision, bounded handoff, and next
+            operating loop without making unsupported value claims.
+          </p>
+        </div>
+        <StatusPill label={journey.sponsorDecisionLoop.statusLabel} tone={journey.sponsorDecisionLoop.statusTone} />
+      </div>
+
+      <div className="ai-value-sponsor-workflow-path">
+        {steps.map((step, index) => (
+          <article className="ai-value-sponsor-workflow-step" key={step.label}>
+            <span className="ai-value-step-number">{index + 1}</span>
+            <div>
+              <span className="ai-value-map-label">{step.label}</span>
+              <strong>{step.status}</strong>
+              <p>{step.detail}</p>
+              <small>{step.feedsNext}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="ai-value-sponsor-workflow-footer">
+        <p>No task is created; no customer action is automated.</p>
+        <div className="ai-value-chip-row">
+          <Link className="ai-value-step" to="/ai-value-workspace/readout">
+            Open Executive readout
+          </Link>
+          <Link className="ai-value-step" to="/ai-value-workspace/decisions">
+            Open Sponsor decisions
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const EvidencePage = ({
   journey,
   evidenceChecks
@@ -1032,6 +1116,8 @@ const ReadoutPage = ({
   executiveBrief: typeof aiValueWorkspace.executiveBrief;
 }) => (
   <section className="ai-value-focused-stack" aria-label="Executive readout workspace">
+    <SponsorOperatingWorkflowPanel journey={journey} />
+
     <ExecutiveReadoutPreviewPanel
       preview={journey.executiveReadoutPreview}
       packetIds={journey.packetIds}
@@ -1100,6 +1186,8 @@ const ReadoutPage = ({
 
 const DecisionsPage = ({ journey }: { journey: Journey }) => (
   <section className="ai-value-focused-stack" aria-label="Sponsor decisions workspace">
+    <SponsorOperatingWorkflowPanel journey={journey} />
+
     <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
 
     <article className="ai-value-panel ai-value-boundary-panel">
