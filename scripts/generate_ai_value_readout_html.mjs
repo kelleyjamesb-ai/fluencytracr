@@ -17,6 +17,8 @@ import {
   validateExecutivePacket,
   validateEngagement,
   validateFluencyBaseline,
+  validateOutcomeEvidenceExport,
+  reviewStateOf,
   summarizeFluencyBaseline,
   renderExecutiveReadoutHtml
 } from "../shared/dist/aiValueEngine/index.js";
@@ -37,6 +39,10 @@ function parseArgs(argv) {
     packet: DEFAULT_PACKET,
     engagement: DEFAULT_ENGAGEMENT,
     baseline: DEFAULT_BASELINE,
+    // Customer outcome evidence is opt-in: without --evidence the readout shows
+    // the "evidence needed" state, matching the backend readout when no export
+    // is attached.
+    evidence: null,
     output: DEFAULT_OUTPUT,
     noEngagement: false,
     noBaseline: false
@@ -50,12 +56,13 @@ function parseArgs(argv) {
     if (arg === "--packet") args.packet = next();
     else if (arg === "--engagement") args.engagement = next();
     else if (arg === "--baseline") args.baseline = next();
+    else if (arg === "--evidence") args.evidence = next();
     else if (arg === "--output") args.output = next();
     else if (arg === "--no-engagement") args.noEngagement = true;
     else if (arg === "--no-baseline") args.noBaseline = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: node scripts/generate_ai_value_readout_html.mjs [--packet path] [--engagement path|--no-engagement] [--baseline path|--no-baseline] [--output path]"
+        "Usage: node scripts/generate_ai_value_readout_html.mjs [--packet path] [--engagement path|--no-engagement] [--baseline path|--no-baseline] [--evidence path] [--output path]"
       );
       process.exit(0);
     } else {
@@ -67,6 +74,43 @@ function parseArgs(argv) {
 
 function readJson(path) {
   return JSON.parse(readFileSync(resolve(process.cwd(), path), "utf8"));
+}
+
+const stringRef = (value) => (typeof value === "string" && value.trim() ? value : null);
+const humanize = (value) =>
+  typeof value === "string" && value.trim() ? value.replace(/_/g, " ").replace(/\s+/g, " ").trim() : null;
+
+function metricNamesFromPacket(packet) {
+  const metrics = Array.isArray(packet?.sections?.metrics) ? packet.sections.metrics : [];
+  return metrics.map((metric) => stringRef(metric?.name)).filter(Boolean);
+}
+
+function dataOwnerFromPacket(packet) {
+  const metrics = Array.isArray(packet?.sections?.metrics) ? packet.sections.metrics : [];
+  for (const metric of metrics) {
+    const owner = humanize(metric?.owner);
+    if (owner) return owner;
+  }
+  return null;
+}
+
+// Mirrors the backend evidenceReviewForReadout mapper so the CLI and the
+// /readout endpoint render the customer-evidence section identically.
+function buildEvidenceReview(packet, outcomeEvidenceExport) {
+  const source = outcomeEvidenceExport?.source_system ?? {};
+  const windows = outcomeEvidenceExport?.windows ?? {};
+  const review = outcomeEvidenceExport?.review ?? {};
+  const dataOwner = dataOwnerFromPacket(packet);
+  return {
+    reviewState: reviewStateOf(outcomeEvidenceExport),
+    metricNames: metricNamesFromPacket(packet),
+    sourceSystemName: stringRef(source.source_name),
+    approvedGrain: stringRef(source.approved_grain),
+    baselineWindow: stringRef(windows.baseline),
+    comparisonWindow: stringRef(windows.comparison),
+    reviewerRole: stringRef(review.reviewer_role) ?? dataOwner,
+    dataOwner
+  };
 }
 
 function main() {
@@ -103,7 +147,19 @@ function main() {
     fluencySummary = summarizeFluencyBaseline(baseline);
   }
 
-  const html = renderExecutiveReadoutHtml({ packet, engagement, fluencySummary });
+  let evidenceReview = null;
+  if (args.evidence) {
+    const outcomeEvidence = readJson(args.evidence);
+    const validation = validateOutcomeEvidenceExport(outcomeEvidence);
+    if (!validation.valid) {
+      console.error("Refusing to render: outcome evidence export failed validation:");
+      for (const gap of validation.gaps) console.error(`- ${gap}`);
+      process.exit(1);
+    }
+    evidenceReview = buildEvidenceReview(packet, outcomeEvidence);
+  }
+
+  const html = renderExecutiveReadoutHtml({ packet, engagement, fluencySummary, evidenceReview });
   const outputPath = resolve(process.cwd(), args.output);
   mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, html, "utf8");

@@ -863,6 +863,16 @@ const REQUIRED_COMPLIANCE_TABLES = [
   "ComplianceDecision"
 ] as const;
 
+// AI Value persistence. Surfaced in DB readiness so a deploy that skipped the
+// ai_value_objects migration fails closed at /ops/db/readiness and /health
+// instead of only erroring at the first value-chain upsert.
+const REQUIRED_AI_VALUE_TABLES = ["ai_value_objects"] as const;
+
+const REQUIRED_PERSISTENCE_TABLES = [
+  ...REQUIRED_COMPLIANCE_TABLES,
+  ...REQUIRED_AI_VALUE_TABLES
+] as const;
+
 type DatabaseReadinessResult =
   | { status: "not_configured" }
   | { status: "ready"; missingTables: []; tableCount: number }
@@ -880,7 +890,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
     )) as Array<{ tablename: string }>;
     const tableNames = new Set(rows.map((row) => row.tablename));
-    const missingTables = REQUIRED_COMPLIANCE_TABLES.filter((tableName) => !tableNames.has(tableName));
+    const missingTables = REQUIRED_PERSISTENCE_TABLES.filter((tableName) => !tableNames.has(tableName));
     if (missingTables.length > 0) {
       return {
         status: "schema_incomplete",
