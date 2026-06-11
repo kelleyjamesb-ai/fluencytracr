@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/roi-scenario.schema.json",
+  "title": "AI Value Governed ROI Scenario",
+  "description": "Docs-backed local schema for governed ROI/value scenario modeling. This is not a production API contract and does not authorize customer-facing economic output.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "roi_scenario_id",
+    "source_refs",
+    "workflow",
+    "evidence_status",
+    "baseline_comparison",
+    "metric_models",
+    "customer_owned_assumptions",
+    "scenario_bands",
+    "safe_value_language",
+    "economic_output_policy",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_ROI_SCENARIO_2026_06"
+    },
+    "roi_scenario_id": {
+      "type": "string"
+    },
+    "source_refs": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "blueprint_id",
+        "metrics_library_id",
+        "value_scenario_id",
+        "readiness_id"
+      ],
+      "properties": {
+        "blueprint_id": { "type": "string" },
+        "metrics_library_id": { "type": "string" },
+        "value_scenario_id": { "type": "string" },
+        "readiness_id": { "type": "string" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow_family", "workflow_name", "value_route"],
+      "properties": {
+        "workflow_family": { "type": "string" },
+        "workflow_name": { "type": "string" },
+        "value_route": {
+          "enum": [
+            "COST_REDUCTION",
+            "CAPACITY_CREATION",
+            "QUALITY_IMPROVEMENT",
+            "RISK_REDUCTION",
+            "EXPERIENCE_IMPROVEMENT",
+            "REVENUE_EXPANSION",
+            "UNCLASSIFIED"
+          ]
+        }
+      }
+    },
+    "evidence_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "readiness_decision",
+        "outcome_evidence_review_state",
+        "source_coverage"
+      ],
+      "properties": {
+        "readiness_decision": {
+          "enum": [
+            "READY_FOR_EXECUTIVE_VALIDATION",
+            "HOLD_FOR_ASSUMPTIONS",
+            "HOLD_FOR_SOURCE_COVERAGE",
+            "HOLD_FOR_BASELINE",
+            "STOP_FOR_GOVERNANCE_REVIEW"
+          ]
+        },
+        "outcome_evidence_review_state": {
+          "enum": ["ACCEPTED", "SUBMITTED", "REJECTED", "MISSING"]
+        },
+        "source_coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ai_activity",
+            "workflow",
+            "outcome",
+            "baseline",
+            "trust",
+            "assumptions",
+            "suppression"
+          ],
+          "properties": {
+            "ai_activity": { "$ref": "#/$defs/state" },
+            "workflow": { "$ref": "#/$defs/state" },
+            "outcome": { "$ref": "#/$defs/state" },
+            "baseline": { "$ref": "#/$defs/state" },
+            "trust": { "$ref": "#/$defs/state" },
+            "assumptions": { "$ref": "#/$defs/state" },
+            "suppression": { "$ref": "#/$defs/state" }
+          }
+        }
+      }
+    },
+    "baseline_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_window", "comparison_window"],
+      "properties": {
+        "baseline_window": { "$ref": "#/$defs/window" },
+        "comparison_window": { "$ref": "#/$defs/window" }
+      }
+    },
+    "metric_models": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "metric_id",
+          "name",
+          "value_route",
+          "measurement_unit",
+          "source_system",
+          "baseline_rule",
+          "comparison_rule",
+          "formula_template",
+          "allowed_claim_level",
+          "value_model_role"
+        ],
+        "properties": {
+          "metric_id": { "type": "string" },
+          "name": { "type": "string" },
+          "value_route": { "type": "string" },
+          "measurement_unit": { "type": "string" },
+          "source_system": { "type": "object" },
+          "baseline_rule": { "type": "string" },
+          "comparison_rule": { "type": "string" },
+          "formula_template": { "type": "string" },
+          "allowed_claim_level": {
+            "enum": [
+              "CAVEATED_VALUE_INVESTIGATION",
+              "SOURCE_READINESS_ONLY",
+              "INTERNAL_ONLY",
+              "BLOCKED"
+            ]
+          },
+          "value_model_role": {
+            "enum": ["PRIMARY", "CONTEXT", "GUARDRAIL"]
+          }
+        }
+      }
+    },
+    "customer_owned_assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["assumption_id", "state", "owner"],
+        "properties": {
+          "assumption_id": { "type": "string" },
+          "state": { "$ref": "#/$defs/state" },
+          "owner": { "type": "string" }
+        }
+      }
+    },
+    "scenario_bands": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["band", "interpretation", "included_metric_ids"],
+        "properties": {
+          "band": {
+            "enum": ["CONSERVATIVE", "BASE_CASE", "EXPANDED"]
+          },
+          "interpretation": { "type": "string" },
+          "included_metric_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "safe_value_language": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_claim_level",
+        "allowed_phrases",
+        "required_caveats",
+        "blocked_claims"
+      ],
+      "properties": {
+        "allowed_claim_level": {
+          "enum": [
+            "CAVEATED_VALUE_INVESTIGATION",
+            "SOURCE_READINESS_ONLY",
+            "INTERNAL_ONLY",
+            "BLOCKED"
+          ]
+        },
+        "allowed_phrases": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "required_caveats": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "blocked_claims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/blocked_claim" }
+        }
+      }
+    },
+    "economic_output_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "customer_facing_economic_output",
+        "dollarized_output",
+        "realized_roi_calculation"
+      ],
+      "properties": {
+        "mode": {
+          "enum": ["MODELED_RANGE_ONLY", "VALUE_HYPOTHESIS_ONLY", "BLOCKED"]
+        },
+        "customer_facing_economic_output": { "const": false },
+        "dollarized_output": { "const": false },
+        "realized_roi_calculation": { "const": false }
+      }
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "production_connector": { "const": false },
+        "dashboard": { "const": false },
+        "realized_roi_calculation": { "const": false },
+        "causality_claim": { "const": false },
+        "individual_scoring": { "const": false },
+        "hris_or_people_analytics": { "const": false },
+        "productivity_ranking": { "const": false },
+        "raw_prompt_or_response_storage": { "const": false },
+        "direct_identifiers": { "const": false },
+        "runtime_service": { "const": false },
+        "autonomous_customer_actions": { "const": false },
+        "customer_facing_economic_output": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "state": {
+      "enum": ["PRESENT", "CAVEATED", "MISSING", "SUPPRESSED", "BLOCKED"]
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["state", "owner", "rule"],
+      "properties": {
+        "state": { "$ref": "#/$defs/state" },
+        "owner": { "type": "string" },
+        "rule": { "type": "string" }
+      }
+    },
+    "blocked_claim": {
+      "enum": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement",
+        "realized_roi_calculation",
+        "customer_facing_economic_output"
+      ]
+    }
+  }
+}

@@ -41,6 +41,12 @@ Blueprint, Metrics, Value Scenario, Evidence Readiness, Claim Boundary, and
 Executive Readout objects through structured handoffs, validators, and local
 ledger references.
 
+After Executive Validation, the platform can emit a local Executive Operating
+Packet handoff bundle that routes the next bounded work to Evidence Readiness,
+Metrics, and Review agents. The bundle is development infrastructure only: it
+does not create a production agent runtime, customer telemetry stream,
+autonomous customer action, ROI calculation, or causality claim.
+
 ## Source Artifact Roles
 
 | Source artifact | Software role |

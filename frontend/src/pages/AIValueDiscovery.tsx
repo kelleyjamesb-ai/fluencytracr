@@ -130,6 +130,9 @@ const lines = (value: string) =>
 const csv = (value: string) =>
   value.split(",").map((item) => item.trim()).filter(Boolean);
 
+const withFallback = (items: string[], fallback: string) =>
+  items.length > 0 ? items : [fallback];
+
 const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
 const sessionOrgId = () => (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
 
@@ -309,8 +312,9 @@ export const AIValueDiscovery = () => {
         account_team_roles: ["value_consultant"]
       },
       business_objectives: form.objectives
-        .filter((objective) => objective.statement)
-        .map((objective, index) => ({
+        .map((objective, index) => ({ objective, index }))
+        .filter(({ objective }) => objective.statement)
+        .map(({ objective, index }) => ({
           objective_id: objectiveIdAt(index),
           objective_statement: objective.statement,
           challenge: objective.challenge,
@@ -449,6 +453,30 @@ export const AIValueDiscovery = () => {
       />
       {hint && <p className="ai-value-discovery-hint">{hint}</p>}
     </div>
+  );
+
+  const routeLabel =
+    VALUE_ROUTES.find((route) => route.value === form.primaryRoute)?.label ?? "Value route to confirm";
+  const currentWorkflow = withFallback(
+    lines(form.currentSteps),
+    "Capture the steps people follow today."
+  );
+  const futureWorkflow = withFallback(
+    lines(form.futureSteps),
+    "Describe the target workflow after Glean is part of the work."
+  );
+  const friction = withFallback(
+    lines(form.frictionPoints),
+    "Name the friction, handoffs, and system gaps slowing the work down."
+  );
+  const systems = withFallback(csv(form.systemsInScope), "Systems still to confirm");
+  const outcomeSignals = withFallback(
+    csv(form.plannedSignals),
+    "Outcome signals still to confirm"
+  );
+  const aiInterventions = withFallback(
+    futureWorkflow.filter((step) => /ai|glean|search|assistant|skill|agent/i.test(step)),
+    form.expectedChange || "Confirm where AI changes the work."
   );
 
   return (
@@ -707,6 +735,88 @@ export const AIValueDiscovery = () => {
               Day-in-the-life workshop{pilotUseCase ? `: ${pilotUseCase.name}` : ""}
             </h3>
             {!pilotUseCase && <p>Pick a pilot use case in the Prioritize step first.</p>}
+            <section className="ai-value-blueprint-canvas" aria-label="Blueprint workshop canvas">
+              <div className="ai-value-section-head">
+                <div>
+                  <p className="eyebrow">Client working canvas</p>
+                  <h3>Blueprint workshop canvas</h3>
+                  <p>
+                    Use this with the client to map how work happens now, where AI changes the
+                    workflow, and what evidence can support a value conversation.
+                  </p>
+                </div>
+                <span className="ai-value-pill ai-value-pill-good">{routeLabel}</span>
+              </div>
+
+              <div className="ai-value-blueprint-flow">
+                <div className="ai-value-blueprint-lane">
+                  <h4>Current workflow</h4>
+                  <ol>
+                    {currentWorkflow.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+                <div className="ai-value-blueprint-lane">
+                  <h4>Future workflow</h4>
+                  <ol>
+                    {futureWorkflow.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+
+              <div className="ai-value-blueprint-insight-grid">
+                <div className="ai-value-blueprint-note">
+                  <h4>Friction, handoffs, and systems</h4>
+                  <ul>
+                    {friction.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                  <div className="ai-value-chip-row">
+                    {systems.map((system) => (
+                      <span className="ai-value-pill" key={system}>
+                        {system}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="ai-value-blueprint-note">
+                  <h4>AI intervention candidates</h4>
+                  <ul>
+                    {aiInterventions.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                  {form.expectedChange && <p>{form.expectedChange}</p>}
+                </div>
+              </div>
+
+              <div className="ai-value-blueprint-handoff-grid">
+                <div className="ai-value-blueprint-handoff">
+                  <h4>Feeds Metrics and ROI opportunity mapping</h4>
+                  <p>
+                    Route: {routeLabel}. Signals to map: {outcomeSignals.join(", ")}.
+                  </p>
+                </div>
+                <div className="ai-value-blueprint-handoff">
+                  <h4>Feeds Evidence readiness</h4>
+                  <p>
+                    Uses aggregate AI activity, workflow evidence, baseline windows, trust signals,
+                    and small-group protection before anything is surfaced.
+                  </p>
+                </div>
+                <div className="ai-value-blueprint-handoff">
+                  <h4>Feeds governed value scenario</h4>
+                  <p>
+                    Turns the value hypothesis into a customer-owned scenario. It can model an
+                    opportunity; it cannot prove ROI or causality on its own.
+                  </p>
+                </div>
+              </div>
+            </section>
             {area("The client question on the wall", "clientQuestion")}
             <div className="ai-value-field-grid">
               <div>{area("How the work happens today (one step per line)", "currentSteps")}</div>

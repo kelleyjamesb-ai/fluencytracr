@@ -73,6 +73,33 @@ const GOVERNANCE_BOUNDARIES = [
   "customer_facing_economic_output"
 ];
 
+const OUTPUT_VERIFICATION = {
+  BLUEPRINT: {
+    validators: ["npm run validate:ai-value-blueprint"],
+    tests: ["npm run test:ai-value-blueprint"]
+  },
+  METRICS_MAPPING: {
+    validators: ["npm run validate:ai-value-metrics"],
+    tests: ["npm run test:ai-value-metrics"]
+  },
+  VALUE_SCENARIO: {
+    validators: ["npm run validate:ai-value-scenario"],
+    tests: ["npm run test:ai-value-scenario"]
+  },
+  EVIDENCE_READINESS: {
+    validators: ["npm run validate:ai-value-readiness"],
+    tests: ["npm run test:ai-value-readiness"]
+  },
+  CLAIM_BOUNDARY: {
+    validators: ["npm run validate:ai-value-claim-boundary"],
+    tests: ["npm run test:ai-value-claim-boundary"]
+  },
+  EXECUTIVE_READOUT: {
+    validators: ["npm run generate:ai-value-executive-packet"],
+    tests: ["npm run test:ai-value-executive-packet"]
+  }
+};
+
 const FORBIDDEN_KEY_PATTERNS = [
   /prompt/i,
   /response/i,
@@ -135,13 +162,13 @@ function isForbiddenKey(key) {
   return FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key));
 }
 
-function collectForbiddenFields(value, fields = new Set()) {
+function collectForbiddenFields(value, fields = new Set(), path = []) {
   if (!value || typeof value !== "object") {
     return fields;
   }
   if (Array.isArray(value)) {
     for (const item of value) {
-      collectForbiddenFields(item, fields);
+      collectForbiddenFields(item, fields, path);
     }
     return fields;
   }
@@ -149,10 +176,16 @@ function collectForbiddenFields(value, fields = new Set()) {
     if (key === "blocked_data_capture" || key === "governance_boundaries") {
       continue;
     }
-    if (isForbiddenKey(key)) {
+    const nextPath = [...path, key];
+    const isExplicitFalseFeedBoundary =
+      key === "customer_telemetry" &&
+      nested === false &&
+      path.length === 1 &&
+      path[0] === "feeds";
+    if (isForbiddenKey(key) && !isExplicitFalseFeedBoundary) {
       fields.add(key);
     }
-    collectForbiddenFields(nested, fields);
+    collectForbiddenFields(nested, fields, nextPath);
   }
   return fields;
 }
@@ -290,17 +323,28 @@ function collectVerificationGaps(handoff) {
       "verification_routing.required_tests must include at least one test command"
     );
   }
-  if (handoff?.task_contract?.expected_output_type === "EVIDENCE_READINESS") {
-    if (!routing.required_validators?.includes("npm run validate:ai-value-readiness")) {
-      gaps.push(
-        "verification_routing.required_validators must include npm run validate:ai-value-readiness"
-      );
+  const verification = OUTPUT_VERIFICATION[handoff?.task_contract?.expected_output_type];
+  if (verification) {
+    for (const validator of verification.validators) {
+      if (!routing.required_validators?.includes(validator)) {
+        gaps.push(
+          `verification_routing.required_validators must include ${validator}`
+        );
+      }
     }
-    if (!routing.required_tests?.includes("npm run test:ai-value-readiness")) {
-      gaps.push(
-        "verification_routing.required_tests must include npm run test:ai-value-readiness"
-      );
+    for (const testCommand of verification.tests) {
+      if (!routing.required_tests?.includes(testCommand)) {
+        gaps.push(
+          `verification_routing.required_tests must include ${testCommand}`
+        );
+      }
     }
+  }
+  if (handoff?.task_contract?.validator_command &&
+      !routing.required_validators?.includes(handoff.task_contract.validator_command)) {
+    gaps.push(
+      "verification_routing.required_validators must include task_contract.validator_command"
+    );
   }
   if (!Array.isArray(routing.reviewer_roles) || routing.reviewer_roles.length === 0) {
     gaps.push("verification_routing.reviewer_roles must include at least one role");
@@ -311,6 +355,67 @@ function collectVerificationGaps(handoff) {
       }
     }
   }
+  return gaps;
+}
+
+function collectBundleTopLevelGaps(bundle) {
+  const gaps = [];
+  for (const field of [
+    "schema_version",
+    "bundle_id",
+    "source_packet_ref",
+    "workflow_family",
+    "value_route",
+    "handoffs",
+    "ledger",
+    "blocked_data_capture",
+    "governance_boundaries",
+    "feeds"
+  ]) {
+    requireField(bundle?.[field], field, gaps);
+  }
+  if (bundle?.schema_version &&
+      bundle.schema_version !== "FT_AI_VALUE_AGENT_HANDOFF_BUNDLE_2026_06") {
+    gaps.push(`schema_version is invalid: ${bundle.schema_version}`);
+  }
+  if (!Array.isArray(bundle?.handoffs) || bundle.handoffs.length === 0) {
+    gaps.push("handoffs must include at least one handoff");
+  }
+  if (bundle?.feeds?.production_agent_runtime !== false) {
+    gaps.push("feeds.production_agent_runtime must be false");
+  }
+  if (bundle?.feeds?.customer_telemetry !== false) {
+    gaps.push("feeds.customer_telemetry must be false");
+  }
+  return gaps;
+}
+
+function collectBundleHandoffGaps(bundle) {
+  const gaps = [];
+  if (!Array.isArray(bundle?.handoffs)) {
+    return gaps;
+  }
+  bundle.handoffs.forEach((handoff, index) => {
+    const result = validateAiValueAgentHandoff(handoff);
+    for (const gap of result.gaps) {
+      gaps.push(`handoffs[${index}]: ${gap}`);
+    }
+    if (handoff?.workflow_family !== bundle.workflow_family) {
+      gaps.push(
+        `handoffs[${index}].workflow_family must match bundle.workflow_family`
+      );
+    }
+    if (handoff?.value_route !== bundle.value_route) {
+      gaps.push(
+        `handoffs[${index}].value_route must match bundle.value_route`
+      );
+    }
+    if (handoff?.ledger?.handoff_ref !== bundle.ledger?.handoff_ref) {
+      gaps.push(
+        `handoffs[${index}].ledger.handoff_ref must match bundle.ledger.handoff_ref`
+      );
+    }
+  });
   return gaps;
 }
 
@@ -380,6 +485,212 @@ export function validateAiValueAgentHandoff(handoff) {
     gaps,
     feeds: {
       local_agent_run_ledger: gaps.length === 0,
+      production_agent_runtime: false,
+      customer_telemetry: false
+    }
+  };
+}
+
+export function validateAiValueAgentHandoffBundle(bundle) {
+  const gaps = [
+    ...collectBundleTopLevelGaps(bundle),
+    ...collectBundleHandoffGaps(bundle),
+    ...collectLedgerGaps(bundle),
+    ...collectBlockedCaptureGaps(bundle),
+    ...collectGovernanceGaps(bundle)
+  ];
+
+  return {
+    schema_version: "FT_AI_VALUE_AGENT_HANDOFF_BUNDLE_VALIDATION_2026_06",
+    bundle_id: bundle?.bundle_id ?? null,
+    handoff_count: Array.isArray(bundle?.handoffs) ? bundle.handoffs.length : 0,
+    valid: gaps.length === 0,
+    gaps,
+    feeds: {
+      local_agent_run_ledger: gaps.length === 0,
+      production_agent_runtime: false,
+      customer_telemetry: false
+    }
+  };
+}
+
+function buildHandoffFromExecutivePacket(packet, options) {
+  const bundleRef =
+    "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json";
+  const sourcePacketRef =
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json";
+  const workflowFamily = packet?.workflow_family ?? null;
+  const valueRoute = packet?.value_route ?? null;
+  const suffix = workflowFamily ?? "unknown";
+
+  return {
+    schema_version: "FT_AI_VALUE_AGENT_HANDOFF_2026_06",
+    handoff_id: `handoff_${suffix}_${options.idSuffix}_v1`,
+    workflow_family: workflowFamily,
+    value_route: valueRoute,
+    source_agent_role: "EXECUTIVE_READOUT_AGENT",
+    target_agent_role: options.targetAgentRole,
+    object_type: "EXECUTIVE_READOUT",
+    object_ref: sourcePacketRef,
+    task_contract: {
+      objective: options.objective,
+      expected_output_type: options.expectedOutputType,
+      expected_output_ref: options.expectedOutputRef,
+      validator_command: options.validatorCommand
+    },
+    model_selection: options.modelSelection,
+    tool_permissions: {
+      read_scopes: [
+        "docs/contracts/ai-value-intelligence/",
+        "schemas/ai-value-intelligence/",
+        "scripts/"
+      ],
+      write_scopes: ["docs/contracts/ai-value-intelligence/examples/"],
+      allowed_tools: [
+        "filesystem_read",
+        "filesystem_write",
+        "local_validator",
+        "test_runner"
+      ],
+      network_access: false,
+      production_access: false,
+      secrets_access: false,
+      customer_data_access: false
+    },
+    verification_routing: {
+      required_validators: options.requiredValidators,
+      required_tests: options.requiredTests,
+      reviewer_roles: ["REVIEWER_AGENT", "EVALUATOR_AGENT"]
+    },
+    ledger: {
+      schema_version: "AR_LEDGER_2026_05",
+      scope_ref: "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+      handoff_ref: bundleRef,
+      verification_refs: ["npm run test:ai-value-agent-harness"],
+      required_caveats: [
+        "Development-harness telemetry only.",
+        "No production agent runtime, autonomous customer action, raw prompt/response storage, ROI calculation, causality claim, or individual scoring."
+      ]
+    },
+    blocked_data_capture: REQUIRED_BLOCKED_CAPTURE,
+    governance_boundaries: {
+      customer_telemetry: false,
+      production_agent_runtime: false,
+      autonomous_customer_action: false,
+      raw_prompt_or_response_storage: false,
+      direct_identifier_capture: false,
+      roi_calculation: false,
+      causality_claim: false,
+      individual_scoring: false,
+      customer_facing_economic_output: false
+    }
+  };
+}
+
+export function buildExecutivePacketHandoffBundle(packet) {
+  const workflowFamily = packet?.workflow_family ?? null;
+  const valueRoute = packet?.value_route ?? null;
+  const bundleRef =
+    "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json";
+
+  const handoffs = [
+    buildHandoffFromExecutivePacket(packet, {
+      idSuffix: "executive_to_evidence_readiness",
+      targetAgentRole: "EVIDENCE_READINESS_AGENT",
+      expectedOutputType: "EVIDENCE_READINESS",
+      expectedOutputRef:
+        "docs/contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json",
+      objective:
+        "Track baseline exports, customer owner review, source coverage, and unresolved assumptions before stronger value language is used.",
+      validatorCommand: "npm run validate:ai-value-readiness",
+      requiredValidators: ["npm run validate:ai-value-readiness"],
+      requiredTests: ["npm run test:ai-value-readiness"],
+      modelSelection: {
+        policy: "DEFAULT_INHERIT",
+        allowed_model_tiers: ["BALANCED", "FRONTIER"],
+        selected_model_tier: "BALANCED",
+        escalation_allowed: true,
+        escalation_rule:
+          "Escalate only for ambiguous evidence, source coverage, or governance failures."
+      }
+    }),
+    buildHandoffFromExecutivePacket(packet, {
+      idSuffix: "executive_to_metrics",
+      targetAgentRole: "METRICS_AGENT",
+      expectedOutputType: "METRICS_MAPPING",
+      expectedOutputRef:
+        "docs/contracts/ai-value-intelligence/examples/customer-support-metrics-library.json",
+      objective:
+        "Carry sponsor decisions back into outcome and ROI opportunity mapping for the selected workflow.",
+      validatorCommand: "npm run validate:ai-value-metrics",
+      requiredValidators: ["npm run validate:ai-value-metrics"],
+      requiredTests: ["npm run test:ai-value-metrics"],
+      modelSelection: {
+        policy: "SMALL_FAST_VALIDATOR",
+        allowed_model_tiers: ["FAST", "BALANCED"],
+        selected_model_tier: "FAST",
+        escalation_allowed: true,
+        escalation_rule:
+          "Escalate only when metric ownership, source systems, or claim levels are ambiguous."
+      }
+    }),
+    buildHandoffFromExecutivePacket(packet, {
+      idSuffix: "executive_to_review",
+      targetAgentRole: "REVIEWER_AGENT",
+      expectedOutputType: "EXECUTIVE_READOUT",
+      expectedOutputRef:
+        "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+      objective:
+        "Review sponsor-facing language, blocked claims, required caveats, and next-action framing before the packet is shared.",
+      validatorCommand: "npm run generate:ai-value-executive-packet",
+      requiredValidators: ["npm run generate:ai-value-executive-packet"],
+      requiredTests: ["npm run test:ai-value-executive-packet"],
+      modelSelection: {
+        policy: "FRONTIER_REVIEW",
+        allowed_model_tiers: ["BALANCED", "FRONTIER"],
+        selected_model_tier: "FRONTIER",
+        escalation_allowed: true,
+        escalation_rule:
+          "Use frontier review only for sponsor-language ambiguity, governance risk, or unresolved claim-boundary issues."
+      }
+    })
+  ];
+
+  return {
+    schema_version: "FT_AI_VALUE_AGENT_HANDOFF_BUNDLE_2026_06",
+    bundle_id: `handoff_bundle_${workflowFamily ?? "unknown"}_executive_v1`,
+    source_packet_ref:
+      "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+    workflow_family: workflowFamily,
+    value_route: valueRoute,
+    handoffs,
+    ledger: {
+      schema_version: "AR_LEDGER_2026_05",
+      scope_ref: "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+      handoff_ref: bundleRef,
+      verification_refs: [
+        "npm run test:ai-value-agent-harness",
+        "npm run test:ai-value-executive-packet"
+      ],
+      required_caveats: [
+        "Development-harness telemetry only.",
+        "Agent handoffs are local task contracts, not production agent runs."
+      ]
+    },
+    blocked_data_capture: REQUIRED_BLOCKED_CAPTURE,
+    governance_boundaries: {
+      customer_telemetry: false,
+      production_agent_runtime: false,
+      autonomous_customer_action: false,
+      raw_prompt_or_response_storage: false,
+      direct_identifier_capture: false,
+      roi_calculation: false,
+      causality_claim: false,
+      individual_scoring: false,
+      customer_facing_economic_output: false
+    },
+    feeds: {
+      local_agent_run_ledger: true,
       production_agent_runtime: false,
       customer_telemetry: false
     }
@@ -463,7 +774,10 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const inputPath = resolve(process.cwd(), args.input);
   const handoff = JSON.parse(readFileSync(inputPath, "utf8"));
-  const result = validateAiValueAgentHandoff(handoff);
+  const result =
+    handoff?.schema_version === "FT_AI_VALUE_AGENT_HANDOFF_BUNDLE_2026_06"
+      ? validateAiValueAgentHandoffBundle(handoff)
+      : validateAiValueAgentHandoff(handoff);
   const json = `${JSON.stringify(result, null, 2)}\n`;
 
   if (args.output) {

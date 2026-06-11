@@ -218,6 +218,12 @@
 - Verified: `npm run build --workspace shared`; targeted backend tests for aggregate import and real-source readiness (9 tests); targeted frontend Methodology Review Workspace tests (4 tests); `npm run build --workspace frontend`; full frontend tests (17 tests); `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`. Strict OpenSpec validation was attempted but blocked by restricted network fetching `@fission-ai/openspec`.
 - Next focus: Stage 2 should make the aggregate package review workflow more operational before any persistence, live Glean connection, or claim-readiness effect is introduced.
 
+## 2026-06-10 (UTC) — Codex (AI Value Platform evidence-aware cadence)
+
+- Completed: Added Evidence-Aware Executive Operating Cadence for the AI Value Platform. Journey and Workspace now use Customer Evidence Review state to change Client Value Questions, sponsor decision, recommended next action, and agentic follow-up for accepted, submitted, rejected, and missing customer evidence. Workspace now also renders the sponsor-facing Client Value Questions and Executive Operating Packet.
+- Verified: Red/green `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "executive cadence"`; affected Journey/Workspace suites; full frontend tests; frontend build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; `git diff --check`; Playwright CLI mocked-route checks for Journey/Workspace at 1440px and 390px with no unsafe internal state codes or object terms, no console errors/warnings, and no horizontal overflow.
+- Next focus: Make the opened/generated Executive Readout HTML evidence-aware so the readout packet itself reflects accepted, submitted, rejected, or missing customer evidence with caveated-only value language.
+
 ## 2026-05-08 (UTC) — Codex (Nielsen Source Evidence Trial Stage 2)
 
 - Completed: Added `NSETR_2026_05`, a review-only Nielsen Source Evidence Trial that maps sanitized Nielsen deck and Time-Saves packet references into document-derived claim candidates and a generated Aggregate Evidence Import package. The sample maps 6 candidates: 2 accepted for review and 4 withheld behind survey export, external outcome export, financial approval, and customer-level telemetry gaps.
@@ -266,3 +272,117 @@
 - Completed: Engagements now carry a portfolio of measurable business objectives (`business_objectives`, 1+, legacy single `business_objective` still accepted): each objective takes optional `success_measures` ({measure, expected_direction IMPROVE/REDUCE/MAINTAIN}); duplicate objective ids rejected; use cases optionally link `objective_id` and the link is validated. Discovery step 1 became the ROI-conversation builder (objective cards with measures, "Add another objective", use-case-to-objective selector); the workspace kickoff panel shows "What the sponsor will measure"; the executive readout opens with "Client objectives and the value review" rendering every objective and its measures. Fixture upgraded to two objectives (capacity + quality).
 - Verified: engine 32/32 (37 with readout suite), backend ai-value 17/17, frontend 24/24 + build, docs sweep, semantic drift guard, live save through the running engine (objective_count 2), browser-verified discovery step.
 - Next focus: tie success_measures to metrics-library recommendations (measure -> metric mapping) so the value review and the evidence chain converge; PR merge.
+
+## 2026-06-10 (UTC) — Codex (AI Value governed scenario builder)
+
+- Completed: Added a Governed Scenario Builder to `/ai-value-journey` that shows customer-owned assumptions, baseline/comparison window status, customer outcome export status, scenario-band readiness, and unlock conditions for stronger value language.
+- Verified: targeted Journey red/green test, full Journey test file, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright desktop/mobile mocked-route checks with no console errors or horizontal overflow.
+- Next focus: Discovery -> Journey continuity so the client-selected Blueprint workflow carries into Journey, Value Workshop, Scenario Builder, and Executive Operating Packet.
+
+## 2026-06-10 (UTC) — Codex (AI Value workflow continuity)
+
+- Completed: Added a Journey-derived selected-workflow handoff so the latest Blueprint workflow carries into `/ai-value-journey` and `/ai-value-workspace` with workflow name, value route, evidence status, downstream feed summary, and missing-workflow guidance before value modeling.
+- Verified: focused red/green Journey + Workspace continuity tests, affected page suites, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright CLI mocked-route checks for Journey/Workspace at desktop/mobile widths with no console errors, no unsafe labels, and no horizontal overflow.
+- Next focus: Governed `value_model` / `roi_scenario` contract before any stronger economic or dollarized output.
+
+## 2026-06-10 (UTC) — Codex (AI Value governed ROI scenario contract)
+
+- Completed: Added `FT_AI_VALUE_ROI_SCENARIO_2026_06` as a governed local value-modeling object with shared engine validator/builder, CLI wrapper, package scripts, seeded Customer Support fixture, and JSON schema.
+- Verified: RED missing-module test first, then ROI scenario tests/validator, adjacent AI value scenario/readiness/agent-harness suites, full AI value engine, V1 spine, docs sweep, semantic drift guard, Glean value governance gates, and diff whitespace check.
+- Next focus: Surface ROI Scenario Readiness in Journey/Workspace and connect it to Executive Operating Packet language without customer-facing dollarized output.
+
+## 2026-06-10 (UTC) — Codex (AI Value ROI scenario readiness UI)
+
+- Completed: Surfaced governed ROI Scenario Readiness in `/ai-value-journey` and `/ai-value-workspace`, backed by latest `roi_scenario` objects and backend object API support. The UI translates baseline/comparison windows, assumptions, outcome evidence review, scenario bands, metric/source details, safe language, and blocked outputs into sponsor-readable value-modeling handoff language.
+- Verified: focused Journey/Workspace ROI readiness tests, full frontend suite/build, backend AI value object API test, full backend CI suite, ROI scenario and agent-harness scripts, docs sweep, semantic drift guard, Glean value governance gate, diff whitespace, and mocked browser checks with no unsafe internal terms, no console errors, and no overflow at 390px/1440px.
+- Next focus: Customer Evidence Request Packet from ROI Scenario Readiness so clients know which aggregate data export, owner, baseline/comparison windows, and review steps are needed before stronger value language.
+
+## 2026-06-10 (UTC) — Codex (AI Value customer evidence request packet)
+
+- Completed: Added a Customer Evidence Request Packet in `/ai-value-journey` and `/ai-value-workspace`, derived from governed ROI Scenario Readiness. The UI now tells the client which aggregate export to request, from which customer system, for which metric/export level/window rules, owned by whom, reviewed by whom, and which value language remains blocked.
+- Verified: red/green customer evidence request tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks for Journey/Workspace with no unsafe terms, no console warnings/errors, and no horizontal overflow.
+- Next focus: Customer Evidence Review Workbench from the request packet, so submitted/accepted/rejected exports are readable as an operating workflow rather than a raw object list.
+
+## 2026-06-10 (UTC) — Codex (AI Value customer evidence review workbench)
+
+- Completed: Added a Customer Evidence Review Workbench in `/ai-value-journey` and `/ai-value-workspace`, derived from the Customer Evidence Request plus outcome-evidence review state. The workbench shows missing/submitted/accepted/rejected states, reviewer ownership, request-match checks for metric/source/export level/windows, blocked value language, and submitted-only Accept/Reject actions through the existing role-gated review API.
+- Verified: red/green customer evidence review tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks for Journey/Workspace with no unsafe terms, no console issues after local preview script stub, and no horizontal overflow.
+- Next focus: Evidence-Aware Executive Operating Cadence, so accepted/submitted/rejected/missing evidence drives sponsor next action, client value questions, and agentic handoff language.
+
+## 2026-06-10 (UTC) — Codex (AI Value evidence-aware executive readout HTML)
+
+- Completed: Opened/generated Executive Readout HTML now renders a Customer Outcome Evidence section for missing, submitted, accepted, and rejected aggregate evidence. Accepted evidence is caveated support only, mismatched accepted exports are ignored, and the example readout no longer exposes the internal packet id.
+- Verified: red/green backend readout API test; full backend AI value object API test; backend build; standalone readout renderer test; full frontend tests/build; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; generated HTML internal-term audit; diff whitespace.
+- Next focus: Executive Readout Preview and Share Workflow in Journey/Workspace, so sponsors can understand what will open/share and which caveats must travel with it.
+
+## 2026-06-10 (UTC) — Codex (AI Value executive readout preview/share)
+
+- Completed: Added a shared Executive Readout Preview in `/ai-value-journey` and `/ai-value-workspace`. The preview uses Customer Evidence Review state to explain what will open, what language remains held, who owns the next action, and which caveat must travel with the readout; accepted evidence stays caveated support only.
+- Verified: red/green preview tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks with no unsafe internal terms, no console errors/warnings, no horizontal overflow, and readout-open tab creation verified.
+- Next focus: Sponsor Decision and Follow-Up Loop, so the readout feeds expansion review, evidence collection, corrected-export requests, claim holds, or a return to Blueprint.
+
+## 2026-06-11 (UTC) — Codex (AI Value sponsor decision loop)
+
+- Completed: Added a shared Sponsor Decision loop to `/ai-value-journey` and `/ai-value-workspace`. It derives the recommended sponsor move from Customer Evidence Review state and shows five governed next moves: Expand workflow, Collect stronger evidence, Request corrected export, Hold value language, and Return to Blueprint. Each move shows what it feeds next while agentic follow-up remains handoff-only.
+- Verified: red/green sponsor-decision tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks with no unsafe internal terms/state codes, no console errors/warnings, and no horizontal overflow.
+- Next focus: Decision Selection Handoff Preview, so a chosen sponsor move produces a compact non-persistent handoff preview without becoming a task manager or autonomous workflow.
+
+## 2026-06-11 (UTC) - Codex (AI Value decision handoff draft)
+
+- Completed: Added the Decision Selection Handoff Preview and copy-ready local draft to `/ai-value-journey` and `/ai-value-workspace`. Selecting a sponsor move now updates the owner, target, evidence or input needed, safe next action, and required caveat, and the visible draft can be copied without persistence or task creation.
+- Verified: red/green copy-ready handoff tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright CLI checks for Journey/Workspace at 1440px and 390px with copy interaction, no unsafe internal terms, no AI Value API failures, and no horizontal overflow.
+- Next focus: Client Value Questions to Metrics Mapping Bridge, so sponsor value questions and success measures recommend governed Metrics Library entries before ROI Scenario Readiness or Customer Evidence Request moves forward.
+
+## 2026-06-11 (UTC) - Codex (AI Value questions-to-metrics bridge)
+
+- Completed: Added a shared Questions to Metrics Bridge to `/ai-value-journey` and `/ai-value-workspace`. The bridge connects the sponsor ROI question and client success measure to the recommended governed metric, value route, customer source system, unit, comparison rule, owner, evidence status, safe claim level, and the ROI Scenario Readiness / Customer Evidence Request handoff.
+- Verified: red/green bridge tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route checks for Journey/Workspace at 1440px and 390px with the bridge present, no console warnings/errors after local Speed Insights stub, and no horizontal overflow.
+- Next focus: pause for human review of the full product spine before starting another slice.
+
+## 2026-06-11 (UTC) - Codex (AI Value client value spine trace)
+
+- Completed: Added a shared Client Value Spine Trace to `/ai-value-journey` and `/ai-value-workspace`. The trace shows the client-readable path from Blueprint decision to outcome metric, customer evidence, governed value language, and sponsor decision, with each step showing what it feeds next.
+- Verified: red/green trace tests; affected Journey/Workspace suites; full frontend tests/build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Journey/Workspace empty state at 1440px and 390px with no console warnings/errors and no horizontal overflow.
+- Next focus: pause for human review of the full product spine before starting another slice.
+
+## 2026-06-11 (UTC) - Codex (AI Value multi-page workspace IA)
+
+- Completed: Split `/ai-value-workspace` from one long page into a route-based guided workspace. Home is now a command center, with focused pages for Readiness, Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Existing governed panels were preserved and moved to the page where a client would expect to use them.
+- Verified: route-specific Workspace tests; Journey + Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all workspace pages at 1440px and 390px with no unsafe internal terms, console warnings/errors, or horizontal overflow.
+- Next focus: pause for human review of the multi-page Workspace and decide whether the next slice should improve page-level interaction depth, visual workshop affordances, or the ROI/evidence data intake path.
+
+## 2026-06-11 (UTC) - Codex (AI Value Blueprint workshop board)
+
+- Completed: Made `/ai-value-workspace/blueprint` behave like a client workshop board with current/target workflow lanes, interactive focus decisions, owner/next-step guidance, and clear handoffs into Metrics mapping, Evidence planning, and the governed Scenario builder.
+- Verified: red/green Blueprint board test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Blueprint at 1440px and 390px with the decision interaction, no unsafe internal terms, no console warnings/errors, and no horizontal overflow.
+- Next focus: inspect the multi-page Workspace with a product lens; the likely next bounded slice is making Metrics feel like outcome and ROI opportunity mapping rather than a table.
+
+## 2026-06-11 (UTC) - Codex (AI Value Metrics opportunity map)
+
+- Completed: Made `/ai-value-workspace/metrics` read as an Outcome and ROI opportunity map with Blueprint route, client value question, outcome metric, customer data need, evidence gap, safe value language, and next gated action. The page now has Evidence and Scenario handoff links, example-mode fallback content, and metric candidate cards instead of the old recommended-signal table.
+- Verified: red/green Metrics map test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Metrics at 1440px and 390px with no unsafe internal terms, no console warnings/errors, no horizontal overflow, and the old value-signal table absent.
+- Next focus: make Evidence and Scenario feel like one governed path from aggregate evidence to value language rather than separate database-backed panels.
+
+## 2026-06-11 (UTC) - Codex (AI Value Evidence to Value path)
+
+- Completed: Added a shared Evidence to Value Language Path to `/ai-value-workspace/evidence` and `/ai-value-workspace/scenario`. The path connects aggregate work evidence, customer outcome evidence, scenario readiness, safe value language, blocked stronger claims, and the next governed action, with handoffs into Scenario Builder and Executive Readout.
+- Verified: red/green Evidence-to-value path test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Evidence and Scenario at 1440px and 390px with no unsafe internal terms/state codes, no console warnings/errors, no horizontal overflow, and the governed path present.
+- Next focus: pause for human review of the multi-page Workspace. If the direction holds, make Readout and Decisions feel like one guided sponsor operating workflow rather than separate panels.
+
+## 2026-06-11 (UTC) - Codex (AI Value guided sponsor workflow)
+
+- Completed: Added a shared Sponsor Operating Workflow to `/ai-value-workspace/readout` and `/ai-value-workspace/decisions`. The panel connects Readout preview, Sponsor decision, Handoff draft, and Next operating loop, with an explicit boundary that no task is created and no customer action is automated.
+- Verified: guided workflow test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Readout and Decisions at 1440px and 390px with no unsafe internal terms/state codes, no console warnings/errors, no horizontal overflow, and the workflow present.
+- Next focus: final product-spine audit across all multi-page Workspace routes for navigation clarity, page purpose, client-readable language, handoff completeness, and mobile fit.
+
+## 2026-06-11 (UTC) - Codex (AI Value workspace handoff navigation)
+
+- Completed: Added a consistent Workspace Handoff footer to every focused `/ai-value-workspace/*` page. It shows what the current page feeds next, links back to the prior phase, and links forward to the next phase; Sponsor Decisions loops back to Blueprint Workshop.
+- Verified: red/green handoff navigation test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all focused workspace pages at 1440px and 390px with expected next links, no unsafe internal terms/state codes, no console warnings/errors, and no horizontal overflow.
+- Next focus: human review of the full Product Spine V1 and a PR/push decision before starting more scope.
+
+## 2026-06-11 (UTC) - Codex (AI Value Product Spine V1 completion audit)
+
+- Completed: Audited the current branch against the full Product Spine V1 goal and marked `ai-value-platform-product-spine-v1` done in `.project/WORK_QUEUE.json`. No product-code change was needed.
+- Verified: full frontend tests/build; AI value engine, V1 spine, Blueprint, Metrics, Scenario, ROI Scenario, Readiness, Agent Harness, Executive Packet, and Readout tests; semantic drift guard; Glean value governance gate; WORK_QUEUE JSON parse; diff whitespace; browser smoke for Journey plus every Workspace page at 1440px and 390px with expected headings/handoffs, no unsafe internal terms, no console warnings/errors, no button clipping, and no horizontal overflow.
+- Next focus: pause for James to review the local multi-page experience, then decide whether to push/open a PR or start a new bounded queue item from observed review gaps.

@@ -24,9 +24,11 @@ const readExample = (name: string): Record<string, unknown> =>
 
 const blueprint = readExample("customer-support-blueprint.json");
 const metricsLibrary = readExample("customer-support-metrics-library.json");
+const roiScenario = readExample("customer-support-roi-scenario.json");
 
 const blueprintId = blueprint.blueprint_id as string;
 const metricsLibraryId = metricsLibrary.library_id as string;
+const roiScenarioId = roiScenario.roi_scenario_id as string;
 
 beforeEach(() => {
   store.reset();
@@ -141,6 +143,28 @@ describe("AI value object API", () => {
       .set(readAuth);
     expect(filtered.body.objects).toHaveLength(1);
     expect(filtered.body.objects[0].object_type).toBe("blueprint");
+  });
+
+  it("stores a governed ROI scenario as a reusable value-modeling object", async () => {
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/roi_scenario/${roiScenarioId}`)
+      .set(writeAuth)
+      .send(roiScenario);
+
+    expect(response.status).toBe(201);
+    expect(response.body.object_type).toBe("roi_scenario");
+    expect(response.body.object_id).toBe(roiScenarioId);
+    expect(response.body.valid).toBe(true);
+    expect(response.body.workflow_family).toBe("customer_support_case_resolution");
+    expect(response.body.validation.feeds.customer_facing_economic_output).toBe(false);
+
+    const fetched = await request(app)
+      .get(`/api/v1/ai-value/objects/roi_scenario/${roiScenarioId}`)
+      .set(readAuth);
+
+    expect(fetched.status).toBe(200);
+    expect(fetched.body.payload.roi_scenario_id).toBe(roiScenarioId);
+    expect(fetched.body.payload.economic_output_policy.customer_facing_economic_output).toBe(false);
   });
 });
 
@@ -460,12 +484,197 @@ describe("AI value spine run API", () => {
     expect(readout.headers["content-type"]).toContain("text/html");
     expect(readout.text).toContain("Pre-ROI planning artifact");
     expect(readout.text).toContain("Northstar Enterprise");
+    expect(readout.text).toContain("Where the team started");
+    expect(readout.text).toContain("2026-03-15_to_2026-03-31");
     expect(readout.text).toContain("What this readout never claims");
 
     const missing = await request(app)
       .get("/api/v1/ai-value/readout/not_a_packet/html")
       .set(readAuth);
     expect(missing.status).toBe(404);
+  });
+
+  it.each([
+    [
+      "missing",
+      null,
+      "Customer outcome evidence needed",
+      "Ask the data owner for the approved aggregate export",
+      "Stronger value language stays held until source, window, and metric evidence are attached."
+    ],
+    [
+      "submitted",
+      "SUBMITTED",
+      "Customer export awaiting review",
+      "Review is pending",
+      "Submission alone does not support ROI or causality claims."
+    ],
+    [
+      "accepted",
+      "ACCEPTED",
+      "Customer export accepted for caveated review",
+      "Prepare the caveated sponsor readout with accepted evidence",
+      "Accepted aggregate evidence supports only caveated value review. It is not ROI proof and does not establish causality."
+    ],
+    [
+      "rejected",
+      "REJECTED",
+      "Customer export needs correction",
+      "Request a corrected aggregate export",
+      "Rejected evidence stays out of the value story."
+    ]
+  ])(
+    "renders evidence-aware executive readout language when outcome evidence is %s",
+    async (_label, reviewState, statusText, actionText, caveatText) => {
+      await storeUpstreamObjects();
+      const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+
+      const requestBody: Record<string, unknown> = {
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId
+      };
+
+      if (reviewState) {
+        await request(app)
+          .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+          .set(writeAuth)
+          .send(outcomeExport)
+          .expect(201);
+
+        if (reviewState === "ACCEPTED" || reviewState === "REJECTED") {
+          await request(app)
+            .post(
+              `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+            )
+            .set(writeAuth)
+            .send({ decision: reviewState })
+            .expect(200);
+        }
+
+        requestBody.outcome_evidence_export_id = outcomeExport.export_id;
+      }
+
+      await request(app)
+        .post("/api/v1/ai-value/value-chain/run")
+        .set(writeAuth)
+        .send(requestBody)
+        .expect(200);
+
+      const readout = await request(app)
+        .get(
+          "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+        )
+        .set(readAuth)
+        .expect(200);
+
+      expect(readout.text).toContain(statusText);
+      expect(readout.text).toContain(actionText);
+      expect(readout.text).toContain(caveatText);
+      expect(readout.text).toContain("Pre-ROI planning artifact");
+      expect(readout.text).toContain("What this readout never claims");
+    }
+  );
+
+  it("does not use mismatched accepted evidence as caveated readout support", async () => {
+    await storeUpstreamObjects();
+    const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+    const mismatchedExport = {
+      ...outcomeExport,
+      windows: {
+        ...(outcomeExport.windows as Record<string, unknown>),
+        baseline: "2020-01-01_to_2020-01-31"
+      }
+    };
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(mismatchedExport)
+      .expect(201);
+    await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED" })
+      .expect(200);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const readout = await request(app)
+      .get(
+        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+      )
+      .set(readAuth)
+      .expect(200);
+
+    expect(readout.text).toContain("Customer outcome evidence needed");
+    expect(readout.text).not.toContain("Customer export accepted for caveated review");
+  });
+
+  it("renders executive readout context only for the packet workflow", async () => {
+    await storeUpstreamObjects();
+    const engagement = readExample("customer-support-engagement.json");
+    const foreignEngagement = JSON.parse(JSON.stringify(engagement));
+    foreignEngagement.engagement_id = "engagement_aaa_foreign";
+    foreignEngagement.client.client_name = "Wrong Workflow Corp";
+    foreignEngagement.use_cases = foreignEngagement.use_cases.map((useCase: any) => ({
+      ...useCase,
+      workflow_family: "sales_pipeline_hygiene"
+    }));
+
+    const fluencyBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      workflow_family: "customer_support_case_resolution"
+    };
+    const foreignBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      baseline_id: "fluency_baseline_aaa_foreign",
+      workflow_family: "sales_pipeline_hygiene",
+      window: "1999-01-01_to_1999-01-31"
+    };
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${foreignEngagement.engagement_id}`)
+      .set(writeAuth)
+      .send(foreignEngagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
+      .set(writeAuth)
+      .send(engagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${foreignBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(foreignBaseline)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${fluencyBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(fluencyBaseline)
+      .expect(201);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const readout = await request(app)
+      .get(
+        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+      )
+      .set(readAuth);
+
+    expect(readout.status).toBe(200);
+    expect(readout.text).toContain("Northstar Enterprise");
+    expect(readout.text).not.toContain("Wrong Workflow Corp");
+    expect(readout.text).toContain("Where the team started");
+    expect(readout.text).toContain("2026-03-15_to_2026-03-31");
+    expect(readout.text).not.toContain("1999-01-01_to_1999-01-31");
   });
 
   it("requires a write role to run the spine", async () => {

@@ -61,7 +61,23 @@ createRoot(container).render(
           }
         />
         <Route
+          path="/ai-value-workspace/:workspacePage"
+          element={
+            <ProtectedRoute>
+              <AIValueWorkspace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/ai-value"
+          element={
+            <ProtectedRoute>
+              <AIValueJourney />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-value-journey"
           element={
             <ProtectedRoute>
               <AIValueJourney />

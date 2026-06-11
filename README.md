@@ -148,6 +148,8 @@ is not the lead positioning for this repository.
 - AI Value Scenario input schema: [schemas/ai-value-intelligence/value-scenario-input.schema.json](schemas/ai-value-intelligence/value-scenario-input.schema.json)
 - AI Value Scenario output schema: [schemas/ai-value-intelligence/value-scenario-output.schema.json](schemas/ai-value-intelligence/value-scenario-output.schema.json)
 - Customer Support AI Value scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json)
+- AI Value governed ROI scenario schema: [schemas/ai-value-intelligence/roi-scenario.schema.json](schemas/ai-value-intelligence/roi-scenario.schema.json)
+- Customer Support governed ROI scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json)
 - AI Value Agentic Platform Harness concept: [docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md](docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md)
 - AI Value Agent Handoff schema: [schemas/ai-value-intelligence/agent-handoff.schema.json](schemas/ai-value-intelligence/agent-handoff.schema.json)
 - Customer Support AI Value agent handoff fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json](docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json)

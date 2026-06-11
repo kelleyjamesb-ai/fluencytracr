@@ -76,6 +76,14 @@
       "status": "done",
       "risk": "medium",
       "last_note": "User-authorized 2026-06-09 (Claude): four slices complete and committed on codex/FluencyTracr-ai-value-platform; engine contract Phase 1 migration done for stages 1-6 with CLI/tests preserved."
+    },
+    {
+      "id": "ai-value-platform-product-spine-v1",
+      "title": "AI Value Platform: product spine experience from whole-system diagrams",
+      "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-06-11 UTC: Product Spine V1, multi-page Workspace, Blueprint workshop board, Metrics ROI opportunity map, Evidence-to-Value path, governed Scenario, Executive Readout, Sponsor Decisions, and agentic handoffs are implemented and acceptance-audited. Verified frontend, AI value contracts, governance gates, diff check, and browser smoke at 1440px/390px."
     }
   ]
 }
