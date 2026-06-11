@@ -350,3 +350,9 @@
 - Completed: Split `/ai-value-workspace` from one long page into a route-based guided workspace. Home is now a command center, with focused pages for Readiness, Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Existing governed panels were preserved and moved to the page where a client would expect to use them.
 - Verified: route-specific Workspace tests; Journey + Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all workspace pages at 1440px and 390px with no unsafe internal terms, console warnings/errors, or horizontal overflow.
 - Next focus: pause for human review of the multi-page Workspace and decide whether the next slice should improve page-level interaction depth, visual workshop affordances, or the ROI/evidence data intake path.
+
+## 2026-06-11 (UTC) - Codex (AI Value Blueprint workshop board)
+
+- Completed: Made `/ai-value-workspace/blueprint` behave like a client workshop board with current/target workflow lanes, interactive focus decisions, owner/next-step guidance, and clear handoffs into Metrics mapping, Evidence planning, and the governed Scenario builder.
+- Verified: red/green Blueprint board test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Blueprint at 1440px and 390px with the decision interaction, no unsafe internal terms, no console warnings/errors, and no horizontal overflow.
+- Next focus: inspect the multi-page Workspace with a product lens; the likely next bounded slice is making Metrics feel like outcome and ROI opportunity mapping rather than a table.

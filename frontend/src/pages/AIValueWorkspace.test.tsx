@@ -659,6 +659,46 @@ describe("AIValueWorkspace journey continuity", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
+  it("turns Blueprint into an interactive client workshop board", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = renderWorkspace("/ai-value-workspace/blueprint");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Blueprint workshop board/i })).toBeInTheDocument();
+    });
+
+    const board = screen.getByRole("region", { name: /Blueprint workshop board/i });
+    expect(within(board).getByRole("heading", { name: /Blueprint workshop board/i })).toBeInTheDocument();
+    expect(within(board).getByRole("heading", { name: /Current workflow/i })).toBeInTheDocument();
+    expect(within(board).getByRole("heading", { name: /Target workflow/i })).toBeInTheDocument();
+    expect(within(board).getByText(/Agent searches across knowledge sources before responding/i)).toBeInTheDocument();
+    expect(within(board).getByText(/Glean Search and Assistant reduce time spent locating trusted answers/i)).toBeInTheDocument();
+
+    expect(within(board).getByRole("heading", { name: /Workshop focus/i })).toBeInTheDocument();
+    let focus = within(board).getByRole("region", { name: /Workshop focus/i });
+    expect(within(focus).getByText(/Which case categories are in scope for the pilot/i)).toBeInTheDocument();
+    fireEvent.click(
+      within(board).getByRole("button", {
+        name: /Focus decision: Which support owner signs off on baseline and comparison windows/i
+      })
+    );
+    focus = within(board).getByRole("region", { name: /Workshop focus/i });
+    expect(
+      within(focus).getByText(/Which support owner signs off on baseline and comparison windows/i)
+    ).toBeInTheDocument();
+    expect(within(board).getByText(/Feeds Metrics and ROI opportunity mapping/i)).toBeInTheDocument();
+    expect(within(board).getByText(/Feeds Evidence readiness/i)).toBeInTheDocument();
+    expect(within(board).getByRole("link", { name: /Open Metrics mapping/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/metrics"
+    );
+    expect(within(board).getByRole("link", { name: /Open Evidence plan/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/evidence"
+    );
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
   it("shows ROI scenario readiness for the selected workflow", async () => {
     stubJourneyFetch(journeyObjects);
     const { container } = renderWorkspace("/ai-value-workspace/scenario");

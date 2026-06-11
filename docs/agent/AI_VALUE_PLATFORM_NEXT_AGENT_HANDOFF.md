@@ -451,6 +451,42 @@ Verification completed for the adjustment:
   cross-page heading bleed-through, no unsafe internal terms, no console
   warnings/errors, and no horizontal overflow.
 
+Latest requested adjustment:
+
+```text
+Blueprint Workshop Board
+```
+
+What changed after the multi-page split:
+
+- `/ai-value-workspace/blueprint` now behaves like a client workshop board
+  instead of a static record panel.
+- The Blueprint page shows current workflow and target workflow lanes so the
+  client can see what changes.
+- Open client decisions are interactive. Choosing a decision updates the
+  workshop focus, owner, and next step.
+- The page now gives explicit handoffs into Metrics mapping, Evidence planning,
+  and the governed Scenario builder.
+- This is page-level interaction and comprehension work only. It does not add a
+  production connector, runtime service, autonomous customer action,
+  unsupported ROI proof, causality claim, individual scoring, HR analytics,
+  productivity ranking, raw prompt/response storage, direct identifiers, or
+  customer-facing dollarized output.
+
+Verification completed for the adjustment:
+
+- `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "interactive client workshop board" --reporter=basic`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
+- `npm test --workspace frontend -- --reporter=basic`
+- `npm run build --workspace frontend`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- In-app browser smoke for Blueprint at 1440px and 390px: decision focus
+  interaction updates the owner and next step, Metrics/Evidence/Scenario
+  handoff links render, no unsafe internal terms appear, no console
+  warnings/errors occur, and there is no horizontal overflow.
+
 ## Next-Agent Prompt
 
 Use this prompt only after the human reviews the checkpoint and wants to keep
@@ -460,11 +496,12 @@ building:
 Continue the AI Value Platform product spine after the checkpoint review.
 First inspect Journey and the multi-page Workspace as a user: Workspace Home,
 Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Check whether
-the page split makes the platform easier to understand, especially the path:
-Client Value Questions -> Questions to Metrics Bridge -> ROI Scenario Readiness
--> Customer Evidence Request -> Sponsor Decision. Identify the next bounded
-product slice that makes the platform more understandable or useful without
-expanding governance risk.
+the page split and Blueprint workshop board make the platform easier to
+understand, especially the path: Blueprint decision -> Metrics mapping -> ROI
+Scenario Readiness -> Customer Evidence Request -> Sponsor Decision. Identify
+the next bounded product slice that makes the platform more understandable or
+useful without expanding governance risk. The likely next slice is making
+Metrics feel like outcome and ROI opportunity mapping rather than a table.
 Keep FluencyTracr as aggregate evidence and keep ROI/value language governed:
 no production connector, runtime service, autonomous customer action, direct
 identifiers, raw prompt/response storage, unsupported ROI proof, causality
@@ -475,7 +512,7 @@ customer-facing dollarized output.
 ## What To Validate First
 
 Validate the working product experience, not the object model. The current
-biggest risk is still client comprehension: Blueprint should feel like a
-workshop canvas, Metrics should feel like outcome/ROI opportunity mapping, and
-Scenario/Evidence should feel like a governed path to value language rather than
-database state.
+biggest risk is still client comprehension: Blueprint now has a working board,
+but Metrics still needs to feel like outcome and ROI opportunity mapping, and
+Scenario/Evidence should feel like a governed path to value language rather
+than database state.

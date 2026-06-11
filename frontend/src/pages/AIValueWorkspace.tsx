@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
@@ -99,6 +100,21 @@ const currentPageFromPath = (pathname: string): WorkspacePageSlug => {
   const slug = raw?.split("/")[0] as WorkspacePageSlug | undefined;
   return slug && workspacePageBySlug.has(slug) ? slug : "home";
 };
+
+const blueprintDecisionGuidance = [
+  {
+    owner: "Support Operations",
+    nextStep: "Define the pilot boundary before metrics mapping."
+  },
+  {
+    owner: "Support Operations and value-readout owner",
+    nextStep: "Confirm baseline and comparison ownership before evidence collection."
+  },
+  {
+    owner: "Workflow owner",
+    nextStep: "Capture operating changes so scenario language stays caveated."
+  }
+];
 
 export const AIValueWorkspace = () => {
   const location = useLocation();
@@ -390,82 +406,152 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
   </section>
 );
 
-const BlueprintPage = ({ live, journey }: { live: WorkspaceLive; journey: Journey }) => (
-  <section className="ai-value-focused-stack" aria-label="Blueprint workspace">
-    <section className="ai-value-handoff-panel" aria-label="Selected workflow from Journey">
-      <div>
-        <p className="eyebrow">Journey Handoff</p>
-        <h3>Selected workflow from Journey</h3>
-        <p>
-          {journey.workflowHandoff.selected
-            ? "This is the same workflow selected in Blueprint and summarized in the Journey."
-            : journey.workflowHandoff.summary}
-        </p>
-      </div>
-      <div className="ai-value-handoff-facts">
+const BlueprintPage = ({ live, journey }: { live: WorkspaceLive; journey: Journey }) => {
+  const [focusedDecision, setFocusedDecision] = useState(
+    aiValueWorkspace.canvas.openDecisions[0] ?? "Choose the first client decision to resolve."
+  );
+  const focusedDecisionIndex = Math.max(
+    aiValueWorkspace.canvas.openDecisions.indexOf(focusedDecision),
+    0
+  );
+  const focusedGuidance =
+    blueprintDecisionGuidance[focusedDecisionIndex] ?? blueprintDecisionGuidance[0];
+
+  return (
+    <section className="ai-value-focused-stack" aria-label="Blueprint workspace">
+      <section className="ai-value-handoff-panel" aria-label="Selected workflow from Journey">
         <div>
-          <span className="ai-value-map-label">Workflow</span>
-          <strong>{journey.workflowHandoff.workflowName}</strong>
+          <p className="eyebrow">Journey Handoff</p>
+          <h3>Selected workflow from Journey</h3>
+          <p>
+            {journey.workflowHandoff.selected
+              ? "This is the same workflow selected in Blueprint and summarized in the Journey."
+              : journey.workflowHandoff.summary}
+          </p>
         </div>
-        <div>
-          <span className="ai-value-map-label">Value route</span>
-          <strong>{journey.workflowHandoff.valueRouteLabel}</strong>
+        <div className="ai-value-handoff-facts">
+          <div>
+            <span className="ai-value-map-label">Workflow</span>
+            <strong>{journey.workflowHandoff.workflowName}</strong>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Value route</span>
+            <strong>{journey.workflowHandoff.valueRouteLabel}</strong>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Evidence status</span>
+            <strong>{journey.workflowHandoff.evidenceStatus}</strong>
+          </div>
         </div>
-        <div>
-          <span className="ai-value-map-label">Evidence status</span>
-          <strong>{journey.workflowHandoff.evidenceStatus}</strong>
+        <div className="ai-value-chip-row">
+          {journey.workflowHandoff.selected ? (
+            <Link className="ai-value-step" to="/ai-value-journey">
+              Back to Journey
+            </Link>
+          ) : (
+            <Link className="ai-value-step" to="/ai-value-discovery">
+              Open Blueprint workshop
+            </Link>
+          )}
         </div>
-      </div>
-      <div className="ai-value-chip-row">
-        {journey.workflowHandoff.selected ? (
-          <Link className="ai-value-step" to="/ai-value-journey">
-            Back to Journey
-          </Link>
-        ) : (
-          <Link className="ai-value-step" to="/ai-value-discovery">
-            Open Blueprint workshop
-          </Link>
-        )}
-      </div>
+      </section>
+
+      {live?.kickoff && (
+        <article className="ai-value-panel">
+          <h3>Client kickoff context</h3>
+          <p>{live.kickoff.objectiveStatement}</p>
+        </article>
+      )}
+
+      <section className="ai-value-blueprint-canvas" aria-label="Blueprint workshop board">
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Client Working Board</p>
+            <h3>Blueprint workshop board</h3>
+            <p>
+              Build the workshop canvas with the client: align the current workflow,
+              target workflow, open decisions, and the next evidence handoff.
+            </p>
+          </div>
+          <StatusPill label={journey.workflowHandoff.valueRouteLabel} tone="good" />
+        </div>
+
+        <div className="ai-value-blueprint-flow">
+          <div className="ai-value-blueprint-lane">
+            <h4>Current workflow</h4>
+            <ol>
+              {aiValueWorkspace.canvas.today.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
+          <div className="ai-value-blueprint-lane">
+            <h4>Target workflow</h4>
+            <ol>
+              {aiValueWorkspace.canvas.target.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div className="ai-value-blueprint-insight-grid">
+          <section className="ai-value-blueprint-note" aria-label="Workshop focus">
+            <h4>Workshop focus</h4>
+            <p>{focusedDecision}</p>
+            <div className="ai-value-chip-row">
+              <StatusPill label={focusedGuidance.owner} tone="warn" />
+              <StatusPill label="Needs client agreement" />
+            </div>
+            <p>{focusedGuidance.nextStep}</p>
+          </section>
+          <section className="ai-value-blueprint-note" aria-label="Client decisions to resolve">
+            <h4>Client decisions to resolve</h4>
+            <div className="ai-value-blueprint-decision-list">
+              {aiValueWorkspace.canvas.openDecisions.map((decision) => (
+                <button
+                  className={`toggle-button ${
+                    focusedDecision === decision ? "active" : ""
+                  }`}
+                  type="button"
+                  key={decision}
+                  aria-pressed={focusedDecision === decision}
+                  onClick={() => setFocusedDecision(decision)}
+                >
+                  Focus decision: {decision}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <div className="ai-value-blueprint-handoff-grid">
+          <div className="ai-value-blueprint-handoff">
+            <h4>Feeds Metrics and ROI opportunity mapping</h4>
+            <p>Turn the focused decision into the outcome measure, source owner, and comparison rule.</p>
+            <Link className="ai-value-step" to="/ai-value-workspace/metrics">
+              Open Metrics mapping
+            </Link>
+          </div>
+          <div className="ai-value-blueprint-handoff">
+            <h4>Feeds Evidence readiness</h4>
+            <p>Clarify the aggregate customer export and what FluencyTracr evidence can safely support.</p>
+            <Link className="ai-value-step" to="/ai-value-workspace/evidence">
+              Open Evidence plan
+            </Link>
+          </div>
+          <div className="ai-value-blueprint-handoff">
+            <h4>Feeds governed value scenario</h4>
+            <p>Carry assumptions forward as scenario inputs, never as ROI proof or causality.</p>
+            <Link className="ai-value-step" to="/ai-value-workspace/scenario">
+              Open Scenario builder
+            </Link>
+          </div>
+        </div>
+      </section>
     </section>
-
-    {live?.kickoff && (
-      <article className="ai-value-panel">
-        <h3>Client kickoff context</h3>
-        <p>{live.kickoff.objectiveStatement}</p>
-      </article>
-    )}
-
-    <article className="ai-value-panel">
-      <h3>Build the workshop canvas with the client</h3>
-      <p>{aiValueWorkspace.canvas.clientQuestion}</p>
-      <div className="ai-value-columns">
-        <div>
-          <h4>Today</h4>
-          <ul>
-            {aiValueWorkspace.canvas.today.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4>Target workflow</h4>
-          <ul>
-            {aiValueWorkspace.canvas.target.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      <h4>Open client decisions</h4>
-      <ul>
-        {aiValueWorkspace.canvas.openDecisions.map((decision) => (
-          <li key={decision}>{decision}</li>
-        ))}
-      </ul>
-    </article>
-  </section>
-);
+  );
+};
 
 const MetricsPage = ({
   journey,

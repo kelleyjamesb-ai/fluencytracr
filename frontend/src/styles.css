@@ -2925,6 +2925,17 @@ body {
   padding-left: 2px;
 }
 
+.ai-value-blueprint-decision-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-value-blueprint-decision-list .toggle-button {
+  justify-content: flex-start;
+  min-height: 44px;
+  text-align: left;
+}
+
 .ai-value-blueprint-insight-grid,
 .ai-value-blueprint-handoff-grid {
   display: grid;
