@@ -2146,6 +2146,69 @@ body {
   background: #ffffff;
 }
 
+.ai-value-spine-trace-panel {
+  margin-bottom: 16px;
+}
+
+.ai-value-spine-trace-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-spine-trace-step {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-spine-trace-index {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.ai-value-spine-trace-content {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ai-value-spine-trace-head {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-value-spine-trace-head strong {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-spine-trace-step p {
+  margin: 0;
+  color: #4b556b;
+}
+
+.ai-value-spine-trace-step small {
+  display: block;
+  color: #343ced;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .ai-value-phase-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -2707,7 +2770,8 @@ body {
   .ai-value-scenario-band-list,
   .ai-value-scenario-input-grid,
   .ai-value-agent-handoff-grid,
-  .ai-value-review-fact-grid {
+  .ai-value-review-fact-grid,
+  .ai-value-spine-trace-list {
     grid-template-columns: 1fr;
   }
 

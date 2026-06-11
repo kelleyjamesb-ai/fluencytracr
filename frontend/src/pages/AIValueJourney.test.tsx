@@ -518,6 +518,37 @@ describe("AIValueJourney", () => {
     expect(bridge.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI/i);
   });
 
+  it("shows a client-readable value spine trace from Blueprint to sponsor decision", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const trace = screen.getByRole("region", { name: /Client value spine trace/i });
+    expect(within(trace).getByRole("heading", { name: /Client Value Spine Trace/i })).toBeInTheDocument();
+    expect(within(trace).getByText(/Blueprint decision/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Feeds the metric and evidence plan/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Outcome metric/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Feeds the customer evidence request/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/^Customer evidence$/i)).toBeInTheDocument();
+    expect(within(trace).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(within(trace).getByText(/Feeds governed scenario language/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/^Value language$/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Feeds the executive packet/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/^Sponsor decision$/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Review submitted customer evidence before sponsor expansion/i)).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("metrics", "_", "library"),
+      uiTerm("object", "_", "id")
+    ]);
+    expect(trace.textContent).not.toMatch(/Glean proved ROI|causality proof|productivity score|realized ROI/i);
+  });
+
   it("turns evidence readiness and scenarios into a client planning workflow", async () => {
     const { container } = renderPage();
 

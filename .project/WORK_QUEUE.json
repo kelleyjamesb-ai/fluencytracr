@@ -83,7 +83,7 @@
       "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "In progress 2026-06-11 UTC: Client Value Questions to Metrics Mapping Bridge now connects sponsor ROI question + client success measure to governed metric, source, owner, evidence status, safe claim level, and ROI Scenario/Customer Evidence handoff. Pause for human review before next slice."
+      "last_note": "In progress 2026-06-11 UTC: Client Value Spine Trace now shows the client-readable path from Blueprint decision to metric, customer evidence, governed value language, and sponsor decision. Pause for human review before next slice."
     }
   ]
 }

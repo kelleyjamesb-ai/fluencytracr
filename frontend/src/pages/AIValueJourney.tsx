@@ -7,6 +7,7 @@ import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequ
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
+import { ValueSpineTracePanel } from "../components/ValueSpineTracePanel";
 
 const StatusPill = ({
   label,
@@ -158,6 +159,8 @@ export const AIValueJourney = () => {
       </section>
 
       <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+
+      <ValueSpineTracePanel trace={journey.valueSpineTrace} />
 
       <section className="ai-value-phase-grid" aria-label="AI value platform phases">
         {journey.stages.map((stage, index) => (

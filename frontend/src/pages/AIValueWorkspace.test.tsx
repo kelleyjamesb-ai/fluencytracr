@@ -676,6 +676,41 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(bridge.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI/i);
   });
 
+  it("shows a client-readable value spine trace inside the workshop", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const trace = screen.getByRole("region", { name: /Client value spine trace/i });
+    expect(within(trace).getByRole("heading", { name: /Client Value Spine Trace/i })).toBeInTheDocument();
+    expect(within(trace).getByText(/Blueprint decision/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Feeds the metric and evidence plan/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Outcome metric/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Feeds the customer evidence request/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/^Customer evidence$/i)).toBeInTheDocument();
+    expect(within(trace).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(within(trace).getByText(/Feeds governed scenario language/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/^Value language$/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Feeds the executive packet/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/^Sponsor decision$/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Review submitted customer evidence before sponsor expansion/i)).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("metrics", "_", "library"),
+      uiTerm("FT", "_", "AI", "_", "VALUE")
+    ]);
+    expect(trace.textContent).not.toMatch(/Glean proved ROI|causality proof|productivity score|realized ROI/i);
+  });
+
   it("shows the customer evidence request packet for the selected workflow", async () => {
     stubJourneyFetch(journeyObjects);
     const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);

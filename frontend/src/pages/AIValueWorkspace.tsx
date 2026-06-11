@@ -9,6 +9,7 @@ import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequ
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
+import { ValueSpineTracePanel } from "../components/ValueSpineTracePanel";
 
 const tabs = [
   "Workflow Canvas",
@@ -130,6 +131,10 @@ export const AIValueWorkspace = () => {
 
       {!journey.loading && (
         <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+      )}
+
+      {!journey.loading && (
+        <ValueSpineTracePanel trace={journey.valueSpineTrace} />
       )}
 
       {!journey.loading && (

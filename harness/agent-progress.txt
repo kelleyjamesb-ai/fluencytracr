@@ -338,3 +338,9 @@
 - Completed: Added a shared Questions to Metrics Bridge to `/ai-value-journey` and `/ai-value-workspace`. The bridge connects the sponsor ROI question and client success measure to the recommended governed metric, value route, customer source system, unit, comparison rule, owner, evidence status, safe claim level, and the ROI Scenario Readiness / Customer Evidence Request handoff.
 - Verified: red/green bridge tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route checks for Journey/Workspace at 1440px and 390px with the bridge present, no console warnings/errors after local Speed Insights stub, and no horizontal overflow.
 - Next focus: pause for human review of the full product spine before starting another slice.
+
+## 2026-06-11 (UTC) - Codex (AI Value client value spine trace)
+
+- Completed: Added a shared Client Value Spine Trace to `/ai-value-journey` and `/ai-value-workspace`. The trace shows the client-readable path from Blueprint decision to outcome metric, customer evidence, governed value language, and sponsor decision, with each step showing what it feeds next.
+- Verified: red/green trace tests; affected Journey/Workspace suites; full frontend tests/build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Journey/Workspace empty state at 1440px and 390px with no console warnings/errors and no horizontal overflow.
+- Next focus: pause for human review of the full product spine before starting another slice.

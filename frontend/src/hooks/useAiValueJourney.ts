@@ -159,6 +159,22 @@ export interface ClientQuestionMetricBridge {
   items: ClientQuestionMetricBridgeItem[];
 }
 
+export interface ValueSpineTraceStep {
+  label: string;
+  answer: string;
+  detail: string;
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  feedsNext: string;
+}
+
+export interface ValueSpineTrace {
+  available: boolean;
+  statusLabel: string;
+  summary: string;
+  steps: ValueSpineTraceStep[];
+}
+
 export interface WorkflowHandoff {
   selected: boolean;
   workflowName: string;
@@ -236,6 +252,7 @@ export interface AiValueJourney {
   workflowHandoff: WorkflowHandoff;
   valueQuestions: ClientValueQuestion[];
   questionMetricBridge: ClientQuestionMetricBridge;
+  valueSpineTrace: ValueSpineTrace;
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
@@ -1093,6 +1110,103 @@ function buildClientQuestionMetricBridge(params: {
   };
 }
 
+function buildValueSpineTrace(params: {
+  workflowHandoff: WorkflowHandoff;
+  questionMetricBridge: ClientQuestionMetricBridge;
+  customerEvidenceRequest: CustomerEvidenceRequest;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+  roiScenarioReadiness: RoiScenarioReadiness;
+  sponsorDecisionLoop: SponsorDecisionLoop;
+}): ValueSpineTrace {
+  const {
+    workflowHandoff,
+    questionMetricBridge,
+    customerEvidenceRequest,
+    customerEvidenceReview,
+    roiScenarioReadiness,
+    sponsorDecisionLoop
+  } = params;
+  const bridgeItem = questionMetricBridge.items[0] ?? null;
+  const metricName =
+    bridgeItem?.metricName ??
+    roiScenarioReadiness.metricName ??
+    "Choose the governed outcome metric.";
+  const allowedLanguage =
+    bridgeItem?.allowedClaimLevel ??
+    roiScenarioReadiness.safeValueLanguage[0] ??
+    "Keep value language in planning mode until evidence improves.";
+  const evidenceAnswer =
+    customerEvidenceReview.statusLabel ||
+    customerEvidenceRequest.statusLabel ||
+    "Customer evidence path not ready";
+
+  const hasWorkflow = workflowHandoff.selected;
+  const hasMetric = questionMetricBridge.available;
+  const hasEvidenceRequest = customerEvidenceRequest.available;
+  const hasScenario = roiScenarioReadiness.available;
+  const available = hasWorkflow && hasMetric;
+
+  return {
+    available,
+    statusLabel: available ? "Spine trace ready" : "Needs workflow and metric",
+    summary:
+      "Follow the client value path from the selected workflow to the metric, evidence request, governed value language, and sponsor decision.",
+    steps: [
+      {
+        label: "Blueprint decision",
+        answer: workflowHandoff.workflowName,
+        detail: hasWorkflow
+          ? workflowHandoff.summary
+          : "Choose the first client workflow before mapping value.",
+        statusLabel: hasWorkflow ? "Workflow selected" : "Needs Blueprint",
+        statusTone: hasWorkflow ? "good" : "warn",
+        feedsNext: "Feeds the metric and evidence plan"
+      },
+      {
+        label: "Outcome metric",
+        answer: metricName,
+        detail: bridgeItem
+          ? `${bridgeItem.successMeasure} measured through ${bridgeItem.sourceSystem}.`
+          : "Map the client success measure to a governed metric before requesting evidence.",
+        statusLabel: hasMetric ? "Metric mapped" : "Needs metric",
+        statusTone: hasMetric ? "good" : "warn",
+        feedsNext: "Feeds the customer evidence request"
+      },
+      {
+        label: "Customer evidence",
+        answer: evidenceAnswer,
+        detail: hasEvidenceRequest
+          ? customerEvidenceReview.summary
+          : customerEvidenceRequest.nextAction,
+        statusLabel: customerEvidenceReview.statusLabel,
+        statusTone: customerEvidenceReview.statusTone,
+        feedsNext: "Feeds governed scenario language"
+      },
+      {
+        label: "Value language",
+        answer: allowedLanguage,
+        detail: hasScenario
+          ? roiScenarioReadiness.executiveHandoff
+          : "Scenario language stays held until baseline, comparison, assumptions, and evidence are ready.",
+        statusLabel: hasScenario ? roiScenarioReadiness.statusLabel : "Scenario not ready",
+        statusTone: hasScenario ? "good" : "warn",
+        feedsNext: "Feeds the executive packet"
+      },
+      {
+        label: "Sponsor decision",
+        answer:
+          customerEvidenceReview.reviewState === "SUBMITTED"
+            ? "Review submitted customer evidence before sponsor expansion."
+            : sponsorDecisionLoop.nextAction,
+        detail: sponsorDecisionLoop.recommendedReason,
+        statusLabel: sponsorDecisionLoop.statusLabel,
+        statusTone: sponsorDecisionLoop.statusTone,
+        feedsNext: "Feeds renewal, expansion, hold, or the next Blueprint loop"
+      }
+    ]
+  };
+}
+
 function buildWorkflowHandoff(params: {
   blueprint: Record<string, any> | null;
   metricsLibrary: Record<string, any> | null;
@@ -1783,6 +1897,13 @@ export const useAiValueJourney = (): AiValueJourney => {
         })
       })
     );
+  const [valueSpineTrace, setValueSpineTrace] = useState<ValueSpineTrace>({
+    available: false,
+    statusLabel: "Needs workflow and metric",
+    summary:
+      "Follow the client value path from the selected workflow to the metric, evidence request, governed value language, and sponsor decision.",
+    steps: []
+  });
   const [evidenceItems, setEvidenceItems] = useState<EvidenceReviewItem[]>([]);
   const [opportunities, setOpportunities] = useState<ValueOpportunity[]>([]);
   const [evidenceScenarioPlan, setEvidenceScenarioPlan] =
@@ -1993,11 +2114,20 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceRequest: evidenceRequest,
         customerEvidenceReview: evidenceReview
       });
+      const valueTrace = buildValueSpineTrace({
+        workflowHandoff: handoff,
+        questionMetricBridge: metricBridge,
+        customerEvidenceRequest: evidenceRequest,
+        customerEvidenceReview: evidenceReview,
+        roiScenarioReadiness: roiReadiness,
+        sponsorDecisionLoop: sponsorDecision
+      });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
       setWorkflowHandoff(handoff);
       setValueQuestions(questions);
       setQuestionMetricBridge(metricBridge);
+      setValueSpineTrace(valueTrace);
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
       setEvidenceScenarioPlan(plan);
@@ -2064,6 +2194,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     workflowHandoff,
     valueQuestions,
     questionMetricBridge,
+    valueSpineTrace,
     evidenceItems,
     opportunities,
     evidenceScenarioPlan,

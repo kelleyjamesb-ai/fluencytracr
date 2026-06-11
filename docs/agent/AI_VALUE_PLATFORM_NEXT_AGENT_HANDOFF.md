@@ -358,14 +358,56 @@ Verification completed:
   bridge renders, no horizontal overflow occurs, and no console warnings/errors
   remain after stubbing local Vercel Speed Insights.
 
+Latest completed slice:
+
+```text
+Client Value Spine Trace
+```
+
+What is now in place:
+
+- Journey and Workspace now show a shared `Client Value Spine Trace` panel
+  immediately after the Questions to Metrics Bridge.
+- The trace makes the product spine readable as a client value path:
+  Blueprint decision -> Outcome metric -> Customer evidence -> Value language
+  -> Sponsor decision.
+- Each step shows the current answer, current status, and what it feeds next,
+  so users can see how a Blueprint workshop decision becomes a governed metric,
+  an aggregate customer evidence request, caveated scenario language, and a
+  sponsor action.
+- The trace is derived only from existing governed view models: Workflow
+  Handoff, Questions to Metrics Bridge, Customer Evidence Request, Customer
+  Evidence Review, ROI Scenario Readiness, and Sponsor Decision.
+- This is a comprehension layer, not a new engine, connector, workflow runner,
+  or value calculator. No production connector, runtime service, autonomous
+  customer action, direct identifiers, raw prompt/response storage,
+  unsupported ROI proof, causality claim, individual scoring, HR analytics,
+  productivity ranking, or customer-facing dollarized output was added.
+
+Verification completed:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "value spine trace"`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- In-app browser smoke against the local preview: Journey and Workspace render
+  the unauthenticated trace empty state at 1440px and 390px, with no console
+  warnings/errors and no horizontal overflow. Populated trace steps are covered
+  by route-level tests with governed Customer Support objects.
+
 Pause checkpoint:
 
 - Stop here for human review before starting another product slice.
 - Inspect `/ai-value-journey` and `/ai-value-workspace`, especially the flow:
   Client Value Questions -> Questions to Metrics Bridge -> ROI Scenario
   Readiness -> Customer Evidence Request -> Sponsor Decision.
-- The main UX question to validate is whether the bridge makes Metrics feel like
-  a client value conversation instead of database plumbing.
+- The main UX question to validate is whether the Questions to Metrics Bridge
+  plus Client Value Spine Trace make the platform feel like one connected
+  client value workflow instead of a set of database-backed panels.
 
 ## Next-Agent Prompt
 
