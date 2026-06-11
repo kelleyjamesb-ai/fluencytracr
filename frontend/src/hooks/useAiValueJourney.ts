@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   listAiValueObjects,
   reviewOutcomeEvidence,
   fetchAiValueObject,
   fetchReadoutHtml,
+  materializeRealEvidence as postRealEvidenceMaterializer,
   AiValueApiError,
-  type AiValueObjectSummary
+  type AiValueObjectSummary,
+  type RealEvidenceMaterializerParams,
+  type RealEvidenceMaterializerResult
 } from "../lib/aiValueApi";
 
 export type JourneyStageKey =
@@ -184,6 +187,28 @@ export interface WorkflowHandoff {
   nextAction: string;
 }
 
+export interface RealEvidenceCoverageItem {
+  label: string;
+  stateLabel: string;
+  stateTone: "good" | "warn" | "neutral";
+  detail: string;
+}
+
+export interface RealEvidenceStatus {
+  available: boolean;
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  summary: string;
+  coverage: RealEvidenceCoverageItem[];
+  heldReasons: string[];
+  outcomeReviewLabel: string;
+  velocityObservationLabel: string;
+  nextAction: string;
+  canRunMaterializer: boolean;
+  materializerRunning: boolean;
+  materializerError: string | null;
+}
+
 export interface RoiScenarioReadiness {
   available: boolean;
   statusLabel: string;
@@ -259,12 +284,14 @@ export interface AiValueJourney {
   roiScenarioReadiness: RoiScenarioReadiness;
   customerEvidenceRequest: CustomerEvidenceRequest;
   customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+  realEvidenceStatus: RealEvidenceStatus;
   executivePlan: ExecutiveOperatingPlan;
   executiveReadoutPreview: ExecutiveReadoutPreview;
   sponsorDecisionLoop: SponsorDecisionLoop;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
+  materializeRealEvidence: () => Promise<void>;
   review: (exportId: string, decision: "ACCEPTED" | "REJECTED") => Promise<void>;
   openReadout: (packetId: string) => Promise<void>;
 }
@@ -385,6 +412,210 @@ const reviewStateLabel = (state: unknown): string => {
   if (normalized === "REJECTED") return "Customer export rejected";
   return "Customer outcome export missing";
 };
+
+const realEvidenceCohortId = () =>
+  (localStorage.getItem("aiValueRealEvidenceCohortId") ?? "cohort-real-evidence").trim() ||
+  "cohort-real-evidence";
+
+const realEvidenceWorkflowId = () =>
+  (localStorage.getItem("aiValueRealEvidenceWorkflowId") ?? "workflow:CHAT").trim() ||
+  "workflow:CHAT";
+
+const realEvidenceOutcomeWorkflowId = (blueprint: Record<string, any> | null) => {
+  const configured = (localStorage.getItem("aiValueRealEvidenceOutcomeWorkflowId") ?? "").trim();
+  return configured || String(blueprint?.workflow_family ?? "").trim() || undefined;
+};
+
+const velocityObservationLabel = (
+  readiness: Record<string, any> | null,
+  materializerResult: RealEvidenceMaterializerResult | null
+): string => {
+  const ref = String(readiness?.source_refs?.velocity_observations_ref ?? "");
+  const parsed = /:(\d+)$/.exec(ref);
+  const count = parsed
+    ? Number.parseInt(parsed[1], 10)
+    : materializerResult?.evidence_summary.velocity_observation_count ?? 0;
+  return count > 0
+    ? `${count} aggregate velocity observation${count === 1 ? "" : "s"}`
+    : "No aggregate velocity observations connected";
+};
+
+const coverageLabel = (state: string): { label: string; tone: "good" | "warn" | "neutral" } => {
+  if (state === "PRESENT") return { label: "Ready", tone: "good" };
+  if (state === "CAVEATED") return { label: "Needs owner review", tone: "warn" };
+  if (state === "SUPPRESSED") return { label: "Held", tone: "warn" };
+  return { label: "Not connected", tone: "neutral" };
+};
+
+const coverageDetail = (lane: string, state: string): string => {
+  const ready = state === "PRESENT";
+  if (lane === "ai_activity") {
+    return ready
+      ? "Aggregate AI activity is attached for the selected workflow."
+      : "Run the governed aggregate ingest before this lane can support the workspace.";
+  }
+  if (lane === "workflow") {
+    return ready
+      ? "Workflow-pattern evidence is attached at the approved aggregate slice."
+      : "Workflow evidence is still waiting on a surfaced aggregate verdict.";
+  }
+  if (lane === "suppression") {
+    return ready
+      ? "Governance gates cleared for this workflow slice."
+      : "Governance gates have not cleared this workflow slice yet.";
+  }
+  if (lane === "trust") {
+    return ready
+      ? "Verification or recovery behavior is present."
+      : "Trust evidence still needs verification or recovery behavior.";
+  }
+  return ready
+    ? "Customer outcome evidence is attached for review."
+    : "Customer outcome evidence still needs submission or review.";
+};
+
+const translateHeldReason = (reason: string): string => {
+  if (/V3 verdict is missing/i.test(reason)) {
+    return "No governed aggregate verdict has been found for this workflow yet.";
+  }
+  if (/SUPPRESS/i.test(reason)) {
+    return "Aggregate evidence is held because governance gates suppressed this workflow slice.";
+  }
+  if (/trust lane held|verification and recovery/i.test(reason)) {
+    return "Trust evidence is still waiting on verification or recovery behavior.";
+  }
+  if (/no paired baseline\/comparison evidence/i.test(reason)) {
+    return "Customer outcome evidence is not aligned to the approved metric, source, and windows.";
+  }
+  if (/forwarded_distribution/i.test(reason)) {
+    return "The aggregate verdict surfaced, but the governed distribution is not available yet.";
+  }
+  if (/blueprint windows/i.test(reason)) {
+    return "Blueprint baseline and comparison windows need client owner review before outcome evidence can attach.";
+  }
+  if (/not overwritten/i.test(reason)) {
+    return "A reviewed customer outcome export already exists and was not overwritten.";
+  }
+  return "An evidence hold needs owner review before stronger value language moves forward.";
+};
+
+function buildRealEvidenceStatus(params: {
+  readiness: Record<string, any> | null;
+  evidenceItems: EvidenceReviewItem[];
+  materializerResult: RealEvidenceMaterializerResult | null;
+  canRunMaterializer: boolean;
+  materializerRunning?: boolean;
+  materializerError?: string | null;
+}): RealEvidenceStatus {
+  const {
+    readiness,
+    evidenceItems,
+    materializerResult,
+    canRunMaterializer,
+    materializerRunning = false,
+    materializerError = null
+  } = params;
+  const sourceRefs = readiness?.source_refs ?? {};
+  const hasAggregateRef =
+    typeof sourceRefs.v3_verdict_id === "string" && sourceRefs.v3_verdict_id.trim().length > 0;
+  const hasForwardedEvidence =
+    hasAggregateRef || materializerResult?.evidence_summary.forwarded_distribution_used === true;
+  const latestEvidence = evidenceItems[evidenceItems.length - 1] ?? null;
+  const latestReviewState = normalizeReviewState(latestEvidence?.reviewState);
+  const translatedHeldReasons = unique(
+    (materializerResult?.held_reasons ?? []).map(translateHeldReason)
+  );
+  const hasSuppressedHold = translatedHeldReasons.some((reason) =>
+    /suppressed this workflow slice/i.test(reason)
+  );
+  const hasMissingHold = translatedHeldReasons.some((reason) =>
+    /No governed aggregate verdict/i.test(reason)
+  );
+  const aggregateLaneMissing =
+    ["ai_activity", "workflow", "suppression"].some(
+      (lane) => coverageState(readiness, lane) !== "PRESENT"
+    );
+  const statusLabel = materializerRunning
+    ? "Checking real aggregate evidence"
+    : materializerError
+      ? "Real evidence check needs retry"
+      : hasForwardedEvidence
+        ? "Workspace is using governed aggregate evidence"
+        : hasSuppressedHold
+          ? "Real aggregate evidence held"
+          : hasMissingHold || aggregateLaneMissing
+            ? "Real aggregate evidence not connected yet"
+            : "Real aggregate evidence not connected yet";
+  const statusTone: RealEvidenceStatus["statusTone"] = materializerError || hasSuppressedHold
+    ? "warn"
+    : hasForwardedEvidence
+      ? "good"
+      : "neutral";
+  const heldReasons = translatedHeldReasons.length > 0
+    ? translatedHeldReasons
+    : !hasForwardedEvidence && readiness
+      ? ["Real aggregate evidence has not been materialized for this workflow yet."]
+      : [];
+  const outcomeReviewLabel = reviewStateLabel(latestReviewState);
+  const nextAction = hasSuppressedHold
+    ? "Hold value language and revisit evidence readiness after governance gates clear."
+    : hasMissingHold
+      ? "Load aggregate evidence after the approved aggregate ingest path has accepted the workflow slice."
+    : latestReviewState === "SUBMITTED"
+      ? "Review submitted customer outcome evidence before stronger value language moves forward."
+      : latestReviewState === "ACCEPTED"
+        ? "Carry accepted evidence into the readout with caveats and blocked claim language attached."
+        : hasForwardedEvidence
+          ? "Use aggregate work evidence for workflow status, then request or review customer outcome evidence."
+          : "Load aggregate evidence after the approved aggregate ingest path has accepted the workflow slice.";
+
+  const coverage: RealEvidenceCoverageItem[] = [
+    { label: "AI activity", lane: "ai_activity" },
+    { label: "Workflow pattern", lane: "workflow" },
+    { label: "Governance gates", lane: "suppression" },
+    { label: "Trust behavior", lane: "trust" }
+  ].map(({ label, lane }) => {
+    const state = coverageState(readiness, lane);
+    const mapped = coverageLabel(state);
+    return {
+      label,
+      stateLabel: mapped.label,
+      stateTone: mapped.tone,
+      detail: coverageDetail(lane, state)
+    };
+  });
+
+  const outcomeMapped = latestReviewState === "ACCEPTED"
+    ? { label: "Accepted", tone: "good" as const }
+    : latestReviewState === "SUBMITTED"
+      ? { label: "Customer export awaiting review", tone: "warn" as const }
+      : latestReviewState === "REJECTED"
+        ? { label: "Corrected export needed", tone: "warn" as const }
+        : { label: "Not connected", tone: "neutral" as const };
+  coverage.push({
+    label: "Customer outcome evidence",
+    stateLabel: outcomeMapped.label,
+    stateTone: outcomeMapped.tone,
+    detail: coverageDetail("outcome", latestReviewState === "ACCEPTED" ? "PRESENT" : "MISSING")
+  });
+
+  return {
+    available: hasForwardedEvidence,
+    statusLabel,
+    statusTone,
+    summary: hasForwardedEvidence
+      ? "Workspace is using governed aggregate evidence from the local materializer where available; customer outcome evidence still waits for human review before value language strengthens."
+      : "Use the local materializer after aggregate ingest to connect governed AI work evidence to this workspace.",
+    coverage,
+    heldReasons,
+    outcomeReviewLabel,
+    velocityObservationLabel: velocityObservationLabel(readiness, materializerResult),
+    nextAction,
+    canRunMaterializer,
+    materializerRunning,
+    materializerError
+  };
+}
 
 const requiredCaveatLabel = (caveat: unknown): string => {
   const text = String(caveat ?? "").trim();
@@ -1951,6 +2182,17 @@ export const useAiValueJourney = (): AiValueJourney => {
         roiScenario: null
       })
     );
+  const lastMaterializerResultRef = useRef<RealEvidenceMaterializerResult | null>(null);
+  const [materializerRequest, setMaterializerRequest] =
+    useState<RealEvidenceMaterializerParams | null>(null);
+  const [realEvidenceStatus, setRealEvidenceStatus] = useState<RealEvidenceStatus>(() =>
+    buildRealEvidenceStatus({
+      readiness: null,
+      evidenceItems: [],
+      materializerResult: null,
+      canRunMaterializer: false
+    })
+  );
   const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
     buildExecutiveOperatingPlan({
       packetCount: 0,
@@ -2048,14 +2290,25 @@ export const useAiValueJourney = (): AiValueJourney => {
       }
 
       const items = buildEvidenceItems(byType);
+      const blueprintSummary = latest(byType.blueprint);
+      const metricsLibrarySummary = latest(byType.metrics_library);
       const [engagement, blueprint, metricsLibrary, readiness, scenario, roiScenario] = await Promise.all([
         maybeFetchPayload(role, latest(byType.engagement)),
-        maybeFetchPayload(role, latest(byType.blueprint)),
-        maybeFetchPayload(role, latest(byType.metrics_library)),
+        maybeFetchPayload(role, blueprintSummary),
+        maybeFetchPayload(role, metricsLibrarySummary),
         maybeFetchPayload(role, latest(byType.evidence_readiness)),
         maybeFetchPayload(role, latest(byType.value_scenario)),
         maybeFetchPayload(role, latest(byType.roi_scenario))
       ]);
+      const nextMaterializerRequest = blueprintSummary && metricsLibrarySummary
+        ? {
+            blueprintId: blueprintSummary.object_id,
+            metricsLibraryId: metricsLibrarySummary.object_id,
+            cohortId: realEvidenceCohortId(),
+            workflowId: realEvidenceWorkflowId(),
+            outcomeWorkflowId: realEvidenceOutcomeWorkflowId(blueprint)
+          }
+        : null;
       const mappedOpportunities = buildValueOpportunities(metricsLibrary, blueprint, items);
       const handoff = buildWorkflowHandoff({
         blueprint,
@@ -2134,6 +2387,15 @@ export const useAiValueJourney = (): AiValueJourney => {
       setRoiScenarioReadiness(roiReadiness);
       setCustomerEvidenceRequest(evidenceRequest);
       setCustomerEvidenceReview(evidenceReview);
+      setMaterializerRequest(nextMaterializerRequest);
+      setRealEvidenceStatus(
+        buildRealEvidenceStatus({
+          readiness,
+          evidenceItems: items,
+          materializerResult: lastMaterializerResultRef.current,
+          canRunMaterializer: Boolean(nextMaterializerRequest)
+        })
+      );
       setExecutivePlan(executivePlan);
       setExecutiveReadoutPreview(readoutPreview);
       setSponsorDecisionLoop(sponsorDecision);
@@ -2158,6 +2420,46 @@ export const useAiValueJourney = (): AiValueJourney => {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const materializeRealEvidence = useCallback(async () => {
+    if (!materializerRequest) {
+      setRealEvidenceStatus((current) => ({
+        ...current,
+        materializerError:
+          "Finish Blueprint and Metrics mapping before loading real aggregate evidence."
+      }));
+      return;
+    }
+    setRealEvidenceStatus((current) => ({
+      ...current,
+      statusLabel: "Checking real aggregate evidence",
+      statusTone: "neutral",
+      materializerRunning: true,
+      materializerError: null
+    }));
+    try {
+      const result = await postRealEvidenceMaterializer(sessionRole(), materializerRequest);
+      lastMaterializerResultRef.current = result;
+      await refresh();
+    } catch (error) {
+      setRealEvidenceStatus((current) => ({
+        ...current,
+        statusLabel: "Real evidence check needs retry",
+        statusTone: "warn",
+        materializerRunning: false,
+        materializerError:
+          error instanceof AiValueApiError && error.status === 403
+            ? "Your current role can view evidence but cannot load aggregate evidence."
+            : "Real aggregate evidence could not be loaded."
+      }));
+      return;
+    }
+    setRealEvidenceStatus((current) => ({
+      ...current,
+      materializerRunning: false,
+      materializerError: null
+    }));
+  }, [materializerRequest, refresh]);
 
   const review = useCallback(
     async (exportId: string, decision: "ACCEPTED" | "REJECTED") => {
@@ -2201,12 +2503,14 @@ export const useAiValueJourney = (): AiValueJourney => {
     roiScenarioReadiness,
     customerEvidenceRequest,
     customerEvidenceReview,
+    realEvidenceStatus,
     executivePlan,
     executiveReadoutPreview,
     sponsorDecisionLoop,
     packetIds,
     errorMessage,
     refresh,
+    materializeRealEvidence,
     review,
     openReadout
   };

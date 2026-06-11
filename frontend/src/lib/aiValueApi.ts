@@ -51,6 +51,33 @@ export interface AiValueSpineRun {
   };
 }
 
+export interface RealEvidenceMaterializerParams {
+  blueprintId: string;
+  metricsLibraryId: string;
+  cohortId: string;
+  workflowId: string;
+  outcomeWorkflowId?: string;
+}
+
+export interface RealEvidenceMaterializerResult {
+  customer_facing_economic_output: false;
+  materialized: Array<{ object_type: string; object_id: string }>;
+  held_reasons: string[];
+  objects: {
+    evidence_readiness: Record<string, unknown>;
+    outcome_evidence_export?: Record<string, unknown>;
+  };
+  evidence_summary: {
+    cohort_id?: string;
+    workflow_id?: string;
+    v3_verdict_id?: string | null;
+    v3_verdict?: string | null;
+    forwarded_distribution_used: boolean;
+    velocity_observation_count: number;
+    outcome_evidence_export_id: string | null;
+  };
+}
+
 const requestJson = async <T>(
   role: string,
   path: string,
@@ -195,6 +222,26 @@ export const runAiValueSpine = (
       body: JSON.stringify({
         blueprint_id: blueprintId,
         metrics_library_id: metricsLibraryId
+      })
+    }
+  );
+
+export const materializeRealEvidence = (
+  role: string,
+  params: RealEvidenceMaterializerParams
+) =>
+  requestJson<RealEvidenceMaterializerResult>(
+    role,
+    "/api/v1/ai-value/materialize/real-evidence",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        blueprint_id: params.blueprintId,
+        metrics_library_id: params.metricsLibraryId,
+        cohort_id: params.cohortId,
+        workflow_id: params.workflowId,
+        outcome_workflow_id: params.outcomeWorkflowId
       })
     }
   );

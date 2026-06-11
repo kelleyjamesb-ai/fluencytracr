@@ -634,6 +634,17 @@ describe("AIValueWorkspace journey continuity", () => {
     return { objects: nextObjects, details: nextDetails };
   };
 
+  const withRealEvidenceReadiness = () => {
+    const nextDetails = cloneJourneyDetails();
+    const readiness = nextDetails["evidence_readiness/readiness_v1"] as Record<string, any>;
+    readiness.source_refs = {
+      v3_verdict_id: "verdict_real_evidence_v1",
+      velocity_observations_ref: "velocity_observations:3",
+      outcome_evidence_export_id: "export_v1"
+    };
+    return { objects: journeyObjects, details: nextDetails };
+  };
+
   const stubJourneyFetch = (
     objects: Array<Record<string, unknown>>,
     details: Record<string, Record<string, unknown>> = journeyDetails
@@ -648,6 +659,45 @@ describe("AIValueWorkspace journey continuity", () => {
             headers: { "content-type": "text/html" }
           });
         }
+        for (const [path, payload] of Object.entries(details)) {
+          if (url.includes(`/ai-value/objects/${path}`)) {
+            const [object_type, object_id] = path.split("/");
+            return jsonResponse({
+              object_type,
+              object_id,
+              schema_version: "test",
+              workflow_family: "customer_support_case_resolution",
+              valid: true,
+              validation: {},
+              updated_at: "2026-06-10T00:00:00Z",
+              payload
+            });
+          }
+        }
+        if (url.includes("/ai-value/objects")) {
+          return jsonResponse({ objects });
+        }
+        return jsonResponse({ objects: [] });
+      })
+    );
+  };
+
+  const stubMaterializerFetch = (
+    materializerBody: Record<string, unknown>,
+    objectsAfterMaterialize: Array<Record<string, unknown>>,
+    detailsAfterMaterialize: Record<string, Record<string, unknown>>
+  ) => {
+    let materializerCalled = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/ai-value/materialize/real-evidence")) {
+          materializerCalled = true;
+          return jsonResponse(materializerBody);
+        }
+        const objects = materializerCalled ? objectsAfterMaterialize : journeyObjects;
+        const details = materializerCalled ? detailsAfterMaterialize : journeyDetails;
         for (const [path, payload] of Object.entries(details)) {
           if (url.includes(`/ai-value/objects/${path}`)) {
             const [object_type, object_id] = path.split("/");
@@ -692,6 +742,126 @@ describe("AIValueWorkspace journey continuity", () => {
     ).toBeInTheDocument();
     expect(within(handoff).getByRole("link", { name: /Back to Journey/i })).toBeInTheDocument();
     expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it.each([
+    "/ai-value-workspace/blueprint",
+    "/ai-value-workspace/metrics",
+    "/ai-value-workspace/evidence",
+    "/ai-value-workspace/scenario",
+    "/ai-value-workspace/readout",
+    "/ai-value-workspace/decisions"
+  ])("shows real aggregate evidence status on %s when materialized objects exist", async (path) => {
+    const fixture = withRealEvidenceReadiness();
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const { container } = renderWorkspace(path);
+
+    await waitFor(() => {
+      const loadedPanel = screen.getByRole("region", { name: /Real aggregate evidence status/i });
+      expect(within(loadedPanel).getAllByText(/Workspace is using governed aggregate evidence/i).length).toBeGreaterThan(0);
+    });
+
+    const panel = screen.getByRole("region", { name: /Real aggregate evidence status/i });
+    expect(within(panel).getByRole("heading", { name: /Real Aggregate Evidence/i })).toBeInTheDocument();
+    expect(within(panel).getAllByText(/AI activity/i).length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText(/Ready/i).length).toBeGreaterThan(0);
+    expect(within(panel).getByText(/3 aggregate velocity observations/i)).toBeInTheDocument();
+    expect(within(panel).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(
+      within(panel).getByText(/Review submitted customer outcome evidence before stronger value language moves forward/i)
+    ).toBeInTheDocument();
+    expect(panel.textContent).not.toMatch(
+      /v3_verdict_id|velocity_observations|source_coverage|workflow:CHAT|\bSUBMITTED\b|realized ROI proof|Glean proved ROI/
+    );
+  });
+
+  it("runs the local materializer and translates suppressed aggregate evidence into held client language", async () => {
+    const after = cloneJourneyDetails();
+    const readiness = after["evidence_readiness/readiness_v1"] as Record<string, any>;
+    readiness.source_coverage = {
+      ai_activity: "MISSING",
+      workflow: "MISSING",
+      baseline: "MISSING",
+      assumptions: "CAVEATED",
+      trust: "MISSING",
+      suppression: "MISSING"
+    };
+    readiness.source_refs = {};
+    const materializerBody = {
+      customer_facing_economic_output: false,
+      materialized: [{ object_type: "evidence_readiness", object_id: "readiness_v1" }],
+      held_reasons: [
+        "V3 verdict is SUPPRESS for cohort-real-evidence/workflow:CHAT",
+        "Outcome evidence export held: no paired baseline/comparison evidence aligned to the metrics library"
+      ],
+      objects: { evidence_readiness: readiness },
+      evidence_summary: {
+        forwarded_distribution_used: false,
+        velocity_observation_count: 0,
+        outcome_evidence_export_id: null
+      }
+    };
+    stubMaterializerFetch(materializerBody, journeyObjects, after);
+    const { container } = renderWorkspace("/ai-value-workspace/evidence");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Real aggregate evidence status/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Use real aggregate evidence/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Aggregate evidence is held because governance gates suppressed this workflow slice/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Customer outcome evidence is not aligned to the approved metric, source, and windows/i)).toBeInTheDocument();
+    expect(screen.getByText(/Hold value language and revisit evidence readiness after governance gates clear/i)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(
+      /V3 verdict|SUPPRESS|cohort-real-evidence|workflow:CHAT|metrics library|source_coverage|realized ROI proof/
+    );
+  });
+
+  it("runs the local materializer and explains missing aggregate evidence without inventing readiness", async () => {
+    const after = cloneJourneyDetails();
+    const readiness = after["evidence_readiness/readiness_v1"] as Record<string, any>;
+    readiness.source_coverage = {
+      ai_activity: "MISSING",
+      workflow: "MISSING",
+      baseline: "MISSING",
+      assumptions: "CAVEATED",
+      trust: "MISSING",
+      suppression: "MISSING"
+    };
+    readiness.source_refs = {};
+    const materializerBody = {
+      customer_facing_economic_output: false,
+      materialized: [{ object_type: "evidence_readiness", object_id: "readiness_v1" }],
+      held_reasons: ["V3 verdict is missing for requested cohort and workflow"],
+      objects: { evidence_readiness: readiness },
+      evidence_summary: {
+        v3_verdict_id: null,
+        v3_verdict: null,
+        forwarded_distribution_used: false,
+        velocity_observation_count: 0,
+        outcome_evidence_export_id: null
+      }
+    };
+    stubMaterializerFetch(materializerBody, journeyObjects, after);
+    const { container } = renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Real aggregate evidence status/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Use real aggregate evidence/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/No governed aggregate verdict has been found for this workflow yet/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Real aggregate evidence not connected yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Load aggregate evidence after the approved aggregate ingest path has accepted the workflow slice/i)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(
+      /v3_verdict|cohort_id|workflow_id|source_coverage|MISSING|realized ROI proof/
+    );
   });
 
   it("turns Blueprint into an interactive client workshop board", async () => {

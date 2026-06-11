@@ -67,6 +67,22 @@ The response writes only validated AI Value objects:
 - `outcome_evidence_export` from paired aggregate customer outcome evidence,
   starting in `SUBMITTED` review state.
 
+You can also trigger this from the multi-page Workspace after the Blueprint and
+Metrics objects exist. Open any focused Workspace page:
+
+- `/ai-value-workspace/blueprint`
+- `/ai-value-workspace/metrics`
+- `/ai-value-workspace/evidence`
+- `/ai-value-workspace/scenario`
+- `/ai-value-workspace/readout`
+- `/ai-value-workspace/decisions`
+
+Use **Use real aggregate evidence** in the Real Aggregate Evidence panel. The
+button calls the same local materializer, refreshes the Workspace, and shows
+aggregate activity coverage, governance status, trust behavior, pending outcome
+review, and held reasons in client-facing language. It does not run
+automatically on page load.
+
 Suppressed, missing, misaligned, or low-trust evidence stays held and is
 reported in `held_reasons`. The materializer does not read raw GCE rows, direct
 identifiers, prompts, transcripts, raw skill/action rows, or HR data. It does

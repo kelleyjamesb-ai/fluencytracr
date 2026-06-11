@@ -82,6 +82,14 @@ const workspacePages = [
 type WorkspacePageSlug = (typeof workspacePages)[number]["slug"];
 
 const workspacePageBySlug = new Map(workspacePages.map((page) => [page.slug, page]));
+const realEvidencePageSlugs: WorkspacePageSlug[] = [
+  "blueprint",
+  "metrics",
+  "evidence",
+  "scenario",
+  "readout",
+  "decisions"
+];
 
 const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "warn" | "good" }) => (
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
@@ -123,9 +131,21 @@ export const AIValueWorkspace = () => {
   const { mode, live, errorMessage, connectLiveEvidence } = useAiValueWorkspace();
   const journey = useAiValueJourney();
 
-  const workflowName = live?.workflowName ?? aiValueWorkspace.workflowName;
-  const valueRouteLabel = live?.valueRouteLabel ?? aiValueWorkspace.valueRouteLabel;
-  const decisionLabel = live?.decisionLabel ?? aiValueWorkspace.decisionLabel;
+  const workflowName =
+    live?.workflowName ??
+    (journey.workflowHandoff.selected
+      ? journey.workflowHandoff.workflowName
+      : aiValueWorkspace.workflowName);
+  const valueRouteLabel =
+    live?.valueRouteLabel ??
+    (journey.workflowHandoff.selected
+      ? journey.workflowHandoff.valueRouteLabel
+      : aiValueWorkspace.valueRouteLabel);
+  const decisionLabel =
+    live?.decisionLabel ??
+    (journey.workflowHandoff.selected && journey.evidenceScenarioPlan.decisionLabel
+      ? journey.evidenceScenarioPlan.decisionLabel
+      : aiValueWorkspace.decisionLabel);
   const claimModeLabel = live?.claimModeLabel ?? aiValueWorkspace.claimModeLabel;
   const valueSignals = live?.valueSignals ?? aiValueWorkspace.valueSignals;
   const valueStory = live?.valueStory ?? aiValueWorkspace.valueStory;
@@ -155,6 +175,10 @@ export const AIValueWorkspace = () => {
           <StatusPill
             label={mode === "live" ? "Live evidence" : "Example content"}
             tone={mode === "live" ? "good" : "neutral"}
+          />
+          <StatusPill
+            label={journey.realEvidenceStatus.available ? "Real aggregate evidence" : "Real evidence not connected"}
+            tone={journey.realEvidenceStatus.statusTone}
           />
           <button
             type="button"
@@ -207,6 +231,13 @@ export const AIValueWorkspace = () => {
         <StatusPill label={activePage.feedsNext} tone={activePageSlug === "home" ? "neutral" : "good"} />
       </section>
 
+      {realEvidencePageSlugs.includes(activePageSlug) && (
+        <RealEvidenceStatusPanel
+          status={journey.realEvidenceStatus}
+          onUseRealEvidence={() => void journey.materializeRealEvidence()}
+        />
+      )}
+
       {activePageSlug === "home" && (
         <WorkspaceHome
           journey={journey}
@@ -257,6 +288,75 @@ export const AIValueWorkspace = () => {
 
 type Journey = ReturnType<typeof useAiValueJourney>;
 type WorkspaceLive = ReturnType<typeof useAiValueWorkspace>["live"];
+
+const RealEvidenceStatusPanel = ({
+  status,
+  onUseRealEvidence
+}: {
+  status: Journey["realEvidenceStatus"];
+  onUseRealEvidence: () => void;
+}) => (
+  <section
+    className="ai-value-panel ai-value-real-evidence-panel"
+    aria-label="Real aggregate evidence status"
+  >
+    <div className="ai-value-section-head">
+      <div>
+        <p className="eyebrow">Governed Data</p>
+        <h3>Real Aggregate Evidence</h3>
+        <p>{status.summary}</p>
+      </div>
+      <StatusPill label={status.statusLabel} tone={status.statusTone} />
+    </div>
+
+    <div className="ai-value-real-evidence-grid">
+      {status.coverage.map((item) => (
+        <div className="ai-value-map-cell" key={item.label}>
+          <span className="ai-value-map-label">{item.label}</span>
+          <StatusPill label={item.stateLabel} tone={item.stateTone} />
+          <p>{item.detail}</p>
+        </div>
+      ))}
+      <div className="ai-value-map-cell">
+        <span className="ai-value-map-label">Velocity context</span>
+        <strong>{status.velocityObservationLabel}</strong>
+        <p>Use this as aggregate activity context, not economic proof.</p>
+      </div>
+      <div className="ai-value-map-cell">
+        <span className="ai-value-map-label">Outcome review</span>
+        <strong>{status.outcomeReviewLabel}</strong>
+        <p>{status.nextAction}</p>
+      </div>
+    </div>
+
+    {status.heldReasons.length > 0 && (
+      <div className="ai-value-real-evidence-held">
+        <h4>Held before stronger value language</h4>
+        <ul>
+          {status.heldReasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    <div className="ai-value-real-evidence-actions">
+      <button
+        className="ai-value-step"
+        type="button"
+        disabled={!status.canRunMaterializer || status.materializerRunning}
+        onClick={onUseRealEvidence}
+      >
+        {status.materializerRunning ? "Checking aggregate evidence..." : "Use real aggregate evidence"}
+      </button>
+      {status.materializerError && <p role="alert">{status.materializerError}</p>}
+      <p>
+        The local action writes governed AI Value objects only; it does not create
+        a customer action or a value claim.
+      </p>
+    </div>
+  </section>
+);
 
 const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug }) => {
   const currentIndex = workspacePages.findIndex((page) => page.slug === currentSlug);

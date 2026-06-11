@@ -2098,6 +2098,52 @@ body {
   gap: 16px;
 }
 
+.ai-value-real-evidence-panel {
+  margin-bottom: 16px;
+}
+
+.ai-value-real-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.ai-value-real-evidence-grid .ai-value-map-cell {
+  min-height: 132px;
+}
+
+.ai-value-real-evidence-grid .ai-value-pill {
+  align-self: start;
+  justify-self: start;
+}
+
+.ai-value-real-evidence-held {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #f2c94c;
+  border-radius: 8px;
+  background: #fff8df;
+}
+
+.ai-value-real-evidence-held h4 {
+  margin-top: 0;
+}
+
+.ai-value-real-evidence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e4e6ef;
+}
+
+.ai-value-real-evidence-actions p {
+  margin: 0;
+}
+
 .ai-value-home-grid {
   display: grid;
   grid-template-columns: minmax(320px, 1fr) minmax(300px, 0.75fr);
