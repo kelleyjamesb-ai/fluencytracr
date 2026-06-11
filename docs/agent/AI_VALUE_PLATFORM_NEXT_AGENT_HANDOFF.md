@@ -313,76 +313,82 @@ Verification completed:
   `Copy handoff draft` shows copied status, no unsafe internal terms appear, no
   AI Value API failures occur, and no horizontal overflow appears.
 
-Recommended next slice:
+Latest completed slice:
 
 ```text
 Client Value Questions To Metrics Mapping Bridge
 ```
 
-Goal:
+What is now in place:
 
-Make Metrics understandable as the bridge between the sponsor's value questions,
-client success measures, and governed ROI opportunity modeling. The product
-should recommend which existing metric definitions support a selected client
-question or success measure, show the value route, source system, unit, baseline
-and comparison rule, and explain what evidence is still needed before stronger
-value language can move forward.
+- Journey and Workspace now show a shared `Questions to Metrics Bridge` panel.
+- The bridge connects the sponsor question `Where is the ROI opportunity?` to
+  the client success measure, recommended governed metric, value route, customer
+  source system, measurement unit, comparison rule, data owner, evidence status,
+  allowed claim language, and downstream handoff.
+- The view model is derived from existing objects only: Engagement success
+  measures, Client Value Questions, Metrics Library / Value Opportunity mapping,
+  ROI Scenario Readiness, Customer Evidence Request, and Customer Evidence
+  Review.
+- The bridge focuses on the success-measure path before deeper opportunity
+  mapping, so Metrics read as an answer to the client value question rather than
+  as schema rows.
+- It feeds ROI Scenario Readiness and Customer Evidence Request without adding a
+  production connector, second metrics system, runtime service, autonomous
+  customer action, direct identifiers, raw prompt/response storage, unsupported
+  ROI proof, causality claim, individual scoring, HR analytics, productivity
+  ranking, or customer-facing dollarized output.
 
-Acceptance criteria:
+Verification completed:
 
-- Journey and Workspace should connect Client Value Questions and sponsor
-  success measures to recommended metrics from the existing Metrics Library.
-- Use the existing governed metric definitions and value routes; do not create a
-  second metrics system.
-- The UI should explain each recommendation in client language:
-  business question, recommended metric, value route, source system, unit,
-  baseline/comparison rule, owner, allowed claim level, and missing evidence.
-- The bridge should feed ROI Scenario Readiness and Customer Evidence Request
-  without calculating ROI or producing customer-facing dollar output.
-- Stronger value language should remain gated by customer-owned outcome
-  evidence, accepted review state, assumptions, and caveats.
-- Do not add production connectors, direct identifiers, raw prompts/responses,
-  unsupported ROI proof, causality claims, individual scoring, HR analytics,
-  productivity ranking, or customer-facing dollarized output.
-- Add focused frontend tests and browser smoke if visual/interaction behavior
-  changes.
+- Red test first:
+  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "bridges"`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts`
+- `npm run test:ai-value-roi-scenario`
+- `npm run test:ai-value-agent-harness`
+- `bash scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- Playwright CLI smoke against built preview: mocked governed Customer Support
+  objects, verified Journey and Workspace at 1440px and 390px, confirmed the
+  bridge renders, no horizontal overflow occurs, and no console warnings/errors
+  remain after stubbing local Vercel Speed Insights.
 
-Suggested files:
+Pause checkpoint:
 
-- `frontend/src/hooks/useAiValueJourney.ts`
-- `frontend/src/components/SponsorDecisionLoopPanel.tsx`
-- `frontend/src/pages/AIValueJourney.tsx`
-- `frontend/src/pages/AIValueWorkspace.tsx`
-- `frontend/src/pages/AIValueJourney.test.tsx`
-- `frontend/src/pages/AIValueWorkspace.test.tsx`
+- Stop here for human review before starting another product slice.
+- Inspect `/ai-value-journey` and `/ai-value-workspace`, especially the flow:
+  Client Value Questions -> Questions to Metrics Bridge -> ROI Scenario
+  Readiness -> Customer Evidence Request -> Sponsor Decision.
+- The main UX question to validate is whether the bridge makes Metrics feel like
+  a client value conversation instead of database plumbing.
 
 ## Next-Agent Prompt
 
-Use this prompt to continue:
+Use this prompt only after the human reviews the checkpoint and wants to keep
+building:
 
 ```text
-Create the Client Value Questions to Metrics Mapping Bridge product slice for
-the AI Value Platform. Journey and Workspace already show Client Value Questions,
-ROI Scenario Readiness, Customer Evidence Request, and Sponsor Decision handoffs.
-Connect those sponsor questions and success measures to recommended metrics from
-the existing governed Metrics Library so the user can see the business question,
-recommended metric, value route, source system, unit, baseline/comparison rule,
-owner, allowed claim level, and missing evidence before stronger value language
-moves forward. Keep this as governed opportunity mapping only: no production
-connector, runtime service, autonomous customer action, direct identifiers, raw
-prompt/response storage, unsupported ROI proof, causality claim, individual
-scoring, HR analytics, productivity ranking, or customer-facing dollarized
-output. Add focused frontend tests and keep frontend, backend object API, ROI
-scenario, agent-harness, build, and governance checks green.
+Continue the AI Value Platform product spine after the checkpoint review.
+First inspect Journey and Workspace as a user: Client Value Questions ->
+Questions to Metrics Bridge -> ROI Scenario Readiness -> Customer Evidence
+Request -> Sponsor Decision. Identify the next bounded product slice that makes
+the platform more understandable or useful without expanding governance risk.
+Keep FluencyTracr as aggregate evidence and keep ROI/value language governed:
+no production connector, runtime service, autonomous customer action, direct
+identifiers, raw prompt/response storage, unsupported ROI proof, causality
+claim, individual scoring, HR analytics, productivity ranking, or
+customer-facing dollarized output.
 ```
 
 ## What To Validate First
 
-Validate how Client Value Questions, Metrics Library objects, ROI Scenario
-Readiness, and Customer Evidence Request are currently derived in
-`useAiValueJourney`. The next slice should reuse the existing metrics library
-and view-model shape rather than inventing a separate metrics system.
-
-The current biggest risk is making Metrics look like database plumbing again.
-Prefer one clear bridge from sponsor question -> recommended metric -> evidence
-needed -> safe value language boundary.
+Validate the working product experience, not the object model. The current
+biggest risk is still client comprehension: Blueprint should feel like a
+workshop canvas, Metrics should feel like outcome/ROI opportunity mapping, and
+Scenario/Evidence should feel like a governed path to value language rather than
+database state.

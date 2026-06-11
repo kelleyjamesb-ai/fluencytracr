@@ -109,7 +109,19 @@ const detailPayloads: Record<string, Record<string, unknown>> = {
     client: {
       client_id: "client_northstar",
       client_name: "Northstar Support"
-    }
+    },
+    business_objectives: [
+      {
+        objective_id: "support_capacity",
+        objective_statement: "Create support capacity by reducing resolution effort.",
+        success_measures: [
+          {
+            measure: "Reduce median support resolution hours",
+            expected_direction: "REDUCE"
+          }
+        ]
+      }
+    ]
   },
   "blueprint/bp_support": {
     blueprint_id: "bp_support",
@@ -476,6 +488,34 @@ describe("AIValueJourney", () => {
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library")
     ]);
+  });
+
+  it("bridges client value questions to governed metrics and evidence needs", async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Client questions to metrics mapping/i });
+    expect(within(bridge).getByRole("heading", { name: /Questions to Metrics Bridge/i })).toBeInTheDocument();
+    expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Support case management system/i)).toBeInTheDocument();
+    expect(within(bridge).getAllByText(/hours/i).length).toBeGreaterThan(0);
+    expect(within(bridge).getByText(/Compare against an approved pre-period window/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Support Operations/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Feeds ROI Scenario Readiness and Customer Evidence Request/i)).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("metrics", "_", "library"),
+      uiTerm("metric", "_", "id")
+    ]);
+    expect(bridge.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI/i);
   });
 
   it("turns evidence readiness and scenarios into a client planning workflow", async () => {

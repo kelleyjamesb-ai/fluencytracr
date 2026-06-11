@@ -137,6 +137,28 @@ export interface ClientValueQuestion {
   detail: string;
 }
 
+export interface ClientQuestionMetricBridgeItem {
+  id: string;
+  sponsorQuestion: string;
+  successMeasure: string;
+  metricName: string;
+  valueRouteLabel: string;
+  sourceSystem: string;
+  measurementUnit: string;
+  baselineRule: string;
+  owner: string;
+  evidenceStatus: string;
+  allowedClaimLevel: string;
+  feedsNext: string;
+}
+
+export interface ClientQuestionMetricBridge {
+  available: boolean;
+  statusLabel: string;
+  summary: string;
+  items: ClientQuestionMetricBridgeItem[];
+}
+
 export interface WorkflowHandoff {
   selected: boolean;
   workflowName: string;
@@ -213,6 +235,7 @@ export interface AiValueJourney {
   stages: JourneyStage[];
   workflowHandoff: WorkflowHandoff;
   valueQuestions: ClientValueQuestion[];
+  questionMetricBridge: ClientQuestionMetricBridge;
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
@@ -981,6 +1004,95 @@ function buildClientValueQuestions(params: {
   ];
 }
 
+const successMeasuresFromEngagement = (engagement: Record<string, any> | null): string[] => {
+  const objectives = Array.isArray(engagement?.business_objectives)
+    ? engagement.business_objectives
+    : engagement?.business_objective
+      ? [engagement.business_objective]
+      : [];
+
+  return unique(
+    objectives.flatMap((objective: Record<string, any>) => {
+      const measures = Array.isArray(objective.success_measures)
+        ? objective.success_measures
+        : Array.isArray(objective.successMeasures)
+          ? objective.successMeasures
+          : [];
+      return measures
+        .map((measure: Record<string, any> | string) =>
+          typeof measure === "string"
+            ? measure
+            : String(measure.measure ?? measure.name ?? measure.label ?? "").trim()
+        )
+        .filter(Boolean);
+    })
+  );
+};
+
+function buildClientQuestionMetricBridge(params: {
+  engagement: Record<string, any> | null;
+  valueQuestions: ClientValueQuestion[];
+  opportunities: ValueOpportunity[];
+  customerEvidenceRequest: CustomerEvidenceRequest;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+}): ClientQuestionMetricBridge {
+  const {
+    engagement,
+    valueQuestions,
+    opportunities,
+    customerEvidenceRequest,
+    customerEvidenceReview
+  } = params;
+  const roiQuestion =
+    valueQuestions.find((item) => /ROI opportunity/i.test(item.question))?.question ??
+    "Where is the ROI opportunity?";
+  const successMeasures = successMeasuresFromEngagement(engagement);
+  const owner =
+    customerEvidenceRequest.owners.find((item) => /baseline|comparison|data/i.test(item.label))
+      ?.owner ??
+    customerEvidenceReview.reviewer ??
+    "Customer data owner";
+
+  if (opportunities.length === 0) {
+    return {
+      available: false,
+      statusLabel: "Needs outcome metric",
+      summary:
+        "Finish the Blueprint and outcome signal mapping before connecting sponsor questions to governed metrics.",
+      items: []
+    };
+  }
+
+  const bridgeOpportunities =
+    successMeasures.length > 0
+      ? opportunities.slice(0, Math.max(1, successMeasures.length))
+      : opportunities.slice(0, 1);
+
+  return {
+    available: true,
+    statusLabel: "Question-to-metric path ready",
+    summary:
+      "This bridge turns sponsor value questions and client success measures into governed metrics, source asks, and the next evidence gate.",
+    items: bridgeOpportunities.map((opportunity, index) => ({
+      id: opportunity.id,
+      sponsorQuestion: roiQuestion,
+      successMeasure:
+        successMeasures[index] ??
+        successMeasures[0] ??
+        "Confirm the client success measure in Blueprint.",
+      metricName: opportunity.metricName,
+      valueRouteLabel: opportunity.valueRouteLabel,
+      sourceSystem: opportunity.sourceSystem,
+      measurementUnit: opportunity.measurementUnit,
+      baselineRule: opportunity.baselineRule,
+      owner,
+      evidenceStatus: customerEvidenceReview.statusLabel || opportunity.status,
+      allowedClaimLevel: opportunity.claimBoundary,
+      feedsNext: "Feeds ROI Scenario Readiness and Customer Evidence Request"
+    }))
+  };
+}
+
 function buildWorkflowHandoff(params: {
   blueprint: Record<string, any> | null;
   metricsLibrary: Record<string, any> | null;
@@ -1643,6 +1755,34 @@ export const useAiValueJourney = (): AiValueJourney => {
     })
   );
   const [valueQuestions, setValueQuestions] = useState<ClientValueQuestion[]>([]);
+  const [questionMetricBridge, setQuestionMetricBridge] =
+    useState<ClientQuestionMetricBridge>(() =>
+      buildClientQuestionMetricBridge({
+        engagement: null,
+        valueQuestions: [],
+        opportunities: [],
+        customerEvidenceRequest: buildCustomerEvidenceRequest({
+          roiScenario: null,
+          workflowHandoff: buildWorkflowHandoff({
+            blueprint: null,
+            metricsLibrary: null,
+            opportunities: []
+          })
+        }),
+        customerEvidenceReview: buildCustomerEvidenceReviewWorkbench({
+          customerEvidenceRequest: buildCustomerEvidenceRequest({
+            roiScenario: null,
+            workflowHandoff: buildWorkflowHandoff({
+              blueprint: null,
+              metricsLibrary: null,
+              opportunities: []
+            })
+          }),
+          evidenceItems: [],
+          roiScenario: null
+        })
+      })
+    );
   const [evidenceItems, setEvidenceItems] = useState<EvidenceReviewItem[]>([]);
   const [opportunities, setOpportunities] = useState<ValueOpportunity[]>([]);
   const [evidenceScenarioPlan, setEvidenceScenarioPlan] =
@@ -1846,10 +1986,18 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceRequest: evidenceRequest,
         customerEvidenceReview: evidenceReview
       });
+      const metricBridge = buildClientQuestionMetricBridge({
+        engagement,
+        valueQuestions: questions,
+        opportunities: mappedOpportunities,
+        customerEvidenceRequest: evidenceRequest,
+        customerEvidenceReview: evidenceReview
+      });
 
       setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
       setWorkflowHandoff(handoff);
       setValueQuestions(questions);
+      setQuestionMetricBridge(metricBridge);
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
       setEvidenceScenarioPlan(plan);
@@ -1915,6 +2063,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     stages,
     workflowHandoff,
     valueQuestions,
+    questionMetricBridge,
     evidenceItems,
     opportunities,
     evidenceScenarioPlan,

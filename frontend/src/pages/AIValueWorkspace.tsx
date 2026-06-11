@@ -4,6 +4,7 @@ import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
@@ -125,6 +126,10 @@ export const AIValueWorkspace = () => {
             )}
           </div>
         </section>
+      )}
+
+      {!journey.loading && (
+        <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
       )}
 
       {!journey.loading && (

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { useAiValueJourney, type JourneyStageState } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
@@ -155,6 +156,8 @@ export const AIValueJourney = () => {
           ))}
         </div>
       </section>
+
+      <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
 
       <section className="ai-value-phase-grid" aria-label="AI value platform phases">
         {journey.stages.map((stage, index) => (

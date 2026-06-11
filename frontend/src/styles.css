@@ -2124,6 +2124,28 @@ body {
   margin: 8px 0 0;
 }
 
+.ai-value-question-metric-bridge-panel {
+  margin-bottom: 16px;
+}
+
+.ai-value-question-metric-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-value-question-metric-item {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-question-metric-item .ai-value-map-cell {
+  background: #ffffff;
+}
+
 .ai-value-phase-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
