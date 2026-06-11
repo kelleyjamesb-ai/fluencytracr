@@ -49,10 +49,25 @@ describe("AIValueWorkspace", () => {
     expect(screen.getAllByText(/Capacity creation/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Needs client assumptions/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Internal planning only/i).length).toBeGreaterThan(0);
+    const intake = screen.getByRole("region", { name: /Evidence connection/i });
+    expect(within(intake).getByRole("heading", { name: /Evidence Connection/i })).toBeInTheDocument();
+    expect(within(intake).getByText(/Customer-side aggregate package/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/Approved evidence package/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/Workspace evidence view/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/Safe value language/i)).toBeInTheDocument();
+    expect(
+      within(intake).getByText(/This view does not calculate ROI, prove causality, or rank people/i)
+    ).toBeInTheDocument();
 
     const workspaceNavigation = screen.getByRole("navigation", {
       name: /AI value workspace pages/i
     });
+    expect(screen.queryByRole("navigation", { name: /^Value journey$/i })).not.toBeInTheDocument();
+    expect(within(workspaceNavigation).getByRole("link", { name: /AI Fluency/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/readiness"
+    );
+    expect(within(workspaceNavigation).getAllByText(/Not started/i).length).toBeGreaterThan(0);
     expect(within(workspaceNavigation).getByRole("link", { name: /Blueprint Workshop/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/blueprint"
@@ -75,18 +90,94 @@ describe("AIValueWorkspace", () => {
     expect(container.textContent).not.toMatch(
       /workflow_state|metric_state|claim boundary|raw_prompt|raw_response|employee_id|user_id|manager_view|team_ranking|productivity_score|Glean proved ROI/i
     );
+    expect(container.textContent).not.toMatch(/AI Fluency Instrument/i);
   });
 
   it("renders the metrics page as a focused outcome and ROI opportunity view", () => {
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
 
     expect(screen.getByRole("heading", { name: /Metrics & ROI Opportunities/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Client questions to metrics mapping/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    const candidates = screen.getByRole("article", { name: /Candidate outcome metrics/i });
+    expect(within(candidates).getByRole("heading", { name: /Candidate outcome metrics/i })).toBeInTheDocument();
+    expect(within(candidates).getByText(/starter shortlist suggested from the selected workflow and value route/i)).toBeInTheDocument();
+    expect(within(candidates).getByText(/Blueprint workflow, value route, and available metric definitions/i)).toBeInTheDocument();
+    expect(within(candidates).getByText(/The client sponsor and data owner choose the metric to carry forward/i)).toBeInTheDocument();
+    expect(within(candidates).getByText(/Add more when the client names another KPI or source system/i)).toBeInTheDocument();
     expect(screen.getByText(/Are cases resolving faster/i)).toBeInTheDocument();
+    expect(within(candidates).getAllByText(/Possible metric/i).length).toBeGreaterThan(1);
+    expect(screen.getByText(/Likely source: Support case management system/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
+    expect(container.textContent).not.toMatch(/Outcome signals to consider|These are candidate signals|Metric Candidates/i);
     expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Executive Operating Packet/i })).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(/workflow_state|metric_state|claim boundary|raw_prompt|raw_response/i);
+  });
+
+  it("frames the readiness step as AI Fluency that feeds Blueprint", () => {
+    const { container } = renderWorkspace("/ai-value-workspace/readiness");
+
+    const workspaceNavigation = screen.getByRole("navigation", {
+      name: /AI value workspace pages/i
+    });
+    expect(
+      within(workspaceNavigation).getByRole("link", { name: /AI Fluency/i })
+    ).toHaveAttribute("href", "/ai-value-workspace/readiness");
+    expect(screen.getByRole("heading", { name: /^AI Fluency$/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/aggregate fluency readiness/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/informs the Blueprint workshop/i)).toBeInTheDocument();
+
+    for (const dimension of [
+      "Confidence",
+      "Usage Quality",
+      "Behavior Change",
+      "Leadership Reinforcement",
+      "Capability Growth"
+    ]) {
+      expect(screen.getByText(dimension)).toBeInTheDocument();
+    }
+
+    expect(screen.getByText(/No individual scoring/i)).toBeInTheDocument();
+    expect(screen.getByText(/No HR analytics/i)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/AI Fluency Instrument|Instrument connection/i);
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("lets AI Fluency open the assessment, copy the client link, and switch to results", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText }
+    });
+    const { container } = renderWorkspace("/ai-value-workspace/readiness");
+
+    const experience = screen.getByRole("region", { name: /AI Fluency experience/i });
+    expect(within(experience).getByRole("heading", { name: /AI Fluency Experience/i })).toBeInTheDocument();
+    expect(within(experience).getByText(/Client assessment preview/i)).toBeInTheDocument();
+    expect(within(experience).getByText(/Send this link to clients/i)).toBeInTheDocument();
+    expect(
+      within(experience).getByRole("link", { name: /Open client assessment/i })
+    ).toHaveAttribute("href", "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item");
+
+    const preview = within(experience).getByTitle(/AI Fluency assessment preview/i);
+    expect(preview).toHaveAttribute("src", "/ai-fluency/assessment-24-item.html");
+
+    fireEvent.click(within(experience).getByRole("button", { name: /Copy client link/i }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item"
+      );
+    });
+    expect(within(experience).getByText(/Client link copied/i)).toBeInTheDocument();
+
+    fireEvent.click(within(experience).getByRole("button", { name: /Show aggregate results/i }));
+    expect(within(experience).getByText(/Aggregate results preview/i)).toBeInTheDocument();
+    expect(within(experience).getByTitle(/AI Fluency aggregate results preview/i)).toHaveAttribute(
+      "src",
+      "/ai-fluency/organizational-results.html"
+    );
+
+    expectNoUnsafeUiLanguage(container.textContent);
   });
 
   it("renders evidence and executive readout as separate focused pages", () => {
@@ -114,8 +205,9 @@ describe("AIValueWorkspace", () => {
       name: /Workspace page handoff/i
     });
     expect(
-      within(metricsHandoff).getByText(/This page feeds next: Metrics feed evidence requests and scenario readiness/i)
+      within(metricsHandoff).getByText(/Use the selected outcome metric to prepare the evidence request/i)
     ).toBeInTheDocument();
+    expect(metricsHandoff.textContent).not.toMatch(/This page feeds next|Metrics feed evidence requests/i);
     expect(within(metricsHandoff).getByRole("link", { name: /Back to Blueprint Workshop/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/blueprint"
@@ -745,27 +837,44 @@ describe("AIValueWorkspace journey continuity", () => {
   });
 
   it.each([
-    "/ai-value-workspace/blueprint",
-    "/ai-value-workspace/metrics",
+    ["/ai-value-workspace/blueprint", /Blueprint workshop board/i],
+    ["/ai-value-workspace/metrics", /Choose the outcome metric/i]
+  ])("keeps %s focused on mapping work instead of showing evidence status", async (path, expectedHeading) => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = renderWorkspace(path);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: expectedHeading })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("region", { name: /Evidence readiness decision/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Can we use this evidence/i })).not.toBeInTheDocument();
+    expect(container.textContent).not.toMatch(
+      /local materializer|aggregate ingest|governed AI work evidence|surfaced aggregate verdict|V3 verdict|source_coverage|Real Aggregate Evidence|Use real aggregate evidence/i
+    );
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it.each([
     "/ai-value-workspace/evidence",
     "/ai-value-workspace/scenario",
     "/ai-value-workspace/readout",
     "/ai-value-workspace/decisions"
-  ])("shows real aggregate evidence status on %s when materialized objects exist", async (path) => {
+  ])("shows the evidence readiness decision on evidence-dependent page %s when approved evidence exists", async (path) => {
     const fixture = withRealEvidenceReadiness();
     stubJourneyFetch(fixture.objects, fixture.details);
     const { container } = renderWorkspace(path);
 
     await waitFor(() => {
-      const loadedPanel = screen.getByRole("region", { name: /Real aggregate evidence status/i });
-      expect(within(loadedPanel).getAllByText(/Workspace is using governed aggregate evidence/i).length).toBeGreaterThan(0);
+      const loadedPanel = screen.getByRole("region", { name: /Evidence readiness decision/i });
+      expect(within(loadedPanel).getAllByText(/Approved evidence connected/i).length).toBeGreaterThan(0);
     });
 
-    const panel = screen.getByRole("region", { name: /Real aggregate evidence status/i });
-    expect(within(panel).getByRole("heading", { name: /Real Aggregate Evidence/i })).toBeInTheDocument();
+    const panel = screen.getByRole("region", { name: /Evidence readiness decision/i });
+    expect(within(panel).getByRole("heading", { name: /Can we use this evidence/i })).toBeInTheDocument();
     expect(within(panel).getAllByText(/AI activity/i).length).toBeGreaterThan(0);
     expect(within(panel).getAllByText(/Ready/i).length).toBeGreaterThan(0);
-    expect(within(panel).getByText(/3 aggregate velocity observations/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/3 aggregate activity observations/i)).toBeInTheDocument();
     expect(within(panel).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
     expect(
       within(panel).getByText(/Review submitted customer outcome evidence before stronger value language moves forward/i)
@@ -775,7 +884,7 @@ describe("AIValueWorkspace journey continuity", () => {
     );
   });
 
-  it("runs the local materializer and translates suppressed aggregate evidence into held client language", async () => {
+  it("connects approved evidence and translates suppressed aggregate evidence into held client language", async () => {
     const after = cloneJourneyDetails();
     const readiness = after["evidence_readiness/readiness_v1"] as Record<string, any>;
     readiness.source_coverage = {
@@ -805,22 +914,22 @@ describe("AIValueWorkspace journey continuity", () => {
     const { container } = renderWorkspace("/ai-value-workspace/evidence");
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Real aggregate evidence status/i })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: /Evidence readiness decision/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Use real aggregate evidence/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Connect approved evidence/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Aggregate evidence is held because governance gates suppressed this workflow slice/i)).toBeInTheDocument();
+      expect(screen.getByText(/Aggregate evidence is held because governance review did not clear this workflow/i)).toBeInTheDocument();
     });
     expect(screen.getByText(/Customer outcome evidence is not aligned to the approved metric, source, and windows/i)).toBeInTheDocument();
-    expect(screen.getByText(/Hold value language and revisit evidence readiness after governance gates clear/i)).toBeInTheDocument();
+    expect(screen.getByText(/Hold value language and revisit evidence readiness after governance review clears/i)).toBeInTheDocument();
     expect(container.textContent).not.toMatch(
       /V3 verdict|SUPPRESS|cohort-real-evidence|workflow:CHAT|metrics library|source_coverage|realized ROI proof/
     );
   });
 
-  it("runs the local materializer and explains missing aggregate evidence without inventing readiness", async () => {
+  it("connects approved evidence and explains missing aggregate evidence without inventing readiness", async () => {
     const after = cloneJourneyDetails();
     const readiness = after["evidence_readiness/readiness_v1"] as Record<string, any>;
     readiness.source_coverage = {
@@ -846,19 +955,19 @@ describe("AIValueWorkspace journey continuity", () => {
       }
     };
     stubMaterializerFetch(materializerBody, journeyObjects, after);
-    const { container } = renderWorkspace("/ai-value-workspace/metrics");
+    const { container } = renderWorkspace("/ai-value-workspace/scenario");
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Real aggregate evidence status/i })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: /Evidence readiness decision/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Use real aggregate evidence/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Connect approved evidence/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/No governed aggregate verdict has been found for this workflow yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/No approved aggregate evidence has been found for this workflow yet/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/Real aggregate evidence not connected yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/Load aggregate evidence after the approved aggregate ingest path has accepted the workflow slice/i)).toBeInTheDocument();
+    expect(screen.getByText(/Evidence not connected yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect approved aggregate evidence after the workflow review clears/i)).toBeInTheDocument();
     expect(container.textContent).not.toMatch(
       /v3_verdict|cohort_id|workflow_id|source_coverage|MISSING|realized ROI proof/
     );
@@ -935,11 +1044,12 @@ describe("AIValueWorkspace journey continuity", () => {
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Client questions to metrics mapping/i })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     });
 
-    const bridge = screen.getByRole("region", { name: /Client questions to metrics mapping/i });
-    expect(within(bridge).getByRole("heading", { name: /Questions to Metrics Bridge/i })).toBeInTheDocument();
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    expect(within(bridge).getByRole("heading", { name: /Choose the outcome metric/i })).toBeInTheDocument();
+    expect(within(bridge).getByText(/where that data lives, who owns it, and what value language is allowed/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
@@ -950,7 +1060,7 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(bridge).getByText(/Support Operations/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Feeds ROI Scenario Readiness and Customer Evidence Request/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Next: Evidence Readiness and Scenario Builder/i)).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("workflow", "_", "family"),
@@ -988,7 +1098,7 @@ describe("AIValueWorkspace journey continuity", () => {
       "href",
       "/ai-value-workspace/scenario"
     );
-    expect(screen.queryByRole("table", { name: /Recommended value signals/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: /Candidate outcome metric cards/i })).not.toBeInTheDocument();
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("workflow", "_", "family"),
       uiTerm("metric", "_", "id"),
@@ -1010,16 +1120,16 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(trace).getByRole("heading", { name: /Client Value Spine Trace/i })).toBeInTheDocument();
     expect(within(trace).getByText(/Blueprint decision/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Feeds the metric and evidence plan/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Sets up the metric and evidence plan/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Outcome metric/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Feeds the customer evidence request/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Sets up the customer evidence request/i)).toBeInTheDocument();
     expect(within(trace).getByText(/^Customer evidence$/i)).toBeInTheDocument();
     expect(within(trace).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(within(trace).getByText(/Feeds governed scenario language/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Sets up scenario language/i)).toBeInTheDocument();
     expect(within(trace).getByText(/^Value language$/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Feeds the executive packet/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Prepares the executive packet/i)).toBeInTheDocument();
     expect(within(trace).getByText(/^Sponsor decision$/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Review submitted customer evidence before sponsor expansion/i)).toBeInTheDocument();
 
@@ -1091,27 +1201,28 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
-  it("shows a governed path from evidence to safe value language", async () => {
+  it("shows the evidence summary from evidence to sponsor readout", async () => {
     stubJourneyFetch(journeyObjects);
     const evidence = renderWorkspace("/ai-value-workspace/evidence");
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Evidence to value language path/i })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: /Evidence summary/i })).toBeInTheDocument();
     });
 
-    const path = screen.getByRole("region", { name: /Evidence to value language path/i });
-    expect(within(path).getByRole("heading", { name: /Evidence to Value Language Path/i })).toBeInTheDocument();
-    expect(within(path).getByText(/Aggregate work evidence/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Customer outcome evidence/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Scenario readiness/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Safe value language/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Blocked stronger claims/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Next action/i)).toBeInTheDocument();
+    const path = screen.getByRole("region", { name: /Evidence summary/i });
+    expect(within(path).getByRole("heading", { name: /What can we say now/i })).toBeInTheDocument();
+    expect(within(path).getByText(/Glean evidence/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Customer data/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Can we model value/i)).toBeInTheDocument();
+    expect(within(path).getByText(/What we can say/i)).toBeInTheDocument();
+    expect(within(path).getByText(/What not to claim/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Next step/i)).toBeInTheDocument();
     expect(within(path).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
     expect(
       within(path).getByText(/Modeled opportunity only; report with caveats after evidence review/i)
     ).toBeInTheDocument();
     expect(within(path).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(path.textContent).not.toMatch(/Evidence to Value Language Path|Governed Path|Sponsor Language/i);
     expect(within(path).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
     expect(within(path).getByRole("link", { name: /Open Scenario builder/i })).toHaveAttribute(
       "href",
@@ -1134,7 +1245,7 @@ describe("AIValueWorkspace journey continuity", () => {
     const scenario = renderWorkspace("/ai-value-workspace/scenario");
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Evidence to value language path/i })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: /Evidence summary/i })).toBeInTheDocument();
     });
     expectNoUnsafeUiLanguage(scenario.container.textContent, [
       uiTerm("workflow", "_", "family"),

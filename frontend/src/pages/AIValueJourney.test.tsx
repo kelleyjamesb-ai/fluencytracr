@@ -391,7 +391,8 @@ describe("AIValueJourney", () => {
     await waitFor(() => {
       expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
     });
-    expect(screen.getAllByText(/Human Readiness/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/AI Fluency/i).length).toBeGreaterThan(0);
+    expect(container.textContent).not.toMatch(/AI Fluency Instrument/i);
     expect(screen.getAllByText(/^Blueprint$/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Execution Instrumentation/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Evidence & Measurement/i).length).toBeGreaterThan(0);
@@ -433,7 +434,7 @@ describe("AIValueJourney", () => {
     expect(
       within(questions).getByText(/customer export is awaiting reviewer acceptance/i)
     ).toBeInTheDocument();
-    expect(within(questions).getByText(/What can we safely say/i)).toBeInTheDocument();
+    expect(within(questions).getByText(/What can we say now/i)).toBeInTheDocument();
     expect(within(questions).getByText(/do not present realized ROI or causality/i)).toBeInTheDocument();
     expect(within(questions).getByText(/What should the client do next/i)).toBeInTheDocument();
     expect(
@@ -483,7 +484,7 @@ describe("AIValueJourney", () => {
     expect(screen.getAllByText(/Safe value language/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Support case resolution/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/aggregate workflow window/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Model as a governed value scenario/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Model as a value scenario/i).length).toBeGreaterThan(0);
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library")
@@ -497,8 +498,9 @@ describe("AIValueJourney", () => {
       expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
     });
 
-    const bridge = screen.getByRole("region", { name: /Client questions to metrics mapping/i });
-    expect(within(bridge).getByRole("heading", { name: /Questions to Metrics Bridge/i })).toBeInTheDocument();
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    expect(within(bridge).getByRole("heading", { name: /Choose the outcome metric/i })).toBeInTheDocument();
+    expect(within(bridge).getByText(/where that data lives, who owns it, and what value language is allowed/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
@@ -509,7 +511,7 @@ describe("AIValueJourney", () => {
     expect(within(bridge).getByText(/Support Operations/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Feeds ROI Scenario Readiness and Customer Evidence Request/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Next: Evidence Readiness and Scenario Builder/i)).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library"),
@@ -529,16 +531,16 @@ describe("AIValueJourney", () => {
     expect(within(trace).getByRole("heading", { name: /Client Value Spine Trace/i })).toBeInTheDocument();
     expect(within(trace).getByText(/Blueprint decision/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Feeds the metric and evidence plan/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Sets up the metric and evidence plan/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Outcome metric/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Feeds the customer evidence request/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Sets up the customer evidence request/i)).toBeInTheDocument();
     expect(within(trace).getByText(/^Customer evidence$/i)).toBeInTheDocument();
     expect(within(trace).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(within(trace).getByText(/Feeds governed scenario language/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Sets up scenario language/i)).toBeInTheDocument();
     expect(within(trace).getByText(/^Value language$/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Feeds the executive packet/i)).toBeInTheDocument();
+    expect(within(trace).getByText(/Prepares the executive packet/i)).toBeInTheDocument();
     expect(within(trace).getByText(/^Sponsor decision$/i)).toBeInTheDocument();
     expect(within(trace).getByText(/Review submitted customer evidence before sponsor expansion/i)).toBeInTheDocument();
 
@@ -557,13 +559,13 @@ describe("AIValueJourney", () => {
     });
 
     expect(
-      screen.getByRole("heading", { name: /Evidence Readiness & Scenario Plan/i })
+      screen.getByRole("heading", { name: /What are we still looking for/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/Can trust now/i)).toBeInTheDocument();
-    expect(screen.getByText(/Needs client evidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Already usable/i)).toBeInTheDocument();
+    expect(screen.getByText(/Still need from client/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Value scenario/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Safe value language/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Next client action/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Current language/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Next step/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/FluencyTracr aggregate evidence/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Baseline window and comparison period/i).length).toBeGreaterThan(0);

@@ -79,9 +79,9 @@ export const AIValueJourney = () => {
         <article className="ai-value-panel">
           <h2>Whole-System Spine</h2>
           <p>
-            Each phase creates or validates an object that feeds the next phase. ROI is
-            treated as a governed opportunity until customer-owned outcome data,
-            assumptions, and claim review support stronger language.
+            Each phase creates or validates the next client decision. ROI is treated
+            as a governed opportunity until customer-owned outcome data, assumptions,
+            and claim review support stronger language.
           </p>
           <div className="ai-value-progress" aria-label={`${progress}% complete`}>
             <div style={{ width: `${progress}%` }} />
@@ -197,7 +197,7 @@ export const AIValueJourney = () => {
               </div>
             </div>
             <p className="ai-value-feeds-next">
-              <strong>Feeds next:</strong> {stage.feedsNext}
+              <strong>Next step:</strong> {stage.feedsNext}
             </p>
             {stage.link && (
               <Link className="ai-value-step ai-value-phase-action" to={stage.link}>
@@ -301,12 +301,11 @@ export const AIValueJourney = () => {
         <article className="ai-value-panel ai-value-evidence-scenario-panel">
           <div className="ai-value-section-head">
             <div>
-              <p className="eyebrow">Evidence Readiness</p>
-              <h2>Evidence Readiness &amp; Scenario Plan</h2>
+              <p className="eyebrow">Client Data Needed</p>
+              <h2>What are we still looking for?</h2>
               <p>
-                Shows what can be trusted now, what the client still needs to
-                provide, and how the ROI opportunity can move into a governed
-                scenario without turning into proof.
+                Collect these items before the value story moves beyond
+                planning language.
               </p>
             </div>
             <StatusPill label={journey.evidenceScenarioPlan.decisionLabel} tone="warn" />
@@ -314,7 +313,7 @@ export const AIValueJourney = () => {
 
           <div className="ai-value-evidence-plan-grid">
             <div className="ai-value-map-cell">
-              <span className="ai-value-map-label">Can trust now</span>
+              <span className="ai-value-map-label">Already usable</span>
               <ul>
                 {journey.evidenceScenarioPlan.canTrust.map((item) => (
                   <li key={item}>{item}</li>
@@ -322,7 +321,7 @@ export const AIValueJourney = () => {
               </ul>
             </div>
             <div className="ai-value-map-cell">
-              <span className="ai-value-map-label">Needs client evidence</span>
+              <span className="ai-value-map-label">Still need from client</span>
               <ul>
                 {journey.evidenceScenarioPlan.needsClientEvidence.map((item) => (
                   <li key={item}>{item}</li>
@@ -346,11 +345,11 @@ export const AIValueJourney = () => {
               </div>
             </div>
             <div className="ai-value-map-cell">
-              <span className="ai-value-map-label">Safe value language</span>
+              <span className="ai-value-map-label">Current language</span>
               <p>{journey.evidenceScenarioPlan.safeValueLanguage}</p>
             </div>
             <div className="ai-value-map-cell">
-              <span className="ai-value-map-label">Next client action</span>
+              <span className="ai-value-map-label">Next step</span>
               <p>{journey.evidenceScenarioPlan.nextClientAction}</p>
             </div>
             <div className="ai-value-map-cell ai-value-map-cell-wide ai-value-scenario-builder">

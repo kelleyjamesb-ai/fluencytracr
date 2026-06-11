@@ -15,12 +15,12 @@ export const ClientQuestionMetricBridgePanel = ({
 }) => (
   <section
     className="ai-value-panel ai-value-question-metric-bridge-panel"
-    aria-label="Client questions to metrics mapping"
+    aria-label="Outcome metric setup"
   >
     <div className="ai-value-section-head">
       <div>
-        <p className="eyebrow">Metrics Mapping</p>
-        <h2>Questions to Metrics Bridge</h2>
+        <p className="eyebrow">Outcome Setup</p>
+        <h2>Choose the outcome metric</h2>
         <p>{bridge.summary}</p>
       </div>
       <StatusPill label={bridge.statusLabel} tone={bridge.available ? "good" : "warn"} />
@@ -32,26 +32,26 @@ export const ClientQuestionMetricBridgePanel = ({
           <article className="ai-value-question-metric-item" key={item.id}>
             <div className="ai-value-map-grid">
               <div className="ai-value-map-cell ai-value-map-cell-wide">
-                <span className="ai-value-map-label">Client question</span>
+                <span className="ai-value-map-label">Client value question</span>
                 <strong>{item.sponsorQuestion}</strong>
                 <p>{item.successMeasure}</p>
               </div>
               <div className="ai-value-map-cell">
-                <span className="ai-value-map-label">Recommended metric</span>
+                <span className="ai-value-map-label">Outcome to measure</span>
                 <strong>{item.metricName}</strong>
                 <p>{item.valueRouteLabel}</p>
               </div>
               <div className="ai-value-map-cell">
-                <span className="ai-value-map-label">Customer system</span>
+                <span className="ai-value-map-label">Customer data source</span>
                 <strong>{item.sourceSystem}</strong>
                 <p>{item.measurementUnit}</p>
               </div>
               <div className="ai-value-map-cell">
-                <span className="ai-value-map-label">Comparison rule</span>
+                <span className="ai-value-map-label">Comparison window</span>
                 <p>{item.baselineRule}</p>
               </div>
               <div className="ai-value-map-cell">
-                <span className="ai-value-map-label">Owner</span>
+                <span className="ai-value-map-label">Data owner</span>
                 <p>{item.owner}</p>
               </div>
               <div className="ai-value-map-cell">
@@ -59,7 +59,7 @@ export const ClientQuestionMetricBridgePanel = ({
                 <p>{item.evidenceStatus}</p>
               </div>
               <div className="ai-value-map-cell ai-value-map-cell-wide">
-                <span className="ai-value-map-label">Safe claim level</span>
+                <span className="ai-value-map-label">Allowed value language</span>
                 <p>{item.allowedClaimLevel}</p>
                 <small>{item.feedsNext}</small>
               </div>
@@ -69,8 +69,8 @@ export const ClientQuestionMetricBridgePanel = ({
       </div>
     ) : (
       <p>
-        Add the client success measure and governed metric before the value
-        path can feed scenario readiness.
+        Add the client success measure and outcome metric before Evidence
+        Readiness can start.
       </p>
     )}
   </section>

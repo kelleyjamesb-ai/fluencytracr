@@ -3,8 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
-import { useAiValueJourney } from "../hooks/useAiValueJourney";
-import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import {
+  useAiValueJourney,
+  type JourneyStageKey,
+  type JourneyStageState
+} from "../hooks/useAiValueJourney";
 import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
@@ -19,15 +22,16 @@ const workspacePages = [
     navLabel: "Home",
     path: "/ai-value-workspace",
     detail: "Command center for the client value workflow.",
-    feedsNext: "Pick the next phase to inspect or complete."
+    feedsNext: "Choose the next workspace page to inspect or complete."
   },
   {
     slug: "readiness",
-    label: "Readiness",
-    navLabel: "Readiness",
+    label: "AI Fluency",
+    navLabel: "AI Fluency",
     path: "/ai-value-workspace/readiness",
-    detail: "Use kickoff context and aggregate fluency signals to frame the client conversation.",
-    feedsNext: "Readiness context feeds Blueprint priorities."
+    detail:
+      "Use aggregate fluency readiness signals to understand what people are ready to do with AI.",
+    feedsNext: "Use AI Fluency findings to focus the Blueprint workshop."
   },
   {
     slug: "blueprint",
@@ -35,7 +39,7 @@ const workspacePages = [
     navLabel: "Blueprint Workshop",
     path: "/ai-value-workspace/blueprint",
     detail: "Co-design the current and target workflow with the client.",
-    feedsNext: "Blueprint decisions feed metrics and evidence planning."
+    feedsNext: "Use the agreed workflow to choose outcome metrics."
   },
   {
     slug: "metrics",
@@ -43,7 +47,7 @@ const workspacePages = [
     navLabel: "Metrics & ROI Opportunities",
     path: "/ai-value-workspace/metrics",
     detail: "Map client value questions to governed outcome metrics and ROI opportunities.",
-    feedsNext: "Metrics feed evidence requests and scenario readiness."
+    feedsNext: "Use the selected outcome metric to prepare the evidence request."
   },
   {
     slug: "evidence",
@@ -51,7 +55,7 @@ const workspacePages = [
     navLabel: "Evidence Readiness",
     path: "/ai-value-workspace/evidence",
     detail: "Separate what Glean can show from what customer-owned data must validate.",
-    feedsNext: "Accepted or rejected evidence determines safe value language."
+    feedsNext: "Use reviewed evidence to decide what the readout can say."
   },
   {
     slug: "scenario",
@@ -59,7 +63,7 @@ const workspacePages = [
     navLabel: "Scenario Builder",
     path: "/ai-value-workspace/scenario",
     detail: "Model value as an assumption-backed scenario, not ROI proof.",
-    feedsNext: "Scenario status feeds the executive readout."
+    feedsNext: "Use scenario status to prepare the executive readout."
   },
   {
     slug: "readout",
@@ -67,7 +71,7 @@ const workspacePages = [
     navLabel: "Executive Readout",
     path: "/ai-value-workspace/readout",
     detail: "Preview the sponsor packet and the caveats that must travel with it.",
-    feedsNext: "Readout feeds sponsor decision and follow-up."
+    feedsNext: "Use the readout to choose the sponsor decision and follow-up."
   },
   {
     slug: "decisions",
@@ -75,21 +79,46 @@ const workspacePages = [
     navLabel: "Sponsor Decisions",
     path: "/ai-value-workspace/decisions",
     detail: "Choose the next governed move and prepare a bounded handoff.",
-    feedsNext: "Decision moves route back to Blueprint, evidence, scenario, or readout."
+    feedsNext: "Use the sponsor decision to return to the right workspace step."
   }
 ] as const;
 
 type WorkspacePageSlug = (typeof workspacePages)[number]["slug"];
 
 const workspacePageBySlug = new Map(workspacePages.map((page) => [page.slug, page]));
+const workspaceStageBySlug: Partial<Record<WorkspacePageSlug, JourneyStageKey>> = {
+  readiness: "readiness",
+  blueprint: "blueprint",
+  metrics: "opportunity",
+  evidence: "measurement",
+  scenario: "scenario",
+  readout: "readout",
+  decisions: "readout"
+};
+
+const workspaceStatusLabels: Record<JourneyStageState, string> = {
+  done: "Completed",
+  attention: "Still working",
+  todo: "Not started"
+};
+
+const workspaceStatusTone: Record<JourneyStageState, "good" | "warn" | "neutral"> = {
+  done: "good",
+  attention: "warn",
+  todo: "neutral"
+};
+
 const realEvidencePageSlugs: WorkspacePageSlug[] = [
-  "blueprint",
-  "metrics",
   "evidence",
   "scenario",
   "readout",
   "decisions"
 ];
+
+const AI_FLUENCY_ASSESSMENT_PREVIEW_URL = "/ai-fluency/assessment-24-item.html";
+const AI_FLUENCY_RESULTS_PREVIEW_URL = "/ai-fluency/organizational-results.html";
+const AI_FLUENCY_CLIENT_ASSESSMENT_URL =
+  "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item";
 
 const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "warn" | "good" }) => (
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
@@ -109,6 +138,26 @@ const currentPageFromPath = (pathname: string): WorkspacePageSlug => {
   return slug && workspacePageBySlug.has(slug) ? slug : "home";
 };
 
+const workspacePageStatus = (
+  slug: WorkspacePageSlug,
+  journey: ReturnType<typeof useAiValueJourney>
+): { label: string; tone: "good" | "warn" | "neutral" } => {
+  if (slug === "home") {
+    return { label: "Overview", tone: "neutral" };
+  }
+
+  const stageKey = workspaceStageBySlug[slug];
+  const stage = journey.stages.find((item) => item.key === stageKey);
+  if (!stage) {
+    return { label: "Not started", tone: "neutral" };
+  }
+
+  return {
+    label: workspaceStatusLabels[stage.state],
+    tone: workspaceStatusTone[stage.state]
+  };
+};
+
 const blueprintDecisionGuidance = [
   {
     owner: "Support Operations",
@@ -121,6 +170,29 @@ const blueprintDecisionGuidance = [
   {
     owner: "Workflow owner",
     nextStep: "Capture operating changes so scenario language stays caveated."
+  }
+];
+
+const aiFluencyDimensions = [
+  {
+    label: "Confidence",
+    detail: "How ready people feel to use AI in real work."
+  },
+  {
+    label: "Usage Quality",
+    detail: "Whether AI use is thoughtful, verified, and task-fit."
+  },
+  {
+    label: "Behavior Change",
+    detail: "Where AI is starting to change how work gets done."
+  },
+  {
+    label: "Leadership Reinforcement",
+    detail: "Whether managers and leaders are making AI adoption practical."
+  },
+  {
+    label: "Capability Growth",
+    detail: "Which skills need reinforcement before workflow change can scale."
   }
 ];
 
@@ -177,7 +249,7 @@ export const AIValueWorkspace = () => {
             tone={mode === "live" ? "good" : "neutral"}
           />
           <StatusPill
-            label={journey.realEvidenceStatus.available ? "Real aggregate evidence" : "Real evidence not connected"}
+            label={journey.realEvidenceStatus.available ? "Evidence connected" : "Evidence not connected"}
             tone={journey.realEvidenceStatus.statusTone}
           />
           <button
@@ -195,20 +267,31 @@ export const AIValueWorkspace = () => {
         </div>
       </header>
 
-      <AiValueJourneyRail stages={journey.stages} current="workshop" />
-
       <nav className="ai-value-workspace-nav" aria-label="AI value workspace pages">
-        {workspacePages.map((page, index) => (
-          <Link
-            key={page.slug}
-            to={page.path}
-            className={activePageSlug === page.slug ? "ai-value-step active" : "ai-value-step"}
-            aria-current={activePageSlug === page.slug ? "page" : undefined}
-          >
-            <span>{index + 1}</span>
-            {page.navLabel}
-          </Link>
-        ))}
+        {workspacePages.map((page, index) => {
+          const status = workspacePageStatus(page.slug, journey);
+          return (
+            <Link
+              key={page.slug}
+              to={page.path}
+              className={
+                activePageSlug === page.slug
+                  ? "ai-value-step ai-value-workspace-card active"
+                  : "ai-value-step ai-value-workspace-card"
+              }
+              aria-current={activePageSlug === page.slug ? "page" : undefined}
+              aria-label={`${index + 1}. ${page.navLabel}, ${status.label}`}
+            >
+              <span className="ai-value-workspace-index">{index + 1}</span>
+              <span className="ai-value-workspace-card-copy">
+                <strong>{page.navLabel}</strong>
+                <span className={`ai-value-workspace-card-status ai-value-workspace-card-status-${status.tone}`}>
+                  {status.label}
+                </span>
+              </span>
+            </Link>
+          );
+        })}
       </nav>
 
       {journey.errorMessage && (
@@ -228,11 +311,18 @@ export const AIValueWorkspace = () => {
           <h2>{activePage.label}</h2>
           <p>{activePage.detail}</p>
         </div>
-        <StatusPill label={activePage.feedsNext} tone={activePageSlug === "home" ? "neutral" : "good"} />
+        <StatusPill label={activePageSlug === "home" ? "Overview" : "Next step"} tone={activePageSlug === "home" ? "neutral" : "good"} />
       </section>
 
       {realEvidencePageSlugs.includes(activePageSlug) && (
         <RealEvidenceStatusPanel
+          status={journey.realEvidenceStatus}
+          onUseRealEvidence={() => void journey.materializeRealEvidence()}
+        />
+      )}
+
+      {activePageSlug === "home" && (
+        <AggregateEvidenceIntakePanel
           status={journey.realEvidenceStatus}
           onUseRealEvidence={() => void journey.materializeRealEvidence()}
         />
@@ -289,74 +379,179 @@ export const AIValueWorkspace = () => {
 type Journey = ReturnType<typeof useAiValueJourney>;
 type WorkspaceLive = ReturnType<typeof useAiValueWorkspace>["live"];
 
+const AggregateEvidenceIntakePanel = ({
+  status,
+  onUseRealEvidence
+}: {
+  status: Journey["realEvidenceStatus"];
+  onUseRealEvidence: () => void;
+}) => {
+  const intakeSteps = [
+    {
+      label: "Customer-side aggregate package",
+      state: status.canRunMaterializer ? "Ready for review" : "Needs Blueprint and Metrics",
+      tone: status.canRunMaterializer ? "good" as const : "warn" as const,
+      detail: "Sanitized aggregate evidence only; no raw rows, direct identifiers, prompts, or transcripts."
+    },
+    {
+      label: "Approved evidence package",
+      state: status.available ? "Accepted for workspace use" : "Ready after review",
+      tone: status.available ? "good" as const : "neutral" as const,
+      detail: "Connects aggregate AI activity plus baseline and comparison outcome records when they are safe to use."
+    },
+    {
+      label: "Workspace evidence view",
+      state: status.available ? "Workspace evidence connected" : "Not connected yet",
+      tone: status.available ? "good" as const : "neutral" as const,
+      detail: "Makes the approved evidence available to the focused workspace pages."
+    },
+    {
+      label: "Safe value language",
+      state: status.outcomeReviewLabel,
+      tone: status.statusTone,
+      detail: "The evidence can inform scenario review; stronger claims wait for customer review and caveats."
+    }
+  ];
+
+  return (
+    <section
+      className="ai-value-panel ai-value-intake-panel"
+      aria-label="Evidence connection"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Newest View</p>
+          <h3>Evidence Connection</h3>
+          <p>
+            Use this to connect approved aggregate evidence to the workspace
+            without turning it into a score or value claim.
+          </p>
+        </div>
+        <StatusPill label={status.statusLabel} tone={status.statusTone} />
+      </div>
+
+      <div className="ai-value-intake-flow">
+        {intakeSteps.map((step, index) => (
+          <div className="ai-value-intake-step" key={step.label}>
+            <span className="ai-value-phase-number">{index + 1}</span>
+            <div>
+              <span className="ai-value-map-label">{step.label}</span>
+              <strong>{step.state}</strong>
+              <p>{step.detail}</p>
+            </div>
+            <StatusPill label={step.state} tone={step.tone} />
+          </div>
+        ))}
+      </div>
+
+      <div className="ai-value-intake-footer">
+        <div>
+          <strong>This view does not calculate ROI, prove causality, or rank people.</strong>
+          <p>
+            It only shows whether aggregate evidence can safely support evidence
+            readiness, customer outcome review, scenario planning, and the
+            executive readout.
+          </p>
+        </div>
+        <button
+          className="ai-value-step active"
+          type="button"
+          disabled={!status.canRunMaterializer || status.materializerRunning}
+          onClick={onUseRealEvidence}
+        >
+          {status.materializerRunning ? "Checking evidence..." : "Connect approved evidence"}
+        </button>
+      </div>
+      {status.materializerError && <p role="alert">{status.materializerError}</p>}
+    </section>
+  );
+};
+
 const RealEvidenceStatusPanel = ({
   status,
   onUseRealEvidence
 }: {
   status: Journey["realEvidenceStatus"];
   onUseRealEvidence: () => void;
-}) => (
-  <section
-    className="ai-value-panel ai-value-real-evidence-panel"
-    aria-label="Real aggregate evidence status"
-  >
-    <div className="ai-value-section-head">
-      <div>
-        <p className="eyebrow">Governed Data</p>
-        <h3>Real Aggregate Evidence</h3>
-        <p>{status.summary}</p>
-      </div>
-      <StatusPill label={status.statusLabel} tone={status.statusTone} />
-    </div>
+}) => {
+  const statusToneClass = `ai-value-evidence-status-${status.statusTone}`;
 
-    <div className="ai-value-real-evidence-grid">
-      {status.coverage.map((item) => (
-        <div className="ai-value-map-cell" key={item.label}>
-          <span className="ai-value-map-label">{item.label}</span>
-          <StatusPill label={item.stateLabel} tone={item.stateTone} />
-          <p>{item.detail}</p>
+  return (
+    <section
+      className="ai-value-panel ai-value-real-evidence-panel"
+      aria-label="Evidence readiness decision"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Evidence Readiness</p>
+          <h3>Can we use this evidence?</h3>
+          <p>{status.summary}</p>
         </div>
-      ))}
-      <div className="ai-value-map-cell">
-        <span className="ai-value-map-label">Velocity context</span>
-        <strong>{status.velocityObservationLabel}</strong>
-        <p>Use this as aggregate activity context, not economic proof.</p>
       </div>
-      <div className="ai-value-map-cell">
-        <span className="ai-value-map-label">Outcome review</span>
-        <strong>{status.outcomeReviewLabel}</strong>
-        <p>{status.nextAction}</p>
-      </div>
-    </div>
 
-    {status.heldReasons.length > 0 && (
-      <div className="ai-value-real-evidence-held">
-        <h4>Held before stronger value language</h4>
-        <ul>
-          {status.heldReasons.map((reason) => (
-            <li key={reason}>{reason}</li>
-          ))}
-        </ul>
+      <div className={`ai-value-real-evidence-status ${statusToneClass}`}>
+        <div>
+          <span className="ai-value-map-label">Current status</span>
+          <strong>{status.statusLabel}</strong>
+          <p>{status.nextAction}</p>
+        </div>
+        <button
+          className="ai-value-step active"
+          type="button"
+          disabled={!status.canRunMaterializer || status.materializerRunning}
+          onClick={onUseRealEvidence}
+        >
+          {status.materializerRunning ? "Checking evidence..." : "Connect approved evidence"}
+        </button>
       </div>
-    )}
 
-    <div className="ai-value-real-evidence-actions">
-      <button
-        className="ai-value-step"
-        type="button"
-        disabled={!status.canRunMaterializer || status.materializerRunning}
-        onClick={onUseRealEvidence}
-      >
-        {status.materializerRunning ? "Checking aggregate evidence..." : "Use real aggregate evidence"}
-      </button>
-      {status.materializerError && <p role="alert">{status.materializerError}</p>}
-      <p>
-        The local action writes governed AI Value objects only; it does not create
-        a customer action or a value claim.
-      </p>
-    </div>
-  </section>
-);
+      <div className="ai-value-real-evidence-checklist" aria-label="Evidence readiness checklist">
+        {status.coverage.map((item) => (
+          <div className="ai-value-evidence-row" key={item.label}>
+            <span className={`ai-value-evidence-dot ai-value-evidence-dot-${item.stateTone}`} aria-hidden="true" />
+            <div>
+              <strong>{item.label}</strong>
+              <p>{item.detail}</p>
+            </div>
+            <span className="ai-value-evidence-row-state">{item.stateLabel}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="ai-value-real-evidence-context">
+        <div>
+          <span className="ai-value-map-label">Activity context</span>
+          <strong>{status.velocityObservationLabel}</strong>
+          <p>Aggregate activity context only, not economic proof.</p>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Outcome review</span>
+          <strong>{status.outcomeReviewLabel}</strong>
+          <p>Customer outcome evidence still needs review before stronger value language.</p>
+        </div>
+      </div>
+
+      {status.heldReasons.length > 0 && (
+        <div className="ai-value-real-evidence-held">
+          <h4>Held before stronger value language</h4>
+          <ul>
+            {status.heldReasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="ai-value-real-evidence-actions">
+        {status.materializerError && <p role="alert">{status.materializerError}</p>}
+        <p>
+          This only updates the workspace evidence view; it does not contact the
+          customer or create a value claim.
+        </p>
+      </div>
+    </section>
+  );
+};
 
 const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug }) => {
   const currentIndex = workspacePages.findIndex((page) => page.slug === currentSlug);
@@ -373,8 +568,8 @@ const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug 
   return (
     <nav className="ai-value-page-handoff" aria-label="Workspace page handoff">
       <div>
-        <p className="eyebrow">Workspace Handoff</p>
-        <p>This page feeds next: {current.feedsNext}</p>
+        <p className="eyebrow">Next Step</p>
+        <p>{current.feedsNext}</p>
       </div>
       <div className="ai-value-page-handoff-actions">
         {previous && (
@@ -428,7 +623,7 @@ const WorkspaceHome = ({
       <article className="ai-value-panel">
         <h3>How to use this workspace</h3>
         <p>
-          Move one phase at a time: readiness frames the workshop, Blueprint
+          Move one phase at a time: AI Fluency frames the workshop, Blueprint
           selects the workflow, metrics define the value opportunity, evidence
           validates what can be trusted, scenario keeps value language governed,
           and readout turns the work into a sponsor decision.
@@ -449,7 +644,7 @@ const WorkspaceHome = ({
             </div>
           </div>
           <p className="ai-value-feeds-next">
-            <strong>Feeds next:</strong> {page.feedsNext}
+            <strong>Next step:</strong> {page.feedsNext}
           </p>
           <Link className="ai-value-step ai-value-phase-action" to={page.path}>
             Open {page.navLabel}
@@ -463,7 +658,36 @@ const WorkspaceHome = ({
 );
 
 const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journey }) => (
-  <section className="ai-value-focused-stack" aria-label="Readiness workspace">
+  <section className="ai-value-focused-stack" aria-label="AI Fluency workspace">
+    <section className="ai-value-panel" aria-label="AI Fluency">
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">AI Fluency</p>
+          <h3>Aggregate fluency readiness</h3>
+          <p>
+            AI Fluency captures aggregate readiness across the client team,
+            highlights capability gaps, and informs the Blueprint workshop with
+            the human context needed to choose better workflows.
+          </p>
+        </div>
+        <div className="ai-value-chip-row">
+          <StatusPill label="No individual scoring" />
+          <StatusPill label="No HR analytics" />
+        </div>
+      </div>
+      <div className="ai-value-client-question-grid">
+        {aiFluencyDimensions.map((dimension) => (
+          <article className="ai-value-client-question-card" key={dimension.label}>
+            <span className="ai-value-map-label">Fluency dimension</span>
+            <strong>{dimension.label}</strong>
+            <p>{dimension.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <AiFluencyExperiencePanel />
+
     {live?.kickoff ? (
       <article className="ai-value-panel">
         <h3>Client kickoff</h3>
@@ -507,10 +731,10 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
       </article>
     ) : (
       <article className="ai-value-panel">
-        <h3>Human readiness context</h3>
+        <h3>AI Fluency connection</h3>
         <p>
-          Connect the kickoff instrument to show aggregate readiness, capability
-          gaps, and the sponsor measure before the Blueprint workshop starts.
+          Connect AI Fluency to show aggregate readiness, capability gaps, and
+          the sponsor measure before the Blueprint workshop starts.
         </p>
       </article>
     )}
@@ -541,6 +765,93 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
     )}
   </section>
 );
+
+const AiFluencyExperiencePanel = () => {
+  const [previewMode, setPreviewMode] = useState<"assessment" | "results">("assessment");
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "unavailable">("idle");
+  const showingResults = previewMode === "results";
+
+  const copyClientLink = async () => {
+    if (!navigator.clipboard?.writeText) {
+      setCopyStatus("unavailable");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(AI_FLUENCY_CLIENT_ASSESSMENT_URL);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("unavailable");
+    }
+  };
+
+  return (
+    <section
+      className="ai-value-panel ai-fluency-experience-panel"
+      aria-label="AI Fluency experience"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Client Experience</p>
+          <h3>AI Fluency Experience</h3>
+          <p>
+            Preview the client assessment, share the hosted completion link, and
+            switch into the aggregate results view once responses are collected.
+          </p>
+        </div>
+        <StatusPill label={showingResults ? "Aggregate results preview" : "Client assessment preview"} tone="good" />
+      </div>
+
+      <div className="ai-fluency-action-row">
+        <div className="ai-fluency-share-box">
+          <span className="ai-value-map-label">Send this link to clients</span>
+          <a
+            className="ai-fluency-client-link"
+            href={AI_FLUENCY_CLIENT_ASSESSMENT_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {AI_FLUENCY_CLIENT_ASSESSMENT_URL}
+          </a>
+        </div>
+        <div className="ai-fluency-controls">
+          <a
+            className="ai-value-step"
+            href={AI_FLUENCY_CLIENT_ASSESSMENT_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open client assessment
+          </a>
+          <button className="ai-value-step" type="button" onClick={() => void copyClientLink()}>
+            Copy client link
+          </button>
+          <button
+            className={showingResults ? "ai-value-step active" : "ai-value-step"}
+            type="button"
+            onClick={() => setPreviewMode(showingResults ? "assessment" : "results")}
+          >
+            {showingResults ? "Show assessment" : "Show aggregate results"}
+          </button>
+        </div>
+      </div>
+
+      <p className="ai-fluency-copy-status" aria-live="polite">
+        {copyStatus === "copied"
+          ? "Client link copied"
+          : copyStatus === "unavailable"
+            ? "Copy unavailable in this browser"
+            : "Hosted links are the client-share path; local previews are for this workspace."}
+      </p>
+
+      <iframe
+        className="ai-fluency-preview-frame"
+        src={showingResults ? AI_FLUENCY_RESULTS_PREVIEW_URL : AI_FLUENCY_ASSESSMENT_PREVIEW_URL}
+        title={showingResults ? "AI Fluency aggregate results preview" : "AI Fluency assessment preview"}
+      />
+    </section>
+  );
+};
 
 const BlueprintPage = ({ live, journey }: { live: WorkspaceLive; journey: Journey }) => {
   const [focusedDecision, setFocusedDecision] = useState(
@@ -717,7 +1028,7 @@ const MetricsPage = ({
     nextValidationStep:
       "Ask Support Operations for baseline and comparison exports before scenario language moves forward.",
     scenarioHandoff:
-      "Model as a governed value scenario after the customer owner confirms baseline, comparison, assumptions, and source coverage.",
+      "Model as a value scenario after the customer owner confirms baseline, comparison, assumptions, and data source.",
     claimBoundary: "Modeled opportunity only; report with caveats after evidence review."
   };
   const primaryBridgeItem = journey.questionMetricBridge.items[0] ?? null;
@@ -799,8 +1110,8 @@ const MetricsPage = ({
               <span className="ai-value-map-label">Next gated action</span>
               <strong>{nextGatedAction}</strong>
               <p>
-                This feeds the evidence request and the governed scenario builder; it does
-                not create a realized value claim.
+                This prepares the evidence request and scenario builder; it does not
+                create a realized value claim.
               </p>
               <div className="ai-value-chip-row">
                 <Link className="ai-value-step" to="/ai-value-workspace/evidence">
@@ -815,27 +1126,46 @@ const MetricsPage = ({
         </>
       </section>
 
-      <article className="ai-value-panel ai-value-signal-shortlist-panel">
+      <article className="ai-value-panel ai-value-signal-shortlist-panel" aria-label="Candidate outcome metrics">
         <div className="ai-value-section-head">
           <div>
-            <p className="eyebrow">Metric Candidates</p>
-            <h3>Outcome signals to consider</h3>
+            <p className="eyebrow">Metric Options</p>
+            <h3>Candidate outcome metrics</h3>
             <p>
-              These are candidate signals for the client workshop. They become
-              scenario inputs only after ownership, source, and review rules are clear.
+              This is a starter shortlist suggested from the selected workflow
+              and value route. In the workshop, ask the client which outcome
+              matters most, what system owns it, and whether another metric
+              should be added.
             </p>
           </div>
-          <StatusPill label="Outcome first" tone="good" />
+          <StatusPill label="Client confirms" tone="good" />
         </div>
-        <div className="ai-value-signal-shortlist" aria-label="Recommended value signals">
+        <div className="ai-value-signal-guidance" aria-label="Metric candidate guidance">
+          <div>
+            <span className="ai-value-map-label">Where these come from</span>
+            <p>Blueprint workflow, value route, and available metric definitions.</p>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Who decides</span>
+            <p>The client sponsor and data owner choose the metric to carry forward.</p>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Can there be more?</span>
+            <p>Yes. Add more when the client names another KPI or source system.</p>
+          </div>
+        </div>
+        <div className="ai-value-signal-shortlist" aria-label="Candidate outcome metric cards">
           {valueSignals.map((signal) => (
             <article className="ai-value-signal-card" key={signal.question}>
               <div>
-                <span className="ai-value-map-label">Client question</span>
+                <span className="ai-value-map-label">Question to ask</span>
                 <h4>{signal.question}</h4>
               </div>
-              <p>{signal.measure}</p>
-              <small>{signal.source}</small>
+              <div>
+                <span className="ai-value-map-label">Possible metric</span>
+                <p>{signal.measure}</p>
+              </div>
+              <small>Likely source: {signal.source}</small>
               <StatusPill label={signal.status} tone={signal.status === "Needs owner" ? "warn" : "good"} />
             </article>
           ))}
@@ -879,15 +1209,15 @@ const EvidenceToValuePathPanel = ({ journey }: { journey: Journey }) => {
   return (
     <section
       className="ai-value-panel ai-value-evidence-value-panel"
-      aria-label="Evidence to value language path"
+      aria-label="Evidence summary"
     >
       <div className="ai-value-section-head">
         <div>
-          <p className="eyebrow">Governed Path</p>
-          <h3>Evidence to Value Language Path</h3>
+          <p className="eyebrow">Evidence Summary</p>
+          <h3>What can we say now?</h3>
           <p>
-            Follow what the product can show, what the customer still owns, and
-            what language is safe before the sponsor sees the readout.
+            Decide whether the sponsor readout can include value language, or
+            whether it should stay in planning mode.
           </p>
         </div>
         <StatusPill label={outcomeEvidence} tone={journey.customerEvidenceReview.statusTone} />
@@ -895,26 +1225,26 @@ const EvidenceToValuePathPanel = ({ journey }: { journey: Journey }) => {
 
       <div className="ai-value-evidence-value-path">
         <div className="ai-value-evidence-value-step">
-          <span className="ai-value-map-label">Aggregate work evidence</span>
+          <span className="ai-value-map-label">Glean evidence</span>
           <strong>{aggregateEvidence}</strong>
-          <p>Use this as the work-pattern signal, not as outcome proof.</p>
+          <p>Use this as adoption context, not as business-outcome proof.</p>
         </div>
         <div className="ai-value-evidence-value-step">
-          <span className="ai-value-map-label">Customer outcome evidence</span>
+          <span className="ai-value-map-label">Customer data</span>
           <strong>{outcomeEvidence}</strong>
           <p>{journey.customerEvidenceReview.summary}</p>
         </div>
         <div className="ai-value-evidence-value-step">
-          <span className="ai-value-map-label">Scenario readiness</span>
+          <span className="ai-value-map-label">Can we model value?</span>
           <strong>{scenarioReadiness}</strong>
           <p>{journey.roiScenarioReadiness.evidenceStatus}</p>
         </div>
         <div className="ai-value-evidence-value-step">
-          <span className="ai-value-map-label">Safe value language</span>
+          <span className="ai-value-map-label">What we can say</span>
           <p>{safeValueLanguage}</p>
         </div>
         <div className="ai-value-evidence-value-step">
-          <span className="ai-value-map-label">Blocked stronger claims</span>
+          <span className="ai-value-map-label">What not to claim</span>
           <div className="ai-value-chip-row">
             {blockedOutputs.map((output) => (
               <StatusPill key={output} label={output} />
@@ -922,11 +1252,11 @@ const EvidenceToValuePathPanel = ({ journey }: { journey: Journey }) => {
           </div>
         </div>
         <div className="ai-value-evidence-value-step ai-value-evidence-value-step-wide">
-          <span className="ai-value-map-label">Next action</span>
+          <span className="ai-value-map-label">Next step</span>
           <strong>{nextAction}</strong>
           <p>
-            This keeps Evidence and Scenario connected while stronger value
-            language waits for customer-owned review.
+            Keep the readout in planning language until the client-owned data
+            and assumptions are ready.
           </p>
           <div className="ai-value-chip-row">
             <Link className="ai-value-step" to="/ai-value-workspace/scenario">
@@ -958,7 +1288,7 @@ const SponsorOperatingWorkflowPanel = ({ journey }: { journey: Journey }) => {
       label: "Readout preview",
       status: journey.executiveReadoutPreview.statusLabel,
       detail: journey.executiveReadoutPreview.whatWillOpen,
-      feedsNext: "Feeds sponsor decision"
+      feedsNext: "Prepares the sponsor decision"
     },
     {
       label: "Sponsor decision",
@@ -970,7 +1300,7 @@ const SponsorOperatingWorkflowPanel = ({ journey }: { journey: Journey }) => {
       label: "Handoff draft",
       status: handoffTarget,
       detail: handoffAction,
-      feedsNext: "Feeds the next owner without creating a task."
+      feedsNext: "Prepares the next owner without creating a task."
     },
     {
       label: "Next operating loop",
@@ -1039,11 +1369,10 @@ const EvidencePage = ({
     <article className="ai-value-panel">
       <div className="ai-value-section-head">
         <div>
-          <p className="eyebrow">Evidence Check</p>
-          <h3>What can be trusted</h3>
+          <p className="eyebrow">Evidence Checklist</p>
+          <h3>What do we have?</h3>
           <p>
-            Keep the evidence conversation operational: which aggregate signal is
-            present, which customer export is missing, and who reviews it.
+            Check the basics before the readout uses stronger value language.
           </p>
         </div>
         <StatusPill label="Aggregate only" tone="good" />
@@ -1062,12 +1391,11 @@ const EvidencePage = ({
     <article className="ai-value-panel ai-value-evidence-scenario-panel">
       <div className="ai-value-section-head">
         <div>
-          <p className="eyebrow">Evidence Readiness</p>
-          <h3>Evidence Readiness &amp; Scenario Plan</h3>
+          <p className="eyebrow">Client Data Needed</p>
+          <h3>What are we still looking for?</h3>
           <p>
-            Shows what can be trusted now, what the client still needs to
-            provide, and how the value opportunity can move into a governed
-            scenario without turning into proof.
+            Collect these items before the value story moves beyond planning
+            language.
           </p>
         </div>
         <StatusPill label={journey.evidenceScenarioPlan.decisionLabel} tone="warn" />
@@ -1075,7 +1403,7 @@ const EvidencePage = ({
 
       <div className="ai-value-evidence-plan-grid">
         <div className="ai-value-map-cell">
-          <span className="ai-value-map-label">Can trust now</span>
+          <span className="ai-value-map-label">Already usable</span>
           <ul>
             {journey.evidenceScenarioPlan.canTrust.map((item) => (
               <li key={item}>{item}</li>
@@ -1083,7 +1411,7 @@ const EvidencePage = ({
           </ul>
         </div>
         <div className="ai-value-map-cell">
-          <span className="ai-value-map-label">Needs client evidence</span>
+          <span className="ai-value-map-label">Still need from client</span>
           <ul>
             {journey.evidenceScenarioPlan.needsClientEvidence.map((item) => (
               <li key={item}>{item}</li>
@@ -1091,11 +1419,11 @@ const EvidencePage = ({
           </ul>
         </div>
         <div className="ai-value-map-cell">
-          <span className="ai-value-map-label">Safe value language</span>
+          <span className="ai-value-map-label">Current language</span>
           <p>{journey.evidenceScenarioPlan.safeValueLanguage}</p>
         </div>
         <div className="ai-value-map-cell">
-          <span className="ai-value-map-label">Next client action</span>
+          <span className="ai-value-map-label">Next step</span>
           <p>{journey.evidenceScenarioPlan.nextClientAction}</p>
         </div>
       </div>
