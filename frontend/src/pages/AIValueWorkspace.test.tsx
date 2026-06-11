@@ -45,6 +45,15 @@ describe("AIValueWorkspace", () => {
 
     expect(screen.getByRole("heading", { name: /AI Value Workspace/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Workspace Home/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Workspace Home guide/i })).toBeInTheDocument();
+    expect(screen.getByText(/Do this now/i)).toBeInTheDocument();
+    expect(screen.getByText(/Start with AI Fluency, then use Blueprint/i)).toBeInTheDocument();
+    expect(screen.getByText(/You need/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sponsor value question/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Start with AI Fluency/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/readiness"
+    );
     expect(screen.getAllByText(/Customer support case resolution/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Capacity creation/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Needs client assumptions/i).length).toBeGreaterThan(0);
@@ -97,6 +106,13 @@ describe("AIValueWorkspace", () => {
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
 
     expect(screen.getByRole("heading", { name: /Metrics & ROI Opportunities/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Metrics & ROI Opportunities guide/i })).toBeInTheDocument();
+    expect(screen.getByText(/Pick the outcome metric, confirm the customer system/i)).toBeInTheDocument();
+    expect(screen.getByText(/Source system and owner/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Prepare Evidence Ask/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/evidence"
+    );
     expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     const candidates = screen.getByRole("article", { name: /Candidate outcome metrics/i });
     expect(within(candidates).getByRole("heading", { name: /Candidate outcome metrics/i })).toBeInTheDocument();
@@ -184,6 +200,9 @@ describe("AIValueWorkspace", () => {
     const evidence = renderWorkspace("/ai-value-workspace/evidence");
 
     expect(screen.getByRole("heading", { name: /^Evidence Readiness$/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Evidence Readiness guide/i })).toBeInTheDocument();
+    expect(screen.getByText(/Request or review the approved aggregate evidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Baseline and comparison windows/i)).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Customer evidence request/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Customer evidence review/i })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Executive Operating Packet/i })).not.toBeInTheDocument();
@@ -346,13 +365,13 @@ describe("AIValueWorkspace live evidence mode", () => {
     vi.unstubAllGlobals();
   });
 
-  it("connects to the evidence engine and shows client-facing live content", async () => {
+  it("connects live evidence and shows client-facing live content", async () => {
     const { container } = renderWorkspace();
 
     fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Live evidence", { selector: "span" })).toBeInTheDocument();
+      expect(screen.getByText("Live evidence connected", { selector: "span" })).toBeInTheDocument();
     });
     expect(screen.getAllByText(/Ready for sponsor validation/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Shareable with caveats/i).length).toBeGreaterThan(0);
@@ -455,7 +474,7 @@ describe("AIValueWorkspace live evidence mode", () => {
     fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Live evidence", { selector: "span" })).toBeInTheDocument();
+      expect(screen.getByText("Live evidence connected", { selector: "span" })).toBeInTheDocument();
     });
     expect(screen.getByText(/Client kickoff/i)).toBeInTheDocument();
     expect(screen.getByText(/Northstar Enterprise/i)).toBeInTheDocument();
@@ -469,7 +488,7 @@ describe("AIValueWorkspace live evidence mode", () => {
     );
   });
 
-  it("shows a friendly error when the evidence engine is unreachable", async () => {
+  it("shows a friendly example-mode message when live evidence is unavailable", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response("{}", { status: 500 }))
@@ -480,13 +499,13 @@ describe("AIValueWorkspace live evidence mode", () => {
 
     await waitFor(() => {
       expect(screen.getAllByRole("alert").some((alert) =>
-        /Could not reach the evidence engine/i.test(alert.textContent ?? "")
+        /Live evidence is not connected yet/i.test(alert.textContent ?? "")
       )).toBe(true);
       expect(screen.getAllByRole("alert").some((alert) =>
-        /The workshop is showing example content/i.test(alert.textContent ?? "")
+        /showing example content until approved aggregate evidence is available/i.test(alert.textContent ?? "")
       )).toBe(true);
     });
-    expect(screen.getByText("Example content", { selector: "span" })).toBeInTheDocument();
+    expect(screen.getByText("Example mode", { selector: "span" })).toBeInTheDocument();
   });
 });
 

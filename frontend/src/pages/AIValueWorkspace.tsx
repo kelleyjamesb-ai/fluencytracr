@@ -22,7 +22,16 @@ const workspacePages = [
     navLabel: "Home",
     path: "/ai-value-workspace",
     detail: "Command center for the client value workflow.",
-    feedsNext: "Choose the next workspace page to inspect or complete."
+    doNow: "Start with AI Fluency, then use Blueprint to agree on the workflow the client wants to improve.",
+    needs: [
+      "Client workflow",
+      "Sponsor value question",
+      "Evidence connection status"
+    ],
+    doneWhen: "You know which page needs attention next.",
+    primaryActionLabel: "Start with AI Fluency",
+    primaryActionPath: "/ai-value-workspace/readiness",
+    feedsNext: "Choose the next workspace step to complete."
   },
   {
     slug: "readiness",
@@ -31,6 +40,15 @@ const workspacePages = [
     path: "/ai-value-workspace/readiness",
     detail:
       "Use aggregate fluency readiness signals to understand what people are ready to do with AI.",
+    doNow: "Share the AI Fluency link with the client and review aggregate results before the workshop.",
+    needs: [
+      "Client assessment link",
+      "Aggregate results",
+      "Readiness gaps to discuss"
+    ],
+    doneWhen: "The Blueprint workshop has a clear human readiness context.",
+    primaryActionLabel: "Open Blueprint Workshop",
+    primaryActionPath: "/ai-value-workspace/blueprint",
     feedsNext: "Use AI Fluency findings to focus the Blueprint workshop."
   },
   {
@@ -39,6 +57,15 @@ const workspacePages = [
     navLabel: "Blueprint Workshop",
     path: "/ai-value-workspace/blueprint",
     detail: "Co-design the current and target workflow with the client.",
+    doNow: "Agree on the current workflow, target workflow, and one open decision to carry forward.",
+    needs: [
+      "Current workflow steps",
+      "Target workflow steps",
+      "Decision owner"
+    ],
+    doneWhen: "The client can point to the workflow and say what success should look like.",
+    primaryActionLabel: "Choose Metrics",
+    primaryActionPath: "/ai-value-workspace/metrics",
     feedsNext: "Use the agreed workflow to choose outcome metrics."
   },
   {
@@ -47,6 +74,15 @@ const workspacePages = [
     navLabel: "Metrics & ROI Opportunities",
     path: "/ai-value-workspace/metrics",
     detail: "Map client value questions to governed outcome metrics and ROI opportunities.",
+    doNow: "Pick the outcome metric, confirm the customer system that owns it, and name the data owner.",
+    needs: [
+      "Client value question",
+      "Outcome metric",
+      "Source system and owner"
+    ],
+    doneWhen: "The evidence ask is specific enough for the customer data owner.",
+    primaryActionLabel: "Prepare Evidence Ask",
+    primaryActionPath: "/ai-value-workspace/evidence",
     feedsNext: "Use the selected outcome metric to prepare the evidence request."
   },
   {
@@ -55,7 +91,16 @@ const workspacePages = [
     navLabel: "Evidence Readiness",
     path: "/ai-value-workspace/evidence",
     detail: "Separate what Glean can show from what customer-owned data must validate.",
-    feedsNext: "Use reviewed evidence to decide what the readout can say."
+    doNow: "Request or review the approved aggregate evidence, then decide whether it can support scenario planning.",
+    needs: [
+      "Aggregate AI activity",
+      "Customer outcome export",
+      "Baseline and comparison windows"
+    ],
+    doneWhen: "The team knows what can be used, what is missing, and what language is still blocked.",
+    primaryActionLabel: "Build Scenario",
+    primaryActionPath: "/ai-value-workspace/scenario",
+    feedsNext: "Use reviewed evidence to decide what the value scenario can say."
   },
   {
     slug: "scenario",
@@ -63,6 +108,15 @@ const workspacePages = [
     navLabel: "Scenario Builder",
     path: "/ai-value-workspace/scenario",
     detail: "Model value as an assumption-backed scenario, not ROI proof.",
+    doNow: "Check whether the evidence and assumptions are strong enough for a caveated value scenario.",
+    needs: [
+      "Accepted or caveated evidence",
+      "Customer-owned assumptions",
+      "Blocked claim list"
+    ],
+    doneWhen: "The scenario stays clearly labeled as planning language, not business proof.",
+    primaryActionLabel: "Preview Readout",
+    primaryActionPath: "/ai-value-workspace/readout",
     feedsNext: "Use scenario status to prepare the executive readout."
   },
   {
@@ -71,6 +125,15 @@ const workspacePages = [
     navLabel: "Executive Readout",
     path: "/ai-value-workspace/readout",
     detail: "Preview the sponsor packet and the caveats that must travel with it.",
+    doNow: "Preview what the sponsor will see and make sure caveats travel with the readout.",
+    needs: [
+      "Sponsor question",
+      "Recommended decision",
+      "Caveats and next owner"
+    ],
+    doneWhen: "The readout is ready to support a decision without overstating value.",
+    primaryActionLabel: "Choose Sponsor Decision",
+    primaryActionPath: "/ai-value-workspace/decisions",
     feedsNext: "Use the readout to choose the sponsor decision and follow-up."
   },
   {
@@ -79,6 +142,15 @@ const workspacePages = [
     navLabel: "Sponsor Decisions",
     path: "/ai-value-workspace/decisions",
     detail: "Choose the next governed move and prepare a bounded handoff.",
+    doNow: "Choose the next operating move: expand, collect stronger evidence, correct the export, hold language, or return to Blueprint.",
+    needs: [
+      "Sponsor decision",
+      "Owner",
+      "Safe handoff"
+    ],
+    doneWhen: "The next owner knows what to do and what not to claim.",
+    primaryActionLabel: "Return to Blueprint",
+    primaryActionPath: "/ai-value-workspace/blueprint",
     feedsNext: "Use the sponsor decision to return to the right workspace step."
   }
 ] as const;
@@ -238,14 +310,11 @@ export const AIValueWorkspace = () => {
         <div>
           <p className="eyebrow">Client Value Workspace</p>
           <h1>AI Value Workspace</h1>
-          <p>{workflowName}</p>
+          <p>Guide the client from readiness to workflow change, evidence review, and a bounded value decision.</p>
         </div>
         <div className="ai-value-status-strip" aria-label="Workspace status">
-          <StatusPill label={valueRouteLabel} tone="good" />
-          <StatusPill label={decisionLabel} tone="warn" />
-          <StatusPill label={claimModeLabel} />
           <StatusPill
-            label={mode === "live" ? "Live evidence" : "Example content"}
+            label={mode === "live" ? "Live evidence connected" : "Example mode"}
             tone={mode === "live" ? "good" : "neutral"}
           />
           <StatusPill
@@ -266,6 +335,25 @@ export const AIValueWorkspace = () => {
           </button>
         </div>
       </header>
+
+      <section className="ai-value-context-bar" aria-label="Current client value thread">
+        <div>
+          <span className="ai-value-map-label">Workflow</span>
+          <strong>{workflowName}</strong>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Value route</span>
+          <strong>{valueRouteLabel}</strong>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Current decision</span>
+          <strong>{decisionLabel}</strong>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Value language</span>
+          <strong>{claimModeLabel}</strong>
+        </div>
+      </section>
 
       <nav className="ai-value-workspace-nav" aria-label="AI value workspace pages">
         {workspacePages.map((page, index) => {
@@ -295,24 +383,21 @@ export const AIValueWorkspace = () => {
       </nav>
 
       {journey.errorMessage && (
-        <p role="alert" className="ai-value-panel">
+        <p role="alert" className="ai-value-inline-alert">
           {journey.errorMessage}
         </p>
       )}
       {errorMessage && (
-        <p role="alert" className="ai-value-panel">
+        <p role="alert" className="ai-value-inline-alert">
           {errorMessage}
         </p>
       )}
 
-      <section className="ai-value-page-head" aria-label={`${activePage.label} overview`}>
-        <div>
-          <p className="eyebrow">Workspace Page</p>
-          <h2>{activePage.label}</h2>
-          <p>{activePage.detail}</p>
-        </div>
-        <StatusPill label={activePageSlug === "home" ? "Overview" : "Next step"} tone={activePageSlug === "home" ? "neutral" : "good"} />
-      </section>
+      <WorkspacePageGuide
+        page={activePage}
+        pageSlug={activePageSlug}
+        status={workspacePageStatus(activePageSlug, journey)}
+      />
 
       {realEvidencePageSlugs.includes(activePageSlug) && (
         <RealEvidenceStatusPanel
@@ -568,7 +653,7 @@ const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug 
   return (
     <nav className="ai-value-page-handoff" aria-label="Workspace page handoff">
       <div>
-        <p className="eyebrow">Next Step</p>
+        <p className="eyebrow">Where this goes next</p>
         <p>{current.feedsNext}</p>
       </div>
       <div className="ai-value-page-handoff-actions">
@@ -582,6 +667,48 @@ const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug 
         </Link>
       </div>
     </nav>
+  );
+};
+
+const WorkspacePageGuide = ({
+  page,
+  pageSlug,
+  status
+}: {
+  page: (typeof workspacePages)[number];
+  pageSlug: WorkspacePageSlug;
+  status: { label: string; tone: "good" | "warn" | "neutral" };
+}) => {
+  const pageIndex = workspacePages.findIndex((item) => item.slug === pageSlug);
+  const stepLabel = pageSlug === "home" ? "Start here" : `Step ${pageIndex + 1} of ${workspacePages.length}`;
+
+  return (
+    <section className="ai-value-page-guide" aria-label={`${page.label} guide`}>
+      <div className="ai-value-page-guide-main">
+        <div className="ai-value-guide-kicker">
+          <span>{stepLabel}</span>
+          <StatusPill label={status.label} tone={status.tone} />
+        </div>
+        <h2>{page.label}</h2>
+        <p>{page.detail}</p>
+      </div>
+      <div className="ai-value-page-guide-action">
+        <span className="ai-value-map-label">Do this now</span>
+        <strong>{page.doNow}</strong>
+        <p>{page.doneWhen}</p>
+        <Link className="ai-value-step active" to={page.primaryActionPath}>
+          {page.primaryActionLabel}
+        </Link>
+      </div>
+      <div className="ai-value-page-guide-needs">
+        <span className="ai-value-map-label">You need</span>
+        <ul>
+          {page.needs.map((need) => (
+            <li key={need}>{need}</li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 };
 

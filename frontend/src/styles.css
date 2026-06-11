@@ -1954,7 +1954,7 @@ body {
   grid-template-columns: minmax(280px, 1fr) auto;
   gap: 24px;
   align-items: start;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .ai-value-topbar h1 {
@@ -1974,6 +1974,39 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.ai-value-status-strip {
+  align-items: flex-start;
+  max-width: 440px;
+}
+
+.ai-value-context-bar {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr 0.9fr 0.9fr;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #d7d7cd;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-context-bar > div {
+  min-width: 0;
+  padding-right: 10px;
+  border-right: 1px solid #ecece5;
+}
+
+.ai-value-context-bar > div:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.ai-value-context-bar strong {
+  display: block;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .ai-value-pill {
@@ -2009,9 +2042,9 @@ body {
 
 .ai-value-workspace-nav {
   display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .ai-value-workspace-nav a {
@@ -2019,10 +2052,13 @@ body {
 }
 
 .ai-value-workspace-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  width: auto;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 10px;
 }
 
 .ai-value-workspace-card-copy {
@@ -2036,7 +2072,7 @@ body {
 }
 
 .ai-value-step {
-  min-height: 56px;
+  min-height: 44px;
   border: 1px solid #d7d7cd;
   border-radius: 8px;
   background: #ffffff;
@@ -2075,6 +2111,89 @@ body {
 .ai-value-step.active {
   border-color: #343ced;
   box-shadow: inset 0 0 0 1px #343ced;
+}
+
+.ai-value-inline-alert {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid #efc66a;
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #382a06;
+  font-weight: 700;
+}
+
+.ai-value-page-guide {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.2fr) minmax(280px, 0.9fr) minmax(220px, 0.7fr);
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid #d7d7cd;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-page-guide-main,
+.ai-value-page-guide-action,
+.ai-value-page-guide-needs {
+  min-width: 0;
+}
+
+.ai-value-page-guide-main h2 {
+  margin: 8px 0 6px;
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.ai-value-page-guide-main p,
+.ai-value-page-guide-action p {
+  margin: 0;
+  color: #454545;
+  line-height: 1.45;
+}
+
+.ai-value-guide-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: #59637c;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ai-value-page-guide-action,
+.ai-value-page-guide-needs {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e4e6ef;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ai-value-page-guide-action strong {
+  display: block;
+  line-height: 1.35;
+}
+
+.ai-value-page-guide-action .ai-value-step {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  margin-top: 4px;
+  text-decoration: none;
+}
+
+.ai-value-page-guide-needs ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .ai-value-page-head {
@@ -3269,6 +3388,8 @@ body {
   .ai-value-handoff-panel,
   .ai-value-journey-summary,
   .ai-value-page-head,
+  .ai-value-page-guide,
+  .ai-value-context-bar,
   .ai-value-home-grid,
   .ai-value-intake-flow,
   .ai-value-intake-footer,
@@ -3287,9 +3408,30 @@ body {
     justify-content: flex-start;
   }
 
-  .ai-value-spine,
-  .ai-value-workspace-nav {
+  .ai-value-spine {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ai-value-workspace-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .ai-value-workspace-card {
+    min-width: 210px;
+  }
+
+  .ai-value-context-bar > div {
+    border-right: 0;
+    border-bottom: 1px solid #ecece5;
+    padding: 0 0 10px;
+  }
+
+  .ai-value-context-bar > div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
   .ai-value-status-strip {

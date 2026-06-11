@@ -105,7 +105,7 @@ export const useAiValueWorkspace = (): AiValueWorkspaceState => {
         return;
       }
       setErrorMessage(
-        "Could not reach the evidence engine. The workshop is showing example content."
+        "Live evidence is not connected yet. The workspace is showing example content until approved aggregate evidence is available."
       );
     }
   }, []);

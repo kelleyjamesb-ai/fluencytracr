@@ -2414,7 +2414,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setErrorMessage(
         error instanceof AiValueApiError && error.status === 401
           ? "Sign in with an organization session to see the journey."
-          : "Could not reach the evidence engine."
+          : "Live evidence is not connected yet. Continue with example content or connect approved aggregate evidence when it is ready."
       );
     } finally {
       setLoading(false);
