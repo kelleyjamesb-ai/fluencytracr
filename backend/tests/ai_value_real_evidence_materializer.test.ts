@@ -137,6 +137,10 @@ describe("AI Value real evidence materializer", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.customer_facing_economic_output).toBe(false);
+    expect(response.body.evidence_summary).toMatchObject({
+      forwarded_distribution_used: true,
+      velocity_observation_count: 3
+    });
     expect(response.body.materialized).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ object_type: "evidence_readiness" }),
@@ -202,6 +206,28 @@ describe("AI Value real evidence materializer", () => {
     });
   });
 
+  it("keeps missing aggregate evidence held instead of synthesizing readiness upgrades", async () => {
+    await postUpstreamObjects();
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.evidence_summary).toMatchObject({
+      v3_verdict_id: null,
+      v3_verdict: null,
+      forwarded_distribution_used: false
+    });
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([expect.stringContaining("V3 verdict is missing")])
+    );
+    expect(response.body.objects.evidence_readiness.source_coverage).toMatchObject({
+      ai_activity: "MISSING",
+      workflow: "MISSING",
+      trust: "MISSING",
+      suppression: "MISSING"
+    });
+  });
+
   it("does not upgrade trust from surfaced aggregate evidence without verification or recovery", async () => {
     await postUpstreamObjects();
     await postV3Aggregate(v3Payload({
@@ -228,5 +254,54 @@ describe("AI Value real evidence materializer", () => {
       trust: "MISSING",
       suppression: "PRESENT"
     });
+  });
+
+  it("keeps misaligned outcome evidence held instead of materializing an export", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+
+    const base = {
+      workflow_id: "customer_support_case_resolution",
+      outcome_metric: "support_median_resolution_hours",
+      outcome_unit: "hours",
+      cohort_size: 2300,
+      source_system: "Unapproved support extract"
+    };
+    await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send({
+        ...base,
+        period_start: "2026-02-01T00:00:00.000Z",
+        period_end: "2026-03-31T00:00:00.000Z",
+        aggregate_value: 18.4
+      })
+      .expect(201);
+    await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send({
+        ...base,
+        period_start: "2026-04-01T00:00:00.000Z",
+        period_end: "2026-05-31T00:00:00.000Z",
+        aggregate_value: 15.1
+      })
+      .expect(201);
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.materialized).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ object_type: "outcome_evidence_export" })
+      ])
+    );
+    expect(response.body.objects.outcome_evidence_export).toBeUndefined();
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("no paired baseline/comparison evidence aligned to the metrics library")
+      ])
+    );
+    expect(response.body.objects.evidence_readiness.source_coverage.outcome).toBe("MISSING");
   });
 });

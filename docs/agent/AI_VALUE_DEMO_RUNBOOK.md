@@ -3,7 +3,7 @@
 This is the path from a clean checkout to a clickable, fully populated AI Value
 chain in the app (Discovery -> Workshop -> Journey -> in-app executive readout).
 
-There are two ways to see the platform. Pick based on what you need.
+There are three ways to see the platform. Pick based on what you need.
 
 ---
 
@@ -36,7 +36,46 @@ node scripts/generate_ai_value_readout_html.mjs \
 
 ---
 
-## Option B - the full in-app click-through
+## Option B - real aggregate evidence materializer
+
+Use this path when you want the AI Value Workspace to use governed aggregate
+evidence already ingested through the local APIs instead of only demo-seeded AI
+Value objects.
+
+Prerequisites:
+
+- `blueprint` and `metrics_library` objects exist for the org.
+- `POST /api/v3/ingest/aggregate` has accepted a V3 aggregate for the requested
+  `cohort_id` and `workflow_id`.
+- Optional customer-attested outcome records have been posted to
+  `POST /api/v1/outcome-evidence` for the Blueprint baseline and comparison
+  windows.
+
+Then run the materializer:
+
+```bash
+curl -sS -X POST http://localhost:4000/api/v1/ai-value/materialize/real-evidence \
+  -H 'content-type: application/json' \
+  -H 'x-role: ADMIN' \
+  -H 'x-org-id: org-northstar-enterprise' \
+  --data @docs/contracts/ai-value-intelligence/examples/customer-support-real-evidence-materializer-request.json
+```
+
+The response writes only validated AI Value objects:
+
+- `evidence_readiness` from surfaced aggregate V3 evidence.
+- `outcome_evidence_export` from paired aggregate customer outcome evidence,
+  starting in `SUBMITTED` review state.
+
+Suppressed, missing, misaligned, or low-trust evidence stays held and is
+reported in `held_reasons`. The materializer does not read raw GCE rows, direct
+identifiers, prompts, transcripts, raw skill/action rows, or HR data. It does
+not accept outcome evidence, calculate ROI, prove causality, score people,
+rank teams, automate customer action, or emit customer-facing economic output.
+
+---
+
+## Option C - the full in-app click-through
 
 The Journey/Workspace pages read live, org-scoped objects from the
 `ai_value_objects` table, so the app is **empty until you seed it**. Run these

@@ -122,6 +122,15 @@ test:
 - [`scripts/ai_value_v1_spine.test.mjs`](../../../scripts/ai_value_v1_spine.test.mjs)
 - [`frontend/src/pages/AIValueWorkspace.tsx`](../../../frontend/src/pages/AIValueWorkspace.tsx)
 
+For the governed real-evidence bridge, use the local materializer endpoint with
+the seeded request fixture in
+[`examples/customer-support-real-evidence-materializer-request.json`](./examples/customer-support-real-evidence-materializer-request.json).
+The materializer reads existing aggregate-only V3 verdicts, surfaced forwarded
+distributions, velocity observations, and customer-attested outcome evidence,
+then writes validated `evidence_readiness` and `outcome_evidence_export` AI
+Value objects. Submitted outcome exports remain pending review and do not
+upgrade the outcome lane until separately accepted.
+
 ## Required Inputs
 
 The generator consumes only aggregate, privacy-safe inputs:

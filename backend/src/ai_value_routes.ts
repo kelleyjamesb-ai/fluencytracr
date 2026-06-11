@@ -16,6 +16,11 @@ import {
   listAiValueObjects,
   upsertAiValueObject
 } from "./repositories/ai-value-object.repository";
+import {
+  AiValueMaterializerNotFoundError,
+  AiValueMaterializerValidationError,
+  materializeRealEvidence
+} from "./ai_value_real_evidence_materializer";
 
 type StageValidation = {
   valid: boolean;
@@ -178,6 +183,67 @@ const evidenceReviewForReadout = (
 };
 
 export function registerAiValueRoutes(app: Express): void {
+  app.post(
+    "/api/v1/ai-value/materialize/real-evidence",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const {
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        cohort_id: cohortId,
+        workflow_id: workflowId,
+        outcome_workflow_id: outcomeWorkflowId
+      } = body;
+      if (
+        typeof blueprintId !== "string" ||
+        typeof metricsLibraryId !== "string" ||
+        typeof cohortId !== "string" ||
+        typeof workflowId !== "string" ||
+        (outcomeWorkflowId !== undefined && typeof outcomeWorkflowId !== "string")
+      ) {
+        return res.status(400).json({
+          error:
+            "blueprint_id, metrics_library_id, cohort_id, and workflow_id are required",
+          reason: "INVALID_REAL_EVIDENCE_MATERIALIZER_REQUEST"
+        });
+      }
+
+      try {
+        const result = await materializeRealEvidence({
+          orgId,
+          blueprintId,
+          metricsLibraryId,
+          cohortId,
+          workflowId,
+          outcomeWorkflowId
+        });
+        return res.json(result);
+      } catch (error) {
+        if (error instanceof AiValueMaterializerNotFoundError) {
+          return res.status(404).json({
+            error: error.message,
+            reason: "OBJECT_NOT_FOUND"
+          });
+        }
+        if (error instanceof AiValueMaterializerValidationError) {
+          return res.status(422).json({
+            error: error.message,
+            reason: "ENGINE_VALIDATION_FAILED",
+            gaps: error.gaps
+          });
+        }
+        return res.status(500).json({
+          error: "real evidence materialization failed",
+          reason: "REAL_EVIDENCE_MATERIALIZATION_FAILED"
+        });
+      }
+    }
+  );
+
   app.put(
     "/api/v1/ai-value/objects/:objectType/:objectId",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),

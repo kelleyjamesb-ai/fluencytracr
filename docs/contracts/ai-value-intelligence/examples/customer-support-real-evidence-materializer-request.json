@@ -1,0 +1,7 @@
+{
+  "blueprint_id": "bp_customer_support_case_resolution",
+  "metrics_library_id": "metrics_customer_support_v1",
+  "cohort_id": "cohort-real-evidence",
+  "workflow_id": "workflow:CHAT",
+  "outcome_workflow_id": "customer_support_case_resolution"
+}
