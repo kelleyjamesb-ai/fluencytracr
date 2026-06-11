@@ -75,6 +75,56 @@ not bury ROI math inside the executive packet or UI.
 Completed latest slice:
 
 ```text
+Evidence To Value Language Path
+```
+
+What is now in place:
+
+- `/ai-value-workspace/evidence` and `/ai-value-workspace/scenario` now share
+  an Evidence to Value Language Path panel.
+- The panel connects aggregate work evidence, customer outcome evidence,
+  scenario readiness, safe value language, blocked stronger claims, and the next
+  governed action.
+- The panel gives explicit handoff links to Scenario Builder and Executive
+  Readout so Evidence and Scenario feel like one governed path rather than two
+  disconnected panels.
+- Blocked value language keeps the highest-risk boundaries visible: no realized
+  ROI claim, no customer-facing economic figures, and no causality claim.
+- This is UI/comprehension work only. No production connector, runtime service,
+  autonomous customer action, unsupported ROI proof, causality claim, individual
+  scoring, HR analytics, productivity ranking, raw prompt/response storage,
+  direct identifiers, or customer-facing dollar output was added.
+
+Verification completed:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "governed path from evidence to safe value language" --reporter=basic`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
+- `npm test --workspace frontend -- --reporter=basic`
+- `npm run build --workspace frontend`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- In-app browser smoke for `/ai-value-workspace/evidence` and
+  `/ai-value-workspace/scenario` at 1440px and 390px: governed path present, no
+  unsafe internal terms/state codes, no console warnings/errors, and no
+  horizontal overflow.
+
+Recommended next slice:
+
+```text
+Guided Sponsor Operating Workflow
+```
+
+Make `/ai-value-workspace/readout` and `/ai-value-workspace/decisions` feel like
+one sponsor operating workflow rather than separate panels. Keep the same
+governance boundary: no ROI proof, no causality, no individual scoring, no HR
+analytics, no productivity ranking, and no customer-facing dollar output unless
+a later governed value-modeling contract explicitly promotes that exact scope.
+
+Previously completed slice:
+
+```text
 Governed value_model / roi_scenario contract
 ```
 

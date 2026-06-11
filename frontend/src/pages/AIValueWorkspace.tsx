@@ -709,6 +709,103 @@ const MetricsPage = ({
   );
 };
 
+const EvidenceToValuePathPanel = ({ journey }: { journey: Journey }) => {
+  const metricBridge = journey.questionMetricBridge.items[0] ?? null;
+  const aggregateEvidence =
+    journey.evidenceScenarioPlan.canTrust[0] ??
+    "Aggregate Glean and FluencyTracr work patterns can shape the value conversation.";
+  const outcomeEvidence =
+    journey.customerEvidenceReview.statusLabel ||
+    journey.customerEvidenceRequest.statusLabel ||
+    journey.evidenceScenarioPlan.needsClientEvidence[0] ||
+    "Customer outcome evidence still needs owner review.";
+  const scenarioReadiness = journey.roiScenarioReadiness.statusLabel;
+  const safeValueLanguage =
+    metricBridge?.allowedClaimLevel ??
+    journey.evidenceScenarioPlan.safeValueLanguage ??
+    journey.roiScenarioReadiness.safeValueLanguage[0] ??
+    "Keep value language in planning mode until evidence improves.";
+  const nextAction =
+    journey.roiScenarioReadiness.nextAction ||
+    journey.evidenceScenarioPlan.nextClientAction ||
+    journey.customerEvidenceReview.nextAction;
+  const blockedOutputs = Array.from(
+    new Set([
+      "No realized ROI claim",
+      "No customer-facing economic figures",
+      "No causality claim",
+      ...(journey.roiScenarioReadiness.blockedOutputs.length > 0
+        ? journey.roiScenarioReadiness.blockedOutputs
+        : [])
+    ])
+  );
+
+  return (
+    <section
+      className="ai-value-panel ai-value-evidence-value-panel"
+      aria-label="Evidence to value language path"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Governed Path</p>
+          <h3>Evidence to Value Language Path</h3>
+          <p>
+            Follow what the product can show, what the customer still owns, and
+            what language is safe before the sponsor sees the readout.
+          </p>
+        </div>
+        <StatusPill label={outcomeEvidence} tone={journey.customerEvidenceReview.statusTone} />
+      </div>
+
+      <div className="ai-value-evidence-value-path">
+        <div className="ai-value-evidence-value-step">
+          <span className="ai-value-map-label">Aggregate work evidence</span>
+          <strong>{aggregateEvidence}</strong>
+          <p>Use this as the work-pattern signal, not as outcome proof.</p>
+        </div>
+        <div className="ai-value-evidence-value-step">
+          <span className="ai-value-map-label">Customer outcome evidence</span>
+          <strong>{outcomeEvidence}</strong>
+          <p>{journey.customerEvidenceReview.summary}</p>
+        </div>
+        <div className="ai-value-evidence-value-step">
+          <span className="ai-value-map-label">Scenario readiness</span>
+          <strong>{scenarioReadiness}</strong>
+          <p>{journey.roiScenarioReadiness.evidenceStatus}</p>
+        </div>
+        <div className="ai-value-evidence-value-step">
+          <span className="ai-value-map-label">Safe value language</span>
+          <p>{safeValueLanguage}</p>
+        </div>
+        <div className="ai-value-evidence-value-step">
+          <span className="ai-value-map-label">Blocked stronger claims</span>
+          <div className="ai-value-chip-row">
+            {blockedOutputs.map((output) => (
+              <StatusPill key={output} label={output} />
+            ))}
+          </div>
+        </div>
+        <div className="ai-value-evidence-value-step ai-value-evidence-value-step-wide">
+          <span className="ai-value-map-label">Next action</span>
+          <strong>{nextAction}</strong>
+          <p>
+            This keeps Evidence and Scenario connected while stronger value
+            language waits for customer-owned review.
+          </p>
+          <div className="ai-value-chip-row">
+            <Link className="ai-value-step" to="/ai-value-workspace/scenario">
+              Open Scenario builder
+            </Link>
+            <Link className="ai-value-step" to="/ai-value-workspace/readout">
+              Open Executive readout
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const EvidencePage = ({
   journey,
   evidenceChecks
@@ -717,6 +814,8 @@ const EvidencePage = ({
   evidenceChecks: typeof aiValueWorkspace.evidenceChecks;
 }) => (
   <section className="ai-value-focused-stack" aria-label="Evidence workspace">
+    <EvidenceToValuePathPanel journey={journey} />
+
     <article className="ai-value-panel">
       <div className="ai-value-section-head">
         <div>
@@ -801,6 +900,8 @@ const ScenarioPage = ({
   safeLanguage: typeof aiValueWorkspace.safeLanguage;
 }) => (
   <section className="ai-value-focused-stack" aria-label="Scenario workspace">
+    <EvidenceToValuePathPanel journey={journey} />
+
     <article className="ai-value-panel">
       <h3>Value story options</h3>
       <div className="ai-value-band-grid">

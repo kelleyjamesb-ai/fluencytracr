@@ -2484,6 +2484,39 @@ body {
   padding-left: 18px;
 }
 
+.ai-value-evidence-value-panel {
+  border-color: #cbd5e8;
+  background: #f9fbff;
+}
+
+.ai-value-evidence-value-path {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-evidence-value-step {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dde2ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-evidence-value-step strong,
+.ai-value-evidence-value-step p {
+  display: block;
+  margin: 4px 0 0;
+}
+
+.ai-value-evidence-value-step .ai-value-chip-row {
+  margin-top: 8px;
+}
+
+.ai-value-evidence-value-step-wide {
+  grid-column: 1 / -1;
+}
+
 .ai-value-agent-handoff-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3042,7 +3075,8 @@ body {
 
 @media (max-width: 980px) {
   .ai-value-metrics-map-hero,
-  .ai-value-metrics-path {
+  .ai-value-metrics-path,
+  .ai-value-evidence-value-path {
     grid-template-columns: 1fr;
   }
 

@@ -362,3 +362,9 @@
 - Completed: Made `/ai-value-workspace/metrics` read as an Outcome and ROI opportunity map with Blueprint route, client value question, outcome metric, customer data need, evidence gap, safe value language, and next gated action. The page now has Evidence and Scenario handoff links, example-mode fallback content, and metric candidate cards instead of the old recommended-signal table.
 - Verified: red/green Metrics map test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Metrics at 1440px and 390px with no unsafe internal terms, no console warnings/errors, no horizontal overflow, and the old value-signal table absent.
 - Next focus: make Evidence and Scenario feel like one governed path from aggregate evidence to value language rather than separate database-backed panels.
+
+## 2026-06-11 (UTC) - Codex (AI Value Evidence to Value path)
+
+- Completed: Added a shared Evidence to Value Language Path to `/ai-value-workspace/evidence` and `/ai-value-workspace/scenario`. The path connects aggregate work evidence, customer outcome evidence, scenario readiness, safe value language, blocked stronger claims, and the next governed action, with handoffs into Scenario Builder and Executive Readout.
+- Verified: red/green Evidence-to-value path test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Evidence and Scenario at 1440px and 390px with no unsafe internal terms/state codes, no console warnings/errors, no horizontal overflow, and the governed path present.
+- Next focus: pause for human review of the multi-page Workspace. If the direction holds, make Readout and Decisions feel like one guided sponsor operating workflow rather than separate panels.

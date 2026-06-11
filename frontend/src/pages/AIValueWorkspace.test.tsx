@@ -886,6 +886,60 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
+  it("shows a governed path from evidence to safe value language", async () => {
+    stubJourneyFetch(journeyObjects);
+    const evidence = renderWorkspace("/ai-value-workspace/evidence");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Evidence to value language path/i })).toBeInTheDocument();
+    });
+
+    const path = screen.getByRole("region", { name: /Evidence to value language path/i });
+    expect(within(path).getByRole("heading", { name: /Evidence to Value Language Path/i })).toBeInTheDocument();
+    expect(within(path).getByText(/Aggregate work evidence/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Customer outcome evidence/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Scenario readiness/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Safe value language/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Blocked stronger claims/i)).toBeInTheDocument();
+    expect(within(path).getByText(/Next action/i)).toBeInTheDocument();
+    expect(within(path).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
+    expect(
+      within(path).getByText(/Modeled opportunity only; report with caveats after evidence review/i)
+    ).toBeInTheDocument();
+    expect(within(path).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(path).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expect(within(path).getByRole("link", { name: /Open Scenario builder/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/scenario"
+    );
+    expect(within(path).getByRole("link", { name: /Open Executive readout/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/readout"
+    );
+    expectNoUnsafeUiLanguage(evidence.container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      "export_v1"
+    ]);
+    evidence.unmount();
+
+    stubJourneyFetch(journeyObjects);
+    const scenario = renderWorkspace("/ai-value-workspace/scenario");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Evidence to value language path/i })).toBeInTheDocument();
+    });
+    expectNoUnsafeUiLanguage(scenario.container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      "export_v1"
+    ]);
+  });
+
   it.each([
     {
       state: "ACCEPTED" as const,
