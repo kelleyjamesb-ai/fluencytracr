@@ -17,7 +17,9 @@ documented value-realization layers:
   dogfood and value-evidence mappings. It defines surfaces, workflows,
   approved cohorts, interventions, trust evidence, source coverage, outcome
   evidence, and value hypotheses without adding events, suppression reasons,
-  individual scoring, rankings, or ROI calculation.
+  individual scoring, rankings, or realized ROI calculation. When aggregate
+  evidence is trusted, reliable, and customer-approved, it may feed ROI metric
+  routing and governed value-scenario modeling.
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
 - **Causal Delta:** compares pre/post workflow patterns around a known change
@@ -62,11 +64,14 @@ documented value-realization layers:
 - **Organizational Segmentation:** future V4 concept for aggregate-only
   intervention contexts such as tenure, function, role family, or behavior
   bands; never person, manager, or comparative team evaluation.
-- **Economic Impact Bridge:** future V4 concept that maps readiness patterns to
-  customer-owned value investigations without proving ROI or causality.
+- **Economic Impact Bridge:** future V4 concept that maps trusted readiness
+  patterns to customer-owned value investigations, ROI metric candidates, and
+  governed scenario modeling without proving ROI or causality.
 - **AI Manager Outcomes Recommendations:** docs-first V4 layer that recommends
   which customer-owned outcome signals and aggregate formulas to use next when
   testing cost, revenue, quality, capacity, risk, or experience value routes.
+  Accepted aggregate evidence may be routed into ROI metric selection and
+  scenario review, but not automatic economic proof.
   "AI Manager" means AI program owner or value-realization leader, not people
   manager scoring.
 - **Work Mode Taxonomy:** maps governed surfaces into durable AI work patterns

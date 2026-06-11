@@ -10,11 +10,12 @@ The pilot should answer one practical question:
 ```text
 Can a customer provide aggregate support workflow evidence that lets
 FluencyTracr generate a bounded, caveated value-readiness packet without
-claiming ROI, causality, productivity, or person-level performance?
+claiming ROI proof, causality, productivity, or person-level performance?
 ```
 
 This packet is not an implementation plan for runtime ingest, dashboards,
-connectors, schemas, APIs, HR analytics, ROI calculation, or economic output.
+connectors, schemas, APIs, HR analytics, realized ROI calculation, or economic
+output.
 
 ## Pilot Boundary
 
@@ -27,6 +28,7 @@ Allowed interpretation:
 - aggregate AI work activity is visible for a support workflow slice;
 - aggregate support outcome metrics are present, missing, held, or suppressed;
 - support value routes may be investigated;
+- trusted aggregate evidence may route to ROI or value metric selection;
 - claim language is safe, caveated, missing, suppressed, or blocked.
 
 Blocked interpretation:
@@ -110,7 +112,8 @@ Recommended pilot shape:
 ## Customer-Owned Assumption Ledger
 
 The customer owns all business assumptions. FluencyTracr may carry the ledger
-as caveat context, but must not convert assumptions into ROI, savings, or
+as caveat context and may use approved assumptions to route ROI or value metric
+models for review, but must not convert assumptions into ROI proof, savings, or
 causal proof.
 
 | Assumption ID | Required statement | Owner | Blocks if missing |
@@ -224,6 +227,9 @@ candidate for value investigation?
 - Support outcome data can test whether AI-assisted work is associated with
   movement in resolution time, escalation, rework, backlog, or customer
   experience.
+- If trust, source coverage, baseline, outcome evidence, and assumptions are
+  accepted, the record can move into ROI metric routing and governed scenario
+  modeling.
 - The claim is caveated because outcome movement is associational and may be
   explained by case mix, staffing, seasonality, channel mix, or process change.
 
@@ -260,8 +266,9 @@ The pilot packet is ready only when all criteria are true:
 - safe and blocked language are both included in the handoff;
 - missing evidence produces `MISSING`, `HELD`, or `SUPPRESSED` language;
 - suppressed AI work evidence blocks downstream value language;
-- no claim says ROI, savings, causality, productivity lift, individual scoring,
-  ranked group comparison, manager comparison, or HR analytics.
+- no claim says ROI proof, realized savings, causality, productivity lift,
+  individual scoring, ranked group comparison, manager comparison, or HR
+  analytics.
 
 ## Stop Conditions
 
@@ -278,8 +285,8 @@ Stop the pilot and return to governance review if the path requires:
   tool payloads, or action rows;
 - HRIS, directory, survey, training, enablement, compensation, performance, or
   workforce-planning joins;
-- ROI calculation, dollarized savings, hours-saved proof, productivity lift,
-  causality, prediction, or customer-facing economic output.
+- realized ROI calculation, dollarized savings, hours-saved proof,
+  productivity lift, causality, prediction, or customer-facing economic output.
 
 ## Relationship To The MVP
 

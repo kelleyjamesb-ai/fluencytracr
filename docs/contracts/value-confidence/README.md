@@ -4,7 +4,10 @@
 
 The Value Confidence contract defines the parent V4 contract for executive economic decision artifacts. It composes governed aggregate behavioral evidence into bounded, caveated confidence readouts.
 
-V4 qualifies the defensibility of AI value claims. It does not calculate realized ROI.
+V4 qualifies the defensibility of AI value claims. When aggregate evidence is
+trusted, reliable, and customer-approved, V4 may route that evidence into ROI
+metric selection and governed scenario modeling. It does not calculate realized
+ROI.
 
 ## Contract Status
 
@@ -42,10 +45,11 @@ contract hardening for internal readout shape only.
 [AI Manager Outcomes Recommendations](./ai-manager-outcomes-recommendations.md)
 is a docs-only recommendation contract for internal pilot language, examples,
 and checklists. It recommends customer-owned outcome signals and aggregate
-formula templates to test value hypotheses. It does not authorize runtime
-schemas, APIs, automated recommendation engines, formula execution, outcome
-joins, customer-facing economic output, ROI, productivity, causality,
-prediction, HR analytics, or ranking surfaces.
+formula templates to test value hypotheses. Accepted aggregate outcome evidence
+may pass into ROI metric routing and governed scenario review. It does not
+authorize runtime schemas, APIs, automated recommendation engines, formula
+execution, production outcome joins, customer-facing economic output, realized
+ROI, productivity, causality, prediction, HR analytics, or ranking surfaces.
 
 ## Inputs
 
@@ -93,7 +97,10 @@ a runtime schema, score, ROI input, citation-click metric, or causal claim.
 
 ### Outcome Evidence
 
-Outcome Evidence stores customer-attested aggregate KPI evidence. Outcome evidence may strengthen confidence but does not automatically establish causality.
+Outcome Evidence stores customer-attested aggregate KPI evidence. Outcome
+evidence may strengthen confidence and can make a record eligible for ROI
+metric routing or governed scenario modeling, but it does not automatically
+establish causality or realized ROI.
 
 ### Raw time-saved claim
 

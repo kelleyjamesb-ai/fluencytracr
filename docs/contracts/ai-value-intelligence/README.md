@@ -80,6 +80,27 @@ individual scoring, HR analytics, productivity ranking, autonomous customer
 action, raw prompt/response storage, direct identifier, or customer-facing
 economic output is authorized by this contract.
 
+### Trusted Data Pass-Through For ROI Metric Routing
+
+The governance layer may pass a record forward for ROI metric routing and
+governed value-scenario modeling when all of these are true:
+
+- aggregate AI work evidence is surfaced, not suppressed;
+- workflow, outcome, baseline, trust, assumptions, and suppression coverage are
+  present or explicitly caveated;
+- customer-owned outcome evidence is accepted or approved for the stated
+  modeling use;
+- baseline and comparison rules are declared before interpretation;
+- customer-owned assumptions are attached with owners; and
+- blocked inputs, direct identifiers, raw content, HR analytics, ranking,
+  individual scoring, productivity measurement, causality claims, and realized
+  ROI proof are absent.
+
+Passing these gates means the platform can determine which ROI or value metrics
+should be modeled, reviewed, and carried into a caveated executive readout. It
+does not mean FluencyTracr has proven ROI, calculated realized savings, or
+created customer-facing economic output.
+
 For the Phase 9.5 Agentic Platform Harness, use
 [`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)
 with the seeded Customer Support handoff fixture in
@@ -146,7 +167,7 @@ The generated packet includes:
 | State | Meaning |
 | --- | --- |
 | `CAVEATED` | Aggregate AI work evidence and outcome signals align directionally, but ROI and causality are not proven. |
-| `SUPPORTED` | The bounded value-investigation claim is supported by aggregate evidence, while economic proof remains blocked. |
+| `SUPPORTED` | The bounded value-investigation claim is supported for ROI metric routing and scenario review, while economic proof remains blocked. |
 | `MISSING` | Required outcome evidence is absent; no safe value claims are emitted. |
 | `SUPPRESSED` | Existing suppression blocks downstream value language. |
 | `BLOCKED` | Unsafe, identifying, or governance-breaking input prevents packet generation. |
@@ -361,8 +382,8 @@ npm run test:ai-value-metrics
 ## Phase 9 Value Scenario Engine
 
 The Phase 9 Value Scenario Engine converts value calculator guidance into a
-governed local software object that can draft a pre-ROI scenario from a
-validated Blueprint and Metrics Library recommendation:
+governed local software object that can draft a pre-proof ROI metric scenario
+from a validated Blueprint and Metrics Library recommendation:
 
 - structured value scenario input schema;
 - structured value scenario output schema;
@@ -386,9 +407,11 @@ Verify:
 npm run test:ai-value-scenario
 ```
 
-Phase 9 is planning software only. It does not produce realized ROI,
-causality, productivity, HR analytics, individual scoring, runtime services,
-dashboards, production connectors, or customer-facing economic output.
+Phase 9 is planning software only. It may select and model candidate ROI or
+value metrics when trusted aggregate evidence and customer-owned assumptions are
+present. It does not produce realized ROI, causality, productivity, HR
+analytics, individual scoring, runtime services, dashboards, production
+connectors, or customer-facing economic output.
 
 ## Phase 9.5 Agentic Platform Harness
 
@@ -460,10 +483,11 @@ The local workspace route is:
 /ai-value-workspace
 ```
 
-This V1 remains local and governed. It does not authorize production
-connectors, customer-facing economic output, realized ROI calculation,
-causality claims, HR analytics, individual scoring, or productivity
-measurement.
+This V1 remains local and governed. It may route trusted aggregate evidence
+into metric selection, value scenarios, and caveated executive validation. It
+does not authorize production connectors, customer-facing economic output,
+realized ROI calculation, causality claims, HR analytics, individual scoring,
+or productivity measurement.
 
 ## Relationship To FluencyTracr Concepts
 

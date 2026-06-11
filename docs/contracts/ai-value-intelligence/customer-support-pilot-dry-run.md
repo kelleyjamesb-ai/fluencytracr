@@ -74,8 +74,10 @@ comparison, or HR analytics.
 
 ## Outcome Signals
 
-These signals support a bounded value investigation only. They do not calculate
-ROI, savings, hours saved, productivity, attribution, or causality.
+These signals support a bounded value investigation only. If the customer
+approves trust, source coverage, baseline rules, and assumptions, they may feed
+ROI or value metric modeling. They do not calculate realized ROI, savings,
+hours saved, productivity, attribution, or causality.
 
 | Signal | Present? | Baseline | Comparison | Directional movement | Customer owner | Caveat |
 | --- | --- | ---: | ---: | ---: | --- | --- |
@@ -118,6 +120,9 @@ AIOMs may use the following language in an internal pilot review:
   workflow slice.
 - Support outcome data can test whether AI-assisted work is associated with
   movement in resolution time, escalation rate, reopen rate, and backlog.
+- If customer validation confirms trust, source coverage, baseline rules, and
+  assumptions, the record can move into ROI metric routing and governed
+  scenario review.
 - The current dry run is caveated because outcome movement is associational and
   customer-owned assumptions are incomplete.
 - The next customer conversation should validate source coverage, assumption
@@ -145,9 +150,10 @@ Use this concise talk track for internal review:
 This dry run shows that the support case-resolution workflow is a viable
 candidate for governed value investigation. We have aggregate AI activity,
 support outcome signals, and a SURFACE verdict, so the packet can support
-caveated investigation language. It cannot support ROI, causality,
-productivity, savings, or team-performance claims. The next step is to confirm
-the customer-owned assumption ledger and choose the primary value route before
+caveated investigation language and may route to ROI metric modeling after
+customer validation. It cannot support ROI proof, causality, productivity,
+savings, or team-performance claims. The next step is to confirm the
+customer-owned assumption ledger and choose the primary value route before
 turning this into an executive pilot story.
 ```
 
@@ -176,6 +182,7 @@ Decision options after the workshop:
 | Decision | When to choose it |
 | --- | --- |
 | `PROCEED_TO_GOVERNED_PACKET` | Source coverage, outcome evidence, windows, and assumptions are confirmed. |
+| `ROUTE_TO_ROI_METRIC_MODELING` | Source coverage, outcome evidence, baseline rules, trust, and assumptions are accepted for governed scenario review. |
 | `HOLD_FOR_ASSUMPTIONS` | Outcome metrics are present, but business assumptions are incomplete. |
 | `HOLD_FOR_SOURCE_COVERAGE` | AI activity, workflow, outcome, baseline, or trust lanes are missing or held. |
 | `STOP_FOR_GOVERNANCE_REVIEW` | Any proposed path requires raw data, HR analytics, ROI proof, causality, scoring, ranking, or runtime implementation. |
@@ -199,6 +206,6 @@ This dry run preserves the FluencyTracr governance boundary:
   payloads, or action rows;
 - no HRIS, directory, survey, training, enablement, compensation, performance,
   or workforce-planning joins;
-- no ROI calculation, dollarized savings, hours-saved proof, productivity
-  lift, causality, prediction, dashboard, connector, API, schema, or runtime
-  implementation.
+- no realized ROI calculation, dollarized savings, hours-saved proof,
+  productivity lift, causality, prediction, dashboard, connector, API, schema,
+  or runtime implementation.
