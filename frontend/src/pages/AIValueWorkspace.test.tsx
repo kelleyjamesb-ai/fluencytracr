@@ -1338,7 +1338,9 @@ describe("AIValueWorkspace journey continuity", () => {
     const preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
     expect(within(preview).getByRole("heading", { name: /Decision Handoff Preview/i })).toBeInTheDocument();
     expect(within(preview).getByText(/Selected move/i)).toBeInTheDocument();
-    expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
+    });
     expect(within(preview).getByText(/^Owner$/i)).toBeInTheDocument();
     expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
     expect(within(preview).getByText(/Where this goes next/i)).toBeInTheDocument();
@@ -1372,7 +1374,9 @@ describe("AIValueWorkspace journey continuity", () => {
 
     const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
     let preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
-    expect(within(preview).getAllByText(/Expand workflow/i).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(within(preview).getAllByText(/Expand workflow/i).length).toBeGreaterThan(0);
+    });
 
     fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
 
