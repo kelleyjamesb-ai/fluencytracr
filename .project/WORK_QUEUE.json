@@ -83,7 +83,7 @@
       "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "In progress 2026-06-11 UTC: Sponsor Decision loop now appears in Journey/Workspace, derives recommendation from evidence review state, exposes five sponsor moves, and shows what each feeds next. Tests/build/governance/browser smoke green. Next slice: Decision Selection Handoff Preview."
+      "last_note": "In progress 2026-06-11 UTC: Decision Selection Handoff Preview and copy-ready local handoff draft now appear in Journey/Workspace. Selecting a sponsor move updates owner, target, evidence input, safe next action, caveat, and copied draft locally only. Next slice: Client Value Questions to Metrics Mapping Bridge."
     }
   ]
 }

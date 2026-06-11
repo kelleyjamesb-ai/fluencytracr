@@ -268,38 +268,79 @@ Verification completed:
   state codes in DOM text, have no console warnings/errors, and have no
   horizontal overflow.
 
+Latest completed slice:
+
+```text
+Decision Selection Handoff Preview And Copy-Ready Draft
+```
+
+What is now in place:
+
+- Journey and Workspace let the sponsor select one of the five Sponsor Decision
+  moves and see the selected handoff update locally.
+- The selected handoff preview shows selected move, owner, target
+  object/workflow, required evidence or input, safe next action, and the caveat
+  that must stay attached.
+- A separate copy-ready local draft mirrors the selected handoff and can be
+  copied to the clipboard.
+- Copying does not persist anything, create a task, call an API, trigger a
+  runtime service, or automate customer action.
+- Accepted evidence remains caveated support only, not ROI proof or causality.
+  Submitted, rejected, missing, and hold-language paths keep stronger value
+  language gated.
+- No production connector, autonomous customer action, raw prompt/response
+  storage, direct identifiers, unsupported ROI proof, causality claim,
+  individual scoring, HR analytics, productivity ranking, or customer-facing
+  dollarized output was added.
+
+Verification completed:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "copies .* decision handoff"`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts`
+- `npm run test:ai-value-roi-scenario`
+- `npm run test:ai-value-agent-harness`
+- `bash scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- Playwright CLI smoke: seeded the local API with governed Customer Support
+  examples, then verified Journey and Workspace at 1440px and 390px. The
+  copy-ready draft renders, selecting `Hold value language` updates the draft,
+  `Copy handoff draft` shows copied status, no unsafe internal terms appear, no
+  AI Value API failures occur, and no horizontal overflow appears.
+
 Recommended next slice:
 
 ```text
-Decision Selection Handoff Preview
+Client Value Questions To Metrics Mapping Bridge
 ```
 
 Goal:
 
-Make the Sponsor Decision loop more useful without turning it into a task
-manager. Journey and Workspace should let a user select one of the five sponsor
-moves and see a compact, non-persistent handoff preview that explains the
-selected move, target object/workflow, owner, required evidence, caveat, and safe
-next action.
+Make Metrics understandable as the bridge between the sponsor's value questions,
+client success measures, and governed ROI opportunity modeling. The product
+should recommend which existing metric definitions support a selected client
+question or success measure, show the value route, source system, unit, baseline
+and comparison rule, and explain what evidence is still needed before stronger
+value language can move forward.
 
 Acceptance criteria:
 
-- Journey and Workspace should keep the current Sponsor Decision panel and add a
-  selected-decision handoff preview near it.
-- The default selected decision should be the recommended option from
-  `sponsorDecisionLoop`.
-- Selecting a different option should update the preview locally only; no
-  persistence, task manager, runtime service, or autonomous workflow.
-- The handoff preview should show:
-  selected move, owner, target object/workflow, required evidence or input,
-  caveat, safe next action, and what it feeds next.
-- For accepted evidence, the preview can prepare caveated expansion review, but
-  it must still say accepted evidence is support only, not ROI proof or
-  causality.
-- For submitted, rejected, or missing evidence, the preview should route to
-  reviewer action, corrected export, or data-owner request without implying
-  validated value.
-- The preview should keep agentic follow-up bounded to handoff preparation only.
+- Journey and Workspace should connect Client Value Questions and sponsor
+  success measures to recommended metrics from the existing Metrics Library.
+- Use the existing governed metric definitions and value routes; do not create a
+  second metrics system.
+- The UI should explain each recommendation in client language:
+  business question, recommended metric, value route, source system, unit,
+  baseline/comparison rule, owner, allowed claim level, and missing evidence.
+- The bridge should feed ROI Scenario Readiness and Customer Evidence Request
+  without calculating ROI or producing customer-facing dollar output.
+- Stronger value language should remain gated by customer-owned outcome
+  evidence, accepted review state, assumptions, and caveats.
 - Do not add production connectors, direct identifiers, raw prompts/responses,
   unsupported ROI proof, causality claims, individual scoring, HR analytics,
   productivity ranking, or customer-facing dollarized output.
@@ -320,28 +361,28 @@ Suggested files:
 Use this prompt to continue:
 
 ```text
-Create the Decision Selection Handoff Preview product slice for the AI Value
-Platform. Journey and Workspace already show a Sponsor Decision loop. Add a
-local selected-decision preview so a sponsor can choose Expand workflow, Collect
-stronger evidence, Request corrected export, Hold value language, or Return to
-Blueprint and see the handoff that would be prepared: selected move, owner,
-target object/workflow, required evidence or input, caveat, safe next action,
-and what it feeds next. Default to the recommended option from
-sponsorDecisionLoop. Keep this non-persistent and bounded to handoff preparation:
-no task manager, production connector, runtime service, autonomous customer
-action, raw prompt/response storage, direct identifiers, unsupported ROI proof,
-causality claim, individual scoring, HR analytics, productivity ranking, or
-customer-facing dollarized output. Add focused frontend tests and keep frontend,
-backend object API, ROI scenario, agent-harness, build, and governance checks
-green.
+Create the Client Value Questions to Metrics Mapping Bridge product slice for
+the AI Value Platform. Journey and Workspace already show Client Value Questions,
+ROI Scenario Readiness, Customer Evidence Request, and Sponsor Decision handoffs.
+Connect those sponsor questions and success measures to recommended metrics from
+the existing governed Metrics Library so the user can see the business question,
+recommended metric, value route, source system, unit, baseline/comparison rule,
+owner, allowed claim level, and missing evidence before stronger value language
+moves forward. Keep this as governed opportunity mapping only: no production
+connector, runtime service, autonomous customer action, direct identifiers, raw
+prompt/response storage, unsupported ROI proof, causality claim, individual
+scoring, HR analytics, productivity ranking, or customer-facing dollarized
+output. Add focused frontend tests and keep frontend, backend object API, ROI
+scenario, agent-harness, build, and governance checks green.
 ```
 
 ## What To Validate First
 
-Validate how the current Sponsor Decision panel is structured in Journey and
-Workspace. The next slice should reuse the existing `sponsorDecisionLoop` view
-model rather than inventing a separate decision system.
+Validate how Client Value Questions, Metrics Library objects, ROI Scenario
+Readiness, and Customer Evidence Request are currently derived in
+`useAiValueJourney`. The next slice should reuse the existing metrics library
+and view-model shape rather than inventing a separate metrics system.
 
-The current biggest risk is inventing a fake action system. Prefer one compact,
-non-persistent handoff preview over a task manager, automation layer, or
-autonomous workflow.
+The current biggest risk is making Metrics look like database plumbing again.
+Prefer one clear bridge from sponsor question -> recommended metric -> evidence
+needed -> safe value language boundary.

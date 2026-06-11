@@ -2302,10 +2302,71 @@ body {
   background: #f7f9fc;
 }
 
+.ai-value-agent-handoff[aria-current="true"] {
+  border-color: #343ced;
+  box-shadow: 0 0 0 1px rgba(52, 60, 237, 0.18);
+  background: #fbfbff;
+}
+
 .ai-value-agent-handoff p,
 .ai-value-agent-handoff small {
   display: block;
   margin: 4px 0 0;
+}
+
+.ai-value-decision-preview {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #d7dcf0;
+  border-radius: 8px;
+  background: #f8f8f2;
+}
+
+.ai-value-decision-preview-note {
+  margin: 0;
+  font-size: 13px;
+  color: #4d4d4d;
+}
+
+.ai-value-decision-bundle {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-decision-draft {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #e2e5ef;
+  border-radius: 8px;
+  background: #f9faf8;
+}
+
+.ai-value-decision-draft p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #2f3445;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-decision-copy {
+  border-radius: 8px;
+  white-space: normal;
+}
+
+.ai-value-decision-select {
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 8px;
+  white-space: normal;
+  text-align: center;
 }
 
 .ai-value-scenario-band-list {

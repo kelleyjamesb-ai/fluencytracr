@@ -973,6 +973,156 @@ describe("AIValueJourney", () => {
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
+  it.each([
+    {
+      state: "ACCEPTED" as const,
+      move: /Expand workflow/i,
+      owner: /Sponsor and workflow owner/i,
+      target: /Blueprint and Executive Operating Packet/i,
+      required: /Accepted customer evidence, expansion boundary, and sponsor appetite/i,
+      safeAction: /Prepare a caveated expansion handoff/i,
+      caveat: /support only; it is not ROI proof and does not establish causality/i
+    },
+    {
+      state: "SUBMITTED" as const,
+      move: /Collect stronger evidence/i,
+      owner: /Support Operations/i,
+      target: /Customer Evidence Request and Evidence Review/i,
+      required: /Reviewer decision on the submitted aggregate evidence/i,
+      safeAction: /Route reviewer action before stronger value language moves forward/i,
+      caveat: /Submitted evidence does not validate value yet/i
+    },
+    {
+      state: "REJECTED" as const,
+      move: /Request corrected export/i,
+      owner: /Support Operations/i,
+      target: /Customer Evidence Request and Evidence Review/i,
+      required: /Corrected aggregate export matching metric, source, grain, and windows/i,
+      safeAction: /Request corrected aggregate evidence before value review continues/i,
+      caveat: /Rejected evidence cannot support value claims/i
+    },
+    {
+      state: "MISSING" as const,
+      move: /Collect stronger evidence/i,
+      owner: /Support Operations/i,
+      target: /Customer Evidence Request and Evidence Review/i,
+      required: /Requested aggregate export from the customer-owned outcome system/i,
+      safeAction: /Send the data-owner request before value language changes/i,
+      caveat: /Missing evidence keeps value language in planning status/i
+    }
+  ])("previews the selected decision handoff for $state evidence", async ({
+    state,
+    move,
+    owner,
+    target,
+    required,
+    safeAction,
+    caveat
+  }) => {
+    const fixture = withOutcomeReviewState(state);
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
+    const preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
+    expect(within(preview).getByRole("heading", { name: /Decision Handoff Preview/i })).toBeInTheDocument();
+    expect(within(preview).getByText(/Selected move/i)).toBeInTheDocument();
+    expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
+    expect(within(preview).getByText(/^Owner$/i)).toBeInTheDocument();
+    expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
+    expect(within(preview).getByText(/Target object or workflow/i)).toBeInTheDocument();
+    expect(within(preview).getByText(target)).toBeInTheDocument();
+    expect(within(preview).getByText(/Required evidence or input/i)).toBeInTheDocument();
+    expect(within(preview).getByText(required)).toBeInTheDocument();
+    expect(within(preview).getByText(/Safe next action/i)).toBeInTheDocument();
+    expect(within(preview).getByText(safeAction)).toBeInTheDocument();
+    expect(within(preview).getByText(caveat)).toBeInTheDocument();
+    expect(within(preview).getByText(/No task is created; this preview only prepares the handoff/i)).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it("updates the decision handoff preview locally when a different move is selected", async () => {
+    const fixture = withOutcomeReviewState("ACCEPTED");
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
+    let preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
+    expect(within(preview).getAllByText(/Expand workflow/i).length).toBeGreaterThan(0);
+
+    fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
+
+    preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
+    expect(within(preview).getAllByText(/Hold value language/i).length).toBeGreaterThan(0);
+    expect(within(preview).getByText(/Value-readout owner/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/ROI Scenario Readiness and Executive Operating Packet/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/Blocked language, reviewed caveats, and unresolved evidence gaps/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/Prepare a hold-language handoff before sponsor sharing/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/Holding value language prevents unsupported ROI, causality, or productivity claims/i)).toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it("copies the selected decision handoff as a governed local draft", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText }
+    });
+    const fixture = withOutcomeReviewState("ACCEPTED");
+    stubJourneyFetch(fixture.objects, fixture.details);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
+    fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
+
+    const bundle = within(decision).getByRole("region", { name: /Copy-ready decision handoff/i });
+    expect(within(bundle).getByText(/Copy-ready handoff/i)).toBeInTheDocument();
+    expect(within(bundle).getByText(/Selected move: Hold value language/i)).toBeInTheDocument();
+    expect(within(bundle).getByText(/Owner: Value-readout owner/i)).toBeInTheDocument();
+    expect(within(bundle).getByText(/Safe next action: Prepare a hold-language handoff before sponsor sharing/i)).toBeInTheDocument();
+    expect(within(bundle).getByText(/No task is created; this is a local handoff draft/i)).toBeInTheDocument();
+
+    fireEvent.click(within(bundle).getByRole("button", { name: /Copy handoff draft/i }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        expect.stringContaining("Selected move: Hold value language")
+      );
+    });
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Owner: Value-readout owner"));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("Safe next action: Prepare a hold-language handoff before sponsor sharing")
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("No task is created; this is a local handoff draft.")
+    );
+    expect(within(bundle).getByText(/Handoff draft copied/i)).toBeInTheDocument();
+  });
+
   it("lets a reviewer accept submitted evidence", async () => {
     renderPage();
     await waitFor(() => {
