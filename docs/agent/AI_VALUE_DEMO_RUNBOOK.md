@@ -42,6 +42,21 @@ Use this path when you want the AI Value Workspace to use governed aggregate
 evidence already ingested through the local APIs instead of only demo-seeded AI
 Value objects.
 
+To prepare the local aggregate API-push sequence from the customer-side package:
+
+```bash
+npm run prepare:ai-value-aggregate-api-push
+```
+
+The default package is
+`docs/contracts/ai-value-intelligence/examples/customer-support-aggregate-api-push-package.json`.
+It emits a governed sequence for:
+
+- `POST /api/v3/ingest/aggregate`
+- baseline `POST /api/v1/outcome-evidence`
+- comparison `POST /api/v1/outcome-evidence`
+- `POST /api/v1/ai-value/materialize/real-evidence`
+
 Prerequisites:
 
 - `blueprint` and `metrics_library` objects exist for the org.

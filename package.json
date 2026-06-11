@@ -46,6 +46,8 @@
     "generate:ai-value-readout": "npm run build --workspace shared && node scripts/generate_ai_value_readout_html.mjs",
     "test:ai-value-readout": "npm run build --workspace shared && node --test scripts/generate_ai_value_readout_html.test.mjs",
     "run:ai-value-chain": "npm run build --workspace shared && node scripts/run_ai_value_chain.mjs",
+    "prepare:ai-value-aggregate-api-push": "node scripts/prepare_ai_value_aggregate_api_push.mjs",
+    "test:ai-value-aggregate-api-push": "node --test scripts/prepare_ai_value_aggregate_api_push.test.mjs",
     "seed:ai-value": "node scripts/seed_ai_value_demo.mjs",
     "db:baseline": "node scripts/baseline_migrations.mjs"
   },

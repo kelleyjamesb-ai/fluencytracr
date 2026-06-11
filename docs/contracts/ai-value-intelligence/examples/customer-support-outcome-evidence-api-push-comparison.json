@@ -1,0 +1,10 @@
+{
+  "workflow_id": "customer_support_case_resolution",
+  "outcome_metric": "support_median_resolution_hours",
+  "outcome_unit": "hours",
+  "period_start": "2026-04-01T00:00:00.000Z",
+  "period_end": "2026-05-31T00:00:00.000Z",
+  "aggregate_value": 15.1,
+  "cohort_size": 2300,
+  "source_system": "Support case management system"
+}

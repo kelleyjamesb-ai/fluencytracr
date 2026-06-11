@@ -131,6 +131,25 @@ then writes validated `evidence_readiness` and `outcome_evidence_export` AI
 Value objects. Submitted outcome exports remain pending review and do not
 upgrade the outcome lane until separately accepted.
 
+For the aggregate API-push path, use the customer-side package fixture in
+[`examples/customer-support-aggregate-api-push-package.json`](./examples/customer-support-aggregate-api-push-package.json)
+with
+[`scripts/prepare_ai_value_aggregate_api_push.mjs`](../../../scripts/prepare_ai_value_aggregate_api_push.mjs).
+The package is the local customer-side transformer contract: it accepts only
+sanitized aggregate AI work evidence plus paired aggregate outcome evidence,
+rejects raw rows, direct identifiers, prompts, outputs, transcripts, raw
+skill/action rows, HR analytics, ranking, ROI proof, causality claims, and
+customer-facing economic output, then emits the governed push sequence:
+
+- [`examples/customer-support-v3-aggregate-ingest-request.json`](./examples/customer-support-v3-aggregate-ingest-request.json)
+  for `POST /api/v3/ingest/aggregate`.
+- [`examples/customer-support-outcome-evidence-api-push-baseline.json`](./examples/customer-support-outcome-evidence-api-push-baseline.json)
+  for the baseline `POST /api/v1/outcome-evidence`.
+- [`examples/customer-support-outcome-evidence-api-push-comparison.json`](./examples/customer-support-outcome-evidence-api-push-comparison.json)
+  for the comparison `POST /api/v1/outcome-evidence`.
+- [`examples/customer-support-real-evidence-materializer-request.json`](./examples/customer-support-real-evidence-materializer-request.json)
+  for `POST /api/v1/ai-value/materialize/real-evidence`.
+
 ## Required Inputs
 
 The generator consumes only aggregate, privacy-safe inputs:
