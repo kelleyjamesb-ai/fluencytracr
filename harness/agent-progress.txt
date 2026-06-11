@@ -374,3 +374,9 @@
 - Completed: Added a shared Sponsor Operating Workflow to `/ai-value-workspace/readout` and `/ai-value-workspace/decisions`. The panel connects Readout preview, Sponsor decision, Handoff draft, and Next operating loop, with an explicit boundary that no task is created and no customer action is automated.
 - Verified: guided workflow test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Readout and Decisions at 1440px and 390px with no unsafe internal terms/state codes, no console warnings/errors, no horizontal overflow, and the workflow present.
 - Next focus: final product-spine audit across all multi-page Workspace routes for navigation clarity, page purpose, client-readable language, handoff completeness, and mobile fit.
+
+## 2026-06-11 (UTC) - Codex (AI Value workspace handoff navigation)
+
+- Completed: Added a consistent Workspace Handoff footer to every focused `/ai-value-workspace/*` page. It shows what the current page feeds next, links back to the prior phase, and links forward to the next phase; Sponsor Decisions loops back to Blueprint Workshop.
+- Verified: red/green handoff navigation test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all focused workspace pages at 1440px and 390px with expected next links, no unsafe internal terms/state codes, no console warnings/errors, and no horizontal overflow.
+- Next focus: human review of the full Product Spine V1 and a PR/push decision before starting more scope.

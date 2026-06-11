@@ -247,12 +247,48 @@ export const AIValueWorkspace = () => {
       {activePageSlug === "decisions" && (
         <DecisionsPage journey={journey} />
       )}
+
+      {activePageSlug !== "home" && (
+        <WorkspacePageHandoff currentSlug={activePageSlug} />
+      )}
     </main>
   );
 };
 
 type Journey = ReturnType<typeof useAiValueJourney>;
 type WorkspaceLive = ReturnType<typeof useAiValueWorkspace>["live"];
+
+const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug }) => {
+  const currentIndex = workspacePages.findIndex((page) => page.slug === currentSlug);
+  const current = workspacePages[currentIndex];
+  const previous = currentIndex > 0 ? workspacePages[currentIndex - 1] : null;
+  const next =
+    currentSlug === "decisions"
+      ? workspacePageBySlug.get("blueprint")
+      : workspacePages[currentIndex + 1];
+  const nextLabel = currentSlug === "decisions" ? "Return to" : "Continue to";
+
+  if (!current || !next) return null;
+
+  return (
+    <nav className="ai-value-page-handoff" aria-label="Workspace page handoff">
+      <div>
+        <p className="eyebrow">Workspace Handoff</p>
+        <p>This page feeds next: {current.feedsNext}</p>
+      </div>
+      <div className="ai-value-page-handoff-actions">
+        {previous && (
+          <Link className="ai-value-step" to={previous.path}>
+            Back to {previous.navLabel}
+          </Link>
+        )}
+        <Link className="ai-value-step active" to={next.path}>
+          {nextLabel} {next.navLabel}
+        </Link>
+      </div>
+    </nav>
+  );
+};
 
 const WorkspaceHome = ({
   journey,

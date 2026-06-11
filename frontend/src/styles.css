@@ -2063,6 +2063,36 @@ body {
   margin: 0;
 }
 
+.ai-value-page-handoff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-page-handoff p {
+  margin: 0;
+}
+
+.ai-value-page-handoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ai-value-page-handoff .ai-value-step {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
 .ai-value-focused-stack {
   display: grid;
   gap: 16px;
@@ -2959,6 +2989,15 @@ body {
   .ai-value-workbench-grid,
   .ai-value-boundary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ai-value-page-handoff {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ai-value-page-handoff-actions {
+    justify-content: flex-start;
   }
 
   .ai-value-spine,

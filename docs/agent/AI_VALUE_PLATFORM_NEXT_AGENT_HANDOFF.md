@@ -75,12 +75,62 @@ not bury ROI math inside the executive packet or UI.
 Completed latest slice:
 
 ```text
-Guided Sponsor Operating Workflow
+Workspace Page Handoff Navigation
 ```
 
 What is now in place:
 
-- `/ai-value-workspace/readout` and `/ai-value-workspace/decisions` now share a
+- Every focused `/ai-value-workspace/*` page now ends with a Workspace Handoff
+  navigation block.
+- The block shows what the current page feeds next, a Back link to the prior
+  phase, and a Continue link to the next phase.
+- Sponsor Decisions loops back to Blueprint Workshop, so the workspace now reads
+  as an operating cycle rather than a set of disconnected pages.
+- The block derives from the existing `workspacePages` structure only; it does
+  not add a new backend object, schema, runtime service, or connector.
+- This is UI/comprehension work only. No production connector, runtime service,
+  autonomous customer action, unsupported ROI proof, causality claim, individual
+  scoring, HR analytics, productivity ranking, raw prompt/response storage,
+  direct identifiers, or customer-facing dollar output was added.
+
+Verification completed:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "clear previous and next handoff" --reporter=basic`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
+- `npm test --workspace frontend -- --reporter=basic`
+- `npm run build --workspace frontend`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- In-app browser smoke for
+  `/ai-value-workspace/readiness`, `/blueprint`, `/metrics`, `/evidence`,
+  `/scenario`, `/readout`, and `/decisions` at 1440px and 390px: handoff
+  navigation present, expected next link correct, no unsafe internal terms/state
+  codes, no console warnings/errors, and no horizontal overflow.
+
+Recommended next slice:
+
+```text
+Human Review / PR Decision
+```
+
+Pause for human review of `/ai-value-journey` and all `/ai-value-workspace`
+routes, then decide whether to push/open a PR or start a new bounded slice from
+observed review gaps. Keep the same governance boundary: no ROI proof, no
+causality, no individual scoring, no HR analytics, no productivity ranking, and
+no customer-facing dollar output unless a later governed value-modeling contract
+explicitly promotes that exact scope.
+
+Previously completed slice:
+
+```text
+Guided Sponsor Operating Workflow
+```
+
+What is in place:
+
+- `/ai-value-workspace/readout` and `/ai-value-workspace/decisions` share a
   Sponsor Operating Workflow panel.
 - The panel connects Readout preview, Sponsor decision, Handoff draft, and Next
   operating loop so the sponsor path feels like one operating workflow rather
@@ -90,39 +140,6 @@ What is now in place:
   service, or connector.
 - The footer keeps the handoff boundary explicit: no task is created and no
   customer action is automated.
-- This is UI/comprehension work only. No production connector, runtime service,
-  autonomous customer action, unsupported ROI proof, causality claim, individual
-  scoring, HR analytics, productivity ranking, raw prompt/response storage,
-  direct identifiers, or customer-facing dollar output was added.
-
-Verification completed:
-
-- Red test first:
-  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "guided sponsor operating workflow" --reporter=basic`
-- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
-- `npm test --workspace frontend -- --reporter=basic`
-- `npm run build --workspace frontend`
-- `node scripts/ci_semantic_drift_guard.mjs`
-- `node scripts/ci_glean_value_governance_gates.mjs`
-- `git diff --check`
-- In-app browser smoke for `/ai-value-workspace/readout` and
-  `/ai-value-workspace/decisions` at 1440px and 390px: sponsor workflow present,
-  required workflow steps present, no unsafe internal terms/state codes, no
-  console warnings/errors, and no horizontal overflow.
-
-Recommended next slice:
-
-```text
-Final Product Spine Audit
-```
-
-Review `/ai-value-workspace` and all focused pages as one client-facing
-operating system. Check navigation clarity, page purpose, client-readable
-language, missing handoffs, mobile fit, and whether each page clearly answers
-what the client does next. Keep the same governance boundary: no ROI proof, no
-causality, no individual scoring, no HR analytics, no productivity ranking, and
-no customer-facing dollar output unless a later governed value-modeling contract
-explicitly promotes that exact scope.
 
 Previously completed slice:
 

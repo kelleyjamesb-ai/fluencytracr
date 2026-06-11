@@ -106,6 +106,41 @@ describe("AIValueWorkspace", () => {
     expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
     expectNoUnsafeUiLanguage(readout.container.textContent);
   });
+
+  it("shows a clear previous and next handoff on focused workspace pages", () => {
+    const metrics = renderWorkspace("/ai-value-workspace/metrics");
+
+    const metricsHandoff = screen.getByRole("navigation", {
+      name: /Workspace page handoff/i
+    });
+    expect(
+      within(metricsHandoff).getByText(/This page feeds next: Metrics feed evidence requests and scenario readiness/i)
+    ).toBeInTheDocument();
+    expect(within(metricsHandoff).getByRole("link", { name: /Back to Blueprint Workshop/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/blueprint"
+    );
+    expect(within(metricsHandoff).getByRole("link", { name: /Continue to Evidence Readiness/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/evidence"
+    );
+    metrics.unmount();
+
+    const decisions = renderWorkspace("/ai-value-workspace/decisions");
+
+    const decisionsHandoff = screen.getByRole("navigation", {
+      name: /Workspace page handoff/i
+    });
+    expect(within(decisionsHandoff).getByRole("link", { name: /Back to Executive Readout/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/readout"
+    );
+    expect(within(decisionsHandoff).getByRole("link", { name: /Return to Blueprint Workshop/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/blueprint"
+    );
+    expectNoUnsafeUiLanguage(decisions.container.textContent);
+  });
 });
 
 describe("AIValueWorkspace live evidence mode", () => {
