@@ -183,77 +183,118 @@ Verification completed:
   evidence-state codes, schema names, or workflow/metric state keys appear in
   the checked-in example readout.
 
-Recommended next slice:
+Latest completed slice:
 
 ```text
 Executive Readout Preview And Share Workflow
 ```
 
+What is now in place:
+
+- Journey and Workspace show a compact sponsor-readable Executive Readout
+  Preview before opening the generated readout.
+- The preview uses the same Customer Evidence Review state as the opened HTML:
+  accepted evidence routes to caveated sponsor review, submitted evidence routes
+  to reviewer action, rejected evidence routes to corrected-export request, and
+  missing evidence routes to data-owner request.
+- The preview explains what will open, what language remains held, who owns the
+  next action, and which caveat must travel with the readout.
+- Accepted evidence is described only as caveated support; submitted, rejected,
+  and missing evidence never imply validated value.
+- `Open executive readout` still works from Journey and Workspace through the
+  shared preview panel.
+
+Verification completed:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "previews"`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts`
+- `npm run test:ai-value-roi-scenario`
+- `npm run test:ai-value-agent-harness`
+- `bash scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- Playwright CLI mocked-route smoke: Journey and Workspace render the preview
+  at 1440px and 390px, expose no unsafe internal state/object terms, have no
+  console warnings/errors, have no horizontal overflow, and opening the readout
+  creates the generated readout tab.
+
+Recommended next slice:
+
+```text
+Sponsor Decision And Follow-Up Loop
+```
+
 Goal:
 
-Make Journey and Workspace show a sponsor-readable preview of the Executive
-Readout before the user opens or shares it. The preview should explain which
-evidence state will control the readout language, what the sponsor can do next,
-and what must remain attached as caveats.
+Make the readout feed the next operating action instead of ending as a static
+packet. Journey and Workspace should show a sponsor decision loop that turns the
+readout into one of a few governed next moves: expand the workflow, collect
+stronger customer evidence, request a corrected export, hold stronger value
+language, or return to Blueprint for the next workflow.
 
 Acceptance criteria:
 
-- Journey and Workspace should show a compact "Executive Readout Preview" or
-  equivalent beside the existing Executive Operating Packet.
-- The preview should use the same Customer Evidence Review state as the opened
-  HTML: accepted, submitted, rejected, or missing.
-- The preview should make the share/open action understandable to a client:
-  what will be included, what is still held, and who owns the next action.
-- Accepted evidence may be described only as caveated support for sponsor
-  review, not ROI proof.
-- Submitted, rejected, and missing evidence must not imply value has been
-  validated.
-- "Open executive readout" must keep working from Journey and Workspace.
-- Do not add production connectors, autonomous customer actions, raw
-  prompts/responses, direct identifiers, unsupported ROI proof, causality
-  claims, individual scoring, HR analytics, productivity ranking, or
-  customer-facing dollarized output.
-- Add focused frontend tests and a browser smoke if visual/interaction behavior
+- Journey and Workspace should show a compact "Sponsor Decision" or equivalent
+  panel near the Executive Readout Preview / Executive Operating Packet.
+- The decision options should be sponsor-readable and action-oriented:
+  `Expand workflow`, `Collect stronger evidence`, `Request corrected export`,
+  `Hold value language`, and `Return to Blueprint`.
+- The recommended option should derive from Customer Evidence Review state:
+  accepted evidence can recommend caveated expansion review; submitted evidence
+  recommends reviewer action; rejected evidence recommends corrected export;
+  missing evidence recommends data-owner request.
+- Each option should explain what object or workflow it feeds next: Blueprint,
+  Customer Evidence Request, Evidence Review, ROI Scenario Readiness, or
+  Executive Operating Packet.
+- Agentic follow-up should remain bounded to handoff preparation only; no
+  autonomous customer action.
+- Do not add production connectors, direct identifiers, raw prompts/responses,
+  unsupported ROI proof, causality claims, individual scoring, HR analytics,
+  productivity ranking, or customer-facing dollarized output.
+- Add focused frontend tests and browser smoke if visual/interaction behavior
   changes.
 
 Suggested files:
 
 - `frontend/src/hooks/useAiValueJourney.ts`
+- `frontend/src/components/ExecutiveReadoutPreviewPanel.tsx` only if the
+  decision loop should sit beside the preview.
 - `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/pages/AIValueWorkspace.tsx`
 - `frontend/src/pages/AIValueJourney.test.tsx`
 - `frontend/src/pages/AIValueWorkspace.test.tsx`
-- `shared/src/aiValueEngine/readoutHtml.ts` only if preview wording should be
-  shared with the renderer instead of duplicated in the view model.
 
 ## Next-Agent Prompt
 
 Use this prompt to continue:
 
 ```text
-Create the Executive Readout Preview and Share Workflow product slice for the
-AI Value Platform. Journey and Workspace should show a sponsor-readable preview
-of the readout before opening it, using the same Customer Evidence Review state
-that drives the generated HTML: accepted evidence routes to caveated sponsor
-review, submitted evidence routes to reviewer action, rejected evidence routes
-to corrected-export request, and missing evidence routes to data-owner request.
-The preview should explain what will be included in the packet, what language
-remains held, who owns the next action, and why caveats must travel with the
-readout. Do not add production connectors, autonomous customer actions, raw
-prompts/responses, direct identifiers, unsupported ROI proof, causality claims,
-individual scoring, HR analytics, productivity ranking, or customer-facing
-dollarized output. Add focused frontend tests and keep frontend, backend object
-API, ROI scenario, agent-harness, build, and governance checks green.
+Create the Sponsor Decision and Follow-Up Loop product slice for the AI Value
+Platform. Journey and Workspace should turn the Executive Readout Preview into a
+governed next-action loop: accepted evidence routes to caveated expansion review,
+submitted evidence routes to reviewer action, rejected evidence routes to a
+corrected-export request, missing evidence routes to the data-owner request, and
+uncertain sponsor decisions can return to Blueprint for the next workflow. The
+UI should explain what each decision feeds next and keep agentic follow-up
+bounded to handoff preparation only. Do not add production connectors,
+autonomous customer actions, raw prompts/responses, direct identifiers,
+unsupported ROI proof, causality claims, individual scoring, HR analytics,
+productivity ranking, or customer-facing dollarized output. Add focused
+frontend tests and keep frontend, backend object API, ROI scenario,
+agent-harness, build, and governance checks green.
 ```
 
 ## What To Validate First
 
-Validate the current Journey and Workspace open-readout path and the existing
-Executive Operating Packet / Client Value Questions placement. The preview
-should reduce confusion and should not become another dense panel full of object
-state.
+Validate where the current Executive Readout Preview and Executive Operating
+Packet appear in Journey and Workspace. The decision loop should make the next
+operating move obvious without becoming a workflow-management product.
 
-The current biggest risk is adding another panel that repeats existing language
-without helping a sponsor understand what they are about to open or share.
-Prefer one compact preview with a clear action, caveat, and owner over a large
-new dashboard section.
+The current biggest risk is inventing a fake action system. Prefer one compact,
+non-persistent decision loop with clear routing language over a new task manager
+or autonomous workflow.

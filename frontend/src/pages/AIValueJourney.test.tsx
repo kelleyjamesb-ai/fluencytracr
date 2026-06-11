@@ -333,6 +333,12 @@ const stubJourneyFetch = (
       if (url.includes("/review")) {
         return jsonResponse({ review_state: "ACCEPTED" });
       }
+      if (url.includes("/ai-value/readout/")) {
+        return new Response("<html>Executive readout</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" }
+        });
+      }
       for (const [path, payload] of Object.entries(payloads)) {
         if (url.includes(`/ai-value/objects/${path}`)) {
           const [object_type, object_id] = path.split("/");
@@ -801,6 +807,87 @@ describe("AIValueJourney", () => {
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("outcome", "_", "evidence", "_", "export"),
       uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it.each([
+    {
+      state: "ACCEPTED" as const,
+      status: /Caveated sponsor review/i,
+      included: /accepted aggregate Median resolution time evidence/i,
+      held: /Realized ROI, causality, productivity, and individual scoring stay out/i,
+      owner: /Support Operations and the sponsor/i,
+      action: /Review the caveated readout with accepted evidence/i,
+      caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i
+    },
+    {
+      state: "SUBMITTED" as const,
+      status: /Review pending/i,
+      included: /pending evidence section/i,
+      held: /Stronger value language stays held until Support Operations accepts or rejects the export/i,
+      owner: /Support Operations/i,
+      action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i,
+      caveat: /Submitted evidence does not validate value yet/i
+    },
+    {
+      state: "REJECTED" as const,
+      status: /Corrected export needed/i,
+      included: /corrected-export request/i,
+      held: /Validated value language stays held until a corrected aggregate export is accepted/i,
+      owner: /Support Operations/i,
+      action: /Keep stronger value language blocked until a corrected export is accepted/i,
+      caveat: /Rejected evidence cannot support value claims/i
+    },
+    {
+      state: "MISSING" as const,
+      status: /Data owner request needed/i,
+      included: /customer evidence request/i,
+      held: /Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review/i,
+      owner: /Support Operations/i,
+      action: /Ask Support Operations for an aggregate Median resolution time export/i,
+      caveat: /Missing evidence keeps the readout in planning status/i
+    }
+  ])("previews the executive readout share workflow for $state evidence", async ({
+    state,
+    status,
+    included,
+    held,
+    owner,
+    action,
+    caveat
+  }) => {
+    const fixture = withOutcomeReviewState(state);
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:readout-preview")
+    });
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const preview = screen.getByRole("region", { name: /Executive readout preview/i });
+    expect(within(preview).getByRole("heading", { name: /Executive Readout Preview/i })).toBeInTheDocument();
+    expect(within(preview).getByText(status)).toBeInTheDocument();
+    expect(within(preview).getByText(included)).toBeInTheDocument();
+    expect(within(preview).getByText(held)).toBeInTheDocument();
+    expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
+    expect(within(preview).getByText(action)).toBeInTheDocument();
+    expect(within(preview).getByText(caveat)).toBeInTheDocument();
+
+    fireEvent.click(within(preview).getByRole("button", { name: /Open executive readout/i }));
+    await waitFor(() => {
+      expect(open).toHaveBeenCalledWith("blob:readout-preview", "_blank", "noopener");
+    });
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("executive", "_", "packet"),
       "export_v1"
     ]);
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);

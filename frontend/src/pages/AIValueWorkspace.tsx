@@ -6,6 +6,7 @@ import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
+import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 
 const tabs = [
   "Workflow Canvas",
@@ -227,6 +228,14 @@ export const AIValueWorkspace = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {!journey.loading && (
+        <ExecutiveReadoutPreviewPanel
+          preview={journey.executiveReadoutPreview}
+          packetIds={journey.packetIds}
+          onOpenReadout={(packetId) => void journey.openReadout(packetId)}
+        />
       )}
 
       {!journey.loading && (

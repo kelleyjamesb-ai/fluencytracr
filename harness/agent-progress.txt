@@ -314,3 +314,9 @@
 - Completed: Opened/generated Executive Readout HTML now renders a Customer Outcome Evidence section for missing, submitted, accepted, and rejected aggregate evidence. Accepted evidence is caveated support only, mismatched accepted exports are ignored, and the example readout no longer exposes the internal packet id.
 - Verified: red/green backend readout API test; full backend AI value object API test; backend build; standalone readout renderer test; full frontend tests/build; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; generated HTML internal-term audit; diff whitespace.
 - Next focus: Executive Readout Preview and Share Workflow in Journey/Workspace, so sponsors can understand what will open/share and which caveats must travel with it.
+
+## 2026-06-10 (UTC) — Codex (AI Value executive readout preview/share)
+
+- Completed: Added a shared Executive Readout Preview in `/ai-value-journey` and `/ai-value-workspace`. The preview uses Customer Evidence Review state to explain what will open, what language remains held, who owns the next action, and which caveat must travel with the readout; accepted evidence stays caveated support only.
+- Verified: red/green preview tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks with no unsafe internal terms, no console errors/warnings, no horizontal overflow, and readout-open tab creation verified.
+- Next focus: Sponsor Decision and Follow-Up Loop, so the readout feeds expansion review, evidence collection, corrected-export requests, claim holds, or a return to Blueprint.

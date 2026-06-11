@@ -4,6 +4,7 @@ import { useAiValueJourney, type JourneyStageState } from "../hooks/useAiValueJo
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
+import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 
 const StatusPill = ({
   label,
@@ -476,6 +477,12 @@ export const AIValueJourney = () => {
           onReview={(exportId, decision) => void journey.review(exportId, decision)}
         />
 
+        <ExecutiveReadoutPreviewPanel
+          preview={journey.executiveReadoutPreview}
+          packetIds={journey.packetIds}
+          onOpenReadout={(packetId) => void journey.openReadout(packetId)}
+        />
+
         <article className="ai-value-panel ai-value-executive-plan-panel">
           <div className="ai-value-section-head">
             <div>
@@ -518,16 +525,6 @@ export const AIValueJourney = () => {
                   <StatusPill key={guardrail} label={guardrail} />
                 ))}
               </div>
-              {journey.packetIds.map((packetId) => (
-                <button
-                  type="button"
-                  className="ai-value-step ai-value-phase-action"
-                  key={packetId}
-                  onClick={() => void journey.openReadout(packetId)}
-                >
-                  Open executive readout
-                </button>
-              ))}
             </div>
           </div>
         </article>

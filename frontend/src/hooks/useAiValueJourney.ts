@@ -94,6 +94,17 @@ export interface ExecutiveOperatingPlan {
   guardrails: string[];
 }
 
+export interface ExecutiveReadoutPreview {
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  whatWillOpen: string;
+  heldLanguage: string;
+  nextOwner: string;
+  nextAction: string;
+  caveat: string;
+  canOpen: boolean;
+}
+
 export interface ClientValueQuestion {
   question: string;
   answer: string;
@@ -183,6 +194,7 @@ export interface AiValueJourney {
   customerEvidenceRequest: CustomerEvidenceRequest;
   customerEvidenceReview: CustomerEvidenceReviewWorkbench;
   executivePlan: ExecutiveOperatingPlan;
+  executiveReadoutPreview: ExecutiveReadoutPreview;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
@@ -657,6 +669,102 @@ function buildExecutiveOperatingPlan(params: {
       "No individual or manager scoring",
       "No productivity ranking"
     ]
+  };
+}
+
+function buildExecutiveReadoutPreview(params: {
+  packetCount: number;
+  customerEvidenceRequest: CustomerEvidenceRequest;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+  executivePlan: ExecutiveOperatingPlan;
+}): ExecutiveReadoutPreview {
+  const {
+    packetCount,
+    customerEvidenceRequest,
+    customerEvidenceReview,
+    executivePlan
+  } = params;
+  const reviewer = customerEvidenceReview.reviewer || "Customer data owner";
+  const metricName = customerEvidenceRequest.metricName || "selected outcome signal";
+
+  if (packetCount === 0) {
+    return {
+      statusLabel: "Needs generated readout",
+      statusTone: "warn",
+      whatWillOpen:
+        "Generate the executive packet before opening the sponsor readout.",
+      heldLanguage:
+        "Value language stays held until the packet, evidence state, and caveats are ready.",
+      nextOwner: reviewer,
+      nextAction: executivePlan.recommendedNextAction,
+      caveat:
+        "The preview is planning guidance until a governed executive packet exists.",
+      canOpen: false
+    };
+  }
+
+  if (customerEvidenceReview.reviewState === "ACCEPTED") {
+    return {
+      statusLabel: "Caveated sponsor review",
+      statusTone: "good",
+      whatWillOpen:
+        `The opened readout will include Blueprint, outcome mapping, scenario language, ` +
+        `accepted aggregate ${metricName} evidence, and blocked value language.`,
+      heldLanguage:
+        "Realized ROI, causality, productivity, and individual scoring stay out.",
+      nextOwner: `${reviewer} and the sponsor`,
+      nextAction:
+        "Review the caveated readout with accepted evidence; decide expansion, hold, or collect stronger assumptions.",
+      caveat:
+        "Accepted evidence is caveated support only; it is not ROI proof and does not establish causality.",
+      canOpen: true
+    };
+  }
+
+  if (customerEvidenceReview.reviewState === "SUBMITTED") {
+    return {
+      statusLabel: "Review pending",
+      statusTone: "warn",
+      whatWillOpen:
+        "The opened readout will include Blueprint, outcome mapping, scenario language, and a pending evidence section.",
+      heldLanguage:
+        `Stronger value language stays held until ${reviewer} accepts or rejects the export.`,
+      nextOwner: reviewer,
+      nextAction: customerEvidenceReview.nextAction,
+      caveat:
+        "Submitted evidence does not validate value yet.",
+      canOpen: true
+    };
+  }
+
+  if (customerEvidenceReview.reviewState === "REJECTED") {
+    return {
+      statusLabel: "Corrected export needed",
+      statusTone: "warn",
+      whatWillOpen:
+        "The opened readout will include the corrected-export request and blocked value language.",
+      heldLanguage:
+        "Validated value language stays held until a corrected aggregate export is accepted.",
+      nextOwner: reviewer,
+      nextAction: customerEvidenceReview.nextAction,
+      caveat:
+        "Rejected evidence cannot support value claims.",
+      canOpen: true
+    };
+  }
+
+  return {
+    statusLabel: "Data owner request needed",
+    statusTone: "neutral",
+    whatWillOpen:
+      "The opened readout will include modeled opportunity language, the customer evidence request, and required caveats.",
+    heldLanguage:
+      "Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review.",
+    nextOwner: reviewer,
+    nextAction: customerEvidenceReview.nextAction,
+    caveat:
+      "Missing evidence keeps the readout in planning status.",
+    canOpen: true
   };
 }
 
@@ -1454,6 +1562,42 @@ export const useAiValueJourney = (): AiValueJourney => {
       opportunities: []
     })
   );
+  const [executiveReadoutPreview, setExecutiveReadoutPreview] =
+    useState<ExecutiveReadoutPreview>(() =>
+      buildExecutiveReadoutPreview({
+        packetCount: 0,
+        customerEvidenceRequest: buildCustomerEvidenceRequest({
+          roiScenario: null,
+          workflowHandoff: buildWorkflowHandoff({
+            blueprint: null,
+            metricsLibrary: null,
+            opportunities: []
+          })
+        }),
+        customerEvidenceReview: buildCustomerEvidenceReviewWorkbench({
+          customerEvidenceRequest: buildCustomerEvidenceRequest({
+            roiScenario: null,
+            workflowHandoff: buildWorkflowHandoff({
+              blueprint: null,
+              metricsLibrary: null,
+              opportunities: []
+            })
+          }),
+          evidenceItems: [],
+          roiScenario: null
+        }),
+        executivePlan: buildExecutiveOperatingPlan({
+          packetCount: 0,
+          evidenceScenarioPlan: buildEvidenceScenarioPlan({
+            readiness: null,
+            scenario: null,
+            evidenceItems: [],
+            opportunities: []
+          }),
+          opportunities: []
+        })
+      })
+    );
   const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -1511,6 +1655,12 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceRequest: evidenceRequest,
         customerEvidenceReview: evidenceReview
       });
+      const readoutPreview = buildExecutiveReadoutPreview({
+        packetCount: packetIds.length,
+        customerEvidenceRequest: evidenceRequest,
+        customerEvidenceReview: evidenceReview,
+        executivePlan
+      });
       const questions = buildClientValueQuestions({
         opportunities: mappedOpportunities,
         evidenceScenarioPlan: plan,
@@ -1529,6 +1679,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setCustomerEvidenceRequest(evidenceRequest);
       setCustomerEvidenceReview(evidenceReview);
       setExecutivePlan(executivePlan);
+      setExecutiveReadoutPreview(readoutPreview);
       setPacketIds(packetIds);
 
       setClientName(
@@ -1592,6 +1743,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     customerEvidenceRequest,
     customerEvidenceReview,
     executivePlan,
+    executiveReadoutPreview,
     packetIds,
     errorMessage,
     refresh,
