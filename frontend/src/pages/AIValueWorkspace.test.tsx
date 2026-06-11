@@ -820,6 +820,89 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
+  it.each([
+    {
+      state: "ACCEPTED" as const,
+      status: /Caveated expansion review/i,
+      recommended: /Recommended: Expand workflow/i,
+      reason: /accepted customer evidence can support caveated expansion review/i,
+      action: /Review expansion with caveats, assumptions, and blocked value language attached/i
+    },
+    {
+      state: "SUBMITTED" as const,
+      status: /Reviewer action needed/i,
+      recommended: /Recommended: Collect stronger evidence/i,
+      reason: /submitted customer evidence needs Support Operations review/i,
+      action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i
+    },
+    {
+      state: "REJECTED" as const,
+      status: /Corrected export needed/i,
+      recommended: /Recommended: Request corrected export/i,
+      reason: /rejected evidence cannot support value claims/i,
+      action: /Keep stronger value language blocked until a corrected export is accepted/i
+    },
+    {
+      state: "MISSING" as const,
+      status: /Data-owner request needed/i,
+      recommended: /Recommended: Collect stronger evidence/i,
+      reason: /aggregate customer evidence has not arrived yet/i,
+      action: /Ask Support Operations for an aggregate Median resolution time export/i
+    }
+  ])("shows a workspace sponsor decision follow-up loop for $state evidence", async ({
+    state,
+    status,
+    recommended,
+    reason,
+    action
+  }) => {
+    const fixture = withOutcomeReviewState(state);
+    stubJourneyFetch(fixture.objects, fixture.details);
+    const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
+    });
+
+    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
+    expect(within(decision).getByRole("heading", { name: /Sponsor Decision/i })).toBeInTheDocument();
+    expect(within(decision).getAllByText(status).length).toBeGreaterThan(0);
+    expect(within(decision).getByText(recommended)).toBeInTheDocument();
+    expect(within(decision).getAllByText(reason).length).toBeGreaterThan(0);
+    expect(within(decision).getAllByText(action).length).toBeGreaterThan(0);
+
+    for (const option of [
+      "Expand workflow",
+      "Collect stronger evidence",
+      "Request corrected export",
+      "Hold value language",
+      "Return to Blueprint"
+    ]) {
+      expect(within(decision).getByRole("heading", { name: option })).toBeInTheDocument();
+    }
+
+    for (const target of [
+      /Feeds Blueprint/i,
+      /Feeds Customer Evidence Request/i,
+      /Feeds Evidence Review/i,
+      /Feeds ROI Scenario Readiness/i,
+      /Feeds Executive Operating Packet/i
+    ]) {
+      expect(within(decision).getAllByText(target).length).toBeGreaterThan(0);
+    }
+
+    expect(within(decision).getByText(/prepares handoffs only; no customer action is automated/i)).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("outcome", "_", "evidence", "_", "export"),
+      uiTerm("agent", "_", "run"),
+      "export_v1"
+    ]);
+    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
   it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {
     stubJourneyFetch([]);
     const { container } = render(<MemoryRouter><AIValueWorkspace /></MemoryRouter>);

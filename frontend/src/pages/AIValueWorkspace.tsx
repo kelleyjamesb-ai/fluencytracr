@@ -7,6 +7,7 @@ import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
+import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 
 const tabs = [
   "Workflow Canvas",
@@ -236,6 +237,10 @@ export const AIValueWorkspace = () => {
           packetIds={journey.packetIds}
           onOpenReadout={(packetId) => void journey.openReadout(packetId)}
         />
+      )}
+
+      {!journey.loading && (
+        <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
       )}
 
       {!journey.loading && (

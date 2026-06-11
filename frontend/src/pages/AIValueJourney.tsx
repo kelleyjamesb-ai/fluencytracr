@@ -5,6 +5,7 @@ import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
+import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 
 const StatusPill = ({
   label,
@@ -482,6 +483,8 @@ export const AIValueJourney = () => {
           packetIds={journey.packetIds}
           onOpenReadout={(packetId) => void journey.openReadout(packetId)}
         />
+
+        <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
 
         <article className="ai-value-panel ai-value-executive-plan-panel">
           <div className="ai-value-section-head">

@@ -105,6 +105,32 @@ export interface ExecutiveReadoutPreview {
   canOpen: boolean;
 }
 
+export type SponsorDecisionOptionLabel =
+  | "Expand workflow"
+  | "Collect stronger evidence"
+  | "Request corrected export"
+  | "Hold value language"
+  | "Return to Blueprint";
+
+export interface SponsorDecisionOption {
+  label: SponsorDecisionOptionLabel;
+  detail: string;
+  action: string;
+  feedsNext: string[];
+  recommended: boolean;
+}
+
+export interface SponsorDecisionLoop {
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  recommendedOptionLabel: SponsorDecisionOptionLabel;
+  recommendedReason: string;
+  nextAction: string;
+  options: SponsorDecisionOption[];
+  agentFollowUp: string;
+  caveat: string;
+}
+
 export interface ClientValueQuestion {
   question: string;
   answer: string;
@@ -195,6 +221,7 @@ export interface AiValueJourney {
   customerEvidenceReview: CustomerEvidenceReviewWorkbench;
   executivePlan: ExecutiveOperatingPlan;
   executiveReadoutPreview: ExecutiveReadoutPreview;
+  sponsorDecisionLoop: SponsorDecisionLoop;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
@@ -765,6 +792,119 @@ function buildExecutiveReadoutPreview(params: {
     caveat:
       "Missing evidence keeps the readout in planning status.",
     canOpen: true
+  };
+}
+
+function buildSponsorDecisionLoop(params: {
+  customerEvidenceRequest: CustomerEvidenceRequest;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+  executivePlan: ExecutiveOperatingPlan;
+}): SponsorDecisionLoop {
+  const { customerEvidenceRequest, customerEvidenceReview, executivePlan } = params;
+  const reviewer = customerEvidenceReview.reviewer || "Customer data owner";
+  const metricName = customerEvidenceRequest.metricName || "selected outcome signal";
+  const sourceSystem =
+    customerEvidenceRequest.sourceSystem || "customer-owned outcome system";
+  const approvedGrain =
+    customerEvidenceRequest.approvedGrain || "approved aggregate export";
+
+  let statusLabel = "Data-owner request needed";
+  let statusTone: SponsorDecisionLoop["statusTone"] = "neutral";
+  let recommendedOptionLabel: SponsorDecisionOptionLabel = "Collect stronger evidence";
+  let recommendedReason =
+    "The aggregate customer evidence has not arrived yet; keep the request moving before stronger value language.";
+  let nextAction = customerEvidenceReview.nextAction || executivePlan.recommendedNextAction;
+
+  if (!customerEvidenceRequest.available) {
+    statusLabel = "Return to Blueprint";
+    statusTone = "warn";
+    recommendedOptionLabel = "Return to Blueprint";
+    recommendedReason =
+      "The workflow, outcome signal, or evidence request is not ready enough for a sponsor value decision.";
+    nextAction = executivePlan.recommendedNextAction;
+  } else if (customerEvidenceReview.reviewState === "ACCEPTED") {
+    statusLabel = "Caveated expansion review";
+    statusTone = "good";
+    recommendedOptionLabel = "Expand workflow";
+    recommendedReason =
+      "The accepted customer evidence can support caveated expansion review; it still does not prove ROI or causality.";
+    nextAction =
+      "Review expansion with caveats, assumptions, and blocked value language attached.";
+  } else if (customerEvidenceReview.reviewState === "SUBMITTED") {
+    statusLabel = "Reviewer action needed";
+    statusTone = "warn";
+    recommendedOptionLabel = "Collect stronger evidence";
+    recommendedReason =
+      `The submitted customer evidence needs ${reviewer} review before stronger value language can move forward.`;
+    nextAction = customerEvidenceReview.nextAction;
+  } else if (customerEvidenceReview.reviewState === "REJECTED") {
+    statusLabel = "Corrected export needed";
+    statusTone = "warn";
+    recommendedOptionLabel = "Request corrected export";
+    recommendedReason =
+      "The rejected evidence cannot support value claims; corrected aggregate evidence must come back before review continues.";
+    nextAction = customerEvidenceReview.nextAction;
+  }
+
+  const options: Array<Omit<SponsorDecisionOption, "recommended">> = [
+    {
+      label: "Expand workflow",
+      detail:
+        "Use the caveated readout to decide where the workflow should scale next.",
+      action:
+        "Confirm sponsor appetite, expansion boundary, and which workflow changes move back into the workshop.",
+      feedsNext: ["Blueprint", "Executive Operating Packet"]
+    },
+    {
+      label: "Collect stronger evidence",
+      detail:
+        "Move the aggregate customer proof forward without treating it as validated value yet.",
+      action:
+        customerEvidenceReview.reviewState === "SUBMITTED"
+          ? customerEvidenceReview.nextAction
+          : customerEvidenceRequest.nextAction,
+      feedsNext: ["Customer Evidence Request", "Evidence Review"]
+    },
+    {
+      label: "Request corrected export",
+      detail:
+        "Ask for a corrected aggregate export when source, metric, grain, or window checks do not match.",
+      action:
+        `Ask ${reviewer} to resubmit ${metricName} from ${sourceSystem} at ${approvedGrain}.`,
+      feedsNext: ["Customer Evidence Request", "Evidence Review"]
+    },
+    {
+      label: "Hold value language",
+      detail:
+        "Keep stronger ROI and outcome language out of the readout until evidence and assumptions support it.",
+      action:
+        "Carry blocked language and caveats into the scenario review before sponsor sharing.",
+      feedsNext: ["ROI Scenario Readiness", "Executive Operating Packet"]
+    },
+    {
+      label: "Return to Blueprint",
+      detail:
+        "Bring sponsor feedback back into the workshop canvas for the next workflow or a revised operating path.",
+      action:
+        "Update the workflow canvas, handoffs, success measure, and instrumentation plan.",
+      feedsNext: ["Blueprint"]
+    }
+  ];
+
+  return {
+    statusLabel,
+    statusTone,
+    recommendedOptionLabel,
+    recommendedReason,
+    nextAction,
+    options: options.map((option) => ({
+      ...option,
+      recommended: option.label === recommendedOptionLabel
+    })),
+    agentFollowUp:
+      "Follow-up prepares handoffs only; no customer action is automated.",
+    caveat:
+      "Sponsor decisions can route the next workflow, evidence request, scenario review, or readout; they do not create ROI proof or causality claims."
   };
 }
 
@@ -1598,6 +1738,39 @@ export const useAiValueJourney = (): AiValueJourney => {
         })
       })
     );
+  const [sponsorDecisionLoop, setSponsorDecisionLoop] = useState<SponsorDecisionLoop>(() => {
+    const workflowHandoff = buildWorkflowHandoff({
+      blueprint: null,
+      metricsLibrary: null,
+      opportunities: []
+    });
+    const customerEvidenceRequest = buildCustomerEvidenceRequest({
+      roiScenario: null,
+      workflowHandoff
+    });
+    const customerEvidenceReview = buildCustomerEvidenceReviewWorkbench({
+      customerEvidenceRequest,
+      evidenceItems: [],
+      roiScenario: null
+    });
+    const executivePlan = buildExecutiveOperatingPlan({
+      packetCount: 0,
+      evidenceScenarioPlan: buildEvidenceScenarioPlan({
+        readiness: null,
+        scenario: null,
+        evidenceItems: [],
+        opportunities: []
+      }),
+      opportunities: [],
+      customerEvidenceRequest,
+      customerEvidenceReview
+    });
+    return buildSponsorDecisionLoop({
+      customerEvidenceRequest,
+      customerEvidenceReview,
+      executivePlan
+    });
+  });
   const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -1661,6 +1834,11 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceReview: evidenceReview,
         executivePlan
       });
+      const sponsorDecision = buildSponsorDecisionLoop({
+        customerEvidenceRequest: evidenceRequest,
+        customerEvidenceReview: evidenceReview,
+        executivePlan
+      });
       const questions = buildClientValueQuestions({
         opportunities: mappedOpportunities,
         evidenceScenarioPlan: plan,
@@ -1680,6 +1858,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setCustomerEvidenceReview(evidenceReview);
       setExecutivePlan(executivePlan);
       setExecutiveReadoutPreview(readoutPreview);
+      setSponsorDecisionLoop(sponsorDecision);
       setPacketIds(packetIds);
 
       setClientName(
@@ -1744,6 +1923,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     customerEvidenceReview,
     executivePlan,
     executiveReadoutPreview,
+    sponsorDecisionLoop,
     packetIds,
     errorMessage,
     refresh,

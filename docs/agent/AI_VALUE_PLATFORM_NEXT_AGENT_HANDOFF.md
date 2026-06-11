@@ -223,36 +223,83 @@ Verification completed:
   console warnings/errors, have no horizontal overflow, and opening the readout
   creates the generated readout tab.
 
-Recommended next slice:
+Latest completed slice:
 
 ```text
 Sponsor Decision And Follow-Up Loop
 ```
 
+What is now in place:
+
+- Journey and Workspace show a shared, compact Sponsor Decision panel near the
+  Executive Readout Preview and Executive Operating Packet.
+- The recommendation is derived from Customer Evidence Review state:
+  accepted evidence recommends caveated expansion review; submitted evidence
+  recommends reviewer action; rejected evidence recommends corrected export;
+  missing evidence recommends the data-owner request; not-ready evidence returns
+  to Blueprint.
+- The sponsor sees five action-oriented choices: `Expand workflow`,
+  `Collect stronger evidence`, `Request corrected export`, `Hold value
+  language`, and `Return to Blueprint`.
+- Each option explains what it feeds next: Blueprint, Customer Evidence Request,
+  Evidence Review, ROI Scenario Readiness, or Executive Operating Packet.
+- Agentic follow-up stays bounded to handoff preparation only. No production
+  connector, autonomous customer action, raw prompts/responses, direct
+  identifiers, unsupported ROI proof, causality claim, individual scoring, HR
+  analytics, productivity ranking, or customer-facing dollarized output was
+  added.
+
+Verification completed:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "sponsor decision follow-up loop"`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx`
+- `npm test --workspace frontend`
+- `npm run build --workspace frontend`
+- `npm run test:ci --workspace backend -- ai_value_objects_api.test.ts`
+- `npm run test:ai-value-roi-scenario`
+- `npm run test:ai-value-agent-harness`
+- `bash scripts/ci_docs_contract_sweep.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- Playwright mocked-route smoke: Journey and Workspace render Sponsor Decision
+  at 1440px and 390px, expose no unsafe internal terms or uppercase evidence
+  state codes in DOM text, have no console warnings/errors, and have no
+  horizontal overflow.
+
+Recommended next slice:
+
+```text
+Decision Selection Handoff Preview
+```
+
 Goal:
 
-Make the readout feed the next operating action instead of ending as a static
-packet. Journey and Workspace should show a sponsor decision loop that turns the
-readout into one of a few governed next moves: expand the workflow, collect
-stronger customer evidence, request a corrected export, hold stronger value
-language, or return to Blueprint for the next workflow.
+Make the Sponsor Decision loop more useful without turning it into a task
+manager. Journey and Workspace should let a user select one of the five sponsor
+moves and see a compact, non-persistent handoff preview that explains the
+selected move, target object/workflow, owner, required evidence, caveat, and safe
+next action.
 
 Acceptance criteria:
 
-- Journey and Workspace should show a compact "Sponsor Decision" or equivalent
-  panel near the Executive Readout Preview / Executive Operating Packet.
-- The decision options should be sponsor-readable and action-oriented:
-  `Expand workflow`, `Collect stronger evidence`, `Request corrected export`,
-  `Hold value language`, and `Return to Blueprint`.
-- The recommended option should derive from Customer Evidence Review state:
-  accepted evidence can recommend caveated expansion review; submitted evidence
-  recommends reviewer action; rejected evidence recommends corrected export;
-  missing evidence recommends data-owner request.
-- Each option should explain what object or workflow it feeds next: Blueprint,
-  Customer Evidence Request, Evidence Review, ROI Scenario Readiness, or
-  Executive Operating Packet.
-- Agentic follow-up should remain bounded to handoff preparation only; no
-  autonomous customer action.
+- Journey and Workspace should keep the current Sponsor Decision panel and add a
+  selected-decision handoff preview near it.
+- The default selected decision should be the recommended option from
+  `sponsorDecisionLoop`.
+- Selecting a different option should update the preview locally only; no
+  persistence, task manager, runtime service, or autonomous workflow.
+- The handoff preview should show:
+  selected move, owner, target object/workflow, required evidence or input,
+  caveat, safe next action, and what it feeds next.
+- For accepted evidence, the preview can prepare caveated expansion review, but
+  it must still say accepted evidence is support only, not ROI proof or
+  causality.
+- For submitted, rejected, or missing evidence, the preview should route to
+  reviewer action, corrected export, or data-owner request without implying
+  validated value.
+- The preview should keep agentic follow-up bounded to handoff preparation only.
 - Do not add production connectors, direct identifiers, raw prompts/responses,
   unsupported ROI proof, causality claims, individual scoring, HR analytics,
   productivity ranking, or customer-facing dollarized output.
@@ -262,8 +309,7 @@ Acceptance criteria:
 Suggested files:
 
 - `frontend/src/hooks/useAiValueJourney.ts`
-- `frontend/src/components/ExecutiveReadoutPreviewPanel.tsx` only if the
-  decision loop should sit beside the preview.
+- `frontend/src/components/SponsorDecisionLoopPanel.tsx`
 - `frontend/src/pages/AIValueJourney.tsx`
 - `frontend/src/pages/AIValueWorkspace.tsx`
 - `frontend/src/pages/AIValueJourney.test.tsx`
@@ -274,27 +320,28 @@ Suggested files:
 Use this prompt to continue:
 
 ```text
-Create the Sponsor Decision and Follow-Up Loop product slice for the AI Value
-Platform. Journey and Workspace should turn the Executive Readout Preview into a
-governed next-action loop: accepted evidence routes to caveated expansion review,
-submitted evidence routes to reviewer action, rejected evidence routes to a
-corrected-export request, missing evidence routes to the data-owner request, and
-uncertain sponsor decisions can return to Blueprint for the next workflow. The
-UI should explain what each decision feeds next and keep agentic follow-up
-bounded to handoff preparation only. Do not add production connectors,
-autonomous customer actions, raw prompts/responses, direct identifiers,
-unsupported ROI proof, causality claims, individual scoring, HR analytics,
-productivity ranking, or customer-facing dollarized output. Add focused
-frontend tests and keep frontend, backend object API, ROI scenario,
-agent-harness, build, and governance checks green.
+Create the Decision Selection Handoff Preview product slice for the AI Value
+Platform. Journey and Workspace already show a Sponsor Decision loop. Add a
+local selected-decision preview so a sponsor can choose Expand workflow, Collect
+stronger evidence, Request corrected export, Hold value language, or Return to
+Blueprint and see the handoff that would be prepared: selected move, owner,
+target object/workflow, required evidence or input, caveat, safe next action,
+and what it feeds next. Default to the recommended option from
+sponsorDecisionLoop. Keep this non-persistent and bounded to handoff preparation:
+no task manager, production connector, runtime service, autonomous customer
+action, raw prompt/response storage, direct identifiers, unsupported ROI proof,
+causality claim, individual scoring, HR analytics, productivity ranking, or
+customer-facing dollarized output. Add focused frontend tests and keep frontend,
+backend object API, ROI scenario, agent-harness, build, and governance checks
+green.
 ```
 
 ## What To Validate First
 
-Validate where the current Executive Readout Preview and Executive Operating
-Packet appear in Journey and Workspace. The decision loop should make the next
-operating move obvious without becoming a workflow-management product.
+Validate how the current Sponsor Decision panel is structured in Journey and
+Workspace. The next slice should reuse the existing `sponsorDecisionLoop` view
+model rather than inventing a separate decision system.
 
 The current biggest risk is inventing a fake action system. Prefer one compact,
-non-persistent decision loop with clear routing language over a new task manager
-or autonomous workflow.
+non-persistent handoff preview over a task manager, automation layer, or
+autonomous workflow.
