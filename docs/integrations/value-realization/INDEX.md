@@ -69,7 +69,9 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
 1. AI Work Evidence defines source-neutral surfaces, workflows, approved
    cohorts, interventions, source coverage, trust evidence, outcome evidence,
    and value hypotheses.
-2. V3 aggregate verdicts establish whether evidence may surface.
+2. V3 aggregate verdicts establish whether evidence may surface and, on
+   `SURFACE`, may forward the governed aggregate distribution to downstream
+   consumers for re-checking.
 3. Velocity measures adoption energy.
 4. Depth measures cross-surface work integration through surface repertoire and
    repeated meaningful use, then qualifies interpretation with
@@ -77,7 +79,10 @@ Trust Calibration Index. V4 remains aggregate-only, caveated, and fail-closed.
 5. Delegation Depth refines Depth as a research-promoted concept for aggregate
    retrieval, transformation, and delegation surface mix.
 6. Work Mode Taxonomy maps governed surfaces into AI work patterns so taxonomy-aware calibration can compare like with like.
-7. Quality Multiplier and Reliability Factor qualify evidence quality and dependability.
+7. Quality Multiplier and Reliability Factor qualify evidence quality and
+   dependability. Quality Multiplier can consume a V3
+   `forwarded_distribution` after re-checking aggregate gates and tagging the
+   result as `QUALITY_PREMIUM` / `CALIBRATED`.
 8. Outcome Evidence may add customer-attested aggregate context without proving causality.
 9. V4 Value Confidence composes those inputs into bounded executive readouts.
 

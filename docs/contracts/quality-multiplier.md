@@ -8,6 +8,11 @@ The Quality Multiplier is a read-only workflow-level adjustment for Glean's time
 
 `GET /api/v1/quality-multiplier?workflow_id=<workflow>&window_days=<days>`
 
+When a V3 aggregate verdict has already surfaced and stored a governed
+`forwarded_distribution`, callers may opt into the aggregate path:
+
+`GET /api/v1/quality-multiplier?workflow_id=<workflow>&window_days=<days>&cohort_id=<cohort>&use_forwarded_distribution=true`
+
 Response:
 
 ```json
@@ -25,6 +30,22 @@ Response:
 
 If any suppression gate applies, `verdict` is `SUPPRESS` and `multiplier` is `null`. There is no fallback multiplier.
 
+Response when the forwarded aggregate path is used:
+
+```json
+{
+  "workflow_id": "sales_proposal_drafting",
+  "window_days": 90,
+  "multiplier": 1.26,
+  "verdict": "SURFACE",
+  "suppression_reason": null,
+  "cohort_size": 37,
+  "evidence_grade": "CALIBRATED",
+  "value_type": "QUALITY_PREMIUM",
+  "computed_at": "2026-06-11T00:00:00.000Z"
+}
+```
+
 ## Gates
 
 The endpoint uses the existing five suppression reasons:
@@ -36,6 +57,11 @@ The endpoint uses the existing five suppression reasons:
 - `HIGH_AMBIGUITY`: ambiguity-flagged evidence exceeds the ambiguity threshold.
 
 These gates run before the multiplier is disclosed. The default posture is suppress.
+
+For forwarded distributions, Quality Multiplier re-checks the same gate class
+at the consumer boundary before emitting a multiplier. The forwarded path does
+not consume raw events, raw GCE rows, user identifiers, prompt text, model
+outputs, transcripts, raw skill names, or action rows.
 
 ## Base Math
 
@@ -112,7 +138,17 @@ contract.
 
 - `OBJECTIVE`: surfaced result with `cohort_size >= 30` and `window_days >= 90`.
 - `QUALITATIVE`: surfaced or suppressed result that does not meet the objective-grade threshold.
-- `CALIBRATED`: reserved for future externally calibrated evidence; not inferred by this endpoint today.
+- `CALIBRATED`: surfaced result produced from a governed V3
+  `forwarded_distribution` after the consumer boundary re-checks suppression
+  gates.
+
+## AIVM Tag
+
+Legacy event-derived responses do not add a `value_type` field. When Quality
+Multiplier consumes a governed `forwarded_distribution`, it emits
+`value_type: QUALITY_PREMIUM`. This tag marks the multiplier as a quality
+adjustment input for downstream value modeling; it is not ROI proof,
+causality, productivity measurement, or customer-facing economic output.
 
 ## Integration Guidance
 

@@ -386,3 +386,9 @@
 - Completed: Audited the current branch against the full Product Spine V1 goal and marked `ai-value-platform-product-spine-v1` done in `.project/WORK_QUEUE.json`. No product-code change was needed.
 - Verified: full frontend tests/build; AI value engine, V1 spine, Blueprint, Metrics, Scenario, ROI Scenario, Readiness, Agent Harness, Executive Packet, and Readout tests; semantic drift guard; Glean value governance gate; WORK_QUEUE JSON parse; diff whitespace; browser smoke for Journey plus every Workspace page at 1440px and 390px with expected headings/handoffs, no unsafe internal terms, no console warnings/errors, no button clipping, and no horizontal overflow.
 - Next focus: pause for James to review the local multi-page experience, then decide whether to push/open a PR or start a new bounded queue item from observed review gaps.
+
+## 2026-06-11 (UTC) - Codex (governed V3 forwarded distribution)
+
+- Completed: Added surfaced-only V3 `forwarded_distribution`, schema-bounded aggregate forwarding, Quality Multiplier consumption from stored V3 verdicts with consumer gate re-checks, additive EvidenceBundle v1 mirror support for surfaced bundles, OpenSpec/docs/OpenAPI updates, and LMSYS assurance fixture coverage. Tightened V3 aggregate identifiers so raw-text shaped IDs are rejected before forwarding.
+- Verified: shared build; backend build; focused V3 ingest and Quality Multiplier backend tests; full backend CI (114 suites, 741 tests); EvidenceBundle schema validation; strict OpenSpec validation; LMSYS self-test; V1 governance gates; docs contract sweep; Glean value governance gate; harness verify (248 passed, 3 skipped).
+- Next focus: review/commit/PR for governed forwarding, then decide whether the next slice should expose safe downstream metric readiness in the AI Value UI without adding ROI proof, causality, productivity measurement, ranking, production connectors, or customer-facing economic output.

@@ -2,9 +2,16 @@ import type { SuppressionReason } from "@learnaire/shared";
 import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "../execution_signals";
 import type { FluencyEventRecord } from "../store";
 import { groupEventsByExecution, reconstructTrace } from "../trace_engine";
+import {
+  ForwardedDistributionSchema,
+  type ForwardedDistribution
+} from "./forwarded_distribution";
+
+export type { ForwardedDistribution } from "./forwarded_distribution";
 
 export type QualityMultiplierVerdict = "SURFACE" | "SUPPRESS";
 export type QualityMultiplierEvidenceGrade = "OBJECTIVE" | "CALIBRATED" | "QUALITATIVE";
+export type QualityMultiplierValueType = "QUALITY_PREMIUM";
 
 export type QualityMultiplierResponse = {
   workflow_id: string;
@@ -17,6 +24,7 @@ export type QualityMultiplierResponse = {
   cohort_size: number;
   evidence_grade: QualityMultiplierEvidenceGrade;
   computed_at: string;
+  value_type?: QualityMultiplierValueType;
   velocity_adjustment_factor?: number;
   velocity_index?: number;
 };
@@ -178,6 +186,15 @@ const evidenceGrade = (
   return "QUALITATIVE";
 };
 
+const forwardedHasConvergence = (forwardedDistribution: ForwardedDistribution): boolean => {
+  const quality = forwardedDistribution.quality_signals;
+  return quality.completion_rate > 0 ||
+    quality.error_rate > 0 ||
+    quality.abandonment_rate > 0 ||
+    quality.recovery_rate > 0 ||
+    quality.verification_rate > 0;
+};
+
 const suppress = (
   params: {
     workflowId: string;
@@ -199,6 +216,23 @@ const suppress = (
   cohort_size: params.cohortSize,
   evidence_grade: evidenceGrade("SUPPRESS", params.cohortSize, params.windowDays),
   computed_at: params.computedAt
+});
+
+const suppressForwardedDistribution = (
+  forwardedDistribution: ForwardedDistribution,
+  reason: SuppressionReason,
+  computedAt: string
+): QualityMultiplierResponse => ({
+  workflow_id: forwardedDistribution.workflow_id,
+  jbtd_id: forwardedDistribution.jbtd_id,
+  persona_id: forwardedDistribution.persona_id,
+  window_days: forwardedDistribution.window_days,
+  multiplier: null,
+  verdict: "SUPPRESS",
+  suppression_reason: reason,
+  cohort_size: forwardedDistribution.cohort_size,
+  evidence_grade: "QUALITATIVE",
+  computed_at: computedAt
 });
 
 const computeRates = (slice: WindowSlice) => {
@@ -335,6 +369,71 @@ export const computeQualityMultiplier = ({
     suppression_reason: null,
     cohort_size: current.cohortSize,
     evidence_grade: evidenceGrade("SURFACE", current.cohortSize, windowDays),
+    computed_at: computedAt
+  };
+};
+
+export const computeQualityMultiplierFromForwardedDistribution = ({
+  forwardedDistribution,
+  now = new Date()
+}: {
+  forwardedDistribution: ForwardedDistribution;
+  now?: Date;
+}): QualityMultiplierResponse => {
+  const computedAt = now.toISOString();
+  const parsed = ForwardedDistributionSchema.safeParse(forwardedDistribution);
+  if (!parsed.success) {
+    return {
+      workflow_id: forwardedDistribution.workflow_id ?? "",
+      jbtd_id: forwardedDistribution.jbtd_id ?? null,
+      persona_id: forwardedDistribution.persona_id ?? null,
+      window_days: forwardedDistribution.window_days ?? 0,
+      multiplier: null,
+      verdict: "SUPPRESS",
+      suppression_reason: "NO_CONVERGENCE",
+      cohort_size: forwardedDistribution.cohort_size ?? 0,
+      evidence_grade: "QUALITATIVE",
+      computed_at: computedAt
+    };
+  }
+  const distribution = parsed.data;
+
+  if (distribution.window_days < MIN_WINDOW_DAYS) {
+    return suppressForwardedDistribution(distribution, "INSUFFICIENT_TIME", computedAt);
+  }
+  if (distribution.ambiguity_rate > AMBIGUITY_RATE_THRESHOLD) {
+    return suppressForwardedDistribution(distribution, "HIGH_AMBIGUITY", computedAt);
+  }
+  if (distribution.cohort_size < MIN_COHORT_SIZE) {
+    return suppressForwardedDistribution(distribution, "INSUFFICIENT_VOLUME", computedAt);
+  }
+  if (!forwardedHasConvergence(distribution)) {
+    return suppressForwardedDistribution(distribution, "NO_CONVERGENCE", computedAt);
+  }
+  if (distribution.baseline_stable !== true) {
+    return suppressForwardedDistribution(distribution, "BASELINE_UNSTABLE", computedAt);
+  }
+
+  const quality = distribution.quality_signals;
+  const rawMultiplier =
+    1 +
+    0.3 * quality.verification_rate +
+    0.25 * quality.recovery_rate -
+    0.35 * quality.abandonment_rate -
+    0.3 * quality.error_rate;
+  const multiplier = roundMultiplier(clamp(rawMultiplier, 0.5, 1.5));
+
+  return {
+    workflow_id: distribution.workflow_id,
+    jbtd_id: distribution.jbtd_id,
+    persona_id: distribution.persona_id,
+    window_days: distribution.window_days,
+    multiplier,
+    verdict: "SURFACE",
+    suppression_reason: null,
+    cohort_size: distribution.cohort_size,
+    evidence_grade: "CALIBRATED",
+    value_type: "QUALITY_PREMIUM",
     computed_at: computedAt
   };
 };
