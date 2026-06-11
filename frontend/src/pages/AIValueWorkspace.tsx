@@ -559,105 +559,155 @@ const MetricsPage = ({
 }: {
   journey: Journey;
   valueSignals: typeof aiValueWorkspace.valueSignals;
-}) => (
-  <section className="ai-value-focused-stack" aria-label="Metrics workspace">
-    <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+}) => {
+  const primarySignal = valueSignals[0] ?? {
+    measure: "Outcome metric",
+    source: "Customer-owned source system"
+  };
+  const primaryOpportunity = journey.opportunities[0] ?? {
+    id: "example-support-resolution-opportunity",
+    workflowName: aiValueWorkspace.workflowName,
+    metricName: primarySignal.measure,
+    measurementUnit: "hours",
+    valueRouteLabel: aiValueWorkspace.valueRouteLabel,
+    roiPoint: "Potential capacity opportunity; not a realized value claim.",
+    gleanEvidence:
+      "Glean and FluencyTracr can show aggregate AI-enabled work patterns around this process.",
+    sourceSystem: primarySignal.source,
+    approvedGrain: "aggregate workflow window",
+    baselineRule: "Baseline and comparison windows must be approved by the customer owner.",
+    customerDataNeeded: `${primarySignal.source} at aggregate workflow window; baseline and comparison windows approved by Support Operations.`,
+    status: "Needs customer evidence",
+    nextValidationStep:
+      "Ask Support Operations for baseline and comparison exports before scenario language moves forward.",
+    scenarioHandoff:
+      "Model as a governed value scenario after the customer owner confirms baseline, comparison, assumptions, and source coverage.",
+    claimBoundary: "Modeled opportunity only; report with caveats after evidence review."
+  };
+  const primaryBridgeItem = journey.questionMetricBridge.items[0] ?? null;
+  const evidenceStatus =
+    journey.customerEvidenceReview.statusLabel || primaryOpportunity.status || "Needs customer evidence";
+  const mapStatusLabel =
+    primaryOpportunity.status === "Customer export awaiting review"
+      ? "Needs evidence review"
+      : primaryOpportunity.status;
+  const nextGatedAction =
+    primaryOpportunity.nextValidationStep ??
+    journey.customerEvidenceRequest.nextAction ??
+    "Map a governed metric before evidence or scenario work moves forward.";
 
-    <article className="ai-value-panel">
-      <div className="ai-value-section-head">
-        <div>
-          <p className="eyebrow">Outcome Mapping</p>
-          <h3>Value signals to map</h3>
-          <p>
-            Start with the client question, then choose the outcome measure,
-            source owner, and claim level before any scenario language moves forward.
-          </p>
-        </div>
-        <StatusPill label="Outcome first" tone="good" />
-      </div>
-      <div className="ai-value-table" role="table" aria-label="Recommended value signals">
-        {valueSignals.map((signal) => (
-          <div className="ai-value-row" role="row" key={signal.question}>
-            <span>{signal.question}</span>
-            <span>{signal.measure}</span>
-            <span>{signal.source}</span>
-            <StatusPill label={signal.status} tone={signal.status === "Needs owner" ? "warn" : "good"} />
+  return (
+    <section className="ai-value-focused-stack" aria-label="Metrics workspace">
+      <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+
+      <section
+        className="ai-value-panel ai-value-metrics-map-panel"
+        aria-label="Outcome and ROI opportunity map"
+      >
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Outcome Mapping</p>
+            <h3>Outcome and ROI opportunity map</h3>
+            <p>
+              Use this board to turn the Blueprint decision into the metric,
+              customer data ask, open evidence need, and next governed value step.
+            </p>
           </div>
-        ))}
-      </div>
-    </article>
-
-    <article className="ai-value-panel ai-value-opportunity-panel">
-      <div className="ai-value-section-head">
-        <div>
-          <p className="eyebrow">Metrics Library Engine</p>
-          <h3>Outcome &amp; ROI Opportunity Mapping</h3>
-          <p>
-            Convert the Blueprint route into measurable business outcomes.
-            Each card separates what Glean can show from the customer-owned data needed
-            before value language gets stronger.
-          </p>
+          <StatusPill
+            label={mapStatusLabel}
+            tone={primaryOpportunity.status === "Outcome evidence attached" ? "good" : "warn"}
+          />
         </div>
-        <StatusPill
-          label={journey.opportunities.length > 0 ? `${journey.opportunities.length} mapped` : "Needs metrics"}
-          tone={journey.opportunities.length > 0 ? "good" : "warn"}
-        />
-      </div>
-      <div className="ai-value-opportunity-board">
-        {journey.opportunities.length > 0 ? (
-          journey.opportunities.map((opportunity) => (
-            <article className="ai-value-opportunity-card" key={opportunity.id}>
-              <div className="ai-value-opportunity-card-head">
-                <div>
-                  <span className="ai-value-map-label">Blueprint value route</span>
-                  <h4>{opportunity.valueRouteLabel}</h4>
-                  <p>{opportunity.workflowName}</p>
-                </div>
-                <StatusPill
-                  label={opportunity.status}
-                  tone={opportunity.status === "Outcome evidence attached" ? "good" : "warn"}
-                />
-              </div>
 
-              <div className="ai-value-map-grid">
-                <div className="ai-value-map-cell">
-                  <span className="ai-value-map-label">Outcome metric</span>
-                  <strong>{opportunity.metricName}</strong>
-                  <p>{opportunity.measurementUnit}</p>
-                  <small>{opportunity.roiPoint}</small>
-                </div>
-                <div className="ai-value-map-cell">
-                  <span className="ai-value-map-label">Customer system to connect</span>
-                  <strong>{opportunity.sourceSystem}</strong>
-                  <p>{opportunity.approvedGrain}</p>
-                  <small>{opportunity.baselineRule}</small>
-                </div>
-                <div className="ai-value-map-cell">
-                  <span className="ai-value-map-label">What Glean can show</span>
-                  <p>{opportunity.gleanEvidence}</p>
-                </div>
-                <div className="ai-value-map-cell">
-                  <span className="ai-value-map-label">Scenario handoff</span>
-                  <p>{opportunity.scenarioHandoff}</p>
-                </div>
-                <div className="ai-value-map-cell ai-value-map-cell-wide">
-                  <span className="ai-value-map-label">Safe value language</span>
-                  <p>{opportunity.claimBoundary}</p>
-                  <small>{opportunity.nextValidationStep}</small>
-                </div>
+        <>
+          <div className="ai-value-metrics-map-hero">
+            <div>
+              <span className="ai-value-map-label">Blueprint route</span>
+              <h4>{primaryOpportunity.workflowName}</h4>
+              <p>{primaryOpportunity.valueRouteLabel}</p>
+              <small>{primaryOpportunity.roiPoint}</small>
+            </div>
+            <div>
+              <span className="ai-value-map-label">Client value question</span>
+              <h4>{primaryBridgeItem?.sponsorQuestion ?? "Where is the ROI opportunity?"}</h4>
+              <p>
+                {primaryBridgeItem?.successMeasure ??
+                  "Confirm the client success measure in Blueprint."}
+              </p>
+            </div>
+          </div>
+
+          <div className="ai-value-metrics-path">
+            <div className="ai-value-metrics-step">
+              <span className="ai-value-map-label">Outcome to measure</span>
+              <strong>{primaryOpportunity.metricName}</strong>
+              <p>{primaryOpportunity.measurementUnit}</p>
+            </div>
+            <div className="ai-value-metrics-step">
+              <span className="ai-value-map-label">Customer data needed</span>
+              <strong>{primaryOpportunity.sourceSystem}</strong>
+              <p>{primaryOpportunity.customerDataNeeded}</p>
+              <small>Baseline and comparison window: {primaryOpportunity.baselineRule}</small>
+            </div>
+            <div className="ai-value-metrics-step">
+              <span className="ai-value-map-label">Evidence gap</span>
+              <strong>{evidenceStatus}</strong>
+              <p>{primaryOpportunity.gleanEvidence}</p>
+            </div>
+            <div className="ai-value-metrics-step">
+              <span className="ai-value-map-label">Safe value language</span>
+              <p>{primaryOpportunity.claimBoundary}</p>
+              <small>{primaryOpportunity.scenarioHandoff}</small>
+            </div>
+            <div className="ai-value-metrics-step ai-value-metrics-step-wide">
+              <span className="ai-value-map-label">Next gated action</span>
+              <strong>{nextGatedAction}</strong>
+              <p>
+                This feeds the evidence request and the governed scenario builder; it does
+                not create a realized value claim.
+              </p>
+              <div className="ai-value-chip-row">
+                <Link className="ai-value-step" to="/ai-value-workspace/evidence">
+                  Open Evidence plan
+                </Link>
+                <Link className="ai-value-step" to="/ai-value-workspace/scenario">
+                  Open Scenario builder
+                </Link>
               </div>
+            </div>
+          </div>
+        </>
+      </section>
+
+      <article className="ai-value-panel ai-value-signal-shortlist-panel">
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Metric Candidates</p>
+            <h3>Outcome signals to consider</h3>
+            <p>
+              These are candidate signals for the client workshop. They become
+              scenario inputs only after ownership, source, and review rules are clear.
+            </p>
+          </div>
+          <StatusPill label="Outcome first" tone="good" />
+        </div>
+        <div className="ai-value-signal-shortlist" aria-label="Recommended value signals">
+          {valueSignals.map((signal) => (
+            <article className="ai-value-signal-card" key={signal.question}>
+              <div>
+                <span className="ai-value-map-label">Client question</span>
+                <h4>{signal.question}</h4>
+              </div>
+              <p>{signal.measure}</p>
+              <small>{signal.source}</small>
+              <StatusPill label={signal.status} tone={signal.status === "Needs owner" ? "warn" : "good"} />
             </article>
-          ))
-        ) : (
-          <p>
-            Add a Metrics Library for the selected Blueprint to map cost,
-            capacity, quality, risk, experience, or growth opportunities.
-          </p>
-        )}
-      </div>
-    </article>
-  </section>
-);
+          ))}
+        </div>
+      </article>
+    </section>
+  );
+};
 
 const EvidencePage = ({
   journey,

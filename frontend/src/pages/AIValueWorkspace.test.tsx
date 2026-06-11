@@ -83,7 +83,7 @@ describe("AIValueWorkspace", () => {
     expect(screen.getByRole("heading", { name: /Metrics & ROI Opportunities/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Client questions to metrics mapping/i })).toBeInTheDocument();
     expect(screen.getByText(/Are cases resolving faster/i)).toBeInTheDocument();
-    expect(screen.getByText(/Support case management system/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
     expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Executive Operating Packet/i })).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(/workflow_state|metric_state|claim boundary|raw_prompt|raw_response/i);
@@ -237,7 +237,7 @@ describe("AIValueWorkspace live evidence mode", () => {
 
     fireEvent.click(within(workspaceNavigation).getByRole("link", { name: /Metrics & ROI Opportunities/i }));
     expect(screen.getByText(/Opportunity data completeness/i)).toBeInTheDocument();
-    expect(screen.getByText(/CRM reporting/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/CRM reporting/i).length).toBeGreaterThan(0);
 
     fireEvent.click(within(workspaceNavigation).getByRole("link", { name: /Scenario Builder/i }));
     expect(screen.getByText(/Proven ROI/i)).toBeInTheDocument();
@@ -755,6 +755,42 @@ describe("AIValueWorkspace journey continuity", () => {
       uiTerm("FT", "_", "AI", "_", "VALUE")
     ]);
     expect(bridge.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI/i);
+  });
+
+  it("turns Metrics into an outcome and ROI opportunity map", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome and ROI opportunity map/i })).toBeInTheDocument();
+    });
+
+    const map = screen.getByRole("region", { name: /Outcome and ROI opportunity map/i });
+    expect(within(map).getByRole("heading", { name: /Outcome and ROI opportunity map/i })).toBeInTheDocument();
+    expect(within(map).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Customer data needed/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Baseline and comparison window/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Evidence gap/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Next gated action/i)).toBeInTheDocument();
+    expect(within(map).getByRole("link", { name: /Open Evidence plan/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/evidence"
+    );
+    expect(within(map).getByRole("link", { name: /Open Scenario builder/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/scenario"
+    );
+    expect(screen.queryByRole("table", { name: /Recommended value signals/i })).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("FT", "_", "AI", "_", "VALUE")
+    ]);
+    expect(map.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI|customer-facing economic/i);
   });
 
   it("shows a client-readable value spine trace inside the workshop", async () => {

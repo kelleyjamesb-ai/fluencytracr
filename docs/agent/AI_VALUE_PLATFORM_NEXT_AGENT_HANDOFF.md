@@ -487,6 +487,45 @@ Verification completed for the adjustment:
   handoff links render, no unsafe internal terms appear, no console
   warnings/errors occur, and there is no horizontal overflow.
 
+Latest requested adjustment:
+
+```text
+Metrics Opportunity Map
+```
+
+What changed after the Blueprint workshop board:
+
+- `/ai-value-workspace/metrics` now opens with an Outcome and ROI opportunity
+  map instead of a value-signal table.
+- The map connects the Blueprint route, client value question, outcome metric,
+  customer data need, evidence gap, safe value language, and next gated action.
+- The page now hands off directly into Evidence planning and the governed
+  Scenario builder.
+- The page has a governed example opportunity path before live evidence is
+  connected, so the client can understand what Metrics is for in example mode.
+- Metric candidates now render as cards rather than a table.
+- This is page-level interaction and comprehension work only. It does not add a
+  production connector, runtime service, autonomous customer action,
+  unsupported ROI proof, causality claim, individual scoring, HR analytics,
+  productivity ranking, raw prompt/response storage, direct identifiers, or
+  customer-facing dollarized output.
+
+Verification completed for the adjustment:
+
+- Red test first:
+  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "outcome and ROI opportunity map" --reporter=basic`
+- `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "outcome and ROI opportunity map" --reporter=basic`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
+- `npm test --workspace frontend -- --reporter=basic`
+- `npm run build --workspace frontend`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- In-app browser smoke for Metrics at 1440px and 390px: the opportunity map
+  renders in example mode, the old recommended value-signal table is absent,
+  Evidence and Scenario handoff links render, no unsafe internal terms appear,
+  no console warnings/errors occur, and there is no horizontal overflow.
+
 ## Next-Agent Prompt
 
 Use this prompt only after the human reviews the checkpoint and wants to keep
@@ -496,12 +535,13 @@ building:
 Continue the AI Value Platform product spine after the checkpoint review.
 First inspect Journey and the multi-page Workspace as a user: Workspace Home,
 Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Check whether
-the page split and Blueprint workshop board make the platform easier to
-understand, especially the path: Blueprint decision -> Metrics mapping -> ROI
-Scenario Readiness -> Customer Evidence Request -> Sponsor Decision. Identify
-the next bounded product slice that makes the platform more understandable or
-useful without expanding governance risk. The likely next slice is making
-Metrics feel like outcome and ROI opportunity mapping rather than a table.
+the page split, Blueprint workshop board, and Metrics opportunity map make the
+platform easier to understand, especially the path: Blueprint decision ->
+Metrics opportunity map -> Evidence readiness -> ROI Scenario Readiness ->
+Sponsor Decision. Identify the next bounded product slice that makes the
+platform more understandable or useful without expanding governance risk. The
+likely next slice is making Evidence and Scenario feel like one governed path
+from aggregate evidence to value language rather than separate panels.
 Keep FluencyTracr as aggregate evidence and keep ROI/value language governed:
 no production connector, runtime service, autonomous customer action, direct
 identifiers, raw prompt/response storage, unsupported ROI proof, causality
@@ -512,7 +552,6 @@ customer-facing dollarized output.
 ## What To Validate First
 
 Validate the working product experience, not the object model. The current
-biggest risk is still client comprehension: Blueprint now has a working board,
-but Metrics still needs to feel like outcome and ROI opportunity mapping, and
-Scenario/Evidence should feel like a governed path to value language rather
-than database state.
+biggest risk is still client comprehension: Blueprint and Metrics now have
+clearer working surfaces, but Scenario/Evidence still need to feel like a
+governed path to value language rather than database state.

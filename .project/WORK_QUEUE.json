@@ -83,7 +83,7 @@
       "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "In progress 2026-06-11 UTC: Workspace is route-based and Blueprint now behaves like a client workshop board with current/target lanes, focus decisions, and handoffs into Metrics, Evidence, and Scenario. Verified frontend tests/build, governance gates, diff check, and browser smoke at 1440px/390px."
+      "last_note": "In progress 2026-06-11 UTC: Workspace is route-based; Blueprint is a client workshop board; Metrics is now an outcome and ROI opportunity map with Blueprint route, client value question, metric, customer data need, evidence gap, and gated handoffs into Evidence and Scenario. Verified frontend tests/build, governance gates, diff check, and browser smoke at 1440px/390px."
     }
   ]
 }

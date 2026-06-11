@@ -356,3 +356,9 @@
 - Completed: Made `/ai-value-workspace/blueprint` behave like a client workshop board with current/target workflow lanes, interactive focus decisions, owner/next-step guidance, and clear handoffs into Metrics mapping, Evidence planning, and the governed Scenario builder.
 - Verified: red/green Blueprint board test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Blueprint at 1440px and 390px with the decision interaction, no unsafe internal terms, no console warnings/errors, and no horizontal overflow.
 - Next focus: inspect the multi-page Workspace with a product lens; the likely next bounded slice is making Metrics feel like outcome and ROI opportunity mapping rather than a table.
+
+## 2026-06-11 (UTC) - Codex (AI Value Metrics opportunity map)
+
+- Completed: Made `/ai-value-workspace/metrics` read as an Outcome and ROI opportunity map with Blueprint route, client value question, outcome metric, customer data need, evidence gap, safe value language, and next gated action. The page now has Evidence and Scenario handoff links, example-mode fallback content, and metric candidate cards instead of the old recommended-signal table.
+- Verified: red/green Metrics map test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Metrics at 1440px and 390px with no unsafe internal terms, no console warnings/errors, no horizontal overflow, and the old value-signal table absent.
+- Next focus: make Evidence and Scenario feel like one governed path from aggregate evidence to value language rather than separate database-backed panels.

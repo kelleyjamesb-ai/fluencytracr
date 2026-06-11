@@ -2369,6 +2369,78 @@ body {
   margin: 0;
 }
 
+.ai-value-metrics-map-panel {
+  border-color: #cbd5e8;
+  background: #f8fbff;
+}
+
+.ai-value-metrics-map-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ai-value-metrics-map-hero > div,
+.ai-value-metrics-step,
+.ai-value-signal-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dde2ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-metrics-map-hero h4,
+.ai-value-signal-card h4 {
+  margin: 2px 0 4px;
+}
+
+.ai-value-metrics-map-hero p,
+.ai-value-metrics-map-hero small,
+.ai-value-metrics-step p,
+.ai-value-metrics-step small,
+.ai-value-signal-card p,
+.ai-value-signal-card small {
+  display: block;
+  margin: 4px 0 0;
+}
+
+.ai-value-metrics-path {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ai-value-metrics-step {
+  display: grid;
+  gap: 4px;
+}
+
+.ai-value-metrics-step-wide {
+  grid-column: 1 / -1;
+}
+
+.ai-value-metrics-step-wide .ai-value-chip-row {
+  margin-top: 8px;
+}
+
+.ai-value-signal-shortlist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.ai-value-signal-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.ai-value-signal-card .ai-value-pill {
+  justify-self: start;
+}
+
 .ai-value-map-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2969,6 +3041,11 @@ body {
 }
 
 @media (max-width: 980px) {
+  .ai-value-metrics-map-hero,
+  .ai-value-metrics-path {
+    grid-template-columns: 1fr;
+  }
+
   .ai-value-blueprint-canvas .ai-value-section-head {
     flex-direction: column;
     align-items: flex-start;
