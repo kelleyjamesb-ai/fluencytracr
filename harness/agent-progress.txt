@@ -344,3 +344,9 @@
 - Completed: Added a shared Client Value Spine Trace to `/ai-value-journey` and `/ai-value-workspace`. The trace shows the client-readable path from Blueprint decision to outcome metric, customer evidence, governed value language, and sponsor decision, with each step showing what it feeds next.
 - Verified: red/green trace tests; affected Journey/Workspace suites; full frontend tests/build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Journey/Workspace empty state at 1440px and 390px with no console warnings/errors and no horizontal overflow.
 - Next focus: pause for human review of the full product spine before starting another slice.
+
+## 2026-06-11 (UTC) - Codex (AI Value multi-page workspace IA)
+
+- Completed: Split `/ai-value-workspace` from one long page into a route-based guided workspace. Home is now a command center, with focused pages for Readiness, Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Existing governed panels were preserved and moved to the page where a client would expect to use them.
+- Verified: route-specific Workspace tests; Journey + Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all workspace pages at 1440px and 390px with no unsafe internal terms, console warnings/errors, or horizontal overflow.
+- Next focus: pause for human review of the multi-page Workspace and decide whether the next slice should improve page-level interaction depth, visual workshop affordances, or the ROI/evidence data intake path.

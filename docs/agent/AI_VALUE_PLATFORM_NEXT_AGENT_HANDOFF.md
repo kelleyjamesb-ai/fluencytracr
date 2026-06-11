@@ -409,6 +409,48 @@ Pause checkpoint:
   plus Client Value Spine Trace make the platform feel like one connected
   client value workflow instead of a set of database-backed panels.
 
+Latest requested adjustment:
+
+```text
+Multi-Page Workspace IA
+```
+
+What changed after the checkpoint:
+
+- `/ai-value-workspace` is now the Workspace Home / command center instead of
+  the long all-in-one page.
+- The workspace has focused route-based pages:
+  `/ai-value-workspace/readiness`, `/blueprint`, `/metrics`, `/evidence`,
+  `/scenario`, `/readout`, and `/decisions`.
+- The old tab-like six-panel workshop flow was replaced with persistent page
+  navigation and focused page bodies.
+- Existing governed components were preserved and moved to the page where a
+  client would expect them: Blueprint workshop canvas, Questions to Metrics
+  Bridge, Customer Evidence Request/Review, ROI Scenario Readiness, Executive
+  Readout Preview, Executive Operating Packet, Sponsor Decision Loop, and Safe
+  Value Language.
+- One handoff label was made more client-readable: "Target object or workflow"
+  became "Where this goes next."
+- This is IA and comprehension work only. It does not add a production
+  connector, runtime service, autonomous customer action, unsupported ROI proof,
+  causality claim, individual scoring, HR analytics, productivity ranking, raw
+  prompt/response storage, direct identifiers, or customer-facing dollarized
+  output.
+
+Verification completed for the adjustment:
+
+- `npm test --workspace frontend -- AIValueWorkspace.test.tsx --reporter=basic`
+- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
+- `npm test --workspace frontend -- --reporter=basic`
+- `npm run build --workspace frontend`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `node scripts/ci_glean_value_governance_gates.mjs`
+- `git diff --check`
+- In-app browser smoke for Home, Blueprint, Metrics, Evidence, Scenario,
+  Readout, and Decisions at 1440px and 390px: no missing expected headings, no
+  cross-page heading bleed-through, no unsafe internal terms, no console
+  warnings/errors, and no horizontal overflow.
+
 ## Next-Agent Prompt
 
 Use this prompt only after the human reviews the checkpoint and wants to keep
@@ -416,10 +458,13 @@ building:
 
 ```text
 Continue the AI Value Platform product spine after the checkpoint review.
-First inspect Journey and Workspace as a user: Client Value Questions ->
-Questions to Metrics Bridge -> ROI Scenario Readiness -> Customer Evidence
-Request -> Sponsor Decision. Identify the next bounded product slice that makes
-the platform more understandable or useful without expanding governance risk.
+First inspect Journey and the multi-page Workspace as a user: Workspace Home,
+Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Check whether
+the page split makes the platform easier to understand, especially the path:
+Client Value Questions -> Questions to Metrics Bridge -> ROI Scenario Readiness
+-> Customer Evidence Request -> Sponsor Decision. Identify the next bounded
+product slice that makes the platform more understandable or useful without
+expanding governance risk.
 Keep FluencyTracr as aggregate evidence and keep ROI/value language governed:
 no production connector, runtime service, autonomous customer action, direct
 identifiers, raw prompt/response storage, unsupported ROI proof, causality

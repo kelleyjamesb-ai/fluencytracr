@@ -241,7 +241,7 @@ export const SponsorDecisionLoopPanel = ({
             <p>{preview.owner}</p>
           </div>
           <div className="ai-value-map-cell">
-            <span className="ai-value-map-label">Target object or workflow</span>
+            <span className="ai-value-map-label">Where this goes next</span>
             <p>{preview.target}</p>
           </div>
           <div className="ai-value-map-cell">

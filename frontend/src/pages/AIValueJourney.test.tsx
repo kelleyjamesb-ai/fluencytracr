@@ -1105,7 +1105,7 @@ describe("AIValueJourney", () => {
     expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
     expect(within(preview).getByText(/^Owner$/i)).toBeInTheDocument();
     expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
-    expect(within(preview).getByText(/Target object or workflow/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/Where this goes next/i)).toBeInTheDocument();
     expect(within(preview).getByText(target)).toBeInTheDocument();
     expect(within(preview).getByText(/Required evidence or input/i)).toBeInTheDocument();
     expect(within(preview).getByText(required)).toBeInTheDocument();
