@@ -277,9 +277,13 @@ const StatusPill = ({
 }) => <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>;
 
 export const ClientQuestionMetricBridgePanel = ({
-  bridge
+  bridge,
+  selectedFunction: controlledSelectedFunction,
+  onSelectedFunctionChange
 }: {
   bridge: ClientQuestionMetricBridge;
+  selectedFunction?: string;
+  onSelectedFunctionChange?: (functionArea: string) => void;
 }) => {
   const functionPlans = useMemo(() => buildFunctionMetricPlans(bridge), [bridge]);
   const initialSelections = useMemo(
@@ -301,16 +305,21 @@ export const ClientQuestionMetricBridgePanel = ({
       ) as Record<string, string[]>,
     [functionPlans]
   );
-  const [selectedFunction, setSelectedFunction] = useState(functionPlans[0]?.functionArea ?? "");
+  const [localSelectedFunction, setLocalSelectedFunction] = useState(functionPlans[0]?.functionArea ?? "");
   const [selectedMetricIdsByFunction, setSelectedMetricIdsByFunction] =
     useState<Record<string, string[]>>(initialSelections);
+  const selectedFunction = controlledSelectedFunction ?? localSelectedFunction;
+
+  const updateSelectedFunction = (functionArea: string) => {
+    setLocalSelectedFunction(functionArea);
+    onSelectedFunctionChange?.(functionArea);
+  };
 
   useEffect(() => {
-    setSelectedFunction((current) =>
-      functionPlans.some((plan) => plan.functionArea === current)
-        ? current
-        : functionPlans[0]?.functionArea ?? ""
-    );
+    const fallbackFunction = functionPlans[0]?.functionArea ?? "";
+    if (!functionPlans.some((plan) => plan.functionArea === selectedFunction)) {
+      updateSelectedFunction(fallbackFunction);
+    }
     setSelectedMetricIdsByFunction((current) => {
       const nextSelections = { ...current };
       let changed = false;
@@ -332,7 +341,7 @@ export const ClientQuestionMetricBridgePanel = ({
       }
       return changed ? nextSelections : current;
     });
-  }, [functionPlans, initialSelections]);
+  }, [functionPlans, initialSelections, selectedFunction]);
 
   const selectedPlan =
     functionPlans.find((plan) => plan.functionArea === selectedFunction) ?? functionPlans[0];
@@ -399,7 +408,7 @@ export const ClientQuestionMetricBridgePanel = ({
                   : "ai-value-metric-function"
               }
               key={plan.functionArea}
-              onClick={() => setSelectedFunction(plan.functionArea)}
+              onClick={() => updateSelectedFunction(plan.functionArea)}
               type="button"
             >
               <strong>{plan.functionArea}</strong>

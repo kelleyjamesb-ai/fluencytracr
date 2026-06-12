@@ -76,7 +76,16 @@ describe("AIValueWorkspace executive spine", () => {
 
     expect(screen.getByText("The value realization spine")).toBeInTheDocument();
     expect(screen.getAllByText(/Assemble the value evidence case/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
+    const vbdFramework = screen.getByRole("region", { name: /Organizational AI Fluency framework/i });
+    const phaseCards = screen.getByRole("region", { name: /Workspace phase cards/i });
+    expect(vbdFramework).toBeInTheDocument();
+    expect(within(vbdFramework).getByText("Deep but slow")).toBeInTheDocument();
+    expect(within(vbdFramework).getByText("High-fluency flow")).toBeInTheDocument();
+    expect(within(vbdFramework).getByText("Low integration")).toBeInTheDocument();
+    expect(within(vbdFramework).getByText("Fast but shallow")).toBeInTheDocument();
+    expect(within(vbdFramework).getByText(/Signals, not scores/i)).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
+    expect(Boolean(vbdFramework.compareDocumentPosition(phaseCards) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
 
     expectNoUnsafeUiLanguage(container.textContent);
   });
@@ -123,12 +132,16 @@ describe("AIValueWorkspace executive spine", () => {
 
   it("gives the VBD operating map its own spine step and redirects the old blueprint link", () => {
     const vbd = renderWorkspace("/ai-value-workspace/vbd");
+    const vbdFramework = screen.getByRole("region", { name: /Organizational AI Fluency framework/i });
     const vbdMap = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
+    expect(vbdFramework).toBeInTheDocument();
     expect(vbdMap).toBeInTheDocument();
+    expect(Boolean(vbdFramework.compareDocumentPosition(vbdMap) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
     expect(within(vbdMap).getAllByText(/High-fluency flow/i).length).toBeGreaterThan(0);
     vbd.unmount();
 
     renderWorkspace("/ai-value-workspace/blueprint");
+    expect(screen.getByRole("region", { name: /Organizational AI Fluency framework/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
     const activeLink = screen.getByRole("link", { current: "page" });
     expect(activeLink).toHaveTextContent("VBD Map");
@@ -147,6 +160,7 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
     expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
     expect(within(map).getByText(/Bubble size shows combined Velocity, Breadth, and Depth/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Organizational AI Fluency framework/i })).toBeInTheDocument();
     const quadrantMap = within(map).getByLabelText("VBD quadrant map");
     expect(within(quadrantMap).getByText("Fast but shallow")).toBeInTheDocument();
     expect(within(quadrantMap).getByText("High-fluency flow")).toBeInTheDocument();
@@ -156,12 +170,16 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(quadrantMap).getByText(/AI is embedded enough to scale/i)).toBeInTheDocument();
     expect(within(quadrantMap).getByText(/Find the work fit before scaling/i)).toBeInTheDocument();
     expect(within(quadrantMap).getByText(/Good use case, slow spread/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getAllByText("Watch for").length).toBe(4);
+    expect(within(quadrantMap).getByText(/Low verification/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/Repeat use/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/Human-only fallback/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/Workflow drag/i)).toBeInTheDocument();
     const yAxis = container.querySelector(".ai-value-vbd-y-axis");
     expect(yAxis).toBeInstanceOf(HTMLElement);
     expect(within(yAxis as HTMLElement).getByText("High")).toHaveClass("ai-value-vbd-axis-high");
     expect(within(yAxis as HTMLElement).getByText("Velocity")).toHaveClass("ai-value-vbd-axis-title");
     expect(within(yAxis as HTMLElement).getByText("Low")).toHaveClass("ai-value-vbd-axis-low");
-    expect(container.querySelectorAll(".ai-value-vbd-grid p")).toHaveLength(0);
     expect(container.querySelectorAll(".ai-value-vbd-grid h4, .ai-value-vbd-grid .ai-value-map-label")).toHaveLength(0);
     expect(container.querySelectorAll(".ai-value-vbd-function-marker")).toHaveLength(0);
     const bubbles = container.querySelectorAll(".ai-value-vbd-function-bubble");
@@ -562,7 +580,18 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(watchPlan).getByText(/Release frequency/i)).toBeInTheDocument();
     expect(within(watchPlan).getByText(/Compare selected outcomes against Velocity, Breadth, and Depth movement over time/i)).toBeInTheDocument();
     expect(within(bridge).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("article", { name: /Candidate outcome metrics/i })).toBeInTheDocument();
+    const candidateMetrics = screen.getByRole("article", { name: /Candidate outcome metrics/i });
+    expect(candidateMetrics).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/How fast are pull requests merging/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Pull request cycle time/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).queryByText(/Are cases resolving faster/i)).not.toBeInTheDocument();
+
+    fireEvent.click(within(bridge).getByRole("button", { name: "Finance or Accounting" }));
+    expect(within(candidateMetrics).getByText(/Finance or Accounting/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Is the close cycle getting shorter/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Close cycle time/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).queryByText(/How fast are pull requests merging/i)).not.toBeInTheDocument();
 
     // The old step-guide and duplicate opportunity map stay removed.
     expect(screen.queryByText(/Step 4 of 8/i)).not.toBeInTheDocument();

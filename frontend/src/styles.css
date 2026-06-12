@@ -2460,6 +2460,254 @@ body {
   min-height: 860px;
 }
 
+.ai-fluency-framework-panel {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 16px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.86) 46%, rgba(251, 251, 247, 0.96)),
+    #fbfbf8;
+}
+
+.ai-fluency-framework-panel > .eyebrow {
+  text-align: center;
+}
+
+.ai-fluency-framework-panel > h3 {
+  margin: 0;
+  color: #10204c;
+  font-size: clamp(31px, 4vw, 48px);
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.ai-fluency-framework-wrap {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.ai-fluency-framework-y-axis {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  min-height: 700px;
+  padding-left: 6px;
+  border-right: 4px solid #10204c;
+  color: #10204c;
+  text-align: center;
+}
+
+.ai-fluency-framework-y-axis strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #10204c;
+  font-size: 28px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ai-fluency-framework-y-axis p {
+  margin: 0;
+  max-width: 124px;
+  color: #10204c;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.28;
+}
+
+.ai-fluency-framework-axis-high,
+.ai-fluency-framework-axis-low,
+.ai-fluency-framework-x-axis > span {
+  color: #0f7c2d;
+  font-size: 20px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ai-fluency-framework-axis-low,
+.ai-fluency-framework-x-axis > span:first-child {
+  color: #c1121f;
+}
+
+.ai-fluency-framework-main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ai-fluency-framework-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  min-height: 700px;
+}
+
+.ai-fluency-framework-quadrant {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  min-width: 0;
+  padding: 28px 30px;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #10204c;
+}
+
+.ai-fluency-framework-quadrant-amber {
+  background: #fff7e8;
+  color: #d97706;
+}
+
+.ai-fluency-framework-quadrant-green {
+  background: #f1fbf0;
+  color: #0f7c2d;
+}
+
+.ai-fluency-framework-quadrant-red {
+  background: #fff2f2;
+  color: #c1121f;
+}
+
+.ai-fluency-framework-quadrant-blue {
+  background: #eef6ff;
+  color: #155bd4;
+}
+
+.ai-fluency-framework-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.ai-fluency-framework-quadrant strong {
+  display: block;
+  margin: 6px 0 22px;
+  color: currentColor;
+  font-size: clamp(21px, 2.2vw, 30px);
+  line-height: 1.06;
+  text-transform: uppercase;
+}
+
+.ai-fluency-framework-quadrant p {
+  margin: 0 0 26px;
+  color: #111827;
+  font-size: clamp(17px, 1.45vw, 23px);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.ai-fluency-framework-quadrant span:not(.ai-fluency-framework-icon) {
+  display: block;
+  margin-bottom: 12px;
+  color: currentColor;
+  font-size: clamp(16px, 1.35vw, 21px);
+  font-weight: 900;
+}
+
+.ai-fluency-framework-quadrant ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding-left: 24px;
+  color: #111827;
+  font-size: clamp(15px, 1.15vw, 20px);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.ai-fluency-framework-quadrant li::marker {
+  color: currentColor;
+}
+
+.ai-fluency-framework-x-axis {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 0.8fr) 1fr;
+  gap: 16px;
+  align-items: start;
+  border-top: 4px solid #10204c;
+  padding-top: 12px;
+  color: #10204c;
+  text-align: center;
+}
+
+.ai-fluency-framework-x-axis > span:first-child {
+  justify-self: start;
+}
+
+.ai-fluency-framework-x-axis > span:last-child {
+  justify-self: end;
+}
+
+.ai-fluency-framework-x-axis strong {
+  display: block;
+  color: #10204c;
+  font-size: 28px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ai-fluency-framework-x-axis p {
+  margin: 6px 0 0;
+  color: #10204c;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.ai-fluency-framework-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  margin: 10px auto 0;
+  width: min(100%, 1100px);
+  padding: 22px 28px;
+  border: 2px solid #10204c;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #10204c;
+}
+
+.ai-fluency-framework-shield {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: #10204c;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ai-fluency-framework-note strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 23px;
+}
+
+.ai-fluency-framework-note p {
+  margin: 0;
+  color: #10204c;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .ai-value-home-grid {
   display: grid;
   grid-template-columns: minmax(320px, 1fr) minmax(300px, 0.75fr);
@@ -3353,7 +3601,7 @@ body {
 .ai-value-vbd-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-height: 560px;
+  min-height: 700px;
   border: 1px solid #c6cbd9;
   border-radius: 8px;
   overflow: hidden;
@@ -3362,8 +3610,8 @@ body {
 .ai-value-vbd-quadrant {
   position: relative;
   min-width: 0;
-  min-height: 280px;
-  padding: 16px;
+  min-height: 350px;
+  padding: 18px;
   border: 0;
   border-radius: 0;
   background: #ffffff;
@@ -3392,30 +3640,53 @@ body {
 .ai-value-vbd-quadrant-label {
   position: absolute;
   display: grid;
-  gap: 4px;
-  max-width: 190px;
-  padding: 8px 10px;
-  border: 1px solid rgba(29, 42, 89, 0.16);
+  gap: 9px;
+  max-width: min(292px, calc(100% - 28px));
+  padding: 14px 16px;
+  border: 1px solid rgba(29, 42, 89, 0.18);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.9);
   color: #1d2a59;
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: 12px;
+  line-height: 1.35;
   pointer-events: none;
-  z-index: 1;
+  box-shadow: 0 14px 28px rgba(20, 35, 70, 0.08);
+  z-index: 3;
 }
 
 .ai-value-vbd-quadrant-label strong {
-  font-size: 12px;
+  color: #10204c;
+  font-size: 16px;
+  line-height: 1.15;
 }
 
-.ai-value-vbd-quadrant-label span {
+.ai-value-vbd-quadrant-label p {
+  margin: 0;
+  color: #202020;
+  font-weight: 650;
+}
+
+.ai-value-vbd-quadrant-label > span {
   color: #3f4a67;
   font-weight: 700;
 }
 
+.ai-value-vbd-watch-title {
+  color: #1d2a59;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.ai-value-vbd-quadrant-label ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+  color: #202020;
+  font-weight: 650;
+}
+
 .ai-value-vbd-quadrant-fast-shallow .ai-value-vbd-quadrant-label,
-.ai-value-vbd-quadrant-flow .ai-value-vbd-quadrant-label,
 .ai-value-vbd-quadrant-low-integration .ai-value-vbd-quadrant-label {
   left: 14px;
 }
@@ -3429,6 +3700,11 @@ body {
 .ai-value-vbd-quadrant-low-integration .ai-value-vbd-quadrant-label,
 .ai-value-vbd-quadrant-deep-slow .ai-value-vbd-quadrant-label {
   top: 14px;
+}
+
+.ai-value-vbd-quadrant-flow .ai-value-vbd-quadrant-label {
+  bottom: 14px;
+  left: 14px;
 }
 
 .ai-value-vbd-footer {
@@ -3477,7 +3753,7 @@ body {
   text-align: center;
   transform: translate(-50%, -50%);
   white-space: normal;
-  z-index: 2;
+  z-index: 4;
 }
 
 .ai-value-vbd-function-bubble span {
@@ -3937,6 +4213,7 @@ body {
   .ai-value-page-head,
   .ai-value-page-guide,
   .ai-value-context-bar,
+  .ai-fluency-framework-wrap,
   .ai-value-home-grid,
   .ai-value-intake-flow,
   .ai-value-intake-footer,
@@ -3975,6 +4252,40 @@ body {
 
   .ai-value-workspace-card {
     min-width: 150px;
+  }
+
+  .ai-fluency-framework-panel > h3 {
+    text-align: left;
+  }
+
+  .ai-fluency-framework-y-axis {
+    min-height: auto;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto;
+    gap: 12px;
+    border-right: 0;
+    border-bottom: 4px solid #10204c;
+    padding: 0 0 12px;
+  }
+
+  .ai-fluency-framework-y-axis p {
+    max-width: none;
+  }
+
+  .ai-fluency-framework-grid {
+    min-height: auto;
+  }
+
+  .ai-fluency-framework-quadrant {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-fluency-framework-x-axis {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .ai-fluency-framework-note {
+    grid-template-columns: 1fr;
   }
 
   .ai-value-vbd-y-axis {
