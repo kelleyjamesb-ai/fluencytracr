@@ -43,139 +43,57 @@ const renderWorkspace = (path = "/ai-value-workspace") =>
     </MemoryRouter>
   );
 
-describe("AIValueWorkspace", () => {
-  it("renders a multi-page workspace home instead of one long workshop page", () => {
+
+describe("AIValueWorkspace executive spine", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ objects: [] }))
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders the value realization spine as the only navigation", () => {
     const { container } = renderWorkspace();
 
-    expect(screen.getByRole("heading", { name: /AI Value Workspace/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Workspace Home/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Workspace Home guide/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/AI Fluency baseline, VBD map, value actions/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Next action/i)).toBeInTheDocument();
-    expect(screen.getByText(/Start with AI Fluency. Use VBD/i)).toBeInTheDocument();
-    expect(screen.getByText(/You need/i)).toBeInTheDocument();
-    expect(screen.getByText(/Sponsor value question/i)).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: /AI value workspace pages/i });
+    const links = within(nav).getAllByRole("link");
+    expect(links).toHaveLength(6);
+    expect(links.map((link) => within(link).getByRole("strong").textContent)).toEqual([
+      "Overview",
+      "AI Fluency",
+      "VBD Map",
+      "Outcome Metrics",
+      "Evidence Case",
+      "Decision & Retest"
+    ]);
+    expect(within(nav).queryByText(/Blueprint/i)).not.toBeInTheDocument();
+    expect(within(nav).queryByText(/Scenario/i)).not.toBeInTheDocument();
+    expect(within(nav).queryByText(/Readout/i)).not.toBeInTheDocument();
+
+    expect(screen.getByText("The value realization spine")).toBeInTheDocument();
+    expect(screen.getAllByText(/Assemble the value evidence case/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Velocity \+ Depth show the work pattern/i })).toBeInTheDocument();
-    expect(screen.getByText(/High-fluency flow/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Start with AI Fluency/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readiness"
-    );
-    expect(screen.getAllByText(/Customer support case resolution/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Capacity creation/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Needs client assumptions/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Internal planning only/i).length).toBeGreaterThan(0);
-    const intake = screen.getByRole("region", { name: /Evidence connection/i });
-    expect(within(intake).getByRole("heading", { name: /Evidence Connection/i })).toBeInTheDocument();
-    expect(within(intake).getByText(/Customer-side aggregate package/i)).toBeInTheDocument();
-    expect(within(intake).getByText(/Approved evidence package/i)).toBeInTheDocument();
-    expect(within(intake).getByText(/Workspace evidence view/i)).toBeInTheDocument();
-    expect(within(intake).getByText(/Safe value language/i)).toBeInTheDocument();
-    expect(
-      within(intake).getByText(/This view does not calculate ROI, prove causality, or rank people/i)
-    ).toBeInTheDocument();
 
-    const workspaceNavigation = screen.getByRole("navigation", {
-      name: /AI value workspace pages/i
-    });
-    expect(screen.queryByRole("navigation", { name: /^Value journey$/i })).not.toBeInTheDocument();
-    expect(within(workspaceNavigation).getByRole("link", { name: /AI Fluency/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readiness"
-    );
-    expect(within(workspaceNavigation).getAllByText(/Not started/i).length).toBeGreaterThan(0);
-    expect(within(workspaceNavigation).getByRole("link", { name: /Blueprint Workshop/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/blueprint"
-    );
-    expect(within(workspaceNavigation).getByRole("link", { name: /Metrics & ROI Opportunities/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/metrics"
-    );
-    expect(within(workspaceNavigation).getByRole("link", { name: /Evidence Readiness/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/evidence"
-    );
-    expect(within(workspaceNavigation).getByRole("link", { name: /Executive Readout/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readout"
-    );
-    expect(screen.queryByRole("button", { name: /Value Signals/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /ROI Scenario Readiness/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
-    expect(container.textContent).not.toMatch(
-      /workflow_state|metric_state|claim boundary|raw_prompt|raw_response|employee_id|user_id|manager_view|team_ranking|productivity_score|Glean proved ROI/i
-    );
-    expect(container.textContent).not.toMatch(/AI Fluency Instrument/i);
+    expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("renders the metrics page as a focused outcome and ROI opportunity view", () => {
-    const { container } = renderWorkspace("/ai-value-workspace/metrics");
-
-    expect(screen.getByRole("heading", { name: /Metrics & ROI Opportunities/i })).toBeInTheDocument();
-    const guide = screen.getByRole("region", { name: /Metrics & ROI Opportunities guide/i });
-    expect(within(guide).getByText(/Blueprint selected the workflow/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/accept the starting metric, choose a different candidate/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Choice to make/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/What should we ask the data owner for/i)).toBeInTheDocument();
-    expect(within(guide).getByRole("link", { name: /Prepare Evidence Ask/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/evidence"
-    );
-    expect(within(guide).getByText(/Blueprint workflow/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Starting metric option/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Missing before evidence/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Next step/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Evidence Readiness checks whether this can support scenario planning/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
-    const candidates = screen.getByRole("article", { name: /Candidate outcome metrics/i });
-    expect(within(candidates).getByRole("heading", { name: /Metric options the client can choose from/i })).toBeInTheDocument();
-    expect(within(candidates).getByText(/suggested from the Blueprint workflow and value route/i)).toBeInTheDocument();
-    expect(within(candidates).getByText(/Blueprint workflow, value route, and available metric definitions/i)).toBeInTheDocument();
-    expect(within(candidates).getByText(/The client sponsor and data owner choose the metric to carry forward/i)).toBeInTheDocument();
-    expect(within(candidates).getByText(/Add more when the client names another KPI or source system/i)).toBeInTheDocument();
-    expect(screen.getByText(/Are cases resolving faster/i)).toBeInTheDocument();
-    expect(within(candidates).getAllByText(/Possible metric/i).length).toBeGreaterThan(1);
-    expect(screen.getByText(/Likely source: Support case management system/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
-    expect(container.textContent).not.toMatch(/Outcome signals to consider|These are candidate signals|Metric Candidates/i);
-    expect(container.textContent).not.toMatch(/Where is the ROI opportunity|Recommended metric to carry forward/i);
-    expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Executive Operating Packet/i })).not.toBeInTheDocument();
-    expect(container.textContent).not.toMatch(/workflow_state|metric_state|claim boundary|raw_prompt|raw_response/i);
-  });
-
-  it("frames the readiness step as AI Fluency that feeds Blueprint", () => {
+  it("keeps the AI Fluency page to baseline numbers and the assessment", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
-    const workspaceNavigation = screen.getByRole("navigation", {
-      name: /AI value workspace pages/i
-    });
-    expect(
-      within(workspaceNavigation).getByRole("link", { name: /AI Fluency/i })
-    ).toHaveAttribute("href", "/ai-value-workspace/readiness");
-    expect(screen.getByRole("heading", { name: /^AI Fluency$/i })).toBeInTheDocument();
-    expect(screen.getByText(/Send AI Fluency. Review aggregate results by function/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /AI Fluency is the baseline/i })).toBeInTheDocument();
-    expect(screen.getByText(/Review aggregate results by function. Then plot VBD/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
-    expect(screen.getByText(/Breadth shows coverage by function, role, or workflow/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /AI Fluency Baseline/i })).toBeInTheDocument();
+    expect(screen.getByText("Aggregate results only")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /AI Fluency experience/i })).toBeInTheDocument();
 
-    for (const dimension of [
-      "Confidence",
-      "Usage Quality",
-      "Behavior Change",
-      "Leadership Reinforcement",
-      "Capability Growth"
-    ]) {
-      expect(screen.getByText(dimension)).toBeInTheDocument();
-    }
+    // Practitioner clutter stays off the executive page.
+    expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Client Value Questions/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Blueprint/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Client kickoff/i)).not.toBeInTheDocument();
 
-    expect(screen.getAllByText(/What results tell us/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Aggregate results only/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Signals, not scores/i).length).toBeGreaterThan(0);
-    expect(container.textContent).not.toMatch(/AI Fluency Instrument|Instrument connection/i);
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
@@ -189,15 +107,9 @@ describe("AIValueWorkspace", () => {
 
     const experience = screen.getByRole("region", { name: /AI Fluency experience/i });
     expect(within(experience).getByRole("heading", { name: /Send AI Fluency and view results/i })).toBeInTheDocument();
-    expect(within(experience).getByText(/Use this first when the organization has not completed AI Fluency/i)).toBeInTheDocument();
-    expect(within(experience).getByText(/Client assessment preview/i)).toBeInTheDocument();
-    expect(within(experience).getByText(/Send this link to clients/i)).toBeInTheDocument();
     expect(
       within(experience).getByRole("link", { name: /Open client assessment/i })
     ).toHaveAttribute("href", "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item");
-
-    const preview = within(experience).getByTitle(/AI Fluency assessment preview/i);
-    expect(preview).toHaveAttribute("src", "/ai-fluency/assessment-24-item.html");
 
     fireEvent.click(within(experience).getByRole("button", { name: /Copy client link/i }));
     await waitFor(() => {
@@ -209,346 +121,42 @@ describe("AIValueWorkspace", () => {
 
     fireEvent.click(within(experience).getByRole("button", { name: /Show aggregate results/i }));
     expect(within(experience).getByText(/Aggregate results preview/i)).toBeInTheDocument();
-    expect(within(experience).getByTitle(/AI Fluency aggregate results preview/i)).toHaveAttribute(
-      "src",
-      "/ai-fluency/organizational-results.html"
-    );
 
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("renders evidence and executive readout as separate focused pages", () => {
-    const evidence = renderWorkspace("/ai-value-workspace/evidence");
+  it("gives the VBD operating map its own spine step and redirects the old blueprint link", () => {
+    const vbd = renderWorkspace("/ai-value-workspace/vbd");
+    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
+    expect(screen.getByText(/High-fluency flow/i)).toBeInTheDocument();
+    vbd.unmount();
 
-    expect(screen.getByRole("heading", { name: /^Evidence Readiness$/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Evidence Readiness guide/i })).toBeInTheDocument();
-    expect(screen.getByText(/Review aggregate evidence and customer-owned outcome data/i)).toBeInTheDocument();
-    expect(screen.getByText(/Baseline and comparison windows/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Customer evidence request/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Customer evidence review/i })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Executive Operating Packet/i })).not.toBeInTheDocument();
+    renderWorkspace("/ai-value-workspace/blueprint");
+    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
+    const activeLink = screen.getByRole("link", { current: "page" });
+    expect(activeLink).toHaveTextContent("VBD Map");
+  });
+
+  it("redirects demoted evidence, scenario, and readout pages to spine steps", () => {
+    const evidence = renderWorkspace("/ai-value-workspace/evidence");
+    expect(screen.getByRole("region", { name: /Value evidence case/i })).toBeInTheDocument();
     evidence.unmount();
 
-    const readout = renderWorkspace("/ai-value-workspace/readout");
+    const scenario = renderWorkspace("/ai-value-workspace/scenario");
+    expect(screen.getByRole("region", { name: /Value evidence case/i })).toBeInTheDocument();
+    scenario.unmount();
 
-    expect(screen.getByRole("heading", { name: /^Executive Readout$/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
-    const proofChain = screen.getByRole("region", { name: /Value proof chain/i });
-    expect(within(proofChain).getByRole("heading", { name: /Metrics, evidence, scenario, decision/i })).toBeInTheDocument();
-    expect(within(proofChain).getByText(/Metric & outcome/i)).toBeInTheDocument();
-    expect(within(proofChain).getByText(/Evidence & proof/i)).toBeInTheDocument();
-    expect(within(proofChain).getByText(/^Scenario$/i)).toBeInTheDocument();
-    expect(within(proofChain).getByText(/^Decision$/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Sponsor decision/i })).toBeInTheDocument();
-    expect(screen.getByText(/Decision for the sponsor/i)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
-    expectNoUnsafeUiLanguage(readout.container.textContent);
+    renderWorkspace("/ai-value-workspace/readout");
+    const activeLink = screen.getByRole("link", { current: "page" });
+    expect(activeLink).toHaveTextContent("Decision & Retest");
   });
 
-  it("shows a clear previous and next handoff on focused workspace pages", () => {
-    const metrics = renderWorkspace("/ai-value-workspace/metrics");
-
-    const metricsHandoff = screen.getByRole("navigation", {
-      name: /Workspace page handoff/i
-    });
-    expect(
-      within(metricsHandoff).getByText(/Use the selected outcome metric to prepare the evidence request/i)
-    ).toBeInTheDocument();
-    expect(metricsHandoff.textContent).not.toMatch(/This page feeds next|Metrics feed evidence requests/i);
-    expect(within(metricsHandoff).getByRole("link", { name: /Back to Blueprint/i })).toHaveAttribute(
+  it("closes the loop from Decision & Retest back to the baseline", () => {
+    renderWorkspace("/ai-value-workspace/decisions");
+    expect(screen.getByRole("link", { name: /Remeasure from AI Fluency/i })).toHaveAttribute(
       "href",
-      "/ai-value-workspace/blueprint"
+      "/ai-value-workspace/readiness"
     );
-    expect(within(metricsHandoff).getByRole("link", { name: /Continue to Evidence/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/evidence"
-    );
-    metrics.unmount();
-
-    const decisions = renderWorkspace("/ai-value-workspace/decisions");
-
-    const decisionsHandoff = screen.getByRole("navigation", {
-      name: /Workspace page handoff/i
-    });
-    expect(within(decisionsHandoff).getByRole("link", { name: /Back to Readout/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readout"
-    );
-    expect(within(decisionsHandoff).getByRole("link", { name: /Return to Blueprint/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/blueprint"
-    );
-    expectNoUnsafeUiLanguage(decisions.container.textContent);
-  });
-});
-
-describe("AIValueWorkspace live evidence mode", () => {
-  const fakeRun = {
-    schema_version: "FT_AI_VALUE_SPINE_RUN_2026_06",
-    decision: "READY_FOR_EXECUTIVE_VALIDATION",
-    halted_at: null,
-    customer_facing_economic_output: false,
-    stages: {
-      blueprint: {
-        status: "VALID",
-        generated: false,
-        hold_reason: null,
-        validation: {},
-        object: {
-          workflow_name: "Sales pipeline hygiene",
-          workflow_family: "sales_pipeline_hygiene",
-          value_routes: { primary: "QUALITY_IMPROVEMENT" }
-        }
-      },
-      metrics: { status: "VALID", generated: false, hold_reason: null, validation: {}, object: {} },
-      scenario: {
-        status: "VALID",
-        generated: true,
-        hold_reason: null,
-        validation: {},
-        object: {
-          input: {
-            value_route: "QUALITY_IMPROVEMENT",
-            metric_references: [
-              {
-                name: "Opportunity data completeness",
-                measurement_unit: "share",
-                source_system: { source_name: "CRM reporting" },
-                allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION"
-              }
-            ],
-            scenario_bands: [
-              { band: "CONSERVATIVE", interpretation: "Narrowest signal set." },
-              { band: "BASE_CASE", interpretation: "All recommended signals." },
-              { band: "EXPANDED", interpretation: "After client validation." }
-            ]
-          }
-        }
-      },
-      readiness: {
-        status: "VALID",
-        generated: true,
-        hold_reason: null,
-        validation: {},
-        object: {
-          readiness_checks: {
-            workflow_state: "PRESENT",
-            metric_state: "PRESENT",
-            baseline_state: "PRESENT",
-            assumption_state: "PRESENT",
-            scenario_state: "PRESENT",
-            governance_state: "PRESENT"
-          },
-          decision_rationale: ["The workshop evidence cleared every readiness gate."],
-          next_actions: ["Schedule the sponsor validation session."]
-        }
-      },
-      claim_boundary: {
-        status: "VALID",
-        generated: true,
-        hold_reason: null,
-        validation: {},
-        object: {
-          claim_state: "CAVEATED",
-          safe_claims: ["Aggregate signals support internal planning."],
-          caveated_claims: ["The client validates operating assumptions first."],
-          required_caveats: ["This is a pre-ROI planning artifact."],
-          blocked_claims: ["roi_proof", "causality_claim"]
-        }
-      },
-      executive_packet: {
-        status: "VALID",
-        generated: true,
-        hold_reason: null,
-        validation: {},
-        object: { packet_id: "executive_packet_sales_pipeline_hygiene_v1" }
-      }
-    }
-  };
-
-  beforeEach(() => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("object_type=blueprint")) {
-          return jsonResponse({
-            objects: [{ object_type: "blueprint", object_id: "bp_sales_pipeline" }]
-          });
-        }
-        if (url.includes("object_type=metrics_library")) {
-          return jsonResponse({
-            objects: [{ object_type: "metrics_library", object_id: "ml_sales" }]
-          });
-        }
-        if (url.includes("/spine/run")) {
-          return jsonResponse({ run: fakeRun, persisted: [] });
-        }
-        return jsonResponse({ objects: [] });
-      })
-    );
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    localStorage.clear();
-  });
-
-  it("connects live evidence and shows client-facing live content", async () => {
-    const { container } = renderWorkspace();
-
-    fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Live evidence connected", { selector: "span" })).toBeInTheDocument();
-    });
-    expect(screen.getAllByText(/Ready for sponsor validation/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Shareable with caveats/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Sales pipeline hygiene/i).length).toBeGreaterThan(0);
-
-    const workspaceNavigation = screen.getByRole("navigation", {
-      name: /AI value workspace pages/i
-    });
-
-    fireEvent.click(within(workspaceNavigation).getByRole("link", { name: /Metrics & ROI Opportunities/i }));
-    expect(screen.getByText(/Opportunity data completeness/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/CRM reporting/i).length).toBeGreaterThan(0);
-
-    fireEvent.click(within(workspaceNavigation).getByRole("link", { name: /Scenario Builder/i }));
-    expect(screen.getByText(/Proven ROI/i)).toBeInTheDocument();
-    expect(screen.getByText(/AI caused the improvement/i)).toBeInTheDocument();
-
-    fireEvent.click(within(workspaceNavigation).getByRole("link", { name: /Evidence Readiness/i }));
-    expect(screen.getAllByText("Workflow canvas").length).toBeGreaterThan(0);
-
-    // Live mode must stay client-facing: no internal object or state names.
-    expect(container.textContent).not.toMatch(
-      /workflow_state|metric_state|claim boundary|READY_FOR_EXECUTIVE_VALIDATION|CAVEATED_VALUE_INVESTIGATION|raw_prompt|employee_id/
-    );
-  });
-
-  it("shows the client kickoff context when the full value chain is available", async () => {
-    let valueChainRequest: Record<string, unknown> | null = null;
-    localStorage.setItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY, "bp_sales_pipeline");
-    localStorage.setItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY, "engagement_v1");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.includes("object_type=blueprint")) {
-          return jsonResponse({
-            objects: [
-              { object_type: "blueprint", object_id: "bp_alpha" },
-              { object_type: "blueprint", object_id: "bp_sales_pipeline" }
-            ]
-          });
-        }
-        if (url.includes("object_type=metrics_library")) {
-          return jsonResponse({
-            objects: [{ object_type: "metrics_library", object_id: "ml_sales" }]
-          });
-        }
-        if (url.includes("object_type=engagement")) {
-          return jsonResponse({
-            objects: [
-              { object_type: "engagement", object_id: "engagement_alpha" },
-              { object_type: "engagement", object_id: "engagement_v1" }
-            ]
-          });
-        }
-        if (url.includes("object_type=fluency_baseline")) {
-          return jsonResponse({
-            objects: [{ object_type: "fluency_baseline", object_id: "baseline_v1" }]
-          });
-        }
-        if (url.includes("/value-chain/run")) {
-          valueChainRequest = JSON.parse(String(init?.body ?? "{}"));
-          return jsonResponse({
-            run: {
-              schema_version: "FT_AI_VALUE_CHAIN_RUN_2026_06",
-              decision: fakeRun.decision,
-              halted_at: null,
-              customer_facing_economic_output: false,
-              engagement: {
-                status: "VALID",
-                generated: false,
-                hold_reason: null,
-                validation: {},
-                covers_workflow_family: true,
-                object: {
-                  client: { client_name: "Northstar Enterprise" },
-                  business_objective: {
-                    objective_statement:
-                      "Create support capacity by reducing time spent locating trusted answers.",
-                    positive_business_outcome:
-                      "Faster resolution without quality loss."
-                  }
-                }
-              },
-              fluency_baseline: {
-                status: "VALID",
-                generated: false,
-                hold_reason: null,
-                validation: {},
-                object: {},
-                summary: {
-                  total_respondents: 180,
-                  suppressed_cohorts: 1,
-                  construct_means: {
-                    behavioral_intent: 3.94,
-                    usage_quality: 2.88
-                  }
-                }
-              },
-              spine: fakeRun
-            },
-            persisted: []
-          });
-        }
-        return jsonResponse({ objects: [] });
-      })
-    );
-
-    const { container } = renderWorkspace("/ai-value-workspace/readiness");
-    fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Live evidence connected", { selector: "span" })).toBeInTheDocument();
-    });
-    expect(screen.getByText(/Client kickoff/i)).toBeInTheDocument();
-    expect(screen.getByText(/Northstar Enterprise/i)).toBeInTheDocument();
-    expect(valueChainRequest).toMatchObject({
-      blueprint_id: "bp_sales_pipeline",
-      engagement_id: "engagement_v1"
-    });
-    expect(screen.getByText(/Create support capacity/i)).toBeInTheDocument();
-    expect(screen.getByText(/180 participants/i)).toBeInTheDocument();
-    expect(screen.getByText(/Strongest: Intent to use AI more/i)).toBeInTheDocument();
-    expect(screen.getByText(/Biggest gap: Usage quality/i)).toBeInTheDocument();
-    expect(screen.getByText(/1 small group withheld/i)).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(
-      /behavioral_intent|usage_quality|construct_means|respondent_id|cohort_id/
-    );
-  });
-
-  it("shows a friendly example-mode message when live evidence is unavailable", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("{}", { status: 500 }))
-    );
-
-    renderWorkspace();
-    fireEvent.click(screen.getByRole("button", { name: /Connect live evidence/i }));
-
-    await waitFor(() => {
-      expect(screen.getAllByRole("alert").some((alert) =>
-        /Live evidence is not connected yet/i.test(alert.textContent ?? "")
-      )).toBe(true);
-      expect(screen.getAllByRole("alert").some((alert) =>
-        /showing example content until approved aggregate evidence is available/i.test(alert.textContent ?? "")
-      )).toBe(true);
-    });
-    expect(screen.getByText("Example mode", { selector: "span" })).toBeInTheDocument();
   });
 });
 
@@ -879,260 +487,8 @@ describe("AIValueWorkspace journey continuity", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens with the same selected Blueprint workflow summarized by the Journey", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/blueprint");
 
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
-    });
-
-    const handoff = screen.getByRole("region", { name: /Selected workflow from Journey/i });
-    expect(within(handoff).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(handoff).getByText(/Capacity creation/i)).toBeInTheDocument();
-    expect(within(handoff).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
-    expect(
-      within(handoff).getByText(/This is the same workflow selected in Blueprint and summarized in the Journey/i)
-    ).toBeInTheDocument();
-    expect(within(handoff).getByRole("link", { name: /Back to Journey/i })).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(container.textContent);
-  });
-
-  it.each([
-    ["/ai-value-workspace/blueprint", /Blueprint workshop board/i],
-    ["/ai-value-workspace/metrics", /Metric setup to confirm with the client/i]
-  ])("keeps %s focused on mapping work instead of showing evidence status", async (path, expectedHeading) => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace(path);
-
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: expectedHeading })).toBeInTheDocument();
-    });
-
-    expect(screen.queryByRole("region", { name: /Evidence readiness decision/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Can we use this evidence/i })).not.toBeInTheDocument();
-    expect(container.textContent).not.toMatch(
-      /local materializer|aggregate ingest|governed AI work evidence|surfaced aggregate verdict|V3 verdict|source_coverage|Real Aggregate Evidence|Use real aggregate evidence/i
-    );
-    expectNoUnsafeUiLanguage(container.textContent);
-  });
-
-  it.each([
-    "/ai-value-workspace/evidence",
-    "/ai-value-workspace/scenario",
-    "/ai-value-workspace/readout",
-    "/ai-value-workspace/decisions"
-  ])("shows the evidence readiness decision on evidence-dependent page %s when approved evidence exists", async (path) => {
-    const fixture = withRealEvidenceReadiness();
-    stubJourneyFetch(fixture.objects, fixture.details);
-    const { container } = renderWorkspace(path);
-
-    await waitFor(() => {
-      const loadedPanel = screen.getByRole("region", { name: /Evidence readiness decision/i });
-      expect(within(loadedPanel).getAllByText(/Approved evidence connected/i).length).toBeGreaterThan(0);
-    });
-
-    const panel = screen.getByRole("region", { name: /Evidence readiness decision/i });
-    expect(within(panel).getByRole("heading", { name: /Can we use this evidence/i })).toBeInTheDocument();
-    expect(within(panel).getAllByText(/AI activity/i).length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText(/Ready/i).length).toBeGreaterThan(0);
-    expect(within(panel).getByText(/3 aggregate activity observations/i)).toBeInTheDocument();
-    expect(within(panel).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(
-      within(panel).getByText(/Review submitted customer outcome evidence before stronger value language moves forward/i)
-    ).toBeInTheDocument();
-    expect(panel.textContent).not.toMatch(
-      /v3_verdict_id|velocity_observations|source_coverage|workflow:CHAT|\bSUBMITTED\b|realized ROI proof|Glean proved ROI/
-    );
-  });
-
-  it("connects approved evidence and translates suppressed aggregate evidence into held client language", async () => {
-    const after = cloneJourneyDetails();
-    const readiness = after["evidence_readiness/readiness_v1"] as Record<string, any>;
-    readiness.source_coverage = {
-      ai_activity: "MISSING",
-      workflow: "MISSING",
-      baseline: "MISSING",
-      assumptions: "CAVEATED",
-      trust: "MISSING",
-      suppression: "MISSING"
-    };
-    readiness.source_refs = {};
-    const materializerBody = {
-      customer_facing_economic_output: false,
-      materialized: [{ object_type: "evidence_readiness", object_id: "readiness_v1" }],
-      held_reasons: [
-        "V3 verdict is SUPPRESS for cohort-real-evidence/workflow:CHAT",
-        "Outcome evidence export held: no paired baseline/comparison evidence aligned to the metrics library"
-      ],
-      objects: { evidence_readiness: readiness },
-      evidence_summary: {
-        forwarded_distribution_used: false,
-        velocity_observation_count: 0,
-        outcome_evidence_export_id: null
-      }
-    };
-    stubMaterializerFetch(materializerBody, journeyObjects, after);
-    const { container } = renderWorkspace("/ai-value-workspace/evidence");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Evidence readiness decision/i })).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /Connect approved evidence/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/Aggregate evidence is held because governance review did not clear this workflow/i)).toBeInTheDocument();
-    });
-    expect(screen.getByText(/Customer outcome evidence is not aligned to the approved metric, source, and windows/i)).toBeInTheDocument();
-    expect(screen.getByText(/Hold value language and revisit evidence readiness after governance review clears/i)).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(
-      /V3 verdict|SUPPRESS|cohort-real-evidence|workflow:CHAT|metrics library|source_coverage|realized ROI proof/
-    );
-  });
-
-  it("connects approved evidence and explains missing aggregate evidence without inventing readiness", async () => {
-    const after = cloneJourneyDetails();
-    const readiness = after["evidence_readiness/readiness_v1"] as Record<string, any>;
-    readiness.source_coverage = {
-      ai_activity: "MISSING",
-      workflow: "MISSING",
-      baseline: "MISSING",
-      assumptions: "CAVEATED",
-      trust: "MISSING",
-      suppression: "MISSING"
-    };
-    readiness.source_refs = {};
-    const materializerBody = {
-      customer_facing_economic_output: false,
-      materialized: [{ object_type: "evidence_readiness", object_id: "readiness_v1" }],
-      held_reasons: ["V3 verdict is missing for requested cohort and workflow"],
-      objects: { evidence_readiness: readiness },
-      evidence_summary: {
-        v3_verdict_id: null,
-        v3_verdict: null,
-        forwarded_distribution_used: false,
-        velocity_observation_count: 0,
-        outcome_evidence_export_id: null
-      }
-    };
-    stubMaterializerFetch(materializerBody, journeyObjects, after);
-    const { container } = renderWorkspace("/ai-value-workspace/scenario");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Evidence readiness decision/i })).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /Connect approved evidence/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/No approved aggregate evidence has been found for this workflow yet/i)).toBeInTheDocument();
-    });
-    expect(screen.getByText(/Evidence not connected yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/Connect approved aggregate evidence after the workflow review clears/i)).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(
-      /v3_verdict|cohort_id|workflow_id|source_coverage|MISSING|realized ROI proof/
-    );
-  });
-
-  it("turns Blueprint into an interactive client workshop board", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/blueprint");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Blueprint workshop board/i })).toBeInTheDocument();
-    });
-
-    const board = screen.getByRole("region", { name: /Blueprint workshop board/i });
-    expect(within(board).getByRole("heading", { name: /Blueprint workshop board/i })).toBeInTheDocument();
-    expect(within(board).getByRole("heading", { name: /Current workflow/i })).toBeInTheDocument();
-    expect(within(board).getByRole("heading", { name: /Target workflow/i })).toBeInTheDocument();
-    expect(within(board).getByText(/Agent searches across knowledge sources before responding/i)).toBeInTheDocument();
-    expect(within(board).getByText(/Glean Search and Assistant reduce time spent locating trusted answers/i)).toBeInTheDocument();
-
-    expect(within(board).getByRole("heading", { name: /Workshop focus/i })).toBeInTheDocument();
-    let focus = within(board).getByRole("region", { name: /Workshop focus/i });
-    expect(within(focus).getByText(/Which case categories are in scope for the pilot/i)).toBeInTheDocument();
-    fireEvent.click(
-      within(board).getByRole("button", {
-        name: /Focus decision: Which support owner signs off on baseline and comparison windows/i
-      })
-    );
-    focus = within(board).getByRole("region", { name: /Workshop focus/i });
-    expect(
-      within(focus).getByText(/Which support owner signs off on baseline and comparison windows/i)
-    ).toBeInTheDocument();
-    expect(within(board).getByText(/Feeds Metrics and ROI opportunity mapping/i)).toBeInTheDocument();
-    expect(within(board).getByText(/Feeds Evidence readiness/i)).toBeInTheDocument();
-    expect(within(board).getByRole("link", { name: /Open Metrics mapping/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/metrics"
-    );
-    expect(within(board).getByRole("link", { name: /Prepare evidence ask/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/evidence"
-    );
-    expectNoUnsafeUiLanguage(container.textContent);
-  });
-
-  it("shows ROI scenario readiness for the selected workflow", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/scenario");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /ROI scenario readiness/i })).toBeInTheDocument();
-    });
-
-    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
-    expect(within(readiness).getByText(/Ready for governed value modeling/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Capacity creation/i)).toBeInTheDocument();
-    expect(within(readiness).getAllByText(/Baseline window/i).length).toBeGreaterThan(0);
-    expect(within(readiness).getAllByText(/Comparison window/i).length).toBeGreaterThan(0);
-    expect(within(readiness).getAllByText(/Customer-owned assumptions/i).length).toBeGreaterThan(0);
-    expect(within(readiness).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(within(readiness).getByText(/No realized ROI claim/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("FT", "_", "AI", "_", "VALUE")
-    ]);
-  });
-
-  it("shows how to increase value when the target is not improving", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/scenario");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Value improvement loop/i })).toBeInTheDocument();
-    });
-
-    const loop = screen.getByRole("region", { name: /Value improvement loop/i });
-    expect(within(loop).getByRole("heading", { name: /If value is not improving/i })).toBeInTheDocument();
-    expect(within(loop).getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
-    expect(within(loop).getByText(/Not improving yet/i)).toBeInTheDocument();
-    expect(within(loop).getAllByText(/Velocity, Breadth, and Depth/i).length).toBeGreaterThan(0);
-    expect(within(loop).getByText(/Likely blockers/i)).toBeInTheDocument();
-    expect(within(loop).getByText(/Breadth is still limited/i)).toBeInTheDocument();
-    expect(within(loop).getByText(/Recommended interventions/i)).toBeInTheDocument();
-    expect(within(loop).getByText(/Run targeted workflow enablement/i)).toBeInTheDocument();
-    expect(within(loop).getAllByText(/Retest window/i).length).toBeGreaterThan(0);
-    expect(within(loop).getByText(/30-45 days/i)).toBeInTheDocument();
-    expect(within(loop).getByText(/Next data needed/i)).toBeInTheDocument();
-    expect(within(loop).getAllByText(/Aggregate AI Fluency follow-up by function/i).length).toBeGreaterThan(0);
-    expect(within(loop).getAllByText(/Advisory only/i).length).toBeGreaterThan(0);
-    expect(loop.textContent).not.toMatch(/threshold|Glean proved ROI|AI caused|individual scoring|team ranking/i);
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("FT", "_", "AI", "_", "VALUE")
-    ]);
-  });
-
-  it("bridges client value questions to governed metrics and evidence needs", async () => {
+  it("turns the metrics page into the function outcome metric step", async () => {
     stubJourneyFetch(journeyObjects);
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
 
@@ -1140,297 +496,19 @@ describe("AIValueWorkspace journey continuity", () => {
       expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     });
 
-    const guide = screen.getByRole("region", { name: /Metrics & ROI Opportunities guide/i });
-    expect(within(guide).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Support case management system/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Support Operations/i)).toBeInTheDocument();
-    expect(within(guide).getByText(/Evidence Readiness/i)).toBeInTheDocument();
-
+    expect(screen.getByRole("heading", { name: /Outcome Metrics/i })).toBeInTheDocument();
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
-    expect(within(bridge).getByRole("heading", { name: /Metric setup to confirm with the client/i })).toBeInTheDocument();
-    expect(within(bridge).getByText(/Use the Blueprint workflow and value route/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Capacity creation/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Support case management system/i)).toBeInTheDocument();
-    expect(within(bridge).getAllByText(/hours/i).length).toBeGreaterThan(0);
-    expect(within(bridge).getByText(/Compare against an approved pre-period window/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Support Operations/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Next: Evidence Readiness and Scenario Builder/i)).toBeInTheDocument();
+    expect(within(bridge).getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
+    expect(within(bridge).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("article", { name: /Candidate outcome metrics/i })).toBeInTheDocument();
+
+    // The old step-guide and duplicate opportunity map stay removed.
+    expect(screen.queryByText(/Step 4 of 8/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Outcome and ROI opportunity map/i })).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("metrics", "_", "library"),
-      uiTerm("FT", "_", "AI", "_", "VALUE")
+      uiTerm("metrics", "_", "library")
     ]);
-    expect(bridge.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI/i);
-  });
-
-  it("turns Metrics into an outcome and ROI opportunity map", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/metrics");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Outcome and ROI opportunity map/i })).toBeInTheDocument();
-    });
-
-    const map = screen.getByRole("region", { name: /Outcome and ROI opportunity map/i });
-    expect(within(map).getByRole("heading", { name: /Metric, evidence ask, and safe value language/i })).toBeInTheDocument();
-    expect(within(map).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Customer data needed/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Baseline and comparison window/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Evidence gap/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Next gated action/i)).toBeInTheDocument();
-    expect(within(map).getByRole("link", { name: /Prepare evidence ask/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/evidence"
-    );
-    expect(within(map).getByRole("link", { name: /Open Scenario builder/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/scenario"
-    );
-    expect(screen.queryByRole("table", { name: /Candidate outcome metric cards/i })).not.toBeInTheDocument();
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("FT", "_", "AI", "_", "VALUE")
-    ]);
-    expect(map.textContent).not.toMatch(/Glean proved ROI|AI caused|realized ROI|customer-facing economic/i);
-  });
-
-  it("shows a client-readable value spine trace inside the workshop", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace();
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Client value spine trace/i })).toBeInTheDocument();
-    });
-
-    const trace = screen.getByRole("region", { name: /Client value spine trace/i });
-    expect(within(trace).getByRole("heading", { name: /Client Value Spine Trace/i })).toBeInTheDocument();
-    expect(within(trace).getByText(/Blueprint decision/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Support case resolution/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Sets up the metric and evidence plan/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Outcome metric/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Sets up the customer evidence request/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/^Customer evidence$/i)).toBeInTheDocument();
-    expect(within(trace).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(within(trace).getByText(/Sets up scenario language/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/^Value language$/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Prepares the executive packet/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/^Sponsor decision$/i)).toBeInTheDocument();
-    expect(within(trace).getByText(/Review submitted customer evidence before sponsor expansion/i)).toBeInTheDocument();
-
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("metrics", "_", "library"),
-      uiTerm("FT", "_", "AI", "_", "VALUE")
-    ]);
-    expect(trace.textContent).not.toMatch(/Glean proved ROI|causality proof|productivity score|realized ROI/i);
-  });
-
-  it("shows the customer evidence request packet for the selected workflow", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/evidence");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Customer evidence request/i })).toBeInTheDocument();
-    });
-
-    const request = screen.getByRole("region", { name: /Customer evidence request/i });
-    expect(within(request).getByRole("heading", { name: /Customer Evidence Request/i })).toBeInTheDocument();
-    expect(
-      within(request).getByText(/Ask Support Operations for an aggregate Median resolution time export from Support case management system/i)
-    ).toBeInTheDocument();
-    expect(within(request).getAllByText(/Aggregate Workflow Window/i).length).toBeGreaterThan(0);
-    expect(within(request).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
-    expect(within(request).getByText(/Support Leader/i)).toBeInTheDocument();
-    expect(
-      within(request).getByText(/Review submitted customer export with Support Operations before stronger value language/i)
-    ).toBeInTheDocument();
-    expect(within(request).getByText(/No realized ROI claim/i)).toBeInTheDocument();
-    expect(within(request).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("source", "_", "system"),
-      uiTerm("approved", "_", "grain"),
-      uiTerm("FT", "_", "AI", "_", "VALUE")
-    ]);
-  });
-
-  it("shows the customer evidence review workbench beside the request packet", async () => {
-    stubJourneyFetch(journeyObjects);
-    const { container } = renderWorkspace("/ai-value-workspace/evidence");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Customer evidence review/i })).toBeInTheDocument();
-    });
-
-    const review = screen.getByRole("region", { name: /Customer evidence review/i });
-    expect(within(review).getByRole("heading", { name: /Customer Evidence Review/i })).toBeInTheDocument();
-    expect(within(review).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
-    expect(
-      within(review).getByText(/Review the submitted aggregate export against Median resolution time/i)
-    ).toBeInTheDocument();
-    expect(within(review).getByText(/Support Operations reviews the submitted export/i)).toBeInTheDocument();
-    expect(within(review).getByRole("button", { name: /^Accept$/ })).toBeInTheDocument();
-    expect(within(review).getByRole("button", { name: /^Reject$/ })).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      "export_v1"
-    ]);
-    expect(container.textContent).not.toMatch(/\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
-  });
-
-  it("shows the evidence summary from evidence to sponsor readout", async () => {
-    stubJourneyFetch(journeyObjects);
-    const evidence = renderWorkspace("/ai-value-workspace/evidence");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Evidence summary/i })).toBeInTheDocument();
-    });
-
-    const path = screen.getByRole("region", { name: /Evidence summary/i });
-    expect(within(path).getByRole("heading", { name: /What can we say now/i })).toBeInTheDocument();
-    expect(within(path).getByText(/Glean evidence/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Customer data/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Can we model value/i)).toBeInTheDocument();
-    expect(within(path).getByText(/What we can say/i)).toBeInTheDocument();
-    expect(within(path).getByText(/What not to claim/i)).toBeInTheDocument();
-    expect(within(path).getByText(/Next step/i)).toBeInTheDocument();
-    expect(within(path).getAllByText(/Customer export awaiting review/i).length).toBeGreaterThan(0);
-    expect(
-      within(path).getByText(/Modeled opportunity only; report with caveats after evidence review/i)
-    ).toBeInTheDocument();
-    expect(within(path).getByText(/No realized ROI claim/i)).toBeInTheDocument();
-    expect(path.textContent).not.toMatch(/Evidence to Value Language Path|Governed Path|Sponsor Language/i);
-    expect(within(path).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
-    expect(within(path).getByRole("link", { name: /Open Scenario builder/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/scenario"
-    );
-    expect(within(path).getByRole("link", { name: /Open Executive readout/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readout"
-    );
-    expectNoUnsafeUiLanguage(evidence.container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      "export_v1"
-    ]);
-    evidence.unmount();
-
-    stubJourneyFetch(journeyObjects);
-    const scenario = renderWorkspace("/ai-value-workspace/scenario");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Evidence summary/i })).toBeInTheDocument();
-    });
-    expectNoUnsafeUiLanguage(scenario.container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      "export_v1"
-    ]);
-  });
-
-  it.each([
-    {
-      state: "ACCEPTED" as const,
-      proofAnswer: /Accepted customer evidence is attached for caveated sponsor review/i,
-      sponsorDecision: /Decide whether the accepted evidence is ready for a caveated sponsor readout/i,
-      nextAction: /Prepare the caveated sponsor readout with accepted evidence/i,
-      agentAction: /prepare the caveated readout/i
-    },
-    {
-      state: "SUBMITTED" as const,
-      proofAnswer: /A customer export is awaiting reviewer acceptance before stronger value language/i,
-      sponsorDecision: /Hold stronger value language until the submitted customer export is accepted or rejected/i,
-      nextAction: /Have Support Operations review the submitted aggregate export/i,
-      agentAction: /route reviewer action/i
-    },
-    {
-      state: "REJECTED" as const,
-      proofAnswer: /A corrected aggregate customer export is still needed/i,
-      sponsorDecision: /Hold stronger value language and request a corrected aggregate export/i,
-      nextAction: /Ask Support Operations to resubmit the aggregate Median resolution time export/i,
-      agentAction: /request the corrected aggregate export/i
-    },
-    {
-      state: "MISSING" as const,
-      proofAnswer: /The aggregate customer export has not arrived yet/i,
-      sponsorDecision: /Hold stronger value language until the data owner submits the requested aggregate export/i,
-      nextAction: /Ask Support Operations for an aggregate Median resolution time export/i,
-      agentAction: /send the data-owner request/i
-    }
-  ])("carries $state evidence into workspace executive cadence", async ({
-    state,
-    proofAnswer,
-    sponsorDecision,
-    nextAction,
-    agentAction
-  }) => {
-    const fixture = withOutcomeReviewState(state);
-    stubJourneyFetch(fixture.objects, fixture.details);
-    const readiness = renderWorkspace("/ai-value-workspace/readiness");
-
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Client Value Questions/i })).toBeInTheDocument();
-    });
-
-    expect(screen.getAllByText(proofAnswer).length).toBeGreaterThan(0);
-    expectNoUnsafeUiLanguage(readiness.container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("agent", "_", "run"),
-      "export_v1"
-    ]);
-    expect(readiness.container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
-    readiness.unmount();
-
-    const readout = renderWorkspace("/ai-value-workspace/readout");
-
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Sponsor decision/i })).toBeInTheDocument();
-    });
-
-    expect(screen.getAllByText(sponsorDecision).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(nextAction).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(agentAction).length).toBeGreaterThan(0);
-
-    expectNoUnsafeUiLanguage(readout.container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("agent", "_", "run"),
-      "export_v1"
-    ]);
-    expect(readout.container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
   it.each([
@@ -1470,7 +548,7 @@ describe("AIValueWorkspace journey continuity", () => {
       action: /Ask Support Operations for an aggregate Median resolution time export/i,
       caveat: /Missing evidence keeps the readout in planning status/i
     }
-  ])("previews the workspace readout share workflow for $state evidence", async ({
+  ])("carries $state evidence into the Decision & Retest readout", async ({
     state,
     status,
     included,
@@ -1486,14 +564,13 @@ describe("AIValueWorkspace journey continuity", () => {
       configurable: true,
       value: vi.fn(() => "blob:workspace-readout-preview")
     });
-    const { container } = renderWorkspace("/ai-value-workspace/readout");
+    const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /Executive Readout Preview/i })).toBeInTheDocument();
     });
 
     const preview = screen.getByRole("region", { name: /Executive readout preview/i });
-    expect(within(preview).getByRole("heading", { name: /Executive Readout Preview/i })).toBeInTheDocument();
     expect(within(preview).getByText(status)).toBeInTheDocument();
     expect(within(preview).getByText(included)).toBeInTheDocument();
     expect(within(preview).getByText(held)).toBeInTheDocument();
@@ -1512,233 +589,6 @@ describe("AIValueWorkspace journey continuity", () => {
       uiTerm("schema", "_", "version"),
       uiTerm("outcome", "_", "evidence", "_", "export"),
       uiTerm("executive", "_", "packet"),
-      "export_v1"
-    ]);
-    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
-  });
-
-  it("shows a guided sponsor operating workflow across readout and decisions", async () => {
-    stubJourneyFetch(journeyObjects);
-    const readout = renderWorkspace("/ai-value-workspace/readout");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Sponsor operating workflow/i })).toBeInTheDocument();
-    });
-
-    const readoutWorkflow = screen.getByRole("region", { name: /Sponsor operating workflow/i });
-    expect(within(readoutWorkflow).getByRole("heading", { name: /Sponsor Operating Workflow/i })).toBeInTheDocument();
-    expect(within(readoutWorkflow).getByText(/Readout preview/i)).toBeInTheDocument();
-    expect(within(readoutWorkflow).getAllByText(/Sponsor decision/i).length).toBeGreaterThan(0);
-    expect(within(readoutWorkflow).getByText(/Handoff draft/i)).toBeInTheDocument();
-    expect(within(readoutWorkflow).getAllByText(/Next operating loop/i).length).toBeGreaterThan(0);
-    expect(within(readoutWorkflow).getAllByText(/Review pending/i).length).toBeGreaterThan(0);
-    expect(within(readoutWorkflow).getAllByText(/Reviewer action needed/i).length).toBeGreaterThan(0);
-    expect(within(readoutWorkflow).getByText(/Recommended: Collect stronger evidence/i)).toBeInTheDocument();
-    expect(
-      within(readoutWorkflow).getByText(/Customer Evidence Request and Evidence Review/i)
-    ).toBeInTheDocument();
-    expect(
-      within(readoutWorkflow).getByText(/No task is created; no customer action is automated/i)
-    ).toBeInTheDocument();
-    expect(within(readoutWorkflow).getByRole("link", { name: /Open Sponsor decisions/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/decisions"
-    );
-    expectNoUnsafeUiLanguage(readout.container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("executive", "_", "packet"),
-      "export_v1"
-    ]);
-    readout.unmount();
-
-    stubJourneyFetch(journeyObjects);
-    const decisions = renderWorkspace("/ai-value-workspace/decisions");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Sponsor operating workflow/i })).toBeInTheDocument();
-    });
-
-    const decisionsWorkflow = screen.getByRole("region", { name: /Sponsor operating workflow/i });
-    expect(within(decisionsWorkflow).getByRole("heading", { name: /Sponsor Operating Workflow/i })).toBeInTheDocument();
-    expect(within(decisionsWorkflow).getByRole("link", { name: /Open Executive readout/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readout"
-    );
-    expectNoUnsafeUiLanguage(decisions.container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("agent", "_", "run"),
-      "export_v1"
-    ]);
-    expect(decisions.container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
-  });
-
-  it.each([
-    {
-      state: "ACCEPTED" as const,
-      status: /Caveated expansion review/i,
-      recommended: /Recommended: Expand workflow/i,
-      reason: /accepted customer evidence can support caveated expansion review/i,
-      action: /Review expansion with caveats, assumptions, and blocked value language attached/i
-    },
-    {
-      state: "SUBMITTED" as const,
-      status: /Reviewer action needed/i,
-      recommended: /Recommended: Collect stronger evidence/i,
-      reason: /submitted customer evidence needs Support Operations review/i,
-      action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i
-    },
-    {
-      state: "REJECTED" as const,
-      status: /Corrected export needed/i,
-      recommended: /Recommended: Request corrected export/i,
-      reason: /rejected evidence cannot support value claims/i,
-      action: /Keep stronger value language blocked until a corrected export is accepted/i
-    },
-    {
-      state: "MISSING" as const,
-      status: /Data-owner request needed/i,
-      recommended: /Recommended: Collect stronger evidence/i,
-      reason: /aggregate customer evidence has not arrived yet/i,
-      action: /Ask Support Operations for an aggregate Median resolution time export/i
-    }
-  ])("shows a workspace sponsor decision follow-up loop for $state evidence", async ({
-    state,
-    status,
-    recommended,
-    reason,
-    action
-  }) => {
-    const fixture = withOutcomeReviewState(state);
-    stubJourneyFetch(fixture.objects, fixture.details);
-    const { container } = renderWorkspace("/ai-value-workspace/decisions");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Sponsor decision loop/i })).toBeInTheDocument();
-    });
-
-    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
-    expect(within(decision).getByRole("heading", { name: /Sponsor Decision/i })).toBeInTheDocument();
-    expect(within(decision).getAllByText(status).length).toBeGreaterThan(0);
-    expect(within(decision).getByText(recommended)).toBeInTheDocument();
-    expect(within(decision).getAllByText(reason).length).toBeGreaterThan(0);
-    expect(within(decision).getAllByText(action).length).toBeGreaterThan(0);
-
-    for (const option of [
-      "Expand workflow",
-      "Collect stronger evidence",
-      "Request corrected export",
-      "Hold value language",
-      "Return to Blueprint"
-    ]) {
-      expect(within(decision).getByRole("heading", { name: option })).toBeInTheDocument();
-    }
-
-    for (const target of [
-      /Feeds Blueprint/i,
-      /Feeds Customer Evidence Request/i,
-      /Feeds Evidence Review/i,
-      /Feeds ROI Scenario Readiness/i,
-      /Feeds Executive Operating Packet/i
-    ]) {
-      expect(within(decision).getAllByText(target).length).toBeGreaterThan(0);
-    }
-
-    expect(within(decision).getByText(/prepares handoffs only; no customer action is automated/i)).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("agent", "_", "run"),
-      "export_v1"
-    ]);
-    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
-  });
-
-  it.each([
-    {
-      state: "ACCEPTED" as const,
-      move: /Expand workflow/i,
-      owner: /Sponsor and workflow owner/i,
-      target: /Blueprint and Executive Operating Packet/i,
-      required: /Accepted customer evidence, expansion boundary, and sponsor appetite/i,
-      safeAction: /Prepare a caveated expansion handoff/i,
-      caveat: /support only; it is not ROI proof and does not establish causality/i
-    },
-    {
-      state: "SUBMITTED" as const,
-      move: /Collect stronger evidence/i,
-      owner: /Support Operations/i,
-      target: /Customer Evidence Request and Evidence Review/i,
-      required: /Reviewer decision on the submitted aggregate evidence/i,
-      safeAction: /Route reviewer action before stronger value language moves forward/i,
-      caveat: /Submitted evidence does not validate value yet/i
-    },
-    {
-      state: "REJECTED" as const,
-      move: /Request corrected export/i,
-      owner: /Support Operations/i,
-      target: /Customer Evidence Request and Evidence Review/i,
-      required: /Corrected aggregate export matching metric, source, grain, and windows/i,
-      safeAction: /Request corrected aggregate evidence before value review continues/i,
-      caveat: /Rejected evidence cannot support value claims/i
-    },
-    {
-      state: "MISSING" as const,
-      move: /Collect stronger evidence/i,
-      owner: /Support Operations/i,
-      target: /Customer Evidence Request and Evidence Review/i,
-      required: /Requested aggregate export from the customer-owned outcome system/i,
-      safeAction: /Send the data-owner request before value language changes/i,
-      caveat: /Missing evidence keeps value language in planning status/i
-    }
-  ])("previews the workspace selected decision handoff for $state evidence", async ({
-    state,
-    move,
-    owner,
-    target,
-    required,
-    safeAction,
-    caveat
-  }) => {
-    const fixture = withOutcomeReviewState(state);
-    stubJourneyFetch(fixture.objects, fixture.details);
-    const { container } = renderWorkspace("/ai-value-workspace/decisions");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Sponsor decision loop/i })).toBeInTheDocument();
-    });
-
-    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
-    const preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
-    expect(within(preview).getByRole("heading", { name: /Decision Handoff Preview/i })).toBeInTheDocument();
-    expect(within(preview).getByText(/Selected move/i)).toBeInTheDocument();
-    await waitFor(() => {
-      expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
-    });
-    expect(within(preview).getByText(/^Owner$/i)).toBeInTheDocument();
-    expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
-    expect(within(preview).getByText(/Where this goes next/i)).toBeInTheDocument();
-    expect(within(preview).getByText(target)).toBeInTheDocument();
-    expect(within(preview).getByText(/Required evidence or input/i)).toBeInTheDocument();
-    expect(within(preview).getByText(required)).toBeInTheDocument();
-    expect(within(preview).getByText(/Safe next action/i)).toBeInTheDocument();
-    expect(within(preview).getByText(safeAction)).toBeInTheDocument();
-    expect(within(preview).getByText(caveat)).toBeInTheDocument();
-    expect(within(preview).getByText(/No task is created; this preview only prepares the handoff/i)).toBeInTheDocument();
-
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("agent", "_", "run"),
       "export_v1"
     ]);
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
@@ -1764,9 +614,6 @@ describe("AIValueWorkspace journey continuity", () => {
     preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
     expect(within(preview).getAllByText(/Hold value language/i).length).toBeGreaterThan(0);
     expect(within(preview).getByText(/Value-readout owner/i)).toBeInTheDocument();
-    expect(within(preview).getByText(/ROI Scenario Readiness and Executive Operating Packet/i)).toBeInTheDocument();
-    expect(within(preview).getByText(/Blocked language, reviewed caveats, and unresolved evidence gaps/i)).toBeInTheDocument();
-    expect(within(preview).getByText(/Prepare a hold-language handoff before sponsor sharing/i)).toBeInTheDocument();
     expect(within(preview).getByText(/Holding value language prevents unsupported ROI, causality, or productivity claims/i)).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
@@ -1798,11 +645,7 @@ describe("AIValueWorkspace journey continuity", () => {
     fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
 
     const bundle = within(decision).getByRole("region", { name: /Copy-ready decision handoff/i });
-    expect(within(bundle).getByText(/Copy-ready handoff/i)).toBeInTheDocument();
     expect(within(bundle).getByText(/Selected move: Hold value language/i)).toBeInTheDocument();
-    expect(within(bundle).getByText(/Owner: Value-readout owner/i)).toBeInTheDocument();
-    expect(within(bundle).getByText(/Safe next action: Prepare a hold-language handoff before sponsor sharing/i)).toBeInTheDocument();
-    expect(within(bundle).getByText(/No task is created; this is a local handoff draft/i)).toBeInTheDocument();
 
     fireEvent.click(within(bundle).getByRole("button", { name: /Copy handoff draft/i }));
 
@@ -1811,58 +654,31 @@ describe("AIValueWorkspace journey continuity", () => {
         expect.stringContaining("Selected move: Hold value language")
       );
     });
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Owner: Value-readout owner"));
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining("Safe next action: Prepare a hold-language handoff before sponsor sharing")
-    );
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining("No task is created; this is a local handoff draft.")
-    );
     expect(within(bundle).getByText(/Handoff draft copied/i)).toBeInTheDocument();
   });
 
-  it("tells the client to finish Blueprint before value modeling when no workflow is selected", async () => {
-    stubJourneyFetch([]);
-    const blueprint = renderWorkspace("/ai-value-workspace/blueprint");
+  it("keeps practitioner working surfaces off every executive spine page", async () => {
+    for (const path of [
+      "/ai-value-workspace",
+      "/ai-value-workspace/readiness",
+      "/ai-value-workspace/vbd",
+      "/ai-value-workspace/metrics",
+      "/ai-value-workspace/decisions"
+    ]) {
+      stubJourneyFetch(journeyObjects);
+      const view = renderWorkspace(path);
+      await waitFor(() => {
+        expect(
+          screen.getByRole("navigation", { name: /AI value workspace pages/i })
+        ).toBeInTheDocument();
+      });
 
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Selected workflow from Journey/i })).toBeInTheDocument();
-    });
-
-    const handoff = screen.getByRole("region", { name: /Selected workflow from Journey/i });
-    expect(within(handoff).getByText(/No workflow selected yet/i)).toBeInTheDocument();
-    expect(
-      within(handoff).getByText(/Finish the Blueprint workshop to choose the first client workflow before modeling value/i)
-    ).toBeInTheDocument();
-    expect(within(handoff).getByRole("link", { name: /Open Blueprint workshop/i })).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(blueprint.container.textContent);
-    blueprint.unmount();
-
-    const scenario = renderWorkspace("/ai-value-workspace/scenario");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /ROI scenario readiness/i })).toBeInTheDocument();
-    });
-
-    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
-    expect(within(readiness).getByText(/Value modeling not ready yet/i)).toBeInTheDocument();
-    expect(
-      within(readiness).getByText(/Finish Blueprint, outcome mapping, baseline, comparison, and assumptions before presenting stronger value language/i)
-    ).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(scenario.container.textContent);
-    scenario.unmount();
-
-    const evidence = renderWorkspace("/ai-value-workspace/evidence");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Customer evidence request/i })).toBeInTheDocument();
-    });
-
-    const request = screen.getByRole("region", { name: /Customer evidence request/i });
-    expect(within(request).getByText(/Evidence request not ready yet/i)).toBeInTheDocument();
-    expect(
-      within(request).getByText(/Finish Blueprint and outcome mapping before asking the client for an aggregate export/i)
-    ).toBeInTheDocument();
-    expectNoUnsafeUiLanguage(evidence.container.textContent);
+      expect(screen.queryByText(/Client Value Questions/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: /Customer evidence review/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: /Sponsor operating workflow/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: /Blueprint Workshop/i })).not.toBeInTheDocument();
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
   });
 });

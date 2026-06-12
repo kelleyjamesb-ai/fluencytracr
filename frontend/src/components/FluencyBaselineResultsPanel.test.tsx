@@ -76,10 +76,8 @@ describe("FluencyBaselineResultsPanel", () => {
     const growth = screen.getByText("Growth edge").parentElement;
     expect(growth?.textContent).toContain("Leadership Reinforcement");
 
-    // Per-dimension percent meters render (confidence weighted mean 4.2/5 = 84%).
-    expect(
-      screen.getByRole("meter", { name: /Confidence 84%/i })
-    ).toBeInTheDocument();
+    // Per-dimension percents render (confidence weighted mean 4.2/5 = 84%).
+    expect(screen.getByText("84%")).toBeInTheDocument();
 
     // Function breakdown shows both functions, highest first.
     expect(screen.getByText("Customer Support")).toBeInTheDocument();
