@@ -6,6 +6,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { AIValueWorkspace } from "./pages/AIValueWorkspace";
 import { AIValueDiscovery } from "./pages/AIValueDiscovery";
 import { AIValueJourney } from "./pages/AIValueJourney";
+import { AIValueReadoutPrototype } from "./pages/AIValueReadoutPrototype";
 import { GovernanceConcept } from "./pages/GovernanceConcept";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -89,6 +90,14 @@ createRoot(container).render(
           element={
             <ProtectedRoute>
               <AIValueDiscovery />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-value-readout"
+          element={
+            <ProtectedRoute>
+              <AIValueReadoutPrototype />
             </ProtectedRoute>
           }
         />
