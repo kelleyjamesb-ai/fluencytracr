@@ -38,6 +38,22 @@ export type {
 } from "./roiScenario";
 
 export {
+  validateValueImprovementLoop,
+  buildValueImprovementLoopFromRoiScenario,
+  VALUE_IMPROVEMENT_LOOP_SCHEMA_VERSION
+} from "./valueImprovement";
+export type {
+  ValueImprovementLoopValidationResult,
+  BuildValueImprovementLoopOptions
+} from "./valueImprovement";
+
+export {
+  validateDataBoundaryContract,
+  DATA_BOUNDARY_SCHEMA_VERSION
+} from "./dataBoundary";
+export type { DataBoundaryValidationResult } from "./dataBoundary";
+
+export {
   validateEvidenceReadiness,
   buildEvidenceReadinessFromObjects,
   deriveReadinessDecision

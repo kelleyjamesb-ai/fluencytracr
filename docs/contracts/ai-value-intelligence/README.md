@@ -80,6 +80,36 @@ individual scoring, HR analytics, productivity ranking, autonomous customer
 action, raw prompt/response storage, direct identifier, or customer-facing
 economic output is authorized by this contract.
 
+For the Data Boundary and ROI Evidence Contract, use
+[`scripts/validate_ai_value_data_boundary.mjs`](../../../scripts/validate_ai_value_data_boundary.mjs)
+with the seeded Customer Support data-boundary fixture in
+[`examples/customer-support-data-boundary-roi-evidence.json`](./examples/customer-support-data-boundary-roi-evidence.json)
+and schema in
+[`schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json`](../../../schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json).
+This object defines which organizational data sources may be useful for value
+analysis upstream, which transformation boundary must aggregate and attest that
+data, and which fields may cross into FluencyTracr as value-evidence inputs. It
+reconciles with the Metrics Library, Outcome Evidence Export, ROI Scenario,
+Value Improvement Loop, Reportability, Aggregate API Push, and AI Value
+Measurement Model contracts. It explicitly permits sensitive organizational
+data to be used upstream inside customer-approved or Glean-approved
+transformation boundaries, while rejecting raw rows, direct identifiers, raw
+content, person-level evidence, HR analytics surfaces, productivity ranking,
+causality claims, realized ROI calculations, and customer-facing economic
+output inside FluencyTracr.
+
+Run:
+
+```bash
+npm run validate:ai-value-data-boundary
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-data-boundary
+```
+
 ### Trusted Data Pass-Through For ROI Metric Routing
 
 The governance layer may pass a record forward for ROI metric routing and
@@ -100,6 +130,21 @@ Passing these gates means the platform can determine which ROI or value metrics
 should be modeled, reviewed, and carried into a caveated executive readout. It
 does not mean FluencyTracr has proven ROI, calculated realized savings, or
 created customer-facing economic output.
+
+For Phase 14 Value Improvement Loop, use
+[`scripts/validate_ai_value_improvement_loop.mjs`](../../../scripts/validate_ai_value_improvement_loop.mjs)
+with the seeded Customer Support improvement fixture in
+[`examples/customer-support-value-improvement-loop.json`](./examples/customer-support-value-improvement-loop.json)
+and schema in
+[`schemas/ai-value-intelligence/value-improvement-loop.schema.json`](../../../schemas/ai-value-intelligence/value-improvement-loop.schema.json).
+This object turns a value target that is not yet improving into likely blockers,
+recommended interventions, a retest window, and next-data-needed guidance using
+aggregate AI Fluency, Velocity, Breadth, Depth, functional metric, and evidence
+confidence context. It is advisory only: no production connector, dashboard,
+ROI proof, realized ROI calculation, causality claim, individual scoring, HR
+analytics, productivity ranking, tunable suppression threshold, autonomous
+customer action, direct identifier, or customer-facing economic output is
+authorized by this contract.
 
 For the Phase 9.5 Agentic Platform Harness, use
 [`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)

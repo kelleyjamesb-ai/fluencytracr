@@ -50,10 +50,14 @@ describe("AIValueWorkspace", () => {
     expect(screen.getByRole("heading", { name: /AI Value Workspace/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Workspace Home/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Workspace Home guide/i })).toBeInTheDocument();
-    expect(screen.getByText(/Do this now/i)).toBeInTheDocument();
-    expect(screen.getByText(/Start with AI Fluency, then use Blueprint/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/AI Fluency baseline, VBD map, value actions/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Next action/i)).toBeInTheDocument();
+    expect(screen.getByText(/Start with AI Fluency. Use VBD/i)).toBeInTheDocument();
     expect(screen.getByText(/You need/i)).toBeInTheDocument();
     expect(screen.getByText(/Sponsor value question/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Velocity \+ Depth show the work pattern/i })).toBeInTheDocument();
+    expect(screen.getByText(/High-fluency flow/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Start with AI Fluency/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/readiness"
@@ -152,12 +156,11 @@ describe("AIValueWorkspace", () => {
       within(workspaceNavigation).getByRole("link", { name: /AI Fluency/i })
     ).toHaveAttribute("href", "/ai-value-workspace/readiness");
     expect(screen.getByRole("heading", { name: /^AI Fluency$/i })).toBeInTheDocument();
-    expect(screen.getByText(/Send AI Fluency to the client/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /After the organization completes AI Fluency/i })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/aggregate results interpretation layer/i)).toBeInTheDocument();
-    expect(screen.getByText(/send the client link below first/i)).toBeInTheDocument();
+    expect(screen.getByText(/Send AI Fluency. Review aggregate results by function/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /AI Fluency is the baseline/i })).toBeInTheDocument();
+    expect(screen.getByText(/Review aggregate results by function. Then plot VBD/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
+    expect(screen.getByText(/Breadth shows coverage by function, role, or workflow/i)).toBeInTheDocument();
 
     for (const dimension of [
       "Confidence",
@@ -171,8 +174,7 @@ describe("AIValueWorkspace", () => {
 
     expect(screen.getAllByText(/What results tell us/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Aggregate results only/i)).toBeInTheDocument();
-    expect(screen.getByText(/No individual scoring/i)).toBeInTheDocument();
-    expect(screen.getByText(/No HR analytics/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Signals, not scores/i).length).toBeGreaterThan(0);
     expect(container.textContent).not.toMatch(/AI Fluency Instrument|Instrument connection/i);
     expectNoUnsafeUiLanguage(container.textContent);
   });
@@ -220,7 +222,7 @@ describe("AIValueWorkspace", () => {
 
     expect(screen.getByRole("heading", { name: /^Evidence Readiness$/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Evidence Readiness guide/i })).toBeInTheDocument();
-    expect(screen.getByText(/Request or review the approved aggregate evidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Review aggregate evidence and customer-owned outcome data/i)).toBeInTheDocument();
     expect(screen.getByText(/Baseline and comparison windows/i)).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Customer evidence request/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Customer evidence review/i })).toBeInTheDocument();
@@ -230,7 +232,14 @@ describe("AIValueWorkspace", () => {
     const readout = renderWorkspace("/ai-value-workspace/readout");
 
     expect(screen.getByRole("heading", { name: /^Executive Readout$/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Executive Operating Packet/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
+    const proofChain = screen.getByRole("region", { name: /Value proof chain/i });
+    expect(within(proofChain).getByRole("heading", { name: /Metrics, evidence, scenario, decision/i })).toBeInTheDocument();
+    expect(within(proofChain).getByText(/Metric & outcome/i)).toBeInTheDocument();
+    expect(within(proofChain).getByText(/Evidence & proof/i)).toBeInTheDocument();
+    expect(within(proofChain).getByText(/^Scenario$/i)).toBeInTheDocument();
+    expect(within(proofChain).getByText(/^Decision$/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Sponsor decision/i })).toBeInTheDocument();
     expect(screen.getByText(/Decision for the sponsor/i)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
     expectNoUnsafeUiLanguage(readout.container.textContent);
@@ -1092,6 +1101,37 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
+  it("shows how to increase value when the target is not improving", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = renderWorkspace("/ai-value-workspace/scenario");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Value improvement loop/i })).toBeInTheDocument();
+    });
+
+    const loop = screen.getByRole("region", { name: /Value improvement loop/i });
+    expect(within(loop).getByRole("heading", { name: /If value is not improving/i })).toBeInTheDocument();
+    expect(within(loop).getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
+    expect(within(loop).getByText(/Not improving yet/i)).toBeInTheDocument();
+    expect(within(loop).getAllByText(/Velocity, Breadth, and Depth/i).length).toBeGreaterThan(0);
+    expect(within(loop).getByText(/Likely blockers/i)).toBeInTheDocument();
+    expect(within(loop).getByText(/Breadth is still limited/i)).toBeInTheDocument();
+    expect(within(loop).getByText(/Recommended interventions/i)).toBeInTheDocument();
+    expect(within(loop).getByText(/Run targeted workflow enablement/i)).toBeInTheDocument();
+    expect(within(loop).getAllByText(/Retest window/i).length).toBeGreaterThan(0);
+    expect(within(loop).getByText(/30-45 days/i)).toBeInTheDocument();
+    expect(within(loop).getByText(/Next data needed/i)).toBeInTheDocument();
+    expect(within(loop).getAllByText(/Aggregate AI Fluency follow-up by function/i).length).toBeGreaterThan(0);
+    expect(within(loop).getAllByText(/Advisory only/i).length).toBeGreaterThan(0);
+    expect(loop.textContent).not.toMatch(/threshold|Glean proved ROI|AI caused|individual scoring|team ranking/i);
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      uiTerm("schema", "_", "version"),
+      uiTerm("FT", "_", "AI", "_", "VALUE")
+    ]);
+  });
+
   it("bridges client value questions to governed metrics and evidence needs", async () => {
     stubJourneyFetch(journeyObjects);
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
@@ -1375,7 +1415,7 @@ describe("AIValueWorkspace journey continuity", () => {
     const readout = renderWorkspace("/ai-value-workspace/readout");
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Executive Operating Packet/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Sponsor decision/i })).toBeInTheDocument();
     });
 
     expect(screen.getAllByText(sponsorDecision).length).toBeGreaterThan(0);

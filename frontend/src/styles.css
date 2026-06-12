@@ -2112,6 +2112,13 @@ body {
   color: #9a6a11;
 }
 
+.ai-value-short-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+
 .ai-value-step.active {
   border-color: #343ced;
   box-shadow: inset 0 0 0 1px #343ced;
@@ -3175,6 +3182,206 @@ body {
   color: #4d4d4d;
 }
 
+.ai-value-improvement-loop-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.ai-value-vbd-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ai-value-vbd-layout {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ai-value-vbd-y-axis {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  min-height: 460px;
+  padding: 10px 6px;
+  border-right: 2px solid #1d2a59;
+  color: #1d2a59;
+  font-weight: 800;
+  text-align: center;
+}
+
+.ai-value-vbd-y-axis strong {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0;
+}
+
+.ai-value-vbd-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ai-value-vbd-quadrant {
+  min-width: 0;
+  min-height: 220px;
+  padding: 16px;
+  border: 1px solid #d7d7cd;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-value-vbd-quadrant h4 {
+  margin: 8px 0;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.ai-value-vbd-quadrant p {
+  margin: 0 0 12px;
+  color: #1f2937;
+}
+
+.ai-value-vbd-quadrant ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ai-value-vbd-quadrant-amber {
+  border-color: #f59e0b;
+  background: #fff8eb;
+}
+
+.ai-value-vbd-quadrant-amber h4 {
+  color: #c45b00;
+}
+
+.ai-value-vbd-quadrant-green {
+  border-color: #16a34a;
+  background: #f0fbf2;
+}
+
+.ai-value-vbd-quadrant-green h4 {
+  color: #176c2e;
+}
+
+.ai-value-vbd-quadrant-red {
+  border-color: #ef4444;
+  background: #fff3f3;
+}
+
+.ai-value-vbd-quadrant-red h4 {
+  color: #b91c1c;
+}
+
+.ai-value-vbd-quadrant-blue {
+  border-color: #2563eb;
+  background: #eef6ff;
+}
+
+.ai-value-vbd-quadrant-blue h4 {
+  color: #1855b7;
+}
+
+.ai-value-vbd-footer {
+  display: grid;
+  grid-template-columns: 82px 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  color: #1d2a59;
+  font-weight: 800;
+}
+
+.ai-value-vbd-footer p {
+  grid-column: 2 / 4;
+  margin: 0;
+  color: #343434;
+  font-weight: 600;
+}
+
+.ai-value-proof-chain-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ai-value-proof-chain-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-proof-chain-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ai-value-proof-chain-card strong,
+.ai-value-proof-chain-card p {
+  display: block;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-improvement-target {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ai-value-improvement-target > div,
+.ai-value-improvement-item,
+.ai-value-improvement-footer > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.ai-value-improvement-target strong,
+.ai-value-improvement-target p,
+.ai-value-improvement-item strong,
+.ai-value-improvement-item p,
+.ai-value-improvement-item small,
+.ai-value-improvement-footer p {
+  display: block;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.ai-value-improvement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ai-value-improvement-grid section {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.ai-value-improvement-grid h4 {
+  margin: 0;
+}
+
+.ai-value-improvement-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ai-value-improvement-footer ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .ai-value-scenario-band-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3472,6 +3679,13 @@ body {
   .ai-value-intake-footer,
   .ai-fluency-action-row,
   .ai-value-workbench-grid,
+  .ai-value-vbd-layout,
+  .ai-value-vbd-grid,
+  .ai-value-vbd-footer,
+  .ai-value-proof-chain-grid,
+  .ai-value-improvement-target,
+  .ai-value-improvement-grid,
+  .ai-value-improvement-footer,
   .ai-value-boundary-grid,
   .ai-value-carry-forward {
     grid-template-columns: 1fr;
@@ -3499,6 +3713,21 @@ body {
 
   .ai-value-workspace-card {
     min-width: 150px;
+  }
+
+  .ai-value-vbd-y-axis {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 2px solid #1d2a59;
+  }
+
+  .ai-value-vbd-y-axis strong {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .ai-value-vbd-footer p {
+    grid-column: auto;
   }
 
   .ai-value-metrics-flow {

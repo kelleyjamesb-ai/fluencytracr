@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json",
+  "title": "AI Value Data Boundary and ROI Evidence Contract",
+  "description": "Docs-backed local schema defining which organizational data may support AI value analysis upstream and which aggregate, attested evidence may cross into FluencyTracr. This is not a production connector, HR analytics surface, ROI calculator, causality engine, or customer-facing economic output contract.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "contract_id",
+    "purpose",
+    "metric_pyramid",
+    "vbd_definitions",
+    "boundary_model",
+    "organizational_data_sources",
+    "reconciliation",
+    "contract_outputs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_DATA_BOUNDARY_ROI_EVIDENCE_2026_06"
+    },
+    "contract_id": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "metric_pyramid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["north_star_metric", "supporting_metrics"],
+      "properties": {
+        "north_star_metric": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["name", "definition", "required_inputs"],
+          "properties": {
+            "name": { "const": "Validated AI Value Movement" },
+            "definition": { "type": "string" },
+            "required_inputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "supporting_metrics": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["name", "definition"],
+            "properties": {
+              "name": {
+                "enum": ["AI Work Integration / VBD", "AI Capability Growth"]
+              },
+              "definition": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "vbd_definitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["velocity", "breadth", "depth"],
+      "properties": {
+        "velocity": {
+          "$ref": "#/$defs/vbd_dimension_speed_to_adoption"
+        },
+        "breadth": {
+          "$ref": "#/$defs/vbd_dimension_spread"
+        },
+        "depth": {
+          "$ref": "#/$defs/vbd_dimension_repertoire"
+        }
+      }
+    },
+    "boundary_model": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "source_system_zone",
+        "transformation_boundary",
+        "fluencytracr_boundary"
+      ],
+      "properties": {
+        "source_system_zone": { "type": "string" },
+        "transformation_boundary": { "type": "string" },
+        "fluencytracr_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "aggregate_only",
+            "raw_source_rows_allowed",
+            "direct_identifiers_allowed",
+            "raw_content_allowed"
+          ],
+          "properties": {
+            "aggregate_only": { "const": true },
+            "raw_source_rows_allowed": { "const": false },
+            "direct_identifiers_allowed": { "const": false },
+            "raw_content_allowed": { "const": false }
+          }
+        }
+      }
+    },
+    "organizational_data_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/organizational_data_source" }
+    },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["conflicts_detected", "existing_contract_alignment"],
+      "properties": {
+        "conflicts_detected": { "const": false },
+        "existing_contract_alignment": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "metrics_library",
+            "outcome_evidence_export",
+            "roi_scenario",
+            "value_improvement_loop",
+            "reportability",
+            "aggregate_api_push",
+            "ai_value_measurement_model"
+          ],
+          "properties": {
+            "metrics_library": { "$ref": "#/$defs/alignment_state" },
+            "outcome_evidence_export": { "$ref": "#/$defs/alignment_state" },
+            "roi_scenario": { "$ref": "#/$defs/alignment_state" },
+            "value_improvement_loop": { "$ref": "#/$defs/alignment_state" },
+            "reportability": { "$ref": "#/$defs/alignment_state" },
+            "aggregate_api_push": { "$ref": "#/$defs/alignment_state" },
+            "ai_value_measurement_model": { "$ref": "#/$defs/alignment_state" }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "contract_outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aggregate_evidence_package",
+        "value_evidence_case_input",
+        "customer_facing_economic_output",
+        "dollarized_output",
+        "realized_roi_calculation",
+        "causality_claim",
+        "individual_scoring",
+        "hr_analytics",
+        "productivity_ranking"
+      ],
+      "properties": {
+        "aggregate_evidence_package": { "const": true },
+        "value_evidence_case_input": { "const": true },
+        "customer_facing_economic_output": { "const": false },
+        "dollarized_output": { "const": false },
+        "realized_roi_calculation": { "const": false },
+        "causality_claim": { "const": false },
+        "individual_scoring": { "const": false },
+        "hr_analytics": { "const": false },
+        "productivity_ranking": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "vbd_dimension_speed_to_adoption": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["definition", "plain_language", "allowed_aggregate_fields"],
+      "properties": {
+        "definition": { "const": "speed_to_adoption" },
+        "plain_language": { "type": "string" },
+        "allowed_aggregate_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "vbd_dimension_spread": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["definition", "plain_language", "allowed_aggregate_fields"],
+      "properties": {
+        "definition": { "const": "spread_across_org_functions_workflows" },
+        "plain_language": { "type": "string" },
+        "allowed_aggregate_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "vbd_dimension_repertoire": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["definition", "plain_language", "allowed_aggregate_fields"],
+      "properties": {
+        "definition": { "const": "aggregate_ai_tool_surface_repertoire" },
+        "plain_language": { "type": "string" },
+        "allowed_aggregate_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "organizational_data_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_category",
+        "source_name",
+        "value_routes",
+        "sensitivity",
+        "raw_data_policy",
+        "allowed_aggregate_fields",
+        "required_attestation",
+        "evidence_level",
+        "allowed_claim_level"
+      ],
+      "properties": {
+        "source_id": { "type": "string" },
+        "source_category": {
+          "enum": [
+            "AI_WORK_EVIDENCE",
+            "AI_FLUENCY_BASELINE",
+            "WORKFLOW_PROCESS",
+            "CUSTOMER_OUTCOME",
+            "FINANCE_ASSUMPTION",
+            "HRIS_ORG_CONTEXT",
+            "ENABLEMENT_ACTIVITY",
+            "CUSTOMER_REVENUE_EXPERIENCE",
+            "QUALITY_RISK"
+          ]
+        },
+        "source_name": { "type": "string" },
+        "value_routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/value_route" }
+        },
+        "sensitivity": {
+          "enum": ["LOW", "MODERATE", "HIGH", "RESTRICTED"]
+        },
+        "raw_data_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_upstream",
+            "transform_boundary",
+            "raw_rows_cross_boundary",
+            "direct_identifiers_cross_boundary",
+            "raw_content_cross_boundary",
+            "persistent_raw_storage_in_fluencytracr"
+          ],
+          "properties": {
+            "allowed_upstream": { "const": true },
+            "transform_boundary": { "type": "string" },
+            "raw_rows_cross_boundary": { "const": false },
+            "direct_identifiers_cross_boundary": { "const": false },
+            "raw_content_cross_boundary": { "const": false },
+            "persistent_raw_storage_in_fluencytracr": { "const": false }
+          }
+        },
+        "allowed_aggregate_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "not": {
+            "contains": {
+              "pattern": "(^raw_|prompt|response|transcript|ticket_text|case_text|message_text|email|employee_id|user_id|user_email|person_id|manager_chain|manager_id|direct_identifier)"
+            }
+          }
+        },
+        "required_attestation": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "data_owner_role",
+            "approved_grain",
+            "baseline_comparison_required",
+            "contains_person_level_data",
+            "contains_raw_content"
+          ],
+          "properties": {
+            "data_owner_role": { "type": "string" },
+            "approved_grain": { "type": "string" },
+            "baseline_comparison_required": { "type": "boolean" },
+            "contains_person_level_data": { "const": false },
+            "contains_raw_content": { "const": false }
+          }
+        },
+        "evidence_level": {
+          "enum": [
+            "MISSING",
+            "DIRECTIONAL",
+            "CAVEATED",
+            "SUPPORTED",
+            "STRONG",
+            "BLOCKED"
+          ]
+        },
+        "allowed_claim_level": {
+          "enum": [
+            "SOURCE_READINESS_ONLY",
+            "INTERNAL_ONLY",
+            "CAVEATED_VALUE_INVESTIGATION",
+            "SUPPORTED_VALUE_MOVEMENT",
+            "STRONG_VALUE_CLAIM_REQUIRES_DESIGN",
+            "BLOCKED"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source_category": { "const": "HRIS_ORG_CONTEXT" }
+            },
+            "required": ["source_category"]
+          },
+          "then": {
+            "properties": {
+              "evidence_level": {
+                "enum": ["MISSING", "DIRECTIONAL", "CAVEATED", "BLOCKED"]
+              },
+              "allowed_claim_level": {
+                "enum": ["SOURCE_READINESS_ONLY", "INTERNAL_ONLY"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "alignment_state": {
+      "enum": ["ALIGNED", "EXTENDS", "REFERENCES", "NOT_APPLICABLE"]
+    },
+    "value_route": {
+      "enum": [
+        "COST_REDUCTION",
+        "CAPACITY_CREATION",
+        "QUALITY_IMPROVEMENT",
+        "RISK_REDUCTION",
+        "EXPERIENCE_IMPROVEMENT",
+        "REVENUE_EXPANSION",
+        "UNCLASSIFIED"
+      ]
+    }
+  }
+}

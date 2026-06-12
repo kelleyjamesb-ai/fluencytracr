@@ -74,6 +74,13 @@ documented value-realization layers:
   scenario review, but not automatic economic proof.
   "AI Manager" means AI program owner or value-realization leader, not people
   manager scoring.
+- **Data Boundary and ROI Evidence:** defines which organizational data may be
+  useful upstream for value analysis, how it must be transformed before crossing
+  into FluencyTracr, and which aggregate evidence can feed value-evidence cases.
+  Sensitive HRIS, finance, revenue, workflow, support, and quality data can
+  inform value modeling only after aggregation, attestation, and identifier
+  removal; FluencyTracr still does not store raw rows, calculate realized ROI,
+  prove causality, run HR analytics, or emit customer-facing economic output.
 - **Work Mode Taxonomy:** maps governed surfaces into durable AI work patterns
   such as retrieval, conversation, transformation, embedded assist, delegation,
   reuse, exploration, verification, and corroborative telemetry.
@@ -155,6 +162,8 @@ is not the lead positioning for this repository.
 - Customer Support AI Value scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json)
 - AI Value governed ROI scenario schema: [schemas/ai-value-intelligence/roi-scenario.schema.json](schemas/ai-value-intelligence/roi-scenario.schema.json)
 - Customer Support governed ROI scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json)
+- AI Value data boundary and ROI evidence schema: [schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json](schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json)
+- Customer Support data boundary and ROI evidence fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-data-boundary-roi-evidence.json](docs/contracts/ai-value-intelligence/examples/customer-support-data-boundary-roi-evidence.json)
 - AI Value Agentic Platform Harness concept: [docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md](docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md)
 - AI Value Agent Handoff schema: [schemas/ai-value-intelligence/agent-handoff.schema.json](schemas/ai-value-intelligence/agent-handoff.schema.json)
 - Customer Support AI Value agent handoff fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json](docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff.json)
@@ -174,6 +183,7 @@ is not the lead positioning for this repository.
 - V4 value confidence integration: [docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md](docs/integrations/value-realization/V4_VALUE_CONFIDENCE.md)
 - Internal Scale Readiness Readout contract: [docs/contracts/value-confidence/internal-scale-readiness-readout.md](docs/contracts/value-confidence/internal-scale-readiness-readout.md)
 - AI Work Evidence concept: [docs/concepts/AI_WORK_EVIDENCE.md](docs/concepts/AI_WORK_EVIDENCE.md)
+- AI Value Measurement Model and phase data support map: [docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md](docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md)
 - AI Value Platform architecture: [docs/concepts/AI_VALUE_PLATFORM_ARCHITECTURE.md](docs/concepts/AI_VALUE_PLATFORM_ARCHITECTURE.md)
 - AI Value Intelligence MVP concept: [docs/concepts/AI_VALUE_INTELLIGENCE_MVP.md](docs/concepts/AI_VALUE_INTELLIGENCE_MVP.md)
 - AI Work Evidence pilot package: [docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md](docs/integrations/value-realization/AI_WORK_EVIDENCE_PILOT_PACKAGE.md)

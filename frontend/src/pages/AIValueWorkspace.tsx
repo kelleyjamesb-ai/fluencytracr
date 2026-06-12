@@ -21,17 +21,17 @@ const workspacePages = [
     label: "Workspace Home",
     navLabel: "Home",
     path: "/ai-value-workspace",
-    detail: "Command center for the client value workflow.",
-    doNow: "Start with AI Fluency, then use Blueprint to agree on the workflow the client wants to improve.",
+    detail: "AI Fluency baseline, VBD map, value actions.",
+    doNow: "Start with AI Fluency. Use VBD to choose where to intervene.",
     needs: [
       "Client workflow",
       "Sponsor value question",
       "Evidence connection status"
     ],
-    doneWhen: "You know which page needs attention next.",
+    doneWhen: "The next action is clear.",
     primaryActionLabel: "Start with AI Fluency",
     primaryActionPath: "/ai-value-workspace/readiness",
-    feedsNext: "Choose the next workspace step to complete."
+    feedsNext: "Move from baseline to VBD to value actions."
   },
   {
     slug: "readiness",
@@ -39,31 +39,31 @@ const workspacePages = [
     navLabel: "AI Fluency",
     path: "/ai-value-workspace/readiness",
     detail:
-      "Use aggregate fluency readiness signals to understand what people are ready to do with AI.",
-    doNow: "Send AI Fluency to the client. After the organization completes it, review aggregate results before the workshop.",
+      "Baseline: what people are ready to do with AI.",
+    doNow: "Send AI Fluency. Review aggregate results by function.",
     needs: [
       "Client assessment link",
       "Aggregate results",
       "Readiness gaps to discuss"
     ],
-    doneWhen: "The Blueprint workshop has a clear human readiness context.",
+    doneWhen: "Readiness gaps are visible.",
     primaryActionLabel: "Open Blueprint Workshop",
     primaryActionPath: "/ai-value-workspace/blueprint",
-    feedsNext: "Use AI Fluency findings to focus the Blueprint workshop."
+    feedsNext: "Plot VBD and choose the workflow to inspect."
   },
   {
     slug: "blueprint",
     label: "Blueprint Workshop",
     navLabel: "Blueprint",
     path: "/ai-value-workspace/blueprint",
-    detail: "Co-design the current and target workflow with the client.",
-    doNow: "Agree on the current workflow, target workflow, and one open decision to carry forward.",
+    detail: "Choose the work pattern to change.",
+    doNow: "Agree on the current workflow, target workflow, and owner.",
     needs: [
       "Current workflow steps",
       "Target workflow steps",
       "Decision owner"
     ],
-    doneWhen: "The client can point to the workflow and say what success should look like.",
+    doneWhen: "The workflow and success measure are clear.",
     primaryActionLabel: "Choose Metrics",
     primaryActionPath: "/ai-value-workspace/metrics",
     feedsNext: "Use the agreed workflow to choose outcome metrics."
@@ -73,14 +73,14 @@ const workspacePages = [
     label: "Metrics & ROI Opportunities",
     navLabel: "Metrics & ROI",
     path: "/ai-value-workspace/metrics",
-    detail: "Map client value questions to governed outcome metrics and ROI opportunities.",
-    doNow: "Use the Blueprint workflow and sponsor success measure to choose the outcome metric, customer system, and data owner.",
+    detail: "Choose the metric that should move.",
+    doNow: "Select the outcome metric, source system, and data owner.",
     needs: [
       "Blueprint workflow",
       "Sponsor success measure",
       "Customer source system and owner"
     ],
-    doneWhen: "The evidence ask is specific enough for the customer data owner.",
+    doneWhen: "The data ask is specific.",
     primaryActionLabel: "Prepare Evidence Ask",
     primaryActionPath: "/ai-value-workspace/evidence",
     feedsNext: "Use the selected outcome metric to prepare the evidence request."
@@ -90,14 +90,14 @@ const workspacePages = [
     label: "Evidence Readiness",
     navLabel: "Evidence",
     path: "/ai-value-workspace/evidence",
-    detail: "Separate what Glean can show from what customer-owned data must validate.",
-    doNow: "Request or review the approved aggregate evidence, then decide whether it can support scenario planning.",
+    detail: "Check whether the evidence is usable.",
+    doNow: "Review aggregate evidence and customer-owned outcome data.",
     needs: [
       "Aggregate AI activity",
       "Customer outcome export",
       "Baseline and comparison windows"
     ],
-    doneWhen: "The team knows what can be used, what is missing, and what language is still blocked.",
+    doneWhen: "Usable and missing evidence are clear.",
     primaryActionLabel: "Build Scenario",
     primaryActionPath: "/ai-value-workspace/scenario",
     feedsNext: "Use reviewed evidence to decide what the value scenario can say."
@@ -107,14 +107,14 @@ const workspacePages = [
     label: "Scenario Builder",
     navLabel: "Scenario",
     path: "/ai-value-workspace/scenario",
-    detail: "Model value as an assumption-backed scenario, not ROI proof.",
-    doNow: "Check whether the evidence and assumptions are strong enough for a caveated value scenario.",
+    detail: "Model the opportunity with caveats.",
+    doNow: "Check evidence, assumptions, and blocked claims.",
     needs: [
       "Accepted or caveated evidence",
       "Customer-owned assumptions",
       "Blocked claim list"
     ],
-    doneWhen: "The scenario stays clearly labeled as planning language, not business proof.",
+    doneWhen: "The model is bounded.",
     primaryActionLabel: "Preview Readout",
     primaryActionPath: "/ai-value-workspace/readout",
     feedsNext: "Use scenario status to prepare the executive readout."
@@ -124,14 +124,14 @@ const workspacePages = [
     label: "Executive Readout",
     navLabel: "Readout",
     path: "/ai-value-workspace/readout",
-    detail: "Preview the sponsor packet and the caveats that must travel with it.",
-    doNow: "Preview what the sponsor will see and make sure caveats travel with the readout.",
+    detail: "Show the decision and caveats.",
+    doNow: "Review the sponsor decision, value posture, and next action.",
     needs: [
       "Sponsor question",
       "Recommended decision",
       "Caveats and next owner"
     ],
-    doneWhen: "The readout is ready to support a decision without overstating value.",
+    doneWhen: "The sponsor can act without overclaiming.",
     primaryActionLabel: "Choose Sponsor Decision",
     primaryActionPath: "/ai-value-workspace/decisions",
     feedsNext: "Use the readout to choose the sponsor decision and follow-up."
@@ -141,14 +141,14 @@ const workspacePages = [
     label: "Sponsor Decisions",
     navLabel: "Decisions",
     path: "/ai-value-workspace/decisions",
-    detail: "Choose the next governed move and prepare a bounded handoff.",
-    doNow: "Choose the next operating move: expand, collect stronger evidence, correct the export, hold language, or return to Blueprint.",
+    detail: "Choose what changes next.",
+    doNow: "Expand, collect evidence, hold language, or return to Blueprint.",
     needs: [
       "Sponsor decision",
       "Owner",
       "Safe handoff"
     ],
-    doneWhen: "The next owner knows what to do and what not to claim.",
+    doneWhen: "The next owner and action are clear.",
     primaryActionLabel: "Return to Blueprint",
     primaryActionPath: "/ai-value-workspace/blueprint",
     feedsNext: "Use the sponsor decision to return to the right workspace step."
@@ -179,6 +179,41 @@ const workspaceStatusTone: Record<JourneyStageState, "good" | "warn" | "neutral"
   attention: "warn",
   todo: "neutral"
 };
+
+const vbdQuadrants = [
+  {
+    id: "deep-slow",
+    label: "Deep but slow",
+    tone: "amber",
+    position: "low-velocity high-depth",
+    summary: "AI is used seriously, but creates drag.",
+    watch: ["Rework loops", "Heavy iteration", "Long latency", "Workflow mismatch"]
+  },
+  {
+    id: "flow",
+    label: "High-fluency flow",
+    tone: "green",
+    position: "high-velocity high-depth",
+    summary: "AI is embedded into work and helps work resolve.",
+    watch: ["Repeat use", "Verification", "Productive refinement", "Faster resolution"]
+  },
+  {
+    id: "low-integration",
+    label: "Low integration",
+    tone: "red",
+    position: "low-velocity low-depth",
+    summary: "AI is not yet part of real work patterns.",
+    watch: ["Abandonment", "Human-only fallback", "Low recurrence", "Poor task fit"]
+  },
+  {
+    id: "fast-shallow",
+    label: "Fast but shallow",
+    tone: "blue",
+    position: "high-velocity low-depth",
+    summary: "AI helps with quick tasks, but may be shallow.",
+    watch: ["Immediate accept", "Low verification", "Thin workflow presence", "Possible blind trust"]
+  }
+] as const;
 
 const realEvidencePageSlugs: WorkspacePageSlug[] = [
   "evidence",
@@ -310,7 +345,7 @@ export const AIValueWorkspace = () => {
         <div>
           <p className="eyebrow">Client Value Workspace</p>
           <h1>AI Value Workspace</h1>
-          <p>Guide the client from readiness to workflow change, evidence review, and a bounded value decision.</p>
+          <p>AI Fluency baseline, VBD map, value actions.</p>
         </div>
         <div className="ai-value-status-strip" aria-label="Workspace status">
           <StatusPill
@@ -699,9 +734,8 @@ const WorkspacePageGuide = ({
         <p>{page.detail}</p>
       </div>
       <div className="ai-value-page-guide-action">
-        <span className="ai-value-map-label">Do this now</span>
+        <span className="ai-value-map-label">Next action</span>
         <strong>{page.doNow}</strong>
-        <p>{page.doneWhen}</p>
         <Link className="ai-value-step active" to={page.primaryActionPath}>
           {page.primaryActionLabel}
         </Link>
@@ -755,14 +789,16 @@ const WorkspaceHome = ({
 
       <article className="ai-value-panel">
         <h3>How to use this workspace</h3>
-        <p>
-          Move one phase at a time: AI Fluency frames the workshop, Blueprint
-          selects the workflow, metrics define the value opportunity, evidence
-          validates what can be trusted, scenario keeps value language governed,
-          and readout turns the work into a sponsor decision.
-        </p>
+        <ol className="ai-value-short-list">
+          <li>Establish the AI Fluency baseline.</li>
+          <li>Plot Velocity, Breadth, and Depth.</li>
+          <li>Connect function metrics.</li>
+          <li>Choose the next value action.</li>
+        </ol>
       </article>
     </section>
+
+    <VbdMapPanel />
 
     <section className="ai-value-phase-grid" aria-label="Workspace phase cards">
       {workspacePages.filter((page) => page.slug !== "home").map((page) => (
@@ -790,24 +826,110 @@ const WorkspaceHome = ({
   </>
 );
 
+const VbdMapPanel = () => (
+  <section className="ai-value-panel ai-value-vbd-panel" aria-label="Velocity Breadth Depth map">
+    <div className="ai-value-section-head">
+      <div>
+        <p className="eyebrow">VBD Map</p>
+        <h3>Velocity + Depth show the work pattern</h3>
+      </div>
+      <StatusPill label="Signals, not scores" tone="good" />
+    </div>
+
+    <div className="ai-value-vbd-layout">
+      <div className="ai-value-vbd-y-axis">
+        <strong>Velocity</strong>
+        <span>High</span>
+        <span>Low</span>
+      </div>
+      <div className="ai-value-vbd-grid">
+        {vbdQuadrants.map((quadrant) => (
+          <article
+            className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone}`}
+            key={quadrant.id}
+          >
+            <span className="ai-value-map-label">{quadrant.position}</span>
+            <h4>{quadrant.label}</h4>
+            <p>{quadrant.summary}</p>
+            <ul>
+              {quadrant.watch.map((signal) => (
+                <li key={signal}>{signal}</li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <div className="ai-value-vbd-footer">
+      <strong>Depth</strong>
+      <span>Low</span>
+      <span>High</span>
+      <p>Breadth shows coverage by function, role, or workflow.</p>
+    </div>
+  </section>
+);
+
+const ValueProofChainPanel = ({ journey }: { journey: Journey }) => {
+  const proofRows = [
+    {
+      label: "Metric & outcome",
+      value: journey.roiScenarioReadiness.metricName || "Outcome metric not selected",
+      detail: journey.roiScenarioReadiness.sourceSystem || "Choose the customer source."
+    },
+    {
+      label: "Evidence & proof",
+      value: journey.realEvidenceStatus.statusLabel,
+      detail: journey.realEvidenceStatus.outcomeReviewLabel
+    },
+    {
+      label: "Scenario",
+      value: journey.roiScenarioReadiness.statusLabel,
+      detail:
+        journey.roiScenarioReadiness.safeValueLanguage[0] ||
+        journey.evidenceScenarioPlan.safeValueLanguage
+    },
+    {
+      label: "Decision",
+      value: journey.sponsorDecisionLoop.recommendedOptionLabel,
+      detail: journey.sponsorDecisionLoop.nextAction
+    }
+  ];
+
+  return (
+    <section className="ai-value-panel ai-value-proof-chain-panel" aria-label="Value proof chain">
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Value Chain</p>
+          <h3>Metrics, evidence, scenario, decision</h3>
+        </div>
+        <StatusPill label="Proof requires customer data" tone="warn" />
+      </div>
+      <div className="ai-value-proof-chain-grid">
+        {proofRows.map((row) => (
+          <article className="ai-value-proof-chain-card" key={row.label}>
+            <span className="ai-value-map-label">{row.label}</span>
+            <strong>{row.value}</strong>
+            <p>{row.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journey }) => (
   <section className="ai-value-focused-stack" aria-label="AI Fluency workspace">
     <section className="ai-value-panel" aria-label="AI Fluency">
       <div className="ai-value-section-head">
         <div>
           <p className="eyebrow">Post-assessment review</p>
-          <h3>After the organization completes AI Fluency</h3>
-          <p>
-            This is the aggregate results interpretation layer. Use it after
-            responses are collected to identify readiness strengths, capability
-            gaps, and the workflows that are ready to bring into Blueprint. If
-            responses are not collected yet, send the client link below first.
-          </p>
+          <h3>AI Fluency is the baseline</h3>
+          <p>Review aggregate results by function. Then plot VBD.</p>
         </div>
         <div className="ai-value-chip-row">
           <StatusPill label="Aggregate results only" tone="good" />
-          <StatusPill label="No individual scoring" />
-          <StatusPill label="No HR analytics" />
+          <StatusPill label="Signals, not scores" />
         </div>
       </div>
       <div className="ai-value-client-question-grid">
@@ -820,6 +942,8 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
         ))}
       </div>
     </section>
+
+    <VbdMapPanel />
 
     <AiFluencyExperiencePanel />
 
@@ -1550,6 +1674,92 @@ const SponsorOperatingWorkflowPanel = ({ journey }: { journey: Journey }) => {
   );
 };
 
+const ValueImprovementLoopPanel = ({ journey }: { journey: Journey }) => {
+  const loop = journey.valueImprovementLoop;
+
+  return (
+    <section
+      className="ai-value-panel ai-value-improvement-loop-panel"
+      aria-label="Value improvement loop"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Value Improvement</p>
+          <h3>If value is not improving</h3>
+          <p>
+            Use this loop when the selected value target is not moving yet:
+            identify the likely blocker, choose the next intervention, and
+            re-measure after the retest window.
+          </p>
+        </div>
+        <StatusPill label={loop.statusLabel} tone={loop.statusTone} />
+      </div>
+
+      <div className="ai-value-improvement-target">
+        <div>
+          <span className="ai-value-map-label">Value target</span>
+          <strong>{loop.metricName}</strong>
+          <p>
+            {loop.available
+              ? `${loop.valueRouteLabel} through ${loop.sourceSystem}`
+              : "Select the workflow, metric, data source, and comparison window first."}
+          </p>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Velocity, Breadth, Depth</span>
+          <strong>Velocity, Breadth, and Depth</strong>
+          <p>{loop.vbdSummary}</p>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Retest window</span>
+          <strong>{loop.retestWindow}</strong>
+          <p>{loop.retestPlan}</p>
+        </div>
+      </div>
+
+      <div className="ai-value-improvement-grid">
+        <section aria-label="Likely blockers">
+          <h4>Likely blockers</h4>
+          {loop.likelyBlockers.map((blocker) => (
+            <article className="ai-value-improvement-item" key={blocker.label}>
+              <strong>{blocker.label}</strong>
+              <p>{blocker.rationale}</p>
+              <small>{blocker.evidenceBasis}</small>
+            </article>
+          ))}
+        </section>
+        <section aria-label="Recommended interventions">
+          <h4>Recommended interventions</h4>
+          {loop.recommendedInterventions.map((intervention) => (
+            <article className="ai-value-improvement-item" key={intervention.label}>
+              <strong>{intervention.label}</strong>
+              <p>{intervention.action}</p>
+              <small>{intervention.owner}</small>
+            </article>
+          ))}
+        </section>
+      </div>
+
+      <div className="ai-value-improvement-footer">
+        <div>
+          <span className="ai-value-map-label">Next data needed</span>
+          <ul>
+            {loop.nextDataNeeded.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Success signal</span>
+          <p>{loop.successSignal}</p>
+          <StatusPill label="Advisory only" tone="neutral" />
+          <p>{loop.caveat}</p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const EvidencePage = ({
   journey,
   evidenceChecks
@@ -1742,6 +1952,8 @@ const ScenarioPage = ({
       </div>
     </section>
 
+    <ValueImprovementLoopPanel journey={journey} />
+
     <article className="ai-value-panel">
       <h3>Safe language</h3>
       <h4>What we can say now</h4>
@@ -1774,6 +1986,10 @@ const ReadoutPage = ({
   executiveBrief: typeof aiValueWorkspace.executiveBrief;
 }) => (
   <section className="ai-value-focused-stack" aria-label="Executive readout workspace">
+    <VbdMapPanel />
+
+    <ValueProofChainPanel journey={journey} />
+
     <SponsorOperatingWorkflowPanel journey={journey} />
 
     <ExecutiveReadoutPreviewPanel
@@ -1786,12 +2002,8 @@ const ReadoutPage = ({
       <div className="ai-value-section-head">
         <div>
           <p className="eyebrow">Executive Readout</p>
-          <h3>Executive Operating Packet</h3>
-          <p>
-            Turns the workshop into a sponsor decision and governed follow-up.
-            Agent tasks stay bounded to evidence review, caveated readout prep,
-            and Blueprint or value-signal updates.
-          </p>
+          <h3>Sponsor decision</h3>
+          <p>Show the value posture, caveats, and next owner.</p>
         </div>
         <StatusPill label={journey.executivePlan.packetStatus} tone="good" />
       </div>
@@ -1806,7 +2018,7 @@ const ReadoutPage = ({
           <p>{journey.executivePlan.recommendedNextAction}</p>
         </div>
         <div className="ai-value-map-cell ai-value-map-cell-wide">
-          <span className="ai-value-map-label">Agentic follow-up</span>
+          <span className="ai-value-map-label">Owner handoff</span>
           <div className="ai-value-agent-handoff-grid">
             {journey.executivePlan.handoffs.map((handoff) => (
               <div className="ai-value-agent-handoff" key={handoff.role}>
@@ -1818,7 +2030,7 @@ const ReadoutPage = ({
           </div>
         </div>
         <div className="ai-value-map-cell ai-value-map-cell-wide">
-          <span className="ai-value-map-label">Guardrails that travel with the packet</span>
+          <span className="ai-value-map-label">Do not claim</span>
           <div className="ai-value-chip-row">
             {journey.executivePlan.guardrails.map((guardrail) => (
               <StatusPill key={guardrail} label={guardrail} />
@@ -1847,6 +2059,8 @@ const DecisionsPage = ({ journey }: { journey: Journey }) => (
     <SponsorOperatingWorkflowPanel journey={journey} />
 
     <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
+
+    <ValueImprovementLoopPanel journey={journey} />
 
     <article className="ai-value-panel ai-value-boundary-panel">
       <h3>Safe Value Language</h3>

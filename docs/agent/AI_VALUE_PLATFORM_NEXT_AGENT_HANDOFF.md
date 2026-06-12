@@ -2,38 +2,47 @@
 
 ## Product North Star
 
-Build the attached whole-system diagrams as reusable software.
-
-The product is not a static dashboard and not a deck generator. It should be a
-guided client value-realization workspace where each phase creates governed
-objects that feed the next phase:
+Build a narrower AI value measurement product around this question:
 
 ```text
-Human Readiness
--> Workflow Discovery And Blueprint
--> Execution Instrumentation
--> Evidence And Measurement
--> Value Realization
--> Whole-System Outcomes
--> Renewal And Expansion
+Are we building AI capability, is AI becoming real work, what outcome should
+move, what proof do we have, and what should we change next?
 ```
 
-The first screen should make the system understandable to a client. If a user
-cannot tell what Blueprint, Metrics, FluencyTracr evidence, outcome data, and
-value realization are for, the experience is not working yet.
+The product is not a static dashboard, deck generator, usage report, or generic
+maturity model. It should be a guided client value-realization workspace where
+each phase creates governed evidence that feeds the next operating decision.
+
+The durable product spine is now:
+
+```text
+AI Fluency Baseline
+-> VBD Operating Map
+-> Function Outcome Metric
+-> Value Evidence Case
+-> Intervention / Retest
+```
+
+Blueprint, metrics, evidence readiness, scenarios, decisions, and proof remain
+important, but they should be subordinate to this spine. They are not competing
+top-level product destinations.
+
+The canonical reset lives in
+[docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md](../concepts/AI_VALUE_MEASUREMENT_MODEL.md).
+Use its phase data support map before expanding the UI, schemas, or next-agent
+handoffs.
 
 ## Product Interpretation Of The Diagrams
 
-The diagrams should be interpreted as a software spine:
+The diagrams should be interpreted through the narrower measurement spine:
 
-| Diagram area | Product module | Existing software anchor | Next experience requirement |
+| Product phase | Client question | Current data support | Next experience requirement |
 | --- | --- | --- | --- |
-| Human Readiness | Explore Your AI Fluency kickoff | `fluency_baseline` object | Show aggregate readiness and capability gaps as client-language kickoff context. |
-| Workflow Discovery And Design | Blueprint workspace | `engagement`, `blueprint`, intake adapter | Make Blueprint feel like a collaborative client workshop, not a database record. |
-| Execution Layer | Glean, MCP, agents, workflow telemetry | FluencyTracr aggregate evidence and future connectors | Show what can be instrumented and what is missing before claiming value. |
-| Evidence And Measurement | FluencyTracr evidence layer | `evidence_readiness`, outcome evidence export | Explain what can be interpreted safely, what is suppressed, and why. |
-| Value Realization | Metrics library and value scenario | `metrics_library`, `value_scenario`, outcome evidence | Map workflow changes to value routes, metrics, assumptions, and evidence gaps. |
-| Whole-System Outcomes | Executive operating cadence | `executive_packet`, readout HTML, Value Journey | Turn validated objects into decision-ready next actions and review rhythm. |
+| AI Fluency Baseline | Are we building AI capability? | Aggregate fluency baseline fixture, `fluencyBaseline` engine, suppressed-cohort tests. | Show post-assessment results by function and make the next intervention question obvious. |
+| VBD Operating Map | Is AI becoming real work? | Velocity concept, Depth concept, aggregate API-push package, VBD context in improvement-loop schema, VBD UI map. | Plot Velocity and Depth as the operating pattern; use Breadth as coverage by function, role, or workflow. |
+| Function Outcome Metric | What outcome should move? | Metric-definition schema, seeded support and sales metrics libraries, Blueprint-to-metric adapter. | Let the client choose the specific outcome metric, source system, owner, and comparison rule. |
+| Value Evidence Case | What proof do we have? | Evidence pack, evidence readiness, outcome export, baseline/comparison fixtures, scenario, review, and readout objects. | Assemble metric, outcome data, VBD state, evidence level, caveats, and decision into one case. |
+| Intervention / Retest | What should we change next? | Value-improvement-loop schema, support fixture, engine, and Decisions UI. | Recommend the next action when the metric or VBD pattern is not moving, then retest the same slice. |
 
 ## Governance Direction
 
@@ -72,55 +81,84 @@ not bury ROI math inside the executive packet or UI.
 
 ## Next Build Slice
 
-Completed latest slice:
+Current latest slice:
 
 ```text
-Workspace Page Handoff Navigation
+Data Boundary And ROI Evidence Contract
 ```
 
 What is now in place:
 
-- Every focused `/ai-value-workspace/*` page now ends with a Workspace Handoff
-  navigation block.
-- The block shows what the current page feeds next, a Back link to the prior
-  phase, and a Continue link to the next phase.
-- Sponsor Decisions loops back to Blueprint Workshop, so the workspace now reads
-  as an operating cycle rather than a set of disconnected pages.
-- The block derives from the existing `workspacePages` structure only; it does
-  not add a new backend object, schema, runtime service, or connector.
-- This is UI/comprehension work only. No production connector, runtime service,
-  autonomous customer action, unsupported ROI proof, causality claim, individual
-  scoring, HR analytics, productivity ranking, raw prompt/response storage,
-  direct identifiers, or customer-facing dollar output was added.
-
-Verification completed:
-
-- Red test first:
-  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "clear previous and next handoff" --reporter=basic`
-- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
-- `npm test --workspace frontend -- --reporter=basic`
-- `npm run build --workspace frontend`
-- `node scripts/ci_semantic_drift_guard.mjs`
-- `node scripts/ci_glean_value_governance_gates.mjs`
-- `git diff --check`
-- In-app browser smoke for
-  `/ai-value-workspace/readiness`, `/blueprint`, `/metrics`, `/evidence`,
-  `/scenario`, `/readout`, and `/decisions` at 1440px and 390px: handoff
-  navigation present, expected next link correct, no unsafe internal terms/state
-  codes, no console warnings/errors, and no horizontal overflow.
+- The AI Value Platform has a first-class local contract for useful
+  organizational data sources across AI work evidence, AI Fluency, workflow
+  process systems, customer outcomes, finance assumptions, HRIS/org context,
+  enablement activity, revenue/experience systems, and quality/risk systems.
+- The contract separates upstream source-system and transformation-boundary
+  use from what may cross into FluencyTracr.
+- Sensitive organizational data may support value analysis upstream only after
+  customer-approved or Glean-approved aggregation, attestation, and identifier
+  removal.
+- FluencyTracr receives aggregate evidence package inputs and future
+  Value Evidence Case inputs only.
+- HRIS/org-context data is restricted to internal/source-readiness context and
+  cannot become supported value proof.
+- The contract reconciles with Metrics Library, Outcome Evidence Export, ROI
+  Scenario, Value Improvement Loop, Reportability, Aggregate API Push, and the
+  AI Value Measurement Model.
+- Corrected VBD definitions are locked: Velocity is speed to adoption, Breadth
+  is spread across the organization/functions/workflows, and Depth is aggregate
+  AI tool or surface repertoire.
+- This slice adds no production connector, runtime service, autonomous
+  customer action, unsupported ROI proof, causality claim, individual scoring,
+  HR analytics surface, productivity ranking, raw prompt or response storage,
+  direct identifiers, or customer-facing dollar output.
 
 Recommended next slice:
 
 ```text
-Human Review / PR Decision
+Value Evidence Case Contract
 ```
 
-Pause for human review of `/ai-value-journey` and all `/ai-value-workspace`
-routes, then decide whether to push/open a PR or start a new bounded slice from
-observed review gaps. Keep the same governance boundary: no ROI proof, no
-causality, no individual scoring, no HR analytics, no productivity ranking, and
-no customer-facing dollar output unless a later governed value-modeling contract
+Create one first-class `value_evidence_case` schema that assembles selected
+metric, customer-owned outcome evidence, VBD state, data-boundary status,
+evidence level, scenario posture, caveats, and sponsor decision into one
+governed object. Keep the same boundary: no ROI proof, no causality, no
+individual scoring, no HR analytics surface, no productivity ranking, and no
+customer-facing dollar output unless a later governed value-modeling contract
 explicitly promotes that exact scope.
+
+Previously completed slice:
+
+```text
+North Star And Phase Data Support Reset
+```
+
+What is now in place:
+
+- The product North Star is now the five-question measurement model:
+  AI capability, real work, outcome metric, proof, and next change.
+- The client-facing product spine is now AI Fluency Baseline -> VBD Operating
+  Map -> Function Outcome Metric -> Value Evidence Case -> Intervention /
+  Retest.
+- [docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md](../concepts/AI_VALUE_MEASUREMENT_MODEL.md)
+  records the source-of-truth phase data support map.
+- Architecture and MVP docs now treat Blueprint, Metrics, Evidence Readiness,
+  Scenario, Decision, and Executive Packet as supporting objects inside the
+  spine rather than competing destinations.
+- The workspace VBD 2x2 labels now align with the intended Velocity x Depth
+  interpretation.
+- This is product-spine and local UX clarity work only. No production connector,
+  runtime service, autonomous customer action, unsupported ROI proof, causality
+  claim, individual scoring, HR analytics, productivity ranking, raw prompt or
+  response storage, direct identifiers, or customer-facing dollar output was
+  added.
+
+Verification completed:
+
+- `npm test --workspace frontend -- AIValueWorkspace.test.tsx`
+- `npm run build --workspace frontend`
+- `./scripts/ci_docs_contract_sweep.sh`
+- `git diff --check`
 
 Previously completed slice:
 

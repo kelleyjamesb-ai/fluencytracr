@@ -134,6 +134,37 @@ export interface SponsorDecisionLoop {
   caveat: string;
 }
 
+export interface ValueImprovementBlocker {
+  label: string;
+  rationale: string;
+  evidenceBasis: string;
+}
+
+export interface ValueImprovementIntervention {
+  label: string;
+  owner: string;
+  action: string;
+  rationale: string;
+}
+
+export interface ValueImprovementLoop {
+  available: boolean;
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  metricName: string;
+  sourceSystem: string;
+  valueRouteLabel: string;
+  targetRationale: string;
+  vbdSummary: string;
+  likelyBlockers: ValueImprovementBlocker[];
+  recommendedInterventions: ValueImprovementIntervention[];
+  retestWindow: string;
+  retestPlan: string;
+  successSignal: string;
+  nextDataNeeded: string[];
+  caveat: string;
+}
+
 export interface ClientValueQuestion {
   question: string;
   answer: string;
@@ -288,6 +319,7 @@ export interface AiValueJourney {
   executivePlan: ExecutiveOperatingPlan;
   executiveReadoutPreview: ExecutiveReadoutPreview;
   sponsorDecisionLoop: SponsorDecisionLoop;
+  valueImprovementLoop: ValueImprovementLoop;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
@@ -1176,6 +1208,178 @@ function buildSponsorDecisionLoop(params: {
       "Follow-up prepares handoffs only; no customer action is automated.",
     caveat:
       "Sponsor decisions can route the next workflow, evidence request, scenario review, or readout; they do not create ROI proof or causality claims."
+  };
+}
+
+function buildValueImprovementLoop(params: {
+  roiScenarioReadiness: RoiScenarioReadiness;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+}): ValueImprovementLoop {
+  const { roiScenarioReadiness, customerEvidenceReview } = params;
+
+  if (!roiScenarioReadiness.available) {
+    return {
+      available: false,
+      statusLabel: "Needs value target",
+      statusTone: "warn",
+      metricName: "No outcome metric selected",
+      sourceSystem: "Customer data source not selected",
+      valueRouteLabel: roiScenarioReadiness.valueRouteLabel,
+      targetRationale:
+        "Finish Blueprint, Metrics, Evidence, and Scenario before recommending value-improvement actions.",
+      vbdSummary:
+        "Velocity, Breadth, and Depth can guide improvement planning after the workflow and metric are selected.",
+      likelyBlockers: [
+        {
+          label: "Value target is not ready",
+          rationale:
+            "Select a workflow, outcome metric, baseline, comparison window, and evidence request before choosing interventions.",
+          evidenceBasis: "Workspace setup status."
+        }
+      ],
+      recommendedInterventions: [
+        {
+          label: "Finish the value setup",
+          owner: "Value owner",
+          action:
+            "Complete Blueprint, Metrics, Evidence Readiness, and Scenario before changing the intervention strategy.",
+          rationale:
+            "Improvement guidance is only useful after the target and measurement path are clear."
+        }
+      ],
+      retestWindow: "After the first approved evidence window",
+      retestPlan:
+        "Revisit this loop after aggregate AI Fluency, Velocity, Breadth, Depth, and the customer-owned metric are connected.",
+      successSignal:
+        "The selected workflow and metric are ready for aggregate intervention planning.",
+      nextDataNeeded: [
+        "Selected Blueprint workflow",
+        "Customer-owned outcome metric",
+        "Baseline and comparison window",
+        "Aggregate AI Fluency, Velocity, Breadth, and Depth context"
+      ],
+      caveat:
+        "Advisory only. This does not create ROI proof, causality language, people scoring, or customer-facing economic output."
+    };
+  }
+
+  const valueTargetStatus =
+    customerEvidenceReview.reviewState === "ACCEPTED" &&
+    !roiScenarioReadiness.inputs.some((input) => input.status !== "Ready to model")
+      ? "Under review"
+      : "Not improving yet";
+  const needsAssumptions = roiScenarioReadiness.inputs.some(
+    (input) => input.label === "Customer-owned assumptions" && input.status !== "Ready to model"
+  );
+  const evidenceNotAccepted = customerEvidenceReview.reviewState !== "ACCEPTED";
+  const likelyBlockers: ValueImprovementBlocker[] = [
+    {
+      label: "AI Fluency is mixed",
+      rationale:
+        "The function may need more confidence, usage quality, behavior change, or leadership reinforcement before workflow change scales.",
+      evidenceBasis: "Aggregate AI Fluency follow-up by function."
+    },
+    {
+      label: "Velocity is not increasing",
+      rationale:
+        "The workflow may not be showing enough aggregate AI-enabled activity to expect business metric movement yet.",
+      evidenceBasis: "Aggregate Velocity movement for the selected workflow."
+    },
+    {
+      label: "Breadth is still limited",
+      rationale:
+        "AI-enabled work may be concentrated in too few roles or workflow steps to affect the function-level metric.",
+      evidenceBasis: "Aggregate Breadth by function and workflow family."
+    },
+    {
+      label: "Depth is still shallow",
+      rationale:
+        "People may be trying AI, but the work pattern has not moved deeply enough into repeatable workflow behavior.",
+      evidenceBasis: "Aggregate Depth evidence for repeated, verified workflow use."
+    },
+    ...(needsAssumptions
+      ? [
+          {
+            label: "Customer assumptions need review",
+            rationale:
+              "Staffing, rollout, process, or case-mix changes may explain metric movement and need owner review.",
+            evidenceBasis: "Customer-owned assumptions attached to the governed value scenario."
+          }
+        ]
+      : []),
+    ...(evidenceNotAccepted
+      ? [
+          {
+            label: "Evidence review is not complete",
+            rationale:
+              "The target may be moving, but the customer-owned export has not cleared review yet.",
+            evidenceBasis: customerEvidenceReview.statusLabel
+          }
+        ]
+      : [])
+  ];
+  const recommendedInterventions: ValueImprovementIntervention[] = [
+    {
+      label: "Run targeted workflow enablement",
+      owner: "AI program owner and workflow owner",
+      action:
+        "Run a focused enablement cycle on the selected workflow, including examples, verification habits, and leadership reinforcement.",
+      rationale:
+        "The fastest improvement path is to help the function use AI in the actual workflow, not just increase generic usage."
+    },
+    {
+      label: "Redesign the AI handoff in the workflow",
+      owner: "Workflow owner",
+      action:
+        "Review where AI should enter the workflow and remove steps that keep users returning to the old process.",
+      rationale:
+        "If Velocity is not increasing, the workflow may need a clearer AI-enabled path before the value metric can move."
+    },
+    {
+      label: "Expand the workflow playbook to more roles",
+      owner: "Function leader",
+      action:
+        "Identify adjacent roles in the same function and extend the approved workflow playbook after the pilot group stabilizes.",
+      rationale:
+        "Breadth must expand at the function level before organization-level value modeling becomes credible."
+    },
+    {
+      label: "Strengthen the evidence review",
+      owner: customerEvidenceReview.reviewer || "Customer data owner",
+      action:
+        "Review baseline, comparison, source, and operating assumptions before stronger value language changes.",
+      rationale:
+        "The right move may be better evidence, not a stronger claim."
+    }
+  ];
+
+  return {
+    available: true,
+    statusLabel: valueTargetStatus,
+    statusTone: valueTargetStatus === "Under review" ? "neutral" : "warn",
+    metricName: roiScenarioReadiness.metricName,
+    sourceSystem: roiScenarioReadiness.sourceSystem,
+    valueRouteLabel: roiScenarioReadiness.valueRouteLabel,
+    targetRationale:
+      "If the customer-owned metric is not moving in the expected direction, use AI Fluency and VBD to decide which intervention to adjust next.",
+    vbdSummary:
+      "Velocity, Breadth, and Depth show whether AI-enabled work is becoming frequent, widespread, and deeply embedded enough to affect the function-level metric.",
+    likelyBlockers,
+    recommendedInterventions,
+    retestWindow: "30-45 days after intervention",
+    retestPlan:
+      "Recheck aggregate AI Fluency, Velocity, Breadth, Depth, and the selected functional metric after the intervention window.",
+    successSignal:
+      "The function shows improving VBD movement and the customer-owned metric moves in the expected direction.",
+    nextDataNeeded: [
+      "Aggregate AI Fluency follow-up by function",
+      "Velocity, Breadth, and Depth movement by workflow family",
+      `${roiScenarioReadiness.metricName} from ${roiScenarioReadiness.sourceSystem}`,
+      "Customer-owned baseline and comparison window review",
+      "Customer-owned assumptions for operating changes during the same period"
+    ],
+    caveat:
+      "Advisory only. This does not create ROI proof, causality language, people scoring, or customer-facing economic output."
   };
 }
 
@@ -2278,6 +2482,12 @@ export const useAiValueJourney = (): AiValueJourney => {
       executivePlan
     });
   });
+  const [valueImprovementLoop, setValueImprovementLoop] = useState<ValueImprovementLoop>(() =>
+    buildValueImprovementLoop({
+      roiScenarioReadiness,
+      customerEvidenceReview
+    })
+  );
   const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -2357,6 +2567,10 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceReview: evidenceReview,
         executivePlan
       });
+      const improvementLoop = buildValueImprovementLoop({
+        roiScenarioReadiness: roiReadiness,
+        customerEvidenceReview: evidenceReview
+      });
       const questions = buildClientValueQuestions({
         opportunities: mappedOpportunities,
         evidenceScenarioPlan: plan,
@@ -2403,6 +2617,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setExecutivePlan(executivePlan);
       setExecutiveReadoutPreview(readoutPreview);
       setSponsorDecisionLoop(sponsorDecision);
+      setValueImprovementLoop(improvementLoop);
       setPacketIds(packetIds);
 
       setClientName(
@@ -2511,6 +2726,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     executivePlan,
     executiveReadoutPreview,
     sponsorDecisionLoop,
+    valueImprovementLoop,
     packetIds,
     errorMessage,
     refresh,
