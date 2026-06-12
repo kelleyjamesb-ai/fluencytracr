@@ -180,6 +180,26 @@ Verify:
 npm run test:ai-value-evidence-case
 ```
 
+To run the whole system locally with a seeded enterprise, start the backend
+(`npm run dev --workspace backend`) and run
+[`scripts/seed_ai_value_enterprise.mjs`](../../../scripts/seed_ai_value_enterprise.mjs)
+(`npm run seed:ai-value-enterprise`). It simulates a synthetic 5,000-employee
+organization upstream (person-level data never leaves the seeder process),
+aggregates it into suppression-checked packages, and pushes twelve functions of
+fluency baselines plus five full workflow chains through the governed API. The
+five focus functions land at different evidence-ladder rungs on purpose
+(Supported, Caveated, Directional, and two held Missing cases), so the
+Workspace shows the full governance range side by side.
+
+For real-data ingestion, use the local MCP server
+[`scripts/ai_value_mcp_server.mjs`](../../../scripts/ai_value_mcp_server.mjs)
+(registered in `.mcp.json`). It exposes `ingest_ai_value_object`,
+`list_ai_value_objects`, `get_ai_value_object`, `review_outcome_evidence`,
+`run_value_chain`, and `assemble_value_evidence_case`. The server adds no new
+write paths: every tool wraps the same fail-closed engine-validated endpoints,
+uploads of outcome evidence always enter as SUBMITTED, and review decisions are
+recorded only when a human reviewer has made them.
+
 For the Phase 9.5 Agentic Platform Harness, use
 [`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)
 with the seeded Customer Support handoff fixture in

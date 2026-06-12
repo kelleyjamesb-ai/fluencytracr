@@ -84,6 +84,44 @@ not bury ROI math inside the executive packet or UI.
 Current latest slice:
 
 ```text
+Whole-System Value Realization: backend case registry, 5,000-employee seeded
+enterprise, governed ingestion MCP server, and the Evidence Case workspace page
+```
+
+What is now in place (2026-06-11, after the Value Evidence Case contract):
+
+- Backend: `data_boundary`, `value_improvement_loop`, and `value_evidence_case`
+  are registered object types with fail-closed validated upserts, plus
+  `POST /api/v1/ai-value/evidence-case/assemble` which loads stored objects,
+  runs `buildValueEvidenceCase`, validates, persists, and returns the case
+  (`backend/tests/ai_value_evidence_case_api.test.ts`, 5 tests).
+- Seeded working solution: `npm run seed:ai-value-enterprise`
+  (`scripts/seed_ai_value_enterprise.mjs`) simulates a deterministic synthetic
+  5,000-employee enterprise upstream (person-level data never leaves the
+  process), aggregates with cohort suppression, and seeds 12 function fluency
+  baselines plus 5 full workflow chains through the governed API. The focus
+  functions land at distinct evidence-ladder rungs by design: Sales SUPPORTED,
+  Customer Support CAVEATED, Engineering DIRECTIONAL (submitted, awaiting
+  human acceptance), Marketing MISSING (no evidence), Operations MISSING
+  (export rejected). Note the local dev backend store is in-memory without a
+  DB; re-run the seeder after a backend restart.
+- Real-data ingestion: `scripts/ai_value_mcp_server.mjs` (registered in
+  `.mcp.json`) exposes ingest/list/get/review/run-chain/assemble MCP tools
+  wrapping the same fail-closed endpoints; smoke-verified over stdio including
+  a rejected tainted ingest.
+- UI: the Workspace has a new step 7 "Evidence Case" page
+  (`/ai-value-workspace/case`, `frontend/src/components/ValueEvidenceCasePanel.tsx`)
+  with a function selector across all stored cases, the evidence ladder with
+  the current rung highlighted, "what we can say / always said with / never
+  claimed" columns, outcome metric and review state, VBD chips, sponsor
+  decision, and next action — all client-facing language, verified live in the
+  browser against the seeded enterprise.
+- Engine: `buildValueEvidenceCase` accepts a `functionArea` option;
+  `ALLOWED_OUTPUT_UNITS` in the scenario stage now includes `days`.
+
+Previously completed slice:
+
+```text
 Value Evidence Case Contract
 ```
 

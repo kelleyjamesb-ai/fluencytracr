@@ -203,6 +203,7 @@ export interface BuildValueEvidenceCaseOptions {
   sponsorDecisionState?: string;
   sponsorDecisionOwnerRole?: string;
   engagementLabel?: string;
+  functionArea?: string;
 }
 
 function requireField(value: any, path: string, gaps: string[]): void {
@@ -689,7 +690,8 @@ export function buildValueEvidenceCase(
     roiScenario?.workflow?.workflow_family ?? readiness?.workflow_family ?? "client_workflow"
   );
   const functionArea = String(
-    improvementLoop?.workflow?.function_area ??
+    options.functionArea ??
+      improvementLoop?.workflow?.function_area ??
       workflowFamily
         .split("_")
         .slice(0, 2)

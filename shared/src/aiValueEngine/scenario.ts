@@ -31,6 +31,7 @@ const ALLOWED_CLAIM_STATES = new Set([
 
 const ALLOWED_OUTPUT_UNITS = new Set([
   "hours",
+  "days",
   "cases",
   "share",
   "score",

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fluencytracr-ai-value": {
+      "command": "node",
+      "args": ["scripts/ai_value_mcp_server.mjs"],
+      "env": {
+        "AI_VALUE_API_BASE": "http://localhost:4000",
+        "AI_VALUE_ORG": "org-northstar-enterprise",
+        "AI_VALUE_ROLE": "ADMIN"
+      }
+    }
+  }
+}

@@ -13,6 +13,7 @@ import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequ
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
+import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
 import { ValueSpineTracePanel } from "../components/ValueSpineTracePanel";
 
 const workspacePages = [
@@ -115,9 +116,26 @@ const workspacePages = [
       "Blocked claim list"
     ],
     doneWhen: "The model is bounded.",
+    primaryActionLabel: "Open Evidence Case",
+    primaryActionPath: "/ai-value-workspace/case",
+    feedsNext: "Use scenario status to assemble the value evidence case."
+  },
+  {
+    slug: "case",
+    label: "Value Evidence Case",
+    navLabel: "Evidence Case",
+    path: "/ai-value-workspace/case",
+    detail: "One governed view of proof per workflow.",
+    doNow: "Review what can be said, what stays blocked, and what to do next.",
+    needs: [
+      "Chosen outcome metric",
+      "Reviewed customer evidence",
+      "Open assumptions and owners"
+    ],
+    doneWhen: "The safe value story and the next action are clear.",
     primaryActionLabel: "Preview Readout",
     primaryActionPath: "/ai-value-workspace/readout",
-    feedsNext: "Use scenario status to prepare the executive readout."
+    feedsNext: "Carry the evidence case into the executive readout."
   },
   {
     slug: "readout",
@@ -164,6 +182,7 @@ const workspaceStageBySlug: Partial<Record<WorkspacePageSlug, JourneyStageKey>> 
   metrics: "opportunity",
   evidence: "measurement",
   scenario: "scenario",
+  case: "scenario",
   readout: "readout",
   decisions: "readout"
 };
@@ -486,6 +505,8 @@ export const AIValueWorkspace = () => {
           safeLanguage={safeLanguage}
         />
       )}
+
+      {activePageSlug === "case" && <ValueEvidenceCasePanel />}
 
       {activePageSlug === "readout" && (
         <ReadoutPage journey={journey} executiveBrief={executiveBrief} />

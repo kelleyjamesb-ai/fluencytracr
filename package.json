@@ -55,6 +55,7 @@
     "prepare:ai-value-aggregate-api-push": "node scripts/prepare_ai_value_aggregate_api_push.mjs",
     "test:ai-value-aggregate-api-push": "node --test scripts/prepare_ai_value_aggregate_api_push.test.mjs",
     "seed:ai-value": "node scripts/seed_ai_value_demo.mjs",
+    "seed:ai-value-enterprise": "npm run build --workspace shared && node scripts/seed_ai_value_enterprise.mjs",
     "db:baseline": "node scripts/baseline_migrations.mjs"
   },
   "devDependencies": {
