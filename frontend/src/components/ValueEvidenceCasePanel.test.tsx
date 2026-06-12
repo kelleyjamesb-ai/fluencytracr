@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ValueEvidenceCasePanel } from "./ValueEvidenceCasePanel";
@@ -245,6 +245,30 @@ describe("ValueEvidenceCasePanel", () => {
     await waitFor(() =>
       expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
     );
+
+    const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    expect(within(intake).getByText(/Add aggregate metric evidence/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Outcome metric/i)).toHaveValue("Median resolution time");
+    expect(within(intake).getByLabelText(/Source system/i)).toHaveValue("Support case management system");
+    expect(within(intake).getByLabelText(/Baseline value/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Current value/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Eligible population/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Evidence owner/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Import aggregate evidence file/i)).toBeInTheDocument();
+
+    fireEvent.change(within(intake).getByLabelText(/Baseline value/i), {
+      target: { value: "18.4" }
+    });
+    fireEvent.change(within(intake).getByLabelText(/Current value/i), {
+      target: { value: "15.1" }
+    });
+    fireEvent.change(within(intake).getByLabelText(/Eligible population/i), {
+      target: { value: "2300" }
+    });
+
+    expect(within(intake).getByText(/Evidence staged locally/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/18.4 to 15.1 hours/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/No person-level rows, names, or manager rankings/i)).toBeInTheDocument();
   });
 
   it("preserves blocked value warnings for legacy cases without claim gates", async () => {

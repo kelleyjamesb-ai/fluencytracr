@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 
 import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
 
@@ -190,6 +190,150 @@ const StatusPill = ({
   tone?: "neutral" | "warn" | "good";
 }) => <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>;
 
+type MetricEvidenceDraft = {
+  outcomeMetric: string;
+  sourceSystem: string;
+  measurementUnit: string;
+  baselineWindow: string;
+  comparisonWindow: string;
+  baselineValue: string;
+  currentValue: string;
+  eligiblePopulation: string;
+  owner: string;
+};
+
+const defaultMetricEvidenceDraft: MetricEvidenceDraft = {
+  outcomeMetric: "Median resolution time",
+  sourceSystem: "Support case management system",
+  measurementUnit: "hours",
+  baselineWindow: "Pre-Glean comparison window",
+  comparisonWindow: "Current reporting window",
+  baselineValue: "",
+  currentValue: "",
+  eligiblePopulation: "",
+  owner: "Support Operations"
+};
+
+const MetricEvidenceIntake = () => {
+  const [draft, setDraft] = useState<MetricEvidenceDraft>(defaultMetricEvidenceDraft);
+  const [fileName, setFileName] = useState("");
+  const evidenceReady = Boolean(
+    draft.baselineValue.trim() &&
+      draft.currentValue.trim() &&
+      draft.eligiblePopulation.trim() &&
+      draft.owner.trim()
+  );
+
+  const updateDraft =
+    (field: keyof MetricEvidenceDraft) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setDraft((current) => ({ ...current, [field]: event.target.value }));
+    };
+
+  return (
+    <section className="ai-value-case-intake" aria-label="Metric evidence intake">
+      <div className="ai-value-case-intake-head">
+        <div>
+          <p className="eyebrow">Evidence intake</p>
+          <h3>Add aggregate metric evidence</h3>
+          <p>
+            Enter the customer-owned metric selected on the Outcome Metrics page, or attach an
+            aggregate export from the system of record.
+          </p>
+        </div>
+        <StatusPill
+          label={evidenceReady ? "Evidence staged locally" : "Needs metric values"}
+          tone={evidenceReady ? "good" : "warn"}
+        />
+      </div>
+
+      <div className="ai-value-case-intake-grid">
+        <label>
+          Outcome metric
+          <input value={draft.outcomeMetric} onChange={updateDraft("outcomeMetric")} />
+        </label>
+        <label>
+          Source system
+          <input value={draft.sourceSystem} onChange={updateDraft("sourceSystem")} />
+        </label>
+        <label>
+          Measurement unit
+          <input value={draft.measurementUnit} onChange={updateDraft("measurementUnit")} />
+        </label>
+        <label>
+          Evidence owner
+          <input value={draft.owner} onChange={updateDraft("owner")} />
+        </label>
+        <label>
+          Baseline window
+          <input value={draft.baselineWindow} onChange={updateDraft("baselineWindow")} />
+        </label>
+        <label>
+          Comparison window
+          <input value={draft.comparisonWindow} onChange={updateDraft("comparisonWindow")} />
+        </label>
+        <label>
+          Baseline value
+          <input
+            inputMode="decimal"
+            value={draft.baselineValue}
+            onChange={updateDraft("baselineValue")}
+          />
+        </label>
+        <label>
+          Current value
+          <input
+            inputMode="decimal"
+            value={draft.currentValue}
+            onChange={updateDraft("currentValue")}
+          />
+        </label>
+        <label>
+          Eligible population
+          <input
+            inputMode="numeric"
+            value={draft.eligiblePopulation}
+            onChange={updateDraft("eligiblePopulation")}
+          />
+        </label>
+        <label>
+          Import aggregate evidence file
+          <input
+            accept=".csv,.json,.xlsx"
+            type="file"
+            onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+          />
+        </label>
+      </div>
+
+      <div className="ai-value-case-intake-preview" aria-label="Evidence package preview">
+        <div>
+          <span className="ai-value-map-label">Staged package</span>
+          <strong>{draft.outcomeMetric || "Outcome metric"}</strong>
+          <p>
+            {draft.baselineValue && draft.currentValue
+              ? `${draft.baselineValue} to ${draft.currentValue} ${draft.measurementUnit}`.trim()
+              : "Add baseline and current values to preview movement."}
+          </p>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Review boundary</span>
+          <p>No person-level rows, names, or manager rankings.</p>
+          <small>
+            {fileName
+              ? `Attached locally: ${fileName}`
+              : "Accepted files: aggregate CSV, JSON, or spreadsheet exports."}
+          </small>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Next gate</span>
+          <p>Submit for customer evidence review before stronger value language unlocks.</p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const humanizeRole = (value: unknown): string => {
   if (typeof value !== "string" || !value) return "Business sponsor";
   const text = value.replace(/_/g, " ").trim();
@@ -379,12 +523,13 @@ export const ValueEvidenceCasePanel = () => {
             <p className="eyebrow">Value Evidence Case</p>
             <h2>No evidence case yet</h2>
             <p>
-              An evidence case is assembled once a workflow has a chosen outcome metric, a data
-              boundary, and an evidence review path. Complete the earlier steps, then assemble the
-              case from the evidence page.
+              Start by staging the aggregate metric evidence for the outcome selected on the
+              previous page. Once the customer reviewer accepts the evidence package, this page can
+              assemble the case and show what value language is allowed.
             </p>
           </div>
         </div>
+        <MetricEvidenceIntake />
       </section>
     );
   }

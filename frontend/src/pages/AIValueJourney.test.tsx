@@ -499,19 +499,32 @@ describe("AIValueJourney", () => {
     });
 
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
-    expect(within(bridge).getByRole("heading", { name: /Metric setup to confirm with the client/i })).toBeInTheDocument();
-    expect(within(bridge).getByText(/Use the Blueprint workflow and value route/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Capacity creation/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Support case management system/i)).toBeInTheDocument();
-    expect(within(bridge).getAllByText(/hours/i).length).toBeGreaterThan(0);
-    expect(within(bridge).getByText(/Compare against an approved pre-period window/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Support Operations/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
-    expect(within(bridge).getByText(/Next: Evidence Readiness and Scenario Builder/i)).toBeInTheDocument();
+    expect(within(bridge).getByRole("heading", { name: /Choose function and outcome metrics/i })).toBeInTheDocument();
+    expect(within(bridge).getByText(/Select the org function from the AI Fluency and VBD work/i)).toBeInTheDocument();
+    expect(within(bridge).getByRole("group", { name: /Select org function/i })).toBeInTheDocument();
+    expect(within(bridge).getByRole("button", { name: /Customer or Account Success/i })).toBeInTheDocument();
+    const medianResolution = within(bridge).getByRole("checkbox", { name: /Median resolution time/i });
+    const firstContactResolution = within(bridge).getByRole("checkbox", { name: /First contact resolution/i });
+    expect(medianResolution).toBeChecked();
+    fireEvent.click(firstContactResolution);
+    const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
+    expect(within(watchPlan).getByText(/Customer or Account Success/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/First contact resolution/i)).toBeInTheDocument();
+    const blueprintContext = within(bridge).getByRole("region", {
+      name: /Blueprint metric context/i
+    });
+    expect(within(blueprintContext).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Capacity creation/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Support case management system/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText("hours")).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Compare against an approved pre-period window/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Support Operations/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Modeled opportunity only; report with caveats after evidence review/i)).toBeInTheDocument();
+    expect(within(blueprintContext).getByText(/Next: Evidence Readiness and Scenario Builder/i)).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library"),

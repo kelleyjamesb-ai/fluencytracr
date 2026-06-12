@@ -81,12 +81,16 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("keeps the AI Fluency page to baseline numbers and the assessment", () => {
+  it("keeps the AI Fluency page focused on the organizational example", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
-    expect(screen.getByRole("heading", { name: /AI Fluency Baseline/i })).toBeInTheDocument();
-    expect(screen.getByText("Aggregate results only")).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /AI Fluency experience/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Organizational AI Fluency example/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "AI Fluency" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /AI Fluency Baseline/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Aggregate results only")).not.toBeInTheDocument();
+    expect(screen.queryByText("Signals, not scores")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confidence")).not.toBeInTheDocument();
+    expect(screen.queryByText("Usage Quality")).not.toBeInTheDocument();
 
     // Practitioner clutter stays off the executive page.
     expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
@@ -97,44 +101,90 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("lets AI Fluency open the assessment, copy the client link, and switch to results", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: { writeText }
-    });
+  it("replaces the client-assessment controls with the AI Org fluency example", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
-    const experience = screen.getByRole("region", { name: /AI Fluency experience/i });
-    expect(within(experience).getByRole("heading", { name: /Send AI Fluency and view results/i })).toBeInTheDocument();
+    const example = screen.getByRole("region", { name: /Organizational AI Fluency example/i });
     expect(
-      within(experience).getByRole("link", { name: /Open client assessment/i })
-    ).toHaveAttribute("href", "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item");
-
-    fireEvent.click(within(experience).getByRole("button", { name: /Copy client link/i }));
-    await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith(
-        "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item"
-      );
-    });
-    expect(within(experience).getByText(/Client link copied/i)).toBeInTheDocument();
-
-    fireEvent.click(within(experience).getByRole("button", { name: /Show aggregate results/i }));
-    expect(within(experience).getByText(/Aggregate results preview/i)).toBeInTheDocument();
+      within(example).getByRole("heading", { name: /AI Org Fluency example/i })
+    ).toBeInTheDocument();
+    expect(within(example).getByTitle(/Organizational AI Fluency example/i)).toHaveAttribute(
+      "src",
+      "/ai-fluency/organizational-results.html"
+    );
+    expect(screen.queryByText(/Send AI Fluency and view results/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Open client assessment/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Copy client link/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Show aggregate results/i })).not.toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/explore-your-ai-fluency-instruments/i);
 
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
   it("gives the VBD operating map its own spine step and redirects the old blueprint link", () => {
     const vbd = renderWorkspace("/ai-value-workspace/vbd");
-    expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
-    expect(screen.getByText(/High-fluency flow/i)).toBeInTheDocument();
+    const vbdMap = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
+    expect(vbdMap).toBeInTheDocument();
+    expect(within(vbdMap).getAllByText(/High-fluency flow/i).length).toBeGreaterThan(0);
     vbd.unmount();
 
     renderWorkspace("/ai-value-workspace/blueprint");
     expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
     const activeLink = screen.getByRole("link", { current: "page" });
     expect(activeLink).toHaveTextContent("VBD Map");
+  });
+
+  it("plots org functions from the AI Fluency results on the VBD map", () => {
+    const { container } = renderWorkspace("/ai-value-workspace/vbd");
+
+    const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
+    expect(within(map).getByText(/Function cluster map/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Customer or Account Success/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Finance or Accounting/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Legal & Compliance/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Measured AI surfaces:/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Bubble size shows combined Velocity, Breadth, and Depth/i)).toBeInTheDocument();
+    const quadrantMap = within(map).getByLabelText("VBD quadrant map");
+    expect(within(quadrantMap).getByText("Fast but shallow")).toBeInTheDocument();
+    expect(within(quadrantMap).getByText("High-fluency flow")).toBeInTheDocument();
+    expect(within(quadrantMap).getByText("Low integration")).toBeInTheDocument();
+    expect(within(quadrantMap).getByText("Deep but slow")).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/Adoption is ahead of workflow change/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/AI is embedded enough to scale/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/Find the work fit before scaling/i)).toBeInTheDocument();
+    expect(within(quadrantMap).getByText(/Good use case, slow spread/i)).toBeInTheDocument();
+    const yAxis = container.querySelector(".ai-value-vbd-y-axis");
+    expect(yAxis).toBeInstanceOf(HTMLElement);
+    expect(within(yAxis as HTMLElement).getByText("High")).toHaveClass("ai-value-vbd-axis-high");
+    expect(within(yAxis as HTMLElement).getByText("Velocity")).toHaveClass("ai-value-vbd-axis-title");
+    expect(within(yAxis as HTMLElement).getByText("Low")).toHaveClass("ai-value-vbd-axis-low");
+    expect(container.querySelectorAll(".ai-value-vbd-grid p")).toHaveLength(0);
+    expect(container.querySelectorAll(".ai-value-vbd-grid h4, .ai-value-vbd-grid .ai-value-map-label")).toHaveLength(0);
+    expect(container.querySelectorAll(".ai-value-vbd-function-marker")).toHaveLength(0);
+    const bubbles = container.querySelectorAll(".ai-value-vbd-function-bubble");
+    expect(bubbles).toHaveLength(17);
+    expect(Array.from(bubbles).every((bubble) => bubble instanceof HTMLElement && bubble.style.getPropertyValue("--vbd-bubble-size"))).toBe(true);
+    const marketingBubble = container.querySelector(
+      '[aria-label^="Marketing & Communications"]'
+    );
+    const businessOperationsBubble = container.querySelector(
+      '[aria-label^="Corporate Strategy or Business Operations"]'
+    );
+    expect(marketingBubble).toBeInstanceOf(HTMLElement);
+    expect(businessOperationsBubble).toBeInstanceOf(HTMLElement);
+    expect(parseFloat((marketingBubble as HTMLElement).style.left)).toBeLessThan(50);
+    expect(parseFloat((businessOperationsBubble as HTMLElement).style.left)).toBeLessThan(50);
+    expect(
+      Array.from(bubbles).some(
+        (bubble) => bubble instanceof HTMLElement && bubble.style.getPropertyValue("--vbd-bubble-size") !== bubbles[0].style.getPropertyValue("--vbd-bubble-size")
+      )
+    ).toBe(true);
+    expect(within(map).queryByText(/No functions here yet/i)).not.toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent);
   });
 
   it("redirects demoted evidence, scenario, and readout pages to spine steps", () => {
@@ -496,9 +546,21 @@ describe("AIValueWorkspace journey continuity", () => {
       expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("heading", { name: /Outcome Metrics/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Outcome Metrics" })).toBeInTheDocument();
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
-    expect(within(bridge).getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
+    expect(within(bridge).getByRole("heading", { name: /Choose function and outcome metrics/i })).toBeInTheDocument();
+    expect(within(bridge).getByRole("group", { name: /Select org function/i })).toBeInTheDocument();
+    fireEvent.click(within(bridge).getByRole("button", { name: "Engineering / Software Development" }));
+    const pullRequestCycle = within(bridge).getByRole("checkbox", { name: /Pull request cycle time/i });
+    const releaseFrequency = within(bridge).getByRole("checkbox", { name: /Release frequency/i });
+    expect(pullRequestCycle).toBeChecked();
+    fireEvent.click(releaseFrequency);
+    expect(releaseFrequency).toBeChecked();
+    const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
+    expect(within(watchPlan).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Pull request cycle time/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Release frequency/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Compare selected outcomes against Velocity, Breadth, and Depth movement over time/i)).toBeInTheDocument();
     expect(within(bridge).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("article", { name: /Candidate outcome metrics/i })).toBeInTheDocument();
 
