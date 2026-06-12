@@ -1097,31 +1097,6 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
         </p>
       </article>
     )}
-
-    {journey.valueQuestions.length > 0 && (
-      <section className="ai-value-client-questions" aria-label="Client value questions">
-        <div className="ai-value-section-head">
-          <div>
-            <p className="eyebrow">Sponsor View</p>
-            <h3>Client Value Questions</h3>
-            <p>
-              These questions keep readiness tied to business value instead of
-              generic training or awareness.
-            </p>
-          </div>
-          <StatusPill label="Governed opportunity view" tone="warn" />
-        </div>
-        <div className="ai-value-client-question-grid">
-          {journey.valueQuestions.map((item) => (
-            <article className="ai-value-client-question-card" key={item.question}>
-              <span className="ai-value-map-label">{item.question}</span>
-              <strong>{item.answer}</strong>
-              <p>{item.detail}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-    )}
   </section>
 );
 

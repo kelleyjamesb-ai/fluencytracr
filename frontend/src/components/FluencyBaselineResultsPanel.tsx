@@ -230,31 +230,18 @@ export const FluencyBaselineResultsPanel = () => {
         </div>
       </div>
 
-      <div className="ai-value-client-question-grid">
+      <div className="ai-value-fluency-dimensions">
         {results.dimensions.map((dimension) => (
-          <article className="ai-value-client-question-card" key={dimension.label}>
-            <span className="ai-value-map-label">What results tell us</span>
-            <strong>{dimension.label}</strong>
+          <div className="ai-value-fluency-dimension" key={dimension.label}>
+            <div>
+              <span className="ai-value-map-label">What results tell us</span>
+              <strong>{dimension.label}</strong>
+              <p>{dimension.detail}</p>
+            </div>
             {dimension.percent !== null && (
-              <div
-                className="ai-value-fluency-meter"
-                role="meter"
-                aria-valuenow={dimension.percent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={`${dimension.label} ${dimension.percent}%`}
-              >
-                <span className="ai-value-fluency-meter-value">{dimension.percent}%</span>
-                <span className="ai-value-fluency-meter-track">
-                  <span
-                    className="ai-value-fluency-meter-fill"
-                    style={{ width: `${dimension.percent}%` }}
-                  />
-                </span>
-              </div>
+              <div className="ai-value-fluency-dimension-percent">{dimension.percent}%</div>
             )}
-            <p>{dimension.detail}</p>
-          </article>
+          </div>
         ))}
       </div>
 
@@ -265,12 +252,6 @@ export const FluencyBaselineResultsPanel = () => {
             {results.functions.map((row) => (
               <li key={row.label}>
                 <strong>{row.label}</strong>
-                <span className="ai-value-fluency-meter-track">
-                  <span
-                    className="ai-value-fluency-meter-fill"
-                    style={{ width: `${row.percent}%` }}
-                  />
-                </span>
                 <span className="ai-value-fluency-function-value">
                   {row.percent}% · {row.respondents.toLocaleString()} responses
                 </span>
