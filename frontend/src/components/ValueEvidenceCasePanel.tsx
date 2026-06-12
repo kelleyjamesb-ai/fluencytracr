@@ -128,6 +128,7 @@ const humanizeWindow = (value: unknown): string => {
 
 interface EvidenceCasePayload {
   value_evidence_case_id: string;
+  source_refs?: { outcome_export_id?: string | null };
   client_context?: { engagement_label?: string; function_area?: string; sponsor_role?: string };
   workflow?: { workflow_name?: string; workflow_family?: string; function_area?: string };
   ai_fluency_summary?: { readiness?: string };
@@ -137,6 +138,7 @@ interface EvidenceCasePayload {
     depth?: { status?: string };
   };
   outcome_metric?: {
+    metric_id?: string;
     metric_name?: string;
     measurement_unit?: string;
     source_system?: string;
@@ -165,6 +167,21 @@ interface EvidenceCasePayload {
   };
 }
 
+interface OutcomeEvidenceMetricPayload {
+  metric_id?: string;
+  measurement_unit?: string;
+  baseline_value?: number | null;
+  comparison_value?: number | null;
+  eligible_population?: number | null;
+}
+
+interface OutcomeEvidenceExportPayload {
+  export_id?: string;
+  source_system?: { source_name?: string; approved_grain?: string };
+  windows?: { baseline?: string; comparison?: string };
+  metrics?: OutcomeEvidenceMetricPayload[];
+}
+
 const StatusPill = ({
   label,
   tone = "neutral"
@@ -187,8 +204,85 @@ const sessionRole = () => {
   }
 };
 
+const outcomeExportIdForCase = (evidenceCase?: EvidenceCasePayload): string | null => {
+  const sourceRef = evidenceCase?.source_refs?.outcome_export_id;
+  const statusRef = evidenceCase?.outcome_evidence_status?.export_id;
+  if (typeof sourceRef === "string" && sourceRef) return sourceRef;
+  if (typeof statusRef === "string" && statusRef) return statusRef;
+  return null;
+};
+
+const numberFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1
+});
+
+const percentFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1
+});
+
+const formatPlainNumber = (value: number): string => numberFormatter.format(value);
+
+const formatMetricValue = (value: unknown, unit: unknown): string => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not connected";
+  const unitText = typeof unit === "string" ? unit : "";
+  if (unitText === "share" || unitText === "rate") {
+    return `${percentFormatter.format(value * 100)}%`;
+  }
+  return unitText ? `${formatPlainNumber(value)} ${unitText}` : formatPlainNumber(value);
+};
+
+const formatPopulation = (value: unknown): string => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not connected";
+  return `${formatPlainNumber(value)} aggregate records`;
+};
+
+const formatMovement = (
+  metric: OutcomeEvidenceMetricPayload | null,
+  expectedDirection: unknown
+): string => {
+  const baseline = metric?.baseline_value;
+  const comparison = metric?.comparison_value;
+  if (
+    typeof baseline !== "number" ||
+    !Number.isFinite(baseline) ||
+    typeof comparison !== "number" ||
+    !Number.isFinite(comparison)
+  ) {
+    return "Not connected";
+  }
+
+  const direction = String(expectedDirection ?? "");
+  const rawDelta = comparison - baseline;
+  const expectedDelta = direction === "REDUCE" ? baseline - comparison : rawDelta;
+  const unit = metric?.measurement_unit;
+  const movementWord =
+    direction === "REDUCE"
+      ? expectedDelta >= 0
+        ? "lower"
+        : "higher"
+      : rawDelta >= 0
+        ? "higher"
+        : "lower";
+  const absoluteDelta = Math.abs(direction === "REDUCE" ? expectedDelta : rawDelta);
+  const percent =
+    baseline === 0 ? null : `${percentFormatter.format((absoluteDelta / Math.abs(baseline)) * 100)}%`;
+  const valueText = formatMetricValue(absoluteDelta, unit);
+  return percent ? `${valueText} ${movementWord} (${percent} movement)` : `${valueText} ${movementWord}`;
+};
+
+const selectedOutcomeMetric = (
+  evidenceCase: EvidenceCasePayload,
+  outcomeExport: OutcomeEvidenceExportPayload | null
+): OutcomeEvidenceMetricPayload | null => {
+  const metricId = evidenceCase.outcome_metric?.metric_id;
+  const metrics = outcomeExport?.metrics ?? [];
+  if (!metricId) return null;
+  return metrics.find((metric) => metric.metric_id === metricId) ?? null;
+};
+
 export const ValueEvidenceCasePanel = () => {
   const [cases, setCases] = useState<EvidenceCasePayload[]>([]);
+  const [outcomeExports, setOutcomeExports] = useState<Record<string, OutcomeEvidenceExportPayload>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "empty" | "error">("loading");
 
@@ -217,7 +311,31 @@ export const ValueEvidenceCasePanel = () => {
               String(b.client_context?.function_area ?? "")
             )
           );
+        const exportIds = Array.from(
+          new Set(
+            payloads
+              .map((payload) => outcomeExportIdForCase(payload))
+              .filter((exportId): exportId is string => Boolean(exportId))
+          )
+        );
+        const exportEntries = await Promise.all(
+          exportIds.map(async (exportId) => {
+            try {
+              const detail = await fetchAiValueObject(role, "outcome_evidence_export", exportId);
+              return [exportId, detail.payload as unknown as OutcomeEvidenceExportPayload] as const;
+            } catch {
+              return [exportId, null] as const;
+            }
+          })
+        );
         setCases(payloads);
+        setOutcomeExports(
+          Object.fromEntries(
+            exportEntries.filter(
+              (entry): entry is readonly [string, OutcomeEvidenceExportPayload] => Boolean(entry[1])
+            )
+          )
+        );
         setSelectedId(payloads[0]?.value_evidence_case_id ?? null);
         setState("ready");
       } catch {
@@ -285,6 +403,13 @@ export const ValueEvidenceCasePanel = () => {
   const legacyBlockedValueClaims = hasClaimGates
     ? []
     : blockedClaims.filter((claim) => !PRIVACY_BOUNDARY_CLAIMS.includes(claim));
+  const selectedExportId = outcomeExportIdForCase(selected);
+  const outcomeExport = selectedExportId ? outcomeExports[selectedExportId] ?? null : null;
+  const primaryMetricOutput = selectedOutcomeMetric(selected, outcomeExport);
+  const additionalMetricCount = Math.max(
+    (outcomeExport?.metrics ?? []).length - (primaryMetricOutput ? 1 : 0),
+    0
+  );
 
   return (
     <section className="ai-value-panel ai-value-evidence-case-panel" aria-label="Value evidence case">
@@ -347,6 +472,86 @@ export const ValueEvidenceCasePanel = () => {
           );
         })}
       </div>
+
+      <section className="ai-value-case-output" aria-label="Data outputs on file">
+        <div className="ai-value-case-output-head">
+          <div>
+            <p className="eyebrow">Aggregate output</p>
+            <h3>Data outputs on file</h3>
+            <p>
+              Customer-owned aggregate numbers for the selected workflow metric. These show
+              observed movement; they do not prove ROI or causality.
+            </p>
+          </div>
+          <StatusPill label={review.label} tone={review.tone} />
+        </div>
+        {primaryMetricOutput ? (
+          <>
+            <div className="ai-value-case-output-title">
+              <span className="ai-value-map-label">Selected metric</span>
+              <strong>{selected.outcome_metric?.metric_name ?? primaryMetricOutput.metric_id}</strong>
+              <small>
+                {outcomeExport?.source_system?.source_name ??
+                  selected.outcome_metric?.source_system ??
+                  "Customer-owned system"}{" "}
+                at {humanizeRole(outcomeExport?.source_system?.approved_grain ?? "aggregate workflow window")}.
+              </small>
+            </div>
+            <div className="ai-value-case-output-grid">
+              <div className="ai-value-case-output-stat">
+                <span>Baseline</span>
+                <strong>
+                  {formatMetricValue(
+                    primaryMetricOutput.baseline_value,
+                    primaryMetricOutput.measurement_unit ?? selected.outcome_metric?.measurement_unit
+                  )}
+                </strong>
+                <small>
+                  {humanizeWindow(outcomeExport?.windows?.baseline ?? selected.baseline_comparison?.baseline_window)}
+                </small>
+              </div>
+              <div className="ai-value-case-output-stat">
+                <span>Comparison</span>
+                <strong>
+                  {formatMetricValue(
+                    primaryMetricOutput.comparison_value,
+                    primaryMetricOutput.measurement_unit ?? selected.outcome_metric?.measurement_unit
+                  )}
+                </strong>
+                <small>
+                  {humanizeWindow(
+                    outcomeExport?.windows?.comparison ?? selected.baseline_comparison?.comparison_window
+                  )}
+                </small>
+              </div>
+              <div className="ai-value-case-output-stat">
+                <span>Movement</span>
+                <strong>{formatMovement(primaryMetricOutput, selected.outcome_metric?.expected_direction)}</strong>
+                <small>Aggregate change for this window pair.</small>
+              </div>
+              <div className="ai-value-case-output-stat">
+                <span>Population</span>
+                <strong>{formatPopulation(primaryMetricOutput.eligible_population)}</strong>
+                <small>No person-level data shown.</small>
+              </div>
+            </div>
+            {additionalMetricCount > 0 && (
+              <p className="ai-value-case-output-note">
+                {additionalMetricCount} more aggregate metric{additionalMetricCount === 1 ? "" : "s"} on file
+                for this export.
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="ai-value-case-output-empty">
+            <strong>Numbers not connected yet</strong>
+            <p>
+              Attach an accepted outcome evidence export with the selected metric ID to show
+              baseline, comparison, movement, and population.
+            </p>
+          </div>
+        )}
+      </section>
 
       <div className="ai-value-map-grid">
         <div className="ai-value-map-cell">

@@ -1,0 +1,18 @@
+{
+  "source_table": "scrubbed_client_analytics",
+  "workflow_id": "standalone:client-analytics",
+  "jbtd_id": null,
+  "persona_id": null,
+  "cohort_size": 11,
+  "event_count": 96,
+  "completion_rate": 0.88,
+  "error_rate": 0.04,
+  "abandonment_rate": 0.03,
+  "recovery_rate": 0.3,
+  "verification_rate": 0.2,
+  "p50_latency_ms": 620,
+  "p95_latency_ms": 1900,
+  "frequency": {"p10": 2, "p50": 6, "p90": 18, "p99": 24},
+  "engagement": {"p10": 3, "p50": 9, "p90": 28, "p99": 44},
+  "breadth": {"p10": 1, "p50": 3, "p90": 6, "p99": 8}
+}

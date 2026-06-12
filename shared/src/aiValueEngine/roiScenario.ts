@@ -2,9 +2,9 @@
  * AI Value Engine — Governed ROI Scenario contract.
  *
  * This stage sits above value scenarios and evidence readiness. It creates a
- * stricter value-modeling artifact for planning conversations without
- * calculating realized ROI, proving causality, storing person-level data, or
- * emitting customer-facing economic figures.
+ * stricter value-modeling artifact for planning conversations. Person-level
+ * and raw-content claims remain hard-blocked; financial and aggregate workforce
+ * outputs require explicit gates before they can be surfaced.
  */
 
 const RESULT_SCHEMA_VERSION = "FT_AI_VALUE_ROI_SCENARIO_VALIDATION_2026_06";
@@ -63,7 +63,7 @@ const REQUIRED_COVERAGE_LANES = [
   "suppression"
 ];
 
-const REQUIRED_BLOCKED_CLAIMS = [
+const LEGACY_REQUIRED_BLOCKED_CLAIMS = [
   "roi_proof",
   "causality_claim",
   "individual_scoring",
@@ -74,7 +74,21 @@ const REQUIRED_BLOCKED_CLAIMS = [
   "customer_facing_economic_output"
 ];
 
-const GOVERNANCE_BOUNDARIES = [
+const ALWAYS_BLOCKED_CLAIMS = [
+  "individual_scoring",
+  "named_employee_productivity",
+  "individual_productivity_measurement",
+  "team_or_manager_ranking",
+  "productivity_ranking",
+  "people_decisioning",
+  "compensation_or_performance_inference",
+  "hris_inference",
+  "raw_prompt_or_response_storage",
+  "direct_identifiers",
+  "raw_content_storage"
+];
+
+const LEGACY_GOVERNANCE_BOUNDARIES = [
   "production_connector",
   "dashboard",
   "realized_roi_calculation",
@@ -89,10 +103,115 @@ const GOVERNANCE_BOUNDARIES = [
   "customer_facing_economic_output"
 ];
 
+const PLATFORM_GOVERNANCE_BOUNDARIES = [
+  "production_connector",
+  "dashboard",
+  "runtime_service",
+  "autonomous_customer_actions"
+];
+
+const ALWAYS_BLOCKED_GOVERNANCE_BOUNDARIES = [
+  ...PLATFORM_GOVERNANCE_BOUNDARIES,
+  ...ALWAYS_BLOCKED_CLAIMS
+];
+
 const ECONOMIC_OUTPUT_FLAGS = [
   "customer_facing_economic_output",
   "dollarized_output",
   "realized_roi_calculation"
+];
+
+const ALLOWED_FINANCIAL_CLAIM_GATE_MODES = new Set([
+  "BLOCKED",
+  "INTERNAL_MODELING",
+  "EXECUTIVE_CAVEATED",
+  "FINANCE_VALIDATED",
+  "CUSTOMER_FACING_APPROVED"
+]);
+
+const ALLOWED_WORKFORCE_ANALYTICS_GATE_MODES = new Set([
+  "BLOCKED",
+  "AGGREGATE_INTERNAL",
+  "EXECUTIVE_CAVEATED",
+  "FINANCE_OR_HR_ATTESTED"
+]);
+
+const FINANCIAL_GATE_REQUIREMENTS: Record<string, string[]> = {
+  dollarized_output: [
+    "aggregate_only",
+    "outcome_metric_accepted",
+    "financial_assumptions_present"
+  ],
+  realized_roi_calculation: [
+    "aggregate_only",
+    "baseline_present",
+    "comparison_present",
+    "outcome_metric_accepted",
+    "financial_assumptions_present",
+    "investment_costs_present",
+    "finance_owner_attested",
+    "confounds_reviewed"
+  ],
+  customer_facing_economic_output: [
+    "finance_owner_attested",
+    "legal_or_governance_approved"
+  ],
+  causality_language: [
+    "experimental_or_quasi_experimental_design"
+  ],
+  aggregate_workflow_productivity: [
+    "aggregate_only",
+    "baseline_present",
+    "comparison_present",
+    "outcome_metric_accepted"
+  ]
+};
+
+const FINANCIAL_OUTPUT_TO_LEGACY_BOUNDARY: Record<string, string> = {
+  realized_roi_calculation: "realized_roi_calculation",
+  customer_facing_economic_output: "customer_facing_economic_output",
+  causality_language: "causality_claim",
+  aggregate_workflow_productivity: "aggregate_workflow_productivity",
+  dollarized_output: "dollarized_output"
+};
+
+const FINANCIAL_OUTPUT_FIELD_PATTERNS: Record<string, RegExp[]> = {
+  dollarized_output: [
+    /dollar/i,
+    /currency/i,
+    /savings_amount/i
+  ],
+  realized_roi_calculation: [
+    /actual_roi/i,
+    /realized_roi/i,
+    /roi_calculation/i
+  ],
+  causality_language: [
+    /causal/i,
+    /causality_claim/i
+  ],
+  aggregate_workflow_productivity: [
+    /^aggregate_workflow_productivity$/i
+  ]
+};
+
+const WORKFORCE_ANALYTICS_OUTPUTS = [
+  "aggregate_workforce_readiness",
+  "aggregate_enablement_coverage",
+  "aggregate_training_completion",
+  "aggregate_ai_confidence",
+  "aggregate_change_readiness",
+  "aggregate_workflow_capacity",
+  "aggregate_role_family_adoption"
+];
+
+const WORKFORCE_SAFETY_REQUIREMENTS = [
+  "aggregate_only",
+  "minimum_cohort_size_met",
+  "no_direct_identifiers",
+  "no_manager_ranking",
+  "no_individual_decisioning",
+  "no_sensitive_attribute_inference"
 ];
 
 const FORBIDDEN_KEY_PATTERNS = [
@@ -107,15 +226,12 @@ const FORBIDDEN_KEY_PATTERNS = [
   /file_content/i,
   /ticket_text/i,
   /raw_/i,
+  /direct_identifiers/i,
   /hris/i,
-  /actual_roi/i,
-  /realized_roi/i,
-  /roi_calculation/i,
-  /dollar/i,
-  /currency/i,
-  /savings_amount/i,
-  /productivity/i,
-  /causal/i
+  /individual/i,
+  /productivity_ranking/i,
+  /people_decisioning/i,
+  /compensation_or_performance_inference/i
 ];
 
 const FORBIDDEN_CLAIM_PATTERNS = [
@@ -133,6 +249,8 @@ const FORBIDDEN_KEY_SCAN_EXEMPTIONS = new Set([
   "safe_value_language",
   "blocked_claims",
   "economic_output_policy",
+  "financial_claim_gate",
+  "workforce_analytics_gate",
   "governance_boundaries"
 ]);
 
@@ -169,8 +287,39 @@ function requireField(value: any, path: string, gaps: string[]): void {
   }
 }
 
+function requireTrue(value: any, path: string, gaps: string[]): void {
+  if (value !== true) {
+    gaps.push(path);
+  }
+}
+
 function isForbiddenKey(key: string): boolean {
   return FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key));
+}
+
+function requestedFinancialOutputForKey(key: string): string | null {
+  for (const [output, patterns] of Object.entries(FINANCIAL_OUTPUT_FIELD_PATTERNS)) {
+    if (patterns.some((pattern) => pattern.test(key))) return output;
+  }
+  return null;
+}
+
+function collectFinancialOutputFields(
+  value: any,
+  outputs: Set<string> = new Set()
+): Set<string> {
+  if (!value || typeof value !== "object") return outputs;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectFinancialOutputFields(item, outputs));
+    return outputs;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    if (FORBIDDEN_KEY_SCAN_EXEMPTIONS.has(key)) continue;
+    const output = requestedFinancialOutputForKey(key);
+    if (output) outputs.add(output);
+    collectFinancialOutputFields(nested, outputs);
+  }
+  return outputs;
 }
 
 function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Set<string> {
@@ -195,6 +344,38 @@ function containsForbiddenClaimLanguage(claims: any): boolean {
 
 function normalizeState(state: any): string {
   return String(state ?? "MISSING").toUpperCase();
+}
+
+function hasGateModel(scenario: any): boolean {
+  return Boolean(scenario?.financial_claim_gate || scenario?.workforce_analytics_gate);
+}
+
+function governanceBoundariesFor(scenario: any): string[] {
+  return hasGateModel(scenario)
+    ? ALWAYS_BLOCKED_GOVERNANCE_BOUNDARIES
+    : LEGACY_GOVERNANCE_BOUNDARIES;
+}
+
+function requiredBlockedClaimsFor(scenario: any): string[] {
+  return hasGateModel(scenario)
+    ? ALWAYS_BLOCKED_CLAIMS
+    : LEGACY_REQUIRED_BLOCKED_CLAIMS;
+}
+
+function financialOutputRequested(scenario: any, output: string): boolean {
+  const gate = scenario?.financial_claim_gate ?? {};
+  const policy = scenario?.economic_output_policy ?? {};
+  const boundary = FINANCIAL_OUTPUT_TO_LEGACY_BOUNDARY[output];
+  return Boolean(
+    gate?.allowed_outputs?.[output] === true ||
+    policy?.[output] === true ||
+    (boundary && scenario?.governance_boundaries?.[boundary] === true) ||
+    collectFinancialOutputFields(scenario).has(output)
+  );
+}
+
+function workforceOutputRequested(scenario: any, output: string): boolean {
+  return scenario?.workforce_analytics_gate?.allowed_outputs?.[output] === true;
 }
 
 function firstMetric(metricsLibrary: any, metricId: any): any {
@@ -398,7 +579,7 @@ function collectSafeLanguageGaps(scenario: any): string[] {
     gaps.push("safe_value_language.required_caveats must include at least one caveat");
   }
   const blockedClaims = new Set(language.blocked_claims ?? []);
-  for (const claim of REQUIRED_BLOCKED_CLAIMS) {
+  for (const claim of requiredBlockedClaimsFor(scenario)) {
     if (!blockedClaims.has(claim)) {
       gaps.push(`safe_value_language.blocked_claims missing ${claim}`);
     }
@@ -411,11 +592,86 @@ function collectEconomicPolicyGaps(scenario: any): string[] {
   const policy = scenario?.economic_output_policy ?? {};
   requireField(policy.mode, "economic_output_policy.mode", gaps);
   for (const flag of ECONOMIC_OUTPUT_FLAGS) {
-    if (policy[flag] === true) {
-      gaps.push(`economic_output_policy.${flag} is true`);
+    if (policy[flag] !== true && policy[flag] !== false) {
+      gaps.push(`economic_output_policy.${flag} must be boolean`);
     }
-    if (policy[flag] !== false) {
-      gaps.push(`economic_output_policy.${flag} must be false`);
+  }
+  return gaps;
+}
+
+function collectFinancialClaimGateGaps(scenario: any): string[] {
+  const gaps: string[] = [];
+  const gate = scenario?.financial_claim_gate ?? null;
+  const requestedOutputs = Object.keys(FINANCIAL_GATE_REQUIREMENTS).filter((output) =>
+    financialOutputRequested(scenario, output)
+  );
+
+  if (!gate) {
+    for (const output of requestedOutputs) {
+      gaps.push(`financial_claim_gate is required when ${output} is allowed`);
+    }
+    return gaps;
+  }
+
+  requireField(gate.mode, "financial_claim_gate.mode", gaps);
+  if (gate.mode && !ALLOWED_FINANCIAL_CLAIM_GATE_MODES.has(gate.mode)) {
+    gaps.push(`financial_claim_gate.mode is invalid: ${gate.mode}`);
+  }
+
+  for (const output of requestedOutputs) {
+    requireTrue(
+      gate.allowed_outputs?.[output],
+      `financial_claim_gate.allowed_outputs.${output} must be true when ${output} is requested`,
+      gaps
+    );
+    if (gate.mode === "BLOCKED") {
+      gaps.push(`financial_claim_gate.mode BLOCKED cannot allow ${output}`);
+    }
+    if (
+      output === "customer_facing_economic_output" &&
+      gate.mode !== "CUSTOMER_FACING_APPROVED"
+    ) {
+      gaps.push(
+        "financial_claim_gate.allowed_outputs.customer_facing_economic_output requires mode CUSTOMER_FACING_APPROVED"
+      );
+    }
+    for (const requirement of FINANCIAL_GATE_REQUIREMENTS[output]) {
+      requireTrue(
+        gate.data_sufficiency?.[requirement],
+        `financial_claim_gate.allowed_outputs.${output} requires data_sufficiency.${requirement}`,
+        gaps
+      );
+    }
+  }
+  return gaps;
+}
+
+function collectWorkforceAnalyticsGateGaps(scenario: any): string[] {
+  const gaps: string[] = [];
+  const gate = scenario?.workforce_analytics_gate ?? null;
+  if (!gate) return gaps;
+
+  requireField(gate.mode, "workforce_analytics_gate.mode", gaps);
+  if (gate.mode && !ALLOWED_WORKFORCE_ANALYTICS_GATE_MODES.has(gate.mode)) {
+    gaps.push(`workforce_analytics_gate.mode is invalid: ${gate.mode}`);
+  }
+  if (gate.hris_join_allowed !== false) {
+    gaps.push("workforce_analytics_gate.hris_join_allowed must be false");
+  }
+
+  const requestedOutputs = WORKFORCE_ANALYTICS_OUTPUTS.filter((output) =>
+    workforceOutputRequested(scenario, output)
+  );
+  for (const output of requestedOutputs) {
+    if (gate.mode === "BLOCKED") {
+      gaps.push(`workforce_analytics_gate.mode BLOCKED cannot allow ${output}`);
+    }
+    for (const requirement of WORKFORCE_SAFETY_REQUIREMENTS) {
+      requireTrue(
+        gate[requirement],
+        `workforce_analytics_gate.allowed_outputs.${output} requires ${requirement}`,
+        gaps
+      );
     }
   }
   return gaps;
@@ -427,7 +683,7 @@ function collectGovernanceGaps(scenario: any): string[] {
     gaps.push(`Forbidden field detected: ${field}`);
   }
   const boundaries = scenario?.governance_boundaries ?? {};
-  for (const boundary of GOVERNANCE_BOUNDARIES) {
+  for (const boundary of governanceBoundariesFor(scenario)) {
     if (boundaries[boundary] === true) {
       gaps.push(`governance_boundaries.${boundary} is true`);
     }
@@ -450,6 +706,8 @@ export function validateRoiScenario(scenario: any): RoiScenarioValidationResult 
     ...collectScenarioBandGaps(scenario),
     ...collectSafeLanguageGaps(scenario),
     ...collectEconomicPolicyGaps(scenario),
+    ...collectFinancialClaimGateGaps(scenario),
+    ...collectWorkforceAnalyticsGateGaps(scenario),
     ...collectGovernanceGaps(scenario)
   ];
   const readinessDecision = scenario?.evidence_status?.readiness_decision ?? null;
@@ -472,7 +730,10 @@ export function validateRoiScenario(scenario: any): RoiScenarioValidationResult 
         !["STOP_FOR_GOVERNANCE_REVIEW", "HOLD_FOR_SOURCE_COVERAGE"].includes(
           String(readinessDecision ?? "")
         ),
-      customer_facing_economic_output: false
+      customer_facing_economic_output:
+        gaps.length === 0 &&
+        scenario?.financial_claim_gate?.mode === "CUSTOMER_FACING_APPROVED" &&
+        scenario?.financial_claim_gate?.allowed_outputs?.customer_facing_economic_output === true
     }
   };
 }
@@ -592,7 +853,7 @@ export function buildRoiScenarioFromValueObjects(inputs: BuildRoiScenarioInputs)
               "Scenario bands are planning ranges, not realized ROI.",
               "Outcome movement cannot be attributed to AI without separate validation."
             ],
-      blocked_claims: REQUIRED_BLOCKED_CLAIMS
+      blocked_claims: ALWAYS_BLOCKED_CLAIMS
     },
     economic_output_policy: {
       mode: "MODELED_RANGE_ONLY",
@@ -600,19 +861,63 @@ export function buildRoiScenarioFromValueObjects(inputs: BuildRoiScenarioInputs)
       dollarized_output: false,
       realized_roi_calculation: false
     },
+    financial_claim_gate: {
+      mode: "BLOCKED",
+      data_sufficiency: {
+        aggregate_only: false,
+        baseline_present: false,
+        comparison_present: false,
+        outcome_metric_accepted: false,
+        financial_assumptions_present: false,
+        investment_costs_present: false,
+        finance_owner_attested: false,
+        confounds_reviewed: false,
+        legal_or_governance_approved: false,
+        experimental_or_quasi_experimental_design: false
+      },
+      allowed_outputs: {
+        dollarized_output: false,
+        realized_roi_calculation: false,
+        customer_facing_economic_output: false,
+        causality_language: false,
+        aggregate_workflow_productivity: false
+      }
+    },
+    workforce_analytics_gate: {
+      mode: "BLOCKED",
+      aggregate_only: false,
+      minimum_cohort_size_met: false,
+      no_direct_identifiers: false,
+      no_manager_ranking: false,
+      no_individual_decisioning: false,
+      no_sensitive_attribute_inference: false,
+      hris_join_allowed: false,
+      allowed_outputs: {
+        aggregate_workforce_readiness: false,
+        aggregate_enablement_coverage: false,
+        aggregate_training_completion: false,
+        aggregate_ai_confidence: false,
+        aggregate_change_readiness: false,
+        aggregate_workflow_capacity: false,
+        aggregate_role_family_adoption: false
+      }
+    },
     governance_boundaries: {
       production_connector: false,
       dashboard: false,
-      realized_roi_calculation: false,
-      causality_claim: false,
       individual_scoring: false,
-      hris_or_people_analytics: false,
+      named_employee_productivity: false,
+      individual_productivity_measurement: false,
+      team_or_manager_ranking: false,
       productivity_ranking: false,
+      people_decisioning: false,
+      compensation_or_performance_inference: false,
+      hris_inference: false,
       raw_prompt_or_response_storage: false,
+      raw_content_storage: false,
       direct_identifiers: false,
       runtime_service: false,
-      autonomous_customer_actions: false,
-      customer_facing_economic_output: false
+      autonomous_customer_actions: false
     }
   };
 }

@@ -238,9 +238,123 @@
         "mode": {
           "enum": ["MODELED_RANGE_ONLY", "VALUE_HYPOTHESIS_ONLY", "BLOCKED"]
         },
-        "customer_facing_economic_output": { "const": false },
-        "dollarized_output": { "const": false },
-        "realized_roi_calculation": { "const": false }
+        "customer_facing_economic_output": { "type": "boolean" },
+        "dollarized_output": { "type": "boolean" },
+        "realized_roi_calculation": { "type": "boolean" }
+      }
+    },
+    "financial_claim_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "data_sufficiency", "allowed_outputs"],
+      "properties": {
+        "mode": {
+          "enum": [
+            "BLOCKED",
+            "INTERNAL_MODELING",
+            "EXECUTIVE_CAVEATED",
+            "FINANCE_VALIDATED",
+            "CUSTOMER_FACING_APPROVED"
+          ]
+        },
+        "data_sufficiency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "aggregate_only",
+            "baseline_present",
+            "comparison_present",
+            "outcome_metric_accepted",
+            "financial_assumptions_present",
+            "investment_costs_present",
+            "finance_owner_attested",
+            "confounds_reviewed"
+          ],
+          "properties": {
+            "aggregate_only": { "type": "boolean" },
+            "baseline_present": { "type": "boolean" },
+            "comparison_present": { "type": "boolean" },
+            "outcome_metric_accepted": { "type": "boolean" },
+            "financial_assumptions_present": { "type": "boolean" },
+            "investment_costs_present": { "type": "boolean" },
+            "finance_owner_attested": { "type": "boolean" },
+            "confounds_reviewed": { "type": "boolean" },
+            "legal_or_governance_approved": { "type": "boolean" },
+            "experimental_or_quasi_experimental_design": { "type": "boolean" }
+          }
+        },
+        "allowed_outputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dollarized_output",
+            "realized_roi_calculation",
+            "customer_facing_economic_output",
+            "causality_language",
+            "aggregate_workflow_productivity"
+          ],
+          "properties": {
+            "dollarized_output": { "type": "boolean" },
+            "realized_roi_calculation": { "type": "boolean" },
+            "customer_facing_economic_output": { "type": "boolean" },
+            "causality_language": { "type": "boolean" },
+            "aggregate_workflow_productivity": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "workforce_analytics_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "aggregate_only",
+        "minimum_cohort_size_met",
+        "no_direct_identifiers",
+        "no_manager_ranking",
+        "no_individual_decisioning",
+        "no_sensitive_attribute_inference",
+        "hris_join_allowed",
+        "allowed_outputs"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "BLOCKED",
+            "AGGREGATE_INTERNAL",
+            "EXECUTIVE_CAVEATED",
+            "FINANCE_OR_HR_ATTESTED"
+          ]
+        },
+        "aggregate_only": { "type": "boolean" },
+        "minimum_cohort_size_met": { "type": "boolean" },
+        "no_direct_identifiers": { "type": "boolean" },
+        "no_manager_ranking": { "type": "boolean" },
+        "no_individual_decisioning": { "type": "boolean" },
+        "no_sensitive_attribute_inference": { "type": "boolean" },
+        "hris_join_allowed": { "const": false },
+        "allowed_outputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "aggregate_workforce_readiness",
+            "aggregate_enablement_coverage",
+            "aggregate_training_completion",
+            "aggregate_ai_confidence",
+            "aggregate_change_readiness",
+            "aggregate_workflow_capacity",
+            "aggregate_role_family_adoption"
+          ],
+          "properties": {
+            "aggregate_workforce_readiness": { "type": "boolean" },
+            "aggregate_enablement_coverage": { "type": "boolean" },
+            "aggregate_training_completion": { "type": "boolean" },
+            "aggregate_ai_confidence": { "type": "boolean" },
+            "aggregate_change_readiness": { "type": "boolean" },
+            "aggregate_workflow_capacity": { "type": "boolean" },
+            "aggregate_role_family_adoption": { "type": "boolean" }
+          }
+        }
       }
     },
     "governance_boundaries": {
@@ -252,9 +366,16 @@
         "realized_roi_calculation": { "const": false },
         "causality_claim": { "const": false },
         "individual_scoring": { "const": false },
+        "named_employee_productivity": { "const": false },
+        "individual_productivity_measurement": { "const": false },
+        "team_or_manager_ranking": { "const": false },
         "hris_or_people_analytics": { "const": false },
+        "people_decisioning": { "const": false },
+        "compensation_or_performance_inference": { "const": false },
+        "hris_inference": { "const": false },
         "productivity_ranking": { "const": false },
         "raw_prompt_or_response_storage": { "const": false },
+        "raw_content_storage": { "const": false },
         "direct_identifiers": { "const": false },
         "runtime_service": { "const": false },
         "autonomous_customer_actions": { "const": false },
@@ -281,9 +402,18 @@
         "roi_proof",
         "causality_claim",
         "individual_scoring",
+        "named_employee_productivity",
+        "individual_productivity_measurement",
         "team_or_manager_ranking",
         "hr_analytics",
+        "people_decisioning",
+        "compensation_or_performance_inference",
+        "hris_inference",
         "productivity_measurement",
+        "productivity_ranking",
+        "raw_prompt_or_response_storage",
+        "direct_identifiers",
+        "raw_content_storage",
         "realized_roi_calculation",
         "customer_facing_economic_output"
       ]

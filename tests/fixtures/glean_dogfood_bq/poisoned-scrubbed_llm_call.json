@@ -1,0 +1,6 @@
+{
+  "source_table": "scrubbed_llm_call",
+  "workflow_id": "workflow:assistant",
+  "cohort_size": 8,
+  "prompt": "do not persist prompt text"
+}

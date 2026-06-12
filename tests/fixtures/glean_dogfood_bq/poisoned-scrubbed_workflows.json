@@ -1,0 +1,8 @@
+{
+  "source_table": "scrubbed_workflows",
+  "workflow_id": "workflow:agent:workflow_named",
+  "cohort_size": 8,
+  "nested": {
+    "url": "https://example.invalid/doc"
+  }
+}

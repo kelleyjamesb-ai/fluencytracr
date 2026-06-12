@@ -4153,6 +4153,122 @@ body {
   font-size: 12px;
 }
 
+.ai-value-case-output {
+  border: 1px solid #d9e1ef;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 18px;
+  background: #fbfcff;
+}
+
+.ai-value-case-output-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.ai-value-case-output-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ai-value-case-output-head p {
+  margin: 5px 0 0;
+  color: #4d566f;
+  font-size: 13px;
+}
+
+.ai-value-case-output-title {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.ai-value-case-output-title strong {
+  font-size: 16px;
+  color: #1d2440;
+}
+
+.ai-value-case-output-title small,
+.ai-value-case-output-note,
+.ai-value-case-output-empty p {
+  color: #59637c;
+  font-size: 12.5px;
+}
+
+.ai-value-case-output-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-case-output-stat {
+  border: 1px solid #e2e6f0;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ffffff;
+  min-width: 0;
+}
+
+.ai-value-case-output-stat span {
+  display: block;
+  color: #6a7288;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ai-value-case-output-stat strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: #1d2440;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.ai-value-case-output-stat small {
+  color: #59637c;
+  font-size: 12px;
+}
+
+.ai-value-case-output-note {
+  margin: 10px 0 0;
+}
+
+.ai-value-case-output-empty {
+  border: 1px dashed #cdd4e5;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.ai-value-case-output-empty strong {
+  color: #1d2440;
+}
+
+.ai-value-case-output-empty p {
+  margin: 6px 0 0;
+}
+
+@media (max-width: 900px) {
+  .ai-value-case-output-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .ai-value-case-output-head {
+    flex-direction: column;
+  }
+
+  .ai-value-case-output-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .ai-value-case-language {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

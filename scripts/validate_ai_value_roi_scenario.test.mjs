@@ -7,16 +7,62 @@ import {
   validateAiValueRoiScenario
 } from "./validate_ai_value_roi_scenario.mjs";
 
-const requiredBlockedClaims = [
-  "roi_proof",
-  "causality_claim",
+const alwaysBlockedClaims = [
   "individual_scoring",
+  "named_employee_productivity",
+  "individual_productivity_measurement",
   "team_or_manager_ranking",
-  "hr_analytics",
-  "productivity_measurement",
-  "realized_roi_calculation",
-  "customer_facing_economic_output"
+  "productivity_ranking",
+  "people_decisioning",
+  "compensation_or_performance_inference",
+  "hris_inference",
+  "raw_prompt_or_response_storage",
+  "direct_identifiers",
+  "raw_content_storage"
 ];
+
+const financialClaimGate = {
+  mode: "BLOCKED",
+  data_sufficiency: {
+    aggregate_only: false,
+    baseline_present: false,
+    comparison_present: false,
+    outcome_metric_accepted: false,
+    financial_assumptions_present: false,
+    investment_costs_present: false,
+    finance_owner_attested: false,
+    confounds_reviewed: false,
+    legal_or_governance_approved: false,
+    experimental_or_quasi_experimental_design: false
+  },
+  allowed_outputs: {
+    dollarized_output: false,
+    realized_roi_calculation: false,
+    customer_facing_economic_output: false,
+    causality_language: false,
+    aggregate_workflow_productivity: false
+  }
+};
+
+const workforceAnalyticsGate = {
+  mode: "BLOCKED",
+  aggregate_only: false,
+  minimum_cohort_size_met: false,
+  no_direct_identifiers: false,
+  no_manager_ranking: false,
+  no_individual_decisioning: false,
+  no_sensitive_attribute_inference: false,
+  hris_join_allowed: false,
+  allowed_outputs: {
+    aggregate_workforce_readiness: false,
+    aggregate_enablement_coverage: false,
+    aggregate_training_completion: false,
+    aggregate_ai_confidence: false,
+    aggregate_change_readiness: false,
+    aggregate_workflow_capacity: false,
+    aggregate_role_family_adoption: false
+  }
+};
 
 const baseRoiScenario = {
   schema_version: "FT_AI_VALUE_ROI_SCENARIO_2026_06",
@@ -113,7 +159,7 @@ const baseRoiScenario = {
       "Scenario bands are planning ranges, not realized ROI.",
       "Outcome movement cannot be attributed to AI without separate validation."
     ],
-    blocked_claims: requiredBlockedClaims
+    blocked_claims: alwaysBlockedClaims
   },
   economic_output_policy: {
     mode: "MODELED_RANGE_ONLY",
@@ -121,19 +167,24 @@ const baseRoiScenario = {
     dollarized_output: false,
     realized_roi_calculation: false
   },
+  financial_claim_gate: financialClaimGate,
+  workforce_analytics_gate: workforceAnalyticsGate,
   governance_boundaries: {
     production_connector: false,
     dashboard: false,
-    realized_roi_calculation: false,
-    causality_claim: false,
     individual_scoring: false,
-    hris_or_people_analytics: false,
+    named_employee_productivity: false,
+    individual_productivity_measurement: false,
+    team_or_manager_ranking: false,
     productivity_ranking: false,
+    people_decisioning: false,
+    compensation_or_performance_inference: false,
+    hris_inference: false,
     raw_prompt_or_response_storage: false,
+    raw_content_storage: false,
     direct_identifiers: false,
     runtime_service: false,
-    autonomous_customer_actions: false,
-    customer_facing_economic_output: false
+    autonomous_customer_actions: false
   }
 };
 
@@ -205,6 +256,20 @@ test("builds a governed ROI scenario from Blueprint, Metrics, Value Scenario, an
   assert.equal(roiScenario.baseline_comparison.baseline_window.state, "PRESENT");
   assert.equal(roiScenario.evidence_status.outcome_evidence_review_state, "SUBMITTED");
   assert.equal(roiScenario.economic_output_policy.customer_facing_economic_output, false);
+  assert.equal(roiScenario.financial_claim_gate.mode, "BLOCKED");
+  assert.equal(roiScenario.workforce_analytics_gate.mode, "BLOCKED");
+  assert.equal(
+    roiScenario.safe_value_language.blocked_claims.includes("hr_analytics"),
+    false
+  );
+  assert.equal(
+    roiScenario.safe_value_language.blocked_claims.includes("productivity_measurement"),
+    false
+  );
+  assert.equal(
+    roiScenario.safe_value_language.blocked_claims.includes("hris_inference"),
+    true
+  );
 });
 
 test("rejects missing source refs and missing baseline/comparison windows", () => {
@@ -221,24 +286,279 @@ test("rejects missing source refs and missing baseline/comparison windows", () =
   assert.equal(result.gaps.includes("baseline_comparison.comparison_window.rule is missing"), true);
 });
 
-test("rejects realized ROI, dollarized output, direct identifiers, and productivity fields", () => {
+test("allows dollarized output only when the financial claim gate has aggregate accepted assumptions", () => {
   const scenario = structuredClone(baseRoiScenario);
-  scenario.economic_output_policy.customer_facing_economic_output = true;
+  scenario.financial_claim_gate.mode = "INTERNAL_MODELING";
+  scenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.dollarized_output requires data_sufficiency.aggregate_only"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.dollarized_output requires data_sufficiency.outcome_metric_accepted"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.dollarized_output requires data_sufficiency.financial_assumptions_present"),
+    true
+  );
+
+  scenario.financial_claim_gate.data_sufficiency.aggregate_only = true;
+  scenario.financial_claim_gate.data_sufficiency.outcome_metric_accepted = true;
+  scenario.financial_claim_gate.data_sufficiency.financial_assumptions_present = true;
+
+  const allowed = validateAiValueRoiScenario(scenario);
+
+  assert.equal(allowed.valid, true);
+});
+
+test("routes dollarized fields through the financial claim gate instead of broad key blocking", () => {
+  const scenario = structuredClone(baseRoiScenario);
   scenario.output = {
-    realized_roi: 250000,
-    dollar_savings: 125000,
-    productivity_score: 0.12,
-    employee_id: "employee-123"
+    dollar_savings: "customer-owned modeled amount"
+  };
+
+  const ungated = validateAiValueRoiScenario(scenario);
+
+  assert.equal(ungated.valid, false);
+  assert.equal(
+    ungated.gaps.includes("Forbidden field detected: dollar_savings"),
+    false
+  );
+  assert.equal(
+    ungated.gaps.includes("financial_claim_gate.allowed_outputs.dollarized_output must be true when dollarized_output is requested"),
+    true
+  );
+
+  scenario.financial_claim_gate.mode = "INTERNAL_MODELING";
+  scenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true
+  });
+
+  const gated = validateAiValueRoiScenario(scenario);
+
+  assert.equal(gated.valid, true);
+});
+
+test("allows realized ROI only when the financial claim gate has baseline, comparison, costs, finance, and confounds", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "FINANCE_VALIDATED";
+  scenario.financial_claim_gate.allowed_outputs.realized_roi_calculation = true;
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    baseline_present: true,
+    comparison_present: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true,
+    investment_costs_present: true,
+    finance_owner_attested: true
+  });
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.realized_roi_calculation requires data_sufficiency.confounds_reviewed"),
+    true
+  );
+
+  scenario.financial_claim_gate.data_sufficiency.confounds_reviewed = true;
+
+  const allowed = validateAiValueRoiScenario(scenario);
+
+  assert.equal(allowed.valid, true);
+});
+
+test("rejects individual scoring present no matter what financial gate is approved", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true,
+    finance_owner_attested: true,
+    legal_or_governance_approved: true
+  });
+  scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
+  scenario.output = {
+    individual_scoring: true
   };
 
   const result = validateAiValueRoiScenario(scenario);
 
   assert.equal(result.valid, false);
-  assert.equal(result.gaps.includes("economic_output_policy.customer_facing_economic_output is true"), true);
-  assert.equal(result.gaps.includes("Forbidden field detected: realized_roi"), true);
-  assert.equal(result.gaps.includes("Forbidden field detected: dollar_savings"), true);
-  assert.equal(result.gaps.includes("Forbidden field detected: productivity_score"), true);
-  assert.equal(result.gaps.includes("Forbidden field detected: employee_id"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: individual_scoring"), true);
+});
+
+test("rejects named employee productivity present no matter what financial gate is approved", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true,
+    finance_owner_attested: true,
+    legal_or_governance_approved: true
+  });
+  scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
+  scenario.output = {
+    named_employee_productivity: "unsafe"
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: named_employee_productivity"), true);
+});
+
+test("rejects manager ranking present no matter what financial gate is approved", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true,
+    finance_owner_attested: true,
+    legal_or_governance_approved: true
+  });
+  scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
+  scenario.output = {
+    team_or_manager_ranking: "unsafe"
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: team_or_manager_ranking"), true);
+});
+
+test("rejects HRIS inference present no matter what financial gate is approved", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true,
+    finance_owner_attested: true,
+    legal_or_governance_approved: true
+  });
+  scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
+  scenario.output = {
+    hris_inference: true
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: hris_inference"), true);
+});
+
+test("requires customer-facing approval and governance signoff for customer-facing economic output", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "FINANCE_VALIDATED";
+  scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
+  scenario.financial_claim_gate.data_sufficiency.finance_owner_attested = true;
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output requires mode CUSTOMER_FACING_APPROVED"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output requires data_sufficiency.legal_or_governance_approved"),
+    true
+  );
+
+  scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
+  scenario.financial_claim_gate.data_sufficiency.legal_or_governance_approved = true;
+
+  const allowed = validateAiValueRoiScenario(scenario);
+
+  assert.equal(allowed.valid, true);
+  assert.equal(allowed.feeds.customer_facing_economic_output, true);
+});
+
+test("allows causality language only with experimental or quasi-experimental design", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "EXECUTIVE_CAVEATED";
+  scenario.financial_claim_gate.allowed_outputs.causality_language = true;
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.causality_language requires data_sufficiency.experimental_or_quasi_experimental_design"),
+    true
+  );
+
+  scenario.financial_claim_gate.data_sufficiency.experimental_or_quasi_experimental_design = true;
+
+  const allowed = validateAiValueRoiScenario(scenario);
+
+  assert.equal(allowed.valid, true);
+});
+
+test("allows aggregate workflow productivity only with aggregate baseline comparison and an accepted outcome metric", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "EXECUTIVE_CAVEATED";
+  scenario.financial_claim_gate.allowed_outputs.aggregate_workflow_productivity = true;
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    baseline_present: true,
+    comparison_present: true
+  });
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.aggregate_workflow_productivity requires data_sufficiency.outcome_metric_accepted"),
+    true
+  );
+
+  scenario.financial_claim_gate.data_sufficiency.outcome_metric_accepted = true;
+
+  const allowed = validateAiValueRoiScenario(scenario);
+
+  assert.equal(allowed.valid, true);
+});
+
+test("allows aggregate workforce analytics only with all workforce safety checks and no HRIS join", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.workforce_analytics_gate.mode = "AGGREGATE_INTERNAL";
+  scenario.workforce_analytics_gate.allowed_outputs.aggregate_workforce_readiness = true;
+  Object.assign(scenario.workforce_analytics_gate, {
+    aggregate_only: true,
+    minimum_cohort_size_met: true,
+    no_direct_identifiers: true,
+    no_manager_ranking: true,
+    no_individual_decisioning: true,
+    no_sensitive_attribute_inference: true,
+    hris_join_allowed: true
+  });
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("workforce_analytics_gate.hris_join_allowed must be false"),
+    true
+  );
+
+  scenario.workforce_analytics_gate.hris_join_allowed = false;
+
+  const allowed = validateAiValueRoiScenario(scenario);
+
+  assert.equal(allowed.valid, true);
 });
 
 test("rejects unsafe safe-value language and missing blocked claims", () => {
@@ -252,9 +572,12 @@ test("rejects unsafe safe-value language and missing blocked claims", () => {
 
   assert.equal(result.valid, false);
   assert.equal(result.gaps.includes("safe_value_language.allowed_phrases contains forbidden claim language"), true);
-  assert.equal(result.gaps.includes("safe_value_language.blocked_claims missing causality_claim"), true);
   assert.equal(
-    result.gaps.includes("safe_value_language.blocked_claims missing customer_facing_economic_output"),
+    result.gaps.includes("safe_value_language.blocked_claims missing named_employee_productivity"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("safe_value_language.blocked_claims missing hris_inference"),
     true
   );
 });
@@ -262,13 +585,43 @@ test("rejects unsafe safe-value language and missing blocked claims", () => {
 test("rejects governance boundaries that imply production actions or unsafe claims", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.governance_boundaries.production_connector = true;
-  scenario.governance_boundaries.causality_claim = true;
+  scenario.governance_boundaries.individual_productivity_measurement = true;
   scenario.governance_boundaries.autonomous_customer_actions = true;
 
   const result = validateAiValueRoiScenario(scenario);
 
   assert.equal(result.valid, false);
   assert.equal(result.gaps.includes("governance_boundaries.production_connector is true"), true);
-  assert.equal(result.gaps.includes("governance_boundaries.causality_claim is true"), true);
+  assert.equal(
+    result.gaps.includes("governance_boundaries.individual_productivity_measurement is true"),
+    true
+  );
   assert.equal(result.gaps.includes("governance_boundaries.autonomous_customer_actions is true"), true);
+});
+
+test("always blocks direct identifiers, raw content, and named employee productivity fields", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
+  Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+    aggregate_only: true,
+    outcome_metric_accepted: true,
+    financial_assumptions_present: true,
+    finance_owner_attested: true,
+    legal_or_governance_approved: true
+  });
+  scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
+  scenario.output = {
+    named_employee_productivity: "unsafe",
+    direct_identifiers: true,
+    employee_id: "employee-123",
+    raw_content_storage: true
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: direct_identifiers"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: employee_id"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: named_employee_productivity"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: raw_content_storage"), true);
 });
