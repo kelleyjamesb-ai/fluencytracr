@@ -3,9 +3,11 @@
  *
  * Deterministic generation of the sponsor-ready readout document from
  * validated objects. Claim governance is rendered into the document: the
- * pre-ROI banner, required caveats, and blocked claims are structural.
+ * value-readiness banner, required caveats, and blocked claims are structural.
  * Callers must validate inputs through the engine before rendering.
  */
+
+import { getAiValueDisplayLabel, getAiValueDisplayLabels } from "./language";
 
 const DECISION_LABELS: Record<string, string> = {
   READY_FOR_EXECUTIVE_VALIDATION: "Ready for sponsor validation",
@@ -29,8 +31,8 @@ const BLOCKED_CLAIM_LABELS: Record<string, string> = {
   team_or_manager_ranking: "Team or org comparisons",
   hr_analytics: "Individual-level people analytics",
   productivity_measurement: "Productivity measurement",
-  realized_roi_calculation: "Realized ROI math",
-  customer_facing_economic_output: "Customer-facing economic figures",
+  realized_roi_calculation: "Value Accounting",
+  customer_facing_economic_output: "Customer-Facing Value Evidence",
   dashboard_or_runtime_implementation: "Always-on dashboarding"
 };
 
@@ -233,7 +235,7 @@ function evidenceReviewSection(
 
   return `
   <section>
-    <h2>Customer outcome evidence</h2>
+    <h2>Evidence Collection</h2>
     <div class="band">
       <h4>${escapeHtml(copy.status)}</h4>
       <p><strong>Sponsor decision:</strong> ${escapeHtml(copy.sponsorDecision)}</p>
@@ -241,6 +243,49 @@ function evidenceReviewSection(
       <p class="muted">${escapeHtml(copy.caveat)}</p>
       ${detailList}
     </div>
+  </section>`;
+}
+
+function ebitaImpactSection(summary: any): string {
+  if (!summary) return "";
+  const realizedLine = summary.realized_ebita_claim_allowed
+    ? "Realized financial language is allowed only within the finance-validated workflow and window."
+    : "No realized financial claim is allowed.";
+  const customerFacingLine = summary.customer_facing_allowed
+    ? "Customer-facing economic language is approved for the stated scope."
+    : "Customer-facing economic language is not approved.";
+  const causalityLine = summary.causality_claim_allowed
+    ? "Causality language is approved by the evidence design."
+    : "Causality language is not approved.";
+  const evidenceRows = Object.entries(summary.evidence_quality ?? {})
+    .map(
+      ([field, value]) =>
+        `<tr><td>${escapeHtml(getAiValueDisplayLabel(field))}</td><td>${escapeHtml(
+          getAiValueDisplayLabel(value)
+        )}</td></tr>`
+    )
+    .join("");
+  const blocked = (summary.blocked_claims ?? [])
+    .map((claim: any) => `<span class="chip">${escapeHtml(getAiValueDisplayLabel(claim))}</span>`)
+    .join("");
+  return `
+  <section>
+    <h2>Financial Translation</h2>
+    <div class="band">
+      <h4>${escapeHtml(getAiValueDisplayLabel(summary.status))}</h4>
+      <p>${escapeHtml(realizedLine)}</p>
+      <p>${escapeHtml(customerFacingLine)}</p>
+      <p>${escapeHtml(causalityLine)}</p>
+    </div>
+    <div class="bands">
+      <div class="band"><h4>Primary financial levers</h4><ul>${list(getAiValueDisplayLabels(summary.primary_ebita_levers))}</ul></div>
+      <div class="band"><h4>Allowed language</h4><ul>${list(summary.allowed_phrases)}</ul></div>
+      <div class="band"><h4>Required caveats</h4><ul>${list(summary.required_caveats)}</ul></div>
+      <div class="band"><h4>Next evidence actions</h4><ul>${list(summary.next_evidence_actions)}</ul></div>
+    </div>
+    <table><tr><td><strong>Evidence</strong></td><td><strong>Quality</strong></td></tr>${evidenceRows}</table>
+    <p><strong>Blocked claims</strong></p>
+    <div>${blocked}</div>
   </section>`;
 }
 
@@ -317,17 +362,17 @@ export function renderExecutiveReadoutHtml({
 </head>
 <body>
   <header>
-    <p class="muted">AI value validation readout</p>
+    <p class="muted">Value realization readout</p>
     <h1>${escapeHtml(packet.workflow_name)}</h1>
     <div class="statusrow">
       <span class="pill warn">${escapeHtml(decisionLabel)}</span>
       <span class="pill">${escapeHtml(claimLabel)}</span>
     </div>
-    <div class="banner"><strong>Pre-ROI planning artifact.</strong> This readout presents modeled, directional value signals under stated caveats. It is not realized ROI, does not establish causality, and never reflects individual performance.</div>
+    <div class="banner"><strong>Value realization planning artifact.</strong> This readout presents value evidence under stated caveats. It is not realized ROI, does not establish causality, and never reflects individual performance.</div>
   </header>
   ${engagementSection(engagement)}
   <section>
-    <h2>Workflow and hypothesis</h2>
+    <h2>Value hypothesis</h2>
     <p class="lead">${escapeHtml(sections.workflow.hypothesis)}</p>
     <div class="bands">
       <div class="band"><h4>Today</h4><ul>${list(sections.workflow.current_state_steps)}</ul></div>
@@ -337,25 +382,26 @@ export function renderExecutiveReadoutHtml({
   ${evidenceReviewSection(evidenceReview)}
   ${fluencySection(fluencySummary)}
   <section>
-    <h2>Value signals to validate</h2>
+    <h2>Measurement plan</h2>
     <table><tr><td><strong>Signal</strong></td><td><strong>Unit</strong></td><td><strong>Owner</strong></td></tr>${metrics}</table>
   </section>
   <section>
-    <h2>Value story options</h2>
+    <h2>Value scenario options</h2>
     <div class="bands">${bands}</div>
     <p class="muted">Scenario bands are planning ranges only. They are not realized ROI.</p>
   </section>
+  ${ebitaImpactSection(packet.ebita_impact_summary)}
   <section>
     <h2>Readiness decision</h2>
     <p><strong>${escapeHtml(decisionLabel)}</strong></p>
     <ul>${list(sections.readiness.rationale)}</ul>
   </section>
   <section>
-    <h2>What we can say</h2>
+    <h2>Value realization language</h2>
     <ul>${list(sections.claim_boundary.safe_claims)}</ul>
     <h2>Required caveats</h2>
     <ul>${list(sections.claim_boundary.required_caveats)}</ul>
-    <h2>What this readout never claims</h2>
+    <h2>Governance boundaries</h2>
     <div>${blocked}</div>
   </section>
   <section>

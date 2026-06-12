@@ -46,7 +46,16 @@
         "scenario_id",
         "readiness_id",
         "claim_boundary_id"
-      ]
+      ],
+      "properties": {
+        "blueprint_id": { "type": "string" },
+        "metrics_library_id": { "type": "string" },
+        "scenario_id": { "type": "string" },
+        "readiness_id": { "type": "string" },
+        "claim_boundary_id": { "type": "string" },
+        "roi_scenario_id": { "type": "string" },
+        "ebita_bridge_id": { "type": "string" }
+      }
     },
     "sections": {
       "type": "object",
@@ -58,6 +67,75 @@
         "claim_boundary",
         "next_actions"
       ]
+    },
+    "ebita_impact_summary": {
+      "type": "object",
+      "description": "Optional governed EBITA impact readout. It is a decision artifact, not an EBITA calculation or customer-facing economic output.",
+      "required": [
+        "status",
+        "realized_ebita_claim_allowed",
+        "customer_facing_allowed",
+        "causality_claim_allowed",
+        "primary_ebita_levers",
+        "evidence_quality",
+        "allowed_phrases",
+        "required_caveats",
+        "blocked_claims",
+        "next_evidence_actions"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "NO_FINANCIAL_TRANSLATION",
+            "DIRECTIONAL_EBITA_BRIDGE",
+            "MODELED_EBITA_SCENARIO",
+            "FINANCE_VALIDATED_EBITA_CASE",
+            "CUSTOMER_FACING_APPROVED"
+          ]
+        },
+        "realized_ebita_claim_allowed": { "type": "boolean" },
+        "customer_facing_allowed": { "type": "boolean" },
+        "causality_claim_allowed": { "type": "boolean" },
+        "primary_ebita_levers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence_quality": {
+          "type": "object",
+          "required": [
+            "adoption_evidence",
+            "workflow_evidence",
+            "outcome_evidence",
+            "financial_evidence",
+            "overall_ebita_confidence"
+          ],
+          "properties": {
+            "adoption_evidence": { "type": "string" },
+            "workflow_evidence": { "type": "string" },
+            "outcome_evidence": { "type": "string" },
+            "financial_evidence": { "type": "string" },
+            "overall_ebita_confidence": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "allowed_phrases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_caveats": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blocked_claims": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "next_evidence_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

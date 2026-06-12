@@ -97,7 +97,8 @@ export {
 } from "./executivePacket";
 export type {
   ExecutivePacketValidationResult,
-  BuildExecutivePacketInputs
+  BuildExecutivePacketInputs,
+  ExecutiveEbitaImpactSummary
 } from "./executivePacket";
 
 export {
@@ -149,3 +150,11 @@ export type {
 
 export { renderExecutiveReadoutHtml } from "./readoutHtml";
 export type { RenderExecutiveReadoutInputs } from "./readoutHtml";
+
+export {
+  AI_VALUE_LANGUAGE_SYSTEM_VERSION,
+  AI_VALUE_EXECUTIVE_CONCEPT_HIERARCHY,
+  AI_VALUE_EVIDENCE_LANGUAGE,
+  getAiValueDisplayLabel,
+  getAiValueDisplayLabels
+} from "./language";

@@ -1,8 +1,8 @@
 # Customer Support AI Value Validation Packet
 
-## Decision
+## Measurement Readiness
 
-HOLD_FOR_ASSUMPTIONS
+Needs client assumptions before validation
 
 ## Workflow
 
@@ -12,8 +12,8 @@ AI-assisted support work may be associated with faster case resolution, lower es
 
 ## Metrics
 
-- Median resolution time (support_median_resolution_hours) - hours
-- Open backlog count (support_backlog_count) - cases
+- Median resolution time - hours
+- Open backlog count - cases
 
 ## Scenario
 
@@ -21,11 +21,13 @@ Value route: CAPACITY_CREATION
 
 Scenario bands are planning ranges only. They are not realized ROI.
 
-## Claim Boundary
+## Value Realization
 
-Claim state: INTERNAL_ONLY
+Claim state: Internal planning only
 
 - Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation.
+
+
 
 ## Required Caveats
 
