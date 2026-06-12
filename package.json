@@ -25,6 +25,7 @@
     "test:ai-value-scenario": "npm run build --workspace shared && node --test scripts/validate_ai_value_scenario.test.mjs",
     "validate:ai-value-roi-scenario": "npm run build --workspace shared && node scripts/validate_ai_value_roi_scenario.mjs",
     "test:ai-value-roi-scenario": "npm run build --workspace shared && node --test scripts/validate_ai_value_roi_scenario.test.mjs",
+    "test:ai-value-ebita-bridge": "npm run build --workspace shared && node --test scripts/validate_ai_value_ebita_bridge.test.mjs",
     "validate:ai-value-data-boundary": "npm run build --workspace shared && node scripts/validate_ai_value_data_boundary.mjs",
     "test:ai-value-data-boundary": "npm run build --workspace shared && node --test scripts/validate_ai_value_data_boundary.test.mjs",
     "validate:ai-value-improvement-loop": "npm run build --workspace shared && node scripts/validate_ai_value_improvement_loop.mjs",

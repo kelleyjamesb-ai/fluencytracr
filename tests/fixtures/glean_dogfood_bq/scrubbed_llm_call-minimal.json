@@ -1,0 +1,18 @@
+{
+  "source_table": "scrubbed_llm_call",
+  "workflow_id": "workflow:assistant",
+  "jbtd_id": null,
+  "persona_id": null,
+  "cohort_size": 8,
+  "event_count": 41,
+  "completion_rate": 0.93,
+  "error_rate": 0.02,
+  "abandonment_rate": 0.01,
+  "recovery_rate": 0.7,
+  "verification_rate": 0.4,
+  "p50_latency_ms": 1400,
+  "p95_latency_ms": 4100,
+  "frequency": {"p10": 1, "p50": 3, "p90": 9, "p99": 14},
+  "engagement": {"p10": 2, "p50": 7, "p90": 22, "p99": 31},
+  "breadth": {"p10": 1, "p50": 2, "p90": 4, "p99": 5}
+}

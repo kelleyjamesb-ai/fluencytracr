@@ -38,6 +38,16 @@ export type {
 } from "./roiScenario";
 
 export {
+  validateEbitaBridge,
+  buildEbitaBridgeFromValueObjects,
+  EBITA_BRIDGE_SCHEMA_VERSION
+} from "./ebitaBridge";
+export type {
+  EbitaBridgeValidationResult,
+  BuildEbitaBridgeInputs
+} from "./ebitaBridge";
+
+export {
   validateValueImprovementLoop,
   buildValueImprovementLoopFromRoiScenario,
   VALUE_IMPROVEMENT_LOOP_SCHEMA_VERSION

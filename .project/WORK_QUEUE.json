@@ -84,6 +84,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-06-11 UTC: Product Spine V1, multi-page Workspace, Blueprint workshop board, Metrics ROI opportunity map, Evidence-to-Value path, governed Scenario, Executive Readout, Sponsor Decisions, and agentic handoffs are implemented and acceptance-audited. Verified frontend, AI value contracts, governance gates, diff check, and browser smoke at 1440px/390px."
+    },
+    {
+      "id": "phase-ai-value-ebita-impact-bridge",
+      "title": "AI Value Platform: governed EBITA Impact Bridge",
+      "bound": "shared/src/aiValueEngine/ebitaBridge.ts, scripts/validate_ai_value_ebita_bridge.test.mjs, docs/concepts/EBITA_IMPACT_BRIDGE.md; acceptance: map value routes to EBITA drivers, validate evidence quality, financial translation policy, safe language, source ROI gate compatibility, no usage-derived EBITA calculation, no frontend, no routes, no DB schema, no dashboards, no individual scoring, no manager_or_team_ranking",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-06-12 UTC: deterministic shared EBITA translation layer after ROI Scenario. It maps value routes to EBITA drivers, validates source ROI gate compatibility, and blocks usage-derived EBITA, individual scoring, manager_or_team_ranking, UI, routes, DB schema, dashboards, and connectors."
     }
   ]
 }

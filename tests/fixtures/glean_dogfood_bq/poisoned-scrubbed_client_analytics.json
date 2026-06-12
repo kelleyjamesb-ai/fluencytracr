@@ -1,0 +1,6 @@
+{
+  "source_table": "scrubbed_client_analytics",
+  "workflow_id": "standalone:client-analytics",
+  "cohort_size": 8,
+  "user_id": "hashed-user-still-forbidden"
+}

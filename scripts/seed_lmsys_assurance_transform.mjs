@@ -666,6 +666,70 @@ export function buildAssuranceCases(options = {}) {
       ]
     },
     {
+      id: "dogfood_bq_surface_fixture",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-dogfood-bq-surface`,
+      description: "Glean dogfood BigQuery adapter emits only aggregate V3 payloads for k-min eligible slices.",
+      expected: {
+        dogfood_bq: "SURFACE_FIXTURE",
+        payload_schema_version: "FT_V3_2026_05",
+        payloads_written: 3
+      },
+      dogfood_bq_manifest: {
+        source_contract: "docs/integrations/glean/dogfood-bq-adapter.md",
+        source_tables: [
+          "scio-apps.scrubbed_llm_call.scrubbed_llm_call_*",
+          "scio-apps.scrubbed_client_analytics.scrubbed_client_analytics_*",
+          "scio-apps.scrubbed_workflows.scrubbed_workflows_*"
+        ],
+        aggregate_only: true,
+        person_level_fields_included: false,
+        uses_fixture_rows: true,
+        exact_allowlist_pinned_in_code: true
+      },
+      events: []
+    },
+    {
+      id: "dogfood_bq_suppress_sub_minimum_slice",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-dogfood-bq-suppress`,
+      description: "Glean dogfood BigQuery adapter suppresses sub-5 slices before V3 emission.",
+      expected: {
+        dogfood_bq: "SUPPRESS_FIXTURE",
+        suppression_reason: "INSUFFICIENT_VOLUME",
+        emitted_payloads_for_slice: 0
+      },
+      dogfood_bq_manifest: {
+        source_contract: "docs/integrations/glean/dogfood-bq-adapter.md",
+        k_min: minCohortSize,
+        aggregate_only: true,
+        person_level_fields_included: false,
+        suppress_forwards_nothing: true
+      },
+      events: []
+    },
+    {
+      id: "dogfood_bq_refused_query_no_partition",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-dogfood-bq-refused-query`,
+      description: "Glean dogfood BigQuery adapter refuses wildcard queries without a partition or shard suffix guard.",
+      expected: {
+        dogfood_bq: "REFUSED_QUERY",
+        refused_reason: "MISSING_PARTITION_GUARD"
+      },
+      dogfood_bq_manifest: {
+        source_contract: "docs/integrations/glean/dogfood-bq-adapter.md",
+        partition_guard_required: true,
+        max_bytes_scanned_gb: 100,
+        read_only: true
+      },
+      invalid_payloads: [
+        {
+          query: "SELECT * FROM `scio-apps.scrubbed_llm_call.scrubbed_llm_call_*`"
+        }
+      ]
+    },
+    {
       id: "calibrated_fluency",
       org_id: orgId,
       workflow_id: `${workflowPrefix}-calibrated-fluency`,

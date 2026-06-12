@@ -6,6 +6,38 @@
 
 ---
 
+## Current Addition: Glean Dogfood BigQuery Adapter
+
+Status: internal-only, read-only adapter scaffold.
+
+The Glean dogfood BigQuery adapter maps three scrubbed, date-sharded internal
+tables into the existing `FT_V3_2026_05` aggregate ingest payload shape. It is
+not a new canonical event contract and does not add endpoints, production
+connectors, dashboards, ROI calculations, causality claims, or person-level
+storage.
+
+| Source key | BigQuery pattern | Mapping |
+| --- | --- | --- |
+| `scrubbed_llm_call` | `scio-apps.scrubbed_llm_call.scrubbed_llm_call_*` | Aggregate LLM invocation, model, workflow, status, token, and latency evidence into V3 velocity and quality fields. |
+| `scrubbed_client_analytics` | `scio-apps.scrubbed_client_analytics.scrubbed_client_analytics_*` | Aggregate surface engagement and client interaction evidence into V3 velocity and quality fields. |
+| `scrubbed_workflows` | `scio-apps.scrubbed_workflows.scrubbed_workflows_*` | Aggregate workflow, agent, step, citation, trigger, model, and execution evidence into V3 velocity and quality fields. |
+
+Boundary:
+
+- Source allowlists are broad and pinned in
+  `src/connectors/glean_dogfood_bq/adapter.py`.
+- Output is narrow and aggregate-only: `schema_version`, cohort/workflow/window
+  metadata, `cohort_size`, `calibration_id`, `velocity`, `quality_signals`, and
+  `privacy.person_level_fields_included = false`.
+- Connector-side k-min is enforced per independent slice before emission.
+- Queries require `_TABLE_SUFFIX` or a partition guard and are capped at 100 GB
+  estimated bytes unless explicitly overridden.
+- Forbidden field names fail closed before payload emission.
+
+See [docs/integrations/glean/dogfood-bq-adapter.md](integrations/glean/dogfood-bq-adapter.md).
+
+---
+
 ## Part A: Repo Architecture Map
 
 ### 1. Repository Structure (2 levels deep)

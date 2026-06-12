@@ -102,6 +102,9 @@ assert.deepEqual(ids, [
   "causal_delta_improved",
   "causal_delta_indeterminate",
   "causal_delta_regressed",
+  "dogfood_bq_refused_query_no_partition",
+  "dogfood_bq_suppress_sub_minimum_slice",
+  "dogfood_bq_surface_fixture",
   "duplicate_execution_ids_across_orgs",
   "failure_success_recovery_maturity",
   "fast_completion_no_verification",
@@ -131,6 +134,25 @@ assert.deepEqual(ids, [
   "velocity_saturated_calibration_cohort"
 ]);
 assert.ok(cases.every((entry) => Array.isArray(entry.events) || Array.isArray(entry.invalid_payloads)));
+const dogfoodBqCases = cases.filter((entry) => entry.dogfood_bq_manifest);
+assert.deepEqual(dogfoodBqCases.map((entry) => entry.id).sort(), [
+  "dogfood_bq_refused_query_no_partition",
+  "dogfood_bq_suppress_sub_minimum_slice",
+  "dogfood_bq_surface_fixture"
+]);
+for (const entry of dogfoodBqCases) {
+  assert.equal(entry.dogfood_bq_manifest.source_contract, "docs/integrations/glean/dogfood-bq-adapter.md");
+  assert.equal(entry.dogfood_bq_manifest.read_only === true || entry.dogfood_bq_manifest.aggregate_only === true, true);
+  assert.ok(["SURFACE_FIXTURE", "SUPPRESS_FIXTURE", "REFUSED_QUERY"].includes(entry.expected.dogfood_bq));
+  if (entry.expected.dogfood_bq === "SUPPRESS_FIXTURE") {
+    assert.equal(entry.expected.suppression_reason, "INSUFFICIENT_VOLUME");
+    assert.equal(entry.dogfood_bq_manifest.person_level_fields_included, false);
+  }
+  if (entry.expected.dogfood_bq === "REFUSED_QUERY") {
+    assert.equal(entry.dogfood_bq_manifest.partition_guard_required, true);
+    assert.equal(entry.dogfood_bq_manifest.max_bytes_scanned_gb, 100);
+  }
+}
 const velocityCases = cases.filter((entry) => entry.velocity_manifest);
 assert.deepEqual(velocityCases.map((entry) => entry.id).sort(), [
   "velocity_customer_above_calibration",

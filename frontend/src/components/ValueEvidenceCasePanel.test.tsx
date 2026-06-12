@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ValueEvidenceCasePanel } from "./ValueEvidenceCasePanel";
@@ -16,12 +16,16 @@ const supportCase = {
     workflow_family: "customer_support_case_resolution",
     function_area: "Customer Support"
   },
+  source_refs: {
+    outcome_export_id: "outcome_export_support_v1"
+  },
   vbd_summary: {
     velocity: { status: "STALLING" },
     breadth: { status: "LIMITED" },
     depth: { status: "SHALLOW" }
   },
   outcome_metric: {
+    metric_id: "support_median_resolution_hours",
     metric_name: "Median resolution time",
     measurement_unit: "hours",
     source_system: "Support case management system",
@@ -122,6 +126,34 @@ const salesCase = {
   }
 };
 
+const supportOutcomeExport = {
+  export_id: "outcome_export_support_v1",
+  source_system: {
+    source_name: "Support case management system",
+    approved_grain: "aggregate_workflow_window"
+  },
+  windows: {
+    baseline: "2026-02-01_to_2026-03-31",
+    comparison: "2026-04-01_to_2026-05-31"
+  },
+  metrics: [
+    {
+      metric_id: "support_median_resolution_hours",
+      measurement_unit: "hours",
+      baseline_value: 18.4,
+      comparison_value: 15.1,
+      eligible_population: 2300
+    },
+    {
+      metric_id: "support_backlog_count",
+      measurement_unit: "cases",
+      baseline_value: 1240,
+      comparison_value: 1102,
+      eligible_population: 2300
+    }
+  ]
+};
+
 const summaryOf = (payload: typeof supportCase) => ({
   object_type: "value_evidence_case",
   object_id: payload.value_evidence_case_id,
@@ -143,10 +175,21 @@ describe("ValueEvidenceCasePanel", () => {
     } as never);
     vi.spyOn(aiValueApi, "fetchAiValueObject").mockImplementation(
       async (_role, _type, objectId) =>
-        ({
-          ...summaryOf(objectId.includes("sales") ? salesCase : supportCase),
-          payload: objectId.includes("sales") ? salesCase : supportCase
-        }) as never
+        _type === "outcome_evidence_export"
+          ? ({
+              object_type: "outcome_evidence_export",
+              object_id: objectId,
+              schema_version: "FT_AI_VALUE_OUTCOME_EVIDENCE_EXPORT_2026_06",
+              workflow_family: null,
+              valid: true,
+              validation: {},
+              updated_at: "2026-06-11T00:00:00Z",
+              payload: supportOutcomeExport
+            } as never)
+          : ({
+              ...summaryOf(objectId.includes("sales") ? salesCase : supportCase),
+              payload: objectId.includes("sales") ? salesCase : supportCase
+            }) as never
     );
 
     render(<ValueEvidenceCasePanel />);
@@ -159,6 +202,12 @@ describe("ValueEvidenceCasePanel", () => {
 
     // Customer Support sorts first; its caveated rung is current.
     expect(screen.getByText("Support case resolution")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Data outputs on file/i })).toBeInTheDocument();
+    expect(screen.getByText("18.4 hours")).toBeInTheDocument();
+    expect(screen.getByText("15.1 hours")).toBeInTheDocument();
+    expect(screen.getByText(/3.3 hours lower/i)).toBeInTheDocument();
+    expect(screen.getByText(/2,300 aggregate records/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 more aggregate metric on file/i)).toBeInTheDocument();
     expect(
       screen.getByText("We can present a caveated value investigation for this workflow.")
     ).toBeInTheDocument();
@@ -196,6 +245,30 @@ describe("ValueEvidenceCasePanel", () => {
     await waitFor(() =>
       expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
     );
+
+    const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    expect(within(intake).getByText(/Add aggregate metric evidence/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Outcome metric/i)).toHaveValue("Median resolution time");
+    expect(within(intake).getByLabelText(/Source system/i)).toHaveValue("Support case management system");
+    expect(within(intake).getByLabelText(/Baseline value/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Current value/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Eligible population/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Evidence owner/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText(/Import aggregate evidence file/i)).toBeInTheDocument();
+
+    fireEvent.change(within(intake).getByLabelText(/Baseline value/i), {
+      target: { value: "18.4" }
+    });
+    fireEvent.change(within(intake).getByLabelText(/Current value/i), {
+      target: { value: "15.1" }
+    });
+    fireEvent.change(within(intake).getByLabelText(/Eligible population/i), {
+      target: { value: "2300" }
+    });
+
+    expect(within(intake).getByText(/Evidence staged locally/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/18.4 to 15.1 hours/i)).toBeInTheDocument();
+    expect(within(intake).getByText(/No person-level rows, names, or manager rankings/i)).toBeInTheDocument();
   });
 
   it("preserves blocked value warnings for legacy cases without claim gates", async () => {

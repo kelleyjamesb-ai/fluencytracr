@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Link, useLocation } from "react-router-dom";
-
-import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
@@ -13,7 +11,6 @@ import {
 import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
-import { FluencyBaselineResultsPanel } from "../components/FluencyBaselineResultsPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
 
 const workspacePages = [
@@ -92,43 +89,436 @@ const workspaceStatusTone: Record<JourneyStageState, "good" | "warn" | "neutral"
 
 const vbdQuadrants = [
   {
-    id: "deep-slow",
-    label: "Deep but slow",
-    tone: "amber",
-    position: "low-velocity high-depth",
-    summary: "AI is used seriously, but creates drag.",
-    watch: ["Rework loops", "Heavy iteration", "Long latency", "Workflow mismatch"]
+    id: "fast-shallow",
+    label: "Fast but shallow",
+    tone: "blue",
+    position: "high-velocity low-depth",
+    mapCue: "Adoption is ahead of workflow change",
+    definition: "AI is moving quickly, but workflow change is still light.",
+    watchFor: [
+      "Immediate accept",
+      "Low verification",
+      "Thin workflow presence",
+      "Possible blind trust"
+    ]
   },
   {
     id: "flow",
     label: "High-fluency flow",
     tone: "green",
     position: "high-velocity high-depth",
-    summary: "AI is embedded into work and helps work resolve.",
-    watch: ["Repeat use", "Verification", "Productive refinement", "Faster resolution"]
+    mapCue: "AI is embedded enough to scale",
+    definition: "AI is embedded into work and helps the work resolve.",
+    watchFor: [
+      "Repeat use",
+      "Verification",
+      "Productive refinement",
+      "Faster resolution"
+    ]
   },
   {
     id: "low-integration",
     label: "Low integration",
     tone: "red",
     position: "low-velocity low-depth",
-    summary: "AI is not yet part of real work patterns.",
-    watch: ["Abandonment", "Human-only fallback", "Low recurrence", "Poor task fit"]
+    mapCue: "Find the work fit before scaling",
+    definition: "AI is not yet part of durable work patterns.",
+    watchFor: [
+      "Abandonment",
+      "Human-only fallback",
+      "Low recurrence",
+      "Poor task fit"
+    ]
+  },
+  {
+    id: "deep-slow",
+    label: "Deep but slow",
+    tone: "amber",
+    position: "low-velocity high-depth",
+    mapCue: "Good use case, slow spread",
+    definition: "AI is used seriously where it appears, but spread is slow.",
+    watchFor: [
+      "Rework loops",
+      "Heavy iteration",
+      "Long latency",
+      "Workflow drag"
+    ]
+  }
+] as const;
+
+const aiFluencyFrameworkQuadrants = [
+  {
+    id: "deep-slow",
+    label: "Deep but slow",
+    tone: "amber",
+    badge: "DS",
+    definition: "AI is used seriously, but creates drag.",
+    watchFor: ["Rework loops", "Heavy iteration", "Long latency", "Workflow mismatch"]
+  },
+  {
+    id: "flow",
+    label: "High-fluency flow",
+    tone: "green",
+    badge: "HF",
+    definition: "AI is embedded into work and helps work resolve.",
+    watchFor: ["Repeat use", "Verification", "Productive refinement", "Faster resolution"]
+  },
+  {
+    id: "low-integration",
+    label: "Low integration",
+    tone: "red",
+    badge: "LI",
+    definition: "AI is not yet part of real work patterns.",
+    watchFor: ["Abandonment", "Human-only fallback", "Low recurrence", "Poor task fit"]
   },
   {
     id: "fast-shallow",
     label: "Fast but shallow",
     tone: "blue",
-    position: "high-velocity low-depth",
-    summary: "AI helps with quick tasks, but may be shallow.",
-    watch: ["Immediate accept", "Low verification", "Thin workflow presence", "Possible blind trust"]
+    badge: "FS",
+    definition: "AI is helping with quick tasks, but may be shallow.",
+    watchFor: ["Immediate accept", "Low verification", "Thin workflow presence", "Possible blind trust"]
   }
 ] as const;
 
-const AI_FLUENCY_ASSESSMENT_PREVIEW_URL = "/ai-fluency/assessment-24-item.html";
-const AI_FLUENCY_RESULTS_PREVIEW_URL = "/ai-fluency/organizational-results.html";
-const AI_FLUENCY_CLIENT_ASSESSMENT_URL =
-  "https://explore-your-ai-fluency-instruments.glean.chatgpt-team.site/24-item";
+type VbdQuadrantId = (typeof vbdQuadrants)[number]["id"];
+
+type AiFluencyOrgFunctionCluster = {
+  functionArea: string;
+  shortLabel: string;
+  quadrantId: VbdQuadrantId;
+  velocity: number;
+  breadth: number;
+  depth: number;
+};
+
+const vbdMeasuredSurfaces = [
+  "Search",
+  "Assistant",
+  "Skills",
+  "Agents",
+  "Artifacts",
+  "workflow automations"
+] as const;
+
+type CandidateOutcomeMetric = {
+  question: string;
+  measure: string;
+  source: string;
+  status: string;
+};
+
+const candidateOutcomeMetricsByFunction: Record<string, CandidateOutcomeMetric[]> = {
+  "Customer or Account Success": [
+    {
+      question: "Are cases resolving faster?",
+      measure: "Median time to resolution",
+      source: "Support case management system",
+      status: "Ready to map"
+    },
+    {
+      question: "Is the open backlog moving down?",
+      measure: "Open backlog count",
+      source: "Support operations reporting",
+      status: "Ready to map"
+    },
+    {
+      question: "Are fewer cases escalating?",
+      measure: "Escalation rate",
+      source: "Escalation reporting",
+      status: "Recommended next"
+    },
+    {
+      question: "Is answer quality holding steady?",
+      measure: "Reopen or quality-review rate",
+      source: "Quality review process",
+      status: "Needs owner"
+    }
+  ],
+  "Engineering / Software Development": [
+    {
+      question: "How fast are pull requests merging?",
+      measure: "Pull request cycle time",
+      source: "GitHub and delivery tracker",
+      status: "Ready to map"
+    },
+    {
+      question: "Are releases shipping more often?",
+      measure: "Release frequency",
+      source: "Release management system",
+      status: "Recommended next"
+    },
+    {
+      question: "Is quality holding as speed improves?",
+      measure: "Escaped defect rate",
+      source: "Incident and bug tracker",
+      status: "Needs owner"
+    },
+    {
+      question: "Is review waiting time shrinking?",
+      measure: "Code review wait time",
+      source: "GitHub review analytics",
+      status: "Ready to map"
+    }
+  ],
+  "Product Management": [
+    {
+      question: "Is feature work moving faster?",
+      measure: "Feature cycle time",
+      source: "Product roadmap and delivery system",
+      status: "Ready to map"
+    },
+    {
+      question: "Are decisions taking less time?",
+      measure: "Decision latency",
+      source: "Roadmap review workflow",
+      status: "Ready to map"
+    },
+    {
+      question: "Are shipped features getting used?",
+      measure: "Feature adoption",
+      source: "Product analytics",
+      status: "Recommended next"
+    },
+    {
+      question: "Is discovery quality holding?",
+      measure: "Validated opportunity rate",
+      source: "Research and product operations",
+      status: "Needs owner"
+    }
+  ],
+  "Sales or Business Development": [
+    {
+      question: "Is the sales cycle getting shorter?",
+      measure: "Sales cycle time",
+      source: "CRM",
+      status: "Ready to map"
+    },
+    {
+      question: "Are proposals turning around faster?",
+      measure: "Proposal turnaround time",
+      source: "CRM and proposal workspace",
+      status: "Ready to map"
+    },
+    {
+      question: "Are qualified opportunities converting?",
+      measure: "Qualified opportunity win rate",
+      source: "CRM",
+      status: "Recommended next"
+    },
+    {
+      question: "Is pipeline quality holding?",
+      measure: "Qualified pipeline conversion",
+      source: "Revenue operations reporting",
+      status: "Needs owner"
+    }
+  ],
+  "Marketing & Communications": [
+    {
+      question: "Are campaigns launching faster?",
+      measure: "Campaign cycle time",
+      source: "Campaign management workspace",
+      status: "Ready to map"
+    },
+    {
+      question: "Is useful content throughput rising?",
+      measure: "Content throughput",
+      source: "Content calendar",
+      status: "Ready to map"
+    },
+    {
+      question: "Is qualified pipeline influenced?",
+      measure: "Qualified pipeline influenced",
+      source: "CRM and attribution reporting",
+      status: "Recommended next"
+    },
+    {
+      question: "Is content quality holding?",
+      measure: "Content review acceptance rate",
+      source: "Content operations review",
+      status: "Needs owner"
+    }
+  ],
+  "Finance or Accounting": [
+    {
+      question: "Is the close cycle getting shorter?",
+      measure: "Close cycle time",
+      source: "ERP and close management system",
+      status: "Ready to map"
+    },
+    {
+      question: "Is forecast accuracy improving?",
+      measure: "Forecast variance",
+      source: "Planning system",
+      status: "Recommended next"
+    },
+    {
+      question: "Are invoices moving faster?",
+      measure: "Invoice cycle time",
+      source: "ERP",
+      status: "Ready to map"
+    },
+    {
+      question: "Are reconciliation exceptions dropping?",
+      measure: "Reconciliation exception rate",
+      source: "Close management system",
+      status: "Needs owner"
+    }
+  ]
+};
+
+const aiFluencyOrgFunctionClusters = [
+  {
+    functionArea: "Engineering / Software Development",
+    shortLabel: "Eng",
+    quadrantId: "flow",
+    velocity: 88,
+    breadth: 86,
+    depth: 88
+  },
+  {
+    functionArea: "Product Management",
+    shortLabel: "PM",
+    quadrantId: "flow",
+    velocity: 78,
+    breadth: 78,
+    depth: 84
+  },
+  {
+    functionArea: "Data & Analytics",
+    shortLabel: "Data",
+    quadrantId: "flow",
+    velocity: 86,
+    breadth: 80,
+    depth: 76
+  },
+  {
+    functionArea: "IT Systems or Security",
+    shortLabel: "IT",
+    quadrantId: "flow",
+    velocity: 82,
+    breadth: 82,
+    depth: 68
+  },
+  {
+    functionArea: "Sales or Business Development",
+    shortLabel: "Sales",
+    quadrantId: "flow",
+    velocity: 72,
+    breadth: 76,
+    depth: 74
+  },
+  {
+    functionArea: "Marketing & Communications",
+    shortLabel: "Mktg",
+    quadrantId: "fast-shallow",
+    velocity: 84,
+    breadth: 72,
+    depth: 46
+  },
+  {
+    functionArea: "Design / UX / Research",
+    shortLabel: "UX",
+    quadrantId: "fast-shallow",
+    velocity: 74,
+    breadth: 64,
+    depth: 42
+  },
+  {
+    functionArea: "Corporate Strategy or Business Operations",
+    shortLabel: "Biz",
+    quadrantId: "fast-shallow",
+    velocity: 64,
+    breadth: 58,
+    depth: 44
+  },
+  {
+    functionArea: "Customer or Account Success",
+    shortLabel: "CS",
+    quadrantId: "deep-slow",
+    velocity: 42,
+    breadth: 55,
+    depth: 66
+  },
+  {
+    functionArea: "Support or Help Desk",
+    shortLabel: "Sup",
+    quadrantId: "low-integration",
+    velocity: 42,
+    breadth: 48,
+    depth: 48
+  },
+  {
+    functionArea: "People Talent or Human Resources",
+    shortLabel: "HR",
+    quadrantId: "low-integration",
+    velocity: 34,
+    breadth: 42,
+    depth: 46
+  },
+  {
+    functionArea: "Finance or Accounting",
+    shortLabel: "Fin",
+    quadrantId: "low-integration",
+    velocity: 26,
+    breadth: 38,
+    depth: 44
+  },
+  {
+    functionArea: "Legal & Compliance",
+    shortLabel: "Leg",
+    quadrantId: "low-integration",
+    velocity: 18,
+    breadth: 30,
+    depth: 34
+  },
+  {
+    functionArea: "Field Operations or Logistics",
+    shortLabel: "Ops",
+    quadrantId: "low-integration",
+    velocity: 28,
+    breadth: 34,
+    depth: 24
+  },
+  {
+    functionArea: "Administrative or Executive Support",
+    shortLabel: "Adm",
+    quadrantId: "low-integration",
+    velocity: 14,
+    breadth: 26,
+    depth: 22
+  },
+  {
+    functionArea: "Education or Training",
+    shortLabel: "L&D",
+    quadrantId: "low-integration",
+    velocity: 42,
+    breadth: 46,
+    depth: 36
+  },
+  {
+    functionArea: "Other",
+    shortLabel: "Oth",
+    quadrantId: "low-integration",
+    velocity: 24,
+    breadth: 32,
+    depth: 31
+  }
+] satisfies AiFluencyOrgFunctionCluster[];
+
+const vbdBubbleSize = ({ velocity, breadth, depth }: AiFluencyOrgFunctionCluster) => {
+  const combinedSignal = (velocity + breadth + depth) / 3;
+  return Math.round(30 + (combinedSignal / 100) * 30);
+};
+
+const vbdBubbleStyle = (plot: AiFluencyOrgFunctionCluster): CSSProperties =>
+  ({
+    left: `${plot.depth}%`,
+    top: `${100 - plot.velocity}%`,
+    "--vbd-bubble-size": `${vbdBubbleSize(plot)}px`
+  }) as CSSProperties;
+
+const AI_ORG_FLUENCY_EXAMPLE_URL = "/ai-fluency/organizational-results.html";
 
 const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "warn" | "good" }) => (
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
@@ -358,6 +748,8 @@ const WorkspaceHome = ({
   decisionLabel: string;
 }) => (
   <>
+    <VbdFrameworkPanel />
+
     <section className="ai-value-home-grid" aria-label="Workspace command center">
       <article className="ai-value-panel ai-value-summary">
         <h3>Current value thread</h3>
@@ -413,144 +805,133 @@ const WorkspaceHome = ({
       ))}
     </section>
 
-    <VbdMapPanel />
   </>
 );
 
-interface VbdFunctionPlot {
-  functionArea: string;
-  quadrantId: string;
-  velocityStatus: string;
-  depthStatus: string;
-}
+const VbdFrameworkPanel = () => (
+  <section
+    className="ai-value-panel ai-fluency-framework-panel"
+    aria-label="Organizational AI Fluency framework"
+  >
+    <p className="eyebrow">AI Fluency 2x2</p>
+    <h3>Organizational AI Fluency</h3>
+    <div className="ai-fluency-framework-wrap">
+      <div className="ai-fluency-framework-y-axis">
+        <span className="ai-fluency-framework-axis-high">High</span>
+        <div>
+          <strong>Velocity</strong>
+          <p>How fast the organization picks up AI-enabled work.</p>
+        </div>
+        <span className="ai-fluency-framework-axis-low">Low</span>
+      </div>
 
-const vbdQuadrantOf = (velocityStatus: string, depthStatus: string): string => {
-  const highVelocity = velocityStatus === "INCREASING";
-  const highDepth = depthStatus === "DEEPENING";
-  if (highVelocity && highDepth) return "flow";
-  if (highVelocity) return "fast-shallow";
-  if (highDepth) return "deep-slow";
-  return "low-integration";
-};
+      <div className="ai-fluency-framework-main">
+        <div className="ai-fluency-framework-grid" aria-label="AI Fluency quadrant framework">
+          {aiFluencyFrameworkQuadrants.map((quadrant) => (
+            <article
+              className={`ai-fluency-framework-quadrant ai-fluency-framework-quadrant-${quadrant.tone}`}
+              key={quadrant.id}
+            >
+              <span className="ai-fluency-framework-icon" aria-hidden="true">
+                {quadrant.badge}
+              </span>
+              <div>
+                <strong>{quadrant.label}</strong>
+                <p>{quadrant.definition}</p>
+                <span>Watch for</span>
+                <ul>
+                  {quadrant.watchFor.map((cue) => (
+                    <li key={cue}>{cue}</li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </div>
 
-const vbdSessionRole = () => {
-  try {
-    return (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
-  } catch {
-    return "ADMIN";
-  }
-};
+        <div className="ai-fluency-framework-x-axis">
+          <span>Low</span>
+          <div>
+            <strong>Depth</strong>
+            <p>How deeply AI is embedded in real work.</p>
+          </div>
+          <span>High</span>
+        </div>
+      </div>
+    </div>
 
-const useVbdFunctionPlots = (): VbdFunctionPlot[] => {
-  const [plots, setPlots] = useState<VbdFunctionPlot[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const role = vbdSessionRole();
-        const { objects } = await listAiValueObjects(role, "value_evidence_case");
-        const details = await Promise.all(
-          objects
-            .filter((summary) => summary.valid)
-            .map((summary) => fetchAiValueObject(role, "value_evidence_case", summary.object_id))
-        );
-        if (cancelled) return;
-        const next: VbdFunctionPlot[] = [];
-        const seen = new Set<string>();
-        for (const detail of details) {
-          const payload = detail.payload as Record<string, any>;
-          const functionArea = String(
-            payload?.client_context?.function_area ?? payload?.workflow?.function_area ?? ""
-          ).trim();
-          if (!functionArea || seen.has(functionArea)) continue;
-          seen.add(functionArea);
-          const velocityStatus = String(payload?.vbd_summary?.velocity?.status ?? "UNKNOWN");
-          const depthStatus = String(payload?.vbd_summary?.depth?.status ?? "UNKNOWN");
-          next.push({
-            functionArea,
-            quadrantId: vbdQuadrantOf(velocityStatus, depthStatus),
-            velocityStatus,
-            depthStatus
-          });
-        }
-        setPlots(next);
-      } catch {
-        if (!cancelled) setPlots([]);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return plots;
-};
+    <div className="ai-fluency-framework-note">
+      <span className="ai-fluency-framework-shield" aria-hidden="true">OK</span>
+      <div>
+        <strong>Signals, not scores. Organizational, not individual.</strong>
+        <p>
+          These are behavioral operating modes, not maturity labels. Use them to inspect
+          workflow design, trust calibration, and governance exposure.
+        </p>
+      </div>
+    </div>
+  </section>
+);
 
 const VbdMapPanel = () => {
-  const plots = useVbdFunctionPlots();
-  const plotted = plots.length > 0;
-
   return (
     <section className="ai-value-panel ai-value-vbd-panel" aria-label="Velocity Breadth Depth map">
       <div className="ai-value-section-head">
         <div>
           <p className="eyebrow">VBD Map</p>
-          <h3>Velocity + Depth show the work pattern</h3>
+          <h3>Function cluster map</h3>
           <p>
-            {plotted
-              ? "Functions plot from their aggregate work-pattern signals. Use the quadrant each cluster sits in to choose where to scale, coach, or redesign next."
-              : "Once aggregate work-pattern data is collected, your functions appear as clusters on this map."}
+            Each function lands on the map from the AI Fluency org results. Use
+            the cluster position to choose where to scale, coach, or redesign
+            next.
           </p>
         </div>
-        <StatusPill label="Signals, not scores" tone="good" />
+        <StatusPill label="Aggregate signals" tone="good" />
       </div>
 
       <div className="ai-value-vbd-layout">
         <div className="ai-value-vbd-y-axis">
-          <strong>Velocity</strong>
-          <span>High</span>
-          <span>Low</span>
+          <span className="ai-value-vbd-axis-high">High</span>
+          <strong className="ai-value-vbd-axis-title">Velocity</strong>
+          <span className="ai-value-vbd-axis-low">Low</span>
         </div>
-        <div className="ai-value-vbd-grid">
-          {vbdQuadrants.map((quadrant) => {
-            const clusterFunctions = plots.filter((plot) => plot.quadrantId === quadrant.id);
-            return (
-              <article
-                className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone}`}
-                key={quadrant.id}
-              >
-                <span className="ai-value-map-label">{quadrant.position}</span>
-                <h4>{quadrant.label}</h4>
-                <p>{quadrant.summary}</p>
-                {plotted && (
-                  <div
-                    className="ai-value-chip-row ai-value-vbd-cluster"
-                    aria-label={`Functions in ${quadrant.label}`}
-                  >
-                    {clusterFunctions.length > 0 ? (
-                      clusterFunctions.map((plot) => (
-                        <span
-                          className="ai-value-pill ai-value-pill-neutral ai-value-vbd-function-pill"
-                          key={plot.functionArea}
-                        >
-                          {plot.functionArea}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="ai-value-vbd-cluster-empty">No functions here yet</span>
-                    )}
+        <div className="ai-value-vbd-map-shell">
+          <div className="ai-value-vbd-grid" aria-label="VBD quadrant map">
+            {vbdQuadrants.map((quadrant) => {
+              return (
+                <article
+                  aria-label={`${quadrant.label}: ${quadrant.definition}`}
+                  className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone} ai-value-vbd-quadrant-${quadrant.id}`}
+                  key={quadrant.id}
+                >
+                  <div className="ai-value-vbd-quadrant-label">
+                    <strong>{quadrant.label}</strong>
+                    <p>{quadrant.definition}</p>
+                    <span>{quadrant.mapCue}</span>
+                    <span className="ai-value-vbd-watch-title">Watch for</span>
+                    <ul>
+                      {quadrant.watchFor.map((cue) => (
+                        <li key={cue}>{cue}</li>
+                      ))}
+                    </ul>
                   </div>
-                )}
-                <ul>
-                  {quadrant.watch.map((signal) => (
-                    <li key={signal}>{signal}</li>
-                  ))}
-                </ul>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
+          </div>
+          <div className="ai-value-vbd-marker-layer" aria-label="Function positions">
+            {aiFluencyOrgFunctionClusters.map((plot) => (
+              <span
+                aria-label={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}`}
+                className={`ai-value-vbd-function-bubble ai-value-vbd-function-bubble-${plot.quadrantId}`}
+                key={plot.functionArea}
+                style={vbdBubbleStyle(plot)}
+                title={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}`}
+              >
+                <span>{plot.shortLabel}</span>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -559,129 +940,81 @@ const VbdMapPanel = () => {
         <span>Low</span>
         <span>High</span>
         <p>
-          Breadth shows coverage by function, role, or workflow.
-          {plotted &&
-            " Cluster positions guide intervention planning; customer-owned outcome evidence still owns the value test."}
+          Depth shows embedded workflow integration. Bubble size shows
+          combined Velocity, Breadth, and Depth.
         </p>
       </div>
+
+      <div className="ai-value-vbd-function-legend" aria-label="Function cluster list">
+        {vbdQuadrants.map((quadrant) => {
+          const functions = aiFluencyOrgFunctionClusters.filter((plot) => plot.quadrantId === quadrant.id);
+          return (
+            <div key={quadrant.id}>
+              <strong>{quadrant.label}</strong>
+              <p>{functions.map((plot) => plot.functionArea).join(", ")}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="ai-value-vbd-definition-legend" aria-label="Quadrant definitions">
+        <h4>Quadrant definitions</h4>
+        <div>
+          {vbdQuadrants.map((quadrant) => (
+            <article key={quadrant.id}>
+              <strong>{quadrant.label}</strong>
+              <p>{quadrant.definition}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <p className="ai-value-vbd-surface-note">
+        <strong>Measured AI surfaces:</strong> {vbdMeasuredSurfaces.join(", ")}.
+        These inform breadth; customer-owned outcome data still owns the value
+        test.
+      </p>
     </section>
   );
 };
 
 const VbdPage = () => (
   <section className="ai-value-focused-stack" aria-label="VBD operating map workspace">
+    <VbdFrameworkPanel />
     <VbdMapPanel />
   </section>
 );
 
 const ReadinessPage = () => (
   <section className="ai-value-focused-stack" aria-label="AI Fluency workspace">
-    <section className="ai-value-panel" aria-label="AI Fluency">
-      <div className="ai-value-section-head">
-        <div>
-          <p className="eyebrow">Step 1 · Baseline</p>
-          <h3>AI Fluency Baseline</h3>
-          <p>Aggregate fluency results across the organization.</p>
-        </div>
-        <div className="ai-value-chip-row">
-          <StatusPill label="Aggregate results only" tone="good" />
-          <StatusPill label="Signals, not scores" />
-        </div>
-      </div>
-      <FluencyBaselineResultsPanel />
-    </section>
-
-    <AiFluencyExperiencePanel />
+    <AiOrgFluencyExamplePanel />
   </section>
 );
 
-const AiFluencyExperiencePanel = () => {
-  const [previewMode, setPreviewMode] = useState<"assessment" | "results">("assessment");
-  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "unavailable">("idle");
-  const showingResults = previewMode === "results";
-
-  const copyClientLink = async () => {
-    if (!navigator.clipboard?.writeText) {
-      setCopyStatus("unavailable");
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(AI_FLUENCY_CLIENT_ASSESSMENT_URL);
-      setCopyStatus("copied");
-    } catch {
-      setCopyStatus("unavailable");
-    }
-  };
-
-  return (
-    <section
-      className="ai-value-panel ai-fluency-experience-panel"
-      aria-label="AI Fluency experience"
-    >
-      <div className="ai-value-section-head">
-        <div>
-          <p className="eyebrow">Client assessment</p>
-          <h3>Send AI Fluency and view results</h3>
-          <p>
-            Use this first when the organization has not completed AI Fluency:
-            preview the assessment, share the hosted completion link, then
-            switch into aggregate results once responses are collected.
-          </p>
-        </div>
-        <StatusPill label={showingResults ? "Aggregate results preview" : "Client assessment preview"} tone="good" />
+const AiOrgFluencyExamplePanel = () => (
+  <section
+    className="ai-value-panel ai-fluency-example-panel"
+    aria-label="Organizational AI Fluency example"
+  >
+    <div className="ai-value-section-head">
+      <div>
+        <p className="eyebrow">Organization example</p>
+        <h3>AI Org Fluency example</h3>
+        <p>
+          Use this as the post-assessment view: aggregate organizational AI
+          Fluency results by function, signal, and next action.
+        </p>
       </div>
+      <StatusPill label="Org results example" tone="good" />
+    </div>
 
-      <div className="ai-fluency-action-row">
-        <div className="ai-fluency-share-box">
-          <span className="ai-value-map-label">Send this link to clients</span>
-          <a
-            className="ai-fluency-client-link"
-            href={AI_FLUENCY_CLIENT_ASSESSMENT_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {AI_FLUENCY_CLIENT_ASSESSMENT_URL}
-          </a>
-        </div>
-        <div className="ai-fluency-controls">
-          <a
-            className="ai-value-step"
-            href={AI_FLUENCY_CLIENT_ASSESSMENT_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open client assessment
-          </a>
-          <button className="ai-value-step" type="button" onClick={() => void copyClientLink()}>
-            Copy client link
-          </button>
-          <button
-            className={showingResults ? "ai-value-step active" : "ai-value-step"}
-            type="button"
-            onClick={() => setPreviewMode(showingResults ? "assessment" : "results")}
-          >
-            {showingResults ? "Show assessment" : "Show aggregate results"}
-          </button>
-        </div>
-      </div>
-
-      <p className="ai-fluency-copy-status" aria-live="polite">
-        {copyStatus === "copied"
-          ? "Client link copied"
-          : copyStatus === "unavailable"
-            ? "Copy unavailable in this browser"
-            : "Hosted links are the client-share path; local previews are for this workspace."}
-      </p>
-
-      <iframe
-        className="ai-fluency-preview-frame"
-        src={showingResults ? AI_FLUENCY_RESULTS_PREVIEW_URL : AI_FLUENCY_ASSESSMENT_PREVIEW_URL}
-        title={showingResults ? "AI Fluency aggregate results preview" : "AI Fluency assessment preview"}
-      />
-    </section>
-  );
-};
+    <iframe
+      className="ai-fluency-preview-frame ai-fluency-org-example-frame"
+      src={AI_ORG_FLUENCY_EXAMPLE_URL}
+      title="Organizational AI Fluency example"
+    />
+  </section>
+);
 
 const MetricsPage = ({
   journey,
@@ -689,35 +1022,62 @@ const MetricsPage = ({
 }: {
   journey: Journey;
   valueSignals: typeof aiValueWorkspace.valueSignals;
-}) => (
-  <section className="ai-value-focused-stack" aria-label="Metrics workspace">
-    <section className="ai-value-panel" aria-label="Outcome metrics guide">
-      <div className="ai-value-section-head">
-        <div>
-          <p className="eyebrow">Step 3 · Outcome Metric</p>
-          <h3>Outcome Metrics</h3>
-          <p>
-            Every value claim is tested against a function outcome metric the
-            client owns. Confirm the metric, source system, owner, and
-            comparison window.
-          </p>
+}) => {
+  const [selectedFunction, setSelectedFunction] = useState("Customer or Account Success");
+
+  return (
+    <section className="ai-value-focused-stack" aria-label="Metrics workspace">
+      <section className="ai-value-panel" aria-label="Outcome metrics guide">
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Step 3 · Outcome Metric</p>
+            <h3>Outcome Metrics</h3>
+            <p>
+              Every value claim is tested against a function outcome metric the
+              client owns. Confirm the metric, source system, owner, and
+              comparison window.
+            </p>
+          </div>
+          <StatusPill label="Client owns the metric" tone="good" />
         </div>
-        <StatusPill label="Client owns the metric" tone="good" />
-      </div>
+      </section>
+
+      <ClientQuestionMetricBridgePanel
+        bridge={journey.questionMetricBridge}
+        onSelectedFunctionChange={setSelectedFunction}
+        selectedFunction={selectedFunction}
+      />
+
+      <CandidateOutcomeMetricsPanel
+        fallbackSignals={valueSignals}
+        selectedFunction={selectedFunction}
+      />
     </section>
+  );
+};
 
-    <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+const CandidateOutcomeMetricsPanel = ({
+  fallbackSignals,
+  selectedFunction
+}: {
+  fallbackSignals: typeof aiValueWorkspace.valueSignals;
+  selectedFunction: string;
+}) => {
+  const functionSignals =
+    candidateOutcomeMetricsByFunction[selectedFunction] ?? fallbackSignals;
 
+  return (
     <article className="ai-value-panel ai-value-signal-shortlist-panel" aria-label="Candidate outcome metrics">
       <div className="ai-value-section-head">
         <div>
           <p className="eyebrow">Metric Options</p>
           <h3>Metric options the client can choose from</h3>
+          <p>{selectedFunction}</p>
         </div>
         <StatusPill label="Client confirms" tone="good" />
       </div>
       <div className="ai-value-signal-shortlist" aria-label="Candidate outcome metric cards">
-        {valueSignals.map((signal) => (
+        {functionSignals.map((signal) => (
           <article className="ai-value-signal-card" key={signal.question}>
             <div>
               <span className="ai-value-map-label">Question to ask</span>
@@ -733,8 +1093,8 @@ const MetricsPage = ({
         ))}
       </div>
     </article>
-  </section>
-);
+  );
+};
 
 const ValueImprovementLoopPanel = ({ journey }: { journey: Journey }) => {
   const loop = journey.valueImprovementLoop;
