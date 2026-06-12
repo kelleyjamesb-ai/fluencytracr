@@ -105,9 +105,14 @@ What is now in place:
 - The contract reconciles with Metrics Library, Outcome Evidence Export, ROI
   Scenario, Value Improvement Loop, Reportability, Aggregate API Push, and the
   AI Value Measurement Model.
-- Corrected VBD definitions are locked: Velocity is speed to adoption, Breadth
-  is spread across the organization/functions/workflows, and Depth is aggregate
-  AI tool or surface repertoire.
+- Corrected VBD definitions are locked, as amended 2026-06-11 with human
+  approval: Velocity is speed to adoption; Breadth is spread across the
+  organization/functions/workflows/surfaces, with the aggregate tool/surface
+  repertoire renamed "Repertoire" as one of Breadth's coverage views; Depth is
+  embeddedness of AI in repeatable workflow behavior (aggregate integration
+  signals: repeat use, verification, reuse, delegation, recovery, judgment).
+  See the decision note in AI_VALUE_MEASUREMENT_MODEL.md; do not revert Depth
+  to repertoire.
 - This slice adds no production connector, runtime service, autonomous
   customer action, unsupported ROI proof, causality claim, individual scoring,
   HR analytics surface, productivity ranking, raw prompt or response storage,

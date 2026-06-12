@@ -80,18 +80,21 @@ The platform should help leaders decide:
 
 ## Canonical VBD Definitions
 
-Use these definitions exactly:
+Use these definitions exactly (amended 2026-06-11 with human approval):
 
 | Dimension | Definition | Product meaning |
 | --- | --- | --- |
 | Velocity | Speed to adoption. | How quickly a function or workflow moves from AI availability to active, repeated use. |
-| Breadth | Spread across the organization, functions, roles, and workflows. | How widely AI capability is showing up across the client operating system. |
-| Depth | Aggregate AI tool or surface repertoire. | How many AI tools or surfaces people use, exposed only as aggregate distributions. |
+| Breadth | Spread across the organization, functions, roles, workflows, and AI surfaces. | How widely AI capability is showing up, with coverage and concentration views. The aggregate tool/surface repertoire ("Repertoire") is one of Breadth's coverage views. |
+| Depth | Embeddedness of AI in repeatable workflow behavior. | Aggregate integration signals only: repeat use within a workflow, verification coverage, reuse, delegation, recovery, and judgment patterns. Never person-level. |
 
 Do not use the older definition of Velocity as frequency of AI showing up in
-the workflow. Do not use the older definition of Depth as "meaningfully changes
-work" unless it is a qualitative interpretation layered on top of the aggregate
-tool/surface repertoire.
+the workflow. Do not define Depth as the aggregate tool/surface repertoire:
+that construct is named **Repertoire** and lives under Breadth's coverage
+views. Depth means embeddedness, because the research case for Depth as a
+leading indicator of value rests on workflow integration, and because the
+executive quadrant (fast-but-shallow, high-fluency flow) only reads correctly
+when Depth means integration.
 
 VBD is an operating map. It is not value proof.
 

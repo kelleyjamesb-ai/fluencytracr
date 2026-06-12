@@ -74,7 +74,7 @@
           "$ref": "#/$defs/vbd_dimension_spread"
         },
         "depth": {
-          "$ref": "#/$defs/vbd_dimension_repertoire"
+          "$ref": "#/$defs/vbd_dimension_workflow_integration"
         }
       }
     },
@@ -193,7 +193,7 @@
       "additionalProperties": true,
       "required": ["definition", "plain_language", "allowed_aggregate_fields"],
       "properties": {
-        "definition": { "const": "spread_across_org_functions_workflows" },
+        "definition": { "const": "spread_across_org_functions_workflows_surfaces" },
         "plain_language": { "type": "string" },
         "allowed_aggregate_fields": {
           "type": "array",
@@ -202,12 +202,12 @@
         }
       }
     },
-    "vbd_dimension_repertoire": {
+    "vbd_dimension_workflow_integration": {
       "type": "object",
       "additionalProperties": true,
       "required": ["definition", "plain_language", "allowed_aggregate_fields"],
       "properties": {
-        "definition": { "const": "aggregate_ai_tool_surface_repertoire" },
+        "definition": { "const": "workflow_integration_embeddedness" },
         "plain_language": { "type": "string" },
         "allowed_aggregate_fields": {
           "type": "array",

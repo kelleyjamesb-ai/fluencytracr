@@ -220,8 +220,8 @@ function collectVbdGaps(contract: any): string[] {
   const vbd = contract?.vbd_definitions ?? {};
   const expected = {
     velocity: "speed_to_adoption",
-    breadth: "spread_across_org_functions_workflows",
-    depth: "aggregate_ai_tool_surface_repertoire"
+    breadth: "spread_across_org_functions_workflows_surfaces",
+    depth: "workflow_integration_embeddedness"
   };
   for (const [dimension, value] of Object.entries(expected)) {
     if (vbd?.[dimension]?.definition !== value) {

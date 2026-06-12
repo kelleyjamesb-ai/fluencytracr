@@ -1,440 +1,451 @@
 {
-  "schema_version": "FT_AI_VALUE_DATA_BOUNDARY_ROI_EVIDENCE_2026_06",
-  "contract_id": "data_boundary_customer_support_roi_evidence_v1",
-  "purpose": "Define which organizational data may support AI value analysis, where sensitive data may be used upstream, and which aggregate evidence may cross into FluencyTracr.",
-  "metric_pyramid": {
-    "north_star_metric": {
-      "name": "Validated AI Value Movement",
-      "definition": "Share of prioritized workflow slices where AI capability, VBD movement, customer-owned outcome movement, and evidence quality support governed value language.",
-      "required_inputs": [
-        "ai_fluency_baseline_or_followup",
-        "vbd_movement",
-        "function_outcome_metric",
-        "accepted_or_caveated_customer_outcome_evidence",
-        "claim_governance"
-      ]
-    },
-    "supporting_metrics": [
-      {
-        "name": "AI Work Integration / VBD",
-        "definition": "Velocity, Breadth, and Depth show whether AI is becoming real work in approved workflow slices."
-      },
-      {
-        "name": "AI Capability Growth",
-        "definition": "Aggregate AI Fluency and behavioral proxies show whether people are becoming more capable with AI over time."
-      }
-    ]
+ "schema_version": "FT_AI_VALUE_DATA_BOUNDARY_ROI_EVIDENCE_2026_06",
+ "contract_id": "data_boundary_customer_support_roi_evidence_v1",
+ "purpose": "Define which organizational data may support AI value analysis, where sensitive data may be used upstream, and which aggregate evidence may cross into FluencyTracr.",
+ "metric_pyramid": {
+  "north_star_metric": {
+   "name": "Validated AI Value Movement",
+   "definition": "Share of prioritized workflow slices where AI capability, VBD movement, customer-owned outcome movement, and evidence quality support governed value language.",
+   "required_inputs": [
+    "ai_fluency_baseline_or_followup",
+    "vbd_movement",
+    "function_outcome_metric",
+    "accepted_or_caveated_customer_outcome_evidence",
+    "claim_governance"
+   ]
   },
-  "vbd_definitions": {
-    "velocity": {
-      "definition": "speed_to_adoption",
-      "plain_language": "How quickly a function or workflow moves from AI availability to active, repeated use.",
-      "allowed_aggregate_fields": [
-        "time_to_first_meaningful_use_days",
-        "time_to_repeated_use_days",
-        "adoption_curve_slope",
-        "active_share_day_30",
-        "active_share_day_60",
-        "active_share_day_90"
-      ]
-    },
-    "breadth": {
-      "definition": "spread_across_org_functions_workflows",
-      "plain_language": "How widely AI spreads across approved functions, roles, workflows, regions, or cohorts.",
-      "allowed_aggregate_fields": [
-        "function_coverage_share",
-        "workflow_coverage_share",
-        "role_family_coverage_share",
-        "region_coverage_share",
-        "priority_use_case_coverage_share"
-      ]
-    },
-    "depth": {
-      "definition": "aggregate_ai_tool_surface_repertoire",
-      "plain_language": "How many AI tools or surfaces people use, exposed only as aggregate distributions.",
-      "allowed_aggregate_fields": [
-        "ai_surface_count_p50",
-        "ai_surface_count_p90",
-        "multi_surface_share",
-        "advanced_surface_share",
-        "search_assistant_skills_agents_mcp_coverage"
-      ]
-    }
+  "supporting_metrics": [
+   {
+    "name": "AI Work Integration / VBD",
+    "definition": "Velocity, Breadth, and Depth show whether AI is becoming real work in approved workflow slices."
+   },
+   {
+    "name": "AI Capability Growth",
+    "definition": "Aggregate AI Fluency and behavioral proxies show whether people are becoming more capable with AI over time."
+   }
+  ]
+ },
+ "vbd_definitions": {
+  "velocity": {
+   "definition": "speed_to_adoption",
+   "plain_language": "How quickly a function or workflow moves from AI availability to active, repeated use.",
+   "allowed_aggregate_fields": [
+    "time_to_first_meaningful_use_days",
+    "time_to_repeated_use_days",
+    "adoption_curve_slope",
+    "active_share_day_30",
+    "active_share_day_60",
+    "active_share_day_90"
+   ]
   },
-  "boundary_model": {
-    "source_system_zone": "Customer-owned systems may contain raw operational, communication, HRIS, finance, and workflow data under customer policy.",
-    "transformation_boundary": "Customer or Glean-approved transformer may join, classify, dedupe, and aggregate sensitive data before export.",
-    "fluencytracr_boundary": {
-      "aggregate_only": true,
-      "raw_source_rows_allowed": false,
-      "direct_identifiers_allowed": false,
-      "raw_content_allowed": false
-    }
+  "breadth": {
+   "definition": "spread_across_org_functions_workflows_surfaces",
+   "plain_language": "How widely AI spreads across approved functions, roles, workflows, regions, and AI surfaces, including the aggregate tool/surface repertoire as a coverage view.",
+   "allowed_aggregate_fields": [
+    "function_coverage_share",
+    "workflow_coverage_share",
+    "role_family_coverage_share",
+    "region_coverage_share",
+    "priority_use_case_coverage_share",
+    "ai_surface_count_p50",
+    "ai_surface_count_p90",
+    "multi_surface_share",
+    "advanced_surface_share",
+    "search_assistant_skills_agents_mcp_coverage"
+   ]
   },
-  "organizational_data_sources": [
-    {
-      "source_id": "ai_work_evidence_glean_surfaces",
-      "source_category": "AI_WORK_EVIDENCE",
-      "source_name": "Glean and AI workflow telemetry",
-      "value_routes": [
-        "CAPACITY_CREATION",
-        "QUALITY_IMPROVEMENT",
-        "EXPERIENCE_IMPROVEMENT"
-      ],
-      "sensitivity": "MODERATE",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "customer_or_glean_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "cohort_id",
-        "workflow_id",
-        "window_start",
-        "window_end",
-        "cohort_size",
-        "time_to_first_meaningful_use_days",
-        "time_to_repeated_use_days",
-        "frequency_distribution",
-        "engagement_distribution",
-        "breadth_distribution",
-        "ai_surface_count_distribution",
-        "verification_rate",
-        "recovery_rate",
-        "abandonment_rate",
-        "error_rate"
-      ],
-      "required_attestation": {
-        "data_owner_role": "platform_owner",
-        "approved_grain": "aggregate_workflow_window",
-        "baseline_comparison_required": true,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "CAVEATED",
-      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
-    },
-    {
-      "source_id": "ai_fluency_baseline",
-      "source_category": "AI_FLUENCY_BASELINE",
-      "source_name": "AI Fluency Instrument aggregate results",
-      "value_routes": ["UNCLASSIFIED"],
-      "sensitivity": "LOW",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "survey_aggregation_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "cohort_id",
-        "function",
-        "respondent_count",
-        "confidence_mean",
-        "usage_quality_mean",
-        "behavior_change_mean",
-        "leadership_reinforcement_mean",
-        "capability_growth_mean",
-        "behavioral_intent_mean",
-        "perceived_ai_impact_mean"
-      ],
-      "required_attestation": {
-        "data_owner_role": "ai_program_owner",
-        "approved_grain": "aggregate_cohort_window",
-        "baseline_comparison_required": false,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "DIRECTIONAL",
-      "allowed_claim_level": "SOURCE_READINESS_ONLY"
-    },
-    {
-      "source_id": "workflow_process_lifecycle",
-      "source_category": "WORKFLOW_PROCESS",
-      "source_name": "Workflow and process lifecycle systems",
-      "value_routes": [
-        "CAPACITY_CREATION",
-        "QUALITY_IMPROVEMENT",
-        "RISK_REDUCTION"
-      ],
-      "sensitivity": "MODERATE",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "customer_process_analytics_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "workflow_id",
-        "cycle_time_p50",
-        "cycle_time_p90",
-        "handoff_count_mean",
-        "rework_rate",
-        "backlog_count",
-        "completion_rate",
-        "sla_breach_rate"
-      ],
-      "required_attestation": {
-        "data_owner_role": "operations_owner",
-        "approved_grain": "aggregate_workflow_window",
-        "baseline_comparison_required": true,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "CAVEATED",
-      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
-    },
-    {
-      "source_id": "customer_outcome_system",
-      "source_category": "CUSTOMER_OUTCOME",
-      "source_name": "Customer-owned business outcome system",
-      "value_routes": [
-        "CAPACITY_CREATION",
-        "QUALITY_IMPROVEMENT",
-        "EXPERIENCE_IMPROVEMENT"
-      ],
-      "sensitivity": "MODERATE",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "customer_outcome_export_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "outcome_metric",
-        "outcome_unit",
-        "baseline_value",
-        "comparison_value",
-        "eligible_population",
-        "source_system",
-        "baseline_window",
-        "comparison_window"
-      ],
-      "required_attestation": {
-        "data_owner_role": "business_data_owner",
-        "approved_grain": "aggregate_workflow_window",
-        "baseline_comparison_required": true,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "SUPPORTED",
-      "allowed_claim_level": "SUPPORTED_VALUE_MOVEMENT"
-    },
-    {
-      "source_id": "finance_assumptions",
-      "source_category": "FINANCE_ASSUMPTION",
-      "source_name": "Finance-owned modeling assumptions",
-      "value_routes": [
-        "COST_REDUCTION",
-        "CAPACITY_CREATION",
-        "REVENUE_EXPANSION"
-      ],
-      "sensitivity": "HIGH",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "finance_assumption_approval_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "loaded_labor_rate_band",
-        "cost_per_case_band",
-        "margin_band",
-        "capacity_assumption_band",
-        "scenario_assumption_owner"
-      ],
-      "required_attestation": {
-        "data_owner_role": "finance_owner",
-        "approved_grain": "approved_assumption_band",
-        "baseline_comparison_required": false,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "CAVEATED",
-      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
-    },
-    {
-      "source_id": "hris_org_context",
-      "source_category": "HRIS_ORG_CONTEXT",
-      "source_name": "HRIS and organizational context",
-      "value_routes": [
-        "CAPACITY_CREATION",
-        "EXPERIENCE_IMPROVEMENT",
-        "REVENUE_EXPANSION"
-      ],
-      "sensitivity": "RESTRICTED",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "customer_people_analytics_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "function",
-        "role_family",
-        "level_band",
-        "tenure_band",
-        "region",
-        "attrition_rate",
-        "internal_mobility_rate",
-        "onboarding_time_days"
-      ],
-      "required_attestation": {
-        "data_owner_role": "people_analytics_owner",
-        "approved_grain": "approved_aggregate_cohort",
-        "baseline_comparison_required": true,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "CAVEATED",
-      "allowed_claim_level": "INTERNAL_ONLY"
-    },
-    {
-      "source_id": "enablement_activity",
-      "source_category": "ENABLEMENT_ACTIVITY",
-      "source_name": "Enablement and intervention activity",
-      "value_routes": ["UNCLASSIFIED", "EXPERIENCE_IMPROVEMENT"],
-      "sensitivity": "MODERATE",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "enablement_aggregation_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "intervention_id",
-        "workshop_participation_share",
-        "coaching_exposure_share",
-        "champion_coverage_share",
-        "followup_completion_share",
-        "intervention_window"
-      ],
-      "required_attestation": {
-        "data_owner_role": "enablement_owner",
-        "approved_grain": "aggregate_intervention_window",
-        "baseline_comparison_required": false,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "DIRECTIONAL",
-      "allowed_claim_level": "SOURCE_READINESS_ONLY"
-    },
-    {
-      "source_id": "customer_revenue_experience",
-      "source_category": "CUSTOMER_REVENUE_EXPERIENCE",
-      "source_name": "Customer, revenue, and experience systems",
-      "value_routes": [
-        "REVENUE_EXPANSION",
-        "EXPERIENCE_IMPROVEMENT",
-        "QUALITY_IMPROVEMENT"
-      ],
-      "sensitivity": "HIGH",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "customer_revenue_analytics_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "sales_cycle_days",
-        "conversion_rate",
-        "renewal_rate",
-        "expansion_rate",
-        "churn_rate",
-        "pipeline_value_band",
-        "csat_score",
-        "nps_score"
-      ],
-      "required_attestation": {
-        "data_owner_role": "revenue_operations_owner",
-        "approved_grain": "aggregate_account_or_workflow_window",
-        "baseline_comparison_required": true,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "SUPPORTED",
-      "allowed_claim_level": "SUPPORTED_VALUE_MOVEMENT"
-    },
-    {
-      "source_id": "quality_risk_system",
-      "source_category": "QUALITY_RISK",
-      "source_name": "Quality, risk, compliance, and incident systems",
-      "value_routes": [
-        "QUALITY_IMPROVEMENT",
-        "RISK_REDUCTION",
-        "CAPACITY_CREATION"
-      ],
-      "sensitivity": "HIGH",
-      "raw_data_policy": {
-        "allowed_upstream": true,
-        "transform_boundary": "quality_risk_aggregation_boundary",
-        "raw_rows_cross_boundary": false,
-        "direct_identifiers_cross_boundary": false,
-        "raw_content_cross_boundary": false,
-        "persistent_raw_storage_in_fluencytracr": false
-      },
-      "allowed_aggregate_fields": [
-        "defect_rate",
-        "qa_pass_rate",
-        "incident_count",
-        "incident_resolution_time_p50",
-        "compliance_exception_rate",
-        "risk_review_cycle_time_days"
-      ],
-      "required_attestation": {
-        "data_owner_role": "risk_or_quality_owner",
-        "approved_grain": "aggregate_workflow_window",
-        "baseline_comparison_required": true,
-        "contains_person_level_data": false,
-        "contains_raw_content": false
-      },
-      "evidence_level": "SUPPORTED",
-      "allowed_claim_level": "SUPPORTED_VALUE_MOVEMENT"
-    }
-  ],
-  "reconciliation": {
-    "conflicts_detected": false,
-    "existing_contract_alignment": {
-      "metrics_library": "EXTENDS",
-      "outcome_evidence_export": "ALIGNED",
-      "roi_scenario": "ALIGNED",
-      "value_improvement_loop": "EXTENDS",
-      "reportability": "ALIGNED",
-      "aggregate_api_push": "ALIGNED",
-      "ai_value_measurement_model": "ALIGNED"
-    },
-    "notes": [
-      "Sensitive organizational data may be useful upstream, but only approved aggregate evidence crosses into FluencyTracr.",
-      "VBD definitions are canonical here: Velocity is speed to adoption, Breadth is spread, Depth is aggregate AI tool/surface repertoire.",
-      "Dollarized ROI remains modeled-only until a later governed contract authorizes customer-facing economic output."
-    ]
-  },
-  "contract_outputs": {
-    "aggregate_evidence_package": true,
-    "value_evidence_case_input": true,
-    "customer_facing_economic_output": false,
-    "dollarized_output": false,
-    "realized_roi_calculation": false,
-    "causality_claim": false,
-    "individual_scoring": false,
-    "hr_analytics": false,
-    "productivity_ranking": false
+  "depth": {
+   "definition": "workflow_integration_embeddedness",
+   "plain_language": "How deeply AI is embedded into repeatable workflow behavior, exposed only as aggregate integration signals; never person-level.",
+   "allowed_aggregate_fields": [
+    "repeat_use_within_workflow_share",
+    "verification_coverage_share",
+    "reuse_of_standardized_assets_share",
+    "delegation_or_agent_use_share",
+    "recovery_after_failure_share",
+    "judgment_override_share"
+   ]
   }
+ },
+ "boundary_model": {
+  "source_system_zone": "Customer-owned systems may contain raw operational, communication, HRIS, finance, and workflow data under customer policy.",
+  "transformation_boundary": "Customer or Glean-approved transformer may join, classify, dedupe, and aggregate sensitive data before export.",
+  "fluencytracr_boundary": {
+   "aggregate_only": true,
+   "raw_source_rows_allowed": false,
+   "direct_identifiers_allowed": false,
+   "raw_content_allowed": false
+  }
+ },
+ "organizational_data_sources": [
+  {
+   "source_id": "ai_work_evidence_glean_surfaces",
+   "source_category": "AI_WORK_EVIDENCE",
+   "source_name": "Glean and AI workflow telemetry",
+   "value_routes": [
+    "CAPACITY_CREATION",
+    "QUALITY_IMPROVEMENT",
+    "EXPERIENCE_IMPROVEMENT"
+   ],
+   "sensitivity": "MODERATE",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "customer_or_glean_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "cohort_id",
+    "workflow_id",
+    "window_start",
+    "window_end",
+    "cohort_size",
+    "time_to_first_meaningful_use_days",
+    "time_to_repeated_use_days",
+    "frequency_distribution",
+    "engagement_distribution",
+    "breadth_distribution",
+    "ai_surface_count_distribution",
+    "verification_rate",
+    "recovery_rate",
+    "abandonment_rate",
+    "error_rate"
+   ],
+   "required_attestation": {
+    "data_owner_role": "platform_owner",
+    "approved_grain": "aggregate_workflow_window",
+    "baseline_comparison_required": true,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "CAVEATED",
+   "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
+  },
+  {
+   "source_id": "ai_fluency_baseline",
+   "source_category": "AI_FLUENCY_BASELINE",
+   "source_name": "AI Fluency Instrument aggregate results",
+   "value_routes": [
+    "UNCLASSIFIED"
+   ],
+   "sensitivity": "LOW",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "survey_aggregation_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "cohort_id",
+    "function",
+    "respondent_count",
+    "confidence_mean",
+    "usage_quality_mean",
+    "behavior_change_mean",
+    "leadership_reinforcement_mean",
+    "capability_growth_mean",
+    "behavioral_intent_mean",
+    "perceived_ai_impact_mean"
+   ],
+   "required_attestation": {
+    "data_owner_role": "ai_program_owner",
+    "approved_grain": "aggregate_cohort_window",
+    "baseline_comparison_required": false,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "DIRECTIONAL",
+   "allowed_claim_level": "SOURCE_READINESS_ONLY"
+  },
+  {
+   "source_id": "workflow_process_lifecycle",
+   "source_category": "WORKFLOW_PROCESS",
+   "source_name": "Workflow and process lifecycle systems",
+   "value_routes": [
+    "CAPACITY_CREATION",
+    "QUALITY_IMPROVEMENT",
+    "RISK_REDUCTION"
+   ],
+   "sensitivity": "MODERATE",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "customer_process_analytics_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "workflow_id",
+    "cycle_time_p50",
+    "cycle_time_p90",
+    "handoff_count_mean",
+    "rework_rate",
+    "backlog_count",
+    "completion_rate",
+    "sla_breach_rate"
+   ],
+   "required_attestation": {
+    "data_owner_role": "operations_owner",
+    "approved_grain": "aggregate_workflow_window",
+    "baseline_comparison_required": true,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "CAVEATED",
+   "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
+  },
+  {
+   "source_id": "customer_outcome_system",
+   "source_category": "CUSTOMER_OUTCOME",
+   "source_name": "Customer-owned business outcome system",
+   "value_routes": [
+    "CAPACITY_CREATION",
+    "QUALITY_IMPROVEMENT",
+    "EXPERIENCE_IMPROVEMENT"
+   ],
+   "sensitivity": "MODERATE",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "customer_outcome_export_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "outcome_metric",
+    "outcome_unit",
+    "baseline_value",
+    "comparison_value",
+    "eligible_population",
+    "source_system",
+    "baseline_window",
+    "comparison_window"
+   ],
+   "required_attestation": {
+    "data_owner_role": "business_data_owner",
+    "approved_grain": "aggregate_workflow_window",
+    "baseline_comparison_required": true,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "SUPPORTED",
+   "allowed_claim_level": "SUPPORTED_VALUE_MOVEMENT"
+  },
+  {
+   "source_id": "finance_assumptions",
+   "source_category": "FINANCE_ASSUMPTION",
+   "source_name": "Finance-owned modeling assumptions",
+   "value_routes": [
+    "COST_REDUCTION",
+    "CAPACITY_CREATION",
+    "REVENUE_EXPANSION"
+   ],
+   "sensitivity": "HIGH",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "finance_assumption_approval_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "loaded_labor_rate_band",
+    "cost_per_case_band",
+    "margin_band",
+    "capacity_assumption_band",
+    "scenario_assumption_owner"
+   ],
+   "required_attestation": {
+    "data_owner_role": "finance_owner",
+    "approved_grain": "approved_assumption_band",
+    "baseline_comparison_required": false,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "CAVEATED",
+   "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
+  },
+  {
+   "source_id": "hris_org_context",
+   "source_category": "HRIS_ORG_CONTEXT",
+   "source_name": "HRIS and organizational context",
+   "value_routes": [
+    "CAPACITY_CREATION",
+    "EXPERIENCE_IMPROVEMENT",
+    "REVENUE_EXPANSION"
+   ],
+   "sensitivity": "RESTRICTED",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "customer_people_analytics_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "function",
+    "role_family",
+    "level_band",
+    "tenure_band",
+    "region",
+    "attrition_rate",
+    "internal_mobility_rate",
+    "onboarding_time_days"
+   ],
+   "required_attestation": {
+    "data_owner_role": "people_analytics_owner",
+    "approved_grain": "approved_aggregate_cohort",
+    "baseline_comparison_required": true,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "CAVEATED",
+   "allowed_claim_level": "INTERNAL_ONLY"
+  },
+  {
+   "source_id": "enablement_activity",
+   "source_category": "ENABLEMENT_ACTIVITY",
+   "source_name": "Enablement and intervention activity",
+   "value_routes": [
+    "UNCLASSIFIED",
+    "EXPERIENCE_IMPROVEMENT"
+   ],
+   "sensitivity": "MODERATE",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "enablement_aggregation_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "intervention_id",
+    "workshop_participation_share",
+    "coaching_exposure_share",
+    "champion_coverage_share",
+    "followup_completion_share",
+    "intervention_window"
+   ],
+   "required_attestation": {
+    "data_owner_role": "enablement_owner",
+    "approved_grain": "aggregate_intervention_window",
+    "baseline_comparison_required": false,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "DIRECTIONAL",
+   "allowed_claim_level": "SOURCE_READINESS_ONLY"
+  },
+  {
+   "source_id": "customer_revenue_experience",
+   "source_category": "CUSTOMER_REVENUE_EXPERIENCE",
+   "source_name": "Customer, revenue, and experience systems",
+   "value_routes": [
+    "REVENUE_EXPANSION",
+    "EXPERIENCE_IMPROVEMENT",
+    "QUALITY_IMPROVEMENT"
+   ],
+   "sensitivity": "HIGH",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "customer_revenue_analytics_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "sales_cycle_days",
+    "conversion_rate",
+    "renewal_rate",
+    "expansion_rate",
+    "churn_rate",
+    "pipeline_value_band",
+    "csat_score",
+    "nps_score"
+   ],
+   "required_attestation": {
+    "data_owner_role": "revenue_operations_owner",
+    "approved_grain": "aggregate_account_or_workflow_window",
+    "baseline_comparison_required": true,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "SUPPORTED",
+   "allowed_claim_level": "SUPPORTED_VALUE_MOVEMENT"
+  },
+  {
+   "source_id": "quality_risk_system",
+   "source_category": "QUALITY_RISK",
+   "source_name": "Quality, risk, compliance, and incident systems",
+   "value_routes": [
+    "QUALITY_IMPROVEMENT",
+    "RISK_REDUCTION",
+    "CAPACITY_CREATION"
+   ],
+   "sensitivity": "HIGH",
+   "raw_data_policy": {
+    "allowed_upstream": true,
+    "transform_boundary": "quality_risk_aggregation_boundary",
+    "raw_rows_cross_boundary": false,
+    "direct_identifiers_cross_boundary": false,
+    "raw_content_cross_boundary": false,
+    "persistent_raw_storage_in_fluencytracr": false
+   },
+   "allowed_aggregate_fields": [
+    "defect_rate",
+    "qa_pass_rate",
+    "incident_count",
+    "incident_resolution_time_p50",
+    "compliance_exception_rate",
+    "risk_review_cycle_time_days"
+   ],
+   "required_attestation": {
+    "data_owner_role": "risk_or_quality_owner",
+    "approved_grain": "aggregate_workflow_window",
+    "baseline_comparison_required": true,
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+   },
+   "evidence_level": "SUPPORTED",
+   "allowed_claim_level": "SUPPORTED_VALUE_MOVEMENT"
+  }
+ ],
+ "reconciliation": {
+  "conflicts_detected": false,
+  "existing_contract_alignment": {
+   "metrics_library": "EXTENDS",
+   "outcome_evidence_export": "ALIGNED",
+   "roi_scenario": "ALIGNED",
+   "value_improvement_loop": "EXTENDS",
+   "reportability": "ALIGNED",
+   "aggregate_api_push": "ALIGNED",
+   "ai_value_measurement_model": "ALIGNED"
+  },
+  "notes": [
+   "Sensitive organizational data may be useful upstream, but only approved aggregate evidence crosses into FluencyTracr.",
+   "VBD definitions are canonical here: Velocity is speed to adoption, Breadth is spread, Depth is aggregate AI tool/surface repertoire.",
+   "Dollarized ROI remains modeled-only until a later governed contract authorizes customer-facing economic output."
+  ]
+ },
+ "contract_outputs": {
+  "aggregate_evidence_package": true,
+  "value_evidence_case_input": true,
+  "customer_facing_economic_output": false,
+  "dollarized_output": false,
+  "realized_roi_calculation": false,
+  "causality_claim": false,
+  "individual_scoring": false,
+  "hr_analytics": false,
+  "productivity_ranking": false
+ }
 }

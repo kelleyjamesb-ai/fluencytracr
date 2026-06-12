@@ -30,13 +30,23 @@ objects inside the spine, not separate product destinations.
 
 ## VBD Definitions
 
-Use these definitions as canonical for the AI Value Platform:
+Use these definitions as canonical for the AI Value Platform (amended
+2026-06-11 with human approval; see the decision note below):
 
 | Dimension | Definition | Product meaning |
 | --- | --- | --- |
 | Velocity | Speed to adoption. | How quickly a function or workflow moves from AI availability to active, repeated use. |
-| Breadth | Spread across the organization, functions, roles, and workflows. | How widely AI capability is showing up across the client operating system. |
-| Depth | Aggregate AI tool or surface repertoire. | How many AI tools or surfaces people use, exposed only as aggregate distributions. |
+| Breadth | Spread across the organization, functions, roles, workflows, and AI surfaces. | How widely AI capability is showing up across the client operating system, with coverage and concentration views. The aggregate tool/surface repertoire ("Repertoire") is one of Breadth's coverage views. |
+| Depth | Embeddedness of AI in repeatable workflow behavior. | Aggregate integration signals only: repeat use within a workflow, verification coverage, reuse of standardized assets, delegation, recovery, and judgment patterns. Never person-level. |
+
+**Decision note (2026-06-11):** an earlier reset defined Depth as the aggregate
+tool/surface repertoire. That construct is kept but renamed **Repertoire** and
+moved under Breadth's coverage views, because (1) "depth" must mean
+embeddedness to the executives who read it, (2) the research case for Depth as
+a leading indicator of value rests on workflow integration (redesign, human
+validation, process embedding), not tool count, and (3) the integration
+signals are already computed by FluencyTracr in aggregate. Do not "correct"
+Depth back to repertoire.
 
 VBD is an operating map, not value proof. It tells the platform where AI work
 is developing and where intervention may be needed. Value claims require a

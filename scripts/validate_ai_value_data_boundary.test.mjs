@@ -58,10 +58,10 @@ test("locks the metric pyramid and corrected VBD definitions", () => {
   assert.equal(contract.metric_pyramid.supporting_metrics[0].name, "AI Work Integration / VBD");
   assert.equal(contract.metric_pyramid.supporting_metrics[1].name, "AI Capability Growth");
   assert.equal(contract.vbd_definitions.velocity.definition, "speed_to_adoption");
-  assert.equal(contract.vbd_definitions.breadth.definition, "spread_across_org_functions_workflows");
-  assert.equal(contract.vbd_definitions.depth.definition, "aggregate_ai_tool_surface_repertoire");
+  assert.equal(contract.vbd_definitions.breadth.definition, "spread_across_org_functions_workflows_surfaces");
+  assert.equal(contract.vbd_definitions.depth.definition, "workflow_integration_embeddedness");
   assert.equal(result.vbd_definitions.velocity, "speed_to_adoption");
-  assert.equal(result.vbd_definitions.depth, "aggregate_ai_tool_surface_repertoire");
+  assert.equal(result.vbd_definitions.depth, "workflow_integration_embeddedness");
 });
 
 test("rejects raw data, direct identifiers, manager chains, and raw content crossing the boundary", () => {
