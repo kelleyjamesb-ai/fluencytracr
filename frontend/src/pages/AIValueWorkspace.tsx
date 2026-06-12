@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+
+import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
@@ -825,49 +827,156 @@ const WorkspaceHome = ({
   </>
 );
 
-const VbdMapPanel = () => (
-  <section className="ai-value-panel ai-value-vbd-panel" aria-label="Velocity Breadth Depth map">
-    <div className="ai-value-section-head">
-      <div>
-        <p className="eyebrow">VBD Map</p>
-        <h3>Velocity + Depth show the work pattern</h3>
-      </div>
-      <StatusPill label="Signals, not scores" tone="good" />
-    </div>
+interface VbdFunctionPlot {
+  functionArea: string;
+  quadrantId: string;
+  velocityStatus: string;
+  depthStatus: string;
+}
 
-    <div className="ai-value-vbd-layout">
-      <div className="ai-value-vbd-y-axis">
-        <strong>Velocity</strong>
-        <span>High</span>
+const vbdQuadrantOf = (velocityStatus: string, depthStatus: string): string => {
+  const highVelocity = velocityStatus === "INCREASING";
+  const highDepth = depthStatus === "DEEPENING";
+  if (highVelocity && highDepth) return "flow";
+  if (highVelocity) return "fast-shallow";
+  if (highDepth) return "deep-slow";
+  return "low-integration";
+};
+
+const vbdSessionRole = () => {
+  try {
+    return (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
+  } catch {
+    return "ADMIN";
+  }
+};
+
+const useVbdFunctionPlots = (): VbdFunctionPlot[] => {
+  const [plots, setPlots] = useState<VbdFunctionPlot[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const role = vbdSessionRole();
+        const { objects } = await listAiValueObjects(role, "value_evidence_case");
+        const details = await Promise.all(
+          objects
+            .filter((summary) => summary.valid)
+            .map((summary) => fetchAiValueObject(role, "value_evidence_case", summary.object_id))
+        );
+        if (cancelled) return;
+        const next: VbdFunctionPlot[] = [];
+        const seen = new Set<string>();
+        for (const detail of details) {
+          const payload = detail.payload as Record<string, any>;
+          const functionArea = String(
+            payload?.client_context?.function_area ?? payload?.workflow?.function_area ?? ""
+          ).trim();
+          if (!functionArea || seen.has(functionArea)) continue;
+          seen.add(functionArea);
+          const velocityStatus = String(payload?.vbd_summary?.velocity?.status ?? "UNKNOWN");
+          const depthStatus = String(payload?.vbd_summary?.depth?.status ?? "UNKNOWN");
+          next.push({
+            functionArea,
+            quadrantId: vbdQuadrantOf(velocityStatus, depthStatus),
+            velocityStatus,
+            depthStatus
+          });
+        }
+        setPlots(next);
+      } catch {
+        if (!cancelled) setPlots([]);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return plots;
+};
+
+const VbdMapPanel = () => {
+  const plots = useVbdFunctionPlots();
+  const plotted = plots.length > 0;
+
+  return (
+    <section className="ai-value-panel ai-value-vbd-panel" aria-label="Velocity Breadth Depth map">
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">VBD Map</p>
+          <h3>Velocity + Depth show the work pattern</h3>
+          <p>
+            {plotted
+              ? "Functions plot from their aggregate work-pattern signals. Use the quadrant each cluster sits in to choose where to scale, coach, or redesign next."
+              : "Once aggregate work-pattern data is collected, your functions appear as clusters on this map."}
+          </p>
+        </div>
+        <StatusPill label="Signals, not scores" tone="good" />
+      </div>
+
+      <div className="ai-value-vbd-layout">
+        <div className="ai-value-vbd-y-axis">
+          <strong>Velocity</strong>
+          <span>High</span>
+          <span>Low</span>
+        </div>
+        <div className="ai-value-vbd-grid">
+          {vbdQuadrants.map((quadrant) => {
+            const clusterFunctions = plots.filter((plot) => plot.quadrantId === quadrant.id);
+            return (
+              <article
+                className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone}`}
+                key={quadrant.id}
+              >
+                <span className="ai-value-map-label">{quadrant.position}</span>
+                <h4>{quadrant.label}</h4>
+                <p>{quadrant.summary}</p>
+                {plotted && (
+                  <div
+                    className="ai-value-chip-row ai-value-vbd-cluster"
+                    aria-label={`Functions in ${quadrant.label}`}
+                  >
+                    {clusterFunctions.length > 0 ? (
+                      clusterFunctions.map((plot) => (
+                        <span
+                          className="ai-value-pill ai-value-pill-neutral ai-value-vbd-function-pill"
+                          key={plot.functionArea}
+                        >
+                          {plot.functionArea}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="ai-value-vbd-cluster-empty">No functions here yet</span>
+                    )}
+                  </div>
+                )}
+                <ul>
+                  {quadrant.watch.map((signal) => (
+                    <li key={signal}>{signal}</li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="ai-value-vbd-footer">
+        <strong>Depth</strong>
         <span>Low</span>
+        <span>High</span>
+        <p>
+          Breadth shows coverage by function, role, or workflow.
+          {plotted &&
+            " Cluster positions guide intervention planning; customer-owned outcome evidence still owns the value test."}
+        </p>
       </div>
-      <div className="ai-value-vbd-grid">
-        {vbdQuadrants.map((quadrant) => (
-          <article
-            className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone}`}
-            key={quadrant.id}
-          >
-            <span className="ai-value-map-label">{quadrant.position}</span>
-            <h4>{quadrant.label}</h4>
-            <p>{quadrant.summary}</p>
-            <ul>
-              {quadrant.watch.map((signal) => (
-                <li key={signal}>{signal}</li>
-              ))}
-            </ul>
-          </article>
-        ))}
-      </div>
-    </div>
-
-    <div className="ai-value-vbd-footer">
-      <strong>Depth</strong>
-      <span>Low</span>
-      <span>High</span>
-      <p>Breadth shows coverage by function, role, or workflow.</p>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const ValueProofChainPanel = ({ journey }: { journey: Journey }) => {
   const proofRows = [

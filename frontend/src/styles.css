@@ -4309,3 +4309,21 @@ body {
     gap: 4px;
   }
 }
+
+/* VBD map function clusters */
+.ai-value-vbd-cluster {
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.ai-value-vbd-function-pill {
+  background: #fff;
+  border-color: #c4cbe2;
+  font-weight: 600;
+}
+
+.ai-value-vbd-cluster-empty {
+  font-size: 11.5px;
+  color: #8a92a9;
+  font-style: italic;
+}

@@ -1515,10 +1515,34 @@ function buildClientQuestionMetricBridge(params: {
     };
   }
 
+  // One card per distinct metric: with multi-function engagements the
+  // opportunity list can repeat metrics and carry many success measures, so
+  // dedupe and pair each metric with its own matching measure (never repeat
+  // the same card per measure).
+  const seenMetrics = new Set<string>();
+  const distinctOpportunities = opportunities.filter((opportunity) => {
+    const key = opportunity.metricName.toLowerCase();
+    if (seenMetrics.has(key)) return false;
+    seenMetrics.add(key);
+    return true;
+  });
   const bridgeOpportunities =
     successMeasures.length > 0
-      ? opportunities.slice(0, Math.max(1, successMeasures.length))
-      : opportunities.slice(0, 1);
+      ? distinctOpportunities.slice(0, Math.max(1, successMeasures.length))
+      : distinctOpportunities.slice(0, 1);
+  const measureForMetric = (metricName: string, index: number): string => {
+    const metric = metricName.toLowerCase();
+    const matched = successMeasures.find((measure) => {
+      const text = measure.toLowerCase();
+      return text.includes(metric) || metric.includes(text);
+    });
+    return (
+      matched ??
+      successMeasures[index] ??
+      successMeasures[0] ??
+      "Confirm the client success measure in Blueprint."
+    );
+  };
 
   return {
     available: true,
@@ -1528,10 +1552,7 @@ function buildClientQuestionMetricBridge(params: {
     items: bridgeOpportunities.map((opportunity, index) => ({
       id: opportunity.id,
       sponsorQuestion: roiQuestion,
-      successMeasure:
-        successMeasures[index] ??
-        successMeasures[0] ??
-        "Confirm the client success measure in Blueprint.",
+      successMeasure: measureForMetric(opportunity.metricName, index),
       metricName: opportunity.metricName,
       valueRouteLabel: opportunity.valueRouteLabel,
       sourceSystem: opportunity.sourceSystem,
