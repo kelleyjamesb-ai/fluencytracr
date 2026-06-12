@@ -1137,7 +1137,20 @@ async function main() {
       improvement_loop_id: improvementLoopId,
       case_id: `value_evidence_case_${focus.workflowFamily}_v1`,
       engagement_label: `Northstar Enterprise ${orgFunction.label} value engagement`,
-      function_area: orgFunction.label
+      function_area: orgFunction.label,
+      // The fully-evidenced path also carries the customer's sign-off on the
+      // economic inputs, lifting the case to the VALIDATED rung and unlocking
+      // realized-value language (causality stays gated on an approved design).
+      customer_validation:
+        focus.evidencePath === "ACCEPTED_SUPPORTED"
+          ? {
+              economic_inputs_approved: true,
+              approved_by_role: `${orgFunction.key}_finance_partner`,
+              validation_reference: `northstar_fy26_q2_${orgFunction.key}_value_validation_memo`,
+              validation_statement:
+                "Finance approved the workflow rate inputs used for this realized-value readout."
+            }
+          : undefined
     });
     if (!assemble.ok) fail(`evidence-case/assemble ${focus.workflowFamily}`, assemble);
     const evidenceCase = assemble.payload?.payload ?? {};

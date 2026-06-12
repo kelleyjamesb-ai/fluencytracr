@@ -81,6 +81,7 @@ const CLAIM_LEVELS = [
   "INTERNAL_HYPOTHESIS_ONLY",
   "CAVEATED_VALUE_INVESTIGATION",
   "SUPPORTED_VALUE_MOVEMENT",
+  "VALIDATED_VALUE_REALIZATION",
   "BLOCKED"
 ] as const;
 
@@ -88,7 +89,8 @@ const CLAIM_RANK: Record<string, number> = {
   OBSERVED_AI_ACTIVITY_ONLY: 0,
   INTERNAL_HYPOTHESIS_ONLY: 1,
   CAVEATED_VALUE_INVESTIGATION: 2,
-  SUPPORTED_VALUE_MOVEMENT: 3
+  SUPPORTED_VALUE_MOVEMENT: 3,
+  VALIDATED_VALUE_REALIZATION: 4
 };
 
 const MAX_CLAIM_BY_EVIDENCE: Record<string, string> = {
@@ -96,22 +98,79 @@ const MAX_CLAIM_BY_EVIDENCE: Record<string, string> = {
   DIRECTIONAL: "INTERNAL_HYPOTHESIS_ONLY",
   CAVEATED: "CAVEATED_VALUE_INVESTIGATION",
   SUPPORTED: "SUPPORTED_VALUE_MOVEMENT",
-  STRONG: "SUPPORTED_VALUE_MOVEMENT",
+  STRONG: "VALIDATED_VALUE_REALIZATION",
   BLOCKED: "BLOCKED"
 };
 
 const NON_CAUSAL_CAVEAT_PATTERN = /does not prove ROI or causality/i;
+const CAUSALITY_CAVEAT_PATTERN = /does not (?:prove|establish) causality/i;
+const CUSTOMER_FIGURES_CAVEAT_PATTERN = /customer-(?:approved|computed|owned)/i;
 
-const REQUIRED_BLOCKED_CLAIMS = [
-  "roi_proof",
-  "causality_claim",
+// Amended 2026-06-12: claim governance is two-tier.
+//
+// Privacy boundaries protect people, not claims; they never relax regardless
+// of how strong the evidence gets.
+export const PRIVACY_BOUNDARY_CLAIMS = [
   "individual_scoring",
   "team_or_manager_ranking",
   "hr_analytics",
-  "productivity_measurement",
-  "realized_roi_calculation",
-  "customer_facing_economic_output"
+  "productivity_measurement"
 ];
+
+// Value claims are evidence-gated, not categorically banned. Each unlocks
+// when its requirements are met, so the claims the platform supports are
+// backed by real customer-owned data. Until a gate opens, its claim must
+// stay in blocked_claims. Even when realized-value language unlocks, the
+// platform itself never computes or stores economic figures — validated
+// cases reference the customer's own approved numbers.
+export const EVIDENCE_GATED_CLAIMS = [
+  "roi_proof",
+  "realized_roi_calculation",
+  "customer_facing_economic_output",
+  "causality_claim"
+];
+
+export const CLAIM_UNLOCK_REQUIREMENTS: Record<string, string> = {
+  roi_proof:
+    "Accepted aggregate outcome evidence with exact window alignment, resolved customer-owned assumptions, and customer-approved economic inputs.",
+  realized_roi_calculation:
+    "The customer computes realized ROI from its own approved inputs; the case references the customer's validated figures.",
+  customer_facing_economic_output:
+    "Economic figures are presented only as customer-computed, customer-approved values referenced by this case.",
+  causality_claim:
+    "An approved baseline/comparison evidence design (control or quasi-experimental) reviewed by the customer's analytics owner."
+};
+
+function customerValidationSatisfied(validation: any): boolean {
+  return Boolean(
+    validation &&
+      validation.economic_inputs_approved === true &&
+      validation.approved_by_role &&
+      validation.validation_reference
+  );
+}
+
+function causalityDesignApproved(design: any): boolean {
+  return design?.design_state === "APPROVED_COMPARISON_DESIGN";
+}
+
+/**
+ * Which evidence-gated claims are unlocked for this case. ROI-family claims
+ * unlock at the VALIDATED rung (token STRONG) — accepted evidence, aligned
+ * windows, resolved assumptions, customer-approved economic inputs.
+ * Causality additionally requires an approved comparison evidence design.
+ */
+function deriveClaimGateStates(evidenceCase: any): Record<string, boolean> {
+  const validated =
+    evidenceCase?.evidence_quality?.evidence_level === "STRONG" &&
+    customerValidationSatisfied(evidenceCase?.customer_validation);
+  return {
+    roi_proof: validated,
+    realized_roi_calculation: validated,
+    customer_facing_economic_output: validated,
+    causality_claim: validated && causalityDesignApproved(evidenceCase?.evidence_design)
+  };
+}
 
 const GOVERNANCE_BOUNDARIES = [
   "production_connector",
@@ -195,6 +254,15 @@ export interface BuildValueEvidenceCaseInputs {
   readiness: any;
   outcomeEvidenceExport?: any;
   improvementLoop?: any;
+  /**
+   * Customer sign-off on the economic inputs behind realized-value language:
+   * { economic_inputs_approved: true, approved_by_role, validation_reference,
+   *   validation_statement? }. With supported evidence, this lifts the case
+   * to the VALIDATED rung and unlocks the ROI-family claim gates.
+   */
+  customerValidation?: any;
+  /** Approved comparison evidence design; required to unlock causality. */
+  evidenceDesign?: any;
 }
 
 export interface BuildValueEvidenceCaseOptions {
@@ -441,13 +509,17 @@ function collectAssumptionGaps(evidenceCase: any): string[] {
 function evidenceCeiling(
   reviewState: string,
   windowAlignment: string,
-  assumptionsAllPresent: boolean
+  assumptionsAllPresent: boolean,
+  customerValidated = false
 ): string {
   if (reviewState === "MISSING" || reviewState === "REJECTED") return "MISSING";
   if (reviewState === "SUBMITTED" || reviewState === "CAVEATED") return "DIRECTIONAL";
   if (reviewState === "ACCEPTED") {
     if (windowAlignment !== "EXACT_MATCH") return "DIRECTIONAL";
-    return assumptionsAllPresent ? "SUPPORTED" : "CAVEATED";
+    if (!assumptionsAllPresent) return "CAVEATED";
+    // VALIDATED (token STRONG): everything SUPPORTED requires, plus
+    // customer-approved economic inputs recorded on the case.
+    return customerValidated ? "STRONG" : "SUPPORTED";
   }
   return "MISSING";
 }
@@ -462,12 +534,7 @@ function collectEvidenceQualityGaps(evidenceCase: any): string[] {
     gaps.push(`evidence_quality.evidence_level is invalid: ${level}`);
     return gaps;
   }
-  if (level === "STRONG") {
-    gaps.push(
-      "evidence_quality.evidence_level STRONG requires a future governed evidence design contract"
-    );
-  }
-  if (level && level !== "BLOCKED" && level !== "STRONG") {
+  if (level && level !== "BLOCKED") {
     const reviewState = evidenceCase?.outcome_evidence_status?.review_state ?? "MISSING";
     const windowAlignment = evidenceCase?.baseline_comparison?.window_alignment ?? "MISSING";
     const assumptions = Array.isArray(evidenceCase?.customer_owned_assumptions)
@@ -476,7 +543,12 @@ function collectEvidenceQualityGaps(evidenceCase: any): string[] {
     const assumptionsAllPresent =
       assumptions.length > 0 &&
       assumptions.every((assumption: any) => assumption?.state === "PRESENT");
-    const ceiling = evidenceCeiling(reviewState, windowAlignment, assumptionsAllPresent);
+    const ceiling = evidenceCeiling(
+      reviewState,
+      windowAlignment,
+      assumptionsAllPresent,
+      customerValidationSatisfied(evidenceCase?.customer_validation)
+    );
     if (EVIDENCE_RANK[level] > EVIDENCE_RANK[ceiling]) {
       gaps.push(
         `evidence_quality.evidence_level exceeds what outcome evidence supports: ${level} > ${ceiling}`
@@ -500,7 +572,24 @@ function collectSafeLanguageGaps(evidenceCase: any): string[] {
     gaps.push("safe_value_language.allowed_phrases contains unsafe claim language");
   }
   const caveats = Array.isArray(safe.required_caveats) ? safe.required_caveats : [];
-  if (!caveats.some((caveat: any) => NON_CAUSAL_CAVEAT_PATTERN.test(String(caveat)))) {
+  const gates = deriveClaimGateStates(evidenceCase);
+  if (gates.roi_proof) {
+    // Realized-value language is unlocked: figures must be customer-owned
+    // and causality must still be disclaimed until its own gate opens.
+    if (!caveats.some((caveat: any) => CUSTOMER_FIGURES_CAVEAT_PATTERN.test(String(caveat)))) {
+      gaps.push(
+        "safe_value_language.required_caveats must state that realized-value figures are customer-approved or customer-computed"
+      );
+    }
+    if (
+      !gates.causality_claim &&
+      !caveats.some((caveat: any) => CAUSALITY_CAVEAT_PATTERN.test(String(caveat)))
+    ) {
+      gaps.push(
+        "safe_value_language.required_caveats must state that this does not prove causality"
+      );
+    }
+  } else if (!caveats.some((caveat: any) => NON_CAUSAL_CAVEAT_PATTERN.test(String(caveat)))) {
     gaps.push(
       "safe_value_language.required_caveats must state that this does not prove ROI or causality"
     );
@@ -531,9 +620,28 @@ function collectSafeLanguageGaps(evidenceCase: any): string[] {
   const blockedClaims = new Set(
     Array.isArray(evidenceCase?.blocked_claims) ? evidenceCase.blocked_claims : []
   );
-  for (const claim of REQUIRED_BLOCKED_CLAIMS) {
+  for (const claim of PRIVACY_BOUNDARY_CLAIMS) {
     if (!blockedClaims.has(claim)) {
       gaps.push(`blocked_claims missing ${claim}`);
+    }
+  }
+  for (const claim of EVIDENCE_GATED_CLAIMS) {
+    if (!gates[claim] && !blockedClaims.has(claim)) {
+      gaps.push(`blocked_claims missing ${claim}`);
+    }
+  }
+  if (evidenceCase?.claim_gates !== undefined) {
+    const entries = Array.isArray(evidenceCase.claim_gates) ? evidenceCase.claim_gates : [];
+    for (const claim of EVIDENCE_GATED_CLAIMS) {
+      const entry = entries.find((item: any) => item?.claim === claim);
+      if (!entry) {
+        gaps.push(`claim_gates missing ${claim}`);
+        continue;
+      }
+      const expected = gates[claim] ? "UNLOCKED" : "LOCKED";
+      if (entry.state !== expected) {
+        gaps.push(`claim_gates.${claim} must be ${expected}`);
+      }
     }
   }
   return gaps;
@@ -662,6 +770,11 @@ const SAFE_PHRASES_BY_LEVEL: Record<string, string[]> = {
     "Bounded movement on the selected outcome metric is supportable for the approved baseline and comparison window.",
     "The next step is to decide whether to scale, coach, or redesign, and when to remeasure."
   ],
+  STRONG: [
+    "Customer-validated realized value is supportable for this workflow slice: accepted outcome evidence, aligned windows, resolved assumptions, and customer-approved economic inputs.",
+    "Realized-value figures are the customer's own, computed from inputs the customer approved and referenced by this case.",
+    "The next step is to scale the workflow and remeasure on the same slice to keep the validation current."
+  ],
   BLOCKED: [
     "Value language is blocked for this workflow slice until governance gates pass."
   ]
@@ -671,6 +784,12 @@ const REQUIRED_CAVEATS = [
   "This does not prove ROI or causality.",
   "All evidence is aggregate-only and workflow-sliced; no person-level data crosses into FluencyTracr.",
   "Customer-owned outcome data owns the value test; VBD and AI Fluency guide intervention planning only."
+];
+
+const VALIDATED_CAVEATS = [
+  "Realized-value figures are customer-computed and customer-approved; FluencyTracr does not compute or store economic output.",
+  "This supports realized value for this workflow slice and window; it does not prove causality.",
+  "All evidence is aggregate-only and workflow-sliced; no person-level data crosses into FluencyTracr."
 ];
 
 /**
@@ -683,8 +802,15 @@ export function buildValueEvidenceCase(
   inputs: BuildValueEvidenceCaseInputs,
   options: BuildValueEvidenceCaseOptions = {}
 ): any {
-  const { dataBoundary, roiScenario, readiness, outcomeEvidenceExport, improvementLoop } =
-    inputs ?? ({} as BuildValueEvidenceCaseInputs);
+  const {
+    dataBoundary,
+    roiScenario,
+    readiness,
+    outcomeEvidenceExport,
+    improvementLoop,
+    customerValidation,
+    evidenceDesign
+  } = inputs ?? ({} as BuildValueEvidenceCaseInputs);
   const metric = firstMetric(roiScenario);
   const workflowFamily = String(
     roiScenario?.workflow?.workflow_family ?? readiness?.workflow_family ?? "client_workflow"
@@ -724,8 +850,16 @@ export function buildValueEvidenceCase(
     (assumption: any) => assumption.state === "PRESENT"
   );
 
-  const evidenceLevel = evidenceCeiling(reviewState, windowAlignment, assumptionsAllPresent);
+  const customerValidated = customerValidationSatisfied(customerValidation);
+  const evidenceLevel = evidenceCeiling(
+    reviewState,
+    windowAlignment,
+    assumptionsAllPresent,
+    customerValidated
+  );
   const claimLevel = MAX_CLAIM_BY_EVIDENCE[evidenceLevel];
+  const validated = evidenceLevel === "STRONG";
+  const causalityUnlocked = validated && causalityDesignApproved(evidenceDesign);
 
   const vbdContext = improvementLoop?.vbd_context ?? {};
   const statusOr = (value: any, allowed: Set<string>): string =>
@@ -739,7 +873,9 @@ export function buildValueEvidenceCase(
     CAVEATED:
       "Customer-owned aggregate outcome evidence was accepted for the matching workflow slice and windows, with assumptions still open.",
     SUPPORTED:
-      "Customer-owned aggregate outcome evidence was accepted with exact window alignment and resolved assumptions."
+      "Customer-owned aggregate outcome evidence was accepted with exact window alignment and resolved assumptions.",
+    STRONG:
+      "Customer-owned aggregate outcome evidence was accepted with exact window alignment, resolved assumptions, and customer-approved economic inputs."
   };
 
   const rationale: Record<string, string> = {
@@ -750,7 +886,9 @@ export function buildValueEvidenceCase(
     CAVEATED:
       "Accepted aggregate outcome evidence and exact baseline/comparison windows exist, but customer-owned assumptions remain caveated or missing.",
     SUPPORTED:
-      "Accepted customer-owned aggregate outcome evidence, exact window alignment, and resolved assumptions support bounded movement for this workflow slice."
+      "Accepted customer-owned aggregate outcome evidence, exact window alignment, and resolved assumptions support bounded movement for this workflow slice.",
+    STRONG:
+      "Accepted customer-owned aggregate outcome evidence, exact window alignment, resolved assumptions, and customer-approved economic inputs support realized-value language scoped to this workflow slice."
   };
 
   return {
@@ -836,14 +974,38 @@ export function buildValueEvidenceCase(
     safe_value_language: {
       allowed_claim_level: claimLevel,
       allowed_phrases: SAFE_PHRASES_BY_LEVEL[evidenceLevel],
-      required_caveats: REQUIRED_CAVEATS
+      required_caveats: validated ? VALIDATED_CAVEATS : REQUIRED_CAVEATS
     },
-    blocked_claims: [...REQUIRED_BLOCKED_CLAIMS],
+    blocked_claims: [
+      ...PRIVACY_BOUNDARY_CLAIMS,
+      ...EVIDENCE_GATED_CLAIMS.filter((claim) =>
+        claim === "causality_claim" ? !causalityUnlocked : !validated
+      )
+    ],
+    claim_gates: EVIDENCE_GATED_CLAIMS.map((claim) => ({
+      claim,
+      state:
+        (claim === "causality_claim" ? causalityUnlocked : validated)
+          ? "UNLOCKED"
+          : "LOCKED",
+      unlock_requirements: CLAIM_UNLOCK_REQUIREMENTS[claim]
+    })),
+    customer_validation: customerValidated
+      ? {
+          economic_inputs_approved: true,
+          approved_by_role: String(customerValidation.approved_by_role),
+          validation_reference: String(customerValidation.validation_reference),
+          validation_statement: String(
+            customerValidation.validation_statement ??
+              "The customer approved the economic inputs behind this case's realized-value language."
+          )
+        }
+      : null,
     scenario_posture: {
       roi_scenario_id: roiScenario?.roi_scenario_id ?? null,
-      band: evidenceLevel === "SUPPORTED" ? "BASE_CASE" : "CONSERVATIVE",
+      band: evidenceLevel === "SUPPORTED" || validated ? "BASE_CASE" : "CONSERVATIVE",
       posture_statement:
-        evidenceLevel === "SUPPORTED"
+        evidenceLevel === "SUPPORTED" || validated
           ? "Plan with the base-case band; expand only after the sponsor accepts the bounded readout."
           : "Plan with the conservative band until outcome evidence is accepted and customer assumptions are resolved."
     },
@@ -860,7 +1022,7 @@ export function buildValueEvidenceCase(
     intervention_retest: {
       improvement_loop_id: improvementLoop?.improvement_loop_id ?? null,
       next_action:
-        evidenceLevel === "SUPPORTED"
+        evidenceLevel === "SUPPORTED" || validated
           ? "Decide where to scale or redesign, then remeasure the same workflow slice in the next window."
           : "Close the highest-priority evidence or assumption gap, run the recommended intervention, and retest.",
       retest_window_label: String(

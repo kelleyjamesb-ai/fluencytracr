@@ -4343,3 +4343,51 @@ body {
   color: #8a92a9;
   font-style: italic;
 }
+
+/* Evidence-gated claim panel */
+.ai-value-case-gates {
+  margin: 0 0 18px;
+}
+
+.ai-value-case-gates h3 {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+}
+
+.ai-value-case-gates-intro {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: #59637c;
+}
+
+.ai-value-case-gate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.ai-value-case-gate {
+  border: 1px solid #e2e6f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f7f8fc;
+}
+
+.ai-value-case-gate-unlocked {
+  background: #f0faf4;
+  border-color: #b9e3c8;
+}
+
+.ai-value-case-gate-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ai-value-case-gate p {
+  margin: 0;
+  font-size: 12px;
+  color: #59637c;
+}

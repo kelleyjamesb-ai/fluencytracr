@@ -203,14 +203,101 @@ test("keeps supported evidence caveated and non-causal", () => {
     )
   );
 
-  // STRONG remains a future contract state, never a default output.
+  // VALIDATED (token STRONG) cannot be hand-escalated without
+  // customer-approved economic inputs recorded on the case.
   const strong = JSON.parse(JSON.stringify(supportedCase));
   strong.evidence_quality.evidence_level = "STRONG";
   const strongResult = validateAiValueEvidenceCase(strong);
   assert.equal(strongResult.valid, false);
   assert.ok(
     strongResult.gaps.some((gap) =>
-      gap.includes("STRONG requires a future governed evidence design contract")
+      gap.includes(
+        "evidence_quality.evidence_level exceeds what outcome evidence supports: STRONG > SUPPORTED"
+      )
+    )
+  );
+});
+
+test("customer validation unlocks realized-value language while causality stays gated", () => {
+  const inputs = loadInputs();
+  const acceptedExport = {
+    ...inputs.outcomeEvidenceExport,
+    review: { review_state: "ACCEPTED" }
+  };
+  const resolvedScenario = JSON.parse(JSON.stringify(inputs.roiScenario));
+  resolvedScenario.customer_owned_assumptions = resolvedScenario.customer_owned_assumptions.map(
+    (assumption) => ({ ...assumption, state: "PRESENT" })
+  );
+  const customerValidation = {
+    economic_inputs_approved: true,
+    approved_by_role: "finance_partner",
+    validation_reference: "fy26_q2_value_validation_memo",
+    validation_statement:
+      "Finance approved the rate inputs behind this case's realized-value readout."
+  };
+
+  const validatedCase = buildValueEvidenceCase({
+    ...inputs,
+    roiScenario: resolvedScenario,
+    outcomeEvidenceExport: acceptedExport,
+    customerValidation
+  });
+
+  // Realized-value language unlocks at the VALIDATED rung.
+  assert.equal(validatedCase.evidence_quality.evidence_level, "STRONG");
+  assert.equal(
+    validatedCase.safe_value_language.allowed_claim_level,
+    "VALIDATED_VALUE_REALIZATION"
+  );
+
+  // ROI-family gates open; causality stays locked without an approved design.
+  const gateState = Object.fromEntries(
+    validatedCase.claim_gates.map((gate) => [gate.claim, gate.state])
+  );
+  assert.equal(gateState.roi_proof, "UNLOCKED");
+  assert.equal(gateState.realized_roi_calculation, "UNLOCKED");
+  assert.equal(gateState.customer_facing_economic_output, "UNLOCKED");
+  assert.equal(gateState.causality_claim, "LOCKED");
+
+  // Privacy boundaries never relax; causality stays in blocked claims.
+  for (const claim of [
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "causality_claim"
+  ]) {
+    assert.ok(validatedCase.blocked_claims.includes(claim), claim);
+  }
+  assert.ok(!validatedCase.blocked_claims.includes("roi_proof"));
+  assert.ok(!validatedCase.blocked_claims.includes("customer_facing_economic_output"));
+
+  // Figures stay customer-owned: the platform still never computes economic
+  // output, and the caveats say so.
+  assert.equal(
+    validatedCase.economic_output_policy.customer_facing_economic_output,
+    false
+  );
+  assert.ok(
+    validatedCase.safe_value_language.required_caveats.some((caveat) =>
+      /customer-computed and customer-approved/i.test(caveat)
+    )
+  );
+  assert.ok(
+    validatedCase.safe_value_language.required_caveats.some((caveat) =>
+      /does not prove causality/i.test(caveat)
+    )
+  );
+  assert.equal(validateAiValueEvidenceCase(validatedCase).valid, true);
+
+  // Stripping the customer validation while keeping the rung must fail closed.
+  const stripped = JSON.parse(JSON.stringify(validatedCase));
+  stripped.customer_validation = null;
+  const strippedResult = validateAiValueEvidenceCase(stripped);
+  assert.equal(strippedResult.valid, false);
+  assert.ok(
+    strippedResult.gaps.some((gap) =>
+      gap.includes("evidence_quality.evidence_level exceeds what outcome evidence supports")
     )
   );
 });

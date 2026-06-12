@@ -131,6 +131,35 @@ should be modeled, reviewed, and carried into a caveated executive readout. It
 does not mean FluencyTracr has proven ROI, calculated realized savings, or
 created customer-facing economic output.
 
+### Claim Governance Is Two-Tier (Amended 2026-06-12)
+
+Claim boundaries on the Value Evidence Case are no longer one flat blocked
+list. The purpose of the governance layer is to back every claim with real
+customer-owned data — so value claims are evidence-gated, not categorically
+banned:
+
+- **Privacy boundaries never relax**, regardless of evidence strength:
+  individual scoring, team or manager ranking, HR analytics, and person-level
+  productivity measurement protect people, not claims.
+- **Evidence-gated claims unlock by rung.** ROI proof, realized ROI language,
+  and customer-facing economic figures unlock at the VALIDATED rung (token
+  `STRONG`): accepted aggregate outcome evidence, exact window alignment,
+  resolved customer-owned assumptions, and a `customer_validation` block
+  recording the customer's sign-off on the economic inputs. Causality has its
+  own gate and additionally requires an approved baseline/comparison evidence
+  design.
+- **Figures stay customer-owned even when unlocked.** FluencyTracr still never
+  computes or stores economic output (`economic_output_policy` stays false); a
+  validated case references the customer's own approved figures via the
+  validation reference, and its caveats must say the figures are
+  customer-computed and customer-approved.
+
+Each case carries `claim_gates` showing every gated claim, its LOCKED or
+UNLOCKED state, and what unlocks it. The validator recomputes gate states
+fail-closed: a case cannot drop a locked claim from `blocked_claims`, cannot
+claim the VALIDATED rung without the customer validation, and cannot use
+causal language without the approved design.
+
 For Phase 14 Value Improvement Loop, use
 [`scripts/validate_ai_value_improvement_loop.mjs`](../../../scripts/validate_ai_value_improvement_loop.mjs)
 with the seeded Customer Support improvement fixture in
