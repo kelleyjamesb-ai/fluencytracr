@@ -87,6 +87,32 @@ const FORBIDDEN_LANGUAGE_PATTERNS = [
   /manager'?s team is underperforming/i
 ];
 
+const FORBIDDEN_KEY_PATTERNS = [
+  /(^|_)user(_|$)/i,
+  /email/i,
+  /employee/i,
+  /manager/i,
+  /person/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /file_content/i,
+  /ticket_text/i,
+  /raw_/i,
+  /direct_identifiers/i,
+  /hris/i,
+  /individual/i,
+  /productivity_measurement/i,
+  /productivity_ranking/i,
+  /people_decisioning/i,
+  /compensation_or_performance_inference/i
+];
+
+const FORBIDDEN_KEY_SCAN_EXEMPTIONS = new Set([
+  "safe_language",
+  "financial_translation_policy"
+]);
+
 export interface EbitaBridgeValidationResult {
   schema_version: string;
   ebita_bridge_id: string | null;
@@ -139,6 +165,24 @@ function safeLanguageContainsForbiddenPhrase(phrases: any[]): boolean {
   return phrases.some((phrase) =>
     FORBIDDEN_LANGUAGE_PATTERNS.some((pattern) => pattern.test(String(phrase)))
   );
+}
+
+function isForbiddenKey(key: string): boolean {
+  return FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key));
+}
+
+function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Set<string> {
+  if (!value || typeof value !== "object") return fields;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectForbiddenFields(item, fields));
+    return fields;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    if (FORBIDDEN_KEY_SCAN_EXEMPTIONS.has(key)) continue;
+    if (isForbiddenKey(key)) fields.add(key);
+    collectForbiddenFields(nested, fields);
+  }
+  return fields;
 }
 
 function roiGate(context: any): any {
@@ -472,6 +516,12 @@ function collectSafeLanguageGaps(bridge: any): string[] {
   return gaps;
 }
 
+function collectForbiddenFieldGaps(bridge: any): string[] {
+  return [...collectForbiddenFields(bridge)]
+    .sort()
+    .map((field) => `Forbidden field detected: ${field}`);
+}
+
 export function validateEbitaBridge(
   bridge: any,
   context?: { roiScenario?: any }
@@ -483,7 +533,8 @@ export function validateEbitaBridge(
     ...collectLeverGaps(bridge),
     ...collectEvidenceQualityGaps(bridge),
     ...collectPolicyGaps(bridge, context ?? {}),
-    ...collectSafeLanguageGaps(bridge)
+    ...collectSafeLanguageGaps(bridge),
+    ...collectForbiddenFieldGaps(bridge)
   ];
   const mode = translationMode(bridge);
   return {

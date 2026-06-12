@@ -207,6 +207,83 @@ def test_fixture_rows_emit_aggregate_only_v3_payloads_and_run_report():
             assert forbidden not in serialized
 
 
+def test_connector_coalesces_duplicate_source_rows_before_emitting_payloads():
+    rows = [
+        {
+            "source_table": "scrubbed_llm_call",
+            "workflow_id": "workflow:case_resolution",
+            "jbtd_id": None,
+            "persona_id": None,
+            "cohort_size": 7,
+            "event_count": 20,
+            "completion_rate": 0.5,
+            "error_rate": 0.1,
+            "abandonment_rate": 0.2,
+            "recovery_rate": 0.3,
+            "verification_rate": 0.4,
+            "p50_latency_ms": 100,
+            "p95_latency_ms": 300,
+            "freq_p10": 1.0,
+            "freq_p50": 2.0,
+            "freq_p90": 3.0,
+            "freq_p99": 4.0,
+            "engagement_p10": 1.0,
+            "engagement_p50": 2.0,
+            "engagement_p90": 3.0,
+            "engagement_p99": 4.0,
+            "breadth_p10": 1.0,
+            "breadth_p50": 2.0,
+            "breadth_p90": 3.0,
+            "breadth_p99": 4.0,
+        },
+        {
+            "source_table": "scrubbed_workflows",
+            "workflow_id": "workflow:case_resolution",
+            "jbtd_id": None,
+            "persona_id": None,
+            "cohort_size": 9,
+            "event_count": 60,
+            "completion_rate": 0.75,
+            "error_rate": 0.05,
+            "abandonment_rate": 0.1,
+            "recovery_rate": 0.2,
+            "verification_rate": 0.5,
+            "p50_latency_ms": 200,
+            "p95_latency_ms": 500,
+            "freq_p10": 2.0,
+            "freq_p50": 3.0,
+            "freq_p90": 5.0,
+            "freq_p99": 8.0,
+            "engagement_p10": 2.0,
+            "engagement_p50": 3.0,
+            "engagement_p90": 5.0,
+            "engagement_p99": 8.0,
+            "breadth_p10": 2.0,
+            "breadth_p50": 3.0,
+            "breadth_p90": 5.0,
+            "breadth_p99": 8.0,
+        },
+    ]
+
+    payloads, report = rows_to_v3_payloads(
+        rows,
+        cohort_id="glean-dogfood",
+        calibration_id="scio-prod-60d-2026-05",
+        window_start="2026-04-12T00:00:00Z",
+        window_end="2026-06-11T00:00:00Z",
+    )
+
+    assert len(payloads) == 1
+    assert report["payloads_emitted"] == 1
+    assert report["emitted_slices"] == 1
+    assert report["source_rows_reviewed"] == 2
+    assert report["source_tables"] == ["scrubbed_llm_call", "scrubbed_workflows"]
+    assert payloads[0]["workflow_id"] == "workflow:case_resolution"
+    assert payloads[0]["cohort_size"] == 7
+    assert payloads[0]["quality_signals"]["completion_rate"] == 0.6875
+    assert payloads[0]["quality_signals"]["p50_latency_ms"] == 175
+
+
 def test_cli_fixture_dry_run_writes_payloads_and_report(tmp_path):
     completed = subprocess.run(
         [

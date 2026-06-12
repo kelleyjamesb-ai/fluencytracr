@@ -371,6 +371,24 @@ test("missing blocked claims in safe language is invalid", () => {
   );
 });
 
+test("rejects forbidden fields anywhere in EBITA bridge output artifacts", () => {
+  const bridge = structuredClone(baseEbitaBridge);
+  bridge.output = {
+    employee_email: "person@example.com",
+    user_id: "user-123",
+    raw_prompt: "unsafe raw prompt",
+    productivity_measurement: true
+  };
+
+  const result = validateEbitaBridge(bridge, { roiScenario: sourceRoiScenario });
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: employee_email"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: productivity_measurement"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: raw_prompt"), true);
+  assert.equal(result.gaps.includes("Forbidden field detected: user_id"), true);
+});
+
 test("buildEbitaBridgeFromValueObjects creates a caveated directional EBITA bridge when ROI allows modeled financial routing but not realized ROI", () => {
   const blueprint = readExample("customer-support-blueprint.json");
   const metricsLibrary = readExample("customer-support-metrics-library.json");

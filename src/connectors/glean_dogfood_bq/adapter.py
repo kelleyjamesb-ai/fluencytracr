@@ -550,6 +550,63 @@ def apply_slice_k_min(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]],
     }
 
 
+def _weighted_numeric(rows: list[dict[str, Any]], key: str, *, integer: bool = False) -> float | int:
+    total_weight = sum(max(0, int(row.get("event_count") or 0)) for row in rows)
+    if total_weight <= 0:
+        values = [float(row.get(key, 0) or 0) for row in rows]
+        value = sum(values) / len(values) if values else 0.0
+    else:
+        value = (
+            sum(float(row.get(key, 0) or 0) * max(0, int(row.get("event_count") or 0)) for row in rows)
+            / total_weight
+        )
+    return int(round(value)) if integer else value
+
+
+def coalesce_duplicate_slices(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge duplicate source-table aggregates into one V3 slice row."""
+
+    grouped: dict[tuple[str, str | None, str | None], list[dict[str, Any]]] = {}
+    for row in rows:
+        grouped.setdefault(_slice_key(row), []).append(row)
+
+    coalesced: list[dict[str, Any]] = []
+    for key, slice_rows in grouped.items():
+        if len(slice_rows) == 1:
+            coalesced.append(slice_rows[0])
+            continue
+
+        base = dict(slice_rows[0])
+        base["workflow_id"], base["jbtd_id"], base["persona_id"] = key
+        base["source_table"] = ",".join(
+            sorted({str(row.get("source_table")) for row in slice_rows if row.get("source_table")})
+        )
+        base["cohort_size"] = min(int(row.get("cohort_size") or 0) for row in slice_rows)
+        base["event_count"] = sum(int(row.get("event_count") or 0) for row in slice_rows)
+
+        for rate_key in (
+            "completion_rate",
+            "error_rate",
+            "abandonment_rate",
+            "recovery_rate",
+            "verification_rate",
+        ):
+            base[rate_key] = _weighted_numeric(slice_rows, rate_key)
+
+        for latency_key in ("p50_latency_ms", "p95_latency_ms"):
+            base[latency_key] = _weighted_numeric(slice_rows, latency_key, integer=True)
+
+        for prefix in ("freq", "engagement", "breadth"):
+            for percentile in ("p10", "p50", "p90", "p99"):
+                base[f"{prefix}_{percentile}"] = _weighted_numeric(
+                    slice_rows,
+                    f"{prefix}_{percentile}",
+                )
+
+        coalesced.append(base)
+    return coalesced
+
+
 def load_fixture_rows(fixture_dir: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for path in sorted(fixture_dir.glob("*.json")):
@@ -638,6 +695,7 @@ def rows_to_v3_payloads(
     for row in rows:
         guard_no_forbidden_fields(row)
     emitted, report = apply_slice_k_min(rows)
+    emitted = coalesce_duplicate_slices(emitted)
     payloads = [
         row_to_v3_payload(
             row,

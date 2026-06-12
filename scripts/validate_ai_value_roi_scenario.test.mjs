@@ -487,6 +487,25 @@ test("requires customer-facing approval and governance signoff for customer-faci
   assert.equal(allowed.feeds.customer_facing_economic_output, true);
 });
 
+test("routes customer-facing economic output fields through the financial claim gate", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.output = {
+    customer_facing_economic_output: true
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output must be true when customer_facing_economic_output is requested"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output requires mode CUSTOMER_FACING_APPROVED"),
+    true
+  );
+});
+
 test("allows causality language only with experimental or quasi-experimental design", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.financial_claim_gate.mode = "EXECUTIVE_CAVEATED";
@@ -561,6 +580,19 @@ test("allows aggregate workforce analytics only with all workforce safety checks
   assert.equal(allowed.valid, true);
 });
 
+test("rejects invalid economic output policy modes in engine-only validation", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.economic_output_policy.mode = "CUSTOMER_FACING_APPROVED";
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("economic_output_policy.mode is invalid: CUSTOMER_FACING_APPROVED"),
+    true
+  );
+});
+
 test("rejects unsafe safe-value language and missing blocked claims", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.safe_value_language.allowed_phrases = [
@@ -597,6 +629,35 @@ test("rejects governance boundaries that imply production actions or unsafe clai
     true
   );
   assert.equal(result.gaps.includes("governance_boundaries.autonomous_customer_actions is true"), true);
+});
+
+test("keeps legacy HRIS or people analytics governance boundary blocked when gates are present", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.governance_boundaries.hris_or_people_analytics = true;
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("governance_boundaries.hris_or_people_analytics is true"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("governance_boundaries.hris_or_people_analytics must be false"),
+    true
+  );
+});
+
+test("rejects legacy productivity measurement fields when gates are present", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.output = {
+    productivity_measurement: true
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("Forbidden field detected: productivity_measurement"), true);
 });
 
 test("always blocks direct identifiers, raw content, and named employee productivity fields", () => {

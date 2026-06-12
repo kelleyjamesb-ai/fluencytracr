@@ -51,6 +51,11 @@ const ALLOWED_CLAIM_LEVELS = new Set([
 ]);
 
 const ALLOWED_MODEL_ROLES = new Set(["PRIMARY", "CONTEXT", "GUARDRAIL"]);
+const ALLOWED_ECONOMIC_OUTPUT_POLICY_MODES = new Set([
+  "MODELED_RANGE_ONLY",
+  "VALUE_HYPOTHESIS_ONLY",
+  "BLOCKED"
+]);
 const REQUIRED_SCENARIO_BANDS = ["CONSERVATIVE", "BASE_CASE", "EXPANDED"];
 
 const REQUIRED_COVERAGE_LANES = [
@@ -113,6 +118,10 @@ const PLATFORM_GOVERNANCE_BOUNDARIES = [
 const ALWAYS_BLOCKED_GOVERNANCE_BOUNDARIES = [
   ...PLATFORM_GOVERNANCE_BOUNDARIES,
   ...ALWAYS_BLOCKED_CLAIMS
+];
+
+const OPTIONAL_ALWAYS_BLOCKED_GOVERNANCE_BOUNDARIES = [
+  "hris_or_people_analytics"
 ];
 
 const ECONOMIC_OUTPUT_FLAGS = [
@@ -186,6 +195,9 @@ const FINANCIAL_OUTPUT_FIELD_PATTERNS: Record<string, RegExp[]> = {
     /realized_roi/i,
     /roi_calculation/i
   ],
+  customer_facing_economic_output: [
+    /^customer_facing_economic_output$/i
+  ],
   causality_language: [
     /causal/i,
     /causality_claim/i
@@ -229,6 +241,7 @@ const FORBIDDEN_KEY_PATTERNS = [
   /direct_identifiers/i,
   /hris/i,
   /individual/i,
+  /productivity_measurement/i,
   /productivity_ranking/i,
   /people_decisioning/i,
   /compensation_or_performance_inference/i
@@ -591,6 +604,12 @@ function collectEconomicPolicyGaps(scenario: any): string[] {
   const gaps: string[] = [];
   const policy = scenario?.economic_output_policy ?? {};
   requireField(policy.mode, "economic_output_policy.mode", gaps);
+  if (
+    policy.mode &&
+    !ALLOWED_ECONOMIC_OUTPUT_POLICY_MODES.has(policy.mode)
+  ) {
+    gaps.push(`economic_output_policy.mode is invalid: ${policy.mode}`);
+  }
   for (const flag of ECONOMIC_OUTPUT_FLAGS) {
     if (policy[flag] !== true && policy[flag] !== false) {
       gaps.push(`economic_output_policy.${flag} must be boolean`);
@@ -683,11 +702,21 @@ function collectGovernanceGaps(scenario: any): string[] {
     gaps.push(`Forbidden field detected: ${field}`);
   }
   const boundaries = scenario?.governance_boundaries ?? {};
-  for (const boundary of governanceBoundariesFor(scenario)) {
+  const requiredBoundaries = new Set(governanceBoundariesFor(scenario));
+  for (const boundary of requiredBoundaries) {
     if (boundaries[boundary] === true) {
       gaps.push(`governance_boundaries.${boundary} is true`);
     }
     if (boundaries[boundary] !== false) {
+      gaps.push(`governance_boundaries.${boundary} must be false`);
+    }
+  }
+  for (const boundary of OPTIONAL_ALWAYS_BLOCKED_GOVERNANCE_BOUNDARIES) {
+    if (requiredBoundaries.has(boundary)) continue;
+    if (boundaries[boundary] === true) {
+      gaps.push(`governance_boundaries.${boundary} is true`);
+    }
+    if (boundaries[boundary] !== undefined && boundaries[boundary] !== false) {
       gaps.push(`governance_boundaries.${boundary} must be false`);
     }
   }
