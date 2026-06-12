@@ -146,6 +146,40 @@ analytics, productivity ranking, tunable suppression threshold, autonomous
 customer action, direct identifier, or customer-facing economic output is
 authorized by this contract.
 
+For the North Star Value Evidence Case, use
+[`scripts/validate_ai_value_evidence_case.mjs`](../../../scripts/validate_ai_value_evidence_case.mjs)
+with the seeded Customer Support fixture in
+[`examples/customer-support-value-evidence-case.json`](./examples/customer-support-value-evidence-case.json)
+and schema in
+[`schemas/ai-value-intelligence/value-evidence-case.schema.json`](../../../schemas/ai-value-intelligence/value-evidence-case.schema.json).
+This is the governed proof object for one workflow slice. It composes the data
+boundary contract, governed ROI scenario, evidence readiness, outcome evidence
+export, and value improvement loop into one case that answers what can safely
+be said about AI value, what evidence supports it, what remains blocked, and
+what the client should do next. The engine validator enforces the evidence
+ladder fail-closed: the evidence level may not exceed what the outcome-evidence
+review state, baseline/comparison window alignment, and customer-owned
+assumptions support; value language is held at observed AI activity when
+outcome evidence is missing or rejected; supported evidence stays caveated and
+non-causal; STRONG remains a future contract state requiring a governed
+evidence design; and the case must carry the amended canonical VBD definitions
+(Velocity is speed to adoption, Breadth is spread including the Repertoire
+coverage view, Depth is workflow-integration embeddedness). No ROI proof,
+causality claim, individual scoring, ranking, HR analytics, raw data, direct
+identifier, or customer-facing economic output is authorized by this contract.
+
+Run:
+
+```bash
+npm run validate:ai-value-evidence-case
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-evidence-case
+```
+
 For the Phase 9.5 Agentic Platform Harness, use
 [`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)
 with the seeded Customer Support handoff fixture in

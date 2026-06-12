@@ -84,10 +84,53 @@ not bury ROI math inside the executive packet or UI.
 Current latest slice:
 
 ```text
-Data Boundary And ROI Evidence Contract
+Value Evidence Case Contract
 ```
 
 What is now in place:
+
+- The first-class `value_evidence_case` object exists:
+  `schemas/ai-value-intelligence/value-evidence-case.schema.json`,
+  seeded fixture
+  `docs/contracts/ai-value-intelligence/examples/customer-support-value-evidence-case.json`,
+  engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts`
+  (exported from the engine index), CLI wrapper
+  `scripts/validate_ai_value_evidence_case.mjs`, tests
+  `scripts/validate_ai_value_evidence_case.test.mjs` plus narrow coverage in
+  `scripts/ai_value_engine.test.mjs`, and package scripts
+  `validate:ai-value-evidence-case` / `test:ai-value-evidence-case`.
+- The case composes the existing governed objects (data boundary contract, ROI
+  scenario, evidence readiness, outcome evidence export, value improvement
+  loop) instead of inventing a parallel model; `buildValueEvidenceCase`
+  derives the evidence level fail-closed.
+- Evidence-ladder gating is enforced by the engine validator: evidence level
+  may not exceed what the outcome-evidence review state, exact
+  baseline/comparison window alignment, and customer-owned assumptions
+  support; missing or rejected outcome evidence holds value language at
+  observed AI activity; SUBMITTED stays directional (human acceptance is
+  required before stronger language); SUPPORTED stays caveated and non-causal
+  with a required "does not prove ROI or causality" caveat; STRONG always
+  fails closed pending a future governed evidence design contract.
+- The case must carry the amended canonical VBD definitions
+  (`speed_to_adoption`, `spread_across_org_functions_workflows_surfaces`,
+  `workflow_integration_embeddedness`) — the validator rejects anything else.
+- Not yet done (intentionally deferred): backend object-type registration and
+  persistence for `value_evidence_case`, and any UI presentation of the case.
+  Contract before UI.
+
+Recommended next slice: register `value_evidence_case` in the backend object
+registry and present it in the Workspace using client-facing language (AI
+Fluency, VBD Map, Outcome Metric, Value Evidence Case, Intervention/Retest),
+or add the retest-result object so the loop can learn — choose from observed
+review gaps.
+
+Previously completed slice:
+
+```text
+Data Boundary And ROI Evidence Contract
+```
+
+What is in place from that slice:
 
 - The AI Value Platform has a first-class local contract for useful
   organizational data sources across AI work evidence, AI Fluency, workflow
@@ -117,20 +160,6 @@ What is now in place:
   customer action, unsupported ROI proof, causality claim, individual scoring,
   HR analytics surface, productivity ranking, raw prompt or response storage,
   direct identifiers, or customer-facing dollar output.
-
-Recommended next slice:
-
-```text
-Value Evidence Case Contract
-```
-
-Create one first-class `value_evidence_case` schema that assembles selected
-metric, customer-owned outcome evidence, VBD state, data-boundary status,
-evidence level, scenario posture, caveats, and sponsor decision into one
-governed object. Keep the same boundary: no ROI proof, no causality, no
-individual scoring, no HR analytics surface, no productivity ranking, and no
-customer-facing dollar output unless a later governed value-modeling contract
-explicitly promotes that exact scope.
 
 Previously completed slice:
 

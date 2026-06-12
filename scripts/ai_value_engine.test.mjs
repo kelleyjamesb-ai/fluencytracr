@@ -20,7 +20,9 @@ import {
   validateExecutivePacket,
   validateDataBoundaryContract,
   validateValueImprovementLoop,
-  buildValueImprovementLoopFromRoiScenario
+  buildValueImprovementLoopFromRoiScenario,
+  validateValueEvidenceCase,
+  buildValueEvidenceCase
 } from "../shared/dist/aiValueEngine/index.js";
 
 function readExample(name) {
@@ -609,4 +611,27 @@ test("value improvement loop validation rejects ROI proof, identifiers, and miss
   );
   assert.ok(validation.gaps.some((gap) => gap.includes("Forbidden field")));
   assert.ok(validation.gaps.some((gap) => gap.includes("unsafe claim language")));
+});
+
+test("value evidence case engine exports validate the seeded fixture and gate the evidence ladder", () => {
+  const fixture = readExample("customer-support-value-evidence-case.json");
+  const validation = validateValueEvidenceCase(fixture);
+
+  assert.equal(validation.valid, true);
+  assert.equal(validation.evidence_level, "CAVEATED");
+  assert.equal(validation.allowed_claim_level, "CAVEATED_VALUE_INVESTIGATION");
+  assert.equal(validation.feeds.customer_facing_economic_output, false);
+
+  const evidenceCase = buildValueEvidenceCase({
+    dataBoundary: readExample("customer-support-data-boundary-roi-evidence.json"),
+    roiScenario: readExample("customer-support-roi-scenario.json"),
+    readiness: readExample("customer-support-evidence-readiness.json"),
+    outcomeEvidenceExport: readExample("customer-support-outcome-evidence-export.json"),
+    improvementLoop: readExample("customer-support-value-improvement-loop.json")
+  });
+
+  assert.equal(validateValueEvidenceCase(evidenceCase).valid, true);
+  assert.equal(evidenceCase.vbd_summary.depth.definition, "workflow_integration_embeddedness");
+  // The seeded export is SUBMITTED, so the built case stays directional.
+  assert.equal(evidenceCase.evidence_quality.evidence_level, "DIRECTIONAL");
 });

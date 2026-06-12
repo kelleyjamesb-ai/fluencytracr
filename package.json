@@ -29,6 +29,8 @@
     "test:ai-value-data-boundary": "npm run build --workspace shared && node --test scripts/validate_ai_value_data_boundary.test.mjs",
     "validate:ai-value-improvement-loop": "npm run build --workspace shared && node scripts/validate_ai_value_improvement_loop.mjs",
     "test:ai-value-improvement-loop": "npm run build --workspace shared && node --test scripts/validate_ai_value_improvement_loop.test.mjs",
+    "validate:ai-value-evidence-case": "npm run build --workspace shared && node scripts/validate_ai_value_evidence_case.mjs",
+    "test:ai-value-evidence-case": "npm run build --workspace shared && node --test scripts/validate_ai_value_evidence_case.test.mjs",
     "validate:ai-value-agent-harness": "npm run build --workspace shared && node scripts/validate_ai_value_agent_harness.mjs",
     "test:ai-value-agent-harness": "npm run build --workspace shared && node --test scripts/validate_ai_value_agent_harness.test.mjs",
     "validate:ai-value-readiness": "npm run build --workspace shared && node scripts/validate_ai_value_readiness.mjs",

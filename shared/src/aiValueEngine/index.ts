@@ -54,6 +54,17 @@ export {
 export type { DataBoundaryValidationResult } from "./dataBoundary";
 
 export {
+  validateValueEvidenceCase,
+  buildValueEvidenceCase,
+  VALUE_EVIDENCE_CASE_SCHEMA_VERSION
+} from "./valueEvidenceCase";
+export type {
+  ValueEvidenceCaseValidationResult,
+  BuildValueEvidenceCaseInputs,
+  BuildValueEvidenceCaseOptions
+} from "./valueEvidenceCase";
+
+export {
   validateEvidenceReadiness,
   buildEvidenceReadinessFromObjects,
   deriveReadinessDecision
