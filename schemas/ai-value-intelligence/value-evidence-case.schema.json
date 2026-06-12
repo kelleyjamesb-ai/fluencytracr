@@ -218,6 +218,7 @@
             "INTERNAL_HYPOTHESIS_ONLY",
             "CAVEATED_VALUE_INVESTIGATION",
             "SUPPORTED_VALUE_MOVEMENT",
+            "VALIDATED_VALUE_REALIZATION",
             "BLOCKED"
           ]
         },
@@ -236,6 +237,36 @@
     "blocked_claims": {
       "type": "array",
       "items": { "$ref": "#/$defs/blocked_claim" }
+    },
+    "customer_validation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "economic_inputs_approved",
+        "approved_by_role",
+        "validation_reference"
+      ],
+      "properties": {
+        "economic_inputs_approved": { "const": true },
+        "approved_by_role": { "type": "string" },
+        "validation_reference": { "type": "string" }
+      }
+    },
+    "evidence_design": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "design_state",
+        "design_type",
+        "approved_by_role",
+        "design_reference"
+      ],
+      "properties": {
+        "design_state": { "const": "APPROVED_COMPARISON_DESIGN" },
+        "design_type": { "type": "string" },
+        "approved_by_role": { "type": "string" },
+        "design_reference": { "type": "string" }
+      }
     },
     "scenario_posture": {
       "type": "object",

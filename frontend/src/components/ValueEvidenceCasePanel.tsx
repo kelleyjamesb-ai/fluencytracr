@@ -34,8 +34,9 @@ const evidenceLevelCopy: Record<string, { label: string; meaning: string; tone: 
     tone: "good"
   },
   STRONG: {
-    label: "Strong",
-    meaning: "Reserved for repeated supported evidence under a future approved evidence design.",
+    label: "Validated",
+    meaning:
+      "Accepted evidence, resolved assumptions, and customer-approved economic inputs back realized-value language for this slice.",
     tone: "good"
   },
   BLOCKED: {
@@ -50,6 +51,8 @@ const claimLevelCopy: Record<string, string> = {
   INTERNAL_HYPOTHESIS_ONLY: "We can discuss an internal hypothesis, not a client-facing value claim.",
   CAVEATED_VALUE_INVESTIGATION: "We can present a caveated value investigation for this workflow.",
   SUPPORTED_VALUE_MOVEMENT: "We can present bounded value movement for this workflow slice.",
+  VALIDATED_VALUE_REALIZATION:
+    "We can present customer-validated realized value for this workflow slice.",
   BLOCKED: "Value language is blocked until governance gates pass."
 };
 
@@ -88,11 +91,35 @@ const blockedClaimCopy: Record<string, string> = {
   causality_claim: "Causality claims",
   individual_scoring: "Individual scoring",
   team_or_manager_ranking: "Team or manager ranking",
-  hr_analytics: "HR analytics",
-  productivity_measurement: "Productivity measurement",
+  hr_analytics: "Individual-level HR analytics",
+  productivity_measurement: "Person-level productivity measurement",
   realized_roi_calculation: "Realized ROI calculation",
   customer_facing_economic_output: "Customer-facing dollar figures"
 };
+
+// Privacy boundaries protect people and never relax, regardless of evidence.
+const PRIVACY_BOUNDARY_CLAIMS = [
+  "individual_scoring",
+  "team_or_manager_ranking",
+  "hr_analytics",
+  "productivity_measurement"
+];
+
+const claimGateUnlockCopy: Record<string, string> = {
+  roi_proof: "Unlocks with accepted evidence, resolved assumptions, and customer-approved economic inputs.",
+  realized_roi_calculation:
+    "Unlocks when the customer computes realized ROI from its own approved inputs.",
+  customer_facing_economic_output:
+    "Unlocks for customer-computed, customer-approved figures referenced by this case.",
+  causality_claim:
+    "Unlocks with an approved baseline/comparison evidence design reviewed by the customer."
+};
+
+interface ClaimGate {
+  claim?: string;
+  state?: string;
+  unlock_requirements?: string;
+}
 
 const humanizeWindow = (value: unknown): string => {
   if (typeof value !== "string" || !value) return "Not set";
@@ -125,6 +152,11 @@ interface EvidenceCasePayload {
     required_caveats?: string[];
   };
   blocked_claims?: string[];
+  claim_gates?: ClaimGate[];
+  customer_validation?: {
+    approved_by_role?: string;
+    validation_reference?: string;
+  } | null;
   sponsor_decision?: { decision_state?: string; decision_owner_role?: string; decision_basis?: string };
   intervention_retest?: {
     next_action?: string;
@@ -248,6 +280,11 @@ export const ValueEvidenceCasePanel = () => {
   const openAssumptions = (selected.customer_owned_assumptions ?? []).filter(
     (assumption) => assumption.state !== "PRESENT"
   );
+  const blockedClaims = selected.blocked_claims ?? [];
+  const hasClaimGates = (selected.claim_gates ?? []).length > 0;
+  const legacyBlockedValueClaims = hasClaimGates
+    ? []
+    : blockedClaims.filter((claim) => !PRIVACY_BOUNDARY_CLAIMS.includes(claim));
 
   return (
     <section className="ai-value-panel ai-value-evidence-case-panel" aria-label="Value evidence case">
@@ -363,14 +400,73 @@ export const ValueEvidenceCasePanel = () => {
           </ul>
         </div>
         <div className="ai-value-case-language-col">
-          <h3>Never claimed</h3>
+          <h3>Privacy boundaries — never claimed</h3>
           <ul>
-            {(selected.blocked_claims ?? []).map((blockedClaim) => (
+            {PRIVACY_BOUNDARY_CLAIMS.filter((claim) =>
+              blockedClaims.includes(claim)
+            ).map((blockedClaim) => (
               <li key={blockedClaim}>{blockedClaimCopy[blockedClaim] ?? blockedClaim.replace(/_/g, " ")}</li>
             ))}
           </ul>
         </div>
+        {legacyBlockedValueClaims.length > 0 && (
+          <div className="ai-value-case-language-col">
+            <h3>Value claims still blocked</h3>
+            <ul>
+              {legacyBlockedValueClaims.map((blockedClaim) => (
+                <li key={blockedClaim}>
+                  {blockedClaimCopy[blockedClaim] ?? blockedClaim.replace(/_/g, " ")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
+
+      {hasClaimGates && (
+        <div className="ai-value-case-gates" aria-label="Evidence-gated claims">
+          <h3>Claims that unlock with evidence</h3>
+          <p className="ai-value-case-gates-intro">
+            These are gated, not banned: each opens once the data supports it. Figures stay
+            customer-computed and customer-approved.
+            {selected.customer_validation?.approved_by_role && (
+              <>
+                {" "}
+                Economic inputs approved by{" "}
+                {humanizeRole(selected.customer_validation.approved_by_role)}.
+              </>
+            )}
+          </p>
+          <div className="ai-value-case-gate-grid">
+            {(selected.claim_gates ?? []).map((gate) => {
+              const unlocked = gate.state === "UNLOCKED";
+              return (
+                <div
+                  className={
+                    unlocked
+                      ? "ai-value-case-gate ai-value-case-gate-unlocked"
+                      : "ai-value-case-gate"
+                  }
+                  key={gate.claim}
+                >
+                  <div className="ai-value-case-gate-head">
+                    <strong>{blockedClaimCopy[gate.claim ?? ""] ?? gate.claim}</strong>
+                    <StatusPill
+                      label={unlocked ? "Unlocked" : "Locked"}
+                      tone={unlocked ? "good" : "neutral"}
+                    />
+                  </div>
+                  <p>
+                    {unlocked
+                      ? "The evidence behind this case supports this claim, within its caveats."
+                      : claimGateUnlockCopy[gate.claim ?? ""] ?? gate.unlock_requirements}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {openAssumptions.length > 0 && (
         <div className="ai-value-case-assumptions">

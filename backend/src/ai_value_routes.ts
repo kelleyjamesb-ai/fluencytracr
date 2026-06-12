@@ -308,7 +308,15 @@ export function registerAiValueRoutes(app: Express): void {
           roiScenario: loaded.roi_scenario,
           readiness: loaded.evidence_readiness,
           outcomeEvidenceExport: outcomeExport,
-          improvementLoop
+          improvementLoop,
+          customerValidation:
+            body.customer_validation && typeof body.customer_validation === "object"
+              ? body.customer_validation
+              : undefined,
+          evidenceDesign:
+            body.evidence_design && typeof body.evidence_design === "object"
+              ? body.evidence_design
+              : undefined
         },
         {
           caseId: stringRef(body.case_id) ?? undefined,

@@ -390,7 +390,7 @@ const BLOCKED_OUTPUT_LABELS: Record<string, string> = {
   causality_claim: "No causality claim",
   individual_scoring: "No individual scoring",
   team_or_manager_ranking: "No team or manager ranking",
-  hr_analytics: "No HR analytics",
+  hr_analytics: "No individual-level HR analytics",
   productivity_measurement: "No productivity measurement"
 };
 

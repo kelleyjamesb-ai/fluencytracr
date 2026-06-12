@@ -142,6 +142,68 @@ describe("AI value evidence case API", () => {
     );
   });
 
+  it("assembles an approved-design case without losing the causality gate state", async () => {
+    const resolvedScenario = JSON.parse(JSON.stringify(roiScenario));
+    resolvedScenario.customer_owned_assumptions =
+      resolvedScenario.customer_owned_assumptions.map((assumption: Record<string, unknown>) => ({
+        ...assumption,
+        state: "PRESENT"
+      }));
+    await putObject("data_boundary", dataBoundary.contract_id as string, dataBoundary);
+    await putObject("roi_scenario", resolvedScenario.roi_scenario_id as string, resolvedScenario);
+    await putObject("evidence_readiness", readiness.readiness_id as string, readiness);
+    await putObject(
+      "outcome_evidence_export",
+      outcomeExport.export_id as string,
+      outcomeExport
+    );
+    const review = await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED" });
+    expect(review.status).toBe(200);
+
+    const response = await request(app)
+      .post("/api/v1/ai-value/evidence-case/assemble")
+      .set(writeAuth)
+      .send({
+        data_boundary_contract_id: dataBoundary.contract_id,
+        roi_scenario_id: resolvedScenario.roi_scenario_id,
+        readiness_id: readiness.readiness_id,
+        outcome_export_id: outcomeExport.export_id,
+        customer_validation: {
+          economic_inputs_approved: true,
+          approved_by_role: "finance_partner",
+          validation_reference: "fy26_q2_value_validation_memo",
+          validation_statement: "This free-form note must not be stored."
+        },
+        evidence_design: {
+          design_state: "APPROVED_COMPARISON_DESIGN",
+          design_type: "matched_comparison",
+          approved_by_role: "analytics_owner",
+          design_reference: "fy26_q2_comparison_design"
+        }
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.payload.evidence_quality.evidence_level).toBe("STRONG");
+    expect(response.body.payload.evidence_design.design_state).toBe(
+      "APPROVED_COMPARISON_DESIGN"
+    );
+    expect(response.body.payload.customer_validation.validation_statement).toBeUndefined();
+
+    const gateState = Object.fromEntries(
+      response.body.payload.claim_gates.map((gate: Record<string, string>) => [
+        gate.claim,
+        gate.state
+      ])
+    );
+    expect(gateState.causality_claim).toBe("UNLOCKED");
+    expect(response.body.payload.blocked_claims).not.toContain("causality_claim");
+  });
+
   it("returns 404 when a referenced source object is missing", async () => {
     const response = await request(app)
       .post("/api/v1/ai-value/evidence-case/assemble")

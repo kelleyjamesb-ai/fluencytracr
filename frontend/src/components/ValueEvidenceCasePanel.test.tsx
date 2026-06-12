@@ -43,7 +43,22 @@ const supportCase = {
     ],
     required_caveats: ["This does not prove ROI or causality."]
   },
-  blocked_claims: ["roi_proof", "customer_facing_economic_output"],
+  blocked_claims: [
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "roi_proof",
+    "realized_roi_calculation",
+    "customer_facing_economic_output",
+    "causality_claim"
+  ],
+  claim_gates: [
+    { claim: "roi_proof", state: "LOCKED" },
+    { claim: "realized_roi_calculation", state: "LOCKED" },
+    { claim: "customer_facing_economic_output", state: "LOCKED" },
+    { claim: "causality_claim", state: "LOCKED" }
+  ],
   sponsor_decision: {
     decision_state: "STRENGTHEN_EVIDENCE",
     decision_owner_role: "customer_support_business_sponsor",
@@ -78,13 +93,32 @@ const salesCase = {
   customer_owned_assumptions: [
     { assumption_id: "deal_mix_stability", state: "PRESENT", owner: "revenue_operations" }
   ],
-  evidence_quality: { evidence_level: "SUPPORTED", rationale: "Supported." },
+  evidence_quality: { evidence_level: "STRONG", rationale: "Validated." },
   safe_value_language: {
-    allowed_claim_level: "SUPPORTED_VALUE_MOVEMENT",
+    allowed_claim_level: "VALIDATED_VALUE_REALIZATION",
     allowed_phrases: [
-      "Customer-owned outcome evidence supports a caveated value movement readout for this workflow slice."
+      "Customer-validated realized value is supportable for this workflow slice."
     ],
-    required_caveats: ["This does not prove ROI or causality."]
+    required_caveats: [
+      "Realized-value figures are customer-computed and customer-approved; this does not prove causality."
+    ]
+  },
+  blocked_claims: [
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "causality_claim"
+  ],
+  claim_gates: [
+    { claim: "roi_proof", state: "UNLOCKED" },
+    { claim: "realized_roi_calculation", state: "UNLOCKED" },
+    { claim: "customer_facing_economic_output", state: "UNLOCKED" },
+    { claim: "causality_claim", state: "LOCKED" }
+  ],
+  customer_validation: {
+    approved_by_role: "sales_finance_partner",
+    validation_reference: "fy26_q2_memo"
   }
 };
 
@@ -129,8 +163,10 @@ describe("ValueEvidenceCasePanel", () => {
       screen.getByText("We can present a caveated value investigation for this workflow.")
     ).toBeInTheDocument();
     expect(screen.getByText("This does not prove ROI or causality.")).toBeInTheDocument();
+    // Privacy boundaries render as permanent; value claims render as gates.
+    expect(screen.getByText("Individual scoring")).toBeInTheDocument();
     expect(screen.getByText("ROI proof")).toBeInTheDocument();
-    expect(screen.getByText("Customer-facing dollar figures")).toBeInTheDocument();
+    expect(screen.getAllByText("Locked").length).toBe(4);
     // No internal tokens leak to the client.
     expect(screen.queryByText("CAVEATED_VALUE_INVESTIGATION")).not.toBeInTheDocument();
     expect(screen.queryByText("customer_support_case_resolution")).not.toBeInTheDocument();
@@ -142,6 +178,14 @@ describe("ValueEvidenceCasePanel", () => {
     );
     expect(screen.getByText("Sales proposal and RFP response")).toBeInTheDocument();
     expect(screen.getByText("Proposal turnaround time")).toBeInTheDocument();
+
+    // The validated case unlocks ROI-family gates while causality stays locked.
+    expect(
+      screen.getAllByText(/customer-validated realized value/i).length
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("Unlocked").length).toBe(3);
+    expect(screen.getAllByText("Locked").length).toBe(1);
+    expect(screen.getByText(/approved by Sales finance partner/i)).toBeInTheDocument();
   });
 
   it("shows the held empty state when no case exists", async () => {
@@ -152,5 +196,30 @@ describe("ValueEvidenceCasePanel", () => {
     await waitFor(() =>
       expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
     );
+  });
+
+  it("preserves blocked value warnings for legacy cases without claim gates", async () => {
+    const legacyCase = {
+      ...supportCase,
+      claim_gates: undefined
+    };
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockResolvedValue({
+      objects: [summaryOf(legacyCase)]
+    } as never);
+    vi.spyOn(aiValueApi, "fetchAiValueObject").mockResolvedValue({
+      ...summaryOf(legacyCase),
+      payload: legacyCase
+    } as never);
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/What can we safely say about this workflow/i)).toBeInTheDocument()
+    );
+
+    expect(screen.getByText("ROI proof")).toBeInTheDocument();
+    expect(screen.getByText("Customer-facing dollar figures")).toBeInTheDocument();
+    expect(screen.getByText("Causality claims")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Evidence-gated claims")).not.toBeInTheDocument();
   });
 });
