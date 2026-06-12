@@ -1,7 +1,7 @@
 {
   "schema_version": "evidence_bundle.v1",
   "org_id": "org_enterprise_alpha",
-  "window": "30d",
+  "window": "90d",
   "generated_at": "2026-02-21T18:30:00Z",
   "suppression": {
     "k_min": 30,
@@ -72,5 +72,46 @@
   },
   "learning": {
     "trend_direction": "stable"
+  },
+  "forwarded_distribution": {
+    "schema_version": "FT_V3_FORWARDED_DISTRIBUTION_2026_06",
+    "source_schema_version": "FT_V3_2026_05",
+    "cohort_id": "enterprise-alpha-support-90d",
+    "workflow_id": "workflow:SUPPORT_RESOLUTION",
+    "jbtd_id": null,
+    "persona_id": null,
+    "window_start": "2025-11-23T18:30:00Z",
+    "window_end": "2026-02-21T18:30:00Z",
+    "window_days": 90,
+    "cohort_size": 140,
+    "ambiguity_rate": 0.04,
+    "calibration_id": "scio-prod-60d-2026-05",
+    "surface_taxonomy_ids": ["workflow:SUPPORT_RESOLUTION"],
+    "velocity": {
+      "frequency": { "p10": 4, "p50": 18, "p90": 42, "p99": 79 },
+      "engagement": { "p10": 5, "p50": 31, "p90": 57, "p99": 63 },
+      "breadth": { "p10": 1, "p50": 4, "p90": 8, "p99": 11 }
+    },
+    "quality_signals": {
+      "completion_rate": 0.91,
+      "error_rate": 0.03,
+      "abandonment_rate": 0.02,
+      "recovery_rate": 0.74,
+      "verification_rate": 0.69,
+      "p50_latency_ms": 950,
+      "p95_latency_ms": 2800
+    },
+    "distribution_moments": {
+      "frequency_mean": 35.75,
+      "engagement_mean": 39,
+      "breadth_mean": 6
+    },
+    "baseline_stable": true,
+    "value_type": "UNCLASSIFIED",
+    "evidence_grade": "OBJECTIVE",
+    "privacy": {
+      "aggregate_only": true,
+      "person_level_fields_included": false
+    }
   }
 }

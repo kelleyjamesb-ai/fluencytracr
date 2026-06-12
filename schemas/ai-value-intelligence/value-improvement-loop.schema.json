@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/value-improvement-loop.schema.json",
+  "title": "AI Value Improvement Loop",
+  "description": "Docs-backed local schema for advisory value improvement planning when aggregate value targets are not yet improving. This is not a production API contract and does not authorize ROI proof, causality claims, individual scoring, or customer-facing economic output.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "improvement_loop_id",
+    "source_refs",
+    "workflow",
+    "value_target",
+    "vbd_context",
+    "likely_blockers",
+    "recommended_interventions",
+    "retest_plan",
+    "next_data_needed",
+    "safe_language",
+    "economic_output_policy",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_IMPROVEMENT_LOOP_2026_06"
+    },
+    "improvement_loop_id": {
+      "type": "string"
+    },
+    "source_refs": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["roi_scenario_id", "readiness_id"],
+      "properties": {
+        "roi_scenario_id": { "type": "string" },
+        "readiness_id": { "type": "string" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_family",
+        "workflow_name",
+        "function_area",
+        "value_route"
+      ],
+      "properties": {
+        "workflow_family": { "type": "string" },
+        "workflow_name": { "type": "string" },
+        "function_area": { "type": "string" },
+        "value_route": {
+          "enum": [
+            "COST_REDUCTION",
+            "CAPACITY_CREATION",
+            "QUALITY_IMPROVEMENT",
+            "RISK_REDUCTION",
+            "EXPERIENCE_IMPROVEMENT",
+            "REVENUE_EXPANSION",
+            "UNCLASSIFIED"
+          ]
+        }
+      }
+    },
+    "value_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "metric_name",
+        "measurement_unit",
+        "source_system",
+        "expected_direction",
+        "current_status",
+        "status_rationale"
+      ],
+      "properties": {
+        "metric_id": { "type": "string" },
+        "metric_name": { "type": "string" },
+        "measurement_unit": { "type": "string" },
+        "source_system": { "type": "string" },
+        "expected_direction": {
+          "enum": ["IMPROVE", "REDUCE", "MAINTAIN"]
+        },
+        "current_status": {
+          "enum": ["IMPROVING", "NOT_IMPROVING", "NEEDS_EVIDENCE", "UNDER_REVIEW"]
+        },
+        "status_rationale": { "type": "string" }
+      }
+    },
+    "vbd_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fluency_readiness",
+        "velocity_status",
+        "breadth_status",
+        "depth_status",
+        "evidence_confidence",
+        "summary"
+      ],
+      "properties": {
+        "fluency_readiness": {
+          "enum": ["READY", "MIXED", "LOW", "UNKNOWN"]
+        },
+        "velocity_status": {
+          "enum": ["INCREASING", "STALLING", "DECLINING", "UNKNOWN"]
+        },
+        "breadth_status": {
+          "enum": ["EXPANDING", "LIMITED", "NARROWING", "UNKNOWN"]
+        },
+        "depth_status": {
+          "enum": ["DEEPENING", "SHALLOW", "FRAGMENTED", "UNKNOWN"]
+        },
+        "evidence_confidence": {
+          "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"]
+        },
+        "summary": { "type": "string" }
+      }
+    },
+    "likely_blockers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/blocker" }
+    },
+    "recommended_interventions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/intervention" }
+    },
+    "retest_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_label",
+        "measurement_plan",
+        "success_signal",
+        "decision_after_retest"
+      ],
+      "properties": {
+        "window_label": { "type": "string" },
+        "measurement_plan": { "type": "string" },
+        "success_signal": { "type": "string" },
+        "decision_after_retest": { "type": "string" }
+      }
+    },
+    "next_data_needed": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "safe_language": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_phrases",
+        "required_caveats",
+        "blocked_claims"
+      ],
+      "properties": {
+        "allowed_phrases": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "required_caveats": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "blocked_claims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/blocked_claim" }
+        }
+      }
+    },
+    "economic_output_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "customer_facing_economic_output",
+        "dollarized_output",
+        "realized_roi_calculation"
+      ],
+      "properties": {
+        "customer_facing_economic_output": { "const": false },
+        "dollarized_output": { "const": false },
+        "realized_roi_calculation": { "const": false }
+      }
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "production_connector",
+        "dashboard",
+        "realized_roi_calculation",
+        "causality_claim",
+        "individual_scoring",
+        "hris_or_people_analytics",
+        "productivity_ranking",
+        "raw_prompt_or_response_storage",
+        "direct_identifiers",
+        "runtime_service",
+        "autonomous_customer_actions",
+        "customer_facing_economic_output"
+      ],
+      "properties": {
+        "production_connector": { "const": false },
+        "dashboard": { "const": false },
+        "realized_roi_calculation": { "const": false },
+        "causality_claim": { "const": false },
+        "individual_scoring": { "const": false },
+        "hris_or_people_analytics": { "const": false },
+        "productivity_ranking": { "const": false },
+        "raw_prompt_or_response_storage": { "const": false },
+        "direct_identifiers": { "const": false },
+        "runtime_service": { "const": false },
+        "autonomous_customer_actions": { "const": false },
+        "customer_facing_economic_output": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocker_id", "label", "rationale", "evidence_basis"],
+      "properties": {
+        "blocker_id": { "type": "string" },
+        "label": { "type": "string" },
+        "rationale": { "type": "string" },
+        "evidence_basis": { "type": "string" }
+      }
+    },
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intervention_id", "label", "owner", "action", "rationale"],
+      "properties": {
+        "intervention_id": { "type": "string" },
+        "label": { "type": "string" },
+        "owner": { "type": "string" },
+        "action": { "type": "string" },
+        "rationale": { "type": "string" }
+      }
+    },
+    "blocked_claim": {
+      "enum": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement",
+        "realized_roi_calculation",
+        "customer_facing_economic_output"
+      ]
+    }
+  }
+}

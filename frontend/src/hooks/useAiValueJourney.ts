@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   listAiValueObjects,
   reviewOutcomeEvidence,
   fetchAiValueObject,
   fetchReadoutHtml,
+  materializeRealEvidence as postRealEvidenceMaterializer,
   AiValueApiError,
-  type AiValueObjectSummary
+  type AiValueObjectSummary,
+  type RealEvidenceMaterializerParams,
+  type RealEvidenceMaterializerResult
 } from "../lib/aiValueApi";
 
 export type JourneyStageKey =
@@ -131,6 +134,37 @@ export interface SponsorDecisionLoop {
   caveat: string;
 }
 
+export interface ValueImprovementBlocker {
+  label: string;
+  rationale: string;
+  evidenceBasis: string;
+}
+
+export interface ValueImprovementIntervention {
+  label: string;
+  owner: string;
+  action: string;
+  rationale: string;
+}
+
+export interface ValueImprovementLoop {
+  available: boolean;
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  metricName: string;
+  sourceSystem: string;
+  valueRouteLabel: string;
+  targetRationale: string;
+  vbdSummary: string;
+  likelyBlockers: ValueImprovementBlocker[];
+  recommendedInterventions: ValueImprovementIntervention[];
+  retestWindow: string;
+  retestPlan: string;
+  successSignal: string;
+  nextDataNeeded: string[];
+  caveat: string;
+}
+
 export interface ClientValueQuestion {
   question: string;
   answer: string;
@@ -182,6 +216,28 @@ export interface WorkflowHandoff {
   evidenceStatus: string;
   summary: string;
   nextAction: string;
+}
+
+export interface RealEvidenceCoverageItem {
+  label: string;
+  stateLabel: string;
+  stateTone: "good" | "warn" | "neutral";
+  detail: string;
+}
+
+export interface RealEvidenceStatus {
+  available: boolean;
+  statusLabel: string;
+  statusTone: "good" | "warn" | "neutral";
+  summary: string;
+  coverage: RealEvidenceCoverageItem[];
+  heldReasons: string[];
+  outcomeReviewLabel: string;
+  velocityObservationLabel: string;
+  nextAction: string;
+  canRunMaterializer: boolean;
+  materializerRunning: boolean;
+  materializerError: string | null;
 }
 
 export interface RoiScenarioReadiness {
@@ -259,12 +315,15 @@ export interface AiValueJourney {
   roiScenarioReadiness: RoiScenarioReadiness;
   customerEvidenceRequest: CustomerEvidenceRequest;
   customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+  realEvidenceStatus: RealEvidenceStatus;
   executivePlan: ExecutiveOperatingPlan;
   executiveReadoutPreview: ExecutiveReadoutPreview;
   sponsorDecisionLoop: SponsorDecisionLoop;
+  valueImprovementLoop: ValueImprovementLoop;
   packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
+  materializeRealEvidence: () => Promise<void>;
   review: (exportId: string, decision: "ACCEPTED" | "REJECTED") => Promise<void>;
   openReadout: (packetId: string) => Promise<void>;
 }
@@ -386,6 +445,210 @@ const reviewStateLabel = (state: unknown): string => {
   return "Customer outcome export missing";
 };
 
+const realEvidenceCohortId = () =>
+  (localStorage.getItem("aiValueRealEvidenceCohortId") ?? "cohort-real-evidence").trim() ||
+  "cohort-real-evidence";
+
+const realEvidenceWorkflowId = () =>
+  (localStorage.getItem("aiValueRealEvidenceWorkflowId") ?? "workflow:CHAT").trim() ||
+  "workflow:CHAT";
+
+const realEvidenceOutcomeWorkflowId = (blueprint: Record<string, any> | null) => {
+  const configured = (localStorage.getItem("aiValueRealEvidenceOutcomeWorkflowId") ?? "").trim();
+  return configured || String(blueprint?.workflow_family ?? "").trim() || undefined;
+};
+
+const velocityObservationLabel = (
+  readiness: Record<string, any> | null,
+  materializerResult: RealEvidenceMaterializerResult | null
+): string => {
+  const ref = String(readiness?.source_refs?.velocity_observations_ref ?? "");
+  const parsed = /:(\d+)$/.exec(ref);
+  const count = parsed
+    ? Number.parseInt(parsed[1], 10)
+    : materializerResult?.evidence_summary.velocity_observation_count ?? 0;
+  return count > 0
+    ? `${count} aggregate activity observation${count === 1 ? "" : "s"}`
+    : "No aggregate activity observations connected";
+};
+
+const coverageLabel = (state: string): { label: string; tone: "good" | "warn" | "neutral" } => {
+  if (state === "PRESENT") return { label: "Ready", tone: "good" };
+  if (state === "CAVEATED") return { label: "Needs owner review", tone: "warn" };
+  if (state === "SUPPRESSED") return { label: "Held", tone: "warn" };
+  return { label: "Not connected", tone: "neutral" };
+};
+
+const coverageDetail = (lane: string, state: string): string => {
+  const ready = state === "PRESENT";
+  if (lane === "ai_activity") {
+    return ready
+      ? "Aggregate AI activity is connected for the selected workflow."
+      : "Connect approved aggregate AI activity before this page can use it.";
+  }
+  if (lane === "workflow") {
+    return ready
+      ? "Workflow-level evidence is connected for this client conversation."
+      : "Workflow-level evidence has not been connected yet.";
+  }
+  if (lane === "suppression") {
+    return ready
+      ? "Governance review cleared for this workflow."
+      : "Governance review has not cleared for this workflow yet.";
+  }
+  if (lane === "trust") {
+    return ready
+      ? "Verification or recovery behavior is present."
+      : "Verification or recovery behavior still needs review.";
+  }
+  return ready
+    ? "Customer outcome evidence is attached for review."
+    : "Customer outcome evidence still needs submission or review.";
+};
+
+const translateHeldReason = (reason: string): string => {
+  if (/V3 verdict is missing/i.test(reason)) {
+    return "No approved aggregate evidence has been found for this workflow yet.";
+  }
+  if (/SUPPRESS/i.test(reason)) {
+    return "Aggregate evidence is held because governance review did not clear this workflow.";
+  }
+  if (/trust lane held|verification and recovery/i.test(reason)) {
+    return "Verification or recovery behavior still needs review.";
+  }
+  if (/no paired baseline\/comparison evidence/i.test(reason)) {
+    return "Customer outcome evidence is not aligned to the approved metric, source, and windows.";
+  }
+  if (/forwarded_distribution/i.test(reason)) {
+    return "The aggregate review cleared, but the approved activity detail is not available yet.";
+  }
+  if (/blueprint windows/i.test(reason)) {
+    return "Blueprint baseline and comparison windows need client owner review before outcome evidence can attach.";
+  }
+  if (/not overwritten/i.test(reason)) {
+    return "A reviewed customer outcome export already exists and was not overwritten.";
+  }
+  return "An evidence hold needs owner review before stronger value language moves forward.";
+};
+
+function buildRealEvidenceStatus(params: {
+  readiness: Record<string, any> | null;
+  evidenceItems: EvidenceReviewItem[];
+  materializerResult: RealEvidenceMaterializerResult | null;
+  canRunMaterializer: boolean;
+  materializerRunning?: boolean;
+  materializerError?: string | null;
+}): RealEvidenceStatus {
+  const {
+    readiness,
+    evidenceItems,
+    materializerResult,
+    canRunMaterializer,
+    materializerRunning = false,
+    materializerError = null
+  } = params;
+  const sourceRefs = readiness?.source_refs ?? {};
+  const hasAggregateRef =
+    typeof sourceRefs.v3_verdict_id === "string" && sourceRefs.v3_verdict_id.trim().length > 0;
+  const hasForwardedEvidence =
+    hasAggregateRef || materializerResult?.evidence_summary.forwarded_distribution_used === true;
+  const latestEvidence = evidenceItems[evidenceItems.length - 1] ?? null;
+  const latestReviewState = normalizeReviewState(latestEvidence?.reviewState);
+  const translatedHeldReasons = unique(
+    (materializerResult?.held_reasons ?? []).map(translateHeldReason)
+  );
+  const hasSuppressedHold = translatedHeldReasons.some((reason) =>
+    /did not clear this workflow/i.test(reason)
+  );
+  const hasMissingHold = translatedHeldReasons.some((reason) =>
+    /No approved aggregate evidence/i.test(reason)
+  );
+  const aggregateLaneMissing =
+    ["ai_activity", "workflow", "suppression"].some(
+      (lane) => coverageState(readiness, lane) !== "PRESENT"
+    );
+  const statusLabel = materializerRunning
+    ? "Checking evidence"
+    : materializerError
+      ? "Evidence check needs retry"
+      : hasForwardedEvidence
+        ? "Approved evidence connected"
+        : hasSuppressedHold
+          ? "Evidence held"
+          : hasMissingHold || aggregateLaneMissing
+            ? "Evidence not connected yet"
+            : "Evidence not connected yet";
+  const statusTone: RealEvidenceStatus["statusTone"] = materializerError || hasSuppressedHold
+    ? "warn"
+    : hasForwardedEvidence
+      ? "good"
+      : "neutral";
+  const heldReasons = translatedHeldReasons.length > 0
+    ? translatedHeldReasons
+    : !hasForwardedEvidence && readiness
+      ? ["Approved aggregate evidence has not been connected for this workflow yet."]
+      : [];
+  const outcomeReviewLabel = reviewStateLabel(latestReviewState);
+  const nextAction = hasSuppressedHold
+    ? "Hold value language and revisit evidence readiness after governance review clears."
+    : hasMissingHold
+      ? "Connect approved aggregate evidence after the workflow review clears."
+    : latestReviewState === "SUBMITTED"
+      ? "Review submitted customer outcome evidence before stronger value language moves forward."
+      : latestReviewState === "ACCEPTED"
+        ? "Carry accepted evidence into the readout with caveats and blocked claim language attached."
+        : hasForwardedEvidence
+          ? "Use aggregate work evidence for workflow status, then request or review customer outcome evidence."
+          : "Connect approved aggregate evidence after the workflow review clears.";
+
+  const coverage: RealEvidenceCoverageItem[] = [
+    { label: "AI activity", lane: "ai_activity" },
+    { label: "Workflow review", lane: "workflow" },
+    { label: "Governance review", lane: "suppression" },
+    { label: "Verification behavior", lane: "trust" }
+  ].map(({ label, lane }) => {
+    const state = hasForwardedEvidence ? coverageState(readiness, lane) : "MISSING";
+    const mapped = coverageLabel(state);
+    return {
+      label,
+      stateLabel: mapped.label,
+      stateTone: mapped.tone,
+      detail: coverageDetail(lane, state)
+    };
+  });
+
+  const outcomeMapped = latestReviewState === "ACCEPTED"
+    ? { label: "Accepted", tone: "good" as const }
+    : latestReviewState === "SUBMITTED"
+      ? { label: "Customer export awaiting review", tone: "warn" as const }
+      : latestReviewState === "REJECTED"
+        ? { label: "Corrected export needed", tone: "warn" as const }
+        : { label: "Not connected", tone: "neutral" as const };
+  coverage.push({
+    label: "Customer outcome evidence",
+    stateLabel: outcomeMapped.label,
+    stateTone: outcomeMapped.tone,
+    detail: coverageDetail("outcome", latestReviewState === "ACCEPTED" ? "PRESENT" : "MISSING")
+  });
+
+  return {
+    available: hasForwardedEvidence,
+    statusLabel,
+    statusTone,
+    summary: hasForwardedEvidence
+      ? "Approved aggregate evidence is connected for this workflow. Customer outcome evidence still needs human review before value language strengthens."
+      : "No approved aggregate evidence is connected yet. Once workflow-level evidence is approved, this page can show what can be trusted and what still needs review.",
+    coverage,
+    heldReasons,
+    outcomeReviewLabel,
+    velocityObservationLabel: velocityObservationLabel(readiness, materializerResult),
+    nextAction,
+    canRunMaterializer,
+    materializerRunning,
+    materializerError
+  };
+}
+
 const requiredCaveatLabel = (caveat: unknown): string => {
   const text = String(caveat ?? "").trim();
   if (/scenario bands are planning ranges/i.test(text)) {
@@ -496,7 +759,7 @@ function buildValueOpportunities(
           ? "Review whether the attached customer outcome evidence supports a caveated readout."
           : "Ask the customer data owner for baseline and comparison exports for this metric.",
         scenarioHandoff:
-          "Model as a governed value scenario after the customer owner confirms baseline, comparison, assumptions, and source coverage.",
+          "Model as a value scenario after the customer owner confirms baseline, comparison, assumptions, and data source.",
         claimBoundary:
           CLAIM_LABELS[String(metric.allowed_claim_level ?? "")] ??
           "Governance review required before this becomes customer-facing."
@@ -588,7 +851,7 @@ function buildEvidenceScenarioPlan(params: {
     ? String(readiness.next_actions[0])
     : submittedEvidence
       ? "Review submitted customer evidence with the data owner."
-      : "Collect baseline, comparison, assumptions, and source coverage before strengthening value language.";
+      : "Collect baseline, comparison, assumptions, and data-source confirmation before strengthening value language.";
   const unlockConditions = compact([
     submittedEvidence && !acceptedEvidence && "Accept or reject the submitted customer outcome export.",
     !acceptedEvidence && !submittedEvidence && "Attach a customer outcome export for the selected metric.",
@@ -606,7 +869,7 @@ function buildEvidenceScenarioPlan(params: {
         ? "Ready for caveated review"
         : submittedEvidence
           ? "Customer evidence awaiting review"
-          : "Needs client evidence"),
+          : "Need client data"),
     canTrust:
       canTrust.length > 0
         ? canTrust
@@ -720,7 +983,7 @@ function buildExecutiveOperatingPlan(params: {
         role: "Evidence readiness agent",
         task:
           evidenceCadence?.evidenceReadinessTask ??
-          "Turn the Customer Evidence Request into a data-owner ask, then track baseline exports, customer owner review, source coverage, and unresolved assumptions.",
+          "Turn the Customer Evidence Request into a data-owner ask, then track baseline exports, customer owner review, data-source confirmation, and unresolved assumptions.",
         guardrail: "No causality claim."
       },
       {
@@ -948,6 +1211,178 @@ function buildSponsorDecisionLoop(params: {
   };
 }
 
+function buildValueImprovementLoop(params: {
+  roiScenarioReadiness: RoiScenarioReadiness;
+  customerEvidenceReview: CustomerEvidenceReviewWorkbench;
+}): ValueImprovementLoop {
+  const { roiScenarioReadiness, customerEvidenceReview } = params;
+
+  if (!roiScenarioReadiness.available) {
+    return {
+      available: false,
+      statusLabel: "Needs value target",
+      statusTone: "warn",
+      metricName: "No outcome metric selected",
+      sourceSystem: "Customer data source not selected",
+      valueRouteLabel: roiScenarioReadiness.valueRouteLabel,
+      targetRationale:
+        "Finish Blueprint, Metrics, Evidence, and Scenario before recommending value-improvement actions.",
+      vbdSummary:
+        "Velocity, Breadth, and Depth can guide improvement planning after the workflow and metric are selected.",
+      likelyBlockers: [
+        {
+          label: "Value target is not ready",
+          rationale:
+            "Select a workflow, outcome metric, baseline, comparison window, and evidence request before choosing interventions.",
+          evidenceBasis: "Workspace setup status."
+        }
+      ],
+      recommendedInterventions: [
+        {
+          label: "Finish the value setup",
+          owner: "Value owner",
+          action:
+            "Complete Blueprint, Metrics, Evidence Readiness, and Scenario before changing the intervention strategy.",
+          rationale:
+            "Improvement guidance is only useful after the target and measurement path are clear."
+        }
+      ],
+      retestWindow: "After the first approved evidence window",
+      retestPlan:
+        "Revisit this loop after aggregate AI Fluency, Velocity, Breadth, Depth, and the customer-owned metric are connected.",
+      successSignal:
+        "The selected workflow and metric are ready for aggregate intervention planning.",
+      nextDataNeeded: [
+        "Selected Blueprint workflow",
+        "Customer-owned outcome metric",
+        "Baseline and comparison window",
+        "Aggregate AI Fluency, Velocity, Breadth, and Depth context"
+      ],
+      caveat:
+        "Advisory only. This does not create ROI proof, causality language, people scoring, or customer-facing economic output."
+    };
+  }
+
+  const valueTargetStatus =
+    customerEvidenceReview.reviewState === "ACCEPTED" &&
+    !roiScenarioReadiness.inputs.some((input) => input.status !== "Ready to model")
+      ? "Under review"
+      : "Not improving yet";
+  const needsAssumptions = roiScenarioReadiness.inputs.some(
+    (input) => input.label === "Customer-owned assumptions" && input.status !== "Ready to model"
+  );
+  const evidenceNotAccepted = customerEvidenceReview.reviewState !== "ACCEPTED";
+  const likelyBlockers: ValueImprovementBlocker[] = [
+    {
+      label: "AI Fluency is mixed",
+      rationale:
+        "The function may need more confidence, usage quality, behavior change, or leadership reinforcement before workflow change scales.",
+      evidenceBasis: "Aggregate AI Fluency follow-up by function."
+    },
+    {
+      label: "Velocity is not increasing",
+      rationale:
+        "The workflow may not be showing enough aggregate AI-enabled activity to expect business metric movement yet.",
+      evidenceBasis: "Aggregate Velocity movement for the selected workflow."
+    },
+    {
+      label: "Breadth is still limited",
+      rationale:
+        "AI-enabled work may be concentrated in too few roles or workflow steps to affect the function-level metric.",
+      evidenceBasis: "Aggregate Breadth by function and workflow family."
+    },
+    {
+      label: "Depth is still shallow",
+      rationale:
+        "People may be trying AI, but the work pattern has not moved deeply enough into repeatable workflow behavior.",
+      evidenceBasis: "Aggregate Depth evidence for repeated, verified workflow use."
+    },
+    ...(needsAssumptions
+      ? [
+          {
+            label: "Customer assumptions need review",
+            rationale:
+              "Staffing, rollout, process, or case-mix changes may explain metric movement and need owner review.",
+            evidenceBasis: "Customer-owned assumptions attached to the governed value scenario."
+          }
+        ]
+      : []),
+    ...(evidenceNotAccepted
+      ? [
+          {
+            label: "Evidence review is not complete",
+            rationale:
+              "The target may be moving, but the customer-owned export has not cleared review yet.",
+            evidenceBasis: customerEvidenceReview.statusLabel
+          }
+        ]
+      : [])
+  ];
+  const recommendedInterventions: ValueImprovementIntervention[] = [
+    {
+      label: "Run targeted workflow enablement",
+      owner: "AI program owner and workflow owner",
+      action:
+        "Run a focused enablement cycle on the selected workflow, including examples, verification habits, and leadership reinforcement.",
+      rationale:
+        "The fastest improvement path is to help the function use AI in the actual workflow, not just increase generic usage."
+    },
+    {
+      label: "Redesign the AI handoff in the workflow",
+      owner: "Workflow owner",
+      action:
+        "Review where AI should enter the workflow and remove steps that keep users returning to the old process.",
+      rationale:
+        "If Velocity is not increasing, the workflow may need a clearer AI-enabled path before the value metric can move."
+    },
+    {
+      label: "Expand the workflow playbook to more roles",
+      owner: "Function leader",
+      action:
+        "Identify adjacent roles in the same function and extend the approved workflow playbook after the pilot group stabilizes.",
+      rationale:
+        "Breadth must expand at the function level before organization-level value modeling becomes credible."
+    },
+    {
+      label: "Strengthen the evidence review",
+      owner: customerEvidenceReview.reviewer || "Customer data owner",
+      action:
+        "Review baseline, comparison, source, and operating assumptions before stronger value language changes.",
+      rationale:
+        "The right move may be better evidence, not a stronger claim."
+    }
+  ];
+
+  return {
+    available: true,
+    statusLabel: valueTargetStatus,
+    statusTone: valueTargetStatus === "Under review" ? "neutral" : "warn",
+    metricName: roiScenarioReadiness.metricName,
+    sourceSystem: roiScenarioReadiness.sourceSystem,
+    valueRouteLabel: roiScenarioReadiness.valueRouteLabel,
+    targetRationale:
+      "If the customer-owned metric is not moving in the expected direction, use AI Fluency and VBD to decide which intervention to adjust next.",
+    vbdSummary:
+      "Velocity, Breadth, and Depth show whether AI-enabled work is becoming frequent, widespread, and deeply embedded enough to affect the function-level metric.",
+    likelyBlockers,
+    recommendedInterventions,
+    retestWindow: "30-45 days after intervention",
+    retestPlan:
+      "Recheck aggregate AI Fluency, Velocity, Breadth, Depth, and the selected functional metric after the intervention window.",
+    successSignal:
+      "The function shows improving VBD movement and the customer-owned metric moves in the expected direction.",
+    nextDataNeeded: [
+      "Aggregate AI Fluency follow-up by function",
+      "Velocity, Breadth, and Depth movement by workflow family",
+      `${roiScenarioReadiness.metricName} from ${roiScenarioReadiness.sourceSystem}`,
+      "Customer-owned baseline and comparison window review",
+      "Customer-owned assumptions for operating changes during the same period"
+    ],
+    caveat:
+      "Advisory only. This does not create ROI proof, causality language, people scoring, or customer-facing economic output."
+  };
+}
+
 function buildClientValueQuestions(params: {
   opportunities: ValueOpportunity[];
   evidenceScenarioPlan: EvidenceScenarioPlan;
@@ -1009,9 +1444,9 @@ function buildClientValueQuestions(params: {
       detail: "Missing evidence becomes the client data request, not a reason to overstate the claim."
     },
     {
-      question: "What can we safely say?",
+      question: "What can we say now?",
       answer: evidenceScenarioPlan.safeValueLanguage,
-      detail: "Safe language travels with the packet so modeled opportunity does not become unsupported ROI proof."
+      detail: "This language travels with the packet so modeled opportunity does not become unsupported ROI proof."
     },
     {
       question: "What should the client do next?",
@@ -1075,28 +1510,49 @@ function buildClientQuestionMetricBridge(params: {
       available: false,
       statusLabel: "Needs outcome metric",
       summary:
-        "Finish the Blueprint and outcome signal mapping before connecting sponsor questions to governed metrics.",
+        "Finish the Blueprint decision and client success measure before choosing the outcome metric and customer data source.",
       items: []
     };
   }
 
+  // One card per distinct metric: with multi-function engagements the
+  // opportunity list can repeat metrics and carry many success measures, so
+  // dedupe and pair each metric with its own matching measure (never repeat
+  // the same card per measure).
+  const seenMetrics = new Set<string>();
+  const distinctOpportunities = opportunities.filter((opportunity) => {
+    const key = opportunity.metricName.toLowerCase();
+    if (seenMetrics.has(key)) return false;
+    seenMetrics.add(key);
+    return true;
+  });
   const bridgeOpportunities =
     successMeasures.length > 0
-      ? opportunities.slice(0, Math.max(1, successMeasures.length))
-      : opportunities.slice(0, 1);
+      ? distinctOpportunities.slice(0, Math.max(1, successMeasures.length))
+      : distinctOpportunities.slice(0, 1);
+  const measureForMetric = (metricName: string, index: number): string => {
+    const metric = metricName.toLowerCase();
+    const matched = successMeasures.find((measure) => {
+      const text = measure.toLowerCase();
+      return text.includes(metric) || metric.includes(text);
+    });
+    return (
+      matched ??
+      successMeasures[index] ??
+      successMeasures[0] ??
+      "Confirm the client success measure in Blueprint."
+    );
+  };
 
   return {
     available: true,
-    statusLabel: "Question-to-metric path ready",
+    statusLabel: "Metric setup ready",
     summary:
-      "This bridge turns sponsor value questions and client success measures into governed metrics, source asks, and the next evidence gate.",
+      "Use this step to confirm the recommended metric, source system, owner, and allowed value language before evidence work starts.",
     items: bridgeOpportunities.map((opportunity, index) => ({
       id: opportunity.id,
       sponsorQuestion: roiQuestion,
-      successMeasure:
-        successMeasures[index] ??
-        successMeasures[0] ??
-        "Confirm the client success measure in Blueprint.",
+      successMeasure: measureForMetric(opportunity.metricName, index),
       metricName: opportunity.metricName,
       valueRouteLabel: opportunity.valueRouteLabel,
       sourceSystem: opportunity.sourceSystem,
@@ -1105,7 +1561,7 @@ function buildClientQuestionMetricBridge(params: {
       owner,
       evidenceStatus: customerEvidenceReview.statusLabel || opportunity.status,
       allowedClaimLevel: opportunity.claimBoundary,
-      feedsNext: "Feeds ROI Scenario Readiness and Customer Evidence Request"
+      feedsNext: "Next: Evidence Readiness and Scenario Builder"
     }))
   };
 }
@@ -1160,7 +1616,7 @@ function buildValueSpineTrace(params: {
           : "Choose the first client workflow before mapping value.",
         statusLabel: hasWorkflow ? "Workflow selected" : "Needs Blueprint",
         statusTone: hasWorkflow ? "good" : "warn",
-        feedsNext: "Feeds the metric and evidence plan"
+        feedsNext: "Sets up the metric and evidence plan"
       },
       {
         label: "Outcome metric",
@@ -1170,7 +1626,7 @@ function buildValueSpineTrace(params: {
           : "Map the client success measure to a governed metric before requesting evidence.",
         statusLabel: hasMetric ? "Metric mapped" : "Needs metric",
         statusTone: hasMetric ? "good" : "warn",
-        feedsNext: "Feeds the customer evidence request"
+        feedsNext: "Sets up the customer evidence request"
       },
       {
         label: "Customer evidence",
@@ -1180,7 +1636,7 @@ function buildValueSpineTrace(params: {
           : customerEvidenceRequest.nextAction,
         statusLabel: customerEvidenceReview.statusLabel,
         statusTone: customerEvidenceReview.statusTone,
-        feedsNext: "Feeds governed scenario language"
+        feedsNext: "Sets up scenario language"
       },
       {
         label: "Value language",
@@ -1190,7 +1646,7 @@ function buildValueSpineTrace(params: {
           : "Scenario language stays held until baseline, comparison, assumptions, and evidence are ready.",
         statusLabel: hasScenario ? roiScenarioReadiness.statusLabel : "Scenario not ready",
         statusTone: hasScenario ? "good" : "warn",
-        feedsNext: "Feeds the executive packet"
+        feedsNext: "Prepares the executive packet"
       },
       {
         label: "Sponsor decision",
@@ -1201,7 +1657,7 @@ function buildValueSpineTrace(params: {
         detail: sponsorDecisionLoop.recommendedReason,
         statusLabel: sponsorDecisionLoop.statusLabel,
         statusTone: sponsorDecisionLoop.statusTone,
-        feedsNext: "Feeds renewal, expansion, hold, or the next Blueprint loop"
+        feedsNext: "Supports renewal, expansion, hold, or the next Blueprint loop"
       }
     ]
   };
@@ -1707,20 +2163,24 @@ function deriveStages(params: {
   return [
     {
       key: "readiness",
-      label: "Human Readiness",
+      label: "AI Fluency",
       state: baselines.length > 0 ? "done" : "todo",
       detail:
         baselines.length > 0
-          ? "Aggregate kickoff fluency signal is available."
-          : "Run the readiness pulse with the client team.",
+          ? "Aggregate AI Fluency signal is available."
+          : "Run AI Fluency with the client team.",
       objectLabel: "Explore Your AI Fluency baseline",
       captured: compact([
         baselines.length > 0 && "Aggregate capability and confidence signal on file",
         engagements.length > 0 && "Client objective context started"
       ]),
       missing: compact([baselines.length === 0 && "Role-safe readiness and behavior baseline"]),
-      feedsNext: "Readiness gaps guide which workflows and role groups the Blueprint workshop should prioritize.",
-      nextAction: baselines.length > 0 ? "Use readiness context in Blueprint." : "Capture aggregate readiness baseline."
+      feedsNext:
+        "AI Fluency gaps help choose which workflows and role groups the Blueprint workshop should prioritize.",
+      nextAction:
+        baselines.length > 0
+          ? "Use AI Fluency context in Blueprint."
+          : "Capture aggregate AI Fluency baseline."
     },
     {
       key: "blueprint",
@@ -1741,7 +2201,7 @@ function deriveStages(params: {
         engagements.length === 0 && "Client objective and sponsor question",
         blueprints.length === 0 && "Day-in-the-life workflow canvas"
       ]),
-      feedsNext: "The workflow canvas defines what Glean, MCP, agent, and outcome systems must instrument.",
+      feedsNext: "The workflow canvas defines what Glean, agent, and outcome systems should review.",
       nextAction:
         blueprints.length > 0 ? "Map instrumentation and outcome signals." : "Open discovery and blueprinting.",
       link: "/ai-value-discovery"
@@ -1761,9 +2221,9 @@ function deriveStages(params: {
       ]),
       missing: compact([
         blueprints.length === 0 && "Workflow family to instrument",
-        "Connector/source coverage confirmation for Glean, MCP, agents, and customer systems"
+        "Data-source confirmation for Glean, agents, and customer systems"
       ]),
-      feedsNext: "Instrumentation determines which aggregate AI work patterns can be trusted as evidence.",
+      feedsNext: "Instrumentation shows which aggregate AI work patterns can be trusted as evidence.",
       nextAction: "Confirm available Glean, MCP, agent, and customer-system signals."
     },
     {
@@ -1789,7 +2249,7 @@ function deriveStages(params: {
         libraries.length === 0 && "Metrics Library / outcome signal definitions",
         accepted.length === 0 && "Customer-owned outcome data for validation"
       ]),
-      feedsNext: "Evidence readiness tells the platform which value opportunities can be modeled, caveated, or blocked.",
+      feedsNext: "Evidence readiness shows which value opportunities can be modeled, caveated, or held.",
       nextAction: submitted.length > 0 ? "Review submitted customer evidence." : "Map outcome data sources."
     },
     {
@@ -1808,7 +2268,7 @@ function deriveStages(params: {
         opportunities.length === 0 && "Metrics tied to the selected workflow",
         accepted.length === 0 && "Customer data exports to validate modeled value"
       ]),
-      feedsNext: "Opportunity rows become governed value scenarios with assumptions, baselines, and claim limits.",
+      feedsNext: "Selected opportunities become value scenarios with assumptions, baselines, and claim limits.",
       nextAction: "Prioritize which ROI point to model first."
     },
     {
@@ -1837,7 +2297,7 @@ function deriveStages(params: {
           "Customer-owned assumptions and scenario bands",
         accepted.length === 0 && "Outcome evidence before stronger claims"
       ]),
-      feedsNext: "Scenario status and safe value language compose the executive readout.",
+      feedsNext: "Scenario status and safe value language prepare the executive readout.",
       nextAction: scenarios.length > 0 ? "Prepare executive validation." : "Draft scenario with caveats."
     },
     {
@@ -1851,7 +2311,7 @@ function deriveStages(params: {
       objectLabel: "Decision packet and operating cadence",
       captured: compact([packets.length > 0 && "Executive packet generated"]),
       missing: compact([packets.length === 0 && "Decision-ready readout and next-action cadence"]),
-      feedsNext: "The readout drives renewal, expansion, or the next workflow pilot.",
+      feedsNext: "The readout supports renewal, expansion, or the next workflow pilot.",
       nextAction: packets.length > 0 ? "Open executive readout." : "Generate readout after scenario review."
     }
   ];
@@ -1951,6 +2411,17 @@ export const useAiValueJourney = (): AiValueJourney => {
         roiScenario: null
       })
     );
+  const lastMaterializerResultRef = useRef<RealEvidenceMaterializerResult | null>(null);
+  const [materializerRequest, setMaterializerRequest] =
+    useState<RealEvidenceMaterializerParams | null>(null);
+  const [realEvidenceStatus, setRealEvidenceStatus] = useState<RealEvidenceStatus>(() =>
+    buildRealEvidenceStatus({
+      readiness: null,
+      evidenceItems: [],
+      materializerResult: null,
+      canRunMaterializer: false
+    })
+  );
   const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
     buildExecutiveOperatingPlan({
       packetCount: 0,
@@ -2032,6 +2503,12 @@ export const useAiValueJourney = (): AiValueJourney => {
       executivePlan
     });
   });
+  const [valueImprovementLoop, setValueImprovementLoop] = useState<ValueImprovementLoop>(() =>
+    buildValueImprovementLoop({
+      roiScenarioReadiness,
+      customerEvidenceReview
+    })
+  );
   const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -2048,14 +2525,25 @@ export const useAiValueJourney = (): AiValueJourney => {
       }
 
       const items = buildEvidenceItems(byType);
+      const blueprintSummary = latest(byType.blueprint);
+      const metricsLibrarySummary = latest(byType.metrics_library);
       const [engagement, blueprint, metricsLibrary, readiness, scenario, roiScenario] = await Promise.all([
         maybeFetchPayload(role, latest(byType.engagement)),
-        maybeFetchPayload(role, latest(byType.blueprint)),
-        maybeFetchPayload(role, latest(byType.metrics_library)),
+        maybeFetchPayload(role, blueprintSummary),
+        maybeFetchPayload(role, metricsLibrarySummary),
         maybeFetchPayload(role, latest(byType.evidence_readiness)),
         maybeFetchPayload(role, latest(byType.value_scenario)),
         maybeFetchPayload(role, latest(byType.roi_scenario))
       ]);
+      const nextMaterializerRequest = blueprintSummary && metricsLibrarySummary
+        ? {
+            blueprintId: blueprintSummary.object_id,
+            metricsLibraryId: metricsLibrarySummary.object_id,
+            cohortId: realEvidenceCohortId(),
+            workflowId: realEvidenceWorkflowId(),
+            outcomeWorkflowId: realEvidenceOutcomeWorkflowId(blueprint)
+          }
+        : null;
       const mappedOpportunities = buildValueOpportunities(metricsLibrary, blueprint, items);
       const handoff = buildWorkflowHandoff({
         blueprint,
@@ -2100,6 +2588,10 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceReview: evidenceReview,
         executivePlan
       });
+      const improvementLoop = buildValueImprovementLoop({
+        roiScenarioReadiness: roiReadiness,
+        customerEvidenceReview: evidenceReview
+      });
       const questions = buildClientValueQuestions({
         opportunities: mappedOpportunities,
         evidenceScenarioPlan: plan,
@@ -2134,9 +2626,19 @@ export const useAiValueJourney = (): AiValueJourney => {
       setRoiScenarioReadiness(roiReadiness);
       setCustomerEvidenceRequest(evidenceRequest);
       setCustomerEvidenceReview(evidenceReview);
+      setMaterializerRequest(nextMaterializerRequest);
+      setRealEvidenceStatus(
+        buildRealEvidenceStatus({
+          readiness,
+          evidenceItems: items,
+          materializerResult: lastMaterializerResultRef.current,
+          canRunMaterializer: Boolean(nextMaterializerRequest)
+        })
+      );
       setExecutivePlan(executivePlan);
       setExecutiveReadoutPreview(readoutPreview);
       setSponsorDecisionLoop(sponsorDecision);
+      setValueImprovementLoop(improvementLoop);
       setPacketIds(packetIds);
 
       setClientName(
@@ -2148,7 +2650,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setErrorMessage(
         error instanceof AiValueApiError && error.status === 401
           ? "Sign in with an organization session to see the journey."
-          : "Could not reach the evidence engine."
+          : "Using example evidence until approved aggregate data is connected."
       );
     } finally {
       setLoading(false);
@@ -2158,6 +2660,46 @@ export const useAiValueJourney = (): AiValueJourney => {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const materializeRealEvidence = useCallback(async () => {
+    if (!materializerRequest) {
+      setRealEvidenceStatus((current) => ({
+        ...current,
+        materializerError:
+          "Finish Blueprint and Metrics mapping before connecting evidence."
+      }));
+      return;
+    }
+    setRealEvidenceStatus((current) => ({
+      ...current,
+      statusLabel: "Checking evidence",
+      statusTone: "neutral",
+      materializerRunning: true,
+      materializerError: null
+    }));
+    try {
+      const result = await postRealEvidenceMaterializer(sessionRole(), materializerRequest);
+      lastMaterializerResultRef.current = result;
+      await refresh();
+    } catch (error) {
+      setRealEvidenceStatus((current) => ({
+        ...current,
+        statusLabel: "Evidence check needs retry",
+        statusTone: "warn",
+        materializerRunning: false,
+        materializerError:
+          error instanceof AiValueApiError && error.status === 403
+            ? "Your current role can view evidence but cannot connect evidence."
+            : "Evidence could not be connected."
+      }));
+      return;
+    }
+    setRealEvidenceStatus((current) => ({
+      ...current,
+      materializerRunning: false,
+      materializerError: null
+    }));
+  }, [materializerRequest, refresh]);
 
   const review = useCallback(
     async (exportId: string, decision: "ACCEPTED" | "REJECTED") => {
@@ -2201,12 +2743,15 @@ export const useAiValueJourney = (): AiValueJourney => {
     roiScenarioReadiness,
     customerEvidenceRequest,
     customerEvidenceReview,
+    realEvidenceStatus,
     executivePlan,
     executiveReadoutPreview,
     sponsorDecisionLoop,
+    valueImprovementLoop,
     packetIds,
     errorMessage,
     refresh,
+    materializeRealEvidence,
     review,
     openReadout
   };

@@ -80,6 +80,126 @@ individual scoring, HR analytics, productivity ranking, autonomous customer
 action, raw prompt/response storage, direct identifier, or customer-facing
 economic output is authorized by this contract.
 
+For the Data Boundary and ROI Evidence Contract, use
+[`scripts/validate_ai_value_data_boundary.mjs`](../../../scripts/validate_ai_value_data_boundary.mjs)
+with the seeded Customer Support data-boundary fixture in
+[`examples/customer-support-data-boundary-roi-evidence.json`](./examples/customer-support-data-boundary-roi-evidence.json)
+and schema in
+[`schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json`](../../../schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json).
+This object defines which organizational data sources may be useful for value
+analysis upstream, which transformation boundary must aggregate and attest that
+data, and which fields may cross into FluencyTracr as value-evidence inputs. It
+reconciles with the Metrics Library, Outcome Evidence Export, ROI Scenario,
+Value Improvement Loop, Reportability, Aggregate API Push, and AI Value
+Measurement Model contracts. It explicitly permits sensitive organizational
+data to be used upstream inside customer-approved or Glean-approved
+transformation boundaries, while rejecting raw rows, direct identifiers, raw
+content, person-level evidence, HR analytics surfaces, productivity ranking,
+causality claims, realized ROI calculations, and customer-facing economic
+output inside FluencyTracr.
+
+Run:
+
+```bash
+npm run validate:ai-value-data-boundary
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-data-boundary
+```
+
+### Trusted Data Pass-Through For ROI Metric Routing
+
+The governance layer may pass a record forward for ROI metric routing and
+governed value-scenario modeling when all of these are true:
+
+- aggregate AI work evidence is surfaced, not suppressed;
+- workflow, outcome, baseline, trust, assumptions, and suppression coverage are
+  present or explicitly caveated;
+- customer-owned outcome evidence is accepted or approved for the stated
+  modeling use;
+- baseline and comparison rules are declared before interpretation;
+- customer-owned assumptions are attached with owners; and
+- blocked inputs, direct identifiers, raw content, HR analytics, ranking,
+  individual scoring, productivity measurement, causality claims, and realized
+  ROI proof are absent.
+
+Passing these gates means the platform can determine which ROI or value metrics
+should be modeled, reviewed, and carried into a caveated executive readout. It
+does not mean FluencyTracr has proven ROI, calculated realized savings, or
+created customer-facing economic output.
+
+For Phase 14 Value Improvement Loop, use
+[`scripts/validate_ai_value_improvement_loop.mjs`](../../../scripts/validate_ai_value_improvement_loop.mjs)
+with the seeded Customer Support improvement fixture in
+[`examples/customer-support-value-improvement-loop.json`](./examples/customer-support-value-improvement-loop.json)
+and schema in
+[`schemas/ai-value-intelligence/value-improvement-loop.schema.json`](../../../schemas/ai-value-intelligence/value-improvement-loop.schema.json).
+This object turns a value target that is not yet improving into likely blockers,
+recommended interventions, a retest window, and next-data-needed guidance using
+aggregate AI Fluency, Velocity, Breadth, Depth, functional metric, and evidence
+confidence context. It is advisory only: no production connector, dashboard,
+ROI proof, realized ROI calculation, causality claim, individual scoring, HR
+analytics, productivity ranking, tunable suppression threshold, autonomous
+customer action, direct identifier, or customer-facing economic output is
+authorized by this contract.
+
+For the North Star Value Evidence Case, use
+[`scripts/validate_ai_value_evidence_case.mjs`](../../../scripts/validate_ai_value_evidence_case.mjs)
+with the seeded Customer Support fixture in
+[`examples/customer-support-value-evidence-case.json`](./examples/customer-support-value-evidence-case.json)
+and schema in
+[`schemas/ai-value-intelligence/value-evidence-case.schema.json`](../../../schemas/ai-value-intelligence/value-evidence-case.schema.json).
+This is the governed proof object for one workflow slice. It composes the data
+boundary contract, governed ROI scenario, evidence readiness, outcome evidence
+export, and value improvement loop into one case that answers what can safely
+be said about AI value, what evidence supports it, what remains blocked, and
+what the client should do next. The engine validator enforces the evidence
+ladder fail-closed: the evidence level may not exceed what the outcome-evidence
+review state, baseline/comparison window alignment, and customer-owned
+assumptions support; value language is held at observed AI activity when
+outcome evidence is missing or rejected; supported evidence stays caveated and
+non-causal; STRONG remains a future contract state requiring a governed
+evidence design; and the case must carry the amended canonical VBD definitions
+(Velocity is speed to adoption, Breadth is spread including the Repertoire
+coverage view, Depth is workflow-integration embeddedness). No ROI proof,
+causality claim, individual scoring, ranking, HR analytics, raw data, direct
+identifier, or customer-facing economic output is authorized by this contract.
+
+Run:
+
+```bash
+npm run validate:ai-value-evidence-case
+```
+
+Verify:
+
+```bash
+npm run test:ai-value-evidence-case
+```
+
+To run the whole system locally with a seeded enterprise, start the backend
+(`npm run dev --workspace backend`) and run
+[`scripts/seed_ai_value_enterprise.mjs`](../../../scripts/seed_ai_value_enterprise.mjs)
+(`npm run seed:ai-value-enterprise`). It simulates a synthetic 5,000-employee
+organization upstream (person-level data never leaves the seeder process),
+aggregates it into suppression-checked packages, and pushes twelve functions of
+fluency baselines plus five full workflow chains through the governed API. The
+five focus functions land at different evidence-ladder rungs on purpose
+(Supported, Caveated, Directional, and two held Missing cases), so the
+Workspace shows the full governance range side by side.
+
+For real-data ingestion, use the local MCP server
+[`scripts/ai_value_mcp_server.mjs`](../../../scripts/ai_value_mcp_server.mjs)
+(registered in `.mcp.json`). It exposes `ingest_ai_value_object`,
+`list_ai_value_objects`, `get_ai_value_object`, `review_outcome_evidence`,
+`run_value_chain`, and `assemble_value_evidence_case`. The server adds no new
+write paths: every tool wraps the same fail-closed engine-validated endpoints,
+uploads of outcome evidence always enter as SUBMITTED, and review decisions are
+recorded only when a human reviewer has made them.
+
 For the Phase 9.5 Agentic Platform Harness, use
 [`scripts/validate_ai_value_agent_harness.mjs`](../../../scripts/validate_ai_value_agent_harness.mjs)
 with the seeded Customer Support handoff fixture in
@@ -100,6 +220,34 @@ test:
 - [`scripts/generate_ai_value_executive_packet.mjs`](../../../scripts/generate_ai_value_executive_packet.mjs)
 - [`scripts/ai_value_v1_spine.test.mjs`](../../../scripts/ai_value_v1_spine.test.mjs)
 - [`frontend/src/pages/AIValueWorkspace.tsx`](../../../frontend/src/pages/AIValueWorkspace.tsx)
+
+For the governed real-evidence bridge, use the local materializer endpoint with
+the seeded request fixture in
+[`examples/customer-support-real-evidence-materializer-request.json`](./examples/customer-support-real-evidence-materializer-request.json).
+The materializer reads existing aggregate-only V3 verdicts, surfaced forwarded
+distributions, velocity observations, and customer-attested outcome evidence,
+then writes validated `evidence_readiness` and `outcome_evidence_export` AI
+Value objects. Submitted outcome exports remain pending review and do not
+upgrade the outcome lane until separately accepted.
+
+For the aggregate API-push path, use the customer-side package fixture in
+[`examples/customer-support-aggregate-api-push-package.json`](./examples/customer-support-aggregate-api-push-package.json)
+with
+[`scripts/prepare_ai_value_aggregate_api_push.mjs`](../../../scripts/prepare_ai_value_aggregate_api_push.mjs).
+The package is the local customer-side transformer contract: it accepts only
+sanitized aggregate AI work evidence plus paired aggregate outcome evidence,
+rejects raw rows, direct identifiers, prompts, outputs, transcripts, raw
+skill/action rows, HR analytics, ranking, ROI proof, causality claims, and
+customer-facing economic output, then emits the governed push sequence:
+
+- [`examples/customer-support-v3-aggregate-ingest-request.json`](./examples/customer-support-v3-aggregate-ingest-request.json)
+  for `POST /api/v3/ingest/aggregate`.
+- [`examples/customer-support-outcome-evidence-api-push-baseline.json`](./examples/customer-support-outcome-evidence-api-push-baseline.json)
+  for the baseline `POST /api/v1/outcome-evidence`.
+- [`examples/customer-support-outcome-evidence-api-push-comparison.json`](./examples/customer-support-outcome-evidence-api-push-comparison.json)
+  for the comparison `POST /api/v1/outcome-evidence`.
+- [`examples/customer-support-real-evidence-materializer-request.json`](./examples/customer-support-real-evidence-materializer-request.json)
+  for `POST /api/v1/ai-value/materialize/real-evidence`.
 
 ## Required Inputs
 
@@ -146,7 +294,7 @@ The generated packet includes:
 | State | Meaning |
 | --- | --- |
 | `CAVEATED` | Aggregate AI work evidence and outcome signals align directionally, but ROI and causality are not proven. |
-| `SUPPORTED` | The bounded value-investigation claim is supported by aggregate evidence, while economic proof remains blocked. |
+| `SUPPORTED` | The bounded value-investigation claim is supported for ROI metric routing and scenario review, while economic proof remains blocked. |
 | `MISSING` | Required outcome evidence is absent; no safe value claims are emitted. |
 | `SUPPRESSED` | Existing suppression blocks downstream value language. |
 | `BLOCKED` | Unsafe, identifying, or governance-breaking input prevents packet generation. |
@@ -361,8 +509,8 @@ npm run test:ai-value-metrics
 ## Phase 9 Value Scenario Engine
 
 The Phase 9 Value Scenario Engine converts value calculator guidance into a
-governed local software object that can draft a pre-ROI scenario from a
-validated Blueprint and Metrics Library recommendation:
+governed local software object that can draft a pre-proof ROI metric scenario
+from a validated Blueprint and Metrics Library recommendation:
 
 - structured value scenario input schema;
 - structured value scenario output schema;
@@ -386,9 +534,11 @@ Verify:
 npm run test:ai-value-scenario
 ```
 
-Phase 9 is planning software only. It does not produce realized ROI,
-causality, productivity, HR analytics, individual scoring, runtime services,
-dashboards, production connectors, or customer-facing economic output.
+Phase 9 is planning software only. It may select and model candidate ROI or
+value metrics when trusted aggregate evidence and customer-owned assumptions are
+present. It does not produce realized ROI, causality, productivity, HR
+analytics, individual scoring, runtime services, dashboards, production
+connectors, or customer-facing economic output.
 
 ## Phase 9.5 Agentic Platform Harness
 
@@ -460,10 +610,11 @@ The local workspace route is:
 /ai-value-workspace
 ```
 
-This V1 remains local and governed. It does not authorize production
-connectors, customer-facing economic output, realized ROI calculation,
-causality claims, HR analytics, individual scoring, or productivity
-measurement.
+This V1 remains local and governed. It may route trusted aggregate evidence
+into metric selection, value scenarios, and caveated executive validation. It
+does not authorize production connectors, customer-facing economic output,
+realized ROI calculation, causality claims, HR analytics, individual scoring,
+or productivity measurement.
 
 ## Relationship To FluencyTracr Concepts
 

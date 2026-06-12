@@ -7,7 +7,9 @@ recommended customer-owned outcome signals and testing formulas derived from
 aggregate AI Work Evidence.
 
 It tells an AI program leader which internal outcome data would make a value
-hypothesis testable. It does not calculate ROI, prove causality, predict
+hypothesis testable. When aggregate evidence is trusted and reliable, it may
+route customer-owned outcome signals into ROI metric selection and governed
+scenario review. It does not calculate realized ROI, prove causality, predict
 outcomes, measure productivity, assess people, compare groups, or require
 HRIS, survey, enablement, or person-level data.
 
@@ -18,8 +20,8 @@ Status: docs-only recommendation contract.
 This contract may be used to harden internal readout language, pilot packet
 examples, templates, and review checklists. It does not authorize APIs,
 schemas, storage, runtime services, frontend product surfaces, customer-facing
-economic output, Time-Saved range values, ROI calculation, productivity claims,
-causality claims, prediction claims, or ranking surfaces.
+economic output, Time-Saved range values, realized ROI calculation,
+productivity claims, causality claims, prediction claims, or ranking surfaces.
 
 ## Required Inputs
 
@@ -207,6 +209,7 @@ Allowed formula families:
 Allowed readiness states:
 
 - `READY_FOR_CUSTOMER_VALUE_TEST`;
+- `READY_FOR_ROI_METRIC_ROUTING`;
 - `OUTCOME_EVIDENCE_MISSING`;
 - `SOURCE_COVERAGE_HOLD`;
 - `TRUST_ATTRIBUTION_HOLD`;
@@ -215,6 +218,11 @@ Allowed readiness states:
 - `SUPPRESSED_NO_RECOMMENDATION`.
 
 These are recommendation states, not suppression reasons.
+
+`READY_FOR_ROI_METRIC_ROUTING` means trusted aggregate evidence can be used to
+choose ROI or value metrics for governed scenario review. It must not be used
+as a realized ROI calculation, causal claim, productivity claim, or permission
+for customer-facing economic output.
 
 ### `quality_gates`
 
@@ -252,7 +260,7 @@ Examples:
 
 Every recommendation must block:
 
-- ROI calculation;
+- realized ROI calculation;
 - causal impact;
 - productivity lift;
 - guaranteed savings;
@@ -321,7 +329,7 @@ Every recommendation must block:
     "no person-level interpretation"
   ],
   "blocked_claims": [
-    "ROI calculation",
+    "realized ROI calculation",
     "causal impact",
     "productivity lift",
     "employee assessment",
@@ -355,5 +363,8 @@ AI Scale Readiness, and Economic Impact Bridge in internal readout language. It
 does not change verdicts, suppression, confidence bands, Time-Saved range
 eligibility, Trust Calibration status, or outcome evidence status.
 
-It recommends what customer-owned outcome evidence to connect next. It does
-not consume that evidence to produce economic output.
+It recommends what customer-owned outcome evidence to connect next. When that
+evidence is accepted and governed, the recommendation may pass it forward for
+ROI metric routing and scenario review. It does not consume that evidence to
+produce realized ROI, causality, productivity, or customer-facing economic
+output.

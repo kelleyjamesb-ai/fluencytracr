@@ -3,6 +3,12 @@ import { z } from "zod";
 import type { SuppressionReason } from "@learnaire/shared";
 import { FluencyJoinKeySchema } from "@learnaire/shared";
 import type { CalibrationBaseline } from "./calibration_registry";
+import {
+  ForwardedDistributionMachineTokenSchema,
+  ForwardedDistributionSchema,
+  FORWARDED_DISTRIBUTION_SCHEMA_VERSION,
+  type ForwardedDistribution
+} from "./forwarded_distribution";
 import type { VelocityDistributionRecord } from "../store";
 import { VELOCITY_SCHEMA_VERSION } from "./velocity_index";
 
@@ -28,6 +34,7 @@ export type V3AggregateVerdict = {
   velocity_index: number | null;
   quality_multiplier: number | null;
   reliability_factor: number | null;
+  forwarded_distribution?: ForwardedDistribution;
   computed_at: string;
 };
 
@@ -53,15 +60,15 @@ const QualitySignalsSchema = z.object({
 
 export const V3AggregateIngestSchema = z.object({
   schema_version: z.literal("FT_V3_2026_05"),
-  cohort_id: z.string().min(1),
-  workflow_id: z.string().min(1),
+  cohort_id: ForwardedDistributionMachineTokenSchema,
+  workflow_id: ForwardedDistributionMachineTokenSchema,
   jbtd_id: FluencyJoinKeySchema.nullable().optional(),
   persona_id: FluencyJoinKeySchema.nullable().optional(),
   window_start: z.string().datetime({ offset: true }),
   window_end: z.string().datetime({ offset: true }),
   cohort_size: z.number().int().positive(),
   ambiguity_rate: z.number().min(0).max(1).optional(),
-  calibration_id: z.string().min(1),
+  calibration_id: ForwardedDistributionMachineTokenSchema,
   velocity: z.object({
     frequency: DistributionSchema,
     engagement: DistributionSchema,
@@ -135,6 +142,49 @@ const suppress = (
 const dimensionIndex = (value: number, baseline: number): number =>
   round(clamp(value / baseline, 0, 1.5));
 
+const distributionMean = (distribution: { p10: number; p50: number; p90: number; p99: number }): number =>
+  round((distribution.p10 + distribution.p50 + distribution.p90 + distribution.p99) / 4);
+
+export const forwardedDistributionFromV3Aggregate = (
+  input: V3AggregateIngestInput,
+  verdict: V3AggregateVerdict
+): ForwardedDistribution | undefined => {
+  if (verdict.verdict !== "SURFACE") {
+    return undefined;
+  }
+  const candidate = {
+    schema_version: FORWARDED_DISTRIBUTION_SCHEMA_VERSION,
+    source_schema_version: input.schema_version,
+    cohort_id: input.cohort_id,
+    workflow_id: input.workflow_id,
+    jbtd_id: input.jbtd_id ?? null,
+    persona_id: input.persona_id ?? null,
+    window_start: input.window_start,
+    window_end: input.window_end,
+    window_days: verdict.window_days,
+    cohort_size: input.cohort_size,
+    ambiguity_rate: input.ambiguity_rate ?? 0,
+    calibration_id: input.calibration_id,
+    surface_taxonomy_ids: [input.workflow_id],
+    velocity: input.velocity,
+    quality_signals: input.quality_signals,
+    distribution_moments: {
+      frequency_mean: distributionMean(input.velocity.frequency),
+      engagement_mean: distributionMean(input.velocity.engagement),
+      breadth_mean: distributionMean(input.velocity.breadth)
+    },
+    baseline_stable: true,
+    value_type: "UNCLASSIFIED",
+    evidence_grade: verdict.evidence_grade,
+    privacy: {
+      aggregate_only: true,
+      person_level_fields_included: false
+    }
+  };
+  const parsed = ForwardedDistributionSchema.safeParse(candidate);
+  return parsed.success ? parsed.data : undefined;
+};
+
 export const computeV3AggregateVerdict = (
   input: V3AggregateIngestInput,
   baseline: CalibrationBaseline,
@@ -186,7 +236,7 @@ export const computeV3AggregateVerdict = (
     1
   ));
 
-  return {
+  const surfaced: V3AggregateVerdict = {
     cohort_id: input.cohort_id,
     workflow_id: input.workflow_id,
     jbtd_id: input.jbtd_id ?? null,
@@ -206,6 +256,10 @@ export const computeV3AggregateVerdict = (
     quality_multiplier: qualityMultiplier,
     reliability_factor: reliabilityFactor,
     computed_at: computedAt
+  };
+  return {
+    ...surfaced,
+    forwarded_distribution: forwardedDistributionFromV3Aggregate(input, surfaced)
   };
 };
 

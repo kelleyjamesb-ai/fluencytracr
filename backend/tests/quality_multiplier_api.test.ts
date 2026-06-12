@@ -2,6 +2,11 @@ import request from "supertest";
 
 import { app } from "../src/app";
 import { buildFluencyEventRecord, store, type FluencyEventRecord } from "../src/store";
+import {
+  computeQualityMultiplierFromForwardedDistribution,
+  type ForwardedDistribution
+} from "../src/value_realization/quality_multiplier";
+import { ForwardedDistributionSchema } from "../src/value_realization/forwarded_distribution";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const BASE_NOW = Date.now();
@@ -146,12 +151,62 @@ const getMultiplier = (workflowId: string, windowDays = 90) =>
     .get(`/api/v1/quality-multiplier?workflow_id=${workflowId}&window_days=${windowDays}`)
     .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
 
+const getForwardedMultiplier = (workflowId: string, cohortId: string, windowDays = 90) =>
+  request(app)
+    .get(
+      `/api/v1/quality-multiplier?workflow_id=${workflowId}&window_days=${windowDays}&cohort_id=${cohortId}&use_forwarded_distribution=true`
+    )
+    .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
+
 const getSlicedMultiplier = (workflowId: string, jbtdId: string, personaId: string, windowDays = 90) =>
   request(app)
     .get(
       `/api/v1/quality-multiplier?workflow_id=${workflowId}&window_days=${windowDays}&jbtd_id=${jbtdId}&persona_id=${personaId}`
     )
     .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
+
+const forwardedDistribution = (overrides: Partial<ForwardedDistribution> = {}): ForwardedDistribution => ({
+  schema_version: "FT_V3_FORWARDED_DISTRIBUTION_2026_06",
+  source_schema_version: "FT_V3_2026_05",
+  cohort_id: "cohort-forwarded-qm",
+  workflow_id: "wf-forwarded-qm",
+  jbtd_id: null,
+  persona_id: null,
+  window_start: new Date(BASE_NOW - 90 * MS_PER_DAY).toISOString(),
+  window_end: new Date(BASE_NOW).toISOString(),
+  window_days: 90,
+  cohort_size: 50,
+  ambiguity_rate: 0,
+  calibration_id: "scio-prod-60d-2026-05",
+  surface_taxonomy_ids: ["wf-forwarded-qm"],
+  velocity: {
+    frequency: { p10: 10, p50: 71, p90: 400, p99: 701 },
+    engagement: { p10: 30, p50: 61, p90: 61, p99: 61 },
+    breadth: { p10: 3, p50: 7, p90: 10, p99: 12 }
+  },
+  quality_signals: {
+    completion_rate: 0.92,
+    error_rate: 0.03,
+    abandonment_rate: 0.01,
+    recovery_rate: 0.8,
+    verification_rate: 0.4,
+    p50_latency_ms: 1000,
+    p95_latency_ms: 3000
+  },
+  distribution_moments: {
+    frequency_mean: 295.5,
+    engagement_mean: 53.25,
+    breadth_mean: 8
+  },
+  baseline_stable: true,
+  value_type: "UNCLASSIFIED",
+  evidence_grade: "OBJECTIVE",
+  privacy: {
+    aggregate_only: true,
+    person_level_fields_included: false
+  },
+  ...overrides
+});
 
 describe("GET /api/v1/quality-multiplier", () => {
   it("surfaces a bounded quality multiplier on the green path", async () => {
@@ -171,6 +226,52 @@ describe("GET /api/v1/quality-multiplier", () => {
     expect(res.body.multiplier).toBeGreaterThanOrEqual(0.5);
     expect(res.body.multiplier).toBeLessThanOrEqual(1.5);
     expect(Date.parse(res.body.computed_at)).not.toBeNaN();
+  });
+
+  it("can consume a governed forwarded distribution without raw event records", async () => {
+    const ingest = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set({ "x-role": "ADMIN", "x-org-id": "org-1", "Content-Type": "application/json" })
+      .send({
+        schema_version: "FT_V3_2026_05",
+        cohort_id: "cohort-forwarded-qm",
+        workflow_id: "workflow:FORWARDED-QM",
+        window_start: new Date(BASE_NOW - 90 * MS_PER_DAY).toISOString(),
+        window_end: new Date(BASE_NOW).toISOString(),
+        cohort_size: 50,
+        calibration_id: "scio-prod-60d-2026-05",
+        velocity: {
+          frequency: { p10: 10, p50: 71, p90: 400, p99: 701 },
+          engagement: { p10: 30, p50: 61, p90: 61, p99: 61 },
+          breadth: { p10: 3, p50: 7, p90: 10, p99: 12 }
+        },
+        quality_signals: {
+          completion_rate: 0.92,
+          error_rate: 0.03,
+          abandonment_rate: 0.01,
+          recovery_rate: 0.8,
+          verification_rate: 0.4,
+          p50_latency_ms: 1000,
+          p95_latency_ms: 3000
+        },
+        privacy: { person_level_fields_included: false }
+      });
+    expect(ingest.status).toBe(202);
+
+    const res = await getForwardedMultiplier("workflow:FORWARDED-QM", "cohort-forwarded-qm");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      workflow_id: "workflow:FORWARDED-QM",
+      window_days: 90,
+      verdict: "SURFACE",
+      suppression_reason: null,
+      cohort_size: 50,
+      value_type: "QUALITY_PREMIUM",
+      evidence_grade: "CALIBRATED"
+    });
+    expect(res.body.multiplier).toBeGreaterThanOrEqual(0.5);
+    expect(res.body.multiplier).toBeLessThanOrEqual(1.5);
   });
 
   it("suppresses when the requested window is too short", async () => {
@@ -302,5 +403,78 @@ describe("GET /api/v1/quality-multiplier", () => {
     expect(lower.status).toBe(200);
     expect(lower.body.verdict).toBe("SURFACE");
     expect(lower.body.multiplier).toBe(0.5);
+  });
+});
+
+describe("computeQualityMultiplierFromForwardedDistribution", () => {
+  it("rejects forbidden forwarded distribution fields and raw-text shaped tokens", () => {
+    const forbiddenPayloads = [
+      { prompt: "summarize the account plan" },
+      { output: "raw model answer" },
+      { message: "raw chat message" },
+      { email: "person@example.com" },
+      { user_id: "user-123" },
+      { actor_id: "actor-123" },
+      { skill_name: "personal skill" },
+      { transcript: "long transcript" },
+      { body: "raw text body" },
+      { quality_signals: { ...forwardedDistribution().quality_signals, prompt: "raw nested prompt" } },
+      { surface_taxonomy_ids: ["this is a raw natural language surface label"] }
+    ];
+
+    for (const override of forbiddenPayloads) {
+      const parsed = ForwardedDistributionSchema.safeParse({
+        ...forwardedDistribution(),
+        ...override
+      });
+      expect(parsed.success).toBe(false);
+    }
+  });
+
+  it("re-checks gates and emits calibrated quality-premium evidence for surfaced distributions", () => {
+    const result = computeQualityMultiplierFromForwardedDistribution({
+      forwardedDistribution: forwardedDistribution()
+    });
+
+    expect(result).toMatchObject({
+      workflow_id: "wf-forwarded-qm",
+      verdict: "SURFACE",
+      suppression_reason: null,
+      cohort_size: 50,
+      value_type: "QUALITY_PREMIUM",
+      evidence_grade: "CALIBRATED"
+    });
+    expect(result.multiplier).toBeGreaterThanOrEqual(0.5);
+    expect(result.multiplier).toBeLessThanOrEqual(1.5);
+  });
+
+  it.each([
+    ["INSUFFICIENT_TIME", { window_days: 30 }],
+    ["INSUFFICIENT_VOLUME", { cohort_size: 4 }],
+    ["NO_CONVERGENCE", {
+      quality_signals: {
+        completion_rate: 0,
+        error_rate: 0,
+        abandonment_rate: 0,
+        recovery_rate: 0,
+        verification_rate: 0,
+        p50_latency_ms: 1000,
+        p95_latency_ms: 3000
+      }
+    }],
+    ["BASELINE_UNSTABLE", { baseline_stable: false }],
+    ["HIGH_AMBIGUITY", { ambiguity_rate: 0.5 }]
+  ] as const)("suppresses forwarded distributions that fail %s", (reason, overrides) => {
+    const result = computeQualityMultiplierFromForwardedDistribution({
+      forwardedDistribution: forwardedDistribution(overrides)
+    });
+
+    expect(result).toMatchObject({
+      verdict: "SUPPRESS",
+      suppression_reason: reason,
+      multiplier: null,
+      evidence_grade: "QUALITATIVE"
+    });
+    expect(result.value_type).toBeUndefined();
   });
 });

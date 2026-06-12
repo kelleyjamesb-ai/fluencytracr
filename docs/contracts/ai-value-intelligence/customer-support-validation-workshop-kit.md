@@ -15,9 +15,10 @@ definitions, baseline/comparison windows, and assumption ledger needed for a
 caveated support value investigation?
 ```
 
-This kit is docs-only. It does not authorize ROI calculation, causality claims,
-individual scoring, HR analytics, dashboards, connectors, schemas, APIs, or
-runtime implementation.
+This kit is docs-only. It can validate whether trusted aggregate evidence is
+ready for ROI metric routing and governed scenario review. It does not
+authorize realized ROI calculation, causality claims, individual scoring, HR
+analytics, dashboards, connectors, schemas, APIs, or runtime implementation.
 
 Source artifacts:
 
@@ -38,7 +39,7 @@ We are validating whether aggregate customer-support workflow evidence can
 support a caveated AI value investigation.
 
 The goal is not to prove ROI. The goal is to confirm whether the evidence is
-ready enough to say:
+ready enough to select ROI or value metrics and say:
 
 "This support workflow is a candidate for governed value investigation, and
 these customer-owned signals can test the value hypothesis."
@@ -97,7 +98,7 @@ Recommended duration: 60 minutes.
 | 20-32 min | Review aggregate data request | Present, missing, held, or not applicable state for each requested aggregate field. |
 | 32-45 min | Complete assumption ledger | Customer-owned assumptions marked present, missing, held, or not applicable. |
 | 45-52 min | Choose value route | Primary pilot story selected: capacity, quality, cost, or experience. |
-| 52-58 min | Apply decision gates | Proceed, hold, or stop decision. |
+| 52-58 min | Apply decision gates | Proceed, hold, stop, or route to governed ROI metric modeling. |
 | 58-60 min | Confirm next owner and date | Owner for missing evidence and date for packet regeneration or hold review. |
 
 ## Approved Aggregate Data Request
@@ -180,8 +181,10 @@ attribute causality, score employees, compare teams, or measure productivity.
 
 If the aggregate sources and assumptions are ready, the strongest claim we can
 make is that this support workflow is a candidate for value investigation and
-that customer-owned support metrics can test the hypothesis. If evidence is
-missing or not approved, the packet will hold or suppress the value language.
+that customer-owned support metrics can test the hypothesis. If trust, source
+coverage, outcome evidence, baseline rules, and assumptions are accepted, the
+record can route to governed ROI metric modeling. If evidence is missing or not
+approved, the packet will hold or suppress the value language.
 ```
 
 ## Safe Language
@@ -193,6 +196,8 @@ The AIOM may use these statements if the relevant workshop gates pass:
 - Customer-owned support metrics can test whether AI-assisted work is
   associated with movement in resolution time, escalation, rework, backlog, or
   customer experience.
+- Accepted aggregate evidence can route into ROI metric selection and governed
+  scenario review.
 - The readout remains caveated because outcome movement may be explained by
   case mix, volume, staffing, channel mix, process changes, or metric changes.
 - Missing evidence will produce hold language rather than a stronger claim.
@@ -217,6 +222,7 @@ Choose exactly one outcome.
 | Outcome | Use when | Next action |
 | --- | --- | --- |
 | `PROCEED_TO_GOVERNED_PACKET` | Scope, aggregate data, windows, assumptions, and safe language are confirmed. | Regenerate the Customer Support AI Value Evidence Pack with customer-approved aggregate inputs. |
+| `ROUTE_TO_ROI_METRIC_MODELING` | Scope, trust, source coverage, outcome evidence, baseline/comparison rules, and assumptions are accepted. | Generate or update the governed ROI scenario with customer-approved metrics and caveats. |
 | `HOLD_FOR_ASSUMPTIONS` | Outcome metrics are present, but assumptions are incomplete. | Assign owners for missing assumptions and reconvene before executive narrative. |
 | `HOLD_FOR_SOURCE_COVERAGE` | A required source lane is missing, held, or not aligned. | Fix source coverage or narrow the workflow slice. |
 | `HOLD_FOR_BASELINE` | No comparable baseline exists. | Select a governed baseline or keep the packet internal-only. |
@@ -266,9 +272,11 @@ should remain caveated.
 ## Safe Next Message
 
 We confirmed whether the support workflow has enough aggregate evidence for a
-caveated value investigation. We are not claiming ROI, causality, productivity,
-or team performance. The next step is to complete the missing evidence items
-before generating or sharing a stronger pilot packet.
+caveated value investigation. We are not claiming ROI proof, causality,
+productivity, or team performance. If the remaining trust, source, baseline,
+outcome, and assumption checks pass, the next step is governed ROI metric
+modeling; otherwise, complete the missing evidence items before generating or
+sharing a stronger pilot packet.
 ```
 
 ## Governance Boundary
@@ -285,6 +293,6 @@ This workshop kit preserves the FluencyTracr boundary:
   payloads, or action rows;
 - no HRIS, directory, survey, training, enablement, compensation, performance,
   or workforce-planning joins;
-- no ROI calculation, dollarized savings, hours-saved proof, productivity
-  lift, causality, prediction, dashboard, connector, API, schema, or runtime
-  implementation.
+- no realized ROI calculation, dollarized savings, hours-saved proof,
+  productivity lift, causality, prediction, dashboard, connector, API, schema,
+  or runtime implementation.

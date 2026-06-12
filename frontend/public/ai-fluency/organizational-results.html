@@ -1,0 +1,1658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Organizational AI Fluency</title>
+  <style>
+    :root {
+      --ink: #14182b;
+      --muted: #56617a;
+      --blue: #143dff;
+      --blue-soft: #e8edff;
+      --blue-line: #ccd7ff;
+      --green: #b8ef2f;
+      --green-soft: #f5faec;
+      --deep: #12374a;
+      --panel: #ffffff;
+      --line: #dce3f2;
+      --shadow: 0 24px 60px rgba(25, 37, 70, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(184, 239, 47, 0.28), transparent 28rem),
+        linear-gradient(110deg, #f8fbff 0%, #eef4ff 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    img,
+    svg {
+      max-width: 100%;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+      gap: 28px;
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .sideCard,
+    .panel,
+    .hero,
+    .modelBand,
+    .actionPanel {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .sideCard {
+      padding: 24px;
+      box-shadow: none;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin-bottom: 16px;
+      font-size: clamp(42px, 5.2vw, 78px);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 12px;
+      font-size: clamp(28px, 3vw, 44px);
+      line-height: 1.04;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      line-height: 1.08;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .main {
+      display: grid;
+      gap: 22px;
+      min-width: 0;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 4vw, 48px);
+      background: linear-gradient(135deg, #2336f3 0%, #2c2d82 100%);
+      color: white;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: -110px;
+      right: -70px;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .hero .eyebrow,
+    .hero p {
+      color: rgba(255, 255, 255, 0.86);
+    }
+
+    .heroGrid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
+      gap: 28px;
+      align-items: center;
+    }
+
+    .scoreOrb {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 250px;
+      max-width: 290px;
+      justify-self: end;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+      text-align: center;
+    }
+
+    .scoreOrb strong {
+      display: block;
+      font-size: 76px;
+      line-height: 0.9;
+    }
+
+    .scoreOrb span {
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .heroMetrics,
+    .metricGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .heroMetrics {
+      margin-top: 28px;
+    }
+
+    .metric {
+      min-height: 150px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .metric span,
+    .miniLabel {
+      display: block;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin: 8px 0;
+      font-size: 25px;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .metric p {
+      margin-bottom: 0;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 14px;
+    }
+
+    .panel {
+      padding: clamp(20px, 3vw, 32px);
+      box-shadow: none;
+    }
+
+    .filterGroup {
+      display: grid;
+      gap: 12px;
+    }
+
+    .filterTabs,
+    .filterChips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filterTab,
+    .chip,
+    .secondaryButton,
+    .primaryButton {
+      min-height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--blue-line);
+      background: white;
+      color: var(--blue);
+      cursor: pointer;
+      font-weight: 850;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .filterTab,
+    .chip {
+      padding: 10px 15px;
+      font-size: 14px;
+      max-width: 100%;
+      white-space: normal;
+    }
+
+    .filterTab.isActive,
+    .chip.isActive {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: white;
+    }
+
+    .filterTab:hover,
+    .chip:hover,
+    .secondaryButton:hover,
+    .primaryButton:hover {
+      transform: translateY(-1px);
+    }
+
+    .scopeLine {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .scopeLine strong {
+      color: var(--ink);
+    }
+
+    .cohortNarrative {
+      margin-top: 6px;
+      padding: 18px;
+      border: 1px solid var(--blue-line);
+      border-radius: 18px;
+      background: linear-gradient(135deg, #ffffff 0%, #f7fbef 100%);
+    }
+
+    .cohortNarrative h3 {
+      margin-bottom: 8px;
+      font-size: 22px;
+    }
+
+    .cohortNarrative p {
+      margin-bottom: 0;
+      font-size: 16px;
+    }
+
+    .profileGrid {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.9fr) minmax(420px, 1.1fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .focusPanel {
+      display: grid;
+      gap: 18px;
+      padding: 24px;
+      border: 1px solid var(--blue-line);
+      border-radius: 22px;
+      background: linear-gradient(140deg, #ffffff 0%, #f7fbef 100%);
+    }
+
+    .focusTop {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .focusScore {
+      color: var(--blue);
+      font-size: 58px;
+      font-weight: 950;
+      line-height: 0.92;
+    }
+
+    .definition {
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.3;
+    }
+
+    .practiceNext {
+      padding: 16px;
+      border: 1px solid var(--blue-line);
+      border-radius: 16px;
+      background: white;
+    }
+
+    .practiceNext strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--blue);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .practiceNext p {
+      margin-bottom: 0;
+      font-size: 16px;
+    }
+
+    .radarCard {
+      display: grid;
+      place-items: center;
+      min-height: 420px;
+      border: 1px solid var(--blue-line);
+      border-radius: 22px;
+      background: #fbfdff;
+    }
+
+    .radarCard svg {
+      width: min(100%, 470px);
+      height: auto;
+      display: block;
+    }
+
+    .dimensionGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .dimensionCard {
+      min-height: 190px;
+      padding: 18px;
+      border: 1px solid var(--blue-line);
+      border-radius: 18px;
+      background: white;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .dimensionCard.isActive {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(20, 61, 255, 0.16);
+    }
+
+    .dimensionTitle {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    .dimensionTitle strong {
+      font-size: 18px;
+      line-height: 1.08;
+    }
+
+    .dimensionTitle span {
+      color: var(--blue);
+      font-size: 30px;
+      font-weight: 950;
+      line-height: 0.95;
+    }
+
+    .dimensionCard p {
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+
+    .progress {
+      overflow: hidden;
+      width: 100%;
+      height: 9px;
+      border-radius: 999px;
+      background: #e4e9f4;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      width: var(--pct);
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2638ff, #b8ef2f);
+    }
+
+    .modelBand {
+      padding: clamp(24px, 4vw, 36px);
+      background: var(--deep);
+      color: #d9ecff;
+      box-shadow: none;
+    }
+
+    .modelBand .eyebrow {
+      color: var(--green);
+    }
+
+    .modelBand h2 {
+      color: #eaf5ff;
+    }
+
+    .modelBand p {
+      color: #c2d9e8;
+    }
+
+    .modelFlow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      margin-top: 24px;
+    }
+
+    .modelNode {
+      min-height: 150px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .modelNode strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #f3fbff;
+      font-size: 18px;
+    }
+
+    .modelNode span {
+      color: #c2d9e8;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .modelArrow {
+      color: var(--green);
+      font-size: 34px;
+      font-weight: 950;
+    }
+
+    .insightGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .insightCard {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: white;
+    }
+
+    .insightCard p {
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    .actionPanel {
+      padding: clamp(24px, 3vw, 32px);
+      background: linear-gradient(135deg, var(--green-soft), #ffffff);
+      box-shadow: none;
+    }
+
+    .actionGrid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      padding-top: 18px;
+      border-top: 1px solid #cfe2a8;
+    }
+
+    .stepNumber {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: #0e1b18;
+      color: var(--green);
+      font-weight: 950;
+      font-size: 13px;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 16px;
+    }
+
+    .step p {
+      margin-bottom: 0;
+      font-size: 14px;
+    }
+
+    .sideTitle {
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .sideMetric {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .sideMetric span {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .sideMetric strong {
+      text-align: right;
+    }
+
+    .actionRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .primaryButton,
+    .secondaryButton {
+      padding: 12px 18px;
+    }
+
+    .primaryButton {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: white;
+    }
+
+    .summaryText {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 1320px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .dimensionGrid,
+      .insightGrid,
+      .actionGrid,
+      .heroMetrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .profileGrid,
+      .modelFlow {
+        grid-template-columns: 1fr;
+      }
+
+      .modelArrow {
+        transform: rotate(90deg);
+        justify-self: center;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .sidebar,
+      .heroGrid,
+      .dimensionGrid,
+      .insightGrid,
+      .actionGrid {
+        grid-template-columns: 1fr;
+      }
+
+      .scoreOrb {
+        justify-self: start;
+        max-width: 260px;
+      }
+
+      .heroMetrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .radarCard {
+        min-height: 360px;
+      }
+
+      .radarCard svg {
+        width: min(100%, 420px);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        gap: 16px;
+        padding: 12px;
+      }
+
+      .hero,
+      .panel,
+      .modelBand,
+      .actionPanel,
+      .sideCard {
+        border-radius: 18px;
+        padding: 18px;
+      }
+
+      h1 {
+        font-size: clamp(34px, 12vw, 46px);
+        line-height: 0.98;
+      }
+
+      h2 {
+        font-size: clamp(26px, 8vw, 34px);
+      }
+
+      p {
+        font-size: 16px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      .eyebrow,
+      .dimensionTitle strong {
+        overflow-wrap: anywhere;
+      }
+
+      .sidebar,
+      .dimensionGrid,
+      .insightGrid,
+      .actionGrid,
+      .heroMetrics,
+      .metricGrid {
+        grid-template-columns: 1fr;
+      }
+
+      .focusTop,
+      .dimensionTitle {
+        display: grid;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .scoreOrb {
+        min-height: 184px;
+        max-width: 220px;
+      }
+
+      .scoreOrb strong {
+        font-size: 58px;
+      }
+
+      .filterTab,
+      .chip {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .filterTabs,
+      .filterChips {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .radarCard {
+        min-height: 300px;
+        padding: 8px;
+      }
+
+      .radarCard svg {
+        width: min(100%, 330px);
+      }
+
+      .dimensionCard {
+        min-height: 150px;
+      }
+
+      .dimensionTitle span,
+      .focusScore {
+        font-size: 42px;
+      }
+
+      .modelNode,
+      .metric,
+      .insightCard,
+      .practiceNext {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .shell {
+        padding: 8px;
+      }
+
+      .hero,
+      .panel,
+      .modelBand,
+      .actionPanel,
+      .sideCard {
+        padding: 16px;
+      }
+
+      .sideMetric {
+        display: grid;
+        gap: 4px;
+      }
+
+      .sideMetric strong {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <aside class="sidebar" aria-label="Organization report controls">
+      <section class="sideCard">
+        <span class="eyebrow">Glean beta example</span>
+        <h2 class="sideTitle">Your Organizational AI Fluency</h2>
+        <p>A seeded 5,000-employee example output for sponsor review and internal testing.</p>
+        <div class="sideMetric"><span>Organization</span><strong id="sideOrg">Northstar Enterprise</strong></div>
+        <div class="sideMetric"><span>Employees represented</span><strong id="sideCount">5,000</strong></div>
+        <div class="sideMetric"><span>Current view</span><strong id="sideScope">All respondents</strong></div>
+      </section>
+    </aside>
+
+    <section class="main">
+      <section class="hero">
+        <div class="heroGrid">
+          <div>
+            <span class="eyebrow">Your Organizational AI Fluency</span>
+            <h1 id="heroTitle">Northstar Enterprise has an established AI fluency profile.</h1>
+            <p id="heroCopy">AI is becoming a meaningful part of work. The focus now is to reinforce usage quality and expand stronger work habits across the organization.</p>
+            <div class="heroMetrics">
+              <article class="metric">
+                <span>Employees represented</span>
+                <strong id="heroCount">5,000</strong>
+                <p>Anonymous responses in the current example cohort.</p>
+              </article>
+              <article class="metric">
+                <span>Completion</span>
+                <strong>91%</strong>
+                <p>Enough coverage to compare segments without over-reading small groups.</p>
+              </article>
+              <article class="metric">
+                <span>Strongest signal</span>
+                <strong id="heroStrongest">Confidence</strong>
+                <p id="heroStrongestCopy">Momentum is most ready to turn into repeatable practice.</p>
+              </article>
+              <article class="metric">
+                <span>Growth edge</span>
+                <strong id="heroEdge">Leadership Reinforcement</strong>
+                <p id="heroEdgeCopy">This is the clearest place to unlock broader adoption.</p>
+              </article>
+            </div>
+          </div>
+          <div class="scoreOrb" aria-label="Average organizational AI fluency score">
+            <div>
+              <strong id="overallScore">72%</strong>
+              <span>average fluency</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="eyebrow">Filter the organization</span>
+        <h2>Compare the same AI fluency model by cohort.</h2>
+        <p>Use the filters to see where fluency is already translating into work and where targeted enablement would make the biggest difference.</p>
+        <div class="filterGroup">
+          <div class="filterTabs" id="mainFilterTabs"></div>
+          <div class="filterChips" id="mainFilterChips"></div>
+          <div class="scopeLine">
+            <span>Current view:</span>
+            <strong id="activeScope">All respondents</strong>
+            <span id="activeScopeCount">5,000 employees</span>
+          </div>
+          <article class="cohortNarrative">
+            <span class="eyebrow" id="cohortEyebrow">Overall readout</span>
+            <h3 id="cohortNarrativeTitle">Across all respondents, AI fluency is becoming an organization-wide adoption signal.</h3>
+            <p id="cohortNarrativeBody">The full company view shows where broad enablement should start and which fluency dimension needs reinforcement before AI habits become consistent across teams.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="eyebrow">AI fluency scores</span>
+        <h2>Where the organization can build momentum next.</h2>
+        <p>Each dimension shows what the score means and the enablement move that would help turn it into adoption.</p>
+        <div class="profileGrid">
+          <article class="focusPanel" id="focusPanel">
+            <div class="focusTop">
+              <div>
+                <span class="eyebrow">AI fluency profile focus</span>
+                <h3 id="focusTitle">Leadership Reinforcement</h3>
+              </div>
+              <div class="focusScore" id="focusScore">64%</div>
+            </div>
+            <p class="definition" id="focusDefinition">Whether responsible AI use is visible, encouraged, and normal in the work environment.</p>
+            <div class="practiceNext">
+              <strong>Enablement move</strong>
+              <p id="focusAction">Make good AI-assisted work visible, so teams have a concrete model to copy.</p>
+            </div>
+            <div class="practiceNext">
+              <strong>Why this matters</strong>
+              <p id="focusWhy">When the environment reinforces practical AI use, strong individual habits spread faster across teams.</p>
+            </div>
+          </article>
+
+          <article class="radarCard" id="radarCard">
+            <svg id="radar" viewBox="0 0 520 520" role="img" aria-label="Organizational AI fluency profile shape"></svg>
+          </article>
+        </div>
+        <div class="dimensionGrid" id="dimensionGrid"></div>
+      </section>
+
+      <section class="modelBand">
+        <span class="eyebrow">How your organization turns fluency into impact</span>
+        <h2 id="modelTitle">Higher AI fluency changes more than tool usage.</h2>
+        <p id="modelCopy">For all respondents, the practical opportunity is to move AI from scattered experimentation into repeatable work. As fluency increases across the organization, employees become more confident, more intentional, and more positive toward using AI. That readiness is what turns AI into operating impact.</p>
+        <div class="modelFlow">
+          <div class="modelNode">
+            <strong>Your Organizational AI Fluency</strong>
+            <span id="modelNodeFluency">Confidence, quality, habits, support, and skill growth across 5,000 employees.</span>
+          </div>
+          <div class="modelArrow" aria-hidden="true">-&gt;</div>
+          <div class="modelNode">
+            <strong>Confidence + Attitude + Intent</strong>
+            <span>People know when to use AI, how to check it, and why it matters.</span>
+          </div>
+          <div class="modelArrow" aria-hidden="true">-&gt;</div>
+          <div class="modelNode">
+            <strong>Work Impact</strong>
+            <span id="modelNodeImpact">Fewer messy handoffs, faster documentation, clearer root causes, and more repeatable processes.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="eyebrow">Why this matters</span>
+        <h2>The model helps you decide where enablement should go first.</h2>
+        <div class="insightGrid">
+          <article class="insightCard">
+            <span class="eyebrow">What this says</span>
+            <h3 id="insightStrong">Your strongest signal is Confidence.</h3>
+            <p id="insightStrongCopy">Use that strength as the entry point. It is the part of AI fluency most ready to turn into a repeatable habit.</p>
+          </article>
+          <article class="insightCard">
+            <span class="eyebrow">What changes first</span>
+            <h3>Readiness should become visible.</h3>
+            <p id="insightReadyCopy">The first useful sign is readiness: people use AI in real work while keeping context, judgment, and review intact.</p>
+          </article>
+          <article class="insightCard">
+            <span class="eyebrow">Work outcome</span>
+            <h3 id="insightOutcome">Look for cleaner operating work.</h3>
+            <p id="insightOutcomeCopy">Watch for faster prep, clearer handoffs, better issue summaries, stronger documentation, or more repeatable team processes.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="actionPanel">
+        <span class="eyebrow">Turn insight into operating impact</span>
+        <h2 id="actionTitle">Make one visible improvement in a real workflow.</h2>
+        <p id="actionCopy">The practical move is to turn the growth edge into one observable change in the work, then compare the before and after quality.</p>
+        <div class="actionGrid">
+          <article class="step">
+            <span class="stepNumber">01</span>
+            <div>
+              <strong>Business impact</strong>
+              <p id="stepCohort">Start with the segment where the growth edge is most visible, then keep the first experiment narrow.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="stepNumber">02</span>
+            <div>
+              <strong>Leadership intervention</strong>
+              <p id="stepWorkflow">Use a recurring work moment: customer prep, renewal risk notes, handoff summaries, root-cause analysis, or SOP drafts.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="stepNumber">03</span>
+            <div>
+              <strong>Operating behavior</strong>
+              <p id="stepReinforce">Show one strong example of AI-assisted work so the team has a concrete model to copy.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="stepNumber">04</span>
+            <div>
+              <strong>Proof to watch</strong>
+              <p id="stepTrack">Look for behavior change first, then connect it to attitude, intent, and perceived work impact.</p>
+            </div>
+          </article>
+        </div>
+        <div class="actionRow">
+          <button class="primaryButton" id="copySummary">Copy summary</button>
+          <button class="secondaryButton" id="downloadSummary">Download summary</button>
+        </div>
+        <p class="summaryText" id="summaryMessage" aria-live="polite"></p>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const dimensions = [
+      {
+        key: "confidence",
+        label: "Confidence",
+        definition: "How steady employees feel using AI, including when the first answer is not useful.",
+        action: "Create lower-stakes practice loops so successful AI use starts to feel repeatable.",
+        why: "Confidence helps employees keep experimenting long enough to find useful work patterns."
+      },
+      {
+        key: "usageQuality",
+        label: "Usage Quality",
+        definition: "Whether AI is helping people produce better work, not just faster work.",
+        action: "Anchor AI practice in one high-value workflow, then compare before and after work quality.",
+        why: "Quality turns AI from a productivity shortcut into a better operating habit."
+      },
+      {
+        key: "behaviorChange",
+        label: "Behavior Change",
+        definition: "Whether AI is becoming part of how recurring work actually gets done.",
+        action: "Attach AI to one repeatable step in the workflow so the behavior shows up every week.",
+        why: "Behavior change is the point where fluency becomes observable adoption."
+      },
+      {
+        key: "leadershipReinforcement",
+        label: "Leadership Reinforcement",
+        definition: "Whether responsible AI use is visible, encouraged, and normal in the work environment.",
+        action: "Make good AI-assisted work visible, so teams have a concrete model to copy.",
+        why: "Leadership reinforcement helps strong individual habits spread across teams."
+      },
+      {
+        key: "capabilityGrowth",
+        label: "Capability Growth",
+        definition: "Whether employees know the next AI skill to build and have a way to practice it.",
+        action: "Pick one capability to improve next and practice it with feedback in a real workflow.",
+        why: "Capability growth keeps fluency moving after the first wave of experimentation."
+      }
+    ];
+
+    const report = {
+      organizationName: "Northstar Enterprise",
+      cohortSize: 5000,
+      completionRate: 91,
+      resultsReachRate: 84,
+      overall: 72,
+      baselineOverall: 58,
+      outcomes: {
+        attitude: 72,
+        intent: 69,
+        impact: 64
+      },
+      dimensionScores: {
+        confidence: 75,
+        usageQuality: 74,
+        behaviorChange: 69,
+        leadershipReinforcement: 64,
+        capabilityGrowth: 72
+      },
+      cuts: [
+        {
+          fieldId: "function",
+          label: "Function",
+          values: [
+            { value: "Engineering / Software Development", count: 800, overall: 78, scores: { confidence: 78, usageQuality: 80, behaviorChange: 73, leadershipReinforcement: 65, capabilityGrowth: 75 } },
+            { value: "Product Management", count: 400, overall: 74, scores: { confidence: 75, usageQuality: 75, behaviorChange: 70, leadershipReinforcement: 64, capabilityGrowth: 73 } },
+            { value: "Design / UX / Research", count: 100, overall: 73, scores: { confidence: 74, usageQuality: 74, behaviorChange: 69, leadershipReinforcement: 63, capabilityGrowth: 72 } },
+            { value: "Data & Analytics", count: 250, overall: 74, scores: { confidence: 76, usageQuality: 75, behaviorChange: 69, leadershipReinforcement: 63, capabilityGrowth: 73 } },
+            { value: "IT Systems or Security", count: 1500, overall: 75, scores: { confidence: 75, usageQuality: 77, behaviorChange: 70, leadershipReinforcement: 64, capabilityGrowth: 73 } },
+            { value: "Sales or Business Development", count: 100, overall: 76, scores: { confidence: 78, usageQuality: 76, behaviorChange: 70, leadershipReinforcement: 64, capabilityGrowth: 73 } },
+            { value: "Marketing & Communications", count: 350, overall: 73, scores: { confidence: 74, usageQuality: 75, behaviorChange: 69, leadershipReinforcement: 63, capabilityGrowth: 72 } },
+            { value: "Customer or Account Success", count: 100, overall: 70, scores: { confidence: 72, usageQuality: 70, behaviorChange: 68, leadershipReinforcement: 62, capabilityGrowth: 70 } },
+            { value: "Support or Help Desk", count: 80, overall: 69, scores: { confidence: 70, usageQuality: 69, behaviorChange: 67, leadershipReinforcement: 61, capabilityGrowth: 68 } },
+            { value: "Field Operations or Logistics", count: 120, overall: 66, scores: { confidence: 67, usageQuality: 66, behaviorChange: 64, leadershipReinforcement: 60, capabilityGrowth: 65 } },
+            { value: "People Talent or Human Resources", count: 100, overall: 69, scores: { confidence: 70, usageQuality: 68, behaviorChange: 66, leadershipReinforcement: 64, capabilityGrowth: 68 } },
+            { value: "Finance or Accounting", count: 90, overall: 68, scores: { confidence: 69, usageQuality: 67, behaviorChange: 65, leadershipReinforcement: 61, capabilityGrowth: 68 } },
+            { value: "Legal & Compliance", count: 80, overall: 67, scores: { confidence: 68, usageQuality: 67, behaviorChange: 64, leadershipReinforcement: 61, capabilityGrowth: 66 } },
+            { value: "Corporate Strategy or Business Operations", count: 550, overall: 72, scores: { confidence: 73, usageQuality: 74, behaviorChange: 68, leadershipReinforcement: 62, capabilityGrowth: 71 } },
+            { value: "Administrative or Executive Support", count: 100, overall: 66, scores: { confidence: 67, usageQuality: 66, behaviorChange: 64, leadershipReinforcement: 60, capabilityGrowth: 65 } },
+            { value: "Education or Training", count: 100, overall: 69, scores: { confidence: 70, usageQuality: 68, behaviorChange: 66, leadershipReinforcement: 64, capabilityGrowth: 68 } },
+            { value: "Other", count: 180, overall: 67, scores: { confidence: 68, usageQuality: 66, behaviorChange: 64, leadershipReinforcement: 60, capabilityGrowth: 67 } }
+          ]
+        },
+        {
+          fieldId: "roleLevel",
+          label: "Role level",
+          values: [
+            { value: "Individual contributor", count: 2650, overall: 70, scores: { confidence: 72, usageQuality: 71, behaviorChange: 67, leadershipReinforcement: 60, capabilityGrowth: 69 } },
+            { value: "Manager", count: 1450, overall: 74, scores: { confidence: 76, usageQuality: 75, behaviorChange: 70, leadershipReinforcement: 67, capabilityGrowth: 72 } },
+            { value: "Director", count: 650, overall: 77, scores: { confidence: 78, usageQuality: 76, behaviorChange: 72, leadershipReinforcement: 68, capabilityGrowth: 74 } },
+            { value: "VP+", count: 180, overall: 80, scores: { confidence: 80, usageQuality: 78, behaviorChange: 74, leadershipReinforcement: 72, capabilityGrowth: 76 } },
+            { value: "Other", count: 70, overall: 68, scores: { confidence: 69, usageQuality: 68, behaviorChange: 64, leadershipReinforcement: 60, capabilityGrowth: 67 } }
+          ]
+        },
+        {
+          fieldId: "priorAiExposure",
+          label: "Prior AI experience",
+          values: [
+            { value: "None", count: 520, overall: 61, scores: { confidence: 62, usageQuality: 61, behaviorChange: 58, leadershipReinforcement: 56, capabilityGrowth: 62 } },
+            { value: "A little", count: 1360, overall: 67, scores: { confidence: 68, usageQuality: 67, behaviorChange: 64, leadershipReinforcement: 60, capabilityGrowth: 67 } },
+            { value: "Some", count: 2020, overall: 74, scores: { confidence: 77, usageQuality: 74, behaviorChange: 70, leadershipReinforcement: 64, capabilityGrowth: 72 } },
+            { value: "A lot", count: 880, overall: 80, scores: { confidence: 80, usageQuality: 80, behaviorChange: 75, leadershipReinforcement: 68, capabilityGrowth: 78 } },
+            { value: "Expert / builder", count: 220, overall: 84, scores: { confidence: 84, usageQuality: 84, behaviorChange: 80, leadershipReinforcement: 72, capabilityGrowth: 82 } }
+          ]
+        }
+      ]
+    };
+
+    const state = {
+      fieldId: "function",
+      value: null,
+      activeDimension: "leadershipReinforcement"
+    };
+
+    const format = new Intl.NumberFormat("en-US");
+
+    function getActiveCut() {
+      return report.cuts.find((cut) => cut.fieldId === state.fieldId) || report.cuts[0];
+    }
+
+    function getActiveSegment() {
+      const cut = getActiveCut();
+      return state.value ? cut.values.find((segment) => segment.value === state.value) || null : null;
+    }
+
+    function getActiveView() {
+      const segment = getActiveSegment();
+      return {
+        label: segment ? segment.value : "All respondents",
+        count: segment ? segment.count : report.cohortSize,
+        overall: segment ? segment.overall : report.overall,
+        scores: segment ? segment.scores : report.dimensionScores
+      };
+    }
+
+    function getAudienceText(view, scopeText) {
+      if (!state.value) {
+        return {
+          short: "employees across the organization",
+          titleSubject: report.organizationName,
+          segmentLabel: "the organization overall",
+          scopeLabel: "All respondents",
+          fieldLabel: "Overall readout",
+          heroCopy: "Across all respondents, AI is becoming a meaningful part of work. The focus now is to reinforce the weakest dimension so strong pockets of fluency become consistent organization-wide habits.",
+          narrativeTitle: "Across all respondents, AI fluency is becoming an organization-wide adoption signal.",
+          narrativeBody: "Use this full-company view to decide the primary enablement priority. It shows whether the organization has enough confidence, quality, habits, leadership reinforcement, and skill growth to turn AI into repeatable work impact.",
+          modelCopy: "For all respondents, the practical opportunity is to move AI from scattered experimentation into repeatable work. As fluency increases across the organization, employees become more confident, more intentional, and more positive toward using AI. That readiness is what turns AI into operating impact.",
+          actionFrame: "the organization overall",
+          workflowExamples: "cross-functional meeting prep, handoff summaries, root-cause analysis, customer follow-up, or SOP drafts",
+          reinforcementOwner: "leaders and managers",
+          measurementSignal: "consistent behavior change across teams",
+          businessImpact: "Use the overall view to decide where AI fluency should change operating rhythm, not just tool activity. The business impact is cleaner cross-functional work, fewer handoff gaps, faster synthesis, and more repeatable team execution.",
+          leaderIntervention: "Leaders should pick one workflow shared by multiple functions, set a visible standard for good AI-assisted work, and make the expected behavior easy to copy.",
+          operatingBehavior: "The behavior to reinforce is not using AI more often. It is using AI to improve the quality of recurring work while preserving human judgment and review.",
+          proofSignal: "Look for fewer messy handoffs, clearer decisions, faster documentation, better review quality, and more teams reusing the same successful pattern."
+        };
+      }
+
+      const activeCut = getActiveCut();
+      const fieldWorkflows = {
+        function: {
+          "Engineering / Software Development": {
+            workflowExamples: "incident summaries, ticket triage, requirements review, release notes, code review prep, or technical documentation",
+            reinforcementOwner: "engineering leaders",
+            measurementSignal: "clearer issue summaries, better documentation, and faster technical review",
+            businessImpact: "For Engineering and Software Development, the business impact is faster triage, clearer incident learning, better documentation, and less rework from ambiguous requirements.",
+            leaderIntervention: "Engineering leaders should choose one high-friction delivery workflow and define how AI improves clarity, review quality, or cycle time.",
+            operatingBehavior: "The target behavior is using AI to improve technical clarity while maintaining expert review.",
+            proofSignal: "Look for clearer issue summaries, better release notes, faster triage, stronger implementation plans, and more reusable documentation."
+          },
+          "Product Management": {
+            workflowExamples: "discovery synthesis, roadmap tradeoff summaries, requirement drafts, launch readiness reviews, or decision memos",
+            reinforcementOwner: "product leaders",
+            measurementSignal: "clearer product decisions, sharper requirements, and faster discovery synthesis",
+            businessImpact: "For Product Management, the business impact is clearer prioritization, faster discovery synthesis, sharper requirements, and tighter cross-functional alignment.",
+            leaderIntervention: "Product leaders should choose one product decision workflow and define how AI improves evidence quality, option clarity, or handoff readiness.",
+            operatingBehavior: "The target behavior is using AI to organize signals and options while keeping product judgment and customer evidence visible.",
+            proofSignal: "Look for clearer requirement drafts, better roadmap tradeoff summaries, faster discovery synthesis, and stronger launch readiness notes."
+          },
+          "Design / UX / Research": {
+            workflowExamples: "research synthesis, concept exploration, usability notes, creative briefs, design critique notes, or accessibility review prep",
+            reinforcementOwner: "design, UX, and research leaders",
+            measurementSignal: "faster exploration, clearer rationale, and better research-to-design synthesis",
+            businessImpact: "For Design, UX, and Research, the business impact is faster exploration, clearer design rationale, better iteration, and stronger user-centered decisions.",
+            leaderIntervention: "Design and research leaders should pick one research-to-design workflow and define how AI expands options without diluting craft, evidence, or accessibility.",
+            operatingBehavior: "The target behavior is using AI to expand options and summarize signals while preserving craft, user context, and research quality.",
+            proofSignal: "Look for faster concept options, clearer design rationale, stronger briefs, and better research-to-design synthesis."
+          },
+          "Data & Analytics": {
+            workflowExamples: "dashboard narratives, metric definitions, analysis summaries, data quality notes, or stakeholder insight briefs",
+            reinforcementOwner: "data and analytics leaders",
+            measurementSignal: "clearer metric explanations, faster insight delivery, and stronger analysis reuse",
+            businessImpact: "For Data and Analytics, the business impact is faster insight delivery, clearer decision support, better metric literacy, and stronger reuse of analysis.",
+            leaderIntervention: "Analytics leaders should pick one recurring insight workflow and define how AI improves narrative quality, assumption clarity, or stakeholder readiness.",
+            operatingBehavior: "The target behavior is using AI to explain and structure analysis while keeping source data, definitions, and analytical judgment intact.",
+            proofSignal: "Look for clearer dashboard narratives, cleaner metric definitions, faster analysis summaries, and better stakeholder insight briefs."
+          },
+          "IT Systems or Security": {
+            workflowExamples: "access reviews, support ticket summaries, system documentation, security checklists, incident communications, or control reviews",
+            reinforcementOwner: "IT and security leaders",
+            measurementSignal: "faster support cycles, clearer systems knowledge, and stronger control follow-through",
+            businessImpact: "For IT Systems and Security, the business impact is faster support cycles, clearer systems knowledge, stronger control follow-through, and better incident coordination.",
+            leaderIntervention: "IT and security leaders should pick one control-sensitive workflow and define how AI improves clarity without weakening governance.",
+            operatingBehavior: "The target behavior is reducing repetitive systems work while preserving security judgment, access controls, and auditability.",
+            proofSignal: "Look for cleaner support notes, stronger review checklists, clearer incident updates, and better system documentation."
+          },
+          "Sales or Business Development": {
+            workflowExamples: "account planning, discovery recap, renewal risk notes, follow-up drafting, or deal review prep",
+            reinforcementOwner: "sales managers",
+            measurementSignal: "cleaner account prep, faster follow-up, and more consistent deal notes",
+            businessImpact: "For Sales and Business Development, the business impact is better pipeline hygiene, faster follow-up, stronger account prep, and clearer deal risk visibility.",
+            leaderIntervention: "Sales leaders should pick one recurring commercial workflow and show what good AI-assisted preparation looks like before the next account or deal review.",
+            operatingBehavior: "The target behavior is consistent AI-supported account synthesis, not one-off prompt experiments.",
+            proofSignal: "Look for cleaner discovery notes, faster customer follow-up, better renewal risk language, and more consistent next-step quality."
+          },
+          "Marketing & Communications": {
+            workflowExamples: "campaign briefs, content repurposing, audience research, launch retros, or performance summaries",
+            reinforcementOwner: "marketing leads",
+            measurementSignal: "stronger briefs, faster content iteration, and clearer campaign learnings",
+            businessImpact: "For Marketing and Communications, the business impact is faster campaign planning, sharper audience insight, stronger creative iteration, and more consistent stakeholder messaging.",
+            leaderIntervention: "Marketing and communications leaders should choose one campaign or message workflow and define the expected AI-assisted improvement in brief quality, speed, or learning capture.",
+            operatingBehavior: "The target behavior is using AI to sharpen the work before handoff, review, or launch.",
+            proofSignal: "Look for stronger briefs, faster content iteration, clearer audience assumptions, and better post-campaign learning summaries."
+          },
+          "Customer or Account Success": {
+            workflowExamples: "QBR prep, health summaries, renewal risk notes, adoption insights, or executive follow-up",
+            reinforcementOwner: "CS and account management leaders",
+            measurementSignal: "clearer customer narratives, faster prep, and more consistent risk visibility",
+            businessImpact: "For Customer or Account Success, the business impact is clearer customer narratives, earlier risk visibility, faster QBR prep, and better adoption follow-through.",
+            leaderIntervention: "CS and account leaders should select one customer-facing workflow and define the standard for a strong AI-assisted account readout.",
+            operatingBehavior: "The target behavior is using AI to synthesize customer context into better actions, not just faster summaries.",
+            proofSignal: "Look for clearer health narratives, faster QBR prep, stronger renewal risk notes, and more specific follow-up actions."
+          },
+          "Support or Help Desk": {
+            workflowExamples: "case summaries, resolution drafts, knowledge article updates, escalation notes, or service quality reviews",
+            reinforcementOwner: "support and help desk leaders",
+            measurementSignal: "faster response drafts, cleaner escalations, and more consistent knowledge reuse",
+            businessImpact: "For Support and Help Desk teams, the business impact is shorter resolution cycles, clearer escalations, better knowledge coverage, and more consistent service quality.",
+            leaderIntervention: "Support leaders should pick one high-volume resolution workflow and define how AI improves speed, accuracy, and handoff quality.",
+            operatingBehavior: "The target behavior is using AI to improve service consistency while preserving policy, accuracy, and empathy.",
+            proofSignal: "Look for faster case summaries, clearer escalation notes, stronger knowledge article updates, and better quality review signals."
+          },
+          "Field Operations or Logistics": {
+            workflowExamples: "shift notes, supplier updates, demand planning summaries, incident reports, fulfillment handoffs, or exception reviews",
+            reinforcementOwner: "field operations and logistics leaders",
+            measurementSignal: "cleaner handoffs, faster exception handling, and better planning visibility",
+            businessImpact: "For Field Operations and Logistics, the business impact is cleaner handoffs, faster exception handling, better planning visibility, and more consistent operational communication.",
+            leaderIntervention: "Operational leaders should pick one handoff or exception workflow and define how AI improves clarity while keeping source systems authoritative.",
+            operatingBehavior: "The target behavior is using AI to organize operational information while preserving safety, timing, and ownership.",
+            proofSignal: "Look for clearer shift notes, faster supplier updates, better incident reports, and stronger fulfillment handoffs."
+          },
+          "People Talent or Human Resources": {
+            workflowExamples: "enablement plans, policy summaries, employee comms, onboarding content, manager guides, or talent planning notes",
+            reinforcementOwner: "people, talent, and HR leaders",
+            measurementSignal: "clearer employee guidance, faster comms, and more reusable enablement",
+            businessImpact: "For People, Talent, and Human Resources, the business impact is clearer employee guidance, faster manager enablement, better onboarding assets, and more consistent communication.",
+            leaderIntervention: "People leaders should pick one employee-facing workflow and define where AI can improve clarity, consistency, or reuse.",
+            operatingBehavior: "The target behavior is using AI to make guidance easier to understand and easier for managers to apply.",
+            proofSignal: "Look for clearer employee comms, faster enablement production, stronger manager guides, and more reusable onboarding content."
+          },
+          "Finance or Accounting": {
+            workflowExamples: "variance summaries, forecast notes, budget review prep, controls documentation, or close checklists",
+            reinforcementOwner: "finance and accounting leaders",
+            measurementSignal: "clearer variance narratives, faster review prep, and stronger documentation",
+            businessImpact: "For Finance and Accounting, the business impact is clearer variance narratives, faster review preparation, stronger controls documentation, and better decision support.",
+            leaderIntervention: "Finance leaders should pick one review workflow and define how AI improves the explanation, evidence, or preparation quality.",
+            operatingBehavior: "The target behavior is using AI to improve financial narrative quality while keeping controls and judgment intact.",
+            proofSignal: "Look for clearer variance summaries, faster budget review prep, stronger close documentation, and better forecast notes."
+          },
+          "Legal & Compliance": {
+            workflowExamples: "policy review, risk summaries, contract notes, compliance guidance, or control narratives",
+            reinforcementOwner: "legal, compliance, and risk leaders",
+            measurementSignal: "faster review cycles, clearer risk communication, and stronger policy consistency",
+            businessImpact: "For Legal and Compliance, the business impact is faster review cycles, clearer risk communication, better policy consistency, and stronger control follow-through.",
+            leaderIntervention: "Legal and compliance leaders should pick one review workflow and define where AI improves preparation while preserving approval paths and human judgment.",
+            operatingBehavior: "The target behavior is using AI to organize and draft without weakening confidentiality, evidence standards, or governance.",
+            proofSignal: "Look for clearer review notes, faster policy drafts, stronger risk summaries, and better stakeholder guidance."
+          },
+          "Corporate Strategy or Business Operations": {
+            workflowExamples: "research synthesis, market scans, operating reviews, strategic option briefs, process documentation, or decision framing notes",
+            reinforcementOwner: "strategy and business operations leaders",
+            measurementSignal: "faster sensemaking, stronger evidence summaries, clearer operating reviews, and better strategic options",
+            businessImpact: "For Corporate Strategy and Business Operations, the business impact is faster sensemaking, stronger evidence summaries, clearer options, and better operating rhythm.",
+            leaderIntervention: "Strategy and business operations leaders should pick one synthesis or operating workflow and define how AI improves evidence organization without weakening judgment or source quality.",
+            operatingBehavior: "The target behavior is using AI to organize evidence, operating context, and options while preserving strategic judgment.",
+            proofSignal: "Look for clearer themes, sharper hypotheses, stronger operating reviews, and more useful strategic option briefs."
+          },
+          "Administrative or Executive Support": {
+            workflowExamples: "scheduling coordination, executive brief prep, office updates, recurring checklists, logistics handoffs, or follow-up tracking",
+            reinforcementOwner: "administrative and executive support leaders",
+            measurementSignal: "fewer dropped handoffs, faster updates, and smoother coordination",
+            businessImpact: "For Administrative and Executive Support, the business impact is smoother coordination, faster updates, fewer dropped handoffs, and more repeatable support routines.",
+            leaderIntervention: "Administrative leaders should pick one coordination-heavy workflow and define how AI improves clarity, timing, and follow-through.",
+            operatingBehavior: "The target behavior is reducing coordination load while keeping ownership, timing, and sensitive details clear.",
+            proofSignal: "Look for cleaner coordination, faster updates, better checklists, and more consistent follow-through."
+          },
+          "Education or Training": {
+            workflowExamples: "training content, learning paths, enablement guides, workshop follow-up, manager practice plans, or assessment summaries",
+            reinforcementOwner: "education, training, and enablement leaders",
+            measurementSignal: "clearer learning materials, faster practice examples, and stronger reinforcement",
+            businessImpact: "For Education and Training, the business impact is faster enablement, clearer practice, stronger reinforcement, and more reusable learning assets.",
+            leaderIntervention: "Training leaders should pick one learning workflow and define how AI improves practice quality, adaptation, or follow-through.",
+            operatingBehavior: "The target behavior is using AI to build and adapt learning support while keeping audience needs and accuracy central.",
+            proofSignal: "Look for clearer learning materials, faster practice examples, better learner support, and stronger reinforcement plans."
+          },
+          "Other": {
+            workflowExamples: "team updates, decision notes, meeting prep, handoff summaries, or process documentation",
+            reinforcementOwner: "team leads",
+            measurementSignal: "clearer updates, faster prep, and more repeatable team routines",
+            businessImpact: "For this function, the business impact is clearer team communication, faster preparation, and more repeatable routines.",
+            leaderIntervention: "Team leaders should select one recurring workflow and define what better AI-assisted work should look like.",
+            operatingBehavior: "The target behavior is turning useful AI practice into a shared team habit.",
+            proofSignal: "Look for clearer updates, faster prep, better handoffs, and more consistent team routines."
+          }
+        },
+        roleLevel: {
+          "Individual contributor": {
+            workflowExamples: "weekly task planning, meeting prep, first drafts, research synthesis, or status updates",
+            reinforcementOwner: "managers",
+            measurementSignal: "more confident first drafts, clearer updates, and stronger self-review habits"
+          },
+          "Manager": {
+            workflowExamples: "1:1 prep, team updates, coaching notes, project reviews, or decision follow-up",
+            reinforcementOwner: "directors",
+            measurementSignal: "better coaching prep, clearer team communication, and more consistent follow-through"
+          },
+          "Director": {
+            workflowExamples: "operating reviews, strategic briefs, cross-functional updates, risk summaries, or planning notes",
+            reinforcementOwner: "senior leaders",
+            measurementSignal: "stronger operating narratives, faster synthesis, and clearer cross-functional decisions"
+          },
+          "VP+": {
+            workflowExamples: "business reviews, exec narratives, portfolio risk summaries, board prep, or strategic decision memos",
+            reinforcementOwner: "executive sponsors",
+            measurementSignal: "clearer strategic narratives, faster executive prep, and better decision quality"
+          },
+          "Other": {
+            workflowExamples: "team updates, meeting prep, handoff summaries, planning notes, or status reporting",
+            reinforcementOwner: "team leads",
+            measurementSignal: "clearer communication, faster preparation, and more consistent routines"
+          }
+        },
+        priorAiExposure: {
+          "None": {
+            workflowExamples: "low-risk meeting prep, simple summaries, glossary building, or first-draft support",
+            reinforcementOwner: "managers and enablement leads",
+            measurementSignal: "more comfort starting with AI and better review habits"
+          },
+          "A little": {
+            workflowExamples: "recurring summaries, follow-up drafting, research synthesis, or checklist generation",
+            reinforcementOwner: "managers and local champions",
+            measurementSignal: "more frequent AI use in repeatable tasks and fewer abandoned first attempts"
+          },
+          "Some": {
+            workflowExamples: "workflow redesign, better prompts, decision support, account synthesis, or operating reviews",
+            reinforcementOwner: "functional leaders",
+            measurementSignal: "higher quality outputs and more consistent workflow adoption"
+          },
+          "A lot": {
+            workflowExamples: "advanced workflow automation, reusable prompt patterns, review systems, or team playbooks",
+            reinforcementOwner: "AI champions and functional leaders",
+            measurementSignal: "reusable AI workflows and visible examples others can adopt"
+          },
+          "Expert / builder": {
+            workflowExamples: "agent prototypes, workflow standards, prompt libraries, evaluation rubrics, or team coaching",
+            reinforcementOwner: "AI program leads",
+            measurementSignal: "scalable patterns, better governance, and stronger peer enablement"
+          }
+        }
+      };
+      const actionContext =
+        fieldWorkflows[activeCut.fieldId]?.[view.label] ||
+        {
+          workflowExamples: "team updates, meeting prep, handoff summaries, planning notes, or status reporting",
+          reinforcementOwner: "team leads",
+          measurementSignal: "clearer communication, faster preparation, and more consistent routines"
+        };
+      const completedActionContext = {
+        businessImpact: `For ${view.label}, the business impact is clearer work quality, faster execution, and more repeatable use of AI in the workflows this cohort owns.`,
+        leaderIntervention: `Leaders should choose one recurring workflow for ${view.label}, define what better AI-assisted work looks like, and make the example visible.`,
+        operatingBehavior: "The target behavior is turning AI fluency into a repeatable work habit, not a one-time experiment.",
+        proofSignal: `Look for ${actionContext.measurementSignal}.`,
+        ...actionContext
+      };
+
+      return {
+        short: `employees in ${view.label}`,
+        titleSubject: view.label,
+        segmentLabel: `${scopeText}`,
+        scopeLabel: scopeText,
+        fieldLabel: `${scopeText} readout`,
+        heroCopy: `${scopeText} shows a different adoption pattern than the organization overall. Use this view to see where AI fluency can become more useful in this cohort's real work.`,
+        narrativeTitle: `${scopeText} has a specific AI fluency adoption pattern.`,
+        narrativeBody: `For ${view.label}, the priority is not generic training. The scores show which fluency habit to reinforce so this cohort can turn AI use into clearer, stronger, or more repeatable work outcomes.`,
+        modelCopy: `For ${view.label}, higher AI fluency should show up as more confident use, clearer intent, and more positive attitudes toward AI in the work this cohort actually owns. The impact to look for is better workflow quality, not just more tool activity.`,
+        actionFrame: view.label,
+        ...completedActionContext
+      };
+    }
+
+    function getOverall(scores) {
+      const values = Object.values(scores);
+      return Math.round(values.reduce((sum, score) => sum + score, 0) / values.length);
+    }
+
+    function getRankedDimensions(scores) {
+      return dimensions
+        .map((dimension) => ({ ...dimension, score: scores[dimension.key] }))
+        .sort((a, b) => b.score - a.score);
+    }
+
+    function setText(id, text) {
+      document.getElementById(id).textContent = text;
+    }
+
+    function renderFilters(targetTabsId, targetChipsId) {
+      const tabs = document.getElementById(targetTabsId);
+      const chips = document.getElementById(targetChipsId);
+      const activeCut = getActiveCut();
+
+      tabs.innerHTML = report.cuts.map((cut) => `
+        <button class="filterTab ${cut.fieldId === state.fieldId ? "isActive" : ""}" type="button" data-field="${cut.fieldId}">
+          ${cut.label}
+        </button>
+      `).join("");
+
+      chips.innerHTML = `
+        <button class="chip ${state.value === null ? "isActive" : ""}" type="button" data-value="">All respondents</button>
+        ${activeCut.values.map((segment) => `
+          <button class="chip ${segment.value === state.value ? "isActive" : ""}" type="button" data-value="${escapeAttr(segment.value)}">
+            ${segment.value} (${format.format(segment.count)})
+          </button>
+        `).join("")}
+      `;
+
+      tabs.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.fieldId = button.dataset.field;
+          state.value = null;
+          render();
+        });
+      });
+
+      chips.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.value = button.dataset.value || null;
+          render();
+        });
+      });
+    }
+
+    function renderDimensionCards(view) {
+      const grid = document.getElementById("dimensionGrid");
+      grid.innerHTML = dimensions.map((dimension) => {
+        const score = view.scores[dimension.key];
+        return `
+          <button class="dimensionCard ${dimension.key === state.activeDimension ? "isActive" : ""}" type="button" data-dimension="${dimension.key}">
+            <div class="dimensionTitle">
+              <strong>${dimension.label}</strong>
+              <span>${score}%</span>
+            </div>
+            <p><strong>Enablement move:</strong> ${dimension.action}</p>
+            <div class="progress" aria-hidden="true"><span style="--pct:${score}%"></span></div>
+          </button>
+        `;
+      }).join("");
+
+      grid.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeDimension = button.dataset.dimension;
+          render();
+        });
+      });
+    }
+
+    function renderFocus(view) {
+      const dimension = dimensions.find((item) => item.key === state.activeDimension) || dimensions[0];
+      const score = view.scores[dimension.key];
+      setText("focusTitle", dimension.label);
+      setText("focusScore", `${score}%`);
+      setText("focusDefinition", dimension.definition);
+      setText("focusAction", dimension.action);
+      setText("focusWhy", dimension.why);
+    }
+
+    function renderRadar(view) {
+      const svg = document.getElementById("radar");
+      const center = 260;
+      const maxRadius = 162;
+      const labelRadius = 214;
+      const points = dimensions.map((dimension, index) => {
+        const angle = -Math.PI / 2 + (index * 2 * Math.PI) / dimensions.length;
+        const score = view.scores[dimension.key] / 100;
+        return {
+          key: dimension.key,
+          label: dimension.label,
+          score: view.scores[dimension.key],
+          x: center + Math.cos(angle) * maxRadius * score,
+          y: center + Math.sin(angle) * maxRadius * score,
+          axisX: center + Math.cos(angle) * maxRadius,
+          axisY: center + Math.sin(angle) * maxRadius,
+          labelX: center + Math.cos(angle) * labelRadius,
+          labelY: center + Math.sin(angle) * labelRadius
+        };
+      });
+      const rings = [0.25, 0.5, 0.75, 1].map((scale) => {
+        const ringPoints = dimensions.map((_, index) => {
+          const angle = -Math.PI / 2 + (index * 2 * Math.PI) / dimensions.length;
+          return `${center + Math.cos(angle) * maxRadius * scale},${center + Math.sin(angle) * maxRadius * scale}`;
+        }).join(" ");
+        return `<polygon points="${ringPoints}" fill="none" stroke="#d7e0ff" stroke-width="1" />`;
+      }).join("");
+      const axes = points.map((point) => `<line x1="${center}" y1="${center}" x2="${point.axisX}" y2="${point.axisY}" stroke="#d7e0ff" stroke-width="1" />`).join("");
+      const shape = points.map((point) => `${point.x},${point.y}`).join(" ");
+      const nodes = points.map((point) => {
+        const active = point.key === state.activeDimension;
+        const displayLabel = point.label.replace("Leadership Reinforcement", "Leadership").replace("Capability Growth", "Growth").replace("Behavior Change", "Habits");
+        return `
+          <g class="radarNode" data-dimension="${point.key}" tabindex="0" role="button" aria-label="${point.label} ${point.score}%">
+            <circle cx="${point.x}" cy="${point.y}" r="${active ? 12 : 9}" fill="${active ? "#b8ef2f" : "#ffffff"}" stroke="#143dff" stroke-width="5" />
+            <text x="${point.labelX}" y="${point.labelY}" text-anchor="middle" dominant-baseline="middle" fill="#182348" font-size="15" font-weight="900">${displayLabel}</text>
+            <text x="${point.labelX}" y="${point.labelY + 19}" text-anchor="middle" dominant-baseline="middle" fill="#143dff" font-size="14" font-weight="900">${point.score}%</text>
+          </g>
+        `;
+      }).join("");
+
+      svg.innerHTML = `
+        <rect x="1" y="1" width="518" height="518" rx="26" fill="#fbfdff" stroke="#dce5ff" />
+        ${rings}
+        ${axes}
+        <polygon points="${shape}" fill="rgba(20, 61, 255, 0.18)" stroke="#143dff" stroke-width="8" stroke-linejoin="round" />
+        ${nodes}
+      `;
+
+      svg.querySelectorAll(".radarNode").forEach((node) => {
+        node.addEventListener("click", () => {
+          state.activeDimension = node.dataset.dimension;
+          render();
+        });
+        node.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            state.activeDimension = node.dataset.dimension;
+            render();
+          }
+        });
+      });
+    }
+
+    function render() {
+      const view = getActiveView();
+      const ranked = getRankedDimensions(view.scores);
+      const strongest = ranked[0];
+      const growthEdge = ranked[ranked.length - 1];
+      const activeCut = getActiveCut();
+      const countText = `${format.format(view.count)} employees`;
+      const scopeText = state.value ? `${activeCut.label}: ${view.label}` : "All respondents";
+      const audience = getAudienceText(view, scopeText);
+
+      setText("sideCount", format.format(view.count));
+      setText("sideScope", view.label);
+      setText("heroCount", format.format(view.count));
+      setText("activeScope", scopeText);
+      setText("activeScopeCount", countText);
+      setText("cohortEyebrow", audience.fieldLabel);
+      setText("cohortNarrativeTitle", audience.narrativeTitle);
+      setText("cohortNarrativeBody", audience.narrativeBody);
+      setText("overallScore", `${view.overall}%`);
+      setText("heroStrongest", strongest.label);
+      setText("heroEdge", growthEdge.label);
+      setText("heroStrongestCopy", `${strongest.label} is where ${audience.short} has the most momentum right now.`);
+      setText("heroEdgeCopy", `${growthEdge.label} is the clearest place to unlock broader adoption for ${audience.short}.`);
+      setText("heroTitle", `${audience.titleSubject} has an established AI fluency profile.`);
+      setText("heroCopy", audience.heroCopy);
+      setText("modelCopy", audience.modelCopy);
+      setText("modelNodeFluency", `Confidence, quality, habits, support, and skill growth across ${format.format(view.count)} employees.`);
+      setText("insightStrong", `Your strongest signal is ${strongest.label}.`);
+      setText("insightStrongCopy", `Use ${strongest.label.toLowerCase()} as the entry point. It is the part of AI fluency most ready to turn into a repeatable habit for ${audience.short}.`);
+      setText("insightReadyCopy", `${audience.titleSubject} should see readiness first: people use AI in real work while keeping context, judgment, and review intact.`);
+      setText("insightOutcome", `Look for ${getOutcomeLanguage(growthEdge.key)}.`);
+      setText("insightOutcomeCopy", getOutcomeCopy(growthEdge.key, audience.short));
+      setText("actionTitle", `Where leaders can turn ${growthEdge.label.toLowerCase()} into business impact.`);
+      setText("actionCopy", `${audience.businessImpact} The leadership question is where ${growthEdge.label.toLowerCase()} can remove friction from the work, improve quality, or make a repeatable workflow easier to sustain.`);
+      setText("stepCohort", audience.businessImpact);
+      setText("stepWorkflow", `${audience.leaderIntervention} Good candidate workflows include ${audience.workflowExamples}.`);
+      setText("stepReinforce", `${audience.operatingBehavior} Ask ${audience.reinforcementOwner} to make the expected behavior visible with one concrete example.`);
+      setText("stepTrack", `${audience.proofSignal} Connect that proof back to confidence, intent, attitude, and perceived work impact.`);
+
+      if (!view.scores[state.activeDimension]) {
+        state.activeDimension = growthEdge.key;
+      }
+
+      renderFilters("mainFilterTabs", "mainFilterChips");
+      renderDimensionCards(view);
+      renderFocus(view);
+      renderRadar(view);
+    }
+
+    function getOutcomeLanguage(key) {
+      const map = {
+        confidence: "more confident execution",
+        usageQuality: "higher quality outputs",
+        behaviorChange: "more repeatable behavior",
+        leadershipReinforcement: "visible team reinforcement",
+        capabilityGrowth: "a clearer next skill path"
+      };
+      return map[key] || "cleaner operating work";
+    }
+
+    function getOutcomeCopy(key, audience = "this cohort") {
+      const map = {
+        confidence: `Watch for ${audience} continuing after imperfect first answers, asking better follow-ups, and applying AI in real work.`,
+        usageQuality: `Watch for ${audience} producing cleaner summaries, stronger first drafts, better issue analysis, and more useful decision support.`,
+        behaviorChange: `Watch for AI showing up in ${audience}'s recurring workflows, not only in one-off experiments.`,
+        leadershipReinforcement: `Watch for managers around ${audience} sharing examples, setting expectations, and making responsible AI use feel normal.`,
+        capabilityGrowth: `Watch for ${audience} naming the next skill to build and practicing it with feedback.`
+      };
+      return map[key] || `Watch for faster prep, clearer handoffs, better issue summaries, stronger documentation, or more repeatable team processes for ${audience}.`;
+    }
+
+    function buildSummary() {
+      const view = getActiveView();
+      const ranked = getRankedDimensions(view.scores);
+      const strongest = ranked[0];
+      const growthEdge = ranked[ranked.length - 1];
+      return [
+        "Your Organizational AI Fluency",
+        `${report.organizationName} example output`,
+        `Current view: ${view.label}`,
+        `Employees represented: ${format.format(view.count)}`,
+        `Average fluency: ${view.overall}%`,
+        `Strongest signal: ${strongest.label} (${strongest.score}%)`,
+        `Growth edge: ${growthEdge.label} (${growthEdge.score}%)`,
+        `Recommended next move: Build ${growthEdge.label.toLowerCase()} into one real workflow and compare before and after work quality.`
+      ].join("\\n");
+    }
+
+    function escapeAttr(value) {
+      return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    document.getElementById("copySummary").addEventListener("click", async () => {
+      const message = document.getElementById("summaryMessage");
+      try {
+        await navigator.clipboard.writeText(buildSummary());
+        message.textContent = "Summary copied.";
+      } catch {
+        message.textContent = "Copy was blocked by the browser. Download summary still works.";
+      }
+    });
+
+    document.getElementById("downloadSummary").addEventListener("click", () => {
+      const blob = new Blob([buildSummary()], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "organizational-ai-fluency-summary.txt";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      document.getElementById("summaryMessage").textContent = "Summary downloaded.";
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -111,6 +111,10 @@ python transformer/glean_gce_transformer.py \
 
 Any person-level field, raw prompt, raw output, message text, or raw event list
 is rejected at the boundary.
+`cohort_id`, `workflow_id`, and `calibration_id` must be machine-safe tokens
+using only letters, numbers, colons, underscores, and hyphens; free-text labels
+belong in customer-side mapping documentation, not forwarded aggregate
+evidence.
 
 ## 4. Post Aggregate Payloads
 
@@ -136,10 +140,30 @@ Successful response:
     "suppression_reason": null,
     "calibration_id": "scio-prod-60d-2026-05",
     "velocity_index": 0.67,
-    "quality_multiplier": 1.19
+    "quality_multiplier": 1.19,
+    "forwarded_distribution": {
+      "schema_version": "FT_V3_FORWARDED_DISTRIBUTION_2026_06",
+      "source_schema_version": "FT_V3_2026_05",
+      "cohort_id": "customer-aiom-60d",
+      "workflow_id": "workflow:CHAT",
+      "cohort_size": 50,
+      "calibration_id": "scio-prod-60d-2026-05",
+      "value_type": "UNCLASSIFIED",
+      "evidence_grade": "OBJECTIVE",
+      "privacy": {
+        "aggregate_only": true,
+        "person_level_fields_included": false
+      }
+    }
   }
 }
 ```
+
+`forwarded_distribution` is present only when the V3 verdict is `SURFACE`.
+It carries the aggregate distribution that already cleared the V3 gates so
+downstream consumers can re-check it without raw GCE. It must not contain raw
+rows, user identifiers, prompts, outputs, transcripts, raw skill names, action
+rows, or sub-5 cohort evidence. Suppressed verdicts omit it.
 
 If a payload references an unknown `calibration_id`, FluencyTracr rejects it.
 If the same immutable aggregate key is posted twice, FluencyTracr rejects the
@@ -153,8 +177,10 @@ curl -fsS "$FLUENCYTRACR_URL/api/v3/verdicts?cohort_id=customer-aiom-60d" \
   -H "x-org-id: $FLUENCYTRACR_ORG_ID"
 ```
 
-The response contains the stored aggregate verdicts for that cohort. Suppressed
-records keep `multiplier`, `velocity_index`, and derived values null.
+The response contains the stored aggregate verdicts for that cohort. Surfaced
+records may include `forwarded_distribution`. Suppressed records keep
+`multiplier`, `velocity_index`, derived values, and `forwarded_distribution`
+null or absent.
 
 ## Scheduling
 

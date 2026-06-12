@@ -123,6 +123,45 @@ describe("POST /api/v3/ingest/aggregate", () => {
     expect(velocity.body.velocity_index).toBe(1);
   });
 
+  it("forwards the governed aggregate distribution only when the V3 verdict surfaces", async () => {
+    const res = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({ workflow_id: "workflow:FORWARDABLE" }));
+
+    expect(res.status).toBe(202);
+    expect(res.body.verdict.verdict).toBe("SURFACE");
+    expect(res.body.verdict.forwarded_distribution).toMatchObject({
+      schema_version: "FT_V3_FORWARDED_DISTRIBUTION_2026_06",
+      source_schema_version: "FT_V3_2026_05",
+      cohort_id: "cohort-enterprise-aiom",
+      workflow_id: "workflow:FORWARDABLE",
+      cohort_size: 50,
+      calibration_id: "scio-prod-60d-2026-05",
+      value_type: "UNCLASSIFIED",
+      evidence_grade: "OBJECTIVE",
+      privacy: {
+        aggregate_only: true,
+        person_level_fields_included: false
+      }
+    });
+    expect(res.body.verdict.forwarded_distribution.velocity.frequency).toEqual(baseDistribution);
+    expect(res.body.verdict.forwarded_distribution.quality_signals.verification_rate).toBe(0.4);
+    expect(res.body.verdict.forwarded_distribution.surface_taxonomy_ids).toContain("workflow:FORWARDABLE");
+
+    const serialized = JSON.stringify(res.body.verdict.forwarded_distribution).toLowerCase();
+    for (const forbidden of ["prompt", "output", "message", "email", "user_id", "actor_id", "skill_name", "transcript", "body"]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+
+    const verdicts = await request(app)
+      .get("/api/v3/verdicts?cohort_id=cohort-enterprise-aiom&workflow_id=workflow:FORWARDABLE")
+      .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-v3" });
+
+    expect(verdicts.status).toBe(200);
+    expect(verdicts.body.verdicts[0].forwarded_distribution.workflow_id).toBe("workflow:FORWARDABLE");
+  });
+
   it("rejects person-level fields at the boundary", async () => {
     const res = await request(app)
       .post("/api/v3/ingest/aggregate")
@@ -131,6 +170,17 @@ describe("POST /api/v3/ingest/aggregate", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.reason_code).toBe("person_level_field_rejected");
+  });
+
+  it("rejects raw-text shaped identifiers before forwarding can occur", async () => {
+    const res = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({ workflow_id: "support resolution prompt analysis" }));
+
+    expect(res.status).toBe(400);
+    expect(res.body.reason_code).toBe("invalid_aggregate_ingest_payload");
+    expect(res.body.details.fieldErrors.workflow_id[0]).toContain("Invalid");
   });
 
   it("rejects unknown calibration ids", async () => {
@@ -175,6 +225,40 @@ describe("POST /api/v3/ingest/aggregate", () => {
     expect(res.body.verdict.verdict).toBe("SUPPRESS");
     expect(res.body.verdict.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(res.body.verdict.velocity_index).toBeNull();
+    expect(res.body.verdict.forwarded_distribution).toBeUndefined();
+  });
+
+  it("keeps forwarding independent across workflow slices in the same cohort", async () => {
+    const surfaced = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({
+        workflow_id: "workflow:SLICE-A",
+        jbtd_id: "support-resolution",
+        persona_id: "support-lead"
+      }));
+    const suppressed = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({
+        workflow_id: "workflow:SLICE-B",
+        jbtd_id: "support-resolution",
+        persona_id: "support-lead",
+        cohort_size: 4
+      }));
+
+    expect(surfaced.status).toBe(202);
+    expect(suppressed.status).toBe(202);
+    expect(surfaced.body.verdict.forwarded_distribution.workflow_id).toBe("workflow:SLICE-A");
+    expect(suppressed.body.verdict.forwarded_distribution).toBeUndefined();
+
+    const verdicts = await request(app)
+      .get("/api/v3/verdicts?cohort_id=cohort-enterprise-aiom")
+      .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-v3" });
+    const byWorkflow = new Map(verdicts.body.verdicts.map((verdict: any) => [verdict.workflow_id, verdict]));
+
+    expect(byWorkflow.get("workflow:SLICE-A").forwarded_distribution.workflow_id).toBe("workflow:SLICE-A");
+    expect(byWorkflow.get("workflow:SLICE-B").forwarded_distribution).toBeUndefined();
   });
 
   it("documents the verdict persistence table migration", () => {

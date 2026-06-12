@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines the Economic Impact Bridge as a future V4 concept for FluencyTracr. It establishes the conceptual basis before any schema, endpoint, economic readout, ROI range, dashboard, or automated recommendation depends on behavioral evidence. The bridge is load-bearing on governance because it explains how FluencyTracr can connect aggregate AI behavior to economic value investigation without claiming realized ROI, causality, productivity lift, or employee performance.
+This document defines the Economic Impact Bridge as a future V4 concept for FluencyTracr. It establishes the conceptual basis before any schema, endpoint, economic readout, ROI range, dashboard, or automated recommendation depends on behavioral evidence. The bridge is load-bearing on governance because it explains how FluencyTracr can connect trusted aggregate AI behavior to ROI metric routing and economic value investigation without claiming realized ROI, causality, productivity lift, or employee performance.
 
 ## 2. The Economic Interpretation Gap
 
@@ -41,13 +41,35 @@ It consumes:
 It emits:
 
 - candidate impact areas,
+- ROI or value metric candidates,
 - value hypotheses,
 - evidence gaps,
 - caveats,
 - customer-owned assumptions required for dollarization,
+- whether trusted data is eligible to pass into governed value-scenario modeling,
 - whether a later defensibility range is allowed, held, or blocked.
 
 It does not emit realized ROI, guaranteed savings, employee productivity, causal impact, or predictions.
+
+## 3.1 Trusted Data Pass-Through
+
+The bridge should not stop all ROI work by default. It should stop unsupported
+ROI claims by default.
+
+When governed aggregate work evidence, customer-owned outcome evidence, trust
+coverage, source coverage, baseline/comparison rules, and assumptions are
+present or explicitly caveated, the bridge may pass the record forward for:
+
+- ROI metric routing,
+- value route selection,
+- governed scenario modeling,
+- executive validation language, and
+- customer-owned finance or operations review.
+
+That pass-through is not a claim upgrade. It is permission to determine which
+ROI metrics should be modeled and reviewed. Realized ROI, causality, dollarized
+savings, productivity claims, and customer-facing economic output remain blocked
+until a separate governed review explicitly approves that exact use.
 
 ## 4. Safe Economic Language
 
@@ -117,7 +139,7 @@ The portfolio determines action posture. The bridge determines economic investig
 
 ## 8. Relationship to Outcome Evidence
 
-Outcome Evidence can strengthen the bridge when it is customer-attested, aggregate, and governed. It may show alignment between behavioral evidence and external business metrics.
+Outcome Evidence can strengthen the bridge when it is customer-attested, aggregate, and governed. It may show alignment between behavioral evidence and external business metrics, and it may make a record eligible for ROI metric routing or governed value-scenario modeling.
 
 Outcome Evidence does not automatically prove causality. A support resolution metric, sales cycle metric, or onboarding metric can provide context, but the bridge must preserve `NOT_CAUSAL` unless a future governed experimental design supports stronger language.
 

@@ -86,8 +86,10 @@ import {
 } from "./value_realization/causal_delta";
 import {
   computeQualityMultiplier,
+  computeQualityMultiplierFromForwardedDistribution,
   failClosedQualityMultiplierResponse
 } from "./value_realization/quality_multiplier";
+import { ForwardedDistributionSchema } from "./value_realization/forwarded_distribution";
 import {
   computeVelocityIndex,
   findVelocityPersonField,
@@ -863,6 +865,16 @@ const REQUIRED_COMPLIANCE_TABLES = [
   "ComplianceDecision"
 ] as const;
 
+// AI Value persistence. Surfaced in DB readiness so a deploy that skipped the
+// ai_value_objects migration fails closed at /ops/db/readiness and /health
+// instead of only erroring at the first value-chain upsert.
+const REQUIRED_AI_VALUE_TABLES = ["ai_value_objects"] as const;
+
+const REQUIRED_PERSISTENCE_TABLES = [
+  ...REQUIRED_COMPLIANCE_TABLES,
+  ...REQUIRED_AI_VALUE_TABLES
+] as const;
+
 type DatabaseReadinessResult =
   | { status: "not_configured" }
   | { status: "ready"; missingTables: []; tableCount: number }
@@ -880,7 +892,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
     )) as Array<{ tablename: string }>;
     const tableNames = new Set(rows.map((row) => row.tablename));
-    const missingTables = REQUIRED_COMPLIANCE_TABLES.filter((tableName) => !tableNames.has(tableName));
+    const missingTables = REQUIRED_PERSISTENCE_TABLES.filter((tableName) => !tableNames.has(tableName));
     if (missingTables.length > 0) {
       return {
         status: "schema_incomplete",
@@ -4047,6 +4059,11 @@ const QualityMultiplierQuerySchema = z.object({
   jbtd_id: FluencyJoinKeySchema.nullable().optional(),
   persona_id: FluencyJoinKeySchema.nullable().optional(),
   window_days: z.coerce.number().int().positive().max(3650),
+  cohort_id: z.string().min(1).optional(),
+  use_forwarded_distribution: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
   include_velocity: z
     .enum(["true", "false"])
     .optional()
@@ -4139,6 +4156,8 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     jbtd_id: req.query.jbtd_id,
     persona_id: req.query.persona_id,
     window_days: req.query.window_days,
+    cohort_id: req.query.cohort_id,
+    use_forwarded_distribution: req.query.use_forwarded_distribution,
     include_velocity: req.query.include_velocity
   });
 
@@ -4146,6 +4165,37 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     return res.status(400).json(
       failClosedQualityMultiplierResponse(rawWorkflowId, rawWindowDays)
     );
+  }
+
+  if (parsed.data.use_forwarded_distribution && parsed.data.cohort_id && req.authOrgId) {
+    const verdicts = await listFluencyTracrVerdicts({
+      orgId: req.authOrgId,
+      cohortId: parsed.data.cohort_id,
+      workflowId: parsed.data.workflow_id
+    });
+    const forwardedVerdict = verdicts.find((row) => {
+      const payload = row.payload_json as Record<string, unknown>;
+      if (payload.verdict !== "SURFACE") {
+        return false;
+      }
+      if ((payload.jbtd_id ?? null) !== (parsed.data.jbtd_id ?? null)) {
+        return false;
+      }
+      if ((payload.persona_id ?? null) !== (parsed.data.persona_id ?? null)) {
+        return false;
+      }
+      return typeof payload.forwarded_distribution === "object" && payload.forwarded_distribution !== null;
+    });
+    const parsedForwarded = ForwardedDistributionSchema.safeParse(
+      forwardedVerdict?.payload_json.forwarded_distribution
+    );
+    if (parsedForwarded.success && parsedForwarded.data.window_days >= parsed.data.window_days) {
+      return res.json(
+        computeQualityMultiplierFromForwardedDistribution({
+          forwardedDistribution: parsedForwarded.data
+        })
+      );
+    }
   }
 
   const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });

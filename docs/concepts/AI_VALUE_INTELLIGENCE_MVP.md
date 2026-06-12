@@ -8,9 +8,8 @@ FluencyTracr's existing evidence-governance model.
 The system should help organizations answer:
 
 ```text
-Where is AI being used, what work is changing, what business value may be
-emerging, and which ROI or value claims are supported, caveated, missing, or
-unsafe?
+Are we building AI capability, is AI becoming real work, what outcome should
+move, what proof do we have, and what should we change next?
 ```
 
 The MVP is docs-first. It does not add schemas, APIs, storage, canonical
@@ -64,13 +63,34 @@ The MVP should answer five executive questions:
 
 | Question | MVP answer |
 | --- | --- |
-| Where is AI being used? | Aggregate AI work patterns by approved workflow, surface, window, and safe segment. |
-| What work is changing? | Evidence of repeated use, delegation, reuse, verification, recovery, quality, or friction. |
-| What value may be emerging? | Candidate value routes such as cost, capacity, quality, risk, revenue, or experience. |
-| What evidence is missing? | Source coverage, baseline, outcome, trust, workflow, or assumption gaps. |
-| What can we safely claim? | Reportable, caveated, unsupported, internal-only, suppressed, or blocked value language. |
+| Are we building AI capability? | Aggregate AI Fluency baseline by approved function or workflow context. |
+| Is AI becoming real work? | VBD pattern: Velocity and Depth show the work pattern; Breadth shows coverage. |
+| What outcome should move? | A customer-owned function outcome metric, source system, owner, unit, and comparison rule. |
+| What proof do we have? | A governed Value Evidence Case with aggregate AI work evidence, outcome evidence, assumptions, caveats, and evidence level. |
+| What should we change next? | An intervention and retest plan for the same workflow slice. |
 
-## 5. First Pilot Slice
+The phase data support map is maintained in
+[AI_VALUE_MEASUREMENT_MODEL.md](AI_VALUE_MEASUREMENT_MODEL.md). Use that map to
+decide whether a future phase has enough software and fixture support to expose
+in the product.
+
+## 5. MVP Product Spine
+
+The MVP should stay narrow:
+
+```text
+AI Fluency Baseline
+-> VBD Operating Map
+-> Function Outcome Metric
+-> Value Evidence Case
+-> Intervention / Retest
+```
+
+The existing Blueprint, Metrics, Evidence Readiness, Scenario, Decision, and
+Executive Packet objects are supporting objects inside this spine. They should
+not be presented as unrelated destinations.
+
+## 6. First Pilot Slice
 
 The first pilot slice should be one workflow family, not the whole diagram.
 
@@ -94,7 +114,7 @@ The first pilot should not require broad HRIS ingestion. HRIS or directory data
 may be used only for coarse, customer-approved aggregate role/function context
 if needed.
 
-## 6. MVP Inputs
+## 7. MVP Inputs
 
 The MVP consumes governed aggregate inputs only.
 
@@ -127,7 +147,7 @@ Raw HR records, employee IDs, emails, names, manager chains, ticket text,
 prompts, responses, transcripts, file content, and person-level usage rows must
 not enter FluencyTracr.
 
-## 7. MVP Outputs
+## 8. MVP Outputs
 
 The MVP produces one evidence pack for the pilot workflow family.
 
@@ -151,7 +171,7 @@ Required outputs:
 The output should be executive-readable and machine-checkable. The first
 version can be Markdown plus seeded JSON examples before implementation.
 
-## 8. Value Routes
+## 9. Value Routes
 
 The MVP should use the value routes already defined in AI Manager Outcomes
 Recommendations:
@@ -167,7 +187,7 @@ Recommendations:
 
 Routes are investigation lanes. They are not proof that value was realized.
 
-## 9. Claim Confidence Ladder
+## 10. Claim Confidence Ladder
 
 The MVP should distinguish five claim states:
 
@@ -183,7 +203,7 @@ These are MVP claim-confidence states, not new suppression reasons. Existing
 `SURFACE` / `SUPPRESS` verdict posture and the five suppression reasons remain
 authoritative.
 
-## 10. Safe And Blocked Claims
+## 11. Safe And Blocked Claims
 
 ### Safe language
 
@@ -208,7 +228,7 @@ The MVP must not say:
 - "AI usage alone generated cost savings."
 - "Suppressed evidence supports a value claim."
 
-## 11. Build Path
+## 12. Build Path
 
 ### Phase 0: Contract and fixture
 
@@ -481,7 +501,7 @@ Phase 10-13 remains local V1 software. It does not add production connectors,
 customer-facing economic output, causality claims, individual scoring, HR
 analytics, or realized ROI.
 
-## 12. Quality Gates
+## 13. Quality Gates
 
 No pilot readout should be generated unless these questions pass:
 
@@ -499,7 +519,7 @@ No pilot readout should be generated unless these questions pass:
 If any gate fails, the output should become `MISSING`, `INTERNAL_ONLY`, or
 `BLOCKED`, depending on the failure.
 
-## 13. Relationship To Existing Concepts
+## 14. Relationship To Existing Concepts
 
 AI Value Intelligence MVP composes existing FluencyTracr concepts:
 
@@ -519,7 +539,7 @@ AI Value Intelligence MVP composes existing FluencyTracr concepts:
 
 The MVP should not bypass any of these boundaries.
 
-## 14. What To Validate First
+## 15. What To Validate First
 
 The first validation question is:
 
@@ -532,7 +552,7 @@ missing, and what claims remain unsafe?
 Success means the output helps an executive make a better next decision
 without pretending to prove ROI.
 
-## 15. Open Decisions
+## 16. Open Decisions
 
 - Which support workflow should be the first seeded pilot: case resolution,
   escalation reduction, knowledge reuse, QA review, or backlog reduction?
@@ -543,7 +563,7 @@ without pretending to prove ROI.
 - Which value route should be primary for pilot storytelling: capacity,
   quality, cost, or experience?
 
-## 16. Attribution
+## 17. Attribution
 
 See [ATTRIBUTION.md](../../ATTRIBUTION.md) for intellectual provenance. This
 MVP is credited to James Kelley and synthesizes the Whole System ROI diagram,

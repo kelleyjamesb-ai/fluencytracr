@@ -10,12 +10,34 @@ workshops, process libraries, metrics libraries, value calculators, executive
 validation checklists, and business-case readouts.
 
 The platform should not become a deck generator. It should convert those
-artifacts into governed software objects that help a client move from business
-objective to validated AI value hypothesis.
+artifacts into governed software objects that help a client move from AI
+capability baseline to a validated next operating action.
+
+The current product North Star is:
+
+```text
+Are we building AI capability, is AI becoming real work, what outcome should
+move, what proof do we have, and what should we change next?
+```
+
+Use [AI_VALUE_MEASUREMENT_MODEL.md](AI_VALUE_MEASUREMENT_MODEL.md) as the
+current product spine and phase data support map.
 
 ## Architecture Spine
 
-The reusable spine is:
+The client-facing reusable spine is:
+
+```text
+AI Fluency Baseline
+-> VBD Operating Map
+-> Function Outcome Metric
+-> Value Evidence Case
+-> Intervention / Retest
+```
+
+The implementation object spine below remains useful as scaffolding. It explains
+how decks, spreadsheets, and worksheets turn into software objects, but it
+should not become the client-facing navigation model.
 
 ```text
 Client Context
@@ -33,6 +55,16 @@ Client Context
 
 Every deck, spreadsheet, worksheet, and checklist should either create, enrich,
 validate, or report on one of these objects.
+
+The object spine maps back to the product phases this way:
+
+| Product phase | Supporting implementation objects | Data support already built |
+| --- | --- | --- |
+| AI Fluency Baseline | Client Context, Business Objective, Workstream, fluency baseline | Aggregate fluency baseline fixture and engine with suppressed-cohort validation. |
+| VBD Operating Map | Workstream, Use Case, Workflow Blueprint, AI Work Evidence | Velocity, Breadth, Depth concepts, aggregate API-push package, and VBD UI/context. |
+| Function Outcome Metric | Metric Definition, Data Source, Blueprint-to-metric adapter | Metrics schemas, support and sales metric fixtures, value routes, source owners, and comparison rules. |
+| Value Evidence Case | Evidence Readiness, Value Scenario, Claim Boundary, Executive Readout | Evidence pack, outcome export, scenario, safe-language review, and executive packet fixtures. |
+| Intervention / Retest | Action Plan, Sponsor Decision, value improvement loop | Value-improvement-loop schema, seeded support fixture, and local recommendation engine. |
 
 Agentic development can accelerate this spine, but agents must coordinate
 through validated object references rather than raw conversation. Phase 9.5

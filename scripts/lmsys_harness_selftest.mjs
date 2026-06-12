@@ -105,6 +105,13 @@ assert.deepEqual(ids, [
   "duplicate_execution_ids_across_orgs",
   "failure_success_recovery_maturity",
   "fast_completion_no_verification",
+  "forwarded_distribution_suppress_baseline_unstable",
+  "forwarded_distribution_suppress_high_ambiguity",
+  "forwarded_distribution_suppress_insufficient_time",
+  "forwarded_distribution_suppress_insufficient_volume",
+  "forwarded_distribution_suppress_no_convergence",
+  "forwarded_distribution_surface_with_forwarding",
+  "forwarded_distribution_surface_without_forwarding_legacy",
   "friction_loop",
   "ghost_use_bypassed_by_positive_evidence",
   "ghost_use_does_not_persist",
@@ -165,6 +172,39 @@ for (const entry of outcomeEvidenceCases) {
     assert.equal(payload.jbtd_id, null);
     assert.equal(payload.persona_id, null);
     assert.ok(payload.cohort_size >= 5);
+  }
+}
+const forwardedDistributionCases = cases.filter((entry) => entry.forwarded_distribution_manifest);
+assert.deepEqual(forwardedDistributionCases.map((entry) => entry.id).sort(), [
+  "forwarded_distribution_suppress_baseline_unstable",
+  "forwarded_distribution_suppress_high_ambiguity",
+  "forwarded_distribution_suppress_insufficient_time",
+  "forwarded_distribution_suppress_insufficient_volume",
+  "forwarded_distribution_suppress_no_convergence",
+  "forwarded_distribution_surface_with_forwarding",
+  "forwarded_distribution_surface_without_forwarding_legacy"
+]);
+for (const entry of forwardedDistributionCases) {
+  assert.equal(entry.forwarded_distribution_manifest.aggregate_only, true);
+  assert.equal(entry.forwarded_distribution_manifest.person_level_fields_included, false);
+  assert.ok(["SURFACE", "SUPPRESS"].includes(entry.expected.verdict));
+  assert.ok(["PRESENT", "ABSENT", "ABSENT_LEGACY"].includes(entry.expected.forwarded_distribution));
+  if (entry.expected.verdict === "SUPPRESS") {
+    assert.equal(entry.expected.forwarded_distribution, "ABSENT");
+    assert.ok([
+      "INSUFFICIENT_TIME",
+      "INSUFFICIENT_VOLUME",
+      "NO_CONVERGENCE",
+      "BASELINE_UNSTABLE",
+      "HIGH_AMBIGUITY"
+    ].includes(entry.expected.suppression_reason));
+    assert.equal(entry.forwarded_distribution_manifest.suppress_forwards_nothing, true);
+  }
+  if (entry.expected.forwarded_distribution === "PRESENT") {
+    assert.equal(entry.forwarded_distribution_manifest.schema_version, "FT_V3_FORWARDED_DISTRIBUTION_2026_06");
+    assert.equal(entry.forwarded_distribution_manifest.consumer_recheck_required, true);
+    assert.equal(entry.expected.quality_multiplier_value_type, "QUALITY_PREMIUM");
+    assert.equal(entry.expected.quality_multiplier_evidence_grade, "CALIBRATED");
   }
 }
 const ghostUseCases = cases.filter((entry) => entry.expected?.ghost_use);

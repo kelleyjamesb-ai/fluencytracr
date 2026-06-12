@@ -17,7 +17,12 @@ import {
   validateValueScenario,
   validateEvidenceReadiness,
   validateClaimBoundary,
-  validateExecutivePacket
+  validateExecutivePacket,
+  validateDataBoundaryContract,
+  validateValueImprovementLoop,
+  buildValueImprovementLoopFromRoiScenario,
+  validateValueEvidenceCase,
+  buildValueEvidenceCase
 } from "../shared/dist/aiValueEngine/index.js";
 
 function readExample(name) {
@@ -46,6 +51,17 @@ test("engine exposes the six per-stage contract entry points", () => {
   ]) {
     assert.equal(typeof entry, "function");
   }
+});
+
+test("engine exposes the data boundary contract for real evidence planning", () => {
+  const contract = readExample("customer-support-data-boundary-roi-evidence.json");
+  const validation = validateDataBoundaryContract(contract);
+
+  assert.equal(typeof validateDataBoundaryContract, "function");
+  assert.equal(validation.valid, true);
+  assert.equal(validation.feeds.aggregate_evidence_package, true);
+  assert.equal(validation.feeds.value_evidence_case, true);
+  assert.equal(validation.feeds.customer_facing_economic_output, false);
 });
 
 test("runSpine runs the Customer Support fixtures through every stage", () => {
@@ -548,4 +564,74 @@ test("runSpine never emits customer-facing economic output", () => {
     run.stages.readiness.validation.feeds.customer_facing_economic_output,
     false
   );
+});
+
+test("builds a governed value improvement loop when a value target is not improving", () => {
+  const roiScenario = readExample("customer-support-roi-scenario.json");
+  const improvementLoop = buildValueImprovementLoopFromRoiScenario(roiScenario, {
+    valueTargetStatus: "NOT_IMPROVING",
+    fluencyReadiness: "MIXED",
+    velocityStatus: "STALLING",
+    breadthStatus: "LIMITED",
+    depthStatus: "SHALLOW",
+    evidenceConfidence: "MEDIUM"
+  });
+  const validation = validateValueImprovementLoop(improvementLoop);
+
+  assert.equal(validation.valid, true);
+  assert.equal(validation.feeds.improvement_planning, true);
+  assert.equal(validation.feeds.customer_facing_economic_output, false);
+  assert.equal(improvementLoop.value_target.current_status, "NOT_IMPROVING");
+  assert.ok(improvementLoop.likely_blockers.length >= 3);
+  assert.ok(
+    improvementLoop.likely_blockers.some((blocker) =>
+      blocker.blocker_id.includes("breadth")
+    )
+  );
+  assert.ok(improvementLoop.recommended_interventions.length >= 3);
+  assert.ok(improvementLoop.retest_plan.window_label.includes("30-45 days"));
+  assert.ok(improvementLoop.next_data_needed.length > 0);
+  assert.equal(improvementLoop.economic_output_policy.customer_facing_economic_output, false);
+});
+
+test("value improvement loop validation rejects ROI proof, identifiers, and missing next actions", () => {
+  const roiScenario = readExample("customer-support-roi-scenario.json");
+  const improvementLoop = buildValueImprovementLoopFromRoiScenario(roiScenario, {
+    valueTargetStatus: "NOT_IMPROVING"
+  });
+  improvementLoop.safe_language.allowed_phrases.push("Glean proved ROI for the customer.");
+  improvementLoop.recommended_interventions = [];
+  improvementLoop.direct_user_ids = ["user-1"];
+
+  const validation = validateValueImprovementLoop(improvementLoop);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("recommended_interventions"))
+  );
+  assert.ok(validation.gaps.some((gap) => gap.includes("Forbidden field")));
+  assert.ok(validation.gaps.some((gap) => gap.includes("unsafe claim language")));
+});
+
+test("value evidence case engine exports validate the seeded fixture and gate the evidence ladder", () => {
+  const fixture = readExample("customer-support-value-evidence-case.json");
+  const validation = validateValueEvidenceCase(fixture);
+
+  assert.equal(validation.valid, true);
+  assert.equal(validation.evidence_level, "CAVEATED");
+  assert.equal(validation.allowed_claim_level, "CAVEATED_VALUE_INVESTIGATION");
+  assert.equal(validation.feeds.customer_facing_economic_output, false);
+
+  const evidenceCase = buildValueEvidenceCase({
+    dataBoundary: readExample("customer-support-data-boundary-roi-evidence.json"),
+    roiScenario: readExample("customer-support-roi-scenario.json"),
+    readiness: readExample("customer-support-evidence-readiness.json"),
+    outcomeEvidenceExport: readExample("customer-support-outcome-evidence-export.json"),
+    improvementLoop: readExample("customer-support-value-improvement-loop.json")
+  });
+
+  assert.equal(validateValueEvidenceCase(evidenceCase).valid, true);
+  assert.equal(evidenceCase.vbd_summary.depth.definition, "workflow_integration_embeddedness");
+  // The seeded export is SUBMITTED, so the built case stays directional.
+  assert.equal(evidenceCase.evidence_quality.evidence_level, "DIRECTIONAL");
 });

@@ -89,6 +89,24 @@ paths:
             matching velocity verdict also surfaces. Default behavior is unchanged.
           schema:
             type: boolean
+        - name: cohort_id
+          in: query
+          required: false
+          description: >
+            Cohort id for an existing V3 aggregate verdict when
+            use_forwarded_distribution is true.
+          schema:
+            type: string
+            minLength: 1
+        - name: use_forwarded_distribution
+          in: query
+          required: false
+          description: >
+            When true and a matching surfaced V3 verdict has a governed
+            forwarded_distribution, Quality Multiplier consumes that aggregate
+            payload after re-checking gates. Raw events are not required.
+          schema:
+            type: boolean
       responses:
         "200":
           description: Quality multiplier verdict
@@ -504,6 +522,10 @@ components:
             - OBJECTIVE
             - CALIBRATED
             - QUALITATIVE
+        value_type:
+          type: string
+          enum:
+            - QUALITY_PREMIUM
         computed_at:
           type: string
           format: date-time

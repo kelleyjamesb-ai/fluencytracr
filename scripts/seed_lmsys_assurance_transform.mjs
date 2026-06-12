@@ -1036,6 +1036,91 @@ export function buildAssuranceCases(options = {}) {
         factory: calibratedExecution
       })
     },
+    {
+      id: "forwarded_distribution_surface_with_forwarding",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-forwarded-surface`,
+      expected: {
+        verdict: "SURFACE",
+        forwarded_distribution: "PRESENT",
+        value_type: "UNCLASSIFIED",
+        quality_multiplier_value_type: "QUALITY_PREMIUM",
+        quality_multiplier_evidence_grade: "CALIBRATED"
+      },
+      forwarded_distribution_manifest: {
+        source_contract: "docs/integrations/value-realization/V3_INGEST.md",
+        schema_version: "FT_V3_FORWARDED_DISTRIBUTION_2026_06",
+        aggregate_only: true,
+        person_level_fields_included: false,
+        consumer_recheck_required: true
+      },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-forwarded-surface`,
+        caseId: "forwarded-surface",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: calibratedExecution
+      })
+    },
+    {
+      id: "forwarded_distribution_surface_without_forwarding_legacy",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-forwarded-legacy`,
+      expected: {
+        verdict: "SURFACE",
+        forwarded_distribution: "ABSENT_LEGACY"
+      },
+      forwarded_distribution_manifest: {
+        source_contract: "docs/contracts/evidence-bundle/v1/README.md",
+        schema_version: null,
+        aggregate_only: true,
+        person_level_fields_included: false,
+        consumer_recheck_required: false
+      },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-forwarded-legacy`,
+        caseId: "forwarded-legacy",
+        count: caseCount,
+        baseMs,
+        runLabel,
+        factory: calibratedExecution
+      })
+    },
+    ...[
+      "INSUFFICIENT_TIME",
+      "INSUFFICIENT_VOLUME",
+      "NO_CONVERGENCE",
+      "BASELINE_UNSTABLE",
+      "HIGH_AMBIGUITY"
+    ].map((reason) => ({
+      id: `forwarded_distribution_suppress_${reason.toLowerCase()}`,
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-forwarded-suppress-${reason.toLowerCase().replaceAll("_", "-")}`,
+      expected: {
+        verdict: "SUPPRESS",
+        suppression_reason: reason,
+        forwarded_distribution: "ABSENT"
+      },
+      forwarded_distribution_manifest: {
+        source_contract: "docs/integrations/value-realization/V3_INGEST.md",
+        schema_version: "FT_V3_FORWARDED_DISTRIBUTION_2026_06",
+        aggregate_only: true,
+        person_level_fields_included: false,
+        suppress_forwards_nothing: true
+      },
+      events: buildExecutions({
+        orgId,
+        workflowId: `${workflowPrefix}-forwarded-suppress-${reason.toLowerCase().replaceAll("_", "-")}`,
+        caseId: `forwarded-suppress-${reason.toLowerCase().replaceAll("_", "-")}`,
+        count: reason === "INSUFFICIENT_VOLUME" ? Math.max(1, minCohortSize - 1) : caseCount,
+        baseMs,
+        runLabel,
+        factory: reason === "NO_CONVERGENCE" ? blindExecution : calibratedExecution
+      })
+    })),
     buildVelocityCase({
       orgId,
       workflowPrefix,

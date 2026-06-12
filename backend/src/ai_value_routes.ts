@@ -16,6 +16,11 @@ import {
   listAiValueObjects,
   upsertAiValueObject
 } from "./repositories/ai-value-object.repository";
+import {
+  AiValueMaterializerNotFoundError,
+  AiValueMaterializerValidationError,
+  materializeRealEvidence
+} from "./ai_value_real_evidence_materializer";
 
 type StageValidation = {
   valid: boolean;
@@ -68,6 +73,18 @@ const OBJECT_TYPES: Record<string, ObjectTypeConfig> = {
   outcome_evidence_export: {
     idField: "export_id",
     validate: (payload) => aiValueEngine.validateOutcomeEvidenceExport(payload)
+  },
+  data_boundary: {
+    idField: "contract_id",
+    validate: (payload) => aiValueEngine.validateDataBoundaryContract(payload)
+  },
+  value_improvement_loop: {
+    idField: "improvement_loop_id",
+    validate: (payload) => aiValueEngine.validateValueImprovementLoop(payload)
+  },
+  value_evidence_case: {
+    idField: "value_evidence_case_id",
+    validate: (payload) => aiValueEngine.validateValueEvidenceCase(payload)
   }
 };
 
@@ -178,6 +195,155 @@ const evidenceReviewForReadout = (
 };
 
 export function registerAiValueRoutes(app: Express): void {
+  app.post(
+    "/api/v1/ai-value/materialize/real-evidence",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const {
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        cohort_id: cohortId,
+        workflow_id: workflowId,
+        outcome_workflow_id: outcomeWorkflowId
+      } = body;
+      if (
+        typeof blueprintId !== "string" ||
+        typeof metricsLibraryId !== "string" ||
+        typeof cohortId !== "string" ||
+        typeof workflowId !== "string" ||
+        (outcomeWorkflowId !== undefined && typeof outcomeWorkflowId !== "string")
+      ) {
+        return res.status(400).json({
+          error:
+            "blueprint_id, metrics_library_id, cohort_id, and workflow_id are required",
+          reason: "INVALID_REAL_EVIDENCE_MATERIALIZER_REQUEST"
+        });
+      }
+
+      try {
+        const result = await materializeRealEvidence({
+          orgId,
+          blueprintId,
+          metricsLibraryId,
+          cohortId,
+          workflowId,
+          outcomeWorkflowId
+        });
+        return res.json(result);
+      } catch (error) {
+        if (error instanceof AiValueMaterializerNotFoundError) {
+          return res.status(404).json({
+            error: error.message,
+            reason: "OBJECT_NOT_FOUND"
+          });
+        }
+        if (error instanceof AiValueMaterializerValidationError) {
+          return res.status(422).json({
+            error: error.message,
+            reason: "ENGINE_VALIDATION_FAILED",
+            gaps: error.gaps
+          });
+        }
+        return res.status(500).json({
+          error: "real evidence materialization failed",
+          reason: "REAL_EVIDENCE_MATERIALIZATION_FAILED"
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/api/v1/ai-value/evidence-case/assemble",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const dataBoundaryContractId = stringRef(body.data_boundary_contract_id);
+      const roiScenarioId = stringRef(body.roi_scenario_id);
+      const readinessId = stringRef(body.readiness_id);
+      if (!dataBoundaryContractId || !roiScenarioId || !readinessId) {
+        return res.status(400).json({
+          error:
+            "data_boundary_contract_id, roi_scenario_id, and readiness_id are required",
+          reason: "INVALID_EVIDENCE_CASE_REQUEST"
+        });
+      }
+      const outcomeExportId = stringRef(body.outcome_export_id);
+      const improvementLoopId = stringRef(body.improvement_loop_id);
+
+      const required: Array<[string, string, string]> = [
+        ["data_boundary", dataBoundaryContractId, "data boundary contract"],
+        ["roi_scenario", roiScenarioId, "ROI scenario"],
+        ["evidence_readiness", readinessId, "evidence readiness"]
+      ];
+      const loaded: Record<string, Record<string, unknown>> = {};
+      for (const [objectType, objectId, label] of required) {
+        const record = await getAiValueObject(orgId, objectType, objectId);
+        if (!record) {
+          return res.status(404).json({
+            error: `${label} ${objectId} not found`,
+            reason: "OBJECT_NOT_FOUND"
+          });
+        }
+        loaded[objectType] = record.payload as Record<string, unknown>;
+      }
+      const outcomeExport = outcomeExportId
+        ? (await getAiValueObject(orgId, "outcome_evidence_export", outcomeExportId))
+            ?.payload ?? null
+        : null;
+      const improvementLoop = improvementLoopId
+        ? (await getAiValueObject(orgId, "value_improvement_loop", improvementLoopId))
+            ?.payload ?? null
+        : null;
+
+      const evidenceCase = aiValueEngine.buildValueEvidenceCase(
+        {
+          dataBoundary: loaded.data_boundary,
+          roiScenario: loaded.roi_scenario,
+          readiness: loaded.evidence_readiness,
+          outcomeEvidenceExport: outcomeExport,
+          improvementLoop
+        },
+        {
+          caseId: stringRef(body.case_id) ?? undefined,
+          engagementLabel: stringRef(body.engagement_label) ?? undefined,
+          functionArea: stringRef(body.function_area) ?? undefined
+        }
+      );
+      const validation = aiValueEngine.validateValueEvidenceCase(evidenceCase);
+      if (!validation.valid) {
+        // Fail closed: an assembled case that does not validate is never stored.
+        return res.status(422).json({
+          error: "assembled value evidence case failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          gaps: validation.gaps
+        });
+      }
+
+      const record = await upsertAiValueObject({
+        orgId,
+        objectType: "value_evidence_case",
+        objectId: String(evidenceCase.value_evidence_case_id),
+        schemaVersion: String(evidenceCase.schema_version),
+        workflowFamily: workflowFamilyOf(evidenceCase),
+        payload: evidenceCase,
+        validation: validation as unknown as Record<string, unknown>,
+        valid: validation.valid
+      });
+
+      return res.status(201).json({
+        ...recordSummary(record),
+        payload: evidenceCase
+      });
+    }
+  );
+
   app.put(
     "/api/v1/ai-value/objects/:objectType/:objectId",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),

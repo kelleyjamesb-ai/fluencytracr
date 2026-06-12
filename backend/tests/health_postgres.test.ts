@@ -35,7 +35,8 @@ describe("health postgres disclosure", () => {
           { tablename: "PolicyMapping" },
           { tablename: "CanonicalControlStateHistory" },
           { tablename: "ComplianceEvent" },
-          { tablename: "ComplianceDecision" }
+          { tablename: "ComplianceDecision" },
+          { tablename: "ai_value_objects" }
         ]
       }),
       disconnectPrisma: async () => undefined

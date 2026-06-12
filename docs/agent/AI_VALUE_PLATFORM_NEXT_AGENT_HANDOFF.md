@@ -2,38 +2,47 @@
 
 ## Product North Star
 
-Build the attached whole-system diagrams as reusable software.
-
-The product is not a static dashboard and not a deck generator. It should be a
-guided client value-realization workspace where each phase creates governed
-objects that feed the next phase:
+Build a narrower AI value measurement product around this question:
 
 ```text
-Human Readiness
--> Workflow Discovery And Blueprint
--> Execution Instrumentation
--> Evidence And Measurement
--> Value Realization
--> Whole-System Outcomes
--> Renewal And Expansion
+Are we building AI capability, is AI becoming real work, what outcome should
+move, what proof do we have, and what should we change next?
 ```
 
-The first screen should make the system understandable to a client. If a user
-cannot tell what Blueprint, Metrics, FluencyTracr evidence, outcome data, and
-value realization are for, the experience is not working yet.
+The product is not a static dashboard, deck generator, usage report, or generic
+maturity model. It should be a guided client value-realization workspace where
+each phase creates governed evidence that feeds the next operating decision.
+
+The durable product spine is now:
+
+```text
+AI Fluency Baseline
+-> VBD Operating Map
+-> Function Outcome Metric
+-> Value Evidence Case
+-> Intervention / Retest
+```
+
+Blueprint, metrics, evidence readiness, scenarios, decisions, and proof remain
+important, but they should be subordinate to this spine. They are not competing
+top-level product destinations.
+
+The canonical reset lives in
+[docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md](../concepts/AI_VALUE_MEASUREMENT_MODEL.md).
+Use its phase data support map before expanding the UI, schemas, or next-agent
+handoffs.
 
 ## Product Interpretation Of The Diagrams
 
-The diagrams should be interpreted as a software spine:
+The diagrams should be interpreted through the narrower measurement spine:
 
-| Diagram area | Product module | Existing software anchor | Next experience requirement |
+| Product phase | Client question | Current data support | Next experience requirement |
 | --- | --- | --- | --- |
-| Human Readiness | Explore Your AI Fluency kickoff | `fluency_baseline` object | Show aggregate readiness and capability gaps as client-language kickoff context. |
-| Workflow Discovery And Design | Blueprint workspace | `engagement`, `blueprint`, intake adapter | Make Blueprint feel like a collaborative client workshop, not a database record. |
-| Execution Layer | Glean, MCP, agents, workflow telemetry | FluencyTracr aggregate evidence and future connectors | Show what can be instrumented and what is missing before claiming value. |
-| Evidence And Measurement | FluencyTracr evidence layer | `evidence_readiness`, outcome evidence export | Explain what can be interpreted safely, what is suppressed, and why. |
-| Value Realization | Metrics library and value scenario | `metrics_library`, `value_scenario`, outcome evidence | Map workflow changes to value routes, metrics, assumptions, and evidence gaps. |
-| Whole-System Outcomes | Executive operating cadence | `executive_packet`, readout HTML, Value Journey | Turn validated objects into decision-ready next actions and review rhythm. |
+| AI Fluency Baseline | Are we building AI capability? | Aggregate fluency baseline fixture, `fluencyBaseline` engine, suppressed-cohort tests. | Show post-assessment results by function and make the next intervention question obvious. |
+| VBD Operating Map | Is AI becoming real work? | Velocity concept, Depth concept, aggregate API-push package, VBD context in improvement-loop schema, VBD UI map. | Plot Velocity and Depth as the operating pattern; use Breadth as coverage by function, role, or workflow. |
+| Function Outcome Metric | What outcome should move? | Metric-definition schema, seeded support and sales metrics libraries, Blueprint-to-metric adapter. | Let the client choose the specific outcome metric, source system, owner, and comparison rule. |
+| Value Evidence Case | What proof do we have? | Evidence pack, evidence readiness, outcome export, baseline/comparison fixtures, scenario, review, and readout objects. | Assemble metric, outcome data, VBD state, evidence level, caveats, and decision into one case. |
+| Intervention / Retest | What should we change next? | Value-improvement-loop schema, support fixture, engine, and Decisions UI. | Recommend the next action when the metric or VBD pattern is not moving, then retest the same slice. |
 
 ## Governance Direction
 
@@ -72,55 +81,156 @@ not bury ROI math inside the executive packet or UI.
 
 ## Next Build Slice
 
-Completed latest slice:
+Current latest slice:
 
 ```text
-Workspace Page Handoff Navigation
+Whole-System Value Realization: backend case registry, 5,000-employee seeded
+enterprise, governed ingestion MCP server, and the Evidence Case workspace page
+```
+
+What is now in place (2026-06-11, after the Value Evidence Case contract):
+
+- Backend: `data_boundary`, `value_improvement_loop`, and `value_evidence_case`
+  are registered object types with fail-closed validated upserts, plus
+  `POST /api/v1/ai-value/evidence-case/assemble` which loads stored objects,
+  runs `buildValueEvidenceCase`, validates, persists, and returns the case
+  (`backend/tests/ai_value_evidence_case_api.test.ts`, 5 tests).
+- Seeded working solution: `npm run seed:ai-value-enterprise`
+  (`scripts/seed_ai_value_enterprise.mjs`) simulates a deterministic synthetic
+  5,000-employee enterprise upstream (person-level data never leaves the
+  process), aggregates with cohort suppression, and seeds 12 function fluency
+  baselines plus 5 full workflow chains through the governed API. The focus
+  functions land at distinct evidence-ladder rungs by design: Sales SUPPORTED,
+  Customer Support CAVEATED, Engineering DIRECTIONAL (submitted, awaiting
+  human acceptance), Marketing MISSING (no evidence), Operations MISSING
+  (export rejected). Note the local dev backend store is in-memory without a
+  DB; re-run the seeder after a backend restart.
+- Real-data ingestion: `scripts/ai_value_mcp_server.mjs` (registered in
+  `.mcp.json`) exposes ingest/list/get/review/run-chain/assemble MCP tools
+  wrapping the same fail-closed endpoints; smoke-verified over stdio including
+  a rejected tainted ingest.
+- UI: the Workspace has a new step 7 "Evidence Case" page
+  (`/ai-value-workspace/case`, `frontend/src/components/ValueEvidenceCasePanel.tsx`)
+  with a function selector across all stored cases, the evidence ladder with
+  the current rung highlighted, "what we can say / always said with / never
+  claimed" columns, outcome metric and review state, VBD chips, sponsor
+  decision, and next action — all client-facing language, verified live in the
+  browser against the seeded enterprise.
+- Engine: `buildValueEvidenceCase` accepts a `functionArea` option;
+  `ALLOWED_OUTPUT_UNITS` in the scenario stage now includes `days`.
+
+Previously completed slice:
+
+```text
+Value Evidence Case Contract
 ```
 
 What is now in place:
 
-- Every focused `/ai-value-workspace/*` page now ends with a Workspace Handoff
-  navigation block.
-- The block shows what the current page feeds next, a Back link to the prior
-  phase, and a Continue link to the next phase.
-- Sponsor Decisions loops back to Blueprint Workshop, so the workspace now reads
-  as an operating cycle rather than a set of disconnected pages.
-- The block derives from the existing `workspacePages` structure only; it does
-  not add a new backend object, schema, runtime service, or connector.
-- This is UI/comprehension work only. No production connector, runtime service,
-  autonomous customer action, unsupported ROI proof, causality claim, individual
-  scoring, HR analytics, productivity ranking, raw prompt/response storage,
-  direct identifiers, or customer-facing dollar output was added.
+- The first-class `value_evidence_case` object exists:
+  `schemas/ai-value-intelligence/value-evidence-case.schema.json`,
+  seeded fixture
+  `docs/contracts/ai-value-intelligence/examples/customer-support-value-evidence-case.json`,
+  engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts`
+  (exported from the engine index), CLI wrapper
+  `scripts/validate_ai_value_evidence_case.mjs`, tests
+  `scripts/validate_ai_value_evidence_case.test.mjs` plus narrow coverage in
+  `scripts/ai_value_engine.test.mjs`, and package scripts
+  `validate:ai-value-evidence-case` / `test:ai-value-evidence-case`.
+- The case composes the existing governed objects (data boundary contract, ROI
+  scenario, evidence readiness, outcome evidence export, value improvement
+  loop) instead of inventing a parallel model; `buildValueEvidenceCase`
+  derives the evidence level fail-closed.
+- Evidence-ladder gating is enforced by the engine validator: evidence level
+  may not exceed what the outcome-evidence review state, exact
+  baseline/comparison window alignment, and customer-owned assumptions
+  support; missing or rejected outcome evidence holds value language at
+  observed AI activity; SUBMITTED stays directional (human acceptance is
+  required before stronger language); SUPPORTED stays caveated and non-causal
+  with a required "does not prove ROI or causality" caveat; STRONG always
+  fails closed pending a future governed evidence design contract.
+- The case must carry the amended canonical VBD definitions
+  (`speed_to_adoption`, `spread_across_org_functions_workflows_surfaces`,
+  `workflow_integration_embeddedness`) — the validator rejects anything else.
+- Not yet done (intentionally deferred): backend object-type registration and
+  persistence for `value_evidence_case`, and any UI presentation of the case.
+  Contract before UI.
+
+Recommended next slice: register `value_evidence_case` in the backend object
+registry and present it in the Workspace using client-facing language (AI
+Fluency, VBD Map, Outcome Metric, Value Evidence Case, Intervention/Retest),
+or add the retest-result object so the loop can learn — choose from observed
+review gaps.
+
+Previously completed slice:
+
+```text
+Data Boundary And ROI Evidence Contract
+```
+
+What is in place from that slice:
+
+- The AI Value Platform has a first-class local contract for useful
+  organizational data sources across AI work evidence, AI Fluency, workflow
+  process systems, customer outcomes, finance assumptions, HRIS/org context,
+  enablement activity, revenue/experience systems, and quality/risk systems.
+- The contract separates upstream source-system and transformation-boundary
+  use from what may cross into FluencyTracr.
+- Sensitive organizational data may support value analysis upstream only after
+  customer-approved or Glean-approved aggregation, attestation, and identifier
+  removal.
+- FluencyTracr receives aggregate evidence package inputs and future
+  Value Evidence Case inputs only.
+- HRIS/org-context data is restricted to internal/source-readiness context and
+  cannot become supported value proof.
+- The contract reconciles with Metrics Library, Outcome Evidence Export, ROI
+  Scenario, Value Improvement Loop, Reportability, Aggregate API Push, and the
+  AI Value Measurement Model.
+- Corrected VBD definitions are locked, as amended 2026-06-11 with human
+  approval: Velocity is speed to adoption; Breadth is spread across the
+  organization/functions/workflows/surfaces, with the aggregate tool/surface
+  repertoire renamed "Repertoire" as one of Breadth's coverage views; Depth is
+  embeddedness of AI in repeatable workflow behavior (aggregate integration
+  signals: repeat use, verification, reuse, delegation, recovery, judgment).
+  See the decision note in AI_VALUE_MEASUREMENT_MODEL.md; do not revert Depth
+  to repertoire.
+- This slice adds no production connector, runtime service, autonomous
+  customer action, unsupported ROI proof, causality claim, individual scoring,
+  HR analytics surface, productivity ranking, raw prompt or response storage,
+  direct identifiers, or customer-facing dollar output.
+
+Previously completed slice:
+
+```text
+North Star And Phase Data Support Reset
+```
+
+What is now in place:
+
+- The product North Star is now the five-question measurement model:
+  AI capability, real work, outcome metric, proof, and next change.
+- The client-facing product spine is now AI Fluency Baseline -> VBD Operating
+  Map -> Function Outcome Metric -> Value Evidence Case -> Intervention /
+  Retest.
+- [docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md](../concepts/AI_VALUE_MEASUREMENT_MODEL.md)
+  records the source-of-truth phase data support map.
+- Architecture and MVP docs now treat Blueprint, Metrics, Evidence Readiness,
+  Scenario, Decision, and Executive Packet as supporting objects inside the
+  spine rather than competing destinations.
+- The workspace VBD 2x2 labels now align with the intended Velocity x Depth
+  interpretation.
+- This is product-spine and local UX clarity work only. No production connector,
+  runtime service, autonomous customer action, unsupported ROI proof, causality
+  claim, individual scoring, HR analytics, productivity ranking, raw prompt or
+  response storage, direct identifiers, or customer-facing dollar output was
+  added.
 
 Verification completed:
 
-- Red test first:
-  `npm test --workspace frontend -- AIValueWorkspace.test.tsx -t "clear previous and next handoff" --reporter=basic`
-- `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx --reporter=basic`
-- `npm test --workspace frontend -- --reporter=basic`
+- `npm test --workspace frontend -- AIValueWorkspace.test.tsx`
 - `npm run build --workspace frontend`
-- `node scripts/ci_semantic_drift_guard.mjs`
-- `node scripts/ci_glean_value_governance_gates.mjs`
+- `./scripts/ci_docs_contract_sweep.sh`
 - `git diff --check`
-- In-app browser smoke for
-  `/ai-value-workspace/readiness`, `/blueprint`, `/metrics`, `/evidence`,
-  `/scenario`, `/readout`, and `/decisions` at 1440px and 390px: handoff
-  navigation present, expected next link correct, no unsafe internal terms/state
-  codes, no console warnings/errors, and no horizontal overflow.
-
-Recommended next slice:
-
-```text
-Human Review / PR Decision
-```
-
-Pause for human review of `/ai-value-journey` and all `/ai-value-workspace`
-routes, then decide whether to push/open a PR or start a new bounded slice from
-observed review gaps. Keep the same governance boundary: no ROI proof, no
-causality, no individual scoring, no HR analytics, no productivity ranking, and
-no customer-facing dollar output unless a later governed value-modeling contract
-explicitly promotes that exact scope.
 
 Previously completed slice:
 

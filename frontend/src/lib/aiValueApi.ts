@@ -1,5 +1,8 @@
 import { authFetch } from "../auth";
 
+export const ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY = "aiValue.activeBlueprintId";
+export const ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY = "aiValue.activeEngagementId";
+
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 const withApiBase = (path: string) => (apiBaseUrl ? `${apiBaseUrl}${path}` : path);
 
@@ -48,6 +51,33 @@ export interface AiValueSpineRun {
     readiness: AiValueSpineStage;
     claim_boundary: AiValueSpineStage;
     executive_packet: AiValueSpineStage;
+  };
+}
+
+export interface RealEvidenceMaterializerParams {
+  blueprintId: string;
+  metricsLibraryId: string;
+  cohortId: string;
+  workflowId: string;
+  outcomeWorkflowId?: string;
+}
+
+export interface RealEvidenceMaterializerResult {
+  customer_facing_economic_output: false;
+  materialized: Array<{ object_type: string; object_id: string }>;
+  held_reasons: string[];
+  objects: {
+    evidence_readiness: Record<string, unknown>;
+    outcome_evidence_export?: Record<string, unknown>;
+  };
+  evidence_summary: {
+    cohort_id?: string;
+    workflow_id?: string;
+    v3_verdict_id?: string | null;
+    v3_verdict?: string | null;
+    forwarded_distribution_used: boolean;
+    velocity_observation_count: number;
+    outcome_evidence_export_id: string | null;
   };
 }
 
@@ -195,6 +225,26 @@ export const runAiValueSpine = (
       body: JSON.stringify({
         blueprint_id: blueprintId,
         metrics_library_id: metricsLibraryId
+      })
+    }
+  );
+
+export const materializeRealEvidence = (
+  role: string,
+  params: RealEvidenceMaterializerParams
+) =>
+  requestJson<RealEvidenceMaterializerResult>(
+    role,
+    "/api/v1/ai-value/materialize/real-evidence",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        blueprint_id: params.blueprintId,
+        metrics_library_id: params.metricsLibraryId,
+        cohort_id: params.cohortId,
+        workflow_id: params.workflowId,
+        outcome_workflow_id: params.outcomeWorkflowId
       })
     }
   );

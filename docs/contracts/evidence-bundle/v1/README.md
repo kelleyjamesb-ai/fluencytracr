@@ -31,6 +31,29 @@ Partners integrating against `evidence_bundle.v1` can rely on stable required fi
 - Executive mode is irreducibly aggregated and does not allow org-structure slicing.
 - Suppression reasons are machine-readable enums for deterministic downstream handling.
 
+## Optional forwarded distribution: surfaced aggregate evidence only
+EvidenceBundle v1 may include `forwarded_distribution` only when
+`suppression.suppression_applied` is `false`. This field mirrors the governed
+V3 aggregate distribution that backed a surfaced verdict so downstream
+consumers can perform bounded metric routing or re-check aggregate quality
+signals without returning to raw telemetry.
+
+The block is additive and optional. Legacy surfaced bundles may omit it, as
+shown in `examples/minimal.json`. Suppressed bundles must omit it, as enforced
+by the JSON schema and shown in `examples/suppressed.json`.
+
+Allowed content is aggregate-only:
+- cohort percentile distributions;
+- distribution moments;
+- governed workflow or surface taxonomy IDs;
+- cohort/window/calibration metadata;
+- AIVM `value_type` and `evidence_grade`; and
+- an explicit privacy marker showing aggregate-only and no person-level fields.
+
+Forbidden content remains forbidden inside the forwarded block: raw rows, raw
+skill names, user IDs, actor IDs, names, email addresses, prompts, outputs,
+messages, transcripts, action rows, free text, or any sub-5 cohort evidence.
+
 ## Coverage map requirement: always include instrumented and missing sources
 - Every payload MUST include `coverage.instrumented_sources`.
 - Every payload MUST include `coverage.missing_sources`.
@@ -45,3 +68,4 @@ Partners integrating against `evidence_bundle.v1` can rely on stable required fi
 ## Canonical Contract Artifacts
 - Schema: `docs/contracts/evidence-bundle/v1/evidence-bundle.schema.json`
 - Examples: `docs/contracts/evidence-bundle/v1/examples/minimal.json`, `docs/contracts/evidence-bundle/v1/examples/full.json`, `docs/contracts/evidence-bundle/v1/examples/suppressed.json`
+- Changelog: `docs/contracts/evidence-bundle/v1/CHANGELOG.md`
