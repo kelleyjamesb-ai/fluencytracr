@@ -117,7 +117,7 @@ const BLOCKED_CLAIM_LABELS: Record<string, string> = {
   causality_claim: "AI caused the improvement",
   individual_scoring: "Individual performance scoring",
   team_or_manager_ranking: "Team or org comparisons",
-  hr_analytics: "People analytics",
+  hr_analytics: "Individual-level people analytics",
   productivity_measurement: "Productivity measurement",
   realized_roi_calculation: "Realized ROI math",
   customer_facing_economic_output: "Customer-facing economic figures",

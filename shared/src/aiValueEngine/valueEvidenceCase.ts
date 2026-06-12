@@ -109,7 +109,11 @@ const CUSTOMER_FIGURES_CAVEAT_PATTERN = /customer-(?:approved|computed|owned)/i;
 // Amended 2026-06-12: claim governance is two-tier.
 //
 // Privacy boundaries protect people, not claims; they never relax regardless
-// of how strong the evidence gets.
+// of how strong the evidence gets. Amended 2026-06-12: every boundary in this
+// list is individual-level. The hr_analytics token means person-level HR
+// analytics; aggregated, cohort-suppressed HR analytics (attrition, capacity,
+// engagement by function or cohort) are permitted evidence inputs under the
+// data-boundary contract, same as any other aggregate.
 export const PRIVACY_BOUNDARY_CLAIMS = [
   "individual_scoring",
   "team_or_manager_ranking",

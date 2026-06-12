@@ -91,8 +91,8 @@ const blockedClaimCopy: Record<string, string> = {
   causality_claim: "Causality claims",
   individual_scoring: "Individual scoring",
   team_or_manager_ranking: "Team or manager ranking",
-  hr_analytics: "HR analytics",
-  productivity_measurement: "Productivity measurement",
+  hr_analytics: "Individual-level HR analytics",
+  productivity_measurement: "Person-level productivity measurement",
   realized_roi_calculation: "Realized ROI calculation",
   customer_facing_economic_output: "Customer-facing dollar figures"
 };

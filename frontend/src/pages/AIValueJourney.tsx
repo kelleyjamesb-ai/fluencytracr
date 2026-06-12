@@ -555,7 +555,7 @@ export const AIValueJourney = () => {
                 <li>Unsupported ROI proof</li>
                 <li>Causality claims</li>
                 <li>Individual or manager scoring</li>
-                <li>Productivity ranking or HR analytics</li>
+                <li>Productivity ranking or individual-level HR analytics</li>
               </ul>
             </div>
           </div>

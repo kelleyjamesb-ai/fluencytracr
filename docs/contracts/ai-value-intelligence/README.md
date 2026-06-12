@@ -94,7 +94,7 @@ Value Improvement Loop, Reportability, Aggregate API Push, and AI Value
 Measurement Model contracts. It explicitly permits sensitive organizational
 data to be used upstream inside customer-approved or Glean-approved
 transformation boundaries, while rejecting raw rows, direct identifiers, raw
-content, person-level evidence, HR analytics surfaces, productivity ranking,
+content, person-level evidence, individual-level HR analytics surfaces, productivity ranking,
 causality claims, realized ROI calculations, and customer-facing economic
 output inside FluencyTracr.
 
@@ -122,9 +122,10 @@ governed value-scenario modeling when all of these are true:
   modeling use;
 - baseline and comparison rules are declared before interpretation;
 - customer-owned assumptions are attached with owners; and
-- blocked inputs, direct identifiers, raw content, HR analytics, ranking,
-  individual scoring, productivity measurement, causality claims, and realized
-  ROI proof are absent.
+- blocked inputs, direct identifiers, raw content, individual-level HR
+  analytics, ranking, individual scoring, person-level productivity
+  measurement, ungated causality claims, and ungated realized ROI proof are
+  absent.
 
 Passing these gates means the platform can determine which ROI or value metrics
 should be modeled, reviewed, and carried into a caveated executive readout. It
@@ -139,8 +140,13 @@ customer-owned data — so value claims are evidence-gated, not categorically
 banned:
 
 - **Privacy boundaries never relax**, regardless of evidence strength:
-  individual scoring, team or manager ranking, HR analytics, and person-level
-  productivity measurement protect people, not claims.
+  individual scoring, team or manager ranking, individual-level HR analytics,
+  and person-level productivity measurement protect people, not claims. Every
+  privacy boundary is individual-level: aggregated, cohort-suppressed HR
+  analytics (attrition, capacity, engagement by function or cohort) are
+  permitted evidence inputs under the data-boundary contract, exactly like any
+  other aggregate — the `hr_analytics` token everywhere in the engine means
+  person-level HR analytics.
 - **Evidence-gated claims unlock by rung.** ROI proof, realized ROI language,
   and customer-facing economic figures unlock at the VALIDATED rung (token
   `STRONG`): accepted aggregate outcome evidence, exact window alignment,
