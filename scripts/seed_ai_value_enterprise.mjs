@@ -569,15 +569,18 @@ const FOCUS_FUNCTIONS = [
 // (with small cohorts suppressed) are returned.
 // ---------------------------------------------------------------------------
 const SUPPRESSION_MINIMUM = 5;
+// Per-construct offsets shape a realistic profile: attitude and intent run
+// ahead of behavior; leadership reinforcement and behavior change lag and
+// become the organization's growth edges.
 const CONSTRUCTS = [
-  "confidence",
-  "usage_quality",
-  "behavior_change",
-  "leadership_reinforcement",
-  "capability_growth",
-  "ai_attitude",
-  "behavioral_intent",
-  "perceived_ai_impact"
+  ["confidence", 0.35],
+  ["usage_quality", 0.05],
+  ["behavior_change", -0.35],
+  ["leadership_reinforcement", -0.55],
+  ["capability_growth", -0.1],
+  ["ai_attitude", 0.55],
+  ["behavioral_intent", 0.7],
+  ["perceived_ai_impact", -0.2]
 ];
 
 function simulateFluencyCohorts(orgFunction) {
@@ -597,11 +600,11 @@ function simulateFluencyCohorts(orgFunction) {
     }
     const base = 2.2 + orgFunction.maturity * 1.6;
     const constructScores = {};
-    for (const construct of CONSTRUCTS) {
+    for (const [construct, offset] of CONSTRUCTS) {
       // Simulate respondent-level scores, keep only the cohort mean.
       let total = 0;
       for (let i = 0; i < respondentCount; i += 1) {
-        total += Math.min(5, Math.max(1, jitter(base, 0.9)));
+        total += Math.min(5, Math.max(1, jitter(base + offset, 0.9)));
       }
       constructScores[construct] = { mean: round1(total / respondentCount) };
     }

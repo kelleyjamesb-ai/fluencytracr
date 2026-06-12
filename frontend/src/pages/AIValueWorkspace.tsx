@@ -13,6 +13,7 @@ import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequ
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
+import { FluencyBaselineResultsPanel } from "../components/FluencyBaselineResultsPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
 import { ValueSpineTracePanel } from "../components/ValueSpineTracePanel";
 
@@ -296,29 +297,6 @@ const blueprintDecisionGuidance = [
   {
     owner: "Workflow owner",
     nextStep: "Capture operating changes so scenario language stays caveated."
-  }
-];
-
-const aiFluencyDimensions = [
-  {
-    label: "Confidence",
-    detail: "How ready people feel to use AI in real work."
-  },
-  {
-    label: "Usage Quality",
-    detail: "Whether AI use is thoughtful, verified, and task-fit."
-  },
-  {
-    label: "Behavior Change",
-    detail: "Where AI is starting to change how work gets done."
-  },
-  {
-    label: "Leadership Reinforcement",
-    detail: "Whether managers and leaders are making AI adoption practical."
-  },
-  {
-    label: "Capability Growth",
-    detail: "Which skills need reinforcement before workflow change can scale."
   }
 ];
 
@@ -953,15 +931,7 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
           <StatusPill label="Signals, not scores" />
         </div>
       </div>
-      <div className="ai-value-client-question-grid">
-        {aiFluencyDimensions.map((dimension) => (
-          <article className="ai-value-client-question-card" key={dimension.label}>
-            <span className="ai-value-map-label">What results tell us</span>
-            <strong>{dimension.label}</strong>
-            <p>{dimension.detail}</p>
-          </article>
-        ))}
-      </div>
+      <FluencyBaselineResultsPanel />
     </section>
 
     <VbdMapPanel />
