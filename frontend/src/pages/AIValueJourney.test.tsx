@@ -499,8 +499,8 @@ describe("AIValueJourney", () => {
     });
 
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
-    expect(within(bridge).getByRole("heading", { name: /Choose the outcome metric/i })).toBeInTheDocument();
-    expect(within(bridge).getByText(/where that data lives, who owns it, and what value language is allowed/i)).toBeInTheDocument();
+    expect(within(bridge).getByRole("heading", { name: /Metric setup to confirm with the client/i })).toBeInTheDocument();
+    expect(within(bridge).getByText(/Use the Blueprint workflow and value route/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
@@ -1104,7 +1104,9 @@ describe("AIValueJourney", () => {
     const preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
     expect(within(preview).getByRole("heading", { name: /Decision Handoff Preview/i })).toBeInTheDocument();
     expect(within(preview).getByText(/Selected move/i)).toBeInTheDocument();
-    expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(within(preview).getAllByText(move).length).toBeGreaterThan(0);
+    });
     expect(within(preview).getByText(/^Owner$/i)).toBeInTheDocument();
     expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
     expect(within(preview).getByText(/Where this goes next/i)).toBeInTheDocument();
@@ -1135,7 +1137,10 @@ describe("AIValueJourney", () => {
 
     const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
     let preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
-    expect(within(preview).getAllByText(/Expand workflow/i).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
+      expect(within(preview).getAllByText(/Expand workflow/i).length).toBeGreaterThan(0);
+    });
 
     fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
 
