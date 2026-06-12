@@ -239,7 +239,16 @@ export const FluencyBaselineResultsPanel = () => {
               <p>{dimension.detail}</p>
             </div>
             {dimension.percent !== null && (
-              <div className="ai-value-fluency-dimension-percent">{dimension.percent}%</div>
+              <div
+                aria-label={`${dimension.label} ${dimension.percent}%`}
+                aria-valuemax={100}
+                aria-valuemin={0}
+                aria-valuenow={dimension.percent}
+                className="ai-value-fluency-dimension-percent"
+                role="meter"
+              >
+                {dimension.percent}%
+              </div>
             )}
           </div>
         ))}
