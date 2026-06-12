@@ -301,3 +301,89 @@ test("customer validation unlocks realized-value language while causality stays 
     )
   );
 });
+
+test("approved evidence design unlocks causality and survives validation", () => {
+  const inputs = loadInputs();
+  const acceptedExport = {
+    ...inputs.outcomeEvidenceExport,
+    review: { review_state: "ACCEPTED" }
+  };
+  const resolvedScenario = JSON.parse(JSON.stringify(inputs.roiScenario));
+  resolvedScenario.customer_owned_assumptions = resolvedScenario.customer_owned_assumptions.map(
+    (assumption) => ({ ...assumption, state: "PRESENT" })
+  );
+
+  const validatedCase = buildValueEvidenceCase({
+    ...inputs,
+    roiScenario: resolvedScenario,
+    outcomeEvidenceExport: acceptedExport,
+    customerValidation: {
+      economic_inputs_approved: true,
+      approved_by_role: "finance_partner",
+      validation_reference: "fy26_q2_value_validation_memo"
+    },
+    evidenceDesign: {
+      design_state: "APPROVED_COMPARISON_DESIGN",
+      design_type: "matched_comparison",
+      approved_by_role: "analytics_owner",
+      design_reference: "fy26_q2_comparison_design"
+    }
+  });
+
+  const gateState = Object.fromEntries(
+    validatedCase.claim_gates.map((gate) => [gate.claim, gate.state])
+  );
+
+  assert.equal(validatedCase.evidence_design.design_state, "APPROVED_COMPARISON_DESIGN");
+  assert.equal(validatedCase.evidence_design.design_type, "matched_comparison");
+  assert.equal(gateState.causality_claim, "UNLOCKED");
+  assert.ok(!validatedCase.blocked_claims.includes("causality_claim"));
+  assert.equal(validateAiValueEvidenceCase(validatedCase).valid, true);
+});
+
+test("does not persist free-form customer validation statements", () => {
+  const inputs = loadInputs();
+  const acceptedExport = {
+    ...inputs.outcomeEvidenceExport,
+    review: { review_state: "ACCEPTED" }
+  };
+  const resolvedScenario = JSON.parse(JSON.stringify(inputs.roiScenario));
+  resolvedScenario.customer_owned_assumptions = resolvedScenario.customer_owned_assumptions.map(
+    (assumption) => ({ ...assumption, state: "PRESENT" })
+  );
+
+  const validatedCase = buildValueEvidenceCase({
+    ...inputs,
+    roiScenario: resolvedScenario,
+    outcomeEvidenceExport: acceptedExport,
+    customerValidation: {
+      economic_inputs_approved: true,
+      approved_by_role: "finance_partner",
+      validation_reference: "fy26_q2_value_validation_memo",
+      validation_statement:
+        "Finance approved $250,000 ROI for jane@example.com in the source memo."
+    }
+  });
+
+  assert.equal(validatedCase.customer_validation.validation_statement, undefined);
+  assert.equal(validateAiValueEvidenceCase(validatedCase).valid, true);
+
+  const handAuthored = JSON.parse(JSON.stringify(validatedCase));
+  handAuthored.customer_validation.validation_statement = "Do not store this free-form note.";
+  const result = validateAiValueEvidenceCase(handAuthored);
+
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.some((gap) =>
+      gap.includes("customer_validation.validation_statement must not be stored")
+    )
+  );
+});
+
+test("published schema allows validated value realization claim level", () => {
+  const schema = readJson("schemas/ai-value-intelligence/value-evidence-case.schema.json");
+  const allowed =
+    schema.properties.safe_value_language.properties.allowed_claim_level.enum;
+
+  assert.ok(allowed.includes("VALIDATED_VALUE_REALIZATION"));
+});

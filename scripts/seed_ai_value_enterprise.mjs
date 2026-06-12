@@ -1146,9 +1146,7 @@ async function main() {
           ? {
               economic_inputs_approved: true,
               approved_by_role: `${orgFunction.key}_finance_partner`,
-              validation_reference: `northstar_fy26_q2_${orgFunction.key}_value_validation_memo`,
-              validation_statement:
-                "Finance approved the workflow rate inputs used for this realized-value readout."
+              validation_reference: `northstar_fy26_q2_${orgFunction.key}_value_validation_memo`
             }
           : undefined
     });

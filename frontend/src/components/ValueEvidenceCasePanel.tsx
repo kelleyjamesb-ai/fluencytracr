@@ -156,7 +156,6 @@ interface EvidenceCasePayload {
   customer_validation?: {
     approved_by_role?: string;
     validation_reference?: string;
-    validation_statement?: string;
   } | null;
   sponsor_decision?: { decision_state?: string; decision_owner_role?: string; decision_basis?: string };
   intervention_retest?: {
@@ -281,6 +280,11 @@ export const ValueEvidenceCasePanel = () => {
   const openAssumptions = (selected.customer_owned_assumptions ?? []).filter(
     (assumption) => assumption.state !== "PRESENT"
   );
+  const blockedClaims = selected.blocked_claims ?? [];
+  const hasClaimGates = (selected.claim_gates ?? []).length > 0;
+  const legacyBlockedValueClaims = hasClaimGates
+    ? []
+    : blockedClaims.filter((claim) => !PRIVACY_BOUNDARY_CLAIMS.includes(claim));
 
   return (
     <section className="ai-value-panel ai-value-evidence-case-panel" aria-label="Value evidence case">
@@ -399,15 +403,27 @@ export const ValueEvidenceCasePanel = () => {
           <h3>Privacy boundaries — never claimed</h3>
           <ul>
             {PRIVACY_BOUNDARY_CLAIMS.filter((claim) =>
-              (selected.blocked_claims ?? []).includes(claim)
+              blockedClaims.includes(claim)
             ).map((blockedClaim) => (
               <li key={blockedClaim}>{blockedClaimCopy[blockedClaim] ?? blockedClaim.replace(/_/g, " ")}</li>
             ))}
           </ul>
         </div>
+        {legacyBlockedValueClaims.length > 0 && (
+          <div className="ai-value-case-language-col">
+            <h3>Value claims still blocked</h3>
+            <ul>
+              {legacyBlockedValueClaims.map((blockedClaim) => (
+                <li key={blockedClaim}>
+                  {blockedClaimCopy[blockedClaim] ?? blockedClaim.replace(/_/g, " ")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
-      {(selected.claim_gates ?? []).length > 0 && (
+      {hasClaimGates && (
         <div className="ai-value-case-gates" aria-label="Evidence-gated claims">
           <h3>Claims that unlock with evidence</h3>
           <p className="ai-value-case-gates-intro">

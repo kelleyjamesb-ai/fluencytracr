@@ -155,7 +155,21 @@ function customerValidationSatisfied(validation: any): boolean {
 }
 
 function causalityDesignApproved(design: any): boolean {
-  return design?.design_state === "APPROVED_COMPARISON_DESIGN";
+  return Boolean(
+    design?.design_state === "APPROVED_COMPARISON_DESIGN" &&
+      design?.approved_by_role &&
+      design?.design_reference
+  );
+}
+
+function sanitizeApprovedEvidenceDesign(design: any): any | null {
+  if (!causalityDesignApproved(design)) return null;
+  return {
+    design_state: "APPROVED_COMPARISON_DESIGN",
+    design_type: String(design.design_type ?? "approved_comparison_design"),
+    approved_by_role: String(design.approved_by_role),
+    design_reference: String(design.design_reference)
+  };
 }
 
 /**
@@ -260,9 +274,10 @@ export interface BuildValueEvidenceCaseInputs {
   improvementLoop?: any;
   /**
    * Customer sign-off on the economic inputs behind realized-value language:
-   * { economic_inputs_approved: true, approved_by_role, validation_reference,
-   *   validation_statement? }. With supported evidence, this lifts the case
-   * to the VALIDATED rung and unlocks the ROI-family claim gates.
+   * { economic_inputs_approved: true, approved_by_role, validation_reference }.
+   * With supported evidence, this lifts the case to the VALIDATED rung and
+   * unlocks the ROI-family claim gates. Free-form validation statements are
+   * intentionally not persisted.
    */
   customerValidation?: any;
   /** Approved comparison evidence design; required to unlock causality. */
@@ -651,6 +666,38 @@ function collectSafeLanguageGaps(evidenceCase: any): string[] {
   return gaps;
 }
 
+function collectCustomerValidationGaps(evidenceCase: any): string[] {
+  const gaps: string[] = [];
+  const validation = evidenceCase?.customer_validation;
+  if (validation === undefined || validation === null) return gaps;
+  if (validation.validation_statement !== undefined) {
+    gaps.push("customer_validation.validation_statement must not be stored");
+  }
+  if (validation.economic_inputs_approved !== true) {
+    gaps.push("customer_validation.economic_inputs_approved must be true");
+  }
+  requireField(validation.approved_by_role, "customer_validation.approved_by_role", gaps);
+  requireField(
+    validation.validation_reference,
+    "customer_validation.validation_reference",
+    gaps
+  );
+  return gaps;
+}
+
+function collectEvidenceDesignGaps(evidenceCase: any): string[] {
+  const gaps: string[] = [];
+  const design = evidenceCase?.evidence_design;
+  if (design === undefined || design === null) return gaps;
+  if (design.design_state !== "APPROVED_COMPARISON_DESIGN") {
+    gaps.push("evidence_design.design_state must be APPROVED_COMPARISON_DESIGN");
+  }
+  requireField(design.design_type, "evidence_design.design_type", gaps);
+  requireField(design.approved_by_role, "evidence_design.approved_by_role", gaps);
+  requireField(design.design_reference, "evidence_design.design_reference", gaps);
+  return gaps;
+}
+
 function collectScenarioPostureGaps(evidenceCase: any): string[] {
   const gaps: string[] = [];
   const posture = evidenceCase?.scenario_posture ?? {};
@@ -724,6 +771,8 @@ export function validateValueEvidenceCase(
     ...collectAssumptionGaps(evidenceCase),
     ...collectEvidenceQualityGaps(evidenceCase),
     ...collectSafeLanguageGaps(evidenceCase),
+    ...collectCustomerValidationGaps(evidenceCase),
+    ...collectEvidenceDesignGaps(evidenceCase),
     ...collectScenarioPostureGaps(evidenceCase),
     ...collectSponsorDecisionGaps(evidenceCase),
     ...collectInterventionRetestGaps(evidenceCase),
@@ -855,6 +904,7 @@ export function buildValueEvidenceCase(
   );
 
   const customerValidated = customerValidationSatisfied(customerValidation);
+  const approvedEvidenceDesign = sanitizeApprovedEvidenceDesign(evidenceDesign);
   const evidenceLevel = evidenceCeiling(
     reviewState,
     windowAlignment,
@@ -863,7 +913,7 @@ export function buildValueEvidenceCase(
   );
   const claimLevel = MAX_CLAIM_BY_EVIDENCE[evidenceLevel];
   const validated = evidenceLevel === "STRONG";
-  const causalityUnlocked = validated && causalityDesignApproved(evidenceDesign);
+  const causalityUnlocked = validated && causalityDesignApproved(approvedEvidenceDesign);
 
   const vbdContext = improvementLoop?.vbd_context ?? {};
   const statusOr = (value: any, allowed: Set<string>): string =>
@@ -998,13 +1048,10 @@ export function buildValueEvidenceCase(
       ? {
           economic_inputs_approved: true,
           approved_by_role: String(customerValidation.approved_by_role),
-          validation_reference: String(customerValidation.validation_reference),
-          validation_statement: String(
-            customerValidation.validation_statement ??
-              "The customer approved the economic inputs behind this case's realized-value language."
-          )
+          validation_reference: String(customerValidation.validation_reference)
         }
       : null,
+    ...(approvedEvidenceDesign ? { evidence_design: approvedEvidenceDesign } : {}),
     scenario_posture: {
       roi_scenario_id: roiScenario?.roi_scenario_id ?? null,
       band: evidenceLevel === "SUPPORTED" || validated ? "BASE_CASE" : "CONSERVATIVE",

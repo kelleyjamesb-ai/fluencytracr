@@ -197,4 +197,29 @@ describe("ValueEvidenceCasePanel", () => {
       expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
     );
   });
+
+  it("preserves blocked value warnings for legacy cases without claim gates", async () => {
+    const legacyCase = {
+      ...supportCase,
+      claim_gates: undefined
+    };
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockResolvedValue({
+      objects: [summaryOf(legacyCase)]
+    } as never);
+    vi.spyOn(aiValueApi, "fetchAiValueObject").mockResolvedValue({
+      ...summaryOf(legacyCase),
+      payload: legacyCase
+    } as never);
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/What can we safely say about this workflow/i)).toBeInTheDocument()
+    );
+
+    expect(screen.getByText("ROI proof")).toBeInTheDocument();
+    expect(screen.getByText("Customer-facing dollar figures")).toBeInTheDocument();
+    expect(screen.getByText("Causality claims")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Evidence-gated claims")).not.toBeInTheDocument();
+  });
 });
