@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
@@ -8,7 +8,11 @@ import {
   type JourneyStageKey,
   type JourneyStageState
 } from "../hooks/useAiValueJourney";
-import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
+import {
+  buildFunctionMetricPlans,
+  ClientQuestionMetricBridgePanel,
+  type FunctionMetricPlan
+} from "../components/ClientQuestionMetricBridgePanel";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
@@ -52,7 +56,15 @@ const workspacePages = [
     navLabel: "Evidence Case",
     path: "/ai-value-workspace/case",
     detail: "What the evidence allows us to say, by function.",
-    feedsNext: "Choose the intervention and the retest window."
+    feedsNext: "Prepare the governed Value / ROI readiness handoff."
+  },
+  {
+    slug: "roi",
+    label: "Value / ROI Readiness",
+    navLabel: "Value / ROI",
+    path: "/ai-value-workspace/roi",
+    detail: "The value modeling inputs, caveats, and blocked claims.",
+    feedsNext: "Carry the caveats into Decision & Retest."
   },
   {
     slug: "decisions",
@@ -71,7 +83,8 @@ const workspaceStageBySlug: Partial<Record<WorkspacePageSlug, JourneyStageKey>> 
   readiness: "readiness",
   vbd: "blueprint",
   metrics: "opportunity",
-  case: "scenario",
+  case: "measurement",
+  roi: "scenario",
   decisions: "readout"
 };
 
@@ -200,172 +213,6 @@ const vbdMeasuredSurfaces = [
   "Artifacts",
   "workflow automations"
 ] as const;
-
-type CandidateOutcomeMetric = {
-  question: string;
-  measure: string;
-  source: string;
-  status: string;
-};
-
-const candidateOutcomeMetricsByFunction: Record<string, CandidateOutcomeMetric[]> = {
-  "Customer or Account Success": [
-    {
-      question: "Are cases resolving faster?",
-      measure: "Median time to resolution",
-      source: "Support case management system",
-      status: "Ready to map"
-    },
-    {
-      question: "Is the open backlog moving down?",
-      measure: "Open backlog count",
-      source: "Support operations reporting",
-      status: "Ready to map"
-    },
-    {
-      question: "Are fewer cases escalating?",
-      measure: "Escalation rate",
-      source: "Escalation reporting",
-      status: "Recommended next"
-    },
-    {
-      question: "Is answer quality holding steady?",
-      measure: "Reopen or quality-review rate",
-      source: "Quality review process",
-      status: "Needs owner"
-    }
-  ],
-  "Engineering / Software Development": [
-    {
-      question: "How fast are pull requests merging?",
-      measure: "Pull request cycle time",
-      source: "GitHub and delivery tracker",
-      status: "Ready to map"
-    },
-    {
-      question: "Are releases shipping more often?",
-      measure: "Release frequency",
-      source: "Release management system",
-      status: "Recommended next"
-    },
-    {
-      question: "Is quality holding as speed improves?",
-      measure: "Escaped defect rate",
-      source: "Incident and bug tracker",
-      status: "Needs owner"
-    },
-    {
-      question: "Is review waiting time shrinking?",
-      measure: "Code review wait time",
-      source: "GitHub review analytics",
-      status: "Ready to map"
-    }
-  ],
-  "Product Management": [
-    {
-      question: "Is feature work moving faster?",
-      measure: "Feature cycle time",
-      source: "Product roadmap and delivery system",
-      status: "Ready to map"
-    },
-    {
-      question: "Are decisions taking less time?",
-      measure: "Decision latency",
-      source: "Roadmap review workflow",
-      status: "Ready to map"
-    },
-    {
-      question: "Are shipped features getting used?",
-      measure: "Feature adoption",
-      source: "Product analytics",
-      status: "Recommended next"
-    },
-    {
-      question: "Is discovery quality holding?",
-      measure: "Validated opportunity rate",
-      source: "Research and product operations",
-      status: "Needs owner"
-    }
-  ],
-  "Sales or Business Development": [
-    {
-      question: "Is the sales cycle getting shorter?",
-      measure: "Sales cycle time",
-      source: "CRM",
-      status: "Ready to map"
-    },
-    {
-      question: "Are proposals turning around faster?",
-      measure: "Proposal turnaround time",
-      source: "CRM and proposal workspace",
-      status: "Ready to map"
-    },
-    {
-      question: "Are qualified opportunities converting?",
-      measure: "Qualified opportunity win rate",
-      source: "CRM",
-      status: "Recommended next"
-    },
-    {
-      question: "Is pipeline quality holding?",
-      measure: "Qualified pipeline conversion",
-      source: "Revenue operations reporting",
-      status: "Needs owner"
-    }
-  ],
-  "Marketing & Communications": [
-    {
-      question: "Are campaigns launching faster?",
-      measure: "Campaign cycle time",
-      source: "Campaign management workspace",
-      status: "Ready to map"
-    },
-    {
-      question: "Is useful content throughput rising?",
-      measure: "Content throughput",
-      source: "Content calendar",
-      status: "Ready to map"
-    },
-    {
-      question: "Is qualified pipeline influenced?",
-      measure: "Qualified pipeline influenced",
-      source: "CRM and attribution reporting",
-      status: "Recommended next"
-    },
-    {
-      question: "Is content quality holding?",
-      measure: "Content review acceptance rate",
-      source: "Content operations review",
-      status: "Needs owner"
-    }
-  ],
-  "Finance or Accounting": [
-    {
-      question: "Is the close cycle getting shorter?",
-      measure: "Close cycle time",
-      source: "ERP and close management system",
-      status: "Ready to map"
-    },
-    {
-      question: "Is forecast accuracy improving?",
-      measure: "Forecast variance",
-      source: "Planning system",
-      status: "Recommended next"
-    },
-    {
-      question: "Are invoices moving faster?",
-      measure: "Invoice cycle time",
-      source: "ERP",
-      status: "Ready to map"
-    },
-    {
-      question: "Are reconciliation exceptions dropping?",
-      measure: "Reconciliation exception rate",
-      source: "Close management system",
-      status: "Needs owner"
-    }
-  ]
-};
 
 const aiFluencyOrgFunctionClusters = [
   {
@@ -524,12 +371,28 @@ const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutra
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
 );
 
+const scenarioInputTone = (status: string): "good" | "warn" | "neutral" => {
+  if (status === "Ready to model") return "good";
+  if (status === "Awaiting review" || status === "Needs owner review" || status === "Missing input") {
+    return "warn";
+  }
+  return "neutral";
+};
+
+const scenarioBandInterpretation = (interpretation: string) =>
+  interpretation.replace(/baseline and comparison windows/gi, "pre/post periods");
+
+const scenarioInputDetail = (label: string, detail: string) =>
+  label === "Customer-owned assumptions"
+    ? detail.replace(/customer-owned assumptions/gi, "client-owned operating context")
+    : detail;
+
 // Practitioner working pages were demoted from the executive spine; their old
 // links land on the nearest spine step.
 const legacySlugRedirects: Record<string, WorkspacePageSlug> = {
   blueprint: "vbd",
   evidence: "case",
-  scenario: "case",
+  scenario: "roi",
   readout: "decisions"
 };
 
@@ -584,7 +447,6 @@ export const AIValueWorkspace = () => {
       ? journey.evidenceScenarioPlan.decisionLabel
       : aiValueWorkspace.decisionLabel);
   const claimModeLabel = live?.claimModeLabel ?? aiValueWorkspace.claimModeLabel;
-  const valueSignals = live?.valueSignals ?? aiValueWorkspace.valueSignals;
 
   return (
     <main className="ai-value-shell">
@@ -688,10 +550,14 @@ export const AIValueWorkspace = () => {
       {activePageSlug === "vbd" && <VbdPage />}
 
       {activePageSlug === "metrics" && (
-        <MetricsPage journey={journey} valueSignals={valueSignals} />
+        <MetricsPage journey={journey} />
       )}
 
       {activePageSlug === "case" && <ValueEvidenceCasePanel />}
+
+      {activePageSlug === "roi" && (
+        <RoiReadinessPage journey={journey} />
+      )}
 
       {activePageSlug === "decisions" && (
         <DecisionsPage journey={journey} />
@@ -780,6 +646,7 @@ const WorkspaceHome = ({
           <li>Plot every function on the VBD map.</li>
           <li>Connect the function outcome metric.</li>
           <li>Assemble the value evidence case.</li>
+          <li>Prepare the Value / ROI readiness handoff.</li>
           <li>Decide, intervene, and remeasure.</li>
         </ol>
       </article>
@@ -906,14 +773,7 @@ const VbdMapPanel = () => {
                 >
                   <div className="ai-value-vbd-quadrant-label">
                     <strong>{quadrant.label}</strong>
-                    <p>{quadrant.definition}</p>
                     <span>{quadrant.mapCue}</span>
-                    <span className="ai-value-vbd-watch-title">Watch for</span>
-                    <ul>
-                      {quadrant.watchFor.map((cue) => (
-                        <li key={cue}>{cue}</li>
-                      ))}
-                    </ul>
                   </div>
                 </article>
               );
@@ -945,27 +805,24 @@ const VbdMapPanel = () => {
         </p>
       </div>
 
-      <div className="ai-value-vbd-function-legend" aria-label="Function cluster list">
-        {vbdQuadrants.map((quadrant) => {
-          const functions = aiFluencyOrgFunctionClusters.filter((plot) => plot.quadrantId === quadrant.id);
-          return (
-            <div key={quadrant.id}>
-              <strong>{quadrant.label}</strong>
-              <p>{functions.map((plot) => plot.functionArea).join(", ")}</p>
-            </div>
-          );
-        })}
-      </div>
-
       <div className="ai-value-vbd-definition-legend" aria-label="Quadrant definitions">
         <h4>Quadrant definitions</h4>
         <div>
-          {vbdQuadrants.map((quadrant) => (
-            <article key={quadrant.id}>
-              <strong>{quadrant.label}</strong>
-              <p>{quadrant.definition}</p>
-            </article>
-          ))}
+          {vbdQuadrants.map((quadrant) => {
+            const functions = aiFluencyOrgFunctionClusters.filter((plot) => plot.quadrantId === quadrant.id);
+            return (
+              <article
+                className={`ai-value-vbd-definition-card ai-value-vbd-definition-card-${quadrant.tone}`}
+                key={quadrant.id}
+              >
+                <strong>{quadrant.label}</strong>
+                <p>{quadrant.definition}</p>
+                <span>{quadrant.mapCue}</span>
+                <small>Watch for: {quadrant.watchFor.join(", ")}.</small>
+                <em>{functions.map((plot) => plot.functionArea).join(", ")}</em>
+              </article>
+            );
+          })}
         </div>
       </div>
 
@@ -980,7 +837,6 @@ const VbdMapPanel = () => {
 
 const VbdPage = () => (
   <section className="ai-value-focused-stack" aria-label="VBD operating map workspace">
-    <VbdFrameworkPanel />
     <VbdMapPanel />
   </section>
 );
@@ -1016,14 +872,12 @@ const AiOrgFluencyExamplePanel = () => (
   </section>
 );
 
-const MetricsPage = ({
-  journey,
-  valueSignals
-}: {
-  journey: Journey;
-  valueSignals: typeof aiValueWorkspace.valueSignals;
-}) => {
+const MetricsPage = ({ journey }: { journey: Journey }) => {
   const [selectedFunction, setSelectedFunction] = useState("Customer or Account Success");
+  const functionMetricPlans = useMemo(
+    () => buildFunctionMetricPlans(journey.questionMetricBridge),
+    [journey.questionMetricBridge]
+  );
 
   return (
     <section className="ai-value-focused-stack" aria-label="Metrics workspace">
@@ -1044,12 +898,13 @@ const MetricsPage = ({
 
       <ClientQuestionMetricBridgePanel
         bridge={journey.questionMetricBridge}
+        functionPlans={functionMetricPlans}
         onSelectedFunctionChange={setSelectedFunction}
         selectedFunction={selectedFunction}
       />
 
       <CandidateOutcomeMetricsPanel
-        fallbackSignals={valueSignals}
+        functionPlans={functionMetricPlans}
         selectedFunction={selectedFunction}
       />
     </section>
@@ -1057,42 +912,180 @@ const MetricsPage = ({
 };
 
 const CandidateOutcomeMetricsPanel = ({
-  fallbackSignals,
+  functionPlans,
   selectedFunction
 }: {
-  fallbackSignals: typeof aiValueWorkspace.valueSignals;
+  functionPlans: FunctionMetricPlan[];
   selectedFunction: string;
 }) => {
-  const functionSignals =
-    candidateOutcomeMetricsByFunction[selectedFunction] ?? fallbackSignals;
+  const selectedPlan = functionPlans.find((plan) => plan.functionArea === selectedFunction) ?? functionPlans[0];
+  const functionSignals = selectedPlan.metrics.slice(0, 5);
 
   return (
     <article className="ai-value-panel ai-value-signal-shortlist-panel" aria-label="Candidate outcome metrics">
       <div className="ai-value-section-head">
         <div>
           <p className="eyebrow">Metric Options</p>
-          <h3>Metric options the client can choose from</h3>
-          <p>{selectedFunction}</p>
+          <h3>Top outcome metrics for this function</h3>
+          <p>{selectedPlan.functionArea}</p>
         </div>
         <StatusPill label="Client confirms" tone="good" />
       </div>
       <div className="ai-value-signal-shortlist" aria-label="Candidate outcome metric cards">
-        {functionSignals.map((signal) => (
-          <article className="ai-value-signal-card" key={signal.question}>
+        {functionSignals.map((metric) => (
+          <article className="ai-value-signal-card" key={metric.id}>
             <div>
               <span className="ai-value-map-label">Question to ask</span>
-              <h4>{signal.question}</h4>
+              <h4>{metric.question ?? `Should the client watch ${metric.name.toLowerCase()}?`}</h4>
             </div>
             <div>
               <span className="ai-value-map-label">Possible metric</span>
-              <p>{signal.measure}</p>
+              <p>{metric.name}</p>
             </div>
-            <small>Likely source: {signal.source}</small>
-            <StatusPill label={signal.status} tone={signal.status === "Needs owner" ? "warn" : "good"} />
+            <small>Likely source: {metric.sourceSystem}</small>
+            <StatusPill label={metric.status ?? "Ready to map"} tone={metric.status === "Needs owner" ? "warn" : "good"} />
           </article>
         ))}
       </div>
     </article>
+  );
+};
+
+const RoiReadinessPage = ({ journey }: { journey: Journey }) => {
+  const readiness = journey.roiScenarioReadiness;
+  const nextClientAction = journey.customerEvidenceRequest.available
+    ? journey.customerEvidenceRequest.reviewStep
+    : readiness.nextAction;
+  const allInputsReady =
+    readiness.available && readiness.inputs.every((input) => input.status === "Ready to model");
+  const readinessTone: "good" | "warn" | "neutral" =
+    allInputsReady
+      ? "good"
+      : readiness.available
+        ? "warn"
+        : "neutral";
+  const readinessLabel = allInputsReady
+    ? readiness.statusLabel
+    : readiness.available
+      ? "Owner review still needed"
+      : readiness.statusLabel;
+
+  return (
+    <section className="ai-value-focused-stack" aria-label="Value and ROI workspace">
+      <section
+        className="ai-value-panel ai-value-roi-readiness"
+        aria-label="Value and ROI readiness"
+      >
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Governed Value Modeling</p>
+            <h3>Value / ROI Readiness</h3>
+            <p>
+              Use this as the readiness check before sponsor sharing: what the
+              client can model, what still needs owner review, and which claims
+              stay blocked.
+            </p>
+          </div>
+          <StatusPill label={readinessLabel} tone={readinessTone} />
+        </div>
+
+        <div className="ai-value-map-grid">
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Workflow</span>
+            <strong>{readiness.workflowName}</strong>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Value route</span>
+            <strong>{readiness.valueRouteLabel}</strong>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Outcome metric</span>
+            <strong>{readiness.metricName}</strong>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Source and aggregation level</span>
+            <strong>{readiness.sourceSystem}</strong>
+            <p>{readiness.sourceGrain}</p>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Evidence status</span>
+            <strong>{readiness.evidenceStatus}</strong>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Next client action</span>
+            <strong>{nextClientAction}</strong>
+          </div>
+        </div>
+
+        <div className="ai-value-scenario-builder">
+          <div className="ai-value-scenario-builder-head">
+            <div>
+              <p className="eyebrow">Value Modeling Inputs</p>
+              <h3>Inputs to confirm before stronger value language</h3>
+            </div>
+          </div>
+          <div className="ai-value-scenario-input-grid">
+            {readiness.inputs.map((input) => (
+              <article className="ai-value-scenario-input" key={input.label}>
+                <div>
+                  <strong>{input.label}</strong>
+                  <p>{scenarioInputDetail(input.label, input.detail)}</p>
+                </div>
+                <StatusPill label={input.status} tone={scenarioInputTone(input.status)} />
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <section aria-label="Scenario bands">
+          <div className="ai-value-scenario-builder-head">
+            <div>
+              <p className="eyebrow">Scenario Bands</p>
+              <h3>Planning ranges for client-owned review</h3>
+            </div>
+          </div>
+          {readiness.scenarioBands.length > 0 ? (
+            <div className="ai-value-scenario-band-list">
+              {readiness.scenarioBands.map((band) => (
+                <article className="ai-value-scenario-band" key={band.label}>
+                  <strong>{band.label}</strong>
+                  <p>{scenarioBandInterpretation(band.interpretation)}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="ai-value-case-output-note">
+              Scenario bands stay held until the client confirms the metric,
+              baseline, comparison window, and operating assumptions.
+            </p>
+          )}
+        </section>
+
+        <div className="ai-value-case-language">
+          <section className="ai-value-case-language-col" aria-label="Safe value language">
+            <h3>Safe value language</h3>
+            <ul>
+              {readiness.safeValueLanguage.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+          <section className="ai-value-case-language-col" aria-label="Blocked outputs and claim limits">
+            <h3>Blocked outputs / claim limits</h3>
+            <ul>
+              {readiness.blockedOutputs.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+        </div>
+
+        <section className="ai-value-case-assumptions" aria-label="Executive handoff">
+          <h3>Executive handoff / what happens next</h3>
+          <p>{readiness.executiveHandoff}</p>
+        </section>
+      </section>
+    </section>
   );
 };
 

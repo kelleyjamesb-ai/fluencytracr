@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ValueEvidenceCasePanel } from "./ValueEvidenceCasePanel";
 import * as aiValueApi from "../lib/aiValueApi";
 
+const SELECTED_OUTCOME_METRICS_KEY = "aiValue.selectedOutcomeMetrics";
+
 const supportCase = {
   value_evidence_case_id: "value_evidence_case_customer_support_case_resolution_v1",
   client_context: {
@@ -167,6 +169,7 @@ const summaryOf = (payload: typeof supportCase) => ({
 describe("ValueEvidenceCasePanel", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   it("renders the evidence ladder and safe language for the seeded cases", async () => {
@@ -208,6 +211,17 @@ describe("ValueEvidenceCasePanel", () => {
     expect(screen.getByText(/3.3 hours lower/i)).toBeInTheDocument();
     expect(screen.getByText(/2,300 aggregate records/i)).toBeInTheDocument();
     expect(screen.getByText(/1 more aggregate metric on file/i)).toBeInTheDocument();
+    const strategicChoice = screen.getByRole("region", { name: /Strategic value choice/i });
+    expect(
+      within(strategicChoice).getByRole("heading", { name: /What should the client do next/i })
+    ).toBeInTheDocument();
+    expect(within(strategicChoice).getByText(/Recommended: Use caveated executive readout/i)).toBeInTheDocument();
+    expect(
+      within(strategicChoice).getByText(/Share directional value movement with caveats/i)
+    ).toBeInTheDocument();
+    expect(
+      within(strategicChoice).getByText(/Do not present realized ROI yet/i)
+    ).toBeInTheDocument();
     expect(
       screen.getByText("We can present a caveated value investigation for this workflow.")
     ).toBeInTheDocument();
@@ -232,6 +246,13 @@ describe("ValueEvidenceCasePanel", () => {
     expect(
       screen.getAllByText(/customer-validated realized value/i).length
     ).toBeGreaterThan(0);
+    const updatedStrategicChoice = screen.getByRole("region", { name: /Strategic value choice/i });
+    expect(
+      within(updatedStrategicChoice).getByText(/Recommended: Use validated value story/i)
+    ).toBeInTheDocument();
+    expect(
+      within(updatedStrategicChoice).getByText(/Keep causality blocked unless the evidence design supports it/i)
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Unlocked").length).toBe(3);
     expect(screen.getAllByText("Locked").length).toBe(1);
     expect(screen.getByText(/approved by Sales finance partner/i)).toBeInTheDocument();
@@ -269,6 +290,92 @@ describe("ValueEvidenceCasePanel", () => {
     expect(within(intake).getByText(/Evidence staged locally/i)).toBeInTheDocument();
     expect(within(intake).getByText(/18.4 to 15.1 hours/i)).toBeInTheDocument();
     expect(within(intake).getByText(/No person-level rows, names, or manager rankings/i)).toBeInTheDocument();
+  });
+
+  it("starts the intake from the outcome metrics selected by the user", async () => {
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockResolvedValue({ objects: [] } as never);
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRICS_KEY,
+      JSON.stringify({
+        functionArea: "Engineering / Software Development",
+        quadrantLabel: "High-fluency flow",
+        vbdBaseline: "Velocity 88 · Breadth 86 · Depth 88",
+        metrics: [
+          {
+            id: "eng-lead-time-for-changes",
+            name: "Lead Time for Changes",
+            valueRoute: "Acceleration",
+            sourceSystem: "Version control and deployment systems",
+            measurementUnit: "days",
+            owner: "Engineering Operations"
+          },
+          {
+            id: "eng-code-review-turnaround",
+            name: "Code Review Turnaround Time",
+            valueRoute: "Acceleration",
+            sourceSystem: "GitHub or GitLab review analytics",
+            measurementUnit: "hours",
+            owner: "Engineering Operations"
+          }
+        ]
+      })
+    );
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
+    );
+
+    const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    expect(within(intake).getByText(/Selected on Outcome Metrics/i)).toBeInTheDocument();
+    expect(within(intake).getByText("Engineering / Software Development")).toBeInTheDocument();
+    expect(within(intake).getByText(/2 outcome metrics selected/i)).toBeInTheDocument();
+    expect(within(intake).getByLabelText("Outcome metric", { exact: true })).toHaveValue("Lead Time for Changes");
+    expect(within(intake).getByLabelText("Source system", { exact: true })).toHaveValue(
+      "Version control and deployment systems"
+    );
+    expect(within(intake).getByLabelText("Measurement unit", { exact: true })).toHaveValue("days");
+    expect(within(intake).getByLabelText("Evidence owner", { exact: true })).toHaveValue("Engineering Operations");
+    expect(within(intake).getByText("Code Review Turnaround Time")).toBeInTheDocument();
+  });
+
+  it("keeps metric evidence intake available when case records are unavailable", async () => {
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockRejectedValue(new Error("offline"));
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRICS_KEY,
+      JSON.stringify({
+        functionArea: "Engineering / Software Development",
+        quadrantLabel: "High-fluency flow",
+        vbdBaseline: "Velocity 88 · Breadth 86 · Depth 88",
+        metrics: [
+          {
+            id: "eng-deployment-frequency",
+            name: "Deployment Frequency",
+            valueRoute: "Acceleration",
+            sourceSystem: "Version control and deployment systems",
+            measurementUnit: "deployments",
+            owner: "Engineering Operations"
+          }
+        ]
+      })
+    );
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/Evidence case not connected yet/i)).toBeInTheDocument()
+    );
+
+    expect(
+      screen.getByText(/Case records are unavailable in this local session/i)
+    ).toBeInTheDocument();
+    const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    expect(within(intake).getByText(/Selected on Outcome Metrics/i)).toBeInTheDocument();
+    expect(within(intake).getByText("Engineering / Software Development")).toBeInTheDocument();
+    expect(within(intake).getByLabelText("Outcome metric", { exact: true })).toHaveValue(
+      "Deployment Frequency"
+    );
   });
 
   it("preserves blocked value warnings for legacy cases without claim gates", async () => {

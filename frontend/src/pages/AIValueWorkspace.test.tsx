@@ -8,6 +8,8 @@ import {
 } from "../lib/aiValueApi";
 
 const uiTerm = (...parts: string[]) => parts.join("");
+const SELECTED_OUTCOME_METRICS_KEY = "aiValue.selectedOutcomeMetrics";
+const SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY = "aiValue.selectedOutcomeMetricWatchPlan";
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const expectNoUnsafeUiLanguage = (
   text: string | null | undefined,
@@ -54,6 +56,7 @@ describe("AIValueWorkspace executive spine", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   it("renders the value realization spine as the only navigation", () => {
@@ -61,13 +64,14 @@ describe("AIValueWorkspace executive spine", () => {
 
     const nav = screen.getByRole("navigation", { name: /AI value workspace pages/i });
     const links = within(nav).getAllByRole("link");
-    expect(links).toHaveLength(6);
+    expect(links).toHaveLength(7);
     expect(links.map((link) => within(link).getByRole("strong").textContent)).toEqual([
       "Overview",
       "AI Fluency",
       "VBD Map",
       "Outcome Metrics",
       "Evidence Case",
+      "Value / ROI",
       "Decision & Retest"
     ]);
     expect(within(nav).queryByText(/Blueprint/i)).not.toBeInTheDocument();
@@ -132,16 +136,14 @@ describe("AIValueWorkspace executive spine", () => {
 
   it("gives the VBD operating map its own spine step and redirects the old blueprint link", () => {
     const vbd = renderWorkspace("/ai-value-workspace/vbd");
-    const vbdFramework = screen.getByRole("region", { name: /Organizational AI Fluency framework/i });
     const vbdMap = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
-    expect(vbdFramework).toBeInTheDocument();
     expect(vbdMap).toBeInTheDocument();
-    expect(Boolean(vbdFramework.compareDocumentPosition(vbdMap) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(screen.queryByRole("region", { name: /Organizational AI Fluency framework/i })).not.toBeInTheDocument();
     expect(within(vbdMap).getAllByText(/High-fluency flow/i).length).toBeGreaterThan(0);
     vbd.unmount();
 
     renderWorkspace("/ai-value-workspace/blueprint");
-    expect(screen.getByRole("region", { name: /Organizational AI Fluency framework/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Organizational AI Fluency framework/i })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Velocity Breadth Depth map/i })).toBeInTheDocument();
     const activeLink = screen.getByRole("link", { current: "page" });
     expect(activeLink).toHaveTextContent("VBD Map");
@@ -160,7 +162,7 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
     expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
     expect(within(map).getByText(/Bubble size shows combined Velocity, Breadth, and Depth/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Organizational AI Fluency framework/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Organizational AI Fluency framework/i })).not.toBeInTheDocument();
     const quadrantMap = within(map).getByLabelText("VBD quadrant map");
     expect(within(quadrantMap).getByText("Fast but shallow")).toBeInTheDocument();
     expect(within(quadrantMap).getByText("High-fluency flow")).toBeInTheDocument();
@@ -170,11 +172,15 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(quadrantMap).getByText(/AI is embedded enough to scale/i)).toBeInTheDocument();
     expect(within(quadrantMap).getByText(/Find the work fit before scaling/i)).toBeInTheDocument();
     expect(within(quadrantMap).getByText(/Good use case, slow spread/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getAllByText("Watch for").length).toBe(4);
-    expect(within(quadrantMap).getByText(/Low verification/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/Repeat use/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/Human-only fallback/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/Workflow drag/i)).toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Watch for/i)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Low verification/i)).not.toBeInTheDocument();
+    const definitions = within(map).getByLabelText(/Quadrant definitions/i);
+    expect(within(definitions).getByText(/Watch for: Immediate accept, Low verification/i)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Watch for: Repeat use, Verification/i)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Human-only fallback/i)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Workflow drag/i)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Customer or Account Success/i)).toBeInTheDocument();
     const yAxis = container.querySelector(".ai-value-vbd-y-axis");
     expect(yAxis).toBeInstanceOf(HTMLElement);
     expect(within(yAxis as HTMLElement).getByText("High")).toHaveClass("ai-value-vbd-axis-high");
@@ -211,7 +217,8 @@ describe("AIValueWorkspace executive spine", () => {
     evidence.unmount();
 
     const scenario = renderWorkspace("/ai-value-workspace/scenario");
-    expect(screen.getByRole("region", { name: /Value evidence case/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Value and ROI readiness/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { current: "page" })).toHaveTextContent("Value / ROI");
     scenario.unmount();
 
     renderWorkspace("/ai-value-workspace/readout");
@@ -553,6 +560,7 @@ describe("AIValueWorkspace journey continuity", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
 
@@ -567,31 +575,81 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(screen.getByRole("heading", { name: "Outcome Metrics" })).toBeInTheDocument();
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
     expect(within(bridge).getByRole("heading", { name: /Choose function and outcome metrics/i })).toBeInTheDocument();
-    expect(within(bridge).getByRole("group", { name: /Select org function/i })).toBeInTheDocument();
-    fireEvent.click(within(bridge).getByRole("button", { name: "Engineering / Software Development" }));
-    const pullRequestCycle = within(bridge).getByRole("checkbox", { name: /Pull request cycle time/i });
-    const releaseFrequency = within(bridge).getByRole("checkbox", { name: /Release frequency/i });
-    expect(pullRequestCycle).toBeChecked();
-    fireEvent.click(releaseFrequency);
-    expect(releaseFrequency).toBeChecked();
+    const functionSelect = within(bridge).getByRole("combobox", { name: /Org function/i }) as HTMLSelectElement;
+    expect(functionSelect.options).toHaveLength(17);
+    expect(within(functionSelect).getByRole("option", { name: "Data & Analytics" })).toBeInTheDocument();
+    expect(within(functionSelect).getByRole("option", { name: "Legal & Compliance" })).toBeInTheDocument();
+    expect(within(functionSelect).getByRole("option", { name: "Education or Training" })).toBeInTheDocument();
+
+    fireEvent.change(functionSelect, { target: { value: "Engineering / Software Development" } });
+    const deploymentFrequency = within(bridge).getByRole("checkbox", { name: /Deployment Frequency/i });
+    const leadTimeForChanges = within(bridge).getByRole("checkbox", { name: /Lead Time for Changes/i });
+    const codeReviewTurnaround = within(bridge).getByRole("checkbox", { name: /Code Review Turnaround Time/i });
+    expect(deploymentFrequency).toBeChecked();
+    fireEvent.click(leadTimeForChanges);
+    fireEvent.click(codeReviewTurnaround);
+    expect(leadTimeForChanges).toBeChecked();
+    expect(codeReviewTurnaround).toBeChecked();
     const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
     expect(within(watchPlan).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
-    expect(within(watchPlan).getByText(/Pull request cycle time/i)).toBeInTheDocument();
-    expect(within(watchPlan).getByText(/Release frequency/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Deployment Frequency/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Lead Time for Changes/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Code Review Turnaround Time/i)).toBeInTheDocument();
     expect(within(watchPlan).getByText(/Compare selected outcomes against Velocity, Breadth, and Depth movement over time/i)).toBeInTheDocument();
+    const storedMetricHandoff = JSON.parse(localStorage.getItem(SELECTED_OUTCOME_METRICS_KEY) ?? "{}");
+    expect(storedMetricHandoff.functionArea).toBe("Engineering / Software Development");
+    expect(storedMetricHandoff.metrics.map((metric: { name: string }) => metric.name)).toEqual([
+      "Deployment Frequency",
+      "Lead Time for Changes",
+      "Code Review Turnaround Time"
+    ]);
+    expect(storedMetricHandoff.metrics[0]).toMatchObject({
+      sourceSystem: "CI/CD system",
+      measurementUnit: "deployments per week",
+      owner: "Engineering Operations"
+    });
     expect(within(bridge).getAllByText(/Support Operations/i).length).toBeGreaterThan(0);
     const candidateMetrics = screen.getByRole("article", { name: /Candidate outcome metrics/i });
     expect(candidateMetrics).toBeInTheDocument();
     expect(within(candidateMetrics).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
-    expect(within(candidateMetrics).getByText(/How fast are pull requests merging/i)).toBeInTheDocument();
-    expect(within(candidateMetrics).getByText(/Pull request cycle time/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Is production deployment frequency increasing/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText("Deployment Frequency")).toBeInTheDocument();
     expect(within(candidateMetrics).queryByText(/Are cases resolving faster/i)).not.toBeInTheDocument();
 
-    fireEvent.click(within(bridge).getByRole("button", { name: "Finance or Accounting" }));
+    fireEvent.change(functionSelect, { target: { value: "IT Systems or Security" } });
+    expect(within(bridge).getAllByText(/Mean Time to Resolution/i).length).toBeGreaterThan(0);
+    expect(within(bridge).getByText(/First Contact Resolution Rate/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Cost per Ticket/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/IT Systems or Security/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Are IT tickets resolving faster/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText("Cost per Ticket")).toBeInTheDocument();
+
+    fireEvent.change(functionSelect, { target: { value: "Data & Analytics" } });
+    expect(within(bridge).getAllByText(/Analytics request cycle time/i).length).toBeGreaterThan(0);
+    expect(within(bridge).getByText(/Dashboard adoption rate/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Data & Analytics/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Are analytics requests moving faster/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Analytics request cycle time/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).queryByText(/Is production deployment frequency increasing/i)).not.toBeInTheDocument();
+
+    fireEvent.change(functionSelect, { target: { value: "Customer or Account Success" } });
+    expect(within(bridge).getByText(/Customer onboarding time/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/Time to First Value/i)).toBeInTheDocument();
+    expect(within(bridge).getByText(/QBR preparation time/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Customer or Account Success/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Are customers reaching implementation faster/i)).toBeInTheDocument();
+
+    fireEvent.change(functionSelect, { target: { value: "Education or Training" } });
+    expect(within(bridge).getAllByText(/Training Material Creation Time/i).length).toBeGreaterThan(0);
+    expect(within(bridge).getByText(/Learning Resource Discovery Time/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Education or Training/i)).toBeInTheDocument();
+    expect(within(candidateMetrics).getByText(/Can learners find relevant resources faster/i)).toBeInTheDocument();
+
+    fireEvent.change(functionSelect, { target: { value: "Finance or Accounting" } });
     expect(within(candidateMetrics).getByText(/Finance or Accounting/i)).toBeInTheDocument();
     expect(within(candidateMetrics).getByText(/Is the close cycle getting shorter/i)).toBeInTheDocument();
     expect(within(candidateMetrics).getByText(/Close cycle time/i)).toBeInTheDocument();
-    expect(within(candidateMetrics).queryByText(/How fast are pull requests merging/i)).not.toBeInTheDocument();
+    expect(within(candidateMetrics).queryByText(/Is production deployment frequency increasing/i)).not.toBeInTheDocument();
 
     // The old step-guide and duplicate opportunity map stay removed.
     expect(screen.queryByText(/Step 4 of 8/i)).not.toBeInTheDocument();
@@ -599,6 +657,56 @@ describe("AIValueWorkspace journey continuity", () => {
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library")
+    ]);
+  });
+
+  it("auto-saves selected outcome metrics by function while keeping the active handoff", async () => {
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    const functionSelect = within(bridge).getByRole("combobox", { name: /Org function/i }) as HTMLSelectElement;
+
+    fireEvent.change(functionSelect, { target: { value: "Engineering / Software Development" } });
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Lead Time for Changes/i }));
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Code Review Turnaround Time/i }));
+
+    fireEvent.change(functionSelect, { target: { value: "Data & Analytics" } });
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Dashboard adoption rate/i }));
+
+    fireEvent.change(functionSelect, { target: { value: "Engineering / Software Development" } });
+    expect(within(bridge).getByRole("checkbox", { name: /Lead Time for Changes/i })).toBeChecked();
+    expect(within(bridge).getByRole("checkbox", { name: /Code Review Turnaround Time/i })).toBeChecked();
+
+    const storedWatchPlan = JSON.parse(
+      localStorage.getItem(SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY) ?? "{}"
+    );
+    expect(storedWatchPlan.activeFunctionArea).toBe("Engineering / Software Development");
+    expect(
+      storedWatchPlan.selectionsByFunction["Engineering / Software Development"].metrics.map(
+        (metric: { name: string }) => metric.name
+      )
+    ).toEqual([
+      "Deployment Frequency",
+      "Lead Time for Changes",
+      "Code Review Turnaround Time"
+    ]);
+    expect(
+      storedWatchPlan.selectionsByFunction["Data & Analytics"].metrics.map(
+        (metric: { name: string }) => metric.name
+      )
+    ).toEqual(["Analytics request cycle time", "Dashboard adoption rate"]);
+
+    const activeHandoff = JSON.parse(localStorage.getItem(SELECTED_OUTCOME_METRICS_KEY) ?? "{}");
+    expect(activeHandoff.functionArea).toBe("Engineering / Software Development");
+    expect(activeHandoff.metrics.map((metric: { name: string }) => metric.name)).toEqual([
+      "Deployment Frequency",
+      "Lead Time for Changes",
+      "Code Review Turnaround Time"
     ]);
   });
 
@@ -685,6 +793,49 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
+  it("exposes Value and ROI readiness as its own workspace step", async () => {
+    stubJourneyFetch(journeyObjects);
+    const { container } = renderWorkspace("/ai-value-workspace/roi");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Value and ROI readiness/i })).toBeInTheDocument();
+    });
+
+    const activeLink = screen.getByRole("link", { current: "page" });
+    expect(activeLink).toHaveTextContent("Value / ROI");
+    const roi = screen.getByRole("region", { name: /Value and ROI readiness/i });
+    expect(within(roi).getByRole("heading", { name: /Value \/ ROI Readiness/i })).toBeInTheDocument();
+    expect(within(roi).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Source and aggregation level/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Owner review still needed/i)).toBeInTheDocument();
+    expect(within(roi).queryByText(/Ready for governed value modeling/i)).not.toBeInTheDocument();
+    expect(within(roi).getByText(/Baseline window/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Comparison window/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Customer-owned assumptions/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Conservative/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Base case/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Expanded/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Potential capacity-creation opportunity for customer-owned validation/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/No realized ROI claim/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
+    expect(within(roi).getByText(/Review submitted customer export with Support Operations before stronger value language/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Back to Evidence Case/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/case"
+    );
+    expect(screen.getByRole("link", { name: /Continue to Decision & Retest/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/decisions"
+    );
+
+    expectNoUnsafeUiLanguage(container.textContent, [
+      uiTerm("workflow", "_", "family"),
+      uiTerm("metric", "_", "id"),
+      "roi_scenario"
+    ]);
+  });
+
   it("updates the workspace decision handoff preview locally when a different move is selected", async () => {
     const fixture = withOutcomeReviewState("ACCEPTED");
     stubJourneyFetch(fixture.objects, fixture.details);
@@ -754,6 +905,7 @@ describe("AIValueWorkspace journey continuity", () => {
       "/ai-value-workspace/readiness",
       "/ai-value-workspace/vbd",
       "/ai-value-workspace/metrics",
+      "/ai-value-workspace/roi",
       "/ai-value-workspace/decisions"
     ]) {
       stubJourneyFetch(journeyObjects);
