@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { putAiValueObject, postWorkshopIntake, AiValueApiError } from "../lib/aiValueApi";
+import {
+  ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
+  ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY,
+  putAiValueObject,
+  postWorkshopIntake,
+  AiValueApiError
+} from "../lib/aiValueApi";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 
@@ -233,6 +239,7 @@ export const AIValueDiscovery = () => {
     Object.fromEntries(ASSUMPTION_ROWS.map(({ id }) => [id, { owner: "", state: "MISSING" }]))
   );
   const [engagementSaved, setEngagementSaved] = useState(false);
+  const [activeEngagementId, setActiveEngagementId] = useState<string | null>(null);
   const [blueprintId, setBlueprintId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -251,7 +258,10 @@ export const AIValueDiscovery = () => {
       assistantSessions: "", searchSessions: "", plannedSignals: ""
     });
     setEngagementSaved(false);
+    setActiveEngagementId(null);
     setBlueprintId(null);
+    localStorage.removeItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY);
+    localStorage.removeItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY);
     setGaps([]);
     setNotice("Starting a fresh discovery.");
   };
@@ -266,6 +276,11 @@ export const AIValueDiscovery = () => {
         ])
       )
     );
+    setEngagementSaved(false);
+    setActiveEngagementId(null);
+    setBlueprintId(null);
+    localStorage.removeItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY);
+    localStorage.removeItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY);
     setNotice("Loaded the example engagement. Walk the steps with the client and adjust.");
     setGaps([]);
   };
@@ -359,6 +374,8 @@ export const AIValueDiscovery = () => {
     try {
       const engagement = buildEngagement();
       await putAiValueObject(sessionRole(), "engagement", engagement.engagement_id, engagement);
+      localStorage.setItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY, engagement.engagement_id);
+      setActiveEngagementId(engagement.engagement_id);
       setEngagementSaved(true);
       setNotice("Engagement saved. The pilot use case is ready for the blueprint workshop.");
       setActiveStep("Blueprint Workshop");
@@ -417,6 +434,7 @@ export const AIValueDiscovery = () => {
       };
       const result = await postWorkshopIntake(sessionRole(), intake);
       setBlueprintId(result.blueprint.object_id);
+      localStorage.setItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY, result.blueprint.object_id);
       setNotice("Blueprint created from the workshop. Open the value workshop to continue the spine.");
     } catch (error) {
       if (error instanceof AiValueApiError && error.status === 422) {
@@ -478,6 +496,13 @@ export const AIValueDiscovery = () => {
     futureWorkflow.filter((step) => /ai|glean|search|assistant|skill|agent/i.test(step)),
     form.expectedChange || "Confirm where AI changes the work."
   );
+  const workspaceParams = new URLSearchParams();
+  if (blueprintId) workspaceParams.set("blueprintId", blueprintId);
+  if (activeEngagementId) workspaceParams.set("engagementId", activeEngagementId);
+  const workspaceLink =
+    workspaceParams.toString().length > 0
+      ? `/ai-value-workspace?${workspaceParams.toString()}`
+      : "/ai-value-workspace";
 
   return (
     <main className="ai-value-shell ai-value-discovery">
@@ -520,8 +545,8 @@ export const AIValueDiscovery = () => {
             onClick={() => setActiveStep(step)}
             aria-current={activeStep === step ? "step" : undefined}
           >
-            <span>{index + 1}</span>
-            {step}
+            <span className="ai-value-discovery-step-index">{index + 1}</span>
+            <span>{step}</span>
           </button>
         ))}
       </section>
@@ -530,6 +555,24 @@ export const AIValueDiscovery = () => {
         {activeStep === "Client & Objective" && (
           <article className="ai-value-panel">
             <h3>Who is this for, and why now?</h3>
+            <section className="ai-value-carry-forward" aria-label="What carries forward">
+              <div>
+                <h4>What carries forward</h4>
+                <p>
+                  Objectives appear in later discovery steps while you work. After you save the
+                  engagement, the client, sponsor outcome, objectives, and success measures become
+                  the kickoff context for the value workshop.
+                </p>
+              </div>
+              <div>
+                <h4>What happens after Blueprint</h4>
+                <p>
+                  Creating the workflow blueprint carries the selected pilot into Blueprint,
+                  Metrics and ROI Opportunities, Evidence Readiness, Value Story, and Executive
+                  Readout.
+                </p>
+              </div>
+            </section>
             <div className="ai-value-field-grid">
               {field("Client name", "clientName")}
               {field("Industry", "industry")}
@@ -916,7 +959,7 @@ export const AIValueDiscovery = () => {
                 {busy ? "Creating…" : "Create the workflow blueprint"}
               </button>
               {blueprintId && (
-                <Link className="ai-value-step active" to="/ai-value-workspace">
+                <Link className="ai-value-step active" to={workspaceLink}>
                   Open the value workshop
                 </Link>
               )}

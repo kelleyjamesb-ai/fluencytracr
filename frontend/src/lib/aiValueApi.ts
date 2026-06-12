@@ -1,5 +1,8 @@
 import { authFetch } from "../auth";
 
+export const ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY = "aiValue.activeBlueprintId";
+export const ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY = "aiValue.activeEngagementId";
+
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 const withApiBase = (path: string) => (apiBaseUrl ? `${apiBaseUrl}${path}` : path);
 

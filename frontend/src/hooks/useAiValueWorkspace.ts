@@ -1,6 +1,9 @@
 import { useCallback, useState } from "react";
 
 import {
+  ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
+  ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY,
+  type AiValueObjectSummary,
   listAiValueObjects,
   putAiValueObject,
   runAiValueSpine,
@@ -26,6 +29,12 @@ export interface AiValueWorkspaceState {
 
 const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
 const sessionOrgId = () => (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
+const activeValueObjectId = (queryName: string, storageKey: string) =>
+  new URLSearchParams(window.location.search).get(queryName) ?? localStorage.getItem(storageKey);
+const preferredObject = (
+  objects: AiValueObjectSummary[],
+  preferredId: string | null
+) => objects.find((object) => object.object_id === preferredId) ?? objects[0];
 
 export const useAiValueWorkspace = (): AiValueWorkspaceState => {
   const [mode, setMode] = useState<AiValueWorkspaceMode>("example");
@@ -65,7 +74,16 @@ export const useAiValueWorkspace = (): AiValueWorkspaceState => {
         libraries = (await listAiValueObjects(role, "metrics_library")).objects;
       }
 
-      const blueprintId = blueprints[0]?.object_id;
+      const preferredBlueprintId = activeValueObjectId(
+        "blueprintId",
+        ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY
+      );
+      const preferredEngagementId = activeValueObjectId(
+        "engagementId",
+        ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY
+      );
+      const blueprint = preferredObject(blueprints, preferredBlueprintId);
+      const blueprintId = blueprint?.object_id;
       const libraryId = libraries[0]?.object_id;
       if (!blueprintId || !libraryId) {
         throw new Error("No workshop objects available");
@@ -74,12 +92,13 @@ export const useAiValueWorkspace = (): AiValueWorkspaceState => {
       // Prefer the full value chain when kickoff objects exist for this org.
       const engagements = (await listAiValueObjects(role, "engagement")).objects;
       const baselines = (await listAiValueObjects(role, "fluency_baseline")).objects;
+      const engagement = preferredObject(engagements, preferredEngagementId);
 
-      if (engagements.length > 0) {
+      if (engagement) {
         const { run } = await runAiValueChain(role, {
           blueprintId,
           metricsLibraryId: libraryId,
-          engagementId: engagements[0].object_id,
+          engagementId: engagement.object_id,
           fluencyBaselineId: baselines[0]?.object_id
         });
         if (!run.spine) {

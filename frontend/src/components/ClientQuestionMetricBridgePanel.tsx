@@ -19,9 +19,12 @@ export const ClientQuestionMetricBridgePanel = ({
   >
     <div className="ai-value-section-head">
       <div>
-        <p className="eyebrow">Outcome Setup</p>
-        <h2>Choose the outcome metric</h2>
-        <p>{bridge.summary}</p>
+        <p className="eyebrow">Metric Setup</p>
+        <h2>Metric setup to confirm with the client</h2>
+        <p>
+          Use the Blueprint workflow and value route to prepare the metric, source system,
+          owner, comparison window, and allowed value language before evidence work starts.
+        </p>
       </div>
       <StatusPill label={bridge.statusLabel} tone={bridge.available ? "good" : "warn"} />
     </div>
@@ -32,7 +35,7 @@ export const ClientQuestionMetricBridgePanel = ({
           <article className="ai-value-question-metric-item" key={item.id}>
             <div className="ai-value-map-grid">
               <div className="ai-value-map-cell ai-value-map-cell-wide">
-                <span className="ai-value-map-label">Client value question</span>
+                <span className="ai-value-map-label">Sponsor question</span>
                 <strong>{item.sponsorQuestion}</strong>
                 <p>{item.successMeasure}</p>
               </div>
@@ -69,8 +72,8 @@ export const ClientQuestionMetricBridgePanel = ({
       </div>
     ) : (
       <p>
-        Add the client success measure and outcome metric before Evidence
-        Readiness can start.
+        Add the client success measure, selected metric, data owner, and comparison window
+        before Evidence Readiness can start.
       </p>
     )}
   </section>

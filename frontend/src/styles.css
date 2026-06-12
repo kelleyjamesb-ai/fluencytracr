@@ -2043,7 +2043,7 @@ body {
 .ai-value-workspace-nav {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
@@ -2053,22 +2053,24 @@ body {
 
 .ai-value-workspace-card {
   display: inline-flex;
-  gap: 8px;
+  gap: 7px;
   align-items: center;
   width: auto;
   min-width: 0;
-  min-height: 42px;
-  padding: 8px 10px;
+  min-height: 38px;
+  padding: 7px 8px;
 }
 
 .ai-value-workspace-card-copy {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 }
 
 .ai-value-workspace-card-copy strong {
+  font-size: 13px;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .ai-value-step {
@@ -2086,16 +2088,18 @@ body {
 .ai-value-workspace-index {
   display: inline-grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #ececff;
   color: #343ced;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .ai-value-workspace-card-status {
   color: #5d6377;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -2601,6 +2605,79 @@ body {
 
 .ai-value-question-metric-item .ai-value-map-cell {
   background: #ffffff;
+}
+
+.ai-value-metrics-command-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ai-value-metrics-command-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.55fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.ai-value-metrics-command-main {
+  min-width: 0;
+}
+
+.ai-value-metrics-command-main h2 {
+  margin: 8px 0 6px;
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.ai-value-metrics-command-main p {
+  margin: 0;
+  max-width: 760px;
+  color: #454545;
+  line-height: 1.45;
+}
+
+.ai-value-metrics-decision-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe0ef;
+  border-radius: 8px;
+  background: #f7f8ff;
+}
+
+.ai-value-metrics-decision-card strong,
+.ai-value-metrics-decision-card p {
+  display: block;
+  margin: 0;
+}
+
+.ai-value-metrics-decision-card .ai-value-step {
+  justify-self: start;
+  margin-top: 2px;
+  text-decoration: none;
+}
+
+.ai-value-metrics-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-value-metrics-flow > div {
+  min-width: 0;
+  border: 1px solid #e4e6ef;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+  border-top: 3px solid #dbe0ef;
+}
+
+.ai-value-metrics-flow strong,
+.ai-value-metrics-flow p {
+  display: block;
+  margin: 4px 0 0;
 }
 
 .ai-value-spine-trace-panel {
@@ -3395,7 +3472,8 @@ body {
   .ai-value-intake-footer,
   .ai-fluency-action-row,
   .ai-value-workbench-grid,
-  .ai-value-boundary-grid {
+  .ai-value-boundary-grid,
+  .ai-value-carry-forward {
     grid-template-columns: 1fr;
   }
 
@@ -3420,7 +3498,17 @@ body {
   }
 
   .ai-value-workspace-card {
-    min-width: 210px;
+    min-width: 150px;
+  }
+
+  .ai-value-metrics-flow {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .ai-value-metrics-flow > div {
+    flex: 0 0 220px;
   }
 
   .ai-value-context-bar > div {
@@ -3466,6 +3554,8 @@ body {
   .ai-value-map-grid,
   .ai-value-evidence-plan-grid,
   .ai-value-executive-plan-grid,
+  .ai-value-metrics-command-head,
+  .ai-value-metrics-flow,
   .ai-value-scenario-band-list,
   .ai-value-scenario-input-grid,
   .ai-value-agent-handoff-grid,
@@ -3522,11 +3612,79 @@ body {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.ai-value-discovery .ai-value-spine {
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.ai-value-discovery .ai-value-spine .ai-value-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  line-height: 1.2;
+}
+
+.ai-value-discovery-step-index {
+  display: inline-grid;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef2ff;
+  color: #343ced;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-value-discovery .ai-value-spine .ai-value-step > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 980px) {
+  .ai-value-discovery .ai-value-spine {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .ai-value-discovery .ai-value-spine {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ai-value-discovery .ai-value-usecase-card {
   border: 1px solid #d6dcea;
   border-radius: 10px;
   padding: 12px 14px;
   margin-top: 12px;
+}
+
+.ai-value-carry-forward {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 14px;
+}
+
+.ai-value-carry-forward > div {
+  min-width: 0;
+  border: 1px solid #d6dcea;
+  border-radius: 8px;
+  background: #f7f9fc;
+  padding: 12px;
+}
+
+.ai-value-carry-forward h4,
+.ai-value-carry-forward p {
+  margin: 0;
+}
+
+.ai-value-carry-forward p {
+  margin-top: 6px;
 }
 
 .ai-value-discovery .ai-value-actions {

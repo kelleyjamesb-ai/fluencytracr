@@ -1320,7 +1320,7 @@ function buildClientQuestionMetricBridge(params: {
     available: true,
     statusLabel: "Metric setup ready",
     summary:
-      "Use this step to choose the outcome the client cares about, where that data lives, who owns it, and what value language is allowed.",
+      "Use this step to confirm the recommended metric, source system, owner, and allowed value language before evidence work starts.",
     items: bridgeOpportunities.map((opportunity, index) => ({
       id: opportunity.id,
       sponsorQuestion: roiQuestion,
@@ -2414,7 +2414,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setErrorMessage(
         error instanceof AiValueApiError && error.status === 401
           ? "Sign in with an organization session to see the journey."
-          : "Live evidence is not connected yet. Continue with example content or connect approved aggregate evidence when it is ready."
+          : "Using example evidence until approved aggregate data is connected."
       );
     } finally {
       setLoading(false);

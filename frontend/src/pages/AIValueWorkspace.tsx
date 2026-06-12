@@ -40,7 +40,7 @@ const workspacePages = [
     path: "/ai-value-workspace/readiness",
     detail:
       "Use aggregate fluency readiness signals to understand what people are ready to do with AI.",
-    doNow: "Share the AI Fluency link with the client and review aggregate results before the workshop.",
+    doNow: "Send AI Fluency to the client. After the organization completes it, review aggregate results before the workshop.",
     needs: [
       "Client assessment link",
       "Aggregate results",
@@ -54,7 +54,7 @@ const workspacePages = [
   {
     slug: "blueprint",
     label: "Blueprint Workshop",
-    navLabel: "Blueprint Workshop",
+    navLabel: "Blueprint",
     path: "/ai-value-workspace/blueprint",
     detail: "Co-design the current and target workflow with the client.",
     doNow: "Agree on the current workflow, target workflow, and one open decision to carry forward.",
@@ -71,14 +71,14 @@ const workspacePages = [
   {
     slug: "metrics",
     label: "Metrics & ROI Opportunities",
-    navLabel: "Metrics & ROI Opportunities",
+    navLabel: "Metrics & ROI",
     path: "/ai-value-workspace/metrics",
     detail: "Map client value questions to governed outcome metrics and ROI opportunities.",
-    doNow: "Pick the outcome metric, confirm the customer system that owns it, and name the data owner.",
+    doNow: "Use the Blueprint workflow and sponsor success measure to choose the outcome metric, customer system, and data owner.",
     needs: [
-      "Client value question",
-      "Outcome metric",
-      "Source system and owner"
+      "Blueprint workflow",
+      "Sponsor success measure",
+      "Customer source system and owner"
     ],
     doneWhen: "The evidence ask is specific enough for the customer data owner.",
     primaryActionLabel: "Prepare Evidence Ask",
@@ -88,7 +88,7 @@ const workspacePages = [
   {
     slug: "evidence",
     label: "Evidence Readiness",
-    navLabel: "Evidence Readiness",
+    navLabel: "Evidence",
     path: "/ai-value-workspace/evidence",
     detail: "Separate what Glean can show from what customer-owned data must validate.",
     doNow: "Request or review the approved aggregate evidence, then decide whether it can support scenario planning.",
@@ -105,7 +105,7 @@ const workspacePages = [
   {
     slug: "scenario",
     label: "Scenario Builder",
-    navLabel: "Scenario Builder",
+    navLabel: "Scenario",
     path: "/ai-value-workspace/scenario",
     detail: "Model value as an assumption-backed scenario, not ROI proof.",
     doNow: "Check whether the evidence and assumptions are strong enough for a caveated value scenario.",
@@ -122,7 +122,7 @@ const workspacePages = [
   {
     slug: "readout",
     label: "Executive Readout",
-    navLabel: "Executive Readout",
+    navLabel: "Readout",
     path: "/ai-value-workspace/readout",
     detail: "Preview the sponsor packet and the caveats that must travel with it.",
     doNow: "Preview what the sponsor will see and make sure caveats travel with the readout.",
@@ -139,7 +139,7 @@ const workspacePages = [
   {
     slug: "decisions",
     label: "Sponsor Decisions",
-    navLabel: "Sponsor Decisions",
+    navLabel: "Decisions",
     path: "/ai-value-workspace/decisions",
     detail: "Choose the next governed move and prepare a bounded handoff.",
     doNow: "Choose the next operating move: expand, collect stronger evidence, correct the export, hold language, or return to Blueprint.",
@@ -368,7 +368,7 @@ export const AIValueWorkspace = () => {
                   : "ai-value-step ai-value-workspace-card"
               }
               aria-current={activePageSlug === page.slug ? "page" : undefined}
-              aria-label={`${index + 1}. ${page.navLabel}, ${status.label}`}
+              aria-label={`${index + 1}. ${page.label}, ${status.label}`}
             >
               <span className="ai-value-workspace-index">{index + 1}</span>
               <span className="ai-value-workspace-card-copy">
@@ -393,11 +393,13 @@ export const AIValueWorkspace = () => {
         </p>
       )}
 
-      <WorkspacePageGuide
-        page={activePage}
-        pageSlug={activePageSlug}
-        status={workspacePageStatus(activePageSlug, journey)}
-      />
+      {activePageSlug !== "metrics" && (
+        <WorkspacePageGuide
+          page={activePage}
+          pageSlug={activePageSlug}
+          status={workspacePageStatus(activePageSlug, journey)}
+        />
+      )}
 
       {realEvidencePageSlugs.includes(activePageSlug) && (
         <RealEvidenceStatusPanel
@@ -431,7 +433,11 @@ export const AIValueWorkspace = () => {
       )}
 
       {activePageSlug === "metrics" && (
-        <MetricsPage journey={journey} valueSignals={valueSignals} />
+        <MetricsPage
+          journey={journey}
+          status={workspacePageStatus(activePageSlug, journey)}
+          valueSignals={valueSignals}
+        />
       )}
 
       {activePageSlug === "evidence" && (
@@ -789,15 +795,17 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
     <section className="ai-value-panel" aria-label="AI Fluency">
       <div className="ai-value-section-head">
         <div>
-          <p className="eyebrow">AI Fluency</p>
-          <h3>Aggregate fluency readiness</h3>
+          <p className="eyebrow">Post-assessment review</p>
+          <h3>After the organization completes AI Fluency</h3>
           <p>
-            AI Fluency captures aggregate readiness across the client team,
-            highlights capability gaps, and informs the Blueprint workshop with
-            the human context needed to choose better workflows.
+            This is the aggregate results interpretation layer. Use it after
+            responses are collected to identify readiness strengths, capability
+            gaps, and the workflows that are ready to bring into Blueprint. If
+            responses are not collected yet, send the client link below first.
           </p>
         </div>
         <div className="ai-value-chip-row">
+          <StatusPill label="Aggregate results only" tone="good" />
           <StatusPill label="No individual scoring" />
           <StatusPill label="No HR analytics" />
         </div>
@@ -805,7 +813,7 @@ const ReadinessPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
       <div className="ai-value-client-question-grid">
         {aiFluencyDimensions.map((dimension) => (
           <article className="ai-value-client-question-card" key={dimension.label}>
-            <span className="ai-value-map-label">Fluency dimension</span>
+            <span className="ai-value-map-label">What results tell us</span>
             <strong>{dimension.label}</strong>
             <p>{dimension.detail}</p>
           </article>
@@ -919,11 +927,12 @@ const AiFluencyExperiencePanel = () => {
     >
       <div className="ai-value-section-head">
         <div>
-          <p className="eyebrow">Client Experience</p>
-          <h3>AI Fluency Experience</h3>
+          <p className="eyebrow">Client assessment</p>
+          <h3>Send AI Fluency and view results</h3>
           <p>
-            Preview the client assessment, share the hosted completion link, and
-            switch into the aggregate results view once responses are collected.
+            Use this first when the organization has not completed AI Fluency:
+            preview the assessment, share the hosted completion link, then
+            switch into aggregate results once responses are collected.
           </p>
         </div>
         <StatusPill label={showingResults ? "Aggregate results preview" : "Client assessment preview"} tone="good" />
@@ -1111,7 +1120,7 @@ const BlueprintPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
             <h4>Feeds Evidence readiness</h4>
             <p>Clarify the aggregate customer export and what FluencyTracr evidence can safely support.</p>
             <Link className="ai-value-step" to="/ai-value-workspace/evidence">
-              Open Evidence plan
+              Prepare evidence ask
             </Link>
           </div>
           <div className="ai-value-blueprint-handoff">
@@ -1129,9 +1138,11 @@ const BlueprintPage = ({ live, journey }: { live: WorkspaceLive; journey: Journe
 
 const MetricsPage = ({
   journey,
+  status,
   valueSignals
 }: {
   journey: Journey;
+  status: { label: string; tone: "good" | "warn" | "neutral" };
   valueSignals: typeof aiValueWorkspace.valueSignals;
 }) => {
   const primarySignal = valueSignals[0] ?? {
@@ -1169,9 +1180,66 @@ const MetricsPage = ({
     primaryOpportunity.nextValidationStep ??
     journey.customerEvidenceRequest.nextAction ??
     "Map a governed metric before evidence or scenario work moves forward.";
+  const metricOwner = primaryBridgeItem?.owner ?? "Not assigned yet";
+  const missingBeforeEvidence = primaryBridgeItem
+    ? "Baseline and comparison windows"
+    : "Sponsor measure and data owner";
 
   return (
     <section className="ai-value-focused-stack" aria-label="Metrics workspace">
+      <section
+        className="ai-value-panel ai-value-metrics-command-panel"
+        aria-label="Metrics & ROI Opportunities guide"
+      >
+        <div className="ai-value-metrics-command-head">
+          <div className="ai-value-metrics-command-main">
+            <div className="ai-value-guide-kicker">
+              <span>Step 4 of 8</span>
+              <StatusPill label={status.label} tone={status.tone} />
+            </div>
+            <h2>Metrics &amp; ROI Opportunities</h2>
+            <p>
+              Blueprint selected the workflow. This page turns that workflow into a client-owned
+              measurement choice: accept the starting metric, choose a different candidate, or
+              capture a KPI the client names.
+            </p>
+          </div>
+          <div className="ai-value-metrics-decision-card">
+            <span className="ai-value-map-label">Choice to make</span>
+            <strong>What should we ask the data owner for?</strong>
+            <p>
+              Leave this page with one metric, its source system, an owner, and the comparison
+              window needed for evidence review.
+            </p>
+            <Link className="ai-value-step active" to="/ai-value-workspace/evidence">
+              Prepare Evidence Ask
+            </Link>
+          </div>
+        </div>
+        <div className="ai-value-metrics-flow" aria-label="How metrics choices work">
+          <div>
+            <span className="ai-value-map-label">Blueprint workflow</span>
+            <strong>{primaryOpportunity.workflowName}</strong>
+            <p>{primaryOpportunity.valueRouteLabel} is the value route to test.</p>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Starting metric option</span>
+            <strong>{primaryOpportunity.metricName}</strong>
+            <p>{primaryOpportunity.sourceSystem}</p>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Missing before evidence</span>
+            <strong>{missingBeforeEvidence}</strong>
+            <p>{metricOwner === "Not assigned yet" ? "Assign the client-side owner before requesting data." : metricOwner}</p>
+          </div>
+          <div>
+            <span className="ai-value-map-label">Next step</span>
+            <strong>Prepare the evidence request</strong>
+            <p>Evidence Readiness checks whether this can support scenario planning.</p>
+          </div>
+        </div>
+      </section>
+
       <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
 
       <section
@@ -1181,10 +1249,10 @@ const MetricsPage = ({
         <div className="ai-value-section-head">
           <div>
             <p className="eyebrow">Outcome Mapping</p>
-            <h3>Outcome and ROI opportunity map</h3>
+            <h3>Metric, evidence ask, and safe value language</h3>
             <p>
-              Use this board to turn the Blueprint decision into the metric,
-              customer data ask, open evidence need, and next governed value step.
+              Once the client chooses a metric, this shows what data to request,
+              what is still missing, and what value language remains safe.
             </p>
           </div>
           <StatusPill
@@ -1202,8 +1270,8 @@ const MetricsPage = ({
               <small>{primaryOpportunity.roiPoint}</small>
             </div>
             <div>
-              <span className="ai-value-map-label">Client value question</span>
-              <h4>{primaryBridgeItem?.sponsorQuestion ?? "Where is the ROI opportunity?"}</h4>
+              <span className="ai-value-map-label">Sponsor question</span>
+              <h4>{primaryBridgeItem?.sponsorQuestion ?? "What outcome should this workflow improve?"}</h4>
               <p>
                 {primaryBridgeItem?.successMeasure ??
                   "Confirm the client success measure in Blueprint."}
@@ -1242,7 +1310,7 @@ const MetricsPage = ({
               </p>
               <div className="ai-value-chip-row">
                 <Link className="ai-value-step" to="/ai-value-workspace/evidence">
-                  Open Evidence plan
+                  Prepare evidence ask
                 </Link>
                 <Link className="ai-value-step" to="/ai-value-workspace/scenario">
                   Open Scenario builder
@@ -1257,19 +1325,18 @@ const MetricsPage = ({
         <div className="ai-value-section-head">
           <div>
             <p className="eyebrow">Metric Options</p>
-            <h3>Candidate outcome metrics</h3>
+            <h3>Metric options the client can choose from</h3>
             <p>
-              This is a starter shortlist suggested from the selected workflow
-              and value route. In the workshop, ask the client which outcome
-              matters most, what system owns it, and whether another metric
-              should be added.
+              These options are suggested from the Blueprint workflow and value route.
+              Use them as starting points; add another metric when the client names a
+              different KPI or source system.
             </p>
           </div>
           <StatusPill label="Client confirms" tone="good" />
         </div>
         <div className="ai-value-signal-guidance" aria-label="Metric candidate guidance">
           <div>
-            <span className="ai-value-map-label">Where these come from</span>
+            <span className="ai-value-map-label">Why these appear</span>
             <p>Blueprint workflow, value route, and available metric definitions.</p>
           </div>
           <div>
@@ -1277,7 +1344,7 @@ const MetricsPage = ({
             <p>The client sponsor and data owner choose the metric to carry forward.</p>
           </div>
           <div>
-            <span className="ai-value-map-label">Can there be more?</span>
+            <span className="ai-value-map-label">When to add another</span>
             <p>Yes. Add more when the client names another KPI or source system.</p>
           </div>
         </div>

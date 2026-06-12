@@ -2,6 +2,10 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AIValueWorkspace } from "./AIValueWorkspace";
+import {
+  ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
+  ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY
+} from "../lib/aiValueApi";
 
 const uiTerm = (...parts: string[]) => parts.join("");
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -106,17 +110,24 @@ describe("AIValueWorkspace", () => {
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
 
     expect(screen.getByRole("heading", { name: /Metrics & ROI Opportunities/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Metrics & ROI Opportunities guide/i })).toBeInTheDocument();
-    expect(screen.getByText(/Pick the outcome metric, confirm the customer system/i)).toBeInTheDocument();
-    expect(screen.getByText(/Source system and owner/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Prepare Evidence Ask/i })).toHaveAttribute(
+    const guide = screen.getByRole("region", { name: /Metrics & ROI Opportunities guide/i });
+    expect(within(guide).getByText(/Blueprint selected the workflow/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/accept the starting metric, choose a different candidate/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Choice to make/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/What should we ask the data owner for/i)).toBeInTheDocument();
+    expect(within(guide).getByRole("link", { name: /Prepare Evidence Ask/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/evidence"
     );
+    expect(within(guide).getByText(/Blueprint workflow/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Starting metric option/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Missing before evidence/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Next step/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Evidence Readiness checks whether this can support scenario planning/i)).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     const candidates = screen.getByRole("article", { name: /Candidate outcome metrics/i });
-    expect(within(candidates).getByRole("heading", { name: /Candidate outcome metrics/i })).toBeInTheDocument();
-    expect(within(candidates).getByText(/starter shortlist suggested from the selected workflow and value route/i)).toBeInTheDocument();
+    expect(within(candidates).getByRole("heading", { name: /Metric options the client can choose from/i })).toBeInTheDocument();
+    expect(within(candidates).getByText(/suggested from the Blueprint workflow and value route/i)).toBeInTheDocument();
     expect(within(candidates).getByText(/Blueprint workflow, value route, and available metric definitions/i)).toBeInTheDocument();
     expect(within(candidates).getByText(/The client sponsor and data owner choose the metric to carry forward/i)).toBeInTheDocument();
     expect(within(candidates).getByText(/Add more when the client names another KPI or source system/i)).toBeInTheDocument();
@@ -125,6 +136,7 @@ describe("AIValueWorkspace", () => {
     expect(screen.getByText(/Likely source: Support case management system/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
     expect(container.textContent).not.toMatch(/Outcome signals to consider|These are candidate signals|Metric Candidates/i);
+    expect(container.textContent).not.toMatch(/Where is the ROI opportunity|Recommended metric to carry forward/i);
     expect(screen.queryByRole("heading", { name: /Customer Evidence Review/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Executive Operating Packet/i })).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(/workflow_state|metric_state|claim boundary|raw_prompt|raw_response/i);
@@ -140,8 +152,12 @@ describe("AIValueWorkspace", () => {
       within(workspaceNavigation).getByRole("link", { name: /AI Fluency/i })
     ).toHaveAttribute("href", "/ai-value-workspace/readiness");
     expect(screen.getByRole("heading", { name: /^AI Fluency$/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/aggregate fluency readiness/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/informs the Blueprint workshop/i)).toBeInTheDocument();
+    expect(screen.getByText(/Send AI Fluency to the client/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /After the organization completes AI Fluency/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/aggregate results interpretation layer/i)).toBeInTheDocument();
+    expect(screen.getByText(/send the client link below first/i)).toBeInTheDocument();
 
     for (const dimension of [
       "Confidence",
@@ -153,6 +169,8 @@ describe("AIValueWorkspace", () => {
       expect(screen.getByText(dimension)).toBeInTheDocument();
     }
 
+    expect(screen.getAllByText(/What results tell us/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Aggregate results only/i)).toBeInTheDocument();
     expect(screen.getByText(/No individual scoring/i)).toBeInTheDocument();
     expect(screen.getByText(/No HR analytics/i)).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/AI Fluency Instrument|Instrument connection/i);
@@ -168,7 +186,8 @@ describe("AIValueWorkspace", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
     const experience = screen.getByRole("region", { name: /AI Fluency experience/i });
-    expect(within(experience).getByRole("heading", { name: /AI Fluency Experience/i })).toBeInTheDocument();
+    expect(within(experience).getByRole("heading", { name: /Send AI Fluency and view results/i })).toBeInTheDocument();
+    expect(within(experience).getByText(/Use this first when the organization has not completed AI Fluency/i)).toBeInTheDocument();
     expect(within(experience).getByText(/Client assessment preview/i)).toBeInTheDocument();
     expect(within(experience).getByText(/Send this link to clients/i)).toBeInTheDocument();
     expect(
@@ -227,11 +246,11 @@ describe("AIValueWorkspace", () => {
       within(metricsHandoff).getByText(/Use the selected outcome metric to prepare the evidence request/i)
     ).toBeInTheDocument();
     expect(metricsHandoff.textContent).not.toMatch(/This page feeds next|Metrics feed evidence requests/i);
-    expect(within(metricsHandoff).getByRole("link", { name: /Back to Blueprint Workshop/i })).toHaveAttribute(
+    expect(within(metricsHandoff).getByRole("link", { name: /Back to Blueprint/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/blueprint"
     );
-    expect(within(metricsHandoff).getByRole("link", { name: /Continue to Evidence Readiness/i })).toHaveAttribute(
+    expect(within(metricsHandoff).getByRole("link", { name: /Continue to Evidence/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/evidence"
     );
@@ -242,11 +261,11 @@ describe("AIValueWorkspace", () => {
     const decisionsHandoff = screen.getByRole("navigation", {
       name: /Workspace page handoff/i
     });
-    expect(within(decisionsHandoff).getByRole("link", { name: /Back to Executive Readout/i })).toHaveAttribute(
+    expect(within(decisionsHandoff).getByRole("link", { name: /Back to Readout/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/readout"
     );
-    expect(within(decisionsHandoff).getByRole("link", { name: /Return to Blueprint Workshop/i })).toHaveAttribute(
+    expect(within(decisionsHandoff).getByRole("link", { name: /Return to Blueprint/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/blueprint"
     );
@@ -363,6 +382,7 @@ describe("AIValueWorkspace live evidence mode", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   it("connects live evidence and shows client-facing live content", async () => {
@@ -399,13 +419,19 @@ describe("AIValueWorkspace live evidence mode", () => {
   });
 
   it("shows the client kickoff context when the full value chain is available", async () => {
+    let valueChainRequest: Record<string, unknown> | null = null;
+    localStorage.setItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY, "bp_sales_pipeline");
+    localStorage.setItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY, "engagement_v1");
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
         if (url.includes("object_type=blueprint")) {
           return jsonResponse({
-            objects: [{ object_type: "blueprint", object_id: "bp_sales_pipeline" }]
+            objects: [
+              { object_type: "blueprint", object_id: "bp_alpha" },
+              { object_type: "blueprint", object_id: "bp_sales_pipeline" }
+            ]
           });
         }
         if (url.includes("object_type=metrics_library")) {
@@ -415,7 +441,10 @@ describe("AIValueWorkspace live evidence mode", () => {
         }
         if (url.includes("object_type=engagement")) {
           return jsonResponse({
-            objects: [{ object_type: "engagement", object_id: "engagement_v1" }]
+            objects: [
+              { object_type: "engagement", object_id: "engagement_alpha" },
+              { object_type: "engagement", object_id: "engagement_v1" }
+            ]
           });
         }
         if (url.includes("object_type=fluency_baseline")) {
@@ -424,6 +453,7 @@ describe("AIValueWorkspace live evidence mode", () => {
           });
         }
         if (url.includes("/value-chain/run")) {
+          valueChainRequest = JSON.parse(String(init?.body ?? "{}"));
           return jsonResponse({
             run: {
               schema_version: "FT_AI_VALUE_CHAIN_RUN_2026_06",
@@ -478,6 +508,10 @@ describe("AIValueWorkspace live evidence mode", () => {
     });
     expect(screen.getByText(/Client kickoff/i)).toBeInTheDocument();
     expect(screen.getByText(/Northstar Enterprise/i)).toBeInTheDocument();
+    expect(valueChainRequest).toMatchObject({
+      blueprint_id: "bp_sales_pipeline",
+      engagement_id: "engagement_v1"
+    });
     expect(screen.getByText(/Create support capacity/i)).toBeInTheDocument();
     expect(screen.getByText(/180 participants/i)).toBeInTheDocument();
     expect(screen.getByText(/Strongest: Intent to use AI more/i)).toBeInTheDocument();
@@ -857,7 +891,7 @@ describe("AIValueWorkspace journey continuity", () => {
 
   it.each([
     ["/ai-value-workspace/blueprint", /Blueprint workshop board/i],
-    ["/ai-value-workspace/metrics", /Choose the outcome metric/i]
+    ["/ai-value-workspace/metrics", /Metric setup to confirm with the client/i]
   ])("keeps %s focused on mapping work instead of showing evidence status", async (path, expectedHeading) => {
     stubJourneyFetch(journeyObjects);
     const { container } = renderWorkspace(path);
@@ -1025,7 +1059,7 @@ describe("AIValueWorkspace journey continuity", () => {
       "href",
       "/ai-value-workspace/metrics"
     );
-    expect(within(board).getByRole("link", { name: /Open Evidence plan/i })).toHaveAttribute(
+    expect(within(board).getByRole("link", { name: /Prepare evidence ask/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/evidence"
     );
@@ -1066,9 +1100,16 @@ describe("AIValueWorkspace journey continuity", () => {
       expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     });
 
+    const guide = screen.getByRole("region", { name: /Metrics & ROI Opportunities guide/i });
+    expect(within(guide).getByText(/Support case resolution/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Median resolution time/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Support case management system/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Support Operations/i)).toBeInTheDocument();
+    expect(within(guide).getByText(/Evidence Readiness/i)).toBeInTheDocument();
+
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
-    expect(within(bridge).getByRole("heading", { name: /Choose the outcome metric/i })).toBeInTheDocument();
-    expect(within(bridge).getByText(/where that data lives, who owns it, and what value language is allowed/i)).toBeInTheDocument();
+    expect(within(bridge).getByRole("heading", { name: /Metric setup to confirm with the client/i })).toBeInTheDocument();
+    expect(within(bridge).getByText(/Use the Blueprint workflow and value route/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Reduce median support resolution hours/i)).toBeInTheDocument();
     expect(within(bridge).getByText(/Median resolution time/i)).toBeInTheDocument();
@@ -1100,7 +1141,7 @@ describe("AIValueWorkspace journey continuity", () => {
     });
 
     const map = screen.getByRole("region", { name: /Outcome and ROI opportunity map/i });
-    expect(within(map).getByRole("heading", { name: /Outcome and ROI opportunity map/i })).toBeInTheDocument();
+    expect(within(map).getByRole("heading", { name: /Metric, evidence ask, and safe value language/i })).toBeInTheDocument();
     expect(within(map).getByText(/Support case resolution/i)).toBeInTheDocument();
     expect(within(map).getByText(/Where is the ROI opportunity/i)).toBeInTheDocument();
     expect(within(map).getByText(/Median resolution time/i)).toBeInTheDocument();
@@ -1109,7 +1150,7 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(map).getByText(/Evidence gap/i)).toBeInTheDocument();
     expect(within(map).getByText(/Customer export awaiting review/i)).toBeInTheDocument();
     expect(within(map).getByText(/Next gated action/i)).toBeInTheDocument();
-    expect(within(map).getByRole("link", { name: /Open Evidence plan/i })).toHaveAttribute(
+    expect(within(map).getByRole("link", { name: /Prepare evidence ask/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/evidence"
     );

@@ -3,6 +3,10 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AIValueDiscovery } from "./AIValueDiscovery";
+import {
+  ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
+  ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY
+} from "../lib/aiValueApi";
 
 const renderPage = () =>
   render(
@@ -45,6 +49,7 @@ describe("AIValueDiscovery", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   it("walks the client-facing discovery flow from objective to blueprint", async () => {
@@ -54,6 +59,9 @@ describe("AIValueDiscovery", () => {
     expect(screen.getByRole("button", { name: /Client & Objective/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Use Case Discovery/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Blueprint Workshop/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /What carries forward/i })).toHaveTextContent(
+      /client, sponsor outcome, objectives, and success measures/i
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /Load example engagement/i }));
     expect(screen.getByDisplayValue(/Northstar Enterprise/i)).toBeInTheDocument();
@@ -68,12 +76,19 @@ describe("AIValueDiscovery", () => {
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent(/Engagement saved/i);
     });
+    expect(localStorage.getItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY)).toMatch(
+      /engagement_northstar_enterprise_customer_support/i
+    );
 
     expect(screen.getByText(/Day-in-the-life workshop: AI-assisted case resolution/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Create the workflow blueprint/i }));
     await waitFor(() => {
       expect(screen.getByRole("link", { name: /Open the value workshop/i })).toBeInTheDocument();
     });
+    expect(localStorage.getItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY)).toBe("bp_x");
+    expect(screen.getByRole("link", { name: /Open the value workshop/i }).getAttribute("href")).toContain(
+      "blueprintId=bp_x"
+    );
 
     expect(container.textContent).not.toMatch(
       /schema_version|workflow_state|FT_AI_VALUE|engagement_id|priority_state/
