@@ -291,7 +291,7 @@ Stop the pilot and return to governance review if the path requires:
 - person-level HRIS, directory, survey, training, enablement, compensation,
   performance, or workforce-planning joins;
 - hashed or joinable person identifiers, people decisioning, HRIS inference
-  from AI usage, or manager/team ranking;
+  from AI usage, or manager/team comparative ordering;
 - realized ROI calculation, dollarized savings, hours-saved proof,
   productivity lift, causality, prediction, or customer-facing economic output.
 

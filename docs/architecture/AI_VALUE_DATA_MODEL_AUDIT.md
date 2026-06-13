@@ -245,7 +245,7 @@ they include finance or workforce context.
 
 What should NOT be stored: raw system exports, row-level system-of-record data,
 query text, ticket text, names, emails, employee IDs, hashed or joinable
-person identifiers, person-level HRIS records, manager ranking, individual
+person identifiers, person-level HRIS records, manager/team comparative ordering, individual
 productivity, HRIS inference or decisioning fields, or dollarized
 customer-facing outputs unless a later contract explicitly approves that exact
 scope. Aggregate HRIS-derived workforce context may be referenced only when it
@@ -334,7 +334,7 @@ Privacy risk: medium. Safe language can still overstate evidence if source refs
 or caveats are lost.
 
 What should NOT be stored: unreviewed customer-facing ROI language, unsupported
-causality, individual productivity, manager/team ranking, HRIS inference,
+causality, individual productivity, manager/team comparative ordering, HRIS inference,
 headcount reduction claims, compensation/performance inference,
 promotion/discipline inference, people decisioning, or any text that
 reconstructs suppressed evidence.
@@ -378,7 +378,7 @@ claims.
 What should NOT be stored: raw source documents, raw evidence files, raw
 prompts/responses/transcripts, customer financial workpapers, direct
 identifiers, hashed or joinable person identifiers, person-level HRIS records,
-person-level data, manager rankings, team rankings, or unapproved
+person-level data, manager/team comparative ordering, or unapproved
 customer-facing economic outputs.
 
 ## 8. Privacy and Governance Constraints
@@ -414,7 +414,7 @@ Additional AI Value constraints:
   Person-level HRIS records, direct identifiers, hashed or joinable person
   identifiers, individual productivity, people decisioning,
   compensation/performance inference, promotion/discipline inference,
-  manager/team ranking, and HRIS inference from AI usage are prohibited.
+  manager/team comparative ordering, and HRIS inference from AI usage are prohibited.
 
 ## 9. Open Questions
 

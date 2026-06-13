@@ -68,8 +68,8 @@ Out of scope:
 - adding backend routes, materializers, or frontend UI;
 - changing canonical events, suppression reasons, thresholds, or governance
   gates;
-- claiming ROI, causality, productivity lift, individual scoring, manager/team
-  ranking, or customer-facing economic value.
+- claiming ROI, causality, productivity lift, individual scoring,
+  manager/team comparative ordering, or customer-facing economic value.
 
 Aggregate workforce context note:
 
@@ -78,7 +78,7 @@ path only as aggregate, cohort-safe, customer-approved workforce context for
 workflow-level value measurement. Person-level HRIS records, direct
 identifiers, hashed or joinable person identifiers, individual productivity,
 people decisioning, compensation/performance inference, promotion/discipline
-inference, manager/team ranking, and HRIS inference from AI usage remain
+inference, manager/team comparative ordering, and HRIS inference from AI usage remain
 blocked.
 
 ## 3. Classification Legend

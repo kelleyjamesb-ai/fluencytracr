@@ -49,7 +49,7 @@ Aggregate HRIS-derived workforce context may be included only as
 customer-approved aggregate evidence for workflow-level value measurement. It
 must have `aggregate_only = true`, meet the minimum cohort threshold, record
 source-owner approval, and exclude person-level HRIS records, direct
-identifiers, hashed or joinable person identifiers, manager/team ranking,
+identifiers, hashed or joinable person identifiers, manager/team comparative ordering,
 people decisioning, compensation/performance inference, promotion/discipline
 inference, attrition prediction, and HRIS inference from AI usage.
 

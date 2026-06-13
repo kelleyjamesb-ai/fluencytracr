@@ -15,8 +15,9 @@ Canonical principle:
 > customer-approved workforce context for workflow-level value measurement.
 > Person-level HRIS records, direct identifiers, hashed or joinable person
 > identifiers, individual productivity measures, people decisioning,
-> compensation/performance inference, promotion/discipline inference, manager
-> ranking, team ranking, and HRIS inference from AI usage are prohibited.
+> compensation/performance inference, promotion/discipline inference,
+> manager/team comparative ordering, and HRIS inference from AI usage are
+> prohibited.
 
 ## Why It Matters
 
@@ -67,7 +68,7 @@ FluencyTracr product state must not store or emit:
 - compensation or performance inference;
 - promotion or discipline inference;
 - attrition prediction;
-- manager ranking or team ranking;
+- manager/team comparative ordering;
 - HRIS inference from AI usage.
 
 ## Hashed Or Pseudonymous Identifiers
@@ -89,7 +90,7 @@ Aggregate workforce context is allowed only when all of the following are true:
 - no direct identifiers are present;
 - no hashed or joinable person identifiers are persisted;
 - no person-level rows are stored;
-- no manager/team ranking is possible;
+- no manager/team comparative ordering is possible;
 - no people decisioning is supported;
 - no sensitive attribute inference is performed;
 - source owner approval is recorded;
@@ -105,7 +106,7 @@ Aggregate workforce context is allowed only when all of the following are true:
 | Hashed employee ID retained in an evidence snapshot | Prohibited | Joinable person identifier persisted in product state. |
 | Manager chain attached to a value case | Prohibited | Person/org hierarchy data that enables manager views. |
 | Attrition prediction from AI usage | Prohibited | HRIS inference from AI usage and people decisioning risk. |
-| Ranking managers by AI-assisted productivity | Prohibited | Manager ranking and productivity measurement. |
+| Ordering managers by AI-assisted productivity | Prohibited | Manager comparison and productivity measurement. |
 
 ## Relationship To Playbook Evidence Layers
 
@@ -124,7 +125,7 @@ governed source context, outcome evidence, or customer-owned assumptions.
 
 Snapshots must carry a privacy boundary showing aggregate-only use and false
 flags for person-level HRIS records, hashed or joinable person identifiers,
-person-level productivity, manager/team ranking, people decisioning,
+person-level productivity, manager/team comparative ordering, people decisioning,
 compensation/performance inference, and HRIS inference from AI usage.
 
 Missing or unapproved workforce context must remain missing, held, or caveated.

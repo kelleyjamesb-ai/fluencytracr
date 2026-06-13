@@ -58,8 +58,8 @@ identifiers, person-level HRIS records, or any sub-5 cohort evidence.
 Aggregate HRIS-derived workforce context may be referenced only as
 customer-approved source context or outcome evidence at a cohort-safe grain. It
 must not become people decisioning, compensation/performance inference,
-promotion/discipline inference, attrition prediction, manager/team ranking,
-individual productivity, or HRIS inference from AI usage.
+promotion/discipline inference, attrition prediction, manager/team comparative
+ordering, individual productivity, or HRIS inference from AI usage.
 
 ## Coverage map requirement: always include instrumented and missing sources
 - Every payload MUST include `coverage.instrumented_sources`.

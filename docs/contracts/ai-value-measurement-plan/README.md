@@ -30,7 +30,7 @@ The Measurement Plan must not:
 - store direct identifiers, hashed identifiers, pseudonymous identifiers, or
   joinable person identifiers;
 - store person-level HRIS records;
-- support people decisioning, manager/team ranking, individual productivity,
+- support people decisioning, manager/team comparative ordering, individual productivity,
   compensation/performance inference, promotion/discipline inference, attrition
   prediction, or HRIS inference from AI usage.
 
@@ -215,10 +215,10 @@ embedding across approved aggregate workflow slices.
 `vbd_measurement_design` contributes only to
 `layer_1_platform_telemetry`. VBD does not authorize ROI, EBITA, causality,
 productivity, headcount reduction, individual attribution, manager/team
-ranking, people decisioning, or customer-facing financial claims.
+comparative ordering, people decisioning, or customer-facing financial claims.
 
-Breadth must remain aggregate-only. It must not become manager ranking, team
-ranking, manager-chain analysis, person-level analytics, direct identifier
+Breadth must remain aggregate-only. It must not become manager/team comparative
+ordering, manager-chain analysis, person-level analytics, direct identifier
 analysis, hashed or joinable identifier analysis, or people decisioning.
 
 Depth may describe embedded repeatable workflow behavior, agent lifecycle,
@@ -292,7 +292,7 @@ and the blocked uses must include:
 - `productivity_claim`
 
 Aggregate workforce context never authorizes people decisioning, manager/team
-ranking, individual attribution, or productivity scoring.
+comparative ordering, individual attribution, or individual productivity measurement.
 
 ## 14. Assumption Requirements
 
@@ -338,7 +338,7 @@ false:
 The validator also rejects forbidden fields that indicate raw content, prompts,
 responses, direct identifiers, person-level HRIS, hashed or joinable person
 identifiers, people decisioning, ranking, compensation/performance inference, or
-productivity scoring.
+individual productivity measurement.
 
 ## 16. Allowed Uses
 

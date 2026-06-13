@@ -98,7 +98,7 @@ Aggregate workforce context may appear only as customer-approved assumption or
 system-of-record context for workflow-level value measurement. It must not be
 inferred from Glean usage telemetry and must not support people decisioning,
 compensation/performance inference, promotion/discipline inference,
-attrition prediction, manager ranking, or team ranking.
+attrition prediction, or manager/team comparative ordering.
 
 ## Relationship to existing contracts
 

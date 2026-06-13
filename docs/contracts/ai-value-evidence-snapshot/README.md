@@ -34,7 +34,8 @@ The evidence snapshot must not:
 - store hashed, pseudonymous, tokenized, or joinable person identifiers;
 - store person-level HRIS records;
 - store person-level productivity data;
-- support manager ranking, team ranking, or manager-chain analysis;
+- support manager/team comparative ordering or manager-chain analysis, both of
+  which are prohibited;
 - support compensation or performance inference;
 - support promotion or discipline inference;
 - support attrition prediction;
@@ -59,7 +60,7 @@ Allowed `snapshot_type` values:
 
 Telemetry-only snapshots may support caveated evidence posture and blocking
 evaluation. They must not support realized ROI, EBITA, causality, productivity,
-headcount reduction, individual attribution, manager/team ranking, people
+headcount reduction, individual attribution, manager/team comparative ordering, people
 decisioning, or customer-facing financial output.
 
 ## 4. Required Fields
@@ -454,8 +455,9 @@ Telemetry source availability and telemetry-only caveated snapshots must block:
 - `customer_facing_financial_output`
 
 The validator also rejects allowed uses that attempt to enable ROI, EBITA,
-causality, productivity, headcount reduction, individual attribution, manager
-ranking, team ranking, people decisioning, or customer-facing financial output.
+causality, productivity, headcount reduction, individual attribution,
+manager/team comparative ordering, people decisioning, or customer-facing
+financial output.
 
 Agent lifecycle evidence may not support financial agent value unless Layer 3
 business outcome evidence is present. Artifact output metadata may not support

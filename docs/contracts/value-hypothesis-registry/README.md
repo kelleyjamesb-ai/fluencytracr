@@ -38,7 +38,7 @@ customer-approved, cohort-safe context for workflow-level measurement. The
 registry must not encode person-level HRIS records, hashed or joinable person
 identifiers, individual productivity, people decisioning,
 compensation/performance inference, promotion/discipline inference, attrition
-prediction, manager ranking, team ranking, or HRIS inference from AI usage.
+prediction, manager/team comparative ordering, or HRIS inference from AI usage.
 
 ## Relationship To Outcome Instrumentation
 

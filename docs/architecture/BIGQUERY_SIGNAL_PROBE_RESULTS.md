@@ -322,7 +322,7 @@ What must remain missing or caveated:
 What must be blocked:
 
 - realized ROI, EBITA, causality, prediction, productivity, headcount, manager
-  comparison, team ranking, or individual attribution claims;
+  comparison, team-level comparative ordering, or individual attribution claims;
 - person-level HRIS records, direct identifiers, hashed or joinable person
   identifiers, people decisioning, compensation/performance inference,
   promotion/discipline inference, and HRIS inference from AI usage;

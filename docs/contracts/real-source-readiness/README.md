@@ -62,7 +62,7 @@ Real-source readiness may mark aggregate HRIS-derived workforce context as
 ready, needs approval, blocked, or unknown. That context is allowed only as
 cohort-safe, customer-approved source context for workflow-level value
 measurement. Person-level HRIS records, direct identifiers, hashed or joinable
-person identifiers, manager/team ranking, people decisioning,
+person identifiers, manager/team comparative ordering, people decisioning,
 compensation/performance inference, promotion/discipline inference, attrition
 prediction, and HRIS inference from AI usage remain blocked.
 

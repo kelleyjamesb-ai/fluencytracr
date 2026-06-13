@@ -208,7 +208,7 @@ This dry run preserves the FluencyTracr governance boundary:
 - no person-level HRIS, directory, survey, training, enablement,
   compensation, performance, or workforce-planning joins;
 - no hashed or joinable person identifiers, people decisioning, HRIS inference
-  from AI usage, or manager/team ranking;
+  from AI usage, or manager/team comparative ordering;
 - no realized ROI calculation, dollarized savings, hours-saved proof,
   productivity lift, causality, prediction, dashboard, connector, API, schema,
   or runtime implementation.

@@ -48,7 +48,7 @@ matching outcome evidence. Consumers decide how to compare those values.
   Person-level HRIS records, direct identifiers, hashed or joinable person
   identifiers, individual productivity, people decisioning,
   compensation/performance inference, promotion/discipline inference,
-  manager/team ranking, attrition prediction, and HRIS inference from AI usage
+  manager/team comparative ordering, attrition prediction, and HRIS inference from AI usage
   remain blocked.
 
 ## Non-Goals
