@@ -92,6 +92,7 @@ Each handoff must include:
 - `required_caveats`
 - `blocked_uses`
 - `blocked_claims`
+- `unmapped_blocked_uses`
 - `suppression`
 - `privacy_boundary`
 - `aggregate_workforce_context`
@@ -99,6 +100,7 @@ Each handoff must include:
 - `financial_boundary`
 - `executive_readout_boundary`
 - `source_provenance`
+- `persistence_policy`
 - `created_at`
 - `derivation_version`
 

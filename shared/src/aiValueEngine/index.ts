@@ -98,6 +98,18 @@ export type {
 } from "./claimReadinessHandoff";
 
 export {
+  AI_VALUE_CLAIM_READINESS_SNAPSHOT_SCHEMA_VERSION,
+  ClaimReadinessSnapshotSchema,
+  buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff,
+  validateClaimReadinessSnapshot
+} from "./claimReadinessSnapshot";
+export type {
+  BuildClaimReadinessSnapshotOptions,
+  ClaimReadinessSnapshot,
+  ClaimReadinessSnapshotValidationResult
+} from "./claimReadinessSnapshot";
+
+export {
   AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
   SourcePackageSchema,
   validateSourcePackage

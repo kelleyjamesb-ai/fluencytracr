@@ -55,6 +55,7 @@ const REQUIRED_HANDOFF_FIELDS = [
   "required_caveats",
   "blocked_uses",
   "blocked_claims",
+  "unmapped_blocked_uses",
   "suppression",
   "privacy_boundary",
   "aggregate_workforce_context",
@@ -62,6 +63,7 @@ const REQUIRED_HANDOFF_FIELDS = [
   "financial_boundary",
   "executive_readout_boundary",
   "source_provenance",
+  "persistence_policy",
   "created_at",
   "derivation_version"
 ];

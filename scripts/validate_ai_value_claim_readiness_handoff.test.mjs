@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   AI_VALUE_CLAIM_READINESS_HANDOFF_SCHEMA_VERSION,
+  ClaimReadinessHandoffSchema,
   buildClaimReadinessHandoffFromEvidenceSnapshot,
   buildTelemetryEvidenceSnapshotDraft,
   translateSnapshotBlockedUsesToBlockedClaims,
@@ -222,6 +223,15 @@ test("buildClaimReadinessHandoffFromEvidenceSnapshot copies required snapshot fi
   assert.deepEqual(handoff.privacy_boundary, snapshot.privacy_boundary);
   assert.deepEqual(handoff.aggregate_workforce_context, snapshot.aggregate_workforce_context);
   assert.deepEqual(handoff.vbd_operating_map, snapshot.vbd_operating_map);
+});
+
+test("Claim Readiness Handoff schema metadata lists all validator-required fields", () => {
+  assert.ok(
+    ClaimReadinessHandoffSchema.required_fields.includes("unmapped_blocked_uses")
+  );
+  assert.ok(
+    ClaimReadinessHandoffSchema.required_fields.includes("persistence_policy")
+  );
 });
 
 test("missing Evidence Snapshot input fails", () => {

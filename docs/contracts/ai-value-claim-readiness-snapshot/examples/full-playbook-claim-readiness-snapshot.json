@@ -1,0 +1,384 @@
+{
+  "schema_version": "FT_AI_VALUE_CLAIM_READINESS_SNAPSHOT_2026_06",
+  "claim_readiness_snapshot_id": "claim_readiness_snapshot_full_playbook_example",
+  "evidence_snapshot_id": "evidence_snapshot_full_playbook_claim_readiness_example",
+  "handoff_id": "claim_readiness_handoff_full_playbook_claim_readiness_example",
+  "org_id": "org_example",
+  "measurement_plan_id": "measurement_plan_full_playbook_claim_readiness_example",
+  "workflow": {
+    "workflow_family": "customer_support_case_resolution",
+    "workflow_name": "Support case resolution",
+    "function_area": "customer_support"
+  },
+  "window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31",
+    "window_label": null
+  },
+  "snapshot_readiness_decision": "READY_FOR_FULL_PLAYBOOK_SNAPSHOT",
+  "playbook_coverage": {
+    "coverage_status": "full_playbook_coverage",
+    "layer_1_platform_telemetry": {
+      "status": "present",
+      "covered_signals": [
+        "workflow_run_count",
+        "search_activity",
+        "chat_or_assistant_activity",
+        "ai_answer_activity",
+        "active_user_aggregate",
+        "eligible_cohort_size",
+        "connector_or_source_coverage",
+        "skill_lifecycle_activity",
+        "agent_lifecycle_activity",
+        "artifact_output_metadata",
+        "mcp_action_boundary_metadata",
+        "control_or_policy_telemetry",
+        "suppression_or_blocked_event_posture"
+      ],
+      "missing_signals": [],
+      "held_signals": [],
+      "caveats": []
+    },
+    "layer_2_user_voice_empirical": {
+      "status": "present",
+      "covered_signals": [
+        "aggregate_ai_fluency_baseline",
+        "aggregate_ai_fluency_retest",
+        "aggregate_confidence_or_readiness_survey",
+        "aggregate_knowledge_access_satisfaction",
+        "aggregate_workflow_observation",
+        "aggregate_qualitative_proof_points",
+        "customer_approved_time_and_motion_summary"
+      ],
+      "missing_signals": [],
+      "held_signals": [],
+      "required_source_exports": [
+        "aggregate_ai_fluency_baseline",
+        "aggregate_ai_fluency_retest",
+        "aggregate_user_voice_or_workflow_observation"
+      ],
+      "caveats": []
+    },
+    "layer_3_business_system_outcomes": {
+      "status": "present",
+      "covered_signals": [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison",
+        "source_system_name",
+        "source_owner_attestation",
+        "metric_owner_review",
+        "finance_or_business_owner_approval",
+        "aggregate_outcome_metric_movement",
+        "minimum_cohort_threshold",
+        "system_of_record_export_availability"
+      ],
+      "missing_signals": [],
+      "held_signals": [],
+      "required_source_exports": [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison",
+        "system_of_record_outcome_export"
+      ],
+      "caveats": []
+    },
+    "governance_evidence": {
+      "status": "present",
+      "covered_signals": [
+        "suppression_state",
+        "k_min_posture",
+        "source_readiness_state",
+        "data_boundary_state",
+        "approved_aggregate_grain",
+        "held_suppressed_missing_lanes",
+        "forbidden_field_checks",
+        "raw_content_exclusion"
+      ],
+      "missing_signals": [],
+      "held_signals": [],
+      "caveats": []
+    },
+    "assumption_evidence": {
+      "status": "present",
+      "covered_signals": [
+        "customer_owned_assumptions",
+        "productivity_recapture_assumption_if_relevant",
+        "aggregate_workforce_context_approval_if_provided",
+        "financial_assumption_approval_if_requested",
+        "low_confidence_assumptions",
+        "high_sensitivity_assumptions",
+        "customer_facing_approval_state"
+      ],
+      "missing_signals": [],
+      "held_signals": [],
+      "required_approvals": [
+        "customer_owned_assumptions",
+        "finance_or_business_owner_approval",
+        "aggregate_workforce_context_approval_if_used"
+      ],
+      "caveats": []
+    }
+  },
+  "coverage_status": "full_playbook_coverage",
+  "claim_readiness_state": "ready_for_internal_claim_review",
+  "allowed_claim_modes": [
+    "internal_evidence_review",
+    "source_bound_business_outcome_claim_planning",
+    "internal_executive_readout_planning"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output",
+    "realized_roi_calculation",
+    "roi_proof",
+    "dollarized_output",
+    "financial_value_claim",
+    "usage_derived_financial_claim",
+    "customer_facing_economic_output",
+    "manager_ranking",
+    "team_ranking",
+    "person_level_hris_records",
+    "hashed_or_joinable_person_identifiers",
+    "compensation_or_performance_inference",
+    "promotion_or_discipline_inference",
+    "attrition_prediction",
+    "hris_inference_from_ai_usage"
+  ],
+  "blocked_claims": [
+    "roi_proof",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "people_decisioning",
+    "customer_facing_economic_output"
+  ],
+  "unmapped_blocked_uses": [],
+  "required_caveats": [
+    "Full Playbook coverage is validated only for this aggregate workflow window and must retain privacy, suppression, and claim-boundary controls.",
+    "Aggregate workforce context has not been provided; workforce context cannot strengthen the evidence posture.",
+    "Velocity is Layer 1 platform telemetry about aggregate activity movement over time; it is not ROI, productivity, causality, or financial proof.",
+    "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
+    "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened.",
+    "Depth is Layer 1 workflow embeddedness posture; business value requires Layer 3 outcomes or accepted quality/outcome evidence.",
+    "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+  ],
+  "suppression": {
+    "default_verdict": "SUPPRESS",
+    "suppression_applies_per_slice": true,
+    "hidden_values_exposed": false,
+    "suppressed_lanes": [],
+    "held_lanes": [],
+    "missing_lanes": [],
+    "reason_codes": []
+  },
+  "privacy_boundary": {
+    "aggregate_only": true,
+    "contains_direct_identifiers": false,
+    "contains_raw_content": false,
+    "contains_person_level_productivity": false,
+    "contains_person_level_hris_records": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false,
+    "contains_compensation_or_performance_inference": false,
+    "contains_promotion_or_discipline_inference": false,
+    "contains_attrition_prediction": false,
+    "contains_hris_inference_from_ai_usage": false,
+    "aggregate_workforce_context_allowed": false,
+    "approved_aggregate_grain": null,
+    "minimum_cohort_threshold": null
+  },
+  "aggregate_workforce_context": {
+    "context_state": "not_provided",
+    "source_type": "not_applicable",
+    "allowed_context_types": [],
+    "source_owner_approval_state": "not_required",
+    "minimum_cohort_threshold": null,
+    "cohort_threshold_met": null,
+    "caveats": [
+      "Aggregate workforce context has not been provided; workforce context cannot strengthen the evidence posture."
+    ]
+  },
+  "vbd_operating_map": {
+    "velocity": {
+      "state": "moderate",
+      "evidence_state": "partial",
+      "source_signals": [
+        "workflow_run_count",
+        "active_user_aggregate"
+      ],
+      "caveats": [
+        "Velocity is Layer 1 platform telemetry about aggregate activity movement over time; it is not ROI, productivity, causality, or financial proof."
+      ]
+    },
+    "breadth": {
+      "state": "emerging",
+      "approved_aggregate_grain": "workflow_family",
+      "covered_slices": 12,
+      "suppressed_or_unknown_slices": 0,
+      "caveats": [
+        "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
+        "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened."
+      ]
+    },
+    "depth": {
+      "state": "developing",
+      "evidence_state": "partial",
+      "source_signals": [
+        "repeat_workflow_behavior",
+        "artifact_output_metadata"
+      ],
+      "requires_layer_3_for_value_claim": true,
+      "caveats": [
+        "Depth is Layer 1 workflow embeddedness posture; business value requires Layer 3 outcomes or accepted quality/outcome evidence."
+      ]
+    },
+    "operating_mode": "fast_but_shallow",
+    "contributes_to_playbook_layer": "layer_1_platform_telemetry",
+    "allowed_interpretation": [
+      "ai_fluency_posture",
+      "aggregate_ai_work_maturity_posture",
+      "layer_1_operating_signal",
+      "evidence_collection_planning",
+      "source_availability_context",
+      "claim_blocking_context"
+    ],
+    "blocked_interpretation": [
+      "realized_roi",
+      "ebita_claim",
+      "causality_claim",
+      "productivity_claim",
+      "headcount_reduction_claim",
+      "individual_attribution",
+      "manager_or_team_ranking",
+      "people_decisioning",
+      "customer_facing_financial_output"
+    ]
+  },
+  "financial_boundary": {
+    "financial_translation_allowed": false,
+    "roi_claim_allowed": false,
+    "ebita_claim_allowed": false,
+    "customer_facing_financial_output_allowed": false,
+    "reasons": [
+      "Blocked use realized_roi prevents corresponding financial permission.",
+      "Blocked use ebita_claim prevents corresponding financial permission.",
+      "Blocked use customer_facing_financial_output prevents corresponding financial permission."
+    ]
+  },
+  "executive_readout_boundary": {
+    "executive_readout_allowed": true,
+    "customer_facing_readout_allowed": false,
+    "internal_only_readout_allowed": true,
+    "required_sections": [
+      "evidence_snapshot_source",
+      "playbook_coverage",
+      "required_caveats",
+      "blocked_claims",
+      "suppression",
+      "privacy_boundary"
+    ],
+    "required_caveats": [
+      "Full Playbook coverage is validated only for this aggregate workflow window and must retain privacy, suppression, and claim-boundary controls.",
+      "Aggregate workforce context has not been provided; workforce context cannot strengthen the evidence posture.",
+      "Velocity is Layer 1 platform telemetry about aggregate activity movement over time; it is not ROI, productivity, causality, or financial proof.",
+      "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
+      "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened.",
+      "Depth is Layer 1 workflow embeddedness posture; business value requires Layer 3 outcomes or accepted quality/outcome evidence.",
+      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+    ],
+    "blocked_sections": [
+      "customer_facing_financial_output"
+    ],
+    "reasons": [
+      "Customer-facing financial output is blocked by the upstream snapshot."
+    ]
+  },
+  "source_refs": {
+    "bigquery_probe_result_id": "bq_probe_full_playbook_claim_readiness_example",
+    "v3_verdict_ids": [],
+    "velocity_observation_ids": [],
+    "outcome_evidence_ids": [
+      "outcome_evidence_claim_readiness_snapshot_example"
+    ],
+    "fluency_baseline_ids": [],
+    "source_readiness_ids": [
+      "source_readiness_full_playbook_claim_readiness_example"
+    ],
+    "real_source_manifest_ids": [],
+    "aggregate_workforce_context_export_ids": [],
+    "notes": [
+      "Read-only aggregate probe summary; no raw rows retained."
+    ]
+  },
+  "source_provenance": {
+    "evidence_snapshot_schema_version": "FT_AI_VALUE_EVIDENCE_SNAPSHOT_2026_06",
+    "evidence_snapshot_derivation_version": "ai_value_evidence_snapshot_builder_2026_06",
+    "source_refs": {
+      "bigquery_probe_result_id": "bq_probe_full_playbook_claim_readiness_example",
+      "v3_verdict_ids": [],
+      "velocity_observation_ids": [],
+      "outcome_evidence_ids": [
+        "outcome_evidence_claim_readiness_snapshot_example"
+      ],
+      "fluency_baseline_ids": [],
+      "source_readiness_ids": [
+        "source_readiness_full_playbook_claim_readiness_example"
+      ],
+      "real_source_manifest_ids": [],
+      "aggregate_workforce_context_export_ids": [],
+      "notes": [
+        "Read-only aggregate probe summary; no raw rows retained."
+      ]
+    },
+    "window": {
+      "window_start": "2026-05-01",
+      "window_end": "2026-05-31",
+      "window_label": null
+    },
+    "k_min_summary": {
+      "total_slices": 12,
+      "k_min_clear_slices": 12,
+      "suppressed_or_unknown_slices": 0,
+      "minimum_cohort_threshold": 5
+    },
+    "baseline_window": null,
+    "comparison_window": null,
+    "provenance_caveats": [
+      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+    ]
+  },
+  "derived_from": {
+    "evidence_snapshot_id": "evidence_snapshot_full_playbook_claim_readiness_example",
+    "evidence_snapshot_schema_version": "FT_AI_VALUE_EVIDENCE_SNAPSHOT_2026_06",
+    "evidence_snapshot_derivation_version": "ai_value_evidence_snapshot_builder_2026_06",
+    "handoff_id": "claim_readiness_handoff_full_playbook_claim_readiness_example",
+    "handoff_schema_version": "FT_AI_VALUE_CLAIM_READINESS_HANDOFF_2026_06",
+    "handoff_derivation_version": "ai_value_claim_readiness_handoff_builder_2026_06",
+    "builder": "ai_value_claim_readiness_snapshot_builder_2026_06"
+  },
+  "validation": {
+    "evidence_snapshot_validated": true,
+    "claim_readiness_handoff_validated": true,
+    "source_binding_validated": true
+  },
+  "persistence_policy": {
+    "persisted": false,
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "creates_ingestion_jobs": false
+  },
+  "created_at": "2026-06-13T00:00:00.000Z",
+  "derivation_version": "ai_value_claim_readiness_snapshot_builder_2026_06"
+}
