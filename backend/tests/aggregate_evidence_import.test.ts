@@ -96,6 +96,86 @@ describe("Aggregate Evidence Import v1", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts aggregate workforce context and business owner-role metadata", () => {
+    const result = AggregateEvidenceImportPackageSchema.safeParse({
+      ...importFixture,
+      aggregate_evidence: [
+        ...importFixture.aggregate_evidence,
+        {
+          evidence_record_id: "aggregate:workforce_context",
+          source_input_id: "source:methodology_snapshot",
+          evidence_type: "business_outcome",
+          evidence_state: "present",
+          aggregate_metric_refs: [
+            "aggregate_hris_derived_context",
+            "aggregate_role_family_context",
+            "metric_owner_role"
+          ],
+          aggregate_values: [
+            {
+              metric_name: "aggregate_time_to_productivity_by_cohort",
+              value: 42,
+              unit: "hours"
+            }
+          ],
+          notes: ["People analytics manager approved aggregate workforce context only."]
+        }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects hashed or joinable person identifiers in aggregate evidence", () => {
+    const result = AggregateEvidenceImportPackageSchema.safeParse({
+      ...importFixture,
+      aggregate_evidence: [
+        ...importFixture.aggregate_evidence,
+        {
+          evidence_record_id: "aggregate:hashed_person",
+          source_input_id: "source:methodology_snapshot",
+          evidence_type: "source_coverage",
+          evidence_state: "present",
+          aggregate_metric_refs: ["hashed_employee_id"],
+          aggregate_values: [
+            {
+              metric_name: "hashed_or_joinable_person_identifier",
+              value: 1,
+              unit: "count"
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects pseudonymous or tokenized user identifiers in aggregate evidence", () => {
+    const result = AggregateEvidenceImportPackageSchema.safeParse({
+      ...importFixture,
+      aggregate_evidence: [
+        ...importFixture.aggregate_evidence,
+        {
+          evidence_record_id: "aggregate:pseudonymous_user",
+          source_input_id: "source:methodology_snapshot",
+          evidence_type: "source_coverage",
+          evidence_state: "present",
+          aggregate_metric_refs: ["pseudonymous_user_identifier"],
+          aggregate_values: [
+            {
+              metric_name: "tokenized_user_identifier",
+              value: 1,
+              unit: "count"
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("emits no forbidden raw or person-level fields in the import review", () => {
     const review = buildAggregateEvidenceImportReview(importFixture);
 

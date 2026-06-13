@@ -228,6 +228,15 @@ describe("AIValueWorkspace executive spine", () => {
 
   it("closes the loop from Decision & Retest back to the baseline", () => {
     renderWorkspace("/ai-value-workspace/decisions");
+    const roiAccess = screen.getByRole("region", { name: /Value and ROI access/i });
+    expect(roiAccess).toBeInTheDocument();
+    expect(within(roiAccess).getByText(/selected outcome metric/i)).toBeInTheDocument();
+    expect(within(roiAccess).queryByText(/No outcome metric selected/i)).not.toBeInTheDocument();
+    expect(within(roiAccess).queryByText(/No workflow selected yet/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open Value \/ ROI screen/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/roi"
+    );
     expect(screen.getByRole("link", { name: /Remeasure from AI Fluency/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/readiness"
@@ -708,6 +717,83 @@ describe("AIValueWorkspace journey continuity", () => {
       "Lead Time for Changes",
       "Code Review Turnaround Time"
     ]);
+  });
+
+  it("falls back for stale saved metric IDs", async () => {
+    const savedWatchPlan = (metrics: Array<Record<string, string>>) => ({
+      activeFunctionArea: "Customer or Account Success",
+      selectionsByFunction: {
+        "Customer or Account Success": {
+          functionArea: "Customer or Account Success",
+          quadrantLabel: "Deep but slow",
+          vbdBaseline: "Velocity 42 · Breadth 55 · Depth 66",
+          metrics
+        }
+      }
+    });
+    const staleMetric = {
+      id: "stale-support-resolution-metric",
+      name: "Legacy resolution metric",
+      question: "Did a previous saved metric survive?",
+      valueRoute: "Capacity creation",
+      sourceSystem: "Legacy support system",
+      measurementUnit: "hours",
+      owner: "Support Operations",
+      watches: "Legacy saved selection"
+    };
+
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY,
+      JSON.stringify(savedWatchPlan([staleMetric]))
+    );
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    expect(within(bridge).getByRole("checkbox", { name: /Median resolution time/i })).toBeChecked();
+    expect(
+      within(screen.getByRole("region", { name: /VBD metric watch plan/i })).getByText(
+        /Median resolution time/i
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("preserves an explicit empty saved metric selection", async () => {
+    const savedWatchPlan = (metrics: Array<Record<string, string>>) => ({
+      activeFunctionArea: "Customer or Account Success",
+      selectionsByFunction: {
+        "Customer or Account Success": {
+          functionArea: "Customer or Account Success",
+          quadrantLabel: "Deep but slow",
+          vbdBaseline: "Velocity 42 · Breadth 55 · Depth 66",
+          metrics
+        }
+      }
+    });
+
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY,
+      JSON.stringify(savedWatchPlan([]))
+    );
+
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    expect(
+      within(bridge).getByRole("checkbox", { name: /Median resolution time/i })
+    ).not.toBeChecked();
+    const watchPlan = screen.getByRole("region", { name: /VBD metric watch plan/i });
+    expect(within(watchPlan).getByText(/Choose at least one client-owned metric/i)).toBeInTheDocument();
+    expect(within(watchPlan).queryByText(/Median resolution time/i)).not.toBeInTheDocument();
   });
 
   it("lets users clear a default outcome metric selection", async () => {

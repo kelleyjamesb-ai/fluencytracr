@@ -11,7 +11,9 @@ hypothesis testable. When aggregate evidence is trusted and reliable, it may
 route customer-owned outcome signals into ROI metric selection and governed
 scenario review. It does not calculate realized ROI, prove causality, predict
 outcomes, measure productivity, assess people, compare groups, or require
-HRIS, survey, enablement, or person-level data.
+person-level HRIS, survey, enablement, or person-level data. Aggregate
+HRIS-derived workforce context may be used only when customer-approved,
+cohort-safe, and tied to workflow-level value measurement.
 
 ## Contract Status
 
@@ -347,7 +349,7 @@ This contract is not:
 - a causation engine;
 - a prediction engine;
 - a productivity measure;
-- an HR analytics model;
+- a person-level HR analytics model;
 - a survey join;
 - a training-record join;
 - a manager dashboard;

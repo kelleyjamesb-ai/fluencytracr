@@ -26,7 +26,7 @@ Status: MVP contract and seeded example.
 
 This contract may be used for seeded pilot packets, internal review, and
 AIOM/value-team handoff. It does not authorize customer production ingest,
-customer-facing ROI claims, schemas, APIs, storage, dashboards, direct HRIS
+customer-facing ROI claims, schemas, APIs, storage, dashboards, direct raw HRIS
 ingest, raw ticket ingestion, causality claims, or productivity measurement.
 
 For the customer-side Phase 3 pilot design, use
@@ -76,9 +76,9 @@ This object carries selected Blueprint workflow, value route, metric models,
 baseline/comparison rules, customer-owned assumptions, evidence status, scenario
 bands, and safe value language into value modeling. It is still local and
 governed: no production connector, realized ROI calculation, causality claim,
-individual scoring, HR analytics, productivity ranking, autonomous customer
-action, raw prompt/response storage, direct identifier, or customer-facing
-economic output is authorized by this contract.
+individual scoring, person-level HR analytics, HRIS inference, productivity
+ranking, autonomous customer action, raw prompt/response storage, direct
+identifier, or customer-facing economic output is authorized by this contract.
 
 For the Data Boundary and ROI Evidence Contract, use
 [`scripts/validate_ai_value_data_boundary.mjs`](../../../scripts/validate_ai_value_data_boundary.mjs)
@@ -94,9 +94,18 @@ Value Improvement Loop, Reportability, Aggregate API Push, and AI Value
 Measurement Model contracts. It explicitly permits sensitive organizational
 data to be used upstream inside customer-approved or Glean-approved
 transformation boundaries, while rejecting raw rows, direct identifiers, raw
-content, person-level evidence, individual-level HR analytics surfaces, productivity ranking,
-causality claims, realized ROI calculations, and customer-facing economic
-output inside FluencyTracr.
+content, person-level evidence, person-level HR analytics surfaces,
+productivity ranking, causality claims, realized ROI calculations, and
+customer-facing economic output inside FluencyTracr. HRIS-derived data is
+allowed only as aggregate, cohort-safe, customer-approved workforce context for
+workflow-level value measurement; person-level HRIS records, direct
+identifiers, hashed or joinable person identifiers, people decisioning,
+compensation/performance inference, promotion/discipline inference,
+manager/team ranking, and HRIS inference from AI usage remain blocked.
+
+See
+[`docs/architecture/AGGREGATE_WORKFORCE_CONTEXT_GOVERNANCE.md`](../../architecture/AGGREGATE_WORKFORCE_CONTEXT_GOVERNANCE.md)
+for the aggregate workforce context boundary.
 
 Run:
 
@@ -200,8 +209,11 @@ non-causal; STRONG remains a future contract state requiring a governed
 evidence design; and the case must carry the amended canonical VBD definitions
 (Velocity is speed to adoption, Breadth is spread including the Repertoire
 coverage view, Depth is workflow-integration embeddedness). No ROI proof,
-causality claim, individual scoring, ranking, HR analytics, raw data, direct
-identifier, or customer-facing economic output is authorized by this contract.
+causality claim, individual scoring, ranking, person-level HR analytics, HRIS
+inference, raw data, direct identifier, or customer-facing economic output is
+authorized by this contract. Aggregate workforce context may appear only as
+cohort-safe, customer-approved source context, outcome evidence, or
+customer-owned assumption state.
 
 Run:
 
@@ -272,8 +284,9 @@ with
 The package is the local customer-side transformer contract: it accepts only
 sanitized aggregate AI work evidence plus paired aggregate outcome evidence,
 rejects raw rows, direct identifiers, prompts, outputs, transcripts, raw
-skill/action rows, HR analytics, ranking, ROI proof, causality claims, and
-customer-facing economic output, then emits the governed push sequence:
+skill/action rows, person-level HR analytics, HRIS inference, ranking, ROI
+proof, causality claims, and customer-facing economic output, then emits the
+governed push sequence:
 
 - [`examples/customer-support-v3-aggregate-ingest-request.json`](./examples/customer-support-v3-aggregate-ingest-request.json)
   for `POST /api/v3/ingest/aggregate`.
@@ -648,8 +661,8 @@ The local workspace route is:
 This V1 remains local and governed. It may route trusted aggregate evidence
 into metric selection, value scenarios, and caveated executive validation. It
 does not authorize production connectors, customer-facing economic output,
-realized ROI calculation, causality claims, HR analytics, individual scoring,
-or productivity measurement.
+realized ROI calculation, causality claims, person-level HR analytics, HRIS
+inference, individual scoring, or productivity measurement.
 
 ## Relationship To FluencyTracr Concepts
 

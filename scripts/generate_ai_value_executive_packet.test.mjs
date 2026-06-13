@@ -426,6 +426,29 @@ test("customer-facing EBITA approval requires both ROI gate and EBITA bridge app
   );
 });
 
+test("downgraded customer-facing EBITA bridge suppresses customer-facing approval language", () => {
+  const bridge = ebitaBridge("CUSTOMER_FACING_APPROVED");
+  const scenario = customerFacingRoiScenario();
+  scenario.financial_claim_gate.data_sufficiency.outcome_metric_accepted = false;
+  const packet = buildPacketWithEbita(bridge, scenario);
+
+  assert.equal(packet.ebita_impact_summary.status, "FINANCE_VALIDATED_EBITA_CASE");
+  assert.equal(packet.ebita_impact_summary.customer_facing_allowed, false);
+  assert.equal(
+    packet.ebita_impact_summary.allowed_phrases.includes(
+      "This economic output is approved for customer-facing use within the stated scope and caveats."
+    ),
+    false
+  );
+  assert.equal(
+    packet.ebita_impact_summary.allowed_phrases.includes(
+      "Finance-attested assumptions support a finance-validated EBITA case for this workflow and window."
+    ),
+    true
+  );
+  assert.equal(validateExecutiveValidationPacket(packet).valid, true);
+});
+
 test("causality language requires aggregate outcome evidence and aligned windows", () => {
   const bridge = ebitaBridge("MODELED_EBITA_SCENARIO");
   bridge.financial_translation_policy.causality_claim_allowed = true;

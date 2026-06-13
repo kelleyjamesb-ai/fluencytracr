@@ -5,6 +5,7 @@ import { ValueEvidenceCasePanel } from "./ValueEvidenceCasePanel";
 import * as aiValueApi from "../lib/aiValueApi";
 
 const SELECTED_OUTCOME_METRICS_KEY = "aiValue.selectedOutcomeMetrics";
+const SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY = "aiValue.selectedOutcomeMetricWatchPlan";
 
 const supportCase = {
   value_evidence_case_id: "value_evidence_case_customer_support_case_resolution_v1",
@@ -338,6 +339,151 @@ describe("ValueEvidenceCasePanel", () => {
     expect(within(intake).getByLabelText("Measurement unit", { exact: true })).toHaveValue("days");
     expect(within(intake).getByLabelText("Evidence owner", { exact: true })).toHaveValue("Engineering Operations");
     expect(within(intake).getByText("Code Review Turnaround Time")).toBeInTheDocument();
+  });
+
+  it("lets the user choose which selected outcome metric to stage evidence for", async () => {
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockResolvedValue({ objects: [] } as never);
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRICS_KEY,
+      JSON.stringify({
+        functionArea: "Engineering / Software Development",
+        quadrantLabel: "High-fluency flow",
+        vbdBaseline: "Velocity 88 · Breadth 86 · Depth 88",
+        metrics: [
+          {
+            id: "eng-lead-time-for-changes",
+            name: "Lead Time for Changes",
+            valueRoute: "Acceleration",
+            sourceSystem: "Version control and deployment systems",
+            measurementUnit: "days",
+            owner: "Engineering Operations"
+          },
+          {
+            id: "eng-code-review-turnaround",
+            name: "Code Review Turnaround Time",
+            valueRoute: "Acceleration",
+            sourceSystem: "GitHub review analytics",
+            measurementUnit: "hours",
+            owner: "Engineering Operations"
+          },
+          {
+            id: "eng-deployment-frequency",
+            name: "Deployment Frequency",
+            valueRoute: "Acceleration",
+            sourceSystem: "Deployment system",
+            measurementUnit: "deployments",
+            owner: "Platform Operations"
+          }
+        ]
+      })
+    );
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
+    );
+
+    const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    const metricQueue = within(intake).getByRole("list", { name: /Selected metrics needing evidence/i });
+    expect(within(metricQueue).getByRole("button", { name: /Lead Time for Changes/i })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(
+      within(metricQueue).getByRole("button", { name: /Code Review Turnaround Time/i })
+    ).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(within(metricQueue).getByRole("button", { name: /Code Review Turnaround Time/i }));
+
+    expect(within(intake).getByLabelText("Outcome metric", { exact: true })).toHaveValue(
+      "Code Review Turnaround Time"
+    );
+    expect(within(intake).getByLabelText("Source system", { exact: true })).toHaveValue(
+      "GitHub review analytics"
+    );
+    expect(within(intake).getByLabelText("Measurement unit", { exact: true })).toHaveValue("hours");
+
+    fireEvent.click(within(metricQueue).getByRole("button", { name: /Deployment Frequency/i }));
+
+    expect(within(intake).getByLabelText("Outcome metric", { exact: true })).toHaveValue(
+      "Deployment Frequency"
+    );
+    expect(within(intake).getByLabelText("Evidence owner", { exact: true })).toHaveValue(
+      "Platform Operations"
+    );
+  });
+
+  it("shows saved outcome metrics across functions when the watch plan has multiple selections", async () => {
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockResolvedValue({ objects: [] } as never);
+    const engineeringSelection = {
+      functionArea: "Engineering / Software Development",
+      quadrantLabel: "High-fluency flow",
+      vbdBaseline: "Velocity 88 · Breadth 86 · Depth 88",
+      metrics: [
+        {
+          id: "eng-deployment-frequency",
+          name: "Deployment Frequency",
+          valueRoute: "Acceleration",
+          sourceSystem: "CI/CD system",
+          measurementUnit: "deployments per week",
+          owner: "Engineering Operations"
+        }
+      ]
+    };
+    const dataSelection = {
+      functionArea: "Data & Analytics",
+      quadrantLabel: "Deep but slow",
+      vbdBaseline: "Velocity 52 · Breadth 64 · Depth 81",
+      metrics: [
+        {
+          id: "data-request-cycle-time",
+          name: "Analytics request cycle time",
+          valueRoute: "Acceleration",
+          sourceSystem: "Analytics intake system",
+          measurementUnit: "days",
+          owner: "Data Operations"
+        }
+      ]
+    };
+    localStorage.setItem(SELECTED_OUTCOME_METRICS_KEY, JSON.stringify(engineeringSelection));
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY,
+      JSON.stringify({
+        activeFunctionArea: engineeringSelection.functionArea,
+        selectionsByFunction: {
+          [engineeringSelection.functionArea]: engineeringSelection,
+          [dataSelection.functionArea]: dataSelection
+        }
+      })
+    );
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
+    );
+
+    const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    expect(within(intake).getByText(/2 outcome metrics selected across 2 functions/i)).toBeInTheDocument();
+    const metricQueue = within(intake).getByRole("list", { name: /Selected metrics needing evidence/i });
+    expect(within(metricQueue).getByRole("button", { name: /Deployment Frequency/i })).toBeInTheDocument();
+    expect(
+      within(metricQueue).getByRole("button", { name: /Analytics request cycle time/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(metricQueue).getByRole("button", { name: /Analytics request cycle time/i }));
+
+    expect(within(intake).getByText("Data & Analytics")).toBeInTheDocument();
+    expect(within(intake).getByLabelText("Outcome metric", { exact: true })).toHaveValue(
+      "Analytics request cycle time"
+    );
+    expect(within(intake).getByLabelText("Source system", { exact: true })).toHaveValue(
+      "Analytics intake system"
+    );
+    expect(within(intake).getByLabelText("Evidence owner", { exact: true })).toHaveValue(
+      "Data Operations"
+    );
   });
 
   it("keeps metric evidence intake available when case records are unavailable", async () => {

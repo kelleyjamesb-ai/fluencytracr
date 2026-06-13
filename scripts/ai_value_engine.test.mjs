@@ -22,7 +22,13 @@ import {
   validateValueImprovementLoop,
   buildValueImprovementLoopFromRoiScenario,
   validateValueEvidenceCase,
-  buildValueEvidenceCase
+  buildValueEvidenceCase,
+  validateEvidenceSnapshot,
+  buildTelemetryEvidenceSnapshotDraft,
+  EVIDENCE_SNAPSHOT_SCHEMA_VERSION,
+  validateMeasurementPlan,
+  buildPlaybookMeasurementPlanDraft,
+  MEASUREMENT_PLAN_SCHEMA_VERSION
 } from "../shared/dist/aiValueEngine/index.js";
 
 function readExample(name) {
@@ -62,6 +68,46 @@ test("engine exposes the data boundary contract for real evidence planning", () 
   assert.equal(validation.feeds.aggregate_evidence_package, true);
   assert.equal(validation.feeds.value_evidence_case, true);
   assert.equal(validation.feeds.customer_facing_economic_output, false);
+});
+
+test("engine exposes the evidence snapshot contract for caveated telemetry posture", () => {
+  const snapshot = buildTelemetryEvidenceSnapshotDraft({
+    orgId: "org_example",
+    workflowFamily: "customer_support_case_resolution",
+    windowStart: "2026-05-01",
+    windowEnd: "2026-05-31",
+    generatedAt: "2026-06-13T00:00:00.000Z",
+    evidenceSnapshotId: "evidence_snapshot_engine_smoke"
+  });
+  const validation = validateEvidenceSnapshot(snapshot);
+
+  assert.equal(typeof validateEvidenceSnapshot, "function");
+  assert.equal(typeof buildTelemetryEvidenceSnapshotDraft, "function");
+  assert.equal(snapshot.schema_version, EVIDENCE_SNAPSHOT_SCHEMA_VERSION);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(validation.feeds.evidence_snapshot, true);
+  assert.equal(validation.feeds.executive_readout, false);
+});
+
+test("engine exposes the measurement plan contract before evidence snapshots", () => {
+  const plan = buildPlaybookMeasurementPlanDraft({
+    orgId: "org_example",
+    workflowFamily: "customer_support_case_resolution",
+    hypothesisStatement:
+      "If support teams use AI for case triage and answer drafting, then eligible support cases should move faster while quality and escalation posture remain governed.",
+    businessObjective: "Improve support case resolution capacity without weakening quality controls.",
+    baselineWindowStart: "2026-05-01",
+    baselineWindowEnd: "2026-05-31",
+    generatedAt: "2026-06-13T00:00:00.000Z",
+    measurementPlanId: "measurement_plan_engine_smoke"
+  });
+  const validation = validateMeasurementPlan(plan);
+
+  assert.equal(plan.schema_version, MEASUREMENT_PLAN_SCHEMA_VERSION);
+  assert.equal(typeof validateMeasurementPlan, "function");
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(validation.readiness.max_snapshot_type, "TELEMETRY_ONLY_CAVEATED");
+  assert.equal(validation.readiness.can_build_claim_readiness, false);
 });
 
 test("runSpine runs the Customer Support fixtures through every stage", () => {

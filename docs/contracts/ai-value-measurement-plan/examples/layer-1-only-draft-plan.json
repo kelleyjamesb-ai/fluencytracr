@@ -1,0 +1,294 @@
+{
+  "schema_version": "FT_AI_VALUE_MEASUREMENT_PLAN_2026_06",
+  "measurement_plan_id": "measurement_plan_example_layer_1_only_draft",
+  "org_id": "org_example",
+  "value_hypothesis": {
+    "value_hypothesis_id": "value_hypothesis_example_support_capacity",
+    "hypothesis_statement": "If the support workflow uses AI for case triage and answer drafting, then eligible cases should move faster while quality and escalation posture remain governed.",
+    "value_route": "capacity_creation",
+    "business_objective": "Improve support case resolution capacity without weakening quality controls.",
+    "sponsor_role": "executive_sponsor",
+    "owner_role": "workflow_owner"
+  },
+  "workflow_scope": {
+    "workflow_family": "customer_support_case_resolution",
+    "workflow_name": "Support case resolution",
+    "function_area": "customer_support",
+    "included_surfaces": [
+      "search",
+      "assistant",
+      "workflow_agent"
+    ],
+    "excluded_surfaces": [],
+    "approved_aggregate_grain": "workflow_family",
+    "minimum_cohort_threshold": 5
+  },
+  "metric_selection": {
+    "primary_metric": {
+      "metric_id": "support_median_resolution_hours",
+      "metric_name": "Median resolution time",
+      "metric_category": "cycle_time",
+      "source_system_type": "customer_system_of_record",
+      "metric_owner_role": "operations_metric_owner"
+    },
+    "supporting_metrics": [
+      {
+        "metric_id": "support_reopen_rate",
+        "metric_name": "Reopen rate",
+        "metric_category": "quality",
+        "source_system_type": "customer_system_of_record",
+        "required_for_claim_readiness": true
+      }
+    ]
+  },
+  "windows": {
+    "baseline_window_start": "2026-05-01",
+    "baseline_window_end": "2026-05-31",
+    "comparison_window_start": null,
+    "comparison_window_end": null,
+    "window_alignment_state": "comparison_pending"
+  },
+  "playbook_evidence_requirements": {
+    "layer_1_platform_telemetry": {
+      "required": true,
+      "required_signals": [
+        "workflow_run_count",
+        "active_user_aggregate",
+        "eligible_cohort_size",
+        "suppression_or_blocked_event_posture"
+      ],
+      "optional_signals": [
+        "search_activity",
+        "chat_or_assistant_activity",
+        "ai_answer_activity",
+        "skill_lifecycle_activity",
+        "agent_lifecycle_activity",
+        "artifact_output_metadata"
+      ],
+      "not_applicable_signals": []
+    },
+    "layer_2_user_voice_empirical": {
+      "required": true,
+      "required_exports": [
+        "aggregate_ai_fluency_baseline",
+        "aggregate_user_voice_or_workflow_observation"
+      ],
+      "optional_exports": [
+        "aggregate_ai_fluency_retest"
+      ],
+      "not_applicable_exports": []
+    },
+    "layer_3_business_system_outcomes": {
+      "required": true,
+      "required_exports": [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison",
+        "system_of_record_outcome_export"
+      ],
+      "optional_exports": [],
+      "not_applicable_exports": []
+    },
+    "governance_evidence": {
+      "required": true,
+      "required_controls": [
+        "source_readiness_state",
+        "data_boundary_state",
+        "k_min_posture",
+        "forbidden_field_checks",
+        "raw_content_exclusion"
+      ],
+      "optional_controls": [
+        "control_or_policy_owner_approval",
+        "mcp_action_boundary_review"
+      ]
+    },
+    "assumption_evidence": {
+      "required": true,
+      "required_assumptions": [
+        "customer_owned_assumptions"
+      ],
+      "optional_assumptions": [
+        "productivity_recapture_assumption_if_relevant",
+        "financial_assumption_approval_if_requested"
+      ],
+      "required_approvals": [
+        "customer_owned_assumptions",
+        "aggregate_workforce_context_approval_if_used"
+      ]
+    }
+  },
+  "source_package_requirements": {
+    "bigquery_source_required": true,
+    "ai_fluency_baseline_required": true,
+    "ai_fluency_retest_required": false,
+    "system_of_record_export_required": true,
+    "aggregate_workforce_context_required": false,
+    "finance_or_business_owner_approval_required": false,
+    "control_or_policy_owner_approval_required": false,
+    "source_owner_attestation_required": true
+  },
+  "aggregate_workforce_context_requirements": {
+    "allowed": true,
+    "required": false,
+    "allowed_context_types": [
+      "aggregate_role_family_context",
+      "aggregate_new_hire_cohort_context",
+      "aggregate_training_completion_context",
+      "aggregate_capacity_planning_context",
+      "aggregate_time_to_productivity_context",
+      "aggregate_hiring_plan_context"
+    ],
+    "source_owner_approval_required": false,
+    "minimum_cohort_threshold": 5,
+    "blocked_uses": [
+      "people_decisioning",
+      "manager_or_team_ranking",
+      "individual_attribution",
+      "productivity_claim"
+    ]
+  },
+  "vbd_measurement_design": {
+    "velocity": {
+      "required": true,
+      "measurement_basis": "workflow_run_growth",
+      "baseline_required": true,
+      "comparison_required": false,
+      "caveats": [
+        "Velocity is Layer 1 platform telemetry about aggregate AI-enabled work movement over time; it is not ROI, productivity, causality, or financial proof."
+      ]
+    },
+    "breadth": {
+      "required": true,
+      "approved_aggregate_grain": "workflow_family",
+      "allowed_spread_dimensions": [
+        "function",
+        "workflow_family",
+        "workflow",
+        "role_family",
+        "cohort",
+        "surface",
+        "use_case"
+      ],
+      "blocked_dimensions": [
+        "individual",
+        "employee",
+        "manager_ranking",
+        "team_ranking",
+        "manager_chain"
+      ],
+      "caveats": [
+        "Breadth measures spread across approved aggregate slices only and cannot become person-level analytics, manager ranking, or team ranking."
+      ]
+    },
+    "depth": {
+      "required": true,
+      "measurement_basis": "repeat_workflow_behavior",
+      "requires_quality_or_outcome_pairing": false,
+      "caveats": [
+        "Depth describes embedded repeatable workflow behavior as Layer 1 posture; business value requires Layer 3 outcome evidence or accepted quality/outcome evidence."
+      ]
+    },
+    "vbd_claim_boundary": {
+      "contributes_to_playbook_layer": "layer_1_platform_telemetry",
+      "allowed_uses": [
+        "ai_fluency_posture",
+        "layer_1_operating_signal",
+        "evidence_collection_planning",
+        "source_availability_context"
+      ],
+      "blocked_uses": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ]
+    }
+  },
+  "assumptions": {
+    "productivity_recapture_required": false,
+    "financial_assumption_required": false,
+    "customer_owned_assumption_required": true,
+    "assumption_approval_state": "held",
+    "notes": [
+      "Customer-owned assumptions are held until approved by the customer or business owner."
+    ]
+  },
+  "privacy_boundary": {
+    "aggregate_only": true,
+    "contains_direct_identifiers": false,
+    "contains_raw_content": false,
+    "contains_person_level_productivity": false,
+    "contains_person_level_hris_records": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false,
+    "contains_compensation_or_performance_inference": false,
+    "contains_promotion_or_discipline_inference": false,
+    "contains_attrition_prediction": false,
+    "contains_hris_inference_from_ai_usage": false
+  },
+  "readiness": {
+    "measurement_plan_readiness": "held_for_customer_exports",
+    "missing_requirements": [
+      "layer_2_user_voice_empirical",
+      "layer_3_business_system_outcomes"
+    ],
+    "held_requirements": [
+      "assumption_evidence",
+      "source_owner_attestation"
+    ],
+    "required_caveats": [
+      "Layer 1 telemetry readiness is not full Playbook readiness.",
+      "Layer 2 user voice or empirical evidence is required before stronger evidence snapshots can be generated.",
+      "Layer 3 business system-of-record outcome evidence is required before claim readiness or executive readout planning.",
+      "Customer-owned assumptions remain held until approved.",
+      "This measurement plan does not compute claim readiness, financial permission, or executive readout output."
+    ],
+    "next_actions": [
+      "Collect aggregate AI Fluency baseline or user voice export.",
+      "Collect customer-attested KPI baseline and comparison exports.",
+      "Collect source owner attestation.",
+      "Collect customer-owned assumptions.",
+      "Collect aggregate workforce context approval if relevant."
+    ]
+  },
+  "allowed_uses": [
+    "measurement_plan_design",
+    "evidence_collection_planning",
+    "source_package_request",
+    "evidence_snapshot_preparation"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output",
+    "realized_roi_calculation",
+    "roi_proof",
+    "dollarized_output",
+    "financial_value_claim",
+    "usage_derived_financial_claim",
+    "customer_facing_economic_output",
+    "manager_ranking",
+    "team_ranking",
+    "person_level_hris_records",
+    "hashed_or_joinable_person_identifiers",
+    "compensation_or_performance_inference",
+    "promotion_or_discipline_inference",
+    "attrition_prediction",
+    "hris_inference_from_ai_usage"
+  ],
+  "created_at": "2026-06-13T00:00:00.000Z",
+  "updated_at": null,
+  "derivation_version": "ai_value_measurement_plan_example_2026_06"
+}

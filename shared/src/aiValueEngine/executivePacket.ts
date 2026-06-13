@@ -345,6 +345,7 @@ function buildEbitaImpactSummary(
   const evidenceQuality = ebitaEvidenceQuality(ebitaBridge);
   const status = statusForEbitaBridge(ebitaBridge, roiScenario, evidenceQuality);
   const bridgePolicy = ebitaBridge.financial_translation_policy ?? {};
+  const rawBridgeStatus = String(bridgePolicy.mode ?? "NO_FINANCIAL_TRANSLATION");
   const realizedAllowed = Boolean(
     (status === "FINANCE_VALIDATED_EBITA_CASE" || status === "CUSTOMER_FACING_APPROVED") &&
       bridgePolicy.realized_ebita_claim_allowed === true &&
@@ -360,7 +361,7 @@ function buildEbitaImpactSummary(
     bridgePolicy.causality_claim_allowed === true && roiGateAllowsCausalityLanguage(roiScenario)
   );
   const safeLanguage = ebitaBridge.safe_language ?? {};
-  const sourcePhrases = status === "NO_FINANCIAL_TRANSLATION"
+  const sourcePhrases = status === "NO_FINANCIAL_TRANSLATION" || rawBridgeStatus !== status
     ? defaultAllowedEbitaPhrases(status)
     : Array.isArray(safeLanguage.allowed_phrases)
       ? safeLanguage.allowed_phrases

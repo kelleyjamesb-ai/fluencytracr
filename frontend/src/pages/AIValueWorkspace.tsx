@@ -1177,6 +1177,8 @@ const ValueImprovementLoopPanel = ({ journey }: { journey: Journey }) => {
 
 const DecisionsPage = ({ journey }: { journey: Journey }) => (
   <section className="ai-value-focused-stack" aria-label="Decision and retest workspace">
+    <ValueRoiAccessPanel journey={journey} />
+
     <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
 
     <ValueImprovementLoopPanel journey={journey} />
@@ -1188,3 +1190,35 @@ const DecisionsPage = ({ journey }: { journey: Journey }) => (
     />
   </section>
 );
+
+const ValueRoiAccessPanel = ({ journey }: { journey: Journey }) => {
+  const readiness = journey.roiScenarioReadiness;
+  const metricName =
+    readiness.metricName && readiness.metricName !== "No outcome metric selected"
+      ? readiness.metricName
+      : "selected outcome metric";
+  const workflowName =
+    readiness.workflowName && readiness.workflowName !== "No workflow selected yet"
+      ? readiness.workflowName
+      : "selected workflow";
+
+  return (
+    <section
+      aria-label="Value and ROI access"
+      className="ai-value-panel ai-value-roi-access-panel"
+    >
+      <div>
+        <p className="eyebrow">Step 6 · Value / ROI</p>
+        <h3>Open Value / ROI before the final decision</h3>
+        <p>
+          Use this screen to see whether the {metricName} for the {workflowName} is
+          ready for internal modeling, executive caveats, finance validation, or
+          customer-facing approval.
+        </p>
+      </div>
+      <Link className="ai-value-step active" to="/ai-value-workspace/roi">
+        Open Value / ROI screen
+      </Link>
+    </section>
+  );
+};

@@ -1023,7 +1023,9 @@ const mergeWithCurrentDefaults = (
   if (metricIds === undefined) return knownDefaultMetricIds;
 
   const selectedMetricIds = dedupeKnownMetricIds(metricIds, knownMetricIds);
-  if (selectedMetricIds.length === 0) return [];
+  if (selectedMetricIds.length === 0) {
+    return metricIds.length === 0 ? [] : knownDefaultMetricIds;
+  }
 
   const missingBridgeDefaults = knownDefaultMetricIds.filter(
     (metricId) => metricId.startsWith("bridge-") && !selectedMetricIds.includes(metricId)
@@ -1199,21 +1201,26 @@ export const ClientQuestionMetricBridgePanel = ({
           nextSelections,
           functionArea
         );
-        const currentMetricIds = hasExplicitSelection
-          ? dedupeKnownMetricIds(nextSelections[functionArea] ?? [], knownMetricIds)
-          : [];
         const defaultMetricIds = dedupeKnownMetricIds(selectedMetricIds, knownMetricIds);
-        const currentHasBridgeMetric = currentMetricIds.some((metricId) =>
+        const currentMetricIds = hasExplicitSelection
+          ? nextSelections[functionArea] ?? []
+          : defaultMetricIds;
+        const knownCurrentMetricIds = dedupeKnownMetricIds(currentMetricIds, knownMetricIds);
+        const currentHasBridgeMetric = knownCurrentMetricIds.some((metricId) =>
           metricId.startsWith("bridge-")
         );
         const defaultHasBridgeMetric = defaultMetricIds.some((metricId) =>
           metricId.startsWith("bridge-")
         );
         const mergedMetricIds =
-          !hasExplicitSelection ||
-          (currentMetricIds.length > 0 && defaultHasBridgeMetric && !currentHasBridgeMetric)
+          !hasExplicitSelection
             ? defaultMetricIds
-            : currentMetricIds;
+            : currentMetricIds.length === 0
+              ? []
+            : knownCurrentMetricIds.length === 0 ||
+                (defaultHasBridgeMetric && !currentHasBridgeMetric)
+              ? defaultMetricIds
+              : knownCurrentMetricIds;
         if (mergedMetricIds.join("|") !== (nextSelections[functionArea] ?? []).join("|")) {
           nextSelections[functionArea] = mergedMetricIds;
           changed = true;

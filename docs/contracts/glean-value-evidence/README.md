@@ -88,9 +88,17 @@ Runtime validation lives in `shared/src/gleanValueEvidenceSchemas.ts` and is exp
 The pack is aggregate-only. It must not include:
 
 - direct person identifiers such as email, employee ID, or user ID
+- hashed, pseudonymous, tokenized, or otherwise joinable person identifiers
+- person-level HRIS records or HRIS inference from AI usage
 - team, manager, role, or person-level comparisons
 - raw prompts, model outputs, transcripts, query text, tool payloads, or file content
 - ranking, productivity scoring, or hidden reconstructed metrics
+
+Aggregate workforce context may appear only as customer-approved assumption or
+system-of-record context for workflow-level value measurement. It must not be
+inferred from Glean usage telemetry and must not support people decisioning,
+compensation/performance inference, promotion/discipline inference,
+attrition prediction, or manager/team comparative ordering.
 
 ## Relationship to existing contracts
 

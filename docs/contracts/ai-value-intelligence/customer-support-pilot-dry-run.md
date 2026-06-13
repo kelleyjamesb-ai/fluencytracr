@@ -30,7 +30,7 @@ Rationale:
 
 Do not use this dry run to claim realized ROI, savings, causality,
 productivity lift, individual performance, ranked group comparison, manager
-comparison, or HR analytics.
+comparison, person-level HR analytics, or HRIS inference from AI usage.
 
 ## Approved Scope
 
@@ -139,8 +139,9 @@ AIOMs must not use the following language:
 - A person, manager, team, function, or department performed better with AI.
 - Raw ticket text, prompts, responses, transcripts, or files explain the
   outcome movement.
-- HRIS, survey, training, enablement, compensation, performance, or workforce
-  data is needed for this dry run.
+- Person-level HRIS, survey, training, enablement, compensation, performance,
+  or workforce data is needed for this dry run. Aggregate workforce context is
+  optional only when customer-approved and cohort-safe.
 
 ## AIOM Talk Track
 
@@ -185,7 +186,7 @@ Decision options after the workshop:
 | `ROUTE_TO_ROI_METRIC_MODELING` | Source coverage, outcome evidence, baseline rules, trust, and assumptions are accepted for governed scenario review. |
 | `HOLD_FOR_ASSUMPTIONS` | Outcome metrics are present, but business assumptions are incomplete. |
 | `HOLD_FOR_SOURCE_COVERAGE` | AI activity, workflow, outcome, baseline, or trust lanes are missing or held. |
-| `STOP_FOR_GOVERNANCE_REVIEW` | Any proposed path requires raw data, HR analytics, ROI proof, causality, scoring, ranking, or runtime implementation. |
+| `STOP_FOR_GOVERNANCE_REVIEW` | Any proposed path requires raw data, person-level HR analytics, HRIS inference, ROI proof, causality, scoring, ranking, or runtime implementation. |
 
 Current dry-run recommendation:
 
@@ -204,8 +205,10 @@ This dry run preserves the FluencyTracr governance boundary:
 - no team, manager, department, function, customer, or Skill ranking;
 - no raw prompts, ticket text, responses, transcripts, file content, tool
   payloads, or action rows;
-- no HRIS, directory, survey, training, enablement, compensation, performance,
-  or workforce-planning joins;
+- no person-level HRIS, directory, survey, training, enablement,
+  compensation, performance, or workforce-planning joins;
+- no hashed or joinable person identifiers, people decisioning, HRIS inference
+  from AI usage, or manager/team comparative ordering;
 - no realized ROI calculation, dollarized savings, hours-saved proof,
   productivity lift, causality, prediction, dashboard, connector, API, schema,
   or runtime implementation.

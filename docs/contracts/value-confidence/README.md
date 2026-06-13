@@ -49,7 +49,8 @@ formula templates to test value hypotheses. Accepted aggregate outcome evidence
 may pass into ROI metric routing and governed scenario review. It does not
 authorize runtime schemas, APIs, automated recommendation engines, formula
 execution, production outcome joins, customer-facing economic output, realized
-ROI, productivity, causality, prediction, HR analytics, or ranking surfaces.
+ROI, productivity, causality, prediction, person-level HR analytics, HRIS
+inference, or ranking surfaces.
 
 ## Inputs
 

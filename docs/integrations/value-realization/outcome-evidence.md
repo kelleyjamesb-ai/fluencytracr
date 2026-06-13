@@ -5,8 +5,9 @@ data engineers attaching systems-of-record KPIs to FluencyTracr verdicts.
 
 Outcome Evidence is the storage-and-replay bridge for customer-attested
 aggregate KPI outcomes. It lets a customer attach a metric such as Jira cycle
-time, Veeva approval time, ticket deflection, or NPS to a workflow period
-without FluencyTracr building a connector to that source system.
+time, Veeva approval time, ticket deflection, NPS, or aggregate
+time-to-productivity by cohort to a workflow period without FluencyTracr
+building a connector to that source system.
 
 ## Contract
 
@@ -42,6 +43,13 @@ matching outcome evidence. Consumers decide how to compare those values.
 - Free-form customer metadata may not use field names containing `user`,
   `email`, `name`, or `id`.
 - `jbtd_id` and `persona_id` are opaque join keys and do not weaken gates.
+- HRIS-derived outcome evidence is allowed only as aggregate, cohort-safe,
+  customer-approved workforce context for workflow-level value measurement.
+  Person-level HRIS records, direct identifiers, hashed or joinable person
+  identifiers, individual productivity, people decisioning,
+  compensation/performance inference, promotion/discipline inference,
+  manager/team comparative ordering, attrition prediction, and HRIS inference from AI usage
+  remain blocked.
 
 ## Non-Goals
 

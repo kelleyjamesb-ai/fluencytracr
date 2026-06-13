@@ -33,6 +33,13 @@ The registry rejects raw prompts, raw responses, transcripts, query text, file c
 
 Claim templates should use contribution, coverage, or evidence language unless finance-approved evidence and reportability gates allow stronger phrasing.
 
+Aggregate HRIS-derived workforce context may support a value hypothesis only as
+customer-approved, cohort-safe context for workflow-level measurement. The
+registry must not encode person-level HRIS records, hashed or joinable person
+identifiers, individual productivity, people decisioning,
+compensation/performance inference, promotion/discipline inference, attrition
+prediction, manager/team comparative ordering, or HRIS inference from AI usage.
+
 ## Relationship To Outcome Instrumentation
 
 Use the Outcome Instrumentation Map (`OIM_2026_05`) to define which external metrics, systems of record, baselines, counterfactuals, attribution levels, and privacy boundaries can move each hypothesis toward stronger claim readiness.

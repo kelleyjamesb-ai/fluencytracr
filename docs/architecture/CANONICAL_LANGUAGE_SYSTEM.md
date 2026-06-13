@@ -89,6 +89,7 @@ EBITA is a financial translation layer, not a usage metric. Usage evidence alone
 | Financial Claim Review | `financial_claim_gate` | Financial Claim Review | Gate that determines which financial outputs are allowed. | Value Scenario and readout governance. | Financial claim gate in UI headings |
 | Governance Boundary | `blocked_claims` | Governance Boundary | Claims that are not allowed for the current evidence state. | Readouts, validators, packet caveats. | Blocked claims as the main story |
 | Aggregate-Only Evidence | suppression and cohort gates | Aggregate-only evidence | Evidence that has passed cohort and privacy constraints before use. | All customer-facing and executive value language. | Team/person productivity data |
+| Aggregate Workforce Context | `aggregate_workforce_context` / `aggregate_hris_derived_context` | Aggregate workforce context | Customer-approved HRIS-derived or workforce system context that is cohort-safe and used only for workflow-level value measurement. | Measurement plans, evidence snapshots, outcome evidence, assumptions. | No HRIS data, HR analytics as a blanket term |
 | Caveat | `required_caveats` | Required caveat | Required language that must travel with the value readout. | Executive readouts, decision packets, finance review. | Disclaimer as optional copy |
 
 ## Intervention Vocabulary

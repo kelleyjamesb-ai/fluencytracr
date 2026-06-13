@@ -157,6 +157,14 @@
         "raw_source_rows_allowed": { "const": false },
         "direct_identifiers_allowed": { "const": false },
         "raw_content_allowed": { "const": false },
+        "contains_person_level_hris_records": { "const": false },
+        "contains_hashed_or_joinable_person_identifiers": { "const": false },
+        "contains_person_level_productivity": { "const": false },
+        "contains_manager_or_team_ranking": { "const": false },
+        "contains_people_decisioning": { "const": false },
+        "contains_compensation_or_performance_inference": { "const": false },
+        "contains_hris_inference_from_ai_usage": { "const": false },
+        "aggregate_workforce_context_allowed": { "type": "boolean" },
         "status": { "enum": ["ENFORCED"] }
       }
     },

@@ -58,9 +58,11 @@ Please come prepared to confirm:
 ## What We Will Not Ask For
 
 We will not ask for names, emails, employee IDs, user-level rows, manager
-chains, ticket text, prompts, responses, transcripts, files, HRIS records,
-training records, survey responses, compensation data, performance data, or
-workforce-planning data.
+chains, ticket text, prompts, responses, transcripts, files, person-level HRIS
+records, hashed or joinable person identifiers, training records, survey
+responses, compensation data, performance data, or workforce-planning data.
+Aggregate workforce context may be accepted only if the customer provides it
+at a cohort-safe approved grain.
 
 ## What The Workshop Produces
 
@@ -212,8 +214,9 @@ Do not use these statements:
 - The support team saved a specific number of hours.
 - A person, manager, team, function, or department performed better with AI.
 - Raw ticket text, prompts, responses, transcripts, or files explain the value.
-- HRIS, survey, training, enablement, compensation, performance, or workforce
-  data is required for this pilot.
+- Person-level HRIS, survey, training, enablement, compensation, performance,
+  or workforce data is required for this pilot. Aggregate workforce context is
+  optional and must remain cohort-safe and customer-approved.
 
 ## Post-Workshop Outcomes
 
@@ -226,7 +229,7 @@ Choose exactly one outcome.
 | `HOLD_FOR_ASSUMPTIONS` | Outcome metrics are present, but assumptions are incomplete. | Assign owners for missing assumptions and reconvene before executive narrative. |
 | `HOLD_FOR_SOURCE_COVERAGE` | A required source lane is missing, held, or not aligned. | Fix source coverage or narrow the workflow slice. |
 | `HOLD_FOR_BASELINE` | No comparable baseline exists. | Select a governed baseline or keep the packet internal-only. |
-| `STOP_FOR_GOVERNANCE_REVIEW` | The requested path requires raw data, HR analytics, scoring, ranking, ROI proof, causality, dashboard, connector, or runtime implementation. | Stop the pilot motion and return to governance review. |
+| `STOP_FOR_GOVERNANCE_REVIEW` | The requested path requires raw data, person-level HR analytics, HRIS inference, scoring, ranking, ROI proof, causality, dashboard, connector, or runtime implementation. | Stop the pilot motion and return to governance review. |
 
 Recommended default from the Phase 4 dry run:
 
@@ -291,8 +294,10 @@ This workshop kit preserves the FluencyTracr boundary:
 - no team, manager, department, function, customer, or Skill ranking;
 - no raw prompts, ticket text, responses, transcripts, file content, tool
   payloads, or action rows;
-- no HRIS, directory, survey, training, enablement, compensation, performance,
-  or workforce-planning joins;
+- no person-level HRIS, directory, survey, training, enablement,
+  compensation, performance, or workforce-planning joins;
+- no hashed or joinable person identifiers, people decisioning, HRIS inference
+  from AI usage, or manager/team comparative ordering;
 - no realized ROI calculation, dollarized savings, hours-saved proof,
   productivity lift, causality, prediction, dashboard, connector, API, schema,
   or runtime implementation.

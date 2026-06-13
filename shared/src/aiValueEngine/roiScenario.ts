@@ -208,6 +208,12 @@ const FINANCIAL_OUTPUT_FIELD_PATTERNS: Record<string, RegExp[]> = {
 };
 
 const WORKFORCE_ANALYTICS_OUTPUTS = [
+  "aggregate_workforce_context",
+  "aggregate_hris_derived_context",
+  "aggregate_role_family_context",
+  "aggregate_new_hire_cohort_context",
+  "aggregate_training_completion_context",
+  "aggregate_capacity_planning_context",
   "aggregate_workforce_readiness",
   "aggregate_enablement_coverage",
   "aggregate_training_completion",
@@ -221,17 +227,45 @@ const WORKFORCE_SAFETY_REQUIREMENTS = [
   "aggregate_only",
   "minimum_cohort_size_met",
   "no_direct_identifiers",
+  "no_person_level_hris_records",
+  "no_hashed_or_joinable_person_identifiers",
+  "no_person_level_productivity",
   "no_manager_ranking",
   "no_individual_decisioning",
+  "no_people_decisioning",
+  "no_compensation_or_performance_inference",
+  "no_hris_inference_from_ai_usage",
   "no_sensitive_attribute_inference"
 ];
 
 const FORBIDDEN_KEY_PATTERNS = [
-  /(^|_)user(_|$)/i,
+  /(^|_)user(?:_id|_email)?($|_)/i,
   /email/i,
-  /employee/i,
-  /manager/i,
-  /person/i,
+  /employee_id/i,
+  /employee_email/i,
+  /employee_name/i,
+  /employee_record/i,
+  /employee_identifier/i,
+  /direct_employee_identifier/i,
+  /hashed_employee_id/i,
+  /hashed_user_id/i,
+  /hashed_person_id/i,
+  /hashed_or_joinable_person_identifier/i,
+  /pseudonymous_(?:employee|person|user)_identifier/i,
+  /tokenized_(?:employee|person|user)_identifier/i,
+  /joinable_(?:employee|person|user)_identifier/i,
+  /person_id/i,
+  /person_identifier/i,
+  /person_level_hris/i,
+  /person_level_(?:data|record|productivity|analytics)/i,
+  /named_employee_productivity/i,
+  /manager_chain/i,
+  /manager_id/i,
+  /manager_view/i,
+  /manager_ranking/i,
+  /team_ranking/i,
+  /team_or_manager_ranking/i,
+  /manager_or_team_ranking/i,
   /prompt/i,
   /response/i,
   /transcript/i,
@@ -239,11 +273,19 @@ const FORBIDDEN_KEY_PATTERNS = [
   /ticket_text/i,
   /raw_/i,
   /direct_identifiers/i,
-  /hris/i,
-  /individual/i,
+  /individual_scoring/i,
+  /individual_productivity/i,
   /productivity_measurement/i,
+  /productivity_rank/i,
   /productivity_ranking/i,
+  /productivity_score/i,
   /people_decisioning/i,
+  /compensation/i,
+  /performance_rating/i,
+  /promotion/i,
+  /discipline/i,
+  /attrition_prediction/i,
+  /hris_inference/i,
   /compensation_or_performance_inference/i
 ];
 
@@ -253,8 +295,8 @@ const FORBIDDEN_CLAIM_PATTERNS = [
   /caused .*lift/i,
   /saved money/i,
   /saved \$?\d/i,
-  /employee/i,
-  /manager/i,
+  /employee (?:performance|productivity|score|ranking|assessment)/i,
+  /manager (?:ranking|comparison|score|performance|view)/i,
   /team .*better/i
 ];
 
@@ -675,7 +717,7 @@ function collectWorkforceAnalyticsGateGaps(scenario: any): string[] {
     gaps.push(`workforce_analytics_gate.mode is invalid: ${gate.mode}`);
   }
   if (gate.hris_join_allowed !== false) {
-    gaps.push("workforce_analytics_gate.hris_join_allowed must be false");
+    gaps.push("workforce_analytics_gate.hris_join_allowed must be false (no persisted person-level HRIS join in FluencyTracr)");
   }
 
   const requestedOutputs = WORKFORCE_ANALYTICS_OUTPUTS.filter((output) =>
@@ -917,11 +959,23 @@ export function buildRoiScenarioFromValueObjects(inputs: BuildRoiScenarioInputs)
       aggregate_only: false,
       minimum_cohort_size_met: false,
       no_direct_identifiers: false,
+      no_person_level_hris_records: false,
+      no_hashed_or_joinable_person_identifiers: false,
+      no_person_level_productivity: false,
       no_manager_ranking: false,
       no_individual_decisioning: false,
+      no_people_decisioning: false,
+      no_compensation_or_performance_inference: false,
+      no_hris_inference_from_ai_usage: false,
       no_sensitive_attribute_inference: false,
       hris_join_allowed: false,
       allowed_outputs: {
+        aggregate_workforce_context: false,
+        aggregate_hris_derived_context: false,
+        aggregate_role_family_context: false,
+        aggregate_new_hire_cohort_context: false,
+        aggregate_training_completion_context: false,
+        aggregate_capacity_planning_context: false,
         aggregate_workforce_readiness: false,
         aggregate_enablement_coverage: false,
         aggregate_training_completion: false,
