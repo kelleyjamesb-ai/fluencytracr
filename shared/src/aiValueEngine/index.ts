@@ -206,6 +206,19 @@ export type {
 } from "./customerJourney";
 
 export {
+  AI_VALUE_CLIENT_EVIDENCE_REQUEST_SCHEMA_VERSION,
+  ClientEvidenceRequestSchema,
+  buildClientEvidenceRequestsFromEvidenceSnapshot,
+  buildClientEvidenceRequestsFromMeasurementPlan,
+  validateClientEvidenceRequest
+} from "./clientEvidenceRequest";
+export type {
+  BuildClientEvidenceRequestOptions,
+  ClientEvidenceRequest,
+  ClientEvidenceRequestValidationResult
+} from "./clientEvidenceRequest";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,

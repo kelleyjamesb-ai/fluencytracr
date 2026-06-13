@@ -1,0 +1,96 @@
+{
+  "schema_version": "FT_AI_VALUE_CLIENT_EVIDENCE_REQUEST_2026_06",
+  "request_id": "client_evidence_request_measurement_plan_client_evidence_request_example_layer_3_business_system_outcomes",
+  "org_id": "org_example",
+  "measurement_plan_id": "measurement_plan_client_evidence_request_example",
+  "evidence_snapshot_id": null,
+  "requested_playbook_layer": "layer_3_business_system_outcomes",
+  "request_type": "aggregate_export",
+  "evidence_purpose": "Collect customer-owned aggregate system-of-record outcome metrics for Playbook Layer 3.",
+  "accepted_formats": [
+    "aggregate_system_of_record_export",
+    "customer_attested_kpi_summary",
+    "manual_aggregate_entry"
+  ],
+  "required_fields": [
+    "customer_owned_aggregate_metric",
+    "covered_window",
+    "metric_owner_attestation",
+    "approved_aggregate_grain",
+    "minimum_cohort_threshold"
+  ],
+  "forbidden_fields": [
+    "raw_prompts",
+    "raw_responses",
+    "transcripts",
+    "query_text",
+    "file_contents",
+    "raw_rows",
+    "direct_identifiers",
+    "hashed_or_joinable_person_identifiers",
+    "person_level_hris_records",
+    "person_level_productivity",
+    "manager_or_team_ranking",
+    "people_decisioning"
+  ],
+  "privacy_requirements": {
+    "aggregate_only": true,
+    "source_owner_approval_required": true,
+    "non_decisioning_context": false,
+    "contains_raw_prompts": false,
+    "contains_raw_responses": false,
+    "contains_transcripts": false,
+    "contains_query_text": false,
+    "contains_file_contents": false,
+    "contains_raw_rows": false,
+    "contains_direct_identifiers": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_person_level_hris_records": false,
+    "contains_person_level_productivity": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false
+  },
+  "minimum_cohort_threshold": 5,
+  "owner_role": "customer_metric_owner",
+  "approver_role": "customer_business_owner",
+  "due_status": "requested",
+  "allowed_claim_improvement": {
+    "caveated": true,
+    "request_itself_upgrades_claim_readiness": false,
+    "evidence_gap_closure_only": true,
+    "blocked_until_validated_evidence": true,
+    "financial_claims_allowed": false,
+    "customer_facing_output_allowed": false,
+    "improvement_scope": [
+      "evidence_gap_closure_planning"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "individual_scoring",
+    "manager_or_team_ranking",
+    "team_or_manager_ranking",
+    "people_decisioning",
+    "financial_value_claim",
+    "customer_facing_financial_output",
+    "customer_facing_economic_output"
+  ],
+  "required_caveats": [
+    "Layer 3 request does not prove causality or financial impact by itself."
+  ],
+  "customer_instructions": [
+    "Provide aggregate customer-owned KPI baseline and comparison metrics.",
+    "Do not include raw rows, account-level records, or person-level records."
+  ],
+  "internal_notes": [
+    "Request is not evidence and cannot improve claim readiness until validated aggregate evidence is provided."
+  ],
+  "created_at": "2026-06-13T00:00:00.000Z",
+  "derivation_version": "ai_value_client_evidence_request_builder_2026_06"
+}
