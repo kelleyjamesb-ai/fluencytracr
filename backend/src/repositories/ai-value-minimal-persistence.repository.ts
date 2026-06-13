@@ -131,6 +131,18 @@ export interface PersistAiValueEvidenceSnapshotInput {
   supersedesId?: string | null;
 }
 
+export interface LoadAiValueMeasurementPlanInput {
+  orgId: string;
+  measurementPlanId: string;
+  version?: number;
+}
+
+export interface ListAiValueSourcePackageRefsInput {
+  orgId: string;
+  measurementPlanId: string;
+  latestOnly?: boolean;
+}
+
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -273,6 +285,9 @@ const sourcePackageRefKey = (orgId: string, sourcePackageId: string, version: nu
 const evidenceSnapshotKey = (orgId: string, evidenceSnapshotId: string, version: number) =>
   `${orgId}:${evidenceSnapshotId}:${version}`;
 
+const latestByVersion = <T extends { version: number }>(records: T[]): T | null =>
+  records.sort((a, b) => b.version - a.version)[0] ?? null;
+
 const rejectDuplicate = (exists: boolean) => {
   if (exists) {
     throw new AiValuePersistenceAlreadyExistsError();
@@ -285,6 +300,76 @@ const translatePrismaDuplicate = (error: any): never => {
   }
   throw error;
 };
+
+export async function loadAiValueMeasurementPlan(
+  input: LoadAiValueMeasurementPlanInput
+): Promise<AiValueMeasurementPlanStoredRecord | null> {
+  if (!usePrisma()) {
+    const records = Array.from(store.aiValueMeasurementPlans.values()).filter(
+      (record) =>
+        record.org_id === input.orgId &&
+        record.measurement_plan_id === input.measurementPlanId &&
+        (input.version === undefined || record.version === input.version)
+    );
+    return latestByVersion(records);
+  }
+
+  const row = await getPrisma().measurementPlan.findFirst({
+    where: {
+      orgId: input.orgId,
+      measurementPlanId: input.measurementPlanId,
+      ...(input.version === undefined ? {} : { version: input.version })
+    },
+    orderBy: { version: "desc" }
+  });
+  return row ? measurementPlanRowToRecord(row) : null;
+}
+
+export async function listAiValueSourcePackageRefs(
+  input: ListAiValueSourcePackageRefsInput
+): Promise<AiValueSourcePackageRefStoredRecord[]> {
+  const latestOnly = input.latestOnly !== false;
+  if (!usePrisma()) {
+    const records = Array.from(store.aiValueSourcePackageRefs.values())
+      .filter(
+        (record) =>
+          record.org_id === input.orgId &&
+          record.measurement_plan_id === input.measurementPlanId
+      )
+      .sort((a, b) =>
+        a.source_package_id.localeCompare(b.source_package_id) ||
+        b.version - a.version
+      );
+    if (!latestOnly) return records;
+    const latest = new Map<string, AiValueSourcePackageRefStoredRecord>();
+    for (const record of records) {
+      if (!latest.has(record.source_package_id)) {
+        latest.set(record.source_package_id, record);
+      }
+    }
+    return [...latest.values()];
+  }
+
+  const rows = await getPrisma().sourcePackageRef.findMany({
+    where: {
+      orgId: input.orgId,
+      measurementPlanId: input.measurementPlanId
+    },
+    orderBy: [
+      { sourcePackageId: "asc" },
+      { version: "desc" }
+    ]
+  });
+  const records = rows.map(sourcePackageRefRowToRecord);
+  if (!latestOnly) return records;
+  const latest = new Map<string, AiValueSourcePackageRefStoredRecord>();
+  for (const record of records) {
+    if (!latest.has(record.source_package_id)) {
+      latest.set(record.source_package_id, record);
+    }
+  }
+  return [...latest.values()];
+}
 
 export async function persistAiValueHypothesisFromMeasurementPlan(
   input: PersistAiValueHypothesisInput

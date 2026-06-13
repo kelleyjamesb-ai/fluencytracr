@@ -33,6 +33,7 @@
     "test:ai-value-claim-readiness-handoff": "npm run build --workspace shared && node --test scripts/validate_ai_value_claim_readiness_handoff.test.mjs",
     "test:ai-value-source-packages": "npm run build --workspace shared && node --test scripts/validate_ai_value_source_packages.test.mjs",
     "test:ai-value-evidence-collection-assembler": "npm run build --workspace shared && node --test scripts/validate_ai_value_evidence_collection_assembler.test.mjs",
+    "test:ai-value-runtime-builders": "npm run test --workspace backend -- --runTestsByPath tests/ai_value_runtime_builders.test.ts",
     "validate:ai-value-improvement-loop": "npm run build --workspace shared && node scripts/validate_ai_value_improvement_loop.mjs",
     "test:ai-value-improvement-loop": "npm run build --workspace shared && node --test scripts/validate_ai_value_improvement_loop.test.mjs",
     "validate:ai-value-evidence-case": "npm run build --workspace shared && node scripts/validate_ai_value_evidence_case.mjs",
