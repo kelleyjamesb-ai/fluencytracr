@@ -72,6 +72,13 @@ function customerFacingRoiScenario() {
   return scenario;
 }
 
+function causalityApprovedRoiScenario() {
+  const scenario = structuredClone(sourceRoiScenario);
+  scenario.financial_claim_gate.allowed_outputs.causality_language = true;
+  scenario.financial_claim_gate.data_sufficiency.experimental_or_quasi_experimental_design = true;
+  return scenario;
+}
+
 function ebitaBridge(mode = "DIRECTIONAL_EBITA_BRIDGE") {
   const bridge = {
     ebita_bridge_id: "ebita_bridge_customer_support_capacity_v1",
@@ -398,6 +405,12 @@ test("customer-facing EBITA approval requires both ROI gate and EBITA bridge app
     ebitaBridge("CUSTOMER_FACING_APPROVED"),
     financeValidatedRoiScenario()
   );
+  const missingAggregateEvidenceScenario = customerFacingRoiScenario();
+  missingAggregateEvidenceScenario.financial_claim_gate.data_sufficiency.aggregate_only = false;
+  const withoutAggregateEvidence = buildPacketWithEbita(
+    ebitaBridge("CUSTOMER_FACING_APPROVED"),
+    missingAggregateEvidenceScenario
+  );
   const withRoiApproval = buildPacketWithEbita(
     ebitaBridge("CUSTOMER_FACING_APPROVED"),
     customerFacingRoiScenario()
@@ -405,6 +418,7 @@ test("customer-facing EBITA approval requires both ROI gate and EBITA bridge app
 
   assert.equal(withoutRoiApproval.ebita_impact_summary.customer_facing_allowed, false);
   assert.equal(withoutRoiApproval.ebita_impact_summary.realized_ebita_claim_allowed, true);
+  assert.equal(withoutAggregateEvidence.ebita_impact_summary.customer_facing_allowed, false);
   assert.equal(withRoiApproval.ebita_impact_summary.customer_facing_allowed, true);
   assert.equal(
     validateExecutiveValidationPacket(withRoiApproval).valid,
@@ -433,6 +447,28 @@ test("downgraded customer-facing EBITA bridge suppresses customer-facing approva
     true
   );
   assert.equal(validateExecutiveValidationPacket(packet).valid, true);
+});
+
+test("causality language requires aggregate outcome evidence and aligned windows", () => {
+  const bridge = ebitaBridge("MODELED_EBITA_SCENARIO");
+  bridge.financial_translation_policy.causality_claim_allowed = true;
+  const missingOutcomeEvidenceScenario = causalityApprovedRoiScenario();
+  missingOutcomeEvidenceScenario.financial_claim_gate.data_sufficiency.outcome_metric_accepted = false;
+
+  const withoutAcceptedOutcomeEvidence = buildPacketWithEbita(
+    bridge,
+    missingOutcomeEvidenceScenario
+  );
+  const withAggregateOutcomeEvidence = buildPacketWithEbita(
+    bridge,
+    causalityApprovedRoiScenario()
+  );
+
+  assert.equal(
+    withoutAcceptedOutcomeEvidence.ebita_impact_summary.causality_claim_allowed,
+    false
+  );
+  assert.equal(withAggregateOutcomeEvidence.ebita_impact_summary.causality_claim_allowed, true);
 });
 
 test("usage-only financial claims are downgraded and blocked", () => {

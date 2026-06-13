@@ -719,7 +719,7 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
-  it("falls back for stale saved metric IDs while preserving explicit empty selections", async () => {
+  it("falls back for stale saved metric IDs", async () => {
     const savedWatchPlan = (metrics: Array<Record<string, string>>) => ({
       activeFunctionArea: "Customer or Account Success",
       selectionsByFunction: {
@@ -747,26 +747,39 @@ describe("AIValueWorkspace journey continuity", () => {
       JSON.stringify(savedWatchPlan([staleMetric]))
     );
     stubJourneyFetch(journeyObjects);
-    const staleView = renderWorkspace("/ai-value-workspace/metrics");
+    renderWorkspace("/ai-value-workspace/metrics");
 
     await waitFor(() => {
       expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     });
 
-    let bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
     expect(within(bridge).getByRole("checkbox", { name: /Median resolution time/i })).toBeChecked();
     expect(
       within(screen.getByRole("region", { name: /VBD metric watch plan/i })).getByText(
         /Median resolution time/i
       )
     ).toBeInTheDocument();
+  });
 
-    staleView.unmount();
-    vi.unstubAllGlobals();
+  it("preserves an explicit empty saved metric selection", async () => {
+    const savedWatchPlan = (metrics: Array<Record<string, string>>) => ({
+      activeFunctionArea: "Customer or Account Success",
+      selectionsByFunction: {
+        "Customer or Account Success": {
+          functionArea: "Customer or Account Success",
+          quadrantLabel: "Deep but slow",
+          vbdBaseline: "Velocity 42 · Breadth 55 · Depth 66",
+          metrics
+        }
+      }
+    });
+
     localStorage.setItem(
       SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY,
       JSON.stringify(savedWatchPlan([]))
     );
+
     stubJourneyFetch(journeyObjects);
     renderWorkspace("/ai-value-workspace/metrics");
 
@@ -774,13 +787,45 @@ describe("AIValueWorkspace journey continuity", () => {
       expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
     });
 
-    bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
     expect(
       within(bridge).getByRole("checkbox", { name: /Median resolution time/i })
     ).not.toBeChecked();
     const watchPlan = screen.getByRole("region", { name: /VBD metric watch plan/i });
     expect(within(watchPlan).getByText(/Choose at least one client-owned metric/i)).toBeInTheDocument();
     expect(within(watchPlan).queryByText(/Median resolution time/i)).not.toBeInTheDocument();
+  });
+
+  it("lets users clear a default outcome metric selection", async () => {
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    const functionSelect = within(bridge).getByRole("combobox", { name: /Org function/i }) as HTMLSelectElement;
+
+    fireEvent.change(functionSelect, { target: { value: "Engineering / Software Development" } });
+    const deploymentFrequency = within(bridge).getByRole("checkbox", { name: /Deployment Frequency/i });
+    expect(deploymentFrequency).toBeChecked();
+
+    fireEvent.click(deploymentFrequency);
+
+    expect(deploymentFrequency).not.toBeChecked();
+    await waitFor(() => {
+      const storedWatchPlan = JSON.parse(
+        localStorage.getItem(SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY) ?? "{}"
+      );
+      expect(
+        storedWatchPlan.selectionsByFunction["Engineering / Software Development"].metrics
+      ).toEqual([]);
+    });
+
+    const activeHandoff = JSON.parse(localStorage.getItem(SELECTED_OUTCOME_METRICS_KEY) ?? "{}");
+    expect(activeHandoff.functionArea).toBe("Engineering / Software Development");
+    expect(activeHandoff.metrics).toEqual([]);
   });
 
   it.each([
