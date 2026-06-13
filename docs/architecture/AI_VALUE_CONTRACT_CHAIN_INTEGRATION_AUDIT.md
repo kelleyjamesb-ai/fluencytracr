@@ -25,7 +25,7 @@ The governing principle is unchanged: no downstream object may make a stronger c
 | Measurement Plan | `docs/contracts/ai-value-measurement-plan/README.md`, examples, `shared/src/aiValueEngine/measurementPlan.ts` | Required fields, Playbook requirements, VBD boundary, workforce context boundary, privacy flags, readiness gates | Strong upstream requirement contract. |
 | Evidence Collection | Source package requirements, BigQuery readiness docs, aggregate workforce governance docs | Documented as required exports and approvals; no ingestion added in this phase | Evidence collection remains planned/probed, not persisted. |
 | Evidence Snapshot | `docs/contracts/ai-value-evidence-snapshot/README.md`, examples, `shared/src/aiValueEngine/evidenceSnapshot.ts` | Required Playbook coverage, coverage status, VBD operating map, caveats, blocked uses, privacy, suppression, k-min posture | Strong snapshot validator. |
-| Claim Readiness | Existing readiness and claim-boundary engine objects | Older engine objects validate their own caveats and blocked claims | Partial chain binding; they do not yet read Evidence Snapshot directly. |
+| Claim Readiness | Existing readiness and claim-boundary engine objects, plus the non-persisted AI Value Claim Readiness Handoff contract | Older engine objects validate their own caveats and blocked claims; the handoff now copies Evidence Snapshot posture into a downstream decision context | Non-persisted handoff addressed; durable claim/readout persistence remains out of scope. |
 | Executive Readout | Executive packet and HTML readout renderer | Existing render path carries readiness, caveats, blocked claims, and EBITA guardrails | Partial chain binding; readout is not yet bound to Evidence Snapshot caveats and blocked uses. |
 
 ## Status Vocabulary Boundary
@@ -80,6 +80,13 @@ The Evidence Snapshot validator is the strongest current enforcement point. It r
 The current downstream claim-readiness path is not yet a durable snapshot object. Existing readiness and claim-boundary objects validate their own claim states, caveats, forbidden fields, and blocked claims. That is useful, but the chain handoff is partial because those downstream validators do not yet consume the Evidence Snapshot object as their required source of truth.
 
 Required invariant before persistence: claim readiness must be built from a validated Evidence Snapshot handoff that copies `playbook_coverage.coverage_status`, `required_caveats`, `blocked_uses`, `suppression`, `privacy_boundary`, `aggregate_workforce_context`, and `vbd_operating_map` into the claim boundary decision context.
+
+Follow-up status: `docs/contracts/ai-value-claim-readiness-handoff/README.md`
+and `shared/src/aiValueEngine/claimReadinessHandoff.ts` now define that
+non-persisted handoff. This addresses the first blocker for the contract/test
+phase only. Persistence, backend routes, frontend UI, ingestion, runtime claim
+scoring, claim readiness snapshots, and executive readout snapshots remain out
+of scope.
 
 ## Claim Readiness to Executive Readout Mapping
 
@@ -171,7 +178,7 @@ The integration gap is that these older objects do not yet require a validated E
 
 | Fix | Classification | Rationale |
 | --- | --- | --- |
-| Define a contract-chain handoff object from Evidence Snapshot to claim readiness | `blocker_before_persistence` | Persisted claim readiness must not bypass snapshot `coverage_status`, caveats, blocked uses, suppression, privacy, VBD, or workforce context. |
+| Define a contract-chain handoff object from Evidence Snapshot to claim readiness | `addressed_for_non_persisted_contract_phase` | The Claim Readiness Handoff now copies snapshot `coverage_status`, caveats, blocked uses, suppression, privacy, VBD, workforce context, source refs, and window/source provenance. Persisted claim/readout objects must still consume this handoff before any persistence is authorized. |
 | Require persisted executive readouts to reference a validated Evidence Snapshot and derived claim-boundary handoff | `blocker_before_persistence` | Executive readouts must not omit upstream caveats or blocked uses. |
 | Add blocked-use/blocked-claim translation map | `should_fix_before_persistence` | Existing downstream vocabulary is safe but not identical. A deterministic mapping prevents weakened claim boundaries. |
 | Add baseline/comparison window echo or source ref in snapshot handoff | `should_fix_before_persistence` | Financial or outcome movement claims require explicit window provenance. |

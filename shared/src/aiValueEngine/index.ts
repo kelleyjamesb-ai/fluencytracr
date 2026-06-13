@@ -85,6 +85,19 @@ export type {
 } from "./evidenceSnapshot";
 
 export {
+  AI_VALUE_CLAIM_READINESS_HANDOFF_SCHEMA_VERSION,
+  ClaimReadinessHandoffSchema,
+  buildClaimReadinessHandoffFromEvidenceSnapshot,
+  translateSnapshotBlockedUsesToBlockedClaims,
+  validateClaimReadinessHandoff
+} from "./claimReadinessHandoff";
+export type {
+  BuildClaimReadinessHandoffOptions,
+  ClaimReadinessHandoff,
+  ClaimReadinessHandoffValidationResult
+} from "./claimReadinessHandoff";
+
+export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
   MEASUREMENT_PLAN_SCHEMA_VERSION

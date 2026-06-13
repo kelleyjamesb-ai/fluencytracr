@@ -1767,7 +1767,7 @@ export function buildTelemetryEvidenceSnapshotDraft(
       "missing_evidence_planning",
       "claim_blocking_evaluation"
     ],
-    blocked_uses: SAFE_DEFAULT_BLOCKED_USES,
+    blocked_uses: [...SAFE_DEFAULT_BLOCKED_USES],
     required_caveats: requiredCaveats,
     next_evidence_actions: [
       "Collect aggregate Layer 2 user voice or empirical evidence if the measurement plan requires stated evidence.",
