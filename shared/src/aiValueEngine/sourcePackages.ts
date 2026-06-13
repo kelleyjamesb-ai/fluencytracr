@@ -235,17 +235,50 @@ const FORBIDDEN_VALUE_CARRIER_KEYS = new Set([
 
 const FORBIDDEN_VALUE_PATTERNS = [
   /^roi$/i,
+  /(?:^|_)roi(?:_|$)/i,
   /realized_roi/i,
+  /return_on_investment/i,
+  /investment_return/i,
   /^ebita$/i,
   /ebita/i,
   /^causality$/i,
   /causal/i,
+  /causation/i,
   /economic_output/i,
+  /(?:^|_)economic(?:_|$)/i,
+  /(?:^|_)profit(?:_|$)/i,
+  /(?:^|_)revenue(?:_|$)/i,
   /financial_(?:impact|output|claim)/i,
+  /(?:^|_)financial(?:_|$)/i,
   /customer_facing_economic_output/i,
   /customer_facing_financial_output/i,
   /dollar(?:ized)?_(?:value|amount|impact|output)/i,
+  /(?:^|_)dollar(?:_|$)/i,
+  /cost_savings/i,
   /productivity_lift/i
+];
+
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+const UNSAFE_METADATA_VALUE_PATTERNS = [
+  /(?:^|_)(?:user|employee|person|direct)_(?:id|identifier)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i,
+  /(?:^|_)raw_(?:rows?|files?|prompt|response|transcript|content)(?:_|$)/i,
+  /(?:^|_)(?:prompt|transcript|query)(?:_|$)/i,
+  /(?:^|_)select(?:_|$)/i,
+  /(?:^|_)from_raw(?:_|$)/i,
+  /(?:^|_)sql_text(?:_|$)/i,
+  /(?:^|_)file_contents?(?:_|$)/i,
+  /(?:^|_)response_(?:text|body|content|message|raw|value)(?:_|$)/i,
+  /(?:^|_)llm_response(?:_|$)/i,
+  ...FORBIDDEN_VALUE_PATTERNS
+];
+
+const FORBIDDEN_IDENTIFIER_VALUE_PATTERNS = [
+  /(?:^|_)(?:user|employee|person|direct)_(?:id|identifier|email)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i
 ];
 
 export const SourcePackageSchema = {
@@ -421,6 +454,80 @@ function collectForbiddenValues(
   }
   for (const [key, nested] of Object.entries(value)) {
     collectForbiddenValues(nested, values, [...path, key]);
+  }
+  return values;
+}
+
+function isUnsafeMetadataValuePath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return !(
+    normalizedPath.includes("allowed_uses") ||
+    normalizedPath.includes("blocked_uses") ||
+    normalizedPath.some((part) => part.includes("caveat"))
+  );
+}
+
+function isUnsafeMetadataValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function isForbiddenIdentifierValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    FORBIDDEN_IDENTIFIER_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function collectUnsafeMetadataValues(
+  value: any,
+  values: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
+  if (typeof value === "string") {
+    if (isUnsafeMetadataValuePath(path) && isUnsafeMetadataValue(value)) {
+      values.add(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectUnsafeMetadataValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectUnsafeMetadataValues(nested, values, [...path, key]);
+  }
+  return values;
+}
+
+function isCaveatValuePath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return normalizedPath.some((part) => part.includes("caveat"));
+}
+
+function collectForbiddenIdentifierValues(
+  value: any,
+  values: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
+  if (typeof value === "string") {
+    if (isCaveatValuePath(path) && isForbiddenIdentifierValue(value)) {
+      values.add(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectForbiddenIdentifierValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectForbiddenIdentifierValues(nested, values, [...path, key]);
   }
   return values;
 }
@@ -676,6 +783,20 @@ function collectForbiddenValueGaps(pkg: any): string[] {
     : [];
 }
 
+function collectUnsafeMetadataValueGaps(pkg: any): string[] {
+  const forbidden = Array.from(collectUnsafeMetadataValues(pkg)).sort();
+  return forbidden.length > 0
+    ? [`Forbidden metadata value(s) present: ${forbidden.join(", ")}`]
+    : [];
+}
+
+function collectForbiddenIdentifierValueGaps(pkg: any): string[] {
+  const forbidden = Array.from(collectForbiddenIdentifierValues(pkg)).sort();
+  return forbidden.length > 0
+    ? [`Forbidden identifier value(s) present: ${forbidden.join(", ")}`]
+    : [];
+}
+
 export function validateSourcePackage(pkg: any): SourcePackageValidationResult {
   const gaps = [
     ...collectTopLevelGaps(pkg),
@@ -685,7 +806,9 @@ export function validateSourcePackage(pkg: any): SourcePackageValidationResult {
     ...collectUsePolicyGaps(pkg),
     ...collectTypeSpecificGaps(pkg),
     ...collectForbiddenFieldGaps(pkg),
-    ...collectForbiddenValueGaps(pkg)
+    ...collectForbiddenValueGaps(pkg),
+    ...collectUnsafeMetadataValueGaps(pkg),
+    ...collectForbiddenIdentifierValueGaps(pkg)
   ];
   const valid = gaps.length === 0;
 

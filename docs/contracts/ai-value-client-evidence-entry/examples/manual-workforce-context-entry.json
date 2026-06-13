@@ -1,0 +1,81 @@
+{
+  "schema_version": "FT_AI_VALUE_CLIENT_EVIDENCE_ENTRY_2026_06",
+  "entry_id": "client_evidence_entry_workforce_context_example",
+  "request_id": "client_evidence_request_measurement_plan_client_evidence_request_example_aggregate_workforce_context",
+  "org_id": "org_example",
+  "measurement_plan_id": "measurement_plan_client_evidence_request_example",
+  "evidence_layer": "aggregate_workforce_context",
+  "entry_mode": "manual_workforce_context_entry",
+  "entered_by_role": "post_sales_value_consultant",
+  "source_owner_role": "customer_workforce_data_owner",
+  "approver_role": "customer_workforce_data_owner",
+  "attestation": {
+    "attestation_state": "attested",
+    "attested_by_role": "customer_workforce_data_owner",
+    "attested_at": "2026-06-13T00:00:00.000Z",
+    "caveats": [
+      "Workforce context is approved aggregate, cohort-safe, and non-decisioning."
+    ]
+  },
+  "aggregate_grain": "role_family",
+  "minimum_cohort_threshold": 5,
+  "covered_window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31"
+  },
+  "metric_or_signal_summary": {
+    "summary_type": "aggregate_role_family_context",
+    "aggregate_signal_name": "approved_aggregate_workforce_context",
+    "aggregate_value_present": true,
+    "source_refs": {
+      "source_readiness_id": "source_readiness_workforce_context_example",
+      "aggregate_entry_ref": "manual_workforce_context_entry_example"
+    },
+    "notes": [
+      "Source owner approved the context as aggregate and non-decisioning."
+    ]
+  },
+  "evidence_state": "present",
+  "privacy_boundary": {
+    "aggregate_only": true,
+    "contains_direct_identifiers": false,
+    "contains_raw_content": false,
+    "contains_raw_rows": false,
+    "contains_raw_files": false,
+    "contains_raw_prompts": false,
+    "contains_raw_responses": false,
+    "contains_transcripts": false,
+    "contains_query_text": false,
+    "contains_file_contents": false,
+    "contains_person_level_productivity": false,
+    "contains_person_level_hris_records": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false,
+    "contains_compensation_or_performance_inference": false,
+    "contains_promotion_or_discipline_inference": false,
+    "contains_attrition_prediction": false,
+    "contains_hris_inference_from_ai_usage": false
+  },
+  "allowed_uses": [
+    "evidence_collection_input",
+    "aggregate_context_only"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "required_caveats": [
+    "Aggregate workforce context is non-decisioning context only and cannot upgrade coverage, rank groups, or support people decisions."
+  ],
+  "validation_status": "validated",
+  "created_at": "2026-06-13T00:00:00.000Z",
+  "derivation_version": "ai_value_client_evidence_entry_builder_2026_06"
+}

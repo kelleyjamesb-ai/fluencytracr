@@ -219,6 +219,18 @@ export type {
 } from "./clientEvidenceRequest";
 
 export {
+  AI_VALUE_CLIENT_EVIDENCE_ENTRY_SCHEMA_VERSION,
+  ClientEvidenceEntrySchema,
+  buildSourcePackageFromClientEvidenceEntry,
+  validateClientEvidenceEntry
+} from "./clientEvidenceEntry";
+export type {
+  BuildSourcePackageFromClientEvidenceEntryOptions,
+  ClientEvidenceEntry,
+  ClientEvidenceEntryValidationResult
+} from "./clientEvidenceEntry";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,
