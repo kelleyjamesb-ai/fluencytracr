@@ -24,7 +24,7 @@ Language changes should happen first through documentation, aliases, display lab
 
 | Canonical term | Internal object name | Display language | Definition | Allowed usage | Deprecated alternatives |
 | --- | --- | --- | --- | --- | --- |
-| AI Capability Baseline | `fluency_baseline` | AI Capability Baseline | Aggregate AI Fluency baseline from the organizational instrument. | Start of value journey, capability context, retest comparison. | AI fluency score, readiness score |
+| AI Capability Baseline | `fluency_baseline` | AI Capability Baseline | Aggregate AI Fluency baseline from the organizational instrument. | Start of value journey, capability context, retest comparison. | Deprecated: AI fluency score, readiness score |
 | Operating Adoption Map | `vbd_operating_map` | Operating Adoption Map | The aggregate operating view that combines Velocity, Breadth, and Depth by function or workflow. | Function map, workflow prioritization, intervention planning. | Maturity map, adoption dashboard |
 | Velocity | `velocity` | Velocity | Speed to adoption for the function or workflow. | VBD map, longitudinal adoption movement. | Usage frequency as value |
 | Breadth | `breadth` | Breadth | Spread across functions, roles, workflows, or approved surfaces. | Coverage view, function comparison, adoption planning. | Tool sprawl, activity breadth |

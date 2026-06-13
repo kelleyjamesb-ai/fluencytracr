@@ -43,9 +43,9 @@ The page should help an executive sponsor quickly understand:
 
 ## Governance Boundary
 
-The prototype is aggregate/workflow-only. It must not show individual
-productivity, named employee evidence, manager or team ranking, HRIS analytics,
-person-level scores, raw prompts, raw responses, or usage-derived ROI.
+The prototype is aggregate/workflow-only.
+
+Blocked outputs include individual productivity, named employee evidence, manager or team ranking, HRIS analytics, person-level scores, raw prompts, raw responses, and usage-derived ROI.
 
 EBITA is shown only as a governed translation status. It is not a calculated
 dollar result, not realized EBITA proof, and not a causality claim.
