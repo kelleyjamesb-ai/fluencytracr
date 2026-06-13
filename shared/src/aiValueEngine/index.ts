@@ -246,6 +246,20 @@ export type {
 } from "./aiFluencyIntakeBridge";
 
 export {
+  AI_VALUE_POST_SALES_WORKFLOW_ORCHESTRATOR_SCHEMA_VERSION,
+  PostSalesWorkflowOrchestratorSchema,
+  buildPostSalesWorkflowOrchestrator,
+  validatePostSalesWorkflowOrchestrator
+} from "./postSalesWorkflowOrchestrator";
+export type {
+  ClientEvidenceEntryReview,
+  PostSalesWorkflowOrchestrator,
+  PostSalesWorkflowOrchestratorBuildInputs,
+  PostSalesWorkflowOrchestratorValidationResult,
+  PostSalesWorkflowPhase
+} from "./postSalesWorkflowOrchestrator";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,
