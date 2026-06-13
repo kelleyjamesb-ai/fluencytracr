@@ -482,11 +482,11 @@ describe("AI value spine run API", () => {
       .set(readAuth);
     expect(readout.status).toBe(200);
     expect(readout.headers["content-type"]).toContain("text/html");
-    expect(readout.text).toContain("Pre-ROI planning artifact");
+    expect(readout.text).toContain("Value realization planning artifact");
     expect(readout.text).toContain("Northstar Enterprise");
     expect(readout.text).toContain("Where the team started");
     expect(readout.text).toContain("2026-03-15_to_2026-03-31");
-    expect(readout.text).toContain("What this readout never claims");
+    expect(readout.text).toContain("Governance boundaries");
 
     const missing = await request(app)
       .get("/api/v1/ai-value/readout/not_a_packet/html")
@@ -570,8 +570,8 @@ describe("AI value spine run API", () => {
       expect(readout.text).toContain(statusText);
       expect(readout.text).toContain(actionText);
       expect(readout.text).toContain(caveatText);
-      expect(readout.text).toContain("Pre-ROI planning artifact");
-      expect(readout.text).toContain("What this readout never claims");
+      expect(readout.text).toContain("Value realization planning artifact");
+      expect(readout.text).toContain("Governance boundaries");
     }
   );
 

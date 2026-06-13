@@ -87,9 +87,7 @@ Aggregate workforce analytics can support context only. They may help explain
 aggregate readiness, enablement coverage, training completion, confidence,
 change readiness, workflow capacity, or role-family adoption.
 
-They must never become individual productivity measurement, named employee
-claims, manager or team ranking, HRIS inference, people decisioning,
-compensation or performance inference, or headcount-reduction justification.
+Blocked uses include individual productivity measurement, named employee claims, manager or team ranking, HRIS inference, people decisioning, compensation or performance inference, and headcount-reduction justification.
 
 ## Next Evidence Actions
 
