@@ -193,6 +193,19 @@ export {
 export type { FluencyBaselineValidationResult } from "./fluencyBaseline";
 
 export {
+  AI_VALUE_CUSTOMER_JOURNEY_SCHEMA_VERSION,
+  CustomerJourneySchema,
+  buildInitialCustomerJourney,
+  validateCustomerJourney
+} from "./customerJourney";
+export type {
+  BuildInitialCustomerJourneyInputs,
+  CustomerJourney,
+  CustomerJourneyStage,
+  CustomerJourneyValidationResult
+} from "./customerJourney";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,
