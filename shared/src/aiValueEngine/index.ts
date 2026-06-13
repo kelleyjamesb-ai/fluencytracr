@@ -98,6 +98,16 @@ export type {
 } from "./claimReadinessHandoff";
 
 export {
+  AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
+  SourcePackageSchema,
+  validateSourcePackage
+} from "./sourcePackages";
+export type {
+  SourcePackage,
+  SourcePackageValidationResult
+} from "./sourcePackages";
+
+export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
   MEASUREMENT_PLAN_SCHEMA_VERSION
