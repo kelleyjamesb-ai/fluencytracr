@@ -211,6 +211,19 @@ The tests compose the existing Measurement Plan and Evidence Snapshot validators
 - suppressed evidence cannot expose hidden values or be reconstructed as support;
 - full Playbook coverage fails without Layer 2, Layer 3, governance, assumptions, k-min, and safe privacy.
 
+Verification run on 2026-06-13:
+
+| Command | Result |
+| --- | --- |
+| `npm run test:ai-value-contract-chain` | Passed: 18/18 tests. |
+| `npm run test:ai-value-measurement-plan` | Passed: 55/55 tests. |
+| `npm run build --workspace shared && node --test scripts/validate_ai_value_evidence_snapshot.test.mjs` | Passed: 62/62 tests. |
+| `npm run test:ai-value-engine` | Passed: 39/39 tests. |
+| `bash scripts/ci_docs_contract_sweep.sh` | Passed. |
+| `python3 scripts/ci_v1_governance_gates.py` | Passed with exit code 0. |
+| `git diff --check` | Passed. |
+| `rg -n "^(<<<<<<<\|=======\|>>>>>>>)" .` | No conflict markers found. |
+
 ## Recommended Next Step
 
 Do not create persistence yet. The next bounded implementation step should be a docs-and-test contract handoff from Evidence Snapshot to claim readiness that defines the exact fields copied forward, the blocked-use translation map, and the fail-closed conditions for any future persisted `claim_readiness_snapshots` or `executive_readout_snapshots`.
