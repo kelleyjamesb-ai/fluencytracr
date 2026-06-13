@@ -607,6 +607,33 @@ test("allows aggregate HRIS-derived workforce context only with all workforce sa
   assert.equal(allowed.valid, true);
 });
 
+test("ROI scenario schema requires all workforce safety flags", () => {
+  const schema = JSON.parse(
+    readFileSync("schemas/ai-value-intelligence/roi-scenario.schema.json", "utf8")
+  );
+
+  assert.deepEqual(
+    schema.properties.workforce_analytics_gate.required,
+    [
+      "mode",
+      "aggregate_only",
+      "minimum_cohort_size_met",
+      "no_direct_identifiers",
+      "no_person_level_hris_records",
+      "no_hashed_or_joinable_person_identifiers",
+      "no_person_level_productivity",
+      "no_manager_ranking",
+      "no_individual_decisioning",
+      "no_people_decisioning",
+      "no_compensation_or_performance_inference",
+      "no_hris_inference_from_ai_usage",
+      "no_sensitive_attribute_inference",
+      "hris_join_allowed",
+      "allowed_outputs"
+    ]
+  );
+});
+
 test("rejects person-level HRIS, hashed identifiers, decisioning, ranking, and inference fields", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.output = {

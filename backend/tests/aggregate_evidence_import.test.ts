@@ -151,6 +151,31 @@ describe("Aggregate Evidence Import v1", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects pseudonymous or tokenized user identifiers in aggregate evidence", () => {
+    const result = AggregateEvidenceImportPackageSchema.safeParse({
+      ...importFixture,
+      aggregate_evidence: [
+        ...importFixture.aggregate_evidence,
+        {
+          evidence_record_id: "aggregate:pseudonymous_user",
+          source_input_id: "source:methodology_snapshot",
+          evidence_type: "source_coverage",
+          evidence_state: "present",
+          aggregate_metric_refs: ["pseudonymous_user_identifier"],
+          aggregate_values: [
+            {
+              metric_name: "tokenized_user_identifier",
+              value: 1,
+              unit: "count"
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("emits no forbidden raw or person-level fields in the import review", () => {
     const review = buildAggregateEvidenceImportReview(importFixture);
 

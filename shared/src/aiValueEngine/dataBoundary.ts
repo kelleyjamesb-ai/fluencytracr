@@ -164,6 +164,8 @@ const OPTIONAL_ATTESTATION_FALSE_FLAGS = [
   "contains_manager_or_team_ranking",
   "contains_people_decisioning",
   "contains_compensation_or_performance_inference",
+  "contains_promotion_or_discipline_inference",
+  "contains_attrition_prediction",
   "contains_hris_inference_from_ai_usage"
 ];
 

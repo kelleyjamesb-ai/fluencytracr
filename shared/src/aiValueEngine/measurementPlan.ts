@@ -724,6 +724,14 @@ function collectWindowGaps(plan: any): string[] {
   if (windows.comparison_window_start && !windows.comparison_window_end) {
     gaps.push("comparison_window_end is required when comparison_window_start is provided");
   }
+  if (windows.window_alignment_state === "baseline_and_comparison_selected") {
+    if (!windows.comparison_window_start) {
+      gaps.push("baseline_and_comparison_selected requires comparison_window_start");
+    }
+    if (!windows.comparison_window_end) {
+      gaps.push("baseline_and_comparison_selected requires comparison_window_end");
+    }
+  }
   if (windows.comparison_window_start && windows.comparison_window_end) {
     requireStartBeforeEnd(
       windows.comparison_window_start,
@@ -991,6 +999,32 @@ function collectReadinessGaps(plan: any): string[] {
       gaps.push("ready_for_full_playbook_snapshot requires held_requirements to be empty");
     }
   }
+  if (readiness.measurement_plan_readiness === "ready_for_layer_1_plus_layer_3_snapshot") {
+    const requirements = plan?.playbook_evidence_requirements ?? {};
+    if (requirements.layer_3_business_system_outcomes?.required !== true) {
+      gaps.push("ready_for_layer_1_plus_layer_3_snapshot requires Layer 3 evidence");
+    }
+    if (plan?.source_package_requirements?.system_of_record_export_required !== true) {
+      gaps.push(
+        "ready_for_layer_1_plus_layer_3_snapshot requires system_of_record_export_required"
+      );
+    }
+    if (plan?.source_package_requirements?.source_owner_attestation_required !== true) {
+      gaps.push(
+        "ready_for_layer_1_plus_layer_3_snapshot requires source_owner_attestation_required"
+      );
+    }
+    if (stringsOf(readiness.missing_requirements).length > 0) {
+      gaps.push(
+        "ready_for_layer_1_plus_layer_3_snapshot requires missing_requirements to be empty"
+      );
+    }
+    if (stringsOf(readiness.held_requirements).length > 0) {
+      gaps.push(
+        "ready_for_layer_1_plus_layer_3_snapshot requires held_requirements to be empty"
+      );
+    }
+  }
   return gaps;
 }
 
@@ -1044,10 +1078,7 @@ function deriveReadiness(
     valid &&
     (maxSnapshotType === "LAYER_1_PLUS_LAYER_3" ||
       maxSnapshotType === "FULL_STACK_EVIDENCE");
-  const canBuildExecutiveReadout =
-    valid &&
-    (planReadiness === "ready_for_layer_1_plus_layer_3_snapshot" ||
-      planReadiness === "ready_for_full_playbook_snapshot");
+  const canBuildExecutiveReadout = canBuildClaimReadiness;
   return {
     can_build_evidence_snapshot: canBuildEvidenceSnapshot,
     max_snapshot_type: maxSnapshotType,

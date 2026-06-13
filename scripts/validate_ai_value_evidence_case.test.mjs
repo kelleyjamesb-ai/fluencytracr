@@ -110,6 +110,8 @@ test("allows aggregate workforce context but rejects raw, person-level HRIS, ran
   evidenceCase.hris_inference_from_ai_usage = true;
   evidenceCase.attrition_prediction = { engineering: 0.04 };
   evidenceCase.productivity_rank = 1;
+  evidenceCase.manager_comparison = true;
+  evidenceCase.manager_comparison_score = 0.92;
   evidenceCase.raw_ticket_sample = "Customer wrote in about a billing error...";
   evidenceCase.data_boundary_status.aggregate_only = false;
   evidenceCase.data_boundary_status.raw_source_rows_allowed = true;
@@ -127,6 +129,8 @@ test("allows aggregate workforce context but rejects raw, person-level HRIS, ran
   assert.ok(forbidden.includes("hris_inference_from_ai_usage"));
   assert.ok(forbidden.includes("attrition_prediction"));
   assert.ok(forbidden.includes("productivity_rank"));
+  assert.ok(forbidden.includes("manager_comparison"));
+  assert.ok(forbidden.includes("manager_comparison_score"));
   assert.ok(forbidden.includes("raw_ticket_sample"));
   assert.equal(forbidden.includes("aggregate_hris_derived_context"), false);
   assert.equal(forbidden.includes("aggregate_time_to_productivity_by_cohort"), false);

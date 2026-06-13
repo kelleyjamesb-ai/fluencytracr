@@ -175,6 +175,17 @@ test("comparison start without comparison end fails", () => {
   );
 });
 
+test("selected comparison state requires both comparison window dates", () => {
+  expectInvalid(
+    (plan) => {
+      plan.windows.window_alignment_state = "baseline_and_comparison_selected";
+      plan.windows.comparison_window_start = null;
+      plan.windows.comparison_window_end = null;
+    },
+    /baseline_and_comparison_selected requires comparison_window_start/
+  );
+});
+
 test("missing Playbook evidence requirement group fails", () => {
   expectInvalid(
     (plan) => {
@@ -641,6 +652,34 @@ test("full Playbook readiness fails if unsafe privacy flags are true", () => {
 
   assert.equal(result.valid, false);
   assert.ok(result.gaps.includes("privacy_boundary.contains_direct_identifiers must be false"));
+});
+
+test("Layer 3 snapshot readiness requires concrete Layer 3 source readiness", () => {
+  const plan = buildValidDraftPlan();
+  plan.readiness.measurement_plan_readiness = "ready_for_layer_1_plus_layer_3_snapshot";
+  plan.readiness.missing_requirements = [];
+  plan.readiness.held_requirements = [];
+  plan.playbook_evidence_requirements.layer_3_business_system_outcomes.required = false;
+  plan.source_package_requirements.system_of_record_export_required = false;
+  plan.source_package_requirements.source_owner_attestation_required = false;
+
+  const result = validateMeasurementPlan(plan);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.readiness.can_build_claim_readiness, false);
+  assert.equal(result.readiness.can_build_executive_readout, false);
+  assert.ok(
+    result.gaps.includes(
+      "ready_for_layer_1_plus_layer_3_snapshot requires Layer 3 evidence"
+    ),
+    result.gaps.join("; ")
+  );
+  assert.ok(
+    result.gaps.includes(
+      "ready_for_layer_1_plus_layer_3_snapshot requires source_owner_attestation_required"
+    ),
+    result.gaps.join("; ")
+  );
 });
 
 test("builder creates valid draft plan", () => {

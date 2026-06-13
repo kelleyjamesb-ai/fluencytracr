@@ -317,6 +317,12 @@ const FORBIDDEN_FIELD_KEY_PATTERNS = [
   /manager_or_team_ranking/i,
   /raw_rows/i,
   /raw_content/i,
+  /query_text/i,
+  /sql_text/i,
+  /warehouse_query/i,
+  /raw_table/i,
+  /raw_dataset/i,
+  /table_name/i,
   /prompt/i,
   /response/i,
   /transcript/i,
@@ -405,6 +411,7 @@ export interface BuildTelemetryEvidenceSnapshotInputs {
   sourceRefs?: any;
   generatedAt?: string;
   evidenceSnapshotId?: string;
+  measurementPlanId?: string;
 }
 
 function requireField(value: any, path: string, gaps: string[]): void {
@@ -547,6 +554,7 @@ function collectTopLevelGaps(snapshot: any): string[] {
     "schema_version",
     "evidence_snapshot_id",
     "org_id",
+    "measurement_plan_id",
     "workflow",
     "window",
     "snapshot_type",
@@ -583,6 +591,40 @@ function collectTopLevelGaps(snapshot: any): string[] {
   requireArray(snapshot?.blocked_uses, "blocked_uses", gaps);
   requireArray(snapshot?.required_caveats, "required_caveats", gaps);
   requireArray(snapshot?.next_evidence_actions, "next_evidence_actions", gaps);
+  return gaps;
+}
+
+function snapshotHasLayer3Coverage(snapshot: any): boolean {
+  return snapshot?.playbook_layers?.layer_3_business_system_outcomes?.evidence_state === "present" &&
+    snapshot?.playbook_coverage?.layer_3_business_system_outcomes?.status === "present";
+}
+
+function snapshotHasExecutableCoverageStatus(snapshot: any): boolean {
+  return [
+    "layer_1_plus_partial_layer_3",
+    "layer_1_plus_layer_2_and_layer_3",
+    "full_playbook_coverage"
+  ].includes(
+    String(snapshot?.playbook_coverage?.coverage_status ?? "")
+  );
+}
+
+function collectSnapshotTypeReadinessGaps(snapshot: any): string[] {
+  const gaps: string[] = [];
+  if (!EXECUTIVE_READY_SNAPSHOT_TYPES.has(String(snapshot?.snapshot_type ?? ""))) {
+    return gaps;
+  }
+  if (!snapshotHasExecutableCoverageStatus(snapshot)) {
+    gaps.push(
+      `${snapshot.snapshot_type} requires coverage_status with Layer 3 evidence`
+    );
+  }
+  if (!snapshotHasLayer3Coverage(snapshot)) {
+    gaps.push(`${snapshot.snapshot_type} requires Layer 3 coverage present`);
+  }
+  if (!hasOutcomeEvidenceReference(snapshot)) {
+    gaps.push(`${snapshot.snapshot_type} requires outcome evidence source references`);
+  }
   return gaps;
 }
 
@@ -1622,6 +1664,8 @@ export function buildTelemetryEvidenceSnapshotDraft(
     : null;
   const evidenceSnapshotId = inputs.evidenceSnapshotId ??
     `evidence_snapshot_${safeIdPart(inputs.orgId)}_${safeIdPart(inputs.workflowFamily)}_${safeIdPart(inputs.windowStart)}_${safeIdPart(inputs.windowEnd)}`;
+  const measurementPlanId = inputs.measurementPlanId ??
+    `measurement_plan_${safeIdPart(inputs.orgId)}_${safeIdPart(inputs.workflowFamily)}_${safeIdPart(inputs.windowStart)}_${safeIdPart(inputs.windowEnd)}`;
   const requiredCaveats = [
     "Telemetry-only evidence can support a caveated aggregate evidence posture only.",
     "Layer 2 user voice or empirical evidence is missing and must be supplied through an aggregate customer export.",
@@ -1650,7 +1694,7 @@ export function buildTelemetryEvidenceSnapshotDraft(
     schema_version: EVIDENCE_SNAPSHOT_SCHEMA_VERSION,
     evidence_snapshot_id: evidenceSnapshotId,
     org_id: inputs.orgId,
-    measurement_plan_id: null,
+    measurement_plan_id: measurementPlanId,
     workflow: {
       workflow_family: inputs.workflowFamily,
       workflow_name: inputs.workflowName ?? null,
@@ -1726,6 +1770,7 @@ export function validateEvidenceSnapshot(
     ...collectEvidenceLaneGaps(snapshot),
     ...collectPlaybookLayerGaps(snapshot),
     ...collectPlaybookCoverageGaps(snapshot),
+    ...collectSnapshotTypeReadinessGaps(snapshot),
     ...collectVbdOperatingMapGaps(snapshot),
     ...collectPrivacyBoundaryGaps(snapshot),
     ...collectSuppressionGaps(snapshot),
@@ -1735,6 +1780,12 @@ export function validateEvidenceSnapshot(
   ];
   const valid = gaps.length === 0;
   const snapshotType = String(snapshot?.snapshot_type ?? "");
+  const canFeedExecutiveReadout =
+    snapshotType === "FULL_STACK_EVIDENCE" ||
+    (snapshotType === "LAYER_1_PLUS_LAYER_3" &&
+      snapshotHasExecutableCoverageStatus(snapshot) &&
+      snapshotHasLayer3Coverage(snapshot) &&
+      hasOutcomeEvidenceReference(snapshot));
 
   return {
     schema_version: RESULT_SCHEMA_VERSION,
@@ -1747,7 +1798,7 @@ export function validateEvidenceSnapshot(
       claim_readiness:
         valid && !HOLD_READINESS_DECISIONS.has(snapshot?.snapshot_readiness_decision),
       executive_readout:
-        valid && EXECUTIVE_READY_SNAPSHOT_TYPES.has(snapshotType)
+        valid && EXECUTIVE_READY_SNAPSHOT_TYPES.has(snapshotType) && canFeedExecutiveReadout
     }
   };
 }

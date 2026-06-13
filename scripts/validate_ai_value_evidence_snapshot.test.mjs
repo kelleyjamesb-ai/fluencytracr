@@ -90,6 +90,7 @@ function buildValidTelemetrySnapshot(overrides = {}) {
     windowEnd: "2026-05-31",
     generatedAt: "2026-06-13T00:00:00.000Z",
     evidenceSnapshotId: "evidence_snapshot_customer_support_2026_05",
+    measurementPlanId: "measurement_plan_customer_support_2026_05",
     aggregateTelemetrySummary: {
       probe_window_start: "2026-05-01",
       probe_window_end: "2026-05-31",
@@ -210,6 +211,7 @@ function promoteToFullPlaybookCoverage(snapshot) {
   snapshot.playbook_layers.layer_3_business_system_outcomes.evidence_state = "present";
   snapshot.playbook_layers.governance_evidence.evidence_state = "present";
   snapshot.playbook_layers.assumption_evidence.evidence_state = "present";
+  snapshot.source_refs.outcome_evidence_ids = ["outcome_evidence_customer_support_2026_06"];
   snapshot.aggregate_telemetry_summary.k_min_summary = {
     total_slices: 12,
     k_min_clear_slices: 12,
@@ -837,6 +839,47 @@ test("full_playbook_coverage with unsafe privacy flags fails", () => {
   );
 });
 
+test("Layer 3 snapshot type cannot feed executive readout without Layer 3 evidence", () => {
+  const snapshot = buildValidTelemetrySnapshot();
+  snapshot.snapshot_type = "LAYER_1_PLUS_LAYER_3";
+
+  const result = validateEvidenceSnapshot(snapshot);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.executive_readout, false);
+  assert.ok(
+    result.gaps.includes(
+      "LAYER_1_PLUS_LAYER_3 requires Layer 3 coverage present"
+    ),
+    result.gaps.join("; ")
+  );
+  assert.ok(
+    result.gaps.includes(
+      "LAYER_1_PLUS_LAYER_3 requires outcome evidence source references"
+    ),
+    result.gaps.join("; ")
+  );
+});
+
+test("snapshots require a measurement plan binding", () => {
+  expectInvalid(
+    (snapshot) => {
+      snapshot.measurement_plan_id = null;
+    },
+    /measurement_plan_id is missing/
+  );
+});
+
+test("source refs cannot carry raw query or table identifiers", () => {
+  expectInvalid(
+    (snapshot) => {
+      snapshot.source_refs.query_text = "select * from raw.customer_table";
+      snapshot.source_refs.raw_table_name = "prod.customer_raw_events";
+    },
+    /Forbidden field\(s\).*query_text.*raw_table_name/
+  );
+});
+
 test("governance evidence missing holds for governance approval", () => {
   expectInvalid(
     (snapshot) => {
@@ -1030,6 +1073,7 @@ test("builder creates valid telemetry-only caveated snapshot", () => {
   const snapshot = buildTelemetryEvidenceSnapshotDraft({
     orgId: "org_builder",
     workflowFamily: "sales_pipeline_hygiene",
+    measurementPlanId: "measurement_plan_builder",
     windowStart: "2026-05-01",
     windowEnd: "2026-05-31",
     generatedAt: "2026-06-13T00:00:00.000Z",
@@ -1038,6 +1082,7 @@ test("builder creates valid telemetry-only caveated snapshot", () => {
   const result = validateEvidenceSnapshot(snapshot);
 
   assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(snapshot.measurement_plan_id, "measurement_plan_builder");
   assert.equal(snapshot.snapshot_type, "TELEMETRY_ONLY_CAVEATED");
   assert.equal(snapshot.playbook_coverage.coverage_status, "layer_1_only");
   assert.deepEqual(

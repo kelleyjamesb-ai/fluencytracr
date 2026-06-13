@@ -2,7 +2,7 @@
   "schema_version": "FT_AI_VALUE_EVIDENCE_SNAPSHOT_2026_06",
   "evidence_snapshot_id": "evidence_snapshot_aggregate_workforce_context_example",
   "org_id": "org_example",
-  "measurement_plan_id": null,
+  "measurement_plan_id": "measurement_plan_new_hire_support_enablement_2026_05",
   "workflow": {
     "workflow_family": "new_hire_support_enablement",
     "workflow_name": "New hire support enablement",

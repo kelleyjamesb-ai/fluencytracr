@@ -229,6 +229,7 @@ const FORBIDDEN_KEY_PATTERNS = [
   /manager_chain/i,
   /manager_id/i,
   /manager_view/i,
+  /manager_comparison/i,
   /manager_ranking/i,
   /team_ranking/i,
   /team_or_manager_ranking/i,

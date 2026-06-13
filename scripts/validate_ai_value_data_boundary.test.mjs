@@ -136,6 +136,8 @@ test("rejects aggregate HRIS context if unsafe person-level attestation flags ar
     contains_hashed_or_joinable_person_identifiers: true,
     contains_people_decisioning: true,
     contains_compensation_or_performance_inference: true,
+    contains_promotion_or_discipline_inference: true,
+    contains_attrition_prediction: true,
     contains_hris_inference_from_ai_usage: true
   });
 
@@ -146,6 +148,8 @@ test("rejects aggregate HRIS context if unsafe person-level attestation flags ar
   assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_hashed_or_joinable_person_identifiers must be false"));
   assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_people_decisioning must be false"));
   assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_compensation_or_performance_inference must be false"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_promotion_or_discipline_inference must be false"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_attrition_prediction must be false"));
   assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_hris_inference_from_ai_usage must be false"));
 });
 
