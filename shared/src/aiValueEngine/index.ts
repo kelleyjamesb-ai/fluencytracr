@@ -75,6 +75,26 @@ export type {
 } from "./valueEvidenceCase";
 
 export {
+  validateEvidenceSnapshot,
+  buildTelemetryEvidenceSnapshotDraft,
+  EVIDENCE_SNAPSHOT_SCHEMA_VERSION
+} from "./evidenceSnapshot";
+export type {
+  EvidenceSnapshotValidationResult,
+  BuildTelemetryEvidenceSnapshotInputs
+} from "./evidenceSnapshot";
+
+export {
+  validateMeasurementPlan,
+  buildPlaybookMeasurementPlanDraft,
+  MEASUREMENT_PLAN_SCHEMA_VERSION
+} from "./measurementPlan";
+export type {
+  MeasurementPlanValidationResult,
+  BuildPlaybookMeasurementPlanInputs
+} from "./measurementPlan";
+
+export {
   validateEvidenceReadiness,
   buildEvidenceReadinessFromObjects,
   deriveReadinessDecision

@@ -70,7 +70,13 @@ test("rejects raw data, direct identifiers, manager chains, and raw content cros
     (source) => source.source_category === "HRIS_ORG_CONTEXT"
   );
   hris.raw_data_policy.raw_rows_cross_boundary = true;
-  hris.allowed_aggregate_fields.push("employee_id", "manager_chain");
+  hris.allowed_aggregate_fields.push(
+    "employee_id",
+    "hashed_employee_id",
+    "manager_chain",
+    "person_level_hris_record",
+    "attrition_prediction"
+  );
 
   const aiWork = contract.organizational_data_sources.find(
     (source) => source.source_category === "AI_WORK_EVIDENCE"
@@ -82,32 +88,65 @@ test("rejects raw data, direct identifiers, manager chains, and raw content cros
   assert.equal(result.valid, false);
   assert.ok(result.gaps.includes("organizational_data_sources[5].raw_data_policy.raw_rows_cross_boundary must be false"));
   assert.ok(result.gaps.includes("organizational_data_sources[5].allowed_aggregate_fields contains forbidden field employee_id"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].allowed_aggregate_fields contains forbidden field hashed_employee_id"));
   assert.ok(result.gaps.includes("organizational_data_sources[5].allowed_aggregate_fields contains forbidden field manager_chain"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].allowed_aggregate_fields contains forbidden field person_level_hris_record"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].allowed_aggregate_fields contains forbidden field attrition_prediction"));
   assert.ok(result.gaps.includes("organizational_data_sources[0].allowed_aggregate_fields contains forbidden field raw_prompt"));
   assert.ok(result.gaps.includes("organizational_data_sources[0].allowed_aggregate_fields contains forbidden field user_email"));
 });
 
-test("keeps HRIS organizational context internal and off the value-proof ladder", () => {
+test("allows aggregate HRIS-derived workforce context when cohort-safe and attested", () => {
   const contract = loadFixture();
   const hris = contract.organizational_data_sources.find(
     (source) => source.source_category === "HRIS_ORG_CONTEXT"
   );
   hris.evidence_level = "SUPPORTED";
   hris.allowed_claim_level = "SUPPORTED_VALUE_MOVEMENT";
+  hris.allowed_aggregate_fields.push(
+    "aggregate_hris_derived_context",
+    "aggregate_role_family_context",
+    "aggregate_new_hire_cohort_context",
+    "aggregate_training_completion_context",
+    "aggregate_capacity_planning_context"
+  );
+  Object.assign(hris.required_attestation, {
+    aggregate_workforce_context_allowed: true,
+    contains_person_level_hris_records: false,
+    contains_hashed_or_joinable_person_identifiers: false,
+    contains_person_level_productivity: false,
+    contains_manager_or_team_ranking: false,
+    contains_people_decisioning: false,
+    contains_compensation_or_performance_inference: false,
+    contains_hris_inference_from_ai_usage: false
+  });
+
+  const result = validateAiValueDataBoundary(contract);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+});
+
+test("rejects aggregate HRIS context if unsafe person-level attestation flags are true", () => {
+  const contract = loadFixture();
+  const hris = contract.organizational_data_sources.find(
+    (source) => source.source_category === "HRIS_ORG_CONTEXT"
+  );
+  Object.assign(hris.required_attestation, {
+    contains_person_level_hris_records: true,
+    contains_hashed_or_joinable_person_identifiers: true,
+    contains_people_decisioning: true,
+    contains_compensation_or_performance_inference: true,
+    contains_hris_inference_from_ai_usage: true
+  });
 
   const result = validateAiValueDataBoundary(contract);
 
   assert.equal(result.valid, false);
-  assert.ok(
-    result.gaps.includes(
-      "organizational_data_sources[5].source_category HRIS_ORG_CONTEXT must stay INTERNAL_ONLY or SOURCE_READINESS_ONLY"
-    )
-  );
-  assert.ok(
-    result.gaps.includes(
-      "organizational_data_sources[5].source_category HRIS_ORG_CONTEXT cannot be SUPPORTED or STRONG evidence"
-    )
-  );
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_person_level_hris_records must be false"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_hashed_or_joinable_person_identifiers must be false"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_people_decisioning must be false"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_compensation_or_performance_inference must be false"));
+  assert.ok(result.gaps.includes("organizational_data_sources[5].required_attestation.contains_hris_inference_from_ai_usage must be false"));
 });
 
 test("rejects conflicts with existing ROI, outcome evidence, and reportability contracts", () => {

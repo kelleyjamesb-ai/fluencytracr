@@ -17,7 +17,7 @@ This plan deprecates confusing or over-claiming language without renaming schema
 | Maturity language | Deprecated for product spine | AI Capability Baseline, Operating Adoption Map | Avoid static maturity labels, rankings, or scorecard framing. |
 | Proof language | Restricted | Evidence, Measured Value, Validated Value | Only use "proof" if a later approved contract explicitly permits it. |
 | Productivity measurement | Restricted | Aggregate Workflow Capacity or Productivity Recapture | Never use for individual, named employee, manager, or team ranking surfaces. |
-| HR analytics | Restricted | HRIS inference, people decisioning, compensation/performance inference | Use only as blocked governance language where relevant. |
+| HR analytics | Split / restricted | Person-level HRIS analytics, HRIS inference, or Aggregate Workforce Context | Do not use as a blanket ban. Person-level HRIS analytics, HRIS inference, people decisioning, compensation/performance inference, manager/team ranking, and individual productivity remain blocked; aggregate HRIS-derived workforce context is allowed only when cohort-safe, customer-approved, and used for workflow-level value measurement. |
 
 ## Migration Rules
 

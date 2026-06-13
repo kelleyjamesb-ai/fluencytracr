@@ -228,6 +228,15 @@ describe("AIValueWorkspace executive spine", () => {
 
   it("closes the loop from Decision & Retest back to the baseline", () => {
     renderWorkspace("/ai-value-workspace/decisions");
+    const roiAccess = screen.getByRole("region", { name: /Value and ROI access/i });
+    expect(roiAccess).toBeInTheDocument();
+    expect(within(roiAccess).getByText(/selected outcome metric/i)).toBeInTheDocument();
+    expect(within(roiAccess).queryByText(/No outcome metric selected/i)).not.toBeInTheDocument();
+    expect(within(roiAccess).queryByText(/No workflow selected yet/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open Value \/ ROI screen/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/roi"
+    );
     expect(screen.getByRole("link", { name: /Remeasure from AI Fluency/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/readiness"

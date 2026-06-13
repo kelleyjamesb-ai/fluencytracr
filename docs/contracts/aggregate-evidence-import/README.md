@@ -45,4 +45,12 @@ The review always emits:
 
 The package is aggregate-only and metadata-only. It must not include raw prompts, raw responses, transcripts, query text, tool payloads, file contents, direct identifiers, rankings, manager views, productivity scoring, or hidden reconstruction of suppressed values.
 
+Aggregate HRIS-derived workforce context may be included only as
+customer-approved aggregate evidence for workflow-level value measurement. It
+must have `aggregate_only = true`, meet the minimum cohort threshold, record
+source-owner approval, and exclude person-level HRIS records, direct
+identifiers, hashed or joinable person identifiers, manager/team ranking,
+people decisioning, compensation/performance inference, promotion/discipline
+inference, attrition prediction, and HRIS inference from AI usage.
+
 See `examples/glean-aggregate-evidence-import.sample.json` for a complete synthetic Stage 1 package.

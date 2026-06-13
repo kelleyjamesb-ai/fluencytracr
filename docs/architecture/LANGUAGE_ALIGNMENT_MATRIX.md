@@ -30,6 +30,7 @@ This matrix preserves internal FluencyTracr contracts while standardizing execut
 | Time Saved | Capacity Created | Alias with caveat | Time saved only becomes value if capacity is recaptured and redeployed. |
 | Realized ROI Calculation | Value Accounting | Alias | Keeps finance calculation governed and avoids calculator framing. |
 | Customer-Facing Economic Output | Customer-Facing Value Evidence | Alias | Clarifies that the output is evidence, not automatic proof. |
+| HR analytics | Person-level HRIS analytics / Aggregate Workforce Context | Split term | Person-level HRIS analytics, HRIS inference, decisioning, and ranking remain blocked. Aggregate HRIS-derived workforce context is allowed only when cohort-safe, customer-approved, and used for workflow-level value measurement. |
 
 ## Canonical Executive Concept Hierarchy
 

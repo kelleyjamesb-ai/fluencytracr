@@ -40,10 +40,26 @@ const GOVERNANCE_STOP_CONDITIONS = [
 ];
 
 const FORBIDDEN_KEY_PATTERNS = [
-  /(^|_)user(_|$)/i,
+  /(^|_)user(?:_id|_email)?($|_)/i,
   /email/i,
-  /employee/i,
+  /employee_id/i,
+  /employee_email/i,
+  /employee_name/i,
+  /employee_record/i,
+  /employee_identifier/i,
+  /direct_employee_identifier/i,
+  /hashed_employee_id/i,
+  /hashed_user_id/i,
+  /hashed_person_id/i,
+  /hashed_or_joinable_person_identifier/i,
+  /pseudonymous_(?:employee|person|user)_identifier/i,
+  /tokenized_(?:employee|person|user)_identifier/i,
+  /joinable_(?:employee|person|user)_identifier/i,
   /manager_chain/i,
+  /manager_id/i,
+  /manager_view/i,
+  /manager_ranking/i,
+  /team_ranking/i,
   /ticket_text/i,
   /sample_ticket_text/i,
   /prompt/i,
@@ -51,15 +67,23 @@ const FORBIDDEN_KEY_PATTERNS = [
   /transcript/i,
   /file_content/i,
   /person_level/i,
+  /individual_productivity/i,
+  /individual_scoring/i,
+  /people_decisioning/i,
+  /compensation/i,
+  /performance_rating/i,
+  /promotion/i,
+  /discipline/i,
+  /attrition_prediction/i,
   /raw_/i,
-  /hris/i
+  /hris_inference/i
 ];
 
 const BLOCKED_CLAIMS = [
   "ROI proof",
   "causality claims",
   "individual scoring",
-  "HR analytics",
+  "person-level HR analytics or HRIS inference",
   "dashboard or runtime implementation"
 ];
 

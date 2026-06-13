@@ -206,25 +206,59 @@ const GOVERNANCE_BOUNDARIES = [
 ];
 
 const FORBIDDEN_KEY_PATTERNS = [
-  /(^|_)user(_|$)/i,
+  /(^|_)user(?:_id|_email)?($|_)/i,
   /email/i,
-  /employee/i,
-  /manager/i,
-  /person/i,
+  /employee_id/i,
+  /employee_email/i,
+  /employee_name/i,
+  /employee_record/i,
+  /employee_identifier/i,
+  /direct_employee_identifier/i,
+  /hashed_employee_id/i,
+  /hashed_user_id/i,
+  /hashed_person_id/i,
+  /hashed_or_joinable_person_identifier/i,
+  /pseudonymous_(?:employee|person|user)_identifier/i,
+  /tokenized_(?:employee|person|user)_identifier/i,
+  /joinable_(?:employee|person|user)_identifier/i,
+  /person_id/i,
+  /person_identifier/i,
+  /person_level_hris/i,
+  /person_level_(?:data|record|productivity|analytics)/i,
+  /named_employee_productivity/i,
+  /manager_chain/i,
+  /manager_id/i,
+  /manager_view/i,
+  /manager_ranking/i,
+  /team_ranking/i,
+  /team_or_manager_ranking/i,
+  /manager_or_team_ranking/i,
   /prompt/i,
   /(^|_)response(_|$)/i,
   /transcript/i,
   /file_content/i,
   /ticket/i,
   /raw_/i,
-  /hris/i,
+  /person_level_hris_record/i,
+  /hris_inference/i,
+  /people_decisioning/i,
+  /compensation/i,
+  /performance_rating/i,
+  /promotion/i,
+  /discipline/i,
+  /attrition_prediction/i,
+  /individual_scoring/i,
+  /individual_productivity/i,
+  /productivity_measurement/i,
+  /productivity_rank/i,
+  /productivity_ranking/i,
+  /productivity_score/i,
   /actual_roi/i,
   /realized_roi/i,
   /roi_calculation/i,
   /dollar/i,
   /currency/i,
   /savings_amount/i,
-  /productivity/i,
   /causal/i
 ];
 
@@ -246,8 +280,8 @@ const FORBIDDEN_CLAIM_PATTERNS = [
   /caused productivity/i,
   /saved money/i,
   /saved \$?\d/i,
-  /employee/i,
-  /manager/i,
+  /employee (?:performance|productivity|score|ranking|assessment)/i,
+  /manager (?:ranking|comparison|score|performance|view)/i,
   /team .*better/i
 ];
 
@@ -463,6 +497,19 @@ function collectDataBoundaryGaps(evidenceCase: any): string[] {
     "raw_content_allowed"
   ]) {
     if (boundary[field] !== false) {
+      gaps.push(`data_boundary_status.${field} must be false`);
+    }
+  }
+  for (const field of [
+    "contains_person_level_hris_records",
+    "contains_hashed_or_joinable_person_identifiers",
+    "contains_person_level_productivity",
+    "contains_manager_or_team_ranking",
+    "contains_people_decisioning",
+    "contains_compensation_or_performance_inference",
+    "contains_hris_inference_from_ai_usage"
+  ]) {
+    if (boundary[field] !== undefined && boundary[field] !== false) {
       gaps.push(`data_boundary_status.${field} must be false`);
     }
   }

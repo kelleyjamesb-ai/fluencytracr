@@ -14,8 +14,8 @@ claiming ROI proof, causality, productivity, or person-level performance?
 ```
 
 This packet is not an implementation plan for runtime ingest, dashboards,
-connectors, schemas, APIs, HR analytics, realized ROI calculation, or economic
-output.
+connectors, schemas, APIs, person-level HR analytics, realized ROI
+calculation, or economic output.
 
 ## Pilot Boundary
 
@@ -39,7 +39,10 @@ Blocked interpretation:
 - a person, team, manager, function, or department performed better;
 - raw ticket, prompt, response, transcript, file, or action content explains
   value;
-- HRIS, directory, survey, training, or enablement-system data is required.
+- person-level HRIS, directory, survey, training, or enablement-system data is
+  required. Aggregate workforce context is optional and only allowed when
+  customer-approved, cohort-safe, and used for workflow-level value
+  measurement.
 
 ## Approved Customer-Side Aggregate Inputs
 
@@ -66,8 +69,9 @@ Disallowed inputs:
   rows;
 - raw tickets, prompts, responses, transcripts, comments, documents, file
   contents, query text, tool payloads, or action rows;
-- HRIS, directory, survey, training, enablement, compensation, performance, or
-  workforce-planning records;
+- person-level HRIS, directory, survey, training, enablement, compensation,
+  performance, or workforce-planning records;
+- hashed or joinable person identifiers;
 - model-generated inferred teams, roles, managers, effort, productivity, or
   savings.
 
@@ -268,7 +272,8 @@ The pilot packet is ready only when all criteria are true:
 - suppressed AI work evidence blocks downstream value language;
 - no claim says ROI proof, realized savings, causality, productivity lift,
   individual scoring, ranked group comparison, manager comparison, or HR
-  analytics.
+  inference. Aggregate workforce context may support interpretation only when
+  customer-approved and cohort-safe.
 
 ## Stop Conditions
 
@@ -283,8 +288,10 @@ Stop the pilot and return to governance review if the path requires:
 - team, manager, department, function, customer, or Skill ranking;
 - raw prompts, responses, transcripts, ticket text, query text, file content,
   tool payloads, or action rows;
-- HRIS, directory, survey, training, enablement, compensation, performance, or
-  workforce-planning joins;
+- person-level HRIS, directory, survey, training, enablement, compensation,
+  performance, or workforce-planning joins;
+- hashed or joinable person identifiers, people decisioning, HRIS inference
+  from AI usage, or manager/team ranking;
 - realized ROI calculation, dollarized savings, hours-saved proof,
   productivity lift, causality, prediction, or customer-facing economic output.
 

@@ -49,11 +49,23 @@ const workforceAnalyticsGate = {
   aggregate_only: false,
   minimum_cohort_size_met: false,
   no_direct_identifiers: false,
+  no_person_level_hris_records: false,
+  no_hashed_or_joinable_person_identifiers: false,
+  no_person_level_productivity: false,
   no_manager_ranking: false,
   no_individual_decisioning: false,
+  no_people_decisioning: false,
+  no_compensation_or_performance_inference: false,
+  no_hris_inference_from_ai_usage: false,
   no_sensitive_attribute_inference: false,
   hris_join_allowed: false,
   allowed_outputs: {
+    aggregate_workforce_context: false,
+    aggregate_hris_derived_context: false,
+    aggregate_role_family_context: false,
+    aggregate_new_hire_cohort_context: false,
+    aggregate_training_completion_context: false,
+    aggregate_capacity_planning_context: false,
     aggregate_workforce_readiness: false,
     aggregate_enablement_coverage: false,
     aggregate_training_completion: false,
@@ -551,16 +563,31 @@ test("allows aggregate workflow productivity only with aggregate baseline compar
   assert.equal(allowed.valid, true);
 });
 
-test("allows aggregate workforce analytics only with all workforce safety checks and no HRIS join", () => {
+test("allows aggregate HRIS-derived workforce context only with all workforce safety checks and no persisted HRIS join", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.workforce_analytics_gate.mode = "AGGREGATE_INTERNAL";
   scenario.workforce_analytics_gate.allowed_outputs.aggregate_workforce_readiness = true;
+  scenario.workforce_analytics_gate.allowed_outputs.aggregate_hris_derived_context = true;
+  scenario.aggregate_workforce_context = {
+    aggregate_hris_derived_context: {
+      aggregate_only: true,
+      source_owner_role: "people_analytics_manager",
+      metric_owner_role: "workforce_analytics_manager",
+      approved_grain: "approved_aggregate_cohort"
+    }
+  };
   Object.assign(scenario.workforce_analytics_gate, {
     aggregate_only: true,
     minimum_cohort_size_met: true,
     no_direct_identifiers: true,
+    no_person_level_hris_records: true,
+    no_hashed_or_joinable_person_identifiers: true,
+    no_person_level_productivity: true,
     no_manager_ranking: true,
     no_individual_decisioning: true,
+    no_people_decisioning: true,
+    no_compensation_or_performance_inference: true,
+    no_hris_inference_from_ai_usage: true,
     no_sensitive_attribute_inference: true,
     hris_join_allowed: true
   });
@@ -569,7 +596,7 @@ test("allows aggregate workforce analytics only with all workforce safety checks
 
   assert.equal(result.valid, false);
   assert.equal(
-    result.gaps.includes("workforce_analytics_gate.hris_join_allowed must be false"),
+    result.gaps.includes("workforce_analytics_gate.hris_join_allowed must be false (no persisted person-level HRIS join in FluencyTracr)"),
     true
   );
 
@@ -578,6 +605,38 @@ test("allows aggregate workforce analytics only with all workforce safety checks
   const allowed = validateAiValueRoiScenario(scenario);
 
   assert.equal(allowed.valid, true);
+});
+
+test("rejects person-level HRIS, hashed identifiers, decisioning, ranking, and inference fields", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.output = {
+    person_level_hris_record: true,
+    hashed_employee_id: "abc123",
+    individual_productivity_measurement: true,
+    team_or_manager_ranking: true,
+    people_decisioning: true,
+    compensation_or_performance_inference: true,
+    promotion_or_discipline_inference: true,
+    attrition_prediction: true,
+    hris_inference_from_ai_usage: true
+  };
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  for (const field of [
+    "person_level_hris_record",
+    "hashed_employee_id",
+    "individual_productivity_measurement",
+    "team_or_manager_ranking",
+    "people_decisioning",
+    "compensation_or_performance_inference",
+    "promotion_or_discipline_inference",
+    "attrition_prediction",
+    "hris_inference_from_ai_usage"
+  ]) {
+    assert.equal(result.gaps.includes(`Forbidden field detected: ${field}`), true, field);
+  }
 });
 
 test("rejects invalid economic output policy modes in engine-only validation", () => {

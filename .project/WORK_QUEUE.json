@@ -116,6 +116,14 @@
       "status": "done",
       "risk": "medium",
       "last_note": "Done 2026-06-12 UTC: canonical language docs, alignment matrix, deprecation plan, shared display labels, readout renderer labels, generated examples, and prototype labels are aligned around Value Hypothesis, Measurement Plan, Evidence Collection, Value Realization, Financial Translation, Value Accounting, Renewal Evidence, and Productivity Recapture. Existing schemas and governance controls remain unchanged."
+    },
+    {
+      "id": "phase-ai-value-data-model-audit",
+      "title": "AI Value Platform: data model persistence audit",
+      "bound": "docs/architecture/AI_VALUE_DATA_MODEL_AUDIT.md; acceptance: current persistence inventory, framework concept classification, minimal Supabase state proposal, BigQuery vs Supabase split, privacy/governance constraints, recommended implementation order; no migrations, schema changes, backend routes, frontend UI, ingestion, or governance logic changes",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "Done 2026-06-13: audited AI Value Platform concepts and classified static framework, customer-specific durable state, derived evidence snapshots, and external sources of truth. Proposed the minimal future Supabase state path without creating migrations or product surface area."
     }
   ]
 }

@@ -73,7 +73,14 @@ function responseWith(patch) {
 }
 
 test("returns PROCEED_TO_GOVERNED_PACKET when required aggregate evidence is ready", () => {
-  const result = validateSupportPilotReadiness(baseResponse);
+  const input = structuredClone(baseResponse);
+  input.approved_aggregate_inputs.aggregate_workforce_context = {
+    aggregate_hris_derived_context: true,
+    aggregate_time_to_productivity_by_cohort: "customer-approved aggregate context only",
+    source_owner_role: "people_analytics_manager"
+  };
+
+  const result = validateSupportPilotReadiness(input);
 
   assert.equal(result.decision, "PROCEED_TO_GOVERNED_PACKET");
   assert.equal(result.ready, true);
@@ -81,7 +88,7 @@ test("returns PROCEED_TO_GOVERNED_PACKET when required aggregate evidence is rea
     "ROI proof",
     "causality claims",
     "individual scoring",
-    "HR analytics",
+    "person-level HR analytics or HRIS inference",
     "dashboard or runtime implementation"
   ]);
 });

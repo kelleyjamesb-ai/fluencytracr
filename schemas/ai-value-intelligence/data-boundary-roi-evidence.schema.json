@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json",
   "title": "AI Value Data Boundary and ROI Evidence Contract",
-  "description": "Docs-backed local schema defining which organizational data may support AI value analysis upstream and which aggregate, attested evidence may cross into FluencyTracr. This is not a production connector, HR analytics surface, ROI calculator, causality engine, or customer-facing economic output contract.",
+  "description": "Docs-backed local schema defining which organizational data may support AI value analysis upstream and which aggregate, attested evidence may cross into FluencyTracr. This is not a production connector, person-level HR analytics surface, ROI calculator, causality engine, or customer-facing economic output contract.",
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -281,7 +281,7 @@
           "items": { "type": "string" },
           "not": {
             "contains": {
-              "pattern": "(^raw_|prompt|response|transcript|ticket_text|case_text|message_text|email|employee_id|user_id|user_email|person_id|manager_chain|manager_id|direct_identifier)"
+              "pattern": "(^raw_|prompt|response|transcript|ticket_text|case_text|message_text|email|employee_id|employee_email|employee_name|employee_record|employee_identifier|direct_employee_identifier|hashed_employee_id|hashed_user_id|hashed_person_id|hashed_or_joinable_person_identifier|pseudonymous_(employee|person|user)_identifier|tokenized_(employee|person|user)_identifier|joinable_(employee|person|user)_identifier|user_id|user_email|person_id|person_identifier|person_level_hris|person_level_(data|record|productivity|analytics)|named_employee_productivity|manager_chain|manager_id|manager_view|manager_ranking|team_ranking|team_or_manager_ranking|manager_or_team_ranking|individual_productivity|individual_scoring|people_decisioning|compensation|performance_rating|promotion|discipline|attrition_prediction|hris_inference|direct_identifier)"
             }
           }
         },
@@ -300,7 +300,15 @@
             "approved_grain": { "type": "string" },
             "baseline_comparison_required": { "type": "boolean" },
             "contains_person_level_data": { "const": false },
-            "contains_raw_content": { "const": false }
+            "contains_raw_content": { "const": false },
+            "contains_person_level_hris_records": { "const": false },
+            "contains_hashed_or_joinable_person_identifiers": { "const": false },
+            "contains_person_level_productivity": { "const": false },
+            "contains_manager_or_team_ranking": { "const": false },
+            "contains_people_decisioning": { "const": false },
+            "contains_compensation_or_performance_inference": { "const": false },
+            "contains_hris_inference_from_ai_usage": { "const": false },
+            "aggregate_workforce_context_allowed": { "type": "boolean" }
           }
         },
         "evidence_level": {
@@ -334,11 +342,14 @@
           },
           "then": {
             "properties": {
-              "evidence_level": {
-                "enum": ["MISSING", "DIRECTIONAL", "CAVEATED", "BLOCKED"]
-              },
               "allowed_claim_level": {
-                "enum": ["SOURCE_READINESS_ONLY", "INTERNAL_ONLY"]
+                "enum": [
+                  "SOURCE_READINESS_ONLY",
+                  "INTERNAL_ONLY",
+                  "CAVEATED_VALUE_INVESTIGATION",
+                  "SUPPORTED_VALUE_MOVEMENT",
+                  "STRONG_VALUE_CLAIM_REQUIRES_DESIGN"
+                ]
               }
             }
           }

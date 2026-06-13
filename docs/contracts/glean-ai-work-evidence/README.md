@@ -31,10 +31,17 @@ Records must not include:
 - tool payloads
 - file or artifact contents
 - direct identifiers
+- hashed or joinable person identifiers
+- person-level HRIS records or HRIS inference from AI usage
 - person/team ranking
 - productivity scoring
 
 Strict schema validation rejects unknown keys before mapping.
+
+Glean AI Work Evidence is Layer 1 telemetry. It may describe aggregate work
+patterns, but it must not infer workforce outcomes or HRIS attributes from AI
+usage. Aggregate workforce context must enter through customer-approved
+system-of-record exports, outcome evidence, or assumption state.
 
 ## Output mappings
 

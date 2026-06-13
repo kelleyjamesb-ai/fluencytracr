@@ -77,6 +77,8 @@ const CONTRACT_OUTPUT_FLAGS = [
   "realized_roi_calculation",
   "causality_claim",
   "individual_scoring",
+  // Legacy token retained for fixture compatibility. It means person-level
+  // HR analytics, not aggregate HRIS-derived workforce context.
   "hr_analytics",
   "productivity_ranking"
 ];
@@ -101,11 +103,41 @@ const FORBIDDEN_AGGREGATE_FIELD_PATTERNS = [
   /message_text/i,
   /email/i,
   /employee_id/i,
+  /employee_email/i,
+  /employee_name/i,
+  /employee_record/i,
+  /employee_identifier/i,
+  /direct_employee_identifier/i,
+  /hashed_employee_id/i,
+  /hashed_user_id/i,
+  /hashed_person_id/i,
+  /hashed_or_joinable_person_identifier/i,
+  /pseudonymous_(?:employee|person|user)_identifier/i,
+  /tokenized_(?:employee|person|user)_identifier/i,
+  /joinable_(?:employee|person|user)_identifier/i,
   /\buser(?:_id|_email)?\b/i,
   /^user[A-Z]/,
   /person_id/i,
+  /person_identifier/i,
+  /person_level_hris/i,
+  /person_level_(?:data|record|productivity|analytics)/i,
+  /named_employee_productivity/i,
   /manager_chain/i,
   /manager_id/i,
+  /manager_view/i,
+  /manager_ranking/i,
+  /team_ranking/i,
+  /team_or_manager_ranking/i,
+  /manager_or_team_ranking/i,
+  /individual_productivity/i,
+  /individual_scoring/i,
+  /people_decisioning/i,
+  /compensation/i,
+  /performance_rating/i,
+  /promotion/i,
+  /discipline/i,
+  /attrition_prediction/i,
+  /hris_inference/i,
   /name/i,
   /direct_identifier/i
 ];
@@ -119,10 +151,21 @@ const REQUIRED_RAW_POLICY_FALSE_FLAGS = [
 
 const HRIS_ALLOWED_CLAIM_LEVELS = new Set([
   "INTERNAL_ONLY",
-  "SOURCE_READINESS_ONLY"
+  "SOURCE_READINESS_ONLY",
+  "CAVEATED_VALUE_INVESTIGATION",
+  "SUPPORTED_VALUE_MOVEMENT",
+  "STRONG_VALUE_CLAIM_REQUIRES_DESIGN"
 ]);
 
-const HRIS_BLOCKED_EVIDENCE_LEVELS = new Set(["SUPPORTED", "STRONG"]);
+const OPTIONAL_ATTESTATION_FALSE_FLAGS = [
+  "contains_person_level_hris_records",
+  "contains_hashed_or_joinable_person_identifiers",
+  "contains_person_level_productivity",
+  "contains_manager_or_team_ranking",
+  "contains_people_decisioning",
+  "contains_compensation_or_performance_inference",
+  "contains_hris_inference_from_ai_usage"
+];
 
 export interface DataBoundaryValidationResult {
   schema_version: string;
@@ -298,10 +341,7 @@ function collectSourceGaps(source: any, index: number): string[] {
   }
   if (source?.source_category === "HRIS_ORG_CONTEXT") {
     if (!HRIS_ALLOWED_CLAIM_LEVELS.has(source?.allowed_claim_level)) {
-      gaps.push(`${prefix}.source_category HRIS_ORG_CONTEXT must stay INTERNAL_ONLY or SOURCE_READINESS_ONLY`);
-    }
-    if (HRIS_BLOCKED_EVIDENCE_LEVELS.has(source?.evidence_level)) {
-      gaps.push(`${prefix}.source_category HRIS_ORG_CONTEXT cannot be SUPPORTED or STRONG evidence`);
+      gaps.push(`${prefix}.source_category HRIS_ORG_CONTEXT has invalid aggregate workforce claim level ${source?.allowed_claim_level}`);
     }
   }
 
@@ -354,6 +394,11 @@ function collectSourceGaps(source: any, index: number): string[] {
   }
   if (attestation.contains_raw_content !== false) {
     gaps.push(`${prefix}.required_attestation.contains_raw_content must be false`);
+  }
+  for (const flag of OPTIONAL_ATTESTATION_FALSE_FLAGS) {
+    if (attestation[flag] !== undefined && attestation[flag] !== false) {
+      gaps.push(`${prefix}.required_attestation.${flag} must be false`);
+    }
   }
 
   return gaps;

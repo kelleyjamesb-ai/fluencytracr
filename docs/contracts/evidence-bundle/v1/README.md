@@ -52,7 +52,14 @@ Allowed content is aggregate-only:
 
 Forbidden content remains forbidden inside the forwarded block: raw rows, raw
 skill names, user IDs, actor IDs, names, email addresses, prompts, outputs,
-messages, transcripts, action rows, free text, or any sub-5 cohort evidence.
+messages, transcripts, action rows, free text, hashed or joinable person
+identifiers, person-level HRIS records, or any sub-5 cohort evidence.
+
+Aggregate HRIS-derived workforce context may be referenced only as
+customer-approved source context or outcome evidence at a cohort-safe grain. It
+must not become people decisioning, compensation/performance inference,
+promotion/discipline inference, attrition prediction, manager/team ranking,
+individual productivity, or HRIS inference from AI usage.
 
 ## Coverage map requirement: always include instrumented and missing sources
 - Every payload MUST include `coverage.instrumented_sources`.
@@ -63,6 +70,7 @@ messages, transcripts, action rows, free text, or any sub-5 cohort evidence.
 ## Security and privacy: no raw prompt/output content, no user identifiers
 - No raw prompt text, model output text, or transcript content in this contract.
 - No user identifiers, email addresses, or person-level IDs.
+- No hashed, pseudonymous, tokenized, or otherwise joinable person identifiers.
 - Data is aggregate evidence posture only, with suppression as the default privacy-preserving fallback.
 
 ## Canonical Contract Artifacts

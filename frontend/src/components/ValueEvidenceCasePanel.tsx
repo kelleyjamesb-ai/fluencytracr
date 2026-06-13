@@ -3,7 +3,10 @@ import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
 import {
   readSelectedOutcomeMetricSelection,
-  type SelectedOutcomeMetricSelection
+  readSelectedOutcomeMetricWatchPlan,
+  type SelectedOutcomeMetric,
+  type SelectedOutcomeMetricSelection,
+  type SelectedOutcomeMetricWatchPlan
 } from "../lib/aiValueMetricSelection";
 
 // Client-facing translations — internal tokens never reach the screen.
@@ -227,10 +230,20 @@ const defaultMetricEvidenceDraft: MetricEvidenceDraft = {
   owner: "Support Operations"
 };
 
-const metricEvidenceDraftFromSelection = (
-  selection: SelectedOutcomeMetricSelection | null
-): MetricEvidenceDraft => {
-  const metric = selection?.metrics[0];
+const DEFAULT_METRIC_DRAFT_KEY = "__default_metric_evidence__";
+
+type MetricEvidenceQueueItem = {
+  key: string;
+  functionArea: string;
+  quadrantLabel: string;
+  vbdBaseline: string;
+  metric: SelectedOutcomeMetric;
+};
+
+const metricEvidenceKey = (functionArea: string, metricId: string) =>
+  `${functionArea}::${metricId}`;
+
+const metricEvidenceDraftFromMetric = (metric?: SelectedOutcomeMetric): MetricEvidenceDraft => {
   if (!metric) return defaultMetricEvidenceDraft;
   return {
     ...defaultMetricEvidenceDraft,
@@ -241,31 +254,91 @@ const metricEvidenceDraftFromSelection = (
   };
 };
 
-const MetricEvidenceIntake = ({
-  metricSelection
-}: {
-  metricSelection: SelectedOutcomeMetricSelection | null;
-}) => {
-  const [draft, setDraft] = useState<MetricEvidenceDraft>(() =>
-    metricEvidenceDraftFromSelection(metricSelection)
+const metricEvidenceQueueFromSelection = (
+  selection: SelectedOutcomeMetricSelection | null,
+  watchPlan: SelectedOutcomeMetricWatchPlan | null
+): MetricEvidenceQueueItem[] => {
+  const watchSelections = watchPlan
+    ? Object.values(watchPlan.selectionsByFunction).filter((item) => item.metrics.length > 0)
+    : [];
+  const selections = watchSelections.length > 0 ? watchSelections : selection ? [selection] : [];
+  const activeFunctionArea = watchPlan?.activeFunctionArea ?? selection?.functionArea ?? "";
+  const orderedSelections = [...selections].sort((a, b) => {
+    if (a.functionArea === activeFunctionArea && b.functionArea !== activeFunctionArea) return -1;
+    if (b.functionArea === activeFunctionArea && a.functionArea !== activeFunctionArea) return 1;
+    return a.functionArea.localeCompare(b.functionArea);
+  });
+  return orderedSelections.flatMap((item) =>
+    item.metrics.map((metric) => ({
+      key: metricEvidenceKey(item.functionArea, metric.id),
+      functionArea: item.functionArea,
+      quadrantLabel: item.quadrantLabel,
+      vbdBaseline: item.vbdBaseline,
+      metric
+    }))
   );
-  const [fileName, setFileName] = useState("");
-  const selectedMetrics = metricSelection?.metrics ?? [];
-  const evidenceReady = Boolean(
+};
+
+const metricEvidenceDraftsFromQueue = (
+  queue: MetricEvidenceQueueItem[]
+): Record<string, MetricEvidenceDraft> => {
+  if (queue.length === 0) {
+    return { [DEFAULT_METRIC_DRAFT_KEY]: defaultMetricEvidenceDraft };
+  }
+  return Object.fromEntries(
+    queue.map((item) => [item.key, metricEvidenceDraftFromMetric(item.metric)])
+  );
+};
+
+const isMetricEvidenceReady = (draft: MetricEvidenceDraft): boolean =>
+  Boolean(
     draft.baselineValue.trim() &&
       draft.currentValue.trim() &&
       draft.eligiblePopulation.trim() &&
       draft.owner.trim()
   );
 
+const MetricEvidenceIntake = ({
+  metricSelection,
+  metricWatchPlan
+}: {
+  metricSelection: SelectedOutcomeMetricSelection | null;
+  metricWatchPlan: SelectedOutcomeMetricWatchPlan | null;
+}) => {
+  const metricQueue = metricEvidenceQueueFromSelection(metricSelection, metricWatchPlan);
+  const [activeMetricId, setActiveMetricId] = useState<string | null>(
+    () => metricQueue[0]?.key ?? null
+  );
+  const [draftsByMetricId, setDraftsByMetricId] = useState<Record<string, MetricEvidenceDraft>>(
+    () => metricEvidenceDraftsFromQueue(metricQueue)
+  );
+  const [fileName, setFileName] = useState("");
+  const draftKey = activeMetricId ?? DEFAULT_METRIC_DRAFT_KEY;
+  const activeItem = metricQueue.find((item) => item.key === activeMetricId) ?? metricQueue[0];
+  const functionCount = new Set(metricQueue.map((item) => item.functionArea)).size;
+  const selectionCountLabel =
+    functionCount > 1
+      ? `${metricQueue.length} outcome metrics selected across ${functionCount} functions`
+      : `${metricQueue.length} outcome metric${metricQueue.length === 1 ? "" : "s"} selected`;
+  const draft =
+    draftsByMetricId[draftKey] ?? metricEvidenceDraftFromMetric(activeItem?.metric);
+  const evidenceReady = isMetricEvidenceReady(draft);
+
   useEffect(() => {
-    setDraft(metricEvidenceDraftFromSelection(metricSelection));
-  }, [metricSelection]);
+    setActiveMetricId(metricQueue[0]?.key ?? null);
+    setDraftsByMetricId(metricEvidenceDraftsFromQueue(metricQueue));
+  }, [metricSelection, metricWatchPlan]);
 
   const updateDraft =
     (field: keyof MetricEvidenceDraft) =>
     (event: ChangeEvent<HTMLInputElement>) => {
-      setDraft((current) => ({ ...current, [field]: event.target.value }));
+      setDraftsByMetricId((current) => ({
+        ...current,
+        [draftKey]: {
+          ...(current[draftKey] ?? draft),
+          [field]: event.target.value
+        }
+      }));
     };
 
   return (
@@ -275,8 +348,8 @@ const MetricEvidenceIntake = ({
           <p className="eyebrow">Evidence intake</p>
           <h3>Add aggregate metric evidence</h3>
           <p>
-            Enter the customer-owned metric selected on the Outcome Metrics page, or attach an
-            aggregate export from the system of record.
+            Choose a selected outcome, enter the customer-owned aggregate values, or attach an
+            approved export from the system of record.
           </p>
         </div>
         <StatusPill
@@ -285,24 +358,42 @@ const MetricEvidenceIntake = ({
         />
       </div>
 
-      {selectedMetrics.length > 0 && (
+      {metricQueue.length > 0 && (
         <div className="ai-value-case-metric-handoff" aria-label="Selected outcome metrics">
           <div>
             <span className="ai-value-map-label">Selected on Outcome Metrics</span>
-            <strong>{metricSelection?.functionArea}</strong>
-            <p>{metricSelection?.vbdBaseline}</p>
+            <strong>{activeItem?.functionArea}</strong>
+            <p>{activeItem?.vbdBaseline}</p>
           </div>
           <div>
-            <span className="ai-value-map-label">
-              {selectedMetrics.length} outcome metric{selectedMetrics.length === 1 ? "" : "s"} selected
-            </span>
-            <ul>
-              {selectedMetrics.map((metric) => (
-                <li key={metric.id}>
-                  <strong>{metric.name}</strong>
-                  <span>
-                    {metric.sourceSystem} · {metric.measurementUnit} · {metric.owner}
-                  </span>
+            <span className="ai-value-map-label">{selectionCountLabel}</span>
+            <p>Choose which metric you are adding evidence for.</p>
+            <ul aria-label="Selected metrics needing evidence">
+              {metricQueue.map((item) => (
+                <li key={item.key}>
+                  <button
+                    aria-pressed={item.key === activeMetricId}
+                    className={
+                      item.key === activeMetricId
+                        ? "ai-value-case-metric-button active"
+                        : "ai-value-case-metric-button"
+                    }
+                    onClick={() => setActiveMetricId(item.key)}
+                    type="button"
+                  >
+                    <strong>{item.metric.name}</strong>
+                    <span>
+                      {item.metric.sourceSystem} · {item.metric.measurementUnit} ·{" "}
+                      {item.metric.owner}
+                    </span>
+                    <small>
+                      {isMetricEvidenceReady(
+                        draftsByMetricId[item.key] ?? metricEvidenceDraftFromMetric(item.metric)
+                      )
+                        ? "Evidence values staged"
+                        : `Needs evidence values · ${item.functionArea}`}
+                    </small>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -667,6 +758,7 @@ export const ValueEvidenceCasePanel = () => {
     [cases, selectedId]
   );
   const metricSelection = useMemo(() => readSelectedOutcomeMetricSelection(), []);
+  const metricWatchPlan = useMemo(() => readSelectedOutcomeMetricWatchPlan(), []);
 
   if (state === "loading") {
     return (
@@ -695,7 +787,7 @@ export const ValueEvidenceCasePanel = () => {
           Case records are unavailable in this local session, so this page is showing the evidence
           intake instead.
         </p>
-        <MetricEvidenceIntake metricSelection={metricSelection} />
+        <MetricEvidenceIntake metricSelection={metricSelection} metricWatchPlan={metricWatchPlan} />
       </section>
     );
   }
@@ -714,7 +806,7 @@ export const ValueEvidenceCasePanel = () => {
             </p>
           </div>
         </div>
-        <MetricEvidenceIntake metricSelection={metricSelection} />
+        <MetricEvidenceIntake metricSelection={metricSelection} metricWatchPlan={metricWatchPlan} />
       </section>
     );
   }

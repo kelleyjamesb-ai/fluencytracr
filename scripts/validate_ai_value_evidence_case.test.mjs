@@ -93,15 +93,27 @@ test("rejects customer-facing economic output and realized ROI fields", () => {
   assert.ok(result.gaps.some((gap) => gap.includes("Forbidden field")));
 });
 
-test("rejects raw data, direct identifiers, HR analytics, and productivity ranking", () => {
+test("allows aggregate workforce context but rejects raw, person-level HRIS, ranking, and inference fields", () => {
   const evidenceCase = buildValueEvidenceCase(loadInputs());
+  evidenceCase.aggregate_workforce_context = {
+    aggregate_hris_derived_context: {
+      aggregate_only: true,
+      approved_grain: "approved_aggregate_cohort",
+      metric_owner_role: "workforce_analytics_manager",
+      aggregate_time_to_productivity_by_cohort: "available as customer-approved aggregate only"
+    }
+  };
   evidenceCase.employee_id = "E-1001";
+  evidenceCase.hashed_employee_id = "abc123";
   evidenceCase.client_context.manager_chain = ["VP Support"];
-  evidenceCase.hris_attrition_breakdown = { engineering: 0.04 };
+  evidenceCase.person_level_hris_record = { status: "unsafe" };
+  evidenceCase.hris_inference_from_ai_usage = true;
+  evidenceCase.attrition_prediction = { engineering: 0.04 };
   evidenceCase.productivity_rank = 1;
   evidenceCase.raw_ticket_sample = "Customer wrote in about a billing error...";
   evidenceCase.data_boundary_status.aggregate_only = false;
   evidenceCase.data_boundary_status.raw_source_rows_allowed = true;
+  evidenceCase.data_boundary_status.contains_hashed_or_joinable_person_identifiers = true;
 
   const result = validateAiValueEvidenceCase(evidenceCase);
 
@@ -109,16 +121,26 @@ test("rejects raw data, direct identifiers, HR analytics, and productivity ranki
   const forbidden = result.gaps.find((gap) => gap.includes("Forbidden field"));
   assert.ok(forbidden);
   assert.ok(forbidden.includes("employee_id"));
+  assert.ok(forbidden.includes("hashed_employee_id"));
   assert.ok(forbidden.includes("manager_chain"));
-  assert.ok(forbidden.includes("hris_attrition_breakdown"));
+  assert.ok(forbidden.includes("person_level_hris_record"));
+  assert.ok(forbidden.includes("hris_inference_from_ai_usage"));
+  assert.ok(forbidden.includes("attrition_prediction"));
   assert.ok(forbidden.includes("productivity_rank"));
   assert.ok(forbidden.includes("raw_ticket_sample"));
+  assert.equal(forbidden.includes("aggregate_hris_derived_context"), false);
+  assert.equal(forbidden.includes("aggregate_time_to_productivity_by_cohort"), false);
   assert.ok(
     result.gaps.some((gap) => gap.includes("data_boundary_status.aggregate_only must be true"))
   );
   assert.ok(
     result.gaps.some((gap) =>
       gap.includes("data_boundary_status.raw_source_rows_allowed must be false")
+    )
+  );
+  assert.ok(
+    result.gaps.some((gap) =>
+      gap.includes("data_boundary_status.contains_hashed_or_joinable_person_identifiers must be false")
     )
   );
 });
