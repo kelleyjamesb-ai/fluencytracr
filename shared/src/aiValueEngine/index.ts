@@ -260,6 +260,19 @@ export type {
 } from "./postSalesWorkflowOrchestrator";
 
 export {
+  AI_VALUE_CUSTOMER_EXPOSURE_POLICY_SCHEMA_VERSION,
+  CustomerExposurePolicySchema,
+  buildCustomerExposurePolicyFromPostSalesWorkflow,
+  validateCustomerExposurePolicy
+} from "./customerExposurePolicy";
+export type {
+  BuildCustomerExposurePolicyOptions,
+  CustomerExposureDecision,
+  CustomerExposurePolicy,
+  CustomerExposurePolicyValidationResult
+} from "./customerExposurePolicy";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,
