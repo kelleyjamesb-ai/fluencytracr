@@ -710,6 +710,38 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
+  it("lets users clear a default outcome metric selection", async () => {
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    const functionSelect = within(bridge).getByRole("combobox", { name: /Org function/i }) as HTMLSelectElement;
+
+    fireEvent.change(functionSelect, { target: { value: "Engineering / Software Development" } });
+    const deploymentFrequency = within(bridge).getByRole("checkbox", { name: /Deployment Frequency/i });
+    expect(deploymentFrequency).toBeChecked();
+
+    fireEvent.click(deploymentFrequency);
+
+    expect(deploymentFrequency).not.toBeChecked();
+    await waitFor(() => {
+      const storedWatchPlan = JSON.parse(
+        localStorage.getItem(SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY) ?? "{}"
+      );
+      expect(
+        storedWatchPlan.selectionsByFunction["Engineering / Software Development"].metrics
+      ).toEqual([]);
+    });
+
+    const activeHandoff = JSON.parse(localStorage.getItem(SELECTED_OUTCOME_METRICS_KEY) ?? "{}");
+    expect(activeHandoff.functionArea).toBe("Engineering / Software Development");
+    expect(activeHandoff.metrics).toEqual([]);
+  });
+
   it.each([
     {
       state: "ACCEPTED" as const,

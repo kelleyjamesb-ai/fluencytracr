@@ -164,11 +164,23 @@ const ebitaEvidenceQuality = (bridge: any): ExecutiveEbitaImpactSummary["evidenc
 const evidenceIsPresent = (value: unknown): boolean =>
   !["", "MISSING", "BLOCKED", "SUPPRESSED"].includes(String(value ?? "").toUpperCase());
 
+function roiGateHasAggregateOutcomeEvidence(roiScenario: any): boolean {
+  const gate = roiScenario?.financial_claim_gate ?? {};
+  return Boolean(
+    gate.data_sufficiency?.aggregate_only === true &&
+      gate.data_sufficiency?.baseline_present === true &&
+      gate.data_sufficiency?.comparison_present === true &&
+      gate.data_sufficiency?.outcome_metric_accepted === true &&
+      gate.data_sufficiency?.financial_assumptions_present === true
+  );
+}
+
 function roiGateAllowsCustomerFacing(roiScenario: any): boolean {
   const gate = roiScenario?.financial_claim_gate ?? {};
   return Boolean(
     gate.mode === "CUSTOMER_FACING_APPROVED" &&
       gate.allowed_outputs?.customer_facing_economic_output === true &&
+      roiGateHasAggregateOutcomeEvidence(roiScenario) &&
       gate.data_sufficiency?.finance_owner_attested === true &&
       gate.data_sufficiency?.legal_or_governance_approved === true
   );
@@ -179,11 +191,7 @@ function roiGateAllowsRealizedFinancialLanguage(roiScenario: any): boolean {
   return Boolean(
     ["FINANCE_VALIDATED", "CUSTOMER_FACING_APPROVED"].includes(String(gate.mode ?? "")) &&
       gate.allowed_outputs?.realized_roi_calculation === true &&
-      gate.data_sufficiency?.aggregate_only === true &&
-      gate.data_sufficiency?.baseline_present === true &&
-      gate.data_sufficiency?.comparison_present === true &&
-      gate.data_sufficiency?.outcome_metric_accepted === true &&
-      gate.data_sufficiency?.financial_assumptions_present === true &&
+      roiGateHasAggregateOutcomeEvidence(roiScenario) &&
       gate.data_sufficiency?.investment_costs_present === true &&
       gate.data_sufficiency?.finance_owner_attested === true &&
       gate.data_sufficiency?.confounds_reviewed === true
@@ -194,6 +202,7 @@ function roiGateAllowsCausalityLanguage(roiScenario: any): boolean {
   const gate = roiScenario?.financial_claim_gate ?? {};
   return Boolean(
     gate.allowed_outputs?.causality_language === true &&
+      roiGateHasAggregateOutcomeEvidence(roiScenario) &&
       gate.data_sufficiency?.experimental_or_quasi_experimental_design === true
   );
 }

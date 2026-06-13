@@ -1015,13 +1015,15 @@ const dedupeKnownMetricIds = (metricIds: string[], knownMetricIds: Set<string>) 
 };
 
 const mergeWithCurrentDefaults = (
-  metricIds: string[],
+  metricIds: string[] | undefined,
   defaultMetricIds: string[],
   knownMetricIds: Set<string>
 ) => {
-  const selectedMetricIds = dedupeKnownMetricIds(metricIds, knownMetricIds);
   const knownDefaultMetricIds = dedupeKnownMetricIds(defaultMetricIds, knownMetricIds);
-  if (selectedMetricIds.length === 0) return knownDefaultMetricIds;
+  if (metricIds === undefined) return knownDefaultMetricIds;
+
+  const selectedMetricIds = dedupeKnownMetricIds(metricIds, knownMetricIds);
+  if (selectedMetricIds.length === 0) return [];
 
   const missingBridgeDefaults = knownDefaultMetricIds.filter(
     (metricId) => metricId.startsWith("bridge-") && !selectedMetricIds.includes(metricId)
@@ -1084,7 +1086,7 @@ const buildSelectionsByFunction = (
   Object.fromEntries(
     functionPlans.map((plan) => {
       const selectedMetricIds = mergeWithCurrentDefaults(
-        selectedMetricIdsByFunction[plan.functionArea] ?? [],
+        selectedMetricIdsByFunction[plan.functionArea],
         initialSelections[plan.functionArea] ?? [],
         getKnownMetricIds(plan)
       );
@@ -1193,10 +1195,13 @@ export const ClientQuestionMetricBridgePanel = ({
         const plan = functionPlans.find((candidate) => candidate.functionArea === functionArea);
         if (!plan) continue;
         const knownMetricIds = getKnownMetricIds(plan);
-        const currentMetricIds = dedupeKnownMetricIds(
-          nextSelections[functionArea] ?? [],
-          knownMetricIds
+        const hasExplicitSelection = Object.prototype.hasOwnProperty.call(
+          nextSelections,
+          functionArea
         );
+        const currentMetricIds = hasExplicitSelection
+          ? dedupeKnownMetricIds(nextSelections[functionArea] ?? [], knownMetricIds)
+          : [];
         const defaultMetricIds = dedupeKnownMetricIds(selectedMetricIds, knownMetricIds);
         const currentHasBridgeMetric = currentMetricIds.some((metricId) =>
           metricId.startsWith("bridge-")
@@ -1205,8 +1210,8 @@ export const ClientQuestionMetricBridgePanel = ({
           metricId.startsWith("bridge-")
         );
         const mergedMetricIds =
-          currentMetricIds.length === 0 ||
-          (defaultHasBridgeMetric && !currentHasBridgeMetric)
+          !hasExplicitSelection ||
+          (currentMetricIds.length > 0 && defaultHasBridgeMetric && !currentHasBridgeMetric)
             ? defaultMetricIds
             : currentMetricIds;
         if (mergedMetricIds.join("|") !== (nextSelections[functionArea] ?? []).join("|")) {
