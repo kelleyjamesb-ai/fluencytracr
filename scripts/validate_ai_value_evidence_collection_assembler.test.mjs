@@ -368,6 +368,23 @@ test("Layer 3 k-min failure suppresses Layer 3 evidence instead of upgrading cov
   assert.ok(snapshot.suppression.reason_codes.includes("INSUFFICIENT_VOLUME"));
 });
 
+test("Layer 3 source refs attach only for present or partial evidence", () => {
+  for (const evidenceState of ["missing", "held"]) {
+    const layer3 = clone(sourcePackage("layer-3-system-of-record-outcome-package.json"));
+    layer3.evidence_state = evidenceState;
+    layer3.source_refs.aggregate_outcome_export_id = "outcome_evidence_must_not_attach";
+    const assembly = buildAssembly([
+      sourcePackage("layer-1-bigquery-telemetry-package.json"),
+      layer3
+    ]);
+    expectValidAssembly(assembly);
+    const snapshot = assembly.draft_evidence_snapshot_input;
+    assert.equal(snapshot.playbook_coverage.layer_3_business_system_outcomes.status, evidenceState);
+    assert.deepEqual(snapshot.source_refs.outcome_evidence_ids, []);
+    assert.notEqual(snapshot.playbook_coverage.coverage_status, "full_playbook_coverage");
+  }
+});
+
 test("aggregate workforce package does not upgrade coverage", () => {
   const assembly = buildAssembly(packageSet(["layer1", "workforce"]));
   expectValidAssembly(assembly);
@@ -397,6 +414,11 @@ test("full Playbook assembly requires Layer 2, Layer 3, governance, assumptions,
   assert.equal(snapshot.playbook_coverage.assumption_evidence.status, "present");
   assert.equal(snapshot.privacy_boundary.aggregate_only, true);
   assert.equal(snapshot.aggregate_telemetry_summary.k_min_summary.suppressed_or_unknown_slices, 0);
+  assert.deepEqual(snapshot.suppression.held_lanes, []);
+  assert.deepEqual(snapshot.suppression.missing_lanes, []);
+  assert.deepEqual(snapshot.suppression.suppressed_lanes, []);
+  assert.deepEqual(snapshot.suppression.reason_codes, []);
+  assert.equal(snapshot.suppression.hidden_values_exposed, false);
 });
 
 test("assembler does not compute ROI, EBITA, causality, productivity, or financial impact", () => {

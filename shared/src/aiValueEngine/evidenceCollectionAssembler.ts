@@ -372,6 +372,11 @@ function packageKMinClear(pkg: any): boolean {
       Number(pkg?.k_min_posture?.total_slices ?? 0);
 }
 
+function packageCanFeedSourceRef(pkg: any): boolean {
+  return ["present", "partial"].includes(String(pkg?.evidence_state)) &&
+    packageKMinClear(pkg);
+}
+
 function findPackageByType(packages: any[], type: string): any | null {
   return packages.find((pkg) => pkg?.source_package_type === type) ?? null;
 }
@@ -756,6 +761,11 @@ function applyCoverageStatus(snapshot: any, coverageStatus: string): void {
   if (coverageStatus === "full_playbook_coverage") {
     snapshot.snapshot_type = "FULL_STACK_EVIDENCE";
     snapshot.snapshot_readiness_decision = "READY_FOR_FULL_PLAYBOOK_SNAPSHOT";
+    snapshot.suppression.held_lanes = [];
+    snapshot.suppression.missing_lanes = [];
+    snapshot.suppression.suppressed_lanes = [];
+    snapshot.suppression.reason_codes = [];
+    snapshot.suppression.hidden_values_exposed = false;
     snapshot.required_caveats = [
       "Full Playbook coverage is validated only for this aggregate workflow window and must retain privacy, suppression, source-binding, and claim-boundary controls."
     ];
@@ -873,7 +883,7 @@ export function buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages(
   const validPackages = mismatchGaps.length === 0
     ? sourcePackages.filter((_, index) => packageResults[index].valid)
     : [];
-  const sourceRefPackages = validPackages.filter(packageKMinClear);
+  const sourceRefPackages = validPackages.filter(packageCanFeedSourceRef);
   const layer1Package = findPackageByType(validPackages, "layer_1_bigquery_telemetry_summary");
   const workforcePackage = findPackageByType(validPackages, "aggregate_workforce_context_export");
   const snapshot = buildTelemetryEvidenceSnapshotDraft({

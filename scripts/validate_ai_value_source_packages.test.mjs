@@ -132,6 +132,14 @@ test("direct identifier fields fail even when privacy flag is false", () => {
   expectInvalid(pkg, /Forbidden field/);
 });
 
+test("generic person identifier fields fail even when privacy flag is false", () => {
+  for (const field of ["person_id", "personIdentifier", "directPersonIdentifier"]) {
+    const pkg = validPackage();
+    pkg.source_refs[field] = "person-123";
+    expectInvalid(pkg, /Forbidden field/);
+  }
+});
+
 test("hashed or joinable person identifiers fail", () => {
   const pkg = validPackage();
   pkg.hashed_person_id = "abc";
@@ -152,6 +160,29 @@ test("query and file content variants fail inside source refs", () => {
   const filePackage = validPackage();
   filePackage.source_refs.fileContents = "raw exported content";
   expectInvalid(filePackage, /Forbidden field/);
+});
+
+test("response-bearing source fields fail while aggregate response metrics remain allowed", () => {
+  for (const field of ["response_text", "llm_response", "responseContent"]) {
+    const pkg = validPackage();
+    pkg.source_refs[field] = "raw generated response text";
+    expectInvalid(pkg, /Forbidden field/);
+  }
+});
+
+test("present or partial evidence requires attested source owner state", () => {
+  for (const evidenceState of ["present", "partial"]) {
+    for (const attestationState of ["missing", "rejected", "held", "submitted"]) {
+      const pkg = validPackage({
+        evidence_state: evidenceState,
+        source_owner_attestation: {
+          ...validPackage().source_owner_attestation,
+          attestation_state: attestationState
+        }
+      });
+      expectInvalid(pkg, /requires source_owner_attestation\.attestation_state attested/);
+    }
+  }
 });
 
 test("person-level HRIS fails", () => {
@@ -239,6 +270,27 @@ test("source package cannot create full Playbook coverage by itself", () => {
     coverage_status: "full_playbook_coverage"
   });
   expectInvalid(pkg, /Source package cannot declare full_playbook_coverage/);
+});
+
+test("source package rejects nested full Playbook coverage declarations", () => {
+  for (const mutation of [
+    (pkg) => {
+      pkg.feeds = { full_playbook_coverage: true };
+    },
+    (pkg) => {
+      pkg.full_playbook_coverage = true;
+    },
+    (pkg) => {
+      pkg.createsFullPlaybookCoverage = true;
+    },
+    (pkg) => {
+      pkg.nested = { coverage_status: "full_playbook_coverage" };
+    }
+  ]) {
+    const pkg = validPackage();
+    mutation(pkg);
+    expectInvalid(pkg, /full_playbook_coverage|full Playbook coverage/);
+  }
 });
 
 test("source package cannot carry ROI, EBITA, causality, or financial output fields", () => {

@@ -139,6 +139,8 @@ const FORBIDDEN_FIELD_KEY_PATTERNS = [
   /raw_rows/i,
   /prompt/i,
   /^responses?$/i,
+  /(?:^|_)response_(?:text|content|body|message|raw|value)$/i,
+  /(?:^|_)llm_response(?:_|$)/i,
   /transcript/i,
   /^query$/i,
   /query_text/i,
@@ -151,6 +153,8 @@ const FORBIDDEN_FIELD_KEY_PATTERNS = [
   /employee_email/i,
   /employee_name/i,
   /direct_identifier/i,
+  /direct_person_identifier/i,
+  /person_(?:id|identifier)/i,
   /hashed_(?:user|person|employee)_id/i,
   /joinable_(?:user|person|employee)_identifier/i,
   /joinable_person_identifier/i,
@@ -421,6 +425,43 @@ function collectForbiddenValues(
   return values;
 }
 
+function collectFullPlaybookCoverageDeclarations(
+  value: any,
+  gaps: string[],
+  path: string[] = []
+): void {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectFullPlaybookCoverageDeclarations(item, gaps, [...path, String(index)])
+    );
+    return;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    const fieldPath = [...path, key];
+    const normalizedKey = normalizeKey(key);
+    if (
+      normalizedKey === "coverage_status" &&
+      nested === "full_playbook_coverage"
+    ) {
+      gaps.push(`${fieldPath.join(".")} cannot declare full_playbook_coverage`);
+    }
+    if (
+      normalizedKey === "full_playbook_coverage" &&
+      nested !== false
+    ) {
+      gaps.push(`${fieldPath.join(".")} cannot declare full_playbook_coverage`);
+    }
+    if (
+      normalizedKey === "creates_full_playbook_coverage" &&
+      nested === true
+    ) {
+      gaps.push(`${fieldPath.join(".")} cannot create full Playbook coverage`);
+    }
+    collectFullPlaybookCoverageDeclarations(nested, gaps, fieldPath);
+  }
+}
+
 function blockedUses(pkg: any): string[] {
   return stringsOf(pkg?.blocked_uses).map(normalizeToken);
 }
@@ -477,6 +518,12 @@ function collectOwnerAndWindowGaps(pkg: any): string[] {
     "source_owner_attestation.attestation_state",
     gaps
   );
+  if (
+    ["present", "partial"].includes(String(pkg?.evidence_state)) &&
+    pkg?.source_owner_attestation?.attestation_state !== "attested"
+  ) {
+    gaps.push("present or partial evidence requires source_owner_attestation.attestation_state attested");
+  }
   requireField(
     pkg?.source_owner_attestation?.attested_by_role,
     "source_owner_attestation.attested_by_role",
@@ -541,6 +588,7 @@ function collectUsePolicyGaps(pkg: any): string[] {
   if (pkg?.creates_full_playbook_coverage === true) {
     gaps.push("Source package cannot create full Playbook coverage by itself");
   }
+  collectFullPlaybookCoverageDeclarations(pkg, gaps);
   return gaps;
 }
 

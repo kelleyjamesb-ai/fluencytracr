@@ -114,12 +114,16 @@ const FORBIDDEN_FIELD_KEY_PATTERNS = [
   /email/i,
   /user_id/i,
   /employee_id/i,
+  /direct_person_identifier/i,
+  /person_(?:id|identifier)/i,
   /hashed_(?:user|person|employee)_id/i,
   /joinable_(?:user|person|employee)_identifier/i,
   /person_level_hris/i,
   /person_level_productivity/i,
   /manager_ranking/i,
   /team_ranking/i,
+  /manager_or_team_ranking/i,
+  /people_decisioning/i,
   /compensation/i,
   /performance_rating/i,
   /promotion/i,
@@ -130,15 +134,6 @@ const FORBIDDEN_FIELD_KEY_PATTERNS = [
 
 const GOVERNED_KEY_ALLOWLIST = new Set([
   "aggregate_workforce_context",
-  "contains_raw_content",
-  "contains_person_level_productivity",
-  "contains_person_level_hris_records",
-  "contains_hashed_or_joinable_person_identifiers",
-  "contains_manager_or_team_ranking",
-  "contains_compensation_or_performance_inference",
-  "contains_promotion_or_discipline_inference",
-  "contains_attrition_prediction",
-  "contains_hris_inference_from_ai_usage",
   "blocked_uses",
   "blocked_claims",
   "blocked_sections",
@@ -156,6 +151,11 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
   "hashed_or_joinable_person_identifiers",
   "compensation_or_performance_inference",
   "promotion_or_discipline_inference"
+]);
+
+const PRIVACY_BOUNDARY_ALLOWED_KEYS = new Set([
+  "aggregate_only",
+  ...UNSAFE_PRIVACY_FLAGS
 ]);
 
 export const ClaimReadinessHandoffSchema = {
@@ -258,6 +258,14 @@ function stringsOf(value: any): string[] {
 
 function normalizeToken(value: string): string {
   return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+function normalizeKey(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
 }
 
 function uniqueStrings(values: string[]): string[] {
@@ -374,21 +382,36 @@ function snapshotCaveatsMention(snapshot: any, pattern: RegExp): boolean {
   return stringsOf(snapshot?.required_caveats).some((caveat) => pattern.test(caveat));
 }
 
-function isForbiddenKey(key: string): boolean {
-  if (GOVERNED_KEY_ALLOWLIST.has(key)) return false;
-  return FORBIDDEN_FIELD_KEY_PATTERNS.some((pattern) => pattern.test(key)) ||
-    DISALLOWED_COMPUTED_FIELD_PATTERNS.some((pattern) => pattern.test(key));
+function isForbiddenKey(key: string, path: string[]): boolean {
+  const normalizedKey = normalizeKey(key);
+  const normalizedPath = path.map(normalizeKey);
+  const underPrivacyBoundary =
+    normalizedPath.length === 2 && normalizedPath[0] === "privacy_boundary";
+  if (underPrivacyBoundary && PRIVACY_BOUNDARY_ALLOWED_KEYS.has(normalizedKey)) {
+    return false;
+  }
+  if (!underPrivacyBoundary && UNSAFE_PRIVACY_FLAGS.includes(normalizedKey)) {
+    return true;
+  }
+  if (GOVERNED_KEY_ALLOWLIST.has(normalizedKey)) return false;
+  return FORBIDDEN_FIELD_KEY_PATTERNS.some((pattern) => pattern.test(normalizedKey)) ||
+    DISALLOWED_COMPUTED_FIELD_PATTERNS.some((pattern) => pattern.test(normalizedKey));
 }
 
-function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Set<string> {
+function collectForbiddenFields(
+  value: any,
+  fields: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
   if (!value || typeof value !== "object") return fields;
   if (Array.isArray(value)) {
-    value.forEach((item) => collectForbiddenFields(item, fields));
+    value.forEach((item) => collectForbiddenFields(item, fields, path));
     return fields;
   }
   for (const [key, nested] of Object.entries(value)) {
-    if (isForbiddenKey(key)) fields.add(key);
-    collectForbiddenFields(nested, fields);
+    const fieldPath = [...path, key];
+    if (isForbiddenKey(key, fieldPath)) fields.add(fieldPath.join("."));
+    collectForbiddenFields(nested, fields, fieldPath);
   }
   return fields;
 }

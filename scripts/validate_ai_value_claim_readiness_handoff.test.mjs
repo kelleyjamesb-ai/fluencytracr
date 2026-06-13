@@ -585,6 +585,30 @@ test("Handoff rejects forbidden raw or person-level fields", () => {
   }
 });
 
+test("Handoff rejects camelCase identifiers, ranking, and misplaced privacy flags", () => {
+  for (const mutate of [
+    (handoff) => {
+      handoff.source_provenance.source_refs.userId = "U-123";
+    },
+    (handoff) => {
+      handoff.extra = { hashedPersonId: "hash-123" };
+    },
+    (handoff) => {
+      handoff.extra = { managerRanking: 1 };
+    },
+    (handoff) => {
+      handoff.extra = { personIdentifier: "person-123" };
+    },
+    (handoff) => {
+      handoff.extra = { containsDirectIdentifiers: false };
+    }
+  ]) {
+    const handoff = buildHandoff();
+    mutate(handoff);
+    expectInvalid(handoff, /Forbidden field/);
+  }
+});
+
 test("Handoff examples validate", () => {
   for (const file of [
     "layer-1-only-handoff.json",
