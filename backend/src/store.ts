@@ -26,6 +26,107 @@ export type AiValueObjectStoredRecord = {
   updated_at: string;
 };
 
+export type AiValueHypothesisStoredRecord = {
+  id: string;
+  org_id: string;
+  value_hypothesis_id: string;
+  schema_version: string;
+  derivation_version: string;
+  workflow_family: string;
+  function_area: string | null;
+  value_route: string;
+  hypothesis_statement: string;
+  business_objective: string;
+  status: string;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueMeasurementPlanStoredRecord = {
+  id: string;
+  org_id: string;
+  measurement_plan_id: string;
+  value_hypothesis_id: string;
+  schema_version: string;
+  derivation_version: string;
+  workflow_family: string;
+  approved_aggregate_grain: string;
+  minimum_cohort_threshold: number;
+  baseline_window_start: string;
+  baseline_window_end: string;
+  comparison_window_start: string | null;
+  comparison_window_end: string | null;
+  coverage_goal: string;
+  readiness_state: string;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_package_requirements: Record<string, unknown>;
+  assumptions: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueSourcePackageRefStoredRecord = {
+  id: string;
+  org_id: string;
+  source_package_id: string;
+  source_package_type: string;
+  schema_version: string;
+  derivation_version: string;
+  measurement_plan_id: string | null;
+  workflow_family: string | null;
+  generated_at: string;
+  covered_window_start: string;
+  covered_window_end: string;
+  approved_aggregate_grain: string;
+  minimum_cohort_threshold: number;
+  evidence_state: string;
+  k_min_posture: Record<string, unknown>;
+  privacy_boundary: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  caveats: string[];
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueEvidenceSnapshotStoredRecord = {
+  id: string;
+  org_id: string;
+  evidence_snapshot_id: string;
+  measurement_plan_id: string;
+  schema_version: string;
+  derivation_version: string;
+  workflow_family: string;
+  snapshot_type: string;
+  coverage_status: string;
+  window_start: string;
+  window_end: string;
+  suppression_default_verdict: string;
+  privacy_aggregate_only: boolean;
+  k_min_threshold_met: boolean;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  required_caveats: string[];
+  blocked_uses: string[];
+  version: number;
+  supersedes_id: string | null;
+  generated_at: string;
+  created_at: string;
+  created_by_role: string;
+};
+
 export type OrgRecord = {
   id: string;
   name: string;
@@ -487,6 +588,10 @@ class MemoryStore {
   workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
   workflowRegistryAudit = new Map<string, WorkflowRegistryAuditRecord>();
   aiValueObjects = new Map<string, AiValueObjectStoredRecord>();
+  aiValueHypotheses = new Map<string, AiValueHypothesisStoredRecord>();
+  aiValueMeasurementPlans = new Map<string, AiValueMeasurementPlanStoredRecord>();
+  aiValueSourcePackageRefs = new Map<string, AiValueSourcePackageRefStoredRecord>();
+  aiValueEvidenceSnapshots = new Map<string, AiValueEvidenceSnapshotStoredRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
   baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
@@ -530,6 +635,10 @@ class MemoryStore {
     this.workflowRegistryCurrent.clear();
     this.workflowRegistryAudit.clear();
     this.aiValueObjects.clear();
+    this.aiValueHypotheses.clear();
+    this.aiValueMeasurementPlans.clear();
+    this.aiValueSourcePackageRefs.clear();
+    this.aiValueEvidenceSnapshots.clear();
     this.workflowVisibilityPolicyConfigs.clear();
     this.baselineResetEvents.clear();
   }
