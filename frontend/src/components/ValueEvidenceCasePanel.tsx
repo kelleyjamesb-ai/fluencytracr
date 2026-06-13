@@ -1,6 +1,10 @@
 import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 
 import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
+import {
+  readSelectedOutcomeMetricSelection,
+  type SelectedOutcomeMetricSelection
+} from "../lib/aiValueMetricSelection";
 
 // Client-facing translations — internal tokens never reach the screen.
 const EVIDENCE_LEVELS = [
@@ -121,6 +125,15 @@ interface ClaimGate {
   unlock_requirements?: string;
 }
 
+type StrategicChoice = {
+  id: string;
+  label: string;
+  summary: string;
+  nextStep: string;
+  tone: "neutral" | "warn" | "good";
+  recommended?: boolean;
+};
+
 const humanizeWindow = (value: unknown): string => {
   if (typeof value !== "string" || !value) return "Not set";
   return value.replace(/_to_/g, " to ").replace(/_/g, " ");
@@ -214,15 +227,40 @@ const defaultMetricEvidenceDraft: MetricEvidenceDraft = {
   owner: "Support Operations"
 };
 
-const MetricEvidenceIntake = () => {
-  const [draft, setDraft] = useState<MetricEvidenceDraft>(defaultMetricEvidenceDraft);
+const metricEvidenceDraftFromSelection = (
+  selection: SelectedOutcomeMetricSelection | null
+): MetricEvidenceDraft => {
+  const metric = selection?.metrics[0];
+  if (!metric) return defaultMetricEvidenceDraft;
+  return {
+    ...defaultMetricEvidenceDraft,
+    outcomeMetric: metric.name,
+    sourceSystem: metric.sourceSystem,
+    measurementUnit: metric.measurementUnit,
+    owner: metric.owner
+  };
+};
+
+const MetricEvidenceIntake = ({
+  metricSelection
+}: {
+  metricSelection: SelectedOutcomeMetricSelection | null;
+}) => {
+  const [draft, setDraft] = useState<MetricEvidenceDraft>(() =>
+    metricEvidenceDraftFromSelection(metricSelection)
+  );
   const [fileName, setFileName] = useState("");
+  const selectedMetrics = metricSelection?.metrics ?? [];
   const evidenceReady = Boolean(
     draft.baselineValue.trim() &&
       draft.currentValue.trim() &&
       draft.eligiblePopulation.trim() &&
       draft.owner.trim()
   );
+
+  useEffect(() => {
+    setDraft(metricEvidenceDraftFromSelection(metricSelection));
+  }, [metricSelection]);
 
   const updateDraft =
     (field: keyof MetricEvidenceDraft) =>
@@ -246,6 +284,31 @@ const MetricEvidenceIntake = () => {
           tone={evidenceReady ? "good" : "warn"}
         />
       </div>
+
+      {selectedMetrics.length > 0 && (
+        <div className="ai-value-case-metric-handoff" aria-label="Selected outcome metrics">
+          <div>
+            <span className="ai-value-map-label">Selected on Outcome Metrics</span>
+            <strong>{metricSelection?.functionArea}</strong>
+            <p>{metricSelection?.vbdBaseline}</p>
+          </div>
+          <div>
+            <span className="ai-value-map-label">
+              {selectedMetrics.length} outcome metric{selectedMetrics.length === 1 ? "" : "s"} selected
+            </span>
+            <ul>
+              {selectedMetrics.map((metric) => (
+                <li key={metric.id}>
+                  <strong>{metric.name}</strong>
+                  <span>
+                    {metric.sourceSystem} · {metric.measurementUnit} · {metric.owner}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <div className="ai-value-case-intake-grid">
         <label>
@@ -424,6 +487,113 @@ const selectedOutcomeMetric = (
   return metrics.find((metric) => metric.metric_id === metricId) ?? null;
 };
 
+const claimGateState = (
+  evidenceCase: EvidenceCasePayload,
+  claim: string
+): "UNLOCKED" | "LOCKED" | null => {
+  const gate = (evidenceCase.claim_gates ?? []).find((item) => item.claim === claim);
+  if (gate?.state === "UNLOCKED" || gate?.state === "LOCKED") return gate.state;
+  return null;
+};
+
+const strategicChoicesForCase = (evidenceCase: EvidenceCasePayload): StrategicChoice[] => {
+  const reviewState = evidenceCase.outcome_evidence_status?.review_state ?? "MISSING";
+  const acceptedEvidence = reviewState === "ACCEPTED" || reviewState === "CAVEATED";
+  const openAssumptions = (evidenceCase.customer_owned_assumptions ?? []).filter(
+    (assumption) => assumption.state !== "PRESENT"
+  );
+  const allowedClaimLevel = evidenceCase.safe_value_language?.allowed_claim_level;
+  const customerFacingUnlocked =
+    claimGateState(evidenceCase, "customer_facing_economic_output") === "UNLOCKED";
+  const realizedValueUnlocked =
+    customerFacingUnlocked ||
+    claimGateState(evidenceCase, "realized_roi_calculation") === "UNLOCKED" ||
+    claimGateState(evidenceCase, "roi_proof") === "UNLOCKED" ||
+    allowedClaimLevel === "VALIDATED_VALUE_REALIZATION";
+  const causalityUnlocked = claimGateState(evidenceCase, "causality_claim") === "UNLOCKED";
+  const customerValidated = Boolean(evidenceCase.customer_validation?.approved_by_role);
+
+  const holdChoice: StrategicChoice = {
+    id: "hold",
+    label: "Hold value language",
+    summary: "Pause external value language when evidence, assumptions, or owner review are not ready.",
+    nextStep: "Resolve the missing item, confirm the baseline and comparison windows, then rerun the case.",
+    tone: "neutral"
+  };
+  const internalModelingChoice: StrategicChoice = {
+    id: "internal-modeling",
+    label: "Model internally",
+    summary: "Use the numbers for planning and sensitivity checks, not as a client-facing value claim.",
+    nextStep: "Document assumptions, costs, and confounds before stronger language moves forward.",
+    tone: "neutral"
+  };
+  const caveatedReadoutChoice: StrategicChoice = {
+    id: "caveated-readout",
+    label: "Use caveated executive readout",
+    summary: "Share directional value movement with caveats.",
+    nextStep: "Do not present realized ROI yet. Resolve open assumptions and confirm the value model with the customer owner.",
+    tone: "warn"
+  };
+  const financeValidationChoice: StrategicChoice = {
+    id: "finance-validation",
+    label: "Validate with Finance",
+    summary: "Ask the customer Finance or data owner to approve assumptions, costs, and the baseline/comparison logic.",
+    nextStep: "Use Finance validation before customer-facing economic language appears in the readout.",
+    tone: "warn"
+  };
+  const validatedStoryChoice: StrategicChoice = {
+    id: "validated-story",
+    label: "Use validated value story",
+    summary: "Use customer-approved realized-value language for this workflow slice.",
+    nextStep: causalityUnlocked
+      ? "Keep the approved evidence design attached when using causality language."
+      : "Keep causality blocked unless the evidence design supports it.",
+    tone: "good"
+  };
+  const interventionChoice: StrategicChoice = {
+    id: "intervene-retest",
+    label: "Intervene and retest",
+    summary: "If the metric is not moving enough, change the AI Fluency or workflow intervention.",
+    nextStep:
+      evidenceCase.intervention_retest?.next_action ??
+      "Remeasure the same function and workflow after the next retest window.",
+    tone: "neutral"
+  };
+
+  let recommendedId = "hold";
+  if (realizedValueUnlocked && customerValidated) {
+    recommendedId = "validated-story";
+  } else if (!acceptedEvidence) {
+    recommendedId = "hold";
+  } else if (openAssumptions.length > 0 || allowedClaimLevel === "CAVEATED_VALUE_INVESTIGATION") {
+    recommendedId = "caveated-readout";
+  } else if (!customerValidated) {
+    recommendedId = "finance-validation";
+  } else {
+    recommendedId = "internal-modeling";
+  }
+
+  return [
+    holdChoice,
+    internalModelingChoice,
+    caveatedReadoutChoice,
+    financeValidationChoice,
+    validatedStoryChoice,
+    interventionChoice
+  ]
+    .filter((choice) => {
+      if (choice.id === recommendedId) return true;
+      if (choice.id === "validated-story") return realizedValueUnlocked || recommendedId === "validated-story";
+      if (choice.id === "finance-validation") return acceptedEvidence && !customerValidated;
+      if (choice.id === "caveated-readout") return acceptedEvidence;
+      if (choice.id === "hold") return !acceptedEvidence || openAssumptions.length > 0;
+      if (choice.id === "internal-modeling") return acceptedEvidence && !realizedValueUnlocked;
+      return true;
+    })
+    .map((choice) => ({ ...choice, recommended: choice.id === recommendedId }))
+    .sort((a, b) => Number(Boolean(b.recommended)) - Number(Boolean(a.recommended)));
+};
+
 export const ValueEvidenceCasePanel = () => {
   const [cases, setCases] = useState<EvidenceCasePayload[]>([]);
   const [outcomeExports, setOutcomeExports] = useState<Record<string, OutcomeEvidenceExportPayload>>({});
@@ -496,6 +666,7 @@ export const ValueEvidenceCasePanel = () => {
     () => cases.find((item) => item.value_evidence_case_id === selectedId) ?? cases[0],
     [cases, selectedId]
   );
+  const metricSelection = useMemo(() => readSelectedOutcomeMetricSelection(), []);
 
   if (state === "loading") {
     return (
@@ -508,9 +679,23 @@ export const ValueEvidenceCasePanel = () => {
   if (state === "error") {
     return (
       <section className="ai-value-panel" aria-label="Value evidence case">
-        <p role="alert">
-          The value evidence cases could not be loaded. Check the workspace connection and try again.
+        <div className="ai-value-section-head">
+          <div>
+            <p className="eyebrow">Value Evidence Case</p>
+            <h2>Evidence case not connected yet</h2>
+            <p>
+              Start by staging the aggregate metric evidence for the outcome selected on the
+              previous page. The governed case can be assembled once the evidence service is
+              available.
+            </p>
+          </div>
+          <StatusPill label="Needs evidence connection" tone="warn" />
+        </div>
+        <p className="ai-value-inline-alert" role="alert">
+          Case records are unavailable in this local session, so this page is showing the evidence
+          intake instead.
         </p>
+        <MetricEvidenceIntake metricSelection={metricSelection} />
       </section>
     );
   }
@@ -529,7 +714,7 @@ export const ValueEvidenceCasePanel = () => {
             </p>
           </div>
         </div>
-        <MetricEvidenceIntake />
+        <MetricEvidenceIntake metricSelection={metricSelection} />
       </section>
     );
   }
@@ -555,6 +740,8 @@ export const ValueEvidenceCasePanel = () => {
     (outcomeExport?.metrics ?? []).length - (primaryMetricOutput ? 1 : 0),
     0
   );
+  const strategicChoices = strategicChoicesForCase(selected);
+  const recommendedChoice = strategicChoices.find((choice) => choice.recommended) ?? strategicChoices[0];
 
   return (
     <section className="ai-value-panel ai-value-evidence-case-panel" aria-label="Value evidence case">
@@ -697,6 +884,40 @@ export const ValueEvidenceCasePanel = () => {
           </div>
         )}
       </section>
+
+      {recommendedChoice && (
+        <section className="ai-value-case-strategy" aria-label="Strategic value choice">
+          <div className="ai-value-case-strategy-head">
+            <div>
+              <p className="eyebrow">Strategic choice</p>
+              <h3>What should the client do next?</h3>
+              <p>
+                Use the evidence level and claim gates to choose the next safe value move.
+              </p>
+            </div>
+            <StatusPill label={`Recommended: ${recommendedChoice.label}`} tone={recommendedChoice.tone} />
+          </div>
+          <div className="ai-value-case-strategy-grid">
+            {strategicChoices.map((choice) => (
+              <article
+                className={
+                  choice.recommended
+                    ? "ai-value-case-strategy-card ai-value-case-strategy-card-recommended"
+                    : "ai-value-case-strategy-card"
+                }
+                key={choice.id}
+              >
+                <span className="ai-value-map-label">
+                  {choice.recommended ? "Recommended" : "Option"}
+                </span>
+                <h4>{choice.label}</h4>
+                <p>{choice.summary}</p>
+                <small>{choice.nextStep}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="ai-value-map-grid">
         <div className="ai-value-map-cell">

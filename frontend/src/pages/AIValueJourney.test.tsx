@@ -501,16 +501,18 @@ describe("AIValueJourney", () => {
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
     expect(within(bridge).getByRole("heading", { name: /Choose function and outcome metrics/i })).toBeInTheDocument();
     expect(within(bridge).getByText(/Select the org function from the AI Fluency and VBD work/i)).toBeInTheDocument();
-    expect(within(bridge).getByRole("group", { name: /Select org function/i })).toBeInTheDocument();
-    expect(within(bridge).getByRole("button", { name: /Customer or Account Success/i })).toBeInTheDocument();
+    const functionSelect = within(bridge).getByRole("combobox", { name: /Org function/i }) as HTMLSelectElement;
+    expect(functionSelect.options).toHaveLength(17);
+    expect(within(functionSelect).getByRole("option", { name: "Customer or Account Success" })).toBeInTheDocument();
+    expect(within(functionSelect).getByRole("option", { name: "Data & Analytics" })).toBeInTheDocument();
     const medianResolution = within(bridge).getByRole("checkbox", { name: /Median resolution time/i });
-    const firstContactResolution = within(bridge).getByRole("checkbox", { name: /First contact resolution/i });
+    const timeToFirstValue = within(bridge).getByRole("checkbox", { name: /Time to First Value/i });
     expect(medianResolution).toBeChecked();
-    fireEvent.click(firstContactResolution);
+    fireEvent.click(timeToFirstValue);
     const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
     expect(within(watchPlan).getByText(/Customer or Account Success/i)).toBeInTheDocument();
     expect(within(watchPlan).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(watchPlan).getByText(/First contact resolution/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Time to First Value/i)).toBeInTheDocument();
     const blueprintContext = within(bridge).getByRole("region", {
       name: /Blueprint metric context/i
     });

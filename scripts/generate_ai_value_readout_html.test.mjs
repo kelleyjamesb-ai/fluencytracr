@@ -25,11 +25,11 @@ test("renders a self-contained readout with claim governance intact", () => {
     fluencySummary: summarizeFluencyBaseline(baseline)
   });
   assert.ok(html.startsWith("<!DOCTYPE html>"));
-  assert.ok(html.includes("Pre-ROI planning artifact"));
+  assert.ok(html.includes("Value realization planning artifact"));
   for (const caveat of packet.sections.claim_boundary.required_caveats) {
     assert.ok(html.includes(caveat.replace(/'/g, "&#39;")), `missing caveat: ${caveat}`);
   }
-  assert.ok(html.includes("What this readout never claims"));
+  assert.ok(html.includes("Governance boundaries"));
   assert.ok(html.includes("Proven ROI"));
   assert.ok(html.includes("AI caused the improvement"));
   assert.ok(html.includes("Northstar Enterprise"));
@@ -42,7 +42,7 @@ test("renders without optional kickoff context", () => {
   const html = renderExecutiveReadoutHtml({ packet, engagement: null, fluencySummary: null });
   assert.ok(!html.includes("Client objective"));
   assert.ok(!html.includes("AI fluency at kickoff"));
-  assert.ok(html.includes("Pre-ROI planning artifact"));
+  assert.ok(html.includes("Value realization planning artifact"));
 });
 
 test("renders accepted outcome evidence as caveated support only", () => {
@@ -71,6 +71,54 @@ test("renders accepted outcome evidence as caveated support only", () => {
   assert.ok(!html.includes("Glean proved ROI"));
   assert.ok(!html.includes("ACCEPTED"));
   assert.ok(!html.includes("outcome_evidence_export"));
+});
+
+test("renders Financial Translation when packet includes governed EBITA summary", () => {
+  const packetWithEbita = JSON.parse(JSON.stringify(packet));
+  packetWithEbita.ebita_impact_summary = {
+    status: "MODELED_EBITA_SCENARIO",
+    realized_ebita_claim_allowed: false,
+    customer_facing_allowed: false,
+    causality_claim_allowed: false,
+    primary_ebita_levers: ["CAPACITY_CREATION", "OPERATING_COST_REDUCTION"],
+    evidence_quality: {
+      adoption_evidence: "SUPPORTED",
+      workflow_evidence: "SUPPORTED",
+      outcome_evidence: "SUPPORTED",
+      financial_evidence: "SUPPORTED",
+      overall_ebita_confidence: "SUPPORTED"
+    },
+    allowed_phrases: [
+      "Customer-owned financial assumptions support a modeled EBITA scenario."
+    ],
+    required_caveats: [
+      "Customer-owned financial assumptions are required before dollarized claims.",
+      "Finance validation is required before realized EBITA language."
+    ],
+    blocked_claims: [
+      "headcount_reduction_from_usage",
+      "individual_productivity_claim",
+      "manager_or_team_ranking",
+      "hris_inference"
+    ],
+    next_evidence_actions: [
+      "Keep economic language internal or caveated until customer-facing approval is granted."
+    ]
+  };
+
+  const html = renderExecutiveReadoutHtml({
+    packet: packetWithEbita,
+    engagement: null,
+    fluencySummary: null
+  });
+
+  assert.ok(html.includes("Financial Translation"));
+  assert.ok(!html.includes("MODELED_EBITA_SCENARIO"));
+  assert.ok(html.includes("Measured Value"));
+  assert.ok(!html.includes(">SUPPORTED<"));
+  assert.ok(html.includes("No realized financial claim is allowed."));
+  assert.ok(html.includes("Customer-owned financial assumptions are required before dollarized claims."));
+  assert.ok(html.includes("Keep economic language internal or caveated until customer-facing approval is granted."));
 });
 
 test("never leaks internal state names into the readout", () => {

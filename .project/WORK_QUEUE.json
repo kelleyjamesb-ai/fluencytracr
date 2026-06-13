@@ -92,6 +92,30 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-06-12 UTC: deterministic shared EBITA translation layer after ROI Scenario. It maps value routes to EBITA drivers, validates source ROI gate compatibility, and blocks usage-derived EBITA, individual scoring, manager_or_team_ranking, UI, routes, DB schema, dashboards, and connectors."
+    },
+    {
+      "id": "phase-ai-value-executive-readout-v2",
+      "title": "AI Value Platform: governed Executive Readout V2",
+      "bound": "shared/src/aiValueEngine/executivePacket.ts, shared/src/aiValueEngine/readoutHtml.ts, scripts/generate_ai_value_executive_packet.test.mjs, scripts/generate_ai_value_readout_html.test.mjs, schemas/ai-value-intelligence/executive-packet.schema.json, docs/concepts/EXECUTIVE_READOUT_V2.md; acceptance: optional ebita_impact_summary, markdown/html EBITA Impact Bridge section, evidence-quality-driven allowed language, usage-only ROI/EBITA blocked, individual productivity/manager ranking/HRIS/headcount claims blocked",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-06-12 UTC: Executive Readout V2 can include governed ebita_impact_summary, markdown/html EBITA Impact Bridge sections, schema support, safe language, blocked claims, and next evidence actions. Usage-only ROI/EBITA, individual productivity, manager ranking, HRIS inference, and headcount claims remain blocked."
+    },
+    {
+      "id": "phase-ai-value-readout-prototype-ui",
+      "title": "AI Value Platform: Executive Readout prototype UI",
+      "bound": "frontend/src/pages/AIValueReadoutPrototype.tsx, frontend/src/pages/AIValueReadoutPrototype.test.tsx, frontend/src/main.tsx, frontend/src/styles.css, docs/concepts/AI_VALUE_READOUT_PROTOTYPE_UI.md; acceptance: static mock executive packet data, VBD posture, workflow outcome evidence, financial claim gate, EBITA bridge status, safe language, blocked claims, caveats, next evidence actions, no individual/manager/HRIS/named productivity or usage-derived ROI views",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "Done 2026-06-12 UTC: static aggregate/workflow-only executive readout prototype added at /ai-value-readout with VBD posture, outcome evidence, financial claim gate, EBITA bridge, safe/caveated language, blocked claims, and next evidence actions. No backend route, DB schema, ingestion, ML/scoring, dashboard, individual/manager/HRIS view, or usage-derived ROI was added."
+    },
+    {
+      "id": "phase-ai-value-language-alignment",
+      "title": "AI Value Platform: canonical language alignment",
+      "bound": "docs/architecture/CANONICAL_LANGUAGE_SYSTEM.md, docs/architecture/LANGUAGE_ALIGNMENT_MATRIX.md, docs/architecture/TERMINOLOGY_DEPRECATION_PLAN.md, shared/src/aiValueEngine/language.ts, executive packet/readout renderers, readout prototype labels; acceptance: executive, evidence, value, financial, governance, intervention, executive readout, and productivity recapture language are standardized through aliases/display labels only; existing schemas remain backward compatible; no governance control is weakened",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "Done 2026-06-12 UTC: canonical language docs, alignment matrix, deprecation plan, shared display labels, readout renderer labels, generated examples, and prototype labels are aligned around Value Hypothesis, Measurement Plan, Evidence Collection, Value Realization, Financial Translation, Value Accounting, Renewal Evidence, and Productivity Recapture. Existing schemas and governance controls remain unchanged."
     }
   ]
 }
