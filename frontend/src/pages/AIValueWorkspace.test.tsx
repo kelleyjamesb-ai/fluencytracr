@@ -719,6 +719,70 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
+  it("falls back for stale saved metric IDs while preserving explicit empty selections", async () => {
+    const savedWatchPlan = (metrics: Array<Record<string, string>>) => ({
+      activeFunctionArea: "Customer or Account Success",
+      selectionsByFunction: {
+        "Customer or Account Success": {
+          functionArea: "Customer or Account Success",
+          quadrantLabel: "Deep but slow",
+          vbdBaseline: "Velocity 42 · Breadth 55 · Depth 66",
+          metrics
+        }
+      }
+    });
+    const staleMetric = {
+      id: "stale-support-resolution-metric",
+      name: "Legacy resolution metric",
+      question: "Did a previous saved metric survive?",
+      valueRoute: "Capacity creation",
+      sourceSystem: "Legacy support system",
+      measurementUnit: "hours",
+      owner: "Support Operations",
+      watches: "Legacy saved selection"
+    };
+
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY,
+      JSON.stringify(savedWatchPlan([staleMetric]))
+    );
+    stubJourneyFetch(journeyObjects);
+    const staleView = renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    let bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    expect(within(bridge).getByRole("checkbox", { name: /Median resolution time/i })).toBeChecked();
+    expect(
+      within(screen.getByRole("region", { name: /VBD metric watch plan/i })).getByText(
+        /Median resolution time/i
+      )
+    ).toBeInTheDocument();
+
+    staleView.unmount();
+    vi.unstubAllGlobals();
+    localStorage.setItem(
+      SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY,
+      JSON.stringify(savedWatchPlan([]))
+    );
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    expect(
+      within(bridge).getByRole("checkbox", { name: /Median resolution time/i })
+    ).not.toBeChecked();
+    const watchPlan = screen.getByRole("region", { name: /VBD metric watch plan/i });
+    expect(within(watchPlan).getByText(/Choose at least one client-owned metric/i)).toBeInTheDocument();
+    expect(within(watchPlan).queryByText(/Median resolution time/i)).not.toBeInTheDocument();
+  });
+
   it.each([
     {
       state: "ACCEPTED" as const,

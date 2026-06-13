@@ -1021,7 +1021,9 @@ const mergeWithCurrentDefaults = (
 ) => {
   const selectedMetricIds = dedupeKnownMetricIds(metricIds, knownMetricIds);
   const knownDefaultMetricIds = dedupeKnownMetricIds(defaultMetricIds, knownMetricIds);
-  if (selectedMetricIds.length === 0) return knownDefaultMetricIds;
+  if (selectedMetricIds.length === 0) {
+    return metricIds.length === 0 ? [] : knownDefaultMetricIds;
+  }
 
   const missingBridgeDefaults = knownDefaultMetricIds.filter(
     (metricId) => metricId.startsWith("bridge-") && !selectedMetricIds.includes(metricId)
@@ -1193,22 +1195,28 @@ export const ClientQuestionMetricBridgePanel = ({
         const plan = functionPlans.find((candidate) => candidate.functionArea === functionArea);
         if (!plan) continue;
         const knownMetricIds = getKnownMetricIds(plan);
-        const currentMetricIds = dedupeKnownMetricIds(
-          nextSelections[functionArea] ?? [],
-          knownMetricIds
+        const hasCurrentSelection = Object.prototype.hasOwnProperty.call(
+          nextSelections,
+          functionArea
         );
         const defaultMetricIds = dedupeKnownMetricIds(selectedMetricIds, knownMetricIds);
-        const currentHasBridgeMetric = currentMetricIds.some((metricId) =>
+        const currentMetricIds = hasCurrentSelection
+          ? nextSelections[functionArea] ?? []
+          : defaultMetricIds;
+        const knownCurrentMetricIds = dedupeKnownMetricIds(currentMetricIds, knownMetricIds);
+        const currentHasBridgeMetric = knownCurrentMetricIds.some((metricId) =>
           metricId.startsWith("bridge-")
         );
         const defaultHasBridgeMetric = defaultMetricIds.some((metricId) =>
           metricId.startsWith("bridge-")
         );
         const mergedMetricIds =
-          currentMetricIds.length === 0 ||
-          (defaultHasBridgeMetric && !currentHasBridgeMetric)
-            ? defaultMetricIds
-            : currentMetricIds;
+          !hasCurrentSelection || currentMetricIds.length === 0
+            ? currentMetricIds
+            : knownCurrentMetricIds.length === 0 ||
+                (defaultHasBridgeMetric && !currentHasBridgeMetric)
+              ? defaultMetricIds
+              : knownCurrentMetricIds;
         if (mergedMetricIds.join("|") !== (nextSelections[functionArea] ?? []).join("|")) {
           nextSelections[functionArea] = mergedMetricIds;
           changed = true;
