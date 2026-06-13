@@ -231,6 +231,21 @@ export type {
 } from "./clientEvidenceEntry";
 
 export {
+  AI_VALUE_AI_FLUENCY_INTAKE_BRIDGE_SCHEMA_VERSION,
+  AIFluencyIntakeBridgeSchema,
+  buildEvidenceGapReviewFromMeasurementPlanAndSnapshot,
+  buildMeasurementPlanDraftFromAIFluencyIntake,
+  validateAIFluencyIntakeBridge
+} from "./aiFluencyIntakeBridge";
+export type {
+  AIFluencyIntakeBridge,
+  AIFluencyIntakeBridgeBuildInputs,
+  AIFluencyIntakeBridgeValidationResult,
+  BuildEvidenceGapReviewOptions,
+  EvidenceGapReview
+} from "./aiFluencyIntakeBridge";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,
