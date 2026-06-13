@@ -859,6 +859,24 @@ function collectPlaybookCoverageGaps(snapshot: any): string[] {
       `playbook_coverage.${layer}.status`,
       gaps
     );
+    const layerEvidenceState = evidenceStateOfLayer(snapshot, layer);
+    if (
+      entry.status === "present" &&
+      layerEvidenceState &&
+      isMissingHeldSuppressedOrNotComputed(layerEvidenceState)
+    ) {
+      gaps.push(
+        `playbook_coverage.${layer}.status cannot be present when playbook_layers.${layer}.evidence_state is ${layerEvidenceState}`
+      );
+    }
+    if (
+      entry.status === "partial" &&
+      isMissingHeldSuppressedOrNotComputed(layerEvidenceState)
+    ) {
+      gaps.push(
+        `playbook_coverage.${layer}.status cannot be partial when playbook_layers.${layer}.evidence_state is ${layerEvidenceState}`
+      );
+    }
     for (const field of ["covered_signals", "missing_signals", "held_signals", "caveats"]) {
       if (!Array.isArray(entry[field])) {
         gaps.push(`playbook_coverage.${layer}.${field} must be an array`);
