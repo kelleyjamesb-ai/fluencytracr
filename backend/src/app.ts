@@ -866,9 +866,15 @@ const REQUIRED_COMPLIANCE_TABLES = [
 ] as const;
 
 // AI Value persistence. Surfaced in DB readiness so a deploy that skipped the
-// ai_value_objects migration fails closed at /ops/db/readiness and /health
-// instead of only erroring at the first value-chain upsert.
-const REQUIRED_AI_VALUE_TABLES = ["ai_value_objects"] as const;
+// AI Value migrations fails closed at /ops/db/readiness and /health instead of
+// only erroring at the first value-chain or evidence persistence write.
+const REQUIRED_AI_VALUE_TABLES = [
+  "ai_value_objects",
+  "value_hypotheses",
+  "measurement_plans",
+  "source_package_refs",
+  "evidence_snapshots"
+] as const;
 
 const REQUIRED_PERSISTENCE_TABLES = [
   ...REQUIRED_COMPLIANCE_TABLES,
@@ -5632,14 +5638,15 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
   if (readiness.status === "not_configured") {
     return res.json({
       status: "not_configured",
-      required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
     });
   }
   if (readiness.status === "unavailable") {
     return res.status(503).json({
       status: "unavailable",
       error: "database_unavailable",
-      details: process.env.NODE_ENV === "production" ? undefined : readiness.error
+      details: process.env.NODE_ENV === "production" ? undefined : readiness.error,
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
     });
   }
   if (readiness.status === "schema_incomplete") {
@@ -5647,13 +5654,13 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       status: "schema_incomplete",
       table_count: readiness.tableCount,
       missing_tables: readiness.missingTables,
-      required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
     });
   }
   return res.json({
     status: "ready",
     table_count: readiness.tableCount,
-    required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+    required_tables: [...REQUIRED_PERSISTENCE_TABLES]
   });
 });
 

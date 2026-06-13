@@ -85,6 +85,53 @@ export type {
 } from "./evidenceSnapshot";
 
 export {
+  AI_VALUE_CLAIM_READINESS_HANDOFF_SCHEMA_VERSION,
+  ClaimReadinessHandoffSchema,
+  buildClaimReadinessHandoffFromEvidenceSnapshot,
+  translateSnapshotBlockedUsesToBlockedClaims,
+  validateClaimReadinessHandoff
+} from "./claimReadinessHandoff";
+export type {
+  BuildClaimReadinessHandoffOptions,
+  ClaimReadinessHandoff,
+  ClaimReadinessHandoffValidationResult
+} from "./claimReadinessHandoff";
+
+export {
+  AI_VALUE_CLAIM_READINESS_SNAPSHOT_SCHEMA_VERSION,
+  ClaimReadinessSnapshotSchema,
+  buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff,
+  validateClaimReadinessSnapshot
+} from "./claimReadinessSnapshot";
+export type {
+  BuildClaimReadinessSnapshotOptions,
+  ClaimReadinessSnapshot,
+  ClaimReadinessSnapshotValidationResult
+} from "./claimReadinessSnapshot";
+
+export {
+  AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
+  SourcePackageSchema,
+  validateSourcePackage
+} from "./sourcePackages";
+export type {
+  SourcePackage,
+  SourcePackageValidationResult
+} from "./sourcePackages";
+
+export {
+  EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,
+  EvidenceCollectionAssemblySchema,
+  buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages,
+  validateEvidenceCollectionAssembly
+} from "./evidenceCollectionAssembler";
+export type {
+  BuildEvidenceCollectionAssemblyOptions,
+  EvidenceCollectionAssembly,
+  EvidenceCollectionAssemblyValidationResult
+} from "./evidenceCollectionAssembler";
+
+export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
   MEASUREMENT_PLAN_SCHEMA_VERSION

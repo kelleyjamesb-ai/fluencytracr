@@ -506,3 +506,131 @@ model AiValueObject {
   @@index([orgId, workflowFamily])
   @@map("ai_value_objects")
 }
+
+model ValueHypothesis {
+  id                  String   @id @default(uuid()) @db.Uuid
+  orgId               String   @map("org_id")
+  valueHypothesisId   String   @map("value_hypothesis_id")
+  schemaVersion       String   @map("schema_version")
+  derivationVersion   String   @map("derivation_version")
+  workflowFamily      String   @map("workflow_family")
+  functionArea        String?  @map("function_area")
+  valueRoute          String   @map("value_route")
+  hypothesisStatement String   @map("hypothesis_statement")
+  businessObjective   String   @map("business_objective")
+  status              String
+  payloadJson         Json     @map("payload_json")
+  validationJson      Json     @map("validation_json")
+  sourceRefsJson      Json     @default("{}") @map("source_refs_json")
+  version             Int
+  supersedesId        String?  @map("supersedes_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
+  createdByRole       String   @map("created_by_role")
+
+  @@unique([orgId, valueHypothesisId, version], name: "value_hypotheses_immutable_key")
+  @@index([orgId, workflowFamily])
+  @@index([orgId, status])
+  @@index([orgId, createdAt])
+  @@map("value_hypotheses")
+}
+
+model MeasurementPlan {
+  id                            String   @id @default(uuid()) @db.Uuid
+  orgId                         String   @map("org_id")
+  measurementPlanId             String   @map("measurement_plan_id")
+  valueHypothesisId             String   @map("value_hypothesis_id")
+  schemaVersion                 String   @map("schema_version")
+  derivationVersion             String   @map("derivation_version")
+  workflowFamily                String   @map("workflow_family")
+  approvedAggregateGrain        String   @map("approved_aggregate_grain")
+  minimumCohortThreshold        Int      @map("minimum_cohort_threshold")
+  baselineWindowStart           DateTime @map("baseline_window_start")
+  baselineWindowEnd             DateTime @map("baseline_window_end")
+  comparisonWindowStart         DateTime? @map("comparison_window_start")
+  comparisonWindowEnd           DateTime? @map("comparison_window_end")
+  coverageGoal                  String   @map("coverage_goal")
+  readinessState                String   @map("readiness_state")
+  payloadJson                   Json     @map("payload_json")
+  validationJson                Json     @map("validation_json")
+  sourcePackageRequirementsJson Json     @map("source_package_requirements_json")
+  assumptionsJson               Json     @map("assumptions_json")
+  sourceRefsJson                Json     @default("{}") @map("source_refs_json")
+  version                       Int
+  supersedesId                  String?  @map("supersedes_id") @db.Uuid
+  createdAt                     DateTime @default(now()) @map("created_at")
+  createdByRole                 String   @map("created_by_role")
+
+  @@unique([orgId, measurementPlanId, version], name: "measurement_plans_immutable_key")
+  @@index([orgId, valueHypothesisId])
+  @@index([orgId, workflowFamily])
+  @@index([orgId, baselineWindowStart, baselineWindowEnd])
+  @@index([orgId, readinessState])
+  @@map("measurement_plans")
+}
+
+model SourcePackageRef {
+  id                      String   @id @default(uuid()) @db.Uuid
+  orgId                   String   @map("org_id")
+  sourcePackageId         String   @map("source_package_id")
+  sourcePackageType       String   @map("source_package_type")
+  schemaVersion           String   @map("schema_version")
+  derivationVersion       String   @map("derivation_version")
+  measurementPlanId       String?  @map("measurement_plan_id")
+  workflowFamily          String?  @map("workflow_family")
+  generatedAt             DateTime @map("generated_at")
+  coveredWindowStart      DateTime @map("covered_window_start")
+  coveredWindowEnd        DateTime @map("covered_window_end")
+  approvedAggregateGrain  String   @map("approved_aggregate_grain")
+  minimumCohortThreshold  Int      @map("minimum_cohort_threshold")
+  evidenceState           String   @map("evidence_state")
+  kMinPostureJson         Json     @map("k_min_posture_json")
+  privacyBoundaryJson     Json     @map("privacy_boundary_json")
+  sourceRefsJson          Json     @map("source_refs_json")
+  validationJson          Json     @map("validation_json")
+  caveatsJson             Json     @map("caveats_json")
+  version                 Int
+  supersedesId            String?  @map("supersedes_id") @db.Uuid
+  createdAt               DateTime @default(now()) @map("created_at")
+  createdByRole           String   @map("created_by_role")
+
+  @@unique([orgId, sourcePackageId, version], name: "source_package_refs_immutable_key")
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, sourcePackageType])
+  @@index([orgId, workflowFamily])
+  @@index([orgId, coveredWindowStart, coveredWindowEnd])
+  @@map("source_package_refs")
+}
+
+model EvidenceSnapshot {
+  id                         String   @id @default(uuid()) @db.Uuid
+  orgId                      String   @map("org_id")
+  evidenceSnapshotId         String   @map("evidence_snapshot_id")
+  measurementPlanId          String   @map("measurement_plan_id")
+  schemaVersion              String   @map("schema_version")
+  derivationVersion          String   @map("derivation_version")
+  workflowFamily             String   @map("workflow_family")
+  snapshotType               String   @map("snapshot_type")
+  coverageStatus             String   @map("coverage_status")
+  windowStart                DateTime @map("window_start")
+  windowEnd                  DateTime @map("window_end")
+  suppressionDefaultVerdict  String   @map("suppression_default_verdict")
+  privacyAggregateOnly       Boolean  @map("privacy_aggregate_only")
+  kMinThresholdMet           Boolean  @map("k_min_threshold_met")
+  payloadJson                Json     @map("payload_json")
+  validationJson             Json     @map("validation_json")
+  sourceRefsJson             Json     @map("source_refs_json")
+  requiredCaveatsJson        Json     @map("required_caveats_json")
+  blockedUsesJson            Json     @map("blocked_uses_json")
+  version                    Int
+  supersedesId               String?  @map("supersedes_id") @db.Uuid
+  generatedAt                DateTime @map("generated_at")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  createdByRole              String   @map("created_by_role")
+
+  @@unique([orgId, evidenceSnapshotId, version], name: "evidence_snapshots_immutable_key")
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, workflowFamily, windowStart, windowEnd])
+  @@index([orgId, coverageStatus])
+  @@index([orgId, snapshotType])
+  @@map("evidence_snapshots")
+}
