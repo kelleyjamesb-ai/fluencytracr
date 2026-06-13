@@ -108,6 +108,18 @@ export type {
 } from "./sourcePackages";
 
 export {
+  EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,
+  EvidenceCollectionAssemblySchema,
+  buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages,
+  validateEvidenceCollectionAssembly
+} from "./evidenceCollectionAssembler";
+export type {
+  BuildEvidenceCollectionAssemblyOptions,
+  EvidenceCollectionAssembly,
+  EvidenceCollectionAssemblyValidationResult
+} from "./evidenceCollectionAssembler";
+
+export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
   MEASUREMENT_PLAN_SCHEMA_VERSION
