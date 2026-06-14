@@ -219,6 +219,12 @@ const FORBIDDEN_KEY_PATTERNS = [
   /headcount_reduction/i
 ];
 
+const LAYER_3_AGGREGATE_OUTCOME_KPI_VALUE_PATTERNS = [
+  /(?:^|_)profit(?:_|$)/i,
+  /(?:^|_)revenue(?:_|$)/i,
+  /cost_savings/i
+] as const;
+
 const FORBIDDEN_VALUE_PATTERNS = [
   /(?:^|_)roi(?:_|$)/i,
   /realized_roi/i,
@@ -231,10 +237,8 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /headcount_reduction/i,
   /(?:^|_)financial(?:_|$)/i,
   /(?:^|_)economic(?:_|$)/i,
-  /(?:^|_)profit(?:_|$)/i,
-  /(?:^|_)revenue(?:_|$)/i,
+  ...LAYER_3_AGGREGATE_OUTCOME_KPI_VALUE_PATTERNS,
   /(?:^|_)dollar(?:_|$)/i,
-  /cost_savings/i,
   /customer_facing_(?:financial|economic)/i,
   /individual_(?:attribution|scoring|score|productivity)/i,
   /employee_(?:score|scoring|productivity)/i,
@@ -242,6 +246,9 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /team_ranking/i,
   /people_decisioning/i
 ];
+
+const LAYER_3_AGGREGATE_OUTCOME_KPI_VALUE_PATTERN_SET =
+  new Set<RegExp>(LAYER_3_AGGREGATE_OUTCOME_KPI_VALUE_PATTERNS);
 
 const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
@@ -461,16 +468,53 @@ function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Se
   return fields;
 }
 
+function isLayer3AggregateOutcomeMetricName(entry: any, value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return entry?.evidence_layer === "layer_3_business_system_outcomes" &&
+    ["aggregate_export_upload_metadata", "manual_aggregate_metric_entry"].includes(
+      String(entry?.entry_mode)
+    ) &&
+    normalizedValue.startsWith("aggregate_");
+}
+
+function isAllowedLayer3AggregateOutcomeKpiValuePattern(
+  entry: any,
+  path: string,
+  pattern: RegExp,
+  value: string
+): boolean {
+  return path === "metric_or_signal_summary.aggregate_metric_name" &&
+    isLayer3AggregateOutcomeMetricName(entry, value) &&
+    LAYER_3_AGGREGATE_OUTCOME_KPI_VALUE_PATTERN_SET.has(pattern);
+}
+
 function collectForbiddenValues(entry: any): string[] {
   const values = [
-    String(entry?.metric_or_signal_summary?.aggregate_metric_name ?? ""),
-    String(entry?.metric_or_signal_summary?.aggregate_signal_name ?? ""),
-    String(entry?.metric_or_signal_summary?.summary_type ?? ""),
-    ...stringsOf(entry?.allowed_uses)
-  ].filter(Boolean);
-  return values.filter((value) =>
-    FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(normalizeKey(value)))
-  );
+    {
+      path: "metric_or_signal_summary.aggregate_metric_name",
+      value: String(entry?.metric_or_signal_summary?.aggregate_metric_name ?? "")
+    },
+    {
+      path: "metric_or_signal_summary.aggregate_signal_name",
+      value: String(entry?.metric_or_signal_summary?.aggregate_signal_name ?? "")
+    },
+    {
+      path: "metric_or_signal_summary.summary_type",
+      value: String(entry?.metric_or_signal_summary?.summary_type ?? "")
+    },
+    ...stringsOf(entry?.allowed_uses).map((value) => ({
+      path: "allowed_uses",
+      value
+    }))
+  ].filter(({ value }) => value);
+  return values
+    .filter(({ path, value }) =>
+      FORBIDDEN_VALUE_PATTERNS.some((pattern) =>
+        pattern.test(normalizeKey(value)) &&
+          !isAllowedLayer3AggregateOutcomeKpiValuePattern(entry, path, pattern, value)
+      )
+    )
+    .map(({ value }) => value);
 }
 
 function isUnsafeMetadataValue(value: string): boolean {

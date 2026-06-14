@@ -530,17 +530,35 @@ function identityGapsForEntry(entry: any, orgId: string, measurementPlanId: stri
   return gaps;
 }
 
+function requestMatchGapsForEntry(entry: any, generatedRequests: ClientEvidenceRequest[]): string[] {
+  const requestId = String(entry?.request_id ?? "");
+  const evidenceLayer = String(entry?.evidence_layer ?? "");
+  if (!requestId || !evidenceLayer) return [];
+  const matchesGeneratedRequest = generatedRequests.some((request) =>
+    request.request_id === requestId &&
+    request.requested_playbook_layer === evidenceLayer
+  );
+  return matchesGeneratedRequest
+    ? []
+    : ["Client Evidence Entry request_id does not match a generated Client Evidence Request for its evidence_layer."];
+}
+
 function reviewEntry(
   entry: any,
   orgId: string,
   measurementPlanId: string,
-  generatedAt: string
+  generatedAt: string,
+  generatedRequests: ClientEvidenceRequest[]
 ): {
   review: ClientEvidenceEntryReview;
   sourcePackage: SourcePackage | null;
 } {
   const validation = validateClientEvidenceEntry(entry);
-  const rejectionReasons = [...validation.gaps, ...identityGapsForEntry(entry, orgId, measurementPlanId)];
+  const rejectionReasons = [
+    ...validation.gaps,
+    ...identityGapsForEntry(entry, orgId, measurementPlanId),
+    ...requestMatchGapsForEntry(entry, generatedRequests)
+  ];
   let sourcePackage: SourcePackage | null = null;
   if (validation.valid && validation.feeds.source_package && rejectionReasons.length === 0) {
     try {
@@ -643,7 +661,8 @@ export function buildPostSalesWorkflowOrchestrator(
       entry,
       inputs.orgId,
       plan.measurement_plan_id,
-      createdAt
+      createdAt,
+      bridge.client_evidence_requests
     );
     entryReviews.push(review);
     if (sourcePackage) derivedSourcePackages.push(sourcePackage);
@@ -958,6 +977,18 @@ function collectEntryReviewGaps(orchestrator: any): string[] {
   const sourcePackageIds = new Set(
     (orchestrator?.source_packages ?? []).map((pkg: any) => String(pkg?.source_package_id ?? ""))
   );
+  const generatedRequestLayersById = new Map<string, string>();
+  for (const request of [
+    ...(orchestrator?.client_evidence_requests?.initial_requests ?? []),
+    ...(orchestrator?.client_evidence_requests?.current_requests ?? [])
+  ]) {
+    if (request?.request_id && request?.requested_playbook_layer) {
+      generatedRequestLayersById.set(
+        String(request.request_id),
+        String(request.requested_playbook_layer)
+      );
+    }
+  }
   const acceptedReviewsByEntryId = new Map<string, any>();
   if (!Array.isArray(orchestrator?.client_evidence_entry_reviews)) {
     gaps.push("client_evidence_entry_reviews must be an array");
@@ -992,6 +1023,14 @@ function collectEntryReviewGaps(orchestrator: any): string[] {
       }
       if (stringsOf(review?.rejection_reasons).length > 0) {
         gaps.push(`client_evidence_entry_reviews[${index}] accepted entry must not carry rejection reasons`);
+      }
+      if (
+        generatedRequestLayersById.get(String(review?.request_id ?? "")) !==
+        String(review?.evidence_layer ?? "")
+      ) {
+        gaps.push(
+          `client_evidence_entry_reviews[${index}] accepted entry must match a generated Client Evidence Request for its evidence_layer`
+        );
       }
       if (review?.entry_id) {
         acceptedReviewsByEntryId.set(String(review.entry_id), review);

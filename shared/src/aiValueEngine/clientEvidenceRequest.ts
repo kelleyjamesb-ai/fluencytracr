@@ -220,6 +220,14 @@ const UNSAFE_VALUE_PATTERNS = [
   /people[_\s-]?decisioning/i
 ];
 
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+const FORBIDDEN_IDENTIFIER_VALUE_PATTERNS = [
+  /(?:^|_)(?:user|employee|person|direct)_(?:id|identifier|email)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i
+];
+
 const GOVERNED_KEY_ALLOWLIST = new Set([
   "forbidden_fields",
   "blocked_claims",
@@ -358,6 +366,14 @@ function normalizeToken(value: string): string {
   return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
+function normalizeKey(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+}
+
 function hasToken(values: any, token: string): boolean {
   return stringsOf(values).map(normalizeToken).includes(token);
 }
@@ -374,10 +390,11 @@ function safeIdPart(value: string): string {
 }
 
 function isForbiddenKey(key: string): boolean {
-  if (GOVERNED_KEY_ALLOWLIST.has(key)) return false;
-  if (REQUIRED_FORBIDDEN_FIELDS.includes(key)) return true;
-  if (REQUIRED_BLOCKED_CLAIMS.includes(key)) return true;
-  return FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key));
+  const normalizedKey = normalizeKey(key);
+  if (GOVERNED_KEY_ALLOWLIST.has(normalizedKey)) return false;
+  if (REQUIRED_FORBIDDEN_FIELDS.includes(normalizedKey)) return true;
+  if (REQUIRED_BLOCKED_CLAIMS.includes(normalizedKey)) return true;
+  return FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(normalizedKey));
 }
 
 function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Set<string> {
@@ -429,6 +446,53 @@ function collectUnsafeNarrativeValues(request: any): string[] {
     }
   }
   return unsafe;
+}
+
+function isForbiddenIdentifierValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    FORBIDDEN_IDENTIFIER_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function collectForbiddenIdentifierValues(
+  value: any,
+  values: string[] = [],
+  path: string[] = []
+): string[] {
+  if (typeof value === "string") {
+    if (isForbiddenIdentifierValue(value)) {
+      values.push(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectForbiddenIdentifierValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectForbiddenIdentifierValues(nested, values, [...path, key]);
+  }
+  return values;
+}
+
+function collectRequestMetadataValueGaps(request: any): string[] {
+  const metadata = {
+    request_id: request?.request_id,
+    org_id: request?.org_id,
+    measurement_plan_id: request?.measurement_plan_id,
+    evidence_snapshot_id: request?.evidence_snapshot_id,
+    evidence_purpose: request?.evidence_purpose,
+    owner_role: request?.owner_role,
+    approver_role: request?.approver_role,
+    customer_instructions: request?.customer_instructions,
+    internal_notes: request?.internal_notes
+  };
+  return collectForbiddenIdentifierValues(metadata).map(
+    (value) => `Forbidden metadata value detected: ${value}`
+  );
 }
 
 function requireCommonPolicy(request: any, gaps: string[]): void {
@@ -600,6 +664,7 @@ export function validateClientEvidenceRequest(request: any): ClientEvidenceReque
   for (const value of collectUnsafeNarrativeValues(request)) {
     gaps.push(`request narrative contains unsafe or unsupported claim language: ${value}`);
   }
+  gaps.push(...collectRequestMetadataValueGaps(request));
   for (const field of [...collectForbiddenFields(request)].sort()) {
     gaps.push(`Forbidden field detected: ${field}`);
   }
@@ -890,8 +955,22 @@ function missingOrHeldLayersFromSnapshot(snapshot: any): string[] {
       layers.push(layer);
     }
   }
-  const workforceState = snapshot?.aggregate_workforce_context?.context_state;
-  if (["not_provided", "held_for_approval", "suppressed", "blocked"].includes(String(workforceState))) {
+  const workforceContext = snapshot?.aggregate_workforce_context ?? {};
+  const workforceState = workforceContext?.context_state;
+  const workforceSourceType = workforceContext?.source_type;
+  const workforceApprovalState = workforceContext?.source_owner_approval_state;
+  const workforceMinimumCohortThreshold = workforceContext?.minimum_cohort_threshold;
+  const workforceContextWasConfigured =
+    snapshot?.privacy_boundary?.aggregate_workforce_context_allowed === true ||
+    (workforceSourceType !== undefined && workforceSourceType !== "not_applicable") ||
+    (workforceApprovalState !== undefined && workforceApprovalState !== "not_required") ||
+    (workforceMinimumCohortThreshold !== undefined && workforceMinimumCohortThreshold !== null) ||
+    stringsOf(workforceContext?.allowed_context_types).length > 0 ||
+    stringsOf(snapshot?.source_refs?.aggregate_workforce_context_export_ids).length > 0;
+  if (
+    workforceContextWasConfigured &&
+    ["not_provided", "held_for_approval", "suppressed", "blocked"].includes(String(workforceState))
+  ) {
     layers.push("aggregate_workforce_context");
   }
   return [...new Set(layers)];
@@ -901,7 +980,10 @@ export function buildClientEvidenceRequestsFromMeasurementPlan(
   measurementPlan: any,
   options: BuildClientEvidenceRequestOptions = {}
 ): ClientEvidenceRequest[] {
-  validateMeasurementPlan(measurementPlan);
+  const validation = validateMeasurementPlan(measurementPlan);
+  if (!validation.valid) {
+    throw new Error(`Measurement Plan is invalid: ${validation.gaps.join("; ")}`);
+  }
   const orgId = measurementPlan?.org_id ?? "unknown_org";
   const measurementPlanId = measurementPlan?.measurement_plan_id ?? "unknown_measurement_plan";
   return requiredLayersFromMeasurementPlan(measurementPlan).map((layer) =>
@@ -913,7 +995,10 @@ export function buildClientEvidenceRequestsFromEvidenceSnapshot(
   evidenceSnapshot: any,
   options: BuildClientEvidenceRequestOptions = {}
 ): ClientEvidenceRequest[] {
-  validateEvidenceSnapshot(evidenceSnapshot);
+  const validation = validateEvidenceSnapshot(evidenceSnapshot);
+  if (!validation.valid) {
+    throw new Error(`Evidence Snapshot is invalid: ${validation.gaps.join("; ")}`);
+  }
   const orgId = evidenceSnapshot?.org_id ?? "unknown_org";
   const measurementPlanId = evidenceSnapshot?.measurement_plan_id ?? "unknown_measurement_plan";
   return missingOrHeldLayersFromSnapshot(evidenceSnapshot).map((layer) =>
