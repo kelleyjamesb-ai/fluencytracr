@@ -172,6 +172,40 @@ test("measurement plan plus Layer 1 package only produces layer_1_only snapshot 
   }
 });
 
+test("full Playbook assembly removes evidence-conditioned financial blockers but keeps immutable blockers", () => {
+  const assembly = buildAssembly(packageSet(["layer1", "layer2", "layer3", "governance", "assumption"]));
+  expectValidAssembly(assembly);
+  const snapshot = assembly.draft_evidence_snapshot_input;
+
+  assert.equal(snapshot.playbook_coverage.coverage_status, "full_playbook_coverage");
+  for (const conditionedUse of [
+    "realized_roi",
+    "realized_roi_calculation",
+    "roi_proof",
+    "dollarized_output",
+    "financial_value_claim",
+    "usage_derived_financial_claim"
+  ]) {
+    assert.ok(
+      !snapshot.blocked_uses.includes(conditionedUse),
+      `${conditionedUse} should be governed by financial claim readiness, not permanently blocked after full coverage`
+    );
+  }
+  for (const immutableUse of [
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output",
+    "customer_facing_economic_output"
+  ]) {
+    assert.ok(snapshot.blocked_uses.includes(immutableUse), `missing immutable blocker ${immutableUse}`);
+  }
+});
+
 test("missing Layer 2 remains explicit as a caveat", () => {
   const assembly = buildAssembly(packageSet(["layer1", "layer3", "governance", "assumption"]));
   expectValidAssembly(assembly);

@@ -10,6 +10,7 @@ import {
 } from "../shared/dist/aiValueEngine/index.js";
 
 const ENTRY_EXAMPLES = "docs/contracts/ai-value-client-evidence-entry/examples";
+const SOURCE_EXAMPLES = "docs/contracts/ai-value-source-packages/examples";
 
 const REQUIRED_SURFACES = [
   "ai_fluency_initial_posture",
@@ -121,6 +122,27 @@ function entryExample(file, measurementPlanId = "measurement_plan_customer_expos
   };
   entry.aggregate_grain = "workflow_family";
   return entry;
+}
+
+function sourcePackageExample(file) {
+  const pkg = readJson(`${SOURCE_EXAMPLES}/${file}`);
+  pkg.org_id = "org_example";
+  pkg.covered_window = {
+    window_start: "2026-05-01",
+    window_end: "2026-05-31"
+  };
+  pkg.approved_aggregate_grain = "workflow_family";
+  return pkg;
+}
+
+function fullPlaybookSourcePackages() {
+  return [
+    sourcePackageExample("layer-1-bigquery-telemetry-package.json"),
+    sourcePackageExample("layer-2-user-voice-package.json"),
+    sourcePackageExample("layer-3-system-of-record-outcome-package.json"),
+    sourcePackageExample("governance-control-package.json"),
+    sourcePackageExample("assumption-approval-package.json")
+  ];
 }
 
 function buildPolicy(orchestratorOverrides = {}, policyOptions = {}) {
@@ -251,8 +273,10 @@ test("updated Evidence Snapshot exposure is limited to coverage posture and cave
   assert.equal(policy.source_availability_boundary.aggregate_workforce_context_upgrades_coverage, false);
 });
 
-test("full Playbook coverage and approvals still do not allow customer-facing financial output in this contract", () => {
-  const policy = buildPolicy({}, {
+test("full Playbook coverage and approvals can allow governed financial claims while customer-facing financial output remains blocked", () => {
+  const policy = buildPolicy({
+    initialSourcePackages: fullPlaybookSourcePackages()
+  }, {
     financeOrBusinessApprovalPresent: true,
     customerAssumptionApprovalPresent: true,
     exportGovernance: {
@@ -261,11 +285,13 @@ test("full Playbook coverage and approvals still do not allow customer-facing fi
       approver_role: "value_governance_lead"
     }
   });
-  policy.financial_claim_policy.full_playbook_coverage_present = true;
-  policy.financial_claim_policy.upstream_financial_translation_allowed = true;
   expectValid(policy);
 
-  assert.equal(policy.financial_claim_policy.financial_claims_allowed, false);
+  assert.equal(policy.coverage_status, "full_playbook_coverage");
+  assert.equal(policy.financial_claim_policy.full_playbook_coverage_present, true);
+  assert.equal(policy.financial_claim_policy.upstream_financial_translation_allowed, true);
+  assert.equal(policy.financial_claim_policy.financial_claims_allowed, true);
+  assert.equal(policy.financial_claim_policy.financial_exposure_state, "financial_translation_ready");
   assert.equal(policy.financial_claim_policy.customer_facing_financial_output_allowed, false);
   assert.equal(policy.export_policy.export_allowed, false);
   assert.equal(policy.export_policy.export_governance_approved, true);
@@ -273,6 +299,23 @@ test("full Playbook coverage and approvals still do not allow customer-facing fi
   const unsafe = clone(policy);
   unsafe.financial_claim_policy.customer_facing_financial_output_allowed = true;
   expectInvalid(unsafe, /customer_facing_financial_output_allowed must remain false/);
+
+  const missingApproval = clone(policy);
+  missingApproval.financial_claim_policy.finance_or_business_approval_present = false;
+  expectInvalid(missingApproval, /financial claims require finance_or_business_approval_present/);
+});
+
+test("Layer 1 only policy cannot be upgraded to governed financial claims by toggling policy booleans", () => {
+  const policy = buildPolicy();
+  policy.financial_claim_policy.full_playbook_coverage_present = true;
+  policy.financial_claim_policy.finance_or_business_approval_present = true;
+  policy.financial_claim_policy.customer_assumption_approval_present = true;
+  policy.financial_claim_policy.upstream_financial_translation_allowed = true;
+  policy.financial_claim_policy.financial_claims_allowed = true;
+  policy.financial_claim_policy.financial_exposure_state = "financial_translation_ready";
+  policy.export_policy.export_governance_approved = true;
+
+  expectInvalid(policy, /financial claims require policy coverage_status full_playbook_coverage/);
 });
 
 test("customer-facing readout remains blocked or caveated until exposure policy allows it", () => {

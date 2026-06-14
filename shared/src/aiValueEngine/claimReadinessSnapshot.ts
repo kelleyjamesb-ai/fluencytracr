@@ -70,11 +70,29 @@ const ALLOWED_CLAIM_MODES = new Set([
   "internal_evidence_review",
   "caveated_internal_playbook_gap_review",
   "source_bound_business_outcome_claim_planning",
+  "governed_roi_scenario_review",
   "internal_executive_readout_planning"
 ]);
 
-const REQUIRED_BLOCKED_CLAIMS = [
-  "roi_proof",
+const FINANCIAL_CLAIM_GOVERNANCE_STATES = new Set([
+  "held",
+  "internal_value_investigation",
+  "financial_translation_ready",
+  "blocked_for_insufficient_evidence",
+  "blocked_for_privacy_or_suppression"
+]);
+
+const FINANCIAL_TRANSLATION_BLOCKED_USES = [
+  "realized_roi",
+  "realized_roi_calculation",
+  "roi_proof"
+];
+
+const FINANCIAL_TRANSLATION_BLOCKED_CLAIMS = [
+  "roi_proof"
+];
+
+const REQUIRED_IMMUTABLE_BLOCKED_CLAIMS = [
   "ebita_claim",
   "causality_claim",
   "productivity_claim",
@@ -83,6 +101,27 @@ const REQUIRED_BLOCKED_CLAIMS = [
   "team_or_manager_ranking",
   "people_decisioning",
   "customer_facing_economic_output"
+];
+
+const REQUIRED_TELEMETRY_BLOCKED_CLAIMS = [
+  "roi_proof",
+  ...REQUIRED_IMMUTABLE_BLOCKED_CLAIMS
+];
+
+const REQUIRED_IMMUTABLE_BLOCKED_USES = [
+  "ebita_claim",
+  "causality_claim",
+  "productivity_claim",
+  "headcount_reduction_claim",
+  "individual_attribution",
+  "manager_or_team_ranking",
+  "people_decisioning",
+  "customer_facing_financial_output"
+];
+
+const REQUIRED_TELEMETRY_BLOCKED_USES = [
+  "realized_roi",
+  ...REQUIRED_IMMUTABLE_BLOCKED_USES
 ];
 
 const UNSAFE_PRIVACY_FLAGS = [
@@ -148,6 +187,7 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
   "blocked_uses",
   "blocked_claims",
   "financial_boundary",
+  "financial_claim_governance_state",
   "financial_translation_allowed",
   "customer_facing_financial_output_allowed",
   "customer_facing_readout_allowed",
@@ -167,7 +207,7 @@ export const ClaimReadinessSnapshotSchema = {
   required_fields: REQUIRED_FIELDS,
   allowed_claim_readiness_states: [...ALLOWED_CLAIM_READINESS_STATES],
   allowed_claim_modes: [...ALLOWED_CLAIM_MODES],
-  required_blocked_claims: REQUIRED_BLOCKED_CLAIMS,
+  required_blocked_claims: REQUIRED_TELEMETRY_BLOCKED_CLAIMS,
   persistence_policy: {
     persisted: false,
     creates_migrations: false,
@@ -374,6 +414,14 @@ function allowedClaimModesForState(
     if (handoff.executive_readout_boundary?.executive_readout_allowed === true) {
       modes.push("internal_executive_readout_planning");
     }
+    if (
+      handoff.financial_boundary?.financial_claim_governance_state ===
+        "financial_translation_ready" &&
+      handoff.financial_boundary?.financial_translation_allowed === true &&
+      handoff.financial_boundary?.roi_claim_allowed === true
+    ) {
+      modes.push("governed_roi_scenario_review");
+    }
     return modes;
   }
   if (state === "blocked_for_privacy_or_suppression") {
@@ -579,17 +627,42 @@ function collectValidationGaps(snapshot: any): string[] {
 function collectClaimBoundaryGaps(snapshot: any): string[] {
   const gaps: string[] = [];
   const blockedClaims = stringsOf(snapshot?.blocked_claims).map(normalizeToken);
-  for (const claim of REQUIRED_BLOCKED_CLAIMS) {
+  const blockedUses = stringsOf(snapshot?.blocked_uses).map(normalizeToken);
+  const financialTranslationReady =
+    snapshot?.financial_boundary?.financial_claim_governance_state ===
+      "financial_translation_ready" &&
+    snapshot?.financial_boundary?.financial_translation_allowed === true &&
+    snapshot?.financial_boundary?.roi_claim_allowed === true;
+  const requiredBlockedClaims = financialTranslationReady
+    ? REQUIRED_IMMUTABLE_BLOCKED_CLAIMS
+    : REQUIRED_TELEMETRY_BLOCKED_CLAIMS;
+  for (const claim of requiredBlockedClaims) {
     if (!blockedClaims.includes(claim)) {
       gaps.push(`blocked_claims missing ${claim}`);
     }
+  }
+  if (
+    financialTranslationReady &&
+    (FINANCIAL_TRANSLATION_BLOCKED_CLAIMS.some((claim) => blockedClaims.includes(claim)) ||
+      FINANCIAL_TRANSLATION_BLOCKED_USES.some((use) => blockedUses.includes(use)))
+  ) {
+    gaps.push("ROI blockers must be removed before governed ROI scenario review or financial translation is allowed");
   }
 
   for (const mode of stringsOf(snapshot?.allowed_claim_modes)) {
     if (!ALLOWED_CLAIM_MODES.has(mode)) {
       gaps.push(`allowed_claim_modes contains unsupported mode ${mode}`);
     }
-    if (/customer_facing|financial|roi|ebita|productivity|causality/i.test(mode)) {
+    if (
+      mode === "governed_roi_scenario_review" &&
+      !financialTranslationReady
+    ) {
+      gaps.push("governed_roi_scenario_review requires financial_translation_ready handoff boundary");
+    }
+    if (
+      mode !== "governed_roi_scenario_review" &&
+      /customer_facing|financial|roi|ebita|productivity|causality/i.test(mode)
+    ) {
       gaps.push(`allowed_claim_modes contains blocked claim mode ${mode}`);
     }
   }
@@ -620,17 +693,10 @@ function collectClaimBoundaryGaps(snapshot: any): string[] {
   ) {
     gaps.push("full_playbook_coverage with safe posture must be ready_for_internal_claim_review");
   }
-  for (const use of [
-    "realized_roi",
-    "ebita_claim",
-    "causality_claim",
-    "productivity_claim",
-    "headcount_reduction_claim",
-    "individual_attribution",
-    "manager_or_team_ranking",
-    "people_decisioning",
-    "customer_facing_financial_output"
-  ]) {
+  const requiredBlockedUses = financialTranslationReady
+    ? REQUIRED_IMMUTABLE_BLOCKED_USES
+    : REQUIRED_TELEMETRY_BLOCKED_USES;
+  for (const use of requiredBlockedUses) {
     if (!stringsOf(snapshot?.blocked_uses).map(normalizeToken).includes(use)) {
       gaps.push(`blocked_uses missing ${use}`);
     }
@@ -703,6 +769,19 @@ function collectCaveatGaps(snapshot: any): string[] {
 function collectFinancialBoundaryGaps(snapshot: any): string[] {
   const gaps: string[] = [];
   const boundary = snapshot?.financial_boundary ?? {};
+  if (
+    boundary.financial_claim_governance_state &&
+    !FINANCIAL_CLAIM_GOVERNANCE_STATES.has(boundary.financial_claim_governance_state)
+  ) {
+    gaps.push(
+      `financial_boundary.financial_claim_governance_state is invalid: ${boundary.financial_claim_governance_state}`
+    );
+  }
+  requireField(
+    boundary.financial_claim_governance_state,
+    "financial_boundary.financial_claim_governance_state",
+    gaps
+  );
   for (const flag of [
     "financial_translation_allowed",
     "roi_claim_allowed",
@@ -712,9 +791,59 @@ function collectFinancialBoundaryGaps(snapshot: any): string[] {
     if (typeof boundary[flag] !== "boolean") {
       gaps.push(`financial_boundary.${flag} must be boolean`);
     }
-    if (boundary[flag] !== false) {
-      gaps.push(`financial_boundary.${flag} must be false`);
+  }
+  const financialTranslationRequested =
+    boundary.financial_claim_governance_state === "financial_translation_ready" ||
+    boundary.financial_translation_allowed === true ||
+    boundary.roi_claim_allowed === true;
+  const roiBlockersPresent =
+    FINANCIAL_TRANSLATION_BLOCKED_CLAIMS.some((claim) =>
+      stringsOf(snapshot?.blocked_claims).map(normalizeToken).includes(claim)
+    ) ||
+    FINANCIAL_TRANSLATION_BLOCKED_USES.some((use) =>
+      stringsOf(snapshot?.blocked_uses).map(normalizeToken).includes(use)
+    );
+  if (financialTranslationRequested) {
+    const mayAllowFinancialTranslation =
+      snapshot?.claim_readiness_state === "ready_for_internal_claim_review" &&
+      snapshot?.playbook_coverage?.coverage_status === "full_playbook_coverage" &&
+      fullPlaybookCoveragePresent(snapshot) &&
+      !suppressionIsActiveOrUnsafe(snapshot?.suppression);
+    if (!mayAllowFinancialTranslation) {
+      gaps.push("financial_boundary financial translation requires ready internal claim review, full Playbook coverage, safe privacy, k-min, and clear suppression");
     }
+    if (roiBlockersPresent) {
+      gaps.push("financial_boundary financial translation requires ROI blockers to be absent");
+    }
+    if (boundary.financial_claim_governance_state !== "financial_translation_ready") {
+      gaps.push("financial_boundary.financial_claim_governance_state must be financial_translation_ready");
+    }
+    if (boundary.financial_translation_allowed !== true) {
+      gaps.push("financial_boundary.financial_translation_allowed must be true");
+    }
+    if (boundary.roi_claim_allowed !== true) {
+      gaps.push("financial_boundary.roi_claim_allowed must be true");
+    }
+  } else {
+    for (const flag of [
+      "financial_translation_allowed",
+      "roi_claim_allowed",
+      "ebita_claim_allowed",
+      "customer_facing_financial_output_allowed"
+    ]) {
+      if (boundary[flag] !== false) {
+        gaps.push(`financial_boundary.${flag} must be false`);
+      }
+    }
+    if (boundary.financial_claim_governance_state === "financial_translation_ready") {
+      gaps.push("financial_boundary.financial_claim_governance_state must not be financial_translation_ready");
+    }
+  }
+  if (boundary.ebita_claim_allowed !== false) {
+    gaps.push("financial_boundary.ebita_claim_allowed must be false");
+  }
+  if (boundary.customer_facing_financial_output_allowed !== false) {
+    gaps.push("financial_boundary.customer_facing_financial_output_allowed must be false");
   }
   requireArray(boundary.reasons, "financial_boundary.reasons", gaps);
   return gaps;

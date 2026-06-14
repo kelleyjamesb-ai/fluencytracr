@@ -344,6 +344,41 @@ test("workforce context does not upgrade coverage by itself", () => {
   assert.ok(orchestrator.blocked_uses.includes("people_decisioning"));
 });
 
+test("full Playbook source packages allow internal financial translation but not customer-facing financial output", () => {
+  const orchestrator = buildPostSalesWorkflowOrchestrator(baseInputs({
+    initialSourcePackages: [
+      sourcePackageExample("layer-1-bigquery-telemetry-package.json"),
+      sourcePackageExample("layer-2-user-voice-package.json"),
+      sourcePackageExample("layer-3-system-of-record-outcome-package.json"),
+      sourcePackageExample("governance-control-package.json"),
+      sourcePackageExample("assumption-approval-package.json")
+    ]
+  }));
+  expectValid(orchestrator);
+
+  assert.equal(
+    orchestrator.evidence_snapshot.playbook_coverage.coverage_status,
+    "full_playbook_coverage"
+  );
+  assert.equal(
+    orchestrator.claim_readiness_handoff.financial_boundary.financial_claim_governance_state,
+    "financial_translation_ready"
+  );
+  assert.equal(orchestrator.coverage_summary.financial_translation_allowed, true);
+  assert.equal(
+    orchestrator.claim_readiness_handoff.financial_boundary.roi_claim_allowed,
+    true
+  );
+  assert.equal(
+    orchestrator.claim_readiness_handoff.financial_boundary.ebita_claim_allowed,
+    false
+  );
+  assert.equal(
+    orchestrator.coverage_summary.customer_facing_financial_output_allowed,
+    false
+  );
+});
+
 test("orchestrator preserves ordered post-sales workflow phases", () => {
   const orchestrator = buildPostSalesWorkflowOrchestrator(baseInputs());
   expectValid(orchestrator);

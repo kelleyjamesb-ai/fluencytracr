@@ -2,17 +2,19 @@
 
 Status: docs-only architecture note for the post-sales external-client product journey.
 
-This document aligns the AI Value product journey after customer kickoff. It does not create a schema, endpoint, runtime builder, persistence table, ingest path, dashboard, claim snapshot, readout snapshot, or customer-facing output.
+This document aligns the AI Value product journey after customer kickoff to the Glean Value Playbook as the required direction. It does not create a schema, endpoint, runtime builder, persistence table, ingest path, dashboard, claim snapshot, readout snapshot, financial claim governance object, or customer-facing output.
 
-No migrations, Prisma schema edits, backend routes, frontend UI, ingestion jobs, persistence, raw/person-level fields, identifiers, raw prompts/responses/transcripts/query/file contents/raw BigQuery rows, ROI, EBITA, productivity, causality, headcount, individual attribution, manager_or_team_ranking, people decisioning, or customer-facing financial output are authorized.
+No migrations, Prisma schema edits, backend routes, frontend UI, ingestion jobs, persistence, raw/person-level fields, identifiers, raw prompts/responses/transcripts/query/file contents/raw BigQuery rows, unsupported ROI, EBITA, productivity, causality, headcount, individual attribution, manager_or_team_ranking, people decisioning, or customer-facing financial output are authorized by this docs-only slice.
 
 ## 1. Purpose
 
-The blueprint defines how external-client post-sales work should move from an initial organization-level posture read to evidence collection, claim review, and only then any external display decision.
+The blueprint defines how external-client post-sales work should move from an initial organization-level posture read to evidence collection, claim review, financial claim governance, and only then any external display decision.
+
+FluencyTracr core is the governance layer that makes value-realization and ROI claims reliable and valid when the evidence infrastructure supports them. It does not replace the Glean Value Playbook; it enforces the evidence, privacy, suppression, source, assumption, and claim-boundary controls that determine whether Playbook-aligned value language can safely progress.
 
 It protects a simple sequencing rule:
 
-`AI Fluency intake -> Layer 1 posture/intensity -> Measurement Plan -> client evidence requests -> Source Packages -> Evidence Snapshot -> internal claim/readout review -> Customer Exposure Policy`
+`AI Fluency intake -> Layer 1 posture/intensity -> Measurement Plan -> client evidence requests -> Source Packages -> Evidence Snapshot -> internal claim/readout review -> Financial Claim Governance -> Customer Exposure Policy`
 
 The purpose is alignment, not implementation. Any runtime, persistence, API, or UI work still needs its own approved contract and verification slice.
 
@@ -34,7 +36,7 @@ VBD describes the aggregate operating posture of AI-enabled work:
 - Breadth: whether aggregate use spans surfaces, workflows, or functions.
 - Depth: whether AI is embedded in repeatable workflow behavior.
 
-VBD is useful because it shows where AI behavior is becoming visible enough to guide investigation. It is bounded because it remains posture, not proof. VBD cannot authorize ROI, EBITA, productivity, causality, headcount, individual attribution, manager_or_team_ranking, people decisioning, full Playbook coverage, or customer-facing financial output.
+VBD is useful because it shows where AI behavior is becoming visible enough to guide investigation. It is bounded because it remains posture, not proof. VBD cannot authorize ROI, EBITA, productivity, causality, headcount, individual attribution, manager_or_team_ranking, people decisioning, full Playbook coverage, or customer-facing financial output. Future financial translation requires promoted financial claim governance, not stronger interpretation of Layer 1 posture.
 
 ## 4. Layer 1 Cost/Intensity Overlay
 
@@ -52,7 +54,7 @@ Required language:
 - token usage is not causality proof
 - token usage is not financial output
 
-Token Efficiency must not appear in customer-facing readouts unless a later Customer Exposure Policy path explicitly authorizes the exact display scope. The current Track A contract authorizes only bounded Layer 1 cost/intensity review and evidence planning.
+Token Efficiency must not appear in customer-facing readouts unless a later Customer Exposure Policy path explicitly authorizes the exact display scope. The current Track A contract authorizes only bounded Layer 1 cost/intensity review and evidence planning; financial translation remains gated by future/promoted financial claim governance.
 
 ## 5. Evidence Ladder
 
@@ -69,7 +71,22 @@ Missing Layer 2 and Layer 3 evidence becomes client evidence requests.
 
 Client evidence requests should ask for aggregate-safe evidence only. They do not upgrade readiness by themselves. Only validated client evidence entries can become Source Packages, and only validated Source Packages can feed Evidence Snapshots.
 
-## 6. Product Journey
+## 6. Financial Claim Governance
+
+Financial Claim Governance is the required stage between internal claim review and customer exposure. It is the control point that decides whether Playbook-aligned value language remains held, can support an internal value investigation, is ready for financial translation, or is allowed as a customer-facing financial claim.
+
+The current docs-only slice records the stage in the blueprint only. It does not create the governance object, schema, route, UI, persistence, ingestion, readout, export, or customer-facing output.
+
+Allowed future governance states should remain explicit:
+
+- `held`: evidence, assumptions, source ownership, privacy, suppression, or approval gates are incomplete.
+- `internal_value_investigation`: aggregate evidence can guide internal value investigation, metric selection, or customer-owned evidence repair without financial output.
+- `financial_translation_ready`: aggregate evidence, customer-owned assumptions, finance/business-owner review, caveats, and source refs are sufficient for governed financial translation review, but not yet customer-facing financial claims.
+- `customer_facing_financial_claim_allowed`: a later promoted financial claim governance contract allows the exact customer-facing financial claim scope, language, caveats, and approval path.
+
+Every state must preserve the hard guardrails: no raw/person-level data, no person identifiers, no joinable identifiers, no people decisioning, no ranking, no unsupported causality, no unsupported productivity, no headcount claims, no hidden suppression, and no claim stronger than the source-bound evidence supports.
+
+## 7. Product Journey
 
 | Step | External-client journey moment | Contract anchor | Output posture |
 | --- | --- | --- | --- |
@@ -81,10 +98,11 @@ Client evidence requests should ask for aggregate-safe evidence only. They do no
 | 6 | Source Packages | `docs/contracts/ai-value-source-packages/README.md` | Aggregate source-bound evidence packages |
 | 7 | Evidence assembly and snapshot | `docs/contracts/ai-value-evidence-collection-assembler/README.md` and `docs/contracts/ai-value-evidence-snapshot/README.md` | Source-bound evidence posture with caveats and blocked uses |
 | 8 | Claim review | `docs/contracts/ai-value-claim-readiness-handoff/README.md` and `docs/contracts/ai-value-claim-readiness-snapshot/README.md` | Internal claim review only |
-| 9 | Readout design | `docs/contracts/ai-value-executive-readout-snapshot/README.md` | Design-only readout shape; no customer-facing output |
-| 10 | Exposure gate | `docs/contracts/ai-value-customer-exposure-policy/README.md` | External display decision |
+| 9 | Financial claim governance | Future promoted financial claim governance contract | Held, internal value investigation, financial translation ready, or customer-facing financial claim allowed |
+| 10 | Readout design | `docs/contracts/ai-value-executive-readout-snapshot/README.md` | Design-only readout shape; no customer-facing output from this slice |
+| 11 | Exposure gate | `docs/contracts/ai-value-customer-exposure-policy/README.md` | External display decision |
 
-## 7. Customer Exposure Rule
+## 8. Customer Exposure Rule
 
 Customer Exposure Policy must pass before external display.
 
@@ -94,25 +112,27 @@ Before any external display, the policy must confirm:
 - required caveats and blocked uses are preserved;
 - VBD and Token Efficiency remain Layer 1 context only;
 - missing Layer 2/3 evidence is shown as evidence requests, not as support;
-- financial, productivity, causality, headcount, attribution, ranking, and people-decisioning claims remain blocked;
+- financial claims follow the promoted financial claim governance state and remain blocked unless that state allows the exact customer-facing scope;
+- unsupported productivity, causality, headcount, attribution, ranking, and people-decisioning claims remain blocked;
 - no raw or person-level data crosses into output;
 - the exact customer-visible scope is allowed by contract.
 
 If any condition is unclear, the default posture is hold or suppress.
 
-## 8. Downstream Context
+## 9. Downstream Context
 
 Quality Multiplier, Causal Delta, Reliability Factor, and Value Confidence contracts are downstream context only in this blueprint. They can qualify or route already-governed aggregate evidence when their own gates allow it. They do not turn AI Fluency, VBD, Token Efficiency, Layer 1 telemetry, or source availability into ROI proof, value proof, productivity proof, causality proof, or financial output.
 
-Value Confidence artifacts remain bounded downstream context. They must not become a shortcut around the customer evidence ladder, exposure policy, or governance invariants.
+Value Confidence artifacts remain bounded downstream context. They must not become a shortcut around the Glean Value Playbook, customer evidence ladder, financial claim governance, exposure policy, or governance invariants.
 
-## 9. Stop Conditions
+## 10. Stop Conditions
 
 Stop and return to contract design if a future slice tries to:
 
 - describe Token Efficiency as anything stronger than Layer 1 cost/intensity context without Track A artifacts and tests;
 - treat AI Fluency, VBD, source availability, BigQuery telemetry, or token usage as proof;
 - expose customer-facing readouts before Customer Exposure Policy approval;
-- generate financial output, ROI proof, EBITA proof, productivity claims, causal claims, or headcount claims;
+- generate financial output, ROI proof, EBITA proof, customer-facing financial claims, or financial translation without a promoted financial claim governance contract;
+- generate unsupported productivity claims, causal claims, or headcount claims;
 - store raw rows, raw text, raw prompts, raw responses, transcripts, query text, file contents, or person-level identifiers;
 - add migrations, Prisma schema changes, backend routes, frontend UI, ingestion jobs, persistence, or readout snapshots from this blueprint.

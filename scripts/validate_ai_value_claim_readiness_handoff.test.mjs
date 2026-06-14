@@ -281,8 +281,10 @@ test("unknown blocked uses are preserved and caveated", () => {
 
 test("Layer 1 only snapshot produces all financial flags false", () => {
   const handoff = buildHandoff();
+  const validation = validateClaimReadinessHandoff(handoff);
 
   assert.deepEqual(handoff.financial_boundary, {
+    financial_claim_governance_state: "blocked_for_privacy_or_suppression",
     financial_translation_allowed: false,
     roi_claim_allowed: false,
     ebita_claim_allowed: false,
@@ -290,6 +292,16 @@ test("Layer 1 only snapshot produces all financial flags false", () => {
     reasons: handoff.financial_boundary.reasons
   });
   assert.ok(handoff.financial_boundary.reasons.length > 0);
+  assert.equal(validation.feeds.roi_scenario_context, false);
+  assert.equal(validation.feeds.ebita_bridge_context, false);
+});
+
+test("blocked handoff cannot claim future customer-facing financial governance state", () => {
+  const handoff = buildHandoff();
+  handoff.financial_boundary.financial_claim_governance_state =
+    "customer_facing_financial_claim_allowed";
+
+  expectInvalid(handoff, /financial_claim_governance_state must remain blocked or held/);
 });
 
 test("Layer 1 only snapshot blocks customer-facing financial output", () => {
@@ -537,6 +549,51 @@ test("Full Playbook handoff fails if privacy is unsafe", () => {
   handoff.privacy_boundary.contains_manager_or_team_ranking = true;
 
   expectInvalid(handoff, /full_playbook_coverage requires safe privacy posture/);
+});
+
+test("Full Playbook handoff can reach governed ROI scenario review while customer-facing financial output stays blocked", () => {
+  const handoff = buildHandoff(buildFullSnapshot());
+  const validation = validateClaimReadinessHandoff(handoff);
+
+  assert.equal(handoff.financial_boundary.financial_claim_governance_state, "financial_translation_ready");
+  assert.equal(handoff.financial_boundary.financial_translation_allowed, true);
+  assert.equal(handoff.financial_boundary.roi_claim_allowed, true);
+  assert.equal(handoff.financial_boundary.ebita_claim_allowed, false);
+  assert.equal(handoff.financial_boundary.customer_facing_financial_output_allowed, false);
+  assert.ok(!handoff.blocked_claims.includes("roi_proof"));
+  assert.ok(handoff.blocked_claims.includes("customer_facing_economic_output"));
+  assert.equal(validation.feeds.roi_scenario_context, true);
+  assert.equal(validation.feeds.ebita_bridge_context, false);
+});
+
+test("historical assumption approval caveats do not block approved full Playbook financial translation", () => {
+  const handoff = buildHandoff(buildFullSnapshot());
+  const historicalCaveat =
+    "Customer-owned assumptions are held until the customer or business owner approves them.";
+  handoff.required_caveats.push(historicalCaveat);
+  handoff.executive_readout_boundary.required_caveats.push(historicalCaveat);
+  const validation = validateClaimReadinessHandoff(handoff);
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(handoff.financial_boundary.financial_claim_governance_state, "financial_translation_ready");
+  assert.equal(validation.feeds.roi_scenario_context, true);
+});
+
+test("direct finance approval caveats block governed ROI scenario review", () => {
+  const snapshot = buildFullSnapshot();
+  snapshot.required_caveats.push(
+    "Finance or business-owner approval is missing, held, or caveated."
+  );
+  const handoff = buildHandoff(snapshot);
+  const validation = validateClaimReadinessHandoff(handoff);
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.notEqual(
+    handoff.financial_boundary.financial_claim_governance_state,
+    "financial_translation_ready"
+  );
+  assert.equal(handoff.financial_boundary.financial_translation_allowed, false);
+  assert.equal(validation.feeds.roi_scenario_context, false);
 });
 
 test("Financial boundary cannot ignore blocked_claims", () => {

@@ -45,13 +45,15 @@ test("AI Value Blueprint docs exist and preserve Layer 1 guardrails", () => {
     "token usage is not financial output",
     "Missing Layer 2 and Layer 3 evidence becomes client evidence requests",
     "Customer Exposure Policy must pass before external display",
-    "No migrations, Prisma schema edits, backend routes, frontend UI, ingestion jobs, persistence, raw/person-level fields, identifiers, raw prompts/responses/transcripts/query/file contents/raw BigQuery rows, ROI, EBITA, productivity, causality, headcount, individual attribution, manager_or_team_ranking, people decisioning, or customer-facing financial output are authorized."
+    "FluencyTracr core is the governance layer that makes value-realization and ROI claims reliable and valid when the evidence infrastructure supports them.",
+    "Financial Claim Governance is the required stage between internal claim review and customer exposure.",
+    "No migrations, Prisma schema edits, backend routes, frontend UI, ingestion jobs, persistence, raw/person-level fields, identifiers, raw prompts/responses/transcripts/query/file contents/raw BigQuery rows, unsupported ROI, EBITA, productivity, causality, headcount, individual attribution, manager_or_team_ranking, people decisioning, or customer-facing financial output are authorized by this docs-only slice."
   ].forEach((phrase) => assertContains(blueprint, phrase, BLUEPRINT_DOC));
 
   const hasTrackAArtifacts = trackATokenEfficiencyArtifactsExist();
   if (hasTrackAArtifacts) {
     assertContains(blueprint, "Token Efficiency is `contract_only`", BLUEPRINT_DOC);
-    assertContains(blueprint, "The current Track A contract authorizes only bounded Layer 1 cost/intensity review and evidence planning.", BLUEPRINT_DOC);
+    assertContains(blueprint, "The current Track A contract authorizes only bounded Layer 1 cost/intensity review and evidence planning; financial translation remains gated by future/promoted financial claim governance.", BLUEPRINT_DOC);
   } else {
     assert.match(
       blueprint,
@@ -102,7 +104,9 @@ test("AI Value Blueprint crosswalk maps required contracts and exposure states",
     "not value proof",
     "not productivity proof",
     "not causality proof",
-    "not financial output"
+    "not financial output",
+    "Financial Claim Governance",
+    "financial_translation_ready"
   ].forEach((phrase) => assertContains(crosswalk, phrase, CROSSWALK_DOC));
 
   const hasTrackAArtifacts = trackATokenEfficiencyArtifactsExist();
