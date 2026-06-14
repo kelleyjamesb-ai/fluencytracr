@@ -5,6 +5,7 @@ import {
   GleanSignalFamilySchema,
   GleanSignalReadinessMapSchema
 } from "./gleanSignalReadinessSchemas";
+import type { GleanSignalReadinessEntry } from "./gleanSignalReadinessSchemas";
 
 export const ReportabilitySchemaVersionSchema = z.literal("FT_REPORTABILITY_2026_05");
 
@@ -381,31 +382,34 @@ export const REPORTABILITY_CLAIM_TAXONOMY: ReportabilityClaimTaxonomyEntry[] = [
   }
 ];
 
-const STATUS_PRIORITY: Record<GleanReadinessStatus, number> = {
-  present: 4,
-  not_computed: 3,
-  suppressed: 2,
-  missing: 1
-};
-
 function combineStatuses(statuses: GleanReadinessStatus[]): GleanReadinessStatus {
   if (statuses.length === 0) {
     return "missing";
   }
-  return statuses.reduce((best, status) => (STATUS_PRIORITY[status] > STATUS_PRIORITY[best] ? status : best));
+  if (statuses.includes("suppressed")) {
+    return "suppressed";
+  }
+  if (statuses.includes("not_computed")) {
+    return "not_computed";
+  }
+  if (statuses.includes("missing")) {
+    return "missing";
+  }
+  return "present";
 }
 
-function caveatForStatus(surface: ReportSurface, status: GleanReadinessStatus): string[] {
+function caveatForStatus(surface: ReportSurface, status: GleanReadinessStatus, family?: GleanSignalFamily): string[] {
+  const evidenceLabel = family ? `${surface} ${family} evidence` : `${surface} evidence`;
   if (status === "present") {
     return [];
   }
   if (status === "suppressed") {
-    return [`${surface} evidence exists but is suppressed by governance or evidence safety policy.`];
+    return [`${evidenceLabel} exists but is suppressed by governance or evidence safety policy.`];
   }
   if (status === "not_computed") {
-    return [`${surface} evidence is not yet computed or validated for this reporting window.`];
+    return [`${evidenceLabel} is not yet computed or validated for this reporting window.`];
   }
-  return [`${surface} evidence is not available for this reporting window.`];
+  return [`${evidenceLabel} is not available for this reporting window.`];
 }
 
 function uniqueValues<T>(values: T[]): T[] {
@@ -452,6 +456,46 @@ function claimLabelForContext(reportContext: ReportContext): string {
   return "Transformation narrative claims";
 }
 
+function assertPresentEntryIsConsistent(entry: GleanSignalReadinessEntry): void {
+  if (entry.readiness_status !== "present") {
+    return;
+  }
+
+  const blockers = [
+    entry.suppression_applied || entry.suppression_reasons.length > 0 ? "suppression is applied" : undefined,
+    entry.source_availability !== "available" ? `source_availability is ${entry.source_availability}` : undefined,
+    entry.scrub_status !== "scrubbed" && entry.scrub_status !== "not_applicable"
+      ? `scrub_status is ${entry.scrub_status}`
+      : undefined,
+    entry.stable_join_keys.length === 0 ? "stable_join_keys is empty" : undefined,
+    entry.derived_dimensions.length === 0 ? "derived_dimensions is empty" : undefined
+  ].filter((blocker): blocker is string => Boolean(blocker));
+
+  if (blockers.length > 0) {
+    throw new Error(`Inconsistent present readiness entry for ${entry.signal_family}: ${blockers.join("; ")}.`);
+  }
+}
+
+function entriesBySignalFamily(entries: GleanSignalReadinessEntry[]): Map<GleanSignalFamily, GleanSignalReadinessEntry> {
+  const entriesByFamily = new Map<GleanSignalFamily, GleanSignalReadinessEntry>();
+  const duplicates = new Set<GleanSignalFamily>();
+
+  entries.forEach((entry) => {
+    if (entriesByFamily.has(entry.signal_family)) {
+      duplicates.add(entry.signal_family);
+      return;
+    }
+    entriesByFamily.set(entry.signal_family, entry);
+  });
+
+  if (duplicates.size > 0) {
+    throw new Error(`Duplicate signal_family entries are not allowed: ${Array.from(duplicates).join(", ")}`);
+  }
+
+  entries.forEach(assertPresentEntryIsConsistent);
+  return entriesByFamily;
+}
+
 export function buildReportabilityDecision(raw: unknown): ReportabilityDecision {
   return ReportabilityDecisionSchema.parse(raw);
 }
@@ -463,21 +507,30 @@ export function generateReportabilityDecision(raw: unknown): ReportabilityDecisi
     throw new Error(`Report context ${request.report_context} is not implemented in FT_REPORTABILITY_2026_05.`);
   }
 
-  const entriesByFamily = new Map(
-    request.readiness_map.entries.map((entry) => [entry.signal_family, entry])
-  );
+  const entriesByFamily = entriesBySignalFamily(request.readiness_map.entries);
 
   const surface_readiness = requirements.map((requirement) => {
-    const statuses = requirement.signal_families.map(
-      (family) => entriesByFamily.get(family)?.readiness_status ?? "missing"
-    );
+    const familyStatuses = requirement.signal_families.map((family) => ({
+      family,
+      status: entriesByFamily.get(family)?.readiness_status ?? "missing"
+    }));
+    const statuses = familyStatuses.map((familyStatus) => familyStatus.status);
     const readiness_status = combineStatuses(statuses);
+    const includeFamilyInCaveat = requirement.signal_families.length > 1;
     return {
       surface: requirement.surface,
       required_for_context: requirement.required_for_context,
       signal_families: requirement.signal_families,
       readiness_status,
-      caveats: caveatForStatus(requirement.surface, readiness_status)
+      caveats: uniqueValues(
+        familyStatuses.flatMap((familyStatus) =>
+          caveatForStatus(
+            requirement.surface,
+            familyStatus.status,
+            includeFamilyInCaveat ? familyStatus.family : undefined
+          )
+        )
+      )
     };
   });
 

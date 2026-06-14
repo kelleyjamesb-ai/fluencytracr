@@ -9,8 +9,7 @@
   "evidence_confidence": "MEDIUM",
   "summary": "Evidence supports a bounded customer-facing claim only when required caveats travel with the report.",
   "covered_surfaces": [
-    "search",
-    "agents"
+    "search"
   ],
   "excluded_surfaces": [
     {
@@ -20,6 +19,10 @@
     {
       "surface": "ai_answers",
       "reason": "ai_answers evidence is not available for this reporting window."
+    },
+    {
+      "surface": "agents",
+      "reason": "agents agent_step evidence is not available for this reporting window."
     },
     {
       "surface": "skills",
@@ -41,12 +44,12 @@
   "required_caveats": [
     "chat evidence is not available for this reporting window.",
     "ai_answers evidence is not available for this reporting window.",
+    "agents agent_step evidence is not available for this reporting window.",
     "skills evidence is not available for this reporting window.",
     "mcp evidence is not yet computed or validated for this reporting window.",
     "apis evidence is not yet computed or validated for this reporting window.",
     "gleanbot evidence is not yet computed or validated for this reporting window.",
-    "ROI claims must be limited to covered surfaces; excluded surfaces: chat, ai_answers, skills, mcp, apis, gleanbot.",
-    "Included optional surfaces (agents) describe evidence coverage only; they do not authorize advanced-surface ROI inclusion claims.",
+    "ROI claims must be limited to covered surfaces; excluded surfaces: chat, ai_answers, agents, skills, mcp, apis, gleanbot.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
   "blocked_claims": [
@@ -90,6 +93,7 @@
   "evidence_gaps": [
     "chat: chat evidence is not available for this reporting window.",
     "ai_answers: ai_answers evidence is not available for this reporting window.",
+    "agents: agents agent_step evidence is not available for this reporting window.",
     "skills: skills evidence is not available for this reporting window.",
     "mcp: mcp evidence is not yet computed or validated for this reporting window.",
     "apis: apis evidence is not yet computed or validated for this reporting window.",

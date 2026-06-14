@@ -5,12 +5,11 @@
   "generated_at": "2026-05-01T12:00:00.000Z",
   "source_system": "FluencyTracr",
   "report_context": "agent_insights",
-  "reportability": "REPORTABLE_WITH_CAVEATS",
-  "evidence_confidence": "MEDIUM",
-  "included_surfaces": [
-    "agents"
-  ],
+  "reportability": "UNSUPPORTED",
+  "evidence_confidence": "UNVERIFIED",
+  "included_surfaces": [],
   "excluded_surfaces": [
+    "agents",
     "mcp",
     "skills"
   ],
@@ -22,8 +21,10 @@
         "agent_run",
         "agent_step"
       ],
-      "readiness_status": "present",
-      "caveats": []
+      "readiness_status": "missing",
+      "caveats": [
+        "agents agent_step evidence is not available for this reporting window."
+      ]
     },
     {
       "surface": "mcp",
@@ -49,25 +50,13 @@
     }
   ],
   "required_caveats": [
+    "agents agent_step evidence is not available for this reporting window.",
     "mcp evidence is not yet computed or validated for this reporting window.",
     "skills evidence is not available for this reporting window.",
-    "Agent insight claims must be limited to covered surfaces; excluded surfaces: mcp, skills.",
+    "Agent insight claims must be limited to covered surfaces; excluded surfaces: agents, mcp, skills.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
-  "allowed_claims": [
-    {
-      "claim_type": "surface_adoption",
-      "claim": "Observed usage coverage for included Glean surfaces."
-    },
-    {
-      "claim_type": "agent_observability",
-      "claim": "Agent workflows are structurally observable for covered agent surfaces."
-    },
-    {
-      "claim_type": "workflow_coverage",
-      "claim": "Workflow-level coverage is available for included agent evidence."
-    }
-  ],
+  "allowed_claims": [],
   "blocked_claims": [
     {
       "claim_type": "total_productivity_impact",

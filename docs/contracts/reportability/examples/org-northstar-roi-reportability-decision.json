@@ -8,12 +8,12 @@
   "reportability": "REPORTABLE_WITH_CAVEATS",
   "evidence_confidence": "MEDIUM",
   "included_surfaces": [
-    "search",
-    "agents"
+    "search"
   ],
   "excluded_surfaces": [
     "chat",
     "ai_answers",
+    "agents",
     "skills",
     "mcp",
     "apis",
@@ -58,8 +58,10 @@
         "agent_run",
         "agent_step"
       ],
-      "readiness_status": "present",
-      "caveats": []
+      "readiness_status": "missing",
+      "caveats": [
+        "agents agent_step evidence is not available for this reporting window."
+      ]
     },
     {
       "surface": "skills",
@@ -109,12 +111,12 @@
   "required_caveats": [
     "chat evidence is not available for this reporting window.",
     "ai_answers evidence is not available for this reporting window.",
+    "agents agent_step evidence is not available for this reporting window.",
     "skills evidence is not available for this reporting window.",
     "mcp evidence is not yet computed or validated for this reporting window.",
     "apis evidence is not yet computed or validated for this reporting window.",
     "gleanbot evidence is not yet computed or validated for this reporting window.",
-    "ROI claims must be limited to covered surfaces; excluded surfaces: chat, ai_answers, skills, mcp, apis, gleanbot.",
-    "Included optional surfaces (agents) describe evidence coverage only; they do not authorize advanced-surface ROI inclusion claims.",
+    "ROI claims must be limited to covered surfaces; excluded surfaces: chat, ai_answers, agents, skills, mcp, apis, gleanbot.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
   "allowed_claims": [

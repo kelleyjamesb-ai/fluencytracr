@@ -5,13 +5,15 @@
   "generated_at": "2026-05-01T12:00:00.000Z",
   "source_system": "FluencyTracr",
   "report_context": "agent_insights",
-  "reportability": "REPORTABLE_WITH_CAVEATS",
-  "evidence_confidence": "MEDIUM",
-  "summary": "Evidence supports a bounded customer-facing claim only when required caveats travel with the report.",
-  "covered_surfaces": [
-    "agents"
-  ],
+  "reportability": "UNSUPPORTED",
+  "evidence_confidence": "UNVERIFIED",
+  "summary": "Evidence is unsupported for this customer-facing report context.",
+  "covered_surfaces": [],
   "excluded_surfaces": [
+    {
+      "surface": "agents",
+      "reason": "agents agent_step evidence is not available for this reporting window."
+    },
     {
       "surface": "mcp",
       "reason": "mcp evidence is not yet computed or validated for this reporting window."
@@ -22,9 +24,10 @@
     }
   ],
   "required_caveats": [
+    "agents agent_step evidence is not available for this reporting window.",
     "mcp evidence is not yet computed or validated for this reporting window.",
     "skills evidence is not available for this reporting window.",
-    "Agent insight claims must be limited to covered surfaces; excluded surfaces: mcp, skills.",
+    "Agent insight claims must be limited to covered surfaces; excluded surfaces: agents, mcp, skills.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
   "blocked_claims": [
@@ -46,6 +49,7 @@
     }
   ],
   "evidence_gaps": [
+    "agents: agents agent_step evidence is not available for this reporting window.",
     "mcp: mcp evidence is not yet computed or validated for this reporting window.",
     "skills: skills evidence is not available for this reporting window.",
     "Confirm MCP Usage export availability and scrubbed field set.",

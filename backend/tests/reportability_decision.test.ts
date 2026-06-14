@@ -341,6 +341,176 @@ describe("generateReportabilityDecision", () => {
     expect(decision.required_caveats.join(" ")).toContain("Agent insight claims must be limited");
   });
 
+  it("does not let present agent families mask suppressed agent evidence", () => {
+    const agentRunPresent = {
+      ...baseReadinessMap.entries.find((entry) => entry.signal_family === "agent_run")!,
+      source_availability: "available",
+      scrub_status: "scrubbed",
+      stable_join_keys: ["workflow_run_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "present",
+      data_quality: {
+        completeness: "verified",
+        latency: "known",
+        join_reliability: "stable"
+      }
+    };
+    const agentStepSuppressed = {
+      signal_family: "agent_step",
+      source_availability: "available",
+      export_channel: "customer_event_logs",
+      scrub_status: "scrubbed",
+      stable_join_keys: ["workflow_run_id", "step_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "suppressed",
+      suppression_applied: true,
+      suppression_reasons: ["INSUFFICIENT_VOLUME"],
+      data_quality: {
+        completeness: "verified",
+        latency: "known",
+        join_reliability: "stable"
+      },
+      validation_evidence: []
+    };
+    const mixedAgentMap = {
+      ...baseReadinessMap,
+      entries: [
+        ...baseReadinessMap.entries.filter((entry) => entry.signal_family !== "agent_run"),
+        agentRunPresent,
+        agentStepSuppressed
+      ]
+    };
+
+    const response = evaluateReportabilityGate({
+      schema_version: "FT_REPORTABILITY_GATE_2026_05",
+      caller_system: "agent_insights",
+      report_context: "agent_insights",
+      requested_claims: ["agent_observability", "workflow_coverage"],
+      readiness_map: mixedAgentMap
+    });
+
+    const agentReadiness = response.decision.surface_readiness.find((surface) => surface.surface === "agents");
+    expect(response.decision.reportability).toBe("SUPPRESSED");
+    expect(response.decision.included_surfaces).not.toContain("agents");
+    expect(agentReadiness?.readiness_status).toBe("suppressed");
+    expect(agentReadiness?.caveats.join(" ")).toContain("agent_step");
+    expect(response.requested_claim_results).toEqual([
+      expect.objectContaining({ claim_type: "agent_observability", disposition: "blocked" }),
+      expect.objectContaining({ claim_type: "workflow_coverage", disposition: "blocked" })
+    ]);
+  });
+
+  it("does not let present agent families mask not-computed agent evidence", () => {
+    const agentRunPresent = {
+      ...baseReadinessMap.entries.find((entry) => entry.signal_family === "agent_run")!,
+      source_availability: "available",
+      scrub_status: "scrubbed",
+      stable_join_keys: ["workflow_run_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "present",
+      data_quality: {
+        completeness: "verified",
+        latency: "known",
+        join_reliability: "stable"
+      }
+    };
+    const agentStepNotComputed = {
+      signal_family: "agent_step",
+      source_availability: "approved_pending_export",
+      export_channel: "customer_event_logs",
+      scrub_status: "unknown",
+      stable_join_keys: ["workflow_run_id", "step_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "not_computed",
+      suppression_applied: false,
+      suppression_reasons: [],
+      data_quality: {
+        completeness: "unknown",
+        latency: "unknown",
+        join_reliability: "partial"
+      },
+      validation_evidence: []
+    };
+    const mixedAgentMap = {
+      ...baseReadinessMap,
+      entries: [
+        ...baseReadinessMap.entries.filter((entry) => entry.signal_family !== "agent_run"),
+        agentRunPresent,
+        agentStepNotComputed
+      ]
+    };
+
+    const response = evaluateReportabilityGate({
+      schema_version: "FT_REPORTABILITY_GATE_2026_05",
+      caller_system: "agent_insights",
+      report_context: "agent_insights",
+      requested_claims: ["agent_observability"],
+      readiness_map: mixedAgentMap
+    });
+
+    const agentReadiness = response.decision.surface_readiness.find((surface) => surface.surface === "agents");
+    expect(response.decision.reportability).toBe("UNSUPPORTED");
+    expect(response.decision.included_surfaces).not.toContain("agents");
+    expect(agentReadiness?.readiness_status).toBe("not_computed");
+    expect(agentReadiness?.caveats.join(" ")).toContain("agent_step");
+    expect(response.requested_claim_results).toEqual([
+      expect.objectContaining({ claim_type: "agent_observability", disposition: "blocked" })
+    ]);
+  });
+
+  it.each([
+    ["suppression flags", { suppression_applied: true, suppression_reasons: ["INSUFFICIENT_VOLUME"] }],
+    ["unapproved source availability", { source_availability: "approved_pending_export" }],
+    ["unsafe scrub status", { scrub_status: "unscrubbed_rejected" }],
+    ["missing stable join keys", { stable_join_keys: [] }],
+    ["missing derived dimensions", { derived_dimensions: [] }]
+  ])("rejects inconsistent present readiness entries with %s", (_label, patch) => {
+    const inconsistentMap = {
+      ...baseReadinessMap,
+      entries: baseReadinessMap.entries.map((entry) =>
+        entry.signal_family === "assistant"
+          ? {
+              ...entry,
+              ...patch,
+              readiness_status: "present"
+            }
+          : entry
+      )
+    };
+
+    expect(() =>
+      evaluateReportabilityGate({
+        schema_version: "FT_REPORTABILITY_GATE_2026_05",
+        caller_system: "roi_model",
+        report_context: "roi",
+        requested_claims: ["covered_time_saved"],
+        readiness_map: inconsistentMap
+      })
+    ).toThrow("Inconsistent present readiness entry for assistant");
+  });
+
+  it("rejects duplicate signal-family entries before evaluating reportability", () => {
+    const duplicateMap = {
+      ...baseReadinessMap,
+      entries: [
+        ...baseReadinessMap.entries,
+        {
+          ...baseReadinessMap.entries[0]
+        }
+      ]
+    };
+
+    expect(() =>
+      evaluateReportabilityGate({
+        schema_version: "FT_REPORTABILITY_GATE_2026_05",
+        caller_system: "roi_model",
+        report_context: "roi",
+        requested_claims: ["covered_time_saved"],
+        readiness_map: duplicateMap
+      })
+    ).toThrow("Duplicate signal_family entries are not allowed: assistant");
+  });
+
   it("supports skills reporting as lifecycle visibility without skill quality claims", () => {
     const skillReadyMap = {
       ...baseReadinessMap,

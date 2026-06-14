@@ -8,13 +8,15 @@
   "reportability": "UNSUPPORTED",
   "evidence_confidence": "UNVERIFIED",
   "summary": "Evidence is unsupported for this customer-facing report context.",
-  "covered_surfaces": [
-    "agents"
-  ],
+  "covered_surfaces": [],
   "excluded_surfaces": [
     {
       "surface": "mcp",
       "reason": "mcp evidence is not yet computed or validated for this reporting window."
+    },
+    {
+      "surface": "agents",
+      "reason": "agents agent_step evidence is not available for this reporting window."
     },
     {
       "surface": "skills",
@@ -23,8 +25,9 @@
   ],
   "required_caveats": [
     "mcp evidence is not yet computed or validated for this reporting window.",
+    "agents agent_step evidence is not available for this reporting window.",
     "skills evidence is not available for this reporting window.",
-    "MCP reporting claims must be limited to covered surfaces; excluded surfaces: mcp, skills.",
+    "MCP reporting claims must be limited to covered surfaces; excluded surfaces: mcp, agents, skills.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
   "blocked_claims": [
@@ -47,6 +50,7 @@
   ],
   "evidence_gaps": [
     "mcp: mcp evidence is not yet computed or validated for this reporting window.",
+    "agents: agents agent_step evidence is not available for this reporting window.",
     "skills: skills evidence is not available for this reporting window.",
     "Confirm MCP Usage export availability and scrubbed field set.",
     "Approve which AI Security aggregate flags can support exposure and leadership reinforcement evidence.",
