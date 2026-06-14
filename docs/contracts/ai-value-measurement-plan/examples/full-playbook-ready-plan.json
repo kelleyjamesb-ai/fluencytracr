@@ -33,6 +33,13 @@
     },
     "supporting_metrics": [
       {
+        "metric_id": "support_backlog_count",
+        "metric_name": "Backlog count",
+        "metric_category": "capacity",
+        "source_system_type": "customer_system_of_record",
+        "required_for_claim_readiness": true
+      },
+      {
         "metric_id": "support_reopen_rate",
         "metric_name": "Reopen rate",
         "metric_category": "quality",
@@ -40,11 +47,11 @@
         "required_for_claim_readiness": true
       },
       {
-        "metric_id": "aggregate_ai_fluency_confidence",
-        "metric_name": "Aggregate AI confidence",
-        "metric_category": "readiness",
-        "source_system_type": "aggregate_survey_export",
-        "required_for_claim_readiness": false
+        "metric_id": "support_escalation_rate",
+        "metric_name": "Escalation rate",
+        "metric_category": "risk",
+        "source_system_type": "customer_system_of_record",
+        "required_for_claim_readiness": true
       }
     ]
   },
