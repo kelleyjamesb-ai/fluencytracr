@@ -181,6 +181,11 @@ evidence adapter when it is backed by the same validated source package refs.
 It must remain aggregate-only and must not infer missing signal families from
 adjacent telemetry.
 
+The Customer Exposure Policy input must preserve the validated orchestrator
+source binding, including `post_sales_workflow_orchestrator_id`. The
+Reportability Gate input must include a valid `GSR_2026_05` readiness map; AI
+Value objects are not a substitute for that `readiness_map`.
+
 The first run should produce both:
 
 - a telemetry-only/caveated path, proving missing Layer 2/3 evidence stays
