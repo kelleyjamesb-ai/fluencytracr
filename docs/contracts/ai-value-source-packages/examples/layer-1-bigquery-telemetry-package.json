@@ -27,7 +27,12 @@
   "source_system_type": "bigquery_telemetry",
   "source_refs": {
     "source_readiness_id": "source_readiness_layer_1",
-    "aggregate_probe_id": "probe_layer_1_summary"
+    "aggregate_probe_id": "probe_layer_1_summary",
+    "reportability_signal_families": [
+      "assistant",
+      "search_document_retrieval",
+      "agent_run"
+    ]
   },
   "evidence_state": "present",
   "privacy_boundary": {

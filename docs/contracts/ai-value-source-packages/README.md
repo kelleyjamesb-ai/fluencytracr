@@ -173,6 +173,12 @@ aggregate export IDs, or aggregate probe IDs. They must not include raw rows,
 query text, file contents, prompts, responses, transcripts, direct identifiers,
 or joinable person identifiers.
 
+Layer 1 packages that feed a reportability readiness adapter may include
+metadata-only `reportability_signal_families`, such as `assistant`,
+`search_document_retrieval`, or `agent_run`. These labels are availability
+evidence for approved aggregate surfaces only; they cannot upgrade Playbook
+coverage, authorize ROI, or infer unlisted signal families.
+
 ## 10. Relationship to Measurement Plan
 
 Measurement Plans declare which source packages are required. Source Packages

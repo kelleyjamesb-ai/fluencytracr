@@ -169,12 +169,17 @@ workflow, and one reporting window pair:
 5. Persist validated Evidence Snapshot.
 6. Build non-persisted Claim Readiness Handoff.
 7. Build or validate Claim Readiness Snapshot in memory.
-8. Build or validate Post-Sales Workflow Orchestrator in memory.
+8. Build and validate `PostSalesWorkflowOrchestrator` for the same support-pilot source bindings.
 9. Run Customer Exposure Policy from the validated orchestrator.
-10. Build or fetch Glean Signal Readiness Map.
-11. Run Reportability Gate.
+10. Build or fetch, then validate, a `GSR_2026_05` Glean Signal Readiness Map as the Reportability Gate `readiness_map`.
+11. Run Reportability Gate with the validated `readiness_map`.
 12. Produce internal pilot readout draft with caveats and blocked claims.
 ```
+
+For the support pilot, the readiness-map step may use the narrow runtime
+evidence adapter when it is backed by the same validated source package refs.
+It must remain aggregate-only and must not infer missing signal families from
+adjacent telemetry.
 
 The Customer Exposure Policy input must preserve the validated orchestrator
 source binding, including `post_sales_workflow_orchestrator_id`. The
@@ -263,9 +268,9 @@ Measurement Plan
 -> Evidence Snapshot persistence
 -> Claim Readiness Handoff
 -> Claim Readiness Snapshot validation
--> Post-Sales Workflow Orchestrator validation
+-> `PostSalesWorkflowOrchestrator` validation
 -> Customer Exposure Policy
--> Glean Signal Readiness Map
+-> `GSR_2026_05` `readiness_map`
 -> Reportability Gate
 ```
 

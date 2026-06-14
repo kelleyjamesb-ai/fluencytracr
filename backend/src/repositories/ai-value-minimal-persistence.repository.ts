@@ -89,6 +89,7 @@ const ALLOWED_SOURCE_REF_KEYS = new Set([
   "notes",
   "outcome_evidence_ids",
   "real_source_manifest_ids",
+  "reportability_signal_families",
   "source_package_ids",
   "source_readiness_id",
   "source_readiness_ids",
