@@ -150,6 +150,31 @@ test("valid manual Layer 3 aggregate outcome entry validates", () => {
   assert.equal(result.feeds.source_package, true);
 });
 
+test("valid manual Layer 3 aggregate business outcome KPI metric names validate", () => {
+  for (const metricName of [
+    "aggregate_revenue_conversion_rate",
+    "aggregate_profit_margin",
+    "aggregate_support_cost_savings_rate"
+  ]) {
+    const entry = validEntry();
+    entry.metric_or_signal_summary.aggregate_metric_name = metricName;
+    const result = expectValid(entry);
+    assert.equal(result.feeds.source_package, true, metricName);
+  }
+});
+
+test("Layer 3 aggregate business outcome KPI metric names still reject ROI and financial output claims", () => {
+  for (const metricName of [
+    "aggregate_revenue_roi",
+    "aggregate_profit_financial_output",
+    "aggregate_support_cost_savings_customer_facing_financial_output"
+  ]) {
+    const entry = validEntry();
+    entry.metric_or_signal_summary.aggregate_metric_name = metricName;
+    expectInvalid(entry, new RegExp(`Forbidden value detected: ${metricName}`));
+  }
+});
+
 test("valid manual Layer 2 aggregate user voice entry validates", () => {
   const entry = readJson(`${EXAMPLES}/manual-layer-2-user-voice-entry.json`);
   const result = expectValid(entry);

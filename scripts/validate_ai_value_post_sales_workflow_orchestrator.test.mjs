@@ -249,6 +249,27 @@ test("adding valid Layer 3 evidence improves Layer 3 state but not financial per
   );
 });
 
+test("client evidence entries must match a generated evidence request before becoming Source Packages", () => {
+  const unrelatedRequestEntry = entryExample("manual-layer-3-outcome-entry.json");
+  unrelatedRequestEntry.request_id =
+    "client_evidence_request_measurement_plan_post_sales_orchestrator_test_layer_3_unrelated_request";
+
+  const orchestrator = buildPostSalesWorkflowOrchestrator(baseInputs({
+    clientEvidenceEntries: [unrelatedRequestEntry]
+  }));
+  expectValid(orchestrator);
+
+  assert.equal(orchestrator.client_evidence_entry_reviews.length, 1);
+  assert.equal(orchestrator.client_evidence_entry_reviews[0].accepted_for_source_package, false);
+  assert.equal(orchestrator.client_evidence_entry_reviews[0].source_package_id, null);
+  assert.deepEqual(orchestrator.source_packages, []);
+  assert.ok(
+    orchestrator.client_evidence_entry_reviews[0].rejection_reasons.some((reason) =>
+      /does not match a generated Client Evidence Request/i.test(reason)
+    )
+  );
+});
+
 test("invalid client evidence is rejected and cannot become a Source Package", () => {
   const unsafeEntry = entryExample("manual-layer-3-outcome-entry.json");
   unsafeEntry.raw_rows = [{ ticket_id: "raw-row-not-allowed" }];
@@ -324,7 +345,7 @@ test("VBD remains Layer 1 only", () => {
   );
 });
 
-test("workforce context does not upgrade coverage by itself", () => {
+test("unsolicited workforce context does not upgrade coverage by itself", () => {
   const orchestrator = buildPostSalesWorkflowOrchestrator(baseInputs({
     clientEvidenceEntries: [
       entryExample("manual-workforce-context-entry.json")
@@ -332,9 +353,17 @@ test("workforce context does not upgrade coverage by itself", () => {
   }));
   expectValid(orchestrator);
 
+  assert.equal(orchestrator.client_evidence_entry_reviews.length, 1);
+  assert.equal(orchestrator.client_evidence_entry_reviews[0].accepted_for_source_package, false);
+  assert.equal(orchestrator.client_evidence_entry_reviews[0].source_package_id, null);
+  assert.ok(
+    orchestrator.client_evidence_entry_reviews[0].rejection_reasons.some((reason) =>
+      /does not match a generated Client Evidence Request/i.test(reason)
+    )
+  );
   assert.equal(
     orchestrator.coverage_summary.aggregate_workforce_context_state,
-    "provided_aggregate_safe"
+    "not_provided"
   );
   assert.notEqual(
     orchestrator.evidence_snapshot.playbook_coverage.coverage_status,

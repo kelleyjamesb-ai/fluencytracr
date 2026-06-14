@@ -180,6 +180,64 @@ test("request forbidden fields and unsafe requested values fail", () => {
   expectInvalid(badThreshold, /minimum_cohort_threshold must be a finite number at least 5/);
 });
 
+test("camelCase forbidden request fields fail after key normalization", () => {
+  const request = requestForLayer(
+    buildClientEvidenceRequestsFromMeasurementPlan(buildPlan()),
+    "layer_2_user_voice_empirical"
+  );
+
+  for (const field of [
+    "userId",
+    "personId",
+    "rawRows",
+    "fileContents",
+    "managerRanking",
+    "peopleDecisioning"
+  ]) {
+    const unsafe = clone(request);
+    unsafe[field] = "blocked";
+    expectInvalid(unsafe, new RegExp(`Forbidden field detected: ${field}`));
+  }
+});
+
+test("request metadata and narrative strings reject identifier values", () => {
+  const request = requestForLayer(
+    buildClientEvidenceRequestsFromMeasurementPlan(buildPlan()),
+    "layer_2_user_voice_empirical"
+  );
+
+  const emailRequestId = clone(request);
+  emailRequestId.request_id = "jane.doe@example.com";
+  expectInvalid(emailRequestId, /Forbidden metadata value detected: request_id/);
+
+  const identifierInstructions = clone(request);
+  identifierInstructions.customer_instructions = [
+    "Ask the source owner to attach user_id_12345 for follow-up."
+  ];
+  expectInvalid(identifierInstructions, /Forbidden metadata value detected: customer_instructions/);
+});
+
+test("request builder fails closed when Measurement Plan validation fails", () => {
+  const plan = buildPlan();
+  plan.source_package_requirements.system_of_record_export_required = false;
+
+  assert.throws(
+    () => buildClientEvidenceRequestsFromMeasurementPlan(plan),
+    /Measurement Plan is invalid/
+  );
+});
+
+test("snapshot request builder does not ask for workforce context when it is not required or allowed", () => {
+  const requests = buildClientEvidenceRequestsFromEvidenceSnapshot(buildSnapshot(), {
+    createdAt: "2026-06-13T00:00:00.000Z"
+  });
+
+  assert.equal(
+    requests.some((request) => request.requested_playbook_layer === "aggregate_workforce_context"),
+    false
+  );
+});
+
 test("Layer 2 request requires aggregate format and aggregate response summary", () => {
   const request = requestForLayer(
     buildClientEvidenceRequestsFromMeasurementPlan(buildPlan()),
