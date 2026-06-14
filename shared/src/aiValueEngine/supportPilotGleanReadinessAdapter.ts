@@ -19,6 +19,7 @@ interface SignalFamilyConfig {
   signal_family: string;
   required_source_package_type: string;
   required_coverage_signals: string[];
+  required_source_signal_families: string[];
   stable_join_keys: string[];
   derived_dimensions: string[];
   export_channel: string;
@@ -49,6 +50,7 @@ const SUPPORT_PILOT_SIGNAL_FAMILIES: SignalFamilyConfig[] = [
     signal_family: "assistant",
     required_source_package_type: "layer_1_bigquery_telemetry_summary",
     required_coverage_signals: ["chat_or_assistant_activity"],
+    required_source_signal_families: ["assistant"],
     stable_join_keys: ["chat_session_id", "session_tracking_token"],
     derived_dimensions: ["usage_quality", "coverage"],
     export_channel: "bigquery_export"
@@ -57,48 +59,18 @@ const SUPPORT_PILOT_SIGNAL_FAMILIES: SignalFamilyConfig[] = [
     signal_family: "search_document_retrieval",
     required_source_package_type: "layer_1_bigquery_telemetry_summary",
     required_coverage_signals: ["search_activity"],
+    required_source_signal_families: ["search_document_retrieval"],
     stable_join_keys: ["session_tracking_token", "event_timestamp"],
     derived_dimensions: ["usage_quality", "coverage"],
-    export_channel: "bigquery_export"
-  },
-  {
-    signal_family: "insights",
-    required_source_package_type: "layer_1_bigquery_telemetry_summary",
-    required_coverage_signals: ["ai_answer_activity"],
-    stable_join_keys: ["event_timestamp"],
-    derived_dimensions: ["coverage"],
     export_channel: "bigquery_export"
   },
   {
     signal_family: "agent_run",
     required_source_package_type: "layer_1_bigquery_telemetry_summary",
     required_coverage_signals: ["agent_lifecycle_activity"],
+    required_source_signal_families: ["agent_run", "workflow_agent"],
     stable_join_keys: ["workflow_run_id"],
     derived_dimensions: ["behavior_change", "coverage"],
-    export_channel: "bigquery_export"
-  },
-  {
-    signal_family: "agent_step",
-    required_source_package_type: "layer_1_bigquery_telemetry_summary",
-    required_coverage_signals: ["agent_step_activity"],
-    stable_join_keys: ["workflow_run_id", "step_id"],
-    derived_dimensions: ["behavior_change", "coverage"],
-    export_channel: "bigquery_export"
-  },
-  {
-    signal_family: "skill_lifecycle",
-    required_source_package_type: "layer_1_bigquery_telemetry_summary",
-    required_coverage_signals: ["skill_lifecycle_activity"],
-    stable_join_keys: ["skill_artifact_id", "event_timestamp"],
-    derived_dimensions: ["capability_growth"],
-    export_channel: "bigquery_export"
-  },
-  {
-    signal_family: "mcp_usage",
-    required_source_package_type: "layer_1_bigquery_telemetry_summary",
-    required_coverage_signals: ["mcp_usage_activity"],
-    stable_join_keys: ["workflow_run_id", "tool_id"],
-    derived_dimensions: ["capability_growth", "calibration"],
     export_channel: "bigquery_export"
   }
 ];
@@ -129,6 +101,28 @@ function packageIsSuppressed(sourcePackage: any): boolean {
     Number(sourcePackage?.k_min_posture?.suppressed_or_unknown_slices ?? 0) > 0;
 }
 
+function packageHasPresentEvidence(sourcePackage: any): boolean {
+  return sourcePackage?.evidence_state === "present";
+}
+
+function sourcePackageSignalFamilies(sourcePackage: any): Set<string> {
+  return new Set([
+    ...stringsOf(sourcePackage?.source_refs?.covered_signal_families),
+    ...stringsOf(sourcePackage?.source_refs?.exported_signal_families),
+    ...stringsOf(sourcePackage?.source_refs?.signal_families)
+  ]);
+}
+
+function sourcePackageCoversSignalFamily(
+  sourcePackage: any,
+  config: SignalFamilyConfig
+): boolean {
+  const coveredFamilies = sourcePackageSignalFamilies(sourcePackage);
+  return config.required_source_signal_families.some((family) =>
+    coveredFamilies.has(family)
+  );
+}
+
 function packageByType(sourcePackages: any[], packageType: string): any | null {
   return sourcePackages.find(
     (sourcePackage) => sourcePackage?.source_package_type === packageType
@@ -156,17 +150,30 @@ function assertNoDuplicatePackageTypes(sourcePackages: any[]): void {
 function assertSourcePackagesBoundToSnapshot(snapshot: any, sourcePackages: any[]): void {
   const snapshotWindowStart = String(snapshot?.window?.window_start ?? "");
   const snapshotWindowEnd = String(snapshot?.window?.window_end ?? "");
+  const referencedPackageIds = new Set(stringsOf(snapshot?.source_refs?.source_package_ids));
+  const providedPackageIds = new Set(
+    sourcePackages.map((sourcePackage) => String(sourcePackage?.source_package_id ?? ""))
+  );
   const drifted = sourcePackages.filter((sourcePackage) =>
     sourcePackage?.org_id !== snapshot?.org_id ||
     String(sourcePackage?.covered_window?.window_start ?? "") !== snapshotWindowStart ||
-    String(sourcePackage?.covered_window?.window_end ?? "") !== snapshotWindowEnd
+    String(sourcePackage?.covered_window?.window_end ?? "") !== snapshotWindowEnd ||
+    !referencedPackageIds.has(String(sourcePackage?.source_package_id ?? ""))
   );
 
+  const missingReferencedPackageIds = Array.from(referencedPackageIds).filter(
+    (packageId) => !providedPackageIds.has(packageId)
+  );
   if (drifted.length > 0) {
     throw new Error(
       `Source Package binding drift detected for support pilot Glean readiness map: ${drifted
         .map((sourcePackage) => sourcePackage?.source_package_id ?? "unknown")
         .join(", ")}`
+    );
+  }
+  if (missingReferencedPackageIds.length > 0) {
+    throw new Error(
+      `Source Package binding drift detected for support pilot Glean readiness map: missing snapshot package ref(s) ${missingReferencedPackageIds.join(", ")}`
     );
   }
 }
@@ -175,6 +182,14 @@ function assertSupportPilotWorkflow(snapshot: any): void {
   if (snapshot?.workflow?.workflow_family !== SUPPORT_PILOT_WORKFLOW_FAMILY) {
     throw new Error(
       `Support pilot workflow is required to build support pilot Glean readiness map: expected ${SUPPORT_PILOT_WORKFLOW_FAMILY}.`
+    );
+  }
+}
+
+function assertFullPlaybookCoverage(snapshot: any): void {
+  if (snapshot?.playbook_coverage?.coverage_status !== "full_playbook_coverage") {
+    throw new Error(
+      "Full Playbook coverage is required before building support pilot Glean readiness map for reportability."
     );
   }
 }
@@ -208,10 +223,18 @@ function readinessEntry(
   const sourceValidation = validateSourcePackage(sourcePackage);
   const unsafe = packageIsUnsafe(sourcePackage);
   const suppressed = packageIsSuppressed(sourcePackage);
+  const presentEvidence = packageHasPresentEvidence(sourcePackage);
   const signalCovered = config.required_coverage_signals.some((signal) =>
     coveredSignals.has(signal)
   );
-  const present = sourceValidation.valid && !unsafe && !suppressed && signalCovered;
+  const familyCovered = sourcePackageCoversSignalFamily(sourcePackage, config);
+  const present =
+    sourceValidation.valid &&
+    !unsafe &&
+    !suppressed &&
+    presentEvidence &&
+    signalCovered &&
+    familyCovered;
   const blocked = !sourceValidation.valid || unsafe || suppressed;
 
   return {
@@ -264,6 +287,7 @@ export function buildSupportPilotGleanReadinessMapFromRuntimeEvidence(
   const generatedAt = input.generatedAt ?? new Date().toISOString();
   const layerOneSignals = coverageSignals(input.evidenceSnapshot);
   assertSupportPilotWorkflow(input.evidenceSnapshot);
+  assertFullPlaybookCoverage(input.evidenceSnapshot);
   assertNoDuplicatePackageTypes(input.sourcePackages);
   assertSourcePackagesBoundToSnapshot(input.evidenceSnapshot, input.sourcePackages);
 
