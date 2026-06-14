@@ -120,6 +120,18 @@ export type {
 } from "./sourcePackages";
 
 export {
+  AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_SCHEMA_VERSION,
+  TokenEfficiencySignalSchema,
+  buildTokenEfficiencySignalFromAggregateSummary,
+  validateTokenEfficiencySignal
+} from "./tokenEfficiencySignal";
+export type {
+  AggregateTokenEfficiencySummary,
+  BuildTokenEfficiencySignalOptions,
+  TokenEfficiencySignalValidationResult
+} from "./tokenEfficiencySignal";
+
+export {
   EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,
   EvidenceCollectionAssemblySchema,
   buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages,

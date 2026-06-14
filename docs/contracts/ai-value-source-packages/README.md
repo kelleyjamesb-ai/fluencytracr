@@ -197,7 +197,19 @@ The validator returns:
 - hard-false claim/readout/economic-output feeds
 - hard-false `full_playbook_coverage`
 
-## 12. Examples
+## 12. Token Efficiency Integration
+
+Token Efficiency is a Layer 1 cost/intensity overlay, not a source package type.
+A Layer 1 source package may reference a validated Token Efficiency Signal as
+aggregate source-readiness context only when the signal has cleared its own
+contract, privacy, k-min, blocked-use, and value-proof-policy gates.
+
+Token Efficiency cannot create full Playbook coverage, claim readiness,
+executive readout readiness, ROI, EBITA, productivity, causality, headcount
+reduction, manager_or_team_ranking, people decisioning, individual attribution, or
+customer-facing financial output.
+
+## 13. Examples
 
 Validator-backed examples:
 
@@ -208,7 +220,7 @@ Validator-backed examples:
 - [`examples/governance-control-package.json`](./examples/governance-control-package.json)
 - [`examples/assumption-approval-package.json`](./examples/assumption-approval-package.json)
 
-## 13. Validation
+## 14. Validation
 
 Run:
 

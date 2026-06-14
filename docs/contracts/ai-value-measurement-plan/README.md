@@ -249,6 +249,13 @@ VBD becomes value-relevant only when paired with Playbook coverage, especially
 Layer 2 user voice, Layer 3 business outcomes, governance evidence, and
 approved customer-owned assumptions.
 
+Token Efficiency is separate from VBD. It may be requested as a Layer 1
+cost/intensity overlay for model usage, workflow intensity, routing, design, and
+evidence planning. It does not change VBD posture and cannot authorize ROI,
+EBITA, productivity, causality, headcount reduction, individual attribution,
+manager_or_team_ranking, people decisioning, full Playbook coverage, or
+customer-facing financial output.
+
 ## 12. Source Package Requirements
 
 `source_package_requirements` declares which aggregate source packages are
