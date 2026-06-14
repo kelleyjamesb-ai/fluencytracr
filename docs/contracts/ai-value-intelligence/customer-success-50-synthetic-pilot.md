@@ -27,6 +27,11 @@ claim support.
 | Baseline window | `2026-02-01_to_2026-03-31` |
 | Comparison window | `2026-04-01_to_2026-05-31` |
 | Synthetic fixture | [`examples/customer-success-50-synthetic-workshop-response.json`](./examples/customer-success-50-synthetic-workshop-response.json) |
+| Workshop intake | [`examples/customer-success-50-synthetic-workshop-intake.json`](./examples/customer-success-50-synthetic-workshop-intake.json) |
+| Metrics library | [`examples/customer-success-50-synthetic-metrics-library.json`](./examples/customer-success-50-synthetic-metrics-library.json) |
+| Engagement context | [`examples/customer-success-50-synthetic-engagement.json`](./examples/customer-success-50-synthetic-engagement.json) |
+| AI Fluency baseline | [`examples/customer-success-50-synthetic-fluency-baseline.json`](./examples/customer-success-50-synthetic-fluency-baseline.json) |
+| Outcome evidence | [`examples/customer-success-50-synthetic-outcome-evidence-export.json`](./examples/customer-success-50-synthetic-outcome-evidence-export.json) |
 
 The workflow represents aggregate account health review work: preparing account
 context, reviewing renewal or adoption risk, drafting next actions, and
@@ -83,6 +88,7 @@ This fixture can be used to rehearse:
 
 - intake packet completion;
 - validator happy-path behavior;
+- domain-agnostic value-chain execution from intake through executive packet;
 - VBD movement display logic;
 - Layer 1, Layer 2, Layer 3, governance, and assumption source-package
   readiness planning;

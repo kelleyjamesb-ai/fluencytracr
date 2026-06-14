@@ -1,0 +1,55 @@
+{
+  "schema_version": "FT_AI_VALUE_FLUENCY_BASELINE_2026_06",
+  "baseline_id": "fluency_baseline_customer_success_50_synthetic_v1",
+  "org_id": "org-synthetic-cs-50",
+  "instrument": {
+    "instrument_id": "ai_fluency_long_v1",
+    "item_count": 24
+  },
+  "window": "2026-03-15_to_2026-03-31",
+  "collection_mode": "kickoff",
+  "cohorts": [
+    {
+      "cohort_id": "cohort_customer_success_managers",
+      "cohort_label": "Customer Success managers",
+      "respondent_count": 32,
+      "construct_scores": {
+        "confidence": { "mean": 3.4 },
+        "usage_quality": { "mean": 3.0 },
+        "behavior_change": { "mean": 2.9 },
+        "leadership_reinforcement": { "mean": 3.5 },
+        "capability_growth": { "mean": 3.2 },
+        "ai_attitude": { "mean": 3.8 },
+        "behavioral_intent": { "mean": 3.9 },
+        "perceived_ai_impact": { "mean": 3.1 }
+      }
+    },
+    {
+      "cohort_id": "cohort_customer_success_operations",
+      "cohort_label": "Customer Success operations",
+      "respondent_count": 12,
+      "construct_scores": {
+        "confidence": { "mean": 3.7 },
+        "usage_quality": { "mean": 3.4 },
+        "behavior_change": { "mean": 3.2 },
+        "leadership_reinforcement": { "mean": 3.6 },
+        "capability_growth": { "mean": 3.5 },
+        "ai_attitude": { "mean": 4.0 },
+        "behavioral_intent": { "mean": 4.1 },
+        "perceived_ai_impact": { "mean": 3.4 }
+      }
+    },
+    {
+      "cohort_id": "cohort_customer_success_specialists",
+      "cohort_label": "Customer Success specialists",
+      "respondent_count": 4,
+      "suppressed": true
+    }
+  ],
+  "governance": {
+    "respondent_identifiers_included": false,
+    "person_level_results_shared": false,
+    "used_for_individual_scoring": false,
+    "used_for_team_ranking": false
+  }
+}

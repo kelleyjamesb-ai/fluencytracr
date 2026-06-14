@@ -1,0 +1,137 @@
+{
+  "schema_version": "FT_AI_VALUE_METRICS_LIBRARY_2026_06",
+  "library_id": "metrics_customer_success_50_synthetic_v1",
+  "workflow_family": "customer_success_account_health_review",
+  "metrics": [
+    {
+      "metric_id": "account_health_review_cycle_days",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Account health review cycle time",
+      "definition": "Median days from account health review trigger to approved risk/action summary, measured in aggregate per workflow window.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "customer_success_platform",
+        "source_name": "Account health reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "days",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "risk_review_coverage_share",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Risk review coverage",
+      "definition": "Share of eligible accounts with an approved health or renewal-risk review in the agreed window.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "customer_success_platform",
+        "source_name": "Account health reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "renewal_action_staleness_count",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Stale renewal action count",
+      "definition": "Count of eligible renewal or account-risk follow-up actions older than the agreed freshness window, measured in aggregate.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "customer_success_platform",
+        "source_name": "Account health reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "count",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "qbr_prep_hours_per_account",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "QBR preparation hours per account",
+      "definition": "Median aggregate preparation hours per eligible QBR account, measured at the workflow-window level.",
+      "value_route": "CAPACITY_CREATION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "customer_success_platform",
+        "source_name": "Account health reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "hours",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "expansion_signal_followup_share",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Expansion signal follow-up coverage",
+      "definition": "Share of eligible expansion or adoption signals with an approved follow-up action in the workflow window.",
+      "value_route": "EXPERIENCE_IMPROVEMENT",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "customer_success_platform",
+        "source_name": "Account health reporting",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    }
+  ]
+}

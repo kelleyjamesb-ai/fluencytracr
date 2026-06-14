@@ -1,0 +1,64 @@
+{
+  "schema_version": "FT_AI_VALUE_OUTCOME_EVIDENCE_EXPORT_2026_06",
+  "export_id": "outcome_export_customer_success_50_synthetic_v1",
+  "org_id": "org-synthetic-cs-50",
+  "workflow_family": "customer_success_account_health_review",
+  "source_system": {
+    "source_type": "customer_success_platform",
+    "source_name": "Account health reporting",
+    "approved_grain": "aggregate_workflow_window"
+  },
+  "attestation": {
+    "exported_by_role": "customer_success_operations",
+    "approved_by_role": "customer_success_business_sponsor",
+    "export_date": "2026-06-14",
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+  },
+  "windows": {
+    "baseline": "2026-02-01_to_2026-03-31",
+    "comparison": "2026-04-01_to_2026-05-31"
+  },
+  "metrics": [
+    {
+      "metric_id": "account_health_review_cycle_days",
+      "measurement_unit": "days",
+      "baseline_value": 10.8,
+      "comparison_value": 7.4,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "risk_review_coverage_share",
+      "measurement_unit": "share",
+      "baseline_value": 0.62,
+      "comparison_value": 0.81,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "renewal_action_staleness_count",
+      "measurement_unit": "count",
+      "baseline_value": 146,
+      "comparison_value": 92,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "qbr_prep_hours_per_account",
+      "measurement_unit": "hours",
+      "baseline_value": 2.6,
+      "comparison_value": 1.9,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "expansion_signal_followup_share",
+      "measurement_unit": "share",
+      "baseline_value": 0.38,
+      "comparison_value": 0.51,
+      "eligible_population": 365
+    }
+  ],
+  "review": {
+    "review_state": "ACCEPTED",
+    "reviewer_role": "gov_operator",
+    "reviewed_at": "2026-06-14T12:00:00.000Z"
+  }
+}

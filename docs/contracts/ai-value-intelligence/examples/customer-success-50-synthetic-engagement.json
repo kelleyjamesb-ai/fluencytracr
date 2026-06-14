@@ -1,0 +1,83 @@
+{
+  "schema_version": "FT_AI_VALUE_ENGAGEMENT_2026_06",
+  "engagement_id": "engagement_customer_success_50_synthetic_v1",
+  "org_id": "org-synthetic-cs-50",
+  "client": {
+    "client_id": "client_synthetic_cs_50",
+    "client_name": "Synthetic Customer Success 50",
+    "industry": "b2b_saas",
+    "company_size": "synthetic_rehearsal",
+    "strategic_objectives": [
+      "Improve renewal-risk visibility across Customer Success",
+      "Make account health review more consistent without expanding the pilot scope"
+    ],
+    "executive_sponsor_role": "vp_customer_success",
+    "technical_champion_role": "customer_success_operations_owner",
+    "account_team_roles": [
+      "aiom",
+      "value_consultant",
+      "customer_success_operations_owner"
+    ]
+  },
+  "business_objectives": [
+    {
+      "objective_id": "objective_cs_risk_review_v1",
+      "objective_statement": "Improve account health review coverage and reduce stale renewal actions.",
+      "challenge": "Customer Success context is spread across notes, support, usage, renewal, and playbook sources.",
+      "initiative": "AI-assisted account health review using Search, Assistant, approved Skills, and governed workflow agents.",
+      "positive_business_outcome": "Customer Success can review risk and renewal actions more consistently with explicit governance caveats.",
+      "decision_timeline": "synthetic_rehearsal_window",
+      "owner_role": "customer_success_business_sponsor",
+      "success_measures": [
+        {
+          "measure": "Risk review coverage share",
+          "expected_direction": "IMPROVE"
+        },
+        {
+          "measure": "Renewal action staleness count",
+          "expected_direction": "REDUCE"
+        }
+      ]
+    }
+  ],
+  "workstream": {
+    "workstream_id": "workstream_customer_success_50_synthetic_v1",
+    "function": "customer_success",
+    "role_families": [
+      "customer_success_manager",
+      "renewal_specialist",
+      "customer_success_operations"
+    ],
+    "users_in_scope": 50,
+    "systems_in_scope": [
+      "customer_success_platform",
+      "support_history",
+      "product_usage_aggregates",
+      "glean_assistant"
+    ],
+    "sponsor_role": "customer_success_business_sponsor"
+  },
+  "use_cases": [
+    {
+      "use_case_id": "uc_customer_success_account_health_review",
+      "name": "AI-assisted account health review",
+      "description": "Customer Success uses Search, Assistant, approved Skills, and governed workflow agents to prepare aggregate-safe account health review inputs for human approval.",
+      "impacted_functions": [
+        "customer_success"
+      ],
+      "impact_rationale": "Account health review coverage and action freshness are leading indicators for renewal-risk operating discipline.",
+      "effort_rationale": "The workflow uses existing account review motions and synthetic aggregate evidence only.",
+      "data_sources": [
+        "customer_success_platform",
+        "glean_work_evidence"
+      ],
+      "uncertainties": [
+        "Real customers may define account health and renewal risk differently",
+        "Customer-owned assumptions must replace synthetic assumptions before a real pilot"
+      ],
+      "priority_state": "PILOT_SELECTED",
+      "workflow_family": "customer_success_account_health_review",
+      "objective_id": "objective_cs_risk_review_v1"
+    }
+  ]
+}
