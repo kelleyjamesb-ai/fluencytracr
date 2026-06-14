@@ -11,6 +11,7 @@
 | Need | Location |
 | --- | --- |
 | **Every session protocol (read first)** | [`SESSION_START.md`](SESSION_START.md) |
+| Agentic execution architecture | [`../concepts/AGENTIC_EXECUTION_HARNESS.md`](../concepts/AGENTIC_EXECUTION_HARNESS.md) |
 | Multi-session coding loop, checklist, handoff log | [`harness/README.md`](../../harness/README.md), [`harness/feature_list.json`](../../harness/feature_list.json), [`harness/agent-progress.txt`](../../harness/agent-progress.txt) |
 | Spec-driven proposals and capabilities | [`openspec/AGENTS.md`](../../openspec/AGENTS.md), [`openspec/specs/`](../../openspec/specs/), [`openspec/changes/`](../../openspec/changes/) |
 | Product architecture and APIs | [`docs/ARCHITECTURE_MAP.md`](../ARCHITECTURE_MAP.md), [`README.md`](../../README.md) canonical doc list |
@@ -19,7 +20,7 @@
 | Product requirements (PRD v1) | [`artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md`](../../artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md) — harness phases: `prd-phase-01`…`04` in [`harness/feature_list.json`](../../harness/feature_list.json) |
 | Cursor agent harness | [`cursor-agent-harness.md`](cursor-agent-harness.md), [`.cursor/rules/`](../../.cursor/rules/) |
 | Optional OpenAI Agents SDK sidecar | [`openai-agents-harness.md`](openai-agents-harness.md), [`integrations/openai-agents/`](../../integrations/openai-agents/) |
-| Development harness event contract | [`docs/contracts/agent-run/README.md`](../contracts/agent-run/README.md), [`shared/src/agentRunSchemas.ts`](../../shared/src/agentRunSchemas.ts) |
+| Development harness event contract | [`docs/contracts/agent-run/README.md`](../contracts/agent-run/README.md), [`docs/contracts/agent-run/ledger.md`](../contracts/agent-run/ledger.md), [`shared/src/agentRunSchemas.ts`](../../shared/src/agentRunSchemas.ts) |
 
 ## Task shape and verification
 
@@ -32,3 +33,7 @@
 
 - **Cursor / generic:** [`AGENTS.md`](../../AGENTS.md)
 - **Claude Code:** [`CLAUDE.md`](../../CLAUDE.md) (also `.antigravity/rules.md` when using Antigravity)
+
+## De-duplication rule
+
+Keep this page as navigation only. Long policy belongs in [`AGENTS.md`](../../AGENTS.md), session workflow belongs in [`SESSION_START.md`](SESSION_START.md), queue state belongs in `.project/`, checklist state belongs in `harness/`, and provider adapters must point back to those files instead of copying them.

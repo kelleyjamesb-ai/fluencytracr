@@ -1,0 +1,341 @@
+{
+  "schema_version": "FT_AI_VALUE_AGENT_HANDOFF_BUNDLE_2026_06",
+  "bundle_id": "handoff_bundle_customer_support_case_resolution_executive_v1",
+  "source_packet_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+  "workflow_family": "customer_support_case_resolution",
+  "value_route": "CAPACITY_CREATION",
+  "handoffs": [
+    {
+      "schema_version": "FT_AI_VALUE_AGENT_HANDOFF_2026_06",
+      "handoff_id": "handoff_customer_support_case_resolution_executive_to_evidence_readiness_v1",
+      "workflow_family": "customer_support_case_resolution",
+      "value_route": "CAPACITY_CREATION",
+      "source_agent_role": "EXECUTIVE_READOUT_AGENT",
+      "target_agent_role": "EVIDENCE_READINESS_AGENT",
+      "object_type": "EXECUTIVE_READOUT",
+      "object_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+      "task_contract": {
+        "objective": "Track baseline exports, customer owner review, source coverage, and unresolved assumptions before stronger value language is used.",
+        "expected_output_type": "EVIDENCE_READINESS",
+        "expected_output_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json",
+        "validator_command": "npm run validate:ai-value-readiness"
+      },
+      "model_selection": {
+        "policy": "DEFAULT_INHERIT",
+        "allowed_model_tiers": [
+          "BALANCED",
+          "FRONTIER"
+        ],
+        "selected_model_tier": "BALANCED",
+        "escalation_allowed": true,
+        "escalation_rule": "Escalate only for ambiguous evidence, source coverage, or governance failures."
+      },
+      "tool_permissions": {
+        "read_scopes": [
+          "docs/contracts/ai-value-intelligence/",
+          "schemas/ai-value-intelligence/",
+          "scripts/"
+        ],
+        "write_scopes": [
+          "docs/contracts/ai-value-intelligence/examples/"
+        ],
+        "allowed_tools": [
+          "filesystem_read",
+          "filesystem_write",
+          "local_validator",
+          "test_runner"
+        ],
+        "network_access": false,
+        "production_access": false,
+        "secrets_access": false,
+        "customer_data_access": false
+      },
+      "verification_routing": {
+        "required_validators": [
+          "npm run validate:ai-value-readiness"
+        ],
+        "required_tests": [
+          "npm run test:ai-value-readiness"
+        ],
+        "reviewer_roles": [
+          "REVIEWER_AGENT",
+          "EVALUATOR_AGENT"
+        ]
+      },
+      "ledger": {
+        "schema_version": "AR_LEDGER_2026_05",
+        "scope_ref": "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+        "handoff_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json",
+        "verification_refs": [
+          "npm run test:ai-value-agent-harness"
+        ],
+        "required_caveats": [
+          "Development-harness telemetry only.",
+          "No production agent runtime, autonomous customer action, raw prompt/response storage, ROI calculation, causality claim, or individual scoring."
+        ]
+      },
+      "blocked_data_capture": [
+        "raw_prompt",
+        "raw_response",
+        "message_text",
+        "file_content",
+        "diff",
+        "patch",
+        "email",
+        "user_id",
+        "person_id",
+        "customer_telemetry",
+        "roi_calculation",
+        "causality_claim",
+        "individual_scoring"
+      ],
+      "governance_boundaries": {
+        "customer_telemetry": false,
+        "production_agent_runtime": false,
+        "autonomous_customer_action": false,
+        "raw_prompt_or_response_storage": false,
+        "direct_identifier_capture": false,
+        "roi_calculation": false,
+        "causality_claim": false,
+        "individual_scoring": false,
+        "customer_facing_economic_output": false
+      }
+    },
+    {
+      "schema_version": "FT_AI_VALUE_AGENT_HANDOFF_2026_06",
+      "handoff_id": "handoff_customer_support_case_resolution_executive_to_metrics_v1",
+      "workflow_family": "customer_support_case_resolution",
+      "value_route": "CAPACITY_CREATION",
+      "source_agent_role": "EXECUTIVE_READOUT_AGENT",
+      "target_agent_role": "METRICS_AGENT",
+      "object_type": "EXECUTIVE_READOUT",
+      "object_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+      "task_contract": {
+        "objective": "Carry sponsor decisions back into outcome and ROI opportunity mapping for the selected workflow.",
+        "expected_output_type": "METRICS_MAPPING",
+        "expected_output_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-metrics-library.json",
+        "validator_command": "npm run validate:ai-value-metrics"
+      },
+      "model_selection": {
+        "policy": "SMALL_FAST_VALIDATOR",
+        "allowed_model_tiers": [
+          "FAST",
+          "BALANCED"
+        ],
+        "selected_model_tier": "FAST",
+        "escalation_allowed": true,
+        "escalation_rule": "Escalate only when metric ownership, source systems, or claim levels are ambiguous."
+      },
+      "tool_permissions": {
+        "read_scopes": [
+          "docs/contracts/ai-value-intelligence/",
+          "schemas/ai-value-intelligence/",
+          "scripts/"
+        ],
+        "write_scopes": [
+          "docs/contracts/ai-value-intelligence/examples/"
+        ],
+        "allowed_tools": [
+          "filesystem_read",
+          "filesystem_write",
+          "local_validator",
+          "test_runner"
+        ],
+        "network_access": false,
+        "production_access": false,
+        "secrets_access": false,
+        "customer_data_access": false
+      },
+      "verification_routing": {
+        "required_validators": [
+          "npm run validate:ai-value-metrics"
+        ],
+        "required_tests": [
+          "npm run test:ai-value-metrics"
+        ],
+        "reviewer_roles": [
+          "REVIEWER_AGENT",
+          "EVALUATOR_AGENT"
+        ]
+      },
+      "ledger": {
+        "schema_version": "AR_LEDGER_2026_05",
+        "scope_ref": "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+        "handoff_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json",
+        "verification_refs": [
+          "npm run test:ai-value-agent-harness"
+        ],
+        "required_caveats": [
+          "Development-harness telemetry only.",
+          "No production agent runtime, autonomous customer action, raw prompt/response storage, ROI calculation, causality claim, or individual scoring."
+        ]
+      },
+      "blocked_data_capture": [
+        "raw_prompt",
+        "raw_response",
+        "message_text",
+        "file_content",
+        "diff",
+        "patch",
+        "email",
+        "user_id",
+        "person_id",
+        "customer_telemetry",
+        "roi_calculation",
+        "causality_claim",
+        "individual_scoring"
+      ],
+      "governance_boundaries": {
+        "customer_telemetry": false,
+        "production_agent_runtime": false,
+        "autonomous_customer_action": false,
+        "raw_prompt_or_response_storage": false,
+        "direct_identifier_capture": false,
+        "roi_calculation": false,
+        "causality_claim": false,
+        "individual_scoring": false,
+        "customer_facing_economic_output": false
+      }
+    },
+    {
+      "schema_version": "FT_AI_VALUE_AGENT_HANDOFF_2026_06",
+      "handoff_id": "handoff_customer_support_case_resolution_executive_to_review_v1",
+      "workflow_family": "customer_support_case_resolution",
+      "value_route": "CAPACITY_CREATION",
+      "source_agent_role": "EXECUTIVE_READOUT_AGENT",
+      "target_agent_role": "REVIEWER_AGENT",
+      "object_type": "EXECUTIVE_READOUT",
+      "object_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+      "task_contract": {
+        "objective": "Review sponsor-facing language, blocked claims, required caveats, and next-action framing before the packet is shared.",
+        "expected_output_type": "EXECUTIVE_READOUT",
+        "expected_output_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json",
+        "validator_command": "npm run generate:ai-value-executive-packet"
+      },
+      "model_selection": {
+        "policy": "FRONTIER_REVIEW",
+        "allowed_model_tiers": [
+          "BALANCED",
+          "FRONTIER"
+        ],
+        "selected_model_tier": "FRONTIER",
+        "escalation_allowed": true,
+        "escalation_rule": "Use frontier review only for sponsor-language ambiguity, governance risk, or unresolved claim-boundary issues."
+      },
+      "tool_permissions": {
+        "read_scopes": [
+          "docs/contracts/ai-value-intelligence/",
+          "schemas/ai-value-intelligence/",
+          "scripts/"
+        ],
+        "write_scopes": [
+          "docs/contracts/ai-value-intelligence/examples/"
+        ],
+        "allowed_tools": [
+          "filesystem_read",
+          "filesystem_write",
+          "local_validator",
+          "test_runner"
+        ],
+        "network_access": false,
+        "production_access": false,
+        "secrets_access": false,
+        "customer_data_access": false
+      },
+      "verification_routing": {
+        "required_validators": [
+          "npm run generate:ai-value-executive-packet"
+        ],
+        "required_tests": [
+          "npm run test:ai-value-executive-packet"
+        ],
+        "reviewer_roles": [
+          "REVIEWER_AGENT",
+          "EVALUATOR_AGENT"
+        ]
+      },
+      "ledger": {
+        "schema_version": "AR_LEDGER_2026_05",
+        "scope_ref": "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+        "handoff_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json",
+        "verification_refs": [
+          "npm run test:ai-value-agent-harness"
+        ],
+        "required_caveats": [
+          "Development-harness telemetry only.",
+          "No production agent runtime, autonomous customer action, raw prompt/response storage, ROI calculation, causality claim, or individual scoring."
+        ]
+      },
+      "blocked_data_capture": [
+        "raw_prompt",
+        "raw_response",
+        "message_text",
+        "file_content",
+        "diff",
+        "patch",
+        "email",
+        "user_id",
+        "person_id",
+        "customer_telemetry",
+        "roi_calculation",
+        "causality_claim",
+        "individual_scoring"
+      ],
+      "governance_boundaries": {
+        "customer_telemetry": false,
+        "production_agent_runtime": false,
+        "autonomous_customer_action": false,
+        "raw_prompt_or_response_storage": false,
+        "direct_identifier_capture": false,
+        "roi_calculation": false,
+        "causality_claim": false,
+        "individual_scoring": false,
+        "customer_facing_economic_output": false
+      }
+    }
+  ],
+  "ledger": {
+    "schema_version": "AR_LEDGER_2026_05",
+    "scope_ref": "docs/concepts/AI_VALUE_AGENTIC_PLATFORM_HARNESS.md",
+    "handoff_ref": "docs/contracts/ai-value-intelligence/examples/customer-support-agent-handoff-bundle.json",
+    "verification_refs": [
+      "npm run test:ai-value-agent-harness",
+      "npm run test:ai-value-executive-packet"
+    ],
+    "required_caveats": [
+      "Development-harness telemetry only.",
+      "Agent handoffs are local task contracts, not production agent runs."
+    ]
+  },
+  "blocked_data_capture": [
+    "raw_prompt",
+    "raw_response",
+    "message_text",
+    "file_content",
+    "diff",
+    "patch",
+    "email",
+    "user_id",
+    "person_id",
+    "customer_telemetry",
+    "roi_calculation",
+    "causality_claim",
+    "individual_scoring"
+  ],
+  "governance_boundaries": {
+    "customer_telemetry": false,
+    "production_agent_runtime": false,
+    "autonomous_customer_action": false,
+    "raw_prompt_or_response_storage": false,
+    "direct_identifier_capture": false,
+    "roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "customer_facing_economic_output": false
+  },
+  "feeds": {
+    "local_agent_run_ledger": true,
+    "production_agent_runtime": false,
+    "customer_telemetry": false
+  }
+}

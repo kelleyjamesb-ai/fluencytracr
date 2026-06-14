@@ -1,0 +1,18 @@
+{
+  "source_table": "scrubbed_workflows",
+  "workflow_id": "workflow:agent:workflow_named",
+  "jbtd_id": null,
+  "persona_id": null,
+  "cohort_size": 7,
+  "event_count": 34,
+  "completion_rate": 0.91,
+  "error_rate": 0.03,
+  "abandonment_rate": 0.02,
+  "recovery_rate": 0.6,
+  "verification_rate": 0.5,
+  "p50_latency_ms": 2300,
+  "p95_latency_ms": 7200,
+  "frequency": {"p10": 1, "p50": 4, "p90": 12, "p99": 19},
+  "engagement": {"p10": 2, "p50": 8, "p90": 20, "p99": 32},
+  "breadth": {"p10": 1, "p50": 2, "p90": 5, "p99": 7}
+}

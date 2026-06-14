@@ -1,0 +1,7 @@
+episode_pattern,boundary_layer,primary_evidence_family,episode_count,explicit_feedback_episode_count,negative_feedback_episode_count,positive_feedback_episode_count,agent_completion_episode_count,failure_or_friction_episode_count,post_failure_continuation_episode_count,skill_episode_count,post_skill_continuation_episode_count,citation_click_episode_count,citation_available_episode_count,coverage_caveat
+resolved_with_confidence,immediate_episode,feedback_signal,3567326,65654,2,65652,3567326,0,0,357384,357384,551171,12386039,aggregate episode evidence only
+resolved_without_verification_signal,same_session_continuation,agent_completion,30676071,0,0,0,30676071,0,0,0,0,0,0,resolution is observed but explicit verification or feedback is not
+recovered_after_failure,same_session_continuation,post_failure_behavior,15826000,0,0,0,15826000,15826000,15826000,0,0,0,0,aggregate episode evidence only
+stalled_after_ai_assist,trace_context,post_failure_behavior,474414,0,0,0,0,474414,0,0,0,0,0,candidate episode-key count; trace run and session keys may overlap
+explicit_negative_feedback,immediate_episode,feedback_signal,2,2,2,0,0,0,0,0,0,0,0,aggregate episode evidence only
+evidence_gap,unknown_boundary,evidence_gap,37484844,0,0,0,0,0,0,0,0,0,0,episode has insufficient downstream evidence for trust interpretation

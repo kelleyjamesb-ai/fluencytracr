@@ -157,12 +157,160 @@
           "enum": ["improving", "stable", "degrading", "suppressed", "not_computed"]
         }
       }
+    },
+    "forwarded_distribution": {
+      "$ref": "#/$defs/forwarded_distribution"
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "suppression": {
+            "properties": {
+              "suppression_applied": { "const": true }
+            },
+            "required": ["suppression_applied"]
+          }
+        },
+        "required": ["suppression"]
+      },
+      "then": {
+        "not": {
+          "required": ["forwarded_distribution"]
+        }
+      }
+    }
+  ],
   "$defs": {
     "evidence_status": {
       "type": "string",
       "enum": ["present", "not_present", "suppressed", "not_computed"]
+    },
+    "distribution_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p10", "p50", "p90", "p99"],
+      "properties": {
+        "p10": { "type": "number", "minimum": 0 },
+        "p50": { "type": "number", "minimum": 0 },
+        "p90": { "type": "number", "minimum": 0 },
+        "p99": { "type": "number", "minimum": 0 }
+      }
+    },
+    "quality_signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completion_rate",
+        "error_rate",
+        "abandonment_rate",
+        "recovery_rate",
+        "verification_rate",
+        "p50_latency_ms",
+        "p95_latency_ms"
+      ],
+      "properties": {
+        "completion_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "error_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "abandonment_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "recovery_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "verification_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "p50_latency_ms": { "type": "integer", "minimum": 0 },
+        "p95_latency_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "forwarded_distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source_schema_version",
+        "cohort_id",
+        "workflow_id",
+        "jbtd_id",
+        "persona_id",
+        "window_start",
+        "window_end",
+        "window_days",
+        "cohort_size",
+        "ambiguity_rate",
+        "calibration_id",
+        "surface_taxonomy_ids",
+        "velocity",
+        "quality_signals",
+        "distribution_moments",
+        "baseline_stable",
+        "value_type",
+        "evidence_grade",
+        "privacy"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "FT_V3_FORWARDED_DISTRIBUTION_2026_06"
+        },
+        "source_schema_version": {
+          "type": "string",
+          "const": "FT_V3_2026_05"
+        },
+        "cohort_id": { "type": "string", "minLength": 1, "maxLength": 180, "pattern": "^[A-Za-z0-9:_-]+$" },
+        "workflow_id": { "type": "string", "minLength": 1, "maxLength": 180, "pattern": "^[A-Za-z0-9:_-]+$" },
+        "jbtd_id": { "type": ["string", "null"] },
+        "persona_id": { "type": ["string", "null"] },
+        "window_start": { "type": "string", "format": "date-time" },
+        "window_end": { "type": "string", "format": "date-time" },
+        "window_days": { "type": "integer", "minimum": 0 },
+        "cohort_size": { "type": "integer", "minimum": 5 },
+        "ambiguity_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "calibration_id": { "type": "string", "minLength": 1, "maxLength": 180, "pattern": "^[A-Za-z0-9:_-]+$" },
+        "surface_taxonomy_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 180, "pattern": "^[A-Za-z0-9:_-]+$" },
+          "uniqueItems": true
+        },
+        "velocity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frequency", "engagement", "breadth"],
+          "properties": {
+            "frequency": { "$ref": "#/$defs/distribution_value" },
+            "engagement": { "$ref": "#/$defs/distribution_value" },
+            "breadth": { "$ref": "#/$defs/distribution_value" }
+          }
+        },
+        "quality_signals": { "$ref": "#/$defs/quality_signals" },
+        "distribution_moments": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frequency_mean", "engagement_mean", "breadth_mean"],
+          "properties": {
+            "frequency_mean": { "type": "number", "minimum": 0 },
+            "engagement_mean": { "type": "number", "minimum": 0 },
+            "breadth_mean": { "type": "number", "minimum": 0 }
+          }
+        },
+        "baseline_stable": { "type": "boolean" },
+        "value_type": {
+          "type": "string",
+          "enum": ["ACCELERATION", "QUALITY_PREMIUM", "NET_NEW", "UNCLASSIFIED"]
+        },
+        "evidence_grade": {
+          "type": "string",
+          "enum": ["OBJECTIVE", "CALIBRATED", "QUALITATIVE"]
+        },
+        "privacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["aggregate_only", "person_level_fields_included"],
+          "properties": {
+            "aggregate_only": { "type": "boolean", "const": true },
+            "person_level_fields_included": { "type": "boolean", "const": false }
+          }
+        }
+      }
     },
     "bounded_aggregates": {
       "type": "object",

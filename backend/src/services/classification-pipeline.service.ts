@@ -8,7 +8,7 @@ import type { ExecutionClassificationOutcome } from "../repositories/classificat
 import type { WorkflowAggregateRepository } from "../repositories/workflow-aggregate.repository";
 import { evaluateFsc } from "./fsc-evaluator";
 import { evaluateMinimumSignalGate } from "./minimum-signal-gate";
-import { classifyBehaviorPattern, type BehaviorPattern } from "./pattern-classifier";
+import { classifyBehaviorPattern, type BehaviorPattern, type SignalBucket } from "./pattern-classifier";
 import { detectSignals, type LatencyDetectionResult } from "./signal-detectors";
 import { evaluateSuppression, type SuppressionReason } from "./suppression-engine";
 import {
@@ -21,6 +21,8 @@ import { buildExecutionFromEvents, type ExecutionBuildResult } from "./execution
 export interface ClassificationPipelineInput {
   readonly org_id: string;
   readonly workflow_id: string;
+  readonly jbtd_id?: string | null;
+  readonly persona_id?: string | null;
   readonly execution_id: string;
   readonly events: ReadonlyArray<CanonicalEvent>;
 }
@@ -77,26 +79,74 @@ async function refreshWorkflowAggregate(
   classificationRepository: ClassificationRepository,
   workflowAggregateRepository: WorkflowAggregateRepository
 ): Promise<void> {
-  const outcomes = await classificationRepository.findByWorkflowId(workflowId);
-  const records: ExecutionClassificationRecord[] = outcomes.map((o) => ({
-    workflow_id: o.workflow_id,
-    execution_id: o.execution_id,
-    status: o.status,
-    pattern: o.pattern,
-    suppression_reason: o.suppression_reason
-  }));
-  const agg = aggregateWorkflowClassifications({
-    records,
-    prevalence_mode: DEFAULT_PREVALENCE_MODE
-  });
-  if (agg.success) {
-    await workflowAggregateRepository.upsertAggregate(agg.result, orgId);
+  const outcomes = await classificationRepository.findByOrgIdAndWorkflowId(orgId, workflowId);
+  const bySlice = new Map<string, ExecutionClassificationRecord[]>();
+  for (const o of outcomes) {
+    const record: ExecutionClassificationRecord = {
+      workflow_id: o.workflow_id,
+      jbtd_id: o.jbtd_id,
+      persona_id: o.persona_id,
+      execution_id: o.execution_id,
+      status: o.status,
+      pattern: o.pattern,
+      suppression_reason: o.suppression_reason
+    };
+    const key = `${record.jbtd_id ?? ""}::${record.persona_id ?? ""}`;
+    const records = bySlice.get(key) ?? [];
+    records.push(record);
+    bySlice.set(key, records);
   }
+  const aggregates = [];
+  for (const records of bySlice.values()) {
+    const agg = aggregateWorkflowClassifications({
+      records,
+      prevalence_mode: DEFAULT_PREVALENCE_MODE
+    });
+    if (agg.success) {
+      aggregates.push(agg.result);
+    }
+  }
+  await workflowAggregateRepository.replaceWorkflowAggregates(orgId, workflowId, aggregates);
+}
+
+function hasOwnJoinKey(input: ClassificationPipelineInput, field: "jbtd_id" | "persona_id"): boolean {
+  return Object.prototype.hasOwnProperty.call(input, field);
+}
+
+function resolveExecutionJoinKeys(
+  input: ClassificationPipelineInput
+): { readonly ok: true; readonly jbtd_id: string | null; readonly persona_id: string | null } | { readonly ok: false } {
+  const inputJbtd = hasOwnJoinKey(input, "jbtd_id") ? input.jbtd_id ?? null : undefined;
+  const inputPersona = hasOwnJoinKey(input, "persona_id") ? input.persona_id ?? null : undefined;
+  let resolvedJbtd: string | null | undefined = inputJbtd;
+  let resolvedPersona: string | null | undefined = inputPersona;
+
+  for (const event of input.events) {
+    const eventJbtd = event.jbtd_id ?? null;
+    const eventPersona = event.persona_id ?? null;
+    if (resolvedJbtd === undefined) {
+      resolvedJbtd = eventJbtd;
+    }
+    if (resolvedPersona === undefined) {
+      resolvedPersona = eventPersona;
+    }
+    if (eventJbtd !== resolvedJbtd || eventPersona !== resolvedPersona) {
+      return { ok: false };
+    }
+  }
+
+  return {
+    ok: true,
+    jbtd_id: resolvedJbtd ?? null,
+    persona_id: resolvedPersona ?? null
+  };
 }
 
 function buildSuppressedOutcome(params: {
   org_id: string;
   workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
   execution_id: string;
   suppression_reason: SuppressionReason;
   diagnostics: ReadonlyArray<string>;
@@ -105,6 +155,8 @@ function buildSuppressedOutcome(params: {
   return {
     org_id: params.org_id,
     workflow_id: params.workflow_id,
+    jbtd_id: params.jbtd_id,
+    persona_id: params.persona_id,
     execution_id: params.execution_id,
     status: "SUPPRESSED",
     suppression_reason: params.suppression_reason,
@@ -120,12 +172,32 @@ export async function runClassificationPipeline(
 ): Promise<ClassificationPipelineResult> {
   const { org_id, workflow_id, execution_id, events } = input;
   const { classificationRepository, workflowAggregateRepository } = deps;
+  const joinKeys = resolveExecutionJoinKeys(input);
+  const jbtd_id = joinKeys.ok ? joinKeys.jbtd_id : input.jbtd_id ?? null;
+  const persona_id = joinKeys.ok ? joinKeys.persona_id : input.persona_id ?? null;
+
+  if (!joinKeys.ok) {
+    const outcome = buildSuppressedOutcome({
+      org_id,
+      workflow_id,
+      jbtd_id,
+      persona_id,
+      execution_id,
+      suppression_reason: "INCOMPLETE_EXECUTION",
+      diagnostics: Object.freeze(["join_key_mismatch", "fail_closed_join_key"])
+    });
+    await classificationRepository.upsertOutcome(outcome);
+    await refreshWorkflowAggregate(org_id, workflow_id, classificationRepository, workflowAggregateRepository);
+    return { outcome, build: null };
+  }
 
   const build = buildExecutionFromEvents({ events, execution_id });
   if (build === null) {
     const outcome = buildSuppressedOutcome({
       org_id,
       workflow_id,
+      jbtd_id,
+      persona_id,
       execution_id,
       suppression_reason: "INCOMPLETE_EXECUTION",
       diagnostics: Object.freeze(["execution_build_failed", "fail_closed_build"])
@@ -161,23 +233,29 @@ export async function runClassificationPipeline(
 
   const itBucket = signals.iteration.iteration_bucket;
   const latBucket = resolveLatencyBucketForClassification(signals.latency);
-  const cr = classifyBehaviorPattern({
-    abandonment_present: signals.abandonment.abandonment_present,
-    iteration_bucket: itBucket,
-    raw_iteration_count: signals.iteration.raw_iteration_count,
-    verification_present: signals.verification.verification_present,
-    recovery_present: signals.recovery.recovery_present,
-    latency_bucket: latBucket
-  });
   let classification_possible = false;
   let classification_reason: string | undefined;
   let pattern: BehaviorPattern | undefined;
-  if (cr.classified && cr.pattern !== undefined) {
-    classification_possible = true;
-    pattern = cr.pattern;
-  } else {
+
+  if (itBucket === "UNKNOWN") {
     classification_possible = false;
-    classification_reason = cr.reason ?? "AMBIGUITY";
+    classification_reason = "AMBIGUITY";
+  } else {
+    const cr = classifyBehaviorPattern({
+      abandonment_present: signals.abandonment.abandonment_present,
+      iteration_bucket: itBucket,
+      raw_iteration_count: signals.iteration.raw_iteration_count,
+      verification_present: signals.verification.verification_present,
+      recovery_present: signals.recovery.recovery_present,
+      latency_bucket: latBucket
+    });
+    if (cr.classified && cr.pattern !== undefined) {
+      classification_possible = true;
+      pattern = cr.pattern;
+    } else {
+      classification_possible = false;
+      classification_reason = cr.reason ?? "AMBIGUITY";
+    }
   }
 
   const suppression = evaluateSuppression({
@@ -198,6 +276,8 @@ export async function runClassificationPipeline(
       ? {
           org_id,
           workflow_id,
+          jbtd_id,
+          persona_id,
           execution_id,
           status: "ALLOWED",
           pattern,
@@ -208,6 +288,8 @@ export async function runClassificationPipeline(
       : {
           org_id,
           workflow_id,
+          jbtd_id,
+          persona_id,
           execution_id,
           status: "SUPPRESSED",
           suppression_reason: suppression.reason,

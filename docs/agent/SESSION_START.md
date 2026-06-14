@@ -84,6 +84,8 @@ There is **no separate daemon** that runs the harness. **Any** coding agent (Cur
 1. Follow **this document** and the chosen **track(s)**.
 2. Carry **explicit handoff text** when spawning subagents (paste current `PROGRESS.md` section or latest `agent-progress` block + the **single** task bound).
 
+For scaled agentic execution, use [`docs/concepts/AGENTIC_EXECUTION_HARNESS.md`](../concepts/AGENTIC_EXECUTION_HARNESS.md). That document is the canonical architecture spine for provider adapters, tool governance, subagent roles, and future agent-run ledger work. Do not create a second live queue, progress file, feature list, or agent-run contract.
+
 **Review / routing:** when doing structured review, use [`agents/review/REVIEW_RULES.md`](../../agents/review/REVIEW_RULES.md) and [`agents/review/ROUTING_RULES.json`](../../agents/review/ROUTING_RULES.json).
 
 **Skills:** optional triggers described in [`agents/core/SYSTEM_PROMPT.md`](../../agents/core/SYSTEM_PROMPT.md) and [`agents/skills/README.md`](../../agents/skills/README.md).

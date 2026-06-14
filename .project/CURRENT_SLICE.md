@@ -1,61 +1,91 @@
 # Current Slice Contract
 
-- Work item id: `ci-frontend-test-toolchain-alignment`
-- Title: `Frontend test toolchain alignment for CI matcher regression`
+- Work item id: `trust-evidence-gap-composition-diagnostic`
+- Title: `Decompose Trust Episode Boundary evidence gap`
 - Status: `completed`
 
 ## Summary
 
-Aligned the frontend workspace test toolchain with the checked-in lockfile so CI and local runs resolve the same Vitest/Vite stack, restoring jest-dom matcher registration for `ProtectedRoute.test.tsx` under CI.
+Add an aggregate-only dogfood diagnostic and readout path that decomposes the
+Trust Episode Boundary evidence gap into interpretable composition buckets
+without adding runtime output, schemas, APIs, canonical events, suppression
+reasons, ROI, causality, individual scoring, or team/manager ranking.
 
 ## Scope Paths
 
-- `package.json`
-- `package-lock.json`
-- `frontend/package.json`
-- `frontend/vite.config.ts`
-- `frontend/src/test/setup.ts`
-- `frontend/src/components/ProtectedRoute.test.tsx`
+- `sql/dogfood/trust_evidence_gap_composition_diagnostic.sql`
+- `scripts/dogfood/run_trust_evidence_gap_composition_readout.py`
+- `docs/research/TRUST_EVIDENCE_GAP_COMPOSITION.md`
+- `docs/dogfood/TRUST_EPISODE_PILOT_RUNBOOK.md`
+- `dogfood-output/trust-evidence-gap-composition/`
+- `dogfood-output/trust-episode-boundary-pilot/`
+- `output/doc/FluencyTracr_Trust_Calibration_Pilot_Brief.md`
+- `output/doc/FluencyTracr_Trust_Calibration_Pilot_Brief.docx`
+- `scripts/dogfood/run_trust_episode_pilot_readout.py`
+- `tests/dogfood/test_trust_episode_pilot_readout.py`
+- `tests/dogfood/test_trust_episode_external_brief.py`
+- `tests/dogfood/test_trust_evidence_gap_composition.py`
+- `tests/dogfood/test_velocity_double_count.py`
+- `.project/CURRENT_SLICE.md`
+- `.project/PROGRESS.md`
 
 ## Key Risks
 
-- Root and frontend toolchain versions can resolve different `vitest` / `vite` instances.
-- Lockfile refresh can introduce broader dependency churn than intended.
-- Fixing matcher symptoms without addressing toolchain skew would leave CI unstable.
+- Gap composition buckets must not become canonical events or suppression
+  reasons.
+- Gap composition must stay aggregate-only and must not expose raw prompts,
+  outputs, transcripts, emails, names, user IDs, manager fields, team fields,
+  or person-level metrics.
+- Ambiguous boundary rows and small cells must stay folded into caveated
+  evidence-gap language.
+- The readout must not claim trust scoring, correctness, ROI, causality,
+  productivity, or ranking.
 
 ## Planned Checks
 
-- Reproduce the frontend failure mode with dependency tree inspection and targeted test runs.
-- Run the frontend Vitest suite after alignment.
-- Confirm the workspace resolves a single valid Vitest/Vite line for frontend.
+- Run focused Trust Evidence Gap Composition tests.
+- Run Trust Episode pilot readout regression tests.
+- Run the dogfood SQL contract tests touched by the new SQL file.
+- Compile the new dogfood readout script.
+- Run docs contract/link checks where relevant.
+- Run semantic drift guard.
+- Run V1 governance gates.
+- Run diff whitespace check.
 
 ## Evaluator Command Profile
 
-`targeted` by default:
-
-- `npm ls vitest --all`
-- `npm ls vite --all`
-- `npm test --workspace frontend`
-
-Escalate to `strict` only if the slice becomes cross-cutting:
-
-- `./harness/scripts/verify.sh`
-- `npm run build --workspace shared`
-- `npm run test:ci --workspace backend`
-- `npm test --workspace frontend`
+- `python -m pytest tests/dogfood/test_trust_evidence_gap_composition.py -q`
+- `python -m pytest tests/dogfood/test_trust_episode_pilot_readout.py tests/dogfood/test_velocity_double_count.py -q`
+- `python3 -m compileall scripts/dogfood/run_trust_evidence_gap_composition_readout.py`
+- `bash scripts/ci_linkcheck_fluency_docs.sh`
+- `node scripts/ci_semantic_drift_guard.mjs`
+- `python3 scripts/ci_v1_governance_gates.py`
+- `git diff --check`
 
 ## Evaluator Pass Criteria
 
-- Only declared scope paths are changed.
-- `npm ls vitest --all` and `npm ls vite --all` no longer report frontend-invalid resolutions.
-- `npm test --workspace frontend` passes.
-- No blocker remains unrecorded in `.project/PROGRESS.md`.
+- The diagnostic emits only aggregate gap composition buckets.
+- The readout explains the current public evidence gap as true gap, ambiguous
+  boundary fold-in, and small-cell fold-in where those rows exist.
+- Generated artifacts carry explicit caveats and non-goals.
+- No runtime API, schema, canonical event, suppression reason, ROI, causality,
+  individual scoring, or ranking behavior changes.
 
 ## Specialists To Consult
 
-- Frontend/build specialist if package alignment creates dependency ambiguity.
-- Review specialist if evaluator results suggest collateral CI risk.
+- None for this bounded dogfood/research slice.
 
 ## Next Handoff Note
 
-Completed by realigning `frontend/package.json` to the locked `vite`/`vitest` versions already used in the workspace. Next bounded unit should return to phase-03 backend work unless new CI failures appear.
+Completed locally. Added the aggregate-only Trust Evidence Gap Composition
+diagnostic, CSV-to-readout runner, retained run-first composition artifacts,
+research doc, pilot runbook instructions, and tests. The retained readout
+explains the deduped public pilot evidence gap as true downstream-evidence gap
+plus ambiguous-boundary fold-in plus a sub-floor safety fold-in whose exact
+value is withheld in shareable output. The BigQuery SQL dry-run and
+seven-business-day candidate-key QA run passed; compare deeper BigQuery bucket
+counts to the 43.1% pilot gap only after applying the same product-episode
+dedup overlay. The executive pilot v0 now also carries evidence quality and
+reliability context: raw candidate-key normalization, high-confidence
+trace/run/action coverage, interpretation completeness, and boundary ambiguity
+share, without changing runtime behavior or governance boundaries.

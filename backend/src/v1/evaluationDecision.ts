@@ -1,3 +1,15 @@
+import {
+  deriveAivmVerdictFields,
+  type AivmCanonicalEvidenceEvent,
+  type AivmEvidenceGrade,
+  type AivmValueType,
+  type ReliabilityComponents
+} from "@learnaire/shared";
+import {
+  computeReliabilityFactor,
+  reliabilityComponentsFromCanonicalEvents
+} from "../value_realization/reliability_factor";
+
 export type EvaluationDecision = {
   schema_version: "FT_V1_2026_01";
   artifact_name: "FT_V1_EVALUATION_DECISION";
@@ -6,6 +18,10 @@ export type EvaluationDecision = {
   role_class: string;
   window_id: string;
   decision: "SURFACE" | "SUPPRESS";
+  value_type: AivmValueType;
+  evidence_grade: AivmEvidenceGrade;
+  reliability_factor: number | null;
+  reliability_components: ReliabilityComponents | null;
   renderable: boolean;
   suppress_reason_code?: SuppressReasonCode;
 };
@@ -32,6 +48,9 @@ export type EvaluationDecisionInput = {
   behavioral_classes_present: number;
   positive_evidence_present: boolean;
   ghost_use_candidate: boolean;
+  cohort_size?: number | null;
+  canonical_events?: ReadonlyArray<AivmCanonicalEvidenceEvent>;
+  explicit_value_type?: "NET_NEW" | null;
   candidate_decision?: "SURFACE" | "SUPPRESS";
   suppress_reason_code?: SuppressReasonCode;
 };
@@ -62,6 +81,14 @@ export const enforceV1EvaluationDecision = (
   }
 
   const renderable = input.window_length_days >= 60 && decision === "SURFACE";
+  const aivm = deriveAivmVerdictFields({
+    canonical_events: input.canonical_events,
+    cohort_size: input.cohort_size,
+    window_length_days: input.window_length_days,
+    explicit_value_type: input.explicit_value_type
+  });
+  const reliability_components =
+    decision === "SURFACE" ? reliabilityComponentsFromCanonicalEvents(input.canonical_events) : null;
 
   return {
     schema_version: input.schema_version,
@@ -71,6 +98,12 @@ export const enforceV1EvaluationDecision = (
     role_class: input.role_class,
     window_id: input.window_id,
     decision,
+    value_type: aivm.value_type,
+    evidence_grade: aivm.evidence_grade,
+    reliability_factor: reliability_components
+      ? computeReliabilityFactor(reliability_components)
+      : null,
+    reliability_components,
     renderable,
     ...(decision === "SUPPRESS" ? { suppress_reason_code } : {})
   };

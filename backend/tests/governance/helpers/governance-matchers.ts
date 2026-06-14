@@ -95,6 +95,8 @@ const SCORE_LIKE_SUBSTRINGS = [
 
 const ALLOWED_WORKFLOW_KEYS = new Set([
   "workflow_id",
+  "jbtd_id",
+  "persona_id",
   "classified_execution_count",
   "suppressed_execution_count",
   "pattern_distribution",

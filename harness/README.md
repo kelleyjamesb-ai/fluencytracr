@@ -6,6 +6,8 @@ This folder is the **single source of truth** for multi-session **checklist + ha
 
 **Relation to `.project/`:** when both are in use, queue state and session narrative live in **`PROGRESS.md` / `WORK_QUEUE.json`** (see [`.project/GOVERNANCE.md`](../.project/GOVERNANCE.md)); this harness holds **`feature_list.json`** verification flags and optional **`agent-progress.txt`** mirroring — see `SESSION_START.md` for the full split.
 
+**Relation to the agentic execution layer:** [`docs/concepts/AGENTIC_EXECUTION_HARNESS.md`](../docs/concepts/AGENTIC_EXECUTION_HARNESS.md) is the canonical architecture spine for scaled provider adapters, tool governance, and future ledger work. This folder remains the canonical checklist and handoff harness. Do not duplicate these files under provider-specific folders.
+
 ## Files
 
 | Path | Purpose |
@@ -52,3 +54,4 @@ Requires Python deps from `requirements.txt` (see [`docs/agent/EVALUATION.md`](.
 - **`fluencytracr-harness/`**: Domain-specific batch analytics with its own `StateStore`; keep orchestration separate unless you explicitly merge workflows.
 - **`.cursor/rules/`**: Cursor project rules that route Cursor Agent back to this harness and enforce bounded, verified slices.
 - **`integrations/openai-agents/`**: Optional OpenAI Agents SDK development sidecar that reads this harness and delegates bounded specialist analysis. It does not replace `feature_list.json`, `agent-progress.txt`, OpenSpec, or mechanical verification.
+- **Agent-run ledger**: Future durable execution metadata is framed in [`docs/contracts/agent-run/ledger.md`](../docs/contracts/agent-run/ledger.md). It points back to this harness and does not replace this folder.

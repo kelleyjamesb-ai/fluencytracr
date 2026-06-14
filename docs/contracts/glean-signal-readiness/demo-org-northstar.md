@@ -4,6 +4,12 @@ Source inventory: `examples/org-northstar-seeded-inventory.json`
 
 Generated readiness map: `examples/org-northstar-weekly-readiness-map.json`
 
+Source-derived readiness map: `examples/org-northstar-source-derived-readiness-map.json`
+
+Derived EvidenceBundle fixture: `../evidence-bundle/v1/examples/glean-readiness-derived.json`
+
+Demo guide: `../../integrations/glean/06-readiness-demo-guide.md`
+
 ## Executive Summary
 
 For the seeded org-window, FluencyTracr can already demonstrate how Glean-native signals translate into evidence readiness without using person-level attribution, raw prompts, model outputs, transcripts, or ranking fields.
@@ -35,3 +41,7 @@ The seeded generator gives FluencyTracr a concrete target for future Glean adapt
 - preserve stable join keys
 - mark unsupported evidence as `missing`, `suppressed`, or `not_computed`
 - avoid inferential claims when data is not ready
+
+## Agent-Safe Readiness Access
+
+For Glean Agent demos, use `fluency.get_signal_readiness_summary` to answer readiness questions without returning raw readiness entries, validation samples, join keys, or source records. Use `fluency.get_signal_readiness_map` only for trusted aggregate contract review.

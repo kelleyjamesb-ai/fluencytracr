@@ -6,6 +6,38 @@
 
 ---
 
+## Current Addition: Glean Dogfood BigQuery Adapter
+
+Status: internal-only, read-only adapter scaffold.
+
+The Glean dogfood BigQuery adapter maps three scrubbed, date-sharded internal
+tables into the existing `FT_V3_2026_05` aggregate ingest payload shape. It is
+not a new canonical event contract and does not add endpoints, production
+connectors, dashboards, ROI calculations, causality claims, or person-level
+storage.
+
+| Source key | BigQuery pattern | Mapping |
+| --- | --- | --- |
+| `scrubbed_llm_call` | `scio-apps.scrubbed_llm_call.scrubbed_llm_call_*` | Aggregate LLM invocation, model, workflow, status, token, and latency evidence into V3 velocity and quality fields. |
+| `scrubbed_client_analytics` | `scio-apps.scrubbed_client_analytics.scrubbed_client_analytics_*` | Aggregate surface engagement and client interaction evidence into V3 velocity and quality fields. |
+| `scrubbed_workflows` | `scio-apps.scrubbed_workflows.scrubbed_workflows_*` | Aggregate workflow, agent, step, citation, trigger, model, and execution evidence into V3 velocity and quality fields. |
+
+Boundary:
+
+- Source allowlists are broad and pinned in
+  `src/connectors/glean_dogfood_bq/adapter.py`.
+- Output is narrow and aggregate-only: `schema_version`, cohort/workflow/window
+  metadata, `cohort_size`, `calibration_id`, `velocity`, `quality_signals`, and
+  `privacy.person_level_fields_included = false`.
+- Connector-side k-min is enforced per independent slice before emission.
+- Queries require `_TABLE_SUFFIX` or a partition guard and are capped at 100 GB
+  estimated bytes unless explicitly overridden.
+- Forbidden field names fail closed before payload emission.
+
+See [docs/integrations/glean/dogfood-bq-adapter.md](integrations/glean/dogfood-bq-adapter.md).
+
+---
+
 ## Part A: Repo Architecture Map
 
 ### 1. Repository Structure (2 levels deep)
@@ -239,29 +271,20 @@ type EmployeeRecord = {
 
 ---
 
-### 7. Fluency Computation
+### 7. Deprecated Legacy Score Quarantine
 
 **Location**: `backend/src/fluency_service.ts`
 
-**Job**: `runFluencyIndexJob(orgId: string)` (line 586 in app.ts)
+**Status**: Deprecated and quarantined. The historical job
+`runFluencyIndexJob(orgId: string)` remains only as a no-op compatibility
+boundary so old imports fail closed.
 
-**Formula**:
-```
-F = 0.20C + 0.40D + 0.25J + 0.15V
+The previous weighted formula is intentionally not documented as an active
+product contract. FluencyTracr now exposes aggregate value-realization evidence
+through fail-closed `SURFACE` / `SUPPRESS` verdicts, Quality Multiplier,
+Reliability Factor, Causal Delta, Outcome Evidence, and Velocity Index outputs.
 
-Where:
-  C (Coverage): Ratio of weekly active users to roster size
-  D (Depth): Weighted interaction score
-  J (Judgment): Compliance score
-  V (Velocity): Delta of depth post-enablement
-```
-
-**Data Sources**:
-1. Metrics from `store.metrics` (filtered by `metric_name`)
-2. Enablement events from `store.enablementEvents`
-3. Spread rollups from `store.spreadRollups`
-
-**Triggers**: Automatically runs after metrics import (line 586)
+**Do not re-enable** a general index, weighted interaction score, dashboard score export, team ranking, or productivity score from connector metrics.
 
 ---
 
@@ -276,7 +299,7 @@ Where:
 **Test Files** (`backend/tests/`):
 - `ingest.test.ts` - Ingest validation
 - `suppression.test.ts` - Privacy suppression
-- `fluency_index.test.ts` - Fluency calculation
+- `fluency_index.test.ts` - Deprecated legacy score quarantine regression
 - `behavioral_signals.test.ts` - Behavioral signals (18 tests)
 - `behavioral_patterns.test.ts` - Pattern detection (18 tests)
 - ~15 more test files

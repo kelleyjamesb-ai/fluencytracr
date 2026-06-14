@@ -31,7 +31,8 @@ it("exports dashboard CSV", async () => {
 
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toMatch(/text\/csv/);
-  expect(body).toMatch(/fluency_index/);
+  expect(body).toMatch(/aggregate_evidence_status/);
+  expect(body).not.toMatch(/fluency_index|score/i);
 });
 
 it("exports dashboard PDF", async () => {

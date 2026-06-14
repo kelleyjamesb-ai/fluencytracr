@@ -1,0 +1,44 @@
+{
+  "caveat": "Candidate-key composition is not directly comparable to the deduped 43.1% product-episode pilot gap until the product-episode dedup overlay is applied. Sub-floor component values are withheld in tracked outputs.",
+  "components": {
+    "ai_activity_without_terminal_outcome": {
+      "episode_count": 1406716,
+      "share_of_visible": 0.007067,
+      "withheld_below_floor": false
+    },
+    "ambiguous_boundary_folded": {
+      "episode_count": 158929357,
+      "share_of_visible": 0.798436,
+      "withheld_below_floor": false
+    },
+    "small_cell_withheld": {
+      "episode_count": null,
+      "share_of_visible": null,
+      "withheld_below_floor": true
+    },
+    "span_or_llm_activity_without_governed_outcome": {
+      "episode_count": 38670491,
+      "share_of_visible": 0.194274,
+      "withheld_below_floor": false
+    },
+    "verification_or_feedback_without_observed_resolution": {
+      "episode_count": 44342,
+      "share_of_visible": 0.000223,
+      "withheld_below_floor": false
+    }
+  },
+  "status": "QA_CANDIDATE_KEY_ONLY",
+  "total_visible_candidate_gap_keys": 199050906,
+  "windows": [
+    "2026-05-15",
+    "2026-05-18",
+    "2026-05-19",
+    "2026-05-20",
+    "2026-05-21",
+    "2026-05-22",
+    "2026-05-26"
+  ],
+  "withheld_sub_floor_components": [
+    "small_cell_withheld"
+  ]
+}

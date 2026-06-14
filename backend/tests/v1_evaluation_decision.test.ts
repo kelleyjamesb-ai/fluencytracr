@@ -18,6 +18,8 @@ it("defaults to SUPPRESS with a reason code", () => {
   const result = enforceV1EvaluationDecision(baseInput);
   expect(result.decision).toBe("SUPPRESS");
   expect(result.suppress_reason_code).toBe("SUPP_NO_QUALIFYING_EVIDENCE");
+  expect(result.value_type).toBe("UNCLASSIFIED");
+  expect(result.evidence_grade).toBe("QUALITATIVE");
 });
 
 it("suppresses ambiguous inputs when ambiguity is present", () => {
@@ -60,6 +62,39 @@ it("drops suppress reason codes on SURFACE decisions", () => {
   expect(result.suppress_reason_code).toBeUndefined();
 });
 
+it("nulls Reliability Factor fields on SUPPRESS decisions", () => {
+  const result = enforceV1EvaluationDecision(baseInput);
+  expect(result.decision).toBe("SUPPRESS");
+  expect(result.reliability_factor).toBeNull();
+  expect(result.reliability_components).toBeNull();
+});
+
+it("emits Reliability Factor fields on SURFACE decisions from canonical observations", () => {
+  const result = enforceV1EvaluationDecision({
+    ...baseInput,
+    candidate_decision: "SURFACE",
+    canonical_events: [
+      { event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED", verification_present: true },
+      { event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED", verification_present: false },
+      { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true },
+      { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true },
+      { event_name: "FT_V1_ITERATION_DEPTH_OBSERVED", iteration_depth: "HEAVY" },
+      { event_name: "FT_V1_ITERATION_DEPTH_OBSERVED", iteration_depth: "LIGHT" },
+      { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: true },
+      { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: false }
+    ]
+  });
+
+  expect(result.decision).toBe("SURFACE");
+  expect(result.reliability_components).toEqual({
+    abandonment_rate: 0.5,
+    friction_loop_rate: 0.5,
+    recovery_success_rate: 1,
+    verification_presence_rate: 0.5
+  });
+  expect(result.reliability_factor).toBe(0.625);
+});
+
 it("bypasses ghost-use evaluation when positive evidence is present", () => {
   const result = enforceV1EvaluationDecision({
     ...baseInput,
@@ -92,6 +127,58 @@ it("sets renderable to true when window >= 60 and decision is SURFACE", () => {
   expect(result.renderable).toBe(true);
   expect(result.decision).toBe("SURFACE");
   expect(result.suppress_reason_code).toBeUndefined();
+});
+
+it("maps acceleration from latency plus low abandonment observations", () => {
+  const result = enforceV1EvaluationDecision({
+    ...baseInput,
+    window_length_days: 90,
+    cohort_size: 30,
+    behavioral_classes_present: 2,
+    candidate_decision: "SURFACE",
+    canonical_events: [
+      { event_name: "FT_V1_LATENCY_OBSERVED", latency_ms: 100 },
+      { event_name: "FT_V1_LATENCY_OBSERVED", latency_ms: 120 },
+      { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: false },
+      { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: false }
+    ]
+  });
+  expect(result.value_type).toBe("ACCELERATION");
+  expect(result.evidence_grade).toBe("OBJECTIVE");
+});
+
+it("maps quality premium from verification plus recovery dominance", () => {
+  const result = enforceV1EvaluationDecision({
+    ...baseInput,
+    behavioral_classes_present: 2,
+    candidate_decision: "SURFACE",
+    canonical_events: [
+      { event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED", verification_present: true },
+      { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true },
+      { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true }
+    ]
+  });
+  expect(result.value_type).toBe("QUALITY_PREMIUM");
+  expect(result.evidence_grade).toBe("QUALITATIVE");
+});
+
+it("reserves NET_NEW for explicit upstream tagging only", () => {
+  const inferred = enforceV1EvaluationDecision({
+    ...baseInput,
+    behavioral_classes_present: 2,
+    candidate_decision: "SURFACE",
+    canonical_events: [{ event_name: "FT_V1_DISPOSITION_OBSERVED" }]
+  });
+  expect(inferred.value_type).toBe("UNCLASSIFIED");
+
+  const tagged = enforceV1EvaluationDecision({
+    ...baseInput,
+    behavioral_classes_present: 2,
+    candidate_decision: "SURFACE",
+    explicit_value_type: "NET_NEW",
+    canonical_events: [{ event_name: "FT_V1_DISPOSITION_OBSERVED" }]
+  });
+  expect(tagged.value_type).toBe("NET_NEW");
 });
 
 describe("TG3 property tests", () => {

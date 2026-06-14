@@ -1,0 +1,289 @@
+{
+  "schema_version": "AIWVG_DEMO_2026_05",
+  "demo_id": "ai-work-value-demo:nielsen-synthetic:2026-05",
+  "org_id": "org-nielsen-synthetic",
+  "generated_at": "2026-05-07T19:30:00.000Z",
+  "source_system": "FluencyTracr",
+  "positioning": {
+    "thesis": "FluencyTracr should measure and govern the enterprise shift from ad hoc AI assistance to repeatable, governed, agentic, outcome-linked work. ROI is the final claim layer after evidence, controls, outcome linkage, and finance approval.",
+    "roi_role": "final_claim_layer",
+    "core_product_questions": [
+      "What work is AI participating in?",
+      "What maturity stage is that work at?",
+      "What evidence supports that stage?",
+      "What outcomes are linked or missing?",
+      "What value hypotheses are active?",
+      "What claims are safe today?",
+      "What evidence would upgrade those claims?"
+    ]
+  },
+  "journey_steps": [
+    {
+      "step_id": "survey_opportunity",
+      "label": "Survey opportunity",
+      "maturity_stage": "ad_hoc_assistance",
+      "ai_surfaces": [],
+      "work_patterns": ["find", "understand"],
+      "evidence_types": ["survey"],
+      "claim_readiness": "directional",
+      "what_it_shows": "Aggregate user-reported friction points indicate where AI assistance may create value, before product telemetry or outcome linkage exists.",
+      "evidence_present": [
+        "Aggregate perceived information-friction opportunity",
+        "Aggregate workflow pain-point themes"
+      ],
+      "evidence_missing": [
+        "Validated product telemetry",
+        "External business outcome metric",
+        "Finance-reviewed value model"
+      ],
+      "safe_claim": "Survey evidence identifies directional value opportunities for follow-up instrumentation.",
+      "blocked_claims": [
+        "Do not claim measured ROI from survey opportunity alone.",
+        "Do not infer individual productivity."
+      ],
+      "next_upgrade_actions": [
+        "Attach aggregate product telemetry to the surveyed workflow categories."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "search_chat_telemetry",
+      "label": "Search and chat telemetry",
+      "maturity_stage": "repeated_assistance",
+      "ai_surfaces": ["search", "chat", "ai_answers"],
+      "work_patterns": ["find", "understand", "summarize", "draft"],
+      "evidence_types": ["product_telemetry"],
+      "claim_readiness": "evidence_present",
+      "what_it_shows": "Aggregate search, chat, and AI Answers activity shows where AI is repeatedly participating in common work patterns.",
+      "evidence_present": [
+        "Covered aggregate search sessions",
+        "Covered aggregate assistant sessions",
+        "No raw prompt, response, or query content"
+      ],
+      "evidence_missing": [
+        "Reusable artifact evidence",
+        "Workflow-run evidence",
+        "Business outcome linkage"
+      ],
+      "safe_claim": "Product telemetry shows repeated AI assistance in covered search and assistant workflows.",
+      "blocked_claims": [
+        "Do not claim time savings or business value without outcome evidence.",
+        "Do not reconstruct raw work content."
+      ],
+      "next_upgrade_actions": [
+        "Group aggregate events into repeatable work patterns and attach claim readiness."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "repeatable_work_patterns",
+      "label": "Repeatable work patterns",
+      "maturity_stage": "repeated_assistance",
+      "ai_surfaces": ["search", "chat", "ai_answers"],
+      "work_patterns": ["find", "understand", "summarize", "analyze", "troubleshoot"],
+      "evidence_types": ["product_telemetry", "survey"],
+      "claim_readiness": "evidence_present",
+      "what_it_shows": "Aggregate AI activity can be represented as work patterns such as find, understand, summarize, analyze, and troubleshoot instead of isolated feature usage.",
+      "evidence_present": [
+        "Pattern-level aggregate coverage",
+        "Directional survey opportunity aligned to observed product telemetry"
+      ],
+      "evidence_missing": [
+        "Reusable skills or artifacts",
+        "Governed workflow runs",
+        "External outcome metric"
+      ],
+      "safe_claim": "Evidence shows AI participation in repeatable work patterns across covered surfaces.",
+      "blocked_claims": [
+        "Do not rank teams or managers by pattern activity.",
+        "Do not score individual productivity."
+      ],
+      "next_upgrade_actions": [
+        "Track reusable outputs from skills, artifacts, and workflow templates."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "skills_artifacts",
+      "label": "Skills and artifacts",
+      "maturity_stage": "reusable_expertise",
+      "ai_surfaces": ["skills", "canvas_artifacts", "chat"],
+      "work_patterns": ["summarize", "draft", "analyze", "automate"],
+      "evidence_types": ["product_telemetry", "artifact_output"],
+      "claim_readiness": "evidence_present",
+      "what_it_shows": "Reusable skills and artifacts indicate that AI-supported work is moving from one-off assistance into repeatable expertise.",
+      "evidence_present": [
+        "Aggregate skill execution evidence",
+        "Aggregate artifact-output and reuse evidence"
+      ],
+      "evidence_missing": [
+        "Governed action evidence",
+        "Business outcome linkage",
+        "Finance-reviewed value model"
+      ],
+      "safe_claim": "Evidence supports reusable AI-assisted expertise for covered workflow outputs.",
+      "blocked_claims": [
+        "Do not expose file contents or generated artifact contents.",
+        "Do not claim revenue or cost impact from artifact counts alone."
+      ],
+      "next_upgrade_actions": [
+        "Connect reusable outputs to workflow runs and external process metrics."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "agentic_execution",
+      "label": "Agentic execution",
+      "maturity_stage": "agentic_execution",
+      "ai_surfaces": ["agents", "apis", "mcp_actions"],
+      "work_patterns": ["automate", "orchestrate", "troubleshoot"],
+      "evidence_types": ["workflow_run", "action_log", "artifact_output"],
+      "claim_readiness": "internal_only",
+      "what_it_shows": "Agent and API-supported workflows show AI participating in multi-step execution, not just single-turn assistance.",
+      "evidence_present": [
+        "Aggregate workflow-run evidence",
+        "Aggregate action-log evidence",
+        "Generated output counts without raw content"
+      ],
+      "evidence_missing": [
+        "Control evidence coverage",
+        "External business outcome linkage",
+        "Finance-reviewed value model"
+      ],
+      "safe_claim": "Internal evidence shows covered agentic workflows are executing repeatable multi-step work.",
+      "blocked_claims": [
+        "Do not claim autonomous business impact without governed controls and outcome linkage.",
+        "Do not include tool payloads."
+      ],
+      "next_upgrade_actions": [
+        "Attach control evidence and approval coverage for governed actions."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "governed_action",
+      "label": "Governed action",
+      "maturity_stage": "governed_action",
+      "ai_surfaces": ["mcp_actions", "agents", "apis"],
+      "work_patterns": ["decide", "automate", "orchestrate"],
+      "evidence_types": ["action_log", "control_evidence"],
+      "claim_readiness": "internal_only",
+      "what_it_shows": "Governed actions add reviewable control evidence, approval coverage, and safe-path constraints before stronger claims are allowed.",
+      "evidence_present": [
+        "Aggregate governed action logs",
+        "Control coverage for covered action classes"
+      ],
+      "evidence_missing": [
+        "External outcome system linkage",
+        "Counterfactual or baseline design",
+        "Finance-reviewed value model"
+      ],
+      "safe_claim": "Internal evidence supports governed execution for covered action classes.",
+      "blocked_claims": [
+        "Do not claim causal risk reduction or financial impact from action logs alone.",
+        "Do not hide suppressed or unreportable values."
+      ],
+      "next_upgrade_actions": [
+        "Link governed workflows to aggregate external outcome metrics."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "outcome_linked_evidence",
+      "label": "Outcome-linked evidence",
+      "maturity_stage": "outcome_linked",
+      "ai_surfaces": ["search", "chat", "agents", "skills", "mcp_actions"],
+      "work_patterns": ["find", "summarize", "analyze", "troubleshoot", "orchestrate"],
+      "evidence_types": ["product_telemetry", "workflow_run", "action_log", "control_evidence", "business_outcome"],
+      "claim_readiness": "caveated",
+      "what_it_shows": "Aggregate AI work evidence is linked to external systems of record such as customer success, support, engineering, security, finance, and HR metrics.",
+      "evidence_present": [
+        "External outcome metric references",
+        "Baseline or counterfactual requirement",
+        "Privacy boundary and minimum sample size"
+      ],
+      "evidence_missing": [
+        "Finance-reviewed recapture and cost assumptions",
+        "Approved value-to-cost model"
+      ],
+      "safe_claim": "Covered evidence supports a contribution story between AI-assisted work and linked business outcomes, with attribution caveats.",
+      "blocked_claims": [
+        "Do not claim causality unless the attribution design supports it.",
+        "Do not claim payback before finance approval."
+      ],
+      "next_upgrade_actions": [
+        "Submit the outcome linkage and assumptions for Finance and Data Science review."
+      ],
+      "roi_position": "not_roi"
+    },
+    {
+      "step_id": "finance_approved_value_claim",
+      "label": "Finance-approved value claim",
+      "maturity_stage": "finance_approved",
+      "ai_surfaces": ["agents", "mcp_actions", "canvas_artifacts"],
+      "work_patterns": ["orchestrate", "automate", "analyze"],
+      "evidence_types": ["workflow_run", "action_log", "artifact_output", "control_evidence", "business_outcome", "financial_model"],
+      "claim_readiness": "customer_safe",
+      "what_it_shows": "Only after governed workflow evidence, linked outcomes, and finance-approved assumptions exist can FluencyTracr produce bounded value language.",
+      "evidence_present": [
+        "Completed reporting agent runs",
+        "Governed action logs",
+        "Control coverage",
+        "Linked reporting cycle-time outcome",
+        "Finance-approved value model"
+      ],
+      "evidence_missing": [],
+      "safe_claim": "Finance-reviewed evidence supports a bounded value claim for governed agentic business reporting workflows.",
+      "blocked_claims": [
+        "Do not generalize the value claim to all AI work.",
+        "Do not remove approved assumptions or caveats from the report-out."
+      ],
+      "next_upgrade_actions": [
+        "Monitor drift in workflow coverage, control evidence, outcome linkage, and financial assumptions."
+      ],
+      "roi_position": "final_layer"
+    }
+  ],
+  "strongest_safe_claim": {
+    "schema_version": "SSC_2026_05",
+    "generated_at": "2026-05-07T19:30:00.000Z",
+    "source_system": "FluencyTracr",
+    "roi_positioning": "final_claim_layer",
+    "strongest_claim": {
+      "claim_id": "claim:agentic_business_reporting",
+      "hypothesis_id": "agentic_business_reporting",
+      "outcome_domain": "finance",
+      "work_pattern": "orchestrate",
+      "maturity_stage": "finance_approved",
+      "claim_readiness": "customer_safe",
+      "safe_claim_language": "Finance-reviewed evidence supports a bounded value claim for governed agentic business reporting workflows.",
+      "evidence_used": ["workflow_run", "action_log", "artifact_output", "control_evidence", "business_outcome", "financial_model"],
+      "aggregate_metric_refs": [
+        "agentic_reporting.completed_runs.window",
+        "agentic_reporting.governed_actions.window",
+        "agentic_reporting.artifacts.window",
+        "agentic_reporting.control_coverage.window",
+        "agentic_reporting.cycle_time_delta.window",
+        "agentic_reporting.finance_approved_value_model"
+      ],
+      "caveats": [
+        "Finance approval is scoped to the synthetic workflow and approved assumptions.",
+        "Do not generalize this value claim to all agentic work."
+      ]
+    },
+    "evidence_gaps": [],
+    "blocked_stronger_claims": [
+      "Do not generalize this value claim to all agentic work.",
+      "Do not generalize this value claim beyond the approved workflow, window, and financial assumptions."
+    ],
+    "upgrade_actions": [
+      "Monitor drift in reporting workflow coverage, control evidence, and financial assumptions.",
+      "Revalidate finance approval when pricing, recapture, or workflow scope changes."
+    ],
+    "governance_boundaries": [
+      "No raw prompts, raw responses, transcripts, query text, tool payloads, or file contents.",
+      "No direct identifiers, manager views, team rankings, or productivity scoring.",
+      "ROI is downstream of evidence, controls, outcomes, and finance approval."
+    ]
+  }
+}

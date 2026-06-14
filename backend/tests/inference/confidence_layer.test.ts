@@ -68,6 +68,8 @@ describe("FluencyTracr V1 Confidence Layer", () => {
 
     expect(result[0].decision).toBe("SUPPRESS");
     expect(result[0].suppression_reason).toBe("HIGH_AMBIGUITY");
+    expect(result[0].value_type).toBe("UNCLASSIFIED");
+    expect(result[0].evidence_grade).toBe("QUALITATIVE");
     expect(result[0].signal_classes).toEqual([]);
     expect(result[0].positive_evidence_present).toBe(false);
     expect(result[0].ghost_use_evaluated).toBe(false);
@@ -111,6 +113,8 @@ describe("FluencyTracr V1 Confidence Layer", () => {
     const secondWindow = result.find((entry) => entry.window_start === windows[1].window_start);
     expect(secondWindow?.positive_evidence_present).toBe(true);
     expect(secondWindow?.ghost_use_evaluated).toBe(false);
+    expect(secondWindow?.value_type).toBe("ACCELERATION");
+    expect(secondWindow?.evidence_grade).toBe("QUALITATIVE");
   });
 
   test("rolls up small teams to eligible parent function", () => {
@@ -141,7 +145,91 @@ describe("FluencyTracr V1 Confidence Layer", () => {
     expect(parent?.population_episodes).toBe(1);
     expect(child?.decision).toBe("SUPPRESS");
     expect(child?.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(child?.value_type).toBe("UNCLASSIFIED");
+    expect(child?.evidence_grade).toBe("QUALITATIVE");
     expect(child?.rolled_up).toBe(true);
+  });
+
+  test("AIVM fields classify objective quality premium windows without changing suppression", () => {
+    const objectiveWindows = [
+      { window_start: "2026-01-01T00:00:00Z", window_end: "2026-04-01T00:00:00Z" },
+      { window_start: "2026-04-02T00:00:00Z", window_end: "2026-07-01T00:00:00Z" }
+    ];
+    const episodes: TaskEpisode[] = [];
+    for (let i = 0; i < 30; i += 1) {
+      episodes.push(buildEpisode({
+        episode_id: `quality-1-${i}`,
+        start_ts: "2026-01-10T00:00:00Z",
+        signal_primitives: {
+          iteration_count: 0,
+          verification_present: true,
+          recovery_present: true,
+          latency_ms: null,
+          abandonment: false
+        }
+      }));
+      episodes.push(buildEpisode({
+        episode_id: `quality-2-${i}`,
+        start_ts: "2026-04-10T00:00:00Z",
+        signal_primitives: {
+          iteration_count: 0,
+          verification_present: true,
+          recovery_present: true,
+          latency_ms: null,
+          abandonment: false
+        }
+      }));
+    }
+
+    const result = aggregateFunctionWindows(episodes, objectiveWindows, buildInputs({
+      contributor_counts: new Map([ ["func-1", 30] ])
+    }));
+    const secondWindow = result.find((entry) => entry.window_start === objectiveWindows[1].window_start);
+    expect(secondWindow?.decision).toBe("SURFACE");
+    expect(secondWindow?.value_type).toBe("QUALITY_PREMIUM");
+    expect(secondWindow?.evidence_grade).toBe("OBJECTIVE");
+  });
+
+  test("SURFACE aggregate emits reliability factor and components without changing the decision", () => {
+    const episodes: TaskEpisode[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      episodes.push(buildEpisode({
+        episode_id: `reliable-1-${i}`,
+        start_ts: "2026-01-10T00:00:00Z",
+        signal_primitives: {
+          iteration_count: i < 2 ? 3 : 0,
+          verification_present: true,
+          recovery_present: true,
+          latency_ms: 100,
+          abandonment: i === 0
+        }
+      }));
+      episodes.push(buildEpisode({
+        episode_id: `reliable-2-${i}`,
+        start_ts: "2026-04-10T00:00:00Z",
+        signal_primitives: {
+          iteration_count: i < 2 ? 3 : 0,
+          verification_present: true,
+          recovery_present: true,
+          latency_ms: 120,
+          abandonment: i === 0
+        }
+      }));
+    }
+
+    const result = aggregateFunctionWindows(episodes, windows, buildInputs({
+      contributor_counts: new Map([ ["func-1", 10] ])
+    }));
+
+    const secondWindow = result.find((entry) => entry.window_start === windows[1].window_start);
+    expect(secondWindow?.decision).toBe("SURFACE");
+    expect(secondWindow?.reliability_components).toEqual({
+      abandonment_rate: 0.1,
+      friction_loop_rate: 0.2,
+      recovery_success_rate: 0.9,
+      verification_presence_rate: 1
+    });
+    expect(secondWindow?.reliability_factor).toBe(0.9);
   });
 
   test("latency alone never surfaces and latency is ignored for ineligible roles", () => {
@@ -202,6 +290,8 @@ describe("FluencyTracr V1 Confidence Layer", () => {
 
     expect(lowVolumeResult[0].decision).toBe("SUPPRESS");
     expect(lowVolumeResult[0].suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(lowVolumeResult[0].reliability_factor).toBeNull();
+    expect(lowVolumeResult[0].reliability_components).toBeNull();
 
     const baselineEpisodes: TaskEpisode[] = [];
     for (let i = 0; i < 10; i += 1) {

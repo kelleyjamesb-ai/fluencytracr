@@ -1,0 +1,84 @@
+{
+  "schema_version": "AIWVG_2026_05",
+  "graph_id": "aiwvg:org-northstar:suppressed-weekly",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-07T18:05:00.000Z",
+  "source_system": "FluencyTracr",
+  "summary": {
+    "overall_claim_readiness": "suppressed",
+    "highest_maturity_stage": "ad_hoc_assistance",
+    "covered_surfaces": ["chat"],
+    "covered_outcome_domains": ["operations"],
+    "blocked_claims": [
+      "Do not claim value impact because evidence is suppressed.",
+      "Do not infer productivity, team maturity, or finance approval from thin telemetry."
+    ],
+    "next_evidence_actions": [
+      "Confirm source coverage for the reporting window.",
+      "Validate minimum cohort and missingness gates before reporting."
+    ]
+  },
+  "nodes": [
+    {
+      "id": "surface:chat",
+      "kind": "surface",
+      "label": "Chat",
+      "claim_readiness": "suppressed",
+      "surface": "chat",
+      "observed_patterns": ["understand"],
+      "maturity_stage": "ad_hoc_assistance",
+      "evidence": [
+        {
+          "evidence_type": "product_telemetry",
+          "evidence_strength": "unverified",
+          "claim_readiness": "suppressed",
+          "source_surface": "chat",
+          "maturity_stage": "ad_hoc_assistance",
+          "validation_status": "rejected",
+          "aggregate_metric_ref": "chat.coverage_suppressed.weekly"
+        }
+      ],
+      "claim_boundary": {
+        "allowed_language": "No customer-facing value claim is available for this graph.",
+        "blocked_language": "Chat evidence proves measurable productivity impact.",
+        "required_caveats": ["Evidence is suppressed due to insufficient coverage and validation."]
+      }
+    },
+    {
+      "id": "pattern:understand",
+      "kind": "work_pattern",
+      "label": "Understand work",
+      "claim_readiness": "suppressed",
+      "work_pattern": "understand",
+      "supported_surfaces": ["chat"],
+      "maturity_stage": "ad_hoc_assistance",
+      "value_hypotheses": ["productivity_capacity"],
+      "evidence": []
+    },
+    {
+      "id": "outcome:operations",
+      "kind": "outcome",
+      "label": "Operations value",
+      "claim_readiness": "suppressed",
+      "outcome_domain": "operations",
+      "value_hypotheses": ["cost_avoidance"],
+      "supported_patterns": ["understand"],
+      "maturity_stage": "ad_hoc_assistance",
+      "evidence": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:chat_understand_suppressed",
+      "edge_type": "claim_blocked_by_gap",
+      "from_node_id": "surface:chat",
+      "to_node_id": "pattern:understand",
+      "evidence_types": ["product_telemetry"],
+      "claim_readiness": "suppressed",
+      "evidence_strength": "unverified",
+      "value_hypotheses": ["productivity_capacity"],
+      "required_caveats": ["Missingness is not evidence of value."]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+gap_component,episode_count,episode_share_of_gap
+ambiguous_boundary_folded,158929357,0.798436
+span_or_llm_activity_without_governed_outcome,38670491,0.194274
+ai_activity_without_terminal_outcome,1406716,0.007067
+verification_or_feedback_without_observed_resolution,44342,0.000223
+small_cell_withheld,WITHHELD,WITHHELD

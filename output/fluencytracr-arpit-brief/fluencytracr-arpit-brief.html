@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FluencyTracr: Macro View, Variables, and Value</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #526070;
+      --line: #d8dde7;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --blue: #2663ff;
+      --green: #0f8a5f;
+      --amber: #b87500;
+      --red: #b94040;
+      --purple: #6d4aff;
+      --slate: #334155;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+
+    .deck {
+      width: min(1180px, calc(100vw - 48px));
+      margin: 32px auto 64px;
+    }
+
+    .sheet {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 18px 50px rgba(23, 32, 51, 0.08);
+      margin: 0 0 28px;
+      padding: 34px;
+      min-height: 760px;
+      page-break-after: always;
+    }
+
+    .eyebrow {
+      color: var(--blue);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      margin: 0 0 10px;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.12; }
+    h1 { font-size: 36px; max-width: 860px; }
+    h2 { font-size: 30px; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    p { margin: 10px 0 0; color: var(--muted); }
+
+    .summary {
+      max-width: 960px;
+      margin-top: 14px;
+      font-size: 18px;
+      color: var(--slate);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .card strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin: 26px 0;
+      align-items: stretch;
+    }
+
+    .flow-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: linear-gradient(180deg, #fff, #fbfcff);
+      position: relative;
+      min-height: 126px;
+    }
+
+    .flow-box:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 43%;
+      right: -14px;
+      color: var(--blue);
+      font-weight: 900;
+      font-size: 20px;
+      z-index: 2;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--blue);
+      border-radius: 999px;
+      padding: 4px 9px;
+      margin-bottom: 10px;
+    }
+
+    .label.green { background: var(--green); }
+    .label.amber { background: var(--amber); }
+    .label.red { background: var(--red); }
+    .label.purple { background: var(--purple); }
+    .label.slate { background: var(--slate); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 18px;
+    }
+
+    th {
+      text-align: left;
+      color: var(--ink);
+      background: #eef3ff;
+      border: 1px solid var(--line);
+      padding: 10px;
+    }
+
+    td {
+      border: 1px solid var(--line);
+      padding: 10px;
+      vertical-align: top;
+      color: var(--slate);
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+
+    li { margin: 5px 0; }
+
+    .zone {
+      border-left: 5px solid var(--blue);
+    }
+    .zone.scale { border-left-color: var(--green); }
+    .zone.enable { border-left-color: var(--blue); }
+    .zone.redesign { border-left-color: var(--amber); }
+    .zone.trust { border-left-color: var(--purple); }
+    .zone.hold { border-left-color: var(--red); }
+
+    .callout {
+      margin-top: 20px;
+      border: 1px solid #c8d7ff;
+      background: #f3f6ff;
+      border-radius: 8px;
+      padding: 16px;
+      color: var(--slate);
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .metric {
+      font-size: 28px;
+      font-weight: 850;
+      color: var(--ink);
+      letter-spacing: 0;
+      margin: 4px 0;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .visual-summary {
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .visual-summary img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .deck { width: auto; margin: 0; }
+      .sheet {
+        box-shadow: none;
+        border: 0;
+        border-radius: 0;
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="sheet">
+      <p class="eyebrow">Sheet 1 · Macro view</p>
+      <h1>FluencyTracr is an evidence layer for deciding where AI is ready to scale.</h1>
+      <p class="summary">
+        It turns aggregate AI usage telemetry into governed action guidance: where to scale, where to coach,
+        where to redesign workflows, where trust needs calibration, and where the evidence is not strong enough yet.
+      </p>
+
+      <div class="flow">
+        <div class="flow-box">
+          <span class="label slate">Inputs</span>
+          <h3>AI work telemetry</h3>
+          <p>Workflow runs, search, autocomplete, summaries, MCP usage, agent activity, verification and feedback context.</p>
+        </div>
+        <div class="flow-box">
+          <span class="label">Evidence</span>
+          <h3>Behavior signals</h3>
+          <p>Usage, velocity, breadth, depth repertoire, reliability, quality, abandonment, recovery, and trust evidence.</p>
+        </div>
+        <div class="flow-box">
+          <span class="label purple">Governance</span>
+          <h3>Fail-closed gates</h3>
+          <p>Aggregate-only interpretation. No individual scoring, no team ranking, no unsupported ROI claim.</p>
+        </div>
+        <div class="flow-box">
+          <span class="label green">Readout</span>
+          <h3>Scale readiness zones</h3>
+          <p>Ready to scale, enablement opportunity, workflow design opportunity, trust calibration, adoption expansion, or hold.</p>
+        </div>
+        <div class="flow-box">
+          <span class="label amber">Action</span>
+          <h3>Value investigation</h3>
+          <p>Point leaders to the workflows and cohorts where a stronger value investigation is defensible.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="card zone scale">
+          <strong>What it is</strong>
+          A governed behavioral evidence system for AI value realization.
+        </div>
+        <div class="card zone redesign">
+          <strong>What it is not</strong>
+          Not a productivity score, people analytics product, ROI calculator, or surveillance layer.
+        </div>
+        <div class="card zone enable">
+          <strong>Why it matters</strong>
+          It helps separate AI activity from durable workflow change.
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Plain-English framing for Arpit:</strong>
+        FluencyTracr asks, “Is AI use becoming a reliable part of how work gets done, and is the evidence strong enough
+        to support a business-value investigation?”
+      </div>
+
+      <div class="footer">
+        Current V4 status: internal scale-readiness readout promoted; customer-facing economic output, trust calibration, reusable leverage, and skill-read evidence remain held until separately governed.
+      </div>
+    </section>
+
+    <section class="sheet">
+      <p class="eyebrow">Sheet 2 · Variables and flow</p>
+      <h2>The model separates raw events, derived behavior, gates, and executive action.</h2>
+      <p class="summary">
+        The important design choice is that per-user calculations happen only inside the protected boundary. What crosses into the readout is aggregate evidence.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Variables / signals</th>
+            <th>What it answers</th>
+            <th>Current posture</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Surface taxonomy</td>
+            <td>Workflow surfaces, standalone surfaces, AGENT sub-surfaces, verification signals joined to parent surfaces where safe.</td>
+            <td>Which AI touchpoints are in scope?</td>
+            <td>Governed taxonomy exists; some trust and skill paths still held.</td>
+          </tr>
+          <tr>
+            <td>Velocity</td>
+            <td>Frequency, engagement, breadth.</td>
+            <td>Is AI use recurring and broad enough to suggest adoption momentum?</td>
+            <td>Implemented as aggregate distributions.</td>
+          </tr>
+          <tr>
+            <td>Depth Repertoire</td>
+            <td>Surface repertoire x repeat use / refinement.</td>
+            <td>Is use spreading across surfaces and returning repeatedly, or is it shallow volume?</td>
+            <td>Promoted for aggregate contract hardening after three-window stability test.</td>
+          </tr>
+          <tr>
+            <td>Quality</td>
+            <td>Completion, abandonment, recovery, friction patterns, Quality Multiplier.</td>
+            <td>Are workflows completing cleanly enough to support stronger interpretation?</td>
+            <td>Supported as aggregate behavioral evidence.</td>
+          </tr>
+          <tr>
+            <td>Reliability</td>
+            <td>Abandonment, recovery, friction loops, latency as corroborative context, Reliability Factor.</td>
+            <td>Where is AI use brittle, interrupted, or in need of workflow redesign?</td>
+            <td>Supported as aggregate context; latency cannot trigger surfacing alone.</td>
+          </tr>
+          <tr>
+            <td>Trust / verification</td>
+            <td>Citation clicks, votes, feedback, verification presence, parent attribution quality.</td>
+            <td>Is there evidence users review or calibrate AI output?</td>
+            <td>Held as governed readout until strict parent attribution is reliable.</td>
+          </tr>
+          <tr>
+            <td>Reusable leverage / skills</td>
+            <td>Skill-read availability, reusable workflow metadata, named workflow leverage, invocation coverage.</td>
+            <td>Is AI moving from one-off use to reusable organizational leverage?</td>
+            <td>Research-only; metadata observability gaps remain.</td>
+          </tr>
+          <tr>
+            <td>Segmentation</td>
+            <td>Department/function, role family, tenure, region, manager/IC, velocity band, depth band.</td>
+            <td>Where should enablement, redesign, or scale action happen?</td>
+            <td>Concept defined; runtime support held until approved aggregate joins exist.</td>
+          </tr>
+          <tr>
+            <td>Outcome context</td>
+            <td>Support, sales, onboarding, or other customer-owned aggregate KPIs.</td>
+            <td>Where might behavioral evidence align with business outcomes?</td>
+            <td>Investigation-routing only; non-causal by default.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid grid-4" style="margin-top: 20px;">
+        <div class="card">
+          <strong>Data readiness gates</strong>
+          <ul>
+            <li>Surface coverage</li>
+            <li>Window stability</li>
+            <li>Suppression rate</li>
+            <li>Join coverage</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Interpretation gates</strong>
+          <ul>
+            <li>Enough volume</li>
+            <li>Enough time</li>
+            <li>Stable baseline</li>
+            <li>Low ambiguity</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Privacy gates</strong>
+          <ul>
+            <li>Aggregate only</li>
+            <li>No user IDs</li>
+            <li>No HR records</li>
+            <li>No raw prompts</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Claim gates</strong>
+          <ul>
+            <li>No causal claim</li>
+            <li>No ROI claim</li>
+            <li>No ranking</li>
+            <li>No productivity score</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Data science collaboration point:</strong>
+        The strongest next question is which held signals can be made attribution-safe: trust/verification, skill-read evidence,
+        reusable leverage, and outcome alignment.
+      </div>
+    </section>
+
+    <section class="sheet">
+      <p class="eyebrow">Sheet 3 · Value to Glean</p>
+      <h2>The value is better value-realization evidence, not bigger ROI claims.</h2>
+      <p class="summary">
+        FluencyTracr helps Glean move from “AI was used” to “AI appears ready to scale here, needs support there, and warrants a value investigation in these places.”
+      </p>
+
+      <div class="visual-summary">
+        <img src="fluencytracr-ai-work-evidence-layer.png" alt="FluencyTracr AI Work Evidence Layer overview diagram">
+      </div>
+
+      <div class="grid grid-3" style="margin-top: 24px;">
+        <div class="card zone scale">
+          <span class="label green">Scale</span>
+          <h3>Ready To Scale</h3>
+          <p>Strong aggregate evidence, stable use, and meaningful depth. Action: expand playbooks and reinforce the pattern.</p>
+        </div>
+        <div class="card zone enable">
+          <span class="label">Coach</span>
+          <h3>Enablement Opportunity</h3>
+          <p>Usage exists, but depth or repeat use is weak. Action: train, coach, and clarify high-value use cases.</p>
+        </div>
+        <div class="card zone redesign">
+          <span class="label amber">Redesign</span>
+          <h3>Workflow Design Opportunity</h3>
+          <p>Usage exists, but friction, abandonment, or recovery patterns suggest the workflow needs redesign.</p>
+        </div>
+        <div class="card zone trust">
+          <span class="label purple">Calibrate</span>
+          <h3>Trust Calibration Opportunity</h3>
+          <p>Usage exists, but verification or feedback evidence is weak. Action: reinforce review and trust behavior.</p>
+        </div>
+        <div class="card zone enable">
+          <span class="label">Expand</span>
+          <h3>Adoption Expansion Opportunity</h3>
+          <p>Activation or surface repertoire is narrow. Action: expand awareness and targeted use cases.</p>
+        </div>
+        <div class="card zone hold">
+          <span class="label red">Hold</span>
+          <h3>Insufficient Evidence</h3>
+          <p>Suppressed, unstable, missing metadata, or unsafe. Action: do not overinterpret yet.</p>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Glean use case</th>
+            <th>What FluencyTracr adds</th>
+            <th>Business value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Value realization</td>
+            <td>Evidence-readiness layer under ROIbot and value modeling.</td>
+            <td>Know when a claim is directional, evidence-backed, or blocked.</td>
+          </tr>
+          <tr>
+            <td>Customer success / AIOM planning</td>
+            <td>Action posture by workflow, surface, or approved segment.</td>
+            <td>Prioritize where to scale, coach, redesign, or hold.</td>
+          </tr>
+          <tr>
+            <td>Executive storytelling</td>
+            <td>Simple portfolio view of AI scale readiness.</td>
+            <td>Move beyond adoption counts toward work-change evidence.</td>
+          </tr>
+          <tr>
+            <td>Product and data science</td>
+            <td>Governed signal backlog: trust, skill reads, reusable leverage, outcome joins.</td>
+            <td>Focus instrumentation work on the signals that unlock stronger claims.</td>
+          </tr>
+          <tr>
+            <td>Enablement</td>
+            <td>Connect observed behavior with the AI Fluency Instrument.</td>
+            <td>Pair behavior evidence with readiness, confidence, intent, and perceived impact.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid grid-3" style="margin-top: 20px;">
+        <div class="card">
+          <strong>What we can say now</strong>
+          We can identify aggregate readiness patterns and evidence gaps.
+        </div>
+        <div class="card">
+          <strong>What we should test next</strong>
+          Whether trust, skills, reusable leverage, and outcome joins can be made attribution-safe.
+        </div>
+        <div class="card">
+          <strong>What we should not say yet</strong>
+          We should not claim proven ROI, causal productivity lift, or performance by team or individual.
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Bottom line:</strong>
+        FluencyTracr gives Glean a disciplined way to connect AI usage to work redesign and value investigation while protecting the credibility of the claim.
+      </div>
+    </section>
+  </main>
+</body>
+</html>

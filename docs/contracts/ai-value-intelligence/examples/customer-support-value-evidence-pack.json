@@ -1,0 +1,214 @@
+{
+  "schema_version": "FT_AI_VALUE_SUPPORT_PACK_2026_06",
+  "org_id": "org-northstar-enterprise",
+  "window_id": "2026-04-01_to_2026-05-31",
+  "workflow_family": "customer_support_case_resolution",
+  "generated_at": "2026-06-09T12:00:00.000Z",
+  "verdict": "SURFACE",
+  "suppression_reason": null,
+  "workflow_value_hypothesis": "AI-assisted support work may be associated with faster case resolution, lower escalation, and improved knowledge reuse.",
+  "value_routes": [
+    "COST_REDUCTION",
+    "CAPACITY_CREATION",
+    "QUALITY_IMPROVEMENT",
+    "EXPERIENCE_IMPROVEMENT"
+  ],
+  "evidence_readiness": [
+    {
+      "lane": "ai_activity",
+      "state": "present"
+    },
+    {
+      "lane": "workflow",
+      "state": "present"
+    },
+    {
+      "lane": "outcome",
+      "state": "present"
+    },
+    {
+      "lane": "baseline",
+      "state": "present"
+    },
+    {
+      "lane": "trust",
+      "state": "present"
+    }
+  ],
+  "ai_work_evidence_summary": {
+    "verdict": "SURFACE",
+    "cohort_size": 42,
+    "window_days": 61,
+    "aggregate_patterns": {
+      "assistant_sessions": 1840,
+      "search_sessions": 2260,
+      "skill_invocations": 312,
+      "agent_runs": 148,
+      "verification_attached_episodes": 780,
+      "recovery_episodes": 96,
+      "abandonment_episodes": 41
+    }
+  },
+  "work_change_evidence": [
+    {
+      "evidence_id": "support-ai-assist-coverage",
+      "observed_pattern": "Search and Assistant activity are present in the support workflow slice.",
+      "aggregate_count": 4100,
+      "interpretation": "Indicates AI-assisted knowledge access is observable."
+    },
+    {
+      "evidence_id": "support-reusable-or-agentic-work",
+      "observed_pattern": "Skills or agent runs are present in aggregate support work.",
+      "aggregate_count": 460,
+      "interpretation": "Indicates reusable or delegated support workflows may be emerging."
+    },
+    {
+      "evidence_id": "support-verification-coverage",
+      "observed_pattern": "Verification-attached episodes are present.",
+      "aggregate_count": 780,
+      "interpretation": "Supports quality and trust review, but does not prove correctness."
+    },
+    {
+      "evidence_id": "support-friction-signals",
+      "observed_pattern": "Recovery and abandonment signals are visible.",
+      "aggregate_count": 137,
+      "interpretation": "Provides caveats around friction and workflow reliability."
+    }
+  ],
+  "outcome_signal_recommendations": [
+    {
+      "signal_id": "median_resolution_hours",
+      "value_route": "COST_REDUCTION",
+      "formula_family": "cycle_time_delta",
+      "result": {
+        "baseline": 18.4,
+        "comparison": 15.1,
+        "delta": 3.3,
+        "unit": "hours"
+      },
+      "interpretation": "Tests whether aggregate support case resolution time moved in the expected direction."
+    },
+    {
+      "signal_id": "escalation_rate",
+      "value_route": "CAPACITY_CREATION",
+      "formula_family": "friction_rate_delta",
+      "result": {
+        "baseline": 0.18,
+        "comparison": 0.14,
+        "delta": 0.04,
+        "unit": "share"
+      },
+      "interpretation": "Tests whether fewer cases required escalation in the comparison window."
+    },
+    {
+      "signal_id": "reopen_rate",
+      "value_route": "QUALITY_IMPROVEMENT",
+      "formula_family": "quality_rate_delta",
+      "result": {
+        "baseline": 0.075,
+        "comparison": 0.061,
+        "delta": 0.014,
+        "unit": "share"
+      },
+      "interpretation": "Tests whether fewer resolved cases reopened after AI-assisted support work."
+    },
+    {
+      "signal_id": "backlog_count",
+      "value_route": "EXPERIENCE_IMPROVEMENT",
+      "formula_family": "throughput_context",
+      "result": {
+        "baseline": 1240,
+        "comparison": 1102,
+        "delta": 138,
+        "unit": "cases"
+      },
+      "interpretation": "Provides directional context for whether support backlog moved with the workflow change."
+    }
+  ],
+  "claim_confidence": {
+    "overall_state": "CAVEATED",
+    "reason": "AI work evidence and customer-owned support outcome signals align directionally, but causality and realized ROI are not established.",
+    "claim_states": [
+      {
+        "claim_type": "support_value_investigation",
+        "state": "SUPPORTED",
+        "reason": "Aggregate AI work evidence and support outcome context support a bounded value-investigation claim."
+      },
+      {
+        "claim_type": "capacity_creation_hypothesis",
+        "state": "CAVEATED",
+        "reason": "Capacity movement is directionally aligned but remains associational and assumption-bound."
+      },
+      {
+        "claim_type": "roi_proof",
+        "state": "BLOCKED",
+        "reason": "The packet does not prove ROI or causality."
+      }
+    ]
+  },
+  "safe_claims": [
+    {
+      "claim_type": "support_value_investigation",
+      "claim": "Aggregate support evidence suggests this workflow is a candidate for value investigation.",
+      "required_caveat": "Directionally aligned evidence does not prove ROI or causality."
+    },
+    {
+      "claim_type": "capacity_creation_hypothesis",
+      "claim": "Observed AI work patterns align with a capacity-creation hypothesis for support case resolution.",
+      "required_caveat": "Customer-owned outcome data must remain attached to the same aggregate slice."
+    },
+    {
+      "claim_type": "quality_improvement_hypothesis",
+      "claim": "Support workflow data can test whether AI-assisted work is associated with lower reopen or escalation rates.",
+      "required_caveat": "Case mix, staffing, channel mix, and process changes may explain movement."
+    }
+  ],
+  "blocked_claims": [
+    {
+      "claim_type": "roi_proof",
+      "claim": "Glean proved ROI for the support organization.",
+      "reason": "Outcome movement and AI work evidence do not establish realized ROI."
+    },
+    {
+      "claim_type": "causal_productivity_lift",
+      "claim": "Glean caused productivity lift.",
+      "reason": "The MVP preserves NOT_CAUSAL posture unless separately governed."
+    },
+    {
+      "claim_type": "individual_productivity",
+      "claim": "Named employees or creators saved a specific number of hours.",
+      "reason": "The evidence pack is aggregate-only."
+    },
+    {
+      "claim_type": "team_ranking",
+      "claim": "One team or manager group performs better with AI.",
+      "reason": "Comparative team or manager ranking is outside the governance boundary."
+    }
+  ],
+  "required_caveats": [
+    "This is a caveated value evidence pack, not ROI proof.",
+    "Outcome movement is associational and must not be described as causal.",
+    "All interpretation is aggregate-only and scoped to the approved support workflow slice."
+  ],
+  "confounders": [
+    "support volume mix",
+    "staffing changes",
+    "channel mix",
+    "seasonality",
+    "process or policy changes",
+    "knowledge base content changes"
+  ],
+  "next_actions": [
+    {
+      "action": "Review the support outcome export with the business owner and confirm the same workflow slice, baseline, and comparison windows.",
+      "owner": "ai_outcomes_manager",
+      "priority": "high"
+    },
+    {
+      "action": "Decide whether capacity, quality, cost, or experience should be the primary pilot story.",
+      "owner": "business_sponsor",
+      "priority": "medium"
+    }
+  ],
+  "executive_summary": "Customer Support is a caveated AI Value Intelligence pilot candidate: aggregate AI work evidence is present, support outcome metrics moved in the expected direction, and claim language must remain bounded to value investigation rather than ROI proof."
+}

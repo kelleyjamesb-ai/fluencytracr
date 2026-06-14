@@ -111,6 +111,22 @@ Recommended backoff profile:
 - Enforce org scoping with `org_id` consistent with integration credentials.
 - Use least-privilege integration roles for partner emitters.
 
+## V3 Aggregate Verdict Forwarding
+
+The production aggregate path is `POST /api/v3/ingest/aggregate`, documented
+in `docs/integrations/value-realization/V3_INGEST.md`. That endpoint accepts
+pre-computed cohort distributions only. When a V3 aggregate verdict is
+`SURFACE`, the stored verdict may include `forwarded_distribution`, an
+aggregate-only block that downstream consumers such as Quality Multiplier can
+re-check without raw telemetry.
+
+Suppressed V3 verdicts never include `forwarded_distribution`. The forwarded
+block must not contain raw GCE rows, raw prompt or output text, transcripts,
+raw skill names, action rows, direct identifiers, or any sub-5 cohort evidence.
+This forwarding supports governed metric routing and scenario readiness; it
+does not calculate ROI, prove causality, measure productivity, rank people or
+teams, or produce customer-facing economic output.
+
 ## Examples
 Successful request:
 

@@ -1,0 +1,500 @@
+{
+  "schema_version": "FT_AI_VALUE_EVIDENCE_COLLECTION_ASSEMBLY_2026_06",
+  "evidence_collection_assembly_id": "evidence_collection_assembly_telemetry_only_example",
+  "org_id": "org_example",
+  "measurement_plan_id": "measurement_plan_customer_support_assembly",
+  "measurement_plan_validation_result": {
+    "schema_version": "FT_AI_VALUE_MEASUREMENT_PLAN_VALIDATION_2026_06",
+    "measurement_plan_id": "measurement_plan_customer_support_assembly",
+    "org_id": "org_example",
+    "valid": true,
+    "gaps": [],
+    "readiness": {
+      "can_build_evidence_snapshot": true,
+      "max_snapshot_type": "TELEMETRY_ONLY_CAVEATED",
+      "can_build_claim_readiness": false,
+      "can_build_executive_readout": false
+    }
+  },
+  "source_package_ids": [
+    "source_package_layer_1_bigquery_example"
+  ],
+  "source_package_validation_results": [
+    {
+      "schema_version": "FT_AI_VALUE_SOURCE_PACKAGE_VALIDATION_2026_06",
+      "source_package_id": "source_package_layer_1_bigquery_example",
+      "org_id": "org_example",
+      "source_package_type": "layer_1_bigquery_telemetry_summary",
+      "evidence_state": "present",
+      "valid": true,
+      "gaps": [],
+      "feeds": {
+        "evidence_collection_input": true,
+        "evidence_snapshot_source_ref": true,
+        "claim_readiness_context": false,
+        "executive_readout_context": false,
+        "customer_facing_economic_output": false,
+        "full_playbook_coverage": false
+      }
+    }
+  ],
+  "source_package_plan_mismatch_gaps": [],
+  "draft_evidence_snapshot_input": {
+    "schema_version": "FT_AI_VALUE_EVIDENCE_SNAPSHOT_2026_06",
+    "evidence_snapshot_id": "evidence_snapshot_telemetry_only_assembly_example",
+    "org_id": "org_example",
+    "measurement_plan_id": "measurement_plan_customer_support_assembly",
+    "workflow": {
+      "workflow_family": "customer_support_case_resolution",
+      "workflow_name": null,
+      "function_area": "customer_support"
+    },
+    "window": {
+      "window_start": "2026-05-01",
+      "window_end": "2026-05-31",
+      "window_label": null
+    },
+    "snapshot_type": "TELEMETRY_ONLY_CAVEATED",
+    "source_refs": {
+      "bigquery_probe_result_id": "probe_layer_1_summary",
+      "v3_verdict_ids": [],
+      "velocity_observation_ids": [],
+      "outcome_evidence_ids": [],
+      "fluency_baseline_ids": [],
+      "source_readiness_ids": [
+        "source_readiness_layer_1"
+      ],
+      "real_source_manifest_ids": [],
+      "aggregate_workforce_context_export_ids": [],
+      "notes": [
+        "Evidence Collection Assembly stores source refs only; no raw rows or raw source content are retained."
+      ],
+      "source_package_ids": [
+        "source_package_layer_1_bigquery_example"
+      ],
+      "governance_control_export_ids": [],
+      "assumption_approval_export_ids": []
+    },
+    "evidence_lanes": [
+      {
+        "lane": "surface_usage",
+        "classification": "available_now",
+        "evidence_state": "present",
+        "playbook_layer": "layer_1_platform_telemetry",
+        "can_support_evidence_snapshot": true,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "Surface usage is available as aggregate Layer 1 telemetry only.",
+          "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself."
+        ]
+      },
+      {
+        "lane": "skill_lifecycle",
+        "classification": "partially_available",
+        "evidence_state": "partial",
+        "playbook_layer": "layer_1_platform_telemetry",
+        "can_support_evidence_snapshot": true,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "Skill evidence is partial and not promoted for reusable expertise or financial claims.",
+          "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself.",
+          "Generic Layer 1 telemetry source package does not by itself prove this evidence lane is fully present."
+        ]
+      },
+      {
+        "lane": "agent_lifecycle",
+        "classification": "derivable_with_existing_data",
+        "evidence_state": "partial",
+        "playbook_layer": "layer_1_platform_telemetry",
+        "can_support_evidence_snapshot": true,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "Agent lifecycle is derivable as aggregate telemetry, but financial agent value requires Layer 3 evidence.",
+          "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself.",
+          "Generic Layer 1 telemetry source package does not by itself prove this evidence lane is fully present."
+        ]
+      },
+      {
+        "lane": "mcp_action_boundary",
+        "classification": "requires_customer_export",
+        "evidence_state": "held",
+        "playbook_layer": "governance_evidence",
+        "can_support_evidence_snapshot": false,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "MCP and action boundary evidence is held until an approved aggregate customer export exists."
+        ]
+      },
+      {
+        "lane": "artifact_output",
+        "classification": "derivable_with_existing_data",
+        "evidence_state": "partial",
+        "playbook_layer": "layer_1_platform_telemetry",
+        "can_support_evidence_snapshot": true,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "Artifact output metadata can describe output activity but cannot prove business value without outcome or quality evidence.",
+          "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself.",
+          "Generic Layer 1 telemetry source package does not by itself prove this evidence lane is fully present."
+        ]
+      },
+      {
+        "lane": "control_evidence",
+        "classification": "requires_customer_export",
+        "evidence_state": "held",
+        "playbook_layer": "governance_evidence",
+        "can_support_evidence_snapshot": false,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "Control evidence is held until approved customer or policy-owner aggregate export is available."
+        ]
+      },
+      {
+        "lane": "assumptions",
+        "classification": "requires_customer_export",
+        "evidence_state": "held",
+        "playbook_layer": "assumption_evidence",
+        "can_support_evidence_snapshot": false,
+        "can_support_claim_readiness": false,
+        "caveats": [
+          "Customer-owned assumptions are held until the customer or business owner approves them."
+        ]
+      }
+    ],
+    "playbook_layers": {
+      "layer_1_platform_telemetry": {
+        "evidence_state": "present",
+        "confidence": "medium",
+        "caveats": [
+          "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself."
+        ]
+      },
+      "layer_2_user_voice_empirical": {
+        "evidence_state": "missing",
+        "confidence": "unknown",
+        "caveats": [
+          "Layer 2 user voice or empirical evidence is missing from this snapshot."
+        ]
+      },
+      "layer_3_business_system_outcomes": {
+        "evidence_state": "missing",
+        "confidence": "unknown",
+        "caveats": [
+          "Layer 3 business system-of-record outcome evidence is missing from this snapshot."
+        ]
+      },
+      "governance_evidence": {
+        "evidence_state": "partial",
+        "confidence": "low",
+        "caveats": [
+          "Governance evidence is partial; MCP/action and control evidence require approved aggregate exports."
+        ]
+      },
+      "assumption_evidence": {
+        "evidence_state": "held",
+        "confidence": "unknown",
+        "caveats": [
+          "Customer-owned assumptions are held until approved by the customer or business owner."
+        ]
+      }
+    },
+    "playbook_coverage": {
+      "coverage_status": "layer_1_only",
+      "layer_1_platform_telemetry": {
+        "status": "present",
+        "covered_signals": [
+          "workflow_run_count",
+          "search_activity",
+          "chat_or_assistant_activity",
+          "ai_answer_activity",
+          "active_user_aggregate",
+          "eligible_cohort_size",
+          "connector_or_source_coverage",
+          "skill_lifecycle_activity",
+          "agent_lifecycle_activity",
+          "artifact_output_metadata",
+          "mcp_action_boundary_metadata",
+          "control_or_policy_telemetry",
+          "suppression_or_blocked_event_posture"
+        ],
+        "missing_signals": [],
+        "held_signals": [],
+        "caveats": [
+          "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself."
+        ]
+      },
+      "layer_2_user_voice_empirical": {
+        "status": "missing",
+        "covered_signals": [],
+        "missing_signals": [
+          "aggregate_ai_fluency_baseline",
+          "aggregate_ai_fluency_retest",
+          "aggregate_confidence_or_readiness_survey",
+          "aggregate_knowledge_access_satisfaction",
+          "aggregate_workflow_observation",
+          "aggregate_qualitative_proof_points",
+          "customer_approved_time_and_motion_summary"
+        ],
+        "held_signals": [],
+        "required_source_exports": [
+          "aggregate_ai_fluency_baseline",
+          "aggregate_ai_fluency_retest",
+          "aggregate_user_voice_or_workflow_observation"
+        ],
+        "caveats": [
+          "Layer 2 user voice or empirical evidence is missing and requires aggregate customer export."
+        ]
+      },
+      "layer_3_business_system_outcomes": {
+        "status": "missing",
+        "covered_signals": [],
+        "missing_signals": [
+          "customer_attested_kpi_baseline",
+          "customer_attested_kpi_comparison",
+          "source_system_name",
+          "source_owner_attestation",
+          "metric_owner_review",
+          "finance_or_business_owner_approval",
+          "aggregate_outcome_metric_movement",
+          "minimum_cohort_threshold",
+          "system_of_record_export_availability"
+        ],
+        "held_signals": [],
+        "required_source_exports": [
+          "customer_attested_kpi_baseline",
+          "customer_attested_kpi_comparison",
+          "system_of_record_outcome_export"
+        ],
+        "caveats": [
+          "Layer 3 business system-of-record outcome evidence is missing and requires customer-attested KPI export."
+        ]
+      },
+      "governance_evidence": {
+        "status": "partial",
+        "covered_signals": [
+          "suppression_state",
+          "k_min_posture",
+          "source_readiness_state",
+          "data_boundary_state",
+          "held_suppressed_missing_lanes",
+          "forbidden_field_checks",
+          "raw_content_exclusion"
+        ],
+        "missing_signals": [],
+        "held_signals": [
+          "approved_aggregate_grain"
+        ],
+        "caveats": [
+          "Governance evidence is partial; approved aggregate grain remains held unless customer-approved aggregate workforce context is provided."
+        ]
+      },
+      "assumption_evidence": {
+        "status": "held",
+        "covered_signals": [],
+        "missing_signals": [],
+        "held_signals": [
+          "customer_owned_assumptions",
+          "productivity_recapture_assumption_if_relevant",
+          "aggregate_workforce_context_approval_if_provided",
+          "financial_assumption_approval_if_requested",
+          "low_confidence_assumptions",
+          "high_sensitivity_assumptions",
+          "customer_facing_approval_state"
+        ],
+        "required_approvals": [
+          "customer_owned_assumptions",
+          "finance_or_business_owner_approval",
+          "aggregate_workforce_context_approval_if_used"
+        ],
+        "caveats": [
+          "Customer-owned assumptions are missing or unapproved and require customer or business-owner approval."
+        ]
+      }
+    },
+    "vbd_operating_map": {
+      "velocity": {
+        "state": "moderate",
+        "evidence_state": "partial",
+        "source_signals": [
+          "workflow_run_count",
+          "active_user_aggregate"
+        ],
+        "caveats": [
+          "Velocity is Layer 1 platform telemetry about aggregate activity movement over time; it is not ROI, productivity, causality, or financial proof."
+        ]
+      },
+      "breadth": {
+        "state": "emerging",
+        "approved_aggregate_grain": "workflow_family",
+        "covered_slices": 12,
+        "suppressed_or_unknown_slices": 0,
+        "caveats": [
+          "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
+          "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened."
+        ]
+      },
+      "depth": {
+        "state": "developing",
+        "evidence_state": "partial",
+        "source_signals": [
+          "repeat_workflow_behavior",
+          "artifact_output_metadata"
+        ],
+        "requires_layer_3_for_value_claim": true,
+        "caveats": [
+          "Depth is Layer 1 workflow embeddedness posture; business value requires Layer 3 outcomes or accepted quality/outcome evidence."
+        ]
+      },
+      "operating_mode": "fast_but_shallow",
+      "contributes_to_playbook_layer": "layer_1_platform_telemetry",
+      "allowed_interpretation": [
+        "ai_fluency_posture",
+        "aggregate_ai_work_maturity_posture",
+        "layer_1_operating_signal",
+        "evidence_collection_planning",
+        "source_availability_context",
+        "claim_blocking_context"
+      ],
+      "blocked_interpretation": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ]
+    },
+    "aggregate_telemetry_summary": {
+      "probe_window_start": "2026-05-01",
+      "probe_window_end": "2026-05-31",
+      "aggregate_event_count": 1,
+      "table_families_checked": [
+        "source_package_layer_1_summary"
+      ],
+      "approved_field_coverage_summary": null,
+      "k_min_summary": {
+        "total_slices": 12,
+        "k_min_clear_slices": 12,
+        "suppressed_or_unknown_slices": 0,
+        "minimum_cohort_threshold": 5
+      }
+    },
+    "aggregate_workforce_context": {
+      "context_state": "not_provided",
+      "source_type": "not_applicable",
+      "allowed_context_types": [],
+      "source_owner_approval_state": "not_required",
+      "minimum_cohort_threshold": null,
+      "cohort_threshold_met": null,
+      "caveats": [
+        "Aggregate workforce context has not been provided; workforce context cannot strengthen the evidence posture."
+      ]
+    },
+    "suppression": {
+      "default_verdict": "SUPPRESS",
+      "suppression_applies_per_slice": true,
+      "hidden_values_exposed": false,
+      "suppressed_lanes": [],
+      "held_lanes": [
+        "mcp_action_boundary",
+        "control_evidence",
+        "assumptions"
+      ],
+      "missing_lanes": [],
+      "reason_codes": [
+        "HIGH_AMBIGUITY"
+      ]
+    },
+    "privacy_boundary": {
+      "aggregate_only": true,
+      "contains_direct_identifiers": false,
+      "contains_raw_content": false,
+      "contains_person_level_productivity": false,
+      "contains_person_level_hris_records": false,
+      "contains_hashed_or_joinable_person_identifiers": false,
+      "contains_manager_or_team_ranking": false,
+      "contains_people_decisioning": false,
+      "contains_compensation_or_performance_inference": false,
+      "contains_promotion_or_discipline_inference": false,
+      "contains_attrition_prediction": false,
+      "contains_hris_inference_from_ai_usage": false,
+      "aggregate_workforce_context_allowed": false,
+      "approved_aggregate_grain": null,
+      "minimum_cohort_threshold": null
+    },
+    "snapshot_readiness_decision": "READY_FOR_CAVEATED_EVIDENCE_SNAPSHOT",
+    "allowed_uses": [
+      "aggregate_evidence_posture_review",
+      "source_availability_summary",
+      "missing_evidence_planning",
+      "claim_blocking_evaluation"
+    ],
+    "blocked_uses": [
+      "realized_roi",
+      "ebita_claim",
+      "causality_claim",
+      "productivity_claim",
+      "headcount_reduction_claim",
+      "individual_attribution",
+      "manager_or_team_ranking",
+      "people_decisioning",
+      "customer_facing_financial_output",
+      "customer_facing_economic_output",
+      "realized_roi_calculation",
+      "roi_proof",
+      "dollarized_output",
+      "financial_value_claim",
+      "usage_derived_financial_claim",
+      "manager_ranking",
+      "team_ranking",
+      "person_level_hris_records",
+      "hashed_or_joinable_person_identifiers",
+      "compensation_or_performance_inference",
+      "promotion_or_discipline_inference",
+      "attrition_prediction",
+      "hris_inference_from_ai_usage"
+    ],
+    "required_caveats": [
+      "Layer 1 telemetry readiness is not full Playbook readiness.",
+      "Layer 2 user voice or empirical evidence is required before stronger evidence snapshots can be generated.",
+      "Layer 3 business system-of-record outcome evidence is required before claim readiness or executive readout planning.",
+      "Customer-owned assumptions remain held until approved.",
+      "This measurement plan does not compute claim readiness, financial permission, or executive readout output.",
+      "Telemetry-only evidence can support a caveated aggregate evidence posture only.",
+      "Layer 2 user voice or empirical evidence is missing and must be supplied through an aggregate customer export.",
+      "Layer 3 business system-of-record outcome evidence is missing and must be supplied through customer-attested aggregate KPI export.",
+      "Customer-owned assumptions are missing or unapproved until a customer or business owner approves them.",
+      "Missing, held, suppressed, or not computed evidence cannot be treated as supported evidence.",
+      "No realized ROI, EBITA, causality, productivity, headcount reduction, individual attribution, manager or team ranking, people decisioning, or customer-facing financial output is supported.",
+      "Aggregate workforce context has not been provided and cannot strengthen the evidence posture.",
+      "Layer 1 BigQuery telemetry summary is aggregate evidence input only and cannot create full Playbook coverage by itself.",
+      "Layer 2 user voice or empirical evidence is missing and must remain explicit as a caveat.",
+      "Layer 3 business system-of-record outcome evidence is missing and must remain explicit as a caveat.",
+      "Customer-owned assumptions are missing or unapproved, so financial translation remains blocked."
+    ],
+    "next_evidence_actions": [
+      "Collect aggregate AI Fluency baseline or user voice export.",
+      "Collect customer-attested KPI baseline and comparison exports.",
+      "Collect source owner attestation.",
+      "Collect customer-owned assumptions.",
+      "Collect aggregate workforce context approval if relevant.",
+      "Collect aggregate Layer 2 user voice or empirical evidence if the measurement plan requires stated evidence.",
+      "Collect customer-attested aggregate Layer 3 system-of-record outcome evidence before value claims are evaluated.",
+      "Collect approved aggregate workforce context only if needed for workflow-level value measurement.",
+      "Keep claim readiness and executive readouts caveated until missing or held evidence lanes are resolved."
+    ],
+    "generated_at": "2026-06-13T00:00:00.000Z",
+    "derivation_version": "ai_value_evidence_collection_assembler_2026_06"
+  },
+  "feeds": {
+    "evidence_snapshot_input": true,
+    "claim_readiness_snapshot": false,
+    "executive_readout_snapshot": false,
+    "customer_facing_economic_output": false
+  },
+  "generated_at": "2026-06-13T00:00:00.000Z",
+  "derivation_version": "ai_value_evidence_collection_assembler_2026_06"
+}

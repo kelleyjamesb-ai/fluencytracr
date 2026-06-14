@@ -151,3 +151,335 @@
 - Completed: Added `reportability_governance_regression.test.ts` to prove unsafe claims stay blocked across ROI, agent insights, skills reporting, and MCP reporting. Added `operating-handoff.md` with the reporting-system usage rule and safe/blocked language examples.
 - Verified: `npm run build --workspace shared`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/reportability_governance_regression.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
 - Next focus: Wire the reportability gate into the real ROI/reporting path, then add `transformation_narrative` only after Product/GTM align on allowed language.
+
+## 2026-05-01 (UTC) — Codex (Glean readiness roadmap)
+
+- Completed: Executed the Glean readiness integration roadmap across phases 1-8 on `codex/OrgFluency-glean-readiness-execution`: source fixture adapter, source-to-readiness CLI, readiness-to-UT bridge, EvidenceBundle derivation, MCP readiness tools, stakeholder demo package, CI/example validation, and live-data decision gate.
+- Verified: Targeted backend and MCP tests, MCP build, shared build, EvidenceBundle schema validation, docs contract sweep, scoped docs linkcheck, OpenSpec validation for each new change, backend CI (`91` suites / `482` tests), and harness verify (`138` passed, `3` skipped).
+- Next focus: Review and archive approved Glean readiness OpenSpec changes; do not implement live Glean export ingestion or Glean-hosted MCP/read access until the Phase 8 gate evidence is confirmed.
+
+## 2026-05-01 (UTC) — Codex (executive readiness prototype)
+
+- Completed: Added `docs/integrations/glean/prototypes/executive-readiness-demo.html`, a static synthetic-data executive prototype with first-screen graphs, readiness/evidence/unlock/agent click paths, strict no-raw-record language, README/demo-guide links, and `scripts/validate_glean_executive_prototype.mjs`.
+- Verified: `node scripts/validate_glean_executive_prototype.mjs`; in-app browser visual/click QA for overview, readiness filter, unlocks, and Agent Brief; `bash scripts/ci_docs_contract_sweep.sh`; `bash scripts/ci_linkcheck_fluency_docs.sh`; `git diff --check`; `./harness/scripts/verify.sh` (`138` passed, `3` skipped).
+- Next focus: Review the prototype narrative with executives before expanding it beyond synthetic demo data; continue queue focus at `phase-03-fsc-min-signal` unless the human asks for another bounded Glean slice.
+
+## 2026-05-07 (UTC) — Cursor (Glean trust-layer deep dive)
+
+- Completed: Created branch `cursor/glean-trust-layer-deep-dive-c7e6`, added `artifacts/plan_glean_trust_layer_deep_dive.md`, and produced `artifacts/glean_trust_layer_deep_dive_2026-05-07.md` positioning FluencyTracr as an independent Glean Trust Evidence Plane.
+- Verified: `git diff --check main...HEAD` passed after whitespace cleanup. Research/reporting slice only; no runtime code touched.
+- Next focus: If approved, convert the recommendations into docs/OpenSpec slices: AWARE crosswalk, Glean Trust Launch Pack, `WorkflowRun`-only live adapter proposal, and MCP Boundary Ledger contract.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence execution plan)
+
+- Completed: Added `artifacts/glean_value_evidence_execution_plan_2026-05-07.md`, an executable plan for a Glean Value Evidence Pack across live/current surfaces: Chat/Search/AI Answers, Skills, Auto Mode Agents, content-triggered agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
+- Verified: `git diff --check` passed for the documentation-only planning slice. Queue unchanged; plan proposes human-owned `glean-value-*` queue items and harness checklist candidates.
+- Next focus: Human decision on whether to add the proposed `glean-value-*` queue items, then start with OpenSpec `add-glean-value-evidence-pack`.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence Pack contract)
+
+- Completed: Implemented first build slice from the plan: OpenSpec `add-glean-value-evidence-pack`, `docs/contracts/glean-value-evidence/README.md`, synthetic `org-northstar-value-pack.json`, shared `GleanValueEvidencePackSchema`, export from `@learnaire/shared`, and `backend/tests/glean_value_evidence_pack_schema.test.ts`.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_value_evidence_pack_schema.test.ts` (3 tests); `npx openspec validate add-glean-value-evidence-pack --strict`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer found claim-safety and doc/spec consistency issues; fixed with claim `.superRefine`, broader forbidden-field tests, README required field list, and `not_present` vocabulary alignment.
+- Next focus: Slice 2 from the plan — OpenSpec + contracts for `add-glean-claim-registry` so customer-safe ROI/value language is governed separately from the pack shape.
+
+## 2026-05-07 (UTC) — Cursor (Glean Claim Registry contract)
+
+- Completed: Implemented Slice 2 from the plan: OpenSpec `add-glean-claim-registry`, `docs/contracts/glean-claim-registry/README.md`, default 10-template registry example, org-window evaluation example, shared `GCR_2026_05` registry/evaluation schemas, registry-aware validation/mapping into `GleanValueClaimReadinessSchema`, and `scripts/ci_glean_value_governance_gates.mjs` wired into docs sweep.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_claim_registry_schema.test.ts tests/glean_value_evidence_pack_schema.test.ts` (15 tests); `npx openspec validate add-glean-claim-registry --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `python3 scripts/ci_v1_governance_gates.py`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer initially found ROI/template bypasses and pack drift; fixed with registry-aware validation, universal forbidden inputs, ROI hard-block from customer-safe language pending assumption governance, pack/evaluation comparison in the governance gate, and additional tests. Final blocker review found no blocking issues.
+- Next focus: Slice 3 from the plan — Assumption Ledger contract so base rates, quality multipliers, recapture, hourly rates, confidence, and sensitivity can become governable evidence rather than ad hoc ROI inputs.
+
+## 2026-05-07 (UTC) — Cursor (Glean Assumption Ledger contract)
+
+- Completed: Implemented Slice 3 from the plan: OpenSpec `add-glean-assumption-ledger`, `docs/contracts/glean-assumption-ledger/README.md`, Time-Saves-seeded `default-assumption-ledger.json`, shared `GleanAssumptionLedgerSchema`, export from `@learnaire/shared`, targeted backend tests, and assumption validation in `scripts/ci_glean_value_governance_gates.mjs`.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_assumption_ledger_schema.test.ts` (6 tests); `npx openspec validate add-glean-assumption-ledger --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer found a customer-safe loophole for low-confidence/high-sensitivity assumptions and README field omission; fixed by blocking `approval_state: customer_safe`, customer-facing language constraints, and customer visibility for risky assumptions, requiring `last_reviewed_at`, and adding tests. Final blocker review found no remaining blocker/important findings.
+- Next focus: Slice 4 from the plan — promote Skills and Auto Mode Agents in readiness/value signal families with lifecycle fixtures and mappings.
+
+## 2026-05-07 (UTC) — Cursor (Glean Skills + Auto Mode readiness)
+
+- Completed: Implemented Slice 4 from the plan: OpenSpec `expand-glean-readiness-for-skills-agents`, `agent_run` and `skill_lifecycle` source readiness support, Auto Mode Agent and Skill lifecycle source fixtures, generator default/arg updates, regenerated source-derived readiness map, and targeted adapter/CLI tests.
+- Verified: `npm run build --workspace shared`; `npm run glean:readiness:sources`; `npm test --workspace backend -- --runTestsByPath tests/glean_source_readiness_adapter.test.ts tests/glean_source_readiness_cli_contract.test.ts`; `node scripts/validate_glean_readiness_examples.mjs`; `npx openspec validate expand-glean-readiness-for-skills-agents --strict`; `git diff --check`.
+- Review: code-reviewer found arbitrary free-text leak risk in source notes/actions; fixed by replacing source text with closed `validation_note_code`, `action_code`, and enum governance reasons, plus privacy tests. Final blocker review found no blocking/important findings.
+- Next focus: Slice 5 from the plan — metadata-only Glean AI Work Evidence adapter that maps approved Glean AI work surfaces into readiness and claim evaluation without raw content.
+
+## 2026-05-07 (UTC) — Cursor (Glean AI Work Evidence adapter)
+
+- Completed: Implemented Slice 5 from the plan: OpenSpec `add-glean-ai-work-evidence-adapter`, `docs/contracts/glean-ai-work-evidence/README.md`, synthetic `org-northstar-ai-work-export.json`, shared `GleanAiWorkEvidenceExportSchema`, readiness inventory mapping, and registry-aware claim evaluation mapping.
+- Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_ai_work_evidence_adapter.test.ts` (5 tests); `npx openspec validate add-glean-ai-work-evidence-adapter --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer found fabricated assumptions-lane and lane divergence risks; fixed by suppressing time-saved/ROI until assumptions are supplied separately, rejecting duplicate lanes, aligning reason codes with the registry, rendering fixed note codes into validation evidence, and adding tests. Re-review found no remaining blocking/important issues.
+- Next focus: Slice 6 from the plan — MCP tools for bounded Value Evidence Pack and claim safety access.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence MCP tools)
+
+- Completed: Implemented Slice 6 from the plan: strict value evidence summary helper plus MCP tools `fluency.get_value_evidence_pack`, `fluency.get_value_claim_readiness_summary`, `fluency.evaluate_claim_safety`, and `fluency.get_non_computable_value_claims`; updated MCP and Glean Agent docs.
+- Verified: `npm test --workspace @learnaire/fluencytracr-mcp` (17 tests); `npm run build --workspace @learnaire/fluencytracr-mcp`; `npx openspec validate add-glean-value-evidence-mcp-tools --strict`; `git diff --check`.
+- Review: code-reviewer found audit/error-safety gaps; fixed suppression-aware audit for full pack access, redacted source errors, omitted customer-safe language from suppressed claims, deterministic unknown-claim rejection, and audit assertions.
+- Next focus: Slice 7 from the plan — executive/client Value Evidence Pack prototype with QBR-safe language and instrumentation-gap callouts.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence Pack prototype)
+
+- Completed: Implemented Slice 7 from the plan: `docs/integrations/glean/prototypes/value-evidence-pack-demo.html`, `scripts/validate_glean_value_evidence_prototype.mjs`, and demo-guide links. The prototype shows QBR-safe claim readiness, evidence coverage, instrumentation gaps, and a Glean Agent answer path using synthetic data only.
+- Verified: `node scripts/validate_glean_value_evidence_prototype.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
+- Review: code-reviewer requested stronger validator coverage; fixed with regex checks for raw-data variants and external resources plus copy cleanup. Re-review found no blocking/important findings.
+- Next focus: Program hardening — run broader package checks as needed, then decide whether to add these `glean-value-*` items to the human-owned queue / harness feature list or archive completed OpenSpec changes after review.
+
+## 2026-05-07 (UTC) — Cursor (Glean Value Evidence broad verification)
+
+- Completed: Ran broad verification across the Glean Value Evidence program slices on `cursor/glean-trust-layer-deep-dive-c7e6`.
+- Verified: `npm run build --workspace shared`; backend targeted tests for value pack, claim registry, assumption ledger, source readiness, source CLI, and AI Work adapter (31 tests); `npm test --workspace @learnaire/fluencytracr-mcp` (17 tests); `npm run build --workspace @learnaire/fluencytracr-mcp`; `node scripts/validate_glean_readiness_examples.mjs`; `node scripts/ci_glean_value_governance_gates.mjs`; `node scripts/validate_glean_value_evidence_prototype.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for all six new Glean value changes; `git diff --check main...HEAD`.
+- Next focus: Human review of PR #207, then decide whether to archive approved OpenSpec changes or add the `glean-value-*` items to `.project/WORK_QUEUE.json` / `harness/feature_list.json` as the formal queue track.
+
+## 2026-05-08 (UTC) — Codex (QBR Narrative View)
+
+- Completed: Added QBR Narrative View for the Glean Claim Packet Export: shared `buildGleanClaimPacketQbrNarrative`, `/methodology-review` narrative section, synthetic Glean Value Evidence fixture wiring, and backend/frontend coverage for internal-only, suppressed, evidence gap, upgrade, governance, and forbidden-field boundaries.
+- Verified: `npm run build --workspace shared`; targeted backend claim packet tests; targeted Methodology Review Workspace tests; `npm run build --workspace frontend`; `npm test --workspace frontend`; `bash scripts/ci_docs_contract_sweep.sh`; `npx @fission-ai/openspec@latest validate add-qbr-narrative-view --strict --no-interactive`; `npm run test:ci --workspace backend` with local test-server binding permission; `git diff --check`.
+- Next focus: Human review, then archive OpenSpec `add-qbr-narrative-view` when approved.
+
+## 2026-05-08 (UTC) — Codex (product framing audit)
+
+- Completed: Audited and tightened docs/UI copy so claim packaging is framed as methodology-governed, QBR-prep oriented, not an ROI calculator, Nielsen-as-synthetic-fixture only, and strongest safe claim rather than strongest possible claim.
+- Verified: Targeted frontend Methodology Review Workspace tests; targeted backend methodology/claim packet tests; frontend build; docs contract sweep; strict OpenSpec validation for `add-qbr-narrative-view` and `add-glean-claim-packet-export`; `git diff --check`.
+- Next focus: Keep future PR copy aligned to evidence governance and claim packaging, not ROI calculation.
+
+## 2026-05-08 (UTC) — Codex (QBR Readiness Summary)
+
+- Completed: Added QBR Readiness Summary to `/methodology-review`, backed by shared `buildGleanClaimPacketQbrReadinessSummary`, showing customer-safe, caveated, internal-only, suppressed/not-computed claims, top blockers, and next upgrade action from the selected claim packet.
+- Verified: `npm run build --workspace shared`; targeted backend claim packet tests; targeted frontend Methodology Review Workspace tests; `npm test --workspace frontend`; `npm run build --workspace frontend`; docs contract sweep; strict OpenSpec validation for `add-qbr-narrative-view`; `git diff --check`.
+- Next focus: Keep summary language tied to existing packet buckets; do not add ROI calculation or readiness upgrades.
+
+## 2026-05-08 (UTC) — Codex (Claim Packet real-source readiness)
+
+- Completed: Added `docs/contracts/glean-claim-packet/REAL_SOURCE_READINESS.md`, a documentation-only readiness gate for replacing synthetic Glean Claim Packet fixtures with real source inputs.
+- Verified: `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for `add-glean-claim-packet-export`; `git diff --check`.
+- Next focus: Keep any future real-source work behind a separate approved ingestion/source-contract change; this slice does not implement ingestion.
+
+## 2026-05-08 (UTC) — Codex (Real Source Readiness Manifest)
+
+- Completed: Added `RSRM_2026_05` Real Source Readiness Manifest, shared review helper, synthetic Glean Claim Packet readiness fixture, docs, and `/methodology-review` real-source readiness section.
+- Verified: `npm run build --workspace shared`; targeted backend manifest and claim packet tests; targeted frontend Methodology Review Workspace tests; `npm run build --workspace frontend`; `npm test --workspace frontend`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for `add-real-source-readiness-manifest`; `git diff --check`.
+- Next focus: Treat this as fixture-replacement readiness only; do not implement ingestion or upgrade claim readiness from source availability.
+
+## 2026-05-08 (UTC) — Codex (Aggregate Evidence Import Stage 1)
+
+- Completed: Added `AEI_2026_05` Aggregate Evidence Import as Stage 1 of Source Evidence Import: admin-exported aggregate upload only, metadata-only schema, shared review helper, synthetic fixture/docs, and `/methodology-review` accepted/withheld aggregate evidence section.
+- Verified: `npm run build --workspace shared`; targeted backend tests for aggregate import and real-source readiness (9 tests); targeted frontend Methodology Review Workspace tests (4 tests); `npm run build --workspace frontend`; full frontend tests (17 tests); `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`. Strict OpenSpec validation was attempted but blocked by restricted network fetching `@fission-ai/openspec`.
+- Next focus: Stage 2 should make the aggregate package review workflow more operational before any persistence, live Glean connection, or claim-readiness effect is introduced.
+
+## 2026-06-10 (UTC) — Codex (AI Value Platform evidence-aware cadence)
+
+- Completed: Added Evidence-Aware Executive Operating Cadence for the AI Value Platform. Journey and Workspace now use Customer Evidence Review state to change Client Value Questions, sponsor decision, recommended next action, and agentic follow-up for accepted, submitted, rejected, and missing customer evidence. Workspace now also renders the sponsor-facing Client Value Questions and Executive Operating Packet.
+- Verified: Red/green `npm test --workspace frontend -- AIValueJourney.test.tsx AIValueWorkspace.test.tsx -t "executive cadence"`; affected Journey/Workspace suites; full frontend tests; frontend build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; `git diff --check`; Playwright CLI mocked-route checks for Journey/Workspace at 1440px and 390px with no unsafe internal state codes or object terms, no console errors/warnings, and no horizontal overflow.
+- Next focus: Make the opened/generated Executive Readout HTML evidence-aware so the readout packet itself reflects accepted, submitted, rejected, or missing customer evidence with caveated-only value language.
+
+## 2026-05-08 (UTC) — Codex (Nielsen Source Evidence Trial Stage 2)
+
+- Completed: Added `NSETR_2026_05`, a review-only Nielsen Source Evidence Trial that maps sanitized Nielsen deck and Time-Saves packet references into document-derived claim candidates and a generated Aggregate Evidence Import package. The sample maps 6 candidates: 2 accepted for review and 4 withheld behind survey export, external outcome export, financial approval, and customer-level telemetry gaps.
+- Verified: `npm run build --workspace shared`; `npm run test:ci --workspace backend -- nielsen_source_evidence_trial.test.ts aggregate_evidence_import.test.ts` (10 tests); `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`; generated review summary via shared helper. OpenSpec strict validation was unavailable because `@fission-ai/openspec` is not cached and network fetches are blocked.
+- Next focus: Decide whether Stage 3 should be a reviewer upload/workspace for sanitized aggregate packages or a source-template definition slice for the specific exports needed to upgrade withheld Nielsen candidates.
+
+## 2026-05-22 (UTC) — Codex (Outcome Evidence ingestion contract)
+
+- Completed: Added storage-only Outcome Evidence ingestion/replay endpoints, Prisma persistence, aggregate-only gates, OpenAPI/schema/OpenSpec/docs, attribution and README updates, and LMSYS assurance scenarios for SURFACE + outcomes, SUPPRESS + outcomes, and no outcomes.
+- Verified: backend build; full backend Jest suite (111 suites / 669 tests); LMSYS harness self-test; dogfood unittest; strict OpenSpec validation; governance gates; git diff --check.
+- Next focus: Keep correlation, causation, attribution, dollarization, source validation, and browsing UI outside FluencyTracr; consumers own those analyses.
+
+## 2026-06-09 (UTC) — Claude Code (AI Value Platform phases 1-4)
+
+- Completed: Implemented the AI Value Engine core in `shared/src/aiValueEngine` (six per-stage validators + builders migrated verbatim, `runSpine` with fail-closed ordering); converted the six ai-value scripts to engine-backed wrappers with CLI shape preserved. Added `ai_value_objects` Prisma model/migration (RLS-enabled), repository with in-memory test fallback, and `/api/v1/ai-value` routes (validated upserts, reads, lists, spine runs, workshop intake) — all fail-closed: invalid objects are 422 and never stored. Wired `AIValueWorkspace` to the API with a live evidence mode that translates engine states into client-facing language. Added the workshop intake adapter and sales-pipeline-hygiene fixtures proving the spine is domain-agnostic (second domain reaches READY_FOR_EXECUTIVE_VALIDATION end to end).
+- Verified: shared build; `node --test` ai-value suites 90/90; frontend vitest 21/21 + build; backend tsc + full Jest 114 suites / 717 tests; live smoke against local Postgres (10 canonical objects persisted across two domains via API); `ci_semantic_drift_guard`, `ci_docs_contract_sweep`, `ci_glean_value_governance_gates`, `git diff --check` all pass; browser-verified live evidence mode at `/ai-value-workspace`.
+- Commits: 4 slices on `codex/FluencyTracr-ai-value-platform` (engine core; data layer + API; workspace wiring; intake + second domain).
+- Next focus: human review/PR; then decide persistence posture for production (table is local/dev-applied; Supabase needs `prisma migrate` baseline or db execute), readout export surface, and whether to archive OpenSpec `add-ai-value-engine-architecture` and scaffold `add-ai-value-engine-core` as a formal change record.
+
+## 2026-06-10 (UTC) — Claude Code (full value chain: kickoff to readout)
+
+- Completed: Extended the AI Value Engine with the upstream value chain: `engagement` stage (Client -> Business Objective -> Workstream -> Use Case composite, role-labels only, use-case-to-blueprint traceability gate) and `fluency_baseline` stage (aggregate "Explore Your AI Fluency" kickoff results; cohort >= 5 or explicitly suppressed and scoreless; respondent identifiers rejected; governance flags must be explicitly false). Added `runValueChain` (engagement -> fluency -> spine, fail-closed at each gate), registered both object types in the API, added `POST /api/v1/ai-value/value-chain/run`, customer-support engagement + fluency fixtures, and a client-facing "Client kickoff" panel in the workspace live mode.
+- Verified: engine suites 99/99; backend 114 suites / 719 tests; frontend 22/22 + build; semantic drift guard, docs sweep, governance gates, `git diff --check`; live API smoke (engagement VALID, covers workflow true, fluency 180 respondents with 1 suppressed cohort, spine HOLD_FOR_ASSUMPTIONS); browser-verified kickoff panel at `/ai-value-workspace`.
+- Next focus: instrument-side aggregate exporter (the HTML instrument currently produces individual readouts; a cohort-aggregate export matching FT_AI_VALUE_FLUENCY_BASELINE_2026_06 closes the loop), follow-up-window fluency deltas as caveated context, and PR review.
+
+## 2026-06-10 (UTC) — Claude Code (Phase 5 slices 1+3: operate the chain)
+
+- Completed: Added the instrument-side privacy boundary and the sponsor-side deliverable. `scripts/aggregate_ai_fluency_sessions.mjs` aggregates Explore Your AI Fluency session payloads (ai-fluency-beta-response/v1) into FT_AI_VALUE_FLUENCY_BASELINE_2026_06 packages: cohort grouping by functionArea/roleLevel, suppression below the engine minimum at export time, respondent ids/profiles/answers never cross the boundary, mixed instrument versions refused, engine validation before any write. `scripts/generate_ai_value_readout_html.mjs` renders a self-contained sponsor-ready HTML readout from validated executive packet + optional engagement/fluency context: fail-closed on invalid inputs, non-removable pre-ROI banner, required caveats and blocked claims rendered as part of the document, content escaped. Example artifact committed beside fixtures.
+- Verified: aggregator 5/5, readout 5/5, engine 22/22, spine 1/1; docs sweep, semantic drift guard, governance gates, git diff --check; browser-verified rendered readout.
+- Next focus: Phase 5 slice 2 — customer outcome-evidence export template (needs human input on what a customer support system can realistically export); then Supabase migration posture and PR #328 merge.
+
+## 2026-06-10 (UTC) — Claude Code (Phase 5 slice 2: outcome evidence export)
+
+- Completed: Defined and implemented the customer outcome-evidence export contract (FT_AI_VALUE_OUTCOME_EVIDENCE_EXPORT_2026_06) per human decisions: generic template keyed to the metrics library, validated API upload, explicit human accept, exact window match. Engine stage validates shape (attestation flags explicitly false, no raw/person-level keys), cross-checks metric ids/units/source types against the metrics library and workflow family/windows against the blueprint, and tracks SUBMITTED/ACCEPTED/REJECTED review states (terminal, reviewer-only). Value chain: accepted+aligned evidence upgrades the outcome lane (upgrade-only, provenance recorded in readiness source_refs); submitted/rejected evidence is pending and never halts; invalid evidence or misaligned accepted evidence halts. API: uploads force SUBMITTED (self-asserted acceptance ignored), review endpoint for ADMIN/ENABLEMENT_LEAD, value-chain accepts outcome_evidence_export_id. Template doc + customer-support fixture committed.
+- Verified: engine 29/29 (40 with spine/aggregator/readout), backend 114 suites / 721 tests, docs sweep, semantic drift guard, governance gates, git diff --check.
+- Next focus: human review/merge; then surface evidence state in the workspace UI and readout (attached-evidence section), and decide Supabase migration posture for ai_value_objects before the deployed app can run the chain.
+
+## 2026-06-10 (UTC) — Claude Code (client-facing discovery and blueprinting experience)
+
+- Completed: Added `/ai-value-discovery`, the client-facing front door for the value chain: a five-step guided flow (Client & Objective -> Workstream -> Use Case Discovery -> Prioritize -> Blueprint Workshop) that captures the consultation in client language, saves the engagement through the governed object API, and creates the workflow blueprint through the workshop intake adapter. Includes example-engagement loader, friendly engine-gap surfacing, pilot-selection gating, evidence-coverage and assumption-owner capture, and a handoff link into the value workshop. No new value logic in React; everything validates through the engine.
+- Verified: frontend 24/24 + build; docs sweep + semantic drift guard; live browser walkthrough against the running backend (engagement saved, blueprint created, handoff rendered).
+- Next focus: link the two experiences from the governance landing page, surface attached outcome evidence in the workspace/readout, Supabase migration posture.
+
+## 2026-06-10 (UTC) — Claude Code (multi-objective engagements: the value review anchor)
+
+- Completed: Engagements now carry a portfolio of measurable business objectives (`business_objectives`, 1+, legacy single `business_objective` still accepted): each objective takes optional `success_measures` ({measure, expected_direction IMPROVE/REDUCE/MAINTAIN}); duplicate objective ids rejected; use cases optionally link `objective_id` and the link is validated. Discovery step 1 became the ROI-conversation builder (objective cards with measures, "Add another objective", use-case-to-objective selector); the workspace kickoff panel shows "What the sponsor will measure"; the executive readout opens with "Client objectives and the value review" rendering every objective and its measures. Fixture upgraded to two objectives (capacity + quality).
+- Verified: engine 32/32 (37 with readout suite), backend ai-value 17/17, frontend 24/24 + build, docs sweep, semantic drift guard, live save through the running engine (objective_count 2), browser-verified discovery step.
+- Next focus: tie success_measures to metrics-library recommendations (measure -> metric mapping) so the value review and the evidence chain converge; PR merge.
+
+## 2026-06-10 (UTC) — Codex (AI Value governed scenario builder)
+
+- Completed: Added a Governed Scenario Builder to `/ai-value-journey` that shows customer-owned assumptions, baseline/comparison window status, customer outcome export status, scenario-band readiness, and unlock conditions for stronger value language.
+- Verified: targeted Journey red/green test, full Journey test file, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright desktop/mobile mocked-route checks with no console errors or horizontal overflow.
+- Next focus: Discovery -> Journey continuity so the client-selected Blueprint workflow carries into Journey, Value Workshop, Scenario Builder, and Executive Operating Packet.
+
+## 2026-06-10 (UTC) — Codex (AI Value workflow continuity)
+
+- Completed: Added a Journey-derived selected-workflow handoff so the latest Blueprint workflow carries into `/ai-value-journey` and `/ai-value-workspace` with workflow name, value route, evidence status, downstream feed summary, and missing-workflow guidance before value modeling.
+- Verified: focused red/green Journey + Workspace continuity tests, affected page suites, full frontend tests, frontend build, AI value agent harness, diff whitespace check, and Playwright CLI mocked-route checks for Journey/Workspace at desktop/mobile widths with no console errors, no unsafe labels, and no horizontal overflow.
+- Next focus: Governed `value_model` / `roi_scenario` contract before any stronger economic or dollarized output.
+
+## 2026-06-10 (UTC) — Codex (AI Value governed ROI scenario contract)
+
+- Completed: Added `FT_AI_VALUE_ROI_SCENARIO_2026_06` as a governed local value-modeling object with shared engine validator/builder, CLI wrapper, package scripts, seeded Customer Support fixture, and JSON schema.
+- Verified: RED missing-module test first, then ROI scenario tests/validator, adjacent AI value scenario/readiness/agent-harness suites, full AI value engine, V1 spine, docs sweep, semantic drift guard, Glean value governance gates, and diff whitespace check.
+- Next focus: Surface ROI Scenario Readiness in Journey/Workspace and connect it to Executive Operating Packet language without customer-facing dollarized output.
+
+## 2026-06-10 (UTC) — Codex (AI Value ROI scenario readiness UI)
+
+- Completed: Surfaced governed ROI Scenario Readiness in `/ai-value-journey` and `/ai-value-workspace`, backed by latest `roi_scenario` objects and backend object API support. The UI translates baseline/comparison windows, assumptions, outcome evidence review, scenario bands, metric/source details, safe language, and blocked outputs into sponsor-readable value-modeling handoff language.
+- Verified: focused Journey/Workspace ROI readiness tests, full frontend suite/build, backend AI value object API test, full backend CI suite, ROI scenario and agent-harness scripts, docs sweep, semantic drift guard, Glean value governance gate, diff whitespace, and mocked browser checks with no unsafe internal terms, no console errors, and no overflow at 390px/1440px.
+- Next focus: Customer Evidence Request Packet from ROI Scenario Readiness so clients know which aggregate data export, owner, baseline/comparison windows, and review steps are needed before stronger value language.
+
+## 2026-06-10 (UTC) — Codex (AI Value customer evidence request packet)
+
+- Completed: Added a Customer Evidence Request Packet in `/ai-value-journey` and `/ai-value-workspace`, derived from governed ROI Scenario Readiness. The UI now tells the client which aggregate export to request, from which customer system, for which metric/export level/window rules, owned by whom, reviewed by whom, and which value language remains blocked.
+- Verified: red/green customer evidence request tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks for Journey/Workspace with no unsafe terms, no console warnings/errors, and no horizontal overflow.
+- Next focus: Customer Evidence Review Workbench from the request packet, so submitted/accepted/rejected exports are readable as an operating workflow rather than a raw object list.
+
+## 2026-06-10 (UTC) — Codex (AI Value customer evidence review workbench)
+
+- Completed: Added a Customer Evidence Review Workbench in `/ai-value-journey` and `/ai-value-workspace`, derived from the Customer Evidence Request plus outcome-evidence review state. The workbench shows missing/submitted/accepted/rejected states, reviewer ownership, request-match checks for metric/source/export level/windows, blocked value language, and submitted-only Accept/Reject actions through the existing role-gated review API.
+- Verified: red/green customer evidence review tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks for Journey/Workspace with no unsafe terms, no console issues after local preview script stub, and no horizontal overflow.
+- Next focus: Evidence-Aware Executive Operating Cadence, so accepted/submitted/rejected/missing evidence drives sponsor next action, client value questions, and agentic handoff language.
+
+## 2026-06-10 (UTC) — Codex (AI Value evidence-aware executive readout HTML)
+
+- Completed: Opened/generated Executive Readout HTML now renders a Customer Outcome Evidence section for missing, submitted, accepted, and rejected aggregate evidence. Accepted evidence is caveated support only, mismatched accepted exports are ignored, and the example readout no longer exposes the internal packet id.
+- Verified: red/green backend readout API test; full backend AI value object API test; backend build; standalone readout renderer test; full frontend tests/build; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; generated HTML internal-term audit; diff whitespace.
+- Next focus: Executive Readout Preview and Share Workflow in Journey/Workspace, so sponsors can understand what will open/share and which caveats must travel with it.
+
+## 2026-06-10 (UTC) — Codex (AI Value executive readout preview/share)
+
+- Completed: Added a shared Executive Readout Preview in `/ai-value-journey` and `/ai-value-workspace`. The preview uses Customer Evidence Review state to explain what will open, what language remains held, who owns the next action, and which caveat must travel with the readout; accepted evidence stays caveated support only.
+- Verified: red/green preview tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks with no unsafe internal terms, no console errors/warnings, no horizontal overflow, and readout-open tab creation verified.
+- Next focus: Sponsor Decision and Follow-Up Loop, so the readout feeds expansion review, evidence collection, corrected-export requests, claim holds, or a return to Blueprint.
+
+## 2026-06-11 (UTC) — Codex (AI Value sponsor decision loop)
+
+- Completed: Added a shared Sponsor Decision loop to `/ai-value-journey` and `/ai-value-workspace`. It derives the recommended sponsor move from Customer Evidence Review state and shows five governed next moves: Expand workflow, Collect stronger evidence, Request corrected export, Hold value language, and Return to Blueprint. Each move shows what it feeds next while agentic follow-up remains handoff-only.
+- Verified: red/green sponsor-decision tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route desktop/mobile checks with no unsafe internal terms/state codes, no console errors/warnings, and no horizontal overflow.
+- Next focus: Decision Selection Handoff Preview, so a chosen sponsor move produces a compact non-persistent handoff preview without becoming a task manager or autonomous workflow.
+
+## 2026-06-11 (UTC) - Codex (AI Value decision handoff draft)
+
+- Completed: Added the Decision Selection Handoff Preview and copy-ready local draft to `/ai-value-journey` and `/ai-value-workspace`. Selecting a sponsor move now updates the owner, target, evidence or input needed, safe next action, and required caveat, and the visible draft can be copied without persistence or task creation.
+- Verified: red/green copy-ready handoff tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright CLI checks for Journey/Workspace at 1440px and 390px with copy interaction, no unsafe internal terms, no AI Value API failures, and no horizontal overflow.
+- Next focus: Client Value Questions to Metrics Mapping Bridge, so sponsor value questions and success measures recommend governed Metrics Library entries before ROI Scenario Readiness or Customer Evidence Request moves forward.
+
+## 2026-06-11 (UTC) - Codex (AI Value questions-to-metrics bridge)
+
+- Completed: Added a shared Questions to Metrics Bridge to `/ai-value-journey` and `/ai-value-workspace`. The bridge connects the sponsor ROI question and client success measure to the recommended governed metric, value route, customer source system, unit, comparison rule, owner, evidence status, safe claim level, and the ROI Scenario Readiness / Customer Evidence Request handoff.
+- Verified: red/green bridge tests; affected Journey/Workspace suites; full frontend tests/build; backend AI value object API test; ROI scenario and agent-harness scripts; docs sweep; semantic drift guard; Glean value governance gate; diff whitespace; Playwright mocked-route checks for Journey/Workspace at 1440px and 390px with the bridge present, no console warnings/errors after local Speed Insights stub, and no horizontal overflow.
+- Next focus: pause for human review of the full product spine before starting another slice.
+
+## 2026-06-11 (UTC) - Codex (AI Value client value spine trace)
+
+- Completed: Added a shared Client Value Spine Trace to `/ai-value-journey` and `/ai-value-workspace`. The trace shows the client-readable path from Blueprint decision to outcome metric, customer evidence, governed value language, and sponsor decision, with each step showing what it feeds next.
+- Verified: red/green trace tests; affected Journey/Workspace suites; full frontend tests/build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Journey/Workspace empty state at 1440px and 390px with no console warnings/errors and no horizontal overflow.
+- Next focus: pause for human review of the full product spine before starting another slice.
+
+## 2026-06-11 (UTC) - Codex (AI Value multi-page workspace IA)
+
+- Completed: Split `/ai-value-workspace` from one long page into a route-based guided workspace. Home is now a command center, with focused pages for Readiness, Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions. Existing governed panels were preserved and moved to the page where a client would expect to use them.
+- Verified: route-specific Workspace tests; Journey + Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all workspace pages at 1440px and 390px with no unsafe internal terms, console warnings/errors, or horizontal overflow.
+- Next focus: pause for human review of the multi-page Workspace and decide whether the next slice should improve page-level interaction depth, visual workshop affordances, or the ROI/evidence data intake path.
+
+## 2026-06-11 (UTC) - Codex (AI Value Blueprint workshop board)
+
+- Completed: Made `/ai-value-workspace/blueprint` behave like a client workshop board with current/target workflow lanes, interactive focus decisions, owner/next-step guidance, and clear handoffs into Metrics mapping, Evidence planning, and the governed Scenario builder.
+- Verified: red/green Blueprint board test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Blueprint at 1440px and 390px with the decision interaction, no unsafe internal terms, no console warnings/errors, and no horizontal overflow.
+- Next focus: inspect the multi-page Workspace with a product lens; the likely next bounded slice is making Metrics feel like outcome and ROI opportunity mapping rather than a table.
+
+## 2026-06-11 (UTC) - Codex (AI Value Metrics opportunity map)
+
+- Completed: Made `/ai-value-workspace/metrics` read as an Outcome and ROI opportunity map with Blueprint route, client value question, outcome metric, customer data need, evidence gap, safe value language, and next gated action. The page now has Evidence and Scenario handoff links, example-mode fallback content, and metric candidate cards instead of the old recommended-signal table.
+- Verified: red/green Metrics map test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Metrics at 1440px and 390px with no unsafe internal terms, no console warnings/errors, no horizontal overflow, and the old value-signal table absent.
+- Next focus: make Evidence and Scenario feel like one governed path from aggregate evidence to value language rather than separate database-backed panels.
+
+## 2026-06-11 (UTC) - Codex (AI Value Evidence to Value path)
+
+- Completed: Added a shared Evidence to Value Language Path to `/ai-value-workspace/evidence` and `/ai-value-workspace/scenario`. The path connects aggregate work evidence, customer outcome evidence, scenario readiness, safe value language, blocked stronger claims, and the next governed action, with handoffs into Scenario Builder and Executive Readout.
+- Verified: red/green Evidence-to-value path test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Evidence and Scenario at 1440px and 390px with no unsafe internal terms/state codes, no console warnings/errors, no horizontal overflow, and the governed path present.
+- Next focus: pause for human review of the multi-page Workspace. If the direction holds, make Readout and Decisions feel like one guided sponsor operating workflow rather than separate panels.
+
+## 2026-06-11 (UTC) - Codex (AI Value guided sponsor workflow)
+
+- Completed: Added a shared Sponsor Operating Workflow to `/ai-value-workspace/readout` and `/ai-value-workspace/decisions`. The panel connects Readout preview, Sponsor decision, Handoff draft, and Next operating loop, with an explicit boundary that no task is created and no customer action is automated.
+- Verified: guided workflow test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for Readout and Decisions at 1440px and 390px with no unsafe internal terms/state codes, no console warnings/errors, no horizontal overflow, and the workflow present.
+- Next focus: final product-spine audit across all multi-page Workspace routes for navigation clarity, page purpose, client-readable language, handoff completeness, and mobile fit.
+
+## 2026-06-11 (UTC) - Codex (AI Value workspace handoff navigation)
+
+- Completed: Added a consistent Workspace Handoff footer to every focused `/ai-value-workspace/*` page. It shows what the current page feeds next, links back to the prior phase, and links forward to the next phase; Sponsor Decisions loops back to Blueprint Workshop.
+- Verified: red/green handoff navigation test; affected Journey/Workspace tests; full frontend tests; frontend build; semantic drift guard; Glean value governance gate; diff whitespace; in-app browser smoke for all focused workspace pages at 1440px and 390px with expected next links, no unsafe internal terms/state codes, no console warnings/errors, and no horizontal overflow.
+- Next focus: human review of the full Product Spine V1 and a PR/push decision before starting more scope.
+
+## 2026-06-11 (UTC) - Codex (AI Value Product Spine V1 completion audit)
+
+- Completed: Audited the current branch against the full Product Spine V1 goal and marked `ai-value-platform-product-spine-v1` done in `.project/WORK_QUEUE.json`. No product-code change was needed.
+- Verified: full frontend tests/build; AI value engine, V1 spine, Blueprint, Metrics, Scenario, ROI Scenario, Readiness, Agent Harness, Executive Packet, and Readout tests; semantic drift guard; Glean value governance gate; WORK_QUEUE JSON parse; diff whitespace; browser smoke for Journey plus every Workspace page at 1440px and 390px with expected headings/handoffs, no unsafe internal terms, no console warnings/errors, no button clipping, and no horizontal overflow.
+- Next focus: pause for James to review the local multi-page experience, then decide whether to push/open a PR or start a new bounded queue item from observed review gaps.
+
+## 2026-06-11 (UTC) - Codex (governed V3 forwarded distribution)
+
+- Completed: Added surfaced-only V3 `forwarded_distribution`, schema-bounded aggregate forwarding, Quality Multiplier consumption from stored V3 verdicts with consumer gate re-checks, additive EvidenceBundle v1 mirror support for surfaced bundles, OpenSpec/docs/OpenAPI updates, and LMSYS assurance fixture coverage. Tightened V3 aggregate identifiers so raw-text shaped IDs are rejected before forwarding.
+- Verified: shared build; backend build; focused V3 ingest and Quality Multiplier backend tests; full backend CI (114 suites, 741 tests); EvidenceBundle schema validation; strict OpenSpec validation; LMSYS self-test; V1 governance gates; docs contract sweep; Glean value governance gate; harness verify (248 passed, 3 skipped).
+- Next focus: review/commit/PR for governed forwarding, then decide whether the next slice should expose safe downstream metric readiness in the AI Value UI without adding ROI proof, causality, productivity measurement, ranking, production connectors, or customer-facing economic output.
+
+## 2026-06-11 (UTC) - Codex (AI Value real evidence materializer)
+
+- Completed: Added the governed real-evidence materializer service and `POST /api/v1/ai-value/materialize/real-evidence` endpoint. The bridge reads stored V3 verdicts, surfaced forwarded distributions, velocity observations, and customer-attested aggregate outcome evidence, then writes validated `evidence_readiness` and `outcome_evidence_export` objects. Outcome exports stay `SUBMITTED`; suppressed, missing, misaligned, and low-trust evidence stays held.
+- Verified: materializer backend test (5/5), adjacent AI Value API test (26/26), shared build, backend build, full backend CI (115 suites / 746 tests), strict OpenSpec validation, docs contract sweep, V1 governance gates, Glean value governance gates, harness verify (248 passed, 3 skipped), and git diff whitespace check.
+- Next focus: review/commit/PR for the materializer, then wire the multi-page workspace to visibly use materialized real-evidence objects where available.
+
+## 2026-06-11 (UTC) - Codex (AI Value real evidence workspace wiring)
+
+- Completed: Wired Blueprint, Metrics, Evidence, Scenario, Readout, and Decisions pages to show a shared Real Aggregate Evidence panel. The panel reads materialized `evidence_readiness` / `outcome_evidence_export` objects when present and exposes a deliberate **Use real aggregate evidence** action that calls the local materializer, refreshes the Workspace, and translates suppressed/missing/pending-review states into client-facing held-language.
+- Verified: focused real-evidence Workspace tests (8/8), full Workspace tests (44/44), affected Journey + Workspace tests (78/78), full frontend tests (99/99), frontend build, semantic drift guard, V1 governance gates, docs contract sweep, Glean value governance gate, diff whitespace check, and browser smoke for Blueprint/Metrics/Evidence/Scenario/Readout/Decisions at 1440px and 390px with panel/button present, no raw panel terms, and no horizontal overflow.
+- Next focus: finish verification, commit the Workspace wiring, then define the next bounded real-data ingest path around aggregate API push.
+
+## 2026-06-11 (UTC) - Codex (AI Value aggregate API push ingest path)
+
+- Completed: Added the local aggregate API-push path for real-data intake. The customer-side package fixture validates aggregate-only AI work evidence and paired aggregate outcome evidence, rejects raw rows, direct identifiers, prompts/outputs/transcripts, raw skill/action rows, HR analytics, ranking, ROI proof, causality claims, autonomous customer actions, and customer-facing economic output, then emits the governed sequence for V3 aggregate ingest, baseline/comparison outcome evidence, and real-evidence materialization.
+- Verified: red/green aggregate package tests, generated request fixture parity, focused backend aggregate push path test, adjacent materializer/V3/outcome API tests, shared build, full backend CI (116 suites / 747 tests), docs contract sweep, V1 governance gates, Glean value governance gate, aggregate push command smoke, and diff whitespace check. Full backend CI still prints the existing local no-DB org persistence log in policy compliance tests, but the suite passes.
+- Next focus: commit/push this ingest-path slice, then set the next goal around an end-to-end developer runner or guided import workbench so the aggregate package can be posted into a running local backend and immediately inspected in the multi-page Workspace.
+
+## 2026-06-11 (UTC) - Claude (VBD canon amendment: Depth = workflow integration)
+
+- Completed: Amended the AI Value Platform VBD canon with human approval. Depth returns to embeddedness of AI in repeatable workflow behavior (aggregate signals: repeat use within workflow, verification coverage, reuse of standardized assets, delegation/agent use, recovery after failure, judgment overrides); the aggregate tool/surface repertoire construct is kept, renamed Repertoire, and moved under Breadth's coverage views. Updated the measurement model (with a decision note blocking future "corrections"), the North Star prompt, the next-agent handoff, the data-boundary schema consts, the customer-support fixture vbd_definitions, the engine validator expected map in shared/src/aiValueEngine/dataBoundary.ts, and the data-boundary tests. FluencyTracr core's V4 Depth Repertoire contract (AGENTS.md, docs/contracts/depth/) is intentionally untouched: it is a separate governance-locked telemetry layer whose aggregate repertoire signals remain valid inputs to the Breadth Repertoire coverage view.
+- Verified: shared build (0 TS errors), data-boundary tests (6/6), full engine tests (36/36), docs contract sweep, semantic drift guard, Glean value governance gates, git diff whitespace check.
+- Next focus: build the Value Evidence Case contract slice per docs/agent/CLAUDE_AI_VALUE_NORTH_STAR_PROMPT.md — TDD, failing tests first, schema + fixture + engine stage + validator CLI + package scripts + docs, no UI in this slice. The new object's vbd_summary must use the amended canon.
+
+## 2026-06-11 (UTC) - Claude (Value Evidence Case contract slice)
+
+- Completed: Built the North Star Value Evidence Case contract via TDD (failing tests first). Added schemas/ai-value-intelligence/value-evidence-case.schema.json, the seeded Customer Support fixture, shared/src/aiValueEngine/valueEvidenceCase.ts (validator + buildValueEvidenceCase composing data boundary, ROI scenario, readiness, outcome evidence export, and improvement loop), engine index exports, scripts/validate_ai_value_evidence_case.mjs CLI, scripts/validate_ai_value_evidence_case.test.mjs (6 tests including the prompt's recommended names), narrow coverage in scripts/ai_value_engine.test.mjs, package scripts validate:/test:ai-value-evidence-case, and docs updates (contracts README, measurement model phase map + build implications, next-agent handoff, root README links). The engine enforces the evidence ladder fail-closed: evidence level cannot exceed what the review state, exact window alignment, and customer-owned assumptions support; missing/rejected evidence holds at observed AI activity; SUBMITTED stays directional pending explicit human acceptance; SUPPORTED requires the non-causal caveat; STRONG fails closed pending a future governed evidence design contract; the amended VBD canon is mandatory in vbd_summary. Also corrected the stale repertoire note in the data-boundary fixture reconciliation block.
+- Verified: shared build (0 TS errors), evidence-case tests (6/6), full engine tests (37/37), data-boundary tests (6/6), improvement-loop tests (3/3), CLI smoke on the seeded fixture (valid, CAVEATED / CAVEATED_VALUE_INVESTIGATION), docs contract sweep, semantic drift guard, Glean value governance gates, git diff whitespace check. No frontend or backend files touched in this slice (contract before UI), so frontend tests/build were not run.
+- Next focus: register value_evidence_case in the backend object registry with validated fail-closed upserts, then present the case in the Workspace with client-facing language; alternatively add the retest-result object so interventions can be scored on the same workflow slice. Keep all hard guardrails.
+
+## 2026-06-12 (UTC) - Claude (Whole-system value realization: seeded enterprise, MCP ingestion, Evidence Case UI)
+
+- Completed: Registered data_boundary, value_improvement_loop, and value_evidence_case as backend object types with fail-closed validated upserts and added POST /api/v1/ai-value/evidence-case/assemble (loads stored objects, builds, validates, persists the case). Built scripts/seed_ai_value_enterprise.mjs (npm run seed:ai-value-enterprise): a deterministic synthetic 5,000-employee enterprise simulated upstream only, aggregated with cohort suppression, seeding 12 function fluency baselines and 5 full workflow chains through the governed API, landing at distinct evidence-ladder rungs (Sales SUPPORTED, Support CAVEATED, Engineering DIRECTIONAL, Marketing MISSING, Operations MISSING/rejected). Built scripts/ai_value_mcp_server.mjs + .mcp.json: a stdio MCP server exposing ingest/list/get/review/run-chain/assemble tools that wrap the same fail-closed endpoints (no new write paths; uploads forced SUBMITTED). Added the Workspace step-7 Evidence Case page (frontend/src/components/ValueEvidenceCasePanel.tsx at /ai-value-workspace/case): function selector, evidence ladder, safe/blocked language columns, outcome metric + review state, VBD chips, sponsor decision, next action — client-facing language only. Engine: buildValueEvidenceCase gained a functionArea option; scenario ALLOWED_OUTPUT_UNITS gained "days". Fixed two stale AIValueJourney test assertions left behind by commit 93dc2e4's panel copy change.
+- Verified: shared build; engine tests 37/37; evidence-case contract tests 6/6; backend evidence-case API tests 5/5 plus adjacent suites and backend tsc; frontend 104/104 and production build; live browser verification of /ai-value-workspace/case against the seeded enterprise (tabs, ladder, language columns, no console errors); MCP stdio smoke (tools list, case reads, tainted ingest rejected 422); docs contract sweep; semantic drift guard; Glean value governance gates; git diff --check.
+- Next focus: persistence posture for ai_value_objects in local dev (in-memory store loses seeds on backend restart; decide whether to baseline the dev DB), retest-result object so interventions can be scored, and function-level case history across measurement cycles.
+
+## 2026-06-12 (UTC) - Codex (Glean dogfood BigQuery adapter)
+
+- Completed: Added the read-only internal `glean_dogfood_bq` adapter for the three real sharded scrubbed BigQuery table families, with broad source allowlists pinned in code and narrow `FT_V3_2026_05` aggregate-only output. Added k-min, partition, cost, and forbidden-field guards; synthetic fixtures; CLI dry-run path; docs/mapping spec; OpenSpec `add-glean-dogfood-bq-adapter`; and LMSYS assurance metadata for surface, suppress, and refused-query cases.
+- Verified: focused pytest 25/25; live BigQuery dry-run for 2026-06-11 compiled and estimated 19026567131 bytes; OpenSpec strict validation; shared build; LMSYS self-test; V1 governance gates; docs contract sweep; harness verify 273 passed / 3 skipped; frontend tests 74/74; diff whitespace. Full backend CI still has an unrelated suite-order failure in `policy_compliance_api.test.ts`, while that file passes standalone 22/22.
+- Next focus: review/commit/PR this adapter slice, then add a bounded operator runner that posts generated aggregate payloads into the local backend and refreshes the Workspace without introducing raw rows, identifiers, ROI proof, causality, or person-level analysis.

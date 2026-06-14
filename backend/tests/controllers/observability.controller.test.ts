@@ -9,6 +9,10 @@ describe("handleGetObservability", () => {
     await repo.upsertAggregate(
       {
         workflow_id: "w1",
+        jbtd_id: null,
+        persona_id: null,
+        verdict: "SURFACE",
+        suppression_reason: null,
         classified_execution_count: 2,
         suppressed_execution_count: 1,
         pattern_distribution: [],
@@ -23,6 +27,8 @@ describe("handleGetObservability", () => {
     expect(body.workflows).toHaveLength(1);
     expect((body.workflows[0] as { workflow_id: string }).workflow_id).toBe("w1");
     const wf = body.workflows[0] as Record<string, unknown>;
+    expect(wf.jbtd_id).toBeNull();
+    expect(wf.persona_id).toBeNull();
     expect(wf).not.toHaveProperty("executions");
     expect(wf).not.toHaveProperty("diagnostics");
   });
@@ -46,6 +52,10 @@ describe("handleGetObservability", () => {
     await repo.upsertAggregate(
       {
         workflow_id: "w-num",
+        jbtd_id: null,
+        persona_id: null,
+        verdict: "SURFACE",
+        suppression_reason: null,
         classified_execution_count: 2,
         suppressed_execution_count: 0,
         prevalence_mode: "NUMERIC_SHARE",
@@ -72,5 +82,50 @@ describe("handleGetObservability", () => {
     for (const row of body.workflows[0]!.pattern_distribution) {
       expect(row).not.toHaveProperty("share");
     }
+  });
+
+  it("returns opaque JBTD and persona join keys when present", async () => {
+    const repo = new InMemoryWorkflowAggregateRepository();
+    await repo.upsertAggregate(
+      {
+        workflow_id: "w-sliced",
+        jbtd_id: "manager-review",
+        persona_id: "frontline-manager",
+        verdict: "SURFACE",
+        suppression_reason: null,
+        classified_execution_count: 5,
+        suppressed_execution_count: 0,
+        pattern_distribution: [],
+        prevalence_mode: DEFAULT_PREVALENCE_MODE
+      },
+      "org-a"
+    );
+    const res = await handleGetObservability("org-a", { workflowAggregateRepository: repo });
+    expect(res.status).toBe(200);
+    const body = res.body as { workflows: ReadonlyArray<Record<string, unknown>> };
+    expect(body.workflows[0]!.jbtd_id).toBe("manager-review");
+    expect(body.workflows[0]!.persona_id).toBe("frontline-manager");
+  });
+
+  it("does not expose suppressed slice buckets publicly", async () => {
+    const repo = new InMemoryWorkflowAggregateRepository();
+    await repo.upsertAggregate(
+      {
+        workflow_id: "w-small",
+        jbtd_id: "manager-review",
+        persona_id: "frontline-manager",
+        verdict: "SUPPRESS",
+        suppression_reason: "INSUFFICIENT_VOLUME",
+        classified_execution_count: 0,
+        suppressed_execution_count: 1,
+        pattern_distribution: [],
+        prevalence_mode: DEFAULT_PREVALENCE_MODE
+      },
+      "org-a"
+    );
+    const res = await handleGetObservability("org-a", { workflowAggregateRepository: repo });
+    expect(res.status).toBe(200);
+    const body = res.body as { workflows: unknown[] };
+    expect(body.workflows).toEqual([]);
   });
 });

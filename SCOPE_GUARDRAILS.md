@@ -25,3 +25,23 @@ Any new data source or feature must satisfy all of the following:
 - [ ] Data is aggregated before storage.
 - [ ] Clear opt-in and disclosure is documented.
 - [ ] Retention limits are defined.
+
+## V4 Value Confidence guardrails
+
+V4 may qualify the defensibility of AI value claims, but it must not create:
+
+- Realized ROI claims.
+- Causal productivity lift claims.
+- Forecasting claims without held-out validation.
+- Maturity scoring.
+- Team or individual rankings.
+- Suppressed economics, including hidden dollar values, hours saved, upside estimates, or portfolio totals.
+
+Depth Repertoire is currently caveat-only context for V4 value confidence. It
+must not become a hidden multiplier, confidence-band adjustment, eligibility
+input, Time-Saved Defensibility Range dependency, benchmark, default, threshold,
+or ranking signal without a later explicit governance decision.
+
+## Agentic Harness Guardrails
+
+Development-harness telemetry may support repo execution, investigation, and verification, but it must not become customer product evidence. Agent-run logs and future ledgers must not store raw prompts, raw responses, file content, diffs, secrets, emails, direct identifiers, person-level metrics, customer raw GCE rows, customer value evidence payloads, or customer-facing economic claims.

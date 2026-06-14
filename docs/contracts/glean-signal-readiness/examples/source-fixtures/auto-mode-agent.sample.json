@@ -1,0 +1,16 @@
+{
+  "source_type": "agent_run",
+  "source_availability": "available",
+  "export_channel": "customer_event_logs",
+  "scrub_status": "scrubbed",
+  "join_keys_present": ["run_id", "workflow_run_id", "trace_id"],
+  "derived_dimensions": ["behavior_change", "capability_growth", "coverage"],
+  "governance_hold": false,
+  "governance_hold_reasons": [],
+  "data_quality": {
+    "completeness": "verified",
+    "latency": "known",
+    "join_reliability": "stable"
+  },
+  "validation_note_code": "auto_mode_agent_lifecycle_available"
+}

@@ -1,0 +1,6 @@
+workflow_id,delegation_bucket,aggregate_user_count,aggregate_bucket_events,aggregate_taxonomy_events,bucket_event_share,p50,p90,p99
+workflow:agent:autonomous,structured_delegation,70,260,900,0.29,5,9,12
+workflow:CHAT,transformation,80,30,900,0.03,1,2,3
+workflow:agent:workflow_named,structured_delegation,38,180,700,0.26,4,8,10
+standalone:SEARCH,retrieval,60,20,800,0.025,1,2,2
+workflow:SPARSE,structured_delegation,3,12,30,0.40,3,5,6

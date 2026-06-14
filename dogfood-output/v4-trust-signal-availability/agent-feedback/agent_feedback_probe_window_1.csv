@@ -1,0 +1,6 @@
+section,event_type,event_count,distinct_users,rows_with_tracking_token,rows_with_session_token,rows_with_chat_feedback_run_id,rows_with_chat_feedback_workflow_id,rows_with_chat_feedback_session_id,matched_by_run_id,matched_by_workflow_id,matched_by_session_token
+01_feedback_like_event_inventory,CHAT_FEEDBACK,312589,110701,306230,308661,291288,82846,248196,0,0,0
+01_feedback_like_event_inventory,AI_ANSWER_VOTE,3422,2662,3422,0,0,0,0,0,0,0
+01_feedback_like_event_inventory,SEARCH_FEEDBACK,2616,1653,1054,0,0,0,0,0,0,0
+01_feedback_like_event_inventory,AI_SUMMARY_VOTE,320,122,171,0,0,0,0,0,0,0
+02_direct_agent_feedback_matches,CHAT_FEEDBACK,1589692,41908,1589665,1588856,1589314,1480171,1322018,66749,1462730,0

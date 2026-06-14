@@ -1,0 +1,146 @@
+{
+  "schema_version": "FT_AI_VALUE_EVIDENCE_CASE_2026_06",
+  "value_evidence_case_id": "value_evidence_case_customer_support_capacity_v1",
+  "source_refs": {
+    "data_boundary_contract_id": "data_boundary_customer_support_roi_evidence_v1",
+    "roi_scenario_id": "roi_scenario_customer_support_capacity_v1",
+    "readiness_id": "readiness_customer_support_v1",
+    "outcome_export_id": "outcome_export_northstar_support_2026_06",
+    "improvement_loop_id": "improvement_loop_customer_support_capacity_v1"
+  },
+  "client_context": {
+    "engagement_label": "Northstar Enterprise customer support value engagement",
+    "function_area": "Customer Support",
+    "sponsor_role": "customer_support_business_sponsor"
+  },
+  "workflow": {
+    "workflow_family": "customer_support_case_resolution",
+    "workflow_name": "Support case resolution",
+    "function_area": "Customer Support",
+    "value_route": "CAPACITY_CREATION"
+  },
+  "ai_fluency_summary": {
+    "readiness": "MIXED",
+    "basis": "Aggregate AI Fluency baseline by function with small cohorts suppressed.",
+    "cohort_suppression_applied": true
+  },
+  "vbd_summary": {
+    "velocity": {
+      "definition": "speed_to_adoption",
+      "status": "STALLING"
+    },
+    "breadth": {
+      "definition": "spread_across_org_functions_workflows_surfaces",
+      "status": "LIMITED"
+    },
+    "depth": {
+      "definition": "workflow_integration_embeddedness",
+      "status": "SHALLOW"
+    },
+    "summary": "Velocity, Breadth, and Depth are the aggregate operating map for this workflow slice; they guide intervention planning and do not prove business impact."
+  },
+  "outcome_metric": {
+    "metric_id": "support_median_resolution_hours",
+    "metric_name": "Median resolution time",
+    "measurement_unit": "hours",
+    "source_system": "Support case management system",
+    "expected_direction": "REDUCE"
+  },
+  "data_boundary_status": {
+    "contract_id": "data_boundary_customer_support_roi_evidence_v1",
+    "aggregate_only": true,
+    "raw_source_rows_allowed": false,
+    "direct_identifiers_allowed": false,
+    "raw_content_allowed": false,
+    "status": "ENFORCED"
+  },
+  "outcome_evidence_status": {
+    "export_id": "outcome_export_northstar_support_2026_06",
+    "review_state": "ACCEPTED",
+    "statement": "Customer-owned aggregate outcome evidence was accepted by the customer reviewer for the matching workflow slice and windows."
+  },
+  "baseline_comparison": {
+    "baseline_window": "2026-02-01_to_2026-03-31",
+    "comparison_window": "2026-04-01_to_2026-05-31",
+    "window_alignment": "EXACT_MATCH"
+  },
+  "customer_owned_assumptions": [
+    {
+      "assumption_id": "case_mix_stability",
+      "state": "PRESENT",
+      "owner": "support_operations"
+    },
+    {
+      "assumption_id": "volume_context",
+      "state": "CAVEATED",
+      "owner": "support_operations"
+    },
+    {
+      "assumption_id": "staffing_and_coverage_context",
+      "state": "MISSING",
+      "owner": "support_leader"
+    }
+  ],
+  "evidence_quality": {
+    "evidence_level": "CAVEATED",
+    "rationale": "Accepted aggregate outcome evidence and exact baseline/comparison windows exist, but volume and staffing assumptions remain caveated or missing."
+  },
+  "safe_value_language": {
+    "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+    "allowed_phrases": [
+      "Customer-owned outcome evidence supports a caveated value investigation for this workflow slice.",
+      "Open customer-owned assumptions still need owner review before stronger value language.",
+      "The next step is to resolve the open assumptions and retest on the same workflow slice."
+    ],
+    "required_caveats": [
+      "This does not prove ROI or causality.",
+      "All evidence is aggregate-only and workflow-sliced; no person-level data crosses into FluencyTracr.",
+      "Customer-owned outcome data owns the value test; VBD and AI Fluency guide intervention planning only."
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "causality_claim",
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "realized_roi_calculation",
+    "customer_facing_economic_output"
+  ],
+  "scenario_posture": {
+    "roi_scenario_id": "roi_scenario_customer_support_capacity_v1",
+    "band": "CONSERVATIVE",
+    "posture_statement": "Plan with the conservative band until outcome evidence is accepted and customer assumptions are resolved."
+  },
+  "sponsor_decision": {
+    "decision_state": "STRENGTHEN_EVIDENCE",
+    "decision_owner_role": "customer_support_business_sponsor",
+    "decision_basis": "Caveated evidence supports continued investigation; resolve the volume and staffing assumptions before stronger value language."
+  },
+  "intervention_retest": {
+    "improvement_loop_id": "improvement_loop_customer_support_capacity_v1",
+    "next_action": "Resolve the staffing and volume assumptions with customer owners, run targeted workflow enablement, and retest.",
+    "retest_window_label": "30-45 days after intervention",
+    "retest_measurement_plan": "Recheck aggregate AI Fluency, VBD movement, and the selected outcome metric on the same workflow slice and windows."
+  },
+  "economic_output_policy": {
+    "customer_facing_economic_output": false,
+    "dollarized_output": false,
+    "realized_roi_calculation": false
+  },
+  "governance_boundaries": {
+    "production_connector": false,
+    "dashboard": false,
+    "realized_roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "hris_or_people_analytics": false,
+    "productivity_ranking": false,
+    "raw_prompt_or_response_storage": false,
+    "direct_identifiers": false,
+    "runtime_service": false,
+    "autonomous_customer_actions": false,
+    "customer_facing_economic_output": false
+  }
+}

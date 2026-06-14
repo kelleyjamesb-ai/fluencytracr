@@ -1,0 +1,145 @@
+{
+  "schema_version": "GCP_2026_05",
+  "claim_packet_id": "claim_packet:org-northstar:weekly:nielsen_roi_payback_internal_2025_10",
+  "org_id": "org-northstar",
+  "window": "weekly",
+  "generated_at": "2026-05-07T00:00:00.000Z",
+  "selected_methodology_snapshot_id": "nielsen_roi_payback_internal_2025_10",
+  "reviewer_decision_memo": "Reviewer decision memo\nDecision state: internal-only\nSelected methodology snapshot: Synthetic Nielsen-style internal ROI and payback fixture (nielsen_roi_payback_internal_2025_10)\nApproval state: finance_approved\nFinancial claim effect: internal-only: customer-facing ROI/payback requires customer-safe methodology approval.\nStrongest safe language: Internal-only: finance-reviewed evidence can support bounded planning language.\nBlocked claim language: Customer-facing ROI/payback requires customer-safe methodology approval.\nWhy stronger claims are blocked: This methodology is finance-approved; financial language is limited to internal-only use until customer-safe approval exists.\nHigh-sensitivity assumptions:\n- Ramped quarterly benefit: Quarterly benefit is modeled from adoption and assumed recaptured capacity.\nCovered surfaces:\n- search\n- chat\n- ai answers\n- agents\n- skills\nExcluded surfaces:\n- mcp actions\n- canvas artifacts\n- apis\n- embedded hosts\nCaveats:\n- This fixture supports internal financial planning language only.\nUpgrade actions:\n- Request customer-safe methodology approval before using financial value language with customers.",
+  "strongest_safe_claim": {
+    "schema_version": "SSC_2026_05",
+    "generated_at": "2026-05-07T00:00:00.000Z",
+    "source_system": "FluencyTracr",
+    "roi_positioning": "final_claim_layer",
+    "strongest_claim": {
+      "claim_id": "claim:agentic_business_reporting",
+      "hypothesis_id": "agentic_business_reporting",
+      "outcome_domain": "finance",
+      "work_pattern": "orchestrate",
+      "maturity_stage": "finance_approved",
+      "claim_readiness": "internal_only",
+      "safe_claim_language": "Internal-only: finance-reviewed evidence supports a bounded value claim for governed agentic business reporting workflows.",
+      "evidence_used": ["workflow_run", "action_log", "artifact_output", "control_evidence", "business_outcome", "financial_model"],
+      "aggregate_metric_refs": [
+        "agentic_reporting.completed_runs.window",
+        "agentic_reporting.governed_actions.window",
+        "agentic_reporting.artifacts.window",
+        "agentic_reporting.control_coverage.window",
+        "agentic_reporting.cycle_time_delta.window",
+        "agentic_reporting.finance_approved_value_model"
+      ],
+      "methodology_snapshot_id": "nielsen_roi_payback_internal_2025_10",
+      "methodology_approval_state": "finance_approved",
+      "methodology_caveats": [
+        "Methodology snapshot nielsen_roi_payback_internal_2025_10 is finance-approved but not customer-safe; keep financial value language internal-only."
+      ],
+      "caveats": [
+        "Finance approval is scoped to the synthetic workflow and approved assumptions.",
+        "Do not generalize this value claim to all agentic work.",
+        "Methodology snapshot nielsen_roi_payback_internal_2025_10 is finance-approved but not customer-safe; keep financial value language internal-only."
+      ]
+    },
+    "evidence_gaps": [],
+    "blocked_stronger_claims": [
+      "Do not generalize this value claim to all agentic work.",
+      "Do not generalize this value claim beyond the approved workflow, window, and financial assumptions."
+    ],
+    "blocked_methodology_claims": [
+      "Customer-facing ROI/payback language requires customer-safe methodology approval."
+    ],
+    "upgrade_actions": [
+      "Monitor drift in reporting workflow coverage, control evidence, and financial assumptions.",
+      "Revalidate finance approval when pricing, recapture, or workflow scope changes."
+    ],
+    "governance_boundaries": [
+      "No raw prompts, raw responses, transcripts, query text, tool payloads, or file contents.",
+      "No direct identifiers, manager views, team rankings, or productivity scoring.",
+      "ROI is downstream of evidence, controls, outcomes, and finance approval."
+    ]
+  },
+  "caveated_claims": [
+    {
+      "claim_id": "glean.time_saved.covered_surfaces",
+      "claim_source": "glean_value_evidence",
+      "claim_type": "time_saved",
+      "claim_readiness": "customer_safe_with_caveats",
+      "language": "Covered Glean assistance surfaces show directional time-saved evidence for this reporting window.",
+      "caveats": ["directional_only", "coverage_limited"],
+      "reason_codes": ["directional_only", "coverage_limited"]
+    },
+    {
+      "claim_id": "glean.skills.reusable_expertise_operationalized",
+      "claim_source": "glean_value_evidence",
+      "claim_type": "skill_reuse",
+      "claim_readiness": "customer_safe_with_caveats",
+      "language": "Aggregate Skill lifecycle evidence indicates reusable expertise is being operationalized.",
+      "caveats": ["directional_only"],
+      "reason_codes": ["directional_only"]
+    }
+  ],
+  "internal_only_claims": [
+    {
+      "claim_id": "claim:agentic_business_reporting",
+      "claim_source": "strongest_safe_claim",
+      "claim_type": "finance",
+      "claim_readiness": "internal_only",
+      "language": "Internal-only: finance-reviewed evidence supports a bounded value claim for governed agentic business reporting workflows.",
+      "caveats": [
+        "Finance approval is scoped to the synthetic workflow and approved assumptions.",
+        "Do not generalize this value claim to all agentic work.",
+        "Methodology snapshot nielsen_roi_payback_internal_2025_10 is finance-approved but not customer-safe; keep financial value language internal-only."
+      ],
+      "reason_codes": ["Customer-facing ROI/payback language requires customer-safe methodology approval."]
+    }
+  ],
+  "suppressed_claims": [
+    {
+      "claim_id": "glean.roi.customer_value_to_cost",
+      "claim_source": "glean_value_evidence",
+      "claim_type": "roi",
+      "claim_readiness": "suppressed",
+      "language": "Suppressed: roi_translation_not_approved, assumption_dominates_result.",
+      "caveats": ["roi_translation_not_approved", "assumption_dominates_result"],
+      "reason_codes": ["roi_translation_not_approved", "assumption_dominates_result"]
+    },
+    {
+      "claim_id": "glean.mcp.governed_action_boundary",
+      "claim_source": "glean_value_evidence",
+      "claim_type": "governed_action",
+      "claim_readiness": "not_computed",
+      "language": "Suppressed: missing_source.",
+      "caveats": ["missing_source"],
+      "reason_codes": ["missing_source"]
+    }
+  ],
+  "evidence_gaps": [
+    {
+      "gap_id": "glean_value_evidence:mcp_action_boundary",
+      "source": "glean_value_evidence",
+      "gap_type": "mcp_action_boundary",
+      "blocks": "not_computed",
+      "action": "MCP Insights and host attribution must be confirmed before action-boundary claims are customer-safe."
+    },
+    {
+      "gap_id": "glean_value_evidence:control_evidence",
+      "source": "glean_value_evidence",
+      "gap_type": "control_evidence",
+      "blocks": "suppressed",
+      "action": "Runtime control details are withheld until governance approval is recorded."
+    }
+  ],
+  "upgrade_actions": [
+    "Monitor drift in reporting workflow coverage, control evidence, and financial assumptions.",
+    "Revalidate finance approval when pricing, recapture, or workflow scope changes.",
+    "Confirm MCP Insights export availability, host attribution, scopes, and activity-log coverage.",
+    "Confirm which Protect runtime aggregate states may be used for customer-safe control evidence.",
+    "Review high-sensitivity base-rate and productivity recapture assumptions before ROI language is approved.",
+    "Request customer-safe methodology approval before using financial value language with customers."
+  ],
+  "governance_boundaries": [
+    "No raw prompts, raw responses, transcripts, query text, tool payloads, or file contents.",
+    "No direct identifiers, manager views, team rankings, or productivity scoring.",
+    "ROI is downstream of evidence, controls, outcomes, and finance approval.",
+    "The packet packages admissible evidence and claim language; it does not calculate ROI independently."
+  ]
+}

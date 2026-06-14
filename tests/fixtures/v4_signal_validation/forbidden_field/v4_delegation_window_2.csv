@@ -1,0 +1,2 @@
+delegation_bucket,aggregate_user_count,aggregate_bucket_events,aggregate_taxonomy_events,bucket_event_share,p10,p50,p90,p99,user_id
+structured_delegation,66,248,1240,0.2,0.031,0.125,0.25,0.37,u-123

@@ -4,6 +4,9 @@ import {
   emptyPatternDistribution,
   eventBelongsToOrg
 } from "../src/observability_aggregate";
+import { auditSuppressedObservabilityRows } from "../src/suppression_audit_log";
+import { store } from "../src/store";
+import { DEFAULT_PHASE2_THRESHOLDS } from "../src/execution_signals";
 
 const now = new Date("2026-04-10T12:00:00.000Z");
 
@@ -12,7 +15,8 @@ const dispositionPair = (
   runId: string,
   ts1: string,
   ts2: string,
-  verification: boolean
+  verification: boolean,
+  overrides: Record<string, unknown> = {}
 ) => [
   buildFluencyEventRecord(
     {
@@ -25,7 +29,8 @@ const dispositionPair = (
       edit_distance_bucket: "none",
       verification_present: verification,
       time_to_action_ms: 100,
-      run_id: runId
+      run_id: runId,
+      ...overrides
     },
     `e-${runId}-1`
   ),
@@ -40,8 +45,52 @@ const dispositionPair = (
       edit_distance_bucket: "none",
       verification_present: false,
       time_to_action_ms: 100,
-      run_id: runId
+      run_id: runId,
+      ...overrides
     },
+    `e-${runId}-2`
+  )
+];
+
+const workActivityOnlyPair = (
+  workflowId: string,
+  runId: string,
+  ts1: string,
+  ts2: string,
+  options: { ambiguity?: boolean } = {}
+) => [
+  buildFluencyEventRecord(
+    {
+      event_type: "workflow_stage_transition",
+      timestamp: ts1,
+      risk_class: "medium",
+      org_unit: "org:org-1",
+      workflow_id: workflowId,
+      stage_from: "not_started",
+      stage_to: "started",
+      ai_assisted: false,
+      run_id: runId,
+      ...(options.ambiguity
+        ? { ambiguity_flag: true, ambiguity_reason_code: "AMB_EVIDENCE_INSUFFICIENT" }
+        : {})
+    } as any,
+    `e-${runId}-1`
+  ),
+  buildFluencyEventRecord(
+    {
+      event_type: "workflow_stage_transition",
+      timestamp: ts2,
+      risk_class: "medium",
+      org_unit: "org:org-1",
+      workflow_id: workflowId,
+      stage_from: "started",
+      stage_to: "human_work_observed",
+      ai_assisted: false,
+      run_id: runId,
+      ...(options.ambiguity
+        ? { ambiguity_flag: true, ambiguity_reason_code: "AMB_EVIDENCE_INSUFFICIENT" }
+        : {})
+    } as any,
     `e-${runId}-2`
   )
 ];
@@ -74,11 +123,105 @@ describe("buildObservabilityRollup", () => {
     const wfa = rows.find((r) => r.workflow_id === "wf-a");
     expect(wfa?.disclosure).toBe("ALLOWED");
     expect(wfa?.executions_disclosed).toBe(2);
-    expect(wfa?.pattern_distribution?.["Calibrated Fluency"]).toBe(2);
+    expect(wfa?.pattern_distribution?.["Calibrated Fluency"]).toBe("HIGH");
+    expect(Object.values(wfa?.pattern_distribution ?? {}).every((v) => typeof v === "string")).toBe(true);
+    expect(wfa?.reliability_components).toEqual({
+      abandonment_rate: 0,
+      friction_loop_rate: 0,
+      recovery_success_rate: 0,
+      verification_presence_rate: 1
+    });
+    expect(wfa?.reliability_factor).toBe(0.75);
     const wfb = rows.find((r) => r.workflow_id === "wf-b");
     expect(wfb?.disclosure).toBe("SUPPRESSED");
     expect(wfb?.suppression_reasons).toContain("insufficient_disclosed_executions");
     expect(wfb?.pattern_distribution).toBeNull();
+    expect(wfb?.reliability_factor).toBeNull();
+    expect(wfb?.reliability_components).toBeNull();
+  });
+
+  it("gates observability independently by JBTD/persona slice", () => {
+    const events = [];
+    for (let i = 0; i < 2; i += 1) {
+      events.push(
+        ...dispositionPair(
+          "wf-sliced",
+          `large-${i}`,
+          "2026-04-09T00:00:00.000Z",
+          "2026-04-09T00:01:00.000Z",
+          true,
+          { jbtd_id: "manager-review", persona_id: "frontline-manager" }
+        )
+      );
+    }
+    events.push(
+      ...dispositionPair(
+        "wf-sliced",
+        "small-0",
+        "2026-04-09T02:00:00.000Z",
+        "2026-04-09T02:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "exec" }
+      )
+    );
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 2 });
+    const large = rows.find((r) => r.persona_id === "frontline-manager");
+    const small = rows.find((r) => r.persona_id === "exec");
+
+    expect(large).toMatchObject({
+      workflow_id: "wf-sliced",
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager",
+      disclosure: "ALLOWED",
+      executions_disclosed: 2
+    });
+    expect(small).toMatchObject({
+      workflow_id: "wf-sliced",
+      jbtd_id: "manager-review",
+      persona_id: "exec",
+      disclosure: "SUPPRESSED",
+      executions_disclosed: 1
+    });
+  });
+
+  it("derives Phase 2 baselines from each JBTD/persona slice only", () => {
+    const events = [
+      ...dispositionPair(
+        "wf-baseline-sliced",
+        "manager-0",
+        "2026-04-09T00:00:00.000Z",
+        "2026-04-09T00:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "frontline-manager" }
+      ),
+      ...dispositionPair(
+        "wf-baseline-sliced",
+        "exec-0",
+        "2026-04-09T02:00:00.000Z",
+        "2026-04-09T02:01:00.000Z",
+        true,
+        { jbtd_id: "manager-review", persona_id: "exec" }
+      )
+    ];
+    const thresholdInputs: ReadonlyArray<string>[] = [];
+
+    buildObservabilityRollup(events, "org-1", "60d", {
+      now,
+      minDisclosedExecutions: 1,
+      thresholdMapBuilder: (sliceEvents) => {
+        thresholdInputs.push(sliceEvents.map((event) => `${event.jbtd_id ?? ""}:${event.persona_id ?? ""}`));
+        return new Map([["wf-baseline-sliced", DEFAULT_PHASE2_THRESHOLDS]]);
+      }
+    });
+
+    expect(thresholdInputs).toHaveLength(2);
+    expect(thresholdInputs).toEqual(
+      expect.arrayContaining([
+        ["manager-review:frontline-manager", "manager-review:frontline-manager"],
+        ["manager-review:exec", "manager-review:exec"]
+      ])
+    );
   });
 
   it("excludes events outside window", () => {
@@ -91,6 +234,104 @@ describe("buildObservabilityRollup", () => {
     );
     const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 1 });
     expect(rows).toEqual([]);
+  });
+
+  it("surfaces ghost-use only as a residual observability pattern when residual preconditions persist", () => {
+    const events = [];
+    for (let i = 0; i < 5; i += 1) {
+      events.push(
+        ...workActivityOnlyPair("wf-ghost", `ghost-current-${i}`, "2026-04-05T00:00:00.000Z", "2026-04-05T00:01:00.000Z"),
+        ...workActivityOnlyPair("wf-ghost", `ghost-previous-${i}`, "2026-01-15T00:00:00.000Z", "2026-01-15T00:01:00.000Z")
+      );
+    }
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 5 });
+    const row = rows.find((r) => r.workflow_id === "wf-ghost");
+
+    expect(row?.disclosure).toBe("ALLOWED");
+    expect(row?.residual_patterns).toEqual({ ghost_use: "PRESENT" });
+    expect(row?.pattern_distribution?.["Undertrust Avoidance"]).toBe("LOW");
+    expect(row?.allowed_interpretation_hints).toContain("no observed AI evidence in window");
+  });
+
+  it("hard-bypasses ghost-use when positive evidence is present", () => {
+    const events = [
+      ...dispositionPair("wf-positive", "positive-current", "2026-04-05T00:00:00.000Z", "2026-04-05T00:01:00.000Z", true),
+      ...workActivityOnlyPair("wf-positive", "positive-previous", "2026-01-15T00:00:00.000Z", "2026-01-15T00:01:00.000Z")
+    ];
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 1 });
+    const row = rows.find((r) => r.workflow_id === "wf-positive");
+
+    expect(row?.residual_patterns).toEqual({ ghost_use: "ABSENT" });
+    expect(row?.allowed_interpretation_hints).toContain("positive evidence hard-bypass applied");
+  });
+
+  it("suppresses ghost-use when ambiguity dominates the evaluation window", () => {
+    const events = [];
+    for (let i = 0; i < 5; i += 1) {
+      events.push(
+        ...workActivityOnlyPair(
+          "wf-ambiguous",
+          `ambiguous-current-${i}`,
+          "2026-04-05T00:00:00.000Z",
+          "2026-04-05T00:01:00.000Z",
+          { ambiguity: true }
+        ),
+        ...workActivityOnlyPair(
+          "wf-ambiguous",
+          `ambiguous-previous-${i}`,
+          "2026-01-15T00:00:00.000Z",
+          "2026-01-15T00:01:00.000Z",
+          { ambiguity: true }
+        )
+      );
+    }
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 5 });
+    const row = rows.find((r) => r.workflow_id === "wf-ambiguous");
+
+    expect(row?.residual_patterns).toEqual({ ghost_use: "SUPPRESSED" });
+    expect(row?.allowed_interpretation_hints).toContain("ambiguity suppression applied");
+  });
+
+  it("holds ghost-use when the persistence gate is not met", () => {
+    const events = [];
+    for (let i = 0; i < 5; i += 1) {
+      events.push(
+        ...workActivityOnlyPair("wf-no-persist", `persist-current-${i}`, "2026-04-05T00:00:00.000Z", "2026-04-05T00:01:00.000Z")
+      );
+    }
+
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 5 });
+    const row = rows.find((r) => r.workflow_id === "wf-no-persist");
+
+    expect(row?.residual_patterns).toEqual({ ghost_use: "ABSENT" });
+    expect(row?.allowed_interpretation_hints).toContain("required windows persistence gate not met");
+  });
+
+  it("writes suppression audit rows for suppressed workflow disclosures", async () => {
+    store.suppressionAuditLogs.clear();
+    const events = dispositionPair(
+      "wf-audit",
+      "r-audit",
+      "2026-04-09T00:00:00.000Z",
+      "2026-04-09T00:01:00.000Z",
+      false
+    );
+    const rows = buildObservabilityRollup(events, "org-1", "60d", { now, minDisclosedExecutions: 2 });
+    const decidedAt = "2026-04-10T12:30:00.000Z";
+
+    const written = await auditSuppressedObservabilityRows("org-1", rows, decidedAt);
+
+    expect(written).toHaveLength(1);
+    expect(written[0]).toMatchObject({
+      orgId: "org-1",
+      workflowId: "wf-audit",
+      suppressionReason: "insufficient_disclosed_executions",
+      decidedAt
+    });
+    expect(Array.from(store.suppressionAuditLogs.values())).toHaveLength(1);
   });
 });
 

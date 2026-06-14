@@ -1,0 +1,175 @@
+export const GLEAN_CLAIM_PACKET_REAL_SOURCE_READINESS = {
+  schema_version: "RSRM_2026_05",
+  manifest_id: "real_source_readiness:glean_claim_packet:nielsen_synthetic:2026_05",
+  org_id: "org-nielsen-synthetic",
+  window: "quarterly",
+  generated_at: "2026-05-08T00:00:00.000Z",
+  claim_packet_id: "claim_packet:org-nielsen-synthetic:quarterly:glean_time_saves_mvp_2025_10",
+  selected_methodology_snapshot_id: "glean_time_saves_mvp_2025_10",
+  source_inputs: [
+    {
+      source_input_id: "source:methodology_snapshot",
+      label: "Methodology Snapshot Registry",
+      source_type: "methodology_snapshot",
+      source_system: "FluencyTracr",
+      readiness_state: "ready",
+      required_fields: [
+        {
+          field_name: "methodology_snapshot_id",
+          status: "known",
+          impact: "Frozen snapshot reference is available for the selected packet."
+        },
+        {
+          field_name: "approval_state",
+          status: "known",
+          impact: "Approval state can gate financial language."
+        }
+      ],
+      privacy_boundary: {
+        aggregate_only: true,
+        forbidden_fields_absent: true,
+        privacy_review_state: "approved",
+        notes: ["Snapshot metadata is aggregate and methodology-scoped."]
+      },
+      approval_state: "approved_internal",
+      affects_claim_buckets: ["caveated", "internal_only"],
+      blockers: [],
+      upgrade_actions: ["Keep methodology snapshot ids, approval states, and claim effects attached to each packet."]
+    },
+    {
+      source_input_id: "source:value_evidence_pack",
+      label: "Glean Value Evidence Pack inputs",
+      source_type: "value_evidence_pack",
+      source_system: "Glean",
+      readiness_state: "unknown",
+      required_fields: [
+        {
+          field_name: "surface_class",
+          status: "unknown",
+          impact: "Covered surfaces cannot replace fixture evidence until approved aggregate exports are confirmed."
+        }
+      ],
+      privacy_boundary: {
+        aggregate_only: true,
+        forbidden_fields_absent: true,
+        privacy_review_state: "needs_review",
+        notes: ["Real aggregate export fields are not confirmed yet."]
+      },
+      approval_state: "in_review",
+      affects_claim_buckets: ["customer_safe", "caveated", "suppressed_or_not_computed"],
+      blockers: ["Confirm aggregate Glean export fields for surface, Skill, Agent, and artifact evidence."],
+      upgrade_actions: ["Request an admin-exported aggregate sample with only approved metadata fields."]
+    },
+    {
+      source_input_id: "source:mcp_action_boundary",
+      label: "MCP and action boundary evidence",
+      source_type: "mcp_action_boundary",
+      source_system: "Glean",
+      readiness_state: "blocked",
+      required_fields: [
+        {
+          field_name: "host_class",
+          status: "missing",
+          impact: "Action-value claims remain not computed without host attribution."
+        }
+      ],
+      privacy_boundary: {
+        aggregate_only: true,
+        forbidden_fields_absent: true,
+        privacy_review_state: "unknown",
+        notes: ["MCP boundary readiness requires approved aggregate activity metadata."]
+      },
+      approval_state: "not_requested",
+      affects_claim_buckets: ["suppressed_or_not_computed"],
+      blockers: ["MCP/action host attribution, scopes, operation class, and activity coverage are not confirmed."],
+      upgrade_actions: ["Confirm MCP Insights or equivalent aggregate activity export before computing governed action evidence."]
+    },
+    {
+      source_input_id: "source:control_evidence",
+      label: "Protect and runtime control evidence",
+      source_type: "control_evidence",
+      source_system: "Glean",
+      readiness_state: "blocked",
+      required_fields: [
+        {
+          field_name: "policy_coverage_state",
+          status: "blocked",
+          impact: "Security and control-effect claims stay suppressed until policy-owner approval exists."
+        }
+      ],
+      privacy_boundary: {
+        aggregate_only: true,
+        forbidden_fields_absent: true,
+        privacy_review_state: "needs_review",
+        notes: ["Control evidence must be approved by the policy owner before customer-facing use."]
+      },
+      approval_state: "not_requested",
+      affects_claim_buckets: ["suppressed_or_not_computed"],
+      blockers: ["Runtime control aggregate states are not approved for customer-facing value evidence."],
+      upgrade_actions: ["Ask the policy owner to approve which aggregate control states may be used in QBR evidence."]
+    },
+    {
+      source_input_id: "source:customer_safe_financial_approval",
+      label: "Customer-safe financial approval workflow",
+      source_type: "approval_workflow",
+      source_system: "FluencyTracr",
+      readiness_state: "needs_approval",
+      required_fields: [
+        {
+          field_name: "finance_approval_state",
+          status: "known",
+          impact: "Finance approval can support internal-only language."
+        }
+      ],
+      privacy_boundary: {
+        aggregate_only: true,
+        forbidden_fields_absent: true,
+        privacy_review_state: "approved",
+        notes: ["Approval workflow records claim effect and reviewer role, not person-level performance."]
+      },
+      approval_state: "in_review",
+      affects_claim_buckets: ["internal_only", "suppressed_or_not_computed"],
+      blockers: ["Finance-approved language is not customer-safe until customer-safe claim effect is approved."],
+      upgrade_actions: ["Route the selected methodology snapshot for customer-safe financial claim review."]
+    },
+    {
+      source_input_id: "source:outcome_instrumentation_map",
+      label: "Outcome Instrumentation Map",
+      source_type: "outcome_instrumentation_map",
+      source_system: "customer_system",
+      readiness_state: "needs_approval",
+      required_fields: [
+        {
+          field_name: "counterfactual_requirement",
+          status: "unknown",
+          impact: "Causal outcome language remains caveated until counterfactual logic is approved."
+        }
+      ],
+      privacy_boundary: {
+        aggregate_only: true,
+        forbidden_fields_absent: true,
+        privacy_review_state: "needs_review",
+        notes: ["Outcome metrics must stay aggregated at account, domain, workflow, or window level."]
+      },
+      approval_state: "in_review",
+      affects_claim_buckets: ["caveated", "internal_only"],
+      blockers: ["Counterfactual and attribution requirements are not approved for stronger outcome language."],
+      upgrade_actions: [
+        "Have the outcome owner approve baseline, counterfactual, attribution, aggregation, and minimum sample rules."
+      ]
+    }
+  ],
+  ingestion_path: {
+    recommended_path: "admin_exported_aggregate_upload",
+    implementation_state: "not_implemented",
+    rationale:
+      "Start with admin-exported aggregate uploads so reviewers can validate field contracts and privacy boundaries before live access.",
+    next_decision:
+      "Create a separate source-contract proposal after aggregate fields, approvals, retention, and rollback behavior are confirmed."
+  },
+  governance_boundaries: [
+    "Real-source readiness does not implement ingestion.",
+    "Readiness review does not calculate ROI or upgrade claim readiness.",
+    "Only aggregate, metadata-only, account-window evidence may replace synthetic fixtures."
+  ]
+} as const;

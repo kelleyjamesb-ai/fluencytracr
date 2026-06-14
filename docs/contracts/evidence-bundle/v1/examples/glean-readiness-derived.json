@@ -1,0 +1,42 @@
+{
+  "schema_version": "evidence_bundle.v1",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-01T13:00:00.000Z",
+  "suppression": {
+    "k_min": 5,
+    "suppression_applied": true,
+    "suppression_reasons": [
+      "privacy_policy_guardrail"
+    ]
+  },
+  "coverage": {
+    "instrumented_sources": [
+      "workflow_run",
+      "agent_run",
+      "skill_lifecycle"
+    ],
+    "missing_sources": [
+      "mcp_usage",
+      "ai_security"
+    ],
+    "coverage_notes": "Glean readiness non-computable signals: mcp_usage:not_computed; ai_security:suppressed:policy_review_required"
+  },
+  "exposure": {
+    "shadow_ai": "suppressed",
+    "unsanctioned_tool_class": "not_computed"
+  },
+  "calibration": {
+    "verification_presence": "not_computed",
+    "recovery_presence": "present",
+    "escalation_to_safe_path_presence": "not_computed"
+  },
+  "fragility": {
+    "friction_loops_elevated": "not_computed",
+    "rapid_abandonment_elevated": "not_computed",
+    "blind_acceptance_risk_elevated": "not_computed"
+  },
+  "learning": {
+    "trend_direction": "not_computed"
+  }
+}

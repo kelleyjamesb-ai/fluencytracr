@@ -99,6 +99,22 @@ npm run glean:readiness
 
 The default output is `examples/org-northstar-weekly-readiness-map.json`.
 
+## Source Fixture Generator
+
+The source-fixture demo reads strict Glean-style source records from `examples/source-fixtures/`.
+
+Generate the source-derived readiness map:
+
+```bash
+npm run glean:readiness:sources
+```
+
+The default output is `examples/org-northstar-source-derived-readiness-map.json`.
+
+## Unified Telemetry Bridge
+
+`mapReadinessToUnifiedTelemetryCoverage` converts only `present` readiness entries into valid aggregate `UT_2026_04` events. `missing`, `suppressed`, and `not_computed` entries are returned as `non_computable_signals` metadata and are not inferred into telemetry events.
+
 ## Example
 
 ```json

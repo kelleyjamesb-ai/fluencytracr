@@ -1,8 +1,16 @@
 import {
   FluencyTracrV1EventSchema,
   FluencyTracrV1Event,
-  FluencyTracrV1EventName
+  FluencyTracrV1EventName,
+  deriveAivmVerdictFields,
+  type AivmEvidenceGrade,
+  type AivmValueType,
+  type ReliabilityComponents
 } from "@learnaire/shared";
+import {
+  computeReliabilityFactor,
+  reliabilityComponentsFromCanonicalEvents
+} from "../value_realization/reliability_factor";
 
 type FluencyTracrV1SuppressReasonCode =
   | "SUPP_INTERNAL_INVARIANT_FAIL"
@@ -22,6 +30,10 @@ type FluencyTracrV1EvaluationDecision =
       role_class: string;
       window_id: string;
       decision: "SURFACE";
+      value_type: AivmValueType;
+      evidence_grade: AivmEvidenceGrade;
+      reliability_factor: number;
+      reliability_components: ReliabilityComponents;
     }
   | {
       schema_version: "FT_V1_2026_01";
@@ -30,6 +42,10 @@ type FluencyTracrV1EvaluationDecision =
       role_class: string;
       window_id: string;
       decision: "SUPPRESS";
+      value_type: AivmValueType;
+      evidence_grade: AivmEvidenceGrade;
+      reliability_factor: null;
+      reliability_components: null;
       suppress_reason_code: FluencyTracrV1SuppressReasonCode;
     };
 
@@ -103,6 +119,13 @@ const windowLengthDays = (bounds: WindowBounds): number => {
   return Math.floor(diffMs / msPerDay) + 1;
 };
 
+const aivmFieldsForContext = (context: WindowEvaluationContext) =>
+  deriveAivmVerdictFields({
+    canonical_events: context.events,
+    cohort_size: context.cohort_size,
+    window_length_days: context.window_bounds ? windowLengthDays(context.window_bounds) : null
+  });
+
 const isAdjacentWindow = (previous: WindowBounds, current: WindowBounds): boolean => {
   const msPerDay = 1000 * 60 * 60 * 24;
   return previous.window_end.getTime() + msPerDay === current.window_start.getTime();
@@ -119,6 +142,7 @@ const hasOperationalEvidence = (events: FluencyTracrV1Event[]): boolean => {
 const failClosed = (
   context: WindowEvaluationContext
 ): FluencyTracrV1EvaluationDecision => {
+  const aivm = aivmFieldsForContext(context);
   return {
     schema_version: "FT_V1_2026_01",
     org_id: context.cohort.org_id,
@@ -126,6 +150,10 @@ const failClosed = (
     role_class: context.cohort.role_class,
     window_id: context.cohort.window_id,
     decision: "SUPPRESS",
+    value_type: aivm.value_type,
+    evidence_grade: aivm.evidence_grade,
+    reliability_factor: null,
+    reliability_components: null,
     suppress_reason_code: "SUPP_INTERNAL_INVARIANT_FAIL"
   };
 };
@@ -134,6 +162,7 @@ const suppressWith = (
   context: WindowEvaluationContext,
   reason: FluencyTracrV1SuppressReasonCode
 ): FluencyTracrV1EvaluationDecision => {
+  const aivm = aivmFieldsForContext(context);
   return {
     schema_version: "FT_V1_2026_01",
     org_id: context.cohort.org_id,
@@ -141,18 +170,28 @@ const suppressWith = (
     role_class: context.cohort.role_class,
     window_id: context.cohort.window_id,
     decision: "SUPPRESS",
+    value_type: aivm.value_type,
+    evidence_grade: aivm.evidence_grade,
+    reliability_factor: null,
+    reliability_components: null,
     suppress_reason_code: reason
   };
 };
 
 const surface = (context: WindowEvaluationContext): FluencyTracrV1EvaluationDecision => {
+  const aivm = aivmFieldsForContext(context);
+  const reliabilityComponents = reliabilityComponentsFromCanonicalEvents(context.events);
   return {
     schema_version: "FT_V1_2026_01",
     org_id: context.cohort.org_id,
     function_id: context.cohort.function_id,
     role_class: context.cohort.role_class,
     window_id: context.cohort.window_id,
-    decision: "SURFACE"
+    decision: "SURFACE",
+    value_type: aivm.value_type,
+    evidence_grade: aivm.evidence_grade,
+    reliability_factor: computeReliabilityFactor(reliabilityComponents),
+    reliability_components: reliabilityComponents
   };
 };
 

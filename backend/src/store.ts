@@ -9,8 +9,123 @@ import {
   DecisionLedgerEntry,
   DecisionLedgerEvaluationInput,
   UnifiedTelemetryEvent,
+  OutcomeEvidenceRecord,
   resolveFluencyExecutionId} from "@learnaire/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
+
+export type AiValueObjectStoredRecord = {
+  org_id: string;
+  object_type: string;
+  object_id: string;
+  schema_version: string;
+  workflow_family: string | null;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  valid: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AiValueHypothesisStoredRecord = {
+  id: string;
+  org_id: string;
+  value_hypothesis_id: string;
+  schema_version: string;
+  derivation_version: string;
+  workflow_family: string;
+  function_area: string | null;
+  value_route: string;
+  hypothesis_statement: string;
+  business_objective: string;
+  status: string;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueMeasurementPlanStoredRecord = {
+  id: string;
+  org_id: string;
+  measurement_plan_id: string;
+  value_hypothesis_id: string;
+  schema_version: string;
+  derivation_version: string;
+  workflow_family: string;
+  approved_aggregate_grain: string;
+  minimum_cohort_threshold: number;
+  baseline_window_start: string;
+  baseline_window_end: string;
+  comparison_window_start: string | null;
+  comparison_window_end: string | null;
+  coverage_goal: string;
+  readiness_state: string;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_package_requirements: Record<string, unknown>;
+  assumptions: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueSourcePackageRefStoredRecord = {
+  id: string;
+  org_id: string;
+  source_package_id: string;
+  source_package_type: string;
+  schema_version: string;
+  derivation_version: string;
+  measurement_plan_id: string | null;
+  workflow_family: string | null;
+  generated_at: string;
+  covered_window_start: string;
+  covered_window_end: string;
+  approved_aggregate_grain: string;
+  minimum_cohort_threshold: number;
+  evidence_state: string;
+  k_min_posture: Record<string, unknown>;
+  privacy_boundary: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  caveats: string[];
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueEvidenceSnapshotStoredRecord = {
+  id: string;
+  org_id: string;
+  evidence_snapshot_id: string;
+  measurement_plan_id: string;
+  schema_version: string;
+  derivation_version: string;
+  workflow_family: string;
+  snapshot_type: string;
+  coverage_status: string;
+  window_start: string;
+  window_end: string;
+  suppression_default_verdict: string;
+  privacy_aggregate_only: boolean;
+  k_min_threshold_met: boolean;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  required_caveats: string[];
+  blocked_uses: string[];
+  version: number;
+  supersedes_id: string | null;
+  generated_at: string;
+  created_at: string;
+  created_by_role: string;
+};
 
 export type OrgRecord = {
   id: string;
@@ -187,6 +302,7 @@ export type FluencyMetaRecord = {
   confidence: number;
 };
 
+/** Deprecated legacy score dimension record. Retained only for quarantined compatibility storage. */
 export type FluencyDimensionRecord = {
   orgId: string;
   bucketStart: string;
@@ -194,6 +310,7 @@ export type FluencyDimensionRecord = {
   score: number;
 };
 
+/** Deprecated legacy score snapshot record. Retained only for quarantined compatibility storage. */
 export type FluencySnapshotRecord = {
   orgId: string;
   bucketStart: string;
@@ -222,6 +339,57 @@ export type FluencyEventRecord = FluencyEvent & {
   event_id: string;
   /** Normalized execution boundary (PRD Phase 1). */
   execution_id: string;
+};
+
+export type VelocityEventName =
+  | "USER_FREQUENCY_OBSERVED"
+  | "USER_ENGAGEMENT_OBSERVED"
+  | "USER_BREADTH_OBSERVED";
+
+export type VelocityDistributionRecord = {
+  org_id: string;
+  schema_version: "FT_V2_2026_05";
+  event_name: VelocityEventName;
+  workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
+  window_start: string;
+  window_end: string;
+  cohort_size: number;
+  ambiguity_rate?: number;
+  distribution: {
+    p10: number;
+    p50: number;
+    p90: number;
+    p99: number;
+  };
+  calibration_reference: string;
+  privacy: {
+    person_level_fields_included: false;
+  };
+  ingested_at: string;
+};
+
+export type FluencyTracrVerdictRecord = {
+  id: string;
+  org_id: string;
+  cohort_id: string;
+  workflow_id: string;
+  jbtd_id: string | null;
+  persona_id: string | null;
+  slice_key: string;
+  window_start: string;
+  window_end: string;
+  calibration_id: string;
+  verdict: "SURFACE" | "SUPPRESS";
+  suppression_reason: string | null;
+  cohort_size: number;
+  evidence_grade: string;
+  velocity_index: number | null;
+  quality_multiplier: number | null;
+  payload_json: Record<string, unknown>;
+  computed_at: string;
+  created_at: string;
 };
 
 export const buildFluencyEventRecord = (event: FluencyEvent, eventId: string): FluencyEventRecord => ({
@@ -259,6 +427,16 @@ export type AuditLogRecord = {
   timestamp: string;
 };
 
+export type SuppressionAuditLogRecord = {
+  id: string;
+  orgId: string;
+  workflowId: string;
+  executionId: string;
+  suppressionReason: string;
+  diagnostics: Record<string, unknown>;
+  decidedAt: string;
+};
+
 export type ConnectorEventQuarantineRecord = {
   vendor: string;
   connector_name: string;
@@ -272,6 +450,8 @@ export type ConnectorEventQuarantineRecord = {
   sample_events: Array<{ event_type: string; timestamp: string }>;
   received_at: string;
 };
+
+export type OutcomeEvidenceStoredRecord = OutcomeEvidenceRecord;
 
 export type IngestReceiptRecord = {
   idempotencyKey: string;
@@ -398,11 +578,20 @@ class MemoryStore {
   decisionLedgerEntries = new Map<string, DecisionLedgerEntryRecord>();
   decisionLedgerEvaluations = new Map<string, DecisionLedgerEvaluationRecord>();
   auditLogs = new Map<string, AuditLogRecord>();
+  suppressionAuditLogs = new Map<string, SuppressionAuditLogRecord>();
   connectorEventQuarantine = new Map<string, ConnectorEventQuarantineRecord>();
+  outcomeEvidence = new Map<string, OutcomeEvidenceStoredRecord>();
+  velocityDistributions = new Map<string, VelocityDistributionRecord>();
+  fluencyTracrVerdicts = new Map<string, FluencyTracrVerdictRecord>();
   ingestReceipts = new Map<string, IngestReceiptRecord>();
   workflowRegistry = new Map<string, WorkflowRegistryRecord>();
   workflowRegistryCurrent = new Map<string, WorkflowRegistryCurrentRecord>();
   workflowRegistryAudit = new Map<string, WorkflowRegistryAuditRecord>();
+  aiValueObjects = new Map<string, AiValueObjectStoredRecord>();
+  aiValueHypotheses = new Map<string, AiValueHypothesisStoredRecord>();
+  aiValueMeasurementPlans = new Map<string, AiValueMeasurementPlanStoredRecord>();
+  aiValueSourcePackageRefs = new Map<string, AiValueSourcePackageRefStoredRecord>();
+  aiValueEvidenceSnapshots = new Map<string, AiValueEvidenceSnapshotStoredRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
   baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
@@ -436,11 +625,20 @@ class MemoryStore {
     this.decisionLedgerEntries.clear();
     this.decisionLedgerEvaluations.clear();
     this.auditLogs.clear();
+    this.suppressionAuditLogs.clear();
     this.connectorEventQuarantine.clear();
+    this.outcomeEvidence.clear();
+    this.velocityDistributions.clear();
+    this.fluencyTracrVerdicts.clear();
     this.ingestReceipts.clear();
     this.workflowRegistry.clear();
     this.workflowRegistryCurrent.clear();
     this.workflowRegistryAudit.clear();
+    this.aiValueObjects.clear();
+    this.aiValueHypotheses.clear();
+    this.aiValueMeasurementPlans.clear();
+    this.aiValueSourcePackageRefs.clear();
+    this.aiValueEvidenceSnapshots.clear();
     this.workflowVisibilityPolicyConfigs.clear();
     this.baselineResetEvents.clear();
   }

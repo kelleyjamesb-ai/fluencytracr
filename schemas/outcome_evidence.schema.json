@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/outcome_evidence.schema.json",
+  "title": "OutcomeEvidenceCreate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workflow_id",
+    "outcome_metric",
+    "outcome_unit",
+    "period_start",
+    "period_end",
+    "aggregate_value",
+    "cohort_size",
+    "source_system",
+    "jbtd_id",
+    "persona_id"
+  ],
+  "properties": {
+    "workflow_id": { "type": "string", "minLength": 1, "maxLength": 180 },
+    "outcome_metric": { "type": "string", "minLength": 1, "maxLength": 180 },
+    "outcome_unit": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "period_start": { "type": "string", "format": "date-time" },
+    "period_end": { "type": "string", "format": "date-time" },
+    "aggregate_value": { "type": "number" },
+    "cohort_size": { "type": "integer", "minimum": 1 },
+    "source_system": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "jbtd_id": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[a-z0-9_-]{1,64}$" },
+        { "type": "null" }
+      ]
+    },
+    "persona_id": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[a-z0-9_-]{1,64}$" },
+        { "type": "null" }
+      ]
+    },
+    "aggregate_kind": {
+      "anyOf": [
+        { "type": "string", "maxLength": 80 },
+        { "type": "null" }
+      ]
+    },
+    "source_attestation": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

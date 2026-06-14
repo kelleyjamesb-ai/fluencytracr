@@ -10,7 +10,7 @@
     <header class="page-header">
       <div>
         <h1>Executive Dashboard</h1>
-        <p class="subtitle">Organization-level AI fluency signals (aggregated only).</p>
+        <p class="subtitle">Organization-level value-realization evidence (aggregated only).</p>
       </div>
       <div class="actions">
         <button id="export-pdf" class="button">Export PDF</button>
@@ -42,12 +42,12 @@
     </section>
 
     <main id="dashboard-panel" class="grid">
-      <section class="card" aria-labelledby="fluency-title">
+      <section class="card" aria-labelledby="evidence-title">
         <div class="card-header">
-          <h2 id="fluency-title">Fluency Index (Trend)</h2>
-          <span id="fluency-score" class="headline"></span>
+          <h2 id="evidence-title">Evidence Readiness Trend</h2>
+          <span id="evidence-readiness-value" class="headline"></span>
         </div>
-        <svg id="fluency-chart" viewBox="0 0 640 240" role="img" aria-label="Fluency trend"></svg>
+        <svg id="evidence-readiness-chart" viewBox="0 0 640 240" role="img" aria-label="Evidence readiness trend"></svg>
       </section>
 
       <section class="card" aria-labelledby="coverage-title">
@@ -83,8 +83,8 @@
         </div>
         <div class="opportunity-meta">
           <label>
-            Maturity stage
-            <select id="maturity-select">
+            Readiness stage
+            <select id="readiness-select">
               <option value="emerging">Emerging</option>
               <option value="scaling">Scaling</option>
               <option value="advanced">Advanced</option>

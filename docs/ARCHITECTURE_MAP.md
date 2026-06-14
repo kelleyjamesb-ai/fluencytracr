@@ -9,7 +9,7 @@ LearnAIR_Engable_Tool/
 │   │   ├── app.ts                    # Main Express app with all routes
 │   │   ├── store.ts                  # In-memory data store (Map-based)
 │   │   ├── ingest.ts                 # Data ingestion validation
-│   │   ├── fluency_service.ts        # Fluency index calculation
+│   │   ├── fluency_service.ts        # Deprecated legacy score compatibility boundary
 │   │   ├── suppression.ts            # Privacy suppression (k=10)
 │   │   ├── enablement.ts             # Training event processing
 │   │   ├── enablement_rollups.ts     # Enablement aggregation
@@ -323,7 +323,9 @@ export const store = new MemoryStore();
 
 - Defines PostgreSQL schema
 - Currently NOT connected (using in-memory store)
-- Models: `Organization`, `Team`, `FluencyScore`, `AuditEvent`
+- Models: `Organization`, `Team`, `AuditEvent`
+- Deprecated legacy model `FluencyScore` is quarantined and ignored in Prisma
+  Client generation; it is not part of the value-realization evidence layer.
 - To activate: Set `DATABASE_URL` env var and run `prisma migrate dev`
 
 ---
@@ -339,7 +341,7 @@ export const store = new MemoryStore();
 **Test Files**:
 - `ingest.test.ts` - Ingest endpoint validation
 - `suppression.test.ts` - Suppression logic
-- `fluency_index.test.ts` - Fluency calculation
+- `fluency_index.test.ts` - Deprecated legacy score quarantine regression
 - `enablement_rollups.test.ts` - Enablement aggregation
 - `spread_rollups.test.ts` - Spread metrics
 - `roster_import.test.ts` - Roster CSV parsing
@@ -441,7 +443,8 @@ python -m pytest tests/test_vision.py  # Run specific file
 
 ### Files NOT to Modify
 
-- ✅ `backend/src/fluency_service.ts` - Keep fluency index separate
+- ✅ `backend/src/fluency_service.ts` - Deprecated legacy score boundary only;
+  do not re-enable score calculation or customer-facing score export
 - ✅ `backend/src/enablement*.ts` - Training events are separate
 - ✅ `backend/src/spread_metrics.ts` - Adoption spread is separate
 - ✅ Python modules (`src/`, `vision/`) - Keep separate from behavioral signals

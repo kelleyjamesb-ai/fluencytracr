@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="841" height="595" viewBox="0 0 841.89 595.28">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#111827}.m{fill:#4B5563}</style>
+<text x="28" y="43" font-size="21" font-weight="700" fill="#111827">FluencyTracr Measurement Model</text>
+<text x="28" y="61" font-size="10.2" font-weight="400" fill="#4B5563">What Glean collects on its own vs. what Fluency Tracker derives for aggregate AI fluency measurement</text>
+<text x="28" y="78" font-size="8.6" font-weight="700" fill="#111827">Clean boundary: Glean logs events. Fluency Tracker interprets aggregate behavior. Data Science validates whether the interpretation is credible.</text>
+<rect x="28.0" y="92" width="252.62992125984258" height="285" rx="8" fill="#EEF2FF" stroke="#343CED" stroke-width="1.2"/>
+<text x="48.0" y="117" font-size="7.8" font-weight="700" fill="#343CED">Already in Glean</text>
+<text x="40.0" y="148" font-size="12.2" font-weight="700" fill="#111827">1. Glean collects on its own</text>
+<rect x="40.0" y="166" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="48.0" y="182" font-size="8.4" font-weight="700" fill="#111827">WORKFLOW_RUN</text>
+<text x="48.0" y="195" font-size="7.2" font-weight="400" fill="#4B5563">workflow, agent, step, action status; app and run IDs</text>
+<rect x="40.0" y="204" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="48.0" y="220" font-size="8.4" font-weight="700" fill="#111827">Assistant / Chat</text>
+<text x="48.0" y="233" font-size="7.2" font-weight="400" fill="#4B5563">sessions, citations, feedback, joins to workflow runs</text>
+<rect x="40.0" y="242" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="48.0" y="258" font-size="8.4" font-weight="700" fill="#111827">Search / Retrieval</text>
+<text x="48.0" y="271" font-size="7.2" font-weight="400" fill="#4B5563">searches, clicks, retrieved documents, source engagement</text>
+<rect x="40.0" y="280" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="48.0" y="296" font-size="8.4" font-weight="700" fill="#111827">Agent / MCP / Security</text>
+<text x="48.0" y="309" font-size="7.2" font-weight="400" fill="#4B5563">tool use, errors, policy events; export and governance may vary</text>
+<rect x="40.0" y="318" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="48.0" y="334" font-size="8.4" font-weight="700" fill="#111827">Product snapshots</text>
+<text x="48.0" y="347" font-size="7.2" font-weight="400" fill="#4B5563">daily inventory of workflows, actions, action packs, subscriptions</text>
+<text x="40.0" y="366" font-size="8.4" font-weight="700" fill="#343CED">Raw event exhaust and metadata. Not a fluency model by itself.</text>
+<rect x="294.6299212598426" y="92" width="252.62992125984258" height="285" rx="8" fill="#EAF8F0" stroke="#168A53" stroke-width="1.2"/>
+<text x="314.6299212598426" y="117" font-size="7.8" font-weight="700" fill="#168A53">Fluency Tracker layer</text>
+<text x="306.6299212598426" y="148" font-size="12.2" font-weight="700" fill="#111827">2. Fluency Tracker adds</text>
+<rect x="306.6299212598426" y="166" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="314.6299212598426" y="182" font-size="8.4" font-weight="700" fill="#111827">Signal readiness map</text>
+<text x="314.6299212598426" y="195" font-size="7.2" font-weight="400" fill="#4B5563">availability, scrub status, join keys, completeness</text>
+<rect x="306.6299212598426" y="204" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="314.6299212598426" y="220" font-size="8.4" font-weight="700" fill="#111827">Trace reconstruction</text>
+<text x="314.6299212598426" y="233" font-size="7.2" font-weight="400" fill="#4B5563">ordered starts, steps, retries, failures, checks, completions</text>
+<rect x="306.6299212598426" y="242" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="314.6299212598426" y="258" font-size="8.4" font-weight="700" fill="#111827">Behavioral proxies</text>
+<text x="314.6299212598426" y="271" font-size="7.2" font-weight="400" fill="#4B5563">exposure, calibration, friction, recovery, capability growth</text>
+<rect x="306.6299212598426" y="280" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="314.6299212598426" y="296" font-size="8.4" font-weight="700" fill="#111827">Safety gates</text>
+<text x="314.6299212598426" y="309" font-size="7.2" font-weight="400" fill="#4B5563">missingness, ambiguity, k-min cohort, privacy suppression</text>
+<rect x="306.6299212598426" y="318" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="314.6299212598426" y="334" font-size="8.4" font-weight="700" fill="#111827">Evidence output</text>
+<text x="314.6299212598426" y="347" font-size="7.2" font-weight="400" fill="#4B5563">aggregate fluency dimensions, confidence level, trend narrative</text>
+<text x="306.6299212598426" y="366" font-size="8.4" font-weight="700" fill="#168A53">This is the measurement layer: interpretation, not collection.</text>
+<rect x="561.2598425196852" y="92" width="252.62992125984258" height="285" rx="8" fill="#FFF7E6" stroke="#B7791F" stroke-width="1.2"/>
+<text x="581.2598425196852" y="117" font-size="7.8" font-weight="700" fill="#B7791F">DS validation</text>
+<text x="573.2598425196852" y="148" font-size="12.2" font-weight="700" fill="#111827">3. Data Science validates</text>
+<rect x="573.2598425196852" y="166" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="581.2598425196852" y="182" font-size="8.4" font-weight="700" fill="#111827">Construct validity</text>
+<text x="581.2598425196852" y="195" font-size="7.2" font-weight="400" fill="#4B5563">does the proxy mean what we claim?</text>
+<rect x="573.2598425196852" y="204" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="581.2598425196852" y="220" font-size="8.4" font-weight="700" fill="#111827">Proxy confidence</text>
+<text x="581.2598425196852" y="233" font-size="7.2" font-weight="400" fill="#4B5563">coverage, stability, drift, threshold sensitivity</text>
+<rect x="573.2598425196852" y="242" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="581.2598425196852" y="258" font-size="8.4" font-weight="700" fill="#111827">Missingness audit</text>
+<text x="581.2598425196852" y="271" font-size="7.2" font-weight="400" fill="#4B5563">which orgs/windows/features are computable or suppressed</text>
+<rect x="573.2598425196852" y="280" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="581.2598425196852" y="296" font-size="8.4" font-weight="700" fill="#111827">Outcome calibration</text>
+<text x="581.2598425196852" y="309" font-size="7.2" font-weight="400" fill="#4B5563">compare signal movement to enablement and business context</text>
+<rect x="573.2598425196852" y="318" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
+<text x="581.2598425196852" y="334" font-size="8.4" font-weight="700" fill="#111827">Guardrail review</text>
+<text x="581.2598425196852" y="347" font-size="7.2" font-weight="400" fill="#4B5563">avoid person-level, productivity, team-ranking, or causal claims</text>
+<text x="573.2598425196852" y="366" font-size="8.4" font-weight="700" fill="#B7791F">Validate credibility before this becomes a score.</text>
+<rect x="28" y="398" width="785.8897637795277" height="116" rx="8" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+<text x="40" y="425" font-size="11" font-weight="700" fill="#111827">How the passive behaviors map</text>
+<rect x="28" y="532" width="785.8897637795277" height="42" rx="8" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1"/>
+<text x="40" y="558" font-size="9" font-weight="700" fill="#111827">Clean claim:</text>
+<text x="110" y="555" font-size="8.4" font-weight="400" fill="#111827">Glean collects behavioral telemetry. Fluency Tracker converts it into aggregate, validated fluency evidence.</text>
+</svg>

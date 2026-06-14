@@ -1,0 +1,147 @@
+{
+  "schema_version": "FT_AI_VALUE_IMPROVEMENT_LOOP_2026_06",
+  "improvement_loop_id": "improvement_loop_customer_support_capacity_v1",
+  "source_refs": {
+    "roi_scenario_id": "roi_scenario_customer_support_capacity_v1",
+    "readiness_id": "readiness_customer_support_v1"
+  },
+  "workflow": {
+    "workflow_family": "customer_support_case_resolution",
+    "workflow_name": "Support case resolution",
+    "function_area": "Customer Support",
+    "value_route": "CAPACITY_CREATION"
+  },
+  "value_target": {
+    "metric_id": "support_median_resolution_hours",
+    "metric_name": "Median resolution time",
+    "measurement_unit": "hours",
+    "source_system": "Support case management system",
+    "expected_direction": "REDUCE",
+    "current_status": "NOT_IMPROVING",
+    "status_rationale": "Treat the target as not yet improving until the customer-owned comparison window and aggregate work-pattern movement support a stronger readout."
+  },
+  "vbd_context": {
+    "fluency_readiness": "MIXED",
+    "velocity_status": "STALLING",
+    "breadth_status": "LIMITED",
+    "depth_status": "SHALLOW",
+    "evidence_confidence": "MEDIUM",
+    "summary": "Velocity, Breadth, and Depth are aggregate work-pattern context; they guide intervention planning and do not prove business impact."
+  },
+  "likely_blockers": [
+    {
+      "blocker_id": "fluency_readiness_gap",
+      "label": "AI Fluency is mixed",
+      "rationale": "The function may need more confidence, usage quality, or leadership reinforcement before workflow change scales.",
+      "evidence_basis": "Aggregate AI Fluency follow-up by function."
+    },
+    {
+      "blocker_id": "velocity_not_moving",
+      "label": "Velocity is not increasing",
+      "rationale": "The workflow may not be showing enough aggregate AI-enabled activity to expect business metric movement yet.",
+      "evidence_basis": "Aggregate Velocity movement for the selected workflow."
+    },
+    {
+      "blocker_id": "breadth_limited",
+      "label": "Breadth is still limited",
+      "rationale": "AI-enabled work may be concentrated in too few roles or workflow steps to affect the function-level metric.",
+      "evidence_basis": "Aggregate Breadth by function and workflow family."
+    },
+    {
+      "blocker_id": "depth_shallow",
+      "label": "Depth is still shallow",
+      "rationale": "People may be trying AI, but the work pattern has not moved deeply enough into repeatable workflow behavior.",
+      "evidence_basis": "Aggregate Depth evidence for repeated, verified workflow use."
+    },
+    {
+      "blocker_id": "customer_assumptions_unresolved",
+      "label": "Customer assumptions need review",
+      "rationale": "Staffing, rollout, process, or case-mix changes may explain metric movement and need owner review.",
+      "evidence_basis": "Customer-owned assumptions attached to the governed ROI scenario."
+    }
+  ],
+  "recommended_interventions": [
+    {
+      "intervention_id": "targeted_workflow_enablement",
+      "label": "Run targeted workflow enablement",
+      "owner": "AI program owner and workflow owner",
+      "action": "Run a focused enablement cycle on the selected workflow, including examples, verification habits, and leadership reinforcement.",
+      "rationale": "The fastest improvement path is to help the function use AI in the actual workflow, not just increase generic usage."
+    },
+    {
+      "intervention_id": "workflow_redesign_review",
+      "label": "Redesign the AI handoff in the workflow",
+      "owner": "Workflow owner",
+      "action": "Review where AI should enter the workflow and remove steps that keep users returning to the old process.",
+      "rationale": "If Velocity is not increasing, the workflow may need a clearer AI-enabled path before the value metric can move."
+    },
+    {
+      "intervention_id": "expand_role_coverage",
+      "label": "Expand the workflow playbook to more roles",
+      "owner": "Function leader",
+      "action": "Identify adjacent roles in the same function and extend the approved workflow playbook after the pilot group stabilizes.",
+      "rationale": "Breadth must expand at the function level before organization-level value modeling becomes credible."
+    },
+    {
+      "intervention_id": "strengthen_evidence_review",
+      "label": "Strengthen the evidence review",
+      "owner": "Customer data owner",
+      "action": "Review baseline, comparison, source, and operating assumptions before stronger value language changes.",
+      "rationale": "The right move may be better evidence, not a stronger claim."
+    }
+  ],
+  "retest_plan": {
+    "window_label": "30-45 days after intervention",
+    "measurement_plan": "Recheck aggregate AI Fluency, Velocity, Breadth, Depth, and the selected functional metric after the intervention window.",
+    "success_signal": "The function shows improving VBD movement and the customer-owned metric moves in the expected direction.",
+    "decision_after_retest": "Expand, adjust the intervention, strengthen evidence, or hold value language based on aggregate results."
+  },
+  "next_data_needed": [
+    "Aggregate AI Fluency follow-up by function",
+    "Velocity, Breadth, and Depth movement by workflow family",
+    "Median resolution time from Support case management system",
+    "Customer-owned baseline and comparison window review",
+    "Customer-owned assumptions for operating changes during the same period"
+  ],
+  "safe_language": {
+    "allowed_phrases": [
+      "The value target is not improving yet, so the team should adjust the intervention and re-measure.",
+      "VBD movement can guide the next workflow intervention, but customer outcome data owns the value test.",
+      "This is an advisory improvement loop, not proof of ROI or causality."
+    ],
+    "required_caveats": [
+      "All guidance is aggregate-only and should be reviewed with the customer owner.",
+      "VBD and AI Fluency guide intervention planning; they do not prove business impact.",
+      "Customer-owned outcome evidence is required before stronger value language."
+    ],
+    "blocked_claims": [
+      "roi_proof",
+      "causality_claim",
+      "individual_scoring",
+      "team_or_manager_ranking",
+      "hr_analytics",
+      "productivity_measurement",
+      "realized_roi_calculation",
+      "customer_facing_economic_output"
+    ]
+  },
+  "economic_output_policy": {
+    "customer_facing_economic_output": false,
+    "dollarized_output": false,
+    "realized_roi_calculation": false
+  },
+  "governance_boundaries": {
+    "production_connector": false,
+    "dashboard": false,
+    "realized_roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "hris_or_people_analytics": false,
+    "productivity_ranking": false,
+    "raw_prompt_or_response_storage": false,
+    "direct_identifiers": false,
+    "runtime_service": false,
+    "autonomous_customer_actions": false,
+    "customer_facing_economic_output": false
+  }
+}

@@ -70,6 +70,9 @@ eggs/
 .eggs/
 lib/
 lib64/
+# The Python build-output "lib/" rule also matches frontend source; keep it tracked.
+!frontend/src/lib/
+!frontend/src/lib/**
 parts/
 sdist/
 var/
@@ -105,7 +108,15 @@ data/
 # Agent runtime memory and harness checkpoints (generated)
 agent_memory.json
 **/agent_memory.json
+.claude/worktrees/
 artifacts/runtime/*
 !artifacts/runtime/.gitkeep
 artifacts/harness/checkpoints/*
 !artifacts/harness/checkpoints/.gitkeep
+.vercel
+.env*.local
+supabase/.temp/
+
+# Generated dogfood CSV caches
+dogfood-output/v4-trust-signal-availability/
+dogfood-output/v4-skill-read-availability/

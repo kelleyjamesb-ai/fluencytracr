@@ -13,6 +13,8 @@ export type CanonicalEvent = Readonly<{
   event_version: string;
   org_id: string;
   workflow_id: string;
+  jbtd_id?: string | null;
+  persona_id?: string | null;
   timestamp: string;
   actor_type: ActorType;
   context: CanonicalEventContext;
@@ -31,6 +33,8 @@ const TOP_LEVEL_KEYS = new Set([
   "event_version",
   "org_id",
   "workflow_id",
+  "jbtd_id",
+  "persona_id",
   "timestamp",
   "actor_type",
   "context",
@@ -53,6 +57,8 @@ export const CANONICAL_EVENT_JSON_SCHEMA = {
     event_version: { type: "string", minLength: 1 },
     org_id: { type: "string", minLength: 1 },
     workflow_id: { type: "string", minLength: 1 },
+    jbtd_id: { anyOf: [{ type: "string", maxLength: 64, pattern: "^[a-z0-9_-]+$" }, { type: "null" }] },
+    persona_id: { anyOf: [{ type: "string", maxLength: 64, pattern: "^[a-z0-9_-]+$" }, { type: "null" }] },
     timestamp: { type: "string", format: "date-time" },
     actor_type: { enum: ["human", "ai", "system"] },
     context: { type: "object" },
@@ -90,6 +96,10 @@ function isIso8601Timestamp(s: string): boolean {
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.length > 0;
+}
+
+function validOpaqueJoinKey(v: string): boolean {
+  return v.length <= 64 && /^[a-z0-9_-]+$/.test(v);
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -150,6 +160,16 @@ export function validateCanonicalEvent(input: unknown): ValidationResult<Canonic
   if (!isNonEmptyString(input.workflow_id)) {
     errors.push("missing_or_empty:workflow_id");
   }
+  for (const f of ["jbtd_id", "persona_id"] as const) {
+    const v = input[f];
+    if (v !== undefined && v !== null) {
+      if (typeof v !== "string") {
+        errors.push(`invalid_type:${f}`);
+      } else if (!validOpaqueJoinKey(v)) {
+        errors.push(`invalid_join_key:${f}`);
+      }
+    }
+  }
   if (!isNonEmptyString(input.timestamp)) {
     errors.push("missing_or_empty:timestamp");
   } else if (!isIso8601Timestamp(input.timestamp)) {
@@ -190,6 +210,16 @@ export function validateCanonicalEvent(input: unknown): ValidationResult<Canonic
     event_version: input.event_version as string,
     org_id: input.org_id as string,
     workflow_id: input.workflow_id as string,
+    ...(input.jbtd_id === null
+      ? { jbtd_id: null }
+      : isNonEmptyString(input.jbtd_id)
+        ? { jbtd_id: input.jbtd_id }
+        : {}),
+    ...(input.persona_id === null
+      ? { persona_id: null }
+      : isNonEmptyString(input.persona_id)
+        ? { persona_id: input.persona_id }
+        : {}),
     timestamp: input.timestamp as string,
     actor_type: input.actor_type as ActorType,
     context: input.context as CanonicalEventContext,

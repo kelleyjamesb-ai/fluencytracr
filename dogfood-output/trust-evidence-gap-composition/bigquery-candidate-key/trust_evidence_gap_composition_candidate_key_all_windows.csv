@@ -1,0 +1,31 @@
+window_date,gap_component,episode_count,episode_share_of_gap,coverage_caveat
+2026-05-15,ambiguous_boundary_folded,17610216,0.7741431788601807,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-15,span_or_llm_activity_without_governed_outcome,4942001,0.21724982612764043,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-15,ai_activity_without_terminal_outcome,190712,0.008383678765029502,AI work activity exists without terminal aggregate outcome evidence
+2026-05-15,verification_or_feedback_without_observed_resolution,5080,2.233162471493659E-4,verification or feedback exists without observed aggregate resolution
+2026-05-18,ambiguous_boundary_folded,19699289,0.7904120044885787,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-18,span_or_llm_activity_without_governed_outcome,5019988,0.2014214207217637,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-18,ai_activity_without_terminal_outcome,197807,0.00793678530082341,AI work activity exists without terminal aggregate outcome evidence
+2026-05-18,verification_or_feedback_without_observed_resolution,5726,2.2974936494924269E-4,verification or feedback exists without observed aggregate resolution
+2026-05-18,small_cell_withheld,WITHHELD,WITHHELD,rare aggregate component below output floor; exact value must be withheld from shareable readouts
+2026-05-19,ambiguous_boundary_folded,21710590,0.7918316271059468,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-19,span_or_llm_activity_without_governed_outcome,5468170,0.1994358489747135,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-19,ai_activity_without_terminal_outcome,232257,0.008470909275922298,AI work activity exists without terminal aggregate outcome evidence
+2026-05-19,verification_or_feedback_without_observed_resolution,7173,2.616146434173809E-4,verification or feedback exists without observed aggregate resolution
+2026-05-20,ambiguous_boundary_folded,25707512,0.7889440412065671,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-20,span_or_llm_activity_without_governed_outcome,6668885,0.20466302154179128,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-20,ai_activity_without_terminal_outcome,201169,0.006173724000419952,AI work activity exists without terminal aggregate outcome evidence
+2026-05-20,verification_or_feedback_without_observed_resolution,7143,2.1921325122160827E-4,verification or feedback exists without observed aggregate resolution
+2026-05-21,ambiguous_boundary_folded,26053084,0.8129356101406409,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-21,span_or_llm_activity_without_governed_outcome,5761636,0.17978060014193642,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-21,ai_activity_without_terminal_outcome,226420,0.007064993950353206,AI work activity exists without terminal aggregate outcome evidence
+2026-05-21,verification_or_feedback_without_observed_resolution,7011,2.1876456402228746E-4,verification or feedback exists without observed aggregate resolution
+2026-05-21,small_cell_withheld,WITHHELD,WITHHELD,rare aggregate component below output floor; exact value must be withheld from shareable readouts
+2026-05-22,ambiguous_boundary_folded,22762358,0.8041287379899246,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-22,span_or_llm_activity_without_governed_outcome,5359980,0.18935270032442314,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-22,ai_activity_without_terminal_outcome,179103,0.006327194632480934,AI work activity exists without terminal aggregate outcome evidence
+2026-05-22,verification_or_feedback_without_observed_resolution,5417,1.9136705317135516E-4,verification or feedback exists without observed aggregate resolution
+2026-05-26,ambiguous_boundary_folded,25386308,0.81832768742647,"candidate episode-key count; trace, run, action, or session keys may overlap"
+2026-05-26,span_or_llm_activity_without_governed_outcome,5449831,0.17567531281409987,span or LLM activity exists without governed aggregate outcome evidence
+2026-05-26,ai_activity_without_terminal_outcome,179248,0.005778059626308004,AI work activity exists without terminal aggregate outcome evidence
+2026-05-26,verification_or_feedback_without_observed_resolution,6792,2.1894013312217687E-4,verification or feedback exists without observed aggregate resolution

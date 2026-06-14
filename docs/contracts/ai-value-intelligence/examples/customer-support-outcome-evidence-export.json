@@ -1,0 +1,55 @@
+{
+  "schema_version": "FT_AI_VALUE_OUTCOME_EVIDENCE_EXPORT_2026_06",
+  "export_id": "outcome_export_northstar_support_2026_06",
+  "org_id": "org-northstar-enterprise",
+  "workflow_family": "customer_support_case_resolution",
+  "source_system": {
+    "source_type": "support_system",
+    "source_name": "Support case management system",
+    "approved_grain": "aggregate_workflow_window"
+  },
+  "attestation": {
+    "exported_by_role": "support_operations_analyst",
+    "approved_by_role": "customer_support_business_sponsor",
+    "export_date": "2026-06-08",
+    "contains_person_level_data": false,
+    "contains_raw_content": false
+  },
+  "windows": {
+    "baseline": "2026-02-01_to_2026-03-31",
+    "comparison": "2026-04-01_to_2026-05-31"
+  },
+  "metrics": [
+    {
+      "metric_id": "support_median_resolution_hours",
+      "measurement_unit": "hours",
+      "baseline_value": 18.4,
+      "comparison_value": 15.1,
+      "eligible_population": 2300
+    },
+    {
+      "metric_id": "support_backlog_count",
+      "measurement_unit": "cases",
+      "baseline_value": 1240,
+      "comparison_value": 1102,
+      "eligible_population": 2300
+    },
+    {
+      "metric_id": "support_escalation_rate",
+      "measurement_unit": "share",
+      "baseline_value": 0.18,
+      "comparison_value": 0.14,
+      "eligible_population": 2300
+    },
+    {
+      "metric_id": "support_reopen_rate",
+      "measurement_unit": "share",
+      "baseline_value": 0.075,
+      "comparison_value": 0.061,
+      "eligible_population": 2300
+    }
+  ],
+  "review": {
+    "review_state": "SUBMITTED"
+  }
+}

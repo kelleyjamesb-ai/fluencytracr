@@ -8,6 +8,8 @@ import { fixtureIds, happyPathExecution, fscMissingStartExecution } from "../fix
 
 const WORKFLOW_KEYS = new Set([
   "workflow_id",
+  "jbtd_id",
+  "persona_id",
   "classified_execution_count",
   "suppressed_execution_count",
   "pattern_distribution",

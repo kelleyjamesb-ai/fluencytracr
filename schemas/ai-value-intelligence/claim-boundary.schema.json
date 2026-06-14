@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/claim-boundary.schema.json",
+  "title": "AI Value Claim Boundary",
+  "description": "Docs-backed local schema for governed AI Value claim boundary records. This is not a customer-facing economic output.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "claim_boundary_id",
+    "workflow_family",
+    "value_route",
+    "source_readiness_id",
+    "claim_state",
+    "safe_claims",
+    "caveated_claims",
+    "blocked_claims",
+    "required_caveats",
+    "review_state",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_CLAIM_BOUNDARY_2026_06"
+    },
+    "claim_boundary_id": { "type": "string" },
+    "workflow_family": { "type": "string" },
+    "value_route": { "type": "string" },
+    "source_readiness_id": { "type": "string" },
+    "claim_state": {
+      "enum": ["CAVEATED", "INTERNAL_ONLY", "MISSING", "BLOCKED"]
+    },
+    "safe_claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "caveated_claims": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "required_caveats": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "review_state": {
+      "enum": [
+        "READY_FOR_INTERNAL_REVIEW",
+        "HOLD_FOR_CUSTOMER_INPUT",
+        "STOP_FOR_GOVERNANCE_REVIEW"
+      ]
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer_facing_economic_output": { "const": false },
+        "realized_roi_calculation": { "const": false },
+        "causality_claim": { "const": false },
+        "individual_scoring": { "const": false },
+        "hr_analytics": { "const": false },
+        "productivity_measurement": { "const": false }
+      }
+    }
+  }
+}

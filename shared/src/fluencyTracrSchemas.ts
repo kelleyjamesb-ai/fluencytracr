@@ -20,10 +20,32 @@ export type FluencyScope = z.infer<typeof FluencyScopeSchema>;
 export const RiskClassSchema = z.enum(["low", "medium", "high"]);
 export type RiskClass = z.infer<typeof RiskClassSchema>;
 
+export const FluencyJoinKeySchema = z
+  .string()
+  .max(64)
+  .regex(/^[a-z0-9_-]+$/);
+export type FluencyJoinKey = z.infer<typeof FluencyJoinKeySchema>;
+
+export const OptionalFluencyJoinKeySchema = FluencyJoinKeySchema.nullable().optional();
+
 const FluencyEventBaseSchema = z.object({
   timestamp: z.string().min(1),
   risk_class: RiskClassSchema,
   org_unit: z.string().min(1).optional(),
+  jbtd_id: OptionalFluencyJoinKeySchema,
+  persona_id: OptionalFluencyJoinKeySchema,
+  ambiguity_flag: z.boolean().optional(),
+  ambiguity_reason_code: z.enum([
+    "AMB_SCHEMA_MISSING_REQUIRED",
+    "AMB_SCHEMA_INVALID_TYPE",
+    "AMB_SCHEMA_OUT_OF_RANGE",
+    "AMB_TEMPORAL_WINDOW_UNKNOWN",
+    "AMB_TEMPORAL_EVENT_OUTSIDE_WINDOW",
+    "AMB_EVIDENCE_CONFLICT",
+    "AMB_EVIDENCE_INSUFFICIENT",
+    "AMB_SOURCE_UNTRUSTED",
+    "AMB_TOOL_SURFACE_UNKNOWN"
+  ]).optional(),
   /** Platform agent/workflow run identifier (canonical when present). */
   run_id: z.string().min(1).optional(),
   /** Assistant/workflow run correlation (secondary to run_id). */
@@ -72,13 +94,30 @@ export const AiAbandonmentEventSchema = FluencyEventBaseSchema.extend({
   reason_bucket: z.enum(["low_quality", "low_trust", "time_pressure", "unknown"])
 }).strict();
 
-export const FluencyEventSchema = z.discriminatedUnion("event_type", [
+const FluencyEventUnionSchema = z.discriminatedUnion("event_type", [
   AiOutputDispositionEventSchema,
   AiRecoveryLoopEventSchema,
   WorkflowStageTransitionEventSchema,
   VerificationSignalEventSchema,
   AiAbandonmentEventSchema
 ]);
+
+export const FluencyEventSchema = FluencyEventUnionSchema.superRefine((event, context) => {
+  if (event.ambiguity_flag === true && !event.ambiguity_reason_code) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "ambiguity_reason_code must be set when ambiguity_flag is true",
+      path: ["ambiguity_reason_code"]
+    });
+  }
+  if (event.ambiguity_flag !== true && event.ambiguity_reason_code) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "ambiguity_reason_code requires ambiguity_flag true",
+      path: ["ambiguity_reason_code"]
+    });
+  }
+});
 
 export type FluencyEvent = z.infer<typeof FluencyEventSchema>;
 
@@ -410,30 +449,91 @@ export const BoardSnapshotResponseSchema = z.object({
 }).strict();
 export type BoardSnapshotResponse = z.infer<typeof BoardSnapshotResponseSchema>;
 
-/** PRD Phase 4 — fixed key order; counts are not ranks (no sorting by value in API). */
+export const ObservabilityPrevalenceBandSchema = z.enum(["LOW", "MODERATE", "HIGH"]);
+export type ObservabilityPrevalenceBand = z.infer<typeof ObservabilityPrevalenceBandSchema>;
+
+/** PRD Phase 4 — executive boundary exposes categorical prevalence only. */
 export const ObservabilityPatternDistributionSchema = z
   .object({
-    "Calibrated Fluency": z.number().int().nonnegative(),
-    "Blind Efficiency": z.number().int().nonnegative(),
-    "Recovery Maturity": z.number().int().nonnegative(),
-    "Friction Loop": z.number().int().nonnegative(),
-    "Undertrust Avoidance": z.number().int().nonnegative()
+    "Calibrated Fluency": ObservabilityPrevalenceBandSchema,
+    "Blind Efficiency": ObservabilityPrevalenceBandSchema,
+    "Recovery Maturity": ObservabilityPrevalenceBandSchema,
+    "Friction Loop": ObservabilityPrevalenceBandSchema,
+    "Undertrust Avoidance": ObservabilityPrevalenceBandSchema
   })
   .strict();
 export type ObservabilityPatternDistribution = z.infer<typeof ObservabilityPatternDistributionSchema>;
 
+export const ObservabilityResidualPatternsSchema = z
+  .object({
+    ghost_use: z.enum(["PRESENT", "ABSENT", "SUPPRESSED"])
+  })
+  .strict();
+export type ObservabilityResidualPatterns = z.infer<typeof ObservabilityResidualPatternsSchema>;
+
+export const ObservabilityReliabilityComponentsSchema = z
+  .object({
+    abandonment_rate: z.number().min(0).max(1),
+    friction_loop_rate: z.number().min(0).max(1),
+    recovery_success_rate: z.number().min(0).max(1),
+    verification_presence_rate: z.number().min(0).max(1)
+  })
+  .strict();
+export type ObservabilityReliabilityComponents = z.infer<
+  typeof ObservabilityReliabilityComponentsSchema
+>;
+
 export const ObservabilityWorkflowRowSchema = z
   .object({
     workflow_id: z.string().min(1),
+    jbtd_id: OptionalFluencyJoinKeySchema,
+    persona_id: OptionalFluencyJoinKeySchema,
     executions_total: z.number().int().nonnegative(),
     executions_disclosed: z.number().int().nonnegative(),
     executions_suppressed: z.number().int().nonnegative(),
     disclosure: z.enum(["ALLOWED", "SUPPRESSED"]),
     suppression_reasons: z.array(z.string().min(1)),
     pattern_distribution: ObservabilityPatternDistributionSchema.nullable(),
+    residual_patterns: ObservabilityResidualPatternsSchema,
+    reliability_factor: z.number().min(0).max(1).nullable(),
+    reliability_components: ObservabilityReliabilityComponentsSchema.nullable(),
     allowed_interpretation_hints: z.array(z.string().min(1))
   })
-  .strict();
+  .strict()
+  .superRefine((row, context) => {
+    if (row.disclosure === "ALLOWED") {
+      if (row.reliability_factor === null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_factor is required when disclosure is ALLOWED",
+          path: ["reliability_factor"]
+        });
+      }
+      if (row.reliability_components === null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_components is required when disclosure is ALLOWED",
+          path: ["reliability_components"]
+        });
+      }
+    }
+    if (row.disclosure === "SUPPRESSED") {
+      if (row.reliability_factor !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_factor must be null when disclosure is SUPPRESSED",
+          path: ["reliability_factor"]
+        });
+      }
+      if (row.reliability_components !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_components must be null when disclosure is SUPPRESSED",
+          path: ["reliability_components"]
+        });
+      }
+    }
+  });
 export type ObservabilityWorkflowRow = z.infer<typeof ObservabilityWorkflowRowSchema>;
 
 export const ObservabilityResponseSchema = z

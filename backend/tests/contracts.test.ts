@@ -1,7 +1,8 @@
 import request from "supertest";
+import type { FluencyEvent } from "@learnaire/shared";
 
 import { app } from "../src/app";
-import { store } from "../src/store";
+import { buildFluencyEventRecord, insertFluencyEvent, store } from "../src/store";
 
 const schemaHeaders = {
   "x-role": "ADMIN",
@@ -100,6 +101,52 @@ it("accepts valid payloads with schema version", async () => {
   expect(typeof body.execution_ids[0]).toBe("string");
 });
 
+it("accepts taxonomy-free JBTD and persona join keys", async () => {
+  const response = await request(app)
+    .post("/api/events")
+    .set(schemaHeaders)
+    .send({
+      events: [
+        {
+          ...validEventPayload.events[0],
+          jbtd_id: "manager-review",
+          persona_id: "frontline_manager"
+        }
+      ]
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body.ingested).toBe(1);
+});
+
+it("rejects oversize or invalid JBTD and persona join keys at ingest", async () => {
+  const invalidResponse = await request(app)
+    .post("/api/events")
+    .set(schemaHeaders)
+    .send({
+      events: [
+        {
+          ...validEventPayload.events[0],
+          jbtd_id: "Manager Review"
+        }
+      ]
+    });
+  const oversizeResponse = await request(app)
+    .post("/api/events")
+    .set(schemaHeaders)
+    .send({
+      events: [
+        {
+          ...validEventPayload.events[0],
+          persona_id: "a".repeat(65)
+        }
+      ]
+    });
+
+  expect(invalidResponse.status).toBe(400);
+  expect(oversizeResponse.status).toBe(400);
+});
+
 it("rejects traces reconstructed query without workflow_id or execution_id", async () => {
   const response = await request(app)
     .get("/api/traces/reconstructed")
@@ -143,6 +190,51 @@ it("returns reconstructed traces for workflow_id", async () => {
   expect(response.body.traces).toHaveLength(1);
   expect(response.body.traces[0].execution_id).toContain("run-xyz");
   expect(response.body.traces[0].retry_sequences.length).toBeGreaterThanOrEqual(1);
+});
+
+it("scopes reconstructed traces to the authenticated org", async () => {
+  store.orgs.set("org-2", { id: "org-2", name: "Org 2", minGroupSize: 1, createdAt: "now" });
+
+  const org1Event = buildFluencyEventRecord(
+    {
+      event_type: "ai_output_disposition",
+      timestamp: "2024-01-04T00:00:00.000Z",
+      risk_class: "low",
+      workflow_id: "workflow-shared",
+      org_unit: "org:org-1",
+      disposition: "accepted",
+      edit_distance_bucket: "none",
+      verification_present: false,
+      time_to_action_ms: 100,
+      run_id: "run-org-1"
+    } as FluencyEvent,
+    "trace-org-1"
+  );
+  const org2Event = buildFluencyEventRecord(
+    {
+      event_type: "ai_output_disposition",
+      timestamp: "2024-01-04T00:01:00.000Z",
+      risk_class: "low",
+      workflow_id: "workflow-shared",
+      org_unit: "org:org-2",
+      disposition: "accepted",
+      edit_distance_bucket: "none",
+      verification_present: false,
+      time_to_action_ms: 100,
+      run_id: "run-org-2"
+    } as FluencyEvent,
+    "trace-org-2"
+  );
+  insertFluencyEvent(org1Event);
+  insertFluencyEvent(org2Event);
+
+  const response = await request(app)
+    .get("/api/traces/reconstructed?workflow_id=workflow-shared")
+    .set({ "x-role": "ADMIN", "x-org-id": "org-1" });
+
+  expect(response.status).toBe(200);
+  expect(response.body.traces).toHaveLength(1);
+  expect(response.body.traces[0].execution_id).toContain("run-org-1");
 });
 
 it("returns signals and pattern when include_signals=true and disclosure ALLOWED (>=2 events)", async () => {
@@ -218,7 +310,8 @@ it("suppresses interpretive fields when include_signals=true and disclosure rule
   expect(response.body.traces[0].signals).toBeNull();
   expect(response.body.traces[0].pattern_confidence_tier).toBeNull();
   expect(response.body.traces[0].ordered_event_ids.length).toBe(1);
-  expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");});
+  expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");
+});
 
 it("accepts configured compatibility versions and marks deprecated versions", async () => {
   process.env.SCHEMA_ACCEPTED_VERSIONS = "0.1,0.2";

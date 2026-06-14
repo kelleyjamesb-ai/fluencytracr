@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Fluency &amp; ROI: Whole System Approach</title>
+<style>
+  :root {
+    --navy: #0b1f4b;
+    --blue: #2748c4;
+    --blue-soft: #eef2ff;
+    --green: #1c7c43;
+    --green-soft: #e8f5ec;
+    --orange: #e8930c;
+    --orange-soft: #fff4e0;
+    --steel: #1e3a8a;
+    --steel-soft: #e7edfb;
+    --purple: #6d28d9;
+    --purple-soft: #f3ecfd;
+    --ink: #11182e;
+    --muted: #4b5670;
+    --line: #d6dcea;
+    --red: #c2272d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "DM Sans", "Inter", "Helvetica Neue", Arial, sans-serif;
+    background: #ffffff;
+    color: var(--ink);
+    padding: 28px 32px 24px;
+    min-width: 1480px;
+  }
+  .page { max-width: 1560px; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  header { text-align: center; margin-bottom: 14px; }
+  header h1 { font-size: 30px; font-weight: 800; letter-spacing: 0.4px; color: #111; }
+  header .sub { font-size: 16px; font-weight: 700; color: var(--blue); margin-top: 2px; }
+  header .loop { font-size: 13px; color: var(--ink); margin-top: 6px; }
+  header .loop b { font-weight: 700; }
+
+  /* ---------- generic band ---------- */
+  .band { display: flex; gap: 10px; margin-bottom: 12px; align-items: stretch; }
+  .band-label {
+    flex: 0 0 132px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    line-height: 1.25;
+    padding: 14px 12px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .band-label small { font-weight: 600; font-size: 11px; opacity: 0.85; margin-top: 6px; }
+  .band-body { flex: 1; display: flex; gap: 8px; }
+
+  /* ---------- lifecycle chevrons ---------- */
+  .lifecycle .band-label { background: var(--navy); }
+  .chevrons { flex: 1; display: flex; gap: 4px; }
+  .chev {
+    flex: 1;
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 10px 10px 14px;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 10px 50%);
+  }
+  .chev:first-child { clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%); }
+  .chev .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--blue); color: var(--blue);
+    font-size: 11px; font-weight: 700; margin-bottom: 4px;
+  }
+  .chev h3 { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .chev p { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+
+  /* ---------- card rows ---------- */
+  .card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex; flex-direction: column;
+    font-size: 11px;
+  }
+  .card .icon { font-size: 18px; margin-bottom: 4px; }
+  .card h3 { font-size: 12.5px; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+  .card p, .card li { font-size: 11px; color: var(--muted); line-height: 1.35; }
+  .card ul { list-style: none; margin-top: 2px; }
+  .card ul li::before { content: "• "; color: var(--muted); }
+  .card .usenow { margin-top: auto; padding-top: 6px; font-size: 11px; }
+  .card .usenow b { display: block; color: var(--green); font-weight: 800; }
+
+  .have .band-label { background: var(--green); }
+  .have .card { background: #fdfffd; border-color: #cfe7d6; }
+
+  .build .band-label { background: var(--orange); }
+  .build .card { background: #fffdf7; border-color: #f3dcae; }
+
+  .data .band-label { background: var(--steel); }
+  .data .card { background: #fbfcff; border-color: #ccd6ee; }
+
+  .pillars {
+    flex: 1.15;
+    background: var(--green-soft);
+    border: 1px solid #b9dcc4;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .pillars h3 { font-size: 13px; font-weight: 800; text-align: center; color: var(--green); }
+  .pillars .cap { font-size: 10.5px; text-align: center; color: var(--muted); margin-bottom: 8px; }
+  .pillars .pill {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid #cfe7d6; border-radius: 6px;
+    padding: 7px 9px; margin-top: 6px; font-size: 11.5px; font-weight: 600;
+  }
+  .pillars .pill span.dot { color: var(--green); font-size: 14px; }
+
+  /* ---------- connect strip ---------- */
+  .connect-strip {
+    text-align: center; font-size: 12px; font-weight: 600; color: var(--ink);
+    margin: -4px 0 12px 142px;
+  }
+  .connect-strip span { margin: 0 10px; }
+  .connect-strip .arrow { display: block; color: var(--steel); font-size: 14px; margin-top: 2px; }
+
+  /* ---------- end state ---------- */
+  .end .band-label { background: var(--purple); }
+  .endgrid { flex: 1; display: flex; gap: 8px; }
+  .endcol {
+    flex: 1; border: 1.5px solid #d8c8f5; border-radius: 8px; background: #fdfbff;
+    padding: 8px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .endcol > h3 {
+    background: var(--purple-soft); color: var(--purple);
+    font-size: 11.5px; font-weight: 800; text-align: center;
+    border-radius: 5px; padding: 5px 4px; line-height: 1.2;
+  }
+  .endcol .note { font-size: 10.5px; color: var(--muted); text-align: center; }
+  .minicards { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .mini {
+    background: #fff; border: 1px solid #e2d8f5; border-radius: 5px;
+    padding: 6px; font-size: 10px; color: var(--muted); text-align: center;
+  }
+  .mini b { display: block; font-size: 10.5px; color: var(--ink); margin-bottom: 2px; }
+  .engines {
+    background: var(--purple); color: #fff; border-radius: 5px;
+    padding: 5px 6px; font-size: 10px; text-align: center;
+  }
+  .engines b { display: block; font-size: 10.5px; margin-bottom: 2px; }
+  .checklist { list-style: none; }
+  .checklist li {
+    background: #fff; border: 1px solid #e2d8f5; border-radius: 5px;
+    padding: 5px 7px; margin-top: 4px; font-size: 10.5px; font-weight: 600;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .checklist li::before { content: "✓"; color: var(--purple); font-weight: 800; }
+  .legend { flex: 0 0 130px; }
+  .legend .key {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 10.5px; font-weight: 600; margin-top: 6px;
+  }
+  .legend .swatch { width: 16px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); }
+  .flow-arrow { align-self: center; color: var(--purple); font-size: 18px; font-weight: 800; flex: 0 0 auto; }
+
+  /* ---------- foundations + claims ---------- */
+  .foundations { display: flex; gap: 10px; margin-bottom: 12px; }
+  .foundations .band-label { background: #f4f6fb; color: var(--ink); border: 1px solid var(--line); }
+  .found-items {
+    flex: 1.3; display: flex; flex-wrap: wrap; align-content: center; gap: 6px 18px;
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: #fbfcfe;
+  }
+  .found-items span { font-size: 11.5px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .claims {
+    flex: 1; border: 1.5px dashed var(--purple); border-radius: 8px;
+    padding: 10px 12px; background: #fefcff;
+  }
+  .claims h3 { text-align: center; font-size: 12.5px; font-weight: 800; color: var(--purple); margin-bottom: 6px; }
+  .claims .cols { display: flex; gap: 14px; }
+  .claims .col { flex: 1; }
+  .claims .col h4 { font-size: 11px; font-weight: 800; margin-bottom: 3px; }
+  .claims .can h4 { color: var(--green); }
+  .claims .cant h4 { color: var(--red); }
+  .claims li { font-size: 10.5px; color: var(--muted); line-height: 1.45; list-style: none; }
+  .claims .can li::before { content: "• "; }
+  .claims .cant li::before { content: "• "; }
+
+  /* ---------- footer ---------- */
+  .goal {
+    background: var(--navy); color: #fff; border-radius: 8px;
+    text-align: center; font-size: 13.5px; padding: 11px 16px;
+  }
+  .goal b { font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>AI FLUENCY &amp; ROI: WHOLE SYSTEM APPROACH</h1>
+    <div class="sub">From People &amp; Workflows to Measurable Business Value</div>
+    <div class="loop">A Closed-Loop System: <b>Discover → Design → Pilot → Implement → Measure → Realize → Expand → Renew</b></div>
+  </header>
+
+  <!-- ============ ROW 1: LIFECYCLE ============ -->
+  <section class="band lifecycle">
+    <div class="band-label">VALUE REALIZATION LIFECYCLE<small>(BVA → BVR)</small></div>
+    <div class="chevrons">
+      <div class="chev"><span class="num">1</span><h3>CURRENT STATE</h3><p>As-Is Workflows, Challenges, Baselines</p></div>
+      <div class="chev"><span class="num">2</span><h3>DISCOVER &amp; BLUEPRINT</h3><p>Day-in-the-Life, Process Discovery, Value Drivers</p></div>
+      <div class="chev"><span class="num">3</span><h3>FUTURE STATE DESIGN</h3><p>To-Be Workflows, Use Cases, Metrics</p></div>
+      <div class="chev"><span class="num">4</span><h3>PILOT / POC</h3><p>Validate Value, Refine, Iterate</p></div>
+      <div class="chev"><span class="num">5</span><h3>IMPLEMENT &amp; ADOPT</h3><p>Deploy, Enable, Drive Adoption</p></div>
+      <div class="chev"><span class="num">6</span><h3>MEASURE &amp; REALIZE</h3><p>Outcomes, ROI, Value Realization</p></div>
+      <div class="chev"><span class="num">7</span><h3>EXPAND &amp; RENEW</h3><p>Business Case for Renewal, New Use Cases</p></div>
+    </div>
+  </section>
+
+  <!-- ============ ROW 2: WHAT WE HAVE ============ -->
+  <section class="band have">
+    <div class="band-label">WHAT WE HAVE TODAY<small>(Use Now)</small></div>
+    <div class="band-body">
+      <div class="card"><div class="icon">🔷</div><h3>Glean Platform</h3>
+        <p>Enterprise Search, AI Assistant, Knowledge Graph, Connectors</p>
+        <div class="usenow"><b>Use now:</b>Capture work signals, answer questions, index content</div></div>
+      <div class="card"><div class="icon">🔌</div><h3>MCP (Model Context Protocol)</h3>
+        <p>Secure context &amp; tool access, standard for AI system integrations</p>
+        <div class="usenow"><b>Use now:</b>Connect external tools &amp; systems to agents consistently</div></div>
+      <div class="card"><div class="icon">🧭</div><h3>Explore Your AI Fluency</h3>
+        <p>Measures AI fluency across People, Skills, Mindset, Behavior</p>
+        <div class="usenow"><b>Use now:</b>Assess readiness &amp; identify capability gaps at person level</div></div>
+      <div class="card"><div class="icon">📡</div><h3>FluencyTracr</h3>
+        <p>Aggregate telemetry from Glean + MCP, evidence store, dashboards (Org/Team/Persona)</p>
+        <div class="usenow"><b>Use now:</b>Track aggregate adoption &amp; usage patterns (safe, privacy-first)</div></div>
+      <div class="card"><div class="icon">🗺️</div><h3>Blueprint (Process Discovery)</h3>
+        <p>Discovery, Visioning, Day-in-the-Life, Executive Validation, Glean Lab</p>
+        <div class="usenow"><b>Use now:</b>Run workshops, build use case &amp; workflow evidence</div></div>
+      <div class="card"><div class="icon">📚</div><h3>Process Library</h3>
+        <p>7+ Functional Domains with 60+ workflows (e.g., Sales, Eng, HR, CS, Support, etc.)</p>
+        <div class="usenow"><b>Use now:</b>Leverage standard processes &amp; workflow catalog</div></div>
+      <div class="card"><div class="icon">📈</div><h3>Metrics Library</h3>
+        <p>Outcome metrics by function (Sales, People/HR, IT, Eng, CS, Marketing)</p>
+        <div class="usenow"><b>Use now:</b>Leverage proven metric definitions &amp; benchmarks</div></div>
+      <div class="pillars">
+        <h3>VALUE PILLARS</h3>
+        <div class="cap">(What We Already Cover)</div>
+        <div class="pill"><span class="dot">⏱</span> Technology Cost Savings</div>
+        <div class="pill"><span class="dot">🔎</span> Search &amp; Assistant Productivity</div>
+        <div class="pill"><span class="dot">⚙️</span> Workflow Acceleration</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROW 3: WHAT WE NEED TO BUILD ============ -->
+  <section class="band build">
+    <div class="band-label">WHAT WE NEED TO BUILD<small>(Conjunction)</small></div>
+    <div class="band-body">
+      <div class="card"><div class="icon">🤖</div><h3>Automated Workflow Instrumentation</h3>
+        <ul><li>Auto detect workflow steps from system events</li><li>Step-level telemetry</li><li>Time on task capture</li><li>Handoff / wait time</li><li>Exception capture</li></ul></div>
+      <div class="card"><div class="icon">🗄️</div><h3>Outcome Data Connectors &amp; Lake</h3>
+        <ul><li>Pre-built connectors to HRIS, CRM, ITSM, CS tools, Finance, etc.</li><li>Data normalization layer</li><li>Warehouse / lake for outcome + usage data</li></ul></div>
+      <div class="card"><div class="icon">🧬</div><h3>Causal Attribution Engine</h3>
+        <ul><li>Baseline vs. post-AI</li><li>Control groups</li><li>Difference-in-differences</li><li>Statistical significance</li><li>Seasonality controls</li></ul></div>
+      <div class="card"><div class="icon">💲</div><h3>ROI &amp; Value Calculation Engine</h3>
+        <ul><li>Metric to $ mapping</li><li>Labor cost models</li><li>Capacity &amp; quality value</li><li>Risk/compliance value</li><li>Scenario modeling</li></ul></div>
+      <div class="card"><div class="icon">🌐</div><h3>Org Science Analytics</h3>
+        <ul><li>Change readiness scoring</li><li>Leadership influence</li><li>Network centrality</li><li>Culture &amp; trust signals</li><li>Team effectiveness</li><li>Topology mapping</li></ul></div>
+      <div class="card"><div class="icon">🧠</div><h3>Human Capital Science Layer</h3>
+        <ul><li>Skills ontology &amp; taxonomy</li><li>Role/skill mapping</li><li>Learning &amp; growth paths</li><li>Career mobility impact</li><li>Retention &amp; attrition lift</li><li>Fluency growth modeling</li></ul></div>
+      <div class="card"><div class="icon">📶</div><h3>Experience &amp; Adoption Intelligence</h3>
+        <ul><li>In-app feedback loop</li><li>Sentiment &amp; satisfaction</li><li>Adoption cohorts</li><li>Help effectiveness</li><li>Nudges &amp; interventions</li></ul></div>
+      <div class="card"><div class="icon">👁️</div><h3>Agent &amp; Automation Observability</h3>
+        <ul><li>Agent performance</li><li>Task success / failure</li><li>Confidence &amp; escalations</li><li>Cost per task</li><li>Human-in-the-loop capture</li></ul></div>
+      <div class="card"><div class="icon">📋</div><h3>Planning &amp; Scenario Workbench</h3>
+        <ul><li>What-if scenarios</li><li>Capacity modeling</li><li>Investment planning</li><li>Value roadmap</li><li>Board-ready reports</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ============ ROW 4: DATA FOUNDATION ============ -->
+  <section class="band data">
+    <div class="band-label">DATA FOUNDATION<small>(What We Need to Connect)</small></div>
+    <div class="band-body">
+      <div class="card"><div class="icon">👥</div><h3>People / HR Data</h3><p>HRIS, roles, tenure, skills, certs, learning/LMS, performance, engagement</p></div>
+      <div class="card"><div class="icon">💰</div><h3>Sales Data</h3><p>CRM, pipeline, opportunities, activities, bookings, revenue, win rate</p></div>
+      <div class="card"><div class="icon">&lt;/&gt;</div><h3>Engineering Data</h3><p>Jira, GitHub, CI/CD, code commits, PRs, builds, deploys, quality metrics</p></div>
+      <div class="card"><div class="icon">💬</div><h3>Support / CS Data</h3><p>Tickets, cases, NPS/CSAT, resolutions, knowledge usage, escalations</p></div>
+      <div class="card"><div class="icon">🖥️</div><h3>IT / Operations Data</h3><p>ITSM, incidents, changes, asset mgmt, cloud spend, automation usage</p></div>
+      <div class="card"><div class="icon">📣</div><h3>Marketing Data</h3><p>Campaigns, leads, content performance, web analytics, conversion rates</p></div>
+      <div class="card"><div class="icon">🧾</div><h3>Finance / Procurement Data</h3><p>Spend, contracts, vendor performance, cost of services, budget vs actuals</p></div>
+      <div class="card"><div class="icon">📝</div><h3>Surveys &amp; Signals</h3><p>Surveys, feedback, fluency assessments, pulse, sentiment, open feedback</p></div>
+    </div>
+  </section>
+  <div class="connect-strip">
+    <span>Secure Ingestion</span>•<span>Identity Resolution</span>•<span>Data Quality &amp; Lineage</span>•<span>Semantic Layer</span>
+    <span class="arrow">▼</span>
+  </div>
+
+  <!-- ============ ROW 5: END STATE ============ -->
+  <section class="band end">
+    <div class="band-label">END STATE: THE WHOLE SYSTEM<small>(When Built)</small></div>
+    <div class="endgrid">
+      <div class="endcol" style="flex:0.85">
+        <h3>1. UNIFIED SIGNALS LAYER</h3>
+        <div class="note">(People • Process • Technology • Data)</div>
+        <div class="minicards">
+          <div class="mini">👥<b>People</b></div>
+          <div class="mini">🔁<b>Process</b></div>
+          <div class="mini">🧱<b>Technology</b></div>
+          <div class="mini">🗄️<b>Data</b></div>
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="endcol" style="flex:1.35">
+        <h3>2. INTELLIGENCE &amp; INSIGHTS LAYER</h3>
+        <div class="minicards">
+          <div class="mini"><b>Descriptive</b>(What Happened?)</div>
+          <div class="mini"><b>Diagnostic</b>(Why Happened?)</div>
+          <div class="mini"><b>Predictive</b>(What Will Happen?)</div>
+          <div class="mini"><b>Prescriptive</b>(What Should We Do?)</div>
+        </div>
+        <div class="engines"><b>MODELS &amp; ENGINES</b>
+          Attribution Models • ROI &amp; Value Models • Adoption &amp; Change Models • Workload &amp; Capacity Models • Risk &amp; Impact Models</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="endcol" style="flex:1.1">
+        <h3>3. OUTCOMES &amp; VALUE REALIZATION</h3>
+        <ul class="checklist">
+          <li>Time Saved / Capacity Created</li>
+          <li>Cost Savings / Cost Avoidance</li>
+          <li>Quality Improvement / Error Reduction</li>
+          <li>Risk Reduction / Compliance</li>
+          <li>Revenue Impact / Growth</li>
+          <li>Employee Experience / Retention</li>
+        </ul>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="endcol" style="flex:1.15">
+        <h3>4. DECISION &amp; ACTION LAYER</h3>
+        <div class="minicards">
+          <div class="mini">🧑‍💼<b>Executive &amp; Leadership Dashboards</b></div>
+          <div class="mini">🔔<b>Alerts &amp; Interventions</b></div>
+          <div class="mini">👥<b>Team &amp; Manager Dashboards</b></div>
+          <div class="mini">🧭<b>Recommendations &amp; Next Best Actions</b></div>
+          <div class="mini">💡<b>Persona Insights</b></div>
+          <div class="mini">📒<b>Playbooks &amp; Workflows</b></div>
+        </div>
+      </div>
+      <div class="endcol" style="flex:0.95">
+        <h3>5. BUSINESS IMPACT</h3>
+        <ul class="checklist">
+          <li>Measurable ROI</li>
+          <li>Sustained Adoption</li>
+          <li>Workforce Capability &amp; Fluency Lift</li>
+          <li>Operational Excellence</li>
+          <li>Strategic Advantage</li>
+        </ul>
+      </div>
+      <div class="endcol legend">
+        <h3>LEGEND</h3>
+        <div class="key"><span class="swatch" style="background:var(--green-soft)"></span>Use Now</div>
+        <div class="key"><span class="swatch" style="background:var(--orange-soft)"></span>Build / Develop</div>
+        <div class="key"><span class="swatch" style="background:var(--steel-soft)"></span>Connect Data</div>
+        <div class="key"><span class="swatch" style="background:var(--purple-soft)"></span>End State</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROW 6: FOUNDATIONS + CLAIM BOUNDARIES ============ -->
+  <section class="foundations">
+    <div class="band-label">CROSS-CUTTING FOUNDATIONS<small>(Required)</small></div>
+    <div class="found-items">
+      <span>🛡 Data Governance &amp; Security</span>
+      <span>🔒 Privacy &amp; Compliance (GDPR, SOC2, ISO)</span>
+      <span>⚙️ Explainability &amp; Trust</span>
+      <span>⚖️ Bias, Fairness &amp; Responsible AI</span>
+      <span>🧩 Semantic Layer &amp; Ontology</span>
+      <span>🔗 API &amp; Integration Framework</span>
+      <span>📡 Monitoring &amp; Observability</span>
+    </div>
+    <div class="claims">
+      <h3>CLAIM BOUNDARIES (FluencyTracr Principles)</h3>
+      <div class="cols">
+        <div class="col can">
+          <h4>✅ WE CAN CLAIM (with evidence)</h4>
+          <ul>
+            <li>Usage (aggregate)</li>
+            <li>Feature adoption</li>
+            <li>Documented outcomes</li>
+            <li>Time saved (self-reported + system)</li>
+          </ul>
+        </div>
+        <div class="col cant">
+          <h4>⛔ WE DO NOT CLAIM</h4>
+          <ul>
+            <li>ROI without validated outcomes</li>
+            <li>Causality without modeling</li>
+            <li>Individual productivity</li>
+            <li>Employee scoring / ranking</li>
+            <li>Team/Individual comparisons</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="goal"><b>WHOLE SYSTEM GOAL:</b>&nbsp; Connect the dots from AI usage to business outcomes through people, processes, and data to drive measurable ROI and sustainable impact.</div>
+
+</div>
+</body>
+</html>

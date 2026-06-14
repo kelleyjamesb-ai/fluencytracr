@@ -7,7 +7,10 @@ import { groupEventsByExecution, reconstructTrace, sortEventsByTimestamp } from 
  * Distributions are internal; numeric baselines are never exposed on APIs.
  */
 
-export const WORKFLOW_BASELINE_MIN_EXECUTIONS = Number(process.env.WORKFLOW_BASELINE_MIN_EXECUTIONS ?? 3);
+export const WORKFLOW_BASELINE_MIN_EXECUTIONS = 3;
+
+/** Rolling cap per workflow when deriving internal percentiles (blueprint §9–10). */
+export const WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS = 200;
 
 /** Matches latency span in computeExecutionSignals (no cross-module import to avoid cycles). */
 const latencyMsForOrdered = (ordered: FluencyEventRecord[]): number | null => {
@@ -57,7 +60,7 @@ export const thresholdsFromExecutionSamples = (
     return { ...BASELINE_FALLBACK };
   }
   const sortedI = [...iterationDepths].sort((a, b) => a - b);
-  const iteration_low = Math.max(0, Math.floor(percentileLinear(sortedI, 0.5)));
+  const iteration_low = Math.max(0, Math.floor(percentileLinear(sortedI, 0.25)));
   let iteration_high = Math.ceil(percentileLinear(sortedI, 0.75));
   iteration_high = Math.max(iteration_low + 1, iteration_high);
 
@@ -85,19 +88,29 @@ export const buildWorkflowPhase2ThresholdMap = (windowedEvents: FluencyEventReco
 
   const map = new Map<string, Phase2Thresholds>();
   for (const [workflowId, wfEvents] of byWorkflow) {
-    const iterationDepths: number[] = [];
-    const latencyMsValues: number[] = [];
     const byExec = groupEventsByExecution(wfEvents);
+    type Sample = { iteration: number; latencyMs: number | null; latestTs: number };
+    const samples: Sample[] = [];
     for (const [, group] of byExec) {
       const trace = reconstructTrace(group);
       if (!trace) {
         continue;
       }
-      iterationDepths.push(trace.retry_sequences.length);
       const ordered = sortEventsByTimestamp(group);
       const lat = latencyMsForOrdered(ordered);
-      if (lat !== null) {
-        latencyMsValues.push(lat);
+      const latestTs = ordered.reduce((max, e) => {
+        const t = Date.parse(e.timestamp);
+        return Number.isFinite(t) ? Math.max(max, t) : max;
+      }, 0);
+      samples.push({ iteration: trace.retry_sequences.length, latencyMs: lat, latestTs });
+    }
+    samples.sort((a, b) => b.latestTs - a.latestTs);
+    const capped = samples.slice(0, WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS);
+    const iterationDepths = capped.map((s) => s.iteration);
+    const latencyMsValues: number[] = [];
+    for (const s of capped) {
+      if (s.latencyMs !== null) {
+        latencyMsValues.push(s.latencyMs);
       }
     }
     map.set(

@@ -1,0 +1,86 @@
+{
+  "schema_version": "FT_AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_2026_06",
+  "token_efficiency_signal_id": "token_efficiency_signal_customer_support_held_2026_05",
+  "org_id": "org_example",
+  "workflow_family": "customer_support_case_resolution",
+  "workflow_name": "Support case resolution",
+  "function_area": "customer_support",
+  "generated_at": "2026-06-13T00:00:00.000Z",
+  "covered_window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31"
+  },
+  "approved_aggregate_grain": "workflow_family",
+  "minimum_cohort_threshold": 5,
+  "k_min_posture": {
+    "minimum_cohort_threshold": 5,
+    "cohort_threshold_met": false,
+    "total_slices": 12,
+    "k_min_clear_slices": 8,
+    "suppressed_or_unknown_slices": 4
+  },
+  "playbook_layer": "layer_1_platform_telemetry",
+  "evidence_lane": "surface_usage",
+  "coverage_contribution": "layer_1_cost_intensity_overlay",
+  "full_playbook_coverage_contribution": false,
+  "evidence_state": "held",
+  "source_refs": {
+    "aggregate_probe_id": "token_probe_customer_support_2026_05",
+    "source_readiness_id": "source_readiness_token_usage_2026_05"
+  },
+  "source_owner_attestation": {
+    "attestation_state": "held",
+    "attested_by_role": "data_platform_owner",
+    "attested_at": "2026-06-13T00:00:00.000Z",
+    "caveats": [
+      "Some aggregate slices did not meet k-min and remain held."
+    ]
+  },
+  "privacy_boundary": {
+    "aggregate_only": true,
+    "contains_direct_identifiers": false,
+    "contains_raw_content": false,
+    "contains_person_level_productivity": false,
+    "contains_person_level_hris_records": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false,
+    "contains_compensation_or_performance_inference": false,
+    "contains_promotion_or_discipline_inference": false,
+    "contains_attrition_prediction": false,
+    "contains_hris_inference_from_ai_usage": false
+  },
+  "allowed_uses": [
+    "cost_exposure_review",
+    "model_usage_review",
+    "workflow_intensity_review",
+    "token_efficiency_review",
+    "model_routing_review",
+    "workflow_design_review",
+    "evidence_collection_planning"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "value_proof_policy": {
+    "token_usage_is_roi_proof": false,
+    "token_usage_is_productivity_proof": false,
+    "token_usage_is_financial_output": false,
+    "token_usage_computes_causality": false,
+    "downstream_claim_strength_upgrade_allowed": false
+  },
+  "caveats": [
+    "Held Token Efficiency records can support evidence collection planning only.",
+    "Held token usage cannot feed an Evidence Snapshot until aggregate cohort thresholds clear.",
+    "Token usage remains Layer 1 cost/intensity context and cannot upgrade Playbook coverage."
+  ],
+  "derivation_version": "token_efficiency_signal_example_2026_06"
+}

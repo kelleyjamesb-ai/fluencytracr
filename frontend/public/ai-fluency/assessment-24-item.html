@@ -1,0 +1,3527 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Fluency Diagnostic</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #eef6e7;
+        color: #171a2d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(226, 247, 202, 0.95), transparent 35%),
+          radial-gradient(circle at top right, rgba(210, 216, 255, 0.98), transparent 42%),
+          linear-gradient(135deg, #f4f9ee 0%, #edf2ff 100%);
+        min-height: 100vh;
+      }
+      main {
+        display: flex;
+        min-height: 100vh;
+        padding: 32px;
+      }
+      .stage {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(224, 228, 238, 0.95);
+        border-radius: 32px;
+        box-shadow: 0 24px 80px rgba(47, 57, 84, 0.12);
+        margin: 0 auto;
+        max-width: 1700px;
+        min-height: calc(100vh - 64px);
+        padding: 34px;
+        width: 100%;
+      }
+      .questionStage {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 340px minmax(0, 1fr);
+        margin: 0 auto;
+        max-width: 1700px;
+        min-height: calc(100vh - 64px);
+        width: 100%;
+      }
+      .eyebrow {
+        color: #1243ff;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: clamp(38px, 4vw, 56px);
+        letter-spacing: 0;
+        line-height: 1.05;
+        margin: 0;
+      }
+      h2 {
+        font-size: clamp(26px, 2.4vw, 42px);
+        letter-spacing: 0;
+        line-height: 1.1;
+        margin: 0;
+      }
+      h3 {
+        font-size: 22px;
+        letter-spacing: 0;
+        margin: 0;
+      }
+      p {
+        color: #566078;
+        font-size: 20px;
+        line-height: 1.35;
+        margin: 18px 0 0;
+      }
+      button, input, select {
+        font: inherit;
+      }
+      button {
+        border: 0;
+        cursor: pointer;
+        font-weight: 800;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+      .topbar {
+        align-items: flex-start;
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+      }
+      .progress {
+        background: #e6e8ef;
+        border-radius: 999px;
+        height: 18px;
+        margin: 24px 0 0;
+        overflow: hidden;
+        width: 100%;
+      }
+      .progressFill {
+        background: linear-gradient(90deg, #173dff 0%, #4859ff 68%, #c8ef3a 100%);
+        border-radius: inherit;
+        height: 100%;
+        transition: width 180ms ease;
+        width: 0;
+      }
+      .progressLabel {
+        color: #59637c;
+        font-size: 22px;
+        margin: 14px 0 30px;
+      }
+      .panel {
+        border: 1px solid #e3e6ee;
+        border-radius: 28px;
+        padding: 34px;
+      }
+      .homeHero {
+        align-items: stretch;
+        display: grid;
+        gap: 34px;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+      }
+      .homeHighlights {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 30px;
+      }
+      .homeHighlight {
+        background: rgba(255, 255, 255, 0.42);
+        border: 1px solid #e3e6ee;
+        border-radius: 18px;
+        display: grid;
+        gap: 10px;
+        padding: 20px;
+      }
+      .homeHighlight strong {
+        color: #1243ff;
+        font-size: 18px;
+        line-height: 1.2;
+      }
+      .homeHighlight span {
+        color: #435b81;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+      .homeExample {
+        background: linear-gradient(135deg, #f7f9ff 0%, #fcfff1 100%);
+        border: 1px solid #dfe6ff;
+        border-radius: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 28px;
+      }
+      .homeChecklist {
+        display: grid;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      .homeChecklist div {
+        background: rgba(255, 255, 255, 0.54);
+        border: 1px solid #dfe6ff;
+        border-radius: 14px;
+        color: #12315b;
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.25;
+        padding: 14px 16px;
+      }
+      .homeActions {
+        display: flex;
+        gap: 14px;
+        margin-top: 34px;
+      }
+      .profileForm {
+        display: grid;
+        gap: 24px 28px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 26px;
+        max-width: 1480px;
+      }
+      #intakeScreen {
+        display: flex;
+        flex-direction: column;
+        padding: 26px 34px;
+      }
+      #intakeScreen .topbar h1 {
+        font-size: clamp(34px, 3.5vw, 52px);
+      }
+      #intakeScreen .progress {
+        margin-top: 18px;
+      }
+      #intakeScreen .progressLabel {
+        margin: 10px 0 18px;
+      }
+      .intakePanel {
+        display: grid;
+        flex: 1;
+        gap: 28px;
+        grid-template-columns: minmax(300px, 0.75fr) minmax(0, 1.25fr);
+        padding: 28px 34px;
+      }
+      #intakeScreen .intakePanel {
+        align-items: center;
+      }
+      .intakeIntro h1 {
+        font-size: clamp(32px, 3.1vw, 46px);
+      }
+      .intakeIntro p {
+        font-size: 18px;
+      }
+      #intakeScreen .profileForm {
+        gap: 14px 18px;
+        margin-top: 0;
+      }
+      #intakeScreen .field label {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+      #intakeScreen .field input,
+      #intakeScreen .field select {
+        font-size: 20px;
+        min-height: 58px;
+        padding: 0 20px;
+      }
+      #intakeScreen .field select {
+        background-position: calc(100% - 24px) 27px, calc(100% - 17px) 27px;
+      }
+      #intakeScreen .beginRow {
+        gap: 16px;
+        margin-top: 2px;
+      }
+      #intakeScreen .primaryButton {
+        padding: 18px 28px;
+      }
+      #intakeScreen .helperText {
+        font-size: 18px;
+      }
+      .field label {
+        color: #171a2d;
+        display: block;
+        font-size: 24px;
+        line-height: 1.12;
+        margin: 0 0 14px;
+      }
+      .field input, .field select {
+        appearance: none;
+        background: #ffffff;
+        border: 1px solid #e2e5ed;
+        border-radius: 16px;
+        color: #171a2d;
+        font-size: 22px;
+        min-height: 76px;
+        padding: 0 24px;
+        width: 100%;
+      }
+      .field select {
+        background-image: linear-gradient(45deg, transparent 50%, #171a2d 50%), linear-gradient(135deg, #171a2d 50%, transparent 50%);
+        background-position: calc(100% - 24px) 34px, calc(100% - 17px) 34px;
+        background-size: 7px 7px, 7px 7px;
+        background-repeat: no-repeat;
+      }
+      .beginRow {
+        align-items: center;
+        display: flex;
+        gap: 24px;
+        grid-column: 1 / -1;
+        margin-top: 12px;
+      }
+      .primaryButton {
+        background: #2f39ff;
+        border-radius: 999px;
+        color: #ffffff;
+        min-width: 360px;
+        padding: 24px 36px;
+      }
+      .helperText {
+        color: #5d6780;
+        font-size: 21px;
+        margin: 0;
+      }
+      #calibrationScreen {
+        display: flex;
+        flex-direction: column;
+      }
+      .privacyCallout {
+        background: #f2f7e8;
+        border: 1px solid #d5e9ba;
+        border-radius: 20px;
+        margin-top: 22px;
+        padding: 18px 20px;
+      }
+      .privacyCallout strong {
+        color: #17201d;
+        display: block;
+        font-size: 20px;
+      }
+      .privacyCallout p {
+        color: #394438;
+        font-size: 17px;
+        margin-top: 8px;
+      }
+      .calibrationPanel {
+        align-items: start;
+        display: grid;
+        gap: 34px;
+        grid-template-columns: minmax(280px, 0.58fr) minmax(0, 1.42fr);
+        padding: 30px 34px;
+      }
+      .calibrationIntro h1 {
+        font-size: clamp(34px, 3.2vw, 50px);
+      }
+      .calibrationIntro p {
+        font-size: 19px;
+      }
+      .calibrationForm {
+        display: grid;
+        gap: 14px;
+      }
+      .calibrationQuestion {
+        color: #1243ff;
+        font-size: 24px;
+        font-weight: 850;
+        line-height: 1.12;
+      }
+      .calibrationHint {
+        color: #445878;
+        font-size: 18px;
+        line-height: 1.35;
+        margin: 8px 0 0;
+      }
+      .calibrationOptions {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .calibrationOption {
+        cursor: pointer;
+        display: block;
+        margin: 0;
+      }
+      .calibrationOption input {
+        opacity: 0;
+        position: absolute;
+      }
+      .calibrationCard {
+        background: #ffffff;
+        border: 1px solid #e3e6ee;
+        border-radius: 16px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 44px minmax(0, 1fr);
+        padding: 12px 14px;
+        transition: border 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      }
+      .calibrationOption input:checked + .calibrationCard {
+        border-color: #2f39ff;
+        box-shadow: 0 0 0 3px rgba(47, 57, 255, 0.14);
+        transform: translateY(-1px);
+      }
+      .calibrationLevel {
+        align-items: center;
+        background: #e9edff;
+        border-radius: 999px;
+        color: #0d3aff;
+        display: inline-flex;
+        font-size: 16px;
+        font-weight: 850;
+        height: 36px;
+        justify-content: center;
+        width: 36px;
+      }
+      .calibrationCopy strong {
+        color: #171a2d;
+        display: block;
+        font-size: 17px;
+      }
+      .calibrationCopy span {
+        color: #59637c;
+        display: block;
+        font-size: 14px;
+        line-height: 1.25;
+        margin-top: 4px;
+      }
+      .sidebar {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid #e3e6ee;
+        border-radius: 28px;
+        padding: 32px;
+      }
+      .productTitle {
+        font-size: 38px;
+        line-height: 1.08;
+        margin-top: 16px;
+      }
+      .progressSummary {
+        background: #f8fbff;
+        border: 1px solid #dfe6ff;
+        border-radius: 24px;
+        margin-top: 24px;
+        padding: 18px;
+      }
+      .progressSummaryNumber {
+        color: #171a2d;
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1.04;
+      }
+      .progressSummaryLabel {
+        color: #59637c;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin-top: 6px;
+        text-transform: uppercase;
+      }
+      .promise, .chapterCard {
+        border: 1px solid #e3e6ee;
+        border-radius: 24px;
+        margin-top: 44px;
+        padding: 24px;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      .pill {
+        background: #e9edff;
+        border-radius: 999px;
+        color: #0d3aff;
+        font-size: 19px;
+        font-weight: 800;
+        padding: 10px 18px;
+      }
+      .chapterList {
+        display: grid;
+        gap: 0;
+        margin-top: 18px;
+        position: relative;
+      }
+      .chapterList::before {
+        background: #e7ebf4;
+        bottom: 26px;
+        content: "";
+        left: 15px;
+        position: absolute;
+        top: 26px;
+        width: 2px;
+      }
+      .circuitHeader {
+        margin-top: 24px;
+      }
+      .circuitHeader strong {
+        color: #171a2d;
+        display: block;
+        font-size: 18px;
+        line-height: 1.1;
+      }
+      .circuitHeader span {
+        color: #59637c;
+        display: block;
+        font-size: 14px;
+        font-weight: 750;
+        line-height: 1.3;
+        margin-top: 6px;
+      }
+      .chapterCard {
+        align-items: center;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 32px minmax(0, 1fr);
+        margin: 0;
+        min-width: 0;
+        padding: 6px 0;
+        position: relative;
+      }
+      .chapterCard.active {
+        border-color: transparent;
+        box-shadow: none;
+      }
+      .chapterCard.active .chapterContent {
+        border-color: var(--signal-end);
+        box-shadow: 0 0 0 3px rgba(47, 57, 255, 0.08);
+      }
+      .chapterCard.completed .chapterContent {
+        border-color: rgba(23, 26, 45, 0.06);
+      }
+      .chapterCard:not(.active):not(.completed) .chapterContent {
+        background: #f8fafc;
+        border-color: #edf1f6;
+      }
+      .chapterCard:not(.active):not(.completed) .chapterName,
+      .chapterCard:not(.active):not(.completed) .chapterState {
+        color: #748094;
+      }
+      .chapterCard:not(.active):not(.completed) .chapterNumber {
+        background: #f8fafc;
+        color: #8b95a8;
+      }
+      .chapterNumber {
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #dfe6ff;
+        border-radius: 999px;
+        color: #58637a;
+        display: flex;
+        font-size: 14px;
+        font-weight: 900;
+        height: 32px;
+        justify-content: center;
+        position: relative;
+        transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+        width: 32px;
+        z-index: 1;
+      }
+      .chapterCard.active .chapterNumber {
+        border-color: var(--signal-end);
+        color: var(--signal-end);
+      }
+      .chapterContent {
+        background: #ffffff;
+        border: 1px solid #e4e8f1;
+        border-radius: 14px;
+        min-width: 0;
+        padding: 9px 10px;
+        transition: border 180ms ease, box-shadow 180ms ease;
+      }
+      .chapterSignalTop {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        min-width: 0;
+      }
+      .chapterName {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-top: 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .chapterState {
+        color: #6b7280;
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+      .chapterState:empty {
+        display: none;
+      }
+      .chapterCard.completed .chapterState {
+        color: var(--signal-end);
+      }
+      .chapterPills {
+        display: grid;
+        gap: 5px;
+        grid-template-columns: repeat(var(--signal-total), minmax(0, 1fr));
+        margin-top: 8px;
+      }
+      .chapterPill {
+        background: #eef2f6;
+        border-radius: 999px;
+        height: 7px;
+        overflow: hidden;
+      }
+      .chapterPill.captured {
+        background: var(--pill-color);
+        box-shadow: 0 0 0 1px rgba(23, 26, 45, 0.04);
+      }
+      .contentShell {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .questionPanel {
+        border: 1px solid #e3e6ee;
+        border-radius: 28px;
+        padding: 32px;
+      }
+      .questionPanel:not(.isResult) {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+      }
+      .questionPanel:not(.isResult) .instrumentLayout {
+        align-items: stretch;
+        display: grid;
+        flex: 1;
+        gap: 28px;
+        grid-template-columns: minmax(220px, 0.42fr) minmax(0, 1fr);
+        min-height: 0;
+      }
+      .instrumentContext {
+        border-right: 1px solid #e3e6ee;
+        padding-right: 28px;
+      }
+      .promptColumn {
+        min-width: 0;
+      }
+      .questionPanel:not(.isResult) #form {
+        display: flex;
+        flex-direction: column;
+      }
+      .questionPanel:not(.isResult) .questionActions {
+        margin-top: 18px;
+      }
+      .questionPanel:not(.isResult) #form.autoAdvance .questionActions {
+        display: none;
+      }
+      .questionPanel.isResult .instrumentLayout {
+        display: none;
+      }
+      .guide {
+        background: linear-gradient(135deg, #f5f8ff 0%, #fbfff0 100%);
+        border: 1px solid #dce4ff;
+        border-radius: 26px;
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 110px minmax(0, 1fr);
+        margin-top: 18px;
+        padding: 24px;
+      }
+      .questionPanel:not(.isResult) .guide {
+        gap: 14px;
+        grid-template-columns: 1fr;
+        padding: 18px;
+      }
+      .guideBadge {
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #dfe4f0;
+        border-radius: 22px;
+        color: #0d3aff;
+        display: flex;
+        font-size: 22px;
+        font-weight: 800;
+        justify-content: center;
+        min-height: 92px;
+      }
+      .questionPanel:not(.isResult) .guideBadge {
+        min-height: 54px;
+      }
+      .guideCopy p {
+        font-size: 21px;
+        margin-top: 8px;
+      }
+      .promptMeta {
+        align-items: center;
+        color: #59637c;
+        display: flex;
+        font-size: 20px;
+        justify-content: space-between;
+        margin: 22px 0;
+      }
+      .questionPanel:not(.isResult) .promptMeta {
+        align-items: flex-start;
+        display: grid;
+        font-size: 18px;
+        gap: 8px;
+        margin: 22px 0 0;
+      }
+      .questionText {
+        color: #1243ff;
+        font-size: clamp(34px, 3.4vw, 50px);
+        line-height: 1.08;
+        margin-bottom: 24px;
+      }
+      .questionPanel:not(.isResult) .questionText {
+        font-size: clamp(30px, 2.8vw, 42px);
+        margin-bottom: 18px;
+      }
+      .questionPanel:not(.isResult) .scaleWrap {
+        padding: 18px;
+      }
+      .questionPanel:not(.isResult) .scaleGrid {
+        gap: 10px;
+        margin-top: 14px;
+      }
+      fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+      }
+      .scaleWrap {
+        background: linear-gradient(135deg, #f7f9ff 0%, #fcfff1 100%);
+        border: 1px solid #dfe6ff;
+        border-radius: 26px;
+        padding: 24px;
+      }
+      .scaleHeader {
+        align-items: flex-start;
+        display: flex;
+        justify-content: flex-start;
+      }
+      .scaleHeader strong {
+        font-size: 20px;
+      }
+      .scaleGrid {
+        align-items: stretch;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        margin-top: 20px;
+      }
+      .scaleOption {
+        cursor: pointer;
+        display: flex;
+        height: 100%;
+        margin: 0;
+      }
+      .scaleOption input {
+        opacity: 0;
+        position: absolute;
+      }
+      .scaleCard {
+        background: #ffffff;
+        border: 1px solid #e3e6ee;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 172px;
+        min-width: 0;
+        padding: 20px;
+        transition: border 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        width: 100%;
+      }
+      .questionPanel:not(.isResult) .scaleCard {
+        min-height: 136px;
+        padding: 12px;
+      }
+      .scaleOption input:checked + .scaleCard {
+        border-color: #2f39ff;
+        box-shadow: 0 0 0 3px rgba(47, 57, 255, 0.14);
+        transform: translateY(-2px);
+      }
+      .scaleNumber {
+        align-items: center;
+        background: #e9edff;
+        border-radius: 999px;
+        color: #0d3aff;
+        display: inline-flex;
+        font-size: 16px;
+        font-weight: 800;
+        height: 46px;
+        justify-content: center;
+        width: 46px;
+      }
+      .scaleTitle {
+        color: #171a2d;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.08;
+        margin-top: 16px;
+        overflow-wrap: anywhere;
+      }
+      .questionPanel:not(.isResult) .scaleTitle {
+        font-size: clamp(15px, 1.25vw, 17px);
+        margin-top: 10px;
+      }
+      .inlineInput {
+        display: grid;
+        gap: 12px;
+      }
+      .inlineInput label {
+        align-items: center;
+        border: 1px solid #e3e6ee;
+        border-radius: 16px;
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+      }
+      .questionActions {
+        display: flex;
+        gap: 16px;
+        margin-top: 26px;
+      }
+      .momentComplete {
+        background: linear-gradient(135deg, #f5f8ff 0%, #fbfff0 100%);
+        border: 1px solid #dfe6ff;
+        border-radius: 26px;
+        padding: 28px;
+      }
+      .momentComplete h1 {
+        font-size: clamp(34px, 3.2vw, 48px);
+      }
+      .momentSummary {
+        border: 1px solid #dfe6ff;
+        border-radius: 20px;
+        margin-top: 24px;
+        padding: 20px;
+      }
+      .momentSummary strong {
+        color: #0d3aff;
+        display: block;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+      .momentBadge {
+        background: #e9edff;
+        border-radius: 999px;
+        color: #0d3aff;
+        display: inline-flex;
+        font-size: 18px;
+        font-weight: 800;
+        margin-top: 22px;
+        padding: 10px 16px;
+      }
+      .resultsGrid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 28px;
+      }
+      .questionPanel.isResult {
+        background: transparent;
+        border: 0;
+        padding: 0;
+      }
+      .resultHero {
+        background: linear-gradient(135deg, #4051ee 0%, #2b317e 100%);
+        border-radius: 28px;
+        color: #ffffff;
+        padding: 34px;
+        position: relative;
+      }
+      .resultHeroHeader {
+        align-items: center;
+        display: grid;
+        gap: 28px;
+        grid-template-columns: minmax(0, 1fr) 150px;
+      }
+      .resultHero p,
+      .resultHero .eyebrow {
+        color: #ffffff;
+      }
+      .resultHeroCopy {
+        min-width: 0;
+      }
+      .resultHero h1 {
+        color: #ffffff;
+        max-width: 720px;
+      }
+      .resultOrb {
+        align-items: center;
+        background: rgba(255, 255, 255, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        display: flex;
+        flex-direction: column;
+        height: 150px;
+        justify-content: center;
+        width: 150px;
+      }
+      .resultOrb strong {
+        font-size: 44px;
+        line-height: 1;
+      }
+      .resultOrb span {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+      .heroResultGrid,
+      .resultBody {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 28px;
+      }
+      .resultBody {
+        align-items: start;
+        grid-template-columns: 1fr;
+      }
+      .heroResultGrid {
+        margin-top: 34px;
+      }
+      .heroResultCard,
+      .resultBlock,
+      .strategyCard,
+      .outcomeMetric {
+        background: #ffffff;
+        border: 1px solid #e3e6ee;
+        border-radius: 20px;
+        color: #171a2d;
+        padding: 22px;
+      }
+      .resultHero .heroResultCard p,
+      .resultHero .heroResultCard .eyebrow {
+        color: #566078;
+      }
+      .resultHero .heroResultCard .eyebrow {
+        color: #59637c;
+      }
+      .heroResultCard p,
+      .resultBlock p,
+      .strategyCard p,
+      .outcomeMetric p {
+        font-size: 16px;
+      }
+      .resultActions {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 24px;
+      }
+      .secondaryButton {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        color: #ffffff;
+        padding: 18px 28px;
+      }
+      .resultColumn {
+        align-content: start;
+        display: grid;
+        gap: 18px;
+        min-width: 0;
+      }
+      .resultBlock,
+      .strategyCard {
+        min-width: 0;
+      }
+      .profileSnapshot {
+        align-items: start;
+        background: linear-gradient(135deg, #f7f9ff 0%, #fbfff0 100%);
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 0.95fr) minmax(240px, 1.05fr);
+      }
+      .snapshotUse {
+        color: #171a2d;
+        font-weight: 800;
+      }
+      .snapshotGrid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 16px;
+      }
+      .profileSnapshot .snapshotGrid {
+        grid-template-columns: 1fr;
+        margin-top: 0;
+      }
+      .snapshotMini {
+        background: #ffffff;
+        border: 1px solid #dfe6ff;
+        border-radius: 16px;
+        padding: 16px;
+      }
+      .snapshotMini:nth-child(1) {
+        background: linear-gradient(135deg, #f7f9ff 0%, #eef3ff 100%);
+      }
+      .snapshotMini:nth-child(2) {
+        background: linear-gradient(135deg, #fbfff0 0%, #f2f9df 100%);
+      }
+      .snapshotMini:nth-child(3) {
+        background: linear-gradient(135deg, #f8fbff 0%, #ecf7ff 100%);
+      }
+      .snapshotMini:nth-child(4) {
+        background: linear-gradient(135deg, #fffdf4 0%, #f7f0d7 100%);
+      }
+      .profileExplorer {
+        background: linear-gradient(135deg, #f7f9ff 0%, #fbfff0 100%);
+      }
+      .profileExplorerIntro {
+        max-width: 680px;
+      }
+      .profileExplorerGrid {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: 1fr;
+        margin-top: 18px;
+      }
+      .profileDimensionList {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .profileChoice {
+        appearance: none;
+        background: #ffffff;
+        border: 1px solid #dfe6ff;
+        border-radius: 16px;
+        color: #171a2d;
+        cursor: pointer;
+        font: inherit;
+        min-height: 132px;
+        padding: 18px;
+        position: relative;
+        text-align: left;
+      }
+      .profileChoiceTop {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+      }
+      .profileChoice strong {
+        font-size: 17px;
+      }
+      .profileChoiceScore {
+        color: #0d3aff;
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .profileChoiceDefinition {
+        color: #566078;
+        font-size: 15px;
+        line-height: 1.38;
+        margin: 12px 0 0;
+        max-width: 36rem;
+      }
+      .profileChoiceCue {
+        color: #1243ff;
+        display: block;
+        font-size: 12px;
+        font-weight: 850;
+        letter-spacing: 0;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+      .profileChoice.isActive,
+      .profileChoice:focus-visible {
+        border-color: #2f39ff;
+        box-shadow: 0 0 0 3px rgba(47, 57, 255, 0.14);
+        outline: none;
+      }
+      .radarChart {
+        align-items: center;
+        display: flex;
+        justify-content: center;
+        min-height: 360px;
+      }
+      .radarPoint {
+        cursor: pointer;
+        outline: none;
+      }
+      .radarPoint circle {
+        fill: #ffffff;
+        stroke: #2f39ff;
+        stroke-width: 3;
+        transition: r 160ms ease, stroke-width 160ms ease, fill 160ms ease;
+      }
+      .radarPoint.isActive circle,
+      .radarPoint:focus-visible circle {
+        fill: #c8ef3a;
+        r: 9;
+        stroke-width: 4;
+      }
+      .profileFocus {
+        background: #ffffff;
+        border: 1px solid #dfe6ff;
+        border-radius: 18px;
+        padding: 24px;
+      }
+      .profileFocusHeader {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+      }
+      .profileFocus h3 {
+        font-size: 28px;
+      }
+      .profileFocusScore {
+        color: #0d3aff;
+        font-size: 42px;
+        font-weight: 850;
+      }
+      .profileFocusDefinition {
+        color: #171a2d;
+        font-size: 18px;
+        font-weight: 750;
+        line-height: 1.35;
+      }
+      .profileFocusAction {
+        color: #171a2d;
+        font-size: 15px;
+        font-weight: 750;
+        margin-top: 8px;
+      }
+      .profileFocusBody {
+        display: grid;
+        gap: 28px;
+        grid-template-columns: minmax(0, 0.78fr) minmax(340px, 1.22fr);
+        margin-top: 18px;
+      }
+      .profileFocusBody p {
+        font-size: 15px;
+      }
+      .profileFocusBody p:first-child {
+        margin-top: 0;
+      }
+      .profileShapeWrap {
+        align-items: center;
+        background: linear-gradient(135deg, #f8fbff 0%, #fbfff2 100%);
+        border: 1px solid #dfe6ff;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 430px;
+        padding: 18px;
+      }
+      .profileShapeWrap svg {
+        height: min(390px, 100%);
+        width: min(390px, 100%);
+      }
+      .profileNodeLabel {
+        background: #eef3ff;
+        border: 1px solid #dbe4ff;
+        border-radius: 999px;
+        color: #0d3aff;
+        font-size: 13px;
+        font-weight: 850;
+        margin-top: 8px;
+        padding: 8px 12px;
+        text-align: center;
+      }
+      .termLabel {
+        align-items: center;
+        display: inline-flex;
+        gap: 8px;
+        position: relative;
+      }
+      .termHelp {
+        align-items: center;
+        background: #e8edff;
+        border: 1px solid #cad5ff;
+        border-radius: 999px;
+        color: #0d3aff;
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 900;
+        height: 18px;
+        justify-content: center;
+        line-height: 1;
+        width: 18px;
+      }
+      .tooltipBubble {
+        background: #171a2d;
+        border-radius: 12px;
+        bottom: calc(100% + 8px);
+        box-shadow: 0 14px 34px rgba(23, 26, 45, 0.18);
+        color: #ffffff;
+        display: none;
+        font-size: 13px;
+        font-weight: 750;
+        left: 0;
+        line-height: 1.3;
+        max-width: min(280px, 72vw);
+        padding: 10px 12px;
+        position: absolute;
+        text-transform: none;
+        z-index: 4;
+      }
+      .profileChoice:hover .tooltipBubble,
+      .profileChoice:focus-visible .tooltipBubble {
+        display: block;
+      }
+      .percentBar {
+        background: #e6e8ef;
+        border-radius: 999px;
+        height: 10px;
+        margin-top: 14px;
+        overflow: hidden;
+      }
+      .percentFill {
+        background: linear-gradient(90deg, #2f39ff, #c8ef3a);
+        border-radius: inherit;
+        height: 100%;
+      }
+      .strategyStack {
+        display: grid;
+        gap: 14px;
+      }
+      .resultStrategy .strategyStack {
+        grid-template-columns: 1fr;
+      }
+      .modelFlow {
+        background: linear-gradient(135deg, #f7f9ff 0%, #fbfff0 100%);
+        border: 1px solid #dfe6ff;
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .impactModel {
+        background: #17201d;
+        border-color: #31483f;
+        color: #ffffff;
+        overflow: hidden;
+        padding: 30px;
+      }
+      .impactModel .eyebrow {
+        color: #c8ef3a;
+      }
+      .impactModel h3 {
+        color: #ffffff;
+        font-size: clamp(26px, 3vw, 38px);
+        max-width: 860px;
+      }
+      .impactModel .modelNarrative {
+        color: #dce8e1;
+        max-width: 980px;
+      }
+      .impactModel .modelFlowTrack {
+        gap: 14px;
+        grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr) 44px minmax(0, 1fr);
+        margin-top: 26px;
+      }
+      .impactModel .modelNode {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+        padding: 18px;
+        position: relative;
+      }
+      .impactModel .modelNode strong {
+        color: #c8ef3a;
+        font-size: 18px;
+      }
+      .impactModel .modelNode p {
+        color: #dce8e1;
+      }
+      .impactModel .modelArrow {
+        align-self: center;
+        color: #c8ef3a;
+        transform: none;
+      }
+      .modelFlowTrack {
+        align-items: stretch;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr;
+        margin-top: 14px;
+      }
+      .modelNode {
+        background: #ffffff;
+        border: 1px solid #dfe6ff;
+        border-radius: 18px;
+        min-height: 0;
+        padding: 14px;
+      }
+      .modelNode strong {
+        display: block;
+        font-size: 16px;
+      }
+      .modelNode p {
+        font-size: 15px;
+        font-weight: 750;
+        line-height: 1.25;
+        margin-top: 8px;
+      }
+      .modelArrow {
+        color: #0d3aff;
+        font-size: 26px;
+        font-weight: 850;
+        text-align: center;
+        transform: rotate(90deg);
+      }
+      .controlNext {
+        background: #f2f7e8;
+        border-color: #d5e9ba;
+        grid-column: 1 / -1;
+        padding: 30px;
+      }
+      .controlNext h3 {
+        max-width: 820px;
+      }
+      .controlNext > p {
+        max-width: 920px;
+      }
+      .actionSteps {
+        display: grid;
+        column-gap: 26px;
+        row-gap: 20px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 24px;
+      }
+      .actionStep {
+        align-items: flex-start;
+        border-top: 1px solid #cfe0b7;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 34px minmax(0, 1fr);
+        padding-top: 18px;
+      }
+      .actionStep:nth-child(-n + 2) {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .actionStep span {
+        align-items: center;
+        background: #17201d;
+        border-radius: 999px;
+        color: #c8ef3a;
+        display: inline-flex;
+        font-size: 13px;
+        font-weight: 850;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+      }
+      .actionStep strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .actionStep p {
+        margin: 0;
+      }
+      .resultCard {
+        border: 1px solid #e3e6ee;
+        border-radius: 20px;
+        padding: 22px;
+      }
+      .score {
+        color: #0d3aff;
+        font-size: 36px;
+        font-weight: 850;
+        margin-top: 10px;
+      }
+      .status {
+        color: #59637c;
+        font-size: 18px;
+        margin-top: 18px;
+      }
+      .error {
+        color: #a31621;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (max-width: 1050px) {
+        main {
+          display: block;
+          padding: 16px;
+        }
+        .stage {
+          border-radius: 24px;
+          min-height: calc(100vh - 32px);
+          padding: 24px;
+        }
+        .questionStage {
+          min-height: calc(100vh - 32px);
+        }
+        .questionStage, .profileForm, .homeHero, .homeHighlights, .intakePanel, .calibrationPanel {
+          grid-template-columns: 1fr;
+        }
+        .questionPanel:not(.isResult) .instrumentLayout {
+          display: flex;
+          flex-direction: column;
+          grid-template-columns: 1fr;
+        }
+        .instrumentContext {
+          order: 2;
+          border-right: 0;
+          border-top: 1px solid #e3e6ee;
+          padding: 20px 0 0;
+        }
+        .promptColumn {
+          order: 1;
+        }
+        .sidebar {
+          display: none;
+        }
+        .scaleGrid, .resultsGrid {
+          grid-template-columns: 1fr;
+        }
+        .questionPanel:not(.isResult) .scaleCard {
+          align-items: center;
+          flex-direction: row;
+          gap: 12px;
+          min-height: 64px;
+        }
+        .questionPanel:not(.isResult) .scaleNumber {
+          flex: 0 0 42px;
+          height: 42px;
+          width: 42px;
+        }
+        .questionPanel:not(.isResult) .scaleTitle {
+          font-size: 17px;
+          margin-top: 0;
+        }
+        .resultOrb {
+          margin-top: 24px;
+          position: static;
+        }
+        .resultHeroHeader {
+          grid-template-columns: 1fr;
+        }
+        .heroResultGrid,
+        .resultBody,
+        .resultActions,
+        .snapshotGrid,
+        .profileSnapshot,
+        .profileExplorerGrid,
+        .profileFocusBody,
+        .profileDimensionList,
+        .resultStrategy .strategyStack,
+        .modelFlowTrack {
+          grid-template-columns: 1fr;
+        }
+        .modelArrow {
+          transform: rotate(90deg);
+        }
+        .impactModel .modelFlowTrack {
+          grid-template-columns: 1fr;
+        }
+        .impactModel .modelArrow {
+          transform: rotate(90deg);
+        }
+        .controlNext {
+          grid-column: auto;
+        }
+        .actionSteps {
+          gap: 0;
+          grid-template-columns: 1fr;
+        }
+        .actionStep,
+        .actionStep:nth-child(-n + 2) {
+          border-top: 1px solid #dfe6ff;
+          padding: 14px 0 0;
+        }
+        .actionStep:first-child {
+          border-top: 0;
+          padding-top: 0;
+        }
+        .beginRow, .topbar, .promptMeta, .homeActions {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .primaryButton {
+          min-width: 0;
+          width: 100%;
+        }
+      }
+      @media (max-width: 1280px) and (min-width: 1051px) {
+        .questionStage {
+          grid-template-columns: 300px minmax(0, 1fr);
+        }
+        .questionPanel:not(.isResult) .instrumentLayout {
+          gap: 20px;
+          grid-template-columns: minmax(180px, 0.28fr) minmax(0, 1fr);
+        }
+        .instrumentContext {
+          padding-right: 20px;
+        }
+        .questionPanel:not(.isResult) .scaleGrid {
+          grid-template-columns: 1fr;
+        }
+        .questionPanel:not(.isResult) .scaleCard {
+          align-items: center;
+          flex-direction: row;
+          gap: 12px;
+          min-height: 64px;
+        }
+        .questionPanel:not(.isResult) .scaleNumber {
+          flex: 0 0 42px;
+          height: 42px;
+          width: 42px;
+        }
+        .questionPanel:not(.isResult) .scaleTitle {
+          font-size: 17px;
+          margin-top: 0;
+        }
+        .resultBody {
+          grid-template-columns: 1fr;
+        }
+        .controlNext {
+          grid-column: auto;
+        }
+      }
+      @media (max-width: 520px) {
+        h1 {
+          font-size: clamp(32px, 10vw, 42px);
+        }
+        .stage {
+          padding: 24px;
+        }
+        .panel,
+        .questionPanel {
+          padding: 24px;
+        }
+        .questionPanel:not(.isResult) .scaleWrap {
+          padding: 18px;
+        }
+        .questionPanel:not(.isResult) .scaleHeader {
+          display: none;
+        }
+        .questionPanel:not(.isResult) .scaleCard {
+          padding: 18px 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main data-runtime="static-beta" data-apps-script-url="https://script.google.com/macros/s/AKfycbyd6YIRTDVc458evh3i4NwWfZ-2GvMczwQ91YvScYPUNGP2r1wtpgoX6fqxEWC5NLpP/exec" data-generated-at="2026-05-29T14:21:46.119Z" data-default-measurement-mode="long" data-default-invite-code="">
+      <section id="homeScreen" class="stage">
+        <div class="topbar">
+          <div>
+            <div class="eyebrow">Explore Your AI Fluency</div>
+            <h1>Get a personal AI fluency strategy for the work you actually do.</h1>
+          </div>
+        </div>
+        <div class="progress" aria-label="Overall completion">
+          <div class="progressFill" style="width: 6%"></div>
+        </div>
+        <p class="progressLabel">In about 6 minutes, see where you are strong, where to grow, and what to do next.</p>
+        <section class="panel homeHero">
+          <div>
+            <div class="eyebrow">What you get</div>
+            <h1>A practical readout you can use to level up how you work with AI.</h1>
+            <p>You will leave with a profile of your AI strengths, a clear growth edge, and a role-aware action plan for using AI with more confidence, quality, and impact.</p>
+            <div class="homeHighlights">
+              <div class="homeHighlight">
+                <strong>Know your strongest dimension</strong>
+                <span>See where your current AI habits are already helping your work.</span>
+              </div>
+              <div class="homeHighlight">
+                <strong>Find your growth edge</strong>
+                <span>Pinpoint the capability that would make AI easier to use well.</span>
+              </div>
+              <div class="homeHighlight">
+                <strong>Choose your next workflow move</strong>
+                <span>Get a practical next step based on your function, role, tenure, and starting point.</span>
+              </div>
+            </div>
+            <div class="homeActions">
+              <button id="startHome" class="primaryButton" type="button">Get my AI fluency strategy</button>
+            </div>
+          </div>
+          <aside class="homeExample">
+            <div>
+              <div class="eyebrow">How it works</div>
+              <h3>Built around your work context</h3>
+              <p>First, add non-identifying work details. Then calibrate your current AI use and move through short AI Fluency sections.</p>
+            </div>
+            <div class="homeChecklist" aria-label="Result preview">
+              <div>Work context before questions</div>
+              <div>Calibration before scoring</div>
+              <div>Personal strategy after the final prompt</div>
+            </div>
+          </aside>
+        </section>
+      </section>
+
+      <section id="intakeScreen" class="stage" hidden>
+        <div class="topbar">
+          <div>
+            <div class="eyebrow">Explore Your AI Fluency</div>
+            <h1>Set up your work profile</h1>
+          </div>
+        </div>
+        <div class="progress" aria-label="Overall completion">
+          <div id="intakeProgressFill" class="progressFill"></div>
+        </div>
+        <p class="progressLabel">Moment 1 &bull; AI confidence &bull; quick prompts ahead &bull; about 6 min left</p>
+        <section class="panel intakePanel">
+          <div class="intakeIntro">
+            <div class="eyebrow">Welcome</div>
+            <h1>A quick setup so the check gives useful signal back.</h1>
+            <p>Before you begin, add a quick work profile so results can roll up by company, function, and cohort.</p>
+            <div class="privacyCallout">
+              <strong>No personally identifiable information is collected.</strong>
+              <p>Do not enter names, emails, employee IDs, or anything that identifies a person. Work details are used only for aggregate analysis by cohort, function, and role-type segments. Individual responses should not be presented as identifiable employee records.</p>
+            </div>
+          </div>
+          <form id="profileForm" class="profileForm">
+            <div class="field">
+              <label for="company">Company name</label>
+              <input id="company" name="company" type="text" autocomplete="organization" />
+            </div>
+            <div class="field">
+              <label for="roleLevel">What best describes your role level?</label>
+              <select id="roleLevel" name="roleLevel" required>
+                <option value="">Select one</option>
+                <option>Individual contributor</option>
+                <option>Manager</option>
+                <option>Director</option>
+                <option>VP+</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="functionArea">What function are you part of?</label>
+              <select id="functionArea" name="functionArea" required>
+                <option value="">Select one</option>
+                <option>Engineering / Software Development</option>
+                <option>Product Management</option>
+                <option>Design / UX / Research</option>
+                <option>Data & Analytics</option>
+                <option>IT Systems or Security</option>
+                <option>Sales or Business Development</option>
+                <option>Marketing & Communications</option>
+                <option>Customer or Account Success</option>
+                <option>Support or Help Desk</option>
+                <option>Field Operations or Logistics</option>
+                <option>People Talent or Human Resources</option>
+                <option>Finance or Accounting</option>
+                <option>Legal & Compliance</option>
+                <option>Corporate Strategy or Business Operations</option>
+                <option>Administrative or Executive Support</option>
+                <option>Education or Training</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tenure">How long have you been at your company?</label>
+              <select id="tenure" name="tenure" required>
+                <option value="">Select one</option>
+                <option>Less than 1 year</option>
+                <option>1-2 years</option>
+                <option>3-5 years</option>
+                <option>6-10 years</option>
+                <option>10+ years</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="priorExperience">How much hands-on AI experience did you have in the past 12 months?</label>
+              <select id="priorExperience" name="priorExperience" required>
+                <option value="">Select one</option>
+                <option>None</option>
+                <option>A little</option>
+                <option>Some</option>
+                <option>A lot</option>
+                <option>Expert / builder</option>
+              </select>
+            </div>
+            <div class="beginRow">
+              <button id="begin" class="primaryButton" type="submit">Continue to calibration</button>
+              <p class="helperText">This required work profile is used only for organization-level reporting and does not change the core measurement model.</p>
+            </div>
+          </form>
+        </section>
+        <p id="intakeMessage" class="status"></p>
+      </section>
+
+      <section id="calibrationScreen" class="stage" hidden>
+        <div class="topbar">
+          <div>
+            <div class="eyebrow">Explore Your AI Fluency</div>
+            <h1>Before the questions, calibrate your AI fluency</h1>
+          </div>
+        </div>
+        <div class="progress" aria-label="Overall completion">
+          <div id="calibrationProgressFill" class="progressFill"></div>
+        </div>
+        <p class="progressLabel">Calibration primer &bull; then AI Fluency sections begin</p>
+        <section class="panel calibrationPanel">
+          <div class="calibrationIntro">
+            <div class="eyebrow">Calibration</div>
+            <h1>Pick the highest level you can do on your own.</h1>
+            <p>Choose something you have personally done more than once, without step-by-step help.</p>
+            <div class="privacyCallout">
+              <strong>No personally identifiable information is collected.</strong>
+              <p>Work details and calibration are used only for aggregate analysis by cohort, function, and role-type segments.</p>
+            </div>
+          </div>
+          <form id="calibrationForm" class="calibrationForm">
+            <fieldset>
+              <legend class="calibrationQuestion">Which statement best describes your current AI fluency?</legend>
+              <p class="calibrationHint">Select the highest level of work you can personally complete with AI, more than once, without step-by-step help.</p>
+              <div id="calibrationOptions" class="calibrationOptions"></div>
+            </fieldset>
+            <div class="beginRow">
+              <button id="startInstrument" class="primaryButton" type="submit">Start AI Fluency questions</button>
+            </div>
+          </form>
+        </section>
+        <p id="calibrationMessage" class="status"></p>
+      </section>
+
+      <section id="questionScreen" class="questionStage" hidden>
+        <aside class="sidebar">
+          <div class="eyebrow">Glean</div>
+          <h2 class="productTitle">Explore Your AI Fluency</h2>
+          <div class="progressSummary" aria-label="Current progress">
+            <div id="sidebarMomentNumber" class="progressSummaryNumber">Signal 1</div>
+            <div id="sidebarMomentLabel" class="progressSummaryLabel">Current signal</div>
+          </div>
+          <div class="circuitHeader">
+            <strong>Fluency Circuit</strong>
+            <span>Each signal fills as you answer. Completed signals carry their final color.</span>
+          </div>
+          <div id="circuitList" class="chapterList" aria-label="Fluency Circuit progress"></div>
+        </aside>
+        <section class="stage contentShell">
+          <div class="topbar">
+            <div>
+              <div class="eyebrow">Explore Your AI Fluency</div>
+              <h1 id="chapterTitle">Getting started</h1>
+            </div>
+          </div>
+          <div class="progress" aria-label="Overall completion">
+            <div id="progressFill" class="progressFill"></div>
+          </div>
+          <p id="progressLabel" class="progressLabel">Moment 1 &bull; AI confidence &bull; quick prompts ahead &bull; about 6 min left</p>
+
+          <section id="questionPanel" class="questionPanel">
+            <div class="instrumentLayout">
+              <div class="instrumentContext">
+                <div class="eyebrow" id="scanLabel">AI confidence</div>
+                <p id="chapterDescription">This first signal checks whether AI feels navigable in the work you actually do.</p>
+                <div class="guide">
+                  <div id="guideBadge" class="guideBadge">Confidence</div>
+                  <div class="guideCopy">
+                    <div class="eyebrow" id="guideEyebrow">Confidence</div>
+                    <h3 id="guideTitle">Find your footing with AI.</h3>
+                    <p id="guideBody">Use this as a compass check: answer from your current level of steadiness.</p>
+                  </div>
+                </div>
+                <div class="promptMeta">
+                  <span id="promptMeta">Start &bull; prompt 1 of 3</span>
+                  <span>Saved automatically. Resume later if needed.</span>
+                </div>
+              </div>
+              <div class="promptColumn">
+                <form id="form" hidden>
+                  <h1 id="title" class="questionText">Loading...</h1>
+                  <fieldset id="answer"></fieldset>
+                  <div class="questionActions">
+                    <button id="submit" class="primaryButton" type="submit">Continue</button>
+                  </div>
+                </form>
+                <section id="momentCompletePanel" class="momentComplete" hidden>
+                  <div class="eyebrow">Moment complete</div>
+                  <h1 id="momentTitle">AI confidence complete.</h1>
+                  <p id="momentNarrative"></p>
+                  <div class="momentSummary">
+                    <strong>Here is what this section helped clarify:</strong>
+                    <p id="momentLearned"></p>
+                  </div>
+                  <span id="momentBadge" class="momentBadge"></span>
+                  <div class="questionActions">
+                    <button id="momentContinue" class="primaryButton" type="button">Continue</button>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <section id="resultPanel" hidden>
+              <div id="resultContent"></div>
+            </section>
+          </section>
+          <p id="message" class="status"></p>
+        </section>
+      </section>
+    </main>
+    <script>
+      const root = document.querySelector("main");
+      const runtimeConfig = {
+        mode: root.dataset.runtime || "server",
+        appsScriptUrl: root.dataset.appsScriptUrl || "",
+        generatedAt: root.dataset.generatedAt || "",
+        defaultMeasurementMode: root.dataset.defaultMeasurementMode || "long",
+        defaultInviteCode: root.dataset.defaultInviteCode || "",
+        sessionId: root.dataset.sessionId || "",
+        token: root.dataset.token || ""
+      };
+      const sessionId = runtimeConfig.sessionId;
+      const token = runtimeConfig.token;
+      const homeScreen = document.querySelector("#homeScreen");
+      const startHome = document.querySelector("#startHome");
+      const intakeScreen = document.querySelector("#intakeScreen");
+      const calibrationScreen = document.querySelector("#calibrationScreen");
+      const questionScreen = document.querySelector("#questionScreen");
+      const profileForm = document.querySelector("#profileForm");
+      const calibrationForm = document.querySelector("#calibrationForm");
+      const calibrationOptionsRoot = document.querySelector("#calibrationOptions");
+      const questionPanel = document.querySelector("#questionPanel");
+      const title = document.querySelector("#title");
+      const form = document.querySelector("#form");
+      const answer = document.querySelector("#answer");
+      const button = document.querySelector("#submit");
+      const message = document.querySelector("#message");
+      const intakeMessage = document.querySelector("#intakeMessage");
+      const calibrationMessage = document.querySelector("#calibrationMessage");
+      const intakeProgressFill = document.querySelector("#intakeProgressFill");
+      const calibrationProgressFill = document.querySelector("#calibrationProgressFill");
+      const progressFill = document.querySelector("#progressFill");
+      const progressLabel = document.querySelector("#progressLabel");
+      const circuitList = document.querySelector("#circuitList");
+      const sidebarMomentNumber = document.querySelector("#sidebarMomentNumber");
+      const sidebarMomentLabel = document.querySelector("#sidebarMomentLabel");
+      const chapterTitle = document.querySelector("#chapterTitle");
+      const chapterDescription = document.querySelector("#chapterDescription");
+      const scanLabel = document.querySelector("#scanLabel");
+      const guideBadge = document.querySelector("#guideBadge");
+      const guideEyebrow = document.querySelector("#guideEyebrow");
+      const guideTitle = document.querySelector("#guideTitle");
+      const guideBody = document.querySelector("#guideBody");
+      const promptMeta = document.querySelector("#promptMeta");
+      const momentCompletePanel = document.querySelector("#momentCompletePanel");
+      const momentTitle = document.querySelector("#momentTitle");
+      const momentNarrative = document.querySelector("#momentNarrative");
+      const momentLearned = document.querySelector("#momentLearned");
+      const momentBadge = document.querySelector("#momentBadge");
+      const momentContinue = document.querySelector("#momentContinue");
+      const resultPanel = document.querySelector("#resultPanel");
+      const resultContent = document.querySelector("#resultContent");
+      let state;
+      let stage = "home";
+      let momentCompleteIndex = null;
+      let activeDimensionKey = null;
+
+      const calibrationLevels = [
+        {
+          level: 1,
+          label: "I have not used AI yet",
+          description: "I have not personally used AI tools to help with work or daily tasks."
+        },
+        {
+          level: 2,
+          label: "I can use AI for simple assistance",
+          description: "I can ask AI to summarize, rewrite, brainstorm, explain, translate, or answer basic questions."
+        },
+        {
+          level: 3,
+          label: "I can use AI to improve my work",
+          description: "I can use AI to strengthen drafts, organize information, prepare messages, improve presentations, or make existing work clearer."
+        },
+        {
+          level: 4,
+          label: "I can use AI to complete multi-step work",
+          description: "I can use AI to support research, planning, analysis, meeting prep, decision-making, or creation of larger work outputs."
+        },
+        {
+          level: 5,
+          label: "I can create repeatable AI-enabled workflows",
+          description: "I can create reusable prompts, workflows, templates, or repeatable processes that help me complete recurring work more effectively."
+        },
+        {
+          level: 6,
+          label: "I can create agents or skills that help me do my work",
+          description: "I can build or configure agents, skills, automations, or AI-powered workflows that help complete work with less manual effort."
+        }
+      ];
+
+      const measurementConfigs = {"long":{"mode":"long","versionIdentifier":"ai_fluency_long_v1","itemCount":24,"constructs":["confidence","usage_quality","behavior_change","leadership_reinforcement","capability_growth","ai_attitude","behavioral_intent","perceived_ai_impact"],"coreConstructs":["confidence","usage_quality","behavior_change","leadership_reinforcement","capability_growth"],"momentumConstructs":["behavioral_intent"],"outcomeConstructs":["perceived_ai_impact"],"optionalConstructs":["ai_attitude"],"items":[{"construct":"confidence","prompt":"I feel confident using AI tools to support my day-to-day work."},{"construct":"confidence","prompt":"When I use AI, I usually know how to get useful output from it."},{"construct":"confidence","prompt":"I can recover quickly when an AI response is not immediately useful."},{"construct":"usage_quality","prompt":"I use AI in ways that improve the quality of my work, not just the speed."},{"construct":"usage_quality","prompt":"I check and refine AI outputs before relying on them."},{"construct":"usage_quality","prompt":"I can tell the difference between low-value and high-value uses of AI in my work."},{"construct":"behavior_change","prompt":"AI has meaningfully changed how I approach at least one recurring workflow."},{"construct":"behavior_change","prompt":"Using AI has become part of my normal way of working, not just occasional experimentation."},{"construct":"behavior_change","prompt":"I regularly rethink how work gets done because AI is available."},{"construct":"leadership_reinforcement","prompt":"Leaders in my organization clearly signal that thoughtful AI use matters."},{"construct":"leadership_reinforcement","prompt":"People here are recognized for improving work with AI in responsible ways."},{"construct":"leadership_reinforcement","prompt":"My organization provides clear guidance on when and how AI should be used."},{"construct":"capability_growth","prompt":"I have the support I need to improve how I use AI at work."},{"construct":"capability_growth","prompt":"I am getting better over time at using AI for meaningful work outcomes."},{"construct":"capability_growth","prompt":"I know what the next step would be to become more effective with AI."},{"construct":"ai_attitude","prompt":"AI makes work feel more possible, not more overwhelming."},{"construct":"ai_attitude","prompt":"I feel positive about AI becoming a bigger part of how work gets done."},{"construct":"ai_attitude","prompt":"AI feels like a helpful advantage in my work, not a distraction."},{"construct":"behavioral_intent","prompt":"I intend to use AI more often in the next few months."},{"construct":"behavioral_intent","prompt":"I intend to expand AI into more meaningful parts of my work."},{"construct":"behavioral_intent","prompt":"I intend to invest time in getting better at using AI effectively."},{"construct":"perceived_ai_impact","prompt":"AI has already made a meaningful positive difference in my work."},{"construct":"perceived_ai_impact","prompt":"AI helps me produce stronger work outcomes than I could without it."},{"construct":"perceived_ai_impact","prompt":"AI is increasing my effectiveness in ways that matter."}]},"short":{"mode":"short","versionIdentifier":"ai_fluency_short_v1","itemCount":14,"constructs":["confidence","usage_quality","behavior_change","leadership_reinforcement","capability_growth","behavioral_intent","perceived_ai_impact"],"coreConstructs":["confidence","usage_quality","behavior_change","leadership_reinforcement","capability_growth"],"momentumConstructs":["behavioral_intent"],"outcomeConstructs":["perceived_ai_impact"],"optionalConstructs":[],"items":[{"construct":"confidence","prompt":"When I use AI, I usually know how to get useful output from it."},{"construct":"confidence","prompt":"I feel confident using AI tools to support my day-to-day work."},{"construct":"usage_quality","prompt":"I use AI in ways that improve the quality of my work, not just the speed."},{"construct":"usage_quality","prompt":"I check and refine AI outputs before relying on them."},{"construct":"behavior_change","prompt":"AI has meaningfully changed how I approach at least one recurring workflow."},{"construct":"behavior_change","prompt":"Using AI has become part of my normal way of working, not just occasional experimentation."},{"construct":"leadership_reinforcement","prompt":"My organization provides clear guidance on when and how AI should be used."},{"construct":"leadership_reinforcement","prompt":"Leaders in my organization clearly signal that thoughtful AI use matters."},{"construct":"capability_growth","prompt":"I know what the next step would be to become more effective with AI."},{"construct":"capability_growth","prompt":"I am getting better over time at using AI for meaningful work outcomes."},{"construct":"behavioral_intent","prompt":"I intend to expand AI into more meaningful parts of my work."},{"construct":"behavioral_intent","prompt":"I intend to invest time in getting better at using AI effectively."},{"construct":"perceived_ai_impact","prompt":"AI is increasing my effectiveness in ways that matter."},{"construct":"perceived_ai_impact","prompt":"AI has already made a meaningful positive difference in my work."}]}};
+
+      function selectedMeasurementMode() {
+        const params = new URLSearchParams(window.location.search);
+        const requestedMode = params.get("measurementMode") || params.get("mode") || runtimeConfig.defaultMeasurementMode || "long";
+        return measurementConfigs[requestedMode] ? requestedMode : "long";
+      }
+
+      const activeMeasurementConfig = measurementConfigs[selectedMeasurementMode()] || measurementConfigs.long;
+      const likertScaleLabels = [
+        "Strongly disagree",
+        "Disagree",
+        "Neither agree nor disagree",
+        "Agree",
+        "Strongly agree"
+      ];
+
+      const chapters = [
+        {
+          key: "confidence",
+          title: "AI confidence",
+          shortLabel: "Confidence",
+          scan: "AI confidence",
+          badge: "Confidence",
+          guideTitle: "Find your footing with AI.",
+          guideBody: "Answer from your current level of steadiness with AI at work.",
+          description: "This moment checks whether AI feels usable and navigable in your day-to-day work.",
+          learned: "how confident AI feels in the work you actually do"
+        },
+        {
+          key: "usage_quality",
+          title: "Using AI well",
+          shortLabel: "Using AI well",
+          scan: "Using AI well",
+          badge: "Using AI well",
+          guideTitle: "Look at how AI improves the work.",
+          guideBody: "Answer based on whether AI helps you make stronger work, not only faster work.",
+          description: "This moment checks the quality and judgment behind AI use.",
+          learned: "whether AI is helping you improve the quality of your work, not just move faster"
+        },
+        {
+          key: "behavior_change",
+          title: "Changing how work happens",
+          shortLabel: "Behavior",
+          scan: "Work habits",
+          badge: "Habits",
+          guideTitle: "Notice where habits are changing.",
+          guideBody: "Answer from what has actually changed in your recurring work.",
+          description: "This moment checks whether AI is becoming part of real workflows.",
+          learned: "whether AI is starting to change your regular work habits"
+        },
+        {
+          key: "leadership_reinforcement",
+          title: "Leadership support",
+          shortLabel: "Leadership",
+          scan: "Leadership support",
+          badge: "Support",
+          guideTitle: "Check the signals around you.",
+          guideBody: "Answer based on the guidance, reinforcement, and examples you see.",
+          description: "This moment checks whether the environment supports thoughtful AI use.",
+          learned: "how much guidance and reinforcement you see around AI use"
+        },
+        {
+          key: "capability_growth",
+          title: "Growing capability",
+          shortLabel: "Growth",
+          scan: "Skill growth",
+          badge: "Growth",
+          guideTitle: "Look at your path to improve.",
+          guideBody: "Answer based on whether you know how to keep getting better with AI.",
+          description: "This moment checks whether capability is growing over time.",
+          learned: "whether you have a clear path to keep getting better with AI"
+        },
+        {
+          key: "ai_attitude",
+          title: "How AI feels",
+          shortLabel: "Attitude",
+          scan: "Attitude toward AI",
+          badge: "Feel",
+          guideTitle: "Check your attitude toward AI.",
+          guideBody: "Answer based on how AI feels in the work you do today.",
+          description: "This moment checks sentiment and openness toward AI.",
+          learned: "how AI feels to you right now in your real work"
+        },
+        {
+          key: "behavioral_intent",
+          title: "What happens next",
+          shortLabel: "Intent",
+          scan: "Future use",
+          badge: "Next",
+          guideTitle: "Look at what you are likely to do next.",
+          guideBody: "Answer based on your real intention to use AI more deeply.",
+          description: "This moment checks whether AI use is likely to continue and expand.",
+          learned: "whether you are likely to keep expanding how you use AI"
+        },
+        {
+          key: "perceived_ai_impact",
+          title: "What AI is changing",
+          shortLabel: "Impact",
+          scan: "Impact at work",
+          badge: "Impact",
+          guideTitle: "Connect AI to outcomes.",
+          guideBody: "Answer based on whether AI is already improving work in ways that matter.",
+          description: "This moment checks the practical impact AI is having on your work.",
+          learned: "where AI is already making a practical difference in your work"
+        }
+      ].filter((chapter) => activeMeasurementConfig.constructs.includes(chapter.key));
+
+      const signalColors = {
+        confidence: { start: "#c7d2fe", end: "#4338ca" },
+        usage_quality: { start: "#bfdbfe", end: "#2563eb" },
+        behavior_change: { start: "#bae6fd", end: "#0369a1" },
+        leadership_reinforcement: { start: "#a5f3fc", end: "#0e7490" },
+        capability_growth: { start: "#99f6e4", end: "#0f766e" },
+        ai_attitude: { start: "#a7f3d0", end: "#047857" },
+        behavioral_intent: { start: "#bbf7d0", end: "#15803d" },
+        perceived_ai_impact: { start: "#86efac", end: "#14532d" }
+      };
+
+      const chunkGroups = [
+        {
+          title: "AI Fluency",
+          label: "AI Fluency",
+          keys: activeMeasurementConfig.coreConstructs,
+          description: "This section captures the core AI fluency signals: confidence, quality, work habits, leadership support, and skill growth.",
+          learned: "your core AI fluency across confidence, quality, habits, support, and growth",
+          guideTitle: "Your core fluency profile is taking shape.",
+          guideBody: "The next section looks at whether that fluency is likely to turn into continued use and work impact."
+        },
+        {
+          title: "AI Momentum and Impact",
+          label: "Momentum and Impact",
+          keys: activeMeasurementConfig.optionalConstructs.concat(activeMeasurementConfig.momentumConstructs, activeMeasurementConfig.outcomeConstructs),
+          description: "This section captures whether AI use is likely to continue and whether it is already creating meaningful work impact.",
+          learned: "your adoption momentum and the work impact AI is creating",
+          guideTitle: "Now connect fluency to what happens next.",
+          guideBody: "Answer based on your likely future use and the value AI is already creating in your work."
+        }
+      ].map((group) => ({
+        ...group,
+        keys: group.keys.filter((key) => chapters.some((chapter) => chapter.key === key))
+      })).filter((group) => group.keys.length > 0);
+
+      const betaQuestionItems = activeMeasurementConfig.items.map((item) => [item.construct, item.prompt]);
+
+      const constructLabels = {
+        confidence: "Confidence",
+        usage_quality: "Usage Quality",
+        behavior_change: "Behavior Change",
+        leadership_reinforcement: "Leadership Reinforcement",
+        capability_growth: "Capability Growth",
+        ai_attitude: "AI Attitude",
+        behavioral_intent: "Behavioral Intent",
+        perceived_ai_impact: "Perceived AI Impact"
+      };
+
+      const constructInterpretations = {
+        confidence: "You have enough comfort to keep experimenting and applying AI to real work.",
+        usage_quality: "Your AI use is moving beyond basic assistance toward higher-value workflows.",
+        behavior_change: "You are translating AI access into concrete changes in how work gets done.",
+        leadership_reinforcement: "Your environment is giving enough signal that practical AI use matters.",
+        capability_growth: "You have a clear next capability to build into repeatable practice.",
+        ai_attitude: "You are likely to see AI as useful and worth continued effort.",
+        behavioral_intent: "You are likely to keep applying AI in daily workflows.",
+        perceived_ai_impact: "You are likely seeing tangible value from AI-enabled work."
+      };
+
+      function createStaticBetaInitialState() {
+        const now = new Date().toISOString();
+        const respondentId = "anon-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+        const questions = betaQuestionItems.map(([construct, questionTitle], index) => ({
+          id: "ai-fluency-q" + String(index + 1).padStart(2, "0"),
+          title: questionTitle,
+          description: "1 = Strongly disagree. 5 = Strongly agree.",
+          type: "single_select",
+          required: true,
+          options: ["1", "2", "3", "4", "5"],
+          scoring: {
+            construct,
+            method: "rating_1_to_5"
+          }
+        }));
+
+        return {
+          diagnostic: {
+            id: "ai-fluency-beta-" + activeMeasurementConfig.mode + "-v1",
+            name: "Explore Your AI Fluency",
+            objective: "Measure AI fluency across five dimensions and connect fluency to behavioral intent and perceived AI impact.",
+            measurementMode: activeMeasurementConfig.mode,
+            versionIdentifier: activeMeasurementConfig.versionIdentifier,
+            itemCount: questions.length,
+            questionCount: questions.length
+          },
+          survey: {
+            id: "ai-fluency-beta-" + activeMeasurementConfig.mode + "-v1",
+            name: "Explore Your AI Fluency",
+            objective: "Measure AI fluency across five dimensions and connect fluency to behavioral intent and perceived AI impact.",
+            audience: "Employees participating in an AI fluency experience",
+            introMessage: "Build your AI fluency profile through " + chapters.length + " short AI Fluency sections.",
+            measurementMode: activeMeasurementConfig.mode,
+            versionIdentifier: activeMeasurementConfig.versionIdentifier,
+            createdAt: now,
+            questions
+          },
+          session: {
+            id: respondentId,
+            surveyId: "ai-fluency-beta-" + activeMeasurementConfig.mode + "-v1",
+            respondentId,
+            status: "active",
+            currentQuestionId: questions[0]?.id || null,
+            answerCount: 0,
+            answers: [],
+            createdAt: now,
+            updatedAt: now
+          },
+          currentQuestion: questions[0] || null,
+          result: null,
+          agent: {
+            promptToRespondent: "",
+            nextQuestionId: questions[0]?.id || null,
+            shouldCompleteSession: false
+          }
+        };
+      }
+
+      function advanceStaticBetaState(currentState, questionId, value) {
+        const answeredAt = new Date().toISOString();
+        const questionIndex = currentState.survey.questions.findIndex((question) => question.id === questionId);
+        if (questionIndex === -1) throw new Error("Unknown beta question.");
+        const answers = currentState.session.answers.filter((answer) => answer.questionId !== questionId).concat({
+          questionId,
+          value,
+          answeredAt
+        });
+        const nextQuestion = currentState.survey.questions[questionIndex + 1] || null;
+        const completed = !nextQuestion;
+        const session = {
+          ...currentState.session,
+          status: completed ? "completed" : "active",
+          currentQuestionId: nextQuestion?.id || null,
+          answerCount: answers.length,
+          answers,
+          updatedAt: answeredAt
+        };
+        const result = completed ? calculateStaticBetaResult(currentState.survey, session, answeredAt) : null;
+
+        return {
+          ...currentState,
+          session,
+          currentQuestion: nextQuestion,
+          result,
+          agent: {
+            promptToRespondent: "",
+            nextQuestionId: session.currentQuestionId,
+            shouldCompleteSession: completed
+          }
+        };
+      }
+
+      function calculateStaticBetaResult(survey, session, calculatedAt) {
+        const measurementConfig = measurementConfigs[survey.measurementMode] || activeMeasurementConfig;
+        const dimensionKeys = measurementConfig.coreConstructs;
+        const outcomeKeys = measurementConfig.optionalConstructs.concat(measurementConfig.momentumConstructs, measurementConfig.outcomeConstructs);
+        const answersByQuestionId = new Map(session.answers.map((item) => [item.questionId, item.value]));
+        const scoresByConstruct = new Map();
+        survey.questions.forEach((question) => {
+          const value = Number(answersByQuestionId.get(question.id));
+          if (!Number.isFinite(value) || !question.scoring) return;
+          const score = Math.round(Math.min(5, Math.max(1, value)) * 100) / 100;
+          const constructScores = scoresByConstruct.get(question.scoring.construct) || [];
+          constructScores.push(score);
+          scoresByConstruct.set(question.scoring.construct, constructScores);
+        });
+        const buildScores = (keys) => keys.reduce((record, key) => {
+          const scores = scoresByConstruct.get(key) || [];
+          if (!scores.length) return record;
+          const score = Math.round((scores.reduce((sum, item) => sum + item, 0) / scores.length) * 100) / 100;
+          record[key] = {
+            key,
+            group: measurementConfig.coreConstructs.includes(key)
+              ? "core_fluency"
+              : measurementConfig.momentumConstructs.includes(key)
+                ? "momentum"
+                : measurementConfig.outcomeConstructs.includes(key)
+                  ? "outcome"
+                  : "optional_long_form",
+            label: constructLabels[key],
+            score,
+            scoreText: score.toFixed(1) + " / 5",
+            interpretation: constructInterpretations[key]
+          };
+          return record;
+        }, {});
+        const dimensions = buildScores(dimensionKeys);
+        const outcomes = buildScores(outcomeKeys);
+        const dimensionScores = Object.values(dimensions);
+        const overallScore = Math.round((dimensionScores.reduce((sum, item) => sum + item.score, 0) / dimensionScores.length) * 100) / 100;
+        const overall = overallScore >= 4.25
+          ? { score: overallScore, profile: "Strong fluency signal", band: "strong" }
+          : overallScore >= 3.5
+            ? { score: overallScore, profile: "Emerging fluency", band: "emerging" }
+            : overallScore >= 2.75
+              ? { score: overallScore, profile: "Developing fluency", band: "developing" }
+              : { score: overallScore, profile: "Early fluency", band: "early" };
+        const strongestDimension = [...dimensionScores].sort((a, b) => b.score - a.score)[0] || null;
+        const growthEdge = [...dimensionScores].sort((a, b) => a.score - b.score)[0] || null;
+        const strength = strongestDimension ? strongestDimension.label + " is the clearest strength" : "The clearest strength will emerge after more scored responses";
+        const growth = growthEdge ? growthEdge.label + " is the best next lever" : "the best next lever needs more scored responses";
+
+        return {
+          schemaVersion: "diagnostic-result/v1",
+          measurementMode: measurementConfig.mode,
+          versionIdentifier: measurementConfig.versionIdentifier,
+          calculatedAt,
+          respondentId: session.respondentId,
+          overall,
+          dimensions,
+          outcomes,
+          primaryOutcome: outcomes.perceived_ai_impact || null,
+          momentum: outcomes.behavioral_intent || null,
+          strongestDimension,
+          growthEdge,
+          narrative: overall.profile + ": " + strength + ", and " + growth + ".",
+          whatThisMeans: "This profile points to practical adoption capacity: where the respondent can already use AI with confidence, and where enablement should focus next.",
+          biggestLever: growthEdge
+            ? "Make " + growthEdge.label.toLowerCase() + " easier to practice in a real workflow this week."
+            : "Collect more completed responses before selecting a growth lever."
+        };
+      }
+
+      function betaContextFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const mergeParams = (source) => {
+          source.forEach((value, key) => {
+            if (!params.has(key)) params.set(key, value);
+          });
+        };
+        if (window.location.hash) {
+          mergeParams(new URLSearchParams(window.location.hash.replace(/^#/, "")));
+        }
+        if (!params.get("invite") && document.referrer) {
+          try {
+            const referrer = new URL(document.referrer);
+            mergeParams(referrer.searchParams);
+            mergeParams(new URLSearchParams(referrer.hash.replace(/^#/, "")));
+          } catch {
+            // Referrer may be unavailable or non-URL in embedded contexts.
+          }
+        }
+        const context = {
+          inviteCode: params.get("invite") || params.get("inviteCode") || params.get("invitecode") || "",
+          clientId: params.get("client") || params.get("clientId") || "",
+          clientName: params.get("clientName") || "",
+          cohortId: params.get("cohort") || params.get("cohortId") || ""
+        };
+        context.inviteCode = context.inviteCode || runtimeConfig.defaultInviteCode || "";
+        return context;
+      }
+
+      function betaProfileFromForm() {
+        const formData = new FormData(profileForm);
+        return {
+          company: String(formData.get("company") || ""),
+          roleLevel: String(formData.get("roleLevel") || ""),
+          functionArea: String(formData.get("functionArea") || ""),
+          tenure: String(formData.get("tenure") || ""),
+          priorExperience: String(formData.get("priorExperience") || "")
+        };
+      }
+
+      function selectedCalibrationLevel() {
+        const formData = new FormData(calibrationForm);
+        const selectedLevel = Number(formData.get("calibrationLevel"));
+        return calibrationLevels.find((item) => item.level === selectedLevel) || null;
+      }
+
+      function selectedCalibrationText() {
+        const selected = selectedCalibrationLevel();
+        if (!selected) {
+          return "No calibration level selected";
+        }
+        return "Level " + selected.level + ": " + selected.label;
+      }
+
+      function buildBetaCompletionPayload(completedState) {
+        const questionsById = new Map(completedState.survey.questions.map((question, index) => [question.id, { question, index }]));
+        const enrichedAnswers = completedState.session.answers.map((answer) => {
+          const match = questionsById.get(answer.questionId);
+          return {
+            ...answer,
+            itemIndex: match ? match.index + 1 : 0,
+            construct: match?.question?.scoring?.construct || null,
+            itemTitle: match?.question?.title || ""
+          };
+        });
+
+        return {
+          schemaVersion: "ai-fluency-beta-response/v1",
+          measurementMode: completedState.survey.measurementMode || activeMeasurementConfig.mode,
+          versionIdentifier: completedState.survey.versionIdentifier || activeMeasurementConfig.versionIdentifier,
+          submittedAt: new Date().toISOString(),
+          ...betaContextFromUrl(),
+          respondentId: completedState.session.respondentId,
+          profile: betaProfileFromForm(),
+          calibration: selectedCalibrationLevel(),
+          answers: enrichedAnswers,
+          result: completedState.result
+        };
+      }
+
+      async function submitBetaCompletion(completedState) {
+        if (!runtimeConfig.appsScriptUrl) {
+          console.warn("BETA_APPS_SCRIPT_URL is not configured; skipping beta response submission.");
+          return;
+        }
+
+        const payload = buildBetaCompletionPayload(completedState);
+        await fetch(runtimeConfig.appsScriptUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "content-type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      function setError(text) {
+        message.className = "status error";
+        message.textContent = text;
+      }
+
+      function setIntakeError(text) {
+        intakeMessage.className = "status error";
+        intakeMessage.textContent = text;
+      }
+
+      function escapeText(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function renderCalibrationOptions() {
+        calibrationOptionsRoot.innerHTML = calibrationLevels.map((item) =>
+          '<label class="calibrationOption"><input required name="calibrationLevel" type="radio" value="' + escapeText(item.level) + '" /><div class="calibrationCard"><span class="calibrationLevel">' + escapeText(item.level) + '</span><span class="calibrationCopy"><strong>' + escapeText(item.label) + '</strong><span>' + escapeText(item.description) + '</span></span></div></label>'
+        ).join("");
+      }
+
+      function currentCounts() {
+        const answerCount = state?.session?.answerCount ?? state?.session?.answers?.length ?? 0;
+        const total = state?.diagnostic?.itemCount ?? state?.diagnostic?.questionCount ?? 24;
+        const questionIndex = Math.min(Math.max(0, answerCount), Math.max(0, total - 1));
+        const currentQuestion = state?.currentQuestion ?? state?.survey?.questions?.[questionIndex] ?? null;
+        const currentConstruct = currentQuestion?.scoring?.construct ?? chapters[0]?.key;
+        const chapterIndex = Math.max(0, chapters.findIndex((chapter) => chapter.key === currentConstruct));
+        const chapter = chapters[chapterIndex] ?? chapters[0];
+        const groupIndex = Math.max(0, chunkGroups.findIndex((group) => group.keys.includes(currentConstruct)));
+        const group = chunkGroups[groupIndex] ?? chunkGroups[0];
+        const questionsInChapter = state?.survey?.questions?.filter((question) => question.scoring?.construct === chapter?.key) ?? [];
+        const answeredInChapter = (state?.session?.answers ?? []).filter((answer) => {
+          const question = state?.survey?.questions?.find((item) => item.id === answer.questionId);
+          return question?.scoring?.construct === chapter?.key;
+        }).length;
+        const questionsInGroup = state?.survey?.questions?.filter((question) => group?.keys.includes(question.scoring?.construct)) ?? [];
+        const answeredInGroup = (state?.session?.answers ?? []).filter((answer) => {
+          const question = state?.survey?.questions?.find((item) => item.id === answer.questionId);
+          return group?.keys.includes(question?.scoring?.construct);
+        }).length;
+        const chapterTotal = Math.max(1, questionsInChapter.length || 1);
+        const promptInChapter = state?.session?.status === "completed"
+          ? chapterTotal
+          : Math.min(chapterTotal, answeredInChapter + 1);
+        return {
+          answerCount,
+          total,
+          chapterIndex,
+          groupIndex,
+          group,
+          promptInChapter,
+          chapterTotal,
+          answeredInChapter,
+          groupTotal: Math.max(1, questionsInGroup.length || 1),
+          answeredInGroup
+        };
+      }
+
+      function isAutoAdvanceQuestion(question) {
+        return question?.type === "single_select" && question.options?.join(",") === "1,2,3,4,5";
+      }
+
+      function answerControl(question) {
+        if (question.type === "rating") {
+          return '<input required name="value" type="number" min="1" max="5" step="1" aria-label="Rating from 1 to 5" />';
+        }
+        if (question.type === "long_text") {
+          return '<textarea required name="value"></textarea>';
+        }
+        if (question.type === "single_select") {
+          if (question.options.join(",") === "1,2,3,4,5") {
+            const cards = question.options.map((option, index) => {
+              const label = likertScaleLabels[index] ?? option;
+              return '<label class="scaleOption"><input required name="value" type="radio" value="' + escapeText(option) + '" /><div class="scaleCard"><div class="scaleNumber">0' + escapeText(option) + '</div><div class="scaleTitle">' + escapeText(label) + '</div></div></label>';
+            }).join("");
+            return '<div class="scaleWrap"><div class="scaleHeader"><strong>How much do you agree?</strong></div><div class="scaleGrid">' + cards + '</div><p class="helperText">Answer based on the statement above and your current work, not the ideal future state.</p></div>';
+          }
+          return '<div class="inlineInput">' + question.options.map(option =>
+            '<label><input required name="value" type="radio" value="' + escapeText(option) + '" /> ' + escapeText(option) + '</label>'
+          ).join("") + '</div>';
+        }
+        if (question.type === "multi_select") {
+          return '<div class="inlineInput">' + question.options.map(option =>
+            '<label><input name="value" type="checkbox" value="' + escapeText(option) + '" /> ' + escapeText(option) + '</label>'
+          ).join("") + '</div>';
+        }
+        return '<input required name="value" type="text" />';
+      }
+
+      function updateProgress() {
+        const counts = currentCounts();
+        const chapter = chapters[counts.chapterIndex];
+        const answerCount = counts.answerCount;
+        const total = counts.total;
+        const percent = state?.session?.status === "completed" ? 100 : Math.min(100, Math.round((answerCount / total) * 100));
+        progressFill.style.width = percent + "%";
+        intakeProgressFill.style.width = "6%";
+        calibrationProgressFill.style.width = "10%";
+
+        progressLabel.textContent = state?.session?.status === "completed"
+          ? "Complete • your profile is ready"
+          : "Part " + (counts.groupIndex + 1) + " of " + chunkGroups.length + " • " + counts.group.title + " • quick prompts ahead";
+      }
+
+      function showHome() {
+        stage = "home";
+        homeScreen.hidden = false;
+        intakeScreen.hidden = true;
+        calibrationScreen.hidden = true;
+        questionScreen.hidden = true;
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+
+      function showIntake() {
+        stage = "intake";
+        homeScreen.hidden = true;
+        intakeScreen.hidden = false;
+        calibrationScreen.hidden = true;
+        questionScreen.hidden = true;
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        updateProgress();
+      }
+
+      function showCalibration() {
+        stage = "calibration";
+        homeScreen.hidden = true;
+        intakeScreen.hidden = true;
+        calibrationScreen.hidden = false;
+        questionScreen.hidden = true;
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        updateProgress();
+      }
+
+      function showQuestion() {
+        stage = "questions";
+        homeScreen.hidden = true;
+        intakeScreen.hidden = true;
+        calibrationScreen.hidden = true;
+        questionScreen.hidden = false;
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        updateProgress();
+      }
+
+      function hexToRgb(hex) {
+        const value = hex.replace("#", "");
+        return {
+          red: parseInt(value.slice(0, 2), 16),
+          green: parseInt(value.slice(2, 4), 16),
+          blue: parseInt(value.slice(4, 6), 16)
+        };
+      }
+
+      function rgbToHex(channel) {
+        return Math.max(0, Math.min(255, Math.round(channel))).toString(16).padStart(2, "0");
+      }
+
+      function signalStepColor(start, end, index, total) {
+        if (total <= 1) return end;
+        const ratio = index / (total - 1);
+        const startRgb = hexToRgb(start);
+        const endRgb = hexToRgb(end);
+        return "#" +
+          rgbToHex(startRgb.red + (endRgb.red - startRgb.red) * ratio) +
+          rgbToHex(startRgb.green + (endRgb.green - startRgb.green) * ratio) +
+          rgbToHex(startRgb.blue + (endRgb.blue - startRgb.blue) * ratio);
+      }
+
+      function signalQuestionStats(signalKey) {
+        const questions = state?.survey?.questions?.filter((question) => question.scoring?.construct === signalKey) ?? [];
+        const answered = (state?.session?.answers ?? []).filter((answer) => {
+          const question = state?.survey?.questions?.find((item) => item.id === answer.questionId);
+          return question?.scoring?.construct === signalKey;
+        }).length;
+        return {
+          total: Math.max(1, questions.length || 1),
+          answered
+        };
+      }
+
+      function styleCompletedSignalNumbers() {
+        circuitList.querySelectorAll("[data-signal-complete='true']").forEach((signal) => {
+          const colors = signalColors[signal.dataset.signalKey] || { start: "#e9edff", end: "#1243ff" };
+          const chapterNumber = signal.querySelector(".chapterNumber");
+          if (!chapterNumber) return;
+          chapterNumber.style.background = colors.end;
+          chapterNumber.style.borderColor = colors.end;
+          chapterNumber.style.color = "#ffffff";
+        });
+      }
+
+      function renderFluencyCircuit() {
+        const counts = currentCounts();
+        const activeChapterIndex = counts.chapterIndex;
+        const activeSignalNumber = state?.session?.status === "completed" ? chapters.length : activeChapterIndex + 1;
+        sidebarMomentNumber.textContent = state?.session?.status === "completed"
+          ? "Profile ready"
+          : "Signal " + activeSignalNumber + " of " + chapters.length;
+        sidebarMomentLabel.textContent = state?.session?.status === "completed" ? "Circuit complete" : "Current signal";
+        circuitList.innerHTML = chapters.map((chapter, index) => {
+          const stats = signalQuestionStats(chapter.key);
+          const chapterTotal = stats.total;
+          const answeredInChapter = stats.answered;
+          const signalDensity = chapterTotal === 3 ? "full" : chapterTotal === 2 ? "short" : "custom";
+          const colors = signalColors[chapter.key] || { start: "#e9edff", end: "#1243ff" };
+          const completed = answeredInChapter >= chapterTotal;
+          const active = index === activeChapterIndex ? " active" : "";
+          const completeClass = completed ? " completed" : "";
+          const stateLabel = active && !completed ? "Now" : "";
+          const pills = Array.from({ length: chapterTotal }, (_item, pillIndex) => {
+            const captured = pillIndex < answeredInChapter;
+            const pillColor = signalStepColor(colors.start, colors.end, pillIndex, chapterTotal);
+            const pillStyle = captured ? ' style="--pill-color: ' + pillColor + '"' : "";
+            return '<span class="chapterPill' + (captured ? " captured" : "") + '"' + pillStyle + '></span>';
+          }).join("");
+          return '<article class="chapterCard ' + signalDensity + active + completeClass + '" data-signal-key="' + escapeText(chapter.key) + '" data-signal-complete="' + escapeText(completed) + '" style="--signal-start: ' + colors.start + '; --signal-end: ' + colors.end + '; --signal-total: ' + chapterTotal + '"><div class="chapterNumber">' + escapeText(index + 1) + '</div><div class="chapterContent"><div class="chapterSignalTop"><div class="chapterName">' + escapeText(chapter.scan) + '</div><span class="chapterState">' + escapeText(stateLabel) + '</span></div><div class="chapterPills">' + pills + '</div></div></article>';
+        }).join("");
+        styleCompletedSignalNumbers();
+      }
+
+      function applyChapter(chapter) {
+        chapterTitle.textContent = chapter.title;
+        chapterDescription.textContent = chapter.description;
+        scanLabel.textContent = chapter.scan;
+        guideBadge.textContent = chapter.scan;
+        guideEyebrow.textContent = chapter.scan;
+        guideTitle.textContent = chapter.guideTitle;
+        guideBody.textContent = chapter.guideBody;
+      }
+
+      function applyChunkGroup(group) {
+        chapterTitle.textContent = group.title;
+        chapterDescription.textContent = group.description;
+        scanLabel.textContent = group.label;
+        guideBadge.textContent = group.label;
+        guideEyebrow.textContent = group.label;
+        guideTitle.textContent = group.guideTitle;
+        guideBody.textContent = group.guideBody;
+      }
+
+      function completedChunkAverage(groupIndex) {
+        const group = chunkGroups[groupIndex];
+        const answers = (state?.session?.answers ?? []).filter((answer) => {
+          const question = state?.survey?.questions?.find((item) => item.id === answer.questionId);
+          return group?.keys.includes(question?.scoring?.construct);
+        });
+        const values = answers.map((answer) => Number(answer.value)).filter((value) => Number.isFinite(value));
+        if (!values.length) return null;
+        return values.reduce((sum, value) => sum + value, 0) / values.length;
+      }
+
+      function feedbackLabel(average) {
+        if (average === null) return "Moment captured";
+        if (average >= 4.2) return "Strong signal";
+        if (average >= 3.2) return "Developing signal";
+        return "Growth area";
+      }
+
+      function feedbackSentence(average, chapter) {
+        if (average === null) {
+          return "You completed this moment and added useful context to your AI fluency profile.";
+        }
+        if (average >= 4.2) {
+          return "Your answers suggest this is already a relative strength for you.";
+        }
+        if (average >= 3.2) {
+          return "Your answers suggest this area is taking shape, with room to make it more consistent.";
+        }
+        return "Your answers suggest this may be an area where more support or practice would help.";
+      }
+
+      function showMomentComplete(groupIndex) {
+        const group = chunkGroups[groupIndex];
+        const average = completedChunkAverage(groupIndex);
+        applyChunkGroup(group);
+        form.hidden = true;
+        momentCompletePanel.hidden = false;
+        resultPanel.hidden = true;
+        momentTitle.textContent = group.title + " complete.";
+        momentNarrative.textContent = feedbackSentence(average, group);
+        momentLearned.textContent = "This helped clarify " + group.learned + ".";
+        momentBadge.textContent = feedbackLabel(average);
+        const nextGroup = chunkGroups[groupIndex + 1];
+        momentContinue.textContent = nextGroup ? "Continue to " + nextGroup.title + " →" : "See my results →";
+        showQuestion();
+        progressLabel.textContent = "Part " + (groupIndex + 1) + " of " + chunkGroups.length + " complete • " + group.title;
+      }
+
+      function scorePercent(score) {
+        const numericScore = Number(score);
+        if (!Number.isFinite(numericScore)) return 0;
+        return Math.round(Math.min(100, Math.max(0, (numericScore / 5) * 100)));
+      }
+
+      function asPercent(score) {
+        return scorePercent(score) + "%";
+      }
+
+      function profileName(result) {
+        const percent = scorePercent(result?.overall?.score ?? 0);
+        if (percent >= 85) return "leading fluency profile";
+        if (percent >= 55) return "established fluency profile";
+        if (percent >= 35) return "developing fluency profile";
+        return "early fluency profile";
+      }
+
+      function resultIntro(result, strongest, growth) {
+        const strongestLabel = strongest?.label ?? "AI fluency";
+        const growthLabel = growth?.label ?? "AI fluency";
+        if (strongest?.key && strongest.key === growth?.key) {
+          return "AI is becoming a meaningful part of work. The focus now is to reinforce " + strongestLabel.toLowerCase() + " through practical, repeatable workflows.";
+        }
+        return "AI is becoming a meaningful part of work. The focus now is to reinforce " + strongestLabel.toLowerCase() + " and expand into " + growthLabel.toLowerCase() + " with practical, repeatable workflows.";
+      }
+
+      function dimensionItems(result) {
+        return Object.values(result?.dimensions ?? {});
+      }
+
+      function outcomeItems(result) {
+        return Object.values(result?.outcomes ?? {});
+      }
+
+      function dimensionDefinition(item) {
+        const definitions = {
+          confidence: "How steady you feel using AI, including when the first answer is not useful.",
+          usage_quality: "Whether AI is helping you produce better work, not just faster work.",
+          behavior_change: "Whether AI is becoming part of how your recurring work actually gets done.",
+          leadership_reinforcement: "Whether your environment makes responsible AI use visible, encouraged, and normal.",
+          capability_growth: "Whether you know the next AI skill to build and have a way to practice it."
+        };
+        return definitions[item?.key] ?? "What this part of your AI fluency profile means in daily work.";
+      }
+
+      function renderTermLabel(item) {
+        return '<span class="termLabel">' + escapeText(item?.label ?? "AI fluency") + '<span class="termHelp" aria-hidden="true">?</span><span class="tooltipBubble">' + escapeText(dimensionDefinition(item)) + '</span></span>';
+      }
+
+      function selectedWorkProfile() {
+        try {
+          return betaProfileFromForm();
+        } catch {
+          return {
+            company: "",
+            roleLevel: "",
+            functionArea: "",
+            tenure: "",
+            priorExperience: ""
+          };
+        }
+      }
+
+      function workContext(profile) {
+        const contexts = {
+          "Engineering / Software Development": {
+            area: "engineering work",
+            workflow: "ticket triage, incident summaries, technical documentation, implementation planning, or code review prep",
+            output: "clearer tickets, faster summaries, better documentation, or stronger review checklists",
+            readiness: "you can use AI for synthesis and planning while keeping technical validation with humans",
+            impact: "faster triage, clearer docs, cleaner incident notes, or better implementation plans",
+            guardrail: "security, correctness, system context, and human technical review"
+          },
+          "Product Management": {
+            area: "product work",
+            workflow: "discovery notes, roadmap tradeoff summaries, product requirement drafts, or launch readiness reviews",
+            output: "clearer product decisions, sharper requirements, faster synthesis, or stronger launch alignment",
+            readiness: "you can use AI to organize signals and options while keeping product judgment, customer context, and tradeoffs visible",
+            impact: "better discovery synthesis, clearer specs, faster roadmap prep, or tighter cross-functional alignment",
+            guardrail: "customer evidence, prioritization logic, technical feasibility, and decision ownership"
+          },
+          "Design / UX / Research": {
+            area: "design, UX, and research work",
+            workflow: "research synthesis, concept exploration, usability notes, creative briefs, or design critique prep",
+            output: "clearer user themes, faster concept options, stronger briefs, or better research-to-design synthesis",
+            readiness: "you can use AI to expand options and summarize signals while preserving craft, user context, and evidence quality",
+            impact: "faster exploration, clearer rationale, better iteration, or stronger user-centered decisions",
+            guardrail: "user evidence, privacy, accessibility, originality, and human creative review"
+          },
+          "Data & Analytics": {
+            area: "data and analytics work",
+            workflow: "dashboard narratives, metric definitions, analysis summaries, or stakeholder insight briefs",
+            output: "clearer metric explanations, faster analysis drafts, stronger insight narratives, or cleaner data questions",
+            readiness: "you can use AI to explain and structure analysis while keeping source data, assumptions, and analytical judgment intact",
+            impact: "faster insight delivery, clearer decision support, better metric literacy, or stronger analysis reuse",
+            guardrail: "source data, assumptions, definitions, privacy, and analytical validity"
+          },
+          "IT Systems or Security": {
+            area: "IT, systems, and security work",
+            workflow: "access reviews, support ticket summaries, system documentation, security checklists, or incident communication",
+            output: "cleaner support notes, faster documentation, stronger review checklists, or clearer incident updates",
+            readiness: "you can use AI to reduce repetitive systems work while preserving controls, security judgment, and auditability",
+            impact: "faster support cycles, clearer systems knowledge, better control follow-through, or stronger incident coordination",
+            guardrail: "access controls, security policy, system accuracy, and approval requirements"
+          },
+          "Sales or Business Development": {
+            area: "sales work",
+            workflow: "account research, meeting prep, follow-up drafts, or objection handling",
+            output: "a sharper account point of view, faster follow-up, cleaner next steps, or stronger meeting prep",
+            readiness: "you can tell when AI should help with prep, synthesis, or follow-up and when customer judgment stays with you",
+            impact: "better account prep, faster follow-up, clearer deal strategy, or more consistent customer notes",
+            guardrail: "customer accuracy, tone, and deal context before anything is shared"
+          },
+          "Marketing & Communications": {
+            area: "marketing and communications work",
+            workflow: "campaign briefs, message testing, content repurposing, audience research, or stakeholder communications",
+            output: "clearer positioning options, faster content variants, tighter briefs, or stronger audience fit",
+            readiness: "you can use AI to explore options while still applying brand, audience, proof, and tone standards",
+            impact: "faster campaign starts, stronger message options, clearer briefs, or more consistent communications",
+            guardrail: "brand fit, claims, confidentiality, audience relevance, and source quality"
+          },
+          "Customer or Account Success": {
+            area: "customer success work",
+            workflow: "QBR prep, renewal risk notes, customer health summaries, or follow-up plans",
+            output: "clearer customer summaries, faster prep, better risk signals, or more specific next actions",
+            readiness: "you can use AI to prepare and synthesize while keeping customer context and judgment intact",
+            impact: "better meeting prep, clearer renewal risks, faster follow-up, or more consistent account plans",
+            guardrail: "customer facts, commitments, sensitive details, and relationship context"
+          },
+          "Support or Help Desk": {
+            area: "support and help desk work",
+            workflow: "case summaries, resolution drafts, knowledge article updates, or escalation notes",
+            output: "faster response drafts, cleaner issue summaries, stronger knowledge reuse, or more consistent handoffs",
+            readiness: "you can use AI to speed up resolution work while still checking facts, policy, and customer tone",
+            impact: "shorter resolution cycles, clearer escalations, better knowledge coverage, or more consistent service quality",
+            guardrail: "customer facts, approved guidance, escalation rules, and sensitive details"
+          },
+          "Field Operations or Logistics": {
+            area: "field operations and logistics work",
+            workflow: "shift notes, supplier updates, demand planning summaries, incident reports, or fulfillment handoffs",
+            output: "clearer operational summaries, faster handoffs, better exception notes, or stronger planning inputs",
+            readiness: "you can use AI to organize operational information while keeping safety, timing, and source systems authoritative",
+            impact: "cleaner handoffs, faster exception handling, better planning visibility, or more consistent operational communication",
+            guardrail: "safety, source system accuracy, compliance, timing, and operational ownership"
+          },
+          "People Talent or Human Resources": {
+            area: "people, talent, and HR work",
+            workflow: "manager guides, employee communications, policy drafts, talent planning notes, or onboarding content",
+            output: "clearer guidance, faster enablement drafts, better manager prompts, or more consistent communications",
+            readiness: "you can use AI to draft and structure while protecting privacy, fairness, and tone",
+            impact: "faster enablement, clearer manager support, more consistent comms, or better policy drafts",
+            guardrail: "privacy, fairness, employee sensitivity, and policy accuracy"
+          },
+          "Finance or Accounting": {
+            area: "finance work",
+            workflow: "variance commentary, budget notes, forecast assumptions, or reconciliation summaries",
+            output: "clearer variance explanations, faster commentary drafts, better assumption notes, or cleaner summaries",
+            readiness: "you can use AI to explain and organize while keeping numbers, controls, and approvals intact",
+            impact: "faster commentary, clearer assumptions, cleaner summaries, or better decision support",
+            guardrail: "numbers, controls, source data, and approval requirements"
+          },
+          "Legal & Compliance": {
+            area: "legal and compliance work",
+            workflow: "policy review, risk summaries, contract notes, or compliance guidance",
+            output: "clearer review notes, faster policy drafts, stronger risk summaries, or better stakeholder guidance",
+            readiness: "you can use AI to organize and draft while keeping legal judgment, approval paths, and evidence standards intact",
+            impact: "faster review cycles, clearer risk communication, better policy consistency, or stronger control follow-through",
+            guardrail: "confidentiality, privilege, regulatory requirements, approved language, and human review"
+          },
+          "Corporate Strategy or Business Operations": {
+            area: "corporate strategy and business operations work",
+            workflow: "research synthesis, market scans, operating reviews, or strategic option briefs",
+            output: "clearer themes, faster synthesis, sharper hypotheses, or more useful strategic options",
+            readiness: "you can use AI to organize evidence, options, and operating context while preserving strategic judgment",
+            impact: "faster sensemaking, stronger decision support, clearer options, or better operating rhythm",
+            guardrail: "source quality, assumptions, evidence strength, confidentiality, and decision ownership"
+          },
+          "Administrative or Executive Support": {
+            area: "administrative and executive support work",
+            workflow: "scheduling coordination, executive brief prep, office updates, recurring checklists, or follow-up tracking",
+            output: "cleaner coordination, faster updates, stronger briefs, or more consistent follow-through",
+            readiness: "you can use AI to reduce coordination load while keeping ownership, timing, and sensitive details clear",
+            impact: "fewer dropped handoffs, faster updates, smoother coordination, or more repeatable support routines",
+            guardrail: "privacy, logistics accuracy, confidentiality, ownership, and escalation rules"
+          },
+          "Education or Training": {
+            area: "education and training work",
+            workflow: "training content, learning paths, enablement guides, or workshop follow-up",
+            output: "clearer learning materials, faster practice examples, better learner support, or stronger reinforcement plans",
+            readiness: "you can use AI to build and adapt learning support while keeping audience needs and accuracy central",
+            impact: "faster enablement, clearer practice, stronger reinforcement, or more reusable learning assets",
+            guardrail: "accuracy, accessibility, audience fit, policy, and human review"
+          }
+        };
+        const legacyFunctionAreas = {
+          "Sales": "Sales or Business Development",
+          "Sales / Revenue": "Sales or Business Development",
+          "Marketing": "Marketing & Communications",
+          "Marketing / Growth": "Marketing & Communications",
+          "Communications / PR": "Marketing & Communications",
+          "Customer success": "Customer or Account Success",
+          "Customer success / Account management": "Customer or Account Success",
+          "Customer support / Service": "Support or Help Desk",
+          "Operations": "Corporate Strategy or Business Operations",
+          "Operations / Business operations": "Corporate Strategy or Business Operations",
+          "Engineering / IT": "Engineering / Software Development",
+          "Engineering / Software development": "Engineering / Software Development",
+          "IT / Systems / Security": "IT Systems or Security",
+          "Data / Analytics / BI": "Data & Analytics",
+          "Research / Insights / Strategy": "Corporate Strategy or Business Operations",
+          "People / HR": "People Talent or Human Resources",
+          "People / HR / Learning": "People Talent or Human Resources",
+          "Finance": "Finance or Accounting",
+          "Finance / Accounting": "Finance or Accounting",
+          "Legal / Compliance / Risk": "Legal & Compliance",
+          "Procurement / Vendor management": "Corporate Strategy or Business Operations",
+          "Design / UX / Creative": "Design / UX / Research",
+          "Administration / Office / Facilities": "Administrative or Executive Support",
+          "Manufacturing / Supply chain / Logistics": "Field Operations or Logistics",
+          "Executive / General management": "Corporate Strategy or Business Operations"
+        };
+        const functionArea = profile?.functionArea;
+        const contextKey = contexts[functionArea] ? functionArea : legacyFunctionAreas[functionArea];
+        return contexts[contextKey] ?? {
+          area: "your work",
+          workflow: "drafting, research, synthesis, follow-up, planning, or review",
+          output: "a faster first draft, stronger options, a clearer decision, or a better review",
+          readiness: "you can name when AI helps, how to check it, and where your judgment still matters",
+          impact: "fewer blank-page starts, stronger drafts, cleaner handoffs, or faster decisions",
+          guardrail: "accuracy, privacy, tone, and human judgment"
+        };
+      }
+
+      function roleStrategy(profile) {
+        const roleLevel = profile?.roleLevel || "your role";
+        const strategies = {
+          "Individual contributor": {
+            title: "Turn your result into one reusable work habit.",
+            body: "Use your strongest dimension to improve one recurring deliverable you own. Your fastest path is to create a better repeatable example, then share what worked with a manager or teammate."
+          },
+          "Manager": {
+            title: "Translate your result into a team example.",
+            body: "Use your own next move to model what good AI-assisted work looks like. Then pick one team workflow where you can set a norm, review standard, or reusable prompt pattern."
+          },
+          "Director": {
+            title: "Turn your result into a scalable operating pattern.",
+            body: "Look for one workflow where your team needs a clearer AI standard. Your opportunity is to connect personal practice to a repeatable way the function improves work quality."
+          },
+          "VP+": {
+            title: "Use your result to shape visible leadership reinforcement.",
+            body: "Your next move is less about one prompt and more about the signal you send: name the workflow, define the quality bar, and make strong AI-assisted work visible."
+          }
+        };
+        return strategies[roleLevel] ?? {
+          title: "Apply your result to the responsibilities you own most often.",
+          body: "Choose one recurring work pattern where better AI fluency would improve quality, speed, or consistency. Keep the move small enough to repeat this week."
+        };
+      }
+
+      function tenureStrategy(profile) {
+        const tenure = profile?.tenure || "";
+        if (tenure === "Less than 1 year") {
+          return "Use AI to accelerate context-building: summarize decisions, decode acronyms, prepare questions, and turn onboarding knowledge into reusable notes.";
+        }
+        if (tenure === "1-2 years") {
+          return "You likely know enough of the work to spot friction. Use AI to improve one repeated workflow and make the before/after visible.";
+        }
+        if (tenure === "3-5 years") {
+          return "Use your institutional context to raise the quality bar: ask AI for options, then apply judgment about what will actually work here.";
+        }
+        if (tenure === "6-10 years" || tenure === "10+ years") {
+          return "Use your pattern recognition to create reusable examples others can trust, especially where AI output needs review, context, or risk judgment.";
+        }
+        return "Use your knowledge of the role to choose a workflow that repeats often enough for practice to turn into capability.";
+      }
+
+      function experienceStrategy(profile) {
+        const experience = profile?.priorExperience || "";
+        const calibration = selectedCalibrationLevel();
+        const level = calibration?.level ?? 0;
+        if (level <= 2 || experience === "None" || experience === "A little") {
+          return "Start with low-risk practice. Your goal is confidence through repetition: summarize, rewrite, compare options, and ask follow-up questions until the pattern feels usable.";
+        }
+        if (level === 3 || level === 4 || experience === "Some") {
+          return "Move from useful assistance to stronger work. Your goal is to improve quality: add context, ask for alternatives, check outputs, and decide what still needs your judgment.";
+        }
+        return "Move from personal productivity to reusable leverage. Your goal is to package what works into prompts, templates, workflows, or automations other people can adopt.";
+      }
+
+      function radarPoints(items) {
+        const center = 150;
+        const radius = 98;
+        const count = Math.max(1, items.length);
+        return items.map((item, index) => {
+          const point = radarCoordinate(item, index, count, radius);
+          return point.x.toFixed(1) + "," + point.y.toFixed(1);
+        }).join(" ");
+      }
+
+      function radarCoordinate(item, index, count, radius) {
+        const center = 150;
+        const angle = -Math.PI / 2 + (index * Math.PI * 2) / count;
+        const percent = scorePercent(item.score) / 100;
+        return {
+          x: center + Math.cos(angle) * radius * percent,
+          y: center + Math.sin(angle) * radius * percent
+        };
+      }
+
+      function radarAxes(items) {
+        const center = 150;
+        const radius = 108;
+        const count = Math.max(1, items.length);
+        return items.map((item, index) => {
+          const angle = -Math.PI / 2 + (index * Math.PI * 2) / count;
+          const x = center + Math.cos(angle) * radius;
+          const y = center + Math.sin(angle) * radius;
+          return '<line x1="150" y1="150" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#d7ddff" />';
+        }).join("");
+      }
+
+      function radarRings() {
+        return [34, 68, 102].map((radius) =>
+          '<polygon points="150,' + (150 - radius) + ' ' + (150 + radius) + ',150 150,' + (150 + radius) + ' ' + (150 - radius) + ',150" fill="none" stroke="#d7ddff" />'
+        ).join("");
+      }
+
+      function radarPointControls(items, activeKey) {
+        const count = Math.max(1, items.length);
+        return items.map((item, index) => {
+          const point = radarCoordinate(item, index, count, 98);
+          const active = item.key === activeKey ? " isActive" : "";
+          return '<g class="radarPoint' + active + '" tabindex="0" role="button" aria-label="Focus ' + escapeText(item.label) + '" data-profile-key="' + escapeText(item.key) + '"><circle cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1) + '" r="6"></circle></g>';
+        }).join("");
+      }
+
+      function dimensionInsight(item) {
+        const insights = {
+          confidence: {
+            read: "This shows how ready AI feels in the work you actually do.",
+            action: "Practice one low-risk workflow three times this week so successful AI use starts to feel repeatable."
+          },
+          usage_quality: {
+            read: "This shows whether AI is improving the quality of the work, not only making it faster.",
+            action: "Create a quick review habit: check sources, refine the output, and decide what still needs your judgment."
+          },
+          behavior_change: {
+            read: "This shows whether AI is changing the way recurring work gets done.",
+            action: "Pick one repeatable workflow and decide where AI should help before, during, and after the work."
+          },
+          leadership_reinforcement: {
+            read: "This shows whether the environment around you makes thoughtful AI use feel encouraged and normal.",
+            action: "Ask for one visible example of good AI-assisted work so the team has a concrete model to copy."
+          },
+          capability_growth: {
+            read: "This shows whether you can see the next skill to build with AI.",
+            action: "Choose one capability to improve next and turn it into a short practice loop with feedback."
+          }
+        };
+        return insights[item?.key] ?? {
+          read: "This shows where AI is starting to create practical value.",
+          action: "Choose one repeatable task and define what good AI-assisted work should look like."
+        };
+      }
+
+      function nextActionPlan(item, context) {
+        const action = dimensionInsight(item);
+        const buildArea = item?.label ?? "AI fluency";
+        return {
+          label: "Turn insight into impact",
+          title: "Make one visible improvement in a real " + context.area + " workflow.",
+          why: "Your clearest build area is " + buildArea.toLowerCase() + ". The practical move is to turn that insight into one observable change in the work: clearer inputs, better review, faster handoff, stronger output quality, or a more repeatable habit.",
+          steps: [
+            {
+              title: "Choose the moment",
+              body: "Start with " + context.workflow + ". Pick one situation that will happen again soon, not a one-off task."
+            },
+            {
+              title: "Name the better outcome",
+              body: "Write one sentence for what should improve: " + context.output + ". This makes the habit measurable."
+            },
+            {
+              title: "Practice with a guardrail",
+              body: action.action + " Before using the output, check " + context.guardrail + "."
+            },
+            {
+              title: "Compare the before and after",
+              body: "Look for a visible signal: " + context.impact + ". If you cannot see a difference, narrow the workflow and try again."
+            }
+          ]
+        };
+      }
+
+      function renderProfileFocus(item) {
+        const insight = dimensionInsight(item);
+        return '<div class="profileFocus" id="profileFocus"><div class="profileFocusHeader"><div><div class="eyebrow">AI Fluency profile focus</div><h3>' + escapeText(item?.label ?? "AI fluency") + '</h3></div><div class="profileFocusScore">' + asPercent(item?.score ?? 0) + '</div></div><div class="profileFocusBody"><div><p class="profileFocusDefinition">' + escapeText(dimensionDefinition(item)) + '</p><p>' + escapeText(insight.read) + '</p><p class="profileFocusAction">' + escapeText(insight.action) + '</p></div><div class="profileShapeWrap"><div class="radarChart" aria-hidden="true" id="profileShape"></div><div class="profileNodeLabel">Highlighted AI Fluency signal: ' + escapeText(item?.label ?? "AI fluency") + '</div></div></div></div>';
+      }
+
+      function renderProfileShape(items) {
+        const target = resultContent.querySelector("#profileShape");
+        if (!target) return;
+        target.innerHTML = '<svg width="340" height="340" viewBox="0 0 300 300" role="img" aria-label="AI fluency profile shape">' + radarRings() + radarAxes(items) + '<polygon points="' + radarPoints(items) + '" fill="rgba(47, 57, 255, 0.22)" stroke="#2f39ff" stroke-width="5" />' + radarPointControls(items, activeDimensionKey) + '</svg>';
+      }
+
+      function dimensionCardAction(item, context) {
+        const workflow = context?.workflow ?? "one repeatable workflow";
+        const guardrail = context?.guardrail ?? "accuracy, privacy, tone, and human judgment";
+        const actions = {
+          confidence: "Try AI on one low-risk " + workflow + " moment three times this week.",
+          usage_quality: "Improve one output: ask for options, check " + guardrail + ", then sharpen the final version.",
+          behavior_change: "Attach AI to one repeatable step so it becomes part of how the work gets done.",
+          leadership_reinforcement: "Ask for or share one visible example of good AI-assisted work the team can copy.",
+          capability_growth: "Pick one AI skill to build next and practice it with feedback in a real workflow."
+        };
+        return actions[item?.key] ?? "Pick one useful AI habit and repeat it in a real workflow this week.";
+      }
+
+      function profileChoiceControls(items, activeKey, context) {
+        return items.map((item) =>
+          '<button class="profileChoice' + (item.key === activeKey ? " isActive" : "") + '" type="button" data-profile-key="' + escapeText(item.key) + '" aria-pressed="' + (item.key === activeKey ? "true" : "false") + '" title="' + escapeText(item.label + ": " + dimensionDefinition(item)) + '"><div class="profileChoiceTop"><strong>' + renderTermLabel(item) + '</strong><span class="profileChoiceScore">' + asPercent(item.score) + '</span></div><p class="profileChoiceDefinition"><span class="profileChoiceCue">Practice next</span>' + escapeText(dimensionCardAction(item, context)) + '</p></button>'
+        ).join("");
+      }
+
+      function renderActionPlan(plan) {
+        return '<article class="strategyCard controlNext"><div class="eyebrow">' + escapeText(plan.label) + '</div><h3>' + escapeText(plan.title) + '</h3><p>This is the workflow experiment to run next. Use the strategy above to understand your pattern; use this plan to turn it into one visible behavior change.</p><p>' + escapeText(plan.why) + '</p><div class="actionSteps">' + plan.steps.map((step, index) => '<div class="actionStep"><span>0' + (index + 1) + '</span><div><strong>' + escapeText(step.title) + '</strong><p>' + escapeText(step.body) + '</p></div></div>').join("") + '</div></article>';
+      }
+
+      function renderFluencyModel(args) {
+        const hasAttitude = Boolean(state?.result?.outcomes?.ai_attitude);
+        const middleTitle = hasAttitude ? "Your Confidence + Attitude + Intent" : "Your Confidence + Intent";
+        const middleBody = hasAttitude
+          ? "You know when to use AI, how it feels, and where your judgment still matters"
+          : "You know when to use AI, how you intend to use it next, and where your judgment still matters";
+        return '<article class="modelFlow impactModel"><div class="eyebrow">How your AI fluency turns into impact</div><h3>Your fluency profile points to where AI can become easier to use well.</h3><p class="modelNarrative">When your AI fluency increases, AI should feel more useful, more intentional, and easier to trust in the right moments. That readiness is what turns AI from something you try into a habit that improves real ' + escapeText(args.context.area) + ' work.</p><div class="modelFlowTrack"><div class="modelNode"><strong>Your AI Fluency</strong><p>Confidence, quality, habits, support, and skill growth</p></div><div class="modelArrow" aria-hidden="true">→</div><div class="modelNode"><strong>' + escapeText(middleTitle) + '</strong><p>' + escapeText(middleBody) + '</p></div><div class="modelArrow" aria-hidden="true">→</div><div class="modelNode"><strong>Your Work Impact</strong><p>' + escapeText(args.context.impact) + '</p></div></div></article>';
+      }
+
+      function renderIndividualStrategy(profile, context) {
+        const role = roleStrategy(profile);
+        return '<section class="resultBlock"><div class="eyebrow">Your individual AI fluency strategy</div><h3>Use this result to level up in the work you actually own.</h3><p>Start by matching your profile to the work you do most often. The guidance below helps you decide where to practice, what kind of workflow to improve, and how to make progress visible in your role.</p><div class="snapshotGrid"><article class="snapshotMini"><strong>Function strategy</strong><p>In ' + escapeText(context.area) + ', start with ' + escapeText(context.workflow) + ' and look for ' + escapeText(context.impact) + '.</p></article><article class="snapshotMini"><strong>Role-level move</strong><p>' + escapeText(role.title) + ' ' + escapeText(role.body) + '</p></article><article class="snapshotMini"><strong>Tenure advantage</strong><p>' + escapeText(tenureStrategy(profile)) + '</p></article><article class="snapshotMini"><strong>Calibration move</strong><p>' + escapeText(selectedCalibrationText()) + '. ' + escapeText(experienceStrategy(profile)) + '</p></article></div></section>';
+      }
+
+      function resultSummaryText() {
+        const result = state?.result;
+        if (!result) return "Your AI fluency profile is not ready yet.";
+        const dimensions = dimensionItems(result);
+        const strongest = result.strongestDimension ?? dimensions[0];
+        const growth = result.growthEdge ?? dimensions[1] ?? dimensions[0];
+        const profile = selectedWorkProfile();
+        const context = workContext(profile);
+        const lines = [
+          "Explore Your AI Fluency",
+          "",
+          "Overall fluency: " + asPercent(result.overall?.score ?? 0),
+          "Profile: " + profileName(result),
+          "Strongest dimension: " + (strongest?.label ?? "AI fluency") + " (" + asPercent(strongest?.score ?? 0) + ")",
+          "Growth edge: " + (growth?.label ?? "AI fluency") + " (" + asPercent(growth?.score ?? 0) + ")",
+          "",
+          "What this means:",
+          result.whatThisMeans ?? "This profile shows where AI feels ready to create value and where support should focus next.",
+          "",
+          "Turn insight into impact:",
+          "Make one visible improvement in a real " + context.area + " workflow.",
+          "Start with " + context.workflow + ". Pick one situation that will happen again soon, not a one-off task.",
+          "Define what should improve: " + context.output + ".",
+          "Practice with a guardrail: check " + context.guardrail + ".",
+          "Compare the before and after by looking for " + context.impact + ".",
+          "",
+          "Your individual AI fluency strategy:",
+          "- Function strategy: in " + context.area + ", start with " + context.workflow + " and look for " + context.impact + ".",
+          "- Role-level move: " + roleStrategy(profile).title + " " + roleStrategy(profile).body,
+          "- Tenure advantage: " + tenureStrategy(profile),
+          "- Calibration move: " + selectedCalibrationText() + ". " + experienceStrategy(profile),
+          "- How to use this: pick one recurring workflow, apply the action plan, and compare the before and after signal.",
+          "",
+          "Dimension scores:"
+        ];
+        dimensions.forEach((item) => {
+          lines.push("- " + item.label + ": " + asPercent(item.score) + " - " + dimensionDefinition(item));
+        });
+        return lines.join("\n");
+      }
+
+      function escapeXml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&apos;");
+      }
+
+      function docxParagraph(text, options = {}) {
+        const size = options.size ? '<w:sz w:val="' + options.size + '"/>' : "";
+        const bold = options.bold ? "<w:b/>" : "";
+        const color = options.color ? '<w:color w:val="' + options.color + '"/>' : "";
+        const runProperties = bold || size || color ? "<w:rPr>" + bold + size + color + "</w:rPr>" : "";
+        const spacing = options.after ? '<w:pPr><w:spacing w:after="' + options.after + '"/></w:pPr>' : "";
+        const textNode = text ? '<w:r>' + runProperties + '<w:t xml:space="preserve">' + escapeXml(text) + '</w:t></w:r>' : "";
+        return "<w:p>" + spacing + textNode + "</w:p>";
+      }
+
+      function buildResultDocumentXml() {
+        const lines = resultSummaryText().split("\n");
+        const paragraphs = lines.map((line, index) => {
+          if (index === 0) {
+            return docxParagraph(line, { bold: true, size: 36, color: "173DFF", after: 240 });
+          }
+          if (!line.trim()) {
+            return docxParagraph("", { after: 120 });
+          }
+          if (line.endsWith(":")) {
+            return docxParagraph(line.replace(":", ""), { bold: true, size: 26, color: "173DFF", after: 120 });
+          }
+          if (line.startsWith("- ")) {
+            return docxParagraph("• " + line.slice(2), { size: 22, after: 80 });
+          }
+          return docxParagraph(line, { size: 22, after: 120 });
+        }).join("");
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          '<w:body>' + paragraphs +
+          '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>' +
+          '</w:body></w:document>';
+      }
+
+      function crc32(bytes) {
+        let crc = -1;
+        for (let index = 0; index < bytes.length; index += 1) {
+          crc = (crc >>> 8) ^ crc32Table[(crc ^ bytes[index]) & 0xff];
+        }
+        return (crc ^ -1) >>> 0;
+      }
+
+      const crc32Table = Array.from({ length: 256 }, (_, index) => {
+        let value = index;
+        for (let bit = 0; bit < 8; bit += 1) {
+          value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+        }
+        return value >>> 0;
+      });
+
+      function uint16(value) {
+        return new Uint8Array([value & 0xff, (value >>> 8) & 0xff]);
+      }
+
+      function uint32(value) {
+        return new Uint8Array([
+          value & 0xff,
+          (value >>> 8) & 0xff,
+          (value >>> 16) & 0xff,
+          (value >>> 24) & 0xff
+        ]);
+      }
+
+      function concatBytes(parts) {
+        const total = parts.reduce((sum, part) => sum + part.length, 0);
+        const output = new Uint8Array(total);
+        let offset = 0;
+        parts.forEach((part) => {
+          output.set(part, offset);
+          offset += part.length;
+        });
+        return output;
+      }
+
+      function createZip(files) {
+        const encoder = new TextEncoder();
+        const localParts = [];
+        const centralParts = [];
+        let offset = 0;
+
+        files.forEach((file) => {
+          const nameBytes = encoder.encode(file.name);
+          const dataBytes = typeof file.data === "string" ? encoder.encode(file.data) : file.data;
+          const checksum = crc32(dataBytes);
+          const localHeader = concatBytes([
+            uint32(0x04034b50),
+            uint16(20),
+            uint16(0),
+            uint16(0),
+            uint16(0),
+            uint16(0),
+            uint32(checksum),
+            uint32(dataBytes.length),
+            uint32(dataBytes.length),
+            uint16(nameBytes.length),
+            uint16(0),
+            nameBytes
+          ]);
+          const centralHeader = concatBytes([
+            uint32(0x02014b50),
+            uint16(20),
+            uint16(20),
+            uint16(0),
+            uint16(0),
+            uint16(0),
+            uint16(0),
+            uint32(checksum),
+            uint32(dataBytes.length),
+            uint32(dataBytes.length),
+            uint16(nameBytes.length),
+            uint16(0),
+            uint16(0),
+            uint16(0),
+            uint16(0),
+            uint32(0),
+            uint32(offset),
+            nameBytes
+          ]);
+
+          localParts.push(localHeader, dataBytes);
+          centralParts.push(centralHeader);
+          offset += localHeader.length + dataBytes.length;
+        });
+
+        const centralDirectory = concatBytes(centralParts);
+        const localData = concatBytes(localParts);
+        const endRecord = concatBytes([
+          uint32(0x06054b50),
+          uint16(0),
+          uint16(0),
+          uint16(files.length),
+          uint16(files.length),
+          uint32(centralDirectory.length),
+          uint32(localData.length),
+          uint16(0)
+        ]);
+
+        return concatBytes([localData, centralDirectory, endRecord]);
+      }
+
+      function buildResultDocx() {
+        return createZip([
+          {
+            name: "[Content_Types].xml",
+            data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+              '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+              '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+              '<Default Extension="xml" ContentType="application/xml"/>' +
+              '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+              '</Types>'
+          },
+          {
+            name: "_rels/.rels",
+            data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+              '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+              '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+              '</Relationships>'
+          },
+          {
+            name: "word/document.xml",
+            data: buildResultDocumentXml()
+          }
+        ]);
+      }
+
+      async function copyResultSummary(buttonElement) {
+        const text = resultSummaryText();
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+          }
+          const original = buttonElement.textContent;
+          buttonElement.textContent = "Copied";
+          window.setTimeout(() => {
+            buttonElement.textContent = original;
+          }, 1800);
+        } catch {
+          setError("Copy did not work in this browser. You can still read and use the profile on this page.");
+        }
+      }
+
+      function downloadResultSummary() {
+        const blob = new Blob([buildResultDocx()], {
+          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ai-fluency-summary.docx";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function setActiveDimension(key) {
+        activeDimensionKey = key;
+        const dimensions = dimensionItems(state?.result);
+        const activeItem = dimensions.find((item) => item.key === key) ?? dimensions[0];
+        resultContent.querySelectorAll("[data-profile-key]").forEach((element) => {
+          element.classList.toggle("isActive", element.dataset.profileKey === key);
+          if (element.tagName === "BUTTON") {
+            element.setAttribute("aria-pressed", element.dataset.profileKey === key ? "true" : "false");
+          }
+        });
+        const focus = resultContent.querySelector("#profileFocus");
+        if (focus && activeItem) {
+          focus.outerHTML = renderProfileFocus(activeItem);
+          renderProfileShape(dimensions);
+        }
+      }
+
+      function movedToNextMoment(previousState, nextState) {
+        if (nextState?.session?.status === "completed" || !nextState?.currentQuestion) {
+          return false;
+        }
+        const previousConstruct = previousState?.currentQuestion?.scoring?.construct;
+        const nextConstruct = nextState.currentQuestion?.scoring?.construct;
+        const previousGroup = chunkGroups.find((group) => group.keys.includes(previousConstruct));
+        const nextGroup = chunkGroups.find((group) => group.keys.includes(nextConstruct));
+        return Boolean(previousGroup && nextGroup && previousGroup.title !== nextGroup.title);
+      }
+
+      function renderResult(result) {
+        const dimensions = dimensionItems(result);
+        const strongest = result?.strongestDimension ?? dimensions[0];
+        const growth = result?.growthEdge ?? dimensions[1] ?? dimensions[0];
+        const overallPercent = asPercent(result?.overall?.score ?? 0);
+        const strongestPercent = strongest ? asPercent(strongest.score) : "0%";
+        const growthPercent = growth ? asPercent(growth.score) : "0%";
+        const activeItem = dimensions.find((item) => item.key === activeDimensionKey) ?? strongest ?? dimensions[0];
+        activeDimensionKey = activeItem?.key ?? null;
+        const profile = selectedWorkProfile();
+        const context = workContext(profile);
+        const actionPlan = nextActionPlan(growth ?? activeItem, context);
+
+        resultContent.innerHTML =
+            '<section class="resultHero">' +
+            '<div class="resultHeroHeader">' +
+              '<div class="resultHeroCopy"><div class="eyebrow">Results reveal</div>' +
+              '<h1>' + escapeText(profileName(result)) + '</h1>' +
+              '<p>' + escapeText(resultIntro(result, strongest, growth)) + '</p></div>' +
+              '<div class="resultOrb"><strong>' + overallPercent + '</strong><span>overall fluency</span></div>' +
+            '</div>' +
+            '<div class="heroResultGrid">' +
+              '<article class="heroResultCard"><div class="eyebrow">Strongest dimension</div><h3>' + escapeText(strongest?.label ?? "AI fluency") + '</h3><p>' + strongestPercent + '. This is where momentum is most likely to compound.</p></article>' +
+              '<article class="heroResultCard"><div class="eyebrow">Growth edge</div><h3>' + escapeText(growth?.label ?? "AI fluency") + '</h3><p>' + growthPercent + '. This is the cleanest place to unlock stronger outcomes next.</p></article>' +
+              '<article class="heroResultCard"><div class="eyebrow">What this means</div><p>' + escapeText(result?.whatThisMeans ?? "This profile shows where AI feels ready to create value and where support should focus next.") + '</p></article>' +
+              '<article class="heroResultCard"><div class="eyebrow">Biggest lever</div><h3>' + escapeText(result?.biggestLever ?? "Build fluency through guided repetition.") + '</h3><p>Create lower-stakes opportunities to practice AI in real workflows until successful usage feels routine.</p></article>' +
+            '</div>' +
+            '<div class="resultActions"><button class="primaryButton" type="button" data-result-action="copy">Copy summary</button><button class="secondaryButton" type="button" data-result-action="download">Download summary</button></div>' +
+          '</section>' +
+          '<section class="resultBody">' +
+            '<section class="resultBlock profileExplorer"><div class="profileExplorerIntro"><h3>AI fluency scores</h3><p>Start with the profile shape, then select any score to see the definition and next move.</p></div><div class="profileExplorerGrid">' + renderProfileFocus(activeItem) + '<div class="profileDimensionList">' + profileChoiceControls(dimensions, activeDimensionKey, context) + '</div></div></section>' +
+            '<div class="resultColumn resultStrategy">' +
+              renderFluencyModel({ context, strongest, growth, overallPercent }) +
+            '</div>' +
+            renderIndividualStrategy(profile, context) +
+            renderActionPlan(actionPlan) +
+          '</section>';
+        renderProfileShape(dimensions);
+      }
+
+      function render(nextState) {
+        state = nextState;
+        message.className = "status";
+        message.textContent = "";
+        intakeMessage.className = "status";
+        intakeMessage.textContent = "";
+        calibrationMessage.className = "status";
+        calibrationMessage.textContent = "";
+        updateProgress();
+        renderFluencyCircuit();
+
+        if (state.session.status === "completed" || !state.currentQuestion) {
+          showQuestion();
+          const result = state.result;
+          questionPanel.classList.toggle("isResult", true);
+          chapterTitle.textContent = "Your profile is ready";
+          questionPanel.querySelector("#scanLabel").textContent = "Results reveal";
+          form.hidden = true;
+          momentCompletePanel.hidden = true;
+          resultPanel.hidden = false;
+          renderResult(result);
+          updateProgress();
+          return;
+        }
+
+        resultPanel.hidden = true;
+        questionPanel.classList.toggle("isResult", false);
+        momentCompletePanel.hidden = true;
+        title.textContent = state.currentQuestion.title;
+        answer.innerHTML = answerControl(state.currentQuestion);
+        form.classList.toggle("autoAdvance", isAutoAdvanceQuestion(state.currentQuestion));
+        const counts = currentCounts();
+        const chapter = chapters[counts.chapterIndex];
+        applyChapter(chapter);
+        if (momentCompleteIndex !== null) {
+          showMomentComplete(momentCompleteIndex);
+          return;
+        }
+        promptMeta.textContent = chapter.scan + " • prompt " + counts.promptInChapter + " of " + counts.chapterTotal;
+        form.hidden = false;
+        if (stage === "questions" || counts.answerCount > 0) {
+          showQuestion();
+        } else if (stage === "calibration") {
+          showCalibration();
+        } else if (stage === "intake") {
+          showIntake();
+        } else {
+          showHome();
+        }
+      }
+
+      async function load() {
+        if (runtimeConfig.mode === "static-beta") {
+          render(createStaticBetaInitialState());
+          return;
+        }
+
+        const response = await fetch('/app/diagnostic/' + encodeURIComponent(sessionId) + '/state?token=' + encodeURIComponent(token));
+        if (!response.ok) throw new Error('Unable to load diagnostic state.');
+        render(await response.json());
+      }
+
+      async function submitCurrentAnswer(value) {
+        button.disabled = true;
+        if (runtimeConfig.mode === "static-beta") {
+          const previousAnswerCount = state?.session?.answerCount ?? state?.session?.answers?.length ?? 0;
+          try {
+            const nextState = advanceStaticBetaState(state, state.currentQuestion.id, value);
+            const completedMoment = movedToNextMoment(state, nextState);
+            const previousConstruct = state?.currentQuestion?.scoring?.construct;
+            momentCompleteIndex = completedMoment
+              ? chunkGroups.findIndex((group) => group.keys.includes(previousConstruct))
+              : null;
+            render(nextState);
+            if (nextState.session.status === "completed") {
+              await submitBetaCompletion(nextState);
+            }
+          } catch (error) {
+            setError(error.message);
+          } finally {
+            button.disabled = false;
+          }
+          return;
+        }
+
+        const previousAnswerCount = state?.session?.answerCount ?? state?.session?.answers?.length ?? 0;
+
+        try {
+          const response = await fetch('/app/diagnostic/' + encodeURIComponent(sessionId) + '/answer?token=' + encodeURIComponent(token), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ questionId: state.currentQuestion.id, value })
+          });
+          if (!response.ok) throw new Error('Unable to submit answer.');
+          const nextState = await response.json();
+          const nextAnswerCount = nextState?.session?.answerCount ?? nextState?.session?.answers?.length ?? 0;
+          const completedMoment = nextAnswerCount > previousAnswerCount && movedToNextMoment(state, nextState);
+          const previousConstruct = state?.currentQuestion?.scoring?.construct;
+          momentCompleteIndex = completedMoment
+            ? chunkGroups.findIndex((group) => group.keys.includes(previousConstruct))
+            : null;
+          render(nextState);
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const values = formData.getAll("value");
+        const value = state.currentQuestion.type === "multi_select" ? values : values[0];
+        await submitCurrentAnswer(value);
+      });
+
+      answer.addEventListener("change", async (event) => {
+        if (!isAutoAdvanceQuestion(state?.currentQuestion)) {
+          return;
+        }
+        const target = event.target;
+        if (!target || target.name !== "value" || !target.checked) {
+          return;
+        }
+        await submitCurrentAnswer(target.value);
+      });
+
+      resultContent.addEventListener("mouseover", (event) => {
+        const target = event.target.closest?.("[data-profile-key]");
+        if (target?.dataset?.profileKey) {
+          setActiveDimension(target.dataset.profileKey);
+        }
+      });
+
+      resultContent.addEventListener("focusin", (event) => {
+        const target = event.target.closest?.("[data-profile-key]");
+        if (target?.dataset?.profileKey) {
+          setActiveDimension(target.dataset.profileKey);
+        }
+      });
+
+      resultContent.addEventListener("click", (event) => {
+        const action = event.target.closest?.("[data-result-action]");
+        if (action?.dataset?.resultAction === "copy") {
+          void copyResultSummary(action);
+          return;
+        }
+        if (action?.dataset?.resultAction === "download") {
+          downloadResultSummary();
+          return;
+        }
+
+        const target = event.target.closest?.("[data-profile-key]");
+        if (target?.dataset?.profileKey) {
+          setActiveDimension(target.dataset.profileKey);
+        }
+      });
+
+      resultContent.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+        const target = event.target.closest?.("[data-profile-key]");
+        if (target?.dataset?.profileKey) {
+          event.preventDefault();
+          setActiveDimension(target.dataset.profileKey);
+        }
+      });
+
+      profileForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        showCalibration();
+      });
+      calibrationForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        showQuestion();
+      });
+      startHome.addEventListener("click", () => showIntake());
+      momentContinue.addEventListener("click", () => {
+        momentCompleteIndex = null;
+        render(state);
+      });
+
+      renderCalibrationOptions();
+      load().catch(error => setError(error.message));
+    </script>
+  </body>
+</html>

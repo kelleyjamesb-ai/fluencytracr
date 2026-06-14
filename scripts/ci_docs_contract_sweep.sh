@@ -58,4 +58,11 @@ search_quiet "docs/api/ingest.md" README.md
 search_quiet "docs/integrations/glean/01-overview.md" README.md
 search_quiet "docs/mcp/fluencytracr-mcp-server.md" README.md
 
+echo "[docs-sweep] Validating Glean readiness examples..."
+npm run build --workspace shared >/dev/null
+node scripts/validate_glean_readiness_examples.mjs >/dev/null
+node scripts/ci_glean_value_governance_gates.mjs >/dev/null
+node scripts/ci_semantic_drift_guard.mjs >/dev/null
+node scripts/agentic_harness_guard.mjs >/dev/null
+
 echo "[docs-sweep] Passed."

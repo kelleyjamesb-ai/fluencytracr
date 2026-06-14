@@ -11,63 +11,119 @@
       "last_note": "optional string, agent status-only"
     }
   },
-  "blueprint_ref": "artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md §17 Build Phases",
+  "blueprint_ref": "artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md \u00a717 Build Phases",
   "items": [
     {
       "id": "phase-01-schemas-ingest",
-      "title": "Phase 1 — Schemas + ingestion (append-only POST /api/events)",
-      "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint §2 (services/ingest layout), §4 Event Schema, §14 API, §17 phase 1",
-      "status": "pending",
+      "title": "Phase 1 \u2014 Schemas + ingestion (append-only POST /api/events)",
+      "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint \u00a72 (services/ingest layout), \u00a74 Event Schema, \u00a714 API, \u00a717 phase 1",
+      "status": "done",
       "risk": "medium",
-      "last_note": "Confirm vs existing app.ts + store; mark done only when blueprint Phase 1 criteria met"
+      "last_note": "POST /api/events + /api/ingest: Zod strict + persistFluencyEventRecord \u2192 Prisma canonical_events when DATABASE_URL set (org from JWT/x-org-id). Readers merge DB + memory via loadFluencyEventRecords."
     },
     {
       "id": "phase-02-execution-trace",
-      "title": "Phase 2 — Execution + trace reconstruction",
-      "bound": "trace_engine + lifecycle reducer; ordering, retries, tool/step grouping; blueprint §5–6, §17 phase 2",
-      "status": "pending",
+      "title": "Phase 2 \u2014 Execution + trace reconstruction",
+      "bound": "trace_engine + lifecycle reducer; ordering, retries, tool/step grouping; blueprint \u00a75\u20136, \u00a717 phase 2",
+      "status": "done",
       "risk": "medium",
-      "last_note": "Depends on phase-01 for event source; may be largely implemented — verify tests"
+      "last_note": "trace_engine + execution_lifecycle + Jest contracts/trace tests green; blueprint target services/* layout still optional incremental migration"
     },
     {
       "id": "phase-03-fsc-min-signal",
-      "title": "Phase 3 — FSC eligibility + minimum signal gates (hard pre-classify)",
-      "bound": "PRD §18 FSC + §20 min signal + §21 steps 1–2 only (not full classify); map to INCOMPLETE_EXECUTION / INSUFFICIENT_SIGNAL; code: services/gates or execution_disclosure; blueprint §7 FSC, §8 Min Signal (§12 suppression wiring continues in phase-05)",
-      "status": "in_progress",
+      "title": "Phase 3 \u2014 FSC eligibility + minimum signal gates (hard pre-classify)",
+      "bound": "PRD \u00a718 FSC + \u00a720 min signal + \u00a721 steps 1\u20132 only (not full classify); map to INCOMPLETE_EXECUTION / INSUFFICIENT_SIGNAL; code: services/gates or execution_disclosure; blueprint \u00a77 FSC, \u00a78 Min Signal (\u00a712 suppression wiring continues in phase-05)",
+      "status": "done",
       "risk": "high",
-      "last_note": "Primary PRD gap; INCOMPLETE_EXECUTION vs INSUFFICIENT_SIGNAL before any pattern logic"
+      "last_note": "fluency_execution_gates.ts: evaluateFluencyExecutionGates \u2192 FSC + min signal; attachPhase2ToTraces skips classify when gates fail; disclosure reasons incomplete_execution / insufficient_signal + fsc:* / min_signal:*; observability_aggregate aligned"
     },
     {
       "id": "phase-04-signals-calibration",
-      "title": "Phase 4 — Signal detection + threshold calibration (internal numeric)",
-      "bound": "execution_signals + workflow_baseline: rolling N=200 per workflow, P25/P75; categories LOW/NORMAL/HIGH internal; no numeric API leak; blueprint §9–10",
-      "status": "pending",
+      "title": "Phase 4 \u2014 Signal detection + threshold calibration (internal numeric)",
+      "bound": "execution_signals + workflow_baseline: rolling N=200 per workflow, P25/P75; categories LOW/NORMAL/HIGH internal; no numeric API leak; blueprint \u00a79\u201310",
+      "status": "done",
       "risk": "medium",
-      "last_note": "After phase-03 stable; supersedes calendar-only baseline if still present"
+      "last_note": "workflow_baseline: iteration_low from P25; latency P75 unchanged; WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS (default 200) newest-first cap per workflow"
     },
     {
       "id": "phase-05-classify-suppress",
-      "title": "Phase 5 — Deterministic pattern classification + suppression pipeline",
-      "bound": "behavioral_patterns + suppression: priority order, mutual exclusion, ambiguity → AMBIGUITY; no inference/ML on product path; blueprint §11–12",
-      "status": "pending",
+      "title": "Phase 5 \u2014 Deterministic pattern classification + suppression pipeline",
+      "bound": "behavioral_patterns + suppression: priority order, mutual exclusion, ambiguity \u2192 AMBIGUITY; no inference/ML on product path; blueprint \u00a711\u201312",
+      "status": "done",
       "risk": "high",
-      "last_note": "Wire full §21 hierarchy; audit log optional per blueprint §15"
+      "last_note": "Fluency path: fluency-pattern-suppression.ts maps signals \u2192 classifyBehaviorPattern + evaluateSuppression; attachPhase2ToTraces + observability_aggregate + disclosure (classification_ambiguity + suppression:* diagnostics). Legacy classifyExecutionPattern kept for direct unit tests / doc parity."
     },
     {
       "id": "phase-06-aggregation-api",
-      "title": "Phase 6 — Workflow aggregation + observability API",
-      "bound": "observability_aggregate + GET /api/observability/:orgId; workflow-level only; cohort suppression; blueprint §13–14",
-      "status": "pending",
+      "title": "Phase 6 \u2014 Workflow aggregation + observability API",
+      "bound": "observability_aggregate + GET /api/observability/:orgId; workflow-level only; cohort suppression; blueprint \u00a713\u201314",
+      "status": "done",
       "risk": "medium",
-      "last_note": "No trends, ranks, scores, raw thresholds in responses"
+      "last_note": "Rollup per-execution path now uses same FSC/min gates + evaluateExecutionDisclosure as traces; still no numeric baseline leak"
     },
     {
       "id": "phase-07-hardening-verify",
-      "title": "Phase 7 — Tests, harness verify, governance regression",
-      "bound": "harness/scripts/verify.sh; harness/feature_list.json passes per docs/agent/EVALUATION.md; blueprint §16 + forbidden-field API tests",
-      "status": "pending",
+      "title": "Phase 7 \u2014 Tests, harness verify, governance regression",
+      "bound": "harness/scripts/verify.sh; harness/feature_list.json passes per docs/agent/EVALUATION.md; blueprint \u00a716 + forbidden-field API tests",
+      "status": "done",
       "risk": "low",
-      "last_note": "Gate before treating v1 blueprint as complete"
+      "last_note": "npm run test:ci --workspace backend; ./harness/scripts/verify.sh; python3 scripts/ci_v1_governance_gates.py; backend/tests/fluency_execution_gates.test.ts"
+    },
+    {
+      "id": "ai-value-platform-phases-1-4",
+      "title": "AI Value Platform: engine core, data layer + API, workbench wiring, intake + second domain",
+      "bound": "shared/src/aiValueEngine/**, scripts/*ai_value* wrappers, backend ai_value_routes + repository + prisma ai_value_objects, frontend AIValueWorkspace live mode, sales-pipeline fixtures; acceptance: all ai-value/engine/backend/frontend suites pass, governance gates pass",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "User-authorized 2026-06-09 (Claude): four slices complete and committed on codex/FluencyTracr-ai-value-platform; engine contract Phase 1 migration done for stages 1-6 with CLI/tests preserved."
+    },
+    {
+      "id": "ai-value-platform-product-spine-v1",
+      "title": "AI Value Platform: product spine experience from whole-system diagrams",
+      "bound": "docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md plus frontend AI Value Journey/Workspace, shared value-chain view models, and focused tests; acceptance: /ai-value-journey explains Human Readiness -> Blueprint -> Execution -> Evidence -> Value Realization -> Outcomes in client language and each phase feeds the next without unsupported ROI, causality, individual scoring, HR analytics, or ranking claims",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-06-11 UTC: Product Spine V1, multi-page Workspace, Blueprint workshop board, Metrics ROI opportunity map, Evidence-to-Value path, governed Scenario, Executive Readout, Sponsor Decisions, and agentic handoffs are implemented and acceptance-audited. Verified frontend, AI value contracts, governance gates, diff check, and browser smoke at 1440px/390px."
+    },
+    {
+      "id": "phase-ai-value-ebita-impact-bridge",
+      "title": "AI Value Platform: governed EBITA Impact Bridge",
+      "bound": "shared/src/aiValueEngine/ebitaBridge.ts, scripts/validate_ai_value_ebita_bridge.test.mjs, docs/concepts/EBITA_IMPACT_BRIDGE.md; acceptance: map value routes to EBITA drivers, validate evidence quality, financial translation policy, safe language, source ROI gate compatibility, no usage-derived EBITA calculation, no frontend, no routes, no DB schema, no dashboards, no individual scoring, no manager_or_team_ranking",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-06-12 UTC: deterministic shared EBITA translation layer after ROI Scenario. It maps value routes to EBITA drivers, validates source ROI gate compatibility, and blocks usage-derived EBITA, individual scoring, manager_or_team_ranking, UI, routes, DB schema, dashboards, and connectors."
+    },
+    {
+      "id": "phase-ai-value-executive-readout-v2",
+      "title": "AI Value Platform: governed Executive Readout V2",
+      "bound": "shared/src/aiValueEngine/executivePacket.ts, shared/src/aiValueEngine/readoutHtml.ts, scripts/generate_ai_value_executive_packet.test.mjs, scripts/generate_ai_value_readout_html.test.mjs, schemas/ai-value-intelligence/executive-packet.schema.json, docs/concepts/EXECUTIVE_READOUT_V2.md; acceptance: optional ebita_impact_summary, markdown/html EBITA Impact Bridge section, evidence-quality-driven allowed language, usage-only ROI/EBITA blocked, individual productivity/manager ranking/HRIS/headcount claims blocked",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-06-12 UTC: Executive Readout V2 can include governed ebita_impact_summary, markdown/html EBITA Impact Bridge sections, schema support, safe language, blocked claims, and next evidence actions. Usage-only ROI/EBITA, individual productivity, manager ranking, HRIS inference, and headcount claims remain blocked."
+    },
+    {
+      "id": "phase-ai-value-readout-prototype-ui",
+      "title": "AI Value Platform: Executive Readout prototype UI",
+      "bound": "frontend/src/pages/AIValueReadoutPrototype.tsx, frontend/src/pages/AIValueReadoutPrototype.test.tsx, frontend/src/main.tsx, frontend/src/styles.css, docs/concepts/AI_VALUE_READOUT_PROTOTYPE_UI.md; acceptance: static mock executive packet data, VBD posture, workflow outcome evidence, financial claim gate, EBITA bridge status, safe language, blocked claims, caveats, next evidence actions, no individual/manager/HRIS/named productivity or usage-derived ROI views",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "Done 2026-06-12 UTC: static aggregate/workflow-only executive readout prototype added at /ai-value-readout with VBD posture, outcome evidence, financial claim gate, EBITA bridge, safe/caveated language, blocked claims, and next evidence actions. No backend route, DB schema, ingestion, ML/scoring, dashboard, individual/manager/HRIS view, or usage-derived ROI was added."
+    },
+    {
+      "id": "phase-ai-value-language-alignment",
+      "title": "AI Value Platform: canonical language alignment",
+      "bound": "docs/architecture/CANONICAL_LANGUAGE_SYSTEM.md, docs/architecture/LANGUAGE_ALIGNMENT_MATRIX.md, docs/architecture/TERMINOLOGY_DEPRECATION_PLAN.md, shared/src/aiValueEngine/language.ts, executive packet/readout renderers, readout prototype labels; acceptance: executive, evidence, value, financial, governance, intervention, executive readout, and productivity recapture language are standardized through aliases/display labels only; existing schemas remain backward compatible; no governance control is weakened",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "Done 2026-06-12 UTC: canonical language docs, alignment matrix, deprecation plan, shared display labels, readout renderer labels, generated examples, and prototype labels are aligned around Value Hypothesis, Measurement Plan, Evidence Collection, Value Realization, Financial Translation, Value Accounting, Renewal Evidence, and Productivity Recapture. Existing schemas and governance controls remain unchanged."
+    },
+    {
+      "id": "phase-ai-value-data-model-audit",
+      "title": "AI Value Platform: data model persistence audit",
+      "bound": "docs/architecture/AI_VALUE_DATA_MODEL_AUDIT.md; acceptance: current persistence inventory, framework concept classification, minimal Supabase state proposal, BigQuery vs Supabase split, privacy/governance constraints, recommended implementation order; no migrations, schema changes, backend routes, frontend UI, ingestion, or governance logic changes",
+      "status": "done",
+      "risk": "medium",
+      "last_note": "Done 2026-06-13: audited AI Value Platform concepts and classified static framework, customer-specific durable state, derived evidence snapshots, and external sources of truth. Proposed the minimal future Supabase state path without creating migrations or product surface area."
     }
   ]
 }

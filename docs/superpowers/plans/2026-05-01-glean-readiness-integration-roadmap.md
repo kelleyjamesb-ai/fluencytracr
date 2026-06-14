@@ -63,14 +63,14 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Write a failing test that maps WorkflowRun-like source metadata to `signal_family: "workflow_run"` with `readiness_status: "present"` after generation.
-- [ ] Write a failing test that maps MCP Usage with unknown scrub status to `signal_family: "mcp_usage"` and `readiness_status: "not_computed"`.
-- [ ] Write a failing test that maps AI Security with governance hold to `signal_family: "ai_security"` and `readiness_status: "suppressed"`.
-- [ ] Add strict Zod schemas for Glean-style source fixture records in `shared/src/gleanSourceReadinessAdapter.ts`.
-- [ ] Add `mapGleanSourcesToReadinessInventory(records)` that emits `GSR_INVENTORY_2026_05`.
-- [ ] Reject unsafe fields using strict schemas and forbidden key tests.
-- [ ] Export adapter functions from `shared/src/index.ts`.
-- [ ] Verify with targeted backend tests and `npm run build --workspace shared`.
+- [x] Write a failing test that maps WorkflowRun-like source metadata to `signal_family: "workflow_run"` with `readiness_status: "present"` after generation.
+- [x] Write a failing test that maps MCP Usage with unknown scrub status to `signal_family: "mcp_usage"` and `readiness_status: "not_computed"`.
+- [x] Write a failing test that maps AI Security with governance hold to `signal_family: "ai_security"` and `readiness_status: "suppressed"`.
+- [x] Add strict Zod schemas for Glean-style source fixture records in `shared/src/gleanSourceReadinessAdapter.ts`.
+- [x] Add `mapGleanSourcesToReadinessInventory(records)` that emits `GSR_INVENTORY_2026_05`.
+- [x] Reject unsafe fields using strict schemas and forbidden key tests.
+- [x] Export adapter functions from `shared/src/index.ts`.
+- [x] Verify with targeted backend tests and `npm run build --workspace shared`.
 
 **Done when:**
 
@@ -92,12 +92,12 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Write a failing test or script contract check that invokes source-to-inventory generation with the three source fixture files.
-- [ ] Add CLI arguments: `--workflow-run`, `--mcp-usage`, `--ai-security`, `--output`.
-- [ ] Default output to `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json`.
-- [ ] Add root script `glean:readiness:sources`.
-- [ ] Run the CLI and commit the generated output.
-- [ ] Compare generated output against expected readiness statuses in a test.
+- [x] Write a failing test or script contract check that invokes source-to-inventory generation with the three source fixture files.
+- [x] Add CLI arguments: `--workflow-run`, `--mcp-usage`, `--ai-security`, `--output`.
+- [x] Default output to `docs/contracts/glean-signal-readiness/examples/org-northstar-source-derived-readiness-map.json`.
+- [x] Add root script `glean:readiness:sources`.
+- [x] Run the CLI and commit the generated output.
+- [x] Compare generated output against expected readiness statuses in a test.
 
 **Done when:**
 
@@ -120,12 +120,12 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Write a failing test that converts `present` readiness entries into UT coverage events.
-- [ ] Write a failing test that excludes `missing`, `suppressed`, and `not_computed` entries from computable UT events while preserving reason metadata in non-computable notes.
-- [ ] Implement `mapReadinessToUnifiedTelemetryCoverage(readinessMap)`.
-- [ ] Ensure generated UT events use `UT_2026_04` and org-window scope only.
-- [ ] Reject entries that imply user/team/manager/ranking dimensions.
-- [ ] Verify against `UnifiedTelemetryEventSchema`.
+- [x] Write a failing test that converts `present` readiness entries into UT coverage events.
+- [x] Write a failing test that excludes `missing`, `suppressed`, and `not_computed` entries from computable UT events while preserving reason metadata in non-computable notes.
+- [x] Implement `mapReadinessToUnifiedTelemetryCoverage(readinessMap)`.
+- [x] Ensure generated UT events use `UT_2026_04` and org-window scope only.
+- [x] Reject entries that imply user/team/manager/ranking dimensions.
+- [x] Verify against `UnifiedTelemetryEventSchema`.
 
 **Done when:**
 
@@ -143,17 +143,18 @@ FluencyTracr should be able to:
 - Modify: `backend/src/app.ts` only if the current EvidenceBundle builder remains centralized there.
 - Prefer create: `backend/src/evidence/gleanReadinessEvidence.ts`
 - Test: `backend/tests/glean_readiness_evidence_bundle.test.ts`
+- Create: `docs/contracts/evidence-bundle/v1/examples/glean-readiness-derived.json`
 - Docs: `docs/contracts/evidence-bundle/v1/README.md`
 - OpenSpec: `openspec/changes/add-glean-readiness-evidence-derivation/`
 
 **Implementation steps:**
 
-- [ ] Write a failing test that present `workflow_run`, `agent_run`, and `search_document_retrieval` entries appear in EvidenceBundle coverage instrumentation.
-- [ ] Write a failing test that `mcp_usage` with `not_computed` remains in missing or not-computed coverage notes.
-- [ ] Write a failing test that suppressed `ai_security` does not produce exposure values but preserves suppression reasons.
-- [ ] Add a focused derivation module rather than expanding `backend/src/app.ts` unless unavoidable.
-- [ ] Wire the derivation into EvidenceBundle generation behind a fixture/demo path or explicit feature flag.
-- [ ] Verify EvidenceBundle v1 schema and suppression semantics.
+- [x] Write a failing test that present `workflow_run`, `agent_run`, and `search_document_retrieval` entries appear in EvidenceBundle coverage instrumentation.
+- [x] Write a failing test that `mcp_usage` with `not_computed` remains in missing or not-computed coverage notes.
+- [x] Write a failing test that suppressed `ai_security` does not produce exposure values but preserves suppression reasons.
+- [x] Add a focused derivation module rather than expanding `backend/src/app.ts` unless unavoidable.
+- [x] Wire the derivation into EvidenceBundle generation behind a fixture/demo path or explicit feature flag.
+- [x] Verify EvidenceBundle v1 schema and suppression semantics.
 
 **Done when:**
 
@@ -170,17 +171,18 @@ FluencyTracr should be able to:
 
 - Modify: `packages/fluencytracr-mcp/src/tools.ts`
 - Modify: `packages/fluencytracr-mcp/src/agentResponse.ts` if a new response template is needed.
+- Create: `packages/fluencytracr-mcp/src/readinessResponse.ts`
 - Test: `packages/fluencytracr-mcp/src/tools.test.ts`
 - Docs: `docs/mcp/fluencytracr-mcp-server.md`
 - Docs: `docs/integrations/glean/03-glean-agent-tooling.md`
 
 **Implementation steps:**
 
-- [ ] Add `fluency.get_signal_readiness_map` for trusted aggregate readiness access.
-- [ ] Add `fluency.get_signal_readiness_summary` if the full map is too verbose for Glean Agent responses.
-- [ ] Ensure both tools return strict templates and reject extra top-level fields.
-- [ ] Audit every tool invocation without raw source records.
-- [ ] Update Glean Agent docs with allowed question classes.
+- [x] Add `fluency.get_signal_readiness_map` for trusted aggregate readiness access.
+- [x] Add `fluency.get_signal_readiness_summary` if the full map is too verbose for Glean Agent responses.
+- [x] Ensure both tools return strict templates and reject extra top-level fields.
+- [x] Audit every tool invocation without raw source records.
+- [x] Update Glean Agent docs with allowed question classes.
 
 **Done when:**
 
@@ -200,10 +202,10 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Add a demo guide with a one-page narrative: measurable now, blocked, suppressed, missing, unlock next.
-- [ ] Link seeded map, source-derived map, and strict MCP summary tool.
-- [ ] Include validation commands.
-- [ ] Include a “what this does not do” section covering surveillance/ranking/raw content.
+- [x] Add a demo guide with a one-page narrative: measurable now, blocked, suppressed, missing, unlock next.
+- [x] Link seeded map, source-derived map, and strict MCP summary tool.
+- [x] Include validation commands.
+- [x] Include a “what this does not do” section covering surveillance/ranking/raw content.
 
 **Done when:**
 
@@ -224,11 +226,11 @@ FluencyTracr should be able to:
 
 **Implementation steps:**
 
-- [ ] Add a validator that parses every JSON file under `docs/contracts/glean-signal-readiness/examples/`.
-- [ ] Validate inventories with `GleanSignalInventorySchema`.
-- [ ] Validate readiness maps with `GleanSignalReadinessMapSchema`.
-- [ ] Add the validator to docs contract sweep or CI.
-- [ ] Ensure validation does not require network access.
+- [x] Add a validator that parses every JSON file under `docs/contracts/glean-signal-readiness/examples/`.
+- [x] Validate inventories with `GleanSignalInventorySchema`.
+- [x] Validate readiness maps with `GleanSignalReadinessMapSchema`.
+- [x] Add the validator to docs contract sweep or CI.
+- [x] Ensure validation does not require network access.
 
 **Done when:**
 
@@ -239,6 +241,8 @@ FluencyTracr should be able to:
 ## Phase 8: Live Data Access Decision Gate
 
 **Outcome:** Decide whether to proceed to real Glean export ingestion, Glean MCP-hosted access, or keep the integration as a validated customer-supplied import path.
+
+**Decision artifact:** `docs/integrations/glean/07-live-data-access-decision-gate.md`
 
 **Decision inputs:**
 
@@ -256,6 +260,12 @@ FluencyTracr should be able to:
 - Path C: Admin-exported aggregate inventory upload.
 
 **Recommended default:** Path C for pilot safety, then Path A once export terms are confirmed.
+
+**Implementation status:**
+
+- [x] Record Path C as the current pilot default.
+- [x] Document go/no-go evidence for Path A and Path B.
+- [x] Link the decision gate from Glean docs and README.
 
 ---
 

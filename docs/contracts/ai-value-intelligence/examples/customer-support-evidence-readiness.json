@@ -1,0 +1,54 @@
+{
+  "schema_version": "FT_AI_VALUE_READINESS_2026_06",
+  "readiness_id": "readiness_customer_support_v1",
+  "workflow_family": "customer_support_case_resolution",
+  "value_route": "CAPACITY_CREATION",
+  "source_refs": {
+    "blueprint_id": "bp_customer_support_case_resolution",
+    "metrics_library_id": "metrics_customer_support_v1",
+    "scenario_id": "scenario_customer_support_capacity_v1"
+  },
+  "source_coverage": {
+    "ai_activity": "PRESENT",
+    "workflow": "PRESENT",
+    "outcome": "PRESENT",
+    "baseline": "PRESENT",
+    "trust": "PRESENT",
+    "assumptions": "CAVEATED",
+    "suppression": "PRESENT"
+  },
+  "readiness_checks": {
+    "workflow_state": "PRESENT",
+    "metric_state": "PRESENT",
+    "baseline_state": "PRESENT",
+    "assumption_state": "CAVEATED",
+    "scenario_state": "PRESENT",
+    "governance_state": "PRESENT"
+  },
+  "decision": "HOLD_FOR_ASSUMPTIONS",
+  "decision_rationale": [
+    "Material customer-owned assumptions are still missing or caveated."
+  ],
+  "next_actions": [
+    "Review missing staffing, channel mix, process, knowledge, metric definition, and rollout assumptions with customer owners."
+  ],
+  "blocked_claims": [
+    "roi_proof",
+    "causality_claim",
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "customer_facing_economic_output"
+  ],
+  "governance_boundaries": {
+    "production_connector": false,
+    "dashboard": false,
+    "realized_roi_calculation": false,
+    "causality_claim": false,
+    "individual_scoring": false,
+    "hr_analytics": false,
+    "runtime_service": false,
+    "customer_facing_economic_output": false
+  }
+}

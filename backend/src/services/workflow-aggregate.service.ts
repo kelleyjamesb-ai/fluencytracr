@@ -6,6 +6,8 @@ import type { BehaviorPattern } from "./pattern-classifier";
 import type { SuppressionReason } from "./suppression-engine";
 
 export type PrevalenceMode = "NUMERIC_SHARE" | "CATEGORICAL_PREVALENCE";
+export type AggregateSuppressionReason = SuppressionReason | "INSUFFICIENT_VOLUME";
+export const MIN_SLICE_COHORT_SIZE = 5;
 
 /**
  * Default: categorical bands are preferred for executive-facing surfaces (no raw proportion exposure).
@@ -21,6 +23,8 @@ export const PREVALENCE_BAND_MODERATE_MAX_SHARE = 0.5;
 
 export interface ExecutionClassificationRecord {
   readonly workflow_id: string;
+  readonly jbtd_id?: string | null;
+  readonly persona_id?: string | null;
   readonly execution_id: string;
   readonly status: "ALLOWED" | "SUPPRESSED";
   readonly pattern?: BehaviorPattern;
@@ -41,13 +45,17 @@ export type WorkflowPatternDistribution = {
 
 export interface WorkflowAggregateResult {
   readonly workflow_id: string;
+  readonly jbtd_id: string | null;
+  readonly persona_id: string | null;
   readonly classified_execution_count: number;
   readonly suppressed_execution_count: number;
+  readonly verdict: "SURFACE" | "SUPPRESS";
+  readonly suppression_reason: AggregateSuppressionReason | null;
   readonly pattern_distribution: ReadonlyArray<WorkflowPatternDistribution>;
   readonly prevalence_mode: PrevalenceMode;
 }
 
-export type WorkflowAggregateFailureReason = "MIXED_WORKFLOW" | "EMPTY_INPUT";
+export type WorkflowAggregateFailureReason = "MIXED_WORKFLOW" | "MIXED_SLICE" | "EMPTY_INPUT";
 
 export type WorkflowAggregateOutput =
   | { readonly success: true; readonly result: WorkflowAggregateResult }
@@ -119,16 +127,50 @@ export function aggregateWorkflowClassifications(
     return { success: false, failed_reason: "MIXED_WORKFLOW" };
   }
   const workflow_id = records[0]!.workflow_id;
+  const jbtd_id = records[0]!.jbtd_id ?? null;
+  const persona_id = records[0]!.persona_id ?? null;
+  if (records.some((r) => (r.jbtd_id ?? null) !== jbtd_id || (r.persona_id ?? null) !== persona_id)) {
+    return { success: false, failed_reason: "MIXED_SLICE" };
+  }
+  if (records.length < MIN_SLICE_COHORT_SIZE) {
+    return {
+      success: true,
+      result: {
+        workflow_id,
+        jbtd_id,
+        persona_id,
+        classified_execution_count: 0,
+        suppressed_execution_count: records.length,
+        verdict: "SUPPRESS",
+        suppression_reason: "INSUFFICIENT_VOLUME",
+        pattern_distribution: Object.freeze([]),
+        prevalence_mode
+      }
+    };
+  }
   const suppressed_execution_count = records.filter((r) => r.status === "SUPPRESSED").length;
   const classified_execution_count = records.filter((r) => r.status === "ALLOWED").length;
-  const pattern_distribution = computePatternDistribution(records, prevalence_mode);
+  const verdict =
+    suppressed_execution_count === 0 && classified_execution_count === records.length
+      ? "SURFACE"
+      : "SUPPRESS";
+  const pattern_distribution =
+    verdict === "SURFACE" ? computePatternDistribution(records, prevalence_mode) : Object.freeze([]);
+  const firstSuppressionReason =
+    verdict === "SUPPRESS"
+      ? records.find((r) => r.suppression_reason !== undefined)?.suppression_reason ?? null
+      : null;
 
   return {
     success: true,
     result: {
       workflow_id,
+      jbtd_id,
+      persona_id,
       classified_execution_count,
       suppressed_execution_count,
+      verdict,
+      suppression_reason: firstSuppressionReason,
       pattern_distribution,
       prevalence_mode
     }

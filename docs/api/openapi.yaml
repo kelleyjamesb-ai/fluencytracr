@@ -1,0 +1,539 @@
+openapi: 3.1.0
+info:
+  title: FluencyTracr API
+  version: 1.0.0
+paths:
+  /api/v1/outcome-evidence:
+    post:
+      summary: Store aggregate outcome evidence
+      description: >
+        Stores one customer-attested aggregate KPI observation for replay beside
+        workflow verdicts. This endpoint does not compute correlation,
+        causation, attribution, dollarization, or claim-readiness upgrades.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutcomeEvidenceCreate"
+      responses:
+        "201":
+          description: Outcome evidence accepted for storage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutcomeEvidenceReceipt"
+        "400":
+          description: Invalid payload
+        "422":
+          description: Aggregate cohort is below the minimum volume gate
+    get:
+      summary: Replay outcome evidence beside a workflow verdict
+      description: >
+        Returns the workflow verdict unchanged alongside matching stored outcome
+        evidence. Consumers may perform their own correlation outside
+        FluencyTracr.
+      parameters:
+        - name: workflow_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: period_start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: period_end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Workflow verdict plus matching outcome evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutcomeEvidenceReplayResponse"
+        "400":
+          description: Invalid query
+  /api/v1/quality-multiplier:
+    get:
+      summary: Get the workflow-level quality multiplier
+      description: >
+        Returns a read-only, aggregate multiplier that downstream value-realization
+        pipelines can apply to time-saved estimates. The endpoint fails closed:
+        when suppression applies, multiplier is null.
+      parameters:
+        - name: workflow_id
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: window_days
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3650
+        - name: include_velocity
+          in: query
+          required: false
+          description: >
+            When true, applies a bounded Velocity Index adjustment only if the
+            matching velocity verdict also surfaces. Default behavior is unchanged.
+          schema:
+            type: boolean
+        - name: cohort_id
+          in: query
+          required: false
+          description: >
+            Cohort id for an existing V3 aggregate verdict when
+            use_forwarded_distribution is true.
+          schema:
+            type: string
+            minLength: 1
+        - name: use_forwarded_distribution
+          in: query
+          required: false
+          description: >
+            When true and a matching surfaced V3 verdict has a governed
+            forwarded_distribution, Quality Multiplier consumes that aggregate
+            payload after re-checking gates. Raw events are not required.
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Quality multiplier verdict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityMultiplierResponse"
+        "400":
+          description: Malformed input; fails closed with no multiplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityMultiplierResponse"
+  /api/v2/ingest/velocity-distribution:
+    post:
+      summary: Ingest aggregate velocity distributions
+      description: >
+        Stores one V2 aggregate velocity distribution observation. Payloads are
+        distribution-only and structurally reject person-level fields.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VelocityDistribution"
+      responses:
+        "202":
+          description: Aggregate velocity distribution accepted
+        "400":
+          description: Invalid payload or person-level field rejected
+  /api/v2/velocity-index:
+    get:
+      summary: Get the workflow-level Velocity Index
+      description: >
+        Returns independent frequency, engagement, and breadth sub-indices and
+        a flat-average composite. The endpoint fails closed: when suppression
+        applies, all index fields are null.
+      parameters:
+        - name: workflow_id
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: window_days
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3650
+        - name: jbtd_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                pattern: "^[a-z0-9_-]{1,64}$"
+              - type: "null"
+        - name: persona_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                pattern: "^[a-z0-9_-]{1,64}$"
+              - type: "null"
+      responses:
+        "200":
+          description: Velocity Index verdict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VelocityIndexResponse"
+        "400":
+          description: Malformed input
+components:
+  schemas:
+    VelocityDistribution:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - event_name
+        - workflow_id
+        - window_start
+        - window_end
+        - cohort_size
+        - distribution
+        - privacy
+      properties:
+        schema_version:
+          type: string
+          const: FT_V2_2026_05
+        event_name:
+          type: string
+          enum:
+            - USER_FREQUENCY_OBSERVED
+            - USER_ENGAGEMENT_OBSERVED
+            - USER_BREADTH_OBSERVED
+        workflow_id:
+          type: string
+          minLength: 1
+        jbtd_id:
+          anyOf:
+            - type: string
+              pattern: "^[a-z0-9_-]{1,64}$"
+            - type: "null"
+        persona_id:
+          anyOf:
+            - type: string
+              pattern: "^[a-z0-9_-]{1,64}$"
+            - type: "null"
+        window_start:
+          type: string
+          format: date-time
+        window_end:
+          type: string
+          format: date-time
+        cohort_size:
+          type: integer
+          minimum: 1
+        ambiguity_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+        distribution:
+          type: object
+          additionalProperties: false
+          required:
+            - p10
+            - p50
+            - p90
+            - p99
+          properties:
+            p10:
+              type: number
+              minimum: 0
+            p50:
+              type: number
+              minimum: 0
+            p90:
+              type: number
+              minimum: 0
+            p99:
+              type: number
+              minimum: 0
+        calibration_reference:
+          type: string
+        privacy:
+          type: object
+          additionalProperties: false
+          required:
+            - person_level_fields_included
+          properties:
+            person_level_fields_included:
+              type: boolean
+              const: false
+    VelocityIndexResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - window_days
+        - verdict
+        - suppression_reason
+        - frequency_index
+        - engagement_index
+        - breadth_index
+        - velocity_index
+        - cohort_size
+        - calibration_reference
+        - evidence_grade
+        - computed_at
+      properties:
+        workflow_id:
+          type: string
+        jbtd_id:
+          anyOf:
+            - type: string
+            - type: "null"
+        persona_id:
+          anyOf:
+            - type: string
+            - type: "null"
+        window_days:
+          type: integer
+        verdict:
+          type: string
+          enum: [SURFACE, SUPPRESS]
+        suppression_reason:
+          anyOf:
+            - type: string
+              enum: [INSUFFICIENT_TIME, INSUFFICIENT_VOLUME, NO_CONVERGENCE, BASELINE_UNSTABLE, HIGH_AMBIGUITY]
+            - type: "null"
+        frequency_index:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1.5
+            - type: "null"
+        engagement_index:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1.5
+            - type: "null"
+        breadth_index:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1.5
+            - type: "null"
+        velocity_index:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1.5
+            - type: "null"
+        cohort_size:
+          type: integer
+          minimum: 0
+        calibration_reference:
+          type: string
+        evidence_grade:
+          type: string
+          enum: [OBJECTIVE, CALIBRATED, QUALITATIVE]
+        computed_at:
+          type: string
+          format: date-time
+    OutcomeEvidenceCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - outcome_metric
+        - outcome_unit
+        - period_start
+        - period_end
+        - aggregate_value
+        - cohort_size
+        - source_system
+        - jbtd_id
+        - persona_id
+      properties:
+        workflow_id:
+          type: string
+        outcome_metric:
+          type: string
+        outcome_unit:
+          type: string
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        aggregate_value:
+          type: number
+        cohort_size:
+          type: integer
+          minimum: 1
+        source_system:
+          type: string
+        jbtd_id:
+          anyOf:
+            - type: string
+              pattern: "^[a-z0-9_-]{1,64}$"
+            - type: "null"
+        persona_id:
+          anyOf:
+            - type: string
+              pattern: "^[a-z0-9_-]{1,64}$"
+            - type: "null"
+        aggregate_kind:
+          anyOf:
+            - type: string
+            - type: "null"
+        source_attestation:
+          type: object
+    OutcomeEvidenceReceipt:
+      type: object
+      additionalProperties: false
+      required:
+        - evidence_id
+        - accepted_at
+        - workflow_id
+      properties:
+        evidence_id:
+          type: string
+          format: uuid
+        accepted_at:
+          type: string
+          format: date-time
+        workflow_id:
+          type: string
+    OutcomeEvidenceReplayResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - verdict
+        - suppression_reason
+        - value_type
+        - evidence_grade
+        - reliability_factor
+        - outcome_evidence
+      properties:
+        workflow_id:
+          type: string
+        verdict:
+          type: string
+          enum: [SURFACE, SUPPRESS]
+        suppression_reason:
+          anyOf:
+            - type: string
+              enum: [INSUFFICIENT_TIME, INSUFFICIENT_VOLUME, NO_CONVERGENCE, BASELINE_UNSTABLE, HIGH_AMBIGUITY]
+            - type: "null"
+        value_type:
+          type: string
+          enum: [ACCELERATION, QUALITY_PREMIUM, NET_NEW, UNCLASSIFIED]
+        evidence_grade:
+          type: string
+          enum: [OBJECTIVE, CALIBRATED, QUALITATIVE]
+        reliability_factor:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        outcome_evidence:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - evidence_id
+              - outcome_metric
+              - outcome_unit
+              - period_start
+              - period_end
+              - aggregate_value
+              - cohort_size
+              - source_system
+              - ingested_at
+            properties:
+              evidence_id:
+                type: string
+                format: uuid
+              outcome_metric:
+                type: string
+              outcome_unit:
+                type: string
+              period_start:
+                type: string
+                format: date-time
+              period_end:
+                type: string
+                format: date-time
+              aggregate_value:
+                type: number
+              cohort_size:
+                type: integer
+              source_system:
+                type: string
+              ingested_at:
+                type: string
+                format: date-time
+    QualityMultiplierResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - workflow_id
+        - window_days
+        - multiplier
+        - verdict
+        - suppression_reason
+        - cohort_size
+        - evidence_grade
+        - computed_at
+      properties:
+        workflow_id:
+          type: string
+        window_days:
+          type: integer
+        multiplier:
+          anyOf:
+            - type: number
+              minimum: 0.5
+              maximum: 1.5
+            - type: "null"
+        verdict:
+          type: string
+          enum:
+            - SURFACE
+            - SUPPRESS
+        suppression_reason:
+          anyOf:
+            - type: string
+              enum:
+                - INSUFFICIENT_TIME
+                - INSUFFICIENT_VOLUME
+                - NO_CONVERGENCE
+                - BASELINE_UNSTABLE
+                - HIGH_AMBIGUITY
+            - type: "null"
+        cohort_size:
+          type: integer
+          minimum: 0
+        evidence_grade:
+          type: string
+          enum:
+            - OBJECTIVE
+            - CALIBRATED
+            - QUALITATIVE
+        value_type:
+          type: string
+          enum:
+            - QUALITY_PREMIUM
+        computed_at:
+          type: string
+          format: date-time
+        velocity_adjustment_factor:
+          type: number
+          minimum: 0.7
+          maximum: 1.3
+        velocity_index:
+          type: number
+          minimum: 0
+          maximum: 1.5

@@ -1,0 +1,4 @@
+workflow_id,real_cohort_size,distinct_users,window_days,completion_rate,error_rate,abandonment_rate,recovery_rate,verification_rate,p50_latency_ms,p95_latency_ms
+AGENT,1250,840,60,0.94,0.08,0.06,0.72,0.81,42000,175000
+CHAT,2400,1700,60,0.91,0.04,0.03,0.65,0.74,31000,98000
+PRISM,80,62,60,0.88,0.10,0.09,0.58,0.62,52000,210000

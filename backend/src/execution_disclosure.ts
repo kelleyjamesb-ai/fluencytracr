@@ -1,10 +1,17 @@
 import type { FluencyPatternName } from "@learnaire/shared";
+import { FLUENCY_GATES_ALL_PASS, type TraceGateSummary } from "./fluency_execution_gates";
 import type { ExecutionSignals, TraceWithPhase2 } from "./execution_signals";
+import type { SuppressionDecision } from "./services/suppression-engine";
+
+export type { TraceGateSummary } from "./fluency_execution_gates";
+
+export const FLUENCY_SUPPRESSION_NEUTRAL: SuppressionDecision = {
+  status: "ALLOWED",
+  diagnostics: Object.freeze([])
+};
 
 /** Minimum events before interpretive signals/patterns may be disclosed (PRD Phase 3). */
-export const MIN_EVENT_COUNT_FOR_DISCLOSURE = Number(
-  process.env.FLUENCY_MIN_EXECUTION_EVENTS_FOR_DISCLOSURE ?? 2
-);
+export const MIN_EVENT_COUNT_FOR_DISCLOSURE = 2;
 
 export type DisclosureState = "ALLOWED" | "SUPPRESSED";
 
@@ -22,11 +29,36 @@ export type TraceWithGovernance = Omit<TraceWithPhase2, "signals" | "pattern" | 
 };
 
 /**
- * Fail-closed governance for per-execution interpretive output (PRD Phase 3).
+ * Fail-closed governance for per-execution interpretive output (PRD Phase 3 + FSC / min-signal).
  * Does not suppress structural trace fields (ordered_event_ids, retry_sequences, etc.).
  */
-export const evaluateExecutionDisclosure = (signals: ExecutionSignals): ExecutionDisclosure => {
+export const evaluateExecutionDisclosure = (
+  signals: ExecutionSignals,
+  gates: TraceGateSummary = FLUENCY_GATES_ALL_PASS,
+  suppression: SuppressionDecision = FLUENCY_SUPPRESSION_NEUTRAL
+): ExecutionDisclosure => {
   const reasons: string[] = [];
+
+  if (!gates.fsc_eligible) {
+    reasons.push("incomplete_execution");
+    for (const c of gates.fsc_failed_checks) {
+      reasons.push(`fsc:${c}`);
+    }
+  }
+
+  if (gates.fsc_eligible && !gates.min_signal_allowed) {
+    reasons.push("insufficient_signal");
+    for (const c of gates.min_signal_failed_checks) {
+      reasons.push(`min_signal:${c}`);
+    }
+  }
+
+  if (suppression.status === "SUPPRESSED" && suppression.reason === "AMBIGUITY") {
+    reasons.push("classification_ambiguity");
+    for (const d of suppression.diagnostics) {
+      reasons.push(`suppression:${d}`);
+    }
+  }
 
   if (signals.event_count < MIN_EVENT_COUNT_FOR_DISCLOSURE) {
     reasons.push("insufficient_event_count");
@@ -48,7 +80,7 @@ export const evaluateExecutionDisclosure = (signals: ExecutionSignals): Executio
 };
 
 export const applyDisclosureToTrace = (trace: TraceWithPhase2): TraceWithGovernance => {
-  const disclosure = evaluateExecutionDisclosure(trace.signals);
+  const disclosure = evaluateExecutionDisclosure(trace.signals, trace.fluency_gates, trace.fluency_suppression);
   if (disclosure.state === "SUPPRESSED") {
     return {
       ...trace,

@@ -47,6 +47,10 @@ describe("governance regression — output surface", () => {
     await repo.upsertAggregate(
       {
         workflow_id: GOV_WF_ALPHA,
+        jbtd_id: null,
+        persona_id: null,
+        verdict: "SURFACE",
+        suppression_reason: null,
         classified_execution_count: 2,
         suppressed_execution_count: 1,
         prevalence_mode: "CATEGORICAL_PREVALENCE",

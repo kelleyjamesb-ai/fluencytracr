@@ -1,0 +1,149 @@
+{
+  "schema_version": "FT_AI_VALUE_SCENARIO_2026_06",
+  "scenario_id": "scenario_customer_support_capacity_v1",
+  "source": {
+    "blueprint_id": "bp_customer_support_case_resolution",
+    "metrics_library_id": "metrics_customer_support_v1"
+  },
+  "input": {
+    "workflow_family": "customer_support_case_resolution",
+    "value_route": "CAPACITY_CREATION",
+    "metric_references": [
+      {
+        "metric_id": "support_median_resolution_hours",
+        "name": "Median resolution time",
+        "value_route": "CAPACITY_CREATION",
+        "measurement_unit": "hours",
+        "source_system": {
+          "source_type": "support_system",
+          "source_name": "Support case management system",
+          "approved_grain": "aggregate_workflow_window"
+        },
+        "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
+      },
+      {
+        "metric_id": "support_backlog_count",
+        "name": "Open backlog count",
+        "value_route": "CAPACITY_CREATION",
+        "measurement_unit": "cases",
+        "source_system": {
+          "source_type": "support_system",
+          "source_name": "Support case management system",
+          "approved_grain": "aggregate_workflow_window"
+        },
+        "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION"
+      }
+    ],
+    "customer_owned_assumptions": [
+      {
+        "assumption_id": "case_mix_stability",
+        "state": "PRESENT",
+        "owner": "support_operations",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "volume_context",
+        "state": "CAVEATED",
+        "owner": "support_operations",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "staffing_and_coverage_context",
+        "state": "MISSING",
+        "owner": "support_leader",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "channel_mix_context",
+        "state": "MISSING",
+        "owner": "support_operations",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "process_or_policy_context",
+        "state": "MISSING",
+        "owner": "business_sponsor",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "knowledge_base_context",
+        "state": "MISSING",
+        "owner": "knowledge_owner",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "metric_definition_stability",
+        "state": "MISSING",
+        "owner": "data_owner",
+        "source": "blueprint_assumption_ledger"
+      },
+      {
+        "assumption_id": "ai_rollout_context",
+        "state": "MISSING",
+        "owner": "aiom",
+        "source": "blueprint_assumption_ledger"
+      }
+    ],
+    "scenario_bands": [
+      {
+        "band": "CONSERVATIVE",
+        "interpretation": "Directional capacity scenario using the narrowest customer-owned assumption set.",
+        "included_metric_ids": [
+          "support_median_resolution_hours"
+        ]
+      },
+      {
+        "band": "BASE_CASE",
+        "interpretation": "Directional capacity scenario using all recommended capacity metrics.",
+        "included_metric_ids": [
+          "support_median_resolution_hours",
+          "support_backlog_count"
+        ]
+      },
+      {
+        "band": "EXPANDED",
+        "interpretation": "Directional capacity scenario for later customer-owned validation after assumptions are reviewed.",
+        "included_metric_ids": [
+          "support_median_resolution_hours",
+          "support_backlog_count"
+        ]
+      }
+    ],
+    "output_units": [
+      "hours",
+      "cases"
+    ]
+  },
+  "output": {
+    "claim_state": "CAVEATED_VALUE_INVESTIGATION",
+    "scenario_summary": "Customer-owned scenario draft for testing whether support capacity signals merit further validation.",
+    "required_caveats": [
+      "Scenario bands are planning ranges, not realized ROI.",
+      "Outcome movement cannot be attributed to AI without separate customer-owned validation.",
+      "This scenario is local and pre-readout; it does not create customer-facing economic output."
+    ],
+    "safe_claims": [
+      "Aggregate support metrics can support a caveated capacity-creation investigation."
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "causality_claim",
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "hr_analytics",
+    "productivity_measurement",
+    "realized_roi_calculation",
+    "customer_facing_economic_output"
+  ],
+  "governance_boundaries": {
+    "requires_connector": false,
+    "requires_dashboard": false,
+    "requires_realized_roi_calculation": false,
+    "requires_causality_claim": false,
+    "requires_individual_scoring": false,
+    "requires_hr_analytics": false,
+    "requires_runtime_service": false,
+    "customer_facing_economic_output": false
+  }
+}

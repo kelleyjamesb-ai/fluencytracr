@@ -16,6 +16,10 @@ import {
   ConnectorEventImportSchema,
   FluencyEventIngestSchema,
   FluencyEventSchema,
+  FluencyJoinKeySchema,
+  OutcomeEvidenceCreateSchema,
+  OutcomeEvidenceQuerySchema,
+  deriveAivmVerdictFields,
   UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
@@ -33,6 +37,7 @@ import {
   RoleSchema as AuthRoleSchema
 } from "@learnaire/shared";
 import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@learnaire/shared";import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
+import { registerAiValueRoutes } from "./ai_value_routes";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
@@ -68,13 +73,61 @@ import { ensureToolClass, ensureUsageShape, normalizeUsageTimestamp } from "./us
 import { runSpreadRollupForOrg } from "./spread_metrics";
 import { importRoster } from "./roster";
 import { suppressAndRollup } from "./suppression";
-import { runFluencyIndexJob } from "./fluency_service";
+import { clearLegacyFluencyIndexArtifacts } from "./fluency_service";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
+import { auditSuppressedObservabilityRows, listSuppressionAuditLogs } from "./suppression_audit_log";
+import {
+  causalDeltaWindowsOverlap,
+  computeCausalDelta,
+  MIN_CAUSAL_DELTA_WINDOW_DAYS
+} from "./value_realization/causal_delta";
+import {
+  computeQualityMultiplier,
+  computeQualityMultiplierFromForwardedDistribution,
+  failClosedQualityMultiplierResponse
+} from "./value_realization/quality_multiplier";
+import { ForwardedDistributionSchema } from "./value_realization/forwarded_distribution";
+import {
+  computeVelocityIndex,
+  findVelocityPersonField,
+  loadVelocityBaseline,
+  VelocityDistributionSchema,
+  velocityAdjustmentFactor
+} from "./value_realization/velocity_index";
+import {
+  findCalibrationBaseline,
+  loadCalibrationBaselines
+} from "./value_realization/calibration_registry";
+import {
+  computeV3AggregateVerdict,
+  V3AggregateIngestSchema,
+  velocityRecordsFromV3Aggregate
+} from "./value_realization/v3_aggregate_ingest";
 import { findForbiddenField } from "./validation/forbiddenFields";
 import { getPrisma } from "./db";
+import {
+  isFluencyCanonicalPersistenceEnabled,
+  loadFluencyEventRecords,
+  persistFluencyEventRecord
+} from "./services/fluency-canonical-persistence";
+import {
+  listOutcomeEvidence,
+  persistOutcomeEvidence
+} from "./repositories/outcome-evidence.repository";
+import {
+  isVelocityPersistenceEnabled,
+  listVelocityDistributions,
+  persistVelocityDistribution
+} from "./repositories/velocity-distribution.repository";
+import {
+  listFluencyTracrVerdicts,
+  persistFluencyTracrVerdict,
+  VerdictAlreadyExistsError,
+  verdictSliceKey
+} from "./repositories/fluencytracr-verdict.repository";
 import {
   buildCoverageSummary,
   COVERAGE_THRESHOLD,
@@ -131,7 +184,7 @@ import {
 } from "./workflow_registry";
 import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
-import { resolveJwtSecret } from "./auth_secret";
+import { isAuthTokenIssuerAuthorized, resolveJwtSecret } from "./auth_secret";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -173,6 +226,10 @@ const signHs256Jwt = (payload: Record<string, unknown>, secret: string) => {
 };
 
 app.post("/auth/token", (req, res) => {
+  if (!isAuthTokenIssuerAuthorized(req.header("x-auth-token-issuer-secret"))) {
+    return res.status(403).json({ error: "Token minting is disabled for this runtime" });
+  }
+
   const parsed = AuthTokenRequestSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid auth token request" });
@@ -569,11 +626,17 @@ const evidenceWindowDays = (window: EvidenceBundleWindow): number => {  if (wind
   return WINDOW_DAYS[window];
 };
 
-const buildEvidenceBundle = (orgId: string, window: EvidenceBundleWindow) => {  const now = new Date();
+const buildEvidenceBundle = (
+  orgId: string,
+  window: EvidenceBundleWindow,
+  fluencyEvents?: FluencyEventRecord[]
+) => {
+  const now = new Date();
   const start = new Date(now);
   start.setUTCDate(start.getUTCDate() - evidenceWindowDays(window));
 
-  const scopedEvents = Array.from(store.fluencyEvents.values()).filter((event) => {
+  const source = fluencyEvents ?? Array.from(store.fluencyEvents.values());
+  const scopedEvents = source.filter((event) => {
     const timestamp = new Date(event.timestamp);
     if (Number.isNaN(timestamp.getTime()) || timestamp < start || timestamp > now) {
       return false;
@@ -802,6 +865,22 @@ const REQUIRED_COMPLIANCE_TABLES = [
   "ComplianceDecision"
 ] as const;
 
+// AI Value persistence. Surfaced in DB readiness so a deploy that skipped the
+// AI Value migrations fails closed at /ops/db/readiness and /health instead of
+// only erroring at the first value-chain or evidence persistence write.
+const REQUIRED_AI_VALUE_TABLES = [
+  "ai_value_objects",
+  "value_hypotheses",
+  "measurement_plans",
+  "source_package_refs",
+  "evidence_snapshots"
+] as const;
+
+const REQUIRED_PERSISTENCE_TABLES = [
+  ...REQUIRED_COMPLIANCE_TABLES,
+  ...REQUIRED_AI_VALUE_TABLES
+] as const;
+
 type DatabaseReadinessResult =
   | { status: "not_configured" }
   | { status: "ready"; missingTables: []; tableCount: number }
@@ -819,7 +898,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
     )) as Array<{ tablename: string }>;
     const tableNames = new Set(rows.map((row) => row.tablename));
-    const missingTables = REQUIRED_COMPLIANCE_TABLES.filter((tableName) => !tableNames.has(tableName));
+    const missingTables = REQUIRED_PERSISTENCE_TABLES.filter((tableName) => !tableNames.has(tableName));
     if (missingTables.length > 0) {
       return {
         status: "schema_incomplete",
@@ -1910,7 +1989,7 @@ app.post("/orgs/:orgId/metrics/import", strictLimiter, schemaVersionMiddleware, 
     }
   });
 
-  runFluencyIndexJob(org.id);
+  clearLegacyFluencyIndexArtifacts(org.id);
   return res.json({ inserted, updated, rejected });
 });
 
@@ -2944,7 +3023,7 @@ app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFie
   return res.json({ inserted, updated, rejected });
 });
 
-app.post("/api/ingest", ingestLimiter, (req, res) => {
+app.post("/api/ingest", ingestLimiter, async (req, res) => {
   const schemaVersion = req.header("X-FluencyTracr-Schema-Version");
   const acceptedVersions = getAcceptedSchemaVersions();
   if (!schemaVersion || !acceptedVersions.includes(schemaVersion)) {
@@ -3020,8 +3099,31 @@ app.post("/api/ingest", ingestLimiter, (req, res) => {
     });
   });
 
-  acceptedEvents.forEach((event) => {
-    insertFluencyEvent(buildFluencyEventRecord(event, crypto.randomUUID()));  });
+  try {
+    for (const event of acceptedEvents) {
+      const eventId = crypto.randomUUID();
+      const record = buildFluencyEventRecord(event, eventId);
+      await persistFluencyEventRecord(record, {
+        orgId: req.authOrgId,
+        schemaVersion
+      });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (isFluencyCanonicalPersistenceEnabled() && message.includes("org_id required")) {
+      return res.status(400).json({
+        error: "org_id required for canonical persistence",
+        reason_code: "missing_org_scope",
+        message:
+          "When DATABASE_URL is set, fluency ingest must include org scope (JWT org_id or x-org-id in dev)."
+      });
+    }
+    return res.status(500).json({
+      error: "Ingest persistence failed",
+      reason_code: "persist_failed",
+      message
+    });
+  }
 
   const response = {
     receipt_id: `rcpt_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`,
@@ -3139,6 +3241,17 @@ app.post("/api/ingest/unified-telemetry", ingestLimiter, (req, res) => {
       field_path: firstIssue ? formatIssuePath(["events", index, ...firstIssue.path]) : `events[${index}]`
     });
   });
+
+  if (req.authOrgId) {
+    const mismatchedIndex = acceptedEvents.findIndex((event) => event.org_id !== req.authOrgId);
+    if (mismatchedIndex >= 0) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Token org scope does not match request org",
+        index: mismatchedIndex + 1
+      });
+    }
+  }
 
   acceptedEvents.forEach((event) => {
     insertUnifiedTelemetryEvent(event);
@@ -3302,7 +3415,7 @@ app.get(
       metadata: { format: "csv" }
     });
     res.setHeader("content-type", "text/csv; charset=utf-8");
-    return res.status(200).send("metric_name,metric_value\nfluency_index,0\n");
+    return res.status(200).send("metric_name,metric_value\naggregate_evidence_status,not_computed\n");
   }
 );
 
@@ -3753,6 +3866,7 @@ app.get(
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
     const baselineResets = await listBaselineResetsByOrg(org.id);
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
     const baselineResetsByWorkflowVersion = entries.reduce<Record<string, string | null>>(
       (acc, entry) => {
         acc[`${entry.workflowId}:${entry.version}`] = getBaselineResetAtForRegistryVersion(
@@ -3766,7 +3880,7 @@ app.get(
     const summary = computeWorkflowVisibilitySummary(entries, parsedWindow.data, {
       policyConfigs,
       baselineResetsByWorkflowVersion,
-      fluencyEvents: Array.from(store.fluencyEvents.values()),
+      fluencyEvents,
       v0Signals: Array.from(store.behavioralSignals.values()),
       patternInferenceRecords: store.patternInferenceRecords
     });
@@ -3815,6 +3929,7 @@ app.get(
         return acc;
       }, new Map<string, (typeof entries)[number]>());
     const now = new Date();
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
     const workflows = await Promise.all(
       Array.from(currentWorkflows.values())
         .sort((a, b) => {
@@ -3824,7 +3939,7 @@ app.get(
           return a.workflowId.localeCompare(b.workflowId);
         })
         .map(async (workflow) => {
-          const visibility = await computeWorkflowVisibilityService(org.id, workflow.workflowId, now);
+          const visibility = await computeWorkflowVisibilityService(org.id, workflow.workflowId, now, fluencyEvents);
           const workingStyle =
             visibility.visibilityState === "VISIBLE"
               ? patternToExecutiveWorkingStyle(visibility.dominantPattern)
@@ -3884,7 +3999,7 @@ app.post(
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
   schemaVersionMiddleware,
   forbiddenFieldsMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const parsed = FluencyEventIngestSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
@@ -3893,17 +4008,34 @@ app.post(
     const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
     const eventIds: string[] = [];
     const executionIds: string[] = [];
-    parsed.data.events.forEach((event) => {
-      const eventId = crypto.randomUUID();
-      const record = buildFluencyEventRecord(event, eventId);
-      insertFluencyEvent(record);
-      eventIds.push(eventId);
-      executionIds.push(record.execution_id);    });
+    try {
+      for (const event of parsed.data.events) {
+        const eventId = crypto.randomUUID();
+        const record = buildFluencyEventRecord(event, eventId);
+        await persistFluencyEventRecord(record, {
+          orgId: req.authOrgId,
+          schemaVersion
+        });
+        eventIds.push(eventId);
+        executionIds.push(record.execution_id);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (isFluencyCanonicalPersistenceEnabled() && message.includes("org_id required")) {
+        return res.status(400).json({
+          error: "org_id required for canonical persistence",
+          message:
+            "When DATABASE_URL is set, fluency ingest must include org scope (JWT org_id or x-org-id in dev)."
+        });
+      }
+      return res.status(500).json({ error: "Event persistence failed", message });
+    }
 
     return res.json({
       ingested: eventIds.length,
       event_ids: eventIds,
-      execution_ids: executionIds,      schema_version: schemaVersion
+      execution_ids: executionIds,
+      schema_version: schemaVersion
     });
   }
 );
@@ -3918,10 +4050,584 @@ const TraceReconstructedQuerySchema = z
     message: "Provide at least one of workflow_id, execution_id"
   });
 
+const CausalDeltaBodySchema = z.object({
+  workflow_id: z.string().min(1),
+  jbtd_id: FluencyJoinKeySchema.nullable().optional(),
+  persona_id: FluencyJoinKeySchema.nullable().optional(),
+  event_at: z.string().datetime({ offset: true }),
+  pre_window_days: z.number().int().positive().default(30),
+  post_window_days: z.number().int().positive().default(30),
+  label: z.string()
+}).strict();
+
+const QualityMultiplierQuerySchema = z.object({
+  workflow_id: z.string().min(1),
+  jbtd_id: FluencyJoinKeySchema.nullable().optional(),
+  persona_id: FluencyJoinKeySchema.nullable().optional(),
+  window_days: z.coerce.number().int().positive().max(3650),
+  cohort_id: z.string().min(1).optional(),
+  use_forwarded_distribution: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
+  include_velocity: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true")
+}).strict();
+
+const VelocityIndexQuerySchema = z.object({
+  workflow_id: z.string().min(1),
+  jbtd_id: FluencyJoinKeySchema.nullable().optional(),
+  persona_id: FluencyJoinKeySchema.nullable().optional(),
+  window_days: z.coerce.number().int().positive().max(3650)
+}).strict();
+
+const V3VerdictsQuerySchema = z.object({
+  cohort_id: z.string().min(1),
+  workflow_id: z.string().min(1).optional()
+}).strict();
+
+const eventBelongsToAuthOrg = (event: FluencyEventRecord, orgId: string | undefined): boolean => {
+  if (!orgId) {
+    return true;
+  }
+  return (
+    typeof event.org_unit === "string" &&
+    (event.org_unit === `org:${orgId}` || event.org_unit.startsWith(`org:${orgId}:`))
+  );
+};
+
+app.post(
+  "/api/v1/causal-delta",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const parsed = CausalDeltaBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid causal delta request",
+        details: parsed.error.flatten()
+      });
+    }
+
+    const { workflow_id, jbtd_id, persona_id, event_at, pre_window_days, post_window_days } = parsed.data;
+    if (
+      pre_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS ||
+      post_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS
+    ) {
+      return res.status(400).json({
+        error: "Invalid causal delta request",
+        reason_code: "window_below_minimum",
+        min_window_days: MIN_CAUSAL_DELTA_WINDOW_DAYS
+      });
+    }
+
+    const changeAt = new Date(event_at);
+    const preStart = new Date(changeAt.getTime() - pre_window_days * 24 * 60 * 60 * 1000);
+    const preEnd = changeAt;
+    const postStart = changeAt;
+    const postEnd = new Date(changeAt.getTime() + post_window_days * 24 * 60 * 60 * 1000);
+    if (causalDeltaWindowsOverlap(preStart, preEnd, postStart, postEnd)) {
+      return res.status(400).json({
+        error: "Invalid causal delta request",
+        reason_code: "overlapping_windows"
+      });
+    }
+
+    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
+    const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, req.authOrgId));
+    return res.json(
+      computeCausalDelta({
+        workflowId: workflow_id,
+        jbtdId: jbtd_id ?? null,
+        personaId: persona_id ?? null,
+        eventAt: event_at,
+        preWindowDays: pre_window_days,
+        postWindowDays: post_window_days,
+        events: scopedEvents
+      })
+    );
+  }
+);
+
+app.get("/api/v1/quality-multiplier", async (req, res) => {
+  // TODO(auth): replace ambient/dev header context with service auth when Paul Li's pipeline identity is defined.
+  const rawWorkflowId = typeof req.query.workflow_id === "string" ? req.query.workflow_id : "";
+  const rawWindowDays =
+    typeof req.query.window_days === "string" && /^\d+$/.test(req.query.window_days)
+      ? Number(req.query.window_days)
+      : 0;
+  const parsed = QualityMultiplierQuerySchema.safeParse({
+    workflow_id: req.query.workflow_id,
+    jbtd_id: req.query.jbtd_id,
+    persona_id: req.query.persona_id,
+    window_days: req.query.window_days,
+    cohort_id: req.query.cohort_id,
+    use_forwarded_distribution: req.query.use_forwarded_distribution,
+    include_velocity: req.query.include_velocity
+  });
+
+  if (!parsed.success) {
+    return res.status(400).json(
+      failClosedQualityMultiplierResponse(rawWorkflowId, rawWindowDays)
+    );
+  }
+
+  if (parsed.data.use_forwarded_distribution && parsed.data.cohort_id && req.authOrgId) {
+    const verdicts = await listFluencyTracrVerdicts({
+      orgId: req.authOrgId,
+      cohortId: parsed.data.cohort_id,
+      workflowId: parsed.data.workflow_id
+    });
+    const forwardedVerdict = verdicts.find((row) => {
+      const payload = row.payload_json as Record<string, unknown>;
+      if (payload.verdict !== "SURFACE") {
+        return false;
+      }
+      if ((payload.jbtd_id ?? null) !== (parsed.data.jbtd_id ?? null)) {
+        return false;
+      }
+      if ((payload.persona_id ?? null) !== (parsed.data.persona_id ?? null)) {
+        return false;
+      }
+      return typeof payload.forwarded_distribution === "object" && payload.forwarded_distribution !== null;
+    });
+    const parsedForwarded = ForwardedDistributionSchema.safeParse(
+      forwardedVerdict?.payload_json.forwarded_distribution
+    );
+    if (parsedForwarded.success && parsedForwarded.data.window_days >= parsed.data.window_days) {
+      return res.json(
+        computeQualityMultiplierFromForwardedDistribution({
+          forwardedDistribution: parsedForwarded.data
+        })
+      );
+    }
+  }
+
+  const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
+  const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, req.authOrgId));
+  const baseResponse = computeQualityMultiplier({
+    workflowId: parsed.data.workflow_id,
+    jbtdId: parsed.data.jbtd_id ?? null,
+    personaId: parsed.data.persona_id ?? null,
+    windowDays: parsed.data.window_days,
+    events: scopedEvents
+  });
+  if (!parsed.data.include_velocity || baseResponse.verdict !== "SURFACE" || baseResponse.multiplier === null) {
+    return res.json(baseResponse);
+  }
+  const velocityResponse = computeVelocityIndex({
+    workflowId: parsed.data.workflow_id,
+    jbtdId: parsed.data.jbtd_id ?? null,
+    personaId: parsed.data.persona_id ?? null,
+    windowDays: parsed.data.window_days,
+    distributions: await listVelocityDistributions({
+      orgId: req.authOrgId,
+      workflowId: parsed.data.workflow_id,
+      jbtdId: parsed.data.jbtd_id ?? null,
+      personaId: parsed.data.persona_id ?? null
+    })
+  });
+  if (velocityResponse.verdict !== "SURFACE" || velocityResponse.velocity_index === null) {
+    return res.json(baseResponse);
+  }
+  const velocity_adjustment_factor = velocityAdjustmentFactor(velocityResponse.velocity_index);
+  return res.json({
+    ...baseResponse,
+    multiplier: Number(Math.min(1.5, Math.max(0.5, baseResponse.multiplier * velocity_adjustment_factor)).toFixed(3)),
+    velocity_adjustment_factor,
+    velocity_index: velocityResponse.velocity_index
+  });
+});
+
+app.post("/api/v2/ingest/velocity-distribution", rbacMiddleware(["ADMIN"]), async (req, res) => {
+  const personField = findVelocityPersonField(req.body);
+  if (personField) {
+    return res.status(400).json({
+      error: "Person-level field rejected",
+      reason_code: "person_level_field_rejected",
+      field_path: personField
+    });
+  }
+  const parsed = VelocityDistributionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid velocity distribution",
+      reason_code: "invalid_velocity_distribution",
+      details: parsed.error.flatten()
+    });
+  }
+  if (!req.authOrgId && isVelocityPersistenceEnabled()) {
+    return res.status(400).json({
+      error: "Velocity distribution requires organization scope",
+      reason_code: "missing_org_scope"
+    });
+  }
+  const orgId = req.authOrgId ?? "org-in-memory";
+  const calibrationReference = parsed.data.calibration_reference ?? loadVelocityBaseline().calibration_id;
+  const record = {
+    ...parsed.data,
+    org_id: orgId,
+    jbtd_id: parsed.data.jbtd_id ?? null,
+    persona_id: parsed.data.persona_id ?? null,
+    calibration_reference: calibrationReference,
+    ingested_at: new Date().toISOString()
+  };
+  try {
+    await persistVelocityDistribution(record);
+  } catch {
+    return res.status(500).json({
+      error: "Velocity persistence failed",
+      reason_code: "velocity_persistence_failed"
+    });
+  }
+  return res.status(202).json({
+    accepted: true,
+    event_name: record.event_name,
+    workflow_id: record.workflow_id,
+    calibration_reference: record.calibration_reference
+  });
+});
+
+app.get("/api/v2/velocity-index", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]), async (req, res) => {
+  const parsed = VelocityIndexQuerySchema.safeParse({
+    workflow_id: req.query.workflow_id,
+    jbtd_id: req.query.jbtd_id,
+    persona_id: req.query.persona_id,
+    window_days: req.query.window_days
+  });
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid velocity index request",
+      reason_code: "invalid_velocity_index_request",
+      details: parsed.error.flatten()
+    });
+  }
+  return res.json(
+    computeVelocityIndex({
+      workflowId: parsed.data.workflow_id,
+      jbtdId: parsed.data.jbtd_id ?? null,
+      personaId: parsed.data.persona_id ?? null,
+      windowDays: parsed.data.window_days,
+      distributions: await listVelocityDistributions({
+        orgId: req.authOrgId,
+        workflowId: parsed.data.workflow_id,
+        jbtdId: parsed.data.jbtd_id ?? null,
+        personaId: parsed.data.persona_id ?? null
+      })
+    })
+  );
+});
+
+app.get(
+  "/api/v3/calibration/baselines",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  (_req, res) => {
+    try {
+      return res.json({
+        baselines: loadCalibrationBaselines().map((baseline) => ({
+          calibration_id: baseline.calibration_id,
+          source: baseline.source,
+          frequency_p50: baseline.frequency_p50,
+          engagement_p50: baseline.engagement_p50,
+          breadth_p50: baseline.breadth_p50
+        }))
+      });
+    } catch {
+      return res.status(500).json({
+        error: "Calibration baselines unavailable",
+        reason_code: "calibration_baselines_unavailable"
+      });
+    }
+  }
+);
+
+app.post("/api/v3/ingest/aggregate", rbacMiddleware(["ADMIN"]), async (req, res) => {
+  const personField = findVelocityPersonField(req.body);
+  if (personField) {
+    return res.status(400).json({
+      error: "Person-level field rejected",
+      reason_code: "person_level_field_rejected",
+      field_path: personField
+    });
+  }
+  const forbiddenField = findForbiddenField(req.body);
+  if (forbiddenField) {
+    return res.status(400).json({
+      error: "Forbidden raw field rejected",
+      reason_code: "forbidden_field_rejected",
+      field_path: forbiddenField.path
+    });
+  }
+  const parsed = V3AggregateIngestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid aggregate ingest payload",
+      reason_code: "invalid_aggregate_ingest_payload",
+      details: parsed.error.flatten()
+    });
+  }
+  const baseline = findCalibrationBaseline(parsed.data.calibration_id);
+  if (!baseline) {
+    return res.status(400).json({
+      error: "Unknown calibration baseline",
+      reason_code: "unknown_calibration_id",
+      calibration_id: parsed.data.calibration_id
+    });
+  }
+  if (!req.authOrgId) {
+    return res.status(400).json({
+      error: "Aggregate ingest requires organization scope",
+      reason_code: "missing_org_scope"
+    });
+  }
+
+  const computed = computeV3AggregateVerdict(parsed.data, baseline);
+  const now = new Date().toISOString();
+  const orgId = req.authOrgId;
+  const record = {
+    id: crypto.randomUUID(),
+    org_id: orgId,
+    cohort_id: computed.cohort_id,
+    workflow_id: computed.workflow_id,
+    jbtd_id: computed.jbtd_id,
+    persona_id: computed.persona_id,
+    slice_key: verdictSliceKey(computed.jbtd_id, computed.persona_id),
+    window_start: computed.window_start,
+    window_end: computed.window_end,
+    calibration_id: computed.calibration_id,
+    verdict: computed.verdict,
+    suppression_reason: computed.suppression_reason,
+    cohort_size: computed.cohort_size,
+    evidence_grade: computed.evidence_grade,
+    velocity_index: computed.velocity_index,
+    quality_multiplier: computed.quality_multiplier,
+    payload_json: {
+      ...computed,
+      privacy: parsed.data.privacy
+    },
+    computed_at: computed.computed_at,
+    created_at: now
+  };
+
+  try {
+    await persistFluencyTracrVerdict(record);
+    for (const velocityRecord of velocityRecordsFromV3Aggregate(orgId, parsed.data, now)) {
+      await persistVelocityDistribution(velocityRecord);
+    }
+  } catch (error) {
+    if (error instanceof VerdictAlreadyExistsError) {
+      return res.status(409).json({
+        error: "Verdict already exists for immutable aggregate key",
+        reason_code: "verdict_already_exists"
+      });
+    }
+    return res.status(500).json({
+      error: "Aggregate ingest failed",
+      reason_code: "aggregate_ingest_failed"
+    });
+  }
+
+  return res.status(202).json({
+    accepted: true,
+    verdict: computed
+  });
+});
+
+app.get(
+  "/api/v3/verdicts",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    const parsed = V3VerdictsQuerySchema.safeParse({
+      cohort_id: req.query.cohort_id,
+      workflow_id: req.query.workflow_id
+    });
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid verdict query",
+        reason_code: "invalid_verdict_query",
+        details: parsed.error.flatten()
+      });
+    }
+    if (!req.authOrgId) {
+      return res.status(400).json({
+        error: "Verdict query requires organization scope",
+        reason_code: "missing_org_scope"
+      });
+    }
+    const rows = await listFluencyTracrVerdicts({
+      orgId: req.authOrgId,
+      cohortId: parsed.data.cohort_id,
+      workflowId: parsed.data.workflow_id
+    });
+    return res.json({
+      cohort_id: parsed.data.cohort_id,
+      verdicts: rows.map((row) => row.payload_json)
+    });
+  }
+);
+
+const toOutcomeEvidenceSuppressionReason = (reasons: string[] | undefined) => {
+  if (!reasons || reasons.length === 0) {
+    return null;
+  }
+  if (reasons.includes("insufficient_disclosed_executions")) {
+    return "INSUFFICIENT_VOLUME";
+  }
+  return "HIGH_AMBIGUITY";
+};
+
+const outcomeEvidenceAivmFields = (
+  events: FluencyEventRecord[],
+  workflowId: string,
+  jbtdId: string | null,
+  personaId: string | null,
+  periodStart: string,
+  periodEnd: string
+) => {
+  const startMs = Date.parse(periodStart);
+  const endMs = Date.parse(periodEnd);
+  const canonical_events = events
+    .filter((event) => event.workflow_id === workflowId)
+    .filter((event) => (event.jbtd_id ?? null) === jbtdId)
+    .filter((event) => (event.persona_id ?? null) === personaId)
+    .filter((event) => {
+      const at = Date.parse(event.timestamp);
+      return at >= startMs && at <= endMs;
+    })
+    .map((event) => {
+      switch (event.event_type) {
+        case "ai_output_disposition":
+          return {
+            event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
+            verification_present: event.verification_present
+          };
+        case "ai_recovery_loop":
+          return { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true };
+        case "ai_abandonment":
+          return { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: true };
+        default:
+          return { event_name: "FT_V1_DISPOSITION_OBSERVED" };
+      }
+    });
+  return deriveAivmVerdictFields({
+    canonical_events,
+    cohort_size: new Set(
+      events
+        .filter((event) => event.workflow_id === workflowId)
+        .filter((event) => (event.jbtd_id ?? null) === jbtdId)
+        .filter((event) => (event.persona_id ?? null) === personaId)
+        .map((event) => event.execution_id)
+    ).size,
+    window_length_days: Math.floor((endMs - startMs) / (24 * 60 * 60 * 1000))
+  });
+};
+
+app.post(
+  "/api/v1/outcome-evidence",
+  rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    // TODO(auth): bind outcome evidence writes to a service identity for Paul Li's pipeline / AIOM ingestion.
+    const parsed = OutcomeEvidenceCreateSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const flattened = parsed.error.flatten();
+      const insufficientVolume = parsed.error.issues.some((issue) => issue.message === "INSUFFICIENT_VOLUME");
+      return res.status(insufficientVolume ? 422 : 400).json({
+        error: "Invalid outcome evidence payload",
+        reason: insufficientVolume ? "INSUFFICIENT_VOLUME" : "INVALID_PAYLOAD",
+        details: flattened
+      });
+    }
+    if (!req.authOrgId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const evidenceId = crypto.randomUUID();
+    const acceptedAt = new Date().toISOString();
+    await persistOutcomeEvidence(req.authOrgId, parsed.data, evidenceId, acceptedAt);
+
+    return res.status(201).json({
+      evidence_id: evidenceId,
+      accepted_at: acceptedAt,
+      workflow_id: parsed.data.workflow_id
+    });
+  }
+);
+
+app.get(
+  "/api/v1/outcome-evidence",
+  rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+  async (req, res) => {
+    // TODO(auth): replace ambient org header auth with a scoped read token for value-realization consumers.
+    const parsed = OutcomeEvidenceQuerySchema.safeParse({
+      workflow_id: req.query.workflow_id,
+      period_start: req.query.period_start,
+      period_end: req.query.period_end,
+      jbtd_id: req.query.jbtd_id,
+      persona_id: req.query.persona_id
+    });
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid outcome evidence query",
+        reason: "INVALID_QUERY",
+        details: parsed.error.flatten()
+      });
+    }
+
+    const orgId = req.authOrgId;
+    if (!orgId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: orgId });
+    const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, orgId));
+    const periodEnd = new Date(parsed.data.period_end);
+    const rows = orgId
+      ? buildObservabilityRollup(scopedEvents, orgId, "90d", { now: periodEnd })
+      : [];
+    const row = rows.find(
+      (entry) =>
+        entry.workflow_id === parsed.data.workflow_id &&
+        (entry.jbtd_id ?? null) === (parsed.data.jbtd_id ?? null) &&
+        (entry.persona_id ?? null) === (parsed.data.persona_id ?? null)
+    );
+    const verdict = row?.disclosure === "ALLOWED" ? "SURFACE" : "SUPPRESS";
+    const outcomeEvidence = await listOutcomeEvidence(orgId, parsed.data);
+    const aivm = outcomeEvidenceAivmFields(
+      scopedEvents,
+      parsed.data.workflow_id,
+      parsed.data.jbtd_id ?? null,
+      parsed.data.persona_id ?? null,
+      parsed.data.period_start,
+      parsed.data.period_end
+    );
+
+    return res.json({
+      workflow_id: parsed.data.workflow_id,
+      verdict,
+      suppression_reason:
+        verdict === "SURFACE" ? null : toOutcomeEvidenceSuppressionReason(row?.suppression_reasons) ?? "INSUFFICIENT_VOLUME",
+      value_type: aivm.value_type,
+      evidence_grade: aivm.evidence_grade,
+      reliability_factor: row?.reliability_factor ?? null,
+      outcome_evidence: outcomeEvidence.map((record) => ({
+        evidence_id: record.evidence_id,
+        outcome_metric: record.outcome_metric,
+        outcome_unit: record.outcome_unit,
+        period_start: record.period_start,
+        period_end: record.period_end,
+        aggregate_value: record.aggregate_value,
+        cohort_size: record.cohort_size,
+        source_system: record.source_system,
+        ingested_at: record.ingested_at
+      }))
+    });
+  }
+);
+
 app.get(
   "/api/traces/reconstructed",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const parsed = TraceReconstructedQuerySchema.safeParse({
       workflow_id: typeof req.query.workflow_id === "string" ? req.query.workflow_id : undefined,
       execution_id: typeof req.query.execution_id === "string" ? req.query.execution_id : undefined,
@@ -3934,7 +4640,16 @@ app.get(
         details: parsed.error.flatten()
       });
     }
-    const events = Array.from(store.fluencyEvents.values());
+    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });
+    const events = loadedEvents.filter((event) => {
+      if (!req.authOrgId) {
+        return true;
+      }
+      return (
+        typeof event.org_unit === "string" &&
+        (event.org_unit === `org:${req.authOrgId}` || event.org_unit.startsWith(`org:${req.authOrgId}:`))
+      );
+    });
     const traces = reconstructTracesForQuery(events, parsed.data);
     const includeSignals =
       req.query.include_signals === "true" ||
@@ -3954,7 +4669,7 @@ app.get(
 app.get(
   "/api/observability/:orgId",
   rbacMiddleware(["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -3970,22 +4685,39 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
     const observationWindow = windowParsed.data;
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
     const workflows = buildObservabilityRollup(
-      Array.from(store.fluencyEvents.values()),
+      fluencyEvents,
       org.id,
       observationWindow,
       { minDisclosedExecutions: MIN_COHORT_SIZE, now: new Date() }
     );
+    await auditSuppressedObservabilityRows(org.id, workflows);
     const payload = {
       org_id: org.id,
       observation_window: observationWindow,
-      workflows
+      workflows: workflows.filter(
+        (workflow) =>
+          workflow.disclosure === "ALLOWED" ||
+          (workflow.jbtd_id === null && workflow.persona_id === null)
+      )
     };
     const validated = ObservabilityResponseSchema.safeParse(payload);
     if (!validated.success) {
       return res.status(500).json({ error: "Internal response shape error" });
     }
     return res.json(validated.data);
+  }
+);
+app.get(
+  "/orgs/:orgId/suppression-audit-log",
+  rbacMiddleware(["ADMIN"]),
+  (req, res) => {
+    const org = store.orgs.get(req.params.orgId);
+    if (!org) {
+      return res.status(404).json({ error: "Org not found" });
+    }
+    return res.json({ logs: listSuppressionAuditLogs(org.id) });
   }
 );
 app.get(
@@ -4159,7 +4891,7 @@ app.get(
 app.get(
   "/api/evidence/bundles/:orgId",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -4175,14 +4907,16 @@ app.get(
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json(bundle);
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: req.params.orgId });
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow, fluencyEvents);
+    return res.json(bundle);
   }
 );
 
 app.get(
   "/api/evidence/coverage/:orgId",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -4198,7 +4932,9 @@ app.get(
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json({
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: req.params.orgId });
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow, fluencyEvents);
+    return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
       window: bundle.window,
@@ -4212,7 +4948,7 @@ app.get(
 app.get(
   "/api/evidence/controls/:orgId",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const org = store.orgs.get(req.params.orgId);
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
@@ -4228,7 +4964,9 @@ app.get(
       });
     }
 
-    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow);    return res.json({
+    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: req.params.orgId });
+    const bundle = buildEvidenceBundle(req.params.orgId, windowRaw as EvidenceBundleWindow, fluencyEvents);
+    return res.json({
       org_id: bundle.org_id,
       schema_version: bundle.schema_version,
       window: bundle.window,
@@ -4282,7 +5020,7 @@ app.post(
 app.post(
   "/api/ledger/:id/evaluate",
   rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
-  (req, res) => {
+  async (req, res) => {
     const entry = store.decisionLedgerEntries.get(req.params.id);
     if (!entry) {
       return res.status(404).json({ error: "Ledger entry not found" });
@@ -4309,7 +5047,7 @@ app.post(
       return res.status(400).json({ error: "Observation window too short" });
     }
 
-    const events: FluencyEventRecord[] = Array.from(store.fluencyEvents.values());
+    const events: FluencyEventRecord[] = await loadFluencyEventRecords({});
     const scoped = filterEventsByScope(events, entry.decision.scope);
     const observationEvents = scoped.filter((event) => {
       const ts = new Date(event.timestamp);
@@ -4900,14 +5638,15 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
   if (readiness.status === "not_configured") {
     return res.json({
       status: "not_configured",
-      required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
     });
   }
   if (readiness.status === "unavailable") {
     return res.status(503).json({
       status: "unavailable",
       error: "database_unavailable",
-      details: process.env.NODE_ENV === "production" ? undefined : readiness.error
+      details: process.env.NODE_ENV === "production" ? undefined : readiness.error,
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
     });
   }
   if (readiness.status === "schema_incomplete") {
@@ -4915,13 +5654,13 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       status: "schema_incomplete",
       table_count: readiness.tableCount,
       missing_tables: readiness.missingTables,
-      required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
     });
   }
   return res.json({
     status: "ready",
     table_count: readiness.tableCount,
-    required_tables: [...REQUIRED_COMPLIANCE_TABLES]
+    required_tables: [...REQUIRED_PERSISTENCE_TABLES]
   });
 });
 
@@ -4936,7 +5675,7 @@ app.get("/health", async (_req, res) => {
     incrementOpsCounter("health_ok");
     return res.json({
       status: "ok",
-      db: "ok",
+      db: "postgres",
       db_tables: readiness.tableCount,
       fail_closed_total: failClosedMetrics.total
     });
@@ -4968,6 +5707,8 @@ app.get("/health", async (_req, res) => {
     details: process.env.NODE_ENV === "production" ? undefined : readiness.error
   });
 });
+
+registerAiValueRoutes(app);
 
 // Global error handler middleware - must be defined last
 // Catches any unhandled errors from route handlers and middleware

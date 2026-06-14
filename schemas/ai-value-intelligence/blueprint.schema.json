@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/blueprint.schema.json",
+  "title": "AI Value Blueprint",
+  "description": "Docs-backed local schema for an aggregate AI Value Intelligence blueprint. This is not a production API contract.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "blueprint_id",
+    "org_id",
+    "workflow_family",
+    "workflow_name",
+    "business_owner",
+    "process_discovery",
+    "value_hypothesis",
+    "value_routes",
+    "windows",
+    "source_requirements",
+    "assumption_ledger",
+    "blocked_claims",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_BLUEPRINT_2026_06"
+    },
+    "blueprint_id": {
+      "type": "string"
+    },
+    "org_id": {
+      "type": "string"
+    },
+    "workflow_family": {
+      "type": "string"
+    },
+    "workflow_name": {
+      "type": "string"
+    },
+    "business_owner": {
+      "type": "object",
+      "required": ["role", "approval_state"],
+      "properties": {
+        "role": { "type": "string" },
+        "approval_state": {
+          "enum": ["PRESENT", "MISSING", "HELD", "NOT_APPLICABLE"]
+        }
+      }
+    },
+    "process_discovery": {
+      "type": "object",
+      "required": ["current_state_steps", "future_state_steps"],
+      "properties": {
+        "current_state_steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "future_state_steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "value_hypothesis": {
+      "type": "string"
+    },
+    "value_routes": {
+      "type": "object",
+      "required": ["primary", "secondary"],
+      "properties": {
+        "primary": {
+          "enum": [
+            "COST_REDUCTION",
+            "CAPACITY_CREATION",
+            "QUALITY_IMPROVEMENT",
+            "RISK_REDUCTION",
+            "EXPERIENCE_IMPROVEMENT",
+            "REVENUE_EXPANSION",
+            "UNCLASSIFIED"
+          ]
+        },
+        "secondary": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "COST_REDUCTION",
+              "CAPACITY_CREATION",
+              "QUALITY_IMPROVEMENT",
+              "RISK_REDUCTION",
+              "EXPERIENCE_IMPROVEMENT",
+              "REVENUE_EXPANSION",
+              "UNCLASSIFIED"
+            ]
+          }
+        }
+      }
+    },
+    "windows": {
+      "type": "object",
+      "required": ["baseline", "comparison"],
+      "properties": {
+        "baseline": { "type": "string" },
+        "comparison": { "type": "string" }
+      }
+    },
+    "source_requirements": {
+      "type": "object",
+      "required": ["source_coverage", "approved_aggregate_inputs"]
+    },
+    "assumption_ledger": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["assumption_id", "state", "owner"],
+        "properties": {
+          "assumption_id": { "type": "string" },
+          "state": {
+            "enum": ["PRESENT", "MISSING", "CAVEATED", "HELD", "NOT_APPLICABLE"]
+          },
+          "owner": { "type": "string" }
+        }
+      }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "properties": {
+        "requires_raw_data": { "type": "boolean" },
+        "requires_hr_analytics": { "type": "boolean" },
+        "requires_roi_calculation": { "type": "boolean" },
+        "requires_causality_claim": { "type": "boolean" },
+        "requires_individual_scoring": { "type": "boolean" },
+        "requires_dashboard": { "type": "boolean" },
+        "requires_runtime_service": { "type": "boolean" }
+      }
+    }
+  }
+}

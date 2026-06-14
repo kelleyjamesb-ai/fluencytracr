@@ -1,0 +1,64 @@
+{
+  "schema_version": "FT_AI_VALUE_SUPPORT_INPUT_2026_06",
+  "org_id": "org-northstar-enterprise",
+  "window_id": "2026-04-01_to_2026-05-31",
+  "workflow_family": "customer_support_case_resolution",
+  "generated_at": "2026-06-09T12:00:00.000Z",
+  "workflow_value_hypothesis": "AI-assisted support work may be associated with faster case resolution, lower escalation, and improved knowledge reuse.",
+  "ai_work_evidence": {
+    "verdict": "SURFACE",
+    "suppression_reason": null,
+    "cohort_size": 42,
+    "window_days": 61,
+    "aggregate_patterns": {
+      "assistant_sessions": 1840,
+      "search_sessions": 2260,
+      "skill_invocations": 312,
+      "agent_runs": 148,
+      "verification_attached_episodes": 780,
+      "recovery_episodes": 96,
+      "abandonment_episodes": 41
+    }
+  },
+  "outcome_evidence": {
+    "source_type": "support_system",
+    "baseline_window": "2026-02-01_to_2026-03-31",
+    "comparison_window": "2026-04-01_to_2026-05-31",
+    "metrics": {
+      "median_resolution_hours": {
+        "baseline": 18.4,
+        "comparison": 15.1,
+        "unit": "hours"
+      },
+      "escalation_rate": {
+        "baseline": 0.18,
+        "comparison": 0.14,
+        "unit": "share"
+      },
+      "reopen_rate": {
+        "baseline": 0.075,
+        "comparison": 0.061,
+        "unit": "share"
+      },
+      "backlog_count": {
+        "baseline": 1240,
+        "comparison": 1102,
+        "unit": "cases"
+      }
+    }
+  },
+  "source_coverage": {
+    "ai_activity": "present",
+    "workflow": "present",
+    "outcome": "present",
+    "baseline": "present",
+    "trust": "present"
+  },
+  "assumptions": [
+    {
+      "assumption_id": "support-volume-mix-stable",
+      "owner": "customer",
+      "description": "Support volume mix is similar enough across baseline and comparison windows for directional review."
+    }
+  ]
+}

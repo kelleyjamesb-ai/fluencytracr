@@ -1,0 +1,25 @@
+# CODEOWNERS for kelleyjamesb-ai/fluencytracr
+#
+# This file enforces review requirements on governance-critical files.
+# The nine invariants in AGENTS.md are load-bearing — they cannot drift
+# silently through automated PRs or agent-generated changes.
+#
+# Syntax: <pattern> <owner1> <owner2> ...
+# Last matching pattern wins.
+
+# Default owner for everything
+*                                   @kelleyjamesb-ai
+
+# Governance and agent context — require owner review
+/AGENTS.md                          @kelleyjamesb-ai
+/CODEX.md                           @kelleyjamesb-ai
+/ATTRIBUTION.md                     @kelleyjamesb-ai
+/.github/CODEOWNERS                 @kelleyjamesb-ai
+
+# V1 contracts — schema, suppression, canonical events
+/schemas/                           @kelleyjamesb-ai
+/openspec/                          @kelleyjamesb-ai
+/docs/contracts/                    @kelleyjamesb-ai
+
+# CI workflows — Assurance Harness must not be weakened
+/.github/workflows/                 @kelleyjamesb-ai

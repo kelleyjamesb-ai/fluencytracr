@@ -2,6 +2,8 @@
 
 Cursor is an optional authoring harness for FluencyTracr. The repo source of truth remains the vendor-neutral harness under `harness/` and the session protocol in `docs/agent/SESSION_START.md`.
 
+This page is an adapter note. The canonical architecture spine is `docs/concepts/AGENTIC_EXECUTION_HARNESS.md`; do not copy that document's source map or governance rules here.
+
 ## What Cursor should use
 
 - Project rules: `.cursor/rules/`

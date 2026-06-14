@@ -19,6 +19,8 @@ export type ObservabilityPatternRow = {
 
 export type ObservabilityWorkflowPayload = {
   readonly workflow_id: string;
+  readonly jbtd_id: string | null;
+  readonly persona_id: string | null;
   readonly classified_execution_count: number;
   readonly suppressed_execution_count: number;
   readonly pattern_distribution: ReadonlyArray<ObservabilityPatternRow>;
@@ -59,13 +61,17 @@ export async function handleGetObservability(
   }
 
   const workflowsRaw = await deps.workflowAggregateRepository.findByOrgId(trimmed);
-  const workflows: ObservabilityWorkflowPayload[] = workflowsRaw.map((w) => ({
-    workflow_id: w.workflow_id,
-    classified_execution_count: w.classified_execution_count,
-    suppressed_execution_count: w.suppressed_execution_count,
-    pattern_distribution: toExecutivePatternRows(w.pattern_distribution, w.classified_execution_count),
-    prevalence_mode: "CATEGORICAL_PREVALENCE"
-  }));
+  const workflows: ObservabilityWorkflowPayload[] = workflowsRaw
+    .filter((w) => w.verdict === "SURFACE" || (w.jbtd_id === null && w.persona_id === null))
+    .map((w) => ({
+      workflow_id: w.workflow_id,
+      jbtd_id: w.jbtd_id,
+      persona_id: w.persona_id,
+      classified_execution_count: w.classified_execution_count,
+      suppressed_execution_count: w.suppressed_execution_count,
+      pattern_distribution: toExecutivePatternRows(w.pattern_distribution, w.classified_execution_count),
+      prevalence_mode: "CATEGORICAL_PREVALENCE"
+    }));
 
   return {
     status: 200,

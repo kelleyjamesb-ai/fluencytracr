@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/value-evidence-case.schema.json",
+  "title": "AI Value Evidence Case",
+  "description": "Docs-backed local schema for the governed proof object of one workflow slice: what can safely be said about AI value, what evidence supports it, what remains blocked, and what the client should do next. This is not a production API contract and does not authorize ROI proof, causality claims, individual scoring, or customer-facing economic output. Cross-field evidence-ladder gating is enforced by the AI Value Engine validator.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "value_evidence_case_id",
+    "source_refs",
+    "client_context",
+    "workflow",
+    "ai_fluency_summary",
+    "vbd_summary",
+    "outcome_metric",
+    "data_boundary_status",
+    "outcome_evidence_status",
+    "baseline_comparison",
+    "customer_owned_assumptions",
+    "evidence_quality",
+    "safe_value_language",
+    "blocked_claims",
+    "scenario_posture",
+    "sponsor_decision",
+    "intervention_retest",
+    "economic_output_policy",
+    "governance_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FT_AI_VALUE_EVIDENCE_CASE_2026_06"
+    },
+    "value_evidence_case_id": {
+      "type": "string"
+    },
+    "source_refs": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["data_boundary_contract_id", "roi_scenario_id", "readiness_id"],
+      "properties": {
+        "data_boundary_contract_id": { "type": "string" },
+        "roi_scenario_id": { "type": "string" },
+        "readiness_id": { "type": "string" },
+        "outcome_export_id": { "type": ["string", "null"] },
+        "improvement_loop_id": { "type": ["string", "null"] }
+      }
+    },
+    "client_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engagement_label", "function_area", "sponsor_role"],
+      "properties": {
+        "engagement_label": { "type": "string" },
+        "function_area": { "type": "string" },
+        "sponsor_role": { "type": "string" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow_family", "workflow_name", "function_area", "value_route"],
+      "properties": {
+        "workflow_family": { "type": "string" },
+        "workflow_name": { "type": "string" },
+        "function_area": { "type": "string" },
+        "value_route": {
+          "enum": [
+            "COST_REDUCTION",
+            "CAPACITY_CREATION",
+            "QUALITY_IMPROVEMENT",
+            "RISK_REDUCTION",
+            "EXPERIENCE_IMPROVEMENT",
+            "REVENUE_EXPANSION",
+            "UNCLASSIFIED"
+          ]
+        }
+      }
+    },
+    "ai_fluency_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["readiness", "basis", "cohort_suppression_applied"],
+      "properties": {
+        "readiness": { "enum": ["READY", "MIXED", "LOW", "UNKNOWN"] },
+        "basis": { "type": "string" },
+        "cohort_suppression_applied": { "const": true }
+      }
+    },
+    "vbd_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["velocity", "breadth", "depth", "summary"],
+      "properties": {
+        "velocity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["definition", "status"],
+          "properties": {
+            "definition": { "const": "speed_to_adoption" },
+            "status": { "enum": ["INCREASING", "STALLING", "DECLINING", "UNKNOWN"] }
+          }
+        },
+        "breadth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["definition", "status"],
+          "properties": {
+            "definition": { "const": "spread_across_org_functions_workflows_surfaces" },
+            "status": { "enum": ["EXPANDING", "LIMITED", "NARROWING", "UNKNOWN"] }
+          }
+        },
+        "depth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["definition", "status"],
+          "properties": {
+            "definition": { "const": "workflow_integration_embeddedness" },
+            "status": { "enum": ["DEEPENING", "SHALLOW", "FRAGMENTED", "UNKNOWN"] }
+          }
+        },
+        "summary": { "type": "string" }
+      }
+    },
+    "outcome_metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "metric_name",
+        "measurement_unit",
+        "source_system",
+        "expected_direction"
+      ],
+      "properties": {
+        "metric_id": { "type": "string" },
+        "metric_name": { "type": "string" },
+        "measurement_unit": { "type": "string" },
+        "source_system": { "type": "string" },
+        "expected_direction": { "enum": ["IMPROVE", "REDUCE", "MAINTAIN"] }
+      }
+    },
+    "data_boundary_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "aggregate_only",
+        "raw_source_rows_allowed",
+        "direct_identifiers_allowed",
+        "raw_content_allowed",
+        "status"
+      ],
+      "properties": {
+        "contract_id": { "type": "string" },
+        "aggregate_only": { "const": true },
+        "raw_source_rows_allowed": { "const": false },
+        "direct_identifiers_allowed": { "const": false },
+        "raw_content_allowed": { "const": false },
+        "contains_person_level_hris_records": { "const": false },
+        "contains_hashed_or_joinable_person_identifiers": { "const": false },
+        "contains_person_level_productivity": { "const": false },
+        "contains_manager_or_team_ranking": { "const": false },
+        "contains_people_decisioning": { "const": false },
+        "contains_compensation_or_performance_inference": { "const": false },
+        "contains_hris_inference_from_ai_usage": { "const": false },
+        "aggregate_workforce_context_allowed": { "type": "boolean" },
+        "status": { "enum": ["ENFORCED"] }
+      }
+    },
+    "outcome_evidence_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["export_id", "review_state", "statement"],
+      "properties": {
+        "export_id": { "type": ["string", "null"] },
+        "review_state": {
+          "enum": ["ACCEPTED", "SUBMITTED", "CAVEATED", "MISSING", "REJECTED"]
+        },
+        "statement": { "type": "string" }
+      }
+    },
+    "baseline_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_window", "comparison_window", "window_alignment"],
+      "properties": {
+        "baseline_window": { "type": ["string", "null"] },
+        "comparison_window": { "type": ["string", "null"] },
+        "window_alignment": { "enum": ["EXACT_MATCH", "MISALIGNED", "MISSING"] }
+      }
+    },
+    "customer_owned_assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assumption_id", "state", "owner"],
+        "properties": {
+          "assumption_id": { "type": "string" },
+          "state": { "enum": ["PRESENT", "CAVEATED", "MISSING"] },
+          "owner": { "type": "string" }
+        }
+      }
+    },
+    "evidence_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_level", "rationale"],
+      "properties": {
+        "evidence_level": {
+          "enum": ["MISSING", "DIRECTIONAL", "CAVEATED", "SUPPORTED", "STRONG", "BLOCKED"]
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+    "safe_value_language": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_claim_level", "allowed_phrases", "required_caveats"],
+      "properties": {
+        "allowed_claim_level": {
+          "enum": [
+            "OBSERVED_AI_ACTIVITY_ONLY",
+            "INTERNAL_HYPOTHESIS_ONLY",
+            "CAVEATED_VALUE_INVESTIGATION",
+            "SUPPORTED_VALUE_MOVEMENT",
+            "VALIDATED_VALUE_REALIZATION",
+            "BLOCKED"
+          ]
+        },
+        "allowed_phrases": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "required_caveats": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/blocked_claim" }
+    },
+    "customer_validation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "economic_inputs_approved",
+        "approved_by_role",
+        "validation_reference"
+      ],
+      "properties": {
+        "economic_inputs_approved": { "const": true },
+        "approved_by_role": { "type": "string" },
+        "validation_reference": { "type": "string" }
+      }
+    },
+    "evidence_design": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "design_state",
+        "design_type",
+        "approved_by_role",
+        "design_reference"
+      ],
+      "properties": {
+        "design_state": { "const": "APPROVED_COMPARISON_DESIGN" },
+        "design_type": { "type": "string" },
+        "approved_by_role": { "type": "string" },
+        "design_reference": { "type": "string" }
+      }
+    },
+    "scenario_posture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roi_scenario_id", "band", "posture_statement"],
+      "properties": {
+        "roi_scenario_id": { "type": "string" },
+        "band": { "enum": ["CONSERVATIVE", "BASE_CASE", "EXPANDED"] },
+        "posture_statement": { "type": "string" }
+      }
+    },
+    "sponsor_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_state", "decision_owner_role", "decision_basis"],
+      "properties": {
+        "decision_state": {
+          "enum": [
+            "PENDING",
+            "SCALE",
+            "COACH",
+            "REDESIGN_WORKFLOW",
+            "STRENGTHEN_EVIDENCE",
+            "HOLD"
+          ]
+        },
+        "decision_owner_role": { "type": "string" },
+        "decision_basis": { "type": "string" }
+      }
+    },
+    "intervention_retest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "improvement_loop_id",
+        "next_action",
+        "retest_window_label",
+        "retest_measurement_plan"
+      ],
+      "properties": {
+        "improvement_loop_id": { "type": ["string", "null"] },
+        "next_action": { "type": "string" },
+        "retest_window_label": { "type": "string" },
+        "retest_measurement_plan": { "type": "string" }
+      }
+    },
+    "economic_output_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "customer_facing_economic_output",
+        "dollarized_output",
+        "realized_roi_calculation"
+      ],
+      "properties": {
+        "customer_facing_economic_output": { "const": false },
+        "dollarized_output": { "const": false },
+        "realized_roi_calculation": { "const": false }
+      }
+    },
+    "governance_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "production_connector",
+        "dashboard",
+        "realized_roi_calculation",
+        "causality_claim",
+        "individual_scoring",
+        "hris_or_people_analytics",
+        "productivity_ranking",
+        "raw_prompt_or_response_storage",
+        "direct_identifiers",
+        "runtime_service",
+        "autonomous_customer_actions",
+        "customer_facing_economic_output"
+      ],
+      "properties": {
+        "production_connector": { "const": false },
+        "dashboard": { "const": false },
+        "realized_roi_calculation": { "const": false },
+        "causality_claim": { "const": false },
+        "individual_scoring": { "const": false },
+        "hris_or_people_analytics": { "const": false },
+        "productivity_ranking": { "const": false },
+        "raw_prompt_or_response_storage": { "const": false },
+        "direct_identifiers": { "const": false },
+        "runtime_service": { "const": false },
+        "autonomous_customer_actions": { "const": false },
+        "customer_facing_economic_output": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "blocked_claim": {
+      "enum": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement",
+        "realized_roi_calculation",
+        "customer_facing_economic_output"
+      ]
+    }
+  }
+}

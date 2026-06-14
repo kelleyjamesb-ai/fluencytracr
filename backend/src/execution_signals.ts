@@ -1,10 +1,15 @@
 import type { FluencyPatternName, FluencyWindow } from "@learnaire/shared";
+import { evaluateFluencyExecutionGates, toTraceGateSummary, type TraceGateSummary } from "./fluency_execution_gates";
+import { runFluencyPatternSuppression } from "./fluency-pattern-suppression";
 import type { FluencyEventRecord } from "./store";
 import type { ReconstructedTrace } from "./trace_engine";
 import { computeExecutionLifecycle, type ExecutionLifecycle } from "./execution_lifecycle";
 import { filterEventsByWindow } from "./fluencytracr";
 import { sortEventsByTimestamp } from "./trace_engine";
 import { buildWorkflowPhase2ThresholdMap } from "./workflow_baseline";
+import type { SuppressionDecision } from "./services/suppression-engine";
+
+export type { TraceGateSummary } from "./fluency_execution_gates";
 
 /**
  * PRD §17-style registry: which structural inputs each signal needs.
@@ -214,10 +219,14 @@ export const classifyExecutionPattern = (
 
 export type TraceWithPhase2 = ReconstructedTrace & {
   signals: ExecutionSignals;
-  pattern: FluencyPatternName;
-  pattern_confidence_tier: ExecutionSignals["confidence_tier"];
+  pattern: FluencyPatternName | null;
+  pattern_confidence_tier: ExecutionSignals["confidence_tier"] | null;
   /** PRD §13 — structural lifecycle; not suppressed with signals/pattern. */
   lifecycle: ExecutionLifecycle;
+  /** FSC + minimum-signal snapshot (PRD §18 / §20); disclosure consumes without recomputing. */
+  fluency_gates: TraceGateSummary;
+  /** §21 suppression decision (FSC → min-signal → classification ambiguity). */
+  fluency_suppression: SuppressionDecision;
 };
 
 export type AttachPhase2Options = {
@@ -257,12 +266,20 @@ export const attachPhase2ToTraces = (
       thresholdsByWorkflow?.get(trace.workflow_id) ??
       DEFAULT_PHASE2_THRESHOLDS;
     const lifecycle = computeExecutionLifecycle(ordered, trace, { now });
+    const gateSnapshot = toTraceGateSummary(evaluateFluencyExecutionGates(ordered, trace, lifecycle));
+    const { pattern, suppression } = runFluencyPatternSuppression({
+      signals,
+      thresholds,
+      gates: gateSnapshot
+    });
     return {
       ...trace,
       signals,
-      pattern: classifyExecutionPattern(signals, thresholds),
-      pattern_confidence_tier: signals.confidence_tier,
-      lifecycle
+      pattern,
+      pattern_confidence_tier: pattern !== null ? signals.confidence_tier : null,
+      lifecycle,
+      fluency_gates: gateSnapshot,
+      fluency_suppression: suppression
     };
   });
 };

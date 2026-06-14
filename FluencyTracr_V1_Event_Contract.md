@@ -35,8 +35,24 @@ Ambiguity suppression takes precedence over all other inference logic, including
 - `tool_surface` (enum: ASSISTANT | AGENT | SEARCH)
 - `event_timestamp` (UTC)
 - `window_id` (pattern: YYYY-MM-DD__YYYY-MM-DD, UTC window bounds)
+- `jbtd_id` (optional opaque join key; string or null)
+- `persona_id` (optional opaque join key; string or null)
 - `ambiguity_flag` (boolean)
 - `ambiguity_reason_code` (enum; required iff ambiguity_flag=true)
+
+## 5.1 Optional value-strategy join keys
+- `jbtd_id` and `persona_id` are customer-controlled, taxonomy-free join keys.
+- FluencyTracr MUST treat both fields as opaque strings. It MUST NOT parse,
+  infer, normalize, or map them to built-in Jobs-to-be-Done or persona
+  taxonomies.
+- Each key MUST be null or match `^[a-z0-9_-]{1,64}$`.
+- Missing keys are equivalent to null for slicing.
+- Suppression gates apply independently inside each `(workflow_id, jbtd_id,
+  persona_id)` bucket. A bucket with cohort size below 5 MUST suppress with
+  `INSUFFICIENT_VOLUME`, even when sibling buckets for the same workflow have
+  enough aggregate volume.
+- FluencyTracr MUST NOT aggregate across buckets to rescue a small slice,
+  because cross-slice aggregation could weaken anonymity guarantees.
 
 ## 6. Canonical event names (V1)
 - FT_V1_DISPOSITION_OBSERVED

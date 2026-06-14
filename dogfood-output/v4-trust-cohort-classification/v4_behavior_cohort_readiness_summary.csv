@@ -1,0 +1,9 @@
+cohort_dimension,current_evidence,status,decision,next_required_input
+depth_repertoire_band,three fixed-window Depth Repertoire CSVs,READY_FROM_SAVED_EXPORTS,PROMOTE_AS_CONTEXT,none for internal context; joint distribution needed for cross-signal cohort analysis
+velocity_band,no tracked V4 velocity window export in dogfood-output,MISSING_JOINT_EXPORT,HOLD_FOR_EXPORT,aggregate velocity band x depth/trust/skill/agent classification CSV
+agent_delegation_band,AGENT feedback availability summary only,PARTIAL_AVAILABILITY_ONLY,HOLD_FOR_ATTRIBUTION,AGENT sub-surface x feedback attribution x reliability/depth aggregate CSV
+skill_read_presence_band,three fixed-window skill-read availability CSVs,READY_FOR_PRESENCE_ONLY,PROMOTE_AS_RESEARCH_INPUT,skill-read presence x AGENT/depth/reliability aggregate CSV; no skill names
+tenure_cohort,not exported in saved V4 bundle,MISSING_EXPORT,OPTIONAL_HOLD,first-active-date tenure buckets computed inside approved boundary
+department_function,no approved org metadata aggregate join,ORG_METADATA_HELD,HOLD_FOR_APPROVED_JOIN,approved aggregate HRIS/directory join with independent suppression
+manager_ic_leader,no approved org metadata aggregate join,ORG_METADATA_HELD,HOLD_FOR_APPROVED_JOIN,approved aggregate HRIS/directory join with independent suppression
+level_region_role_family,no approved org metadata aggregate join,ORG_METADATA_HELD,HOLD_FOR_APPROVED_JOIN,approved aggregate HRIS/directory join with independent suppression

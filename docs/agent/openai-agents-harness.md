@@ -2,11 +2,14 @@
 
 This repo has a vendor-neutral long-running harness under `harness/`. The OpenAI Agents SDK package is an optional development sidecar for working against that harness with code-first agents, tools, and specialist delegation.
 
+This page is an adapter note. The canonical architecture spine is `docs/concepts/AGENTIC_EXECUTION_HARNESS.md`; do not copy that document's source map or governance rules here.
+
 ## Why it exists
 
 - Use OpenAI Agents SDK orchestration for local development assistance when a manager agent should read repo harness docs, inspect checklist state, and call bounded specialists.
 - Keep the product runtime independent of OpenAI-specific tooling.
 - Preserve the repo source of truth: `docs/agent/SESSION_START.md`, `harness/README.md`, `harness/feature_list.json`, and `harness/agent-progress.txt`.
+- Map future run capture to `docs/contracts/agent-run/README.md` and `docs/contracts/agent-run/ledger.md` instead of inventing a sidecar-specific ledger.
 
 Official docs used for this sidecar:
 

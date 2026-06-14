@@ -1,0 +1,164 @@
+{
+  "schema_version": "GSR_2026_05",
+  "org_id": "org-northstar-enterprise",
+  "window": "weekly",
+  "generated_at": "2026-05-01T13:00:00.000Z",
+  "source_system": "Glean",
+  "entries": [
+    {
+      "signal_family": "workflow_run",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "run_id",
+        "workflow_run_id",
+        "chat_session_id"
+      ],
+      "derived_dimensions": [
+        "usage_quality",
+        "behavior_change",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T13:00:00.000Z",
+          "evidence_type": "sample_export_review",
+          "note": "WorkflowRun aggregate fields are available with unsafe content excluded."
+        }
+      ]
+    },
+    {
+      "signal_family": "agent_run",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "run_id",
+        "workflow_run_id",
+        "trace_id"
+      ],
+      "derived_dimensions": [
+        "behavior_change",
+        "capability_growth",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "verified",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T13:00:00.000Z",
+          "evidence_type": "sample_export_review",
+          "note": "Auto Mode Agent lifecycle metadata is available as aggregate run and status fields with unsafe content excluded."
+        }
+      ]
+    },
+    {
+      "signal_family": "skill_lifecycle",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "not_applicable",
+      "stable_join_keys": [
+        "skill_artifact_id",
+        "event_timestamp"
+      ],
+      "derived_dimensions": [
+        "capability_growth",
+        "coverage"
+      ],
+      "readiness_status": "present",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "stable"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T13:00:00.000Z",
+          "evidence_type": "sample_export_review",
+          "note": "Skill lifecycle metadata is available as aggregate creation, enablement, routing, and invocation counts with unsafe instruction content excluded."
+        }
+      ]
+    },
+    {
+      "signal_family": "mcp_usage",
+      "source_availability": "approved_pending_export",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "unknown",
+      "stable_join_keys": [
+        "trace_id",
+        "workflow_run_id",
+        "tool_id"
+      ],
+      "derived_dimensions": [
+        "capability_growth",
+        "calibration",
+        "coverage"
+      ],
+      "readiness_status": "not_computed",
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "unknown",
+        "latency": "unknown",
+        "join_reliability": "partial"
+      },
+      "validation_evidence": []
+    },
+    {
+      "signal_family": "ai_security",
+      "source_availability": "available",
+      "export_channel": "customer_event_logs",
+      "scrub_status": "scrubbed",
+      "stable_join_keys": [
+        "workflow_run_id",
+        "event_timestamp"
+      ],
+      "derived_dimensions": [
+        "leadership_reinforcement",
+        "exposure"
+      ],
+      "readiness_status": "suppressed",
+      "suppression_applied": true,
+      "suppression_reasons": [
+        "policy_review_required"
+      ],
+      "data_quality": {
+        "completeness": "partial",
+        "latency": "known",
+        "join_reliability": "partial"
+      },
+      "validation_evidence": [
+        {
+          "checked_at": "2026-05-01T13:00:00.000Z",
+          "evidence_type": "sample_export_review",
+          "note": "AI Security aggregates require governance approval before use."
+        }
+      ]
+    }
+  ],
+  "next_actions": [
+    {
+      "signal_family": "mcp_usage",
+      "action": "Confirm MCP Usage export availability and scrubbed field set.",
+      "owner": "glean_admin",
+      "priority": "high"
+    }
+  ]
+}

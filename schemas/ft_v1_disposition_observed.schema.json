@@ -65,6 +65,30 @@
         "REJECT",
         "ABANDON"
       ]
+    },
+    "jbtd_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9_-]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "persona_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9_-]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [

@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -53,9 +54,14 @@ model Team {
   organization   Organization  @relation(fields: [organizationId], references: [id])
   organizationId String
   createdAt      DateTime      @default(now())
-  fluencyScores  FluencyScore[]
+  /// Deprecated legacy scoring relation. Ignored because FluencyTracr's
+  /// current value-realization evidence layer does not expose team scores.
+  fluencyScores  FluencyScore[] @ignore
 }
 
+/// Deprecated legacy scoring model. Quarantined from Prisma Client generation
+/// because FluencyTracr now emits aggregate fail-closed evidence verdicts, not
+/// team, maturity, productivity, or general fluency scores.
 model FluencyScore {
   id             String   @id @default(uuid())
   organizationId String
@@ -71,6 +77,7 @@ model FluencyScore {
   createdAt      DateTime @default(now())
 
   @@index([organizationId, day])
+  @@ignore
 }
 
 model AuditEvent {
@@ -295,6 +302,8 @@ model V1CanonicalEvent {
   id                 String   @id @default(uuid()) @db.Uuid
   orgId              String   @map("org_id")
   workflowId         String   @map("workflow_id")
+  jbtdId             String?  @map("jbtd_id") @db.VarChar(64)
+  personaId          String?  @map("persona_id") @db.VarChar(64)
   executionId        String   @map("execution_id")
   eventName          String   @map("event_name")
   eventVersion       String   @map("event_version")
@@ -309,6 +318,7 @@ model V1CanonicalEvent {
   @@index([executionId])
   @@index([workflowId])
   @@index([orgId, workflowId])
+  @@index([orgId, workflowId, jbtdId, personaId])
   @@index([executionId, eventTimestamp, ingestSequence])
   @@map("canonical_events")
 }
@@ -337,6 +347,8 @@ model V1ClassificationOutcome {
   orgId              String    @map("org_id")
   executionId        String    @map("execution_id")
   workflowId         String    @map("workflow_id")
+  jbtdId             String?   @map("jbtd_id") @db.VarChar(64)
+  personaId          String?   @map("persona_id") @db.VarChar(64)
   status             String
   pattern            String?
   suppressionReason  String?   @map("suppression_reason")
@@ -346,6 +358,7 @@ model V1ClassificationOutcome {
 
   @@id([orgId, executionId])
   @@index([orgId, workflowId, processedAt])
+  @@index([orgId, workflowId, jbtdId, personaId])
   @@map("classification_outcomes")
 }
 
@@ -353,14 +366,16 @@ model V1WorkflowAggregate {
   id                         String   @id @default(uuid()) @db.Uuid
   orgId                      String   @map("org_id")
   workflowId                 String   @map("workflow_id")
+  jbtdId                     String?  @map("jbtd_id") @db.VarChar(64)
+  personaId                  String?  @map("persona_id") @db.VarChar(64)
   prevalenceMode             String   @map("prevalence_mode")
   classifiedExecutionCount   Int      @map("classified_execution_count")
   suppressedExecutionCount   Int      @map("suppressed_execution_count")
   patternDistributionJson    Json     @map("pattern_distribution_json")
   recomputedAt               DateTime @map("recomputed_at")
 
-  @@unique([orgId, workflowId])
   @@index([orgId])
+  @@index([orgId, workflowId, jbtdId, personaId])
   @@map("workflow_aggregates")
 }
 
@@ -391,4 +406,231 @@ model V1SuppressionAuditLog {
   @@index([orgId, workflowId, createdAt])
   @@index([orgId, executionId])
   @@map("suppression_audit_log")
+}
+
+model V1OutcomeEvidence {
+  evidenceId        String   @id @default(uuid()) @map("evidence_id") @db.Uuid
+  orgId             String   @map("org_id")
+  workflowId        String   @map("workflow_id")
+  outcomeMetric     String   @map("outcome_metric")
+  outcomeUnit       String   @map("outcome_unit")
+  periodStart       DateTime @map("period_start")
+  periodEnd         DateTime @map("period_end")
+  aggregateValue    Float    @map("aggregate_value")
+  cohortSize        Int      @map("cohort_size")
+  sourceSystem      String   @map("source_system")
+  jbtdId            String?  @map("jbtd_id") @db.VarChar(64)
+  personaId         String?  @map("persona_id") @db.VarChar(64)
+  aggregateKind     String?  @map("aggregate_kind")
+  ingestedAt        DateTime @default(now()) @map("ingested_at")
+  sourceAttestation Json?    @map("source_attestation")
+
+  @@index([orgId])
+  @@index([workflowId])
+  @@index([orgId, workflowId, periodStart, periodEnd])
+  @@index([jbtdId])
+  @@index([personaId])
+  @@index([workflowId, periodStart, periodEnd])
+  @@map("outcome_evidence")
+}
+
+model V2VelocityDistributionObservation {
+  id                         String   @id @default(uuid()) @db.Uuid
+  orgId                      String   @map("org_id")
+  workflowId                 String   @map("workflow_id")
+  jbtdId                     String?  @map("jbtd_id") @db.VarChar(64)
+  personaId                  String?  @map("persona_id") @db.VarChar(64)
+  eventName                  String   @map("event_name")
+  schemaVersion              String   @map("schema_version")
+  windowStart                DateTime @map("window_start")
+  windowEnd                  DateTime @map("window_end")
+  cohortSize                 Int      @map("cohort_size")
+  ambiguityRate              Float?   @map("ambiguity_rate")
+  distributionJson           Json     @map("distribution_json")
+  calibrationReference       String   @map("calibration_reference")
+  personLevelFieldsIncluded  Boolean  @default(false) @map("person_level_fields_included")
+  ingestedAt                 DateTime @default(now()) @map("ingested_at")
+  ingestSequence             BigInt   @unique @default(autoincrement()) @map("ingest_sequence")
+
+  @@index([orgId])
+  @@index([orgId, workflowId])
+  @@index([orgId, workflowId, jbtdId, personaId])
+  @@index([orgId, workflowId, eventName, windowStart, windowEnd])
+  @@index([orgId, ingestedAt])
+  @@map("velocity_distribution_observations")
+}
+
+model FluencyTracrVerdict {
+  id                String   @id @default(uuid()) @db.Uuid
+  orgId             String   @map("org_id")
+  cohortId          String   @map("cohort_id")
+  workflowId        String   @map("workflow_id")
+  jbtdId            String?  @map("jbtd_id") @db.VarChar(64)
+  personaId         String?  @map("persona_id") @db.VarChar(64)
+  sliceKey          String   @map("slice_key")
+  windowStart       DateTime @map("window_start")
+  windowEnd         DateTime @map("window_end")
+  calibrationId     String   @map("calibration_id")
+  verdict           String
+  suppressionReason String?  @map("suppression_reason")
+  cohortSize        Int      @map("cohort_size")
+  evidenceGrade     String   @map("evidence_grade")
+  velocityIndex     Float?   @map("velocity_index")
+  qualityMultiplier Float?   @map("quality_multiplier")
+  payloadJson       Json     @map("payload_json")
+  computedAt        DateTime @map("computed_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, cohortId, workflowId, sliceKey, windowStart, windowEnd, calibrationId], name: "fluencytracr_verdicts_immutable_key")
+  @@index([orgId, cohortId])
+  @@index([orgId, workflowId])
+  @@index([orgId, calibrationId])
+  @@map("fluencytracr_verdicts")
+}
+
+model AiValueObject {
+  id             String   @id @default(uuid()) @db.Uuid
+  orgId          String   @map("org_id")
+  objectType     String   @map("object_type")
+  objectId       String   @map("object_id")
+  schemaVersion  String   @map("schema_version")
+  workflowFamily String?  @map("workflow_family")
+  payloadJson    Json     @map("payload_json")
+  validationJson Json     @map("validation_json")
+  valid          Boolean
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([orgId, objectType, objectId], name: "ai_value_objects_unique_key")
+  @@index([orgId, objectType])
+  @@index([orgId, workflowFamily])
+  @@map("ai_value_objects")
+}
+
+model ValueHypothesis {
+  id                  String   @id @default(uuid()) @db.Uuid
+  orgId               String   @map("org_id")
+  valueHypothesisId   String   @map("value_hypothesis_id")
+  schemaVersion       String   @map("schema_version")
+  derivationVersion   String   @map("derivation_version")
+  workflowFamily      String   @map("workflow_family")
+  functionArea        String?  @map("function_area")
+  valueRoute          String   @map("value_route")
+  hypothesisStatement String   @map("hypothesis_statement")
+  businessObjective   String   @map("business_objective")
+  status              String
+  payloadJson         Json     @map("payload_json")
+  validationJson      Json     @map("validation_json")
+  sourceRefsJson      Json     @default("{}") @map("source_refs_json")
+  version             Int
+  supersedesId        String?  @map("supersedes_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
+  createdByRole       String   @map("created_by_role")
+
+  @@unique([orgId, valueHypothesisId, version], name: "value_hypotheses_immutable_key")
+  @@index([orgId, workflowFamily])
+  @@index([orgId, status])
+  @@index([orgId, createdAt])
+  @@map("value_hypotheses")
+}
+
+model MeasurementPlan {
+  id                            String   @id @default(uuid()) @db.Uuid
+  orgId                         String   @map("org_id")
+  measurementPlanId             String   @map("measurement_plan_id")
+  valueHypothesisId             String   @map("value_hypothesis_id")
+  schemaVersion                 String   @map("schema_version")
+  derivationVersion             String   @map("derivation_version")
+  workflowFamily                String   @map("workflow_family")
+  approvedAggregateGrain        String   @map("approved_aggregate_grain")
+  minimumCohortThreshold        Int      @map("minimum_cohort_threshold")
+  baselineWindowStart           DateTime @map("baseline_window_start")
+  baselineWindowEnd             DateTime @map("baseline_window_end")
+  comparisonWindowStart         DateTime? @map("comparison_window_start")
+  comparisonWindowEnd           DateTime? @map("comparison_window_end")
+  coverageGoal                  String   @map("coverage_goal")
+  readinessState                String   @map("readiness_state")
+  payloadJson                   Json     @map("payload_json")
+  validationJson                Json     @map("validation_json")
+  sourcePackageRequirementsJson Json     @map("source_package_requirements_json")
+  assumptionsJson               Json     @map("assumptions_json")
+  sourceRefsJson                Json     @default("{}") @map("source_refs_json")
+  version                       Int
+  supersedesId                  String?  @map("supersedes_id") @db.Uuid
+  createdAt                     DateTime @default(now()) @map("created_at")
+  createdByRole                 String   @map("created_by_role")
+
+  @@unique([orgId, measurementPlanId, version], name: "measurement_plans_immutable_key")
+  @@index([orgId, valueHypothesisId])
+  @@index([orgId, workflowFamily])
+  @@index([orgId, baselineWindowStart, baselineWindowEnd])
+  @@index([orgId, readinessState])
+  @@map("measurement_plans")
+}
+
+model SourcePackageRef {
+  id                      String   @id @default(uuid()) @db.Uuid
+  orgId                   String   @map("org_id")
+  sourcePackageId         String   @map("source_package_id")
+  sourcePackageType       String   @map("source_package_type")
+  schemaVersion           String   @map("schema_version")
+  derivationVersion       String   @map("derivation_version")
+  measurementPlanId       String?  @map("measurement_plan_id")
+  workflowFamily          String?  @map("workflow_family")
+  generatedAt             DateTime @map("generated_at")
+  coveredWindowStart      DateTime @map("covered_window_start")
+  coveredWindowEnd        DateTime @map("covered_window_end")
+  approvedAggregateGrain  String   @map("approved_aggregate_grain")
+  minimumCohortThreshold  Int      @map("minimum_cohort_threshold")
+  evidenceState           String   @map("evidence_state")
+  kMinPostureJson         Json     @map("k_min_posture_json")
+  privacyBoundaryJson     Json     @map("privacy_boundary_json")
+  sourceRefsJson          Json     @map("source_refs_json")
+  validationJson          Json     @map("validation_json")
+  caveatsJson             Json     @map("caveats_json")
+  version                 Int
+  supersedesId            String?  @map("supersedes_id") @db.Uuid
+  createdAt               DateTime @default(now()) @map("created_at")
+  createdByRole           String   @map("created_by_role")
+
+  @@unique([orgId, sourcePackageId, version], name: "source_package_refs_immutable_key")
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, sourcePackageType])
+  @@index([orgId, workflowFamily])
+  @@index([orgId, coveredWindowStart, coveredWindowEnd])
+  @@map("source_package_refs")
+}
+
+model EvidenceSnapshot {
+  id                         String   @id @default(uuid()) @db.Uuid
+  orgId                      String   @map("org_id")
+  evidenceSnapshotId         String   @map("evidence_snapshot_id")
+  measurementPlanId          String   @map("measurement_plan_id")
+  schemaVersion              String   @map("schema_version")
+  derivationVersion          String   @map("derivation_version")
+  workflowFamily             String   @map("workflow_family")
+  snapshotType               String   @map("snapshot_type")
+  coverageStatus             String   @map("coverage_status")
+  windowStart                DateTime @map("window_start")
+  windowEnd                  DateTime @map("window_end")
+  suppressionDefaultVerdict  String   @map("suppression_default_verdict")
+  privacyAggregateOnly       Boolean  @map("privacy_aggregate_only")
+  kMinThresholdMet           Boolean  @map("k_min_threshold_met")
+  payloadJson                Json     @map("payload_json")
+  validationJson             Json     @map("validation_json")
+  sourceRefsJson             Json     @map("source_refs_json")
+  requiredCaveatsJson        Json     @map("required_caveats_json")
+  blockedUsesJson            Json     @map("blocked_uses_json")
+  version                    Int
+  supersedesId               String?  @map("supersedes_id") @db.Uuid
+  generatedAt                DateTime @map("generated_at")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  createdByRole              String   @map("created_by_role")
+
+  @@unique([orgId, evidenceSnapshotId, version], name: "evidence_snapshots_immutable_key")
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, workflowFamily, windowStart, windowEnd])
+  @@index([orgId, coverageStatus])
+  @@index([orgId, snapshotType])
+  @@map("evidence_snapshots")
 }

@@ -57,6 +57,8 @@ export async function handlePostEvents(
       {
         org_id: event.org_id,
         workflow_id: event.workflow_id,
+        jbtd_id: event.jbtd_id ?? null,
+        persona_id: event.persona_id ?? null,
         execution_id: executionId,
         events: eventsForExecution
       },

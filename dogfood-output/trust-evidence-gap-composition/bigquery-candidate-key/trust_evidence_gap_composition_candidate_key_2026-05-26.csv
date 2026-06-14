@@ -1,0 +1,5 @@
+gap_component,episode_count,episode_share_of_gap,coverage_caveat
+ambiguous_boundary_folded,25386308,0.81832768742647,"candidate episode-key count; trace, run, action, or session keys may overlap"
+span_or_llm_activity_without_governed_outcome,5449831,0.17567531281409987,span or LLM activity exists without governed aggregate outcome evidence
+ai_activity_without_terminal_outcome,179248,0.005778059626308004,AI work activity exists without terminal aggregate outcome evidence
+verification_or_feedback_without_observed_resolution,6792,2.1894013312217687E-4,verification or feedback exists without observed aggregate resolution

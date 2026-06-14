@@ -5,8 +5,14 @@ import {
   SuppressionReason,
   AmbiguityState,
   AmbiguityReasonCode,
-  IterationDepth
+  IterationDepth,
+  ReliabilityComponents,
+  deriveAivmVerdictFields
 } from "@learnaire/shared";
+import {
+  computeReliabilityFactor,
+  reliabilityComponentsFromCounts
+} from "../value_realization/reliability_factor";
 
 export const CONFIDENCE_SCHEMA_VERSION = "v1" as const;
 
@@ -58,6 +64,14 @@ export type FunctionWindowMetrics = {
   verification_present: boolean;
   recovery_present: boolean;
   directed_iteration_present: boolean;
+  reliability_components: ReliabilityComponents;
+  aivm_events: Array<{
+    event_name: string;
+    abandonment_present?: boolean;
+    verification_present?: boolean;
+    recovery_present?: boolean;
+    latency_ms?: number | null;
+  }>;
 };
 
 export const isLatencyEligibleRole = (roleClass: string): boolean => {
@@ -240,6 +254,47 @@ const buildWindowMetrics = (
   );
   const recoveryPresent = nonAmbiguous.some((episode) => episode.signal_primitives.recovery_present);
   const directedIterationPresent = detectDirectedIteration(nonAmbiguous);
+  const reliabilityComponents = reliabilityComponentsFromCounts({
+    total: nonAmbiguousEpisodes,
+    abandonment: nonAmbiguous.filter((episode) => episode.signal_primitives.abandonment).length,
+    frictionLoop: nonAmbiguous.filter(
+      (episode) => deriveIterationDepthLabel(episode.signal_primitives.iteration_count) === "Heavy"
+    ).length,
+    recoverySuccess: nonAmbiguous.filter(
+      (episode) =>
+        episode.signal_primitives.recovery_present && !episode.signal_primitives.abandonment
+    ).length,
+    verificationPresence: nonAmbiguous.filter(
+      (episode) => episode.signal_primitives.verification_present
+    ).length
+  });
+  const aivm_events = nonAmbiguous.flatMap((episode) => {
+    const events: FunctionWindowMetrics["aivm_events"] = [
+      {
+        event_name: "FT_V1_ABANDONMENT_OBSERVED",
+        abandonment_present: episode.signal_primitives.abandonment
+      }
+    ];
+    if (episode.signal_primitives.latency_ms !== null) {
+      events.push({
+        event_name: "FT_V1_LATENCY_OBSERVED",
+        latency_ms: episode.signal_primitives.latency_ms
+      });
+    }
+    if (episode.signal_primitives.verification_present) {
+      events.push({
+        event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
+        verification_present: true
+      });
+    }
+    if (episode.signal_primitives.recovery_present) {
+      events.push({
+        event_name: "FT_V1_RECOVERY_OBSERVED",
+        recovery_present: true
+      });
+    }
+    return events;
+  });
 
   return {
     org_id: orgId,
@@ -255,7 +310,9 @@ const buildWindowMetrics = (
     calibration_present: calibrationPresent,
     verification_present: verificationPresent,
     recovery_present: recoveryPresent,
-    directed_iteration_present: directedIterationPresent
+    directed_iteration_present: directedIterationPresent,
+    reliability_components: reliabilityComponents,
+    aivm_events
   };
 };
 
@@ -445,6 +502,13 @@ export const aggregateFunctionWindows = (
       const positiveEvidence = isPositiveEvidencePersistent(metrics, previous);
       const decision = buildSuppressionDecision(metrics, previous);
       const ghostUseEvaluated = !positiveEvidence && ghostUseEligible(metrics, previous, inputs);
+      const aivm = deriveAivmVerdictFields({
+        canonical_events: metrics.aivm_events,
+        cohort_size: metrics.eligible_contributors,
+        window_length_days: daysBetween(metrics.window_start, metrics.window_end)
+      });
+      const reliabilityComponents =
+        decision.decision === "SURFACE" ? metrics.reliability_components : null;
 
       aggregates.push({
         org_id: metrics.org_id,
@@ -454,6 +518,12 @@ export const aggregateFunctionWindows = (
         window_end: metrics.window_end,
         decision: decision.decision,
         suppression_reason: decision.suppression_reason,
+        value_type: aivm.value_type,
+        evidence_grade: aivm.evidence_grade,
+        reliability_factor: reliabilityComponents
+          ? computeReliabilityFactor(reliabilityComponents)
+          : null,
+        reliability_components: reliabilityComponents,
         signal_classes: metrics.signal_classes,
         positive_evidence_present: positiveEvidence,
         ghost_use_evaluated: ghostUseEvaluated,
@@ -477,6 +547,10 @@ export const aggregateFunctionWindows = (
         window_end: window.window_end,
         decision: "SUPPRESS",
         suppression_reason: "INSUFFICIENT_VOLUME",
+        value_type: "UNCLASSIFIED",
+        evidence_grade: "QUALITATIVE",
+        reliability_factor: null,
+        reliability_components: null,
         signal_classes: [],
         positive_evidence_present: false,
         ghost_use_evaluated: false,

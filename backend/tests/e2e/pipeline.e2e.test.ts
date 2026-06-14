@@ -41,11 +41,11 @@ describe("v1 pipeline e2e (in-memory)", () => {
 
     const agg = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA);
     expect(agg).not.toBeNull();
-    expect(agg!.classified_execution_count).toBe(1);
-    expect(agg!.suppressed_execution_count).toBe(0);
-    expect(agg!.pattern_distribution.length).toBe(1);
-    expect(agg!.pattern_distribution[0]!.pattern).toBe(BehaviorPattern.BLIND_EFFICIENCY);
-    expect(agg!.pattern_distribution[0]!.count).toBe(1);
+    expect(agg!.verdict).toBe("SUPPRESS");
+    expect(agg!.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(agg!.classified_execution_count).toBe(0);
+    expect(agg!.suppressed_execution_count).toBe(1);
+    expect(agg!.pattern_distribution.length).toBe(0);
   });
 
   it("Scenario 2: FSC failure — INCOMPLETE_EXECUTION, no allowed pattern slot for execution", async () => {
@@ -121,13 +121,75 @@ describe("v1 pipeline e2e (in-memory)", () => {
 
     const aggA = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA);
     const aggB = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowB);
-    expect(aggA?.classified_execution_count).toBe(1);
-    expect(aggB?.classified_execution_count).toBe(1);
-    expect(aggA?.pattern_distribution[0]!.count).toBe(1);
-    expect(aggB?.pattern_distribution[0]!.count).toBe(1);
+    expect(aggA?.verdict).toBe("SUPPRESS");
+    expect(aggB?.verdict).toBe("SUPPRESS");
+    expect(aggA?.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(aggB?.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(aggA?.classified_execution_count).toBe(0);
+    expect(aggB?.classified_execution_count).toBe(0);
+    expect(aggA?.pattern_distribution).toEqual([]);
+    expect(aggB?.pattern_distribution).toEqual([]);
 
     const allClass = await classificationRepository.findByOrgId(fixtureIds.org);
     expect(allClass.length).toBe(2);
     expect(new Set(allClass.map((c) => c.workflow_id)).size).toBe(2);
+  });
+
+  it("gates cohort size independently within each JBTD persona bucket", async () => {
+    const { classificationRepository, workflowAggregateRepository } = createE2eInMemoryStack();
+
+    for (let i = 0; i < 5; i += 1) {
+      const exId = `slice-large-${i}`;
+      await runClassificationPipeline(
+        {
+          org_id: fixtureIds.org,
+          workflow_id: fixtureIds.workflowA,
+          jbtd_id: "manager-review",
+          persona_id: "frontline-manager",
+          execution_id: exId,
+          events: happyPathExecution(exId, fixtureIds.workflowA).map((event) => ({
+            ...event,
+            jbtd_id: "manager-review",
+            persona_id: "frontline-manager"
+          }))
+        },
+        { classificationRepository, workflowAggregateRepository }
+      );
+    }
+
+    const soloId = "slice-solo";
+    await runClassificationPipeline(
+      {
+        org_id: fixtureIds.org,
+        workflow_id: fixtureIds.workflowA,
+        jbtd_id: "manager-review",
+        persona_id: "executive-sponsor",
+        execution_id: soloId,
+        events: happyPathExecution(soloId, fixtureIds.workflowA).map((event) => ({
+          ...event,
+          jbtd_id: "manager-review",
+          persona_id: "executive-sponsor"
+        }))
+      },
+      { classificationRepository, workflowAggregateRepository }
+    );
+
+    const large = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA, {
+      jbtd_id: "manager-review",
+      persona_id: "frontline-manager"
+    });
+    const solo = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA, {
+      jbtd_id: "manager-review",
+      persona_id: "executive-sponsor"
+    });
+
+    expect(large?.verdict).toBe("SURFACE");
+    expect(large?.classified_execution_count).toBe(5);
+    expect(large?.jbtd_id).toBe("manager-review");
+    expect(large?.persona_id).toBe("frontline-manager");
+    expect(solo?.verdict).toBe("SUPPRESS");
+    expect(solo?.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+    expect(solo?.classified_execution_count).toBe(0);
+    expect(solo?.suppressed_execution_count).toBe(1);
   });
 });

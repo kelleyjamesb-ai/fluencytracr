@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FluencyTracr Glean Value Evidence Pack Demo</title>
+  <style>
+    :root {
+      --ink: #15171a;
+      --muted: #64707d;
+      --line: #d8dee6;
+      --wash: #f4f7fa;
+      --panel: #ffffff;
+      --blue: #276ef1;
+      --green: #15845b;
+      --amber: #b96d10;
+      --red: #c2413a;
+      --violet: #6957d8;
+      --shadow: 0 14px 34px rgba(21, 23, 26, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #eef2f6;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      background: #1d2734;
+      color: #f8fafc;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .brand {
+      padding: 0 8px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .brand strong { display: block; font-size: 17px; margin-bottom: 6px; }
+    .brand span { color: #bac5d2; font-size: 13px; line-height: 1.4; }
+
+    nav { display: grid; gap: 8px; }
+    button {
+      font: inherit;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+
+    nav button {
+      text-align: left;
+      background: transparent;
+      color: #d8dee8;
+      padding: 11px 12px;
+    }
+
+    nav button.active,
+    nav button:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .guardrail {
+      margin-top: auto;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 10px;
+      padding: 12px;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    main { padding: 28px; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    h1 { margin: 0 0 6px; font-size: 28px; line-height: 1.12; }
+    .subtitle { margin: 0; color: var(--muted); max-width: 800px; line-height: 1.45; }
+
+    .badge {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: #47515d;
+      font-size: 12px;
+      box-shadow: 0 6px 18px rgba(21, 23, 26, 0.06);
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: #66758a;
+      font-size: 11px;
+      font-weight: 740;
+      text-transform: uppercase;
+    }
+
+    h2, h3 { margin: 0 0 10px; }
+    .metric { font-size: 34px; line-height: 1; font-weight: 780; margin-bottom: 7px; }
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      margin: 3px 5px 3px 0;
+      background: var(--wash);
+      color: #47515d;
+    }
+
+    .pill.green { color: var(--green); background: #e9f8f1; }
+    .pill.amber { color: var(--amber); background: #fff4e5; }
+    .pill.red { color: var(--red); background: #fff0ef; }
+    .pill.blue { color: var(--blue); background: #eaf1ff; }
+
+    .list { display: grid; gap: 10px; }
+    .item {
+      border: 1px solid var(--line);
+      background: #fbfcfd;
+      border-radius: 9px;
+      padding: 12px;
+    }
+
+    .item strong { display: block; margin-bottom: 4px; }
+    .item p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 13px; }
+
+    .claim-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+      border-top: 1px solid var(--line);
+      padding: 12px 0;
+    }
+
+    .claim-row:first-child { border-top: none; padding-top: 0; }
+
+    .quote {
+      border-left: 4px solid var(--blue);
+      background: #f7faff;
+      padding: 13px;
+      border-radius: 8px;
+      color: #2b3a4d;
+      line-height: 1.48;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <strong>FluencyTracr</strong>
+        <span>Glean Value Evidence Pack<br>Synthetic executive demo data</span>
+      </div>
+      <nav>
+        <button class="active" data-view="overview">Executive Summary</button>
+        <button data-view="claims">Claim Readiness</button>
+        <button data-view="surfaces">Evidence Coverage</button>
+        <button data-view="actions">Instrumentation Plan</button>
+        <button data-view="agent">Glean Agent Answer</button>
+      </nav>
+      <div class="guardrail">
+        Aggregate org-window demo only. No raw source records, direct identifiers, group comparisons, or performance scoring.
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h1>Glean Value Evidence Pack</h1>
+          <p class="subtitle">A QBR-ready view of which Glean value claims are supported, caveated, suppressed, or not yet computable across Search, Chat, Skills, Agents, MCP/actions, artifacts, controls, and assumptions.</p>
+        </div>
+        <div class="badge">org-northstar · weekly · GVE_2026_05</div>
+      </div>
+
+      <section class="view active" id="overview">
+        <div class="grid">
+          <div class="panel">
+            <p class="eyebrow">Value posture</p>
+            <div class="metric">Directional</div>
+            <p class="muted">Covered surfaces show value evidence, but ROI language remains suppressed until assumption governance is approved.</p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Customer-safe claims</p>
+            <div class="metric">2 / 4</div>
+            <p class="muted">Time-saved and Skill reuse can be discussed with caveats. ROI and MCP boundary claims are not customer-safe.</p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Reusable-work evidence</p>
+            <div class="metric">Present</div>
+            <p class="muted">Skill lifecycle and Auto Mode Agent lifecycle are visible as aggregate, content-free evidence lanes.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Approved language</p>
+          <div class="quote">Covered Glean surfaces show directional value evidence for this window. Skills and agent lifecycle evidence are being instrumented, so ROI claims should be presented with coverage and assumption caveats.</div>
+        </div>
+      </section>
+
+      <section class="view" id="claims">
+        <div class="panel">
+          <h2>Claim Readiness</h2>
+          <div class="claim-row">
+            <div><strong>Covered-surface time saved</strong><p>Derived aggregate evidence is present, but language must preserve coverage and assumption caveats.</p></div>
+            <span class="pill amber">customer-safe with caveats</span>
+          </div>
+          <div class="claim-row">
+            <div><strong>Customer value-to-cost / ROI</strong><p>Suppressed because financial translation is not approved and high-leverage assumptions still dominate.</p></div>
+            <span class="pill red">suppressed</span>
+          </div>
+          <div class="claim-row">
+            <div><strong>Reusable expertise operationalized</strong><p>Aggregate Skill lifecycle shows repeatable expertise emerging without exposing Skill instruction contents.</p></div>
+            <span class="pill amber">customer-safe with caveats</span>
+          </div>
+          <div class="claim-row">
+            <div><strong>Governed MCP action boundary</strong><p>MCP Insights, host attribution, scopes, and activity logs must be confirmed before this claim can be used.</p></div>
+            <span class="pill blue">not computed</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="surfaces">
+        <div class="grid">
+          <div class="panel">
+            <p class="eyebrow">Present</p>
+            <span class="pill green">UI Chat</span>
+            <span class="pill green">UI Search</span>
+            <span class="pill green">AI Answers</span>
+            <span class="pill green">Skills</span>
+            <span class="pill green">Auto Mode Agents</span>
+            <span class="pill green">Artifacts</span>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Not computed</p>
+            <span class="pill blue">MCP actions</span>
+            <span class="pill blue">Embedded hosts</span>
+            <p class="muted">Need confirmed host attribution, scopes, and activity-log coverage.</p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">Suppressed</p>
+            <span class="pill red">Protect runtime controls</span>
+            <p class="muted">Policy owner must approve which aggregate control states can be surfaced.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="actions">
+        <div class="panel">
+          <h2>Next instrumentation actions</h2>
+          <div class="list">
+            <div class="item"><strong>Confirm MCP boundary logs</strong><p>Owner: Glean admin · Priority: high · Validate host attribution, scopes, and activity-log coverage.</p></div>
+            <div class="item"><strong>Approve runtime control aggregates</strong><p>Owner: Data governance · Priority: high · Decide which Protect states can support customer-safe evidence.</p></div>
+            <div class="item"><strong>Review high-leverage assumptions</strong><p>Owner: FluencyTracr operator · Priority: medium · Base rates, multipliers, recapture, and hourly rates remain internal-only.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="agent">
+        <div class="panel">
+          <p class="eyebrow">Ask Glean Agent</p>
+          <h2>“Which value claims are safe for this QBR?”</h2>
+          <div class="quote">Two claims are customer-safe with caveats: covered-surface time saved and reusable Skill-backed expertise. ROI and MCP boundary claims should not be used externally. Next actions are to approve assumption governance, confirm MCP boundary logs, and approve runtime control aggregates.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll("nav button");
+    const views = document.querySelectorAll(".view");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        buttons.forEach((item) => item.classList.remove("active"));
+        views.forEach((view) => view.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(button.dataset.view).classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>
