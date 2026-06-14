@@ -35,6 +35,10 @@ For the customer-side Phase 3 pilot design, use
 For the filled Phase 4 AIOM dry run, use
 [customer-support-pilot-dry-run.md](./customer-support-pilot-dry-run.md).
 
+For the customer pilot intake packet that should be completed before the
+validation workshop, use
+[customer-support-pilot-intake-packet.md](./customer-support-pilot-intake-packet.md).
+
 For the Phase 5 customer validation workshop kit, use
 [customer-support-validation-workshop-kit.md](./customer-support-validation-workshop-kit.md).
 
