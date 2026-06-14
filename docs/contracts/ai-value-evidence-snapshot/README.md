@@ -164,6 +164,11 @@ explicit. It exists so a readout can distinguish four separate questions:
 - **Financial permission:** whether customer-approved financial or economic
   language is allowed.
 
+Token Efficiency may appear only as a Layer 1 cost/intensity overlay in this
+matrix. It can inform source availability and evidence planning, but it cannot
+turn `layer_1_only` into `full_playbook_coverage`, cannot validate claim
+readiness, and cannot authorize financial or customer-facing output.
+
 Allowed `coverage_status` values:
 
 - `layer_1_only`
