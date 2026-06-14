@@ -285,6 +285,13 @@ export type {
 } from "./customerExposurePolicy";
 
 export {
+  buildSupportPilotGleanReadinessMapFromRuntimeEvidence
+} from "./supportPilotGleanReadinessAdapter";
+export type {
+  BuildSupportPilotGleanReadinessMapInput
+} from "./supportPilotGleanReadinessAdapter";
+
+export {
   validateOutcomeEvidenceExport,
   applyOutcomeEvidenceReview,
   reviewStateOf,
