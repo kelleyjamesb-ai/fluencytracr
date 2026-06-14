@@ -7,11 +7,10 @@
   "report_context": "mcp_reporting",
   "reportability": "UNSUPPORTED",
   "evidence_confidence": "UNVERIFIED",
-  "included_surfaces": [
-    "agents"
-  ],
+  "included_surfaces": [],
   "excluded_surfaces": [
     "mcp",
+    "agents",
     "skills"
   ],
   "surface_readiness": [
@@ -33,8 +32,10 @@
         "agent_run",
         "agent_step"
       ],
-      "readiness_status": "present",
-      "caveats": []
+      "readiness_status": "missing",
+      "caveats": [
+        "agents agent_step evidence is not available for this reporting window."
+      ]
     },
     {
       "surface": "skills",
@@ -50,8 +51,9 @@
   ],
   "required_caveats": [
     "mcp evidence is not yet computed or validated for this reporting window.",
+    "agents agent_step evidence is not available for this reporting window.",
     "skills evidence is not available for this reporting window.",
-    "MCP reporting claims must be limited to covered surfaces; excluded surfaces: mcp, skills.",
+    "MCP reporting claims must be limited to covered surfaces; excluded surfaces: mcp, agents, skills.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
   "allowed_claims": [],

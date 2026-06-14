@@ -69,7 +69,7 @@ The MCP reporting gate answers:
 | `apis` | `api_usage` | No |
 | `gleanbot` | `gleanbot` | No |
 
-Required surfaces determine whether a covered ROI claim can be made. Optional advanced surfaces are included when present and listed as exclusions when missing, suppressed, or not computed.
+Required surfaces determine whether a covered ROI claim can be made. Optional advanced surfaces may appear as evidence coverage when present, but they do not authorize advanced-surface ROI inclusion unless a later promoted contract defines explicit readiness and value-estimation rules.
 
 ## Required Guardrail
 
@@ -79,12 +79,17 @@ The shared contract exposes `REPORTABILITY_CLAIM_TAXONOMY` so downstream reporti
 | --- | --- | --- |
 | `covered_time_saved` | Allowed | Covered-surface estimates are allowed when at least one required ROI surface is present and caveats travel with the estimate. |
 | `surface_adoption` | Allowed | Surface coverage can be reported as observation, not as maturity, causality, or productivity. |
+| `agent_roi_included` | Blocked | Agent evidence coverage does not authorize agent ROI inclusion without explicit value-estimation rules. |
+| `skill_roi_included` | Blocked | Skill evidence coverage does not authorize skills ROI inclusion without explicit value-estimation rules. |
+| `mcp_roi_included` | Blocked | MCP evidence coverage does not authorize MCP ROI inclusion without explicit value-estimation rules. |
+| `api_roi_included` | Blocked | API evidence coverage does not authorize API ROI inclusion without explicit value-estimation rules. |
+| `gleanbot_roi_included` | Blocked | Gleanbot evidence coverage does not authorize Gleanbot ROI inclusion without explicit value-estimation rules. |
 | `total_productivity_impact` | Blocked | A covered-surface estimate cannot support total organizational AI productivity claims. |
 | `causal_productivity_lift` | Blocked | Readiness and usage evidence do not establish causality. |
 | `individual_productivity` | Blocked | FluencyTracr is aggregate-first and does not report individual performance. |
 | `team_ranking` | Blocked | Ranking teams or managers creates governance risk and exceeds the evidence boundary. |
 
-Every generated decision also blocks excluded-surface inclusion claims, such as:
+Every generated ROI decision blocks advanced-surface inclusion claims, such as:
 
 - agent ROI is included
 - skills ROI is included

@@ -5,6 +5,7 @@ import {
   GleanSignalFamilySchema,
   GleanSignalReadinessMapSchema
 } from "./gleanSignalReadinessSchemas";
+import type { GleanSignalReadinessEntry } from "./gleanSignalReadinessSchemas";
 
 export const ReportabilitySchemaVersionSchema = z.literal("FT_REPORTABILITY_2026_05");
 
@@ -317,6 +318,41 @@ export const REPORTABILITY_CLAIM_TAXONOMY: ReportabilityClaimTaxonomyEntry[] = [
     rationale: "Allowed when MCP usage evidence is present; this does not claim MCP success, productivity, or value."
   },
   {
+    claim_type: "agent_roi_included",
+    claim: "Agent ROI is included in the estimate.",
+    default_disposition: "blocked",
+    report_contexts: ["roi"],
+    rationale: "Agent evidence coverage does not authorize agent ROI inclusion without explicit value-estimation rules."
+  },
+  {
+    claim_type: "skill_roi_included",
+    claim: "Skills ROI is included in the estimate.",
+    default_disposition: "blocked",
+    report_contexts: ["roi"],
+    rationale: "Skill evidence coverage does not authorize skills ROI inclusion without explicit value-estimation rules."
+  },
+  {
+    claim_type: "mcp_roi_included",
+    claim: "MCP ROI is included in the estimate.",
+    default_disposition: "blocked",
+    report_contexts: ["roi"],
+    rationale: "MCP evidence coverage does not authorize MCP ROI inclusion without explicit value-estimation rules."
+  },
+  {
+    claim_type: "api_roi_included",
+    claim: "API ROI is included in the estimate.",
+    default_disposition: "blocked",
+    report_contexts: ["roi"],
+    rationale: "API evidence coverage does not authorize API ROI inclusion without explicit value-estimation rules."
+  },
+  {
+    claim_type: "gleanbot_roi_included",
+    claim: "Gleanbot ROI is included in the estimate.",
+    default_disposition: "blocked",
+    report_contexts: ["roi"],
+    rationale: "Gleanbot evidence coverage does not authorize Gleanbot ROI inclusion without explicit value-estimation rules."
+  },
+  {
     claim_type: "total_productivity_impact",
     claim: "Total AI productivity impact across the organization.",
     default_disposition: "blocked",
@@ -346,31 +382,34 @@ export const REPORTABILITY_CLAIM_TAXONOMY: ReportabilityClaimTaxonomyEntry[] = [
   }
 ];
 
-const STATUS_PRIORITY: Record<GleanReadinessStatus, number> = {
-  present: 4,
-  not_computed: 3,
-  suppressed: 2,
-  missing: 1
-};
-
 function combineStatuses(statuses: GleanReadinessStatus[]): GleanReadinessStatus {
   if (statuses.length === 0) {
     return "missing";
   }
-  return statuses.reduce((best, status) => (STATUS_PRIORITY[status] > STATUS_PRIORITY[best] ? status : best));
+  if (statuses.includes("suppressed")) {
+    return "suppressed";
+  }
+  if (statuses.includes("not_computed")) {
+    return "not_computed";
+  }
+  if (statuses.includes("missing")) {
+    return "missing";
+  }
+  return "present";
 }
 
-function caveatForStatus(surface: ReportSurface, status: GleanReadinessStatus): string[] {
+function caveatForStatus(surface: ReportSurface, status: GleanReadinessStatus, family?: GleanSignalFamily): string[] {
+  const evidenceLabel = family ? `${surface} ${family} evidence` : `${surface} evidence`;
   if (status === "present") {
     return [];
   }
   if (status === "suppressed") {
-    return [`${surface} evidence exists but is suppressed by governance or evidence safety policy.`];
+    return [`${evidenceLabel} exists but is suppressed by governance or evidence safety policy.`];
   }
   if (status === "not_computed") {
-    return [`${surface} evidence is not yet computed or validated for this reporting window.`];
+    return [`${evidenceLabel} is not yet computed or validated for this reporting window.`];
   }
-  return [`${surface} evidence is not available for this reporting window.`];
+  return [`${evidenceLabel} is not available for this reporting window.`];
 }
 
 function uniqueValues<T>(values: T[]): T[] {
@@ -385,6 +424,10 @@ function claimForType(claim_type: z.infer<typeof ClaimTypeSchema>): Reportabilit
   return claim;
 }
 
+function assertCompleteClaimTaxonomy(): void {
+  ClaimTypeSchema.options.forEach((claim_type) => claimForType(claim_type));
+}
+
 function taxonomyClaimsForContext(
   reportContext: ReportContext,
   disposition: z.infer<typeof ClaimDispositionSchema>
@@ -395,51 +438,6 @@ function taxonomyClaimsForContext(
       claim_type: entry.claim_type,
       claim: entry.claim
     }));
-}
-
-function excludedSurfaceClaims(
-  excludedSurfaces: Array<{ surface: ReportSurface }>,
-  reportContext: ReportContext
-): ReportabilityClaim[] {
-  if (reportContext !== "roi") {
-    return [];
-  }
-
-  const excluded = new Set(excludedSurfaces.map((surface) => surface.surface));
-  const claims: ReportabilityClaim[] = [];
-
-  if (excluded.has("agents")) {
-    claims.push({
-      claim_type: "agent_roi_included",
-      claim: "Agent ROI is included in the estimate."
-    });
-  }
-  if (excluded.has("skills")) {
-    claims.push({
-      claim_type: "skill_roi_included",
-      claim: "Skills ROI is included in the estimate."
-    });
-  }
-  if (excluded.has("mcp")) {
-    claims.push({
-      claim_type: "mcp_roi_included",
-      claim: "MCP ROI is included in the estimate."
-    });
-  }
-  if (excluded.has("apis")) {
-    claims.push({
-      claim_type: "api_roi_included",
-      claim: "API ROI is included in the estimate."
-    });
-  }
-  if (excluded.has("gleanbot")) {
-    claims.push({
-      claim_type: "gleanbot_roi_included",
-      claim: "Gleanbot ROI is included in the estimate."
-    });
-  }
-
-  return claims;
 }
 
 function claimLabelForContext(reportContext: ReportContext): string {
@@ -458,6 +456,46 @@ function claimLabelForContext(reportContext: ReportContext): string {
   return "Transformation narrative claims";
 }
 
+function assertPresentEntryIsConsistent(entry: GleanSignalReadinessEntry): void {
+  if (entry.readiness_status !== "present") {
+    return;
+  }
+
+  const blockers = [
+    entry.suppression_applied || entry.suppression_reasons.length > 0 ? "suppression is applied" : undefined,
+    entry.source_availability !== "available" ? `source_availability is ${entry.source_availability}` : undefined,
+    entry.scrub_status !== "scrubbed" && entry.scrub_status !== "not_applicable"
+      ? `scrub_status is ${entry.scrub_status}`
+      : undefined,
+    entry.stable_join_keys.length === 0 ? "stable_join_keys is empty" : undefined,
+    entry.derived_dimensions.length === 0 ? "derived_dimensions is empty" : undefined
+  ].filter((blocker): blocker is string => Boolean(blocker));
+
+  if (blockers.length > 0) {
+    throw new Error(`Inconsistent present readiness entry for ${entry.signal_family}: ${blockers.join("; ")}.`);
+  }
+}
+
+function entriesBySignalFamily(entries: GleanSignalReadinessEntry[]): Map<GleanSignalFamily, GleanSignalReadinessEntry> {
+  const entriesByFamily = new Map<GleanSignalFamily, GleanSignalReadinessEntry>();
+  const duplicates = new Set<GleanSignalFamily>();
+
+  entries.forEach((entry) => {
+    if (entriesByFamily.has(entry.signal_family)) {
+      duplicates.add(entry.signal_family);
+      return;
+    }
+    entriesByFamily.set(entry.signal_family, entry);
+  });
+
+  if (duplicates.size > 0) {
+    throw new Error(`Duplicate signal_family entries are not allowed: ${Array.from(duplicates).join(", ")}`);
+  }
+
+  entries.forEach(assertPresentEntryIsConsistent);
+  return entriesByFamily;
+}
+
 export function buildReportabilityDecision(raw: unknown): ReportabilityDecision {
   return ReportabilityDecisionSchema.parse(raw);
 }
@@ -469,21 +507,30 @@ export function generateReportabilityDecision(raw: unknown): ReportabilityDecisi
     throw new Error(`Report context ${request.report_context} is not implemented in FT_REPORTABILITY_2026_05.`);
   }
 
-  const entriesByFamily = new Map(
-    request.readiness_map.entries.map((entry) => [entry.signal_family, entry])
-  );
+  const entriesByFamily = entriesBySignalFamily(request.readiness_map.entries);
 
   const surface_readiness = requirements.map((requirement) => {
-    const statuses = requirement.signal_families.map(
-      (family) => entriesByFamily.get(family)?.readiness_status ?? "missing"
-    );
+    const familyStatuses = requirement.signal_families.map((family) => ({
+      family,
+      status: entriesByFamily.get(family)?.readiness_status ?? "missing"
+    }));
+    const statuses = familyStatuses.map((familyStatus) => familyStatus.status);
     const readiness_status = combineStatuses(statuses);
+    const includeFamilyInCaveat = requirement.signal_families.length > 1;
     return {
       surface: requirement.surface,
       required_for_context: requirement.required_for_context,
       signal_families: requirement.signal_families,
       readiness_status,
-      caveats: caveatForStatus(requirement.surface, readiness_status)
+      caveats: uniqueValues(
+        familyStatuses.flatMap((familyStatus) =>
+          caveatForStatus(
+            requirement.surface,
+            familyStatus.status,
+            includeFamilyInCaveat ? familyStatus.family : undefined
+          )
+        )
+      )
     };
   });
 
@@ -492,6 +539,9 @@ export function generateReportabilityDecision(raw: unknown): ReportabilityDecisi
   const suppressedRequiredSurfaces = requiredSurfaces.filter((surface) => surface.readiness_status === "suppressed");
   const unavailableRequiredSurfaces = requiredSurfaces.filter((surface) => surface.readiness_status !== "present");
   const excludedSurfaces = surface_readiness.filter((surface) => surface.readiness_status !== "present");
+  const presentOptionalSurfaces = surface_readiness.filter(
+    (surface) => !surface.required_for_context && surface.readiness_status === "present"
+  );
 
   let reportability: z.infer<typeof ReportabilityStateSchema>;
   if (presentRequiredSurfaces.length === 0 && suppressedRequiredSurfaces.length > 0) {
@@ -520,6 +570,13 @@ export function generateReportabilityDecision(raw: unknown): ReportabilityDecisi
             .join(", ")}.`
         ]
       : []),
+    ...(request.report_context === "roi" && presentOptionalSurfaces.length > 0
+      ? [
+          `Included optional surfaces (${presentOptionalSurfaces
+            .map((surface) => surface.surface)
+            .join(", ")}) describe evidence coverage only; they do not authorize advanced-surface ROI inclusion claims.`
+        ]
+      : []),
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ]);
 
@@ -527,17 +584,14 @@ export function generateReportabilityDecision(raw: unknown): ReportabilityDecisi
     .filter((surface) => surface.readiness_status === "present")
     .map((surface) => surface.surface);
 
-  const blocked_claims = [
-    ...taxonomyClaimsForContext(request.report_context, "blocked"),
-    ...excludedSurfaceClaims(excludedSurfaces, request.report_context)
-  ];
+  const blocked_claims = taxonomyClaimsForContext(request.report_context, "blocked");
 
   const allowed_claims =
     reportability === "REPORTABLE" || reportability === "REPORTABLE_WITH_CAVEATS"
       ? taxonomyClaimsForContext(request.report_context, "allowed")
       : [];
 
-  claimForType("covered_time_saved");
+  assertCompleteClaimTaxonomy();
 
   return ReportabilityDecisionSchema.parse({
     schema_version: "FT_REPORTABILITY_2026_05",

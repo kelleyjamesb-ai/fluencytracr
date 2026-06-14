@@ -9,6 +9,8 @@ import {
   ReportabilityDecisionSchema,
   ReportabilityGateResponseSchema
 } from "@learnaire/shared";
+import fs from "fs";
+import path from "path";
 
 const baseReadinessMap = {
   schema_version: "GSR_2026_05",
@@ -130,6 +132,12 @@ const baseReadinessMap = {
   ]
 };
 
+const repoRoot = path.join(__dirname, "../..");
+
+const readJson = (relativePath: string) => JSON.parse(
+  fs.readFileSync(path.join(repoRoot, relativePath), "utf8")
+);
+
 describe("generateReportabilityDecision", () => {
   it("allows covered ROI claims while caveating excluded advanced surfaces", () => {
     const decision = generateReportabilityDecision({
@@ -215,10 +223,60 @@ describe("generateReportabilityDecision", () => {
     expect(roiClaimTypes).toEqual(expect.arrayContaining([
       "covered_time_saved",
       "surface_adoption",
+      "agent_roi_included",
+      "skill_roi_included",
+      "mcp_roi_included",
+      "api_roi_included",
+      "gleanbot_roi_included",
       "total_productivity_impact",
-      "causal_productivity_lift"
+      "causal_productivity_lift",
+      "individual_productivity",
+      "team_ranking"
     ]));
     expect(REPORTABILITY_CLAIM_TAXONOMY.every((claim) => claim.rationale.length > 0)).toBe(true);
+  });
+
+  it.each([
+    [
+      "roi",
+      "docs/contracts/reportability/examples/org-northstar-roi-reportability-decision.json",
+      "docs/contracts/reportability/examples/org-northstar-customer-evidence-appendix.json"
+    ],
+    [
+      "agent_insights",
+      "docs/contracts/reportability/examples/org-northstar-agent-insights-reportability-decision.json",
+      "docs/contracts/reportability/examples/org-northstar-agent-insights-evidence-appendix.json"
+    ],
+    [
+      "skills_reporting",
+      "docs/contracts/reportability/examples/org-northstar-skills-reportability-decision.json",
+      "docs/contracts/reportability/examples/org-northstar-skills-evidence-appendix.json"
+    ],
+    [
+      "mcp_reporting",
+      "docs/contracts/reportability/examples/org-northstar-mcp-reportability-decision.json",
+      "docs/contracts/reportability/examples/org-northstar-mcp-evidence-appendix.json"
+    ]
+  ] as const)("keeps the committed %s reportability examples generated from the validators", (
+    report_context,
+    decisionPath,
+    appendixPath
+  ) => {
+    const readinessMap = readJson("docs/contracts/glean-signal-readiness/examples/org-northstar-weekly-readiness-map.json");
+    const expectedDecision = readJson(decisionPath);
+    const generatedDecision = generateReportabilityDecision({
+      report_context,
+      readiness_map: readinessMap
+    });
+
+    expect(generatedDecision).toEqual(expectedDecision);
+    expect(ReportabilityDecisionSchema.parse(expectedDecision)).toEqual(expectedDecision);
+
+    const expectedAppendix = readJson(appendixPath);
+    const generatedAppendix = generateCustomerEvidenceAppendix(expectedDecision);
+
+    expect(generatedAppendix).toEqual(expectedAppendix);
+    expect(CustomerEvidenceAppendixSchema.parse(expectedAppendix)).toEqual(expectedAppendix);
   });
 
   it("supports agent insights as a bounded observability context", () => {
@@ -281,6 +339,176 @@ describe("generateReportabilityDecision", () => {
     ]));
     expect(decision.blocked_claims.map((claim) => claim.claim_type)).not.toContain("skill_roi_included");
     expect(decision.required_caveats.join(" ")).toContain("Agent insight claims must be limited");
+  });
+
+  it("does not let present agent families mask suppressed agent evidence", () => {
+    const agentRunPresent = {
+      ...baseReadinessMap.entries.find((entry) => entry.signal_family === "agent_run")!,
+      source_availability: "available",
+      scrub_status: "scrubbed",
+      stable_join_keys: ["workflow_run_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "present",
+      data_quality: {
+        completeness: "verified",
+        latency: "known",
+        join_reliability: "stable"
+      }
+    };
+    const agentStepSuppressed = {
+      signal_family: "agent_step",
+      source_availability: "available",
+      export_channel: "customer_event_logs",
+      scrub_status: "scrubbed",
+      stable_join_keys: ["workflow_run_id", "step_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "suppressed",
+      suppression_applied: true,
+      suppression_reasons: ["INSUFFICIENT_VOLUME"],
+      data_quality: {
+        completeness: "verified",
+        latency: "known",
+        join_reliability: "stable"
+      },
+      validation_evidence: []
+    };
+    const mixedAgentMap = {
+      ...baseReadinessMap,
+      entries: [
+        ...baseReadinessMap.entries.filter((entry) => entry.signal_family !== "agent_run"),
+        agentRunPresent,
+        agentStepSuppressed
+      ]
+    };
+
+    const response = evaluateReportabilityGate({
+      schema_version: "FT_REPORTABILITY_GATE_2026_05",
+      caller_system: "agent_insights",
+      report_context: "agent_insights",
+      requested_claims: ["agent_observability", "workflow_coverage"],
+      readiness_map: mixedAgentMap
+    });
+
+    const agentReadiness = response.decision.surface_readiness.find((surface) => surface.surface === "agents");
+    expect(response.decision.reportability).toBe("SUPPRESSED");
+    expect(response.decision.included_surfaces).not.toContain("agents");
+    expect(agentReadiness?.readiness_status).toBe("suppressed");
+    expect(agentReadiness?.caveats.join(" ")).toContain("agent_step");
+    expect(response.requested_claim_results).toEqual([
+      expect.objectContaining({ claim_type: "agent_observability", disposition: "blocked" }),
+      expect.objectContaining({ claim_type: "workflow_coverage", disposition: "blocked" })
+    ]);
+  });
+
+  it("does not let present agent families mask not-computed agent evidence", () => {
+    const agentRunPresent = {
+      ...baseReadinessMap.entries.find((entry) => entry.signal_family === "agent_run")!,
+      source_availability: "available",
+      scrub_status: "scrubbed",
+      stable_join_keys: ["workflow_run_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "present",
+      data_quality: {
+        completeness: "verified",
+        latency: "known",
+        join_reliability: "stable"
+      }
+    };
+    const agentStepNotComputed = {
+      signal_family: "agent_step",
+      source_availability: "approved_pending_export",
+      export_channel: "customer_event_logs",
+      scrub_status: "unknown",
+      stable_join_keys: ["workflow_run_id", "step_id"],
+      derived_dimensions: ["behavior_change", "coverage"],
+      readiness_status: "not_computed",
+      suppression_applied: false,
+      suppression_reasons: [],
+      data_quality: {
+        completeness: "unknown",
+        latency: "unknown",
+        join_reliability: "partial"
+      },
+      validation_evidence: []
+    };
+    const mixedAgentMap = {
+      ...baseReadinessMap,
+      entries: [
+        ...baseReadinessMap.entries.filter((entry) => entry.signal_family !== "agent_run"),
+        agentRunPresent,
+        agentStepNotComputed
+      ]
+    };
+
+    const response = evaluateReportabilityGate({
+      schema_version: "FT_REPORTABILITY_GATE_2026_05",
+      caller_system: "agent_insights",
+      report_context: "agent_insights",
+      requested_claims: ["agent_observability"],
+      readiness_map: mixedAgentMap
+    });
+
+    const agentReadiness = response.decision.surface_readiness.find((surface) => surface.surface === "agents");
+    expect(response.decision.reportability).toBe("UNSUPPORTED");
+    expect(response.decision.included_surfaces).not.toContain("agents");
+    expect(agentReadiness?.readiness_status).toBe("not_computed");
+    expect(agentReadiness?.caveats.join(" ")).toContain("agent_step");
+    expect(response.requested_claim_results).toEqual([
+      expect.objectContaining({ claim_type: "agent_observability", disposition: "blocked" })
+    ]);
+  });
+
+  it.each([
+    ["suppression flags", { suppression_applied: true, suppression_reasons: ["INSUFFICIENT_VOLUME"] }],
+    ["unapproved source availability", { source_availability: "approved_pending_export" }],
+    ["unsafe scrub status", { scrub_status: "unscrubbed_rejected" }],
+    ["missing stable join keys", { stable_join_keys: [] }],
+    ["missing derived dimensions", { derived_dimensions: [] }]
+  ])("rejects inconsistent present readiness entries with %s", (_label, patch) => {
+    const inconsistentMap = {
+      ...baseReadinessMap,
+      entries: baseReadinessMap.entries.map((entry) =>
+        entry.signal_family === "assistant"
+          ? {
+              ...entry,
+              ...patch,
+              readiness_status: "present"
+            }
+          : entry
+      )
+    };
+
+    expect(() =>
+      evaluateReportabilityGate({
+        schema_version: "FT_REPORTABILITY_GATE_2026_05",
+        caller_system: "roi_model",
+        report_context: "roi",
+        requested_claims: ["covered_time_saved"],
+        readiness_map: inconsistentMap
+      })
+    ).toThrow("Inconsistent present readiness entry for assistant");
+  });
+
+  it("rejects duplicate signal-family entries before evaluating reportability", () => {
+    const duplicateMap = {
+      ...baseReadinessMap,
+      entries: [
+        ...baseReadinessMap.entries,
+        {
+          ...baseReadinessMap.entries[0]
+        }
+      ]
+    };
+
+    expect(() =>
+      evaluateReportabilityGate({
+        schema_version: "FT_REPORTABILITY_GATE_2026_05",
+        caller_system: "roi_model",
+        report_context: "roi",
+        requested_claims: ["covered_time_saved"],
+        readiness_map: duplicateMap
+      })
+    ).toThrow("Duplicate signal_family entries are not allowed: assistant");
   });
 
   it("supports skills reporting as lifecycle visibility without skill quality claims", () => {

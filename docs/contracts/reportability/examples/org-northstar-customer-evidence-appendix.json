@@ -9,8 +9,7 @@
   "evidence_confidence": "MEDIUM",
   "summary": "Evidence supports a bounded customer-facing claim only when required caveats travel with the report.",
   "covered_surfaces": [
-    "search",
-    "agents"
+    "search"
   ],
   "excluded_surfaces": [
     {
@@ -20,6 +19,10 @@
     {
       "surface": "ai_answers",
       "reason": "ai_answers evidence is not available for this reporting window."
+    },
+    {
+      "surface": "agents",
+      "reason": "agents agent_step evidence is not available for this reporting window."
     },
     {
       "surface": "skills",
@@ -41,29 +44,18 @@
   "required_caveats": [
     "chat evidence is not available for this reporting window.",
     "ai_answers evidence is not available for this reporting window.",
+    "agents agent_step evidence is not available for this reporting window.",
     "skills evidence is not available for this reporting window.",
     "mcp evidence is not yet computed or validated for this reporting window.",
     "apis evidence is not yet computed or validated for this reporting window.",
     "gleanbot evidence is not yet computed or validated for this reporting window.",
-    "ROI claims must be limited to covered surfaces; excluded surfaces: chat, ai_answers, skills, mcp, apis, gleanbot.",
+    "ROI claims must be limited to covered surfaces; excluded surfaces: chat, ai_answers, agents, skills, mcp, apis, gleanbot.",
     "Do not claim total AI productivity impact, individual productivity, team ranking, or causal productivity lift."
   ],
   "blocked_claims": [
     {
-      "claim_type": "total_productivity_impact",
-      "claim": "Total AI productivity impact across the organization."
-    },
-    {
-      "claim_type": "causal_productivity_lift",
-      "claim": "Glean caused a productivity lift."
-    },
-    {
-      "claim_type": "individual_productivity",
-      "claim": "Individual productivity or performance score."
-    },
-    {
-      "claim_type": "team_ranking",
-      "claim": "Team or manager ranking based on AI usage."
+      "claim_type": "agent_roi_included",
+      "claim": "Agent ROI is included in the estimate."
     },
     {
       "claim_type": "skill_roi_included",
@@ -80,11 +72,28 @@
     {
       "claim_type": "gleanbot_roi_included",
       "claim": "Gleanbot ROI is included in the estimate."
+    },
+    {
+      "claim_type": "total_productivity_impact",
+      "claim": "Total AI productivity impact across the organization."
+    },
+    {
+      "claim_type": "causal_productivity_lift",
+      "claim": "Glean caused a productivity lift."
+    },
+    {
+      "claim_type": "individual_productivity",
+      "claim": "Individual productivity or performance score."
+    },
+    {
+      "claim_type": "team_ranking",
+      "claim": "Team or manager ranking based on AI usage."
     }
   ],
   "evidence_gaps": [
     "chat: chat evidence is not available for this reporting window.",
     "ai_answers: ai_answers evidence is not available for this reporting window.",
+    "agents: agents agent_step evidence is not available for this reporting window.",
     "skills: skills evidence is not available for this reporting window.",
     "mcp: mcp evidence is not yet computed or validated for this reporting window.",
     "apis: apis evidence is not yet computed or validated for this reporting window.",
