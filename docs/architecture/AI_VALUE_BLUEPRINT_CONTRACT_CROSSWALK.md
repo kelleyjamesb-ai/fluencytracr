@@ -17,6 +17,7 @@ Column meanings:
 | Blueprint concept | Contract/doc status | Schema status | Persistence status | Runtime status | Customer exposure status |
 | --- | --- | --- | --- | --- | --- |
 | Blueprint alignment note | `docs/architecture/AI_VALUE_BLUEPRINT.md` | No schema; architecture note only | No persistence | No runtime | Not customer-visible |
+| First productized pilot scope | `docs/architecture/AI_VALUE_PILOT_SCOPE_LOCK.md` | No schema; scope decision only | Uses existing minimal persistence foundation; adds none | No runtime | Not customer-visible; defines the first support-workflow pilot scope only |
 | AI Value Intelligence foundation | `docs/contracts/ai-value-intelligence/README.md`; examples under `docs/contracts/ai-value-intelligence/examples/` | Existing schemas under `schemas/ai-value-intelligence/`, including `schemas/ai-value-intelligence/blueprint.schema.json` | Generic object and minimal persistence exist elsewhere, but this crosswalk adds none | Existing AI Value Engine validators/generators remain separate from this docs slice | Internal/product planning only unless later exposure contract allows |
 | Post-sales customer journey | `docs/contracts/ai-value-customer-journey/README.md` | Shared validator: `shared/src/aiValueEngine/customerJourney.ts` | No new persistence from this blueprint | Contract helper only | Stage posture may guide customer work, but external display still depends on exposure policy |
 | AI Fluency starting point | `docs/contracts/ai-value-ai-fluency-intake-bridge/README.md` | Shared validator: `shared/src/aiValueEngine/aiFluencyIntakeBridge.ts` | No persistence from the bridge | Bridge can create draft Measurement Plan context and evidence gaps | Aggregate posture only; not value proof |
@@ -44,6 +45,7 @@ Column meanings:
 The blueprint alignment references the current Planck inventory as follows:
 
 - `docs/contracts/ai-value-intelligence/README.md`
+- `docs/architecture/AI_VALUE_PILOT_SCOPE_LOCK.md`
 - `docs/contracts/ai-value-measurement-plan/README.md`
 - `docs/contracts/ai-value-source-packages/README.md`
 - `docs/contracts/ai-value-evidence-collection-assembler/README.md`
