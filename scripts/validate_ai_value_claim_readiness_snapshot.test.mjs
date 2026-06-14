@@ -262,6 +262,22 @@ test("finance approval caveats keep full Playbook snapshots out of governed ROI 
   assert.equal(claimSnapshot.financial_boundary.customer_facing_financial_output_allowed, false);
 });
 
+test("manually supplied financial-ready snapshots fail when finance approval caveats remain unresolved", () => {
+  const snapshot = promoteSnapshotToFullPlaybook(buildSnapshot());
+  const claimSnapshot = buildSnapshotObject(snapshot, buildHandoff(snapshot));
+  const unresolvedApprovalCaveat = "Finance or business-owner approval is missing.";
+  claimSnapshot.required_caveats.push(unresolvedApprovalCaveat);
+  claimSnapshot.executive_readout_boundary.required_caveats.push(unresolvedApprovalCaveat);
+
+  const validation = validateClaimReadinessSnapshot(claimSnapshot);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /Finance or business-owner approval/i.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
 test("active suppression blocks internal claim-review readiness", () => {
   const snapshot = promoteSnapshotToFullPlaybook(buildSnapshot());
   snapshot.suppression.reason_codes = ["HIGH_AMBIGUITY"];

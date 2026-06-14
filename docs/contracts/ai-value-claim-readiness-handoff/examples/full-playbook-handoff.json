@@ -153,6 +153,7 @@
     "people_decisioning",
     "customer_facing_financial_output",
     "customer_facing_economic_output",
+    "ebita_claim",
     "manager_ranking",
     "team_ranking",
     "person_level_hris_records",

@@ -13,6 +13,7 @@ import {
 import {
   AI_VALUE_CLAIM_READINESS_HANDOFF_SCHEMA_VERSION,
   type ClaimReadinessHandoff,
+  financeOrBusinessApprovalCaveated,
   validateClaimReadinessHandoff
 } from "./claimReadinessHandoff";
 
@@ -803,14 +804,19 @@ function collectFinancialBoundaryGaps(snapshot: any): string[] {
     FINANCIAL_TRANSLATION_BLOCKED_USES.some((use) =>
       stringsOf(snapshot?.blocked_uses).map(normalizeToken).includes(use)
     );
+  const approvalCaveated = financeOrBusinessApprovalCaveated(snapshot);
   if (financialTranslationRequested) {
     const mayAllowFinancialTranslation =
       snapshot?.claim_readiness_state === "ready_for_internal_claim_review" &&
       snapshot?.playbook_coverage?.coverage_status === "full_playbook_coverage" &&
       fullPlaybookCoveragePresent(snapshot) &&
-      !suppressionIsActiveOrUnsafe(snapshot?.suppression);
+      !suppressionIsActiveOrUnsafe(snapshot?.suppression) &&
+      !approvalCaveated;
     if (!mayAllowFinancialTranslation) {
       gaps.push("financial_boundary financial translation requires ready internal claim review, full Playbook coverage, safe privacy, k-min, and clear suppression");
+    }
+    if (approvalCaveated) {
+      gaps.push("Finance or business-owner approval is missing, held, or caveated.");
     }
     if (roiBlockersPresent) {
       gaps.push("financial_boundary financial translation requires ROI blockers to be absent");
