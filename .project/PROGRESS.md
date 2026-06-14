@@ -13,6 +13,9 @@
   productivity claim, individual attribution, manager/team ranking, or
   customer-facing economic output was added. Verification:
   `npm run test:ai-value-support-pilot-readiness-adapter`;
+  `npm run test --workspace backend -- --runTestsByPath
+  tests/ai_value_runtime_builders.test.ts`; `npm run test:ci --workspace
+  backend`;
   `npm run test:ai-value-source-packages`;
   `npm run test:ai-value-evidence-collection-assembler`;
   `npm run test:ai-value-contract-chain`; `git diff --check`.
