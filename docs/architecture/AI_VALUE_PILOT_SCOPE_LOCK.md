@@ -85,10 +85,10 @@ or governed financial translation can be considered.
 | Layer | Required pilot input | Source package posture | First-run expectation |
 | --- | --- | --- | --- |
 | Layer 1 telemetry | Aggregate Glean telemetry for support workflow activity, source readiness, eligible cohort size, suppression posture, and VBD movement | `layer_1_bigquery_telemetry_summary` | Required for every run. |
-| Layer 2 user voice | Aggregate AI Fluency baseline plus aggregate user voice/workflow observation; retest for later windows | `layer_2_user_voice` | Baseline required; retest may be comparison-window pending in the first run. |
-| Layer 3 system of record | Aggregate support metric baseline and comparison export for median resolution hours, with supporting backlog/reopen/escalation metrics where available | `layer_3_system_of_record_outcome` | Required before full Playbook coverage or financial translation. |
-| Governance | Source readiness state, data boundary state, k-min posture, forbidden-field checks, raw-content exclusion, source-owner attestation | `governance_control` | Required before full Playbook coverage. |
-| Assumptions | Customer-owned assumption approval; finance/business approval when financial translation is requested | `assumption_approval` | Required before internal ROI scenario review. |
+| Layer 2 user voice | Aggregate AI Fluency baseline plus aggregate user voice/workflow observation; retest for later windows | `layer_2_user_voice_empirical_export` | Baseline required; retest may be comparison-window pending in the first run. |
+| Layer 3 system of record | Aggregate support metric baseline and comparison export for median resolution hours, with supporting backlog/reopen/escalation metrics where available | `layer_3_business_system_of_record_outcome_export` | Required before full Playbook coverage or financial translation. |
+| Governance | Source readiness state, data boundary state, k-min posture, forbidden-field checks, raw-content exclusion, source-owner attestation | `governance_control_export` | Required before full Playbook coverage. |
+| Assumptions | Customer-owned assumption approval; finance/business approval when financial translation is requested | `assumption_approval_export` | Required before internal ROI scenario review. |
 
 Aggregate workforce context is optional. If provided, it can only appear as
 aggregate, cohort-safe, source-owner-approved, non-decisioning context. It
@@ -169,10 +169,17 @@ workflow, and one reporting window pair:
 5. Persist validated Evidence Snapshot.
 6. Build non-persisted Claim Readiness Handoff.
 7. Build or validate Claim Readiness Snapshot in memory.
-8. Run Customer Exposure Policy.
-9. Run Reportability Gate.
-10. Produce internal pilot readout draft with caveats and blocked claims.
+8. Build and validate `PostSalesWorkflowOrchestrator` for the same support-pilot source bindings.
+9. Run Customer Exposure Policy from the validated orchestrator.
+10. Build or fetch, then validate, a `GSR_2026_05` Glean Signal Readiness Map as the Reportability Gate `readiness_map`.
+11. Run Reportability Gate with the validated `readiness_map`.
+12. Produce internal pilot readout draft with caveats and blocked claims.
 ```
+
+For the support pilot, the readiness-map step may use the narrow runtime
+evidence adapter when it is backed by the same validated source package refs.
+It must remain aggregate-only and must not infer missing signal families from
+adjacent telemetry.
 
 The first run should produce both:
 
@@ -256,7 +263,9 @@ Measurement Plan
 -> Evidence Snapshot persistence
 -> Claim Readiness Handoff
 -> Claim Readiness Snapshot validation
+-> `PostSalesWorkflowOrchestrator` validation
 -> Customer Exposure Policy
+-> `GSR_2026_05` `readiness_map`
 -> Reportability Gate
 ```
 
