@@ -11,9 +11,9 @@ workflow orchestrator exists.
 It is a contract-only sidecar. It does not create backend routes, frontend UI,
 ingestion jobs, migrations, Prisma schema changes, export packages, persisted
 Claim Readiness Snapshots, persisted Executive Readout Snapshots, rendered
-readouts, ROI, EBITA, causality, productivity, headcount, individual
-attribution, `manager_or_team_ranking`, people decisioning, or customer-facing
-financial output.
+readouts, realized ROI output, EBITA output, causality, productivity,
+headcount, individual attribution, `manager_or_team_ranking`, people
+decisioning, or customer-facing financial output.
 
 Related contracts:
 
@@ -124,6 +124,12 @@ status until a later customer-facing readout contract allows more.
 
 Export remains blocked until explicit export governance exists.
 
+Governed financial claims may be marked allowed only inside
+`financial_claim_policy` when full Playbook coverage, finance/business approval,
+customer assumption approval, upstream financial translation, and export
+governance are all present. This is not customer-facing financial output:
+`customer_facing_financial_output_allowed` remains false in this contract.
+
 ## 5. Source Availability Boundary
 
 The policy must keep these false:
@@ -145,7 +151,7 @@ approved, non-decisioning context. It cannot upgrade coverage by itself.
 
 ## 6. Financial Claim Policy
 
-Financial claims remain blocked unless all future unlock conditions are met:
+Governed financial claims remain blocked unless all unlock conditions are met:
 
 - `full_playbook_coverage`
 - finance or business owner approval;
@@ -155,13 +161,14 @@ Financial claims remain blocked unless all future unlock conditions are met:
 - upstream financial boundary allows translation;
 - export governance if any customer-facing output is requested.
 
-Even when those conditions are represented as present, this contract keeps:
+When those conditions are represented as present, `financial_claims_allowed`
+may be true for governed claim-language exposure only. This contract still
+keeps:
 
-- `financial_claims_allowed: false`
 - `customer_facing_financial_output_allowed: false`
 
-Any future change that allows financial output requires a separate contract and
-explicit approval.
+Any future change that allows customer-facing financial output, dollarized ROI
+output, or EBITA output requires a separate contract and explicit approval.
 
 ## 7. Readout Policy
 
@@ -249,6 +256,10 @@ The policy must keep all of the following false:
 - Claim Readiness preview becomes a claim output or snapshot export;
 - executive readout preparation becomes a rendered readout without policy;
 - export is allowed before a separate export governance contract;
+- governed financial claims are allowed without full Playbook coverage,
+  finance/business approval, customer assumption approval, upstream financial
+  translation, export governance, or `financial_exposure_state:
+  financial_translation_ready`;
 - customer-facing financial output is allowed;
 - blocked uses, blocked outputs, or caveats are weakened;
 - source binding is missing or unvalidated;
@@ -269,6 +280,6 @@ This phase does not authorize:
 - rendered executive readouts;
 - customer workflow API implementation;
 - customer workflow UI implementation;
-- ROI, EBITA, causality, productivity, headcount, individual attribution,
-  `manager_or_team_ranking`, people decisioning, or customer-facing financial
-  output.
+- realized ROI output, EBITA output, causality, productivity, headcount,
+  individual attribution, `manager_or_team_ranking`, people decisioning, or
+  customer-facing financial output.

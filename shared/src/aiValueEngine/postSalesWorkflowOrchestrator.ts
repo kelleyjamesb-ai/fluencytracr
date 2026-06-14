@@ -1142,6 +1142,7 @@ function collectContractValidationGaps(orchestrator: any): string[] {
 function collectCoverageSummaryGaps(orchestrator: any): string[] {
   const gaps: string[] = [];
   const snapshot = orchestrator?.evidence_snapshot ?? {};
+  const handoff = orchestrator?.claim_readiness_handoff ?? {};
   const summary = orchestrator?.coverage_summary ?? {};
   if (summary.coverage_status !== snapshot?.playbook_coverage?.coverage_status) {
     gaps.push("coverage_summary.coverage_status must match evidence_snapshot coverage_status");
@@ -1152,8 +1153,23 @@ function collectCoverageSummaryGaps(orchestrator: any): string[] {
   if (summary.layer_3_business_system_outcomes_status !== coverageStatusOf(snapshot, "layer_3_business_system_outcomes")) {
     gaps.push("coverage_summary.layer_3_business_system_outcomes_status must match evidence snapshot");
   }
-  if (summary.financial_translation_allowed !== false) {
-    gaps.push("coverage_summary.financial_translation_allowed must be false");
+  if (
+    summary.financial_translation_allowed !==
+      handoff?.financial_boundary?.financial_translation_allowed
+  ) {
+    gaps.push("coverage_summary.financial_translation_allowed must match claim_readiness_handoff financial boundary");
+  }
+  if (summary.financial_translation_allowed === true) {
+    if (snapshot?.playbook_coverage?.coverage_status !== "full_playbook_coverage") {
+      gaps.push("coverage_summary.financial_translation_allowed requires full_playbook_coverage");
+    }
+    if (
+      handoff?.financial_boundary?.financial_claim_governance_state !==
+        "financial_translation_ready" ||
+      handoff?.financial_boundary?.roi_claim_allowed !== true
+    ) {
+      gaps.push("coverage_summary.financial_translation_allowed requires financial_translation_ready handoff");
+    }
   }
   if (summary.customer_facing_financial_output_allowed !== false) {
     gaps.push("coverage_summary.customer_facing_financial_output_allowed must be false");

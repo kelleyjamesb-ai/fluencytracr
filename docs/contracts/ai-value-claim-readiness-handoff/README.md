@@ -19,9 +19,10 @@ upstream Evidence Snapshot supports.
 
 ## 2. Non-goals
 
-The handoff is not claim readiness. It is not ROI. It is not EBITA. It is not
-financial permission. It is not an executive readout. It is not a persisted
-snapshot. It is not people analytics. It is not productivity scoring.
+The handoff is not claim readiness. It is not ROI proof. It is not EBITA proof.
+It is not customer-facing financial permission. It is not an executive readout.
+It is not a persisted snapshot. It is not people analytics. It is not
+person-level productivity output.
 
 This contract must not:
 
@@ -29,7 +30,7 @@ This contract must not:
   ingestion jobs, or persistence;
 - persist claim readiness snapshots, executive readout snapshots, or evidence
   snapshots;
-- compute claim scores, ROI, EBITA, dollar value, time-saved value,
+- compute claim scores, realized ROI, EBITA, dollar value, time-saved value,
   productivity lift, or financial impact;
 - store raw rows, prompts, responses, transcripts, query text, file contents, or
   direct identifiers;
@@ -63,7 +64,11 @@ The handoff copies forward:
 - `vbd_operating_map`
 
 It also derives downstream `blocked_claims`, financial/readout boundaries, and
-source provenance from that validated snapshot posture.
+source provenance from that validated snapshot posture. When full Playbook
+coverage, safe privacy, clear suppression, k-min, Layer 2, Layer 3, governance,
+and assumption gates all pass, the handoff may stop carrying
+evidence-conditioned ROI blockers into `blocked_claims` and may mark internal
+financial translation ready. Immutable blockers remain carried forward.
 
 ## 4. Relationship to Claim Readiness
 
@@ -235,26 +240,39 @@ Layer 1-only caveat.
 
 When baseline and comparison windows are not first-class Evidence Snapshot
 fields, the handoff marks them `null` and caveats that downstream outcome
-movement or financial translation must remain blocked or explicitly caveated
-until those windows are attached.
+movement or financial translation review must remain explicitly caveated until
+those windows are attached.
 
 ## 14. Financial / ROI / EBITA Boundary
 
 `financial_boundary` includes:
 
+- `financial_claim_governance_state`
 - `financial_translation_allowed`
 - `roi_claim_allowed`
 - `ebita_claim_allowed`
 - `customer_facing_financial_output_allowed`
 - `reasons`
 
+Allowed governance states are `held`, `internal_value_investigation`,
+`financial_translation_ready`, `blocked_for_insufficient_evidence`, and
+`blocked_for_privacy_or_suppression`.
+
+`customer_facing_financial_claim_allowed` is reserved for a later promoted
+financial claim governance contract and is not a valid state in this handoff.
+
+`financial_translation_allowed` and `roi_claim_allowed` may be true only when
+full Playbook coverage is validated with Layer 2, Layer 3, governance evidence,
+assumptions or explicit not-required status, safe privacy, clear suppression,
+and k-min. This authorizes internal governed ROI scenario review only, not ROI
+proof or customer-facing financial output.
+
+`ebita_claim_allowed` and
+`customer_facing_financial_output_allowed` must remain false in this contract.
 All financial flags must be false when Playbook coverage is not full, Layer 3
 is missing or unsafe, assumptions are missing or held, finance/business-owner
-approval is missing or caveated, blocked uses or blocked claims include
-financial blockers, privacy is unsafe, or suppression is active.
-
-The current builder is deliberately conservative and sets all financial flags
-to false.
+approval is missing or caveated, ROI blockers remain in blocked uses or blocked
+claims, privacy is unsafe, or suppression is active.
 
 ## 15. Executive Readout Boundary
 
@@ -288,8 +306,9 @@ false, customer-facing readout false, preserved caveats, and blocked downstream
 claim posture.
 
 The full Playbook example shows Layer 1/2/3, governance, assumptions, k-min,
-and safe privacy posture while preserving caveats and keeping financial flags
-conservative.
+and safe privacy posture while preserving caveats, allowing internal governed
+ROI scenario review, keeping EBITA blocked, and keeping customer-facing
+financial output blocked.
 
 ## 17. Validation Rules
 
@@ -297,11 +316,13 @@ The validator enforces:
 
 - handoff can only be built from a validated Evidence Snapshot;
 - required fields are present;
-- blocked uses translate to blocked claims without weakening;
+- blocked uses translate to blocked claims without weakening, except
+  evidence-conditioned ROI blockers may be removed only when financial
+  translation is ready under full Playbook governance;
 - unknown blocked uses are preserved or caveated;
 - required caveats and nested evidence caveats carry forward;
-- financial flags fail closed for insufficient evidence, blocked uses/claims,
-  unsafe privacy, suppression, or caveated approvals;
+- financial flags fail closed for insufficient evidence, ROI blockers, unsafe
+  privacy, suppression, or caveated approvals;
 - executive readout boundary cannot omit required caveats;
 - full Playbook coverage requires Layer 1, Layer 2, Layer 3, governance,
   assumptions or explicit not-required status, k-min, and safe privacy;

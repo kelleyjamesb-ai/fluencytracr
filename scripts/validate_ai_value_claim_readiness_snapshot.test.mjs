@@ -204,8 +204,62 @@ test("full Playbook snapshots can become internal claim-review ready without fin
 
   assert.equal(claimSnapshot.claim_readiness_state, "ready_for_internal_claim_review");
   assert.ok(claimSnapshot.allowed_claim_modes.includes("source_bound_business_outcome_claim_planning"));
+  assert.ok(claimSnapshot.allowed_claim_modes.includes("governed_roi_scenario_review"));
+  assert.equal(claimSnapshot.financial_boundary.financial_claim_governance_state, "financial_translation_ready");
+  assert.equal(claimSnapshot.financial_boundary.financial_translation_allowed, true);
+  assert.equal(claimSnapshot.financial_boundary.roi_claim_allowed, true);
   assert.equal(claimSnapshot.financial_boundary.customer_facing_financial_output_allowed, false);
   assert.ok(claimSnapshot.blocked_claims.includes("customer_facing_economic_output"));
+  assert.ok(!claimSnapshot.blocked_claims.includes("roi_proof"));
+});
+
+test("governed ROI scenario review fails if ROI blockers remain present", () => {
+  const snapshot = promoteSnapshotToFullPlaybook(buildSnapshot());
+  const claimSnapshot = buildSnapshotObject(snapshot, buildHandoff(snapshot));
+
+  claimSnapshot.blocked_claims.push("roi_proof");
+  claimSnapshot.blocked_uses.push("realized_roi");
+
+  const validation = validateClaimReadinessSnapshot(claimSnapshot);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /ROI blockers must be removed/i.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("claim snapshot financial governance state cannot jump to future customer-facing state", () => {
+  const claimSnapshot = buildSnapshotObject();
+  claimSnapshot.financial_boundary.financial_claim_governance_state =
+    "customer_facing_financial_claim_allowed";
+
+  const validation = validateClaimReadinessSnapshot(claimSnapshot);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /financial_claim_governance_state/i.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("finance approval caveats keep full Playbook snapshots out of governed ROI scenario review", () => {
+  const snapshot = promoteSnapshotToFullPlaybook(buildSnapshot());
+  snapshot.required_caveats.push(
+    "Finance or business-owner approval is missing, held, or caveated."
+  );
+  const snapshotValidation = validateEvidenceSnapshot(snapshot);
+  assert.equal(snapshotValidation.valid, true, snapshotValidation.gaps.join("; "));
+
+  const claimSnapshot = buildSnapshotObject(snapshot, buildHandoff(snapshot));
+
+  assert.equal(claimSnapshot.claim_readiness_state, "ready_for_internal_claim_review");
+  assert.ok(!claimSnapshot.allowed_claim_modes.includes("governed_roi_scenario_review"));
+  assert.notEqual(
+    claimSnapshot.financial_boundary.financial_claim_governance_state,
+    "financial_translation_ready"
+  );
+  assert.equal(claimSnapshot.financial_boundary.financial_translation_allowed, false);
+  assert.equal(claimSnapshot.financial_boundary.roi_claim_allowed, false);
+  assert.equal(claimSnapshot.financial_boundary.customer_facing_financial_output_allowed, false);
 });
 
 test("active suppression blocks internal claim-review readiness", () => {

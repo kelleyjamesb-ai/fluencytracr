@@ -29,8 +29,8 @@ This phase must not:
 - create migrations, Prisma schema changes, backend routes, frontend UI,
   ingestion jobs, or persisted snapshots;
 - create `claim_readiness_snapshots` or `executive_readout_snapshots` tables;
-- compute ROI, EBITA, dollar value, time-saved value, productivity lift,
-  financial impact, causal delta, or customer-facing economic output;
+- compute realized ROI, EBITA, dollar value, time-saved value, productivity
+  lift, financial impact, causal delta, or customer-facing economic output;
 - store raw rows, prompts, responses, transcripts, query text, file contents,
   direct identifiers, hashed or joinable person identifiers, person-level HRIS,
   or person-level productivity;
@@ -105,9 +105,10 @@ Allowed `claim_readiness_state` values:
 - `held_for_governance`
 - `held_for_source_binding`
 
-`ready_for_internal_claim_review` is not financial permission and not
-customer-facing readiness. It only means the source-bound aggregate evidence
-chain can support internal claim-review planning.
+`ready_for_internal_claim_review` is not customer-facing readiness. It only
+means the source-bound aggregate evidence chain can support internal
+claim-review planning. Governed ROI scenario review still requires a
+`financial_translation_ready` upstream handoff boundary.
 
 ## 6. Allowed Claim Modes
 
@@ -116,10 +117,16 @@ Allowed `allowed_claim_modes` values:
 - `internal_evidence_review`
 - `caveated_internal_playbook_gap_review`
 - `source_bound_business_outcome_claim_planning`
+- `governed_roi_scenario_review`
 - `internal_executive_readout_planning`
 
+`governed_roi_scenario_review` is internal only and is valid only when the
+upstream handoff has `financial_claim_governance_state:
+financial_translation_ready`, `financial_translation_allowed: true`, and
+`roi_claim_allowed: true`.
+
 Blocked modes include customer-facing financial output, ROI proof, EBITA
-claims, productivity claims, causality claims, headcount reduction claims,
+proof, productivity claims, causality claims, headcount reduction claims,
 individual attribution, the blocked use `manager_or_team_ranking`, and people
 decisioning.
 
@@ -146,9 +153,8 @@ The Claim Readiness Snapshot copies `required_caveats`, `blocked_uses`,
 `aggregate_workforce_context`, `vbd_operating_map`, `source_refs`, and
 `source_provenance` forward from the validated upstream objects.
 
-It must keep the following blocked claims present:
+It must keep the following immutable blocked claims present:
 
-- `roi_proof`
 - `ebita_claim`
 - `causality_claim`
 - `productivity_claim`
@@ -158,14 +164,28 @@ It must keep the following blocked claims present:
 - `people_decisioning`
 - `customer_facing_economic_output`
 
+Telemetry-only or otherwise non-ready snapshots must also keep `roi_proof`
+blocked. Full Playbook snapshots with a
+`financial_translation_ready` handoff may remove `roi_proof` from
+`blocked_claims` for internal governed ROI scenario review only.
+
 ## 9. Financial and Executive Boundaries
 
-The current builder keeps all `financial_boundary` flags false:
+`financial_boundary` includes:
 
+- `financial_claim_governance_state`
 - `financial_translation_allowed`
 - `roi_claim_allowed`
 - `ebita_claim_allowed`
 - `customer_facing_financial_output_allowed`
+
+For `ready_for_internal_claim_review` snapshots with full Playbook coverage and
+a validated financial-translation-ready handoff,
+`financial_translation_allowed` and `roi_claim_allowed` may be true. This is an
+internal scenario-review posture only.
+
+`ebita_claim_allowed` and
+`customer_facing_financial_output_allowed` must remain false.
 
 `executive_readout_boundary.customer_facing_readout_allowed` must remain false.
 This contract does not create, persist, or render an executive readout snapshot.
@@ -211,10 +231,11 @@ The validator enforces:
 - BigQuery source availability alone cannot validate full coverage;
 - blocked claims cannot be weakened;
 - allowed claim modes cannot include customer-facing, financial, ROI, EBITA,
-  productivity, or causality modes;
+  productivity, or causality modes except `governed_roi_scenario_review` when
+  the upstream handoff is `financial_translation_ready`;
 - required caveats carry missing, held, suppressed, partial, or not-computed
   evidence forward;
-- financial flags remain false;
+- EBITA and customer-facing financial output flags remain false;
 - customer-facing readout remains false;
 - privacy and suppression remain fail-closed;
 - persistence policy flags remain false;

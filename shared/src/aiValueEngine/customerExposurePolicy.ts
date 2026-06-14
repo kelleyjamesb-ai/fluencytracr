@@ -181,6 +181,7 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
   "blocked_claims",
   "required_caveats",
   "financial_claim_policy",
+  "financial_exposure_state",
   "financial_claims_allowed",
   "finance_or_business_approval_present",
   "full_playbook_coverage_present",
@@ -330,6 +331,7 @@ export interface CustomerExposurePolicy {
     finance_or_business_approval_present: boolean;
     customer_assumption_approval_present: boolean;
     upstream_financial_translation_allowed: boolean;
+    financial_exposure_state: string;
     financial_claims_allowed: boolean;
     customer_facing_financial_output_allowed: boolean;
     blocked_claims: string[];
@@ -536,6 +538,17 @@ export function buildCustomerExposurePolicyFromPostSalesWorkflow(
     options.financeOrBusinessApprovalPresent === true;
   const customerAssumptionApprovalPresent =
     options.customerAssumptionApprovalPresent === true;
+  const upstreamFinancialTranslationAllowed =
+    orchestrator.claim_readiness_handoff?.financial_boundary?.financial_translation_allowed === true;
+  const financialClaimsAllowed =
+    fullPlaybookCoveragePresent &&
+    financeOrBusinessApprovalPresent &&
+    customerAssumptionApprovalPresent &&
+    upstreamFinancialTranslationAllowed &&
+    exportApproved;
+  const financialExposureState = financialClaimsAllowed
+    ? "financial_translation_ready"
+    : "held_for_financial_claim_governance";
 
   const exposureDecisions: CustomerExposureDecision[] = [
     decision("ai_fluency_initial_posture", {
@@ -695,9 +708,9 @@ export function buildCustomerExposurePolicyFromPostSalesWorkflow(
       full_playbook_coverage_present: fullPlaybookCoveragePresent,
       finance_or_business_approval_present: financeOrBusinessApprovalPresent,
       customer_assumption_approval_present: customerAssumptionApprovalPresent,
-      upstream_financial_translation_allowed:
-        orchestrator.claim_readiness_handoff?.financial_boundary?.financial_translation_allowed === true,
-      financial_claims_allowed: false,
+      upstream_financial_translation_allowed: upstreamFinancialTranslationAllowed,
+      financial_exposure_state: financialExposureState,
+      financial_claims_allowed: financialClaimsAllowed,
       customer_facing_financial_output_allowed: false,
       blocked_claims: blockedClaimsOf(orchestrator),
       required_unlock_conditions: [
@@ -1015,7 +1028,15 @@ function collectFinancialGaps(policy: any): string[] {
   const outputAllowed = financial.customer_facing_financial_output_allowed === true;
   const financialClaimsAllowed = financial.financial_claims_allowed === true;
 
+  requireField(
+    financial.financial_exposure_state,
+    "financial_claim_policy.financial_exposure_state",
+    gaps
+  );
   if (outputAllowed || financialClaimsAllowed) {
+    if (policy?.coverage_status !== "full_playbook_coverage") {
+      gaps.push("financial claims require policy coverage_status full_playbook_coverage");
+    }
     if (financial.full_playbook_coverage_present !== true) {
       gaps.push("financial claims require full_playbook_coverage");
     }
@@ -1031,18 +1052,18 @@ function collectFinancialGaps(policy: any): string[] {
     if (!policy?.export_policy?.export_governance_approved) {
       gaps.push("customer-facing financial output requires export governance approval");
     }
-    for (const blocked of [
-      "realized_roi",
-      "ebita_claim",
-      "customer_facing_financial_output"
-    ]) {
-      if (hasToken(policy?.blocked_uses, blocked)) {
-        gaps.push(`financial claims cannot be allowed while ${blocked} remains blocked`);
-      }
+    if (financial.financial_exposure_state !== "financial_translation_ready") {
+      gaps.push("financial claims require financial_exposure_state financial_translation_ready");
+    }
+    if (hasToken(financial.blocked_claims, "roi_proof")) {
+      gaps.push("financial claims require upstream blocked_claims to remove roi_proof");
     }
   }
   if (outputAllowed) {
     gaps.push("customer_facing_financial_output_allowed must remain false in this contract");
+  }
+  if (!financialClaimsAllowed && financial.financial_exposure_state === "financial_translation_ready") {
+    gaps.push("financial_exposure_state cannot be financial_translation_ready unless financial claims are allowed");
   }
   return gaps;
 }

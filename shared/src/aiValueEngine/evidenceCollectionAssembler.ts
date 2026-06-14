@@ -121,8 +121,16 @@ const REQUIRED_ASSUMPTION_APPROVALS = [
   "aggregate_workforce_context_approval_if_used"
 ];
 
-const SAFE_BLOCKED_USES = [
+const EVIDENCE_CONDITIONED_FINANCIAL_BLOCKED_USES = [
   "realized_roi",
+  "realized_roi_calculation",
+  "roi_proof",
+  "dollarized_output",
+  "financial_value_claim",
+  "usage_derived_financial_claim"
+];
+
+const IMMUTABLE_BLOCKED_USES = [
   "ebita_claim",
   "causality_claim",
   "productivity_claim",
@@ -132,11 +140,6 @@ const SAFE_BLOCKED_USES = [
   "people_decisioning",
   "customer_facing_financial_output",
   "customer_facing_economic_output",
-  "realized_roi_calculation",
-  "roi_proof",
-  "dollarized_output",
-  "financial_value_claim",
-  "usage_derived_financial_claim",
   "manager_ranking",
   "team_ranking",
   "person_level_hris_records",
@@ -145,6 +148,11 @@ const SAFE_BLOCKED_USES = [
   "promotion_or_discipline_inference",
   "attrition_prediction",
   "hris_inference_from_ai_usage"
+];
+
+const SAFE_BLOCKED_USES = [
+  ...EVIDENCE_CONDITIONED_FINANCIAL_BLOCKED_USES,
+  ...IMMUTABLE_BLOCKED_USES
 ];
 
 const DISALLOWED_ASSEMBLY_KEY_PATTERNS = [
@@ -832,12 +840,22 @@ function collectNextActions(plan: any, snapshot: any): string[] {
 }
 
 function collectBlockedUses(plan: any, packages: any[], snapshot: any): string[] {
-  return unique([
-    ...SAFE_BLOCKED_USES,
+  const fullPlaybookCoverage =
+    snapshot?.playbook_coverage?.coverage_status === "full_playbook_coverage";
+  const defaultBlockedUses = fullPlaybookCoverage
+    ? IMMUTABLE_BLOCKED_USES
+    : SAFE_BLOCKED_USES;
+  const blockedUses = unique([
+    ...defaultBlockedUses,
     ...stringsOf(plan?.blocked_uses),
     ...stringsOf(snapshot.blocked_uses),
     ...packages.flatMap((pkg) => stringsOf(pkg?.blocked_uses))
   ]);
+  return fullPlaybookCoverage
+    ? blockedUses.filter((use) =>
+        !EVIDENCE_CONDITIONED_FINANCIAL_BLOCKED_USES.includes(normalizeKey(use))
+      )
+    : blockedUses;
 }
 
 function containsForbiddenComputedKeys(

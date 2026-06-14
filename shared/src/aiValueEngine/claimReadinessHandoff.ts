@@ -68,14 +68,34 @@ const REQUIRED_HANDOFF_FIELDS = [
   "derivation_version"
 ];
 
-const FINANCIAL_BLOCKED_USES = [
+const FINANCIAL_CLAIM_GOVERNANCE_STATES = new Set([
+  "held",
+  "internal_value_investigation",
+  "financial_translation_ready",
+  "blocked_for_insufficient_evidence",
+  "blocked_for_privacy_or_suppression"
+]);
+
+const EVIDENCE_CONDITIONED_FINANCIAL_BLOCKED_USES = [
   "realized_roi",
-  "ebita_claim",
-  "customer_facing_financial_output"
+  "realized_roi_calculation",
+  "roi_proof",
+  "dollarized_output",
+  "financial_value_claim",
+  "usage_derived_financial_claim"
 ];
 
-const FINANCIAL_BLOCKED_CLAIMS = [
-  "roi_proof",
+const FINANCIAL_TRANSLATION_BLOCKED_USES = [
+  "realized_roi",
+  "realized_roi_calculation",
+  "roi_proof"
+];
+
+const FINANCIAL_TRANSLATION_BLOCKED_CLAIMS = [
+  "roi_proof"
+];
+
+const ALWAYS_BLOCKED_FINANCIAL_CLAIMS = [
   "ebita_claim",
   "customer_facing_economic_output"
 ];
@@ -139,6 +159,7 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
   "blocked_sections",
   "blocked_interpretation",
   "financial_boundary",
+  "financial_claim_governance_state",
   "financial_translation_allowed",
   "customer_facing_financial_output_allowed",
   "customer_facing_readout_allowed",
@@ -206,6 +227,7 @@ export interface ClaimReadinessHandoff {
   aggregate_workforce_context: any;
   vbd_operating_map: any;
   financial_boundary: {
+    financial_claim_governance_state: string;
     financial_translation_allowed: boolean;
     roi_claim_allowed: boolean;
     ebita_claim_allowed: boolean;
@@ -382,6 +404,88 @@ function snapshotCaveatsMention(snapshot: any, pattern: RegExp): boolean {
   return stringsOf(snapshot?.required_caveats).some((caveat) => pattern.test(caveat));
 }
 
+function financeOrBusinessApprovalCaveated(value: any): boolean {
+  return stringsOf(value?.required_caveats).some((caveat) => {
+    const normalized = caveat
+      .toLowerCase()
+      .replace(/[_-]+/g, " ");
+    const referencesFinancialApproval =
+      /(finance|business owner|financial assumption).{0,40}approval/.test(normalized) ||
+      /approval.{0,40}(finance|business owner|financial assumption)/.test(normalized);
+    const approvalIsUnresolved =
+      /missing|unapproved|held|caveated|not approved/.test(normalized) ||
+      /requires? .{0,40}approval|approval .{0,40}required/.test(normalized);
+    return referencesFinancialApproval && approvalIsUnresolved;
+  });
+}
+
+function financialTranslationReadinessReasons(
+  snapshot: any,
+  blockedUses: string[],
+  sourceProvenance?: ClaimReadinessHandoff["source_provenance"]
+): string[] {
+  const reasons: string[] = [];
+  const coverage = snapshot?.playbook_coverage ?? {};
+  const normalizedBlockedUses = blockedUses.map(normalizeToken);
+  const coverageObject = sourceProvenance
+    ? { ...snapshot, source_provenance: sourceProvenance }
+    : snapshot;
+
+  if (!fullPlaybookCoveragePresent(coverageObject)) {
+    reasons.push("Full Playbook coverage is required for financial translation.");
+  }
+  if (coverage.layer_3_business_system_outcomes?.status !== "present") {
+    reasons.push("Layer 3 business system-of-record outcome evidence is not present.");
+  }
+  if (
+    coverage.assumption_evidence?.status !== "present" &&
+    !assumptionEvidenceExplicitlyNotRequired({ playbook_coverage: coverage })
+  ) {
+    reasons.push("Assumption evidence is missing, held, suppressed, partial, not computed, or unapproved.");
+  }
+  if (financeOrBusinessApprovalCaveated(snapshot)) {
+    reasons.push("Finance or business-owner approval is missing, held, or caveated.");
+  }
+  for (const use of FINANCIAL_TRANSLATION_BLOCKED_USES) {
+    if (normalizedBlockedUses.includes(use)) {
+      reasons.push(`Blocked use ${use} prevents governed ROI scenario review.`);
+    }
+  }
+  if (privacyIsUnsafe(snapshot?.privacy_boundary)) {
+    reasons.push("Privacy boundary is unsafe.");
+  }
+  if (suppressionIsActiveOrUnsafe(snapshot?.suppression)) {
+    reasons.push("Suppression is active or fail-closed.");
+  }
+
+  return uniqueStrings(reasons);
+}
+
+function financialTranslationReady(
+  snapshot: any,
+  blockedUses: string[],
+  sourceProvenance?: ClaimReadinessHandoff["source_provenance"]
+): boolean {
+  return financialTranslationReadinessReasons(
+    snapshot,
+    blockedUses,
+    sourceProvenance
+  ).length === 0;
+}
+
+function handoffBlockedUsesForFinancialState(
+  snapshot: any,
+  sourceProvenance: ClaimReadinessHandoff["source_provenance"]
+): string[] {
+  const originalBlockedUses = stringsOf(snapshot?.blocked_uses);
+  const withoutConditionedFinancialUses = originalBlockedUses.filter((use) =>
+    !EVIDENCE_CONDITIONED_FINANCIAL_BLOCKED_USES.includes(normalizeToken(use))
+  );
+  return financialTranslationReady(snapshot, withoutConditionedFinancialUses, sourceProvenance)
+    ? withoutConditionedFinancialUses
+    : originalBlockedUses;
+}
+
 function isForbiddenKey(key: string, path: string[]): boolean {
   const normalizedKey = normalizeKey(key);
   const normalizedPath = path.map(normalizeKey);
@@ -448,49 +552,33 @@ export function translateSnapshotBlockedUsesToBlockedClaims(
   };
 }
 
-function buildFinancialBoundary(snapshot: any): ClaimReadinessHandoff["financial_boundary"] {
-  const reasons: string[] = [];
-  const coverage = snapshot?.playbook_coverage ?? {};
-  const blockedUses = stringsOf(snapshot?.blocked_uses).map(normalizeToken);
-
-  if (coverage.coverage_status !== "full_playbook_coverage") {
-    reasons.push("Playbook coverage is not full_playbook_coverage.");
-  }
-  if (coverage.layer_3_business_system_outcomes?.status !== "present") {
-    reasons.push("Layer 3 business system-of-record outcome evidence is not present.");
-  }
-  if (
-    coverage.assumption_evidence?.status !== "present" &&
-    !assumptionEvidenceExplicitlyNotRequired({ playbook_coverage: coverage })
-  ) {
-    reasons.push("Assumption evidence is missing, held, suppressed, partial, not computed, or unapproved.");
-  }
-  if (
-    stringsOf(snapshot?.required_caveats).some((caveat) =>
-      /finance|business-owner|business owner/i.test(caveat) &&
-      /missing|unapproved|held|approval|required/i.test(caveat)
-    )
-  ) {
-    reasons.push("Finance or business-owner approval is missing, held, or caveated.");
-  }
-  for (const use of FINANCIAL_BLOCKED_USES) {
-    if (blockedUses.includes(use)) {
-      reasons.push(`Blocked use ${use} prevents corresponding financial permission.`);
-    }
-  }
-  if (privacyIsUnsafe(snapshot?.privacy_boundary)) {
-    reasons.push("Privacy boundary is unsafe.");
-  }
-  if (suppressionIsActiveOrUnsafe(snapshot?.suppression)) {
-    reasons.push("Suppression is active or fail-closed.");
-  }
-
+function buildFinancialBoundary(
+  snapshot: any,
+  blockedUses: string[],
+  sourceProvenance: ClaimReadinessHandoff["source_provenance"]
+): ClaimReadinessHandoff["financial_boundary"] {
+  const reasons = financialTranslationReadinessReasons(
+    snapshot,
+    blockedUses,
+    sourceProvenance
+  );
+  const translationReady = reasons.length === 0;
   return {
-    financial_translation_allowed: false,
-    roi_claim_allowed: false,
+    financial_claim_governance_state: translationReady
+      ? "financial_translation_ready"
+      : privacyIsUnsafe(snapshot?.privacy_boundary) ||
+          suppressionIsActiveOrUnsafe(snapshot?.suppression)
+        ? "blocked_for_privacy_or_suppression"
+        : "blocked_for_insufficient_evidence",
+    financial_translation_allowed: translationReady,
+    roi_claim_allowed: translationReady,
     ebita_claim_allowed: false,
     customer_facing_financial_output_allowed: false,
-    reasons: uniqueStrings(reasons)
+    reasons: translationReady
+      ? [
+          "Governed ROI scenario review may proceed internally; EBITA and customer-facing financial output remain blocked until separately authorized."
+        ]
+      : reasons
   };
 }
 
@@ -561,7 +649,7 @@ function buildSourceProvenance(snapshot: any): ClaimReadinessHandoff["source_pro
     baseline_window: null,
     comparison_window: null,
     provenance_caveats: [
-      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation review must remain explicitly caveated until those windows are attached."
     ]
   };
 }
@@ -577,10 +665,12 @@ export function buildClaimReadinessHandoffFromEvidenceSnapshot(
     );
   }
 
-  const translated = translateSnapshotBlockedUsesToBlockedClaims(
-    evidenceSnapshot.blocked_uses
-  );
   const sourceProvenance = buildSourceProvenance(evidenceSnapshot);
+  const handoffBlockedUses = handoffBlockedUsesForFinancialState(
+    evidenceSnapshot,
+    sourceProvenance
+  );
+  const translated = translateSnapshotBlockedUsesToBlockedClaims(handoffBlockedUses);
   const requiredCaveats = uniqueStrings([
     ...sourceCaveatsForHandoff(evidenceSnapshot),
     ...stringsOf(sourceProvenance.provenance_caveats)
@@ -600,7 +690,11 @@ export function buildClaimReadinessHandoffFromEvidenceSnapshot(
     );
   }
 
-  const financialBoundary = buildFinancialBoundary(evidenceSnapshot);
+  const financialBoundary = buildFinancialBoundary(
+    evidenceSnapshot,
+    handoffBlockedUses,
+    sourceProvenance
+  );
   const executiveReadoutBoundary = buildExecutiveReadoutBoundary(
     evidenceSnapshot,
     financialBoundary,
@@ -619,9 +713,10 @@ export function buildClaimReadinessHandoffFromEvidenceSnapshot(
     playbook_coverage: deepClone(evidenceSnapshot.playbook_coverage),
     source_refs: deepClone(evidenceSnapshot.source_refs),
     required_caveats: requiredCaveats,
-    blocked_uses: stringsOf(evidenceSnapshot.blocked_uses),
+    blocked_uses: handoffBlockedUses,
     blocked_claims: uniqueStrings([
       ...translated.blocked_claims,
+      ...ALWAYS_BLOCKED_FINANCIAL_CLAIMS,
       "customer_facing_economic_output"
     ]),
     unmapped_blocked_uses: translated.unmapped_blocked_uses,
@@ -687,6 +782,19 @@ function collectBlockedClaimGaps(handoff: any): string[] {
 function collectFinancialBoundaryGaps(handoff: any): string[] {
   const gaps: string[] = [];
   const boundary = handoff?.financial_boundary ?? {};
+  if (
+    boundary.financial_claim_governance_state &&
+    !FINANCIAL_CLAIM_GOVERNANCE_STATES.has(boundary.financial_claim_governance_state)
+  ) {
+    gaps.push(
+      `financial_boundary.financial_claim_governance_state is invalid: ${boundary.financial_claim_governance_state}`
+    );
+  }
+  requireField(
+    boundary.financial_claim_governance_state,
+    "financial_boundary.financial_claim_governance_state",
+    gaps
+  );
   for (const flag of [
     "financial_translation_allowed",
     "roi_claim_allowed",
@@ -699,18 +807,18 @@ function collectFinancialBoundaryGaps(handoff: any): string[] {
   }
   requireArray(boundary.reasons, "financial_boundary.reasons", gaps);
 
-  const mustBlockFinancial =
+  const mustBlockFinancialTranslation =
     !fullPlaybookCoveragePresent(handoff) ||
     privacyIsUnsafe(handoff?.privacy_boundary) ||
     suppressionIsActiveOrUnsafe(handoff?.suppression) ||
-    FINANCIAL_BLOCKED_USES.some((use) =>
+    FINANCIAL_TRANSLATION_BLOCKED_USES.some((use) =>
       stringsOf(handoff?.blocked_uses).map(normalizeToken).includes(use)
     ) ||
-    FINANCIAL_BLOCKED_CLAIMS.some((claim) =>
+    FINANCIAL_TRANSLATION_BLOCKED_CLAIMS.some((claim) =>
       stringsOf(handoff?.blocked_claims).map(normalizeToken).includes(claim)
     ) ||
-    caveatsMention(handoff, /finance|business-owner|business owner/i);
-  if (mustBlockFinancial) {
+    financeOrBusinessApprovalCaveated(handoff);
+  if (mustBlockFinancialTranslation) {
     for (const flag of [
       "financial_translation_allowed",
       "roi_claim_allowed",
@@ -720,6 +828,34 @@ function collectFinancialBoundaryGaps(handoff: any): string[] {
       if (boundary[flag] !== false) {
         gaps.push(`financial_boundary.${flag} must be false`);
       }
+    }
+    if (boundary.financial_claim_governance_state === "financial_translation_ready") {
+      gaps.push("financial_boundary.financial_claim_governance_state must not be financial_translation_ready");
+    }
+    if (boundary.financial_claim_governance_state === "customer_facing_financial_claim_allowed") {
+      gaps.push("financial_boundary.financial_claim_governance_state must remain blocked or held until a future customer-facing financial governance contract exists");
+    }
+  } else {
+    if (boundary.financial_claim_governance_state !== "financial_translation_ready") {
+      gaps.push("financial_boundary.financial_claim_governance_state must be financial_translation_ready");
+    }
+    if (boundary.financial_translation_allowed !== true) {
+      gaps.push("financial_boundary.financial_translation_allowed must be true");
+    }
+    if (boundary.roi_claim_allowed !== true) {
+      gaps.push("financial_boundary.roi_claim_allowed must be true");
+    }
+  }
+  if (boundary.ebita_claim_allowed !== false) {
+    gaps.push("financial_boundary.ebita_claim_allowed must be false");
+    if (boundary.financial_translation_allowed !== false) {
+      gaps.push("financial_boundary.financial_translation_allowed must be false while EBITA remains blocked");
+    }
+  }
+  if (boundary.customer_facing_financial_output_allowed !== false) {
+    gaps.push("financial_boundary.customer_facing_financial_output_allowed must be false");
+    if (boundary.financial_translation_allowed !== false) {
+      gaps.push("financial_boundary.financial_translation_allowed must be false while customer-facing financial output is requested");
     }
   }
   return gaps;
@@ -836,7 +972,16 @@ function collectVbdGaps(handoff: any): string[] {
     ...stringsOf(handoff?.blocked_uses).map(normalizeToken),
     ...stringsOf(handoff?.blocked_claims).map(normalizeToken)
   ]);
+  const financialTranslationReady =
+    handoff?.financial_boundary?.financial_claim_governance_state ===
+      "financial_translation_ready";
   for (const use of stringsOf(map.blocked_interpretation).map(normalizeToken)) {
+    if (
+      financialTranslationReady &&
+      FINANCIAL_TRANSLATION_BLOCKED_USES.includes(use)
+    ) {
+      continue;
+    }
     const translated = BLOCKED_USE_TO_BLOCKED_CLAIM[use];
     if (!blockedTokens.has(use) && (!translated || !blockedTokens.has(translated))) {
       gaps.push(`VBD blocked_interpretation ${use} must carry into blocked_uses or blocked_claims`);
@@ -849,9 +994,7 @@ function collectVbdGaps(handoff: any): string[] {
   ) {
     gaps.push("high_fluency_flow with layer_1_only must carry the Layer 1 only caveat");
   }
-  for (const blocked of [
-    "roi_proof",
-    "ebita_claim",
+  const requiredVbdBlockedClaims = [
     "causality_claim",
     "productivity_claim",
     "headcount_reduction_claim",
@@ -859,7 +1002,13 @@ function collectVbdGaps(handoff: any): string[] {
     "team_or_manager_ranking",
     "individual_scoring",
     "customer_facing_economic_output"
-  ]) {
+  ];
+  if (!financialTranslationReady) {
+    requiredVbdBlockedClaims.unshift("roi_proof", "ebita_claim");
+  } else {
+    requiredVbdBlockedClaims.unshift("ebita_claim");
+  }
+  for (const blocked of requiredVbdBlockedClaims) {
     if (!blockedTokens.has(blocked)) {
       gaps.push(`VBD boundary requires blocked claim/use ${blocked}`);
     }
@@ -950,6 +1099,12 @@ export function validateClaimReadinessHandoff(
     ...collectForbiddenFieldGaps(handoff)
   ];
   const valid = gaps.length === 0;
+  const roiScenarioReady = valid &&
+    handoff?.financial_boundary?.financial_claim_governance_state ===
+      "financial_translation_ready" &&
+    handoff?.financial_boundary?.financial_translation_allowed === true &&
+    handoff?.financial_boundary?.roi_claim_allowed === true &&
+    handoff?.financial_boundary?.customer_facing_financial_output_allowed === false;
 
   return {
     schema_version: RESULT_SCHEMA_VERSION,
@@ -959,8 +1114,8 @@ export function validateClaimReadinessHandoff(
     gaps,
     feeds: {
       claim_readiness_context: valid,
-      roi_scenario_context: valid,
-      ebita_bridge_context: valid,
+      roi_scenario_context: roiScenarioReady,
+      ebita_bridge_context: false,
       executive_readout_context: valid &&
         handoff?.executive_readout_boundary?.executive_readout_allowed === true
     }

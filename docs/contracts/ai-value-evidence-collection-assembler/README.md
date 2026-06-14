@@ -107,6 +107,16 @@ BigQuery source availability alone cannot validate `full_playbook_coverage`.
 VBD remains Layer 1 platform telemetry only. Aggregate workforce context remains
 context only and cannot upgrade coverage by itself.
 
+When full Playbook coverage is validated, the draft Evidence Snapshot may stop
+carrying evidence-conditioned financial blockers such as `realized_roi`,
+`roi_proof`, `dollarized_output`, `financial_value_claim`, and
+`usage_derived_financial_claim`. This does not compute ROI, authorize EBITA, or
+create customer financial output; it only lets later claim-readiness contracts
+evaluate governed financial translation under their own gates. Immutable
+blockers such as causality, productivity, headcount reduction, individual
+attribution, `manager_or_team_ranking`, people decisioning, and
+`ebita_claim`, and customer-facing financial output must remain present.
+
 ## 6. Fail-Closed Rules
 
 Assembly fails closed when a source package is unsafe or invalid, including:

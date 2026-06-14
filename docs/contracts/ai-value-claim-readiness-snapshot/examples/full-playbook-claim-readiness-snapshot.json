@@ -123,10 +123,10 @@
   "allowed_claim_modes": [
     "internal_evidence_review",
     "source_bound_business_outcome_claim_planning",
-    "internal_executive_readout_planning"
+    "internal_executive_readout_planning",
+    "governed_roi_scenario_review"
   ],
   "blocked_uses": [
-    "realized_roi",
     "ebita_claim",
     "causality_claim",
     "productivity_claim",
@@ -135,11 +135,6 @@
     "manager_or_team_ranking",
     "people_decisioning",
     "customer_facing_financial_output",
-    "realized_roi_calculation",
-    "roi_proof",
-    "dollarized_output",
-    "financial_value_claim",
-    "usage_derived_financial_claim",
     "customer_facing_economic_output",
     "manager_ranking",
     "team_ranking",
@@ -151,15 +146,14 @@
     "hris_inference_from_ai_usage"
   ],
   "blocked_claims": [
-    "roi_proof",
-    "ebita_claim",
     "causality_claim",
     "productivity_claim",
     "headcount_reduction_claim",
     "individual_scoring",
     "team_or_manager_ranking",
     "people_decisioning",
-    "customer_facing_economic_output"
+    "customer_facing_economic_output",
+    "ebita_claim"
   ],
   "unmapped_blocked_uses": [],
   "required_caveats": [
@@ -168,8 +162,9 @@
     "Velocity is Layer 1 platform telemetry about aggregate activity movement over time; it is not ROI, productivity, causality, or financial proof.",
     "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
     "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened.",
+    "Suppressed or unknown slices are preserved and cannot be hidden inside covered breadth.",
     "Depth is Layer 1 workflow embeddedness posture; business value requires Layer 3 outcomes or accepted quality/outcome evidence.",
-    "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+    "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation review must remain explicitly caveated until those windows are attached."
   ],
   "suppression": {
     "default_verdict": "SUPPRESS",
@@ -223,11 +218,12 @@
     "breadth": {
       "state": "emerging",
       "approved_aggregate_grain": "workflow_family",
-      "covered_slices": 12,
+      "covered_slices": 14,
       "suppressed_or_unknown_slices": 0,
       "caveats": [
         "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
-        "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened."
+        "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened.",
+        "Suppressed or unknown slices are preserved and cannot be hidden inside covered breadth."
       ]
     },
     "depth": {
@@ -265,14 +261,13 @@
     ]
   },
   "financial_boundary": {
-    "financial_translation_allowed": false,
-    "roi_claim_allowed": false,
+    "financial_claim_governance_state": "financial_translation_ready",
+    "financial_translation_allowed": true,
+    "roi_claim_allowed": true,
     "ebita_claim_allowed": false,
     "customer_facing_financial_output_allowed": false,
     "reasons": [
-      "Blocked use realized_roi prevents corresponding financial permission.",
-      "Blocked use ebita_claim prevents corresponding financial permission.",
-      "Blocked use customer_facing_financial_output prevents corresponding financial permission."
+      "Governed ROI scenario review may proceed internally; EBITA and customer-facing financial output remain blocked until separately authorized."
     ]
   },
   "executive_readout_boundary": {
@@ -293,8 +288,9 @@
       "Velocity is Layer 1 platform telemetry about aggregate activity movement over time; it is not ROI, productivity, causality, or financial proof.",
       "Breadth is interpreted only across approved aggregate workflow slices and cannot support person-level, manager, team, HRIS, or people-decisioning interpretation.",
       "Approved aggregate grain is missing or held, so breadth remains caveated and cannot be strengthened.",
+      "Suppressed or unknown slices are preserved and cannot be hidden inside covered breadth.",
       "Depth is Layer 1 workflow embeddedness posture; business value requires Layer 3 outcomes or accepted quality/outcome evidence.",
-      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation review must remain explicitly caveated until those windows are attached."
     ],
     "blocked_sections": [
       "customer_facing_financial_output"
@@ -304,15 +300,15 @@
     ]
   },
   "source_refs": {
-    "bigquery_probe_result_id": "bq_probe_full_playbook_claim_readiness_example",
+    "bigquery_probe_result_id": "bq_probe_ready_for_caveated_snapshot",
     "v3_verdict_ids": [],
     "velocity_observation_ids": [],
     "outcome_evidence_ids": [
-      "outcome_evidence_claim_readiness_snapshot_example"
+      "outcome_evidence_customer_support_2026_06"
     ],
     "fluency_baseline_ids": [],
     "source_readiness_ids": [
-      "source_readiness_full_playbook_claim_readiness_example"
+      "source_readiness_example"
     ],
     "real_source_manifest_ids": [],
     "aggregate_workforce_context_export_ids": [],
@@ -324,15 +320,15 @@
     "evidence_snapshot_schema_version": "FT_AI_VALUE_EVIDENCE_SNAPSHOT_2026_06",
     "evidence_snapshot_derivation_version": "ai_value_evidence_snapshot_builder_2026_06",
     "source_refs": {
-      "bigquery_probe_result_id": "bq_probe_full_playbook_claim_readiness_example",
+      "bigquery_probe_result_id": "bq_probe_ready_for_caveated_snapshot",
       "v3_verdict_ids": [],
       "velocity_observation_ids": [],
       "outcome_evidence_ids": [
-        "outcome_evidence_claim_readiness_snapshot_example"
+        "outcome_evidence_customer_support_2026_06"
       ],
       "fluency_baseline_ids": [],
       "source_readiness_ids": [
-        "source_readiness_full_playbook_claim_readiness_example"
+        "source_readiness_example"
       ],
       "real_source_manifest_ids": [],
       "aggregate_workforce_context_export_ids": [],
@@ -354,7 +350,7 @@
     "baseline_window": null,
     "comparison_window": null,
     "provenance_caveats": [
-      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation must remain blocked or explicitly caveated until those windows are attached."
+      "Baseline and comparison windows are not first-class fields in the Evidence Snapshot; downstream outcome movement or financial translation review must remain explicitly caveated until those windows are attached."
     ]
   },
   "derived_from": {
