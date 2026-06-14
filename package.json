@@ -48,6 +48,7 @@
     "test:ai-value-claim-readiness-handoff": "npm run build --workspace shared && node --test scripts/validate_ai_value_claim_readiness_handoff.test.mjs",
     "test:ai-value-claim-readiness-snapshot": "npm run build --workspace shared && node --test scripts/validate_ai_value_claim_readiness_snapshot.test.mjs",
     "test:ai-value-source-packages": "npm run build --workspace shared && node --test scripts/validate_ai_value_source_packages.test.mjs",
+    "test:ai-value-support-pilot-readiness-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_support_pilot_glean_readiness_adapter.test.mjs",
     "test:ai-value-token-efficiency-signal": "npm run build --workspace shared && node --test scripts/validate_ai_value_token_efficiency_signal.test.mjs",
     "test:ai-value-evidence-collection-assembler": "npm run build --workspace shared && node --test scripts/validate_ai_value_evidence_collection_assembler.test.mjs",
     "test:ai-value-runtime-builders": "npm run test --workspace backend -- --runTestsByPath tests/ai_value_runtime_builders.test.ts",
