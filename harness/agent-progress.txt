@@ -102,3 +102,52 @@
 - Completed: Added Cursor project rules in `.cursor/rules/` for session startup, bounded harness slices, and provider boundaries. Added provider-neutral `AR_2026_05` agent-run schema in `shared/src/agentRunSchemas.ts`, JSON Schema under `schemas/agent_run/`, and docs under `docs/contracts/agent-run/` plus `docs/agent/cursor-agent-harness.md`.
 - Verified: Wrote failing test first, then passed `npm test --workspace backend -- --runTestsByPath tests/agent_run_schema.test.ts`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `bash scripts/ci_linkcheck_fluency_docs.sh`; `npm run validate:agents`.
 - Next focus: Add a Cursor CLI adapter only after `cursor-agent` is available locally and the desired event capture path is confirmed.
+
+## 2026-05-06 (UTC) — Codex (ROI reportability gate)
+
+- Completed: Added `FT_REPORTABILITY_2026_05` reportability contract in `shared/src/reportabilitySchemas.ts`, seeded ROI generator `scripts/generate_reportability_decision.mjs`, `npm run reportability:roi`, docs under `docs/contracts/reportability/`, and focused backend tests.
+- Verified: `npm run build --workspace shared`; `npm run reportability:roi`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`; `npm run validate:agents`.
+- Harness note: Existing OpenAI Agents SDK sidecar and Cursor rules validate cleanly; no harness uplevel was needed for this slice.
+- Next focus: Decide whether ROI reportability should become a required gate for customer-facing ROI decks, then add report contexts for agent insights, skills reporting, MCP reporting, and transformation narratives.
+
+## 2026-05-06 (UTC) — Codex (claim taxonomy)
+
+- Completed: Promoted ROI allowed/blocked language into `REPORTABILITY_CLAIM_TAXONOMY`, wired the ROI evaluator to taxonomy-driven claims, and added dynamic blocked claims for excluded agent, skills, and MCP ROI inclusion.
+- Verified: `npm run build --workspace shared`; `npm run reportability:roi`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Add the customer-facing evidence appendix shape, or add the next report context (`agent_insights`) if ROI gate approval is the priority.
+
+## 2026-05-06 (UTC) — Codex (customer evidence appendix)
+
+- Completed: Added `FT_EVIDENCE_APPENDIX_2026_05` appendix schema and generator from reportability decisions, `npm run reportability:appendix`, seeded Northstar appendix output, docs, and privacy-boundary tests.
+- Verified: `npm run build --workspace shared`; `npm run reportability:roi`; `npm run reportability:appendix`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Expand surface readiness rules for Agents, Skills, MCP, APIs, and Gleanbot before adding additional report contexts.
+
+## 2026-05-06 (UTC) — Codex (surface readiness expansion)
+
+- Completed: Added `api_usage` and `gleanbot` signal families, mapped `apis` and `gleanbot` as optional ROI report surfaces, added dynamic blocked claims for API/Gleanbot ROI inclusion, and updated the seeded Northstar readiness inventory/output examples.
+- Verified: `npm run build --workspace shared`; `npm run glean:readiness && npm run reportability:roi && npm run reportability:appendix`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Add the next report context, starting with `agent_insights`, using the same readiness/reportability/appendix pattern.
+
+## 2026-05-06 (UTC) — Codex (agent insights context)
+
+- Completed: Added `agent_insights` as a supported report context with agent surface requirements, allowed observability/workflow-coverage claims, blocked productivity/causality/ranking claims, and seeded agent insights decision/appendix examples.
+- Verified: `npm run build --workspace shared`; `npm run glean:readiness && npm run reportability:roi && npm run reportability:appendix && npm run reportability:agent-insights && npm run reportability:agent-appendix`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Add `skills_reporting` and `mcp_reporting` contexts using the same guarded pattern.
+
+## 2026-05-06 (UTC) — Codex (skills and MCP contexts)
+
+- Completed: Added `skills_reporting` and `mcp_reporting` report contexts, claim taxonomy entries for skill lifecycle visibility and MCP tool observability, scripts for seeded decisions/appendices, docs, and tests.
+- Verified: `npm run build --workspace shared`; `npm run glean:readiness && npm run reportability:roi && npm run reportability:appendix && npm run reportability:agent-insights && npm run reportability:agent-appendix && npm run reportability:skills && npm run reportability:skills-appendix && npm run reportability:mcp && npm run reportability:mcp-appendix`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Define the integration boundary for systems that must call FluencyTracr before customer-facing reporting.
+
+## 2026-05-06 (UTC) — Codex (integration boundary)
+
+- Completed: Added `FT_REPORTABILITY_GATE_2026_05` request/response schemas and `evaluateReportabilityGate`, returning reportability decision, customer appendix, and per-claim allowed/blocked results for downstream systems. Added integration boundary docs.
+- Verified: `npm run build --workspace shared`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Add governance regression tests and final operating handoff docs for the reportability-first pivot.
+
+## 2026-05-06 (UTC) — Codex (governance regression + handoff)
+
+- Completed: Added `reportability_governance_regression.test.ts` to prove unsafe claims stay blocked across ROI, agent insights, skills reporting, and MCP reporting. Added `operating-handoff.md` with the reporting-system usage rule and safe/blocked language examples.
+- Verified: `npm run build --workspace shared`; `npm run test:ci --workspace backend -- --runTestsByPath tests/reportability_decision.test.ts tests/reportability_governance_regression.test.ts tests/glean_signal_readiness_schema.test.ts tests/glean_signal_readiness_generator.test.ts`.
+- Next focus: Wire the reportability gate into the real ROI/reporting path, then add `transformation_narrative` only after Product/GTM align on allowed language.

@@ -29,6 +29,8 @@ Allowed `signal_family` values:
 - `user_memory_tool`
 - `assistant`
 - `search_document_retrieval`
+- `api_usage`
+- `gleanbot`
 - `insights`
 
 ## Readiness Status

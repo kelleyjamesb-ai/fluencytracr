@@ -8,4 +8,5 @@ export * from "./fluencyTracrV1Signal";
 export * from "./unifiedTelemetrySchemas";
 export * from "./agentRunSchemas";
 export * from "./gleanSignalReadinessSchemas";
+export * from "./reportabilitySchemas";
 export * from "./metricConstants";

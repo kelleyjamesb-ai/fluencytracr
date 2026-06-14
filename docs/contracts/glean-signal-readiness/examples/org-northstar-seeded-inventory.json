@@ -139,6 +139,48 @@
           "note": "Seeded retrieval fields model aggregate evidence-seeking behavior without document content."
         }
       ]
+    },
+    {
+      "signal_family": "api_usage",
+      "source_availability": "unconfirmed",
+      "export_channel": "unknown",
+      "scrub_status": "unknown",
+      "stable_join_keys": [],
+      "derived_dimensions": ["coverage", "usage_quality"],
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "unknown",
+        "latency": "unknown",
+        "join_reliability": "unknown"
+      },
+      "validation_evidence": [],
+      "recommended_next_action": {
+        "action": "Confirm whether REST API and Search API activity are available in customer-safe aggregate exports.",
+        "owner": "glean_admin",
+        "priority": "medium"
+      }
+    },
+    {
+      "signal_family": "gleanbot",
+      "source_availability": "unconfirmed",
+      "export_channel": "unknown",
+      "scrub_status": "unknown",
+      "stable_join_keys": [],
+      "derived_dimensions": ["coverage", "usage_quality"],
+      "suppression_applied": false,
+      "suppression_reasons": [],
+      "data_quality": {
+        "completeness": "unknown",
+        "latency": "unknown",
+        "join_reliability": "unknown"
+      },
+      "validation_evidence": [],
+      "recommended_next_action": {
+        "action": "Confirm whether Gleanbot activity can be separated from other assistant or notification surfaces for customer reporting.",
+        "owner": "glean_admin",
+        "priority": "medium"
+      }
     }
   ]
 }
