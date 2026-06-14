@@ -404,19 +404,29 @@ function snapshotCaveatsMention(snapshot: any, pattern: RegExp): boolean {
   return stringsOf(snapshot?.required_caveats).some((caveat) => pattern.test(caveat));
 }
 
-function financeOrBusinessApprovalCaveated(value: any): boolean {
+export function financeOrBusinessApprovalCaveated(value: any): boolean {
   return stringsOf(value?.required_caveats).some((caveat) => {
     const normalized = caveat
       .toLowerCase()
       .replace(/[_-]+/g, " ");
     const referencesFinancialApproval =
-      /(finance|business owner|financial assumption).{0,40}approval/.test(normalized) ||
-      /approval.{0,40}(finance|business owner|financial assumption)/.test(normalized);
-    const approvalIsUnresolved =
-      /missing|unapproved|held|caveated|not approved/.test(normalized) ||
+      /(finance|financial|business owner|financial assumption).{0,40}approval/.test(normalized) ||
+      /approval.{0,40}(finance|financial|business owner|financial assumption)/.test(normalized);
+    const approvalIsExplicitlyNotRequired =
+      /\b(?:explicitly\s+)?not\s+required\b/.test(normalized);
+    const approvalHasBlockedState =
+      /missing|unapproved|held|caveated|not approved/.test(normalized);
+    const approvalIsRequired =
       /requires? .{0,40}approval|approval .{0,40}required/.test(normalized);
+    const approvalIsUnresolved =
+      approvalHasBlockedState || (!approvalIsExplicitlyNotRequired && approvalIsRequired);
     return referencesFinancialApproval && approvalIsUnresolved;
   });
+}
+
+function snapshotReadinessAllowsRoiScenario(handoff: any): boolean {
+  const readiness = String(handoff?.snapshot_readiness_decision ?? "");
+  return readiness.length > 0 && !/HOLD|SUPPRESS|NOT_READY|GOVERNANCE/i.test(readiness);
 }
 
 function financialTranslationReadinessReasons(
@@ -1100,6 +1110,7 @@ export function validateClaimReadinessHandoff(
   ];
   const valid = gaps.length === 0;
   const roiScenarioReady = valid &&
+    snapshotReadinessAllowsRoiScenario(handoff) &&
     handoff?.financial_boundary?.financial_claim_governance_state ===
       "financial_translation_ready" &&
     handoff?.financial_boundary?.financial_translation_allowed === true &&

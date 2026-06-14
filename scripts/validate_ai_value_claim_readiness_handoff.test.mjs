@@ -566,6 +566,55 @@ test("Full Playbook handoff can reach governed ROI scenario review while custome
   assert.equal(validation.feeds.ebita_bridge_context, false);
 });
 
+test("Full Playbook handoff with not-required financial approval wording can route governed ROI scenario review", () => {
+  for (const notRequiredCaveat of [
+    "Financial assumption approval is not required.",
+    "Financial assumption approval is explicitly not required.",
+    "Finance approval not required for this aggregate workflow window.",
+    "Business owner approval is not required because assumptions are not used."
+  ]) {
+    const handoff = buildHandoff(buildFullSnapshot());
+    handoff.required_caveats.push(notRequiredCaveat);
+    handoff.executive_readout_boundary.required_caveats.push(notRequiredCaveat);
+    const validation = validateClaimReadinessHandoff(handoff);
+
+    assert.equal(validation.valid, true, validation.gaps.join("; "));
+    assert.equal(handoff.financial_boundary.financial_claim_governance_state, "financial_translation_ready");
+    assert.equal(validation.feeds.roi_scenario_context, true);
+  }
+});
+
+test("Full Playbook handoff with required financial approval wording stays blocked", () => {
+  const handoff = buildHandoff(buildFullSnapshot());
+  const requiredCaveat = "Financial approval required before governed ROI scenario review.";
+  handoff.required_caveats.push(requiredCaveat);
+  handoff.executive_readout_boundary.required_caveats.push(requiredCaveat);
+  const validation = validateClaimReadinessHandoff(handoff);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /financial_translation_allowed must be false/i.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("held, suppressed, and not-ready snapshot decisions do not feed governed ROI scenario review", () => {
+  for (const decision of [
+    "HOLD_FOR_GOVERNANCE_APPROVAL",
+    "HOLD_FOR_CUSTOMER_EXPORTS",
+    "SUPPRESSED",
+    "NOT_READY"
+  ]) {
+    const handoff = buildHandoff(buildFullSnapshot());
+    handoff.snapshot_readiness_decision = decision;
+    const validation = validateClaimReadinessHandoff(handoff);
+
+    assert.equal(validation.valid, true, validation.gaps.join("; "));
+    assert.equal(handoff.financial_boundary.financial_claim_governance_state, "financial_translation_ready");
+    assert.equal(validation.feeds.roi_scenario_context, false);
+  }
+});
+
 test("historical assumption approval caveats do not block approved full Playbook financial translation", () => {
   const handoff = buildHandoff(buildFullSnapshot());
   const historicalCaveat =
@@ -676,6 +725,12 @@ test("Handoff examples validate", () => {
 
     assert.equal(result.valid, true, `${file}: ${result.gaps.join("; ")}`);
   }
+});
+
+test("Full Playbook handoff example keeps immutable EBITA blocked use", () => {
+  const handoff = readJson(`${EXAMPLES}/full-playbook-handoff.json`);
+
+  assert.ok(handoff.blocked_uses.includes("ebita_claim"));
 });
 
 test("Handoff does not compute ROI, EBITA, dollar value, time saved value, or financial impact", () => {
