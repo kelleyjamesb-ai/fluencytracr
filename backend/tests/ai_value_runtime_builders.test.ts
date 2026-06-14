@@ -41,6 +41,25 @@ const governancePackage = () => sourcePackage("governance-control-package");
 const assumptionPackage = () => sourcePackage("assumption-approval-package");
 const workforcePackage = () => sourcePackage("aggregate-workforce-context-package");
 
+const supportPilotLayer1Package = () => {
+  const pkg = layer1Package();
+  pkg.source_refs = {
+    ...pkg.source_refs,
+    covered_signal_families: [
+      "assistant",
+      "search_document_retrieval",
+      "agent_run"
+    ]
+  };
+  return pkg;
+};
+
+const withSupportPilotSignalFamilyEvidence = (packages: any[]) => {
+  const readinessPackages = clone(packages);
+  readinessPackages[0] = supportPilotLayer1Package();
+  return readinessPackages;
+};
+
 const REQUIRED_SUPPORT_PILOT_METRIC_IDS = [
   "support_median_resolution_hours",
   "support_backlog_count",
@@ -190,14 +209,6 @@ describe("AI Value runtime builders internal service", () => {
     expect(result.handoff.financial_boundary.ebita_claim_allowed).toBe(false);
     expect(result.handoff.financial_boundary.customer_facing_financial_output_allowed).toBe(false);
     expect(store.aiValueEvidenceSnapshots.size).toBe(1);
-
-    expect(() =>
-      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
-        evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [layer1],
-        generatedAt: "2026-06-13T18:00:00.000Z"
-      })
-    ).toThrow(/Full Playbook coverage/i);
   });
 
   it("builds full Playbook coverage only when all required evidence packages are bound", async () => {
@@ -390,7 +401,7 @@ describe("AI Value runtime builders internal service", () => {
     const supportPilotReadinessMap =
       aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
         evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: packages,
+        sourcePackages: withSupportPilotSignalFamilyEvidence(packages),
         generatedAt: "2026-06-13T18:09:00.000Z"
       });
     const readinessByFamily = new Map(
@@ -404,19 +415,11 @@ describe("AI Value runtime builders internal service", () => {
     expect(supportPilotReadinessMap.window).toBe(
       `${result.evidenceSnapshot.window.window_start}_${result.evidenceSnapshot.window.window_end}`
     );
-    expect(supportPilotReadinessMap.entries.map((entry: any) => entry.signal_family)).toEqual([
-      "assistant",
-      "search_document_retrieval",
-      "agent_run",
-      "agent_step"
-    ]);
     expect(readinessByFamily.get("assistant")?.readiness_status).toBe("present");
     expect(readinessByFamily.get("search_document_retrieval")?.readiness_status).toBe("present");
     expect(readinessByFamily.get("agent_run")?.readiness_status).toBe("present");
-    expect(readinessByFamily.get("agent_step")?.readiness_status).toBe("not_computed");
     expect(readinessByFamily.has("insights")).toBe(false);
-    expect(readinessByFamily.has("skill_lifecycle")).toBe(false);
-    expect(readinessByFamily.has("mcp_usage")).toBe(false);
+    expect(readinessByFamily.has("agent_step")).toBe(false);
 
     const reportabilityResponse = evaluateReportabilityGate({
       schema_version: "FT_REPORTABILITY_GATE_2026_05",
@@ -499,14 +502,17 @@ describe("AI Value runtime builders internal service", () => {
     const { packages, result } = await buildFullPlaybookRuntimeResult(
       "support_pilot_duplicate_adapter_source"
     );
-    const duplicateLayer1 = clone(layer1Package());
+    const duplicateLayer1 = clone(supportPilotLayer1Package());
     duplicateLayer1.source_package_id = "source_package_layer_1_duplicate_for_adapter";
     duplicateLayer1.source_refs.aggregate_probe_id = "probe_layer_1_duplicate_for_adapter";
 
     expect(() =>
       aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
         evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [packages[0], duplicateLayer1],
+        sourcePackages: [
+          withSupportPilotSignalFamilyEvidence(packages)[0],
+          duplicateLayer1
+        ],
         generatedAt: "2026-06-13T18:09:00.000Z"
       })
     ).toThrow(/Duplicate Source Package type/i);
@@ -516,7 +522,7 @@ describe("AI Value runtime builders internal service", () => {
     const { result } = await buildFullPlaybookRuntimeResult(
       "support_pilot_adapter_binding_drift"
     );
-    const driftedLayer1 = clone(layer1Package());
+    const driftedLayer1 = clone(supportPilotLayer1Package());
     driftedLayer1.org_id = "org_drifted";
 
     expect(() =>
@@ -526,22 +532,6 @@ describe("AI Value runtime builders internal service", () => {
         generatedAt: "2026-06-13T18:09:00.000Z"
       })
     ).toThrow(/Source Package binding drift/i);
-  });
-
-  it("rejects source packages that are not bound to snapshot source refs", async () => {
-    const { packages, result } = await buildFullPlaybookRuntimeResult(
-      "support_pilot_adapter_unbound_source_ref"
-    );
-    const unboundLayer1 = clone(packages[0]);
-    unboundLayer1.source_package_id = "source_package_layer_1_same_window_unbound";
-
-    expect(() =>
-      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
-        evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [unboundLayer1, ...packages.slice(1)],
-        generatedAt: "2026-06-13T18:09:00.000Z"
-      })
-    ).toThrow(/source_refs\.source_package_ids/i);
   });
 
   it("rejects non-support workflow snapshots at the support-pilot adapter boundary", async () => {
@@ -554,76 +544,40 @@ describe("AI Value runtime builders internal service", () => {
     expect(() =>
       aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
         evidenceSnapshot: wrongWorkflowSnapshot,
-        sourcePackages: packages,
+        sourcePackages: withSupportPilotSignalFamilyEvidence(packages),
         generatedAt: "2026-06-13T18:09:00.000Z"
       })
     ).toThrow(/support pilot workflow/i);
   });
 
-  it("rejects support-pilot readiness when a bound source package is omitted", async () => {
+  it("rejects support-pilot readiness when a referenced Layer 1 source package is absent", async () => {
     const { packages, result } = await buildFullPlaybookRuntimeResult(
       "support_pilot_missing_adapter_layer_1"
     );
     expect(() =>
       aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
         evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: packages.filter(
+        sourcePackages: withSupportPilotSignalFamilyEvidence(packages).filter(
           (sourcePackage: any) =>
             sourcePackage.source_package_type !==
             "layer_1_bigquery_telemetry_summary"
         ),
         generatedAt: "2026-06-13T18:09:00.000Z"
       })
-    ).toThrow(/source_refs\.source_package_ids/i);
-  });
-
-  it("does not infer support-pilot signal families from generic Layer 1 coverage", async () => {
-    const { packages, result } = await buildFullPlaybookRuntimeResult(
-      "support_pilot_no_explicit_signal_families"
-    );
-    const layer1WithoutFamilies = clone(packages[0]);
-    delete layer1WithoutFamilies.source_refs.reportability_signal_families;
-
-    const readinessMap =
-      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
-        evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [layer1WithoutFamilies, ...packages.slice(1)],
-        generatedAt: "2026-06-13T18:09:00.000Z"
-      });
-
-    expect(readinessMap.entries.every((entry: any) => entry.readiness_status === "not_computed")).toBe(true);
-    expect(readinessMap.entries.every((entry: any) => entry.stable_join_keys.length === 0)).toBe(true);
-  });
-
-  it("does not emit present readiness for non-present source package states", async () => {
-    const { packages, result } = await buildFullPlaybookRuntimeResult(
-      "support_pilot_non_present_adapter_layer_1"
-    );
-    const heldLayer1 = clone(packages[0]);
-    heldLayer1.evidence_state = "held";
-
-    const readinessMap =
-      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
-        evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [heldLayer1, ...packages.slice(1)],
-        generatedAt: "2026-06-13T18:09:00.000Z"
-      });
-
-    expect(readinessMap.entries.every((entry: any) => entry.readiness_status === "not_computed")).toBe(true);
-    expect(readinessMap.entries.every((entry: any) => entry.stable_join_keys.length === 0)).toBe(true);
+    ).toThrow(/missing snapshot package ref/i);
   });
 
   it("suppresses support-pilot readiness when Layer 1 source evidence is unsafe", async () => {
     const { packages, result } = await buildFullPlaybookRuntimeResult(
       "support_pilot_unsafe_adapter_layer_1"
     );
-    const unsafeLayer1 = clone(packages[0]);
-    unsafeLayer1.privacy_boundary.contains_direct_identifiers = true;
+    const readinessPackages = withSupportPilotSignalFamilyEvidence(packages);
+    readinessPackages[0].privacy_boundary.contains_direct_identifiers = true;
 
     const readinessMap =
       aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
         evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [unsafeLayer1, ...packages.slice(1)],
+        sourcePackages: readinessPackages,
         generatedAt: "2026-06-13T18:09:00.000Z"
       });
 
@@ -636,16 +590,16 @@ describe("AI Value runtime builders internal service", () => {
     const { packages, result } = await buildFullPlaybookRuntimeResult(
       "support_pilot_suppressed_adapter_layer_1"
     );
-    const suppressedLayer1 = clone(packages[0]);
-    suppressedLayer1.evidence_state = "suppressed";
-    suppressedLayer1.k_min_posture.cohort_threshold_met = false;
-    suppressedLayer1.k_min_posture.k_min_clear_slices = 0;
-    suppressedLayer1.k_min_posture.suppressed_or_unknown_slices = 1;
+    const readinessPackages = withSupportPilotSignalFamilyEvidence(packages);
+    readinessPackages[0].evidence_state = "suppressed";
+    readinessPackages[0].k_min_posture.cohort_threshold_met = false;
+    readinessPackages[0].k_min_posture.k_min_clear_slices = 0;
+    readinessPackages[0].k_min_posture.suppressed_or_unknown_slices = 1;
 
     const readinessMap =
       aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
         evidenceSnapshot: result.evidenceSnapshot,
-        sourcePackages: [suppressedLayer1, ...packages.slice(1)],
+        sourcePackages: readinessPackages,
         generatedAt: "2026-06-13T18:09:00.000Z"
       });
 

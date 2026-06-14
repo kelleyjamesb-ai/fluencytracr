@@ -18,6 +18,8 @@ import { validateSourcePackage } from "./sourcePackages";
 interface SignalFamilyConfig {
   signal_family: string;
   required_source_package_type: string;
+  required_coverage_signals: string[];
+  required_source_signal_families: string[];
   stable_join_keys: string[];
   derived_dimensions: string[];
   export_channel: string;
@@ -47,6 +49,8 @@ const SUPPORT_PILOT_SIGNAL_FAMILIES: SignalFamilyConfig[] = [
   {
     signal_family: "assistant",
     required_source_package_type: "layer_1_bigquery_telemetry_summary",
+    required_coverage_signals: ["chat_or_assistant_activity"],
+    required_source_signal_families: ["assistant"],
     stable_join_keys: ["chat_session_id", "session_tracking_token"],
     derived_dimensions: ["usage_quality", "coverage"],
     export_channel: "bigquery_export"
@@ -54,6 +58,8 @@ const SUPPORT_PILOT_SIGNAL_FAMILIES: SignalFamilyConfig[] = [
   {
     signal_family: "search_document_retrieval",
     required_source_package_type: "layer_1_bigquery_telemetry_summary",
+    required_coverage_signals: ["search_activity"],
+    required_source_signal_families: ["search_document_retrieval"],
     stable_join_keys: ["session_tracking_token", "event_timestamp"],
     derived_dimensions: ["usage_quality", "coverage"],
     export_channel: "bigquery_export"
@@ -61,14 +67,9 @@ const SUPPORT_PILOT_SIGNAL_FAMILIES: SignalFamilyConfig[] = [
   {
     signal_family: "agent_run",
     required_source_package_type: "layer_1_bigquery_telemetry_summary",
+    required_coverage_signals: ["agent_lifecycle_activity"],
+    required_source_signal_families: ["agent_run", "workflow_agent"],
     stable_join_keys: ["workflow_run_id"],
-    derived_dimensions: ["behavior_change", "coverage"],
-    export_channel: "bigquery_export"
-  },
-  {
-    signal_family: "agent_step",
-    required_source_package_type: "layer_1_bigquery_telemetry_summary",
-    stable_join_keys: ["workflow_run_id", "step_id"],
     derived_dimensions: ["behavior_change", "coverage"],
     export_channel: "bigquery_export"
   }
@@ -78,6 +79,14 @@ const SUPPORT_PILOT_WORKFLOW_FAMILY = "customer_support_case_resolution";
 
 function stringsOf(value: any): string[] {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
+}
+
+function coverageSignals(snapshot: any): Set<string> {
+  return new Set(
+    stringsOf(
+      snapshot?.playbook_coverage?.layer_1_platform_telemetry?.covered_signals
+    )
+  );
 }
 
 function packageIsUnsafe(sourcePackage: any): boolean {
@@ -92,8 +101,26 @@ function packageIsSuppressed(sourcePackage: any): boolean {
     Number(sourcePackage?.k_min_posture?.suppressed_or_unknown_slices ?? 0) > 0;
 }
 
-function packageSignalFamilies(sourcePackage: any): Set<string> {
-  return new Set(stringsOf(sourcePackage?.source_refs?.reportability_signal_families));
+function packageHasPresentEvidence(sourcePackage: any): boolean {
+  return sourcePackage?.evidence_state === "present";
+}
+
+function sourcePackageSignalFamilies(sourcePackage: any): Set<string> {
+  return new Set([
+    ...stringsOf(sourcePackage?.source_refs?.covered_signal_families),
+    ...stringsOf(sourcePackage?.source_refs?.exported_signal_families),
+    ...stringsOf(sourcePackage?.source_refs?.signal_families)
+  ]);
+}
+
+function sourcePackageCoversSignalFamily(
+  sourcePackage: any,
+  config: SignalFamilyConfig
+): boolean {
+  const coveredFamilies = sourcePackageSignalFamilies(sourcePackage);
+  return config.required_source_signal_families.some((family) =>
+    coveredFamilies.has(family)
+  );
 }
 
 function packageByType(sourcePackages: any[], packageType: string): any | null {
@@ -123,12 +150,20 @@ function assertNoDuplicatePackageTypes(sourcePackages: any[]): void {
 function assertSourcePackagesBoundToSnapshot(snapshot: any, sourcePackages: any[]): void {
   const snapshotWindowStart = String(snapshot?.window?.window_start ?? "");
   const snapshotWindowEnd = String(snapshot?.window?.window_end ?? "");
+  const referencedPackageIds = new Set(stringsOf(snapshot?.source_refs?.source_package_ids));
+  const providedPackageIds = new Set(
+    sourcePackages.map((sourcePackage) => String(sourcePackage?.source_package_id ?? ""))
+  );
   const drifted = sourcePackages.filter((sourcePackage) =>
     sourcePackage?.org_id !== snapshot?.org_id ||
     String(sourcePackage?.covered_window?.window_start ?? "") !== snapshotWindowStart ||
-    String(sourcePackage?.covered_window?.window_end ?? "") !== snapshotWindowEnd
+    String(sourcePackage?.covered_window?.window_end ?? "") !== snapshotWindowEnd ||
+    !referencedPackageIds.has(String(sourcePackage?.source_package_id ?? ""))
   );
 
+  const missingReferencedPackageIds = Array.from(referencedPackageIds).filter(
+    (packageId) => !providedPackageIds.has(packageId)
+  );
   if (drifted.length > 0) {
     throw new Error(
       `Source Package binding drift detected for support pilot Glean readiness map: ${drifted
@@ -136,24 +171,9 @@ function assertSourcePackagesBoundToSnapshot(snapshot: any, sourcePackages: any[
         .join(", ")}`
     );
   }
-
-  const snapshotPackageIds = new Set(stringsOf(snapshot?.source_refs?.source_package_ids));
-  const providedPackageIds = new Set(
-    sourcePackages
-      .map((sourcePackage) => sourcePackage?.source_package_id)
-      .filter(Boolean)
-      .map(String)
-  );
-  const unboundIds = Array.from(providedPackageIds).filter(
-    (sourcePackageId) => !snapshotPackageIds.has(sourcePackageId)
-  );
-  const missingIds = Array.from(snapshotPackageIds).filter(
-    (sourcePackageId) => !providedPackageIds.has(sourcePackageId)
-  );
-
-  if (snapshotPackageIds.size === 0 || unboundIds.length > 0 || missingIds.length > 0) {
+  if (missingReferencedPackageIds.length > 0) {
     throw new Error(
-      `Source Package IDs must match Evidence Snapshot source_refs.source_package_ids before building support pilot Glean readiness map: unbound=${unboundIds.join(", ") || "none"} missing=${missingIds.join(", ") || "none"}`
+      `Source Package binding drift detected for support pilot Glean readiness map: missing snapshot package ref(s) ${missingReferencedPackageIds.join(", ")}`
     );
   }
 }
@@ -174,22 +194,10 @@ function assertFullPlaybookCoverage(snapshot: any): void {
   }
 }
 
-function sourceAvailabilityFor(sourcePackage: any, signalFamilyCovered: boolean): string {
-  if (!sourcePackage) {
-    return "unavailable";
-  }
-  if (sourcePackage.evidence_state === "missing") {
-    return "unavailable";
-  }
-  if (!signalFamilyCovered || sourcePackage.evidence_state !== "present") {
-    return "approved_pending_export";
-  }
-  return "available";
-}
-
 function readinessEntry(
   config: SignalFamilyConfig,
   sourcePackage: any | null,
+  coveredSignals: Set<string>,
   generatedAt: string
 ): any {
   if (!sourcePackage) {
@@ -215,17 +223,23 @@ function readinessEntry(
   const sourceValidation = validateSourcePackage(sourcePackage);
   const unsafe = packageIsUnsafe(sourcePackage);
   const suppressed = packageIsSuppressed(sourcePackage);
-  const signalFamilyCovered = packageSignalFamilies(sourcePackage).has(config.signal_family);
-  const evidencePresent = sourcePackage.evidence_state === "present";
-  const present = sourceValidation.valid && !unsafe && !suppressed &&
-    evidencePresent && signalFamilyCovered;
+  const presentEvidence = packageHasPresentEvidence(sourcePackage);
+  const signalCovered = config.required_coverage_signals.some((signal) =>
+    coveredSignals.has(signal)
+  );
+  const familyCovered = sourcePackageCoversSignalFamily(sourcePackage, config);
+  const present =
+    sourceValidation.valid &&
+    !unsafe &&
+    !suppressed &&
+    presentEvidence &&
+    signalCovered &&
+    familyCovered;
   const blocked = !sourceValidation.valid || unsafe || suppressed;
 
   return {
     signal_family: config.signal_family,
-    source_availability: blocked
-      ? "available"
-      : sourceAvailabilityFor(sourcePackage, signalFamilyCovered),
+    source_availability: "available",
     export_channel: config.export_channel,
     scrub_status: unsafe ? "unscrubbed_rejected" : "scrubbed",
     stable_join_keys: present ? config.stable_join_keys : [],
@@ -234,9 +248,7 @@ function readinessEntry(
       ? "present"
       : blocked
         ? "suppressed"
-        : sourcePackage.evidence_state === "missing"
-          ? "missing"
-          : "not_computed",
+        : "not_computed",
     suppression_applied: blocked,
     suppression_reasons: blocked
       ? [
@@ -273,6 +285,7 @@ export function buildSupportPilotGleanReadinessMapFromRuntimeEvidence(
   }
 
   const generatedAt = input.generatedAt ?? new Date().toISOString();
+  const layerOneSignals = coverageSignals(input.evidenceSnapshot);
   assertSupportPilotWorkflow(input.evidenceSnapshot);
   assertFullPlaybookCoverage(input.evidenceSnapshot);
   assertNoDuplicatePackageTypes(input.sourcePackages);
@@ -288,6 +301,7 @@ export function buildSupportPilotGleanReadinessMapFromRuntimeEvidence(
       readinessEntry(
         config,
         packageByType(input.sourcePackages, config.required_source_package_type),
+        layerOneSignals,
         generatedAt
       )
     ),
