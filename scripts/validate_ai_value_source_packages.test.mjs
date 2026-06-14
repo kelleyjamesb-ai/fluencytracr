@@ -361,3 +361,52 @@ test("Layer 2 aggregate response metrics are allowed when not raw responses", ()
   const result = validateSourcePackage(pkg);
   assert.equal(result.valid, true, result.gaps.join("; "));
 });
+
+test("source package metadata values cannot carry identifiers or raw content", () => {
+  for (const mutation of [
+    (pkg) => {
+      pkg.source_package_id = "jane.doe@example.com";
+    },
+    (pkg) => {
+      pkg.org_id = "user_id_12345";
+    },
+    (pkg) => {
+      pkg.source_refs.aggregate_probe_id = "person-123";
+    },
+    (pkg) => {
+      pkg.source_refs.aggregate_probe_id = "employee-123";
+    },
+    (pkg) => {
+      pkg.source_refs.aggregate_probe_id = "userId12345";
+    },
+    (pkg) => {
+      pkg.source_refs.aggregate_probe_id = "raw transcript text";
+    },
+    (pkg) => {
+      pkg.source_refs.aggregate_probe_id = "select * from raw_events";
+    }
+  ]) {
+    const pkg = validPackage();
+    mutation(pkg);
+    expectInvalid(pkg, /Forbidden metadata value/);
+  }
+});
+
+test("source package caveats reject direct identifier values while allowing warning language", () => {
+  const packageCaveat = validPackage({
+    caveats: ["jane.doe@example.com"]
+  });
+  expectInvalid(packageCaveat, /Forbidden identifier value/);
+
+  const attestationCaveat = validPackage();
+  attestationCaveat.source_owner_attestation.caveats = ["person-123"];
+  expectInvalid(attestationCaveat, /Forbidden identifier value/);
+
+  const safeWarning = validPackage({
+    caveats: [
+      "Package cannot support ROI, causality, person-level productivity, or raw source content."
+    ]
+  });
+  const result = validateSourcePackage(safeWarning);
+  assert.equal(result.valid, true, result.gaps.join("; "));
+});

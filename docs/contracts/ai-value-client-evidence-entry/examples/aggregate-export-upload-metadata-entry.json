@@ -1,0 +1,81 @@
+{
+  "schema_version": "FT_AI_VALUE_CLIENT_EVIDENCE_ENTRY_2026_06",
+  "entry_id": "client_evidence_entry_aggregate_export_metadata_example",
+  "request_id": "client_evidence_request_measurement_plan_client_evidence_request_example_layer_2_user_voice_empirical",
+  "org_id": "org_example",
+  "measurement_plan_id": "measurement_plan_client_evidence_request_example",
+  "evidence_layer": "layer_2_user_voice_empirical",
+  "entry_mode": "aggregate_export_upload_metadata",
+  "entered_by_role": "post_sales_value_consultant",
+  "source_owner_role": "customer_research_owner",
+  "approver_role": "customer_research_owner",
+  "attestation": {
+    "attestation_state": "attested",
+    "attested_by_role": "customer_research_owner",
+    "attested_at": "2026-06-13T00:00:00.000Z",
+    "caveats": [
+      "Only aggregate export metadata was retained by this contract."
+    ]
+  },
+  "aggregate_grain": "workflow_family",
+  "minimum_cohort_threshold": 5,
+  "covered_window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31"
+  },
+  "metric_or_signal_summary": {
+    "summary_type": "aggregate_export_metadata_summary",
+    "aggregate_signal_name": "aggregate_ai_fluency_retest_summary",
+    "aggregate_value_present": true,
+    "source_refs": {
+      "source_readiness_id": "source_readiness_aggregate_export_metadata_example",
+      "aggregate_entry_ref": "aggregate_export_metadata_entry_example"
+    },
+    "notes": [
+      "Metadata describes an approved aggregate export; raw files are not stored."
+    ]
+  },
+  "evidence_state": "present",
+  "privacy_boundary": {
+    "aggregate_only": true,
+    "contains_direct_identifiers": false,
+    "contains_raw_content": false,
+    "contains_raw_rows": false,
+    "contains_raw_files": false,
+    "contains_raw_prompts": false,
+    "contains_raw_responses": false,
+    "contains_transcripts": false,
+    "contains_query_text": false,
+    "contains_file_contents": false,
+    "contains_person_level_productivity": false,
+    "contains_person_level_hris_records": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false,
+    "contains_compensation_or_performance_inference": false,
+    "contains_promotion_or_discipline_inference": false,
+    "contains_attrition_prediction": false,
+    "contains_hris_inference_from_ai_usage": false
+  },
+  "allowed_uses": [
+    "evidence_collection_input",
+    "evidence_snapshot_preparation"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "required_caveats": [
+    "Aggregate export upload metadata entry retains metadata only and cannot store raw files or raw rows."
+  ],
+  "validation_status": "validated",
+  "created_at": "2026-06-13T00:00:00.000Z",
+  "derivation_version": "ai_value_client_evidence_entry_builder_2026_06"
+}
