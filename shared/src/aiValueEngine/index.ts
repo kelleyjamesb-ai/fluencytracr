@@ -98,6 +98,40 @@ export type {
 } from "./claimReadinessHandoff";
 
 export {
+  AI_VALUE_CLAIM_READINESS_SNAPSHOT_SCHEMA_VERSION,
+  ClaimReadinessSnapshotSchema,
+  buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff,
+  validateClaimReadinessSnapshot
+} from "./claimReadinessSnapshot";
+export type {
+  BuildClaimReadinessSnapshotOptions,
+  ClaimReadinessSnapshot,
+  ClaimReadinessSnapshotValidationResult
+} from "./claimReadinessSnapshot";
+
+export {
+  AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
+  SourcePackageSchema,
+  validateSourcePackage
+} from "./sourcePackages";
+export type {
+  SourcePackage,
+  SourcePackageValidationResult
+} from "./sourcePackages";
+
+export {
+  EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,
+  EvidenceCollectionAssemblySchema,
+  buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages,
+  validateEvidenceCollectionAssembly
+} from "./evidenceCollectionAssembler";
+export type {
+  BuildEvidenceCollectionAssemblyOptions,
+  EvidenceCollectionAssembly,
+  EvidenceCollectionAssemblyValidationResult
+} from "./evidenceCollectionAssembler";
+
+export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
   MEASUREMENT_PLAN_SCHEMA_VERSION
@@ -157,6 +191,86 @@ export {
   FLUENCY_INSTRUMENT_IDS
 } from "./fluencyBaseline";
 export type { FluencyBaselineValidationResult } from "./fluencyBaseline";
+
+export {
+  AI_VALUE_CUSTOMER_JOURNEY_SCHEMA_VERSION,
+  CustomerJourneySchema,
+  buildInitialCustomerJourney,
+  validateCustomerJourney
+} from "./customerJourney";
+export type {
+  BuildInitialCustomerJourneyInputs,
+  CustomerJourney,
+  CustomerJourneyStage,
+  CustomerJourneyValidationResult
+} from "./customerJourney";
+
+export {
+  AI_VALUE_CLIENT_EVIDENCE_REQUEST_SCHEMA_VERSION,
+  ClientEvidenceRequestSchema,
+  buildClientEvidenceRequestsFromEvidenceSnapshot,
+  buildClientEvidenceRequestsFromMeasurementPlan,
+  validateClientEvidenceRequest
+} from "./clientEvidenceRequest";
+export type {
+  BuildClientEvidenceRequestOptions,
+  ClientEvidenceRequest,
+  ClientEvidenceRequestValidationResult
+} from "./clientEvidenceRequest";
+
+export {
+  AI_VALUE_CLIENT_EVIDENCE_ENTRY_SCHEMA_VERSION,
+  ClientEvidenceEntrySchema,
+  buildSourcePackageFromClientEvidenceEntry,
+  validateClientEvidenceEntry
+} from "./clientEvidenceEntry";
+export type {
+  BuildSourcePackageFromClientEvidenceEntryOptions,
+  ClientEvidenceEntry,
+  ClientEvidenceEntryValidationResult
+} from "./clientEvidenceEntry";
+
+export {
+  AI_VALUE_AI_FLUENCY_INTAKE_BRIDGE_SCHEMA_VERSION,
+  AIFluencyIntakeBridgeSchema,
+  buildEvidenceGapReviewFromMeasurementPlanAndSnapshot,
+  buildMeasurementPlanDraftFromAIFluencyIntake,
+  validateAIFluencyIntakeBridge
+} from "./aiFluencyIntakeBridge";
+export type {
+  AIFluencyIntakeBridge,
+  AIFluencyIntakeBridgeBuildInputs,
+  AIFluencyIntakeBridgeValidationResult,
+  BuildEvidenceGapReviewOptions,
+  EvidenceGapReview
+} from "./aiFluencyIntakeBridge";
+
+export {
+  AI_VALUE_POST_SALES_WORKFLOW_ORCHESTRATOR_SCHEMA_VERSION,
+  PostSalesWorkflowOrchestratorSchema,
+  buildPostSalesWorkflowOrchestrator,
+  validatePostSalesWorkflowOrchestrator
+} from "./postSalesWorkflowOrchestrator";
+export type {
+  ClientEvidenceEntryReview,
+  PostSalesWorkflowOrchestrator,
+  PostSalesWorkflowOrchestratorBuildInputs,
+  PostSalesWorkflowOrchestratorValidationResult,
+  PostSalesWorkflowPhase
+} from "./postSalesWorkflowOrchestrator";
+
+export {
+  AI_VALUE_CUSTOMER_EXPOSURE_POLICY_SCHEMA_VERSION,
+  CustomerExposurePolicySchema,
+  buildCustomerExposurePolicyFromPostSalesWorkflow,
+  validateCustomerExposurePolicy
+} from "./customerExposurePolicy";
+export type {
+  BuildCustomerExposurePolicyOptions,
+  CustomerExposureDecision,
+  CustomerExposurePolicy,
+  CustomerExposurePolicyValidationResult
+} from "./customerExposurePolicy";
 
 export {
   validateOutcomeEvidenceExport,

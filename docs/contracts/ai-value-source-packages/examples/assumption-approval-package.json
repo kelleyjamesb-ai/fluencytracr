@@ -1,0 +1,71 @@
+{
+  "schema_version": "FT_AI_VALUE_SOURCE_PACKAGE_2026_06",
+  "source_package_id": "source_package_assumption_approval_example",
+  "org_id": "org_example",
+  "source_package_type": "assumption_approval_export",
+  "source_owner_role": "finance_or_business_owner",
+  "source_owner_attestation": {
+    "attestation_state": "attested",
+    "attested_by_role": "finance_or_business_owner",
+    "attested_at": "2026-06-13T00:00:00.000Z",
+    "caveats": []
+  },
+  "generated_at": "2026-06-13T00:00:00.000Z",
+  "covered_window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31"
+  },
+  "approved_aggregate_grain": "workflow_family",
+  "minimum_cohort_threshold": 5,
+  "k_min_posture": {
+    "minimum_cohort_threshold": 5,
+    "cohort_threshold_met": true,
+    "total_slices": 1,
+    "k_min_clear_slices": 1,
+    "suppressed_or_unknown_slices": 0
+  },
+  "source_system_type": "finance_approved_assumption",
+  "source_refs": {
+    "source_readiness_id": "source_readiness_assumption_approval",
+    "assumption_approval_export_id": "assumption_approval_export"
+  },
+  "assumption_approval": {
+    "approval_state": "approved",
+    "approval_owner_role": "finance_or_business_owner",
+    "approved_at": "2026-06-13T00:00:00.000Z"
+  },
+  "evidence_state": "present",
+  "privacy_boundary": {
+    "aggregate_only": true,
+    "contains_direct_identifiers": false,
+    "contains_raw_content": false,
+    "contains_person_level_productivity": false,
+    "contains_person_level_hris_records": false,
+    "contains_hashed_or_joinable_person_identifiers": false,
+    "contains_manager_or_team_ranking": false,
+    "contains_people_decisioning": false,
+    "contains_compensation_or_performance_inference": false,
+    "contains_promotion_or_discipline_inference": false,
+    "contains_attrition_prediction": false,
+    "contains_hris_inference_from_ai_usage": false
+  },
+  "allowed_uses": [
+    "evidence_collection_input",
+    "assumption_review"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "caveats": [
+    "Assumption approval package records approval state only and cannot compute ROI, EBITA, productivity, causality, or financial impact."
+  ],
+  "derivation_version": "source_package_example_2026_06"
+}
