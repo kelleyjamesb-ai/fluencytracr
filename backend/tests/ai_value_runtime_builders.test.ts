@@ -99,54 +99,6 @@ const buildAiFluencyBaseline = () => ({
   }
 });
 
-const presentReadinessEntry = (
-  signal_family: string,
-  stable_join_keys: string[],
-  derived_dimensions: string[] = ["coverage"]
-) => ({
-  signal_family,
-  source_availability: "available",
-  export_channel: "customer_event_logs",
-  scrub_status: "scrubbed",
-  stable_join_keys,
-  derived_dimensions,
-  readiness_status: "present",
-  suppression_applied: false,
-  suppression_reasons: [],
-  data_quality: {
-    completeness: "verified",
-    latency: "known",
-    join_reliability: "stable"
-  },
-  validation_evidence: []
-});
-
-const supportPilotReadinessMap = (evidenceSnapshot: any) => ({
-  schema_version: "GSR_2026_05",
-  org_id: evidenceSnapshot.org_id,
-  window: `${evidenceSnapshot.window.window_start}_${evidenceSnapshot.window.window_end}`,
-  generated_at: "2026-06-13T18:09:00.000Z",
-  source_system: "Glean",
-  entries: [
-    presentReadinessEntry(
-      "assistant",
-      ["chat_session_id", "session_tracking_token"],
-      ["usage_quality", "coverage"]
-    ),
-    presentReadinessEntry(
-      "search_document_retrieval",
-      ["session_tracking_token", "event_timestamp"],
-      ["usage_quality", "coverage"]
-    ),
-    presentReadinessEntry("insights", ["event_timestamp"]),
-    presentReadinessEntry("agent_run", ["workflow_run_id"], ["behavior_change"]),
-    presentReadinessEntry("agent_step", ["workflow_run_id", "step_id"], ["behavior_change"]),
-    presentReadinessEntry("skill_lifecycle", ["skill_artifact_id", "event_timestamp"], ["capability_growth"]),
-    presentReadinessEntry("mcp_usage", ["workflow_run_id", "tool_id"], ["capability_growth", "calibration"])
-  ],
-  next_actions: []
-});
-
 beforeEach(() => {
   store.reset();
 });
@@ -175,6 +127,35 @@ const persistRefs = async (plan: any, packages: any[]) => {
       createdByRole: "data_platform_owner"
     });
   }
+};
+
+const buildFullPlaybookRuntimeResult = async (
+  suffix: string,
+  packages = [
+    layer1Package(),
+    layer2Package(),
+    layer3Package(),
+    governancePackage(),
+    assumptionPackage()
+  ]
+) => {
+  const plan = fullPlan();
+  await persistPlan(plan);
+  await persistRefs(plan, packages);
+
+  return {
+    plan,
+    packages,
+    result: await buildAiValueClaimReadinessHandoffInternal({
+      orgId: plan.org_id,
+      measurementPlanId: plan.measurement_plan_id,
+      sourcePackages: packages,
+      evidenceSnapshotId: `runtime_snapshot_${suffix}`,
+      handoffId: `runtime_handoff_${suffix}`,
+      generatedAt: "2026-06-13T18:09:00.000Z",
+      createdByRole: "value_realization_pm"
+    })
+  };
 };
 
 describe("AI Value runtime builders internal service", () => {
@@ -398,6 +379,28 @@ describe("AI Value runtime builders internal service", () => {
       expect.arrayContaining(REQUIRED_BLOCKED_USES)
     );
 
+    const supportPilotReadinessMap =
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: result.evidenceSnapshot,
+        sourcePackages: packages,
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      });
+    const readinessByFamily = new Map(
+      supportPilotReadinessMap.entries.map((entry: any) => [
+        entry.signal_family,
+        entry
+      ])
+    );
+
+    expect(supportPilotReadinessMap.org_id).toBe(result.evidenceSnapshot.org_id);
+    expect(supportPilotReadinessMap.window).toBe(
+      `${result.evidenceSnapshot.window.window_start}_${result.evidenceSnapshot.window.window_end}`
+    );
+    expect(readinessByFamily.get("assistant")?.readiness_status).toBe("present");
+    expect(readinessByFamily.get("search_document_retrieval")?.readiness_status).toBe("present");
+    expect(readinessByFamily.get("insights")?.readiness_status).toBe("present");
+    expect(readinessByFamily.get("agent_step")?.readiness_status).toBe("not_computed");
+
     const reportabilityResponse = evaluateReportabilityGate({
       schema_version: "FT_REPORTABILITY_GATE_2026_05",
       caller_system: "roi_model",
@@ -413,7 +416,7 @@ describe("AI Value runtime builders internal service", () => {
         "skill_roi_included",
         "mcp_roi_included"
       ],
-      readiness_map: supportPilotReadinessMap(result.evidenceSnapshot),
+      readiness_map: supportPilotReadinessMap,
       generated_at: "2026-06-13T18:09:00.000Z"
     });
 
@@ -473,6 +476,116 @@ describe("AI Value runtime builders internal service", () => {
     expect(reportabilityResponse.appendix.governance_posture.join(" ")).toContain(
       "Aggregate-only"
     );
+  });
+
+  it("rejects duplicate support-pilot source package types before building reportability readiness", async () => {
+    const { packages, result } = await buildFullPlaybookRuntimeResult(
+      "support_pilot_duplicate_adapter_source"
+    );
+    const duplicateLayer1 = clone(layer1Package());
+    duplicateLayer1.source_package_id = "source_package_layer_1_duplicate_for_adapter";
+    duplicateLayer1.source_refs.aggregate_probe_id = "probe_layer_1_duplicate_for_adapter";
+
+    expect(() =>
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: result.evidenceSnapshot,
+        sourcePackages: [packages[0], duplicateLayer1],
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      })
+    ).toThrow(/Duplicate Source Package type/i);
+  });
+
+  it("rejects source package binding drift before building support-pilot readiness", async () => {
+    const { result } = await buildFullPlaybookRuntimeResult(
+      "support_pilot_adapter_binding_drift"
+    );
+    const driftedLayer1 = clone(layer1Package());
+    driftedLayer1.org_id = "org_drifted";
+
+    expect(() =>
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: result.evidenceSnapshot,
+        sourcePackages: [driftedLayer1],
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      })
+    ).toThrow(/Source Package binding drift/i);
+  });
+
+  it("rejects non-support workflow snapshots at the support-pilot adapter boundary", async () => {
+    const { packages, result } = await buildFullPlaybookRuntimeResult(
+      "support_pilot_adapter_wrong_workflow"
+    );
+    const wrongWorkflowSnapshot = clone(result.evidenceSnapshot);
+    wrongWorkflowSnapshot.workflow.workflow_family = "sales_rfp_cycle";
+
+    expect(() =>
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: wrongWorkflowSnapshot,
+        sourcePackages: packages,
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      })
+    ).toThrow(/support pilot workflow/i);
+  });
+
+  it("marks support-pilot readiness missing when Layer 1 source evidence is absent", async () => {
+    const { packages, result } = await buildFullPlaybookRuntimeResult(
+      "support_pilot_missing_adapter_layer_1"
+    );
+    const readinessMap =
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: result.evidenceSnapshot,
+        sourcePackages: packages.filter(
+          (sourcePackage: any) =>
+            sourcePackage.source_package_type !==
+            "layer_1_bigquery_telemetry_summary"
+        ),
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      });
+
+    expect(readinessMap.entries.every((entry: any) => entry.readiness_status === "missing")).toBe(true);
+    expect(readinessMap.entries.every((entry: any) => entry.stable_join_keys.length === 0)).toBe(true);
+  });
+
+  it("suppresses support-pilot readiness when Layer 1 source evidence is unsafe", async () => {
+    const { result } = await buildFullPlaybookRuntimeResult(
+      "support_pilot_unsafe_adapter_layer_1"
+    );
+    const unsafeLayer1 = clone(layer1Package());
+    unsafeLayer1.privacy_boundary.contains_direct_identifiers = true;
+
+    const readinessMap =
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: result.evidenceSnapshot,
+        sourcePackages: [unsafeLayer1],
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      });
+
+    expect(readinessMap.entries.every((entry: any) => entry.readiness_status === "suppressed")).toBe(true);
+    expect(readinessMap.entries.every((entry: any) => entry.suppression_applied === true)).toBe(true);
+    expect(readinessMap.entries.every((entry: any) => entry.scrub_status === "unscrubbed_rejected")).toBe(true);
+  });
+
+  it("suppresses support-pilot readiness when Layer 1 source evidence fails k-min", async () => {
+    const { result } = await buildFullPlaybookRuntimeResult(
+      "support_pilot_suppressed_adapter_layer_1"
+    );
+    const suppressedLayer1 = clone(layer1Package());
+    suppressedLayer1.evidence_state = "suppressed";
+    suppressedLayer1.k_min_posture.cohort_threshold_met = false;
+    suppressedLayer1.k_min_posture.k_min_clear_slices = 0;
+    suppressedLayer1.k_min_posture.suppressed_or_unknown_slices = 1;
+
+    const readinessMap =
+      aiValueEngine.buildSupportPilotGleanReadinessMapFromRuntimeEvidence({
+        evidenceSnapshot: result.evidenceSnapshot,
+        sourcePackages: [suppressedLayer1],
+        generatedAt: "2026-06-13T18:09:00.000Z"
+      });
+
+    expect(readinessMap.entries.every((entry: any) => entry.readiness_status === "suppressed")).toBe(true);
+    expect(readinessMap.entries.every((entry: any) =>
+      entry.suppression_reasons.includes("source_package_suppressed_or_k_min_not_clear")
+    )).toBe(true);
   });
 
   it("fails closed when a full Playbook plan is missing required source packages", async () => {
