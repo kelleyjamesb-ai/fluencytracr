@@ -242,6 +242,46 @@ test("the spine is domain-agnostic: sales pipeline runs end to end", () => {
   );
 });
 
+test("the synthetic 50-person Customer Success motion runs from intake through value chain", () => {
+  const intake = readExample("customer-success-50-synthetic-workshop-intake.json");
+  const csLibrary = readExample("customer-success-50-synthetic-metrics-library.json");
+  const csEngagement = readExample("customer-success-50-synthetic-engagement.json");
+  const csBaseline = readExample("customer-success-50-synthetic-fluency-baseline.json");
+  const csOutcomeExport = readExample("customer-success-50-synthetic-outcome-evidence-export.json");
+  const { blueprint: csBlueprint, blueprint_validation } =
+    buildBlueprintDraftFromWorkshopIntake(intake);
+
+  assert.equal(blueprint_validation.valid, true);
+  assert.equal(csBlueprint.workflow_family, "customer_success_account_health_review");
+  assert.equal(validateMetricsLibrary(csLibrary).valid, true);
+
+  const run = runValueChain({
+    engagement: csEngagement,
+    fluencyBaseline: csBaseline,
+    outcomeEvidenceExport: csOutcomeExport,
+    blueprint: csBlueprint,
+    metricsLibrary: csLibrary,
+    ids: {
+      readinessId: "readiness_customer_success_50_synthetic_v1",
+      claimBoundaryId: "claim_boundary_customer_success_50_synthetic_v1",
+      packetId: "executive_packet_customer_success_50_synthetic_v1"
+    }
+  });
+
+  assert.equal(run.engagement.status, "VALID");
+  assert.equal(run.engagement.covers_workflow_family, true);
+  assert.equal(run.fluency_baseline.status, "VALID");
+  assert.equal(run.outcome_evidence.status, "VALID");
+  assert.equal(run.outcome_evidence.attached, true);
+  assert.equal(run.spine.halted_at, null);
+  assert.equal(run.decision, "READY_FOR_EXECUTIVE_VALIDATION");
+  assert.equal(run.spine.stages.claim_boundary.object.claim_state, "CAVEATED");
+  assert.equal(
+    run.spine.stages.executive_packet.object.customer_facing_economic_output,
+    false
+  );
+});
+
 const engagement = readExample("customer-support-engagement.json");
 const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
 

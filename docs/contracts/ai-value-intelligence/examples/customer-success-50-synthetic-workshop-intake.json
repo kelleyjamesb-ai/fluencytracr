@@ -1,0 +1,133 @@
+{
+  "schema_version": "FT_AI_VALUE_WORKSHOP_INTAKE_2026_06",
+  "intake_id": "intake_customer_success_50_synthetic_v1",
+  "org_id": "org-synthetic-cs-50",
+  "workflow_family": "customer_success_account_health_review",
+  "workflow_name": "Customer Success account health review",
+  "business_owner": {
+    "role": "customer_success_business_sponsor",
+    "approval_state": "PRESENT"
+  },
+  "client_question": "Where should AI make account health review more consistent and easier to act on for Customer Success?",
+  "current_state_steps": [
+    "Customer Success reviews account notes, usage signals, support history, and renewal context across several systems",
+    "Customer Success prepares risk notes and next actions before renewal or QBR checkpoints",
+    "Customer Success operations reviews stale risk actions and coverage gaps before leadership review"
+  ],
+  "future_state_steps": [
+    "Search and Assistant surface account context beside the account health workflow",
+    "Approved Skills draft risk-review summaries and next-action options for human review",
+    "Aggregate work evidence shows whether account health review coverage and follow-up posture improve safely"
+  ],
+  "friction_points": [
+    "Account context is scattered across success, support, product usage, and notes systems",
+    "Risk review work is hard to complete consistently across a 50-person Customer Success function",
+    "Follow-up actions can become stale before renewal or QBR checkpoints"
+  ],
+  "expected_work_change": "Account health review shifts from manual context gathering to review-and-confirm risk and action planning.",
+  "value_hypothesis": "AI-assisted account health review may be associated with faster review cycles, broader risk coverage, and fewer stale renewal actions.",
+  "value_routes": {
+    "primary": "RISK_REDUCTION",
+    "secondary": ["CAPACITY_CREATION", "EXPERIENCE_IMPROVEMENT"]
+  },
+  "windows": {
+    "baseline": "2026-02-01_to_2026-03-31",
+    "comparison": "2026-04-01_to_2026-05-31"
+  },
+  "source_coverage": {
+    "ai_activity": "PRESENT",
+    "workflow": "PRESENT",
+    "outcome": "PRESENT",
+    "baseline": "PRESENT",
+    "trust": "PRESENT",
+    "assumptions": "PRESENT",
+    "suppression": "PRESENT"
+  },
+  "approved_aggregate_inputs": {
+    "case_population": {
+      "total_accounts": 420,
+      "eligible_accounts": 365,
+      "excluded_accounts": 55
+    },
+    "ai_activity": {
+      "assistant_sessions": 720,
+      "search_sessions": 980,
+      "skill_invocations": 180,
+      "agent_runs": 84
+    },
+    "trust_and_friction": {
+      "verification_attached_episodes": 360,
+      "recovery_episodes": 42,
+      "abandonment_episodes": 18
+    },
+    "outcome_signals": {
+      "account_health_review_cycle_days": {
+        "baseline": 10.8,
+        "comparison": 7.4,
+        "unit": "days"
+      },
+      "risk_review_coverage_share": {
+        "baseline": 0.62,
+        "comparison": 0.81,
+        "unit": "share"
+      },
+      "renewal_action_staleness_count": {
+        "baseline": 146,
+        "comparison": 92,
+        "unit": "count"
+      },
+      "qbr_prep_hours_per_account": {
+        "baseline": 2.6,
+        "comparison": 1.9,
+        "unit": "hours"
+      },
+      "expansion_signal_followup_share": {
+        "baseline": 0.38,
+        "comparison": 0.51,
+        "unit": "share"
+      }
+    }
+  },
+  "assumptions": [
+    {
+      "assumption_id": "case_mix_stability",
+      "state": "PRESENT",
+      "owner": "customer_success_operations"
+    },
+    {
+      "assumption_id": "volume_context",
+      "state": "PRESENT",
+      "owner": "customer_success_operations"
+    },
+    {
+      "assumption_id": "staffing_and_coverage_context",
+      "state": "PRESENT",
+      "owner": "customer_success_leader"
+    },
+    {
+      "assumption_id": "channel_mix_context",
+      "state": "PRESENT",
+      "owner": "customer_success_operations"
+    },
+    {
+      "assumption_id": "process_or_policy_context",
+      "state": "PRESENT",
+      "owner": "business_sponsor"
+    },
+    {
+      "assumption_id": "knowledge_base_context",
+      "state": "PRESENT",
+      "owner": "knowledge_owner"
+    },
+    {
+      "assumption_id": "metric_definition_stability",
+      "state": "PRESENT",
+      "owner": "customer_success_data_owner"
+    },
+    {
+      "assumption_id": "ai_rollout_context",
+      "state": "PRESENT",
+      "owner": "aiom"
+    }
+  ]
+}

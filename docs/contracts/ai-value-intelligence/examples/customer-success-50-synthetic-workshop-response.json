@@ -1,0 +1,151 @@
+{
+  "schema_version": "FT_AI_VALUE_SYNTHETIC_WORKSHOP_RESPONSE_2026_06",
+  "source": "customer-success-50-synthetic-workshop-response",
+  "org_id": "org-synthetic-cs-50",
+  "workflow_family": "customer_success_account_health_review",
+  "primary_value_route": "RISK_REDUCTION",
+  "baseline_window": "2026-02-01_to_2026-03-31",
+  "comparison_window": "2026-04-01_to_2026-05-31",
+  "synthetic_context": {
+    "synthetic_fixture": true,
+    "organization_profile": "Synthetic B2B SaaS organization with a 50-person Customer Success function.",
+    "customer_success_headcount": 50,
+    "approved_aggregate_grain": "function",
+    "use_policy": "Synthetic rehearsal fixture only; not customer-attested evidence and not external claim support."
+  },
+  "source_coverage": {
+    "ai_activity": "PRESENT",
+    "workflow": "PRESENT",
+    "outcome": "PRESENT",
+    "baseline": "PRESENT",
+    "trust": "PRESENT",
+    "assumptions": "PRESENT",
+    "suppression": "PRESENT"
+  },
+  "approved_aggregate_inputs": {
+    "case_population": {
+      "total_accounts": 420,
+      "eligible_accounts": 365,
+      "excluded_accounts": 55,
+      "exclusion_reason_counts": {
+        "missing_contract_window": 21,
+        "new_customer_no_baseline": 19,
+        "strategic_account_holdout": 15
+      }
+    },
+    "ai_activity": {
+      "assistant_sessions": 720,
+      "search_sessions": 980,
+      "skill_invocations": 180,
+      "agent_runs": 84
+    },
+    "trust_and_friction": {
+      "verification_attached_episodes": 360,
+      "recovery_episodes": 42,
+      "abandonment_episodes": 18
+    },
+    "vbd_movement": {
+      "velocity_index": {
+        "baseline": 0.42,
+        "comparison": 0.61,
+        "unit": "index"
+      },
+      "breadth_active_account_cohort_share": {
+        "baseline": 0.48,
+        "comparison": 0.68,
+        "unit": "share"
+      },
+      "depth_repeat_workflow_share": {
+        "baseline": 0.31,
+        "comparison": 0.49,
+        "unit": "share"
+      }
+    },
+    "outcome_signals": {
+      "account_health_review_cycle_days": {
+        "baseline": 10.8,
+        "comparison": 7.4,
+        "unit": "days"
+      },
+      "risk_review_coverage_share": {
+        "baseline": 0.62,
+        "comparison": 0.81,
+        "unit": "share"
+      },
+      "renewal_action_staleness_count": {
+        "baseline": 146,
+        "comparison": 92,
+        "unit": "count"
+      },
+      "qbr_prep_hours_per_account": {
+        "baseline": 2.6,
+        "comparison": 1.9,
+        "unit": "hours"
+      },
+      "expansion_signal_followup_share": {
+        "baseline": 0.38,
+        "comparison": 0.51,
+        "unit": "share"
+      }
+    }
+  },
+  "assumptions": [
+    {
+      "assumption_id": "case_mix_stability",
+      "state": "PRESENT",
+      "owner": "customer_success_operations",
+      "caveat": "Synthetic account mix is held stable across windows."
+    },
+    {
+      "assumption_id": "volume_context",
+      "state": "PRESENT",
+      "owner": "customer_success_operations",
+      "caveat": "Synthetic eligible account count is stable enough for rehearsal."
+    },
+    {
+      "assumption_id": "staffing_and_coverage_context",
+      "state": "PRESENT",
+      "owner": "customer_success_leader",
+      "caveat": "Synthetic Customer Success headcount remains 50 across both windows."
+    },
+    {
+      "assumption_id": "channel_mix_context",
+      "state": "PRESENT",
+      "owner": "customer_success_operations",
+      "caveat": "Synthetic customer segment and channel mix remain stable."
+    },
+    {
+      "assumption_id": "process_or_policy_context",
+      "state": "PRESENT",
+      "owner": "business_sponsor",
+      "caveat": "Synthetic renewal risk process is unchanged except for approved AI workflow support."
+    },
+    {
+      "assumption_id": "knowledge_base_context",
+      "state": "PRESENT",
+      "owner": "knowledge_owner",
+      "caveat": "Synthetic account playbook content is stable across windows."
+    },
+    {
+      "assumption_id": "metric_definition_stability",
+      "state": "PRESENT",
+      "owner": "customer_success_data_owner",
+      "caveat": "Synthetic metric definitions are stable across baseline and comparison windows."
+    },
+    {
+      "assumption_id": "ai_rollout_context",
+      "state": "PRESENT",
+      "owner": "aiom",
+      "caveat": "Synthetic comparison window includes a governed account health review workflow rollout."
+    }
+  ],
+  "governance_stop_conditions": {
+    "requires_raw_data": false,
+    "requires_hr_analytics": false,
+    "requires_roi_calculation": false,
+    "requires_causality_claim": false,
+    "requires_individual_scoring": false,
+    "requires_dashboard": false,
+    "requires_runtime_service": false
+  }
+}

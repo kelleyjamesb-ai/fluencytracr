@@ -39,6 +39,9 @@ For the customer pilot intake packet that should be completed before the
 validation workshop, use
 [customer-support-pilot-intake-packet.md](./customer-support-pilot-intake-packet.md).
 
+For a synthetic 50-person Customer Success rehearsal fixture, use
+[customer-success-50-synthetic-pilot.md](./customer-success-50-synthetic-pilot.md).
+
 For the Phase 5 customer validation workshop kit, use
 [customer-support-validation-workshop-kit.md](./customer-support-validation-workshop-kit.md).
 
