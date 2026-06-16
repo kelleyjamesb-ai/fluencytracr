@@ -29,6 +29,21 @@ function trackATokenEfficiencyArtifactsExist() {
     packageJson.includes("\"test:ai-value-token-efficiency-signal\"");
 }
 
+function vbdTokenEfficiencyMapArtifactsExist() {
+  const requiredFiles = [
+    "docs/contracts/ai-value-vbd-token-efficiency-map/README.md",
+    "docs/contracts/ai-value-vbd-token-efficiency-map/examples/valid-replicate-map.json",
+    "docs/contracts/ai-value-vbd-token-efficiency-map/examples/valid-mitigate-map.json",
+    "docs/contracts/ai-value-vbd-token-efficiency-map/examples/held-map.json",
+    "shared/src/aiValueEngine/vbdTokenEfficiencyMap.ts",
+    "scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs"
+  ];
+  const packageJson = readRequiredFile("package.json");
+
+  return requiredFiles.every((path) => existsSync(path)) &&
+    packageJson.includes("\"test:ai-value-vbd-token-efficiency-map\"");
+}
+
 test("AI Value Blueprint docs exist and preserve Layer 1 guardrails", () => {
   const blueprint = readRequiredFile(BLUEPRINT_DOC);
 
@@ -66,6 +81,7 @@ test("AI Value Blueprint docs exist and preserve Layer 1 guardrails", () => {
       "Token Efficiency must not be described as contract_only or implemented without exact Track A artifacts and token test script"
     );
   }
+
 });
 
 test("AI Value Blueprint crosswalk maps required contracts and exposure states", () => {
@@ -126,5 +142,13 @@ test("AI Value Blueprint crosswalk maps required contracts and exposure states",
       /Token Efficiency[\s\S]{0,300}\b(contract_only|implemented|available|landed|complete)\b/i,
       "Crosswalk must not mark Token Efficiency contract_only or implemented without exact Track A artifacts"
     );
+  }
+
+  if (vbdTokenEfficiencyMapArtifactsExist()) {
+    assertContains(crosswalk, "VBD x Token Efficiency Map", CROSSWALK_DOC);
+    assertContains(crosswalk, "docs/contracts/ai-value-vbd-token-efficiency-map/README.md", CROSSWALK_DOC);
+    assertContains(crosswalk, "shared/src/aiValueEngine/vbdTokenEfficiencyMap.ts", CROSSWALK_DOC);
+    assertContains(crosswalk, "scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs", CROSSWALK_DOC);
+    assertContains(crosswalk, "Aggregate strategy context only", CROSSWALK_DOC);
   }
 });

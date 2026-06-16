@@ -154,14 +154,23 @@ feed Evidence Snapshot context.
 - Measurement Plans may request Token Efficiency during evidence collection
   planning, but it remains separate from VBD and cannot authorize value claims.
 
-## 10. Examples
+## 10. Relationship to VBD x Token Efficiency Map
+
+The VBD x Token Efficiency Map may reference a valid Token Efficiency Signal as
+Layer 1 cost/intensity context only. The map can emit aggregate strategy zones
+for replication, optimization, activation, mitigation, or evidence hold, but it
+must not upgrade Playbook coverage, claim readiness, financial permission,
+productivity interpretation, causality, reportability, or customer-facing
+economic output.
+
+## 11. Examples
 
 Validator-backed examples:
 
 - [`examples/valid-token-efficiency-signal.json`](./examples/valid-token-efficiency-signal.json)
 - [`examples/held-token-efficiency-signal.json`](./examples/held-token-efficiency-signal.json)
 
-## 11. Validation
+## 12. Validation
 
 Run:
 

@@ -24,6 +24,7 @@ Column meanings:
 | Measurement Plan | `docs/contracts/ai-value-measurement-plan/README.md` | Shared validator: `shared/src/aiValueEngine/measurementPlan.ts` | Minimal table exists for `measurement_plans`; this blueprint changes none | Existing validator/builder patterns | Internal planning artifact until projected and approved |
 | VBD posture | Measurement Plan and Evidence Snapshot contracts define VBD boundaries | Shared validators in `measurementPlan.ts` and `evidenceSnapshot.ts` | VBD can be carried inside persisted Measurement Plans and Evidence Snapshots | Contract-derived context only | VBD remains Layer 1 AI fluency posture; not ROI proof, not value proof, not productivity proof, not causality proof, not financial output |
 | Token Efficiency | `contract_only`: Track A artifacts are present at `docs/architecture/AI_VALUE_TOKEN_USAGE_STRATEGY.md` and `docs/contracts/ai-value-token-efficiency-signal/README.md` | Shared validator/builder: `shared/src/aiValueEngine/tokenEfficiencySignal.ts`; examples under `docs/contracts/ai-value-token-efficiency-signal/examples/`; test: `scripts/validate_ai_value_token_efficiency_signal.test.mjs` | No persistence | Contract helper only; no ingestion job, backend route, frontend UI, claim snapshot, or readout snapshot | Token Efficiency is Layer 1 cost/intensity overlay only; token usage is not ROI proof, not value proof, not productivity proof, not causality proof, not financial output |
+| VBD x Token Efficiency Map | `contract_only`: `docs/contracts/ai-value-vbd-token-efficiency-map/README.md` defines aggregate strategy zones only | Shared validator/builder: `shared/src/aiValueEngine/vbdTokenEfficiencyMap.ts`; examples under `docs/contracts/ai-value-vbd-token-efficiency-map/examples/`; test: `scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs` | No persistence | Contract helper only; no ingestion job, backend route, frontend UI, claim snapshot, reportability readiness, or readout snapshot | Aggregate strategy context only; not ROI proof, not value proof, not productivity proof, not causality proof, not financial output |
 | Layer 2 and Layer 3 evidence asks | `docs/contracts/ai-value-client-evidence-request/README.md` | Shared validator: `shared/src/aiValueEngine/clientEvidenceRequest.ts` | No persistence from requests | Request builder/helper only | Customer ask is allowed as an evidence request, not as evidence or claim support |
 | Client evidence entries | `docs/contracts/ai-value-client-evidence-entry/README.md` | Shared validator: `shared/src/aiValueEngine/clientEvidenceEntry.ts` | No new persistence; validated entries may convert to Source Packages | Validator and conversion helper | Entry status alone cannot become value proof or customer-facing financial output |
 | Source Packages | `docs/contracts/ai-value-source-packages/README.md` | Shared validator: `shared/src/aiValueEngine/sourcePackages.ts` | Metadata refs table exists for `source_package_refs`; full package payload storage remains constrained | Validator supports aggregate source package handling | Source availability is not value proof; customer display requires exposure approval |
@@ -65,6 +66,12 @@ The blueprint alignment references the current Planck inventory as follows:
 - `docs/contracts/ai-value-token-efficiency-signal/examples/held-token-efficiency-signal.json`
 - `shared/src/aiValueEngine/tokenEfficiencySignal.ts`
 - `scripts/validate_ai_value_token_efficiency_signal.test.mjs`
+- `docs/contracts/ai-value-vbd-token-efficiency-map/README.md`
+- `docs/contracts/ai-value-vbd-token-efficiency-map/examples/valid-replicate-map.json`
+- `docs/contracts/ai-value-vbd-token-efficiency-map/examples/valid-mitigate-map.json`
+- `docs/contracts/ai-value-vbd-token-efficiency-map/examples/held-map.json`
+- `shared/src/aiValueEngine/vbdTokenEfficiencyMap.ts`
+- `scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs`
 - `docs/contracts/quality-multiplier.md`
 - `docs/contracts/causal-delta.md`
 - `docs/contracts/reliability-factor.md`

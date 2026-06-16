@@ -68,6 +68,10 @@ const ALLOWED_READOUT_STATES = new Set([
   "blocked_for_customer_facing_financial_output"
 ]);
 
+const ALLOWED_READOUT_AUDIENCES = new Set([
+  "internal_value_review"
+]);
+
 const ALLOWED_SECTIONS = [
   "evidence_chain_summary",
   "playbook_coverage",
@@ -435,6 +439,9 @@ function collectTopLevelGaps(snapshot: any): string[] {
   if (snapshot?.readout_state && !ALLOWED_READOUT_STATES.has(snapshot.readout_state)) {
     gaps.push(`readout_state is invalid: ${snapshot.readout_state}`);
   }
+  if (snapshot?.readout_audience && !ALLOWED_READOUT_AUDIENCES.has(snapshot.readout_audience)) {
+    gaps.push("readout_audience must be internal_value_review");
+  }
   if (
     snapshot?.coverage_status &&
     snapshot.coverage_status !== snapshot?.playbook_coverage?.coverage_status
@@ -554,6 +561,12 @@ function collectBoundaryGaps(snapshot: any): string[] {
     snapshot?.executive_readout_boundary?.customer_facing_readout_allowed,
     false,
     "executive_readout_boundary.customer_facing_readout_allowed",
+    gaps
+  );
+  requireBoolean(
+    snapshot?.persistence_policy?.persisted,
+    false,
+    "persistence_policy.persisted",
     gaps
   );
   requireBoolean(

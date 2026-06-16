@@ -165,6 +165,16 @@ export type {
 } from "./tokenEfficiencySignal";
 
 export {
+  AI_VALUE_VBD_TOKEN_EFFICIENCY_MAP_SCHEMA_VERSION,
+  buildVbdTokenEfficiencyMapFromEvidenceSnapshotAndTokenSignal,
+  validateVbdTokenEfficiencyMap
+} from "./vbdTokenEfficiencyMap";
+export type {
+  BuildVbdTokenEfficiencyMapOptions,
+  VbdTokenEfficiencyMapValidationResult
+} from "./vbdTokenEfficiencyMap";
+
+export {
   EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,
   EvidenceCollectionAssemblySchema,
   buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages,
