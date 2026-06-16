@@ -156,10 +156,24 @@ const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const UNSAFE_METADATA_VALUE_PATTERNS = [
   /(?:^|_)(?:raw_rows?|raw_query|raw_prompts?|raw_responses?|raw_transcripts?|raw_content)(?:_|$)/i,
   /(?:^|_)(?:prompt_text|query_text|sql_text|file_contents?)(?:_|$)/i,
-  /(?:^|_)(?:employee_email|employee_name|employee_id|user_id|person_id|person_identifier)(?:_|$)/i,
+  /(?:^|_)(?:employee_emails?|employee_names?|employee_ids?|user_emails?|user_names?|user_ids?|person_emails?|person_names?|person_ids?|person_identifiers?)(?:_|$)/i,
   /(?:^|_)(?:direct_identifiers?|direct_person_identifier|direct_names?)(?:_|$)/i,
   /(?:^|_)(?:hashed|joinable|pseudonymous|tokenized)_(?:ids?|identifiers?|users?|persons?|employees?)(?:_|$)/i,
   /(?:^|_)person_level_(?:productivity|hris|records?)(?:_|$)/i
+];
+
+const NEGATIVE_PRIVACY_CAVEAT_PATTERNS = [
+  /\bno\b/i,
+  /\bnot\b/i,
+  /\bnever\b/i,
+  /\bwithout\b/i,
+  /\bblocked?\b/i,
+  /\bexcluded?\b/i,
+  /\bnot emitted\b/i,
+  /\bare not emitted\b/i,
+  /\bmust not\b/i,
+  /\bcannot\b/i,
+  /\bdoes not\b/i
 ];
 
 export interface BuildVbdTokenEfficiencyMapOptions {
@@ -208,7 +222,26 @@ function evidenceState(value: any): string {
 }
 
 function vbdDimensionState(value: any): string {
-  return String(value?.evidence_state ?? value?.state ?? "missing");
+  return String(value?.state ?? value?.evidence_state ?? "missing");
+}
+
+function positiveNumber(value: any): number {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0;
+}
+
+function snapshotMinimumCohortThreshold(snapshot: any): any {
+  return snapshot?.privacy_boundary?.minimum_cohort_threshold ??
+    snapshot?.aggregate_telemetry_summary?.k_min_summary?.minimum_cohort_threshold ??
+    null;
+}
+
+function hasSuppressedVbdSlices(map: any): boolean {
+  return [
+    map?.velocity?.suppressed_or_unknown_slices,
+    map?.breadth?.suppressed_or_unknown_slices,
+    map?.depth?.suppressed_or_unknown_slices
+  ].some((value) => positiveNumber(value) > 0);
 }
 
 function snapshotWorkflowFamily(snapshot: any): string | null {
@@ -250,7 +283,8 @@ function deriveVbdPosture(snapshot: any): string {
   if (states.includes("suppressed")) return "suppressed";
   if (states.includes("held") ||
       states.includes("not_computed") ||
-      states.includes("missing")) {
+      states.includes("missing") ||
+      hasSuppressedVbdSlices(map)) {
     return "held";
   }
   if (map.operating_mode === "high_fluency_flow") return "high_work_integration";
@@ -321,7 +355,7 @@ function collectBindingGaps(snapshot: any, tokenSignal: any): string[] {
   if (snapshotGrain !== tokenSignal?.approved_aggregate_grain) {
     gaps.push("approved_aggregate_grain must match between Evidence Snapshot and Token Efficiency Signal");
   }
-  const snapshotMinimum = snapshot?.privacy_boundary?.minimum_cohort_threshold;
+  const snapshotMinimum = snapshotMinimumCohortThreshold(snapshot);
   const tokenMinimum = tokenSignal?.minimum_cohort_threshold;
   if (
     snapshotMinimum !== undefined &&
@@ -370,7 +404,8 @@ function collectForbiddenKeys(
 
 function isSafePolicyListPath(path: string[]): boolean {
   const normalizedPath = path.map(normalizeKey);
-  return normalizedPath.includes("allowed_uses") || normalizedPath.includes("blocked_uses");
+  return normalizedPath.length <= 2 &&
+    (normalizedPath[0] === "allowed_uses" || normalizedPath[0] === "blocked_uses");
 }
 
 function isUnsafeMetadataValue(value: string): boolean {
@@ -379,13 +414,22 @@ function isUnsafeMetadataValue(value: string): boolean {
     UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
 }
 
+function isTopLevelCaveatPath(path: string[]): boolean {
+  return normalizeKey(path[0] ?? "") === "caveats" && path.length <= 2;
+}
+
+function isNegativePrivacyCaveat(value: string): boolean {
+  return NEGATIVE_PRIVACY_CAVEAT_PATTERNS.some((pattern) => pattern.test(value));
+}
+
 function collectUnsafeMetadataValues(
   value: any,
   values: string[] = [],
   path: string[] = []
 ): string[] {
   if (typeof value === "string") {
-    if (!isSafePolicyListPath(path) && isUnsafeMetadataValue(value)) {
+    const safeNegativeCaveat = isTopLevelCaveatPath(path) && isNegativePrivacyCaveat(value);
+    if (!isSafePolicyListPath(path) && !safeNegativeCaveat && isUnsafeMetadataValue(value)) {
       values.push(`${path.join(".")}: ${value}`);
     }
     return values;
@@ -471,7 +515,7 @@ export function buildVbdTokenEfficiencyMapFromEvidenceSnapshotAndTokenSignal(
     approved_aggregate_grain:
       evidenceSnapshot?.privacy_boundary?.approved_aggregate_grain ?? null,
     minimum_cohort_threshold:
-      evidenceSnapshot?.privacy_boundary?.minimum_cohort_threshold ??
+      snapshotMinimumCohortThreshold(evidenceSnapshot) ??
       tokenEfficiencySignal?.minimum_cohort_threshold ??
       null,
     k_min_posture: tokenEfficiencySignal?.k_min_posture ?? null,

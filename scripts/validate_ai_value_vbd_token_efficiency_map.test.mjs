@@ -350,6 +350,7 @@ test("suppressed or not-computed breadth holds VBD maps", () => {
           breadth: {
             ...highVbdOperatingMap().breadth,
             state,
+            evidence_state: "present",
             caveats: [`Breadth is ${state} and cannot be inferred from other dimensions.`]
           }
         }
@@ -362,6 +363,38 @@ test("suppressed or not-computed breadth holds VBD maps", () => {
     assert.equal(map.strategy_zone, "hold_for_evidence", state);
     assert.notEqual(map.vbd_posture, "high_work_integration", state);
   }
+});
+
+test("emerging VBD maps hold when aggregate slices are suppressed", () => {
+  const snapshot = baseSnapshot({
+    aggregate_telemetry_summary: {
+      ...baseSnapshot().aggregate_telemetry_summary,
+      k_min_summary: {
+        total_slices: 6,
+        k_min_clear_slices: 5,
+        suppressed_or_unknown_slices: 1,
+        minimum_cohort_threshold: 5
+      }
+    },
+    vbd_operating_map: {
+      ...emergingVbdOperatingMap(),
+      breadth: {
+        ...emergingVbdOperatingMap().breadth,
+        covered_slices: 5,
+        suppressed_or_unknown_slices: 1,
+        caveats: [
+          "Suppressed or unknown slices are preserved and cannot be interpreted as covered breadth."
+        ]
+      }
+    }
+  });
+  assert.equal(validateEvidenceSnapshot(snapshot).valid, true);
+
+  const map = buildMap(snapshot, tokenSignal());
+
+  expectValidMap(map);
+  assert.equal(map.vbd_posture, "held");
+  assert.equal(map.strategy_zone, "hold_for_evidence");
 });
 
 test("map fails closed when token signal and snapshot source bindings drift", () => {
@@ -385,6 +418,34 @@ test("map fails closed when k-min bindings drift between snapshot and token sign
     }
   });
   const map = buildMap(baseSnapshot(), signal);
+
+  assert.equal(map.valid, false);
+  assert.equal(map.strategy_zone, "hold_for_evidence");
+  assert.ok(
+    map.gaps.some((gap) => /minimum_cohort_threshold/i.test(gap)),
+    map.gaps.join("; ")
+  );
+});
+
+test("map uses telemetry k-min threshold when privacy boundary threshold is held", () => {
+  const snapshot = baseSnapshot({
+    privacy_boundary: {
+      ...baseSnapshot().privacy_boundary,
+      minimum_cohort_threshold: null
+    }
+  });
+  assert.equal(validateEvidenceSnapshot(snapshot).valid, true);
+
+  const map = buildMap(snapshot, tokenSignal({
+    minimum_cohort_threshold: 10,
+    k_min_posture: {
+      minimum_cohort_threshold: 10,
+      cohort_threshold_met: true,
+      total_slices: 6,
+      k_min_clear_slices: 6,
+      suppressed_or_unknown_slices: 0
+    }
+  }));
 
   assert.equal(map.valid, false);
   assert.equal(map.strategy_zone, "hold_for_evidence");
@@ -474,6 +535,33 @@ test("map rejects unsafe metadata values in serialized source refs and caveats",
     },
     {
       ...clone(map),
+      source_refs: {
+        ...map.source_refs,
+        token_source_refs: {
+          aggregate_probe_id: "user_email_export",
+          source_readiness_id: "source_readiness_token_usage_2026_05"
+        }
+      }
+    },
+    {
+      ...clone(map),
+      source_refs: {
+        ...map.source_refs,
+        token_source_refs: {
+          aggregate_probe_id: "user_name_lookup",
+          source_readiness_id: "employee_ids_export"
+        }
+      }
+    },
+    {
+      ...clone(map),
+      source_refs: {
+        ...map.source_refs,
+        allowed_uses: ["employee_email"]
+      }
+    },
+    {
+      ...clone(map),
       caveats: [
         ...map.caveats,
         "This caveat references employee_email metadata."
@@ -483,6 +571,18 @@ test("map rejects unsafe metadata values in serialized source refs and caveats",
     const result = validateVbdTokenEfficiencyMap(unsafe);
     assert.equal(result.valid, false, result.gaps.join("; "));
   }
+});
+
+test("map allows negative privacy caveats that name blocked artifacts", () => {
+  const map = {
+    ...clone(buildMap()),
+    caveats: [
+      ...buildMap().caveats,
+      "No raw prompts, raw responses, transcripts, query text, tool payloads, or file contents are emitted."
+    ]
+  };
+
+  expectValidMap(map);
 });
 
 test("map examples validate", () => {
