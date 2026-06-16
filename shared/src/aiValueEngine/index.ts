@@ -110,6 +110,18 @@ export type {
 } from "./claimReadinessSnapshot";
 
 export {
+  AI_VALUE_EXECUTIVE_READOUT_SNAPSHOT_SCHEMA_VERSION,
+  ExecutiveReadoutSnapshotSchema,
+  buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot,
+  validateExecutiveReadoutSnapshot
+} from "./executiveReadoutSnapshot";
+export type {
+  BuildExecutiveReadoutSnapshotOptions,
+  ExecutiveReadoutSnapshot,
+  ExecutiveReadoutSnapshotValidationResult
+} from "./executiveReadoutSnapshot";
+
+export {
   AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
   SourcePackageSchema,
   validateSourcePackage

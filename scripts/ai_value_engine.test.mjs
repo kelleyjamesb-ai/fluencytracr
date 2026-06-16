@@ -247,6 +247,7 @@ test("the synthetic 50-person Customer Success motion runs from intake through v
   const csLibrary = readExample("customer-success-50-synthetic-metrics-library.json");
   const csEngagement = readExample("customer-success-50-synthetic-engagement.json");
   const csBaseline = readExample("customer-success-50-synthetic-fluency-baseline.json");
+  const csFollowup = readExample("customer-success-50-synthetic-fluency-followup.json");
   const csOutcomeExport = readExample("customer-success-50-synthetic-outcome-evidence-export.json");
   const { blueprint: csBlueprint, blueprint_validation } =
     buildBlueprintDraftFromWorkshopIntake(intake);
@@ -254,6 +255,40 @@ test("the synthetic 50-person Customer Success motion runs from intake through v
   assert.equal(blueprint_validation.valid, true);
   assert.equal(csBlueprint.workflow_family, "customer_success_account_health_review");
   assert.equal(validateMetricsLibrary(csLibrary).valid, true);
+  assert.equal(csLibrary.metrics.length, 11);
+  assert.equal(validateFluencyBaseline(csFollowup).valid, true);
+  assert.equal(csFollowup.collection_mode, "followup");
+  assert.equal(summarizeFluencyBaseline(csBaseline).total_respondents, 50);
+  assert.equal(intake.approved_aggregate_inputs.vbd_movement.velocity_index.comparison, 0.61);
+  assert.equal(
+    intake.approved_aggregate_inputs.ai_influence_posture.state,
+    "DIRECTIONAL_ALIGNMENT_ONLY"
+  );
+  assert.ok(
+    intake.approved_aggregate_inputs.ai_influence_posture.does_not_support.includes(
+      "causality_claim"
+    )
+  );
+  assert.equal(
+    intake.approved_aggregate_inputs.ai_activity_by_window.assistant_sessions.comparison,
+    480
+  );
+  assert.equal(
+    intake.approved_aggregate_inputs.trust_and_friction_by_window.verification_attached_episodes.comparison,
+    264
+  );
+  assert.deepEqual(
+    csLibrary.metrics
+      .filter((metric) => metric.metric_priority === "P0")
+      .map((metric) => metric.metric_id),
+    [
+      "gross_revenue_retention_rate",
+      "renewal_rate",
+      "at_risk_account_share",
+      "account_health_review_cycle_days",
+      "risk_review_coverage_share"
+    ]
+  );
 
   const run = runValueChain({
     engagement: csEngagement,
@@ -273,6 +308,7 @@ test("the synthetic 50-person Customer Success motion runs from intake through v
   assert.equal(run.fluency_baseline.status, "VALID");
   assert.equal(run.outcome_evidence.status, "VALID");
   assert.equal(run.outcome_evidence.attached, true);
+  assert.equal(run.outcome_evidence.validation.metric_count, 11);
   assert.equal(run.spine.halted_at, null);
   assert.equal(run.decision, "READY_FOR_EXECUTIVE_VALIDATION");
   assert.equal(run.spine.stages.claim_boundary.object.claim_state, "CAVEATED");

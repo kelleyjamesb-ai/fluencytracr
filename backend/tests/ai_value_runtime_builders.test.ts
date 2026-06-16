@@ -211,6 +211,131 @@ describe("AI Value runtime builders internal service", () => {
     expect(store.aiValueEvidenceSnapshots.size).toBe(1);
   });
 
+  it("persists a metadata-only pilot run ledger when requested", async () => {
+    const plan = layer1Plan();
+    const layer1 = layer1Package();
+    await persistPlan(plan);
+    await persistRefs(plan, [layer1]);
+
+    const result = await buildAiValueClaimReadinessHandoffInternal({
+      orgId: plan.org_id,
+      measurementPlanId: plan.measurement_plan_id,
+      sourcePackages: [layer1],
+      evidenceSnapshotId: "runtime_snapshot_pilot_run_ledger",
+      evidenceSnapshotVersion: 1,
+      handoffId: "runtime_handoff_pilot_run_ledger",
+      pilotRunId: "pilot_run_runtime_ledger",
+      generatedAt: "2026-06-13T18:00:00.000Z",
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(result.persistedPilotRun?.pilot_run_id).toBe("pilot_run_runtime_ledger");
+    expect(result.persistedPilotRun?.measurement_plan_id).toBe(plan.measurement_plan_id);
+    expect(result.persistedPilotRun?.source_package_ids).toEqual([
+      layer1.source_package_id
+    ]);
+    expect(result.persistedPilotRun?.evidence_snapshot_id).toBe(
+      "runtime_snapshot_pilot_run_ledger"
+    );
+    expect(result.persistedPilotRun?.claim_readiness_handoff_id).toBe(
+      "runtime_handoff_pilot_run_ledger"
+    );
+    expect(result.persistedPilotRun?.coverage_status).toBe("layer_1_only");
+    expect(result.persistedPilotRun?.run_status).toBe("completed_with_caveats");
+    expect(result.persistedPilotRun?.claim_readiness_snapshot_persisted).toBe(false);
+    expect(result.persistedPilotRun?.executive_readout_snapshot_persisted).toBe(false);
+    expect(result.handoff.persistence_policy.persisted).toBe(false);
+    expect(store.aiValueEvidenceSnapshots.size).toBe(1);
+    expect(store.aiValuePilotRuns.size).toBe(1);
+  });
+
+  it("persists Claim Readiness and Executive Readout Snapshots when explicitly requested", async () => {
+    const plan = fullPlan();
+    const packages = [
+      layer1Package(),
+      layer2Package(),
+      layer3Package(),
+      governancePackage(),
+      assumptionPackage()
+    ];
+    await persistPlan(plan);
+    await persistRefs(plan, packages);
+
+    const result = await buildAiValueClaimReadinessHandoffInternal({
+      orgId: plan.org_id,
+      measurementPlanId: plan.measurement_plan_id,
+      sourcePackages: packages,
+      evidenceSnapshotId: "runtime_snapshot_persisted_claim_readout",
+      handoffId: "runtime_handoff_persisted_claim_readout",
+      claimReadinessSnapshotId: "claim_readiness_snapshot_runtime_persisted",
+      executiveReadoutSnapshotId: "executive_readout_snapshot_runtime_persisted",
+      generatedAt: "2026-06-13T18:00:00.000Z",
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(result.claimReadinessSnapshot?.claim_readiness_snapshot_id).toBe(
+      "claim_readiness_snapshot_runtime_persisted"
+    );
+    expect(result.persistedClaimReadinessSnapshot?.evidence_snapshot_id).toBe(
+      "runtime_snapshot_persisted_claim_readout"
+    );
+    expect(result.persistedClaimReadinessSnapshot?.customer_facing_readout_allowed).toBe(false);
+    expect(result.persistedClaimReadinessSnapshot?.customer_facing_financial_output_allowed).toBe(false);
+    expect(result.executiveReadoutSnapshot?.executive_readout_snapshot_id).toBe(
+      "executive_readout_snapshot_runtime_persisted"
+    );
+    expect(result.persistedExecutiveReadoutSnapshot?.claim_readiness_snapshot_id).toBe(
+      "claim_readiness_snapshot_runtime_persisted"
+    );
+    expect(result.persistedExecutiveReadoutSnapshot?.customer_facing_readout_allowed).toBe(false);
+    expect(result.persistedExecutiveReadoutSnapshot?.customer_facing_financial_output_allowed).toBe(false);
+    expect(store.aiValueEvidenceSnapshots.size).toBe(1);
+    expect(store.aiValueClaimReadinessSnapshots.size).toBe(1);
+    expect(store.aiValueExecutiveReadoutSnapshots.size).toBe(1);
+  });
+
+  it("persists pilot-run lineage after downstream snapshots are persisted in the same internal chain", async () => {
+    const plan = fullPlan();
+    const packages = [
+      layer1Package(),
+      layer2Package(),
+      layer3Package(),
+      governancePackage(),
+      assumptionPackage()
+    ];
+    await persistPlan(plan);
+    await persistRefs(plan, packages);
+
+    const result = await buildAiValueClaimReadinessHandoffInternal({
+      orgId: plan.org_id,
+      measurementPlanId: plan.measurement_plan_id,
+      sourcePackages: packages,
+      evidenceSnapshotId: "runtime_snapshot_persisted_full_lineage",
+      handoffId: "runtime_handoff_persisted_full_lineage",
+      claimReadinessSnapshotId: "claim_readiness_snapshot_runtime_full_lineage",
+      executiveReadoutSnapshotId: "executive_readout_snapshot_runtime_full_lineage",
+      pilotRunId: "pilot_run_runtime_full_lineage",
+      generatedAt: "2026-06-13T18:00:00.000Z",
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(result.persistedPilotRun?.pilot_run_id).toBe(
+      "pilot_run_runtime_full_lineage"
+    );
+    expect(result.persistedPilotRun?.claim_readiness_snapshot_persisted).toBe(true);
+    expect(result.persistedPilotRun?.executive_readout_snapshot_persisted).toBe(true);
+    expect(result.persistedPilotRun?.claim_readiness_snapshot_id).toBe(
+      "claim_readiness_snapshot_runtime_full_lineage"
+    );
+    expect(result.persistedPilotRun?.executive_readout_snapshot_id).toBe(
+      "executive_readout_snapshot_runtime_full_lineage"
+    );
+    expect(result.persistedPilotRun?.blocked_uses).toContain(
+      "customer_facing_financial_output"
+    );
+    expect(store.aiValuePilotRuns.size).toBe(1);
+  });
+
   it("builds full Playbook coverage only when all required evidence packages are bound", async () => {
     const plan = fullPlan();
     const packages = [

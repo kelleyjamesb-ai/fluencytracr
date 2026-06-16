@@ -4,9 +4,23 @@
   "org_id": "org-synthetic-cs-50",
   "workflow_family": "customer_success_account_health_review",
   "source_system": {
-    "source_type": "customer_success_platform",
-    "source_name": "Account health reporting",
+    "source_type": "customer_success_reporting_layer",
+    "source_name": "Customer Success operating metrics mart",
     "approved_grain": "aggregate_workflow_window"
+  },
+  "synthetic_context": {
+    "synthetic_fixture": true,
+    "use_policy": "Synthetic rehearsal only; not customer-attested evidence or external claim support."
+  },
+  "evidence_boundary": {
+    "contains_ai_activity": false,
+    "purpose": "Layer 3 aggregate outcome evidence only; pair with the workshop response for AI work evidence and VBD posture.",
+    "does_not_prove": [
+      "roi",
+      "causality",
+      "productivity",
+      "person_or_group_assessment"
+    ]
   },
   "attestation": {
     "exported_by_role": "customer_success_operations",
@@ -21,6 +35,41 @@
   },
   "metrics": [
     {
+      "metric_id": "gross_revenue_retention_rate",
+      "measurement_unit": "share",
+      "baseline_value": 0.88,
+      "comparison_value": 0.91,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "net_revenue_retention_rate",
+      "measurement_unit": "share",
+      "baseline_value": 1.03,
+      "comparison_value": 1.07,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "renewal_rate",
+      "measurement_unit": "share",
+      "baseline_value": 0.82,
+      "comparison_value": 0.87,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "logo_churn_rate",
+      "measurement_unit": "share",
+      "baseline_value": 0.14,
+      "comparison_value": 0.1,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "at_risk_account_share",
+      "measurement_unit": "share",
+      "baseline_value": 0.27,
+      "comparison_value": 0.19,
+      "eligible_population": 365
+    },
+    {
       "metric_id": "account_health_review_cycle_days",
       "measurement_unit": "days",
       "baseline_value": 10.8,
@@ -32,6 +81,13 @@
       "measurement_unit": "share",
       "baseline_value": 0.62,
       "comparison_value": 0.81,
+      "eligible_population": 365
+    },
+    {
+      "metric_id": "customer_health_signal_coverage_share",
+      "measurement_unit": "share",
+      "baseline_value": 0.71,
+      "comparison_value": 0.86,
       "eligible_population": 365
     },
     {

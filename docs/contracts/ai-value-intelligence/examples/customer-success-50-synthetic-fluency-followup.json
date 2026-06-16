@@ -1,27 +1,27 @@
 {
   "schema_version": "FT_AI_VALUE_FLUENCY_BASELINE_2026_06",
-  "baseline_id": "fluency_baseline_customer_success_50_synthetic_v1",
+  "baseline_id": "fluency_followup_customer_success_50_synthetic_v1",
   "org_id": "org-synthetic-cs-50",
   "instrument": {
     "instrument_id": "ai_fluency_long_v1",
     "item_count": 24
   },
-  "window": "2026-03-15_to_2026-03-31",
-  "collection_mode": "kickoff",
+  "window": "2026-05-15_to_2026-05-31",
+  "collection_mode": "followup",
   "cohorts": [
     {
       "cohort_id": "cohort_customer_success_function_aggregate",
       "cohort_label": "Customer Success function aggregate",
       "respondent_count": 50,
       "construct_scores": {
-        "confidence": { "mean": 3.7 },
-        "usage_quality": { "mean": 3.5 },
-        "behavior_change": { "mean": 3.2 },
-        "leadership_reinforcement": { "mean": 3.8 },
-        "capability_growth": { "mean": 3.4 },
-        "ai_attitude": { "mean": 4.0 },
-        "behavioral_intent": { "mean": 4.1 },
-        "perceived_ai_impact": { "mean": 3.3 }
+        "confidence": { "mean": 4.0 },
+        "usage_quality": { "mean": 3.9 },
+        "behavior_change": { "mean": 3.8 },
+        "leadership_reinforcement": { "mean": 4.1 },
+        "capability_growth": { "mean": 3.9 },
+        "ai_attitude": { "mean": 4.2 },
+        "behavioral_intent": { "mean": 4.3 },
+        "perceived_ai_impact": { "mean": 3.8 }
       }
     }
   ],

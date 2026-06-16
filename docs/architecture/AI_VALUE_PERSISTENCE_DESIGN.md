@@ -1,13 +1,15 @@
 # AI Value Persistence Design
 
-Status: design only
+Status: minimal spine implemented; pilot run ledger added as snapshot-aware metadata lineage; Claim Readiness and Executive Readout Snapshot backend persistence promoted
 
 Phase: `phase-ai-value-persistence-design`
 
-This document does not create migrations, Prisma schema changes, backend
-routes, frontend UI, ingestion jobs, persistence writes, claim readiness
-snapshots, or executive readout snapshots. It defines the future durable state
-shape required before Phase 4 can implement minimal aggregate persistence.
+This document began as a design note. The minimal aggregate spine now exists,
+the pilot repeatability slice adds a snapshot-aware pilot run ledger, and the
+snapshot persistence promotion adds backend-only Claim Readiness Snapshot and
+Executive Readout Snapshot tables. It still does not authorize backend routes,
+frontend UI, ingestion jobs, raw rows, rendered customer readouts, or
+customer-facing financial output.
 
 ## 1. Purpose
 
@@ -55,8 +57,9 @@ RLS pattern. It should not introduce a second persistence stack.
    blocked uses, privacy posture, suppression posture, and source refs.
 4. Use append-only or immutable versioning for evidence-bearing objects.
 5. Corrections create new versions; historical evidence posture is not mutated.
-6. Keep claim readiness and executive readouts deferred until source binding and
-   runtime builders are safe.
+6. Persist Claim Readiness and Executive Readout Snapshots only after source
+   binding and runtime builders preserve caveats, blocked claims, privacy, and
+   suppression boundaries.
 7. Keep aggregate workforce context as approved context only.
 8. Keep VBD as Layer 1 posture only.
 9. Keep BigQuery source availability distinct from full Playbook coverage.
@@ -77,9 +80,10 @@ RLS pattern. It should not introduce a second persistence stack.
 | `measurement_plans` | `implement_now` | Phase 4 | Baseline/comparison windows, selected metrics, Playbook requirements, source requirements, and assumptions must be stable before snapshots. |
 | `evidence_snapshots` | `implement_now` | Phase 4 | Claim handoffs and later readouts need immutable aggregate evidence posture. |
 | `source_package_refs` | `implement_now` | Phase 4 | Source Package metadata/refs need durable lineage without storing raw exports. |
+| `ai_value_pilot_runs` | `implemented_snapshot_aware_metadata_lineage` | Pilot repeatability slice plus snapshot lineage promotion | Records the run lineage across Measurement Plan, Source Package refs, persisted Evidence Snapshot, validated Claim Readiness Handoff, and optional persisted Claim Readiness / Executive Readout Snapshot ids. |
 | `source_packages` | `design_now_implement_later` | Later, if refs are insufficient | Full package payload persistence is optional and should wait unless runtime builders need reviewed metadata beyond refs. |
-| `claim_readiness_snapshots` | `design_now_implement_later` | Phase 6 or later | Requires safe runtime builders plus validated handoff propagation. |
-| `executive_readout_snapshots` | `defer` | Phase 7 or later design only | Readouts are downstream presentation artifacts and must wait for claim snapshot safety. |
+| `claim_readiness_snapshots` | `implemented_backend_only` | Snapshot persistence promotion | Source-bound durable posture derived from persisted Evidence Snapshots and validated Claim Readiness Handoffs. |
+| `executive_readout_snapshots` | `implemented_backend_only` | Snapshot persistence promotion | Internal-only durable readout posture derived from persisted Claim Readiness Snapshots; no rendered or customer-facing output. |
 
 Phase 4 should implement only the `implement_now` set unless this design is
 amended by a later explicit governance decision.
@@ -525,10 +529,10 @@ Why needed now:
 
 ## 10. `claim_readiness_snapshots`
 
-Purpose: future persisted snapshot of allowed claim modes and blocked claims,
+Purpose: persisted snapshot of allowed claim modes and blocked claims,
 derived only from a validated Evidence Snapshot and Claim Readiness Handoff.
 
-Status: `design_now_implement_later`.
+Status: `implemented_backend_only`.
 
 Schema outline:
 
@@ -536,6 +540,7 @@ Schema outline:
 - `org_id` text, required.
 - `claim_readiness_snapshot_id` text, required.
 - `evidence_snapshot_id` text, required.
+- `handoff_id` text, required.
 - `measurement_plan_id` text, required.
 - `schema_version` text, required.
 - `derivation_version` text, required.
@@ -543,10 +548,13 @@ Schema outline:
 - `claim_readiness_state` text, required.
 - `financial_boundary_state` text, required.
 - `executive_readout_allowed` boolean, required.
+- `customer_facing_readout_allowed` boolean, required and false.
+- `customer_facing_financial_output_allowed` boolean, required and false.
 - `payload_json` JSONB, required.
 - `validation_json` JSONB, required.
 - `source_refs_json` JSONB, required.
 - `required_caveats_json` JSONB, required.
+- `blocked_uses_json` JSONB, required.
 - `blocked_claims_json` JSONB, required.
 - `version` integer, required.
 - `supersedes_id` UUID, nullable.
@@ -602,16 +610,20 @@ Indexes:
 - `(org_id, measurement_plan_id)`.
 - `(org_id, claim_readiness_state)`.
 
-Why not implement now:
+Implementation boundary:
 
-- Runtime builders and minimal Evidence Snapshot persistence must be safe first.
-- The current handoff is intentionally non-persisted.
+- Backend repository persistence is append-only and source-bound to a persisted
+  Evidence Snapshot.
+- The stored payload must validate with `validateClaimReadinessSnapshot`.
+- No backend route, frontend UI, ingestion job, rendered readout, or
+  customer-facing financial output is created by this table.
 
 ## 11. `executive_readout_snapshots`
 
-Purpose: future immutable presentation-state snapshot for executive readouts.
+Purpose: immutable internal presentation-state snapshot for executive readout
+planning.
 
-Status: `defer`.
+Status: `implemented_backend_only`.
 
 Schema outline:
 
@@ -621,24 +633,28 @@ Schema outline:
 - `claim_readiness_snapshot_id` text, required for any persisted executive
   readout snapshot.
 - `evidence_snapshot_id` text, required.
+- `handoff_id` text, required.
 - `measurement_plan_id` text, required.
 - `schema_version` text, required.
 - `derivation_version` text, required.
 - `readout_audience` text, required.
-- `customer_facing_allowed` boolean, required.
-- `financial_output_allowed` boolean, required.
+- `readout_state` text, required.
+- `coverage_status` text, required.
+- `customer_facing_readout_allowed` boolean, required and false.
+- `customer_facing_financial_output_allowed` boolean, required and false.
 - `payload_json` JSONB, required.
 - `validation_json` JSONB, required.
 - `source_refs_json` JSONB, required.
 - `required_caveats_json` JSONB, required.
+- `blocked_uses_json` JSONB, required.
 - `blocked_claims_json` JSONB, required.
+- `version` integer, required.
+- `supersedes_id` UUID, nullable.
 - `created_at` timestamp, required.
 
 JSON payload contract:
 
 - Must be source-bound to Evidence Snapshot and Claim Readiness Snapshot.
-- Before Claim Readiness Snapshot persistence exists, executive readouts must
-  remain non-persisted prototypes or internal renderings.
 - Must render caveats, blocked claims, coverage status, evidence gaps,
   suppression posture, privacy posture, VBD boundary, workforce-context
   boundary, and financial boundary.
@@ -676,7 +692,8 @@ Allowed query patterns:
 
 - By `org_id`, `executive_readout_snapshot_id`.
 - By `org_id`, `evidence_snapshot_id`.
-- By `org_id`, customer-facing boundary state.
+- By `org_id`, `claim_readiness_snapshot_id`.
+- By `org_id`, `readout_state`.
 
 Blocked query patterns:
 
@@ -687,16 +704,20 @@ Blocked query patterns:
 
 Indexes:
 
-- Unique `(org_id, executive_readout_snapshot_id)`.
+- Unique `(org_id, executive_readout_snapshot_id, version)`.
 - `(org_id, evidence_snapshot_id)`.
 - `(org_id, claim_readiness_snapshot_id)`.
-- `(org_id, customer_facing_allowed)`.
+- `(org_id, readout_state)`.
 
-Why defer:
+Implementation boundary:
 
-- Executive readouts are downstream presentation artifacts.
-- They should not be persisted until source binding, claim snapshot safety, and
-  API/UI readiness are proven.
+- Backend repository persistence is append-only and source-bound to a persisted
+  Claim Readiness Snapshot.
+- The stored payload must validate with `validateExecutiveReadoutSnapshot`.
+- It is an internal-only snapshot of allowed sections, blocked sections,
+  caveats, source refs, and governance posture.
+- No backend route, frontend UI, ingestion job, rendered readout, customer
+  export, or customer-facing financial output is created by this table.
 
 ## 12. Relationship to `ai_value_objects`
 
@@ -721,19 +742,51 @@ Evidence Snapshots because its current repository pattern uses mutable upsert
 semantics. A bridge from `ai_value_objects` to typed immutable tables requires a
 later explicit governance decision and migration plan.
 
-## 13. Phase 4 Guardrails
+## 13. `ai_value_pilot_runs`
 
-Phase 4 may implement only:
+Purpose: snapshot-aware metadata lineage ledger for repeatable AI Value pilots.
+
+Status: `implemented_snapshot_aware_metadata_lineage`.
+
+The ledger records lineage and posture only:
+
+- Pilot Run id.
+- Measurement Plan id.
+- Source Package ref ids.
+- Evidence Snapshot id.
+- validated Claim Readiness Handoff id.
+- coverage status.
+- run status.
+- required caveats.
+- blocked uses.
+- validation flags proving Evidence Snapshot persistence and Handoff
+  validation.
+- optional Claim Readiness Snapshot id when that snapshot was persisted.
+- optional Executive Readout Snapshot id when that snapshot was persisted.
+
+It stores only lineage and posture. It does not store full snapshot payloads,
+raw rows, prompts, responses, transcripts, query text, direct identifiers,
+person-level data, ROI calculations, customer-facing financial output, or
+rendered readouts. When snapshot persistence flags are true, the referenced
+snapshot ids must exist and match the same org, Measurement Plan, Evidence
+Snapshot, Handoff, and coverage lineage.
+
+## 14. Phase 4 Guardrails
+
+The original Phase 4 may implement only:
 
 - `value_hypotheses`;
 - `measurement_plans`;
 - `source_package_refs`;
 - `evidence_snapshots`.
 
-Phase 4 must not implement:
+The later pilot repeatability slice may add `ai_value_pilot_runs` only as
+metadata lineage over the approved spine. The snapshot persistence promotion
+may add `claim_readiness_snapshots` and `executive_readout_snapshots` only as
+backend service tables. It must not create customer-facing financial artifacts.
 
-- `claim_readiness_snapshots`;
-- `executive_readout_snapshots`;
+Phase 4 and the snapshot persistence promotion must not implement:
+
 - raw source tables;
 - ingestion staging tables with raw rows;
 - UI-specific tables;
@@ -752,7 +805,7 @@ Phase 4 tests must prove:
 - RLS posture follows existing public-table hardening;
 - no forbidden fields exist in schema or migration.
 
-## 14. Stop Conditions
+## 15. Stop Conditions
 
 Stop before Phase 4 if implementation would require:
 

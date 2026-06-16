@@ -214,6 +214,14 @@ export interface BuildClaimBoundaryOptions {
   claimBoundaryId?: string;
 }
 
+function formatClaimRoute(value: any): string {
+  return String(value ?? "value")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "value";
+}
+
 export function buildClaimBoundaryFromReadiness(
   readiness: any,
   options: BuildClaimBoundaryOptions = {}
@@ -236,7 +244,7 @@ export function buildClaimBoundaryFromReadiness(
     safe_claims: blocked
       ? []
       : [
-          "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
+          `Aggregate workflow metrics and AI work evidence can support internal planning for a ${formatClaimRoute(readiness?.value_route)} investigation.`
         ],
     caveated_claims: blocked
       ? []

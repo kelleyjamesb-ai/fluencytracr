@@ -15,7 +15,7 @@ const baseBoundary = {
   source_readiness_id: "readiness_customer_support_v1",
   claim_state: "INTERNAL_ONLY",
   safe_claims: [
-    "Aggregate support metrics and AI work evidence can support internal planning for a capacity-creation investigation."
+    "Aggregate workflow metrics and AI work evidence can support internal planning for a capacity creation investigation."
   ],
   caveated_claims: [
     "Customer-owned assumptions must be reviewed before executive validation."
@@ -83,6 +83,24 @@ test("builds claim boundary from Evidence Readiness", () => {
   assert.equal(boundary.source_readiness_id, "readiness_customer_support_v1");
   assert.equal(boundary.claim_state, "INTERNAL_ONLY");
   assert.equal(boundary.review_state, "READY_FOR_INTERNAL_REVIEW");
+  assert.deepEqual(boundary.safe_claims, [
+    "Aggregate workflow metrics and AI work evidence can support internal planning for a capacity creation investigation."
+  ]);
+});
+
+test("claim boundary safe claim follows the workflow value route", () => {
+  const boundary = buildClaimBoundaryFromReadiness({
+    workflow_family: "customer_success_account_health_review",
+    value_route: "RISK_REDUCTION",
+    readiness_id: "readiness_customer_success_50_synthetic_v1",
+    decision: "READY_FOR_EXECUTIVE_VALIDATION"
+  });
+  const result = validateAiValueClaimBoundary(boundary);
+
+  assert.equal(result.valid, true);
+  assert.deepEqual(boundary.safe_claims, [
+    "Aggregate workflow metrics and AI work evidence can support internal planning for a risk reduction investigation."
+  ]);
 });
 
 test("rejects missing identity and claim arrays", () => {

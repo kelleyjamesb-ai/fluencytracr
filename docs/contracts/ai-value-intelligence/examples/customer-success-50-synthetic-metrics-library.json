@@ -4,6 +4,136 @@
   "workflow_family": "customer_success_account_health_review",
   "metrics": [
     {
+      "metric_id": "gross_revenue_retention_rate",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Gross revenue retention rate",
+      "definition": "Share of starting recurring revenue retained from the eligible account population before expansion, reported only as an aggregate rate for the approved workflow window.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period window for the same workflow family and eligible account population.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "net_revenue_retention_rate",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Net revenue retention rate",
+      "definition": "Share of starting recurring revenue retained after contraction and expansion effects, reported only as an aggregate rate for context and later customer-owned validation.",
+      "value_route": "REVENUE_EXPANSION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period window for the same eligible account population.",
+      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "renewal_rate",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Renewal rate",
+      "definition": "Share of eligible renewal accounts renewed in the approved workflow window, reported as an aggregate rate.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period renewal window for the same eligible population.",
+      "comparison_rule": "Compare against the approved post-period renewal window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "logo_churn_rate",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Logo churn rate",
+      "definition": "Share of eligible accounts that churned in the approved workflow window, reported only as an aggregate rate.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period churn window for the same eligible account population.",
+      "comparison_rule": "Compare against the approved post-period churn window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "at_risk_account_share",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "At-risk account share",
+      "definition": "Share of eligible accounts in an approved renewal or adoption-risk state during the workflow window.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P0",
+      "source_system": {
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period risk classification window for the same eligible account population.",
+      "comparison_rule": "Compare against the approved post-period risk classification window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
       "metric_id": "account_health_review_cycle_days",
       "workflow_family": "customer_success_account_health_review",
       "name": "Account health review cycle time",
@@ -11,8 +141,8 @@
       "value_route": "RISK_REDUCTION",
       "metric_priority": "P0",
       "source_system": {
-        "source_type": "customer_success_platform",
-        "source_name": "Account health reporting",
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
         "approved_grain": "aggregate_workflow_window"
       },
       "measurement_unit": "days",
@@ -37,13 +167,39 @@
       "value_route": "RISK_REDUCTION",
       "metric_priority": "P0",
       "source_system": {
-        "source_type": "customer_success_platform",
-        "source_name": "Account health reporting",
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
         "approved_grain": "aggregate_workflow_window"
       },
       "measurement_unit": "share",
       "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
       "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "owner": "customer_success_operations",
+      "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
+      "blocked_claims": [
+        "roi_proof",
+        "causality_claim",
+        "individual_scoring",
+        "team_or_manager_ranking",
+        "hr_analytics",
+        "productivity_measurement"
+      ]
+    },
+    {
+      "metric_id": "customer_health_signal_coverage_share",
+      "workflow_family": "customer_success_account_health_review",
+      "name": "Customer health signal coverage",
+      "definition": "Share of eligible accounts with a current, approved customer health signal during the workflow window.",
+      "value_route": "RISK_REDUCTION",
+      "metric_priority": "P1",
+      "source_system": {
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
+        "approved_grain": "aggregate_workflow_window"
+      },
+      "measurement_unit": "share",
+      "baseline_rule": "Compare against an approved pre-period account-health coverage window.",
+      "comparison_rule": "Compare against the approved post-period account-health coverage window; report directional movement only.",
       "owner": "customer_success_operations",
       "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
       "blocked_claims": [
@@ -63,8 +219,8 @@
       "value_route": "RISK_REDUCTION",
       "metric_priority": "P1",
       "source_system": {
-        "source_type": "customer_success_platform",
-        "source_name": "Account health reporting",
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
         "approved_grain": "aggregate_workflow_window"
       },
       "measurement_unit": "count",
@@ -89,8 +245,8 @@
       "value_route": "CAPACITY_CREATION",
       "metric_priority": "P1",
       "source_system": {
-        "source_type": "customer_success_platform",
-        "source_name": "Account health reporting",
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
         "approved_grain": "aggregate_workflow_window"
       },
       "measurement_unit": "hours",
@@ -115,13 +271,13 @@
       "value_route": "EXPERIENCE_IMPROVEMENT",
       "metric_priority": "P1",
       "source_system": {
-        "source_type": "customer_success_platform",
-        "source_name": "Account health reporting",
+        "source_type": "customer_success_reporting_layer",
+        "source_name": "Customer Success operating metrics mart",
         "approved_grain": "aggregate_workflow_window"
       },
       "measurement_unit": "share",
-      "baseline_rule": "Compare against an approved pre-period window for the same workflow family.",
-      "comparison_rule": "Compare against the approved post-period window; report directional movement only.",
+      "baseline_rule": "Compare against an approved pre-period expansion-signal follow-up window.",
+      "comparison_rule": "Compare against the approved post-period expansion-signal follow-up window; report directional movement only.",
       "owner": "customer_success_operations",
       "allowed_claim_level": "CAVEATED_VALUE_INVESTIGATION",
       "blocked_claims": [

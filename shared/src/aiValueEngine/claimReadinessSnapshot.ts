@@ -210,6 +210,7 @@ export const ClaimReadinessSnapshotSchema = {
   allowed_claim_modes: [...ALLOWED_CLAIM_MODES],
   required_blocked_claims: REQUIRED_TELEMETRY_BLOCKED_CLAIMS,
   persistence_policy: {
+    backend_persistence_allowed: true,
     persisted: false,
     creates_migrations: false,
     creates_prisma_schema: false,
@@ -275,6 +276,7 @@ export interface ClaimReadinessSnapshot {
     source_binding_validated: boolean;
   };
   persistence_policy: {
+    backend_persistence_allowed?: boolean;
     persisted: boolean;
     creates_migrations: boolean;
     creates_prisma_schema: boolean;
@@ -532,6 +534,7 @@ export function buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff(
       source_binding_validated: true
     },
     persistence_policy: {
+      backend_persistence_allowed: true,
       persisted: false,
       creates_migrations: false,
       creates_prisma_schema: false,

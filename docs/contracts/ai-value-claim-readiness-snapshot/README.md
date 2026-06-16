@@ -5,7 +5,7 @@ Schema version: `FT_AI_VALUE_CLAIM_READINESS_SNAPSHOT_2026_06`
 ## 1. Purpose
 
 The AI Value Claim Readiness Snapshot is a deterministic, aggregate-only,
-non-persisted contract object derived only from:
+backend-persistable contract object derived only from:
 
 1. a validated AI Value Evidence Snapshot; and
 2. a validated Claim Readiness Handoff for the same snapshot, org, measurement
@@ -20,15 +20,16 @@ validated Evidence Snapshot and Handoff support.
 
 ## 2. Non-goals
 
-This contract is not persistence, ingestion, a backend route, frontend UI, an
-executive readout, a claim readiness database table, ROI proof, EBITA proof,
-productivity measurement, causality proof, or customer-facing financial output.
+This contract is not ingestion, a backend route, frontend UI, an executive
+readout, ROI proof, EBITA proof, productivity measurement, causality proof, or
+customer-facing financial output.
 
-This phase must not:
+Backend-only persistence must not:
 
-- create migrations, Prisma schema changes, backend routes, frontend UI,
-  ingestion jobs, or persisted snapshots;
-- create `claim_readiness_snapshots` or `executive_readout_snapshots` tables;
+- create backend routes, frontend UI, ingestion jobs, rendered readouts, or
+  customer-facing outputs;
+- create Executive Readout Snapshots without a persisted Claim Readiness
+  Snapshot parent;
 - compute realized ROI, EBITA, dollar value, time-saved value, productivity
   lift, financial impact, causal delta, or customer-facing economic output;
 - store raw rows, prompts, responses, transcripts, query text, file contents,
@@ -54,8 +55,8 @@ The builder must also confirm exact source binding:
 - window
 
 The current helper enforces these bindings before constructing the snapshot.
-Any future runtime or persistence path must enforce the same source binding
-before writing durable state.
+The backend persistence path enforces the same source binding before writing
+durable state.
 
 ## 4. Required Fields
 
@@ -188,7 +189,8 @@ internal scenario-review posture only.
 `customer_facing_financial_output_allowed` must remain false.
 
 `executive_readout_boundary.customer_facing_readout_allowed` must remain false.
-This contract does not create, persist, or render an executive readout snapshot.
+This contract does not render an executive readout snapshot or authorize a
+customer-facing readout.
 
 ## 10. Persistence Policy
 
@@ -196,6 +198,7 @@ Every Claim Readiness Snapshot must declare:
 
 ```json
 {
+  "backend_persistence_allowed": true,
   "persisted": false,
   "creates_migrations": false,
   "creates_prisma_schema": false,
@@ -205,8 +208,10 @@ Every Claim Readiness Snapshot must declare:
 }
 ```
 
-Persistence remains design-now/implement-later until a later governance decision
-authorizes source-bound durable claim readiness state.
+`backend_persistence_allowed` authorizes append-only repository persistence of
+validated, source-bound snapshots. The remaining flags stay false because this
+contract still does not create public routes, UI, ingestion, or customer-facing
+output.
 
 ## 11. Examples
 
@@ -238,6 +243,7 @@ The validator enforces:
 - EBITA and customer-facing financial output flags remain false;
 - customer-facing readout remains false;
 - privacy and suppression remain fail-closed;
-- persistence policy flags remain false;
+- backend persistence is allowed while route, UI, ingestion, and customer-facing
+  output flags remain false;
 - forbidden raw, person-level, HRIS, ranking, decisioning, and computed
   economic fields are rejected.
