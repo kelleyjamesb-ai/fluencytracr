@@ -82,6 +82,12 @@ Layer 1 cost/intensity context only. The map can help route aggregate strategy
 work, but it cannot upgrade Playbook coverage, claim readiness, financial
 permission, reportability, or customer-facing economic output.
 
+The VBD x Token Pilot Runner may compose multiple validated maps into a
+time-series pilot movement view. That runner inherits the same boundaries: it
+can show aggregate movement and strategy posture, but it cannot create value
+proof, claim readiness, reportability readiness, persistence, or financial
+output.
+
 ## Examples
 
 Validator-backed examples:

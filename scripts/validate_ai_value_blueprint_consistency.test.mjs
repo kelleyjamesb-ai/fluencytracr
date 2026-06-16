@@ -44,6 +44,19 @@ function vbdTokenEfficiencyMapArtifactsExist() {
     packageJson.includes("\"test:ai-value-vbd-token-efficiency-map\"");
 }
 
+function vbdTokenPilotRunnerArtifactsExist() {
+  const requiredFiles = [
+    "docs/contracts/ai-value-vbd-token-pilot-runner/README.md",
+    "docs/contracts/ai-value-vbd-token-pilot-runner/examples/customer-success-50-synthetic-pilot-run.json",
+    "shared/src/aiValueEngine/vbdTokenPilotRunner.ts",
+    "scripts/validate_ai_value_vbd_token_pilot_runner.test.mjs"
+  ];
+  const packageJson = readRequiredFile("package.json");
+
+  return requiredFiles.every((path) => existsSync(path)) &&
+    packageJson.includes("\"test:ai-value-vbd-token-pilot-runner\"");
+}
+
 test("AI Value Blueprint docs exist and preserve Layer 1 guardrails", () => {
   const blueprint = readRequiredFile(BLUEPRINT_DOC);
 
@@ -150,5 +163,13 @@ test("AI Value Blueprint crosswalk maps required contracts and exposure states",
     assertContains(crosswalk, "shared/src/aiValueEngine/vbdTokenEfficiencyMap.ts", CROSSWALK_DOC);
     assertContains(crosswalk, "scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs", CROSSWALK_DOC);
     assertContains(crosswalk, "Aggregate strategy context only", CROSSWALK_DOC);
+  }
+
+  if (vbdTokenPilotRunnerArtifactsExist()) {
+    assertContains(crosswalk, "VBD x Token Pilot Runner", CROSSWALK_DOC);
+    assertContains(crosswalk, "docs/contracts/ai-value-vbd-token-pilot-runner/README.md", CROSSWALK_DOC);
+    assertContains(crosswalk, "shared/src/aiValueEngine/vbdTokenPilotRunner.ts", CROSSWALK_DOC);
+    assertContains(crosswalk, "scripts/validate_ai_value_vbd_token_pilot_runner.test.mjs", CROSSWALK_DOC);
+    assertContains(crosswalk, "Aggregate pilot movement context only", CROSSWALK_DOC);
   }
 });

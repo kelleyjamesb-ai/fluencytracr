@@ -1,0 +1,309 @@
+{
+  "schema_version": "FT_AI_VALUE_VBD_TOKEN_PILOT_RUN_2026_06",
+  "pilot_run_id": "vbd_token_pilot_run_cs_50_synthetic",
+  "org_id": "org-synthetic-cs-50",
+  "workflow_family": "customer_success_account_health_review",
+  "workflow_name": "Customer Success account health review",
+  "function_area": "customer_success",
+  "generated_at": "2026-06-16T00:00:00.000Z",
+  "pilot_scope": {
+    "population_label": "Synthetic Customer Success 50",
+    "users_in_scope": 50,
+    "approved_aggregate_grain": "function",
+    "minimum_cohort_threshold": 5,
+    "synthetic_fixture": true
+  },
+  "approved_aggregate_grain": "function",
+  "minimum_cohort_threshold": 5,
+  "valid": true,
+  "gaps": [],
+  "pilot_decision": "ready_for_strategy_review",
+  "window_count": 2,
+  "window_sequence": [
+    {
+      "window_id": "baseline",
+      "window_label": "Baseline",
+      "covered_window": {
+        "window_start": "2026-02-01",
+        "window_end": "2026-03-31"
+      },
+      "evidence_snapshot_id": "evidence_snapshot_cs_50_baseline",
+      "token_efficiency_signal_id": "token_efficiency_signal_cs_50_baseline",
+      "vbd_posture": "shallow_work_integration",
+      "token_posture": "high_intensity",
+      "strategy_zone": "mitigate_friction",
+      "token_summary": {
+        "total_tokens": 680000,
+        "aggregate_interaction_count": 310,
+        "aggregate_workflow_count": 62,
+        "high_intensity_workflow_share": 0.68,
+        "average_tokens_per_interaction": 2194,
+        "average_tokens_per_workflow": 10968
+      },
+      "vbd_token_efficiency_map": {
+        "schema_version": "FT_AI_VALUE_VBD_TOKEN_EFFICIENCY_MAP_2026_06",
+        "map_id": "vbd_token_efficiency_map_cs_50_baseline",
+        "org_id": "org-synthetic-cs-50",
+        "workflow_family": "customer_success_account_health_review",
+        "workflow_name": "Customer Success account health review",
+        "function_area": "customer_success",
+        "covered_window": {
+          "window_start": "2026-02-01",
+          "window_end": "2026-03-31"
+        },
+        "approved_aggregate_grain": "function",
+        "minimum_cohort_threshold": 5,
+        "k_min_posture": {
+          "minimum_cohort_threshold": 5,
+          "cohort_threshold_met": true,
+          "total_slices": 6,
+          "k_min_clear_slices": 6,
+          "suppressed_or_unknown_slices": 0
+        },
+        "valid": true,
+        "gaps": [],
+        "vbd_posture": "shallow_work_integration",
+        "token_posture": "high_intensity",
+        "strategy_zone": "mitigate_friction",
+        "source_refs": {
+          "evidence_snapshot_id": "evidence_snapshot_cs_50_baseline",
+          "token_efficiency_signal_id": "token_efficiency_signal_cs_50_baseline",
+          "token_source_refs": {
+            "aggregate_probe_id": "token_probe_cs_50_baseline",
+            "source_readiness_id": "source_readiness_token_usage_cs_50_baseline"
+          }
+        },
+        "allowed_uses": [
+          "aggregate_strategy_planning",
+          "workflow_design_review",
+          "model_routing_review",
+          "enablement_planning",
+          "cost_exposure_review",
+          "token_efficiency_review"
+        ],
+        "blocked_uses": [
+          "realized_roi",
+          "ebita_claim",
+          "causality_claim",
+          "productivity_claim",
+          "headcount_reduction_claim",
+          "individual_attribution",
+          "manager_or_team_ranking",
+          "people_decisioning",
+          "customer_facing_financial_output"
+        ],
+        "value_proof_policy": {
+          "map_is_roi_proof": false,
+          "map_is_productivity_proof": false,
+          "map_is_financial_output": false,
+          "map_computes_causality": false,
+          "map_allows_person_or_team_comparison": false,
+          "downstream_claim_strength_upgrade_allowed": false
+        },
+        "feeds": {
+          "evidence_snapshot_context": true,
+          "claim_readiness_snapshot": false,
+          "executive_readout_snapshot": false,
+          "reportability_readiness": false,
+          "customer_facing_financial_output": false
+        },
+        "persistence_policy": {
+          "persisted": false,
+          "creates_migrations": false,
+          "creates_prisma_schema": false,
+          "creates_backend_routes": false,
+          "creates_frontend_ui": false,
+          "creates_ingestion_jobs": false
+        },
+        "caveats": [
+          "VBD x Token Efficiency Map is aggregate strategy context only.",
+          "Token usage is cost/intensity context and is not ROI, productivity, causality, or financial proof.",
+          "VBD is Layer 1 work-integration posture and cannot create full Playbook coverage by itself.",
+          "Mitigate friction means diagnose aggregate workflow design, not label people or teams."
+        ],
+        "generated_at": "2026-06-16T00:00:00.000Z",
+        "derivation_version": "ai_value_vbd_token_efficiency_map_2026_06"
+      },
+      "caveats": [
+        "VBD x Token Efficiency Map is aggregate strategy context only.",
+        "Token usage is cost/intensity context and is not ROI, productivity, causality, or financial proof.",
+        "VBD is Layer 1 work-integration posture and cannot create full Playbook coverage by itself."
+      ]
+    },
+    {
+      "window_id": "comparison",
+      "window_label": "Comparison",
+      "covered_window": {
+        "window_start": "2026-04-01",
+        "window_end": "2026-05-31"
+      },
+      "evidence_snapshot_id": "evidence_snapshot_cs_50_comparison",
+      "token_efficiency_signal_id": "token_efficiency_signal_cs_50_comparison",
+      "vbd_posture": "high_work_integration",
+      "token_posture": "efficient",
+      "strategy_zone": "replicate_pattern",
+      "token_summary": {
+        "total_tokens": 420000,
+        "aggregate_interaction_count": 640,
+        "aggregate_workflow_count": 168,
+        "high_intensity_workflow_share": 0.16,
+        "average_tokens_per_interaction": 656,
+        "average_tokens_per_workflow": 2400
+      },
+      "vbd_token_efficiency_map": {
+        "schema_version": "FT_AI_VALUE_VBD_TOKEN_EFFICIENCY_MAP_2026_06",
+        "map_id": "vbd_token_efficiency_map_cs_50_comparison",
+        "org_id": "org-synthetic-cs-50",
+        "workflow_family": "customer_success_account_health_review",
+        "workflow_name": "Customer Success account health review",
+        "function_area": "customer_success",
+        "covered_window": {
+          "window_start": "2026-04-01",
+          "window_end": "2026-05-31"
+        },
+        "approved_aggregate_grain": "function",
+        "minimum_cohort_threshold": 5,
+        "k_min_posture": {
+          "minimum_cohort_threshold": 5,
+          "cohort_threshold_met": true,
+          "total_slices": 6,
+          "k_min_clear_slices": 6,
+          "suppressed_or_unknown_slices": 0
+        },
+        "valid": true,
+        "gaps": [],
+        "vbd_posture": "high_work_integration",
+        "token_posture": "efficient",
+        "strategy_zone": "replicate_pattern",
+        "source_refs": {
+          "evidence_snapshot_id": "evidence_snapshot_cs_50_comparison",
+          "token_efficiency_signal_id": "token_efficiency_signal_cs_50_comparison",
+          "token_source_refs": {
+            "aggregate_probe_id": "token_probe_cs_50_comparison",
+            "source_readiness_id": "source_readiness_token_usage_cs_50_comparison"
+          }
+        },
+        "allowed_uses": [
+          "aggregate_strategy_planning",
+          "workflow_design_review",
+          "model_routing_review",
+          "enablement_planning",
+          "cost_exposure_review",
+          "token_efficiency_review"
+        ],
+        "blocked_uses": [
+          "realized_roi",
+          "ebita_claim",
+          "causality_claim",
+          "productivity_claim",
+          "headcount_reduction_claim",
+          "individual_attribution",
+          "manager_or_team_ranking",
+          "people_decisioning",
+          "customer_facing_financial_output"
+        ],
+        "value_proof_policy": {
+          "map_is_roi_proof": false,
+          "map_is_productivity_proof": false,
+          "map_is_financial_output": false,
+          "map_computes_causality": false,
+          "map_allows_person_or_team_comparison": false,
+          "downstream_claim_strength_upgrade_allowed": false
+        },
+        "feeds": {
+          "evidence_snapshot_context": true,
+          "claim_readiness_snapshot": false,
+          "executive_readout_snapshot": false,
+          "reportability_readiness": false,
+          "customer_facing_financial_output": false
+        },
+        "persistence_policy": {
+          "persisted": false,
+          "creates_migrations": false,
+          "creates_prisma_schema": false,
+          "creates_backend_routes": false,
+          "creates_frontend_ui": false,
+          "creates_ingestion_jobs": false
+        },
+        "caveats": [
+          "VBD x Token Efficiency Map is aggregate strategy context only.",
+          "Token usage is cost/intensity context and is not ROI, productivity, causality, or financial proof.",
+          "VBD is Layer 1 work-integration posture and cannot create full Playbook coverage by itself."
+        ],
+        "generated_at": "2026-06-16T00:00:00.000Z",
+        "derivation_version": "ai_value_vbd_token_efficiency_map_2026_06"
+      },
+      "caveats": [
+        "VBD x Token Efficiency Map is aggregate strategy context only.",
+        "Token usage is cost/intensity context and is not ROI, productivity, causality, or financial proof.",
+        "VBD is Layer 1 work-integration posture and cannot create full Playbook coverage by itself."
+      ]
+    }
+  ],
+  "movement_summary": {
+    "baseline_window_id": "baseline",
+    "comparison_window_id": "comparison",
+    "strategy_transition": "mitigate_friction_to_replicate_pattern",
+    "vbd_posture_transition": "shallow_work_integration_to_high_work_integration",
+    "token_posture_transition": "high_intensity_to_efficient",
+    "total_tokens_change_pct": -0.3824,
+    "average_tokens_per_workflow_change_pct": -0.7812,
+    "high_intensity_workflow_share_change": -0.52,
+    "interpretation": "Aggregate VBD and token movement is strategy context only; customer-owned outcome evidence is still required for value claims."
+  },
+  "recommended_next_motion": {
+    "motion": "replicate_governed_pattern",
+    "rationale": "The approved aggregate workflow pattern shows stronger work integration without high token intensity; replicate only inside the approved pilot scope."
+  },
+  "allowed_uses": [
+    "aggregate_strategy_planning",
+    "pilot_rehearsal",
+    "workflow_design_review",
+    "model_routing_review",
+    "enablement_planning",
+    "cost_exposure_review",
+    "token_efficiency_review"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "value_proof_policy": {
+    "pilot_run_is_roi_proof": false,
+    "pilot_run_is_productivity_proof": false,
+    "pilot_run_is_financial_output": false,
+    "pilot_run_computes_causality": false,
+    "pilot_run_allows_person_or_team_comparison": false,
+    "downstream_claim_strength_upgrade_allowed": false
+  },
+  "feeds": {
+    "evidence_snapshot_context": true,
+    "vbd_token_efficiency_maps": true,
+    "claim_readiness_snapshot": false,
+    "executive_readout_snapshot": false,
+    "reportability_readiness": false,
+    "customer_facing_financial_output": false
+  },
+  "persistence_policy": {
+    "persisted": false,
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "creates_ingestion_jobs": false
+  },
+  "caveats": [
+    "VBD x Token Pilot Run is aggregate strategy context only.",
+    "VBD and token usage together are not ROI proof, productivity proof, causality proof, EBITA proof, headcount proof, or customer-facing financial output.",
+    "Customer-owned Layer 2, Layer 3, governance, and assumption evidence are still required before full Playbook-backed value claims.",
+    "No individual attribution, manager ranking, team ranking, or people decisioning is supported."
+  ],
+  "derivation_version": "ai_value_vbd_token_pilot_runner_2026_06"
+}

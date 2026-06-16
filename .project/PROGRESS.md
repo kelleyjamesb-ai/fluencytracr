@@ -2,6 +2,27 @@
 
 ## Last Completed
 
+- AI Value VBD x Token Pilot Runner slice (user-requested, 2026-06-16):
+  added the contract-only aggregate pilot runner for composing VBD x Token
+  Efficiency Maps across time windows, with a synthetic 50-person Customer
+  Success example that shows movement from `mitigate_friction` to
+  `replicate_pattern`. The runner sorts windows chronologically, requires at
+  least two windows for movement, preserves held evidence as
+  `hold_for_evidence`, rejects unsafe downstream feeds/privacy flags/tiny
+  cohort context, and emits strategy posture only. Also hardened the Pilot
+  Intake Runner so held/non-present Source Packages cannot feed evidence
+  assembly. No migrations, backend routes, frontend UI, ingestion jobs,
+  persistence, claim readiness snapshots, executive readout snapshots,
+  reportability readiness, ROI/productivity/causality/ranking/people-decisioning,
+  or customer-facing financial output were added. Verification:
+  `npm run test:ai-value-vbd-token-pilot-runner`;
+  `npm run test:ai-value-vbd-token-efficiency-map`;
+  `npm run test:ai-value-token-efficiency-signal`;
+  `npm run test:ai-value-pilot-intake-runner`;
+  `npm run test:ai-value-evidence-collection-assembler`;
+  `npm run test:ai-value-blueprint-consistency`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Value support-pilot GSR adapter review repair (user-requested, 2026-06-14 UTC):
   tightened `buildSupportPilotGleanReadinessMapFromRuntimeEvidence` so reportability
   readiness only builds from full Playbook coverage, source packages must match

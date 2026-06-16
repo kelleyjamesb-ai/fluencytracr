@@ -175,6 +175,17 @@ export type {
 } from "./vbdTokenEfficiencyMap";
 
 export {
+  AI_VALUE_VBD_TOKEN_PILOT_RUN_SCHEMA_VERSION,
+  buildVbdTokenPilotRunFromWindowEvidence,
+  validateVbdTokenPilotRun
+} from "./vbdTokenPilotRunner";
+export type {
+  BuildVbdTokenPilotRunInput,
+  BuildVbdTokenPilotRunWindowInput,
+  VbdTokenPilotRunValidationResult
+} from "./vbdTokenPilotRunner";
+
+export {
   EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,
   EvidenceCollectionAssemblySchema,
   buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages,
