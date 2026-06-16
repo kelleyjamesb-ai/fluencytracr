@@ -353,23 +353,472 @@ const aiFluencyOrgFunctionClusters = [
   }
 ] satisfies AiFluencyOrgFunctionCluster[];
 
+type VbdTokenWindowKey = "1m" | "3m" | "6m" | "12m";
+type VbdTokenWindowValueKey = "oneMonth" | "threeMonths" | "sixMonths" | "twelveMonths";
+type VbdTokenOverlayMode = "vbd" | "vbd-token";
+
+type VbdTokenFunctionProfile = {
+  functionArea: string;
+  oneMonth: number;
+  threeMonths: number;
+  sixMonths: number;
+  twelveMonths: number;
+  posture: string;
+};
+
+const vbdTokenWindowOptions = [
+  {
+    key: "1m",
+    label: "1 month",
+    valueKey: "oneMonth",
+    interpretationLabel: "1 month (held for context)"
+  },
+  {
+    key: "3m",
+    label: "3 months",
+    valueKey: "threeMonths",
+    interpretationLabel: "3 months"
+  },
+  {
+    key: "6m",
+    label: "6 months",
+    valueKey: "sixMonths",
+    interpretationLabel: "6 months"
+  },
+  {
+    key: "12m",
+    label: "12 months",
+    valueKey: "twelveMonths",
+    interpretationLabel: "12 months"
+  }
+] satisfies {
+  key: VbdTokenWindowKey;
+  label: string;
+  valueKey: VbdTokenWindowValueKey;
+  interpretationLabel: string;
+}[];
+
+const vbdTokenFunctionProfiles = [
+  {
+    functionArea: "Engineering / Software Development",
+    oneMonth: 78,
+    threeMonths: 75,
+    sixMonths: 71,
+    twelveMonths: 68,
+    posture: "High work integration, steady token intensity"
+  },
+  {
+    functionArea: "Product Management",
+    oneMonth: 72,
+    threeMonths: 74,
+    sixMonths: 76,
+    twelveMonths: 79,
+    posture: "Broad planning work, watch synthesis depth"
+  },
+  {
+    functionArea: "Data & Analytics",
+    oneMonth: 69,
+    threeMonths: 73,
+    sixMonths: 74,
+    twelveMonths: 77,
+    posture: "Analytical workflows expanding across surfaces"
+  },
+  {
+    functionArea: "IT Systems or Security",
+    oneMonth: 64,
+    threeMonths: 66,
+    sixMonths: 68,
+    twelveMonths: 70,
+    posture: "Governed operational use, moderate intensity"
+  },
+  {
+    functionArea: "Sales or Business Development",
+    oneMonth: 74,
+    threeMonths: 76,
+    sixMonths: 78,
+    twelveMonths: 81,
+    posture: "Fast adoption, confirm workflow integration"
+  },
+  {
+    functionArea: "Marketing & Communications",
+    oneMonth: 92,
+    threeMonths: 88,
+    sixMonths: 82,
+    twelveMonths: 74,
+    posture: "High activity, check verification and reuse"
+  },
+  {
+    functionArea: "Design / UX / Research",
+    oneMonth: 86,
+    threeMonths: 84,
+    sixMonths: 80,
+    twelveMonths: 76,
+    posture: "Fast experimentation, deepen workflow presence"
+  },
+  {
+    functionArea: "Corporate Strategy or Business Operations",
+    oneMonth: 83,
+    threeMonths: 81,
+    sixMonths: 78,
+    twelveMonths: 75,
+    posture: "Broad exploration, route to durable workflows"
+  },
+  {
+    functionArea: "Customer or Account Success",
+    oneMonth: 80,
+    threeMonths: 86,
+    sixMonths: 92,
+    twelveMonths: 96,
+    posture: "Deep workflow integration, scale carefully"
+  },
+  {
+    functionArea: "Support or Help Desk",
+    oneMonth: 58,
+    threeMonths: 61,
+    sixMonths: 65,
+    twelveMonths: 69,
+    posture: "Emerging use, improve recovery loops"
+  },
+  {
+    functionArea: "People Talent or Human Resources",
+    oneMonth: 44,
+    threeMonths: 48,
+    sixMonths: 52,
+    twelveMonths: 56,
+    posture: "Held for aggregate workflow fit"
+  },
+  {
+    functionArea: "Finance or Accounting",
+    oneMonth: 42,
+    threeMonths: 46,
+    sixMonths: 51,
+    twelveMonths: 55,
+    posture: "Governed review before broader use"
+  },
+  {
+    functionArea: "Legal & Compliance",
+    oneMonth: 34,
+    threeMonths: 38,
+    sixMonths: 42,
+    twelveMonths: 45,
+    posture: "High control context, keep evidence narrow"
+  },
+  {
+    functionArea: "Field Operations or Logistics",
+    oneMonth: 37,
+    threeMonths: 40,
+    sixMonths: 43,
+    twelveMonths: 47,
+    posture: "Find repeated workflow fit first"
+  },
+  {
+    functionArea: "Administrative or Executive Support",
+    oneMonth: 32,
+    threeMonths: 35,
+    sixMonths: 39,
+    twelveMonths: 44,
+    posture: "Low integration, hold for clearer patterns"
+  },
+  {
+    functionArea: "Education or Training",
+    oneMonth: 49,
+    threeMonths: 54,
+    sixMonths: 60,
+    twelveMonths: 66,
+    posture: "Capability workflows are building"
+  },
+  {
+    functionArea: "Other",
+    oneMonth: 28,
+    threeMonths: 32,
+    sixMonths: 36,
+    twelveMonths: 40,
+    posture: "Keep grouped until patterns clarify"
+  }
+] satisfies VbdTokenFunctionProfile[];
+
+const vbdTokenProfileByFunction = new Map(
+  vbdTokenFunctionProfiles.map((profile) => [profile.functionArea, profile])
+);
+
 const vbdBubbleSize = ({ velocity, breadth, depth }: AiFluencyOrgFunctionCluster) => {
   const combinedSignal = (velocity + breadth + depth) / 3;
   return Math.round(30 + (combinedSignal / 100) * 30);
 };
 
-const vbdBubbleStyle = (plot: AiFluencyOrgFunctionCluster): CSSProperties =>
-  ({
-    left: `${plot.depth}%`,
-    top: `${100 - plot.velocity}%`,
-    "--vbd-bubble-size": `${vbdBubbleSize(plot)}px`
+const tokenIntensityBand = (tokenIntensity: number) => {
+  if (tokenIntensity >= 85) return "Very high";
+  if (tokenIntensity >= 70) return "High";
+  if (tokenIntensity >= 50) return "Moderate";
+  return "Lower";
+};
+
+const tokenIntensityTone = (tokenIntensity: number) => {
+  if (tokenIntensity >= 85) return "very-high";
+  if (tokenIntensity >= 70) return "high";
+  if (tokenIntensity >= 50) return "moderate";
+  return "lower";
+};
+
+const selectedTokenWindowOption = (windowKey: VbdTokenWindowKey) =>
+  vbdTokenWindowOptions.find((option) => option.key === windowKey) ?? vbdTokenWindowOptions[0];
+
+const tokenIntensityForFunction = (
+  functionArea: string,
+  windowKey: VbdTokenWindowKey
+) => {
+  const profile = vbdTokenProfileByFunction.get(functionArea);
+  const option = selectedTokenWindowOption(windowKey);
+  return profile?.[option.valueKey] ?? 0;
+};
+
+const clampVbdCoordinate = (value: number) => Math.max(8, Math.min(92, Math.round(value)));
+
+const vbdWindowMovementByKey: Record<VbdTokenWindowKey, number> = {
+  "1m": 0,
+  "3m": 0.45,
+  "6m": 0.8,
+  "12m": 1.15
+};
+
+const vbdWindowAdjustedPosition = (
+  plot: AiFluencyOrgFunctionCluster,
+  windowKey: VbdTokenWindowKey
+) => {
+  const movement = vbdWindowMovementByKey[windowKey];
+  const depthNudge = ((plot.velocity - 50) / 6 + (plot.breadth - 50) / 10) * movement;
+  const velocityNudge = ((plot.breadth - 50) / 8 + (plot.depth - 50) / 12) * movement;
+
+  return {
+    depth: clampVbdCoordinate(plot.depth + depthNudge),
+    velocity: clampVbdCoordinate(plot.velocity + velocityNudge)
+  };
+};
+
+const tokenAdjustedVbdPosition = (
+  plot: AiFluencyOrgFunctionCluster,
+  windowKey: VbdTokenWindowKey
+) => {
+  const vbdPosition = vbdWindowAdjustedPosition(plot, windowKey);
+  const tokenIntensity = tokenIntensityForFunction(plot.functionArea, windowKey);
+  const tokenShift = (tokenIntensity - 60) / 4;
+  return {
+    depth: clampVbdCoordinate(vbdPosition.depth + tokenShift),
+    velocity: clampVbdCoordinate(vbdPosition.velocity + tokenShift / 1.4)
+  };
+};
+
+const buildTokenFunctionRows = (windowKey: VbdTokenWindowKey) =>
+  aiFluencyOrgFunctionClusters
+    .map((plot) => {
+      const tokenIntensity = tokenIntensityForFunction(plot.functionArea, windowKey);
+      return {
+        ...plot,
+        tokenIntensity,
+        tokenBand: tokenIntensityBand(tokenIntensity),
+        tokenTone: tokenIntensityTone(tokenIntensity),
+        tokenPosture: vbdTokenProfileByFunction.get(plot.functionArea)?.posture ?? "Held for aggregate review"
+      };
+    });
+
+const buildTokenQuadrantRows = (functionRows: ReturnType<typeof buildTokenFunctionRows>) =>
+  vbdQuadrants
+    .map((quadrant) => {
+      const functions = functionRows.filter((plot) => plot.quadrantId === quadrant.id);
+      const aggregateTokenIntensity = functions.length
+        ? Math.round(functions.reduce((sum, plot) => sum + plot.tokenIntensity, 0) / functions.length)
+        : 0;
+      return {
+        ...quadrant,
+        aggregateTokenIntensity,
+        tokenBand: tokenIntensityBand(aggregateTokenIntensity),
+        tokenTone: tokenIntensityTone(aggregateTokenIntensity),
+        reviewFunction: functions[0]?.functionArea ?? "No function surfaced"
+      };
+    });
+
+const vbdBubbleStyle = (
+  plot: AiFluencyOrgFunctionCluster,
+  tokenWindow: VbdTokenWindowKey = "1m",
+  mode: VbdTokenOverlayMode = "vbd"
+): CSSProperties => {
+  const tokenIntensity = tokenIntensityForFunction(plot.functionArea, tokenWindow);
+  const position =
+    mode === "vbd-token"
+      ? tokenAdjustedVbdPosition(plot, tokenWindow)
+      : vbdWindowAdjustedPosition(plot, tokenWindow);
+  return ({
+    left: `${position.depth}%`,
+    top: `${100 - position.velocity}%`,
+    "--vbd-bubble-size": `${vbdBubbleSize(plot)}px`,
+    "--vbd-token-ring": `${Math.round(4 + tokenIntensity / 8)}px`,
+    "--vbd-token-opacity": `${Math.min(0.46, 0.14 + tokenIntensity / 240)}`
   }) as CSSProperties;
+};
 
 const AI_ORG_FLUENCY_EXAMPLE_URL = "/ai-fluency/organizational-results.html";
+const vbdTokenPilotRun = {
+  workflow_name: "Customer Success account health review",
+  pilot_scope: {
+    population_label: "Synthetic Customer Success 50"
+  },
+  pilot_decision: "ready_for_strategy_review",
+  allowed_uses: [
+    "aggregate_strategy_planning",
+    "workflow_design_review",
+    "model_routing_review",
+    "cost_exposure_review"
+  ],
+  blocked_uses: [
+    "realized_roi",
+    "causality_claim",
+    "productivity_claim",
+    "individual_attribution"
+  ],
+  recommended_next_motion: {
+    motion: "replicate_governed_pattern",
+    rationale:
+      "The approved aggregate workflow pattern shows stronger work integration without high token intensity; replicate only inside the approved pilot scope."
+  },
+  movement_summary: {
+    total_tokens_change_pct: -0.38,
+    average_tokens_per_workflow_change_pct: -0.78,
+    high_intensity_workflow_share_change: -0.52
+  },
+  window_sequence: [
+    {
+      window_label: "Baseline",
+      covered_window: {
+        window_start: "2026-02-01",
+        window_end: "2026-03-31"
+      },
+      vbd_posture: "shallow_work_integration",
+      token_posture: "high_intensity",
+      strategy_zone: "mitigate_friction"
+    },
+    {
+      window_label: "Comparison",
+      covered_window: {
+        window_start: "2026-04-01",
+        window_end: "2026-05-31"
+      },
+      vbd_posture: "high_work_integration",
+      token_posture: "efficient",
+      strategy_zone: "replicate_pattern"
+    }
+  ]
+} as const;
+const vbdTokenPilotWindows = Array.isArray(vbdTokenPilotRun.window_sequence)
+  ? vbdTokenPilotRun.window_sequence
+  : [];
+const vbdTokenPilotBaseline = vbdTokenPilotWindows[0] ?? {};
+const vbdTokenPilotComparison = vbdTokenPilotWindows[vbdTokenPilotWindows.length - 1] ?? {};
+
+const strategyZoneLabels: Record<string, string> = {
+  replicate_pattern: "Replicate pattern",
+  optimize_cost: "Optimize cost",
+  activate_workflow: "Activate workflow",
+  mitigate_friction: "Mitigate friction",
+  hold_for_evidence: "Hold for evidence"
+};
+
+const pilotMotionLabels: Record<string, string> = {
+  replicate_governed_pattern: "Replicate governed pattern",
+  optimize_cost: "Optimize cost",
+  activate_workflow: "Activate workflow",
+  mitigate_friction: "Mitigate friction",
+  hold_for_evidence: "Hold for evidence"
+};
+
+const pilotDecisionLabels: Record<string, string> = {
+  ready_for_strategy_review: "Ready for strategy review",
+  hold_for_more_windows: "Hold for more windows",
+  hold_for_evidence: "Hold for evidence"
+};
+
+const vbdPostureLabels: Record<string, string> = {
+  high_work_integration: "High work integration",
+  emerging_work_integration: "Emerging work integration",
+  shallow_work_integration: "Shallow work integration",
+  held_or_suppressed: "Held or suppressed"
+};
+
+const tokenPostureLabels: Record<string, string> = {
+  efficient: "Efficient token posture",
+  moderate_intensity: "Moderate token intensity",
+  high_intensity: "High token intensity",
+  held_or_suppressed: "Held or suppressed"
+};
+
+const allowedPilotUseLabels: Record<string, string> = {
+  aggregate_strategy_planning: "Aggregate strategy planning",
+  pilot_rehearsal: "Pilot rehearsal",
+  workflow_design_review: "Workflow design review",
+  model_routing_review: "Model routing review",
+  enablement_planning: "Enablement planning",
+  cost_exposure_review: "Cost exposure review",
+  token_efficiency_review: "Token efficiency review"
+};
+
+const blockedPilotUseLabels: Record<string, string> = {
+  realized_roi: "Blocked: economic proof",
+  ebita_claim: "Blocked: financial claim",
+  causality_claim: "Blocked: causal proof",
+  productivity_claim: "Blocked: productivity proof",
+  headcount_reduction_claim: "Blocked: headcount reduction",
+  individual_attribution: "Blocked: people-level attribution",
+  manager_or_team_ranking: "Blocked: group ranking",
+  people_decisioning: "Blocked: people decisioning",
+  customer_facing_financial_output: "Blocked: customer-facing financial output"
+};
 
 const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "warn" | "good" }) => (
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
 );
+
+const labelFromToken = (
+  value: unknown,
+  labels: Record<string, string>,
+  fallback = "Held for review"
+) => {
+  const key = String(value ?? "");
+  return labels[key] ?? fallback;
+};
+
+const dateRangeLabel = (window: Record<string, any>) => {
+  const start = window.covered_window?.window_start;
+  const end = window.covered_window?.window_end;
+  return start && end ? `${start} to ${end}` : "Window not available";
+};
+
+const percentMovementLabel = (value: unknown) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not available";
+  if (value === 0) return "No change";
+  const direction = value < 0 ? "lower" : "higher";
+  return `${Math.round(Math.abs(value) * 100)}% ${direction}`;
+};
+
+const pointMovementLabel = (value: unknown) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not available";
+  if (value === 0) return "No change";
+  const direction = value < 0 ? "lower" : "higher";
+  return `${Math.round(Math.abs(value) * 100)} pts ${direction}`;
+};
+
+const displayPilotUses = (uses: unknown, labels: Record<string, string>) =>
+  Array.isArray(uses)
+    ? uses.map((use) => labelFromToken(use, labels)).filter(Boolean)
+    : [];
+
+const prioritizedPilotUses = (
+  uses: string[],
+  priority: string[],
+  maxItems: number
+) => {
+  const selected = priority.filter((item) => uses.includes(item));
+  const fallback = uses.filter((item) => !selected.includes(item));
+  return [...selected, ...fallback].slice(0, maxItems);
+};
 
 const scenarioInputTone = (status: string): "good" | "warn" | "neutral" => {
   if (status === "Ready to model") return "good";
@@ -741,6 +1190,30 @@ const VbdFrameworkPanel = () => (
 );
 
 const VbdMapPanel = () => {
+  const [tokenOverlayMode, setTokenOverlayMode] = useState<VbdTokenOverlayMode>("vbd");
+  const [tokenWindow, setTokenWindow] = useState<VbdTokenWindowKey>("1m");
+  const isVbdWithToken = tokenOverlayMode === "vbd-token";
+  const tokenWindowOption = selectedTokenWindowOption(tokenWindow);
+  const tokenFunctionRows = useMemo(() => buildTokenFunctionRows(tokenWindow), [tokenWindow]);
+  const tokenQuadrantRows = useMemo(() => buildTokenQuadrantRows(tokenFunctionRows), [tokenFunctionRows]);
+  const primaryReviewQuadrant = tokenQuadrantRows[0];
+  const tokenResult = isVbdWithToken ? (
+    <section className="ai-value-vbd-token-result" aria-label="Aggregate token result box">
+      <div className="ai-value-vbd-token-quadrants">
+        {tokenQuadrantRows.map((quadrant) => (
+          <article
+            className={`ai-value-vbd-token-card ai-value-vbd-token-card-${quadrant.tokenTone}`}
+            key={quadrant.id}
+          >
+            <strong>{quadrant.label}</strong>
+            <span>{quadrant.tokenBand} aggregate token intensity</span>
+            <p>{quadrant.reviewFunction}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  ) : null;
+
   return (
     <section className="ai-value-panel ai-value-vbd-panel" aria-label="Velocity Breadth Depth map">
       <div className="ai-value-section-head">
@@ -755,6 +1228,61 @@ const VbdMapPanel = () => {
         </div>
         <StatusPill label="Aggregate signals" tone="good" />
       </div>
+
+      <section className="ai-value-vbd-token-overlay" aria-label="VBD scenario controls">
+        <div className="ai-value-vbd-token-overlay-head">
+          <div>
+            <p className="eyebrow">Strategy context only</p>
+            <h4>VBD scenario controls</h4>
+            <p>
+              Simulated aggregate context for workflow review. Month controls
+              move the circles in VBD, and VBD with Token adds token context
+              for scenario planning only; it is not ROI, productivity,
+              causality, people attribution, financial output, savings, or
+              efficiency proof.
+            </p>
+          </div>
+          <div className="ai-value-vbd-token-controls" aria-label="Token overlay controls">
+            <div className="ai-value-vbd-token-control-group" aria-label="Token overlay mode">
+              <button
+                aria-pressed={tokenOverlayMode === "vbd"}
+                onClick={() => setTokenOverlayMode("vbd")}
+                type="button"
+              >
+                VBD
+              </button>
+              <button
+                aria-pressed={tokenOverlayMode === "vbd-token"}
+                onClick={() => setTokenOverlayMode("vbd-token")}
+                type="button"
+              >
+                VBD with Token
+              </button>
+            </div>
+            <div className="ai-value-vbd-token-control-group" aria-label="Token overlay window">
+              {vbdTokenWindowOptions.map((option) => (
+                <button
+                  aria-pressed={tokenWindow === option.key}
+                  key={option.key}
+                  onClick={() => setTokenWindow(option.key)}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="ai-value-vbd-token-overlay-summary">
+          <span>Window: {tokenWindowOption.interpretationLabel}</span>
+          <span>
+            VBD review lens: {primaryReviewQuadrant.label}
+          </span>
+          <span>
+            {isVbdWithToken ? `${primaryReviewQuadrant.tokenBand} token context` : "Token context off"}
+          </span>
+        </div>
+      </section>
 
       <div className="ai-value-vbd-layout">
         <div className="ai-value-vbd-y-axis">
@@ -780,17 +1308,26 @@ const VbdMapPanel = () => {
             })}
           </div>
           <div className="ai-value-vbd-marker-layer" aria-label="Function positions">
-            {aiFluencyOrgFunctionClusters.map((plot) => (
+            {aiFluencyOrgFunctionClusters.map((plot) => {
+              const tokenIntensity = tokenIntensityForFunction(plot.functionArea, tokenWindow);
+              return (
               <span
-                aria-label={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}`}
-                className={`ai-value-vbd-function-bubble ai-value-vbd-function-bubble-${plot.quadrantId}`}
+                aria-label={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}${
+                  isVbdWithToken ? `, aggregate token intensity ${tokenIntensityBand(tokenIntensity)}` : ""
+                }`}
+                className={`ai-value-vbd-function-bubble ai-value-vbd-function-bubble-${plot.quadrantId}${
+                  isVbdWithToken ? " ai-value-vbd-function-bubble-token-overlay" : ""
+                }`}
                 key={plot.functionArea}
-                style={vbdBubbleStyle(plot)}
-                title={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}`}
+                style={vbdBubbleStyle(plot, tokenWindow, isVbdWithToken ? "vbd-token" : "vbd")}
+                title={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}${
+                  isVbdWithToken ? `, aggregate token intensity ${tokenIntensityBand(tokenIntensity)}` : ""
+                }`}
               >
                 <span>{plot.shortLabel}</span>
               </span>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -804,6 +1341,8 @@ const VbdMapPanel = () => {
           combined Velocity, Breadth, and Depth.
         </p>
       </div>
+
+      {tokenResult}
 
       <div className="ai-value-vbd-definition-legend" aria-label="Quadrant definitions">
         <h4>Quadrant definitions</h4>
@@ -835,9 +1374,147 @@ const VbdMapPanel = () => {
   );
 };
 
+const VbdTokenPilotReviewPanel = () => {
+  const movement = (vbdTokenPilotRun.movement_summary ?? {}) as Record<string, any>;
+  const motion = (vbdTokenPilotRun.recommended_next_motion ?? {}) as Record<string, any>;
+  const allowedUses = displayPilotUses(vbdTokenPilotRun.allowed_uses, allowedPilotUseLabels);
+  const blockedUses = displayPilotUses(vbdTokenPilotRun.blocked_uses, blockedPilotUseLabels);
+  const visibleAllowedUses = prioritizedPilotUses(
+    allowedUses,
+    [
+      "Aggregate strategy planning",
+      "Workflow design review",
+      "Model routing review",
+      "Cost exposure review"
+    ],
+    4
+  );
+  const visibleBlockedUses = prioritizedPilotUses(
+    blockedUses,
+    [
+      "Blocked: economic proof",
+      "Blocked: causal proof",
+      "Blocked: productivity proof",
+      "Blocked: people-level attribution"
+    ],
+    4
+  );
+  const decisionLabel = labelFromToken(vbdTokenPilotRun.pilot_decision, pilotDecisionLabels);
+  const motionLabel = labelFromToken(motion.motion, pilotMotionLabels);
+
+  return (
+    <section
+      className="ai-value-panel ai-value-token-pilot-panel"
+      aria-label="VBD token pilot movement review"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Pilot Movement Review</p>
+          <h3>VBD and token movement</h3>
+          <p>
+            Use the validated rehearsal to inspect aggregate work-integration
+            movement and token intensity together. Keep the readout inside the
+            pilot rehearsal boundary; it is not value proof.
+          </p>
+        </div>
+        <StatusPill label="Strategy context" tone="good" />
+      </div>
+
+      <div className="ai-value-token-pilot-summary" aria-label="Pilot movement summary">
+        <article>
+          <span className="ai-value-map-label">Workflow</span>
+          <strong>{String(vbdTokenPilotRun.workflow_name ?? "Workflow not selected")}</strong>
+          <p>{String(vbdTokenPilotRun.pilot_scope?.population_label ?? "Aggregate pilot rehearsal")}</p>
+        </article>
+        <article>
+          <span className="ai-value-map-label">Review decision</span>
+          <strong>{decisionLabel}</strong>
+          <p>Function-level aggregate grain with minimum cohort protection.</p>
+        </article>
+        <article>
+          <span className="ai-value-map-label">Recommended motion</span>
+          <strong>{motionLabel}</strong>
+          <p>{String(motion.rationale ?? "Review the aggregate workflow pattern before expanding.")}</p>
+        </article>
+      </div>
+
+      <div className="ai-value-token-pilot-motion" aria-label="Baseline to comparison movement">
+        <PilotWindowCard label="Baseline window" window={vbdTokenPilotBaseline} />
+        <div className="ai-value-token-pilot-arrow" aria-hidden="true">
+          <span />
+          <strong>moves to</strong>
+          <span />
+        </div>
+        <PilotWindowCard label="Comparison window" window={vbdTokenPilotComparison} />
+      </div>
+
+      <div className="ai-value-token-pilot-metrics" aria-label="Token movement metrics">
+        <article>
+          <span className="ai-value-map-label">Total tokens</span>
+          <strong>{percentMovementLabel(movement.total_tokens_change_pct)}</strong>
+        </article>
+        <article>
+          <span className="ai-value-map-label">Tokens per workflow</span>
+          <strong>{percentMovementLabel(movement.average_tokens_per_workflow_change_pct)}</strong>
+        </article>
+        <article>
+          <span className="ai-value-map-label">High-intensity workflow share</span>
+          <strong>{pointMovementLabel(movement.high_intensity_workflow_share_change)}</strong>
+        </article>
+      </div>
+
+      <div className="ai-value-token-pilot-boundary">
+        <article aria-label="Allowed planning uses">
+          <h4>Allowed planning uses</h4>
+          <div className="ai-value-token-pilot-chip-list">
+            {visibleAllowedUses.map((use) => (
+              <span key={use}>{use}</span>
+            ))}
+          </div>
+        </article>
+        <article aria-label="Blocked outputs">
+          <h4>Blocked outputs</h4>
+          <div className="ai-value-token-pilot-chip-list ai-value-token-pilot-chip-list-blocked">
+            {visibleBlockedUses.map((use) => (
+              <span key={use}>{use}</span>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <p className="ai-value-token-pilot-caveat">
+        <strong>Boundary:</strong> This panel reads the validated synthetic
+        rehearsal as aggregate strategy context only. Customer-owned outcome
+        evidence, governance review, and approved assumptions are still required
+        before stronger value language.
+      </p>
+    </section>
+  );
+};
+
+const PilotWindowCard = ({
+  label,
+  window
+}: {
+  label: string;
+  window: Record<string, any>;
+}) => (
+  <article className="ai-value-token-pilot-window">
+    <span className="ai-value-map-label">{label}</span>
+    <strong>{String(window.window_label ?? label)}</strong>
+    <p>{dateRangeLabel(window)}</p>
+    <div>
+      <span>{labelFromToken(window.vbd_posture, vbdPostureLabels)}</span>
+      <span>{labelFromToken(window.token_posture, tokenPostureLabels)}</span>
+      <span>{labelFromToken(window.strategy_zone, strategyZoneLabels)}</span>
+    </div>
+  </article>
+);
+
 const VbdPage = () => (
   <section className="ai-value-focused-stack" aria-label="VBD operating map workspace">
     <VbdMapPanel />
+    <VbdTokenPilotReviewPanel />
   </section>
 );
 

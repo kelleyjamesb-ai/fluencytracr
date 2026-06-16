@@ -154,10 +154,10 @@ describe("AIValueWorkspace executive spine", () => {
 
     const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(within(map).getByText(/Function cluster map/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Customer or Account Success/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Finance or Accounting/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Legal & Compliance/i)).toBeInTheDocument();
+    expect(within(map).getAllByText(/Engineering \/ Software Development/i).length).toBeGreaterThan(0);
+    expect(within(map).getAllByText(/Customer or Account Success/i).length).toBeGreaterThan(0);
+    expect(within(map).getAllByText(/Finance or Accounting/i).length).toBeGreaterThan(0);
+    expect(within(map).getAllByText(/Legal & Compliance/i).length).toBeGreaterThan(0);
     expect(within(map).getByText(/Measured AI surfaces:/i)).toBeInTheDocument();
     expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
     expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
@@ -207,6 +207,135 @@ describe("AIValueWorkspace executive spine", () => {
       )
     ).toBe(true);
     expect(within(map).queryByText(/No functions here yet/i)).not.toBeInTheDocument();
+
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("shows aggregate token controls with dynamic VBD month-window sorting", () => {
+    const { container } = renderWorkspace("/ai-value-workspace/vbd");
+
+    const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
+    expect(within(map).queryByRole("button", { name: /Token usage overlay/i })).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".ai-value-vbd-function-bubble")).toHaveLength(17);
+
+    const overlay = within(map).getByRole("region", { name: /VBD scenario controls/i });
+    expect(within(overlay).getByRole("button", { name: "VBD" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(within(overlay).getByRole("button", { name: "VBD with Token" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+    expect(within(overlay).getByRole("button", { name: "1 month" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(overlay).getByRole("button", { name: "3 months" })).toBeInTheDocument();
+    expect(within(overlay).getByRole("button", { name: "6 months" })).toBeInTheDocument();
+    expect(within(overlay).getByRole("button", { name: "12 months" })).toBeInTheDocument();
+    expect(within(overlay).getByText(/Window: 1 month \(held for context\)/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/VBD review lens: Fast but shallow/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/Token context off/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/Strategy context only/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/VBD scenario controls/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/Simulated aggregate context for workflow review/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/Month controls move the circles in VBD/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/VBD with Token adds token context/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/not ROI, productivity, causality, people attribution, financial output, savings, or efficiency proof/i)).toBeInTheDocument();
+    const graphic = container.querySelector(".ai-value-vbd-layout");
+    const overlayControls = container.querySelector(".ai-value-vbd-token-overlay");
+    expect(graphic).toBeInstanceOf(HTMLElement);
+    expect(overlayControls).toBeInstanceOf(HTMLElement);
+    expect(container.querySelector(".ai-value-vbd-token-quadrants")).not.toBeInTheDocument();
+    expect(
+      (overlayControls as HTMLElement).compareDocumentPosition(graphic as HTMLElement) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    const customerSuccessBubble = container.querySelector(
+      '[aria-label^="Customer or Account Success"]'
+    ) as HTMLElement;
+    expect(customerSuccessBubble).toBeInstanceOf(HTMLElement);
+    expect(customerSuccessBubble.style.left).toBe("66%");
+    expect(customerSuccessBubble.style.top).toBe("58%");
+    const customerSuccessVbdOneMonth = {
+      left: customerSuccessBubble.style.left,
+      top: customerSuccessBubble.style.top
+    };
+
+    fireEvent.click(within(overlay).getByRole("button", { name: "12 months" }));
+    expect(within(overlay).getByRole("button", { name: "12 months" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(overlay).getByText(/Window: 12 months/i)).toBeInTheDocument();
+    expect(within(overlay).getByRole("button", { name: "VBD" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(customerSuccessBubble.style.left).not.toBe(customerSuccessVbdOneMonth.left);
+    expect(customerSuccessBubble.style.top).not.toBe(customerSuccessVbdOneMonth.top);
+    const customerSuccessVbdTwelveMonths = {
+      left: customerSuccessBubble.style.left,
+      top: customerSuccessBubble.style.top
+    };
+
+    fireEvent.click(within(overlay).getByRole("button", { name: "VBD with Token" }));
+    expect(within(overlay).getByRole("button", { name: "VBD with Token" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(customerSuccessBubble.style.left).not.toBe(customerSuccessVbdTwelveMonths.left);
+    expect(customerSuccessBubble.style.top).not.toBe(customerSuccessVbdTwelveMonths.top);
+    expect(customerSuccessBubble).toHaveClass("ai-value-vbd-function-bubble-token-overlay");
+    expect(customerSuccessBubble.getAttribute("aria-label")).toMatch(/aggregate token intensity/i);
+    expect(within(map).queryByRole("heading", { name: /Function review context/i })).not.toBeInTheDocument();
+    expect(within(overlay).getByText(/High token context/i)).toBeInTheDocument();
+    const quadrantContext = container.querySelector(".ai-value-vbd-token-quadrants");
+    expect(quadrantContext).toBeInstanceOf(HTMLElement);
+    expect(
+      (graphic as HTMLElement).compareDocumentPosition(quadrantContext as HTMLElement) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    const customerSuccessTokenLeftAtTwelveMonths = customerSuccessBubble.style.left;
+    fireEvent.click(within(overlay).getByRole("button", { name: "3 months" }));
+    expect(customerSuccessBubble.style.left).not.toBe(customerSuccessTokenLeftAtTwelveMonths);
+
+    expect(container.querySelectorAll(".ai-value-vbd-function-bubble")).toHaveLength(17);
+    expect(container.textContent).not.toMatch(/highest|leader|leaderboard|rank|score|function usage order|token usage by function/i);
+    expect(container.textContent).not.toMatch(
+      /680000|420000|10968|2194|org-synthetic|evidence_snapshot|token_probe|source_readiness|aggregate_interaction_count|users_in_scope|workflow_id|customer_id|pilot_id|source_id/i
+    );
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "live telemetry",
+      "real-time",
+      "cost savings",
+      "token savings",
+      "ROI proof",
+      uiTerm("manager", " ", "ranking"),
+      uiTerm("team", " ", "ranking")
+    ]);
+  });
+
+  it("adds a governed VBD token pilot movement review to the VBD step", () => {
+    const { container } = renderWorkspace("/ai-value-workspace/vbd");
+
+    const review = screen.getByRole("region", { name: /VBD token pilot movement review/i });
+    expect(review).toBeInTheDocument();
+    expect(within(review).getByRole("heading", { name: /VBD and token movement/i })).toBeInTheDocument();
+    expect(within(review).getByText(/Customer Success account health review/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Ready for strategy review/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Replicate governed pattern/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Baseline window/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Comparison window/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Shallow work integration/i)).toBeInTheDocument();
+    expect(within(review).getByText(/High work integration/i)).toBeInTheDocument();
+    expect(within(review).getAllByText(/High token intensity/i).length).toBeGreaterThan(0);
+    expect(within(review).getAllByText(/Efficient token posture/i).length).toBeGreaterThan(0);
+    expect(within(review).getByText(/38% lower/i)).toBeInTheDocument();
+    expect(within(review).getByText(/78% lower/i)).toBeInTheDocument();
+    expect(within(review).getByText(/52 pts lower/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Aggregate strategy planning/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Workflow design review/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Blocked: economic proof/i)).toBeInTheDocument();
+    expect(within(review).getByText(/Blocked: people-level attribution/i)).toBeInTheDocument();
+    expect(within(review).getAllByText(/strategy context only/i).length).toBeGreaterThan(0);
+    expect(review.textContent).not.toMatch(/replicate_governed_pattern|realized_roi|manager_or_team_ranking/i);
 
     expectNoUnsafeUiLanguage(container.textContent);
   });
