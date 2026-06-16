@@ -132,6 +132,16 @@ export type {
 } from "./sourcePackages";
 
 export {
+  SCRUBBED_GLEAN_CLIENT_EXPORT_SCHEMA_VERSION,
+  convertScrubbedGleanClientExportToEvidenceInputs,
+  validateScrubbedGleanClientExport
+} from "./scrubbedGleanClientExportConverter";
+export type {
+  ConvertScrubbedGleanClientExportOptions,
+  ScrubbedGleanClientExportConversionResult
+} from "./scrubbedGleanClientExportConverter";
+
+export {
   AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_SCHEMA_VERSION,
   TokenEfficiencySignalSchema,
   buildTokenEfficiencySignalFromAggregateSummary,
