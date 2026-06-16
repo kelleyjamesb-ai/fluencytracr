@@ -207,6 +207,15 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
   "source_system_type",
   "source_refs",
   "source_readiness_id",
+  "aggregate_probe_id",
+  "aggregate_export_id",
+  "aggregate_outcome_export_id",
+  "aggregate_workforce_context_export_id",
+  "governance_control_export_id",
+  "assumption_approval_export_id",
+  "client_evidence_entry_id",
+  "client_evidence_request_id",
+  "aggregate_entry_ref",
   "blocked_uses",
   "aggregate_workforce_context",
   "metric_owner_review",
@@ -280,6 +289,15 @@ const FORBIDDEN_IDENTIFIER_VALUE_PATTERNS = [
   /(?:^|_)(?:user|employee|person|direct)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
   /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i
 ];
+
+const REQUIRED_SOURCE_REF_BY_PACKAGE_TYPE: Record<string, string> = {
+  layer_1_bigquery_telemetry_summary: "aggregate_probe_id",
+  layer_2_user_voice_empirical_export: "aggregate_export_id",
+  layer_3_business_system_of_record_outcome_export: "aggregate_outcome_export_id",
+  aggregate_workforce_context_export: "aggregate_workforce_context_export_id",
+  governance_control_export: "governance_control_export_id",
+  assumption_approval_export: "assumption_approval_export_id"
+};
 
 export const SourcePackageSchema = {
   schema_version: AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
@@ -443,7 +461,7 @@ function collectForbiddenValues(
       isForbiddenValuePath(path) &&
       FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue))
     ) {
-      values.add(`${path.join(".")}: ${value}`);
+      values.add(path.join(".") || "<root>");
     }
     return values;
   }
@@ -486,7 +504,7 @@ function collectUnsafeMetadataValues(
 ): Set<string> {
   if (typeof value === "string") {
     if (isUnsafeMetadataValuePath(path) && isUnsafeMetadataValue(value)) {
-      values.add(`${path.join(".")}: ${value}`);
+      values.add(path.join(".") || "<root>");
     }
     return values;
   }
@@ -515,7 +533,7 @@ function collectForbiddenIdentifierValues(
 ): Set<string> {
   if (typeof value === "string") {
     if (isCaveatValuePath(path) && isForbiddenIdentifierValue(value)) {
-      values.add(`${path.join(".")}: ${value}`);
+      values.add(path.join(".") || "<root>");
     }
     return values;
   }
@@ -652,6 +670,9 @@ function collectKMinGaps(pkg: any): string[] {
   const gaps: string[] = [];
   const minimum = Number(pkg?.minimum_cohort_threshold);
   const postureMinimum = Number(pkg?.k_min_posture?.minimum_cohort_threshold);
+  const totalSlices = Number(pkg?.k_min_posture?.total_slices);
+  const clearSlices = Number(pkg?.k_min_posture?.k_min_clear_slices);
+  const suppressedOrUnknownSlices = Number(pkg?.k_min_posture?.suppressed_or_unknown_slices);
   if (!Number.isFinite(minimum) || minimum < 5) {
     gaps.push("minimum_cohort_threshold must be at least 5");
   }
@@ -663,6 +684,49 @@ function collectKMinGaps(pkg: any): string[] {
   }
   if (typeof pkg?.k_min_posture?.cohort_threshold_met !== "boolean") {
     gaps.push("k_min_posture.cohort_threshold_met must be boolean");
+  }
+  if (!Number.isInteger(totalSlices) || totalSlices < 1) {
+    gaps.push("k_min_posture.total_slices must be an integer at least 1");
+  }
+  if (!Number.isInteger(clearSlices) || clearSlices < 0) {
+    gaps.push("k_min_posture.k_min_clear_slices must be a non-negative integer");
+  }
+  if (!Number.isInteger(suppressedOrUnknownSlices) || suppressedOrUnknownSlices < 0) {
+    gaps.push("k_min_posture.suppressed_or_unknown_slices must be a non-negative integer");
+  }
+  if (
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    clearSlices > totalSlices
+  ) {
+    gaps.push("k_min_posture.k_min_clear_slices cannot exceed total_slices");
+  }
+  if (
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    Number.isInteger(suppressedOrUnknownSlices) &&
+    clearSlices + suppressedOrUnknownSlices !== totalSlices
+  ) {
+    gaps.push("k_min_posture.k_min_clear_slices plus suppressed_or_unknown_slices must equal total_slices");
+  }
+  if (
+    pkg?.k_min_posture?.cohort_threshold_met === true &&
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    Number.isInteger(suppressedOrUnknownSlices) &&
+    (clearSlices !== totalSlices || suppressedOrUnknownSlices !== 0)
+  ) {
+    gaps.push("k_min_posture.cohort_threshold_met true requires all slices clear and no suppressed or unknown slices");
+  }
+  if (
+    pkg?.k_min_posture?.cohort_threshold_met === false &&
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    Number.isInteger(suppressedOrUnknownSlices) &&
+    clearSlices === totalSlices &&
+    suppressedOrUnknownSlices === 0
+  ) {
+    gaps.push("k_min_posture.cohort_threshold_met false requires at least one suppressed or uncleared slice");
   }
   return gaps;
 }
@@ -702,6 +766,14 @@ function collectUsePolicyGaps(pkg: any): string[] {
 function collectTypeSpecificGaps(pkg: any): string[] {
   const gaps: string[] = [];
   const type = pkg?.source_package_type;
+  const requiredSourceRef = REQUIRED_SOURCE_REF_BY_PACKAGE_TYPE[String(type)];
+  if (
+    requiredSourceRef &&
+    (typeof pkg?.source_refs?.[requiredSourceRef] !== "string" ||
+      pkg.source_refs[requiredSourceRef].trim() === "")
+  ) {
+    gaps.push(`${type} requires source_refs.${requiredSourceRef}`);
+  }
   if (type === "layer_1_bigquery_telemetry_summary" &&
     pkg?.source_system_type !== "bigquery_telemetry") {
     gaps.push("Layer 1 package must use source_system_type bigquery_telemetry");
@@ -753,8 +825,12 @@ function collectTypeSpecificGaps(pkg: any): string[] {
     if (pkg?.aggregate_workforce_context?.source_owner_approval_state !== "approved") {
       gaps.push("aggregate_workforce_context.source_owner_approval_state must be approved");
     }
-    if (pkg?.aggregate_workforce_context?.cohort_threshold_met !== true) {
-      gaps.push("aggregate_workforce_context.cohort_threshold_met must be true");
+    const workforceCanFeed = canFeedEvidenceSnapshotSourceRef(pkg);
+    if (workforceCanFeed && pkg?.aggregate_workforce_context?.cohort_threshold_met !== true) {
+      gaps.push("aggregate_workforce_context.cohort_threshold_met must be true for present or partial workforce context");
+    }
+    if (!workforceCanFeed && pkg?.aggregate_workforce_context?.cohort_threshold_met === true) {
+      gaps.push("aggregate_workforce_context.cohort_threshold_met cannot be true when workforce context is suppressed, held, missing, not computed, or below k-min");
     }
     for (const use of WORKFORCE_BLOCKED_USES) {
       if (!blockedUses(pkg).includes(use)) {
@@ -797,6 +873,19 @@ function collectForbiddenIdentifierValueGaps(pkg: any): string[] {
     : [];
 }
 
+function kMinClear(pkg: any): boolean {
+  const totalSlices = Number(pkg?.k_min_posture?.total_slices ?? 0);
+  return pkg?.k_min_posture?.cohort_threshold_met === true &&
+    totalSlices > 0 &&
+    Number(pkg?.k_min_posture?.k_min_clear_slices ?? -1) === totalSlices &&
+    Number(pkg?.k_min_posture?.suppressed_or_unknown_slices ?? 0) === 0;
+}
+
+function canFeedEvidenceSnapshotSourceRef(pkg: any): boolean {
+  return ["present", "partial"].includes(String(pkg?.evidence_state)) &&
+    kMinClear(pkg);
+}
+
 export function validateSourcePackage(pkg: any): SourcePackageValidationResult {
   const gaps = [
     ...collectTopLevelGaps(pkg),
@@ -822,7 +911,7 @@ export function validateSourcePackage(pkg: any): SourcePackageValidationResult {
     gaps,
     feeds: {
       evidence_collection_input: valid,
-      evidence_snapshot_source_ref: valid,
+      evidence_snapshot_source_ref: valid && canFeedEvidenceSnapshotSourceRef(pkg),
       claim_readiness_context: false,
       executive_readout_context: false,
       customer_facing_economic_output: false,

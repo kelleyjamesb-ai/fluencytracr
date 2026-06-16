@@ -330,6 +330,12 @@ describe("AI Value runtime builders internal service", () => {
     expect(result.persistedPilotRun?.executive_readout_snapshot_id).toBe(
       "executive_readout_snapshot_runtime_full_lineage"
     );
+    expect(result.persistedPilotRun?.required_caveats).toEqual(
+      result.executiveReadoutSnapshot?.required_caveats
+    );
+    expect(result.persistedPilotRun?.blocked_uses).toEqual(
+      result.executiveReadoutSnapshot?.blocked_uses
+    );
     expect(result.persistedPilotRun?.blocked_uses).toContain(
       "customer_facing_financial_output"
     );
@@ -784,7 +790,8 @@ describe("AI Value runtime builders internal service", () => {
     suppressedLayer1.evidence_state = "suppressed";
     suppressedLayer1.k_min_posture.cohort_threshold_met = false;
     suppressedLayer1.k_min_posture.k_min_clear_slices = 0;
-    suppressedLayer1.k_min_posture.suppressed_or_unknown_slices = 1;
+    suppressedLayer1.k_min_posture.suppressed_or_unknown_slices =
+      suppressedLayer1.k_min_posture.total_slices;
     suppressedLayer1.caveats = [
       "Layer 1 package failed k-min and must remain suppressed."
     ];

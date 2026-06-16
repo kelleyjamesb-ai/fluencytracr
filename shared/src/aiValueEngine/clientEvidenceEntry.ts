@@ -514,7 +514,7 @@ function collectForbiddenValues(entry: any): string[] {
           !isAllowedLayer3AggregateOutcomeKpiValuePattern(entry, path, pattern, value)
       )
     )
-    .map(({ value }) => value);
+    .map(({ path }) => path);
 }
 
 function isUnsafeMetadataValue(value: string): boolean {
@@ -536,7 +536,7 @@ function collectUnsafeMetadataValues(
 ): string[] {
   if (typeof value === "string") {
     if (isUnsafeMetadataValue(value)) {
-      values.push(`${path.join(".")}: ${value}`);
+      values.push(path.join(".") || "<root>");
     }
     return values;
   }
@@ -570,7 +570,7 @@ function collectEntryMetadataValueGaps(entry: any): string[] {
     }
   };
   return collectUnsafeMetadataValues(metadata).map(
-    (value) => `Forbidden metadata value detected: ${value}`
+    (path) => `Forbidden metadata value detected at ${path}`
   );
 }
 
@@ -581,7 +581,7 @@ function collectForbiddenIdentifierValues(
 ): string[] {
   if (typeof value === "string") {
     if (isForbiddenIdentifierValue(value)) {
-      values.push(`${path.join(".")}: ${value}`);
+      values.push(path.join(".") || "<root>");
     }
     return values;
   }
@@ -607,7 +607,7 @@ function collectCaveatIdentifierValueGaps(entry: any): string[] {
     rejection_reasons: entry?.rejection_reasons
   };
   return collectForbiddenIdentifierValues(caveatValues).map(
-    (value) => `Forbidden identifier value detected: ${value}`
+    (path) => `Forbidden identifier value detected at ${path}`
   );
 }
 
@@ -853,7 +853,8 @@ function sourceSystemTypeForEntry(entry: ClientEvidenceEntry): string {
 }
 
 function sourceRefsForEntry(entry: ClientEvidenceEntry): Record<string, any> {
-  return {
+  const inputRefs = entry.metric_or_signal_summary.source_refs;
+  const refs: Record<string, any> = {
     source_readiness_id: entry.metric_or_signal_summary.source_refs.source_readiness_id ??
       `source_readiness_${safeIdPart(entry.entry_id)}`,
     client_evidence_entry_id: entry.entry_id,
@@ -861,6 +862,42 @@ function sourceRefsForEntry(entry: ClientEvidenceEntry): Record<string, any> {
     aggregate_entry_ref: entry.metric_or_signal_summary.source_refs.aggregate_entry_ref ??
       entry.entry_id
   };
+  if (entry.evidence_layer === "layer_2_user_voice_empirical") {
+    refs.aggregate_export_id =
+      inputRefs.aggregate_export_id ??
+      inputRefs.aggregate_probe_id ??
+      inputRefs.aggregate_entry_ref ??
+      entry.entry_id;
+  }
+  if (entry.evidence_layer === "layer_3_business_system_outcomes") {
+    refs.aggregate_outcome_export_id =
+      inputRefs.aggregate_outcome_export_id ??
+      inputRefs.aggregate_probe_id ??
+      inputRefs.aggregate_entry_ref ??
+      entry.entry_id;
+  }
+  if (entry.evidence_layer === "governance_evidence") {
+    refs.governance_control_export_id =
+      inputRefs.governance_control_export_id ??
+      inputRefs.aggregate_probe_id ??
+      inputRefs.aggregate_entry_ref ??
+      entry.entry_id;
+  }
+  if (entry.evidence_layer === "assumption_evidence") {
+    refs.assumption_approval_export_id =
+      inputRefs.assumption_approval_export_id ??
+      inputRefs.aggregate_probe_id ??
+      inputRefs.aggregate_entry_ref ??
+      entry.entry_id;
+  }
+  if (entry.evidence_layer === "aggregate_workforce_context") {
+    refs.aggregate_workforce_context_export_id =
+      inputRefs.aggregate_workforce_context_export_id ??
+      inputRefs.aggregate_probe_id ??
+      inputRefs.aggregate_entry_ref ??
+      entry.entry_id;
+  }
+  return refs;
 }
 
 function metricOwnerReviewForEntry(entry: ClientEvidenceEntry): any {

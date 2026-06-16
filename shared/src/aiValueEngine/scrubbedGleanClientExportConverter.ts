@@ -10,7 +10,6 @@
 
 import {
   AI_VALUE_CLIENT_EVIDENCE_ENTRY_SCHEMA_VERSION,
-  buildSourcePackageFromClientEvidenceEntry,
   type ClientEvidenceEntry,
   validateClientEvidenceEntry
 } from "./clientEvidenceEntry";
@@ -308,7 +307,7 @@ function requireBoolean(value: any, expected: boolean, path: string, gaps: strin
 function requireEnum(value: any, allowed: Set<string>, path: string, gaps: string[]): void {
   requireField(value, path, gaps);
   if (value !== undefined && value !== null && value !== "" && !allowed.has(String(value))) {
-    gaps.push(`${path} is invalid: ${String(value)}`);
+    gaps.push(`${path} is invalid`);
   }
 }
 
@@ -366,7 +365,8 @@ function collectForbiddenValues(
       !isSafePolicyPath(path) &&
       FORBIDDEN_CLAIM_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
     if (unsafeIdentifier || unsafeClaim) {
-      values.add(`${path.join(".")}: ${value}`);
+      const violation = unsafeIdentifier ? "identifier" : "unsupported_claim";
+      values.add(`${path.join(".") || "<root>"} (${violation})`);
     }
     return values;
   }
@@ -406,7 +406,7 @@ function collectTopLevelGaps(input: any): string[] {
     input?.schema_version &&
     input.schema_version !== SCRUBBED_GLEAN_CLIENT_EXPORT_SCHEMA_VERSION
   ) {
-    gaps.push(`schema_version is invalid: ${input.schema_version}`);
+    gaps.push("schema_version is invalid");
   }
   requireEnum(input?.evidence_layer, ALLOWED_EVIDENCE_LAYERS, "evidence_layer", gaps);
   requireEnum(input?.aggregate_grain, ALLOWED_AGGREGATE_GRAINS, "aggregate_grain", gaps);
@@ -440,6 +440,16 @@ function collectKMinGaps(input: any): string[] {
   const gaps: string[] = [];
   const minimum = Number(input?.minimum_cohort_threshold);
   const postureMinimum = Number(input?.k_min_posture?.minimum_cohort_threshold);
+  const cohortThresholdMet = input?.k_min_posture?.cohort_threshold_met;
+  const totalSlices = Number(input?.k_min_posture?.total_slices ?? 1);
+  const clearSlices = Number(input?.k_min_posture?.k_min_clear_slices ?? (
+    cohortThresholdMet === true ? totalSlices : 0
+  ));
+  const suppressedOrUnknownSlices = Number(
+    input?.k_min_posture?.suppressed_or_unknown_slices ?? (
+      cohortThresholdMet === true ? 0 : Math.max(totalSlices - clearSlices, 1)
+    )
+  );
   if (!Number.isFinite(minimum) || minimum < 5) {
     gaps.push("minimum_cohort_threshold must be a finite number at least 5");
   }
@@ -449,8 +459,51 @@ function collectKMinGaps(input: any): string[] {
   if (Number.isFinite(minimum) && Number.isFinite(postureMinimum) && minimum !== postureMinimum) {
     gaps.push("k_min_posture.minimum_cohort_threshold must match minimum_cohort_threshold");
   }
-  if (typeof input?.k_min_posture?.cohort_threshold_met !== "boolean") {
+  if (typeof cohortThresholdMet !== "boolean") {
     gaps.push("k_min_posture.cohort_threshold_met must be boolean");
+  }
+  if (!Number.isInteger(totalSlices) || totalSlices < 1) {
+    gaps.push("k_min_posture.total_slices must be an integer at least 1");
+  }
+  if (!Number.isInteger(clearSlices) || clearSlices < 0) {
+    gaps.push("k_min_posture.k_min_clear_slices must be a non-negative integer");
+  }
+  if (!Number.isInteger(suppressedOrUnknownSlices) || suppressedOrUnknownSlices < 0) {
+    gaps.push("k_min_posture.suppressed_or_unknown_slices must be a non-negative integer");
+  }
+  if (
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    clearSlices > totalSlices
+  ) {
+    gaps.push("k_min_posture.k_min_clear_slices cannot exceed total_slices");
+  }
+  if (
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    Number.isInteger(suppressedOrUnknownSlices) &&
+    clearSlices + suppressedOrUnknownSlices !== totalSlices
+  ) {
+    gaps.push("k_min_posture.k_min_clear_slices plus suppressed_or_unknown_slices must equal total_slices");
+  }
+  if (
+    cohortThresholdMet === true &&
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    Number.isInteger(suppressedOrUnknownSlices) &&
+    (clearSlices !== totalSlices || suppressedOrUnknownSlices !== 0)
+  ) {
+    gaps.push("k_min_posture.cohort_threshold_met true requires k_min_clear_slices to equal total_slices and suppressed_or_unknown_slices to be 0");
+  }
+  if (
+    cohortThresholdMet === false &&
+    Number.isInteger(totalSlices) &&
+    Number.isInteger(clearSlices) &&
+    Number.isInteger(suppressedOrUnknownSlices) &&
+    clearSlices === totalSlices &&
+    suppressedOrUnknownSlices === 0
+  ) {
+    gaps.push("k_min_posture.cohort_threshold_met false requires at least one suppressed or uncleared slice");
   }
   return gaps;
 }
@@ -626,14 +679,83 @@ function evidenceStateForInput(input: any): string {
   return ALLOWED_EVIDENCE_STATES.has(requestedState) ? requestedState : "held";
 }
 
+function kMinPostureForInput(input: any): Record<string, number | boolean> {
+  const cohortThresholdMet = input.k_min_posture.cohort_threshold_met === true;
+  const totalSlices = Number(input.k_min_posture.total_slices ?? 1);
+  const clearSlices = Number(input.k_min_posture.k_min_clear_slices ?? (
+    cohortThresholdMet ? totalSlices : 0
+  ));
+  const suppressedOrUnknownSlices = Number(
+    input.k_min_posture.suppressed_or_unknown_slices ?? (
+      cohortThresholdMet ? 0 : Math.max(totalSlices - clearSlices, 1)
+    )
+  );
+  return {
+    minimum_cohort_threshold: input.k_min_posture.minimum_cohort_threshold,
+    cohort_threshold_met: cohortThresholdMet,
+    total_slices: totalSlices,
+    k_min_clear_slices: clearSlices,
+    suppressed_or_unknown_slices: suppressedOrUnknownSlices
+  };
+}
+
 function sourceRefsForInput(input: any, clientEvidenceEntryId?: string): Record<string, any> {
+  const inputSourceRefs =
+    input?.source_refs &&
+    typeof input.source_refs === "object" &&
+    !Array.isArray(input.source_refs)
+      ? input.source_refs
+      : {};
   const refs: Record<string, any> = {
     source_readiness_id: input.source_readiness_id ??
+      inputSourceRefs.source_readiness_id ??
       `source_readiness_${safeIdPart(String(input.export_id ?? "unknown"))}`,
-    source_export_id: input.export_id,
-    aggregate_probe_id: input.aggregate_probe_id ?? input.export_id,
-    aggregate_entry_ref: input.aggregate_entry_ref ?? input.export_id
+    source_export_id: input.source_export_id ??
+      inputSourceRefs.source_export_id ??
+      input.export_id,
+    aggregate_probe_id: input.aggregate_probe_id ??
+      inputSourceRefs.aggregate_probe_id ??
+      input.export_id,
+    aggregate_entry_ref: input.aggregate_entry_ref ??
+      inputSourceRefs.aggregate_entry_ref ??
+      input.export_id
   };
+  if (input.evidence_layer === "layer_2_user_voice_empirical") {
+    refs.aggregate_export_id = input.aggregate_export_id ??
+      inputSourceRefs.aggregate_export_id ??
+      input.aggregate_probe_id ??
+      inputSourceRefs.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "layer_3_business_system_outcomes") {
+    refs.aggregate_outcome_export_id = input.aggregate_outcome_export_id ??
+      inputSourceRefs.aggregate_outcome_export_id ??
+      input.aggregate_probe_id ??
+      inputSourceRefs.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "governance_evidence") {
+    refs.governance_control_export_id = input.governance_control_export_id ??
+      inputSourceRefs.governance_control_export_id ??
+      input.aggregate_probe_id ??
+      inputSourceRefs.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "assumption_evidence") {
+    refs.assumption_approval_export_id = input.assumption_approval_export_id ??
+      inputSourceRefs.assumption_approval_export_id ??
+      input.aggregate_probe_id ??
+      inputSourceRefs.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "aggregate_workforce_context") {
+    refs.aggregate_workforce_context_export_id =
+      input.aggregate_workforce_context_export_id ??
+      inputSourceRefs.aggregate_workforce_context_export_id ??
+      input.aggregate_probe_id ??
+      inputSourceRefs.aggregate_probe_id ??
+      input.export_id;
+  }
   if (clientEvidenceEntryId) {
     refs.client_evidence_entry_id = clientEvidenceEntryId;
     refs.client_evidence_request_id = input.request_id;
@@ -724,15 +846,7 @@ function buildLayer1SourcePackage(input: any, options: ConvertScrubbedGleanClien
     },
     approved_aggregate_grain: input.aggregate_grain,
     minimum_cohort_threshold: input.minimum_cohort_threshold,
-    k_min_posture: {
-      minimum_cohort_threshold: input.k_min_posture.minimum_cohort_threshold,
-      cohort_threshold_met: input.k_min_posture.cohort_threshold_met,
-      total_slices: Number(input.k_min_posture.total_slices ?? 1),
-      k_min_clear_slices: Number(input.k_min_posture.k_min_clear_slices ?? (
-        input.k_min_posture.cohort_threshold_met ? 1 : 0
-      )),
-      suppressed_or_unknown_slices: Number(input.k_min_posture.suppressed_or_unknown_slices ?? 0)
-    },
+    k_min_posture: kMinPostureForInput(input),
     source_system_type: sourceSystemTypeForLayer(input.evidence_layer),
     source_refs: sourceRefsForInput(input),
     evidence_state: evidenceState,
@@ -786,7 +900,9 @@ function buildClientEvidenceEntry(input: any, options: ConvertScrubbedGleanClien
       aggregate_signal_name: summary.aggregate_signal_name ??
         summary.aggregate_metric_name ??
         defaultAggregateSignalName(input.evidence_layer),
-      aggregate_value_present: summary.aggregate_value_present ?? aggregateValuePresent,
+      aggregate_value_present: aggregateValuePresent
+        ? summary.aggregate_value_present ?? true
+        : false,
       source_refs: sourceRefs,
       notes: notesForInput(input, evidenceState)
     },
@@ -815,24 +931,68 @@ function sourcePackageFromClientEvidenceEntry(
   options: ConvertScrubbedGleanClientExportOptions
 ): SourcePackage | null {
   const entryValidation = validateClientEvidenceEntry(entry);
-  if (!entryValidation.feeds.source_package) return null;
-  const sourcePackage = buildSourcePackageFromClientEvidenceEntry(entry, {
-    generatedAt: options.generatedAt ?? input.generated_at,
-    sourcePackageId: options.sourcePackageId ??
-      `source_package_${safeIdPart(String(input.export_id))}`
-  });
-  sourcePackage.source_refs = {
-    ...sourcePackage.source_refs,
-    ...sourceRefsForInput(input, entry.entry_id)
+  if (!entryValidation.valid) return null;
+  const generatedAt = options.generatedAt ?? input.generated_at;
+  const sourcePackage: SourcePackage = {
+    schema_version: AI_VALUE_SOURCE_PACKAGE_SCHEMA_VERSION,
+    source_package_id: options.sourcePackageId ??
+      `source_package_${safeIdPart(String(input.export_id))}`,
+    org_id: input.org_id,
+    source_package_type: sourcePackageTypeForLayer(input.evidence_layer),
+    source_owner_role: input.source_owner_role,
+    source_owner_attestation: {
+      attestation_state: input.attestation.attestation_state,
+      attested_by_role: input.attestation.attested_by_role,
+      attested_at: input.attestation.attested_at ?? generatedAt,
+      caveats: stringsOf(input.attestation.caveats)
+    },
+    generated_at: generatedAt,
+    covered_window: {
+      window_start: input.covered_window.window_start,
+      window_end: input.covered_window.window_end
+    },
+    approved_aggregate_grain: input.aggregate_grain,
+    minimum_cohort_threshold: input.minimum_cohort_threshold,
+    k_min_posture: kMinPostureForInput(input),
+    source_system_type: sourceSystemTypeForLayer(input.evidence_layer),
+    source_refs: sourceRefsForInput(input, entry.entry_id),
+    evidence_state: entry.evidence_state,
+    privacy_boundary: sourcePackagePrivacyBoundary(input),
+    allowed_uses: stringsOf(input.allowed_uses ?? DEFAULT_ALLOWED_USES),
+    blocked_uses: stringsOf(input.blocked_uses ?? REQUIRED_BLOCKED_USES),
+    caveats: caveatsForInput(input, entry.evidence_state),
+    derivation_version: DERIVATION_VERSION
   };
-  sourcePackage.k_min_posture = {
-    minimum_cohort_threshold: input.k_min_posture.minimum_cohort_threshold,
-    cohort_threshold_met: input.k_min_posture.cohort_threshold_met,
-    total_slices: Number(input.k_min_posture.total_slices ?? 1),
-    k_min_clear_slices: Number(input.k_min_posture.k_min_clear_slices ?? 1),
-    suppressed_or_unknown_slices: Number(input.k_min_posture.suppressed_or_unknown_slices ?? 0)
-  };
-  sourcePackage.caveats = caveatsForInput(input, entry.evidence_state);
+  if (input.evidence_layer === "layer_3_business_system_outcomes") {
+    (sourcePackage as any).metric_owner_review = {
+      review_state: input.metric_owner_review?.review_state ?? "reviewed",
+      reviewed_by_role:
+        input.metric_owner_review?.reviewed_by_role ??
+        input.source_owner_role,
+      reviewed_at: input.metric_owner_review?.reviewed_at ?? generatedAt,
+      caveats: stringsOf(input.metric_owner_review?.caveats)
+    };
+  }
+  if (input.evidence_layer === "assumption_evidence") {
+    (sourcePackage as any).assumption_approval = {
+      approval_state: input.assumption_approval?.approval_state ?? "approved",
+      approval_owner_role:
+        input.assumption_approval?.approval_owner_role ??
+        input.source_owner_role,
+      approved_at: input.assumption_approval?.approved_at ?? generatedAt,
+      approval_caveats: stringsOf(input.assumption_approval?.approval_caveats)
+    };
+  }
+  if (input.evidence_layer === "aggregate_workforce_context") {
+    (sourcePackage as any).aggregate_workforce_context = {
+      context_types: [entry.metric_or_signal_summary.summary_type],
+      source_owner_approval_state:
+        input.aggregate_workforce_context?.source_owner_approval_state ??
+        "approved",
+      cohort_threshold_met: input.k_min_posture.cohort_threshold_met === true,
+      non_decisioning_context: true
+    };
+  }
   const validation = validateSourcePackage(sourcePackage);
   if (!validation.valid) {
     throw new Error(`Derived Source Package is invalid: ${validation.gaps.join("; ")}`);
@@ -840,14 +1000,37 @@ function sourcePackageFromClientEvidenceEntry(
   return sourcePackage;
 }
 
+function safeResultMetadataValue(value: any): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  const normalizedValue = normalizeKey(trimmed);
+  const unsafe =
+    FORBIDDEN_VALUE_PATTERNS.some((pattern) =>
+      pattern.test(trimmed) || pattern.test(normalizedValue)
+    ) ||
+    FORBIDDEN_CLAIM_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue)) ||
+    /(?:^|_)(?:raw|prompt|response|transcript|query|sql|table|dataset|file_content)(?:_|$)/i
+      .test(normalizedValue);
+  if (unsafe) return null;
+  return /^[A-Za-z0-9_.:-]+$/.test(trimmed) ? trimmed : null;
+}
+
 function invalidResult(input: any, gaps: string[]): ScrubbedGleanClientExportConversionResult {
+  const exportId = safeResultMetadataValue(input?.export_id);
+  const orgId = safeResultMetadataValue(input?.org_id);
+  const measurementPlanId = safeResultMetadataValue(input?.measurement_plan_id);
+  const evidenceLayer = ALLOWED_EVIDENCE_LAYERS.has(String(input?.evidence_layer ?? ""))
+    ? String(input.evidence_layer)
+    : null;
+  const generatedAt = safeResultMetadataValue(input?.generated_at);
   return {
     schema_version: RESULT_SCHEMA_VERSION,
-    export_id: input?.export_id ?? null,
-    org_id: input?.org_id ?? null,
-    measurement_plan_id: input?.measurement_plan_id ?? null,
-    evidence_layer: input?.evidence_layer ?? null,
-    generated_at: input?.generated_at ?? null,
+    export_id: exportId,
+    org_id: orgId,
+    measurement_plan_id: measurementPlanId,
+    evidence_layer: evidenceLayer,
+    generated_at: generatedAt,
     derivation_version: DERIVATION_VERSION,
     valid: false,
     gaps,

@@ -501,6 +501,14 @@ function normalizeToken(value: string): string {
   return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
+function normalizeKey(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+}
+
 function blockedUsesInclude(snapshot: any, token: string): boolean {
   return stringsOf(snapshot?.blocked_uses).map(normalizeToken).includes(token);
 }
@@ -531,8 +539,9 @@ function hasUnsafeAllowedUse(snapshot: any): string | null {
 }
 
 function isForbiddenKey(key: string): boolean {
-  if (GOVERNED_POLICY_KEYS.has(key)) return false;
-  return FORBIDDEN_FIELD_KEY_PATTERNS.some((pattern) => pattern.test(key));
+  const normalizedKey = normalizeKey(key);
+  if (GOVERNED_POLICY_KEYS.has(normalizedKey)) return false;
+  return FORBIDDEN_FIELD_KEY_PATTERNS.some((pattern) => pattern.test(normalizedKey));
 }
 
 function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Set<string> {

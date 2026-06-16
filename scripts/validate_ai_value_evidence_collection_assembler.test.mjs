@@ -382,6 +382,14 @@ test("Layer 2 k-min failure suppresses Layer 2 evidence instead of upgrading cov
   const snapshot = assembly.draft_evidence_snapshot_input;
   assert.equal(snapshot.playbook_coverage.layer_2_user_voice_empirical.status, "suppressed");
   assert.deepEqual(snapshot.source_refs.fluency_baseline_ids, []);
+  assert.ok(
+    snapshot.source_refs.source_package_ids.includes(layer2.source_package_id),
+    "suppressed Layer 2 package should remain in lineage source package refs"
+  );
+  assert.ok(
+    snapshot.source_refs.source_readiness_ids.includes(layer2.source_refs.source_readiness_id),
+    "suppressed Layer 2 package should remain in source readiness lineage"
+  );
   assert.notEqual(snapshot.playbook_coverage.coverage_status, "layer_1_plus_partial_layer_2");
   assert.notEqual(snapshot.playbook_coverage.coverage_status, "full_playbook_coverage");
   assert.ok(snapshot.suppression.reason_codes.includes("INSUFFICIENT_VOLUME"));
@@ -397,9 +405,43 @@ test("Layer 3 k-min failure suppresses Layer 3 evidence instead of upgrading cov
   const snapshot = assembly.draft_evidence_snapshot_input;
   assert.equal(snapshot.playbook_coverage.layer_3_business_system_outcomes.status, "suppressed");
   assert.deepEqual(snapshot.source_refs.outcome_evidence_ids, []);
+  assert.ok(
+    snapshot.source_refs.source_package_ids.includes(layer3.source_package_id),
+    "suppressed Layer 3 package should remain in lineage source package refs"
+  );
+  assert.ok(
+    snapshot.source_refs.source_readiness_ids.includes(layer3.source_refs.source_readiness_id),
+    "suppressed Layer 3 package should remain in source readiness lineage"
+  );
   assert.notEqual(snapshot.playbook_coverage.coverage_status, "layer_1_plus_partial_layer_3");
   assert.notEqual(snapshot.playbook_coverage.coverage_status, "full_playbook_coverage");
   assert.ok(snapshot.suppression.reason_codes.includes("INSUFFICIENT_VOLUME"));
+});
+
+test("aggregate workforce k-min failure preserves lineage but blocks workforce context feed", () => {
+  const workforce = clone(sourcePackage("aggregate-workforce-context-package.json"));
+  workforce.k_min_posture.cohort_threshold_met = false;
+  workforce.k_min_posture.total_slices = 12;
+  workforce.k_min_posture.k_min_clear_slices = 5;
+  workforce.k_min_posture.suppressed_or_unknown_slices = 7;
+  workforce.aggregate_workforce_context.cohort_threshold_met = false;
+  const assembly = buildAssembly([sourcePackage("layer-1-bigquery-telemetry-package.json"), workforce]);
+  expectValidAssembly(assembly);
+  const snapshot = assembly.draft_evidence_snapshot_input;
+
+  assert.equal(snapshot.aggregate_workforce_context.context_state, "blocked");
+  assert.equal(snapshot.aggregate_workforce_context.cohort_threshold_met, false);
+  assert.deepEqual(snapshot.source_refs.aggregate_workforce_context_export_ids, []);
+  assert.ok(
+    snapshot.source_refs.source_package_ids.includes(workforce.source_package_id),
+    "suppressed workforce package should remain in lineage source package refs"
+  );
+  assert.ok(
+    snapshot.source_refs.source_readiness_ids.includes(workforce.source_refs.source_readiness_id),
+    "suppressed workforce package should remain in source readiness lineage"
+  );
+  assert.equal(snapshot.playbook_coverage.coverage_status, "layer_1_only");
+  assert.notEqual(snapshot.playbook_coverage.coverage_status, "full_playbook_coverage");
 });
 
 test("Layer 3 source refs attach only for present or partial evidence", () => {

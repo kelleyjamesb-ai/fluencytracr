@@ -163,6 +163,89 @@ function validLayer2Export(overrides = {}) {
   };
 }
 
+function validLayer3Export(overrides = {}) {
+  return {
+    ...validLayer1Export({
+      export_id: "scrubbed_glean_export_support_layer_3_2026_05",
+      request_id: "client_evidence_request_measurement_plan_support_pilot_2026_05_layer_3_business_system_outcomes",
+      evidence_layer: "layer_3_business_system_outcomes",
+      source_owner_role: "customer_metric_owner",
+      approver_role: "customer_business_owner",
+      source_readiness_id: "source_readiness_support_layer_3_2026_05",
+      aggregate_probe_id: "aggregate_support_outcome_export_2026_05",
+      metric_or_signal_summary: {
+        summary_type: "customer_owned_aggregate_metric_summary",
+        aggregate_metric_name: "aggregate_support_case_resolution_rate",
+        aggregate_value_present: true,
+        notes: [
+          "Customer metric owner attested that this is an aggregate KPI summary."
+        ]
+      },
+      signal_families: [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison"
+      ],
+      covered_signal_families: [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison"
+      ],
+      notes: [
+        "Layer 3 export is customer-owned aggregate system-of-record metadata only."
+      ],
+      caveats: [
+        "Layer 3 package is customer-attested aggregate outcome evidence and does not prove causality or financial impact by itself."
+      ],
+      allowed_uses: [
+        "evidence_collection_input",
+        "evidence_snapshot_preparation"
+      ],
+      ...overrides
+    })
+  };
+}
+
+function validWorkforceExport(overrides = {}) {
+  return {
+    ...validLayer1Export({
+      export_id: "scrubbed_glean_export_support_workforce_context_2026_05",
+      request_id: "client_evidence_request_measurement_plan_support_pilot_2026_05_aggregate_workforce_context",
+      evidence_layer: "aggregate_workforce_context",
+      source_owner_role: "customer_people_operations_owner",
+      approver_role: "customer_people_operations_owner",
+      source_readiness_id: "source_readiness_support_workforce_context_2026_05",
+      aggregate_probe_id: "aggregate_workforce_context_export_2026_05",
+      metric_or_signal_summary: {
+        summary_type: "aggregate_workforce_context_export_summary",
+        aggregate_signal_name: "aggregate_role_family_context",
+        aggregate_value_present: true,
+        notes: [
+          "Aggregate workforce context was provided as approved, non-decisioning metadata only."
+        ]
+      },
+      aggregate_workforce_context: {
+        source_owner_approval_state: "approved"
+      },
+      signal_families: [
+        "aggregate_role_family_context"
+      ],
+      covered_signal_families: [
+        "aggregate_role_family_context"
+      ],
+      notes: [
+        "Workforce export is aggregate context only and cannot support people decisions."
+      ],
+      caveats: [
+        "Aggregate workforce context is non-decisioning context only."
+      ],
+      allowed_uses: [
+        "evidence_collection_input",
+        "evidence_snapshot_preparation"
+      ],
+      ...overrides
+    })
+  };
+}
+
 test("scrubbed Layer 1 Glean telemetry export builds validated BigQuery Source Package", () => {
   const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer1Export());
 
@@ -217,10 +300,181 @@ test("scrubbed Layer 2 Glean aggregate export normalizes through Client Evidence
     "layer_2_user_voice_empirical_export"
   );
   assert.equal(result.source_package.source_refs.source_export_id, "scrubbed_glean_export_support_layer_2_2026_05");
+  assert.equal(result.source_package.source_refs.aggregate_export_id, "aggregate_ai_fluency_export_support_2026_05");
   assert.equal(result.source_package.source_refs.client_evidence_entry_id, result.client_evidence_entry.entry_id);
 
   const packageValidation = validateSourcePackage(result.source_package);
   assert.equal(packageValidation.valid, true, packageValidation.gaps.join("; "));
+});
+
+test("scrubbed Layer 2 nested source refs are preserved for assembly lineage", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer2Export({
+    aggregate_probe_id: undefined,
+    source_refs: {
+      aggregate_export_id: "nested_layer_2_export_ref",
+      aggregate_probe_id: "nested_layer_2_probe_ref"
+    }
+  }));
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.source_package.source_refs.aggregate_export_id, "nested_layer_2_export_ref");
+  assert.equal(result.source_package.source_refs.aggregate_probe_id, "nested_layer_2_probe_ref");
+});
+
+test("scrubbed Layer 3 aggregate outcome export carries outcome source refs for assembly", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer3Export());
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.feeds.client_evidence_entry, true);
+  assert.equal(result.feeds.source_package, true);
+  assert.equal(result.client_evidence_entry.evidence_layer, "layer_3_business_system_outcomes");
+  assert.equal(
+    result.source_package.source_package_type,
+    "layer_3_business_system_of_record_outcome_export"
+  );
+  assert.equal(result.source_package.source_refs.source_export_id, "scrubbed_glean_export_support_layer_3_2026_05");
+  assert.equal(result.source_package.source_refs.aggregate_outcome_export_id, "aggregate_support_outcome_export_2026_05");
+  assert.equal(result.source_package.metric_owner_review.review_state, "reviewed");
+
+  const packageValidation = validateSourcePackage(result.source_package);
+  assert.equal(packageValidation.valid, true, packageValidation.gaps.join("; "));
+});
+
+test("scrubbed Layer 2 k-min failures produce suppressed caveat-bearing Source Packages", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer2Export({
+    metric_or_signal_summary: {
+      ...validLayer2Export().metric_or_signal_summary,
+      aggregate_value_present: true
+    },
+    k_min_posture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: false,
+      total_slices: 12,
+      k_min_clear_slices: 9,
+      suppressed_or_unknown_slices: 3
+    }
+  }));
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.client_evidence_entry.evidence_state, "suppressed");
+  assert.equal(result.client_evidence_entry.metric_or_signal_summary.aggregate_value_present, false);
+  assert.equal(result.source_package.evidence_state, "suppressed");
+  assert.equal(result.feeds.source_package, true);
+  assert.equal(result.feeds.evidence_collection_input, true);
+  assert.ok(
+    result.source_package.caveats.some((caveat) => /k-min|suppressed/i.test(caveat)),
+    result.source_package.caveats.join("; ")
+  );
+});
+
+test("scrubbed Layer 3 k-min failures produce suppressed caveat-bearing Source Packages", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer3Export({
+    metric_or_signal_summary: {
+      ...validLayer3Export().metric_or_signal_summary,
+      aggregate_value_present: true
+    },
+    k_min_posture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: false,
+      total_slices: 10,
+      k_min_clear_slices: 6,
+      suppressed_or_unknown_slices: 4
+    }
+  }));
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.client_evidence_entry.evidence_state, "suppressed");
+  assert.equal(result.client_evidence_entry.metric_or_signal_summary.aggregate_value_present, false);
+  assert.equal(result.source_package.evidence_state, "suppressed");
+  assert.equal(result.source_package.k_min_posture.cohort_threshold_met, false);
+  assert.equal(result.source_package.source_refs.aggregate_outcome_export_id, "aggregate_support_outcome_export_2026_05");
+});
+
+test("scrubbed workforce k-min failures preserve caveat-bearing Source Package lineage", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validWorkforceExport({
+    metric_or_signal_summary: {
+      ...validWorkforceExport().metric_or_signal_summary,
+      aggregate_value_present: true
+    },
+    k_min_posture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: false,
+      total_slices: 12,
+      k_min_clear_slices: 9,
+      suppressed_or_unknown_slices: 3
+    }
+  }));
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.client_evidence_entry.evidence_state, "suppressed");
+  assert.equal(result.client_evidence_entry.metric_or_signal_summary.aggregate_value_present, false);
+  assert.equal(result.source_package.source_package_type, "aggregate_workforce_context_export");
+  assert.equal(result.source_package.evidence_state, "suppressed");
+  assert.equal(result.source_package.aggregate_workforce_context.cohort_threshold_met, false);
+  assert.equal(
+    result.source_package.source_refs.aggregate_workforce_context_export_id,
+    "aggregate_workforce_context_export_2026_05"
+  );
+  const packageValidation = validateSourcePackage(result.source_package);
+  assert.equal(packageValidation.valid, true, packageValidation.gaps.join("; "));
+  assert.equal(packageValidation.feeds.evidence_collection_input, true);
+  assert.equal(packageValidation.feeds.evidence_snapshot_source_ref, false);
+});
+
+test("inconsistent k-min counts fail before advertising feedable evidence", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer2Export({
+    k_min_posture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: true,
+      total_slices: 10,
+      k_min_clear_slices: 7,
+      suppressed_or_unknown_slices: 0
+    }
+  }));
+
+  assert.equal(result.valid, false);
+  assert.equal(result.source_package, null);
+  assert.ok(
+    result.gaps.some((gap) => /cohort_threshold_met true requires|plus suppressed_or_unknown_slices/.test(gap)),
+    result.gaps.join("; ")
+  );
+});
+
+test("forbidden identifier values are not echoed in scrubbed export gaps", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer2Export({
+    source_refs: {
+      aggregate_export_id: "jane.doe@example.com"
+    }
+  }));
+
+  assert.equal(result.valid, false);
+  const gapText = result.gaps.join("; ");
+  assert.match(gapText, /Forbidden value detected/);
+  assert.doesNotMatch(gapText, /jane\.doe@example\.com/);
+});
+
+test("invalid scrubbed export results do not echo unsafe metadata or enum values", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer2Export({
+    schema_version: "jane.doe@example.com",
+    export_id: "jane.doe@example.com",
+    org_id: "user_id_12345",
+    measurement_plan_id: "select * from raw_events",
+    evidence_layer: "person_id_12345",
+    generated_at: "raw transcript text"
+  }));
+
+  assert.equal(result.valid, false);
+  assert.equal(result.export_id, null);
+  assert.equal(result.org_id, null);
+  assert.equal(result.measurement_plan_id, null);
+  assert.equal(result.evidence_layer, null);
+  assert.equal(result.generated_at, null);
+  const serialized = JSON.stringify(result);
+  assert.doesNotMatch(serialized, /jane\.doe@example\.com/);
+  assert.doesNotMatch(serialized, /user_id_12345/);
+  assert.doesNotMatch(serialized, /select \* from raw_events/);
+  assert.doesNotMatch(serialized, /person_id_12345/);
+  assert.doesNotMatch(serialized, /raw transcript text/);
 });
 
 test("raw rows or direct identifiers in the scrubbed export input fail closed", () => {

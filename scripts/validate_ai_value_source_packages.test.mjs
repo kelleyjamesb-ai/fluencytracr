@@ -100,6 +100,36 @@ function expectInvalid(pkg, expectedGapPattern) {
   );
 }
 
+function withTypeSpecificSourceRef(pkg) {
+  const refsByType = {
+    layer_1_bigquery_telemetry_summary: {
+      aggregate_probe_id: "probe_layer_1_summary"
+    },
+    layer_2_user_voice_empirical_export: {
+      aggregate_export_id: "aggregate_layer_2_export"
+    },
+    layer_3_business_system_of_record_outcome_export: {
+      aggregate_outcome_export_id: "aggregate_layer_3_outcome_export"
+    },
+    aggregate_workforce_context_export: {
+      aggregate_workforce_context_export_id: "aggregate_workforce_context_export"
+    },
+    governance_control_export: {
+      governance_control_export_id: "governance_control_export"
+    },
+    assumption_approval_export: {
+      assumption_approval_export_id: "assumption_approval_export"
+    }
+  };
+  return {
+    ...pkg,
+    source_refs: {
+      ...pkg.source_refs,
+      ...refsByType[pkg.source_package_type]
+    }
+  };
+}
+
 test("all examples validate", () => {
   for (const file of EXAMPLE_FILES) {
     const pkg = readJson(`${EXAMPLES}/${file}`);
@@ -124,6 +154,139 @@ test("direct identifiers fail", () => {
   const pkg = validPackage();
   pkg.privacy_boundary.contains_direct_identifiers = true;
   expectInvalid(pkg, /privacy_boundary\.contains_direct_identifiers must be false/);
+});
+
+test("package types require canonical source ref keys used by assembly", () => {
+  const cases = [
+    ["layer_1_bigquery_telemetry_summary", "bigquery_telemetry", "aggregate_probe_id"],
+    ["layer_2_user_voice_empirical_export", "aggregate_survey_export", "aggregate_export_id"],
+    ["layer_3_business_system_of_record_outcome_export", "customer_system_of_record", "aggregate_outcome_export_id"],
+    ["governance_control_export", "governance_control", "governance_control_export_id"],
+    ["assumption_approval_export", "finance_approved_assumption", "assumption_approval_export_id"],
+    ["aggregate_workforce_context_export", "aggregate_workforce_export", "aggregate_workforce_context_export_id"]
+  ];
+
+  for (const [sourcePackageType, sourceSystemType, requiredRef] of cases) {
+    const pkg = validPackage({
+      source_package_type: sourcePackageType,
+      source_system_type: sourceSystemType,
+      source_refs: {
+        source_readiness_id: `source_readiness_${sourcePackageType}`,
+        aggregate_probe_id: "generic_probe_ref"
+      },
+      ...(sourcePackageType === "layer_3_business_system_of_record_outcome_export"
+        ? {
+            metric_owner_review: {
+              review_state: "reviewed",
+              reviewed_by_role: "customer_metric_owner"
+            }
+          }
+        : {}),
+      ...(sourcePackageType === "assumption_approval_export"
+        ? {
+            assumption_approval: {
+              approval_state: "approved",
+              approval_owner_role: "customer_finance_owner"
+            }
+          }
+        : {}),
+      ...(sourcePackageType === "aggregate_workforce_context_export"
+        ? {
+            aggregate_workforce_context: {
+              source_owner_approval_state: "approved",
+              cohort_threshold_met: true,
+              allowed_context_types: ["aggregate_role_family_context"]
+            }
+          }
+        : {})
+    });
+    delete pkg.source_refs[requiredRef];
+
+    expectInvalid(pkg, new RegExp(`source_refs\\.${requiredRef}`));
+
+    const valid = withTypeSpecificSourceRef(pkg);
+    const result = validateSourcePackage(valid);
+    assert.equal(result.valid, true, `${sourcePackageType}: ${result.gaps.join("; ")}`);
+  }
+});
+
+test("inconsistent k-min counts fail closed", () => {
+  for (const kMinPosture of [
+    {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: true,
+      total_slices: 12,
+      k_min_clear_slices: 9,
+      suppressed_or_unknown_slices: 0
+    },
+    {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: true,
+      total_slices: 12,
+      k_min_clear_slices: 12,
+      suppressed_or_unknown_slices: 1
+    },
+    {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: false,
+      total_slices: 12,
+      k_min_clear_slices: 12,
+      suppressed_or_unknown_slices: 0
+    }
+  ]) {
+    const pkg = validPackage({ k_min_posture: kMinPosture });
+    expectInvalid(pkg, /k_min_posture/);
+  }
+});
+
+test("k-min suppressed packages remain valid but do not feed evidence snapshot source refs", () => {
+  const pkg = validPackage({
+    evidence_state: "suppressed",
+    k_min_posture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: false,
+      total_slices: 12,
+      k_min_clear_slices: 9,
+      suppressed_or_unknown_slices: 3
+    }
+  });
+  const result = validateSourcePackage(pkg);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.feeds.evidence_collection_input, true);
+  assert.equal(result.feeds.evidence_snapshot_source_ref, false);
+});
+
+test("k-min suppressed workforce packages remain valid lineage but cannot feed workforce context refs", () => {
+  const pkg = withTypeSpecificSourceRef(validPackage({
+    source_package_type: "aggregate_workforce_context_export",
+    source_system_type: "aggregate_workforce_export",
+    evidence_state: "suppressed",
+    k_min_posture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: false,
+      total_slices: 12,
+      k_min_clear_slices: 9,
+      suppressed_or_unknown_slices: 3
+    },
+    aggregate_workforce_context: {
+      source_owner_approval_state: "approved",
+      cohort_threshold_met: false,
+      allowed_context_types: ["aggregate_role_family_context"]
+    },
+    caveats: [
+      "Aggregate workforce context failed k-min and must remain caveated lineage only."
+    ]
+  }));
+  const result = validateSourcePackage(pkg);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.feeds.evidence_collection_input, true);
+  assert.equal(result.feeds.evidence_snapshot_source_ref, false);
+
+  const inconsistent = clone(pkg);
+  inconsistent.aggregate_workforce_context.cohort_threshold_met = true;
+  expectInvalid(inconsistent, /cohort_threshold_met cannot be true/);
 });
 
 test("direct identifier fields fail even when privacy flag is false", () => {
@@ -231,10 +394,10 @@ test("Layer 2 package must be aggregate-only", () => {
 });
 
 test("Layer 3 package requires metric owner review or caveat", () => {
-  const pkg = validPackage({
+  const pkg = withTypeSpecificSourceRef(validPackage({
     source_package_type: "layer_3_business_system_of_record_outcome_export",
     source_system_type: "customer_system_of_record"
-  });
+  }));
   expectInvalid(pkg, /Layer 3 package requires metric_owner_review or caveat/);
 
   const caveated = clone(pkg);
@@ -352,12 +515,12 @@ test("generic metric containers cannot smuggle financial or causal outputs", () 
 });
 
 test("Layer 2 aggregate response metrics are allowed when not raw responses", () => {
-  const pkg = validPackage({
+  const pkg = withTypeSpecificSourceRef(validPackage({
     source_package_type: "layer_2_user_voice_empirical_export",
     source_system_type: "aggregate_survey_export",
     aggregate_response_count: 250,
     response_rate: 0.72
-  });
+  }));
   const result = validateSourcePackage(pkg);
   assert.equal(result.valid, true, result.gaps.join("; "));
 });
@@ -388,7 +551,11 @@ test("source package metadata values cannot carry identifiers or raw content", (
   ]) {
     const pkg = validPackage();
     mutation(pkg);
-    expectInvalid(pkg, /Forbidden metadata value/);
+    const result = validateSourcePackage(pkg);
+    assert.equal(result.valid, false, "Expected source package to fail");
+    const gapText = result.gaps.join("; ");
+    assert.match(gapText, /Forbidden metadata value/);
+    assert.doesNotMatch(gapText, /jane\.doe@example\.com|person-123|employee-123|userId12345|raw transcript text|select \* from raw_events/);
   }
 });
 
@@ -396,11 +563,17 @@ test("source package caveats reject direct identifier values while allowing warn
   const packageCaveat = validPackage({
     caveats: ["jane.doe@example.com"]
   });
-  expectInvalid(packageCaveat, /Forbidden identifier value/);
+  const packageCaveatResult = validateSourcePackage(packageCaveat);
+  assert.equal(packageCaveatResult.valid, false);
+  assert.match(packageCaveatResult.gaps.join("; "), /Forbidden identifier value/);
+  assert.doesNotMatch(packageCaveatResult.gaps.join("; "), /jane\.doe@example\.com/);
 
   const attestationCaveat = validPackage();
   attestationCaveat.source_owner_attestation.caveats = ["person-123"];
-  expectInvalid(attestationCaveat, /Forbidden identifier value/);
+  const attestationCaveatResult = validateSourcePackage(attestationCaveat);
+  assert.equal(attestationCaveatResult.valid, false);
+  assert.match(attestationCaveatResult.gaps.join("; "), /Forbidden identifier value/);
+  assert.doesNotMatch(attestationCaveatResult.gaps.join("; "), /person-123/);
 
   const safeWarning = validPackage({
     caveats: [
