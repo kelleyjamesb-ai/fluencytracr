@@ -28,7 +28,7 @@ privacy, source-readiness, and caveat boundaries.
 | Zone | Meaning | Action |
 | --- | --- | --- |
 | `replicate_pattern` | High or emerging work integration with efficient token posture. | Study and replicate the workflow pattern. |
-| `optimize_cost` | High or emerging work integration with high token intensity. | Optimize prompts, agents, model routing, or workflow design. |
+| `optimize_cost` | High or emerging work integration with moderate or high token intensity. | Optimize prompts, agents, model routing, or workflow design. |
 | `activate_workflow` | Shallow work integration with efficient or moderate token posture. | Improve use cases, workflow design, and enablement. |
 | `mitigate_friction` | Shallow work integration with high token intensity. | Diagnose friction before stronger interpretation. |
 | `hold_for_evidence` | Missing, held, suppressed, unsafe, or mismatched evidence. | Preserve caveats and do not interpret. |

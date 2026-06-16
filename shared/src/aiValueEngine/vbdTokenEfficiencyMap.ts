@@ -151,6 +151,17 @@ const TRUE_ONLY_KEY_PATTERNS = [
   /^creates_ingestion_jobs$/i
 ];
 
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+const UNSAFE_METADATA_VALUE_PATTERNS = [
+  /(?:^|_)(?:raw_rows?|raw_query|raw_prompts?|raw_responses?|raw_transcripts?|raw_content)(?:_|$)/i,
+  /(?:^|_)(?:prompt_text|query_text|sql_text|file_contents?)(?:_|$)/i,
+  /(?:^|_)(?:employee_email|employee_name|employee_id|user_id|person_id|person_identifier)(?:_|$)/i,
+  /(?:^|_)(?:direct_identifiers?|direct_person_identifier|direct_names?)(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable|pseudonymous|tokenized)_(?:ids?|identifiers?|users?|persons?|employees?)(?:_|$)/i,
+  /(?:^|_)person_level_(?:productivity|hris|records?)(?:_|$)/i
+];
+
 export interface BuildVbdTokenEfficiencyMapOptions {
   mapId?: string;
   generatedAt?: string;
@@ -196,6 +207,10 @@ function evidenceState(value: any): string {
   return String(value?.evidence_state ?? "unknown");
 }
 
+function vbdDimensionState(value: any): string {
+  return String(value?.evidence_state ?? value?.state ?? "missing");
+}
+
 function snapshotWorkflowFamily(snapshot: any): string | null {
   return snapshot?.workflow?.workflow_family ?? snapshot?.workflow_family ?? null;
 }
@@ -227,13 +242,26 @@ function deriveVbdPosture(snapshot: any): string {
   const map = snapshot?.vbd_operating_map;
   if (!map) return "unknown";
   const states = [
-    evidenceState(map.velocity),
-    evidenceState(map.depth)
+    vbdDimensionState(map.velocity),
+    vbdDimensionState(map.breadth),
+    vbdDimensionState(map.depth),
+    String(map.operating_mode ?? "missing")
   ];
   if (states.includes("suppressed")) return "suppressed";
-  if (states.includes("held") || states.includes("not_computed")) return "held";
+  if (states.includes("held") ||
+      states.includes("not_computed") ||
+      states.includes("missing")) {
+    return "held";
+  }
   if (map.operating_mode === "high_fluency_flow") return "high_work_integration";
   if (map.depth?.state === "embedded" || map.breadth?.state === "broad") {
+    return "emerging_work_integration";
+  }
+  if (
+    map.depth?.state === "developing" ||
+    map.breadth?.state === "emerging" ||
+    ["fast_but_shallow", "deep_but_slow"].includes(String(map.operating_mode))
+  ) {
     return "emerging_work_integration";
   }
   if (map.depth?.state === "shallow" || map.breadth?.state === "narrow") {
@@ -271,10 +299,10 @@ function deriveStrategyZone(vbdPosture: string, tokenPosture: string): string {
     "high_work_integration",
     "emerging_work_integration"
   ].includes(vbdPosture);
-  const highToken = tokenPosture === "high_intensity";
-  if (highVbd && highToken) return "optimize_cost";
+  const costReviewToken = ["high_intensity", "moderate"].includes(tokenPosture);
+  if (highVbd && costReviewToken) return "optimize_cost";
   if (highVbd) return "replicate_pattern";
-  if (highToken) return "mitigate_friction";
+  if (tokenPosture === "high_intensity") return "mitigate_friction";
   return "activate_workflow";
 }
 
@@ -292,6 +320,27 @@ function collectBindingGaps(snapshot: any, tokenSignal: any): string[] {
   const snapshotGrain = snapshot?.privacy_boundary?.approved_aggregate_grain;
   if (snapshotGrain !== tokenSignal?.approved_aggregate_grain) {
     gaps.push("approved_aggregate_grain must match between Evidence Snapshot and Token Efficiency Signal");
+  }
+  const snapshotMinimum = snapshot?.privacy_boundary?.minimum_cohort_threshold;
+  const tokenMinimum = tokenSignal?.minimum_cohort_threshold;
+  if (
+    snapshotMinimum !== undefined &&
+    snapshotMinimum !== null &&
+    tokenMinimum !== undefined &&
+    tokenMinimum !== null &&
+    Number(snapshotMinimum) !== Number(tokenMinimum)
+  ) {
+    gaps.push("minimum_cohort_threshold must match between Evidence Snapshot and Token Efficiency Signal");
+  }
+  const tokenPostureMinimum = tokenSignal?.k_min_posture?.minimum_cohort_threshold;
+  if (
+    snapshotMinimum !== undefined &&
+    snapshotMinimum !== null &&
+    tokenPostureMinimum !== undefined &&
+    tokenPostureMinimum !== null &&
+    Number(snapshotMinimum) !== Number(tokenPostureMinimum)
+  ) {
+    gaps.push("k_min_posture.minimum_cohort_threshold must match Evidence Snapshot minimum_cohort_threshold");
   }
   return gaps;
 }
@@ -317,6 +366,41 @@ function collectForbiddenKeys(
     collectForbiddenKeys(nested, keys, [...path, key]);
   }
   return keys;
+}
+
+function isSafePolicyListPath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return normalizedPath.includes("allowed_uses") || normalizedPath.includes("blocked_uses");
+}
+
+function isUnsafeMetadataValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function collectUnsafeMetadataValues(
+  value: any,
+  values: string[] = [],
+  path: string[] = []
+): string[] {
+  if (typeof value === "string") {
+    if (!isSafePolicyListPath(path) && isUnsafeMetadataValue(value)) {
+      values.push(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectUnsafeMetadataValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectUnsafeMetadataValues(nested, values, [...path, key]);
+  }
+  return values;
 }
 
 function requiredCaveats(snapshot: any, tokenSignal: any): string[] {
@@ -473,11 +557,27 @@ export function validateVbdTokenEfficiencyMap(
   if (!Array.isArray(map?.gaps)) {
     gaps.push("gaps must be an array");
   }
+  if (map?.valid === true && Array.isArray(map?.gaps) && map.gaps.length > 0) {
+    gaps.push("valid maps must not carry gaps");
+  }
   if (map?.valid === false && String(map?.strategy_zone) !== "hold_for_evidence") {
     gaps.push("invalid maps must use strategy_zone hold_for_evidence");
   }
   if (map?.valid === false && Array.isArray(map?.gaps) && map.gaps.length === 0) {
     gaps.push("invalid maps must carry gaps");
+  }
+  const expectedStrategyZone = deriveStrategyZone(
+    String(map?.vbd_posture ?? "unknown"),
+    String(map?.token_posture ?? "unknown")
+  );
+  if (
+    ALLOWED_VBD_POSTURES.has(String(map?.vbd_posture)) &&
+    ALLOWED_TOKEN_POSTURES.has(String(map?.token_posture)) &&
+    map?.strategy_zone !== expectedStrategyZone
+  ) {
+    gaps.push(
+      `strategy_zone must be ${expectedStrategyZone} for vbd_posture ${String(map?.vbd_posture)} and token_posture ${String(map?.token_posture)}`
+    );
   }
   if (Number(map?.minimum_cohort_threshold) < 5) {
     gaps.push("minimum_cohort_threshold must be at least 5");
@@ -519,6 +619,12 @@ export function validateVbdTokenEfficiencyMap(
   const forbiddenKeys = collectForbiddenKeys(map);
   if (forbiddenKeys.length > 0) {
     gaps.push(`Forbidden field(s) present: ${Array.from(new Set(forbiddenKeys)).sort().join(", ")}`);
+  }
+  const unsafeMetadataValues = collectUnsafeMetadataValues(map);
+  if (unsafeMetadataValues.length > 0) {
+    gaps.push(
+      `Forbidden metadata value(s) present: ${Array.from(new Set(unsafeMetadataValues)).sort().join(", ")}`
+    );
   }
   if (!Array.isArray(map?.caveats) || map.caveats.length === 0) {
     gaps.push("caveats must contain at least one caveat");

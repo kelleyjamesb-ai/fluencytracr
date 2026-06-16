@@ -85,6 +85,33 @@ function shallowVbdOperatingMap() {
   };
 }
 
+function emergingVbdOperatingMap() {
+  return {
+    ...highVbdOperatingMap(),
+    velocity: {
+      state: "moderate",
+      evidence_state: "partial",
+      source_signals: ["workflow_run_count", "active_user_aggregate"],
+      caveats: ["Velocity is partial aggregate Layer 1 posture only."]
+    },
+    breadth: {
+      state: "emerging",
+      approved_aggregate_grain: "function",
+      covered_slices: 4,
+      suppressed_or_unknown_slices: 0,
+      caveats: ["Breadth is emerging across approved aggregate slices."]
+    },
+    depth: {
+      state: "developing",
+      evidence_state: "partial",
+      source_signals: ["repeat_workflow_behavior", "artifact_output_metadata"],
+      requires_layer_3_for_value_claim: true,
+      caveats: ["Depth is developing aggregate posture only."]
+    },
+    operating_mode: "fast_but_shallow"
+  };
+}
+
 function baseSnapshot(overrides = {}) {
   const snapshot = buildTelemetryEvidenceSnapshotDraft({
     orgId: "org_northstar_support",
@@ -214,6 +241,23 @@ function highIntensityTokenSignal() {
   });
 }
 
+function moderateTokenSignal() {
+  return tokenSignal({
+    aggregate_token_summary: {
+      total_prompt_tokens: 230000,
+      total_completion_tokens: 70000,
+      total_tokens: 300000,
+      model_families_observed: ["gpt-4.1", "gpt-4.1-mini"],
+      aggregate_interaction_count: 840,
+      aggregate_workflow_count: 120,
+      high_intensity_workflow_share: 0.3,
+      average_tokens_per_interaction: 357,
+      average_tokens_per_workflow: 2500,
+      prompt_to_completion_ratio: 3.29
+    }
+  });
+}
+
 function buildMap(snapshot = baseSnapshot(), signal = tokenSignal(), options = {}) {
   return buildVbdTokenEfficiencyMapFromEvidenceSnapshotAndTokenSignal(snapshot, signal, {
     mapId: "vbd_token_efficiency_map_support_2026_05",
@@ -256,6 +300,26 @@ test("high VBD plus high token intensity maps to optimize cost", () => {
   assert.equal(map.token_posture, "high_intensity");
 });
 
+test("high VBD plus moderate token posture maps to optimize cost, not replicate", () => {
+  const map = buildMap(baseSnapshot(), moderateTokenSignal());
+
+  expectValidMap(map);
+  assert.equal(map.strategy_zone, "optimize_cost");
+  assert.equal(map.vbd_posture, "high_work_integration");
+  assert.equal(map.token_posture, "moderate");
+});
+
+test("normal emerging VBD snapshot maps to emerging work integration", () => {
+  const map = buildMap(
+    baseSnapshot({ vbd_operating_map: emergingVbdOperatingMap() }),
+    tokenSignal()
+  );
+
+  expectValidMap(map);
+  assert.equal(map.vbd_posture, "emerging_work_integration");
+  assert.equal(map.strategy_zone, "replicate_pattern");
+});
+
 test("shallow VBD plus efficient token posture maps to activate workflow", () => {
   const map = buildMap(baseSnapshot({ vbd_operating_map: shallowVbdOperatingMap() }), tokenSignal());
 
@@ -277,6 +341,29 @@ test("shallow VBD plus high token intensity maps to mitigate friction", () => {
   assert.equal(map.token_posture, "high_intensity");
 });
 
+test("suppressed or not-computed breadth holds VBD maps", () => {
+  for (const state of ["suppressed", "not_computed", "missing"]) {
+    const map = buildMap(
+      baseSnapshot({
+        vbd_operating_map: {
+          ...highVbdOperatingMap(),
+          breadth: {
+            ...highVbdOperatingMap().breadth,
+            state,
+            caveats: [`Breadth is ${state} and cannot be inferred from other dimensions.`]
+          }
+        }
+      }),
+      tokenSignal(),
+      { mapId: `vbd_token_efficiency_map_breadth_${state}` }
+    );
+
+    expectValidMap(map);
+    assert.equal(map.strategy_zone, "hold_for_evidence", state);
+    assert.notEqual(map.vbd_posture, "high_work_integration", state);
+  }
+});
+
 test("map fails closed when token signal and snapshot source bindings drift", () => {
   const map = buildMap(baseSnapshot(), tokenSignal({ org_id: "org_other" }));
 
@@ -284,6 +371,27 @@ test("map fails closed when token signal and snapshot source bindings drift", ()
   assert.equal(map.strategy_zone, "hold_for_evidence");
   assert.equal(map.feeds.claim_readiness_snapshot, false);
   assert.ok(map.gaps.some((gap) => /org_id/i.test(gap)), map.gaps.join("; "));
+});
+
+test("map fails closed when k-min bindings drift between snapshot and token signal", () => {
+  const signal = tokenSignal({
+    minimum_cohort_threshold: 10,
+    k_min_posture: {
+      minimum_cohort_threshold: 10,
+      cohort_threshold_met: true,
+      total_slices: 6,
+      k_min_clear_slices: 6,
+      suppressed_or_unknown_slices: 0
+    }
+  });
+  const map = buildMap(baseSnapshot(), signal);
+
+  assert.equal(map.valid, false);
+  assert.equal(map.strategy_zone, "hold_for_evidence");
+  assert.ok(
+    map.gaps.some((gap) => /minimum_cohort_threshold/i.test(gap)),
+    map.gaps.join("; ")
+  );
 });
 
 test("held token evidence produces hold zone and cannot feed downstream claims", () => {
@@ -312,6 +420,21 @@ test("held token evidence produces hold zone and cannot feed downstream claims",
   assert.equal(map.feeds.customer_facing_financial_output, false);
 });
 
+test("validator rejects serialized maps with inconsistent gaps, postures, or zones", () => {
+  const base = buildMap();
+  expectValidMap(base);
+
+  for (const unsafe of [
+    { ...clone(base), gaps: ["manually carried caveat"] },
+    { ...clone(base), vbd_posture: "held", strategy_zone: "replicate_pattern" },
+    { ...clone(base), token_posture: "suppressed", strategy_zone: "optimize_cost" },
+    { ...clone(base), token_posture: "moderate", strategy_zone: "replicate_pattern" }
+  ]) {
+    const result = validateVbdTokenEfficiencyMap(unsafe);
+    assert.equal(result.valid, false, JSON.stringify(unsafe));
+  }
+});
+
 test("map rejects ROI, productivity, causality, ranking, or financial output fields", () => {
   const map = buildMap();
   expectValidMap(map);
@@ -331,6 +454,34 @@ test("map rejects ROI, productivity, causality, ranking, or financial output fie
       result.gaps.some((gap) => new RegExp(field).test(gap)),
       `${field}: ${result.gaps.join("; ")}`
     );
+  }
+});
+
+test("map rejects unsafe metadata values in serialized source refs and caveats", () => {
+  const map = buildMap();
+  expectValidMap(map);
+
+  for (const unsafe of [
+    {
+      ...clone(map),
+      source_refs: {
+        ...map.source_refs,
+        token_source_refs: {
+          aggregate_probe_id: "raw_prompts_export",
+          source_readiness_id: "source_readiness_token_usage_2026_05"
+        }
+      }
+    },
+    {
+      ...clone(map),
+      caveats: [
+        ...map.caveats,
+        "This caveat references employee_email metadata."
+      ]
+    }
+  ]) {
+    const result = validateVbdTokenEfficiencyMap(unsafe);
+    assert.equal(result.valid, false, result.gaps.join("; "));
   }
 });
 
