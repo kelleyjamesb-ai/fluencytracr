@@ -163,6 +163,47 @@ function validLayer2Export(overrides = {}) {
   };
 }
 
+function validLayer3Export(overrides = {}) {
+  return {
+    ...validLayer1Export({
+      export_id: "scrubbed_glean_export_support_layer_3_2026_05",
+      request_id: "client_evidence_request_measurement_plan_support_pilot_2026_05_layer_3_business_system_outcomes",
+      evidence_layer: "layer_3_business_system_outcomes",
+      source_owner_role: "customer_metric_owner",
+      approver_role: "customer_business_owner",
+      source_readiness_id: "source_readiness_support_layer_3_2026_05",
+      aggregate_probe_id: "aggregate_support_outcome_export_2026_05",
+      metric_or_signal_summary: {
+        summary_type: "customer_owned_aggregate_metric_summary",
+        aggregate_metric_name: "aggregate_support_case_resolution_rate",
+        aggregate_value_present: true,
+        notes: [
+          "Customer metric owner attested that this is an aggregate KPI summary."
+        ]
+      },
+      signal_families: [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison"
+      ],
+      covered_signal_families: [
+        "customer_attested_kpi_baseline",
+        "customer_attested_kpi_comparison"
+      ],
+      notes: [
+        "Layer 3 export is customer-owned aggregate system-of-record metadata only."
+      ],
+      caveats: [
+        "Layer 3 package is customer-attested aggregate outcome evidence and does not prove causality or financial impact by itself."
+      ],
+      allowed_uses: [
+        "evidence_collection_input",
+        "evidence_snapshot_preparation"
+      ],
+      ...overrides
+    })
+  };
+}
+
 test("scrubbed Layer 1 Glean telemetry export builds validated BigQuery Source Package", () => {
   const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer1Export());
 
@@ -217,7 +258,27 @@ test("scrubbed Layer 2 Glean aggregate export normalizes through Client Evidence
     "layer_2_user_voice_empirical_export"
   );
   assert.equal(result.source_package.source_refs.source_export_id, "scrubbed_glean_export_support_layer_2_2026_05");
+  assert.equal(result.source_package.source_refs.aggregate_export_id, "aggregate_ai_fluency_export_support_2026_05");
   assert.equal(result.source_package.source_refs.client_evidence_entry_id, result.client_evidence_entry.entry_id);
+
+  const packageValidation = validateSourcePackage(result.source_package);
+  assert.equal(packageValidation.valid, true, packageValidation.gaps.join("; "));
+});
+
+test("scrubbed Layer 3 aggregate outcome export carries outcome source refs for assembly", () => {
+  const result = convertScrubbedGleanClientExportToEvidenceInputs(validLayer3Export());
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.feeds.client_evidence_entry, true);
+  assert.equal(result.feeds.source_package, true);
+  assert.equal(result.client_evidence_entry.evidence_layer, "layer_3_business_system_outcomes");
+  assert.equal(
+    result.source_package.source_package_type,
+    "layer_3_business_system_of_record_outcome_export"
+  );
+  assert.equal(result.source_package.source_refs.source_export_id, "scrubbed_glean_export_support_layer_3_2026_05");
+  assert.equal(result.source_package.source_refs.aggregate_outcome_export_id, "aggregate_support_outcome_export_2026_05");
+  assert.equal(result.source_package.metric_owner_review.review_state, "reviewed");
 
   const packageValidation = validateSourcePackage(result.source_package);
   assert.equal(packageValidation.valid, true, packageValidation.gaps.join("; "));

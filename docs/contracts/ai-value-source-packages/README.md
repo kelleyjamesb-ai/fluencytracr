@@ -192,9 +192,9 @@ Evidence Snapshot posture.
 
 ## 11. Relationship to Evidence Snapshot
 
-Source Packages may feed Evidence Snapshot preparation only through a future
-non-persisted assembler. They are not Evidence Snapshots and cannot directly
-create claim readiness.
+Source Packages may feed Evidence Snapshot preparation only through the
+non-persisted Evidence Collection Assembler. They are not Evidence Snapshots and
+cannot directly create claim readiness.
 
 The validator returns:
 

@@ -142,6 +142,17 @@ export type {
 } from "./scrubbedGleanClientExportConverter";
 
 export {
+  AI_VALUE_PILOT_INTAKE_RUN_SCHEMA_VERSION,
+  buildAiValuePilotIntakeRunFromScrubbedGleanExports,
+  validateAiValuePilotIntakeRun
+} from "./aiValuePilotIntakeRunner";
+export type {
+  AiValuePilotIntakeRun,
+  AiValuePilotIntakeRunValidationResult,
+  BuildAiValuePilotIntakeRunInput
+} from "./aiValuePilotIntakeRunner";
+
+export {
   AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_SCHEMA_VERSION,
   TokenEfficiencySignalSchema,
   buildTokenEfficiencySignalFromAggregateSummary,

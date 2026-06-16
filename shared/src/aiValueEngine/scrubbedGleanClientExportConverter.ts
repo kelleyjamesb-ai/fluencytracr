@@ -634,6 +634,32 @@ function sourceRefsForInput(input: any, clientEvidenceEntryId?: string): Record<
     aggregate_probe_id: input.aggregate_probe_id ?? input.export_id,
     aggregate_entry_ref: input.aggregate_entry_ref ?? input.export_id
   };
+  if (input.evidence_layer === "layer_2_user_voice_empirical") {
+    refs.aggregate_export_id = input.aggregate_export_id ??
+      input.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "layer_3_business_system_outcomes") {
+    refs.aggregate_outcome_export_id = input.aggregate_outcome_export_id ??
+      input.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "governance_evidence") {
+    refs.governance_control_export_id = input.governance_control_export_id ??
+      input.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "assumption_evidence") {
+    refs.assumption_approval_export_id = input.assumption_approval_export_id ??
+      input.aggregate_probe_id ??
+      input.export_id;
+  }
+  if (input.evidence_layer === "aggregate_workforce_context") {
+    refs.aggregate_workforce_context_export_id =
+      input.aggregate_workforce_context_export_id ??
+      input.aggregate_probe_id ??
+      input.export_id;
+  }
   if (clientEvidenceEntryId) {
     refs.client_evidence_entry_id = clientEvidenceEntryId;
     refs.client_evidence_request_id = input.request_id;
