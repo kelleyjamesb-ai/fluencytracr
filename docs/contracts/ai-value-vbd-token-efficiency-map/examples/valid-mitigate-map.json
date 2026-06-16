@@ -1,0 +1,84 @@
+{
+  "schema_version": "FT_AI_VALUE_VBD_TOKEN_EFFICIENCY_MAP_2026_06",
+  "map_id": "vbd_token_efficiency_map_mitigate_example",
+  "org_id": "org_northstar_support",
+  "workflow_family": "customer_support",
+  "workflow_name": "Customer support",
+  "function_area": "customer_success",
+  "covered_window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31"
+  },
+  "approved_aggregate_grain": "function",
+  "minimum_cohort_threshold": 5,
+  "k_min_posture": {
+    "minimum_cohort_threshold": 5,
+    "cohort_threshold_met": true,
+    "total_slices": 6,
+    "k_min_clear_slices": 6,
+    "suppressed_or_unknown_slices": 0
+  },
+  "valid": true,
+  "gaps": [],
+  "vbd_posture": "shallow_work_integration",
+  "token_posture": "high_intensity",
+  "strategy_zone": "mitigate_friction",
+  "source_refs": {
+    "evidence_snapshot_id": "evidence_snapshot_support_vbd_token_2026_05",
+    "token_efficiency_signal_id": "token_efficiency_signal_support_2026_05",
+    "token_source_refs": {
+      "aggregate_probe_id": "token_probe_customer_support_2026_05",
+      "source_readiness_id": "source_readiness_token_usage_2026_05"
+    }
+  },
+  "allowed_uses": [
+    "aggregate_strategy_planning",
+    "workflow_design_review",
+    "model_routing_review",
+    "enablement_planning",
+    "cost_exposure_review",
+    "token_efficiency_review"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "value_proof_policy": {
+    "map_is_roi_proof": false,
+    "map_is_productivity_proof": false,
+    "map_is_financial_output": false,
+    "map_computes_causality": false,
+    "map_allows_person_or_team_comparison": false,
+    "downstream_claim_strength_upgrade_allowed": false
+  },
+  "feeds": {
+    "evidence_snapshot_context": true,
+    "claim_readiness_snapshot": false,
+    "executive_readout_snapshot": false,
+    "reportability_readiness": false,
+    "customer_facing_financial_output": false
+  },
+  "persistence_policy": {
+    "persisted": false,
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "creates_ingestion_jobs": false
+  },
+  "caveats": [
+    "VBD x Token Efficiency Map is aggregate strategy context only.",
+    "Token usage is cost/intensity context and is not ROI, productivity, causality, or financial proof.",
+    "VBD is Layer 1 work-integration posture and cannot create full Playbook coverage by itself.",
+    "Mitigate friction means diagnose aggregate workflow design, not label people or teams."
+  ],
+  "generated_at": "2026-06-16T00:00:00.000Z",
+  "derivation_version": "ai_value_vbd_token_efficiency_map_2026_06"
+}
