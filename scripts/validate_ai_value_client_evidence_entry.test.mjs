@@ -171,7 +171,8 @@ test("Layer 3 aggregate business outcome KPI metric names still reject ROI and f
   ]) {
     const entry = validEntry();
     entry.metric_or_signal_summary.aggregate_metric_name = metricName;
-    expectInvalid(entry, new RegExp(`Forbidden value detected: ${metricName}`));
+    const result = expectInvalid(entry, /Forbidden value detected: metric_or_signal_summary\.aggregate_metric_name/);
+    assert.doesNotMatch(result.gaps.join("; "), new RegExp(metricName));
   }
 });
 
@@ -321,12 +322,20 @@ test("entry cannot authorize ROI, EBITA, productivity, causality, or customer-fa
 
   const metricClaim = validEntry();
   metricClaim.metric_or_signal_summary.aggregate_metric_name = "realized_roi";
-  expectInvalid(metricClaim, /Forbidden value detected: realized_roi/);
+  const metricClaimResult = expectInvalid(
+    metricClaim,
+    /Forbidden value detected: metric_or_signal_summary\.aggregate_metric_name/
+  );
+  assert.doesNotMatch(metricClaimResult.gaps.join("; "), /realized_roi/);
 
   for (const metricName of ["roiEstimate", "realizedRoi"]) {
     const camelCaseMetricClaim = validEntry();
     camelCaseMetricClaim.metric_or_signal_summary.aggregate_metric_name = metricName;
-    expectInvalid(camelCaseMetricClaim, new RegExp(`Forbidden value detected: ${metricName}`));
+    const result = expectInvalid(
+      camelCaseMetricClaim,
+      /Forbidden value detected: metric_or_signal_summary\.aggregate_metric_name/
+    );
+    assert.doesNotMatch(result.gaps.join("; "), new RegExp(metricName));
   }
 });
 
@@ -385,12 +394,14 @@ test("unsafe metadata values fail even when field names are metadata-safe", () =
   const emailId = validEntry({
     entry_id: "jane.doe@example.com"
   });
-  expectInvalid(emailId, /Forbidden metadata value/);
+  const emailIdResult = expectInvalid(emailId, /Forbidden metadata value/);
+  assert.doesNotMatch(emailIdResult.gaps.join("; "), /jane\.doe@example\.com/);
 
   const userIdRequest = validEntry({
     request_id: "user_id_12345"
   });
-  expectInvalid(userIdRequest, /Forbidden metadata value/);
+  const userIdRequestResult = expectInvalid(userIdRequest, /Forbidden metadata value/);
+  assert.doesNotMatch(userIdRequestResult.gaps.join("; "), /user_id_12345/);
 
   for (const value of [
     "jane.doe@example.com",
@@ -404,7 +415,8 @@ test("unsafe metadata values fail even when field names are metadata-safe", () =
   ]) {
     const entry = validEntry();
     entry.metric_or_signal_summary.source_refs.aggregate_entry_ref = value;
-    expectInvalid(entry, /Forbidden metadata value/);
+    const result = expectInvalid(entry, /Forbidden metadata value/);
+    assert.doesNotMatch(result.gaps.join("; "), new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 });
 
@@ -427,11 +439,13 @@ test("caveat strings reject direct identifier values while allowing warning lang
   const badRequiredCaveat = validEntry({
     required_caveats: ["jane.doe@example.com"]
   });
-  expectInvalid(badRequiredCaveat, /Forbidden identifier value/);
+  const badRequiredCaveatResult = expectInvalid(badRequiredCaveat, /Forbidden identifier value/);
+  assert.doesNotMatch(badRequiredCaveatResult.gaps.join("; "), /jane\.doe@example\.com/);
 
   const badAttestationCaveat = validEntry();
   badAttestationCaveat.attestation.caveats = ["person-123"];
-  expectInvalid(badAttestationCaveat, /Forbidden identifier value/);
+  const badAttestationCaveatResult = expectInvalid(badAttestationCaveat, /Forbidden identifier value/);
+  assert.doesNotMatch(badAttestationCaveatResult.gaps.join("; "), /person-123/);
 
   const safeWarning = validEntry({
     required_caveats: [
@@ -487,6 +501,10 @@ test("validated entry can produce Source Package through Source Package validato
   );
   assert.equal(sourcePackage.source_system_type, "manual_customer_attestation");
   assert.equal(sourcePackage.source_refs.client_evidence_entry_id, entry.entry_id);
+  assert.equal(
+    sourcePackage.source_refs.aggregate_outcome_export_id,
+    entry.metric_or_signal_summary.source_refs.aggregate_entry_ref
+  );
   assert.deepEqual(sourcePackage.blocked_uses, REQUIRED_BLOCKED_USES);
 
   const result = validateSourcePackage(sourcePackage);
@@ -513,6 +531,14 @@ test("all valid entry modes build the expected Source Package type", () => {
       sourcePackageId: `source_package_${entry.entry_id}`
     });
     assert.equal(sourcePackage.source_package_type, expectedType, file);
+    const requiredRef = {
+      layer_2_user_voice_empirical_export: "aggregate_export_id",
+      layer_3_business_system_of_record_outcome_export: "aggregate_outcome_export_id",
+      governance_control_export: "governance_control_export_id",
+      assumption_approval_export: "assumption_approval_export_id",
+      aggregate_workforce_context_export: "aggregate_workforce_context_export_id"
+    }[expectedType];
+    assert.equal(typeof sourcePackage.source_refs[requiredRef], "string", file);
     const result = validateSourcePackage(sourcePackage);
     assert.equal(result.valid, true, `${file}: ${result.gaps.join("; ")}`);
     assert.equal(result.feeds.full_playbook_coverage, false);

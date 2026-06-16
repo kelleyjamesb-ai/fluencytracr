@@ -76,15 +76,26 @@ const FORBIDDEN_PERSISTENCE_STRING_PATTERNS = [
   /person_level_(?:hris|productivity|analytics|record)/i
 ];
 
+const normalizeKey = (value: string): string =>
+  value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+
 const ALLOWED_SOURCE_REF_KEYS = new Set([
   "aggregate_export_id",
   "aggregate_outcome_export_id",
   "aggregate_probe_id",
+  "aggregate_entry_ref",
   "aggregate_workforce_context_export_id",
   "aggregate_workforce_context_export_ids",
   "assumption_approval_export_id",
   "assumption_approval_export_ids",
   "bigquery_probe_result_id",
+  "client_evidence_entry_id",
+  "client_evidence_request_id",
+  "covered_signal_families",
   "fluency_baseline_ids",
   "governance_control_export_id",
   "governance_control_export_ids",
@@ -93,12 +104,16 @@ const ALLOWED_SOURCE_REF_KEYS = new Set([
   "outcome_evidence_ids",
   "real_source_manifest_ids",
   "reportability_signal_families",
+  "source_export_id",
   "source_package_ids",
   "source_readiness_id",
   "source_readiness_ids",
+  "source_tables",
+  "table_families_checked",
   "v3_verdict_ids",
   "value_hypothesis_id",
-  "velocity_observation_ids"
+  "velocity_observation_ids",
+  "vbd_summary"
 ]);
 
 export interface PersistAiValueHypothesisInput {
@@ -274,16 +289,17 @@ const scanForbiddenPersistenceKeys = (
 
   for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
     const nestedPath = path ? `${path}.${key}` : key;
-    const safeFalsePrivacyFlag = key.startsWith("contains_") && nested === false;
+    const normalizedKey = normalizeKey(key);
+    const safeFalsePrivacyFlag = normalizedKey.startsWith("contains_") && nested === false;
     const safeFalseGovernanceFlag = [
       "can_authorize_people_decisioning",
       "customer_facing_financial_output_allowed",
       "customer_facing_readout_allowed"
-    ].includes(key) && nested === false;
+    ].includes(normalizedKey) && nested === false;
     if (
       !safeFalsePrivacyFlag &&
       !safeFalseGovernanceFlag &&
-      FORBIDDEN_PERSISTENCE_KEY_PATTERNS.some((pattern) => pattern.test(key))
+      FORBIDDEN_PERSISTENCE_KEY_PATTERNS.some((pattern) => pattern.test(normalizedKey))
     ) {
       gaps.push(`forbidden persistence field ${nestedPath} is not allowed`);
     }
@@ -349,6 +365,120 @@ const pilotRunKey = (orgId: string, pilotRunId: string, version: number) =>
 const latestByVersion = <T extends { version: number }>(records: T[]): T | null =>
   records.sort((a, b) => b.version - a.version)[0] ?? null;
 
+const exactByVersion = <T extends { version: number }>(
+  records: T[],
+  version: number
+): T | null => records.find((record) => record.version === version) ?? null;
+
+const getPath = (value: unknown, path: string): unknown =>
+  path.split(".").reduce<unknown>(
+    (current, key) => asRecord(current)[key],
+    value
+  );
+
+const asPositiveIntegerOrNull = (value: unknown): number | null =>
+  Number.isInteger(value) && Number(value) >= 1 ? Number(value) : null;
+
+const requirePersistenceVersion = (
+  value: Record<string, unknown>,
+  label: string,
+  paths: string[]
+): number => {
+  const versions: Array<{ path: string; version: number }> = [];
+  const gaps: string[] = [];
+  for (const path of paths) {
+    const rawVersion = getPath(value, path);
+    if (rawVersion === undefined) continue;
+    const version = asPositiveIntegerOrNull(rawVersion);
+    if (version === null) {
+      gaps.push(`${path} must be a positive integer`);
+    } else {
+      versions.push({ path, version });
+    }
+  }
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      `${label} has invalid persisted source version`,
+      gaps
+    );
+  }
+  if (versions.length === 0) {
+    throw new AiValuePersistenceValidationError(
+      `${label} is missing explicit persisted source version`,
+      [`${label} must carry one of: ${paths.join(", ")}`]
+    );
+  }
+  const distinctVersions = new Set(versions.map((entry) => entry.version));
+  if (distinctVersions.size > 1) {
+    throw new AiValuePersistenceValidationError(
+      `${label} has conflicting persisted source versions`,
+      [
+        `${label} version markers must agree: ${versions
+          .map((entry) => `${entry.path}=${entry.version}`)
+          .join(", ")}`
+      ]
+    );
+  }
+  return versions[0].version;
+};
+
+const requireSourcePackageRefVersions = (
+  validation: Record<string, unknown>,
+  sourcePackageIds: string[]
+): Record<string, number> => {
+  const versionMap = asRecord(validation.source_package_ref_versions);
+  const gaps: string[] = [];
+  const resolved: Record<string, number> = {};
+  const expectedIds = new Set(sourcePackageIds);
+  for (const sourcePackageId of Object.keys(versionMap)) {
+    if (!expectedIds.has(sourcePackageId)) {
+      gaps.push(`validation.source_package_ref_versions.${sourcePackageId} is not referenced by source_package_ids`);
+    }
+  }
+  for (const sourcePackageId of sourcePackageIds) {
+    const version = asPositiveIntegerOrNull(versionMap[sourcePackageId]);
+    if (version === null) {
+      gaps.push(`validation.source_package_ref_versions.${sourcePackageId} must be a positive integer`);
+    } else {
+      resolved[sourcePackageId] = version;
+    }
+  }
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Pilot Run source package lineage is missing explicit versions",
+      gaps
+    );
+  }
+  return resolved;
+};
+
+const sortedStrings = (values: string[]): string[] => [...values].sort((a, b) => a.localeCompare(b));
+
+const missingFrom = (required: string[], actual: string[]): string[] => {
+  const actualSet = new Set(actual);
+  return sortedStrings(required.filter((value) => !actualSet.has(value)));
+};
+
+const compareField = (
+  gaps: string[],
+  label: string,
+  expected: unknown,
+  actual: unknown
+) => {
+  if (stableStringify(expected) !== stableStringify(actual)) {
+    gaps.push(label);
+  }
+};
+
+const expectedPilotRunStatus = (
+  coverageStatus: string,
+  requiredCaveats: string[]
+): string => {
+  if (coverageStatus === "held_for_governance") return "held_for_governance";
+  if (coverageStatus === "held_for_customer_exports") return "held_for_source_binding";
+  return requiredCaveats.length > 0 ? "completed_with_caveats" : "completed";
+};
+
 const rejectDuplicate = (exists: boolean) => {
   if (exists) {
     throw new AiValuePersistenceAlreadyExistsError();
@@ -378,6 +508,21 @@ const PILOT_RUN_ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "blocked_uses",
   "validation",
   "generated_at"
+]);
+
+const PILOT_RUN_ALLOWED_VALIDATION_FIELDS = new Set([
+  "valid",
+  "evidence_snapshot_persisted",
+  "evidence_snapshot_version",
+  "evidence_snapshot_persistence_version",
+  "source_package_ref_versions",
+  "claim_readiness_handoff_validated",
+  "claim_readiness_snapshot_persisted",
+  "claim_readiness_snapshot_version",
+  "claim_readiness_snapshot_persistence_version",
+  "executive_readout_snapshot_persisted",
+  "executive_readout_snapshot_version",
+  "executive_readout_snapshot_persistence_version"
 ]);
 
 const PILOT_RUN_COVERAGE_STATUSES = new Set([
@@ -451,8 +596,25 @@ const validatePilotRunLedgerShape = (pilotRun: Record<string, unknown>): void =>
   if (pilotRun.run_status && !PILOT_RUN_STATUSES.has(asString(pilotRun.run_status))) {
     gaps.push(`run_status is invalid: ${asString(pilotRun.run_status)}`);
   }
+  if (
+    PILOT_RUN_COVERAGE_STATUSES.has(asString(pilotRun.coverage_status)) &&
+    PILOT_RUN_STATUSES.has(asString(pilotRun.run_status))
+  ) {
+    const expectedStatus = expectedPilotRunStatus(
+      asString(pilotRun.coverage_status),
+      asStringArray(pilotRun.required_caveats)
+    );
+    if (asString(pilotRun.run_status) !== expectedStatus) {
+      gaps.push(`run_status must be ${expectedStatus} for coverage_status ${asString(pilotRun.coverage_status)} and carried caveats`);
+    }
+  }
 
   const validation = asRecord(pilotRun.validation);
+  for (const key of Object.keys(validation)) {
+    if (!PILOT_RUN_ALLOWED_VALIDATION_FIELDS.has(key)) {
+      gaps.push(`validation.${key} is not allowed`);
+    }
+  }
   if (Object.keys(validation).length === 0) {
     gaps.push("validation is required");
   }
@@ -502,22 +664,23 @@ const validatePilotRunLedgerShape = (pilotRun: Record<string, unknown>): void =>
 
 async function loadLatestEvidenceSnapshotRecord(
   orgId: string,
-  evidenceSnapshotId: string
+  evidenceSnapshotId: string,
+  version?: number
 ): Promise<AiValueEvidenceSnapshotStoredRecord | null> {
   if (!usePrisma()) {
-    return latestByVersion(
-      Array.from(store.aiValueEvidenceSnapshots.values()).filter(
-        (record) =>
-          record.org_id === orgId &&
-          record.evidence_snapshot_id === evidenceSnapshotId
-      )
+    const records = Array.from(store.aiValueEvidenceSnapshots.values()).filter(
+      (record) =>
+        record.org_id === orgId &&
+        record.evidence_snapshot_id === evidenceSnapshotId
     );
+    return version === undefined ? latestByVersion(records) : exactByVersion(records, version);
   }
 
   const row = await getPrisma().evidenceSnapshot.findFirst({
     where: {
       orgId,
-      evidenceSnapshotId
+      evidenceSnapshotId,
+      ...(version === undefined ? {} : { version })
     },
     orderBy: { version: "desc" }
   });
@@ -526,22 +689,23 @@ async function loadLatestEvidenceSnapshotRecord(
 
 async function loadLatestClaimReadinessSnapshotRecord(
   orgId: string,
-  claimReadinessSnapshotId: string
+  claimReadinessSnapshotId: string,
+  version?: number
 ): Promise<AiValueClaimReadinessSnapshotStoredRecord | null> {
   if (!usePrisma()) {
-    return latestByVersion(
-      Array.from(store.aiValueClaimReadinessSnapshots.values()).filter(
-        (record) =>
-          record.org_id === orgId &&
-          record.claim_readiness_snapshot_id === claimReadinessSnapshotId
-      )
+    const records = Array.from(store.aiValueClaimReadinessSnapshots.values()).filter(
+      (record) =>
+        record.org_id === orgId &&
+        record.claim_readiness_snapshot_id === claimReadinessSnapshotId
     );
+    return version === undefined ? latestByVersion(records) : exactByVersion(records, version);
   }
 
   const row = await getPrisma().claimReadinessSnapshot.findFirst({
     where: {
       orgId,
-      claimReadinessSnapshotId
+      claimReadinessSnapshotId,
+      ...(version === undefined ? {} : { version })
     },
     orderBy: { version: "desc" }
   });
@@ -550,26 +714,48 @@ async function loadLatestClaimReadinessSnapshotRecord(
 
 async function loadLatestExecutiveReadoutSnapshotRecord(
   orgId: string,
-  executiveReadoutSnapshotId: string
+  executiveReadoutSnapshotId: string,
+  version?: number
 ): Promise<AiValueExecutiveReadoutSnapshotStoredRecord | null> {
   if (!usePrisma()) {
-    return latestByVersion(
-      Array.from(store.aiValueExecutiveReadoutSnapshots.values()).filter(
-        (record) =>
-          record.org_id === orgId &&
-          record.executive_readout_snapshot_id === executiveReadoutSnapshotId
-      )
+    const records = Array.from(store.aiValueExecutiveReadoutSnapshots.values()).filter(
+      (record) =>
+        record.org_id === orgId &&
+        record.executive_readout_snapshot_id === executiveReadoutSnapshotId
     );
+    return version === undefined ? latestByVersion(records) : exactByVersion(records, version);
   }
 
   const row = await getPrisma().executiveReadoutSnapshot.findFirst({
     where: {
       orgId,
-      executiveReadoutSnapshotId
+      executiveReadoutSnapshotId,
+      ...(version === undefined ? {} : { version })
     },
     orderBy: { version: "desc" }
   });
   return row ? executiveReadoutSnapshotRowToRecord(row) : null;
+}
+
+async function loadSourcePackageRefRecord(
+  orgId: string,
+  sourcePackageId: string,
+  version: number
+): Promise<AiValueSourcePackageRefStoredRecord | null> {
+  if (!usePrisma()) {
+    return store.aiValueSourcePackageRefs.get(
+      sourcePackageRefKey(orgId, sourcePackageId, version)
+    ) ?? null;
+  }
+
+  const row = await getPrisma().sourcePackageRef.findFirst({
+    where: {
+      orgId,
+      sourcePackageId,
+      version
+    }
+  });
+  return row ? sourcePackageRefRowToRecord(row) : null;
 }
 
 const ensureClaimSnapshotBoundToPersistedEvidence = async (
@@ -577,14 +763,24 @@ const ensureClaimSnapshotBoundToPersistedEvidence = async (
 ): Promise<AiValueEvidenceSnapshotStoredRecord> => {
   const orgId = asString(snapshot.org_id);
   const evidenceSnapshotId = asString(snapshot.evidence_snapshot_id);
+  const evidenceSnapshotVersion = requirePersistenceVersion(
+    snapshot,
+    "Claim Readiness Snapshot evidence source binding",
+    [
+      "derived_from.evidence_snapshot_persistence_version",
+      "source_provenance.evidence_snapshot_persistence_version",
+      "validation.evidence_snapshot_persistence_version"
+    ]
+  );
   const persistedEvidence = await loadLatestEvidenceSnapshotRecord(
     orgId,
-    evidenceSnapshotId
+    evidenceSnapshotId,
+    evidenceSnapshotVersion
   );
   if (!persistedEvidence) {
     throw new AiValuePersistenceValidationError(
       "Claim Readiness Snapshot is not bound to a persisted Evidence Snapshot",
-      ["persisted Evidence Snapshot is required before Claim Readiness Snapshot persistence"]
+      [`persisted Evidence Snapshot version ${evidenceSnapshotVersion} is required before Claim Readiness Snapshot persistence`]
     );
   }
 
@@ -610,6 +806,34 @@ const ensureClaimSnapshotBoundToPersistedEvidence = async (
   if (stableStringify(persistedEvidence.source_refs) !== stableStringify(asRecord(snapshot.source_refs))) {
     gaps.push("Claim Readiness Snapshot source_refs do not match persisted Evidence Snapshot");
   }
+  for (const field of [
+    "playbook_coverage",
+    "suppression",
+    "privacy_boundary",
+    "aggregate_workforce_context",
+    "vbd_operating_map"
+  ]) {
+    compareField(
+      gaps,
+      `Claim Readiness Snapshot ${field} does not match persisted Evidence Snapshot`,
+      persistedPayload[field],
+      snapshot[field]
+    );
+  }
+  const missingCaveats = missingFrom(
+    persistedEvidence.required_caveats,
+    asStringArray(snapshot.required_caveats)
+  );
+  if (missingCaveats.length > 0) {
+    gaps.push(`Claim Readiness Snapshot required_caveats missing persisted Evidence Snapshot caveat(s): ${missingCaveats.join(", ")}`);
+  }
+  const missingBlockedUses = missingFrom(
+    persistedEvidence.blocked_uses,
+    asStringArray(snapshot.blocked_uses)
+  );
+  if (missingBlockedUses.length > 0) {
+    gaps.push(`Claim Readiness Snapshot blocked_uses missing persisted Evidence Snapshot blocked use(s): ${missingBlockedUses.join(", ")}`);
+  }
   if (gaps.length > 0) {
     throw new AiValuePersistenceValidationError(
       "Claim Readiness Snapshot source binding failed before persistence",
@@ -624,14 +848,24 @@ const ensureExecutiveReadoutBoundToPersistedClaimSnapshot = async (
 ): Promise<AiValueClaimReadinessSnapshotStoredRecord> => {
   const orgId = asString(snapshot.org_id);
   const claimReadinessSnapshotId = asString(snapshot.claim_readiness_snapshot_id);
+  const claimReadinessSnapshotVersion = requirePersistenceVersion(
+    snapshot,
+    "Executive Readout Snapshot claim source binding",
+    [
+      "derived_from.claim_readiness_snapshot_persistence_version",
+      "source_provenance.claim_readiness_snapshot_persistence_version",
+      "validation.claim_readiness_snapshot_persistence_version"
+    ]
+  );
   const persistedClaim = await loadLatestClaimReadinessSnapshotRecord(
     orgId,
-    claimReadinessSnapshotId
+    claimReadinessSnapshotId,
+    claimReadinessSnapshotVersion
   );
   if (!persistedClaim) {
     throw new AiValuePersistenceValidationError(
       "Executive Readout Snapshot is not bound to a persisted Claim Readiness Snapshot",
-      ["persisted Claim Readiness Snapshot is required before Executive Readout Snapshot persistence"]
+      [`persisted Claim Readiness Snapshot version ${claimReadinessSnapshotVersion} is required before Executive Readout Snapshot persistence`]
     );
   }
 
@@ -659,6 +893,51 @@ const ensureExecutiveReadoutBoundToPersistedClaimSnapshot = async (
   if (stableStringify(persistedClaim.source_refs) !== stableStringify(asRecord(snapshot.source_refs))) {
     gaps.push("Executive Readout Snapshot source_refs do not match persisted Claim Readiness Snapshot");
   }
+  const expectedReadoutSnapshot = aiValueEngine.buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot(
+    persistedPayload,
+    {
+      executiveReadoutSnapshotId: asString(snapshot.executive_readout_snapshot_id),
+      createdAt: asString(snapshot.created_at)
+    }
+  ) as unknown as Record<string, unknown>;
+  if (asString(expectedReadoutSnapshot.readout_state) !== asString(snapshot.readout_state)) {
+    gaps.push("Executive Readout Snapshot readout_state does not match persisted Claim Readiness Snapshot posture");
+  }
+  for (const field of [
+    "playbook_coverage",
+    "financial_boundary",
+    "executive_readout_boundary",
+    "suppression",
+    "privacy_boundary"
+  ]) {
+    compareField(
+      gaps,
+      `Executive Readout Snapshot ${field} does not match persisted Claim Readiness Snapshot`,
+      persistedPayload[field],
+      snapshot[field]
+    );
+  }
+  const missingCaveats = missingFrom(
+    persistedClaim.required_caveats,
+    asStringArray(snapshot.required_caveats)
+  );
+  if (missingCaveats.length > 0) {
+    gaps.push(`Executive Readout Snapshot required_caveats missing persisted Claim Readiness Snapshot caveat(s): ${missingCaveats.join(", ")}`);
+  }
+  const missingBlockedUses = missingFrom(
+    persistedClaim.blocked_uses,
+    asStringArray(snapshot.blocked_uses)
+  );
+  if (missingBlockedUses.length > 0) {
+    gaps.push(`Executive Readout Snapshot blocked_uses missing persisted Claim Readiness Snapshot blocked use(s): ${missingBlockedUses.join(", ")}`);
+  }
+  const missingBlockedClaims = missingFrom(
+    persistedClaim.blocked_claims,
+    asStringArray(snapshot.blocked_claims)
+  );
+  if (missingBlockedClaims.length > 0) {
+    gaps.push(`Executive Readout Snapshot blocked_claims missing persisted Claim Readiness Snapshot blocked claim(s): ${missingBlockedClaims.join(", ")}`);
+  }
   if (gaps.length > 0) {
     throw new AiValuePersistenceValidationError(
       "Executive Readout Snapshot source binding failed before persistence",
@@ -676,15 +955,113 @@ const ensurePilotRunSnapshotLineage = async (
   const claimSnapshotPersisted = validation.claim_readiness_snapshot_persisted === true;
   const executiveReadoutPersisted = validation.executive_readout_snapshot_persisted === true;
   const gaps: string[] = [];
+  const evidenceSnapshotVersion = requirePersistenceVersion(
+    pilotRun,
+    "Pilot Run Evidence Snapshot lineage",
+    [
+      "validation.evidence_snapshot_version",
+      "validation.evidence_snapshot_persistence_version"
+    ]
+  );
+  const persistedEvidence = await loadLatestEvidenceSnapshotRecord(
+    orgId,
+    asString(pilotRun.evidence_snapshot_id),
+    evidenceSnapshotVersion
+  );
+  if (!persistedEvidence) {
+    gaps.push(`persisted Evidence Snapshot version ${evidenceSnapshotVersion} is required before pilot run lineage can record it`);
+  } else {
+    const comparisons: Array<[string, unknown, unknown]> = [
+      ["evidence_snapshot_id", persistedEvidence.evidence_snapshot_id, pilotRun.evidence_snapshot_id],
+      ["measurement_plan_id", persistedEvidence.measurement_plan_id, pilotRun.measurement_plan_id],
+      ["coverage_status", persistedEvidence.coverage_status, pilotRun.coverage_status]
+    ];
+    for (const [field, expected, actual] of comparisons) {
+      if (String(expected) !== String(actual)) {
+        gaps.push(`pilot run ${field} does not match persisted Evidence Snapshot`);
+      }
+    }
+    const pilotSourcePackageIds = sortedStrings(asStringArray(pilotRun.source_package_ids));
+    const evidenceSourcePackageIds = sortedStrings(asStringArray(
+      asRecord(persistedEvidence.source_refs).source_package_ids
+    ));
+    if (evidenceSourcePackageIds.length === 0) {
+      gaps.push("persisted Evidence Snapshot source_refs.source_package_ids must bind pilot run source packages");
+    } else if (stableStringify(evidenceSourcePackageIds) !== stableStringify(pilotSourcePackageIds)) {
+      gaps.push("pilot run source_package_ids do not match persisted Evidence Snapshot source_refs.source_package_ids");
+    }
+    const sourcePackageVersions = requireSourcePackageRefVersions(
+      validation,
+      pilotSourcePackageIds
+    );
+    for (const sourcePackageId of pilotSourcePackageIds) {
+      const persistedSourcePackage = await loadSourcePackageRefRecord(
+        orgId,
+        sourcePackageId,
+        sourcePackageVersions[sourcePackageId]
+      );
+      if (!persistedSourcePackage) {
+        gaps.push(`persisted Source Package ref ${sourcePackageId} version ${sourcePackageVersions[sourcePackageId]} is required before pilot run lineage can record it`);
+      } else if (persistedSourcePackage.measurement_plan_id !== asString(pilotRun.measurement_plan_id)) {
+        gaps.push(`pilot run source package ${sourcePackageId} measurement_plan_id does not match pilot run`);
+      }
+    }
+    const missingEvidenceCaveats = missingFrom(
+      persistedEvidence.required_caveats,
+      asStringArray(pilotRun.required_caveats)
+    );
+    if (missingEvidenceCaveats.length > 0) {
+      gaps.push(`pilot run required_caveats missing persisted Evidence Snapshot caveat(s): ${missingEvidenceCaveats.join(", ")}`);
+    }
+    const missingEvidenceBlockedUses = missingFrom(
+      persistedEvidence.blocked_uses,
+      asStringArray(pilotRun.blocked_uses)
+    );
+    if (missingEvidenceBlockedUses.length > 0) {
+      gaps.push(`pilot run blocked_uses missing persisted Evidence Snapshot blocked use(s): ${missingEvidenceBlockedUses.join(", ")}`);
+    }
+    if (validation.claim_readiness_handoff_validated === true) {
+      const expectedHandoff = aiValueEngine.buildClaimReadinessHandoffFromEvidenceSnapshot(
+        persistedEvidence.payload,
+        {
+          handoffId: asString(pilotRun.claim_readiness_handoff_id),
+          createdAt: asString(pilotRun.generated_at)
+        }
+      );
+      const missingHandoffCaveats = missingFrom(
+        expectedHandoff.required_caveats,
+        asStringArray(pilotRun.required_caveats)
+      );
+      if (missingHandoffCaveats.length > 0) {
+        gaps.push(`pilot run required_caveats missing validated Claim Readiness Handoff caveat(s): ${missingHandoffCaveats.join(", ")}`);
+      }
+      const missingHandoffBlockedUses = missingFrom(
+        expectedHandoff.blocked_uses,
+        asStringArray(pilotRun.blocked_uses)
+      );
+      if (missingHandoffBlockedUses.length > 0) {
+        gaps.push(`pilot run blocked_uses missing validated Claim Readiness Handoff blocked use(s): ${missingHandoffBlockedUses.join(", ")}`);
+      }
+    }
+  }
   let persistedClaim: AiValueClaimReadinessSnapshotStoredRecord | null = null;
 
   if (claimSnapshotPersisted) {
+    const claimReadinessSnapshotVersion = requirePersistenceVersion(
+      pilotRun,
+      "Pilot Run Claim Readiness Snapshot lineage",
+      [
+        "validation.claim_readiness_snapshot_version",
+        "validation.claim_readiness_snapshot_persistence_version"
+      ]
+    );
     persistedClaim = await loadLatestClaimReadinessSnapshotRecord(
       orgId,
-      asString(pilotRun.claim_readiness_snapshot_id)
+      asString(pilotRun.claim_readiness_snapshot_id),
+      claimReadinessSnapshotVersion
     );
     if (!persistedClaim) {
-      gaps.push("persisted Claim Readiness Snapshot is required before pilot run lineage can record it");
+      gaps.push(`persisted Claim Readiness Snapshot version ${claimReadinessSnapshotVersion} is required before pilot run lineage can record it`);
     } else {
       const comparisons: Array<[string, unknown, unknown]> = [
         ["evidence_snapshot_id", persistedClaim.evidence_snapshot_id, pilotRun.evidence_snapshot_id],
@@ -697,16 +1074,39 @@ const ensurePilotRunSnapshotLineage = async (
           gaps.push(`pilot run ${field} does not match persisted Claim Readiness Snapshot`);
         }
       }
+      const missingCaveats = missingFrom(
+        persistedClaim.required_caveats,
+        asStringArray(pilotRun.required_caveats)
+      );
+      if (missingCaveats.length > 0) {
+        gaps.push(`pilot run required_caveats missing persisted Claim Readiness Snapshot caveat(s): ${missingCaveats.join(", ")}`);
+      }
+      const missingBlockedUses = missingFrom(
+        persistedClaim.blocked_uses,
+        asStringArray(pilotRun.blocked_uses)
+      );
+      if (missingBlockedUses.length > 0) {
+        gaps.push(`pilot run blocked_uses missing persisted Claim Readiness Snapshot blocked use(s): ${missingBlockedUses.join(", ")}`);
+      }
     }
   }
 
   if (executiveReadoutPersisted) {
+    const executiveReadoutSnapshotVersion = requirePersistenceVersion(
+      pilotRun,
+      "Pilot Run Executive Readout Snapshot lineage",
+      [
+        "validation.executive_readout_snapshot_version",
+        "validation.executive_readout_snapshot_persistence_version"
+      ]
+    );
     const persistedReadout = await loadLatestExecutiveReadoutSnapshotRecord(
       orgId,
-      asString(pilotRun.executive_readout_snapshot_id)
+      asString(pilotRun.executive_readout_snapshot_id),
+      executiveReadoutSnapshotVersion
     );
     if (!persistedReadout) {
-      gaps.push("persisted Executive Readout Snapshot is required before pilot run lineage can record it");
+      gaps.push(`persisted Executive Readout Snapshot version ${executiveReadoutSnapshotVersion} is required before pilot run lineage can record it`);
     } else {
       const comparisons: Array<[string, unknown, unknown]> = [
         ["claim_readiness_snapshot_id", persistedReadout.claim_readiness_snapshot_id, pilotRun.claim_readiness_snapshot_id],
@@ -719,6 +1119,20 @@ const ensurePilotRunSnapshotLineage = async (
         if (String(expected) !== String(actual)) {
           gaps.push(`pilot run ${field} does not match persisted Executive Readout Snapshot`);
         }
+      }
+      const missingCaveats = missingFrom(
+        persistedReadout.required_caveats,
+        asStringArray(pilotRun.required_caveats)
+      );
+      if (missingCaveats.length > 0) {
+        gaps.push(`pilot run required_caveats missing persisted Executive Readout Snapshot caveat(s): ${missingCaveats.join(", ")}`);
+      }
+      const missingBlockedUses = missingFrom(
+        persistedReadout.blocked_uses,
+        asStringArray(pilotRun.blocked_uses)
+      );
+      if (missingBlockedUses.length > 0) {
+        gaps.push(`pilot run blocked_uses missing persisted Executive Readout Snapshot blocked use(s): ${missingBlockedUses.join(", ")}`);
       }
     }
   }

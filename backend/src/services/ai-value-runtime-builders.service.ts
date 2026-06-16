@@ -302,6 +302,21 @@ export async function buildAiValueClaimReadinessHandoffInternal(
         }
       )
     : undefined;
+  if (claimReadinessSnapshot) {
+    const claimSnapshotRecord = claimReadinessSnapshot as unknown as Record<string, any>;
+    claimSnapshotRecord.derived_from = {
+      ...asRecord(claimSnapshotRecord.derived_from),
+      evidence_snapshot_persistence_version: persistedEvidenceSnapshot.version
+    };
+    claimSnapshotRecord.source_provenance = {
+      ...asRecord(claimSnapshotRecord.source_provenance),
+      evidence_snapshot_persistence_version: persistedEvidenceSnapshot.version
+    };
+    claimSnapshotRecord.validation = {
+      ...asRecord(claimSnapshotRecord.validation),
+      evidence_snapshot_persistence_version: persistedEvidenceSnapshot.version
+    };
+  }
   const persistedClaimReadinessSnapshot = claimReadinessSnapshot
     ? await persistAiValueClaimReadinessSnapshot({
         claimReadinessSnapshot: claimReadinessSnapshot as unknown as Record<string, unknown>,
@@ -324,6 +339,24 @@ export async function buildAiValueClaimReadinessHandoffInternal(
         }
       )
     : undefined;
+  if (executiveReadoutSnapshot && persistedClaimReadinessSnapshot) {
+    const readoutRecord = executiveReadoutSnapshot as unknown as Record<string, any>;
+    readoutRecord.derived_from = {
+      ...asRecord(readoutRecord.derived_from),
+      claim_readiness_snapshot_persistence_version:
+        persistedClaimReadinessSnapshot.version
+    };
+    readoutRecord.source_provenance = {
+      ...asRecord(readoutRecord.source_provenance),
+      claim_readiness_snapshot_persistence_version:
+        persistedClaimReadinessSnapshot.version
+    };
+    readoutRecord.validation = {
+      ...asRecord(readoutRecord.validation),
+      claim_readiness_snapshot_persistence_version:
+        persistedClaimReadinessSnapshot.version
+    };
+  }
   const persistedExecutiveReadoutSnapshot = executiveReadoutSnapshot
     ? await persistAiValueExecutiveReadoutSnapshot({
         executiveReadoutSnapshot: executiveReadoutSnapshot as unknown as Record<string, unknown>,
@@ -336,6 +369,14 @@ export async function buildAiValueClaimReadinessHandoffInternal(
         throw error;
       })
     : undefined;
+
+  const pilotRunEvidencePosture = (
+    executiveReadoutSnapshot ??
+    claimReadinessSnapshot ??
+    handoff
+  ) as unknown as Record<string, unknown>;
+  const pilotRunRequiredCaveats = stringsOf(pilotRunEvidencePosture.required_caveats);
+  const pilotRunBlockedUses = stringsOf(pilotRunEvidencePosture.blocked_uses);
 
   const persistedPilotRun = input.pilotRunId
     ? await persistAiValuePilotRun({
@@ -350,16 +391,32 @@ export async function buildAiValueClaimReadinessHandoffInternal(
           coverage_status: coverageStatus,
           run_status: runStatusForCoverage(
             coverageStatus,
-            stringsOf(handoff.required_caveats)
+            pilotRunRequiredCaveats
           ),
-          required_caveats: stringsOf(handoff.required_caveats),
-          blocked_uses: stringsOf(handoff.blocked_uses),
+          required_caveats: pilotRunRequiredCaveats,
+          blocked_uses: pilotRunBlockedUses,
           validation: {
             valid: true,
             evidence_snapshot_persisted: true,
+            evidence_snapshot_version: persistedEvidenceSnapshot.version,
+            source_package_ref_versions: Object.fromEntries(
+              sourcePackageRefs.map((ref) => [ref.source_package_id, ref.version])
+            ),
             claim_readiness_handoff_validated: true,
             claim_readiness_snapshot_persisted: Boolean(persistedClaimReadinessSnapshot),
-            executive_readout_snapshot_persisted: Boolean(persistedExecutiveReadoutSnapshot)
+            executive_readout_snapshot_persisted: Boolean(persistedExecutiveReadoutSnapshot),
+            ...(persistedClaimReadinessSnapshot
+              ? {
+                  claim_readiness_snapshot_version:
+                    persistedClaimReadinessSnapshot.version
+                }
+              : {}),
+            ...(persistedExecutiveReadoutSnapshot
+              ? {
+                  executive_readout_snapshot_version:
+                    persistedExecutiveReadoutSnapshot.version
+                }
+              : {})
           },
           ...(persistedClaimReadinessSnapshot
             ? {

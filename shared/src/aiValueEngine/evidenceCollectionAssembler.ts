@@ -409,16 +409,16 @@ function sourcePackageIds(packages: any[]): string[] {
   return unique(packages.map((pkg) => pkg?.source_package_id).filter(Boolean).map(String));
 }
 
-function buildSourceRefs(packages: any[]): any {
-  const layer1 = findPackageByType(packages, "layer_1_bigquery_telemetry_summary");
-  const layer2 = findPackageByType(packages, "layer_2_user_voice_empirical_export");
+function buildSourceRefs(feedablePackages: any[], lineagePackages: any[] = feedablePackages): any {
+  const layer1 = findPackageByType(feedablePackages, "layer_1_bigquery_telemetry_summary");
+  const layer2 = findPackageByType(feedablePackages, "layer_2_user_voice_empirical_export");
   const layer3 = findPackageByType(
-    packages,
+    feedablePackages,
     "layer_3_business_system_of_record_outcome_export"
   );
-  const workforce = findPackageByType(packages, "aggregate_workforce_context_export");
-  const governance = findPackageByType(packages, "governance_control_export");
-  const assumption = findPackageByType(packages, "assumption_approval_export");
+  const workforce = findPackageByType(feedablePackages, "aggregate_workforce_context_export");
+  const governance = findPackageByType(feedablePackages, "governance_control_export");
+  const assumption = findPackageByType(feedablePackages, "assumption_approval_export");
 
   return {
     bigquery_probe_result_id: layer1?.source_refs?.aggregate_probe_id ?? null,
@@ -430,13 +430,13 @@ function buildSourceRefs(packages: any[]): any {
     fluency_baseline_ids: layer2?.source_refs?.aggregate_export_id
       ? [layer2.source_refs.aggregate_export_id]
       : [],
-    source_readiness_ids: sourceReadinessIds(packages),
+    source_readiness_ids: sourceReadinessIds(lineagePackages),
     real_source_manifest_ids: [],
     aggregate_workforce_context_export_ids:
       workforce?.source_refs?.aggregate_workforce_context_export_id
         ? [workforce.source_refs.aggregate_workforce_context_export_id]
         : [],
-    source_package_ids: sourcePackageIds(packages),
+    source_package_ids: sourcePackageIds(lineagePackages),
     governance_control_export_ids: governance?.source_refs?.governance_control_export_id
       ? [governance.source_refs.governance_control_export_id]
       : [],
@@ -481,6 +481,19 @@ function buildTelemetrySummary(layer1Package: any, plan: any): any {
 function buildAggregateWorkforceContext(workforcePackage: any): any | undefined {
   if (!workforcePackage) return undefined;
   const context = workforcePackage.aggregate_workforce_context ?? {};
+  if (!packageKMinClear(workforcePackage)) {
+    return {
+      context_state: "blocked",
+      source_type: "aggregate_workforce_export",
+      allowed_context_types: [],
+      source_owner_approval_state: context.source_owner_approval_state ?? "approved",
+      minimum_cohort_threshold: workforcePackage.minimum_cohort_threshold,
+      cohort_threshold_met: false,
+      caveats: mergeUnique(packageCaveats(workforcePackage), [
+        "Aggregate workforce context is blocked because k-min cohort posture is not clear."
+      ])
+    };
+  }
   return {
     context_state: "provided_aggregate_safe",
     source_type: "aggregate_workforce_export",
@@ -913,7 +926,7 @@ export function buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages(
     windowEnd: measurementPlan?.windows?.baseline_window_end ?? "",
     aggregateTelemetrySummary: buildTelemetrySummary(layer1Package, measurementPlan),
     aggregateWorkforceContext: buildAggregateWorkforceContext(workforcePackage),
-    sourceRefs: buildSourceRefs(sourceRefPackages),
+    sourceRefs: buildSourceRefs(sourceRefPackages, validPackages),
     generatedAt,
     evidenceSnapshotId: options.evidenceSnapshotId,
     measurementPlanId: measurementPlan?.measurement_plan_id
@@ -1015,10 +1028,10 @@ export function validateEvidenceCollectionAssembly(
   if (!Array.isArray(assembly?.source_package_plan_mismatch_gaps)) {
     gaps.push("source_package_plan_mismatch_gaps must be an array");
   }
-  for (const result of assembly?.source_package_validation_results ?? []) {
+  for (const [index, result] of (assembly?.source_package_validation_results ?? []).entries()) {
     if (result?.valid !== true) {
       gaps.push(
-        `source package ${result?.source_package_id ?? "unknown"} invalid: ${stringsOf(result?.gaps).join("; ")}`
+        `source package at index ${index} invalid: ${stringsOf(result?.gaps).join("; ")}`
       );
     }
     if (
@@ -1027,7 +1040,7 @@ export function validateEvidenceCollectionAssembly(
       result?.feeds?.customer_facing_economic_output !== false ||
       result?.feeds?.full_playbook_coverage !== false
     ) {
-      gaps.push(`source package ${result?.source_package_id ?? "unknown"} exposes forbidden downstream feeds`);
+      gaps.push(`source package at index ${index} exposes forbidden downstream feeds`);
     }
   }
   const mismatchGaps = stringsOf(assembly?.source_package_plan_mismatch_gaps);

@@ -81,6 +81,29 @@ const ALLOWED_SECTIONS = [
   "next_evidence_actions"
 ];
 
+const PROHIBITED_SECTIONS = [
+  "roi",
+  "ebita",
+  "causality",
+  "productivity",
+  "financial_output",
+  "roi_proof",
+  "ebita_claim",
+  "causality_claim",
+  "productivity_claim",
+  "headcount_reduction_claim",
+  "individual_attribution",
+  "manager_or_team_ranking",
+  "people_decisioning",
+  "customer_facing_financial_output",
+  "customer_facing_economic_output"
+];
+
+const KNOWN_SECTIONS = new Set([
+  ...ALLOWED_SECTIONS,
+  ...PROHIBITED_SECTIONS
+]);
+
 const IMMUTABLE_BLOCKED_CLAIMS = [
   "ebita_claim",
   "causality_claim",
@@ -222,6 +245,14 @@ function normalizeToken(value: string): string {
   return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
+function normalizeKey(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+}
+
 function safeIdPart(value: string): string {
   return value
     .toLowerCase()
@@ -254,7 +285,10 @@ function requireBoolean(value: any, expected: boolean, path: string, gaps: strin
 function suppressionBlocksReadout(suppression: any): boolean {
   return suppression?.default_verdict !== "SUPPRESS" ||
     suppression?.hidden_values_exposed !== false ||
-    stringsOf(suppression?.suppressed_lanes).length > 0;
+    stringsOf(suppression?.suppressed_lanes).length > 0 ||
+    stringsOf(suppression?.held_lanes).length > 0 ||
+    stringsOf(suppression?.missing_lanes).length > 0 ||
+    stringsOf(suppression?.reason_codes).length > 0;
 }
 
 function privacyIsUnsafe(boundary: any): boolean {
@@ -313,16 +347,7 @@ export function buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot(
   const snapshot = claimReadinessSnapshot as ClaimReadinessSnapshot;
   const blockedSections = uniqueStrings([
     ...stringsOf(snapshot.executive_readout_boundary?.blocked_sections),
-    "roi_proof",
-    "ebita_claim",
-    "causality_claim",
-    "productivity_claim",
-    "headcount_reduction_claim",
-    "individual_attribution",
-    "manager_or_team_ranking",
-    "people_decisioning",
-    "customer_facing_financial_output",
-    "customer_facing_economic_output"
+    ...PROHIBITED_SECTIONS
   ]);
 
   return {
@@ -426,6 +451,67 @@ function collectTopLevelGaps(snapshot: any): string[] {
     "blocked_sections"
   ]) {
     requireArray(snapshot?.[field], field, gaps);
+  }
+  return gaps;
+}
+
+function expectedReadoutState(snapshot: any): string {
+  if (privacyIsUnsafe(snapshot?.privacy_boundary) || suppressionBlocksReadout(snapshot?.suppression)) {
+    return "blocked_for_privacy_or_suppression";
+  }
+  if (
+    snapshot?.financial_boundary?.customer_facing_financial_output_allowed === true ||
+    snapshot?.executive_readout_boundary?.customer_facing_readout_allowed === true
+  ) {
+    return "blocked_for_customer_facing_financial_output";
+  }
+  if (snapshot?.coverage_status !== "full_playbook_coverage") {
+    return "held_for_full_playbook_coverage";
+  }
+  if (
+    snapshot?.executive_readout_boundary?.executive_readout_allowed === true &&
+    snapshot?.executive_readout_boundary?.internal_only_readout_allowed === true
+  ) {
+    return "internal_only_readout_ready";
+  }
+  return "internal_only_claim_review_ready";
+}
+
+function collectReadoutStateGaps(snapshot: any): string[] {
+  const gaps: string[] = [];
+  if (
+    snapshot?.readout_state &&
+    ALLOWED_READOUT_STATES.has(snapshot.readout_state) &&
+    snapshot.readout_state !== expectedReadoutState(snapshot)
+  ) {
+    gaps.push(`readout_state must be ${expectedReadoutState(snapshot)} for the carried evidence posture`);
+  }
+  return gaps;
+}
+
+function collectSectionGaps(snapshot: any): string[] {
+  const gaps: string[] = [];
+  const allowedSections = stringsOf(snapshot?.allowed_sections);
+  const blockedSections = stringsOf(snapshot?.blocked_sections);
+  const blockedSectionSet = new Set(blockedSections);
+
+  for (const section of allowedSections) {
+    if (!ALLOWED_SECTIONS.includes(section)) {
+      gaps.push(`allowed_sections contains unsupported section ${section}`);
+    }
+    if (PROHIBITED_SECTIONS.includes(section) || blockedSectionSet.has(section)) {
+      gaps.push(`allowed_sections cannot include blocked section ${section}`);
+    }
+  }
+  for (const section of blockedSections) {
+    if (!KNOWN_SECTIONS.has(section)) {
+      gaps.push(`blocked_sections contains unsupported section ${section}`);
+    }
+  }
+  for (const section of PROHIBITED_SECTIONS) {
+    if (!blockedSectionSet.has(section)) {
+      gaps.push(`blocked_sections missing ${section}`);
+    }
   }
   return gaps;
 }
@@ -611,22 +697,160 @@ function collectSourceProvenanceGaps(snapshot: any): string[] {
   return gaps;
 }
 
+const GOVERNED_KEY_ALLOWLIST = new Set([
+  "aggregate_workforce_context",
+  "aggregate_workforce_context_boundary",
+  "blocked_claims",
+  "blocked_sections",
+  "blocked_uses",
+  "can_authorize_people_decisioning",
+  "contains_attrition_prediction",
+  "contains_compensation_or_performance_inference",
+  "contains_direct_identifiers",
+  "contains_hashed_or_joinable_person_identifiers",
+  "contains_hris_inference_from_ai_usage",
+  "contains_manager_or_team_ranking",
+  "contains_people_decisioning",
+  "contains_person_level_hris_records",
+  "contains_person_level_productivity",
+  "contains_promotion_or_discipline_inference",
+  "contains_raw_content",
+  "customer_facing_financial_output_allowed",
+  "customer_facing_readout_allowed",
+  "evidence_snapshot_id",
+  "financial_boundary",
+  "governance_evidence",
+  "assumption_evidence",
+  "layer_1_platform_telemetry",
+  "layer_2_user_voice_empirical",
+  "layer_3_business_system_outcomes",
+  "readout_state",
+  "source_refs",
+  "source_provenance"
+]);
+
+const FORBIDDEN_FIELD_KEY_PATTERNS = [
+  /(^|_)user(?:_id|_email)?($|_)/i,
+  /email/i,
+  /employee_id/i,
+  /employee_email/i,
+  /employee_name/i,
+  /employee_record/i,
+  /employee_identifier/i,
+  /direct_employee_identifier/i,
+  /hashed_employee_id/i,
+  /hashed_user_id/i,
+  /hashed_person_id/i,
+  /pseudonymous_(?:employee|person|user)_identifier/i,
+  /tokenized_(?:employee|person|user)_identifier/i,
+  /joinable_(?:employee|person|user)_identifier/i,
+  /person_id/i,
+  /person_identifier/i,
+  /person_level_hris/i,
+  /person_level_(?:data|record|productivity|analytics)/i,
+  /named_employee_productivity/i,
+  /manager_chain/i,
+  /manager_id/i,
+  /manager_view/i,
+  /manager_ranking/i,
+  /team_ranking/i,
+  /team_or_manager_ranking/i,
+  /raw_rows/i,
+  /raw_content/i,
+  /query_text/i,
+  /sql_text/i,
+  /warehouse_query/i,
+  /raw_table/i,
+  /raw_dataset/i,
+  /table_name/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /file_content/i,
+  /people_decisioning/i,
+  /compensation/i,
+  /performance_rating/i,
+  /promotion/i,
+  /discipline/i,
+  /attrition_prediction/i,
+  /hris_inference/i,
+  /individual_productivity/i,
+  /productivity_rank/i,
+  /productivity_score/i
+];
+
+function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Set<string> {
+  if (!value || typeof value !== "object") return fields;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectForbiddenFields(item, fields));
+    return fields;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    const normalizedKey = normalizeKey(key);
+    if (
+      !GOVERNED_KEY_ALLOWLIST.has(normalizedKey) &&
+      FORBIDDEN_FIELD_KEY_PATTERNS.some((pattern) => pattern.test(normalizedKey))
+    ) {
+      fields.add(key);
+    }
+    collectForbiddenFields(nested, fields);
+  }
+  return fields;
+}
+
+function collectForbiddenFieldGaps(snapshot: any): string[] {
+  const forbidden = Array.from(collectForbiddenFields(snapshot)).sort();
+  return forbidden.length > 0
+    ? [`Forbidden field(s) present: ${forbidden.join(", ")}`]
+    : [];
+}
+
+function collectShadowAliasFields(
+  value: any,
+  fields: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
+  if (!value || typeof value !== "object") return fields;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectShadowAliasFields(item, fields, [...path, String(index)]));
+    return fields;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    const normalizedKey = normalizeKey(key);
+    if (key !== normalizedKey && GOVERNED_KEY_ALLOWLIST.has(normalizedKey)) {
+      fields.add([...path, key].join("."));
+    }
+    collectShadowAliasFields(nested, fields, [...path, key]);
+  }
+  return fields;
+}
+
+function collectShadowAliasFieldGaps(snapshot: any): string[] {
+  const aliases = Array.from(collectShadowAliasFields(snapshot)).sort();
+  return aliases.length > 0
+    ? [`Shadow alias field(s) present: ${aliases.join(", ")}`]
+    : [];
+}
+
 export function validateExecutiveReadoutSnapshot(
   snapshot: any
 ): ExecutiveReadoutSnapshotValidationResult {
   const gaps = [
     ...collectTopLevelGaps(snapshot),
+    ...collectReadoutStateGaps(snapshot),
+    ...collectSectionGaps(snapshot),
     ...collectBoundaryGaps(snapshot),
     ...collectPrivacyAndSuppressionGaps(snapshot),
     ...collectDerivationGaps(snapshot),
     ...collectValidationGaps(snapshot),
-    ...collectSourceProvenanceGaps(snapshot)
+    ...collectSourceProvenanceGaps(snapshot),
+    ...collectForbiddenFieldGaps(snapshot),
+    ...collectShadowAliasFieldGaps(snapshot)
   ];
   const valid = gaps.length === 0;
   const internalReadoutReady =
     snapshot?.readout_state === "internal_only_readout_ready" ||
-    snapshot?.readout_state === "internal_only_claim_review_ready" ||
-    snapshot?.readout_state === "held_for_full_playbook_coverage";
+    snapshot?.readout_state === "internal_only_claim_review_ready";
 
   return {
     schema_version: RESULT_SCHEMA_VERSION,

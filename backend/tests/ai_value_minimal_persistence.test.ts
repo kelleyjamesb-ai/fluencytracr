@@ -50,28 +50,46 @@ const measurementPlan = () =>
   readJson("ai-value-measurement-plan/examples/layer-1-only-draft-plan.json");
 
 const evidenceSnapshot = () =>
-  readJson("ai-value-evidence-snapshot/examples/telemetry-only-caveated-snapshot.json");
+  {
+    const snapshot = readJson("ai-value-evidence-snapshot/examples/telemetry-only-caveated-snapshot.json");
+    snapshot.source_refs.source_package_ids = [
+      "source_package_layer_1_bigquery_example"
+    ];
+    return snapshot;
+  };
 
 const sourcePackage = () =>
   readJson("ai-value-source-packages/examples/layer-1-bigquery-telemetry-package.json");
 
 const pilotRunInput = () => {
   const snapshot = evidenceSnapshot();
+  const sourcePackageId = sourcePackage().source_package_id;
+  const handoff = aiValueEngine.buildClaimReadinessHandoffFromEvidenceSnapshot(
+    snapshot,
+    {
+      handoffId: "claim_readiness_handoff_layer_1_example",
+      createdAt: "2026-06-13T18:00:00.000Z"
+    }
+  );
   return {
     pilot_run_id: "pilot_run_support_layer_1_example",
     org_id: snapshot.org_id,
     measurement_plan_id: snapshot.measurement_plan_id,
     workflow_family: snapshot.workflow.workflow_family,
-    source_package_ids: ["source_package_layer_1_bigquery_telemetry_example"],
+    source_package_ids: [sourcePackageId],
     evidence_snapshot_id: snapshot.evidence_snapshot_id,
-    claim_readiness_handoff_id: "claim_readiness_handoff_layer_1_example",
+    claim_readiness_handoff_id: handoff.handoff_id,
     coverage_status: snapshot.playbook_coverage.coverage_status,
     run_status: "completed_with_caveats",
-    required_caveats: snapshot.required_caveats,
-    blocked_uses: snapshot.blocked_uses,
+    required_caveats: handoff.required_caveats,
+    blocked_uses: handoff.blocked_uses,
     validation: {
       valid: true,
       evidence_snapshot_persisted: true,
+      evidence_snapshot_version: 1,
+      source_package_ref_versions: {
+        [sourcePackageId]: 1
+      },
       claim_readiness_handoff_validated: true,
       claim_readiness_snapshot_persisted: false,
       executive_readout_snapshot_persisted: false
@@ -97,6 +115,9 @@ const buildClaimSnapshotInput = () => {
         createdAt: "2026-06-13T18:00:00.000Z"
       }
     );
+  (claimSnapshot as any).derived_from.evidence_snapshot_persistence_version = 1;
+  (claimSnapshot as any).source_provenance.evidence_snapshot_persistence_version = 1;
+  (claimSnapshot as any).validation.evidence_snapshot_persistence_version = 1;
   return { snapshot, handoff, claimSnapshot };
 };
 
@@ -110,7 +131,27 @@ const buildExecutiveReadoutSnapshotInput = () => {
         createdAt: "2026-06-13T18:00:00.000Z"
       }
     );
+  (executiveReadoutSnapshot as any).derived_from.claim_readiness_snapshot_persistence_version = 1;
+  (executiveReadoutSnapshot as any).source_provenance.claim_readiness_snapshot_persistence_version = 1;
+  (executiveReadoutSnapshot as any).validation.claim_readiness_snapshot_persistence_version = 1;
   return { ...chain, executiveReadoutSnapshot };
+};
+
+const persistSourceAndEvidencePrereqs = async (snapshot = evidenceSnapshot()) => {
+  const pkg = sourcePackage();
+  await persistAiValueSourcePackageRef({
+    sourcePackage: pkg,
+    version: 1,
+    measurementPlanId: snapshot.measurement_plan_id,
+    workflowFamily: snapshot.workflow.workflow_family,
+    createdByRole: "data_platform_owner"
+  });
+  await persistAiValueEvidenceSnapshot({
+    evidenceSnapshot: snapshot,
+    version: 1,
+    createdByRole: "value_realization_pm"
+  });
+  return { pkg, snapshot };
 };
 
 beforeEach(() => {
@@ -348,6 +389,7 @@ describe("AI Value minimal persistence repository", () => {
   });
 
   it("persists metadata-only pilot runs append-only with caveats and blocked uses", async () => {
+    await persistSourceAndEvidencePrereqs();
     const run = pilotRunInput();
     const stored = await persistAiValuePilotRun({
       pilotRun: run,
@@ -391,11 +433,7 @@ describe("AI Value minimal persistence repository", () => {
   it("persists pilot run lineage when claim and executive snapshots are already persisted", async () => {
     const { snapshot, claimSnapshot, executiveReadoutSnapshot } =
       buildExecutiveReadoutSnapshotInput();
-    await persistAiValueEvidenceSnapshot({
-      evidenceSnapshot: snapshot,
-      version: 1,
-      createdByRole: "value_realization_pm"
-    });
+    await persistSourceAndEvidencePrereqs(snapshot);
     await persistAiValueClaimReadinessSnapshot({
       claimReadinessSnapshot: claimSnapshot,
       version: 1,
@@ -414,12 +452,20 @@ describe("AI Value minimal persistence repository", () => {
       claim_readiness_handoff_id: claimSnapshot.handoff_id,
       claim_readiness_snapshot_id: claimSnapshot.claim_readiness_snapshot_id,
       executive_readout_snapshot_id: executiveReadoutSnapshot.executive_readout_snapshot_id,
+      required_caveats: executiveReadoutSnapshot.required_caveats,
+      blocked_uses: executiveReadoutSnapshot.blocked_uses,
       validation: {
         valid: true,
         evidence_snapshot_persisted: true,
+        evidence_snapshot_version: 1,
+        source_package_ref_versions: {
+          [sourcePackage().source_package_id]: 1
+        },
         claim_readiness_handoff_validated: true,
         claim_readiness_snapshot_persisted: true,
-        executive_readout_snapshot_persisted: true
+        claim_readiness_snapshot_version: 1,
+        executive_readout_snapshot_persisted: true,
+        executive_readout_snapshot_version: 1
       }
     };
 
@@ -437,6 +483,10 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.executive_readout_snapshot_id).toBe(
       executiveReadoutSnapshot.executive_readout_snapshot_id
     );
+    expect(stored.required_caveats).toEqual(
+      executiveReadoutSnapshot.required_caveats
+    );
+    expect(stored.blocked_uses).toEqual(executiveReadoutSnapshot.blocked_uses);
   });
 
   it("persists source-bound Claim Readiness Snapshots after Evidence Snapshot persistence", async () => {
@@ -507,13 +557,58 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.claim_readiness_snapshot_id).toBe(
       claimSnapshot.claim_readiness_snapshot_id
     );
-    expect(stored.readout_state).toBe("held_for_full_playbook_coverage");
+    expect(stored.readout_state).toBe("blocked_for_privacy_or_suppression");
     expect(stored.customer_facing_readout_allowed).toBe(false);
     expect(stored.customer_facing_financial_output_allowed).toBe(false);
     expect(stored.required_caveats).toEqual(executiveReadoutSnapshot.required_caveats);
     expect(stored.blocked_claims).toContain("customer_facing_economic_output");
     expect(stored.validation.valid).toBe(true);
     expect(store.aiValueExecutiveReadoutSnapshots.size).toBe(1);
+  });
+
+  it("rejects readout state upgrades, forbidden fields, and unsupported sections", () => {
+    const { executiveReadoutSnapshot } = buildExecutiveReadoutSnapshotInput();
+
+    const upgradedState = clone(executiveReadoutSnapshot);
+    upgradedState.readout_state = "internal_only_readout_ready";
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(upgradedState).valid).toBe(false);
+
+    const heldReadout = clone(executiveReadoutSnapshot);
+    heldReadout.suppression.reason_codes = [];
+    heldReadout.suppression.suppressed_lanes = [];
+    heldReadout.suppression.held_lanes = [];
+    heldReadout.suppression.missing_lanes = [];
+    heldReadout.readout_state = "held_for_full_playbook_coverage";
+    const heldResult = aiValueEngine.validateExecutiveReadoutSnapshot(heldReadout);
+    expect(heldResult.valid).toBe(true);
+    expect(heldResult.feeds.internal_executive_readout_context).toBe(false);
+
+    const reasonCodeOnlySuppression = clone(heldReadout);
+    reasonCodeOnlySuppression.suppression.reason_codes = ["HIGH_AMBIGUITY"];
+    reasonCodeOnlySuppression.readout_state = "blocked_for_privacy_or_suppression";
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(reasonCodeOnlySuppression).valid).toBe(true);
+    const reasonCodeUpgrade = clone(reasonCodeOnlySuppression);
+    reasonCodeUpgrade.readout_state = "internal_only_readout_ready";
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(reasonCodeUpgrade).valid).toBe(false);
+
+    const unsafeField = clone(executiveReadoutSnapshot);
+    unsafeField.raw_rows = [{ user_id: "person-123" }];
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(unsafeField).valid).toBe(false);
+
+    const shadowAlias = clone(executiveReadoutSnapshot);
+    (shadowAlias as any).readoutState = "internal_only_readout_ready";
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(shadowAlias).valid).toBe(false);
+
+    const nestedShadowAlias = clone(executiveReadoutSnapshot);
+    (nestedShadowAlias.executive_readout_boundary as any).customerFacingReadoutAllowed = true;
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(nestedShadowAlias).valid).toBe(false);
+
+    const unsafeSection = clone(executiveReadoutSnapshot);
+    unsafeSection.allowed_sections = [
+      ...unsafeSection.allowed_sections,
+      "customer_facing_financial_output"
+    ];
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(unsafeSection).valid).toBe(false);
   });
 
   it("fails unsafe payloads before persistence", async () => {
@@ -545,6 +640,16 @@ describe("AI Value minimal persistence repository", () => {
   });
 
   it("fails unsafe pilot run ledger records before persistence", async () => {
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: pilotRunInput(),
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    await persistSourceAndEvidencePrereqs();
+
     const unsafeRun = clone(pilotRunInput());
     unsafeRun.raw_rows = [{ user_id: "person-123" }];
 
@@ -578,17 +683,110 @@ describe("AI Value minimal persistence repository", () => {
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
 
+    const inconsistentStatus = clone(pilotRunInput());
+    inconsistentStatus.run_status = "completed";
+
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: inconsistentStatus,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeValidationMetadata = clone(pilotRunInput());
+    (unsafeValidationMetadata.validation as any).extra_customer_facing_readout_allowed = true;
+
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: unsafeValidationMetadata,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const extraSourcePackageVersion = clone(pilotRunInput());
+    (extraSourcePackageVersion.validation.source_package_ref_versions as any).unreferenced_package = 1;
+
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: extraSourcePackageVersion,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    store.aiValueSourcePackageRefs.clear();
+    await persistAiValueSourcePackageRef({
+      sourcePackage: sourcePackage(),
+      version: 1,
+      measurementPlanId: null,
+      workflowFamily: "customer_support_case_resolution",
+      createdByRole: "data_platform_owner"
+    });
+    const unboundSourcePackageRef = clone(pilotRunInput());
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: unboundSourcePackageRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+    store.aiValueSourcePackageRefs.clear();
+    await persistAiValueSourcePackageRef({
+      sourcePackage: sourcePackage(),
+      version: 1,
+      measurementPlanId: "measurement_plan_other",
+      workflowFamily: "customer_support_case_resolution",
+      createdByRole: "data_platform_owner"
+    });
+    const wrongPlanSourcePackageRef = clone(pilotRunInput());
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: wrongPlanSourcePackageRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    store.aiValueSourcePackageRefs.clear();
+    await persistAiValueSourcePackageRef({
+      sourcePackage: sourcePackage(),
+      version: 1,
+      measurementPlanId: "measurement_plan_customer_support_2026_05",
+      workflowFamily: "customer_support_case_resolution",
+      createdByRole: "data_platform_owner"
+    });
+
+    const conflictingEvidenceVersion = clone(pilotRunInput());
+    (conflictingEvidenceVersion.validation as any).evidence_snapshot_persistence_version = 2;
+
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: conflictingEvidenceVersion,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const missingHandoffCaveats = clone(pilotRunInput());
+    missingHandoffCaveats.required_caveats = evidenceSnapshot().required_caveats;
+
+    await expect(
+      persistAiValuePilotRun({
+        pilotRun: missingHandoffCaveats,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
     expect(store.aiValuePilotRuns.size).toBe(0);
   });
 
   it("fails pilot run snapshot lineage when referenced snapshots are missing or drifted", async () => {
     const { snapshot, claimSnapshot, executiveReadoutSnapshot } =
       buildExecutiveReadoutSnapshotInput();
-    await persistAiValueEvidenceSnapshot({
-      evidenceSnapshot: snapshot,
-      version: 1,
-      createdByRole: "value_realization_pm"
-    });
+    await persistSourceAndEvidencePrereqs(snapshot);
 
     const missingClaimLineage = {
       ...pilotRunInput(),
@@ -598,6 +796,10 @@ describe("AI Value minimal persistence repository", () => {
       validation: {
         valid: true,
         evidence_snapshot_persisted: true,
+        evidence_snapshot_version: 1,
+        source_package_ref_versions: {
+          [sourcePackage().source_package_id]: 1
+        },
         claim_readiness_handoff_validated: true,
         claim_readiness_snapshot_persisted: true,
         executive_readout_snapshot_persisted: false
@@ -607,6 +809,16 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValuePilotRun({
         pilotRun: missingClaimLineage,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const conflictingClaimVersion = clone(claimSnapshot);
+    (conflictingClaimVersion.validation as any).evidence_snapshot_persistence_version = 2;
+    await expect(
+      persistAiValueClaimReadinessSnapshot({
+        claimReadinessSnapshot: conflictingClaimVersion,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -631,9 +843,15 @@ describe("AI Value minimal persistence repository", () => {
       validation: {
         valid: true,
         evidence_snapshot_persisted: true,
+        evidence_snapshot_version: 1,
+        source_package_ref_versions: {
+          [sourcePackage().source_package_id]: 1
+        },
         claim_readiness_handoff_validated: true,
         claim_readiness_snapshot_persisted: true,
-        executive_readout_snapshot_persisted: true
+        claim_readiness_snapshot_version: 1,
+        executive_readout_snapshot_persisted: true,
+        executive_readout_snapshot_version: 1
       }
     };
 
@@ -674,6 +892,16 @@ describe("AI Value minimal persistence repository", () => {
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
 
+    const weakenedClaim = clone(claimSnapshot);
+    weakenedClaim.suppression.reason_codes = [];
+    await expect(
+      persistAiValueClaimReadinessSnapshot({
+        claimReadinessSnapshot: weakenedClaim,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
     const unsafeClaim = clone(claimSnapshot);
     unsafeClaim.raw_rows = [{ user_id: "person-123" }];
     await expect(
@@ -704,6 +932,118 @@ describe("AI Value minimal persistence repository", () => {
       persistAiValueExecutiveReadoutSnapshot({
         executiveReadoutSnapshot: unsafeReadout,
         version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const upgradedReadout = clone(executiveReadoutSnapshot);
+    upgradedReadout.readout_state = "internal_only_readout_ready";
+    await expect(
+      persistAiValueExecutiveReadoutSnapshot({
+        executiveReadoutSnapshot: upgradedReadout,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const missingReadoutCaveat = clone(executiveReadoutSnapshot);
+    missingReadoutCaveat.required_caveats = [];
+    await expect(
+      persistAiValueExecutiveReadoutSnapshot({
+        executiveReadoutSnapshot: missingReadoutCaveat,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const missingReadoutBlockedClaim = clone(executiveReadoutSnapshot);
+    missingReadoutBlockedClaim.blocked_claims =
+      missingReadoutBlockedClaim.blocked_claims.filter(
+        (claim: string) => claim !== "customer_facing_economic_output"
+      );
+    await expect(
+      persistAiValueExecutiveReadoutSnapshot({
+        executiveReadoutSnapshot: missingReadoutBlockedClaim,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+  });
+
+  it("binds claim/readout persistence to explicit upstream versions", async () => {
+    const { snapshot, claimSnapshot, executiveReadoutSnapshot } =
+      buildExecutiveReadoutSnapshotInput();
+    await persistAiValueEvidenceSnapshot({
+      evidenceSnapshot: snapshot,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    await expect(
+      persistAiValueClaimReadinessSnapshot({
+        claimReadinessSnapshot: {
+          ...claimSnapshot,
+          derived_from: {
+            ...claimSnapshot.derived_from,
+            evidence_snapshot_persistence_version: 2
+          },
+          validation: {
+            ...claimSnapshot.validation,
+            evidence_snapshot_persistence_version: 2
+          }
+        },
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    await persistAiValueClaimReadinessSnapshot({
+      claimReadinessSnapshot: claimSnapshot,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    const correctedClaim = clone(claimSnapshot);
+    correctedClaim.required_caveats = [
+      ...correctedClaim.required_caveats,
+      "Corrected version caveat."
+    ];
+    correctedClaim.executive_readout_boundary.required_caveats = [
+      ...correctedClaim.executive_readout_boundary.required_caveats,
+      "Corrected version caveat."
+    ];
+    const firstClaimRecord = [...store.aiValueClaimReadinessSnapshots.values()][0];
+    await persistAiValueClaimReadinessSnapshot({
+      claimReadinessSnapshot: correctedClaim,
+      version: 2,
+      supersedesId: firstClaimRecord.id,
+      createdByRole: "value_realization_pm"
+    });
+
+    const conflictingReadoutVersion = clone(executiveReadoutSnapshot);
+    (conflictingReadoutVersion.validation as any).claim_readiness_snapshot_persistence_version = 2;
+    await expect(
+      persistAiValueExecutiveReadoutSnapshot({
+        executiveReadoutSnapshot: conflictingReadoutVersion,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const storedReadout = await persistAiValueExecutiveReadoutSnapshot({
+      executiveReadoutSnapshot,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+    expect(storedReadout.version).toBe(1);
+
+    const readoutBoundToLatest = clone(executiveReadoutSnapshot);
+    (readoutBoundToLatest as any).derived_from.claim_readiness_snapshot_persistence_version = 2;
+    (readoutBoundToLatest as any).validation.claim_readiness_snapshot_persistence_version = 2;
+    await expect(
+      persistAiValueExecutiveReadoutSnapshot({
+        executiveReadoutSnapshot: readoutBoundToLatest,
+        version: 2,
         createdByRole: "value_realization_pm"
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
