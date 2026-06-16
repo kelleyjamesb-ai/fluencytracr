@@ -1,15 +1,16 @@
-# AI Value Executive Readout Snapshot Design
+# AI Value Executive Readout Snapshot Contract
 
-Schema version: `FT_AI_VALUE_EXECUTIVE_READOUT_SNAPSHOT_DESIGN_2026_06`
+Schema version: `FT_AI_VALUE_EXECUTIVE_READOUT_SNAPSHOT_2026_06`
 
-Status: design-only. No runtime helper, validator, schema, migration, backend
-route, frontend UI, ingestion job, persistence table, or rendered executive
-readout is authorized by this document.
+Status: backend-only persistence promoted. Runtime builder, validator, Prisma
+schema, and append-only persistence table are authorized for internal governed
+state. Backend routes, frontend UI, ingestion jobs, rendered customer readouts,
+exports, and customer-facing financial output remain unauthorized.
 
 ## 1. Purpose
 
-The AI Value Executive Readout Snapshot is the future immutable presentation
-state for an executive-facing AI Value readout. Its job is to carry only the
+The AI Value Executive Readout Snapshot is the immutable internal presentation
+state for governed executive readout planning. Its job is to carry only the
 claims, caveats, gaps, and boundaries already allowed by the upstream evidence
 chain.
 
@@ -19,20 +20,19 @@ Snapshot allow.
 
 ## 2. Current Decision
 
-Implementation is deferred.
+Implementation is promoted for backend-only, source-bound durable state.
 
 `docs/architecture/AI_VALUE_PERSISTENCE_DESIGN.md` classifies
-`executive_readout_snapshots` as `defer`. This Phase 7 design does not change
-that decision. Any persisted executive readout snapshot requires a later
-explicit approval that promotes this exact scope.
+`executive_readout_snapshots` as `implemented_backend_only`. This promotion
+does not authorize rendered readouts, backend routes, frontend UI, customer
+exports, or customer-facing financial output.
 
 ## 3. Non-goals
 
 This design must not:
 
-- create migrations, Prisma schema changes, backend routes, frontend UI,
-  ingestion jobs, runtime builders, validators, or persisted snapshots;
-- create `executive_readout_snapshots` tables;
+- create backend routes, frontend UI, ingestion jobs, rendered customer
+  readouts, dashboard surfaces, or export flows;
 - render an executive readout, HTML packet, deck, dashboard, or API response;
 - compute ROI, EBITA, dollar value, time-saved value, productivity lift,
   financial impact, causal delta, or customer-facing economic output;
@@ -46,22 +46,22 @@ This design must not:
 
 ## 4. Source Binding
 
-A future Executive Readout Snapshot must be source-bound to:
+Every Executive Readout Snapshot must be source-bound to:
 
 - a validated Evidence Snapshot;
 - a validated Claim Readiness Handoff;
-- a validated Claim Readiness Snapshot if implemented;
+- a validated persisted Claim Readiness Snapshot;
 - the Measurement Plan id carried by those upstream objects;
 - the same org, workflow, and window carried by those upstream objects;
 - aggregate source refs already present in the Evidence Snapshot provenance.
 
-Before Claim Readiness Snapshot persistence exists, any executive readout must
-remain non-persisted prototype language or internal-only design review. It must
-not become durable product state.
+Executive Readout Snapshot persistence must fail unless the referenced Claim
+Readiness Snapshot has already been persisted for the same org, Measurement
+Plan, Evidence Snapshot, Handoff, workflow, window, and source refs.
 
 ## 5. Minimum Future Object Shape
 
-A future persisted Executive Readout Snapshot should include:
+An Executive Readout Snapshot includes:
 
 - `schema_version`
 - `executive_readout_snapshot_id`
@@ -221,26 +221,28 @@ computed, the readout must preserve that state as a caveat or evidence gap.
 
 ## 14. Persistence Policy
 
-The design-only policy is:
+The backend-only persistence policy is:
 
 ```json
 {
+  "backend_persistence_allowed": true,
   "persisted": false,
-  "creates_migrations": false,
-  "creates_prisma_schema": false,
   "creates_backend_routes": false,
   "creates_frontend_ui": false,
   "creates_ingestion_jobs": false,
-  "creates_runtime_builder": false
+  "customer_facing_readout_allowed": false,
+  "customer_facing_financial_output_allowed": false
 }
 ```
 
-Any future persisted version must be append-only, source-bound, and blocked
-until Claim Readiness Snapshot persistence is explicitly approved.
+`backend_persistence_allowed` authorizes append-only repository persistence of
+validated, source-bound snapshots. The remaining flags stay false because this
+contract still does not create public routes, UI, ingestion, rendered readouts,
+customer exports, or customer-facing financial output.
 
-## 15. Validation Requirements For Future Implementation
+## 15. Validation Requirements
 
-Future implementation must fail closed unless:
+Implementation must fail closed unless:
 
 - all upstream objects validate;
 - source binding matches across org, Measurement Plan, workflow, window, and
@@ -249,7 +251,7 @@ Future implementation must fail closed unless:
 - all blocked claims carry forward;
 - evidence gaps are explicitly represented;
 - financial boundary flags are not loosened;
-- customer-facing readout is permitted by upstream evidence, if ever allowed;
+- customer-facing readout remains false;
 - privacy and suppression posture are safe;
 - VBD and aggregate workforce context remain context only;
 - forbidden raw, person-level, ranking, decisioning, and computed economic
@@ -259,7 +261,6 @@ Future implementation must fail closed unless:
 
 Stop instead of implementing if any work would require:
 
-- a migration or persistent table in this phase;
 - backend routes or frontend UI in this phase;
 - executive readout generation from caveated, held, suppressed, or internal-only
   evidence;

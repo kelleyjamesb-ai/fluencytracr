@@ -8,7 +8,7 @@
     "role": "customer_success_business_sponsor",
     "approval_state": "PRESENT"
   },
-  "client_question": "Where should AI make account health review more consistent and easier to act on for Customer Success?",
+  "client_question": "Where does aggregate AI-supported account health review show stronger operating posture, and which customer-owned outcomes should be investigated next?",
   "current_state_steps": [
     "Customer Success reviews account notes, usage signals, support history, and renewal context across several systems",
     "Customer Success prepares risk notes and next actions before renewal or QBR checkpoints",
@@ -55,12 +55,115 @@
       "skill_invocations": 180,
       "agent_runs": 84
     },
+    "ai_activity_by_window": {
+      "assistant_sessions": {
+        "baseline": 240,
+        "comparison": 480,
+        "unit": "count"
+      },
+      "search_sessions": {
+        "baseline": 390,
+        "comparison": 590,
+        "unit": "count"
+      },
+      "skill_invocations": {
+        "baseline": 50,
+        "comparison": 130,
+        "unit": "count"
+      },
+      "agent_runs": {
+        "baseline": 18,
+        "comparison": 66,
+        "unit": "count"
+      }
+    },
     "trust_and_friction": {
       "verification_attached_episodes": 360,
       "recovery_episodes": 42,
       "abandonment_episodes": 18
     },
+    "trust_and_friction_by_window": {
+      "verification_attached_episodes": {
+        "baseline": 96,
+        "comparison": 264,
+        "unit": "count"
+      },
+      "recovery_episodes": {
+        "baseline": 28,
+        "comparison": 14,
+        "unit": "count"
+      },
+      "abandonment_episodes": {
+        "baseline": 13,
+        "comparison": 5,
+        "unit": "count"
+      }
+    },
+    "vbd_movement": {
+      "velocity_index": {
+        "baseline": 0.42,
+        "comparison": 0.61,
+        "unit": "index"
+      },
+      "breadth_active_account_cohort_share": {
+        "baseline": 0.48,
+        "comparison": 0.68,
+        "unit": "share"
+      },
+      "depth_repeat_workflow_share": {
+        "baseline": 0.31,
+        "comparison": 0.49,
+        "unit": "share"
+      }
+    },
+    "ai_influence_posture": {
+      "state": "DIRECTIONAL_ALIGNMENT_ONLY",
+      "summary": "Aggregate AI activity, VBD movement, and trust/friction posture all move in the expected direction during the comparison window.",
+      "basis": [
+        "Aggregate Search, Assistant, Skill, and governed agent activity are higher in the comparison window.",
+        "Verification-attached episodes are higher while recovery and abandonment episodes are lower.",
+        "Velocity, Breadth, and Depth movement indicates faster, broader, more repeatable aggregate account-health review support."
+      ],
+      "supports": [
+        "internal_workflow_value_investigation",
+        "executive_validation_of_caveated_value_story",
+        "enablement_and_workflow_intervention_planning"
+      ],
+      "does_not_support": [
+        "roi_proof",
+        "causality_claim",
+        "productivity_measurement",
+        "individual_attribution",
+        "team_or_manager_ranking",
+        "customer_facing_financial_output"
+      ]
+    },
     "outcome_signals": {
+      "gross_revenue_retention_rate": {
+        "baseline": 0.88,
+        "comparison": 0.91,
+        "unit": "share"
+      },
+      "net_revenue_retention_rate": {
+        "baseline": 1.03,
+        "comparison": 1.07,
+        "unit": "share"
+      },
+      "renewal_rate": {
+        "baseline": 0.82,
+        "comparison": 0.87,
+        "unit": "share"
+      },
+      "logo_churn_rate": {
+        "baseline": 0.14,
+        "comparison": 0.1,
+        "unit": "share"
+      },
+      "at_risk_account_share": {
+        "baseline": 0.27,
+        "comparison": 0.19,
+        "unit": "share"
+      },
       "account_health_review_cycle_days": {
         "baseline": 10.8,
         "comparison": 7.4,
@@ -69,6 +172,11 @@
       "risk_review_coverage_share": {
         "baseline": 0.62,
         "comparison": 0.81,
+        "unit": "share"
+      },
+      "customer_health_signal_coverage_share": {
+        "baseline": 0.71,
+        "comparison": 0.86,
         "unit": "share"
       },
       "renewal_action_staleness_count": {

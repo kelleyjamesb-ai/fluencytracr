@@ -346,10 +346,11 @@ test("manual or unsafe snapshots fail validation", () => {
   assert.equal(validateClaimReadinessSnapshot(overclaimed).valid, false);
 });
 
-test("Claim Readiness Snapshot contract creates no persistence, routes, UI, or ingestion", () => {
+test("Claim Readiness Snapshot contract allows backend-only persistence without routes, UI, or ingestion", () => {
   const claimSnapshot = buildSnapshotObject();
 
   assert.deepEqual(claimSnapshot.persistence_policy, {
+    backend_persistence_allowed: true,
     persisted: false,
     creates_migrations: false,
     creates_prisma_schema: false,

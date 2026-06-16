@@ -4,11 +4,17 @@ import {
   AiValuePersistenceValidationError,
   listAiValueSourcePackageRefs,
   loadAiValueMeasurementPlan,
-  persistAiValueEvidenceSnapshot
+  persistAiValueClaimReadinessSnapshot,
+  persistAiValueEvidenceSnapshot,
+  persistAiValueExecutiveReadoutSnapshot,
+  persistAiValuePilotRun
 } from "../repositories/ai-value-minimal-persistence.repository";
 import type {
+  AiValueClaimReadinessSnapshotStoredRecord,
   AiValueEvidenceSnapshotStoredRecord,
+  AiValueExecutiveReadoutSnapshotStoredRecord,
   AiValueMeasurementPlanStoredRecord,
+  AiValuePilotRunStoredRecord,
   AiValueSourcePackageRefStoredRecord
 } from "../store";
 
@@ -30,6 +36,12 @@ export interface BuildAiValueRuntimeHandoffInput {
   evidenceSnapshotId?: string;
   evidenceSnapshotVersion?: number;
   handoffId?: string;
+  claimReadinessSnapshotId?: string;
+  claimReadinessSnapshotVersion?: number;
+  executiveReadoutSnapshotId?: string;
+  executiveReadoutSnapshotVersion?: number;
+  pilotRunId?: string;
+  pilotRunVersion?: number;
   generatedAt?: string;
   createdByRole: string;
 }
@@ -41,6 +53,11 @@ export interface AiValueRuntimeHandoffResult {
   evidenceSnapshot: Record<string, unknown>;
   persistedEvidenceSnapshot: AiValueEvidenceSnapshotStoredRecord;
   handoff: ReturnType<typeof aiValueEngine.buildClaimReadinessHandoffFromEvidenceSnapshot>;
+  claimReadinessSnapshot?: ReturnType<typeof aiValueEngine.buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff>;
+  persistedClaimReadinessSnapshot?: AiValueClaimReadinessSnapshotStoredRecord;
+  executiveReadoutSnapshot?: ReturnType<typeof aiValueEngine.buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot>;
+  persistedExecutiveReadoutSnapshot?: AiValueExecutiveReadoutSnapshotStoredRecord;
+  persistedPilotRun?: AiValuePilotRunStoredRecord;
 }
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -169,6 +186,18 @@ const suppressionOrKMinGaps = (
   return gaps;
 };
 
+const runStatusForCoverage = (
+  coverageStatus: string,
+  requiredCaveats: string[]
+): string => {
+  if (/held/i.test(coverageStatus)) {
+    return coverageStatus === "held_for_governance"
+      ? "held_for_governance"
+      : "held_for_source_binding";
+  }
+  return requiredCaveats.length > 0 ? "completed_with_caveats" : "completed";
+};
+
 export async function buildAiValueClaimReadinessHandoffInternal(
   input: BuildAiValueRuntimeHandoffInput
 ): Promise<AiValueRuntimeHandoffResult> {
@@ -260,12 +289,113 @@ export async function buildAiValueClaimReadinessHandoffInternal(
     throw new AiValueRuntimeBuilderError("claim readiness handoff failed validation", handoffValidation.gaps);
   }
 
+  const shouldPersistClaimReadinessSnapshot = Boolean(
+    input.claimReadinessSnapshotId || input.executiveReadoutSnapshotId
+  );
+  const claimReadinessSnapshot = shouldPersistClaimReadinessSnapshot
+    ? aiValueEngine.buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff(
+        evidenceSnapshot,
+        handoff,
+        {
+          claimReadinessSnapshotId: input.claimReadinessSnapshotId,
+          createdAt: input.generatedAt
+        }
+      )
+    : undefined;
+  const persistedClaimReadinessSnapshot = claimReadinessSnapshot
+    ? await persistAiValueClaimReadinessSnapshot({
+        claimReadinessSnapshot: claimReadinessSnapshot as unknown as Record<string, unknown>,
+        version: input.claimReadinessSnapshotVersion ?? 1,
+        createdByRole: input.createdByRole
+      }).catch((error) => {
+        if (error instanceof AiValuePersistenceValidationError) {
+          throw new AiValueRuntimeBuilderError("Claim Readiness Snapshot persistence failed validation", error.gaps);
+        }
+        throw error;
+      })
+    : undefined;
+
+  const executiveReadoutSnapshot = input.executiveReadoutSnapshotId
+    ? aiValueEngine.buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot(
+        claimReadinessSnapshot,
+        {
+          executiveReadoutSnapshotId: input.executiveReadoutSnapshotId,
+          createdAt: input.generatedAt
+        }
+      )
+    : undefined;
+  const persistedExecutiveReadoutSnapshot = executiveReadoutSnapshot
+    ? await persistAiValueExecutiveReadoutSnapshot({
+        executiveReadoutSnapshot: executiveReadoutSnapshot as unknown as Record<string, unknown>,
+        version: input.executiveReadoutSnapshotVersion ?? 1,
+        createdByRole: input.createdByRole
+      }).catch((error) => {
+        if (error instanceof AiValuePersistenceValidationError) {
+          throw new AiValueRuntimeBuilderError("Executive Readout Snapshot persistence failed validation", error.gaps);
+        }
+        throw error;
+      })
+    : undefined;
+
+  const persistedPilotRun = input.pilotRunId
+    ? await persistAiValuePilotRun({
+        pilotRun: {
+          pilot_run_id: input.pilotRunId,
+          org_id: input.orgId,
+          measurement_plan_id: input.measurementPlanId,
+          workflow_family: measurementPlan.workflow_family,
+          source_package_ids: sourcePackageRefs.map((ref) => ref.source_package_id),
+          evidence_snapshot_id: persistedEvidenceSnapshot.evidence_snapshot_id,
+          claim_readiness_handoff_id: handoff.handoff_id,
+          coverage_status: coverageStatus,
+          run_status: runStatusForCoverage(
+            coverageStatus,
+            stringsOf(handoff.required_caveats)
+          ),
+          required_caveats: stringsOf(handoff.required_caveats),
+          blocked_uses: stringsOf(handoff.blocked_uses),
+          validation: {
+            valid: true,
+            evidence_snapshot_persisted: true,
+            claim_readiness_handoff_validated: true,
+            claim_readiness_snapshot_persisted: Boolean(persistedClaimReadinessSnapshot),
+            executive_readout_snapshot_persisted: Boolean(persistedExecutiveReadoutSnapshot)
+          },
+          ...(persistedClaimReadinessSnapshot
+            ? {
+                claim_readiness_snapshot_id:
+                  persistedClaimReadinessSnapshot.claim_readiness_snapshot_id
+              }
+            : {}),
+          ...(persistedExecutiveReadoutSnapshot
+            ? {
+                executive_readout_snapshot_id:
+                  persistedExecutiveReadoutSnapshot.executive_readout_snapshot_id
+              }
+            : {}),
+          generated_at: input.generatedAt ?? new Date().toISOString()
+        },
+        version: input.pilotRunVersion ?? 1,
+        createdByRole: input.createdByRole
+      }).catch((error) => {
+        if (error instanceof AiValuePersistenceValidationError) {
+          throw new AiValueRuntimeBuilderError("pilot run ledger persistence failed validation", error.gaps);
+        }
+        throw error;
+      })
+    : undefined;
+
   return {
     measurementPlan,
     sourcePackageRefs,
     assembly,
     evidenceSnapshot,
     persistedEvidenceSnapshot,
-    handoff
+    handoff,
+    ...(claimReadinessSnapshot ? { claimReadinessSnapshot } : {}),
+    ...(persistedClaimReadinessSnapshot ? { persistedClaimReadinessSnapshot } : {}),
+    ...(executiveReadoutSnapshot ? { executiveReadoutSnapshot } : {}),
+    ...(persistedExecutiveReadoutSnapshot ? { persistedExecutiveReadoutSnapshot } : {}),
+    ...(persistedPilotRun ? { persistedPilotRun } : {})
   };
 }

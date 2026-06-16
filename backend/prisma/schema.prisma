@@ -634,3 +634,110 @@ model EvidenceSnapshot {
   @@index([orgId, snapshotType])
   @@map("evidence_snapshots")
 }
+
+model ClaimReadinessSnapshot {
+  id                                      String   @id @default(uuid()) @db.Uuid
+  orgId                                   String   @map("org_id")
+  claimReadinessSnapshotId                String   @map("claim_readiness_snapshot_id")
+  evidenceSnapshotId                      String   @map("evidence_snapshot_id")
+  handoffId                               String   @map("handoff_id")
+  measurementPlanId                       String   @map("measurement_plan_id")
+  schemaVersion                           String   @map("schema_version")
+  derivationVersion                       String   @map("derivation_version")
+  coverageStatus                          String   @map("coverage_status")
+  claimReadinessState                     String   @map("claim_readiness_state")
+  financialBoundaryState                  String   @map("financial_boundary_state")
+  executiveReadoutAllowed                 Boolean  @map("executive_readout_allowed")
+  customerFacingReadoutAllowed            Boolean  @map("customer_facing_readout_allowed")
+  customerFacingFinancialOutputAllowed    Boolean  @map("customer_facing_financial_output_allowed")
+  payloadJson                             Json     @map("payload_json")
+  validationJson                          Json     @map("validation_json")
+  sourceRefsJson                          Json     @map("source_refs_json")
+  requiredCaveatsJson                     Json     @map("required_caveats_json")
+  blockedUsesJson                         Json     @map("blocked_uses_json")
+  blockedClaimsJson                       Json     @map("blocked_claims_json")
+  version                                 Int
+  supersedesId                            String?  @map("supersedes_id") @db.Uuid
+  createdAt                               DateTime @default(now()) @map("created_at")
+  createdByRole                           String   @map("created_by_role")
+
+  @@unique([orgId, claimReadinessSnapshotId, version], name: "claim_readiness_snapshots_immutable_key")
+  @@index([orgId, evidenceSnapshotId])
+  @@index([orgId, handoffId])
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, coverageStatus])
+  @@index([orgId, claimReadinessState])
+  @@map("claim_readiness_snapshots")
+}
+
+model ExecutiveReadoutSnapshot {
+  id                                      String   @id @default(uuid()) @db.Uuid
+  orgId                                   String   @map("org_id")
+  executiveReadoutSnapshotId              String   @map("executive_readout_snapshot_id")
+  claimReadinessSnapshotId                String   @map("claim_readiness_snapshot_id")
+  evidenceSnapshotId                      String   @map("evidence_snapshot_id")
+  handoffId                               String   @map("handoff_id")
+  measurementPlanId                       String   @map("measurement_plan_id")
+  schemaVersion                           String   @map("schema_version")
+  derivationVersion                       String   @map("derivation_version")
+  readoutAudience                         String   @map("readout_audience")
+  readoutState                            String   @map("readout_state")
+  coverageStatus                          String   @map("coverage_status")
+  customerFacingReadoutAllowed            Boolean  @map("customer_facing_readout_allowed")
+  customerFacingFinancialOutputAllowed    Boolean  @map("customer_facing_financial_output_allowed")
+  payloadJson                             Json     @map("payload_json")
+  validationJson                          Json     @map("validation_json")
+  sourceRefsJson                          Json     @map("source_refs_json")
+  requiredCaveatsJson                     Json     @map("required_caveats_json")
+  blockedUsesJson                         Json     @map("blocked_uses_json")
+  blockedClaimsJson                       Json     @map("blocked_claims_json")
+  version                                 Int
+  supersedesId                            String?  @map("supersedes_id") @db.Uuid
+  createdAt                               DateTime @default(now()) @map("created_at")
+  createdByRole                           String   @map("created_by_role")
+
+  @@unique([orgId, executiveReadoutSnapshotId, version], name: "executive_readout_snapshots_immutable_key")
+  @@index([orgId, claimReadinessSnapshotId])
+  @@index([orgId, evidenceSnapshotId])
+  @@index([orgId, handoffId])
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, coverageStatus])
+  @@index([orgId, readoutState])
+  @@map("executive_readout_snapshots")
+}
+
+model AiValuePilotRun {
+  id                                  String   @id @default(uuid()) @db.Uuid
+  orgId                               String   @map("org_id")
+  pilotRunId                          String   @map("pilot_run_id")
+  measurementPlanId                   String   @map("measurement_plan_id")
+  workflowFamily                      String   @map("workflow_family")
+  sourcePackageIdsJson                Json     @map("source_package_ids_json")
+  evidenceSnapshotId                  String   @map("evidence_snapshot_id")
+  claimReadinessHandoffId             String   @map("claim_readiness_handoff_id")
+  coverageStatus                      String   @map("coverage_status")
+  runStatus                           String   @map("run_status")
+  validationJson                      Json     @map("validation_json")
+  requiredCaveatsJson                 Json     @map("required_caveats_json")
+  blockedUsesJson                     Json     @map("blocked_uses_json")
+  claimReadinessSnapshotPersisted     Boolean  @map("claim_readiness_snapshot_persisted")
+  executiveReadoutSnapshotPersisted   Boolean  @map("executive_readout_snapshot_persisted")
+  claimReadinessSnapshotId            String?  @map("claim_readiness_snapshot_id")
+  executiveReadoutSnapshotId          String?  @map("executive_readout_snapshot_id")
+  version                             Int
+  supersedesId                        String?  @map("supersedes_id") @db.Uuid
+  generatedAt                         DateTime @map("generated_at")
+  createdAt                           DateTime @default(now()) @map("created_at")
+  createdByRole                       String   @map("created_by_role")
+
+  @@unique([orgId, pilotRunId, version], name: "ai_value_pilot_runs_immutable_key")
+  @@index([orgId, measurementPlanId])
+  @@index([orgId, evidenceSnapshotId])
+  @@index([orgId, claimReadinessHandoffId])
+  @@index([orgId, claimReadinessSnapshotId])
+  @@index([orgId, executiveReadoutSnapshotId])
+  @@index([orgId, workflowFamily])
+  @@index([orgId, coverageStatus])
+  @@index([orgId, runStatus])
+  @@map("ai_value_pilot_runs")
+}

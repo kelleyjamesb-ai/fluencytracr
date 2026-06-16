@@ -41,6 +41,9 @@ validation workshop, use
 
 For a synthetic 50-person Customer Success rehearsal fixture, use
 [customer-success-50-synthetic-pilot.md](./customer-success-50-synthetic-pilot.md).
+For the synthetic client-facing final readout that pairs CS operating metrics
+with the 24-item AI Fluency instrument output, use
+[customer-success-50-synthetic-final-readout.md](./customer-success-50-synthetic-final-readout.md).
 
 For the Phase 5 customer validation workshop kit, use
 [customer-support-validation-workshop-kit.md](./customer-support-validation-workshop-kit.md).

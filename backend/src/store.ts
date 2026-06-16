@@ -127,6 +127,85 @@ export type AiValueEvidenceSnapshotStoredRecord = {
   created_by_role: string;
 };
 
+export type AiValueClaimReadinessSnapshotStoredRecord = {
+  id: string;
+  org_id: string;
+  claim_readiness_snapshot_id: string;
+  evidence_snapshot_id: string;
+  handoff_id: string;
+  measurement_plan_id: string;
+  schema_version: string;
+  derivation_version: string;
+  coverage_status: string;
+  claim_readiness_state: string;
+  financial_boundary_state: string;
+  executive_readout_allowed: boolean;
+  customer_facing_readout_allowed: boolean;
+  customer_facing_financial_output_allowed: boolean;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  required_caveats: string[];
+  blocked_uses: string[];
+  blocked_claims: string[];
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValueExecutiveReadoutSnapshotStoredRecord = {
+  id: string;
+  org_id: string;
+  executive_readout_snapshot_id: string;
+  claim_readiness_snapshot_id: string;
+  evidence_snapshot_id: string;
+  handoff_id: string;
+  measurement_plan_id: string;
+  schema_version: string;
+  derivation_version: string;
+  readout_audience: string;
+  readout_state: string;
+  coverage_status: string;
+  customer_facing_readout_allowed: boolean;
+  customer_facing_financial_output_allowed: boolean;
+  payload: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  required_caveats: string[];
+  blocked_uses: string[];
+  blocked_claims: string[];
+  version: number;
+  supersedes_id: string | null;
+  created_at: string;
+  created_by_role: string;
+};
+
+export type AiValuePilotRunStoredRecord = {
+  id: string;
+  org_id: string;
+  pilot_run_id: string;
+  measurement_plan_id: string;
+  workflow_family: string;
+  source_package_ids: string[];
+  evidence_snapshot_id: string;
+  claim_readiness_handoff_id: string;
+  coverage_status: string;
+  run_status: string;
+  validation: Record<string, unknown>;
+  required_caveats: string[];
+  blocked_uses: string[];
+  claim_readiness_snapshot_persisted: boolean;
+  executive_readout_snapshot_persisted: boolean;
+  claim_readiness_snapshot_id: string | null;
+  executive_readout_snapshot_id: string | null;
+  version: number;
+  supersedes_id: string | null;
+  generated_at: string;
+  created_at: string;
+  created_by_role: string;
+};
+
 export type OrgRecord = {
   id: string;
   name: string;
@@ -592,6 +671,9 @@ class MemoryStore {
   aiValueMeasurementPlans = new Map<string, AiValueMeasurementPlanStoredRecord>();
   aiValueSourcePackageRefs = new Map<string, AiValueSourcePackageRefStoredRecord>();
   aiValueEvidenceSnapshots = new Map<string, AiValueEvidenceSnapshotStoredRecord>();
+  aiValueClaimReadinessSnapshots = new Map<string, AiValueClaimReadinessSnapshotStoredRecord>();
+  aiValueExecutiveReadoutSnapshots = new Map<string, AiValueExecutiveReadoutSnapshotStoredRecord>();
+  aiValuePilotRuns = new Map<string, AiValuePilotRunStoredRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
   baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
@@ -639,6 +721,9 @@ class MemoryStore {
     this.aiValueMeasurementPlans.clear();
     this.aiValueSourcePackageRefs.clear();
     this.aiValueEvidenceSnapshots.clear();
+    this.aiValueClaimReadinessSnapshots.clear();
+    this.aiValueExecutiveReadoutSnapshots.clear();
+    this.aiValuePilotRuns.clear();
     this.workflowVisibilityPolicyConfigs.clear();
     this.baselineResetEvents.clear();
   }
