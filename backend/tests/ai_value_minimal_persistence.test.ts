@@ -61,6 +61,99 @@ const evidenceSnapshot = () =>
 const sourcePackage = () =>
   readJson("ai-value-source-packages/examples/layer-1-bigquery-telemetry-package.json");
 
+const scrubbedLayer1Export = () => ({
+  schema_version: "FT_AI_VALUE_SCRUBBED_GLEAN_CLIENT_EXPORT_2026_06",
+  export_id: "scrubbed_glean_export_support_layer_1_2026_05",
+  org_id: "org_example",
+  measurement_plan_id: "measurement_plan_customer_support_2026_05",
+  evidence_layer: "layer_1_platform_telemetry",
+  source_owner_role: "data_platform_owner",
+  approver_role: "data_platform_owner",
+  attestation: {
+    attestation_state: "attested",
+    attested_by_role: "data_platform_owner",
+    attested_at: "2026-06-16T00:00:00.000Z",
+    caveats: [
+      "Scrubbed aggregate export summary only; no raw rows or identifiers retained."
+    ]
+  },
+  generated_at: "2026-06-16T00:00:00.000Z",
+  covered_window: {
+    window_start: "2026-05-01",
+    window_end: "2026-05-31"
+  },
+  aggregate_grain: "workflow_family",
+  minimum_cohort_threshold: 5,
+  k_min_posture: {
+    minimum_cohort_threshold: 5,
+    cohort_threshold_met: true,
+    total_slices: 12,
+    k_min_clear_slices: 12,
+    suppressed_or_unknown_slices: 0
+  },
+  evidence_state: "present",
+  privacy_boundary: {
+    aggregate_only: true,
+    contains_direct_identifiers: false,
+    contains_raw_content: false,
+    contains_raw_rows: false,
+    contains_raw_files: false,
+    contains_raw_prompts: false,
+    contains_raw_responses: false,
+    contains_transcripts: false,
+    contains_query_text: false,
+    contains_file_contents: false,
+    contains_person_level_productivity: false,
+    contains_person_level_hris_records: false,
+    contains_hashed_or_joinable_person_identifiers: false,
+    contains_manager_or_team_ranking: false,
+    contains_people_decisioning: false,
+    contains_compensation_or_performance_inference: false,
+    contains_promotion_or_discipline_inference: false,
+    contains_attrition_prediction: false,
+    contains_hris_inference_from_ai_usage: false
+  },
+  source_tables: [
+    "scrubbed_llm_call",
+    "scrubbed_client_analytics"
+  ],
+  table_families_checked: [
+    "scrubbed_llm_call",
+    "scrubbed_client_analytics"
+  ],
+  source_readiness_id: "source_readiness_support_layer_1_2026_05",
+  aggregate_probe_id: "bq_probe_support_layer_1_2026_05",
+  aggregate_entry_ref: "aggregate_entry_support_layer_1_2026_05",
+  signal_families: [
+    "assistant",
+    "search_document_retrieval",
+    "agent_run"
+  ],
+  covered_signal_families: [
+    "assistant",
+    "search_document_retrieval",
+    "agent_run"
+  ],
+  allowed_uses: [
+    "evidence_collection_input",
+    "source_availability_summary"
+  ],
+  blocked_uses: [
+    "realized_roi",
+    "ebita_claim",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  caveats: [
+    "Layer 1 telemetry is source availability evidence only and cannot create full Playbook coverage by itself."
+  ]
+});
+
 const pilotRunInput = () => {
   const snapshot = evidenceSnapshot();
   const sourcePackageId = sourcePackage().source_package_id;
@@ -363,6 +456,40 @@ describe("AI Value minimal persistence repository", () => {
     expect(store.aiValueSourcePackageRefs.size).toBe(2);
   });
 
+  it("persists Source Package refs produced by the scrubbed Glean converter", async () => {
+    const conversion = aiValueEngine.convertScrubbedGleanClientExportToEvidenceInputs(
+      scrubbedLayer1Export(),
+      {
+        sourcePackageId: "source_package_scrubbed_layer_1_persistence_test"
+      }
+    );
+    expect(conversion.valid).toBe(true);
+    expect(conversion.source_package).toBeTruthy();
+
+    const ref = await persistAiValueSourcePackageRef({
+      sourcePackage: conversion.source_package,
+      version: 1,
+      measurementPlanId: "measurement_plan_customer_support_2026_05",
+      workflowFamily: "customer_support_case_resolution",
+      createdByRole: "data_platform_owner"
+    });
+
+    expect(ref.validation.valid).toBe(true);
+    expect(ref.source_refs.source_export_id).toBe(
+      "scrubbed_glean_export_support_layer_1_2026_05"
+    );
+    expect(ref.source_refs.aggregate_probe_id).toBe(
+      "bq_probe_support_layer_1_2026_05"
+    );
+    expect(ref.source_refs.aggregate_entry_ref).toBe(
+      "aggregate_entry_support_layer_1_2026_05"
+    );
+    expect(ref.source_refs.table_families_checked).toEqual([
+      "scrubbed_llm_call",
+      "scrubbed_client_analytics"
+    ]);
+  });
+
   it("persists validated Evidence Snapshots with caveats, blocked uses, and k-min posture", async () => {
     const snapshot = evidenceSnapshot();
     snapshot.source_refs.governance_control_export_ids = ["governance_control_export_example"];
@@ -572,6 +699,14 @@ describe("AI Value minimal persistence repository", () => {
     const upgradedState = clone(executiveReadoutSnapshot);
     upgradedState.readout_state = "internal_only_readout_ready";
     expect(aiValueEngine.validateExecutiveReadoutSnapshot(upgradedState).valid).toBe(false);
+
+    const externalAudience = clone(executiveReadoutSnapshot);
+    externalAudience.readout_audience = "customer";
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(externalAudience).valid).toBe(false);
+
+    const claimsPersistedState = clone(executiveReadoutSnapshot);
+    claimsPersistedState.persistence_policy.persisted = true;
+    expect(aiValueEngine.validateExecutiveReadoutSnapshot(claimsPersistedState).valid).toBe(false);
 
     const heldReadout = clone(executiveReadoutSnapshot);
     heldReadout.suppression.reason_codes = [];
