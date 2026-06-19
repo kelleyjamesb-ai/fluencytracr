@@ -61,6 +61,11 @@ This concept does not replace those artifacts. It defines the measurement grain
 and time-series logic they need to share before stronger statistical modeling
 can be considered.
 
+The first hardened object for this spine is the
+[AI Value Measurement Cell](../contracts/ai-value-measurement-cell/README.md),
+which validates cross-source alignment at the aggregate
+function/workflow/cohort/window/metric grain.
+
 ## Canonical Measurement Cell
 
 The core analytical unit is a Measurement Cell.
@@ -592,11 +597,17 @@ Blocked language:
 
 ## Implementation Boundary
 
-This concept authorizes docs-only planning and research framing.
+This concept authorizes docs-only planning and research framing unless a later
+bounded contract-hardening slice explicitly promotes an alignment object.
+
+The AI Value Measurement Cell is that first bounded contract-hardening slice.
+It is a shared fail-closed alignment validator only. It does not score value,
+run a Bayesian model, calculate finance movement, create customer-facing
+outputs, or unlock stronger claim language.
 
 It does not authorize:
 
-- schemas;
+- production schemas under `schemas/`;
 - backend routes;
 - persistence;
 - frontend UI;
