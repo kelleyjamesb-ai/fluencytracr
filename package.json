@@ -47,6 +47,7 @@
     "test:ai-value-contract-chain": "npm run build --workspace shared && node --test scripts/validate_ai_value_contract_chain.test.mjs",
     "test:ai-value-claim-readiness-handoff": "npm run build --workspace shared && node --test scripts/validate_ai_value_claim_readiness_handoff.test.mjs",
     "test:ai-value-claim-readiness-snapshot": "npm run build --workspace shared && node --test scripts/validate_ai_value_claim_readiness_snapshot.test.mjs",
+    "test:ai-value-value-hypothesis-readiness": "npm run build --workspace shared && node --test scripts/validate_ai_value_value_hypothesis_readiness.test.mjs",
     "test:ai-value-source-packages": "npm run build --workspace shared && node --test scripts/validate_ai_value_source_packages.test.mjs",
     "test:ai-value-scrubbed-glean-export-converter": "npm run build --workspace shared && node --test scripts/validate_ai_value_scrubbed_glean_export_converter.test.mjs",
     "test:ai-value-pilot-intake-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_pilot_intake_runner.test.mjs",

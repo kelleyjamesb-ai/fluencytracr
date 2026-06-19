@@ -110,6 +110,18 @@ export type {
 } from "./claimReadinessSnapshot";
 
 export {
+  AI_VALUE_HYPOTHESIS_READINESS_SCHEMA_VERSION,
+  ValueHypothesisReadinessSchema,
+  buildValueHypothesisReadinessFromMeasurementPlanAndClaimSnapshot,
+  validateValueHypothesisReadiness
+} from "./valueHypothesisReadiness";
+export type {
+  BuildValueHypothesisReadinessOptions,
+  ValueHypothesisReadiness,
+  ValueHypothesisReadinessValidationResult
+} from "./valueHypothesisReadiness";
+
+export {
   AI_VALUE_EXECUTIVE_READOUT_SNAPSHOT_SCHEMA_VERSION,
   ExecutiveReadoutSnapshotSchema,
   buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot,

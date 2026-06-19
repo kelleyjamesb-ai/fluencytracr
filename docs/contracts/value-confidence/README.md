@@ -52,6 +52,30 @@ execution, production outcome joins, customer-facing economic output, realized
 ROI, productivity, causality, prediction, person-level HR analytics, HRIS
 inference, or ranking surfaces.
 
+[AI Value Finance Investigation Readiness](./ai-value-finance-investigation-readiness.md)
+is a future-state docs-only internal readiness contract. It asks whether an
+aggregate evidence package is ready for business-owner or customer-owned
+finance-context review. It is not a supported runtime V4 economic readout and
+does not authorize APIs, schemas, runtime services, frontend product surfaces,
+customer-facing economic output, formula execution, finance-system joins,
+realized ROI, productivity claims, causality claims, prediction claims,
+probability output, or ranking surfaces. It cannot bypass the ROI Scenario
+financial claim gate or the EBITA Impact Bridge.
+
+ROI Bot may be referenced by Finance Investigation Readiness only as a sourced
+usage-analytics and scenario-modeling companion. ROI Bot can contribute source
+tags, pull dates, usage actuals, token/FlexCredit context, pricing assumptions,
+volume assumptions, and deliverable packaging. It cannot change suppression,
+AI Fluency interpretation, VBD scoring, evidence grade, confidence band,
+causality status, or allowed claim level.
+
+[AI Value Hypothesis Readiness](../ai-value-value-hypothesis-readiness/README.md)
+is the stricter operating packet that should precede any finance-context review.
+It uses readiness states and contribution evidence tiers only. It does not
+expose a confidence percentage, customer-facing economic output, ROI proof,
+causality claim, productivity claim, schema, endpoint, persistence path, or UI
+surface.
+
 ## Inputs
 
 ### V3 aggregate verdicts
