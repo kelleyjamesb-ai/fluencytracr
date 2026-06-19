@@ -122,6 +122,14 @@ is developing and where intervention may be needed. Value claims require a
 customer-owned function outcome metric, accepted or caveated outcome evidence,
 and claim review.
 
+For longitudinal measurement, use
+[Blueprint To Finance Review Readiness Spine](./BLUEPRINT_TO_FINANCE_REVIEW_READINESS_SPINE.md)
+as the docs-only companion concept. It defines the Measurement Cell grain, VBD
+Momentum, Signal Emergence, Metric Yield, Token Efficiency Yield, and the future
+Bayesian modeling posture without authorizing runtime scoring, confidence
+percentages, customer-facing economic output, ROI proof, financial attribution,
+or causality claims.
+
 ## What Good Looks Like
 
 | Layer | Good looks like | Failure mode |
