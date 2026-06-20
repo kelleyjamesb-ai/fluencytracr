@@ -188,6 +188,16 @@ export type {
 } from "./dataSpineReadiness";
 
 export {
+  AI_VALUE_REAL_DATA_INTAKE_PACKET_RUN_SCHEMA_VERSION,
+  buildRealDataIntakePacketRun,
+  validateRealDataIntakePacketRun
+} from "./realDataIntakePacketRunner";
+export type {
+  BuildRealDataIntakePacketRunInput,
+  RealDataIntakePacketRunValidationResult
+} from "./realDataIntakePacketRunner";
+
+export {
   AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_SCHEMA_VERSION,
   TokenEfficiencySignalSchema,
   buildTokenEfficiencySignalFromAggregateSummary,

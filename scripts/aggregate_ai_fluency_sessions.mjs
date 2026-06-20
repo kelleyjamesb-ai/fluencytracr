@@ -33,6 +33,7 @@ function parseArgs(argv) {
     input: null,
     output: null,
     orgId: null,
+    clientId: null,
     baselineId: null,
     collectionMode: "kickoff",
     window: null,
@@ -47,13 +48,14 @@ function parseArgs(argv) {
     if (arg === "--input") args.input = next();
     else if (arg === "--output") args.output = next();
     else if (arg === "--org-id") args.orgId = next();
+    else if (arg === "--client-id") args.clientId = next();
     else if (arg === "--baseline-id") args.baselineId = next();
     else if (arg === "--collection-mode") args.collectionMode = next();
     else if (arg === "--window") args.window = next();
     else if (arg === "--group-by") args.groupBy = next();
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: node scripts/aggregate_ai_fluency_sessions.mjs --input sessions.json|dir --org-id org --baseline-id id [--collection-mode kickoff|followup] [--window A_to_B] [--group-by functionArea|roleLevel] [--output path]"
+        "Usage: node scripts/aggregate_ai_fluency_sessions.mjs --input sessions.json|dir --org-id org --baseline-id id [--client-id client] [--collection-mode kickoff|followup] [--window A_to_B] [--group-by functionArea|roleLevel] [--output path]"
       );
       process.exit(0);
     } else {
@@ -196,6 +198,21 @@ export function aggregateFluencySessions(sessions, options) {
     schema_version: BASELINE_SCHEMA_VERSION,
     baseline_id: options.baselineId,
     org_id: options.orgId,
+    ...(options.clientId
+      ? {
+          client_id: options.clientId,
+          source_binding: {
+            import_key: {
+              org_id: options.orgId,
+              client_id: options.clientId,
+              baseline_id: options.baselineId,
+              window: options.window ?? deriveWindow(sessions) ?? "unknown_window",
+              group_by: options.groupBy
+            },
+            source_ref: `ai_fluency_dashboard_export:${options.orgId}:${options.clientId}:${options.baselineId}`
+          }
+        }
+      : {}),
     instrument: {
       instrument_id: instrumentIds[0],
       item_count: itemCount
@@ -221,6 +238,7 @@ function main() {
   const { baseline, validation, session_gaps } = aggregateFluencySessions(sessions, {
     orgId: args.orgId,
     baselineId: args.baselineId,
+    clientId: args.clientId,
     collectionMode: args.collectionMode,
     window: args.window,
     groupBy: args.groupBy

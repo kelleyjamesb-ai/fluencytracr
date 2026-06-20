@@ -183,6 +183,55 @@ test("missing VBD token aggregate does not get rescued by other sources", () => 
   assert.ok(spine.missing_evidence.includes("VBD_TOKEN_AGGREGATE_REQUIRED"));
 });
 
+test("MEASUREMENT_CELL_READY cannot be forged when a source lane is not ready", () => {
+  const cases = [
+    ["source_ref", null],
+    ["owner_approval_state", "submitted"],
+    ["review_state", "held"],
+    ["aggregate_only", false],
+    ["aligned", false]
+  ];
+
+  for (const [field, value] of cases) {
+    const spine = buildDataSpineIntakeReadiness(baseInput());
+    spine.source_readiness.customer_metric[field] = value;
+    spine.readiness_state = "MEASUREMENT_CELL_READY";
+    spine.missing_evidence = [];
+    spine.feeds.measurement_cell_input = true;
+    spine.feeds.value_hypothesis_packet_runner = true;
+
+    const result = validateDataSpineIntakeReadiness(spine);
+
+    assert.equal(result.valid, false, `${field} should fail closed`);
+    assert.equal(result.feeds.measurement_cell_input, false);
+    assert.ok(
+      result.gaps.some((gap) =>
+        gap.includes("MEASUREMENT_CELL_READY") ||
+        gap.includes("missing_evidence") ||
+        gap.includes("aggregate_only") ||
+        gap.includes("aligned")
+      ),
+      `${field} should report readiness forgery; got ${result.gaps.join("; ")}`
+    );
+  }
+});
+
+test("held data spine cannot expose Measurement Cell feeds by mutating feeds", () => {
+  const input = baseInput();
+  input.sources.customerMetric.state = "submitted";
+  input.sources.customerMetric.owner_approval_state = "submitted";
+  input.sources.customerMetric.review_state = "needs_review";
+  const spine = buildDataSpineIntakeReadiness(input);
+  spine.feeds.measurement_cell_input = true;
+  spine.feeds.value_hypothesis_packet_runner = true;
+
+  const result = validateDataSpineIntakeReadiness(spine);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_input, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("feeds.measurement_cell_input")));
+});
+
 test("unsafe raw, person, connector, confidence, and financial fields fail", () => {
   const spine = buildDataSpineIntakeReadiness(baseInput());
   spine.raw_rows = [{ user_id: "u_123" }];

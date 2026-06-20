@@ -64,6 +64,7 @@ export interface FluencyBaselineValidationResult {
   schema_version: string;
   baseline_id: string | null;
   org_id: string | null;
+  client_id: string | null;
   instrument_id: string | null;
   collection_mode: string | null;
   cohort_count: number;
@@ -224,6 +225,7 @@ export function validateFluencyBaseline(baseline: any): FluencyBaselineValidatio
     schema_version: RESULT_SCHEMA_VERSION,
     baseline_id: baseline?.baseline_id ?? null,
     org_id: baseline?.org_id ?? null,
+    client_id: typeof baseline?.client_id === "string" ? baseline.client_id : null,
     instrument_id: instrumentId,
     collection_mode: baseline?.collection_mode ?? null,
     cohort_count: cohorts.length,
@@ -268,6 +270,7 @@ export function summarizeFluencyBaseline(baseline: any): any {
   return {
     schema_version: "FT_AI_VALUE_FLUENCY_BASELINE_SUMMARY_2026_06",
     baseline_id: baseline?.baseline_id ?? null,
+    client_id: typeof baseline?.client_id === "string" ? baseline.client_id : null,
     instrument_id: baseline?.instrument?.instrument_id ?? null,
     collection_mode: baseline?.collection_mode ?? null,
     window: baseline?.window ?? null,

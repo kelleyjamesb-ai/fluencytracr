@@ -72,6 +72,22 @@ test("aggregates sessions into an engine-valid baseline with cohort means", () =
   assert.equal(baseline.window, "2026-06-02_to_2026-06-02");
 });
 
+test("can bind aggregate AI Fluency output to a client id without leaking respondent data", () => {
+  const sessions = Array.from({ length: 5 }, (_, i) =>
+    makeSession(`client-${i}`, "customer_support", { confidence: 4 })
+  );
+  const { baseline, validation } = aggregateFluencySessions(sessions, {
+    ...options,
+    clientId: "client_northstar"
+  });
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(validation.client_id, "client_northstar");
+  assert.equal(baseline.client_id, "client_northstar");
+  assert.equal(baseline.source_binding.import_key.client_id, "client_northstar");
+  assert.equal(JSON.stringify(baseline).includes("anon-"), false);
+});
+
 test("suppresses cohorts below the minimum size at export time", () => {
   const sessions = [
     ...Array.from({ length: 5 }, (_, i) => makeSession(`a-${i}`, "customer_support")),

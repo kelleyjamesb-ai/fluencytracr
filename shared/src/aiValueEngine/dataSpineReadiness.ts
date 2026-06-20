@@ -260,6 +260,16 @@ function alignedSource(input: BuildDataSpineIntakeReadinessInput, source: any): 
     sameWindow(source.comparison_window, input.comparisonWindow);
 }
 
+function sourceAlignedToSpine(spine: any, source: any): boolean {
+  return source?.org_id === spine?.org_id &&
+    source?.client_id === spine?.client_id &&
+    source?.workflow_family === spine?.workflow_family &&
+    source?.function_area === spine?.function_area &&
+    source?.cohort_key === spine?.cohort_key &&
+    sameWindow(source?.baseline_window, spine?.baseline_window) &&
+    sameWindow(source?.comparison_window, spine?.comparison_window);
+}
+
 function collectForbiddenFields(
   value: any,
   fields: Set<string> = new Set(),
@@ -501,6 +511,50 @@ function collectSourceGaps(spine: any): string[] {
     if (!sameWindow(source.comparison_window, spine?.comparison_window)) {
       gaps.push(`${key}.comparison_window must match data spine comparison_window`);
     }
+    if (source.aligned !== sourceAlignedToSpine(spine, source)) {
+      gaps.push(`source_readiness.${key}.aligned must reflect actual source alignment`);
+    }
+    if (source.aggregate_only !== true) {
+      gaps.push(`source_readiness.${key}.aggregate_only must be true`);
+    }
+  }
+  return gaps;
+}
+
+function sameStringSet(left: any, right: any): boolean {
+  const normalize = (value: any) =>
+    Array.isArray(value) ? [...new Set(value.map((item) => String(item)))].sort() : [];
+  return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right));
+}
+
+function collectReadinessStateGaps(spine: any): string[] {
+  const gaps: string[] = [];
+  const sourceReadiness = spine?.source_readiness ?? {};
+  const derivedMissing = deriveMissingEvidence(sourceReadiness);
+  const derivedReady = derivedMissing.length === 0;
+  if (!sameStringSet(spine?.missing_evidence, derivedMissing)) {
+    gaps.push("missing_evidence must match derived source readiness gaps");
+  }
+  if (spine?.readiness_state === "MEASUREMENT_CELL_READY" && !derivedReady) {
+    gaps.push("readiness_state cannot be MEASUREMENT_CELL_READY unless every source lane is present, approved, clear, aggregate-only, source-bound, and aligned");
+  }
+  if (spine?.readiness_state !== "MEASUREMENT_CELL_READY" && spine?.feeds?.measurement_cell_input === true) {
+    gaps.push("feeds.measurement_cell_input must be false unless readiness_state is MEASUREMENT_CELL_READY");
+  }
+  if (spine?.readiness_state !== "MEASUREMENT_CELL_READY" && spine?.feeds?.value_hypothesis_packet_runner === true) {
+    gaps.push("feeds.value_hypothesis_packet_runner must be false unless readiness_state is MEASUREMENT_CELL_READY");
+  }
+  if (derivedReady && spine?.feeds?.measurement_cell_input !== true) {
+    gaps.push("feeds.measurement_cell_input must be true when all source lanes are ready");
+  }
+  if (derivedReady && spine?.feeds?.value_hypothesis_packet_runner !== true) {
+    gaps.push("feeds.value_hypothesis_packet_runner must be true when all source lanes are ready");
+  }
+  if (!derivedReady && spine?.feeds?.measurement_cell_input !== false) {
+    gaps.push("feeds.measurement_cell_input must be false when source lanes are missing, held, suppressed, unapproved, or misaligned");
+  }
+  if (!derivedReady && spine?.feeds?.value_hypothesis_packet_runner !== false) {
+    gaps.push("feeds.value_hypothesis_packet_runner must be false when source lanes are missing, held, suppressed, unapproved, or misaligned");
   }
   return gaps;
 }
@@ -537,6 +591,7 @@ export function validateDataSpineIntakeReadiness(
   const gaps = [
     ...collectTopLevelGaps(spine),
     ...collectSourceGaps(spine),
+    ...collectReadinessStateGaps(spine),
     ...collectBoundaryGaps(spine)
   ];
   const valid = gaps.length === 0;
