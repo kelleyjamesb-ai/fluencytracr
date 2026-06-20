@@ -1,0 +1,123 @@
+{
+  "schema_version": "FT_AI_VALUE_BLUEPRINT_EXTRACTION_DRAFT_2026_06",
+  "draft_id": "blueprint_extraction_draft_northstar_marketing_day_0",
+  "org_id": "org_northstar",
+  "client_id": "client_northstar",
+  "document_source_ref": "blueprint_upload_doc_ref_northstar_001",
+  "source_posture": "upstream_structured_reference_only",
+  "extraction_state": "parsed",
+  "approval_state": "pending_review",
+  "owner_role": "value_consultant",
+  "approver_role": null,
+  "workflow_family": "campaign_brief_to_launch",
+  "workflow_name": "Campaign brief to launch",
+  "function_area": "marketing",
+  "cohort_key": "function:marketing|eligible_seats:240",
+  "extracted_fields": {
+    "value_hypothesis": "Marketing can reduce campaign cycle time when governed AI-assisted briefing becomes repeatable.",
+    "value_route": "CAPACITY_CREATION",
+    "metric_candidates": [
+      {
+        "metric_id": "marketing_campaign_cycle_days",
+        "metric_name": "Campaign cycle time",
+        "expected_direction": "decrease"
+      }
+    ],
+    "baseline_window": {
+      "window_start": "2026-06-01",
+      "window_end": "2026-06-30"
+    },
+    "comparison_window": {
+      "window_start": "2026-09-01",
+      "window_end": "2026-09-30"
+    },
+    "assumption_refs": [
+      "case_mix_stability",
+      "volume_context",
+      "staffing_and_coverage_context",
+      "channel_mix_context",
+      "process_or_policy_context",
+      "knowledge_base_context",
+      "metric_definition_stability",
+      "ai_rollout_context"
+    ]
+  },
+  "blueprint_validation_input": null,
+  "data_spine_source": {
+    "state": "pending_approval",
+    "intake_mode": "blueprint_document_upload",
+    "source_ref": "blueprint_extraction_draft_northstar_marketing_day_0",
+    "org_id": "org_northstar",
+    "client_id": "client_northstar",
+    "workflow_family": "campaign_brief_to_launch",
+    "function_area": "marketing",
+    "cohort_key": "function:marketing|eligible_seats:240",
+    "baseline_window": {
+      "window_start": "2026-06-01",
+      "window_end": "2026-06-30"
+    },
+    "comparison_window": {
+      "window_start": "2026-09-01",
+      "window_end": "2026-09-30"
+    },
+    "owner_approval_state": "submitted",
+    "review_state": "needs_review",
+    "aggregate_only": true,
+    "parser_productized": false,
+    "live_pull_performed": false
+  },
+  "feeds": {
+    "blueprint_review_queue": true,
+    "blueprint_validation_input": false,
+    "data_spine_blueprint_source": false,
+    "measurement_cell_input": false,
+    "customer_facing_financial_output": false
+  },
+  "source_refs": {
+    "document_source_ref": "blueprint_upload_doc_ref_northstar_001",
+    "extraction_run_ref": "blueprint_extraction_run_northstar_001"
+  },
+  "allowed_uses": [
+    "blueprint_extraction_review",
+    "blueprint_approval_workflow",
+    "data_spine_source_preparation"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "ebitda_claim",
+    "financial_attribution",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output",
+    "confidence_percentage",
+    "probability_output"
+  ],
+  "boundary_policy": {
+    "parser_productized": false,
+    "live_pull_performed": false,
+    "persisted": false,
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "stores_raw_document_text": false,
+    "stores_uploaded_file": false,
+    "emits_roi": false,
+    "emits_financial_attribution": false,
+    "emits_confidence_percentage": false,
+    "emits_probability": false,
+    "customer_facing_financial_output": false
+  },
+  "required_caveats": [
+    "Source refs point to upstream-approved structured extraction outputs only.",
+    "This contract does not parse Blueprint uploads, run BigQuery, pull live Glean data, or validate raw customer files.",
+    "Approved Blueprint extraction can feed Blueprint validation and Data Spine source alignment only; it is not Measurement Cell input or value proof."
+  ],
+  "generated_at": "2026-06-20T00:00:00.000Z",
+  "derivation_version": "ai_value_blueprint_extraction_draft_2026_06"
+}

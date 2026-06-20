@@ -69,6 +69,7 @@ const DISALLOWED_KEY_PATTERNS = [
   /^query$/i,
   /query_text/i,
   /sql_text/i,
+  /bigquery_sql/i,
   /^file_contents?$/i,
   /email/i,
   /user_id/i,

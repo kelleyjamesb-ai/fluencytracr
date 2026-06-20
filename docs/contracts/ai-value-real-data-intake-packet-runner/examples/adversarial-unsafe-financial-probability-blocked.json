@@ -1,0 +1,38 @@
+{
+  "schema_version": "FT_AI_VALUE_ADVERSARIAL_CLIENT_FIXTURE_2026_06",
+  "file_name": "adversarial-unsafe-financial-probability-blocked.json",
+  "fixture_id": "unsafe_financial_probability_side_doors",
+  "source_posture": "synthetic_rehearsal_input_spec",
+  "scenario": "A packet attempts to smuggle ROI, EBITDA, probability, thresholds, raw rows, person identifiers, route, UI, and persistence fields.",
+  "customer_evidence_allowed": false,
+  "finance_context_allowed": false,
+  "customer_facing_financial_output_allowed": false,
+  "expected": {
+    "validation_valid": false,
+    "false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ],
+    "gaps_include": [
+      "roi_value",
+      "ebitda_impact",
+      "confidence_percent",
+      "probability",
+      "threshold",
+      "raw_rows",
+      "user_id",
+      "prompt",
+      "creates_backend_routes",
+      "creates_frontend_ui",
+      "persistence_table"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "financial_attribution",
+    "causality_claim",
+    "confidence_percentage",
+    "customer_facing_financial_output"
+  ]
+}

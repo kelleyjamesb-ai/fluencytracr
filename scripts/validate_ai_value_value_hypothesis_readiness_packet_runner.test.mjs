@@ -419,7 +419,8 @@ test("direct selected metric movement cannot reach finance-context investigation
         end: "2026-06-30"
       },
       source_ref: "outcome_evidence_value_hypothesis_packet_test",
-      owner_role: "support_business_owner"
+      owner_role: "support_business_owner",
+      owner_approval_state: "approved"
     },
     roiBotContext: {
       present: true,
@@ -443,6 +444,50 @@ test("direct selected metric movement cannot reach finance-context investigation
   assert.equal(packet.review_boundaries.roi_proof_allowed, false);
   assert.equal(packet.review_boundaries.causality_claim_allowed, false);
   assert.equal(packet.review_boundaries.financial_output_allowed, false);
+});
+
+test("direct selected metric movement without owner approval stays evidence-review only", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const packet = buildPacket({
+    plan,
+    claimSnapshot,
+    comparisonDesignState: "matched_comparison_candidate",
+    selectedMetricMovement: {
+      metric_id: "support_median_resolution_hours",
+      state: "present",
+      baseline_window: {
+        start: "2026-05-01",
+        end: "2026-05-31"
+      },
+      comparison_window: {
+        start: "2026-06-01",
+        end: "2026-06-30"
+      },
+      source_ref: "outcome_evidence_value_hypothesis_packet_test",
+      owner_role: "support_business_owner",
+      owner_approval_state: "submitted"
+    },
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
+  });
+
+  const validation = validateValueHypothesisReadinessPacket(packet);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(packet.readiness.readiness_state, "EVIDENCE_REVIEW_READY");
+  assert.equal(packet.review_flow.current_review_label, "Glean review");
+  assert.ok(!packet.allowed_next_actions.includes("business_owner_review"));
+  assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
+  assert.equal(validation.feeds.business_owner_review, false);
+  assert.equal(validation.feeds.finance_context_investigation, false);
+  assert.equal(packet.evidence_sources.selected_metric_movement.owner_approval_state, "submitted");
+  assert.equal(packet.evidence_sources.selected_metric_movement.customer_owned_or_approved, false);
 });
 
 test("validated Measurement Cell can drive packet metric movement and design alignment", () => {
@@ -482,6 +527,66 @@ test("validated Measurement Cell can drive packet metric movement and design ali
   assert.equal(validation.feeds.finance_context_investigation, true);
   assert.equal(validation.feeds.customer_facing_output, false);
   assert.equal(validation.feeds.financial_output, false);
+});
+
+test("packet validation rejects finance-context readiness without Measurement Cell validation binding", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const packet = buildPacket({
+    plan,
+    claimSnapshot,
+    measurementCell: buildPacketMeasurementCell(),
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
+  });
+  const tamperedPacket = clone(packet);
+  delete tamperedPacket.validation.measurement_cell_validation_binding;
+  delete tamperedPacket.evidence_sources.measurement_cell.validation_binding;
+
+  const validation = validateValueHypothesisReadinessPacket(tamperedPacket);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.gaps.some((gap) =>
+    gap.includes("Measurement Cell validation binding")
+  ));
+  assert.equal(validation.feeds.finance_context_investigation, false);
+});
+
+test("Measurement Cell selected metric owner approval is preserved and holds review readiness", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const measurementCell = buildPacketMeasurementCell();
+  measurementCell.selected_metric.owner_approval_state = "submitted";
+  const packet = buildPacket({
+    plan,
+    claimSnapshot,
+    measurementCell,
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
+  });
+
+  const validation = validateValueHypothesisReadinessPacket(packet);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(packet.readiness.readiness_state, "EVIDENCE_REVIEW_READY");
+  assert.equal(packet.evidence_sources.selected_metric_movement.state, "held");
+  assert.equal(packet.evidence_sources.selected_metric_movement.owner_approval_state, "submitted");
+  assert.equal(packet.evidence_sources.selected_metric_movement.customer_owned_or_approved, false);
+  assert.equal(packet.evidence_sources.measurement_cell.state, "held");
+  assert.equal(packet.evidence_sources.measurement_cell.feeds_finance_context_investigation, false);
+  assert.ok(packet.missing_evidence.includes("METRIC_OWNER_APPROVAL_REQUIRED"));
+  assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
+  assert.equal(validation.feeds.finance_context_investigation, false);
 });
 
 test("suppressed Measurement Cell holds packet metric movement instead of upgrading finance review", () => {

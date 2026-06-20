@@ -19,6 +19,7 @@ Data Spine Readiness
 -> draft Evidence Snapshot
 -> non-persisted Claim Readiness Handoff
 -> Measurement Cell preparation
+-> Measurement Cell Assembly Runner
 ```
 
 It exists to move the product beyond synthetic-only fixtures without pretending
@@ -37,7 +38,10 @@ The runner composes these existing architecture pieces:
 - Pilot Intake Runner output for evidence collection and handoff preparation.
 
 The runner may prepare Measurement Cell assembly only when the Data Spine is
-aligned, approved, clear, aggregate-only, and not held.
+aligned, approved, clear, aggregate-only, and not held. The downstream
+Measurement Cell Assembly Runner must still bind the output back to the same
+Measurement Plan, Data Spine, source refs, and selected customer metric before
+packet preparation.
 
 ## Representable In Contract Today
 
@@ -53,6 +57,10 @@ Representable in the shared engine today:
   entries after owner approval;
 - Measurement Cell and Value Hypothesis Readiness packet gates are deterministic
   and fail closed.
+
+The `examples/` directory includes adversarial rehearsal fixtures for messy
+client-like intake gaps. They are expectation specs for validator tests, not
+customer evidence and not finance-ready examples.
 
 Not productized in this runner:
 

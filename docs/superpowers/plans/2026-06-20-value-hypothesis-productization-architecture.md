@@ -68,17 +68,17 @@ Expected: all tests pass.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test pending extraction does not feed Measurement Cell assembly**
+- [x] **Step 1: Test pending extraction does not feed Measurement Cell assembly**
 
 Expected: a parsed draft with source refs and unmapped fields validates as
 reviewable but has no Measurement Cell feed.
 
-- [ ] **Step 2: Test approved extraction can become a Blueprint validation input**
+- [x] **Step 2: Test approved extraction can become a Blueprint validation input**
 
 Expected: approval state, owner role, workflow family, value route, metric
 candidates, windows, and assumptions are present before it can feed downstream.
 
-- [ ] **Step 3: Test unsafe document-derived content fails**
+- [x] **Step 3: Test unsafe document-derived content fails**
 
 Expected: raw excerpts beyond bounded source refs, person-level fields, direct
 identifiers, raw prompts/responses, ROI proof, causality, confidence, and
@@ -95,17 +95,17 @@ financial attribution fail closed.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test valid aggregate dashboard export**
+- [x] **Step 1: Test valid aggregate dashboard export**
 
 Expected: aggregate cohort counts, construct scores, collection mode, instrument
 ID, baseline/follow-up window, `client_id`, and `org_id` validate.
 
-- [ ] **Step 2: Test suppression and small cohort behavior**
+- [x] **Step 2: Test suppression and small cohort behavior**
 
 Expected: suppressed cohorts carry no scores and cannot feed Measurement Cell
 or packet readiness by themselves.
 
-- [ ] **Step 3: Test client/org mismatch**
+- [x] **Step 3: Test client/org mismatch**
 
 Expected: `client_id` or `org_id` drift fails closed.
 
@@ -120,17 +120,17 @@ Expected: `client_id` or `org_id` drift fails closed.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test valid scrubbed aggregate VBD/token summary**
+- [x] **Step 1: Test valid scrubbed aggregate VBD/token summary**
 
 Expected: VBD/token evidence aligns by org, workflow, function, cohort, window,
 k-min, source ref, and source owner attestation.
 
-- [ ] **Step 2: Test live BigQuery fields fail**
+- [x] **Step 2: Test live BigQuery fields fail**
 
 Expected: SQL text, raw rows, query text, table row samples, prompts,
 responses, and direct identifiers fail closed.
 
-- [ ] **Step 3: Test token usage remains cost/intensity context**
+- [x] **Step 3: Test token usage remains cost/intensity context**
 
 Expected: token data cannot change VBD formulas, upgrade claim readiness, or
 feed finance-context readiness.
@@ -146,18 +146,18 @@ feed finance-context readiness.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test manual aggregate metric entry**
+- [x] **Step 1: Test manual aggregate metric entry**
 
 Expected: source owner, metric owner approval, metric ID, direction, denominator
 or metric-definition context, baseline/comparison windows, and source ref are
 required before downstream use.
 
-- [ ] **Step 2: Test aggregate export metadata entry**
+- [x] **Step 2: Test aggregate export metadata entry**
 
 Expected: customer system-of-record export metadata can become Layer 3 evidence
 only when validated and approved.
 
-- [ ] **Step 3: Test stale, window-drifted, or owner-missing metrics hold**
+- [x] **Step 3: Test stale, window-drifted, or owner-missing metrics hold**
 
 Expected: no Measurement Cell or finance-context feed.
 
@@ -172,19 +172,25 @@ Expected: no Measurement Cell or finance-context feed.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test aligned data spine builds a Measurement Cell**
+- [x] **Step 1: Test aligned data spine builds a Measurement Cell**
 
-Expected: only `MEASUREMENT_CELL_READY` spines can feed builder input.
+Expected: only `MEASUREMENT_CELL_READY` spines bound to the same Measurement
+Plan can feed builder input.
 
-- [ ] **Step 2: Test held or suppressed source lanes block assembly**
+- [x] **Step 2: Test held or suppressed source lanes block assembly**
 
 Expected: missing evidence remains explicit and no packet runner feed appears.
 
-- [ ] **Step 3: Test milestone and rolling windows**
+- [x] **Step 3: Test milestone and rolling windows**
 
 Expected: milestone windows can support finance-context investigation only
 through the existing Measurement Cell gate; rolling 30-day windows remain
 operating context only.
+
+- [x] **Step 4: Test plan, real-data, source-ref, and stale validation drift**
+
+Expected: plan metric/window drift, real-data function/cohort/source drift, and
+forged embedded validation feed objects fail closed before packet preparation.
 
 ## Phase 7: Real Data Intake Packet Runner
 
@@ -197,17 +203,17 @@ operating context only.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test happy path from parsed aggregate inputs**
+- [x] **Step 1: Test happy path from parsed aggregate inputs**
 
-Expected: valid objects produce a non-persisted internal packet and source-bound
-Measurement Cell.
+Expected: valid objects produce a non-persisted internal intake packet and
+prepare source-bound Measurement Cell assembly.
 
-- [ ] **Step 2: Test source drift across lanes**
+- [x] **Step 2: Test source drift across lanes**
 
 Expected: drifted org, client, workflow, function, cohort, metric, source ref,
 or window fails before packet assembly.
 
-- [ ] **Step 3: Test forbidden side doors**
+- [x] **Step 3: Test forbidden side doors**
 
 Expected: raw rows, document text, direct identifiers, person-level fields,
 ROI, causality, productivity, confidence, probability, persistence, routes, UI,
@@ -222,21 +228,28 @@ and customer-facing financial output fail closed.
 - Create: `scripts/validate_ai_value_adversarial_client_fixture_pack.test.mjs`
 - Modify: `package.json`
 
-- [ ] **Step 1: Add fixture for mismatched windows**
+- [x] **Step 1: Add fixture for mismatched windows**
 
 Expected: packet is held before Measurement Cell assembly.
 
-- [ ] **Step 2: Add fixture for missing metric owner approval**
+- [x] **Step 2: Add fixture for missing metric owner approval**
 
 Expected: customer metric lane is held and finance-context readiness is blocked.
 
-- [ ] **Step 3: Add fixture for k-min failure and suppressed slices**
+- [x] **Step 3: Add fixture for k-min failure and suppressed slices**
 
 Expected: suppressed evidence cannot be rescued by other lanes.
 
-- [ ] **Step 4: Add fixture for partial AI Fluency and missing Layer 3**
+- [x] **Step 4: Add fixture for partial AI Fluency and missing Layer 3**
 
 Expected: readiness can remain planning or evidence-review only.
+
+- [x] **Step 5: Add import-gap poison fixtures**
+
+Expected: unparsed Blueprint upload, raw BigQuery/VBD-token leakage, missing
+assumptions, held governance, rolling 30-day finance-boundary, and unsafe
+financial/probability/person-level fields remain held or blocked with no
+customer-facing financial output.
 
 ## Phase 9: Thin UI Output Contract
 
@@ -249,13 +262,13 @@ Expected: readiness can remain planning or evidence-review only.
 - Modify: `shared/src/aiValueEngine/index.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Test UI output displays readiness, gaps, held lanes, caveats, and blocked claims**
+- [x] **Step 1: Test UI output displays readiness, gaps, held lanes, caveats, and blocked claims**
 
 Expected: UI output cannot display ROI proof, financial attribution,
 confidence percentages, probabilities, productivity claims, or customer-facing
 financial output.
 
-- [ ] **Step 2: Test upload/review queue state**
+- [x] **Step 2: Test upload/review queue state**
 
 Expected: UI output shows source lane status and next action, not a polished
 executive proof dashboard.
@@ -264,14 +277,36 @@ executive proof dashboard.
 
 ## Current Productization Position
 
+Phases 1-9 are complete as contract-first shared-engine infrastructure. The
+architecture now supports governed intake contracts for Blueprint extraction
+drafts, aggregate AI Fluency dashboard imports, scrubbed aggregate Glean/
+BigQuery VBD-token context, customer metric imports/manual entries, Data Spine
+Readiness, Measurement Cell assembly, real-data packet orchestration,
+adversarial client fixtures, and thin UI output boundaries.
+
+The finance-context path is gated by a validated, source-bound Measurement Cell
+validation binding. Direct selected metric movement, ROI Bot assumptions,
+stale feed flags, rolling 30-day operating context, suppressed evidence, or
+misaligned source refs cannot bypass the Measurement Cell gate.
+
 The architecture is ready to move from contract hardening into real intake
-orchestration. It is not ready for live upload parsing, live BigQuery pulls,
-persistence, backend routes, or customer-facing financial output.
+orchestration. It is not yet ready for live upload parsing, live dashboard
+pulls, live BigQuery query execution, persistence, backend routes, or
+customer-facing financial output.
 
-The next implementation slice after Phase 1 is Phase 2 or Phase 7 depending on
-the desired sequence:
+Recommended next implementation slices:
 
-- choose Phase 2 if Blueprint upload/review is the next user-facing intake
-  risk;
-- choose Phase 7 if packet orchestration across already-parsed aggregate
-  inputs is the next system risk.
+- Blueprint upload parser adapter: convert PDF/PPT/DOC/Google document content
+  into the approved Blueprint Extraction Draft contract with human approval.
+- AI Fluency dashboard import runner: pull or receive aggregate dashboard
+  exports by `client_id`/`org_id` and normalize them through the existing client
+  import adapter.
+- Glean/BigQuery aggregate export adapter: produce the approved VBD-token
+  aggregate object upstream from BigQuery without exposing SQL, raw rows, or
+  live query execution inside this shared engine.
+- Customer metric import surface: let customers upload or manually enter
+  aggregate metric windows and route them through the customer metric intake
+  contract.
+- Orchestration/persistence layer: store source refs, review states, packet
+  runs, and Measurement Cell outputs without changing the governed claim
+  boundary.

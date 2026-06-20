@@ -1,0 +1,37 @@
+{
+  "schema_version": "FT_AI_VALUE_ADVERSARIAL_CLIENT_FIXTURE_2026_06",
+  "file_name": "adversarial-unparsed-blueprint-upload-held.json",
+  "fixture_id": "unparsed_blueprint_upload_held",
+  "source_posture": "synthetic_rehearsal_input_spec",
+  "scenario": "Blueprint upload is submitted but has not become approved structured extraction; raw file content poison must fail closed.",
+  "customer_evidence_allowed": false,
+  "finance_context_allowed": false,
+  "customer_facing_financial_output_allowed": false,
+  "expected": {
+    "held_readiness_state": "INTAKE_REVIEW_READY",
+    "held_false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ],
+    "held_missing_evidence_include": [
+      "BLUEPRINT_APPROVAL_REQUIRED"
+    ],
+    "poisoned_validation_valid": false,
+    "poisoned_false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ],
+    "poisoned_gaps_include": [
+      "file_content"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "financial_attribution",
+    "causality_claim",
+    "confidence_percentage",
+    "customer_facing_financial_output"
+  ]
+}

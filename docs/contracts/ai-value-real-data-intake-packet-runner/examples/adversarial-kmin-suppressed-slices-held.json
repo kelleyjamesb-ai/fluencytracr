@@ -1,0 +1,34 @@
+{
+  "schema_version": "FT_AI_VALUE_ADVERSARIAL_CLIENT_FIXTURE_2026_06",
+  "file_name": "adversarial-kmin-suppressed-slices-held.json",
+  "fixture_id": "k_min_failure_and_suppressed_vbd",
+  "source_posture": "synthetic_rehearsal_input_spec",
+  "scenario": "VBD/token lane is suppressed and Layer 1 contains suppressed or unknown slices.",
+  "customer_evidence_allowed": false,
+  "finance_context_allowed": false,
+  "customer_facing_financial_output_allowed": false,
+  "expected": {
+    "data_spine_readiness_state": "INTAKE_REVIEW_READY",
+    "data_spine_false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ],
+    "data_spine_missing_evidence_include": [
+      "VBD_TOKEN_AGGREGATE_REQUIRED"
+    ],
+    "real_data_decision": "HELD_FOR_DATA_SPINE",
+    "real_data_false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "financial_attribution",
+    "causality_claim",
+    "confidence_percentage",
+    "customer_facing_financial_output"
+  ]
+}
