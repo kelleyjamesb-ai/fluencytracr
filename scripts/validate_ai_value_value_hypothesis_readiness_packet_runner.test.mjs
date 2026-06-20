@@ -280,6 +280,10 @@ function buildPacketMeasurementCell(overrides = {}) {
     timeWindow: {
       time_window_id: "comparison_2026_06",
       window_label: "Comparison 2026-06",
+      window_mode: "milestone",
+      anchor_date: "2026-06-30",
+      days_since_launch: 30,
+      cadence: "milestone",
       window_start: "2026-06-01",
       window_end: "2026-06-30",
       baseline_window: {

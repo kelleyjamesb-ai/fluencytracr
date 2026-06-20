@@ -120,6 +120,21 @@ const ALLOWED_REVIEW_STATES = new Set([
   "FINANCE_CONTEXT_INVESTIGATION_READY"
 ]);
 
+const ALLOWED_WINDOW_MODES = new Set([
+  "milestone",
+  "rolling_30_day"
+]);
+
+const ALLOWED_WINDOW_CADENCES = new Set([
+  "milestone",
+  "rolling_30_day"
+]);
+
+const ALLOWED_MILESTONE_DAYS = new Set([0, 30, 60, 90, 180, 365]);
+
+const ROLLING_30_DAY_CAVEAT =
+  "Rolling 30-day Measurement Cells are operating momentum context; overlapping windows are not independent attribution samples.";
+
 const SAFE_ALLOWED_USES = new Set([
   "measurement_cell_alignment",
   "internal_evidence_review",
@@ -128,6 +143,11 @@ const SAFE_ALLOWED_USES = new Set([
   "finance_context_investigation_planning",
   "bayesian_research_design_planning"
 ]);
+
+const ROLLING_30_DAY_BLOCKED_ALLOWED_USES = [
+  "finance_context_investigation_planning",
+  "bayesian_research_design_planning"
+];
 
 const REQUIRED_BLOCKED_USES = [
   "realized_roi",
@@ -188,6 +208,9 @@ const FORBIDDEN_FIELD_PATTERNS = [
   /^confidence_score$/i,
   /^ai_contribution_confidence$/i,
   /^ai_contribution_probability$/i,
+  /^signal_emergence_confidence$/i,
+  /^window_confidence$/i,
+  /^contribution_likelihood$/i,
   /^attribution_probability$/i,
   /^probability$/i,
   /^posterior_probability$/i,
@@ -267,7 +290,14 @@ const FORBIDDEN_FIELD_PATTERNS = [
   /^promotion$/i,
   /^discipline$/i,
   /^attrition_prediction$/i,
-  /^hris_inference$/i
+  /^hris_inference$/i,
+  /^suppression_reason$/i,
+  /^minimum_window_days$/i,
+  /^threshold_days$/i,
+  /^backend_routes?$/i,
+  /^schema_ref$/i,
+  /^persistence_table$/i,
+  /^ui_surface$/i
 ];
 
 const GOVERNED_KEY_ALLOWLIST = new Set([
@@ -294,9 +324,16 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
 
 const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
+const UNSAFE_METADATA_VALUE_PATTERNS = [
+  /(?:^|[|;,\s])team_rank\s*[:=]\s*\d+/i,
+  /\b(?:top|bottom)[-\s]performing\s+(?:team|manager|department|function|cohort)\b/i,
+  /\bmanager\s+[A-Z][A-Za-z'-]+\b/
+];
+
 const UNSAFE_CLAIM_LANGUAGE_PATTERNS = [
   /\bproved?\s+(?:roi|savings|financial impact|ebita|ebitda|productivity|causality)\b/i,
   /\b(?:roi|savings|ebita|ebitda|financial impact|productivity lift)\b.{0,48}\b(?:due to|caused by|attributed to|from ai|by ai)\b/i,
+  /\bAI(?:-enabled)?\b.{0,64}\b(?:contributed to|influenced|generated|drove|lifted|improved)\b.{0,64}\b(?:metric|metrics|pipeline|revenue|financial|productivity|ebita|ebitda|outcome|growth|movement)\b/i,
   /\b(?:ebita|ebitda|financial)\s+impact\b/i,
   /\bconfidence\s*(?:percent|percentage|score)\b/i,
   /\battribution\s+probability\b/i
@@ -327,6 +364,10 @@ export interface BuildMeasurementCellInput {
   timeWindow: {
     time_window_id: string;
     window_label?: string;
+    window_mode?: string;
+    anchor_date?: string;
+    days_since_launch?: number | null;
+    cadence?: string;
     window_start: string;
     window_end: string;
     baseline_window?: any;
@@ -436,6 +477,29 @@ function daysBetween(start: string, end: string): number | null {
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
   const days = Math.round((endMs - startMs) / 86400000) + 1;
   return days > 0 ? days : null;
+}
+
+function dateIsValid(value: any): boolean {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function inferWindowMode(window: any): string {
+  const explicitMode = window?.window_mode;
+  if (explicitMode) return String(explicitMode);
+  return /^rolling[_-]?30d|rolling_30_day/i.test(String(window?.time_window_id ?? ""))
+    ? "rolling_30_day"
+    : "milestone";
+}
+
+function inferDaysSinceLaunch(window: any): number | null {
+  const explicitDays = numberOrNull(window?.days_since_launch);
+  if (explicitDays !== null) return explicitDays;
+  const match = String(window?.time_window_id ?? "").match(/(?:^|_)day[_-]?(\d+)(?:_|$)/i);
+  return match ? Number(match[1]) : null;
+}
+
+function rollingWindowCaveats(windowMode: string): string[] {
+  return windowMode === "rolling_30_day" ? [ROLLING_30_DAY_CAVEAT] : [];
 }
 
 function midpointDate(window: any): string | null {
@@ -587,6 +651,7 @@ function collectUnsafeStringValues(
     if (
       !isSafePolicyPath(path) &&
       (EMAIL_VALUE_PATTERN.test(value) ||
+        UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(value)) ||
         /(?:^|_)(?:user|employee|person)_(?:id|email|name|identifier)(?:_|$)/i.test(normalized) ||
         /(?:^|_)raw_(?:row|prompt|response|transcript|content)(?:_|$)/i.test(normalized))
     ) {
@@ -644,8 +709,31 @@ function collectTopLevelGaps(cell: any): string[] {
     gaps.push(`schema_version is invalid: ${cell.schema_version}`);
   }
   requireField(cell?.time_window?.time_window_id, "time_window.time_window_id", gaps);
+  requireField(cell?.time_window?.window_mode, "time_window.window_mode", gaps);
+  requireField(cell?.time_window?.anchor_date, "time_window.anchor_date", gaps);
+  requireField(cell?.time_window?.days_since_launch, "time_window.days_since_launch", gaps);
+  requireField(cell?.time_window?.cadence, "time_window.cadence", gaps);
   requireField(cell?.time_window?.window_start, "time_window.window_start", gaps);
   requireField(cell?.time_window?.window_end, "time_window.window_end", gaps);
+  requireEnum(
+    cell?.time_window?.window_mode,
+    ALLOWED_WINDOW_MODES,
+    "time_window.window_mode",
+    gaps
+  );
+  requireEnum(
+    cell?.time_window?.cadence,
+    ALLOWED_WINDOW_CADENCES,
+    "time_window.cadence",
+    gaps
+  );
+  if (cell?.time_window?.anchor_date && !dateIsValid(cell.time_window.anchor_date)) {
+    gaps.push("time_window.anchor_date must be a valid date");
+  }
+  const daysSinceLaunch = numberOrNull(cell?.time_window?.days_since_launch);
+  if (daysSinceLaunch === null || daysSinceLaunch < 0) {
+    gaps.push("time_window.days_since_launch must be a non-negative number");
+  }
   if (
     cell?.time_window?.window_start &&
     cell?.time_window?.window_end &&
@@ -657,6 +745,36 @@ function collectTopLevelGaps(cell: any): string[] {
   requireArray(cell?.allowed_uses, "allowed_uses", gaps);
   requireArray(cell?.blocked_uses, "blocked_uses", gaps);
   requireArray(cell?.required_caveats, "required_caveats", gaps);
+  if (cell?.time_window?.window_mode === "milestone") {
+    if (cell?.time_window?.cadence !== "milestone") {
+      gaps.push("milestone windows require cadence milestone");
+    }
+    if (daysSinceLaunch !== null && !ALLOWED_MILESTONE_DAYS.has(daysSinceLaunch)) {
+      gaps.push("milestone days_since_launch must be one of 0, 30, 60, 90, 180, or 365");
+    }
+  }
+  if (cell?.time_window?.window_mode === "rolling_30_day") {
+    if (cell?.time_window?.cadence !== "rolling_30_day") {
+      gaps.push("rolling_30_day windows require cadence rolling_30_day");
+    }
+    if (cell?.time_window?.window_day_count !== 30) {
+      gaps.push("rolling_30_day windows must be exactly 30 days");
+    }
+    const baselineDays = daysBetween(
+      String(cell?.time_window?.baseline_window?.window_start ?? ""),
+      String(cell?.time_window?.baseline_window?.window_end ?? "")
+    );
+    const comparisonDays = daysBetween(
+      String(cell?.time_window?.comparison_window?.window_start ?? ""),
+      String(cell?.time_window?.comparison_window?.window_end ?? "")
+    );
+    if (baselineDays !== 30 || comparisonDays !== 30) {
+      gaps.push("rolling_30_day baseline_window and comparison_window must each be exactly 30 days");
+    }
+    if (!cell?.time_window?.prior_window_ref) {
+      gaps.push("rolling_30_day windows require time_window.prior_window_ref");
+    }
+  }
   return gaps;
 }
 
@@ -974,6 +1092,13 @@ function collectUsePolicyGaps(cell: any): string[] {
       gaps.push(`allowed_uses contains unsupported use: ${use}`);
     }
   }
+  if (cell?.time_window?.window_mode === "rolling_30_day") {
+    for (const use of ROLLING_30_DAY_BLOCKED_ALLOWED_USES) {
+      if (allowed.includes(use)) {
+        gaps.push(`rolling_30_day Measurement Cells cannot allow ${use}`);
+      }
+    }
+  }
   for (const use of REQUIRED_BLOCKED_USES) {
     if (!blocked.includes(use)) gaps.push(`blocked_uses missing ${use}`);
   }
@@ -1031,13 +1156,20 @@ function feedState(cell: any, valid: boolean): MeasurementCellValidationResult["
     "controlled_test",
     "calibrated_historical_model"
   ].includes(design);
+  const financeContextEligibleWindow =
+    cell?.time_window?.window_mode !== "rolling_30_day";
   return {
     value_hypothesis_readiness_input: clear,
     business_owner_metric_review: clear && metricPresent && ownerApproved,
     finance_context_investigation_planning:
-      clear && metricPresent && ownerApproved && financePath,
+      clear && metricPresent && ownerApproved && financePath && financeContextEligibleWindow,
     bayesian_research_design_planning:
-      clear && metricPresent && ownerApproved && financePath && designSupportsResearch,
+      clear &&
+      metricPresent &&
+      ownerApproved &&
+      financePath &&
+      designSupportsResearch &&
+      financeContextEligibleWindow,
     customer_facing_financial_output: false
   };
 }
@@ -1064,6 +1196,8 @@ export function validateMeasurementCell(cell: any): MeasurementCellValidationRes
 }
 
 export function buildMeasurementCell(input: BuildMeasurementCellInput): any {
+  const windowMode = inferWindowMode(input.timeWindow);
+  const daysSinceLaunch = inferDaysSinceLaunch(input.timeWindow);
   const currentVbd = numberOrNull(input.vbdContext?.overall_vbd_score);
   const priorVbd = numberOrNull(input.vbdContext?.prior_overall_vbd_score);
   const momentum = currentVbd !== null && priorVbd !== null
@@ -1132,6 +1266,12 @@ export function buildMeasurementCell(input: BuildMeasurementCellInput): any {
     cohort_key: input.cohortKey,
     time_window: {
       ...input.timeWindow,
+      window_mode: windowMode,
+      anchor_date: input.timeWindow.anchor_date ?? input.timeWindow.window_end,
+      days_since_launch: daysSinceLaunch,
+      cadence: input.timeWindow.cadence ?? (
+        windowMode === "rolling_30_day" ? "rolling_30_day" : "milestone"
+      ),
       window_day_count:
         input.timeWindow.window_day_count ??
         daysBetween(input.timeWindow.window_start, input.timeWindow.window_end)
@@ -1251,8 +1391,10 @@ export function buildMeasurementCell(input: BuildMeasurementCellInput): any {
       "internal_evidence_review",
       "value_hypothesis_readiness_input",
       "business_owner_metric_review",
-      "finance_context_investigation_planning",
-      "bayesian_research_design_planning"
+      ...(windowMode === "rolling_30_day" ? [] : [
+        "finance_context_investigation_planning",
+        "bayesian_research_design_planning"
+      ])
     ],
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     value_proof_policy: Object.fromEntries(
@@ -1266,6 +1408,7 @@ export function buildMeasurementCell(input: BuildMeasurementCellInput): any {
       "Measurement Cells are aggregate alignment objects, not ROI proof, financial attribution, causality, productivity measurement, or customer-facing financial output.",
       "Metric movement cannot rescue suppressed VBD, AI Fluency, or governance evidence.",
       "Bayesian modeling remains future research until a later governed decision promotes it.",
+      ...rollingWindowCaveats(windowMode),
       ...(input.requiredCaveats ?? [])
     ],
     derivation_version: DERIVATION_VERSION

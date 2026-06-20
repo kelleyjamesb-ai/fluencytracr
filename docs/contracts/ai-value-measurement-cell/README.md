@@ -81,6 +81,43 @@ Each Measurement Cell must carry:
 The shared validator lives at
 [`shared/src/aiValueEngine/measurementCell.ts`](../../../shared/src/aiValueEngine/measurementCell.ts).
 
+## Time Window Modes
+
+Measurement Cells support two time-window modes:
+
+- `milestone` for launch-anchored executive progression checkpoints.
+- `rolling_30_day` for operating and momentum context between milestones.
+
+Each `time_window` should document:
+
+- `window_mode`: either `milestone` or `rolling_30_day`.
+- `anchor_date`: the checkpoint or measurement anchor date used to interpret
+  the cell, normally the comparison-window end date for milestone and rolling
+  reviews.
+- `days_since_launch`: the launch-relative day represented by the cell, such as
+  `0`, `30`, `60`, `90`, `180`, or `365` for milestone checkpoints.
+- `cadence`: the review rhythm represented by the cell, such as `milestone`
+  or `rolling_30_day`.
+- `baseline_window`: the aggregate pre-period or launch baseline used for
+  review context.
+- `comparison_window`: the aggregate period being evaluated for this cell.
+- `prior_window_ref`: the prior Measurement Cell or time-window reference used
+  only for progression, continuity, or momentum review.
+
+`milestone` windows support executive progression across Day 0, Day 30, Day
+60, Day 90, Day 180, and Day 365. They are appropriate for launch-readiness
+review, post-launch progression review, and internal evidence handoffs where
+leaders need a stable sequence of aggregate checkpoints.
+
+`rolling_30_day` windows provide operating and momentum context only. They may
+help reviewers see whether aggregate evidence is continuing, weakening, or
+stabilizing between milestone checkpoints, but they must not be treated as ROI
+proof, causality evidence, productivity evidence, financial attribution,
+confidence percentages, probabilities, or customer-facing output. Overlapping
+rolling windows are not independent attribution samples. They must not feed
+finance-context investigation planning or Bayesian research design planning
+unless a later governed decision explicitly promotes that scope.
+
 ## Derived Context
 
 The builder may derive:

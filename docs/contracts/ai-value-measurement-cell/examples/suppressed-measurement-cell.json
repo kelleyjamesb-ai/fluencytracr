@@ -9,6 +9,10 @@
   "time_window": {
     "time_window_id": "day_30",
     "window_label": "Day 30",
+    "window_mode": "milestone",
+    "anchor_date": "2026-07-30",
+    "days_since_launch": 30,
+    "cadence": "milestone",
     "window_start": "2026-07-01",
     "window_end": "2026-07-30",
     "baseline_window": {
