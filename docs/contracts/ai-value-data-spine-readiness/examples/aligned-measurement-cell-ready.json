@@ -1,0 +1,218 @@
+{
+  "schema_version": "FT_AI_VALUE_DATA_SPINE_READINESS_2026_06",
+  "data_spine_readiness_id": "data_spine_readiness_org_northstar_campaign_brief_to_launch_marketing_day_90",
+  "org_id": "org_northstar",
+  "client_id": "client_northstar",
+  "workflow_family": "campaign_brief_to_launch",
+  "function_area": "marketing",
+  "cohort_key": "function:marketing|eligible_seats:240",
+  "baseline_window": {
+    "window_start": "2026-06-01",
+    "window_end": "2026-06-30"
+  },
+  "comparison_window": {
+    "window_start": "2026-09-01",
+    "window_end": "2026-09-30"
+  },
+  "readiness_state": "MEASUREMENT_CELL_READY",
+  "source_readiness": {
+    "blueprint": {
+      "state": "present",
+      "intake_mode": "blueprint_document_upload",
+      "source_ref": "blueprint_parse_approved_2026_q3",
+      "org_id": "org_northstar",
+      "client_id": "client_northstar",
+      "workflow_family": "campaign_brief_to_launch",
+      "function_area": "marketing",
+      "cohort_key": "function:marketing|eligible_seats:240",
+      "baseline_window": {
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
+      },
+      "comparison_window": {
+        "window_start": "2026-09-01",
+        "window_end": "2026-09-30"
+      },
+      "owner_approval_state": "approved",
+      "review_state": "clear",
+      "aggregate_only": true,
+      "metric_id": null,
+      "connector_status": null,
+      "aligned": true
+    },
+    "ai_fluency": {
+      "state": "present",
+      "intake_mode": "ai_fluency_dashboard_export",
+      "source_ref": "ai_fluency_client_northstar_day_90",
+      "org_id": "org_northstar",
+      "client_id": "client_northstar",
+      "workflow_family": "campaign_brief_to_launch",
+      "function_area": "marketing",
+      "cohort_key": "function:marketing|eligible_seats:240",
+      "baseline_window": {
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
+      },
+      "comparison_window": {
+        "window_start": "2026-09-01",
+        "window_end": "2026-09-30"
+      },
+      "owner_approval_state": "approved",
+      "review_state": "clear",
+      "aggregate_only": true,
+      "metric_id": null,
+      "connector_status": null,
+      "aligned": true
+    },
+    "vbd_token": {
+      "state": "present",
+      "intake_mode": "scrubbed_glean_bigquery_export",
+      "source_ref": "scrubbed_glean_vbd_token_day_90",
+      "org_id": "org_northstar",
+      "client_id": "client_northstar",
+      "workflow_family": "campaign_brief_to_launch",
+      "function_area": "marketing",
+      "cohort_key": "function:marketing|eligible_seats:240",
+      "baseline_window": {
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
+      },
+      "comparison_window": {
+        "window_start": "2026-09-01",
+        "window_end": "2026-09-30"
+      },
+      "owner_approval_state": "approved",
+      "review_state": "clear",
+      "aggregate_only": true,
+      "metric_id": null,
+      "connector_status": "scrubbed_export_only",
+      "aligned": true
+    },
+    "customer_metric": {
+      "state": "present",
+      "intake_mode": "manual_customer_metric_entry",
+      "source_ref": "customer_metric_campaign_cycle_day_90",
+      "org_id": "org_northstar",
+      "client_id": "client_northstar",
+      "workflow_family": "campaign_brief_to_launch",
+      "function_area": "marketing",
+      "cohort_key": "function:marketing|eligible_seats:240",
+      "baseline_window": {
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
+      },
+      "comparison_window": {
+        "window_start": "2026-09-01",
+        "window_end": "2026-09-30"
+      },
+      "owner_approval_state": "approved",
+      "review_state": "clear",
+      "aggregate_only": true,
+      "metric_id": "marketing_campaign_cycle_days",
+      "connector_status": null,
+      "aligned": true
+    },
+    "assumption": {
+      "state": "present",
+      "intake_mode": "assumption_approval",
+      "source_ref": "finance_assumption_approval_day_90",
+      "org_id": "org_northstar",
+      "client_id": "client_northstar",
+      "workflow_family": "campaign_brief_to_launch",
+      "function_area": "marketing",
+      "cohort_key": "function:marketing|eligible_seats:240",
+      "baseline_window": {
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
+      },
+      "comparison_window": {
+        "window_start": "2026-09-01",
+        "window_end": "2026-09-30"
+      },
+      "owner_approval_state": "approved",
+      "review_state": "clear",
+      "aggregate_only": true,
+      "metric_id": null,
+      "connector_status": null,
+      "aligned": true
+    },
+    "governance": {
+      "state": "present",
+      "intake_mode": "governance_attestation",
+      "source_ref": "governance_attestation_day_90",
+      "org_id": "org_northstar",
+      "client_id": "client_northstar",
+      "workflow_family": "campaign_brief_to_launch",
+      "function_area": "marketing",
+      "cohort_key": "function:marketing|eligible_seats:240",
+      "baseline_window": {
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
+      },
+      "comparison_window": {
+        "window_start": "2026-09-01",
+        "window_end": "2026-09-30"
+      },
+      "owner_approval_state": "approved",
+      "review_state": "clear",
+      "aggregate_only": true,
+      "metric_id": null,
+      "connector_status": null,
+      "aligned": true
+    }
+  },
+  "missing_evidence": [],
+  "next_actions": [
+    "Build Measurement Cell from aligned approved source spine."
+  ],
+  "feeds": {
+    "measurement_cell_input": true,
+    "value_hypothesis_packet_runner": true,
+    "customer_facing_financial_output": false
+  },
+  "allowed_uses": [
+    "source_alignment_review",
+    "measurement_cell_preparation",
+    "value_hypothesis_packet_preparation"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "ebitda_claim",
+    "financial_attribution",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output",
+    "confidence_percentage",
+    "probability_output"
+  ],
+  "boundary_policy": {
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "creates_ingestion_jobs": false,
+    "persists_source_data": false,
+    "runs_bigquery": false,
+    "parses_uploaded_documents": false,
+    "emits_confidence_percentage": false,
+    "emits_probability": false,
+    "computes_roi": false,
+    "computes_causality": false,
+    "computes_productivity": false,
+    "emits_financial_attribution": false,
+    "customer_facing_financial_output": false
+  },
+  "required_caveats": [
+    "Data Spine Intake Readiness verifies aggregate source alignment only; it is not ROI proof, causality, productivity measurement, financial attribution, a confidence percentage, or customer-facing financial output.",
+    "Glean/BigQuery VBD and token evidence must enter as scrubbed aggregate summaries; this contract does not run BigQuery or ingest raw rows.",
+    "Blueprint document uploads must become approved structured extraction objects before they can feed Measurement Cell assembly.",
+    "Manual customer metric entries require owner approval and aligned windows before they can feed Measurement Cell assembly."
+  ],
+  "generated_at": "2026-06-20T00:00:00.000Z",
+  "derivation_version": "ai_value_data_spine_readiness_2026_06"
+}

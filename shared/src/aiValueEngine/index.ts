@@ -178,6 +178,16 @@ export type {
 } from "./aiValuePilotIntakeRunner";
 
 export {
+  AI_VALUE_DATA_SPINE_READINESS_SCHEMA_VERSION,
+  buildDataSpineIntakeReadiness,
+  validateDataSpineIntakeReadiness
+} from "./dataSpineReadiness";
+export type {
+  BuildDataSpineIntakeReadinessInput,
+  DataSpineIntakeReadinessValidationResult
+} from "./dataSpineReadiness";
+
+export {
   AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_SCHEMA_VERSION,
   TokenEfficiencySignalSchema,
   buildTokenEfficiencySignalFromAggregateSummary,
