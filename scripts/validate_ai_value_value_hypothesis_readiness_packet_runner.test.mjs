@@ -396,7 +396,7 @@ test("packet runner assembles a planning-ready packet for Glean review", () => {
   assert.equal(packet.persistence_policy.creates_frontend_ui, false);
 });
 
-test("selected metric movement and matched comparison can reach finance-context investigation without ROI proof", () => {
+test("direct selected metric movement cannot reach finance-context investigation without Measurement Cell", () => {
   const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
   const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
   const packet = buildPacket({
@@ -429,9 +429,12 @@ test("selected metric movement and matched comparison can reach finance-context 
 
   const validation = validateValueHypothesisReadinessPacket(packet);
   assert.equal(validation.valid, true, validation.gaps.join("; "));
-  assert.equal(packet.readiness.readiness_state, "FINANCE_CONTEXT_INVESTIGATION_READY");
+  assert.equal(packet.readiness.readiness_state, "BUSINESS_OWNER_REVIEW_READY");
   assert.equal(packet.readiness.contribution_evidence_tier, "MATCHED_COMPARISON_READY");
-  assert.equal(packet.review_flow.current_review_label, "Finance-context review");
+  assert.equal(packet.review_flow.current_review_label, "Business-owner review");
+  assert.ok(packet.missing_evidence.includes("MEASUREMENT_CELL_REQUIRED_FOR_FINANCE_CONTEXT"));
+  assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
+  assert.equal(validation.feeds.finance_context_investigation, false);
   assert.ok(packet.blocked_claims.includes("roi_proof"));
   assert.equal(packet.review_boundaries.roi_proof_allowed, false);
   assert.equal(packet.review_boundaries.causality_claim_allowed, false);
@@ -445,7 +448,23 @@ test("validated Measurement Cell can drive packet metric movement and design ali
   const packet = buildPacket({
     plan,
     claimSnapshot,
-    measurementCell
+    measurementCell,
+    selectedMetricMovement: {
+      metric_id: "support_median_resolution_hours",
+      state: "present",
+      baseline_window: { start: "2026-05-01", end: "2026-05-31" },
+      comparison_window: { start: "2026-06-01", end: "2026-06-30" },
+      source_ref: "outcome_evidence_value_hypothesis_packet_test",
+      owner_role: "support_business_owner"
+    },
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
   });
 
   const validation = validateValueHypothesisReadinessPacket(packet);
@@ -453,6 +472,7 @@ test("validated Measurement Cell can drive packet metric movement and design ali
   assert.equal(packet.validation.measurement_cell_validated, true);
   assert.equal(packet.evidence_sources.measurement_cell.state, "present");
   assert.equal(packet.evidence_sources.measurement_cell.measurement_cell_id, measurementCell.measurement_cell_id);
+  assert.equal(packet.evidence_sources.measurement_cell.feeds_finance_context_investigation, true);
   assert.equal(packet.readiness.readiness_state, "FINANCE_CONTEXT_INVESTIGATION_READY");
   assert.equal(packet.readiness.contribution_evidence_tier, "MATCHED_COMPARISON_READY");
   assert.equal(validation.feeds.finance_context_investigation, true);
@@ -517,7 +537,23 @@ test("suppressed Measurement Cell holds packet metric movement instead of upgrad
   const packet = buildPacket({
     plan,
     claimSnapshot,
-    measurementCell
+    measurementCell,
+    selectedMetricMovement: {
+      metric_id: "support_median_resolution_hours",
+      state: "present",
+      baseline_window: { start: "2026-05-01", end: "2026-05-31" },
+      comparison_window: { start: "2026-06-01", end: "2026-06-30" },
+      source_ref: "outcome_evidence_value_hypothesis_packet_test",
+      owner_role: "support_business_owner"
+    },
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
   });
 
   const validation = validateValueHypothesisReadinessPacket(packet);
@@ -525,6 +561,45 @@ test("suppressed Measurement Cell holds packet metric movement instead of upgrad
   assert.equal(packet.evidence_sources.measurement_cell.state, "held");
   assert.equal(packet.readiness.readiness_state, "EVIDENCE_REVIEW_READY");
   assert.ok(packet.missing_evidence.includes("MEASUREMENT_CELL_HELD_OR_SUPPRESSED"));
+  assert.ok(packet.missing_evidence.includes("MEASUREMENT_CELL_REQUIRED_FOR_FINANCE_CONTEXT"));
+  assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
+  assert.equal(validation.feeds.finance_context_investigation, false);
+});
+
+test("finance-held Measurement Cell and ROI Bot assumptions cannot substitute for finance-context gate", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const measurementCell = buildPacketMeasurementCell({
+    financeReviewContext: {
+      finance_owner_state: "held",
+      financial_driver: null,
+      metric_to_financial_driver_pathway:
+        "Resolution-time movement is held for finance context review.",
+      source_ref: "finance_context_support_2026_06"
+    },
+    governance: {
+      review_state: "BUSINESS_OWNER_REVIEW_READY"
+    }
+  });
+  const packet = buildPacket({
+    plan,
+    claimSnapshot,
+    measurementCell,
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
+  });
+
+  const validation = validateValueHypothesisReadinessPacket(packet);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(packet.evidence_sources.measurement_cell.state, "held");
+  assert.equal(packet.readiness.readiness_state, "BUSINESS_OWNER_REVIEW_READY");
+  assert.ok(packet.missing_evidence.includes("MEASUREMENT_CELL_REQUIRED_FOR_FINANCE_CONTEXT"));
   assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
   assert.equal(validation.feeds.finance_context_investigation, false);
 });
@@ -559,6 +634,34 @@ test("invalid or misaligned Measurement Cell fails packet assembly", () => {
     () => buildPacket({ plan, claimSnapshot, measurementCell: sourceDriftCell }),
     /Measurement Cell org_id must match measurement plan org_id/
   );
+
+  const workflowDriftPlan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  workflowDriftPlan.workflow_scope.workflow_id = "workflow_support_case_resolution";
+  const workflowDriftCell = buildPacketMeasurementCell({
+    workflowId: "workflow_other"
+  });
+  assert.throws(
+    () => buildPacket({
+      plan: workflowDriftPlan,
+      claimSnapshot,
+      measurementCell: workflowDriftCell
+    }),
+    /Measurement Cell workflow_id must match measurement plan workflow_id/
+  );
+
+  const cohortDriftPlan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  cohortDriftPlan.workflow_scope.cohort_key = "function:customer_support|eligible_seats:500";
+  const cohortDriftCell = buildPacketMeasurementCell({
+    cohortKey: "function:customer_success|eligible_seats:500"
+  });
+  assert.throws(
+    () => buildPacket({
+      plan: cohortDriftPlan,
+      claimSnapshot,
+      measurementCell: cohortDriftCell
+    }),
+    /Measurement Cell cohort_key must match measurement plan cohort_key/
+  );
 });
 
 test("ROI Bot approval alone cannot upgrade a missing metric packet", () => {
@@ -581,7 +684,27 @@ test("ROI Bot approval alone cannot upgrade a missing metric packet", () => {
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(packet.readiness.readiness_state, "EVIDENCE_REVIEW_READY");
   assert.ok(packet.missing_evidence.includes("METRIC_MOVEMENT_MISSING"));
+  assert.ok(!packet.missing_evidence.includes("MEASUREMENT_CELL_REQUIRED_FOR_FINANCE_CONTEXT"));
   assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
+});
+
+test("packet validation rejects finance-context readiness without Measurement Cell evidence", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const packet = buildPacket({
+    plan,
+    claimSnapshot,
+    measurementCell: buildPacketMeasurementCell()
+  });
+  const tamperedPacket = clone(packet);
+  delete tamperedPacket.evidence_sources.measurement_cell;
+
+  const validation = validateValueHypothesisReadinessPacket(tamperedPacket);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.gaps.some((gap) =>
+    gap.includes("FINANCE_CONTEXT_INVESTIGATION_READY requires Measurement Cell")
+  ));
+  assert.equal(validation.feeds.finance_context_investigation, false);
 });
 
 test("suppression forces a hold-only packet", () => {

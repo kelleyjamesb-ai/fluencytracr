@@ -361,6 +361,13 @@ function assertMeasurementCellAligns(
   claimSnapshot: any,
   measurementCell: any
 ): void {
+  const planWorkflowId = plan?.workflow_scope?.workflow_id ?? null;
+  const snapshotWorkflowId = claimSnapshot?.workflow?.workflow_id ?? null;
+  const expectedWorkflowId = planWorkflowId ?? snapshotWorkflowId;
+  const planCohortKey = plan?.workflow_scope?.cohort_key ?? null;
+  const snapshotCohortKey = claimSnapshot?.workflow?.cohort_key ?? null;
+  const expectedCohortKey = planCohortKey ?? snapshotCohortKey;
+
   if (
     measurementCell.function_area !==
     (plan?.workflow_scope?.function_area ?? null)
@@ -371,6 +378,18 @@ function assertMeasurementCellAligns(
     throw new Error(
       "Measurement Cell workflow_family must match measurement plan workflow_family"
     );
+  }
+  if (
+    expectedWorkflowId &&
+    measurementCell.workflow_id !== expectedWorkflowId
+  ) {
+    throw new Error("Measurement Cell workflow_id must match measurement plan workflow_id");
+  }
+  if (
+    expectedCohortKey &&
+    measurementCell.cohort_key !== expectedCohortKey
+  ) {
+    throw new Error("Measurement Cell cohort_key must match measurement plan cohort_key");
   }
   if (measurementCell.selected_metric?.metric_id !== primaryMetricId(plan)) {
     throw new Error("Measurement Cell selected_metric.metric_id must match measurement plan primary metric");
@@ -388,6 +407,33 @@ function assertMeasurementCellAligns(
   if (!sourceRefExists(claimSnapshot?.source_refs, measurementCell.ai_fluency_context?.source_ref)) {
     throw new Error("Measurement Cell ai_fluency_context.source_ref must be present in claim snapshot source_refs");
   }
+}
+
+function comparisonDesignRequiresMeasurementCellForFinanceContext(
+  comparisonDesignState: string | null | undefined
+): boolean {
+  return [
+    "pre_post",
+    "matched_comparison_candidate",
+    "customer_owned_research_design_candidate",
+    "experimental_holdout_documented"
+  ].includes(String(comparisonDesignState));
+}
+
+function measurementCellRequiredForFinanceContext(
+  measurementCellContext: {
+    selectedMetricMovement?: SelectedMetricMovementInput;
+    comparisonDesignState?: BuildValueHypothesisReadinessOptions["comparisonDesignState"];
+    validated: boolean;
+    assumptionOwnerApproved: boolean;
+  },
+  selectedMetricMovement?: SelectedMetricMovementInput,
+  comparisonDesignState?: BuildValueHypothesisReadinessOptions["comparisonDesignState"]
+): boolean {
+  if (measurementCellContext.assumptionOwnerApproved) return false;
+  if (measurementCellContext.validated) return true;
+  return selectedMetricMovement?.state === "present" &&
+    comparisonDesignRequiresMeasurementCellForFinanceContext(comparisonDesignState);
 }
 
 function normalizeMeasurementCellInput(
@@ -421,12 +467,14 @@ function normalizeMeasurementCellInput(
   }
   assertMeasurementCellAligns(plan, claimSnapshot, measurementCell);
 
-  const held = measurementCellHasSuppression(measurementCell) ||
+  const metricMovementHeld = measurementCellHasSuppression(measurementCell) ||
     cellValidation.feeds.value_hypothesis_readiness_input !== true ||
     measurementCell.metric_movement?.movement_state !== "present";
+  const financeContextHeld =
+    cellValidation.feeds.finance_context_investigation_planning !== true;
   const selectedMetricMovement: SelectedMetricMovementInput = {
     metric_id: String(measurementCell.selected_metric.metric_id),
-    state: held ? "held" : "present",
+    state: metricMovementHeld ? "held" : "present",
     baseline_window: measurementCellBaselineWindow(measurementCell),
     comparison_window: measurementCellComparisonWindow(measurementCell),
     source_ref: measurementCell.selected_metric.source_ref ?? null,
@@ -448,26 +496,28 @@ function normalizeMeasurementCellInput(
 
   return {
     selectedMetricMovement,
-    comparisonDesignState: held
+    comparisonDesignState: metricMovementHeld
       ? "pre_post"
       : measurementCellDesignState(measurementCell),
     evidenceSource: {
-      state: held ? "held" : "present",
+      state: financeContextHeld ? "held" : "present",
       measurement_cell_id: measurementCell.measurement_cell_id,
       source_bound: true,
       feeds_value_hypothesis_readiness:
         cellValidation.feeds.value_hypothesis_readiness_input === true,
       feeds_finance_context_investigation:
-        held ? false : cellValidation.feeds.finance_context_investigation_planning === true,
+        cellValidation.feeds.finance_context_investigation_planning === true,
       design_type: measurementCell.evidence_design?.design_type ?? null,
       token_usage_role: "spend_or_intensity_context_only",
       yield_role: "review_context_only",
       source_refs: deepClone(measurementCell.source_refs ?? {})
     },
-    missingEvidence: held ? ["MEASUREMENT_CELL_HELD_OR_SUPPRESSED"] : [],
+    missingEvidence: metricMovementHeld || financeContextHeld
+      ? ["MEASUREMENT_CELL_HELD_OR_SUPPRESSED"]
+      : [],
     validated: true,
     assumptionOwnerApproved:
-      !held && cellValidation.feeds.finance_context_investigation_planning === true
+      cellValidation.feeds.finance_context_investigation_planning === true
   };
 }
 
@@ -616,9 +666,7 @@ export function buildValueHypothesisReadinessPacket(
       valueHypothesisReadinessId: `${input.packetId ?? "value_hypothesis_readiness_packet"}_readiness`,
       createdAt: input.generatedAt,
       metricMovementState: selectedMetricMovement?.state ?? "missing",
-      assumptionOwnerApproved:
-        roiBotContext.owner_approval_state === "approved" ||
-        measurementCellContext.assumptionOwnerApproved,
+      assumptionOwnerApproved: measurementCellContext.assumptionOwnerApproved,
       comparisonDesignState,
       roiBotContext
     }
@@ -665,7 +713,14 @@ export function buildValueHypothesisReadinessPacket(
     contribution_evidence_tier: readiness.contribution_evidence_tier,
     missing_evidence: uniqueStrings([
       ...readiness.holds,
-      ...measurementCellContext.missingEvidence
+      ...measurementCellContext.missingEvidence,
+      ...(measurementCellRequiredForFinanceContext(
+        measurementCellContext,
+        selectedMetricMovement,
+        readiness.factors.comparison_design_strength.state
+      )
+        ? ["MEASUREMENT_CELL_REQUIRED_FOR_FINANCE_CONTEXT"]
+        : [])
     ]),
     allowed_next_actions: nextActionsForReadiness(readiness),
     required_caveats: [...readiness.required_caveats],
@@ -790,6 +845,28 @@ function collectActionGaps(packet: any): string[] {
   return gaps;
 }
 
+function collectMeasurementCellFinanceGateGaps(packet: any): string[] {
+  const gaps: string[] = [];
+  const financeContextRequested =
+    packet?.readiness_state === "FINANCE_CONTEXT_INVESTIGATION_READY" ||
+    stringsOf(packet?.allowed_next_actions).includes(
+      "prepare_finance_context_investigation_packet"
+    );
+  if (!financeContextRequested) return gaps;
+
+  const measurementCell = packet?.evidence_sources?.measurement_cell;
+  if (
+    packet?.validation?.measurement_cell_validated !== true ||
+    measurementCell?.state !== "present" ||
+    measurementCell?.feeds_finance_context_investigation !== true
+  ) {
+    gaps.push(
+      "FINANCE_CONTEXT_INVESTIGATION_READY requires Measurement Cell evidence that is validated, present, aligned, not held, not suppressed, and finance-context feeding"
+    );
+  }
+  return gaps;
+}
+
 function fieldKeyIsForbidden(key: string): boolean {
   const normalizedKey = normalizeKey(key);
   if (GOVERNED_KEY_ALLOWLIST.has(normalizedKey)) return false;
@@ -845,6 +922,7 @@ export function validateValueHypothesisReadinessPacket(
     ...collectReviewFlowGaps(packet),
     ...collectBoundaryAndPersistenceGaps(packet),
     ...collectActionGaps(packet),
+    ...collectMeasurementCellFinanceGateGaps(packet),
     ...collectSourceBindingGaps(packet),
     ...collectForbiddenFieldGaps(packet)
   ];

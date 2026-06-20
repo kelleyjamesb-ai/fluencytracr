@@ -25,17 +25,24 @@ Selected metric movement must align to the measurement plan metric, source ref,
 and baseline/comparison windows. ROI Bot context cannot upgrade readiness by
 itself.
 
-## Optional Measurement Cell Alignment Gate
+## Measurement Cell Alignment Gate
 
-Measurement Cell alignment is optional. When a Measurement Cell is provided, the
-runner applies it as a fail-closed alignment gate before deriving selected metric
-movement. The runner may derive selected metric movement only when the cell is
-valid, aligned to the selected Measurement Plan metric and windows, and is not
-held or suppressed.
+Measurement Cell alignment remains optional for `PLANNING_READY`,
+`EVIDENCE_REVIEW_READY`, and `BUSINESS_OWNER_REVIEW_READY` packets. For
+`FINANCE_CONTEXT_INVESTIGATION_READY`, a valid Measurement Cell is mandatory.
+
+When a Measurement Cell is provided, the runner applies it as a fail-closed
+evidence alignment gate before deriving selected metric movement. The runner may
+derive selected metric movement only when the cell is valid, aligned to the
+selected Measurement Plan metric and windows, and is not held or suppressed.
 
 Held, suppressed, invalid, or misaligned cells do not upgrade readiness or fill
 evidence gaps. They are recorded as missing evidence for the selected metric
 movement lane.
+
+The Measurement Cell is an evidence alignment gate only. It is not ROI proof, a
+confidence model, causality evidence, productivity measurement, financial
+attribution, or customer-facing financial output.
 
 ## Review Labels
 
