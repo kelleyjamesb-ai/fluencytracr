@@ -294,6 +294,14 @@ const GOVERNED_KEY_ALLOWLIST = new Set([
 
 const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
+const UNSAFE_CLAIM_LANGUAGE_PATTERNS = [
+  /\bproved?\s+(?:roi|savings|financial impact|ebita|ebitda|productivity|causality)\b/i,
+  /\b(?:roi|savings|ebita|ebitda|financial impact|productivity lift)\b.{0,48}\b(?:due to|caused by|attributed to|from ai|by ai)\b/i,
+  /\b(?:ebita|ebitda|financial)\s+impact\b/i,
+  /\bconfidence\s*(?:percent|percentage|score)\b/i,
+  /\battribution\s+probability\b/i
+];
+
 export interface MeasurementCellValidationResult {
   schema_version: string;
   measurement_cell_id: string | null;
@@ -599,6 +607,33 @@ function collectUnsafeStringValues(
   return values;
 }
 
+function collectUnsafeClaimLanguageValues(
+  value: any,
+  values: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
+  if (typeof value === "string") {
+    if (
+      !isSafePolicyPath(path) &&
+      UNSAFE_CLAIM_LANGUAGE_PATTERNS.some((pattern) => pattern.test(value))
+    ) {
+      values.add(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectUnsafeClaimLanguageValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectUnsafeClaimLanguageValues(nested, values, [...path, key]);
+  }
+  return values;
+}
+
 function collectTopLevelGaps(cell: any): string[] {
   const gaps: string[] = [];
   for (const field of REQUIRED_FIELDS) requireField(cell?.[field], field, gaps);
@@ -753,6 +788,48 @@ function collectAlignmentGaps(cell: any): string[] {
   ]) {
     const value = path.split(".").reduce((acc: any, part: string) => acc?.[part], cell);
     requireField(value, path, gaps);
+  }
+  for (const [topLevelPath, topLevelValue, nestedPath, nestedValue] of [
+    [
+      "source_refs.blueprint_source_ref",
+      cell?.source_refs?.blueprint_source_ref,
+      "blueprint_alignment.source_ref",
+      cell?.blueprint_alignment?.source_ref
+    ],
+    [
+      "source_refs.ai_fluency_source_ref",
+      cell?.source_refs?.ai_fluency_source_ref,
+      "ai_fluency_context.source_ref",
+      cell?.ai_fluency_context?.source_ref
+    ],
+    [
+      "source_refs.vbd_source_ref",
+      cell?.source_refs?.vbd_source_ref,
+      "vbd_context.source_ref",
+      cell?.vbd_context?.source_ref
+    ],
+    [
+      "source_refs.metric_source_ref",
+      cell?.source_refs?.metric_source_ref,
+      "selected_metric.source_ref",
+      cell?.selected_metric?.source_ref
+    ],
+    [
+      "source_refs.token_source_ref",
+      cell?.source_refs?.token_source_ref,
+      "token_context.source_ref",
+      cell?.token_context?.source_ref
+    ]
+  ]) {
+    if (
+      topLevelValue !== undefined &&
+      topLevelValue !== null &&
+      nestedValue !== undefined &&
+      nestedValue !== null &&
+      topLevelValue !== nestedValue
+    ) {
+      gaps.push(`${topLevelPath} must match ${nestedPath}`);
+    }
   }
   return gaps;
 }
@@ -928,10 +1005,14 @@ function collectSuppressionGaps(cell: any): string[] {
 function collectForbiddenGaps(cell: any): string[] {
   const forbidden = Array.from(collectForbiddenFields(cell)).sort();
   const unsafeValues = Array.from(collectUnsafeStringValues(cell)).sort();
+  const unsafeClaimLanguage = Array.from(collectUnsafeClaimLanguageValues(cell)).sort();
   return [
     ...forbidden.map((field) => `Forbidden field detected: ${field}`),
     ...(unsafeValues.length
       ? [`Forbidden metadata value(s) present: ${unsafeValues.join(", ")}`]
+      : []),
+    ...(unsafeClaimLanguage.length
+      ? [`Unsafe claim language present: ${unsafeClaimLanguage.join(", ")}`]
       : [])
   ];
 }

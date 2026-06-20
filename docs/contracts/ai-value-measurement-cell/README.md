@@ -22,6 +22,10 @@ Its job is to decide whether evidence sources are aligned enough to feed
 internal review objects. It is not a score, model output, financial readout, or
 claim upgrade.
 
+Top-level `source_refs` must match the nested source refs on Blueprint,
+AI Fluency, VBD, selected metric, and token context lanes when those refs are
+present. Source-ref drift fails validation.
+
 ## Non-Goals
 
 The Measurement Cell must not:
@@ -40,6 +44,11 @@ The Measurement Cell must not:
   or attrition prediction;
 - create schemas, backend routes, persistence, ingestion jobs, frontend UI, or
   customer-facing exports.
+
+The validator also rejects unsafe claim language in normal text fields, such as
+phrasing that says AI proved ROI, created savings, drove EBITDA impact, or
+produced a contribution probability. Governance caveats and blocked-use lists
+may name prohibited claims only to block them.
 
 ## Required Inputs
 

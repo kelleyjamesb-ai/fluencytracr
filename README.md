@@ -172,6 +172,7 @@ is not the lead positioning for this repository.
 - AI Value Evidence Readiness schema: [schemas/ai-value-intelligence/evidence-readiness.schema.json](schemas/ai-value-intelligence/evidence-readiness.schema.json)
 - Customer Support AI Value readiness fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json](docs/contracts/ai-value-intelligence/examples/customer-support-evidence-readiness.json)
 - AI Value Hypothesis Readiness contract: [docs/contracts/ai-value-value-hypothesis-readiness/README.md](docs/contracts/ai-value-value-hypothesis-readiness/README.md)
+- AI Value Hypothesis Readiness Packet Runner: [docs/contracts/ai-value-hypothesis-readiness-packet-runner/README.md](docs/contracts/ai-value-hypothesis-readiness-packet-runner/README.md)
 - AI Value Claim Boundary schema: [schemas/ai-value-intelligence/claim-boundary.schema.json](schemas/ai-value-intelligence/claim-boundary.schema.json)
 - Customer Support AI Value claim boundary fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json](docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json)
 - AI Value Executive Packet schema: [schemas/ai-value-intelligence/executive-packet.schema.json](schemas/ai-value-intelligence/executive-packet.schema.json)

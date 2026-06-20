@@ -205,6 +205,18 @@ test("preserves and rejects input-level source identity drift", () => {
   assert.ok(result.gaps.some((gap) => gap.includes("token_context.cohort_key")));
 });
 
+test("rejects top-level source_ref drift from nested source refs", () => {
+  const cell = buildMeasurementCell(baseInput());
+  cell.source_refs.metric_source_ref = "wrong_metric_ref";
+  cell.source_refs.vbd_source_ref = "wrong_vbd_ref";
+
+  const result = validateMeasurementCell(cell);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("source_refs.metric_source_ref")));
+  assert.ok(result.gaps.some((gap) => gap.includes("source_refs.vbd_source_ref")));
+});
+
 test("missing numeric metric values stay missing instead of becoming zero", () => {
   const cell = buildMeasurementCell(baseInput({
     selectedMetric: {
@@ -254,6 +266,17 @@ test("rejects ROI, probability, and finance-output field injection", () => {
   assert.ok(result.gaps.some((gap) => gap.includes("savings")));
   assert.ok(result.gaps.some((gap) => gap.includes("value_at_risk")));
   assert.ok(result.gaps.some((gap) => gap.includes("customer_facing_prediction")));
+});
+
+test("rejects unsafe value-claim language inside allowed text fields", () => {
+  const cell = buildMeasurementCell(baseInput());
+  cell.finance_review_context.metric_to_financial_driver_pathway =
+    "This proved ROI savings from AI and should be treated as EBITDA impact.";
+
+  const result = validateMeasurementCell(cell);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("Unsafe claim language")));
 });
 
 test("rejects person-level and workforce-risk field injection", () => {

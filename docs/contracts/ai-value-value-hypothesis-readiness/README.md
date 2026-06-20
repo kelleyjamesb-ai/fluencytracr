@@ -110,3 +110,11 @@ See `examples/` for validating internal packets:
 - `planning-ready-value-hypothesis-readiness.json`
 - `business-owner-review-ready-value-hypothesis-readiness.json`
 - `finance-context-investigation-ready-value-hypothesis-readiness.json`
+
+## Packet Runner
+
+The packet runner lives at
+[`../ai-value-hypothesis-readiness-packet-runner/README.md`](../ai-value-hypothesis-readiness-packet-runner/README.md).
+It assembles internal review packets from validated readiness inputs. It does
+not add formulas, confidence percentages, UI, routes, schemas, persistence, or
+customer-facing economic output.
