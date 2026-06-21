@@ -258,6 +258,16 @@ export type {
 } from "./realDataIntakePacketRunner";
 
 export {
+  AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION,
+  buildOperatorIntakeAdapterRun,
+  validateOperatorIntakeAdapterRun
+} from "./operatorIntakeAdapter";
+export type {
+  BuildOperatorIntakeAdapterRunInput,
+  OperatorIntakeAdapterRunValidationResult
+} from "./operatorIntakeAdapter";
+
+export {
   AI_VALUE_MEASUREMENT_CELL_SCHEMA_VERSION,
   buildMeasurementCell,
   validateMeasurementCell

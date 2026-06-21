@@ -406,13 +406,31 @@ function sameWindow(left: any, right: any): boolean {
 }
 
 function sourcePackageAlignedToSource(laneKey: LaneKey, pkg: SourcePackage, source: any): boolean {
+  const packageContext = pkg as any;
   const refKey = SOURCE_PACKAGE_REF_KEY_BY_LANE[laneKey];
   const sourceRefMatches = !refKey ||
     !source?.source_ref ||
     pkg?.source_refs?.[refKey] === source.source_ref;
+  const optionalPackageContextMatches = [
+    ["client_id", "client_id"],
+    ["workflow_family", "workflow_family"],
+    ["function_area", "function_area"],
+    ["cohort_key", "cohort_key"],
+    ["metric_id", "metric_id"]
+  ].every(([pkgKey, sourceKey]) =>
+    packageContext?.[pkgKey] === undefined ||
+    packageContext?.[pkgKey] === null ||
+    packageContext?.[pkgKey] === source?.[sourceKey]
+  );
+  const optionalBaselineWindowMatches =
+    packageContext?.baseline_window === undefined ||
+    packageContext?.baseline_window === null ||
+    sameWindow(packageContext.baseline_window, source?.baseline_window);
   return pkg?.org_id === source?.org_id &&
     sameWindow(pkg?.covered_window, source?.comparison_window) &&
-    sourceRefMatches;
+    sourceRefMatches &&
+    optionalPackageContextMatches &&
+    optionalBaselineWindowMatches;
 }
 
 function buildLane(

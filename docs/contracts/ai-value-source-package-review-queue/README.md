@@ -78,10 +78,13 @@ Customer metric lanes must also carry `metric_id`. Package-backed lanes
 `governance`) must have matching Source Packages before the queue can reach
 `DATA_SPINE_REVIEW_READY`. Those packages must be valid, feedable, and aligned
 to the same `org_id`, comparison window, and lane `source_ref` through the
-package type's canonical `source_refs` key. A suppressed Source Package can be
-valid metadata while still blocking the lane from feeding evidence. A valid
-Source Package from another org, window, or source reference must also block the
-lane.
+package type's canonical `source_refs` key. If a package carries optional
+context fields such as `client_id`, `workflow_family`, `function_area`,
+`cohort_key`, `metric_id`, or `baseline_window`, those fields must also align
+to the Data Spine source lane. A suppressed Source Package can be valid metadata
+while still blocking the lane from feeding evidence. A valid Source Package
+from another org, workflow, function, cohort, metric, window, or source
+reference must also block the lane.
 
 ## Queue States
 
