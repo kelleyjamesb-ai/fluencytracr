@@ -208,6 +208,16 @@ export type {
 } from "./aiFluencyClientImport";
 
 export {
+  AI_VALUE_AI_FLUENCY_DASHBOARD_IMPORT_RUN_SCHEMA_VERSION,
+  buildAIFluencyDashboardImportRun,
+  validateAIFluencyDashboardImportRun
+} from "./aiFluencyDashboardImportRunner";
+export type {
+  AIFluencyDashboardImportRunValidationResult,
+  BuildAIFluencyDashboardImportRunInput
+} from "./aiFluencyDashboardImportRunner";
+
+export {
   AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
   buildVbdTokenAggregateIntake,
   validateVbdTokenAggregateIntake

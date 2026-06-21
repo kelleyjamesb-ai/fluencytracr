@@ -56,6 +56,8 @@
     "test:ai-value-data-spine-readiness": "npm run build --workspace shared && node --test scripts/validate_ai_value_data_spine_readiness.test.mjs",
     "test:ai-value-blueprint-extraction-draft": "npm run build --workspace shared && node --test scripts/validate_ai_value_blueprint_extraction_draft.test.mjs",
     "test:ai-value-ai-fluency-client-import": "npm run build --workspace shared && node --test scripts/validate_ai_value_ai_fluency_client_import.test.mjs",
+    "test:ai-value-ai-fluency-dashboard-import-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_ai_fluency_dashboard_import_runner.test.mjs",
+    "test:ai-value-google-sheets-aggregate-export-adapter": "node --test scripts/validate_ai_value_google_sheets_aggregate_export_adapter.test.mjs",
     "test:ai-value-vbd-token-aggregate-intake": "npm run build --workspace shared && node --test scripts/validate_ai_value_vbd_token_aggregate_intake.test.mjs",
     "test:ai-value-customer-metric-intake": "npm run build --workspace shared && node --test scripts/validate_ai_value_customer_metric_intake.test.mjs",
     "test:ai-value-real-data-intake-packet-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_real_data_intake_packet_runner.test.mjs",

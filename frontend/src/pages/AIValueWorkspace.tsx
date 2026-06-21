@@ -102,38 +102,38 @@ const workspaceStatusTone: Record<JourneyStageState, "good" | "warn" | "neutral"
 
 const vbdQuadrants = [
   {
-    id: "fast-shallow",
-    label: "Fast but shallow",
-    tone: "blue",
-    position: "high-velocity low-depth",
-    mapCue: "Adoption is ahead of workflow change",
-    definition: "AI is moving quickly, but workflow change is still light.",
+    id: "deep-slow",
+    label: "Deep but slow",
+    tone: "amber",
+    position: "low-velocity high-integration",
+    mapCue: "Good use case, slow spread",
+    definition: "AI is used seriously where it appears, but spread is slow.",
     watchFor: [
-      "Immediate accept",
-      "Low verification",
-      "Thin workflow presence",
-      "Possible blind trust"
+      "Rework loops",
+      "Heavy iteration",
+      "Long latency",
+      "Workflow drag"
     ]
   },
   {
     id: "flow",
     label: "High-fluency flow",
     tone: "green",
-    position: "high-velocity high-depth",
+    position: "high-velocity high-integration",
     mapCue: "AI is embedded enough to scale",
     definition: "AI is embedded into work and helps the work resolve.",
     watchFor: [
       "Repeat use",
       "Verification",
-      "Productive refinement",
-      "Faster resolution"
+      "Workflow-connected use",
+      "Review-ready patterns"
     ]
   },
   {
     id: "low-integration",
     label: "Low integration",
     tone: "red",
-    position: "low-velocity low-depth",
+    position: "low-velocity low-integration",
     mapCue: "Find the work fit before scaling",
     definition: "AI is not yet part of durable work patterns.",
     watchFor: [
@@ -144,17 +144,17 @@ const vbdQuadrants = [
     ]
   },
   {
-    id: "deep-slow",
-    label: "Deep but slow",
-    tone: "amber",
-    position: "low-velocity high-depth",
-    mapCue: "Good use case, slow spread",
-    definition: "AI is used seriously where it appears, but spread is slow.",
+    id: "fast-shallow",
+    label: "Fast but shallow",
+    tone: "blue",
+    position: "high-velocity low-integration",
+    mapCue: "Adoption is ahead of workflow change",
+    definition: "AI is moving quickly, but workflow change is still light.",
     watchFor: [
-      "Rework loops",
-      "Heavy iteration",
-      "Long latency",
-      "Workflow drag"
+      "Immediate accept",
+      "Low verification",
+      "Thin workflow presence",
+      "Possible blind trust"
     ]
   }
 ] as const;
@@ -174,7 +174,7 @@ const aiFluencyFrameworkQuadrants = [
     tone: "green",
     badge: "HF",
     definition: "AI is embedded into work and helps work resolve.",
-    watchFor: ["Repeat use", "Verification", "Productive refinement", "Faster resolution"]
+    watchFor: ["Repeat use", "Verification", "Workflow-connected use", "Review-ready patterns"]
   },
   {
     id: "low-integration",
@@ -194,12 +194,17 @@ const aiFluencyFrameworkQuadrants = [
   }
 ] as const;
 
+const formatVbdQuadrantPosition = (position: string) =>
+  position
+    .split(" ")
+    .map((part) => part.replace("-", " "))
+    .join(" / ");
+
 type VbdQuadrantId = (typeof vbdQuadrants)[number]["id"];
 
 type AiFluencyOrgFunctionCluster = {
   functionArea: string;
   shortLabel: string;
-  quadrantId: VbdQuadrantId;
   velocity: number;
   breadth: number;
   depth: number;
@@ -218,7 +223,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Engineering / Software Development",
     shortLabel: "Eng",
-    quadrantId: "flow",
     velocity: 88,
     breadth: 86,
     depth: 88
@@ -226,7 +230,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Product Management",
     shortLabel: "PM",
-    quadrantId: "flow",
     velocity: 78,
     breadth: 78,
     depth: 84
@@ -234,7 +237,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Data & Analytics",
     shortLabel: "Data",
-    quadrantId: "flow",
     velocity: 86,
     breadth: 80,
     depth: 76
@@ -242,7 +244,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "IT Systems or Security",
     shortLabel: "IT",
-    quadrantId: "flow",
     velocity: 82,
     breadth: 82,
     depth: 68
@@ -250,7 +251,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Sales or Business Development",
     shortLabel: "Sales",
-    quadrantId: "flow",
     velocity: 72,
     breadth: 76,
     depth: 74
@@ -258,7 +258,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Marketing & Communications",
     shortLabel: "Mktg",
-    quadrantId: "fast-shallow",
     velocity: 84,
     breadth: 72,
     depth: 46
@@ -266,7 +265,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Design / UX / Research",
     shortLabel: "UX",
-    quadrantId: "fast-shallow",
     velocity: 74,
     breadth: 64,
     depth: 42
@@ -274,7 +272,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Corporate Strategy or Business Operations",
     shortLabel: "Biz",
-    quadrantId: "fast-shallow",
     velocity: 64,
     breadth: 58,
     depth: 44
@@ -282,7 +279,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Customer or Account Success",
     shortLabel: "CS",
-    quadrantId: "deep-slow",
     velocity: 42,
     breadth: 55,
     depth: 66
@@ -290,7 +286,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Support or Help Desk",
     shortLabel: "Sup",
-    quadrantId: "low-integration",
     velocity: 42,
     breadth: 48,
     depth: 48
@@ -298,7 +293,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "People Talent or Human Resources",
     shortLabel: "HR",
-    quadrantId: "low-integration",
     velocity: 34,
     breadth: 42,
     depth: 46
@@ -306,7 +300,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Finance or Accounting",
     shortLabel: "Fin",
-    quadrantId: "low-integration",
     velocity: 26,
     breadth: 38,
     depth: 44
@@ -314,7 +307,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Legal & Compliance",
     shortLabel: "Leg",
-    quadrantId: "low-integration",
     velocity: 18,
     breadth: 30,
     depth: 34
@@ -322,7 +314,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Field Operations or Logistics",
     shortLabel: "Ops",
-    quadrantId: "low-integration",
     velocity: 28,
     breadth: 34,
     depth: 24
@@ -330,7 +321,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Administrative or Executive Support",
     shortLabel: "Adm",
-    quadrantId: "low-integration",
     velocity: 14,
     breadth: 26,
     depth: 22
@@ -338,7 +328,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Education or Training",
     shortLabel: "L&D",
-    quadrantId: "low-integration",
     velocity: 42,
     breadth: 46,
     depth: 36
@@ -346,7 +335,6 @@ const aiFluencyOrgFunctionClusters = [
   {
     functionArea: "Other",
     shortLabel: "Oth",
-    quadrantId: "low-integration",
     velocity: 24,
     breadth: 32,
     depth: 31
@@ -541,11 +529,6 @@ const vbdTokenProfileByFunction = new Map(
   vbdTokenFunctionProfiles.map((profile) => [profile.functionArea, profile])
 );
 
-const vbdBubbleSize = ({ velocity, breadth, depth }: AiFluencyOrgFunctionCluster) => {
-  const combinedSignal = (velocity + breadth + depth) / 3;
-  return Math.round(30 + (combinedSignal / 100) * 30);
-};
-
 const tokenIntensityBand = (tokenIntensity: number) => {
   if (tokenIntensity >= 85) return "Very high";
   if (tokenIntensity >= 70) return "High";
@@ -572,64 +555,117 @@ const tokenIntensityForFunction = (
   return profile?.[option.valueKey] ?? 0;
 };
 
+const VBD_THRESHOLD = 60;
+
+type VbdScoredFunction = AiFluencyOrgFunctionCluster & {
+  overallVbdScore: number;
+  integrationScore: number;
+  quadrantId: VbdQuadrantId;
+  tokenIntensity: number;
+  tokenBand: string;
+  tokenTone: string;
+  tokenPosture: string;
+};
+
 const clampVbdCoordinate = (value: number) => Math.max(8, Math.min(92, Math.round(value)));
 
-const vbdWindowMovementByKey: Record<VbdTokenWindowKey, number> = {
+const vbdWindowFactorByKey: Record<VbdTokenWindowKey, number> = {
   "1m": 0,
-  "3m": 0.45,
-  "6m": 0.8,
-  "12m": 1.15
+  "3m": 0.35,
+  "6m": 0.7,
+  "12m": 1
 };
 
-const vbdWindowAdjustedPosition = (
+const vbdWindowLiftByFunction = new Map<string, number>(
+  [
+    ["Engineering / Software Development", 8],
+    ["Product Management", 10],
+    ["Data & Analytics", 10],
+    ["IT Systems or Security", 9],
+    ["Sales or Business Development", 12],
+    ["Marketing & Communications", 8],
+    ["Design / UX / Research", 9],
+    ["Corporate Strategy or Business Operations", 10],
+    ["Customer or Account Success", 22],
+    ["Support or Help Desk", 13],
+    ["People Talent or Human Resources", 11],
+    ["Finance or Accounting", 10],
+    ["Legal & Compliance", 7],
+    ["Field Operations or Logistics", 10],
+    ["Administrative or Executive Support", 8],
+    ["Education or Training", 14],
+    ["Other", 6]
+  ]
+);
+
+const vbdWindowAdjustedInputs = (
   plot: AiFluencyOrgFunctionCluster,
   windowKey: VbdTokenWindowKey
 ) => {
-  const movement = vbdWindowMovementByKey[windowKey];
-  const depthNudge = ((plot.velocity - 50) / 6 + (plot.breadth - 50) / 10) * movement;
-  const velocityNudge = ((plot.breadth - 50) / 8 + (plot.depth - 50) / 12) * movement;
+  const factor = vbdWindowFactorByKey[windowKey];
+  const lift = vbdWindowLiftByFunction.get(plot.functionArea) ?? 8;
 
   return {
-    depth: clampVbdCoordinate(plot.depth + depthNudge),
-    velocity: clampVbdCoordinate(plot.velocity + velocityNudge)
+    velocity: clampVbdCoordinate(plot.velocity + lift * factor),
+    breadth: clampVbdCoordinate(plot.breadth + Math.round(lift * 0.55 * factor)),
+    depth: clampVbdCoordinate(plot.depth + Math.round(lift * 0.45 * factor))
   };
 };
 
-const tokenAdjustedVbdPosition = (
-  plot: AiFluencyOrgFunctionCluster,
-  windowKey: VbdTokenWindowKey
-) => {
-  const vbdPosition = vbdWindowAdjustedPosition(plot, windowKey);
-  const tokenIntensity = tokenIntensityForFunction(plot.functionArea, windowKey);
-  const tokenShift = (tokenIntensity - 60) / 4;
+const vbdQuadrantForScores = (velocity: number, integrationScore: number): VbdQuadrantId => {
+  if (velocity >= VBD_THRESHOLD && integrationScore >= VBD_THRESHOLD) return "flow";
+  if (velocity >= VBD_THRESHOLD && integrationScore < VBD_THRESHOLD) return "fast-shallow";
+  if (velocity < VBD_THRESHOLD && integrationScore >= VBD_THRESHOLD) return "deep-slow";
+  return "low-integration";
+};
+
+const vbdScoresForInputs = ({ velocity, breadth, depth }: Pick<AiFluencyOrgFunctionCluster, "velocity" | "breadth" | "depth">) => {
+  const integrationScore = Math.round(0.4 * breadth + 0.6 * depth);
+  const overallVbdScore = Math.round(0.3 * velocity + 0.3 * breadth + 0.4 * depth);
   return {
-    depth: clampVbdCoordinate(vbdPosition.depth + tokenShift),
-    velocity: clampVbdCoordinate(vbdPosition.velocity + tokenShift / 1.4)
+    integrationScore,
+    overallVbdScore,
+    quadrantId: vbdQuadrantForScores(velocity, integrationScore)
   };
 };
 
-const buildTokenFunctionRows = (windowKey: VbdTokenWindowKey) =>
-  aiFluencyOrgFunctionClusters
-    .map((plot) => {
-      const tokenIntensity = tokenIntensityForFunction(plot.functionArea, windowKey);
-      return {
-        ...plot,
-        tokenIntensity,
-        tokenBand: tokenIntensityBand(tokenIntensity),
-        tokenTone: tokenIntensityTone(tokenIntensity),
-        tokenPosture: vbdTokenProfileByFunction.get(plot.functionArea)?.posture ?? "Held for aggregate review"
-      };
-    });
+const buildVbdFunctionRows = (windowKey: VbdTokenWindowKey): VbdScoredFunction[] =>
+  aiFluencyOrgFunctionClusters.map((plot) => {
+    const windowInputs = vbdWindowAdjustedInputs(plot, windowKey);
+    const scores = vbdScoresForInputs(windowInputs);
+    const tokenIntensity = tokenIntensityForFunction(plot.functionArea, windowKey);
+    return {
+      ...plot,
+      ...windowInputs,
+      ...scores,
+      tokenIntensity,
+      tokenBand: tokenIntensityBand(tokenIntensity),
+      tokenTone: tokenIntensityTone(tokenIntensity),
+      tokenPosture: vbdTokenProfileByFunction.get(plot.functionArea)?.posture ?? "Held for aggregate review"
+    };
+  });
 
-const buildTokenQuadrantRows = (functionRows: ReturnType<typeof buildTokenFunctionRows>) =>
+const vbdBubbleSize = ({ overallVbdScore }: Pick<VbdScoredFunction, "overallVbdScore">) =>
+  Math.round(30 + (overallVbdScore / 100) * 30);
+
+const buildQuadrantRows = (functionRows: VbdScoredFunction[]) =>
   vbdQuadrants
     .map((quadrant) => {
       const functions = functionRows.filter((plot) => plot.quadrantId === quadrant.id);
+      const quadrantStrength = functions.length
+        ? Math.round(functions.reduce((sum, plot) => sum + plot.overallVbdScore, 0) / functions.length)
+        : 0;
+      const quadrantShare = functionRows.length
+        ? Math.round((functions.length / functionRows.length) * 100)
+        : 0;
       const aggregateTokenIntensity = functions.length
         ? Math.round(functions.reduce((sum, plot) => sum + plot.tokenIntensity, 0) / functions.length)
         : 0;
       return {
         ...quadrant,
+        functions,
+        quadrantStrength,
+        quadrantShare,
         aggregateTokenIntensity,
         tokenBand: tokenIntensityBand(aggregateTokenIntensity),
         tokenTone: tokenIntensityTone(aggregateTokenIntensity),
@@ -638,21 +674,14 @@ const buildTokenQuadrantRows = (functionRows: ReturnType<typeof buildTokenFuncti
     });
 
 const vbdBubbleStyle = (
-  plot: AiFluencyOrgFunctionCluster,
-  tokenWindow: VbdTokenWindowKey = "1m",
-  mode: VbdTokenOverlayMode = "vbd"
+  plot: VbdScoredFunction
 ): CSSProperties => {
-  const tokenIntensity = tokenIntensityForFunction(plot.functionArea, tokenWindow);
-  const position =
-    mode === "vbd-token"
-      ? tokenAdjustedVbdPosition(plot, tokenWindow)
-      : vbdWindowAdjustedPosition(plot, tokenWindow);
   return ({
-    left: `${position.depth}%`,
-    top: `${100 - position.velocity}%`,
+    left: `${plot.velocity}%`,
+    top: `${100 - plot.integrationScore}%`,
     "--vbd-bubble-size": `${vbdBubbleSize(plot)}px`,
-    "--vbd-token-ring": `${Math.round(4 + tokenIntensity / 8)}px`,
-    "--vbd-token-opacity": `${Math.min(0.46, 0.14 + tokenIntensity / 240)}`
+    "--vbd-token-ring": `${Math.round(4 + plot.tokenIntensity / 8)}px`,
+    "--vbd-token-opacity": `${Math.min(0.46, 0.14 + plot.tokenIntensity / 240)}`
   }) as CSSProperties;
 };
 
@@ -749,6 +778,42 @@ const tokenPostureLabels: Record<string, string> = {
   high_intensity: "High token intensity",
   held_or_suppressed: "Held or suppressed"
 };
+
+const roiBotModelingContext = {
+  title: "ROI Bot companion lane",
+  statusLabel: "Modeling context only",
+  source: "ROI Bot",
+  pullDiscipline: "Source tags and pull dates required",
+  role:
+    "Adds live usage actuals, token/FlexCredit context, pricing, volume, revenue, EBITDA, and loaded-cost assumptions for governed scenario review.",
+  doesNotChange: [
+    "FluencyTracr governance",
+    "AI Fluency dashboard interpretation",
+    "VBD score or quadrant placement",
+    "evidence grade or claim level"
+  ],
+  requiredChecks: [
+    {
+      label: "Usage actuals",
+      detail: "Approved Glean analytics source with source tag and pull date.",
+      status: "Source required"
+    },
+    {
+      label: "Assumption owner",
+      detail: "Business or finance owner confirms pricing, volume, revenue, EBITDA, or cost assumptions.",
+      status: "Owner review"
+    },
+    {
+      label: "Scenario packaging",
+      detail: "HTML or PPTX output may carry caveats after FluencyTracr claim boundaries are applied.",
+      status: "Caveats required"
+    }
+  ],
+  safeLanguage:
+    "ROI Bot can package a sourced value hypothesis for business-owner review after evidence checks.",
+  blockedLanguage:
+    "ROI Bot output does not prove ROI, productivity, causality, EBITDA movement, revenue movement, savings, or AI value attribution."
+} as const;
 
 const allowedPilotUseLabels: Record<string, string> = {
   aggregate_strategy_planning: "Aggregate strategy planning",
@@ -1194,22 +1259,41 @@ const VbdMapPanel = () => {
   const [tokenWindow, setTokenWindow] = useState<VbdTokenWindowKey>("1m");
   const isVbdWithToken = tokenOverlayMode === "vbd-token";
   const tokenWindowOption = selectedTokenWindowOption(tokenWindow);
-  const tokenFunctionRows = useMemo(() => buildTokenFunctionRows(tokenWindow), [tokenWindow]);
-  const tokenQuadrantRows = useMemo(() => buildTokenQuadrantRows(tokenFunctionRows), [tokenFunctionRows]);
-  const primaryReviewQuadrant = tokenQuadrantRows[0];
+  const vbdFunctionRows = useMemo(() => buildVbdFunctionRows(tokenWindow), [tokenWindow]);
+  const quadrantRows = useMemo(() => buildQuadrantRows(vbdFunctionRows), [vbdFunctionRows]);
+  const overallPopulationVbdScore = vbdFunctionRows.length
+    ? Math.round(vbdFunctionRows.reduce((sum, plot) => sum + plot.overallVbdScore, 0) / vbdFunctionRows.length)
+    : 0;
+  const primaryReviewQuadrant =
+    quadrantRows.find((quadrant) => quadrant.id === "fast-shallow") ?? quadrantRows[0];
   const tokenResult = isVbdWithToken ? (
     <section className="ai-value-vbd-token-result" aria-label="Aggregate token result box">
+      <h4>Token usage by quadrant</h4>
       <div className="ai-value-vbd-token-quadrants">
-        {tokenQuadrantRows.map((quadrant) => (
+        {quadrantRows.map((quadrant) => (
           <article
             className={`ai-value-vbd-token-card ai-value-vbd-token-card-${quadrant.tokenTone}`}
             key={quadrant.id}
           >
             <strong>{quadrant.label}</strong>
             <span>{quadrant.tokenBand} aggregate token intensity</span>
-            <p>{quadrant.reviewFunction}</p>
+            <p>{quadrant.functions.length} functions in quadrant</p>
           </article>
         ))}
+      </div>
+      <div className="ai-value-vbd-token-functions">
+        <h4>Token usage by function</h4>
+        <div>
+          {vbdFunctionRows.map((plot) => (
+            <article
+              className={`ai-value-vbd-token-function-row ai-value-vbd-token-function-row-${plot.tokenTone}`}
+              key={plot.functionArea}
+            >
+              <strong>{plot.functionArea}</strong>
+              <p>{plot.tokenBand} token intensity</p>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   ) : null;
@@ -1221,13 +1305,33 @@ const VbdMapPanel = () => {
           <p className="eyebrow">VBD Map</p>
           <h3>Function cluster map</h3>
           <p>
-            Each function lands on the map from the AI Fluency org results. Use
+            Each function lands on the map from Velocity and Integration. Use
             the cluster position to choose where to scale, coach, or redesign
             next.
           </p>
         </div>
         <StatusPill label="Aggregate signals" tone="good" />
       </div>
+
+      {!isVbdWithToken && (
+        <section className="ai-value-vbd-score-summary" aria-label="Overall VBD scoring model">
+          <article>
+            <span>Overall VBD Score</span>
+            <strong>{overallPopulationVbdScore}</strong>
+            <p>Velocity 0.30 + Breadth 0.30 + Depth 0.40</p>
+          </article>
+          <article>
+            <span>Integration Score</span>
+            <strong>Breadth + Depth</strong>
+            <p>Breadth 0.40 + Depth 0.60</p>
+          </article>
+          <article>
+            <span>Fixed quadrant line 60</span>
+            <strong>0-100 scale</strong>
+            <p>Quadrants use Velocity and Integration; this is not a configurable control.</p>
+          </article>
+        </section>
+      )}
 
       <section className="ai-value-vbd-token-overlay" aria-label="VBD scenario controls">
         <div className="ai-value-vbd-token-overlay-head">
@@ -1236,10 +1340,11 @@ const VbdMapPanel = () => {
             <h4>VBD scenario controls</h4>
             <p>
               Simulated aggregate context for workflow review. Month controls
-              move the circles in VBD, and VBD with Token adds token context
-              for scenario planning only; it is not ROI, productivity,
-              causality, people attribution, financial output, savings, or
-              efficiency proof.
+              switch between example aggregate snapshots using Velocity,
+              Breadth, Depth, and Integration. VBD + Token adds a token
+              intensity overlay for scenario planning only; it is not ROI,
+              productivity, causality, people attribution, financial output,
+              savings, or efficiency proof.
             </p>
           </div>
           <div className="ai-value-vbd-token-controls" aria-label="Token overlay controls">
@@ -1256,7 +1361,7 @@ const VbdMapPanel = () => {
                 onClick={() => setTokenOverlayMode("vbd-token")}
                 type="button"
               >
-                VBD with Token
+                VBD + Token
               </button>
             </div>
             <div className="ai-value-vbd-token-control-group" aria-label="Token overlay window">
@@ -1287,58 +1392,86 @@ const VbdMapPanel = () => {
       <div className="ai-value-vbd-layout">
         <div className="ai-value-vbd-y-axis">
           <span className="ai-value-vbd-axis-high">High</span>
-          <strong className="ai-value-vbd-axis-title">Velocity</strong>
+          <strong className="ai-value-vbd-axis-title">Integration</strong>
           <span className="ai-value-vbd-axis-low">Low</span>
         </div>
         <div className="ai-value-vbd-map-shell">
-          <div className="ai-value-vbd-grid" aria-label="VBD quadrant map">
-            {vbdQuadrants.map((quadrant) => {
-              return (
+          <div className="ai-value-vbd-quadrant-guide ai-value-vbd-quadrant-guide-top" aria-label="High integration quadrant guide">
+            {quadrantRows
+              .filter((quadrant) => quadrant.id === "deep-slow" || quadrant.id === "flow")
+              .map((quadrant) => (
                 <article
-                  aria-label={`${quadrant.label}: ${quadrant.definition}`}
-                  className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone} ai-value-vbd-quadrant-${quadrant.id}`}
+                  className={`ai-value-vbd-quadrant-guide-card ai-value-vbd-quadrant-guide-card-${quadrant.tone}`}
                   key={quadrant.id}
                 >
-                  <div className="ai-value-vbd-quadrant-label">
-                    <strong>{quadrant.label}</strong>
-                    <span>{quadrant.mapCue}</span>
-                  </div>
+                  <strong>{quadrant.label}</strong>
+                  <span>{formatVbdQuadrantPosition(quadrant.position)}</span>
                 </article>
-              );
-            })}
+              ))}
           </div>
-          <div className="ai-value-vbd-marker-layer" aria-label="Function positions">
-            {aiFluencyOrgFunctionClusters.map((plot) => {
-              const tokenIntensity = tokenIntensityForFunction(plot.functionArea, tokenWindow);
-              return (
-              <span
-                aria-label={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}${
-                  isVbdWithToken ? `, aggregate token intensity ${tokenIntensityBand(tokenIntensity)}` : ""
-                }`}
-                className={`ai-value-vbd-function-bubble ai-value-vbd-function-bubble-${plot.quadrantId}${
-                  isVbdWithToken ? " ai-value-vbd-function-bubble-token-overlay" : ""
-                }`}
-                key={plot.functionArea}
-                style={vbdBubbleStyle(plot, tokenWindow, isVbdWithToken ? "vbd-token" : "vbd")}
-                title={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}${
-                  isVbdWithToken ? `, aggregate token intensity ${tokenIntensityBand(tokenIntensity)}` : ""
-                }`}
-              >
-                <span>{plot.shortLabel}</span>
-              </span>
-              );
-            })}
+          <div className="ai-value-vbd-plot-shell">
+            <div className="ai-value-vbd-grid" aria-label="VBD quadrant map">
+              {quadrantRows.map((quadrant) => {
+                return (
+                  <article
+                    aria-hidden="true"
+                    className={`ai-value-vbd-quadrant ai-value-vbd-quadrant-${quadrant.tone} ai-value-vbd-quadrant-${quadrant.id}`}
+                    key={quadrant.id}
+                  />
+                );
+              })}
+            </div>
+            <div className="ai-value-vbd-marker-layer" aria-label="Function positions">
+              {vbdFunctionRows.map((plot) => {
+                const quadrant = vbdQuadrants.find((entry) => entry.id === plot.quadrantId);
+                return (
+                <span
+                  aria-label={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}, Integration Score ${plot.integrationScore}, ${quadrant?.label ?? "VBD quadrant"}${
+                    isVbdWithToken
+                      ? `, aggregate token intensity ${plot.tokenBand}`
+                      : `, Overall VBD Score ${plot.overallVbdScore}`
+                  }`}
+                  className={`ai-value-vbd-function-bubble ai-value-vbd-function-bubble-${plot.quadrantId}${
+                    isVbdWithToken ? " ai-value-vbd-function-bubble-token-overlay" : ""
+                  }`}
+                  key={plot.functionArea}
+                  style={vbdBubbleStyle(plot)}
+                  title={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}, Integration ${plot.integrationScore}${
+                    isVbdWithToken
+                      ? `, aggregate token intensity ${plot.tokenBand}`
+                      : `, Overall VBD Score ${plot.overallVbdScore}`
+                  }`}
+                >
+                  <span>{plot.shortLabel}</span>
+                </span>
+                );
+              })}
+            </div>
+          </div>
+          <div className="ai-value-vbd-quadrant-guide ai-value-vbd-quadrant-guide-bottom" aria-label="Low integration quadrant guide">
+            {quadrantRows
+              .filter((quadrant) => quadrant.id === "low-integration" || quadrant.id === "fast-shallow")
+              .map((quadrant) => (
+                <article
+                  className={`ai-value-vbd-quadrant-guide-card ai-value-vbd-quadrant-guide-card-${quadrant.tone}`}
+                  key={quadrant.id}
+                >
+                  <strong>{quadrant.label}</strong>
+                  <span>{formatVbdQuadrantPosition(quadrant.position)}</span>
+                </article>
+              ))}
           </div>
         </div>
       </div>
 
       <div className="ai-value-vbd-footer">
-        <strong>Depth</strong>
+        <strong>Velocity</strong>
         <span>Low</span>
         <span>High</span>
         <p>
-          Depth shows embedded workflow integration. Bubble size shows
-          combined Velocity, Breadth, and Depth.
+          {isVbdWithToken
+            ? "X-axis is Velocity. Y-axis is Integration. Bubble size remains anchored to the VBD model."
+            : "X-axis is Velocity. Y-axis is Integration. Bubble size shows Overall VBD Score."}
         </p>
       </div>
 
@@ -1348,7 +1481,8 @@ const VbdMapPanel = () => {
         <h4>Quadrant definitions</h4>
         <div>
           {vbdQuadrants.map((quadrant) => {
-            const functions = aiFluencyOrgFunctionClusters.filter((plot) => plot.quadrantId === quadrant.id);
+            const quadrantRow = quadrantRows.find((row) => row.id === quadrant.id);
+            const functions = quadrantRow?.functions ?? [];
             return (
               <article
                 className={`ai-value-vbd-definition-card ai-value-vbd-definition-card-${quadrant.tone}`}
@@ -1357,6 +1491,12 @@ const VbdMapPanel = () => {
                 <strong>{quadrant.label}</strong>
                 <p>{quadrant.definition}</p>
                 <span>{quadrant.mapCue}</span>
+                {!isVbdWithToken && quadrantRow && (
+                  <span className="ai-value-vbd-definition-score">
+                    Quadrant Strength {quadrantRow.quadrantStrength} · Quadrant Share{" "}
+                    {quadrantRow.quadrantShare}%
+                  </span>
+                )}
                 <small>Watch for: {quadrant.watchFor.join(", ")}.</small>
                 <em>{functions.map((plot) => plot.functionArea).join(", ")}</em>
               </article>
@@ -1738,6 +1878,8 @@ const RoiReadinessPage = ({ journey }: { journey: Journey }) => {
           )}
         </section>
 
+        <RoiBotModelingContextPanel />
+
         <div className="ai-value-case-language">
           <section className="ai-value-case-language-col" aria-label="Safe value language">
             <h3>Safe value language</h3>
@@ -1765,6 +1907,70 @@ const RoiReadinessPage = ({ journey }: { journey: Journey }) => {
     </section>
   );
 };
+
+const RoiBotModelingContextPanel = () => (
+  <section
+    className="ai-value-roi-bot-context"
+    aria-label="ROI Bot modeling context"
+  >
+    <div className="ai-value-scenario-builder-head">
+      <div>
+        <p className="eyebrow">Sourced Scenario Companion</p>
+        <h3>{roiBotModelingContext.title}</h3>
+        <p>{roiBotModelingContext.role}</p>
+      </div>
+      <StatusPill label={roiBotModelingContext.statusLabel} tone="neutral" />
+    </div>
+
+    <div className="ai-value-map-grid">
+      <div className="ai-value-map-cell">
+        <span className="ai-value-map-label">Source system</span>
+        <strong>{roiBotModelingContext.source}</strong>
+      </div>
+      <div className="ai-value-map-cell">
+        <span className="ai-value-map-label">Pull discipline</span>
+        <strong>{roiBotModelingContext.pullDiscipline}</strong>
+      </div>
+      <div className="ai-value-map-cell">
+        <span className="ai-value-map-label">Safe use</span>
+        <strong>Value hypothesis packaging</strong>
+      </div>
+      <div className="ai-value-map-cell">
+        <span className="ai-value-map-label">Boundary</span>
+        <strong>Does not change claim readiness</strong>
+      </div>
+    </div>
+
+    <div className="ai-value-scenario-input-grid">
+      {roiBotModelingContext.requiredChecks.map((check) => (
+        <article className="ai-value-scenario-input" key={check.label}>
+          <div>
+            <strong>{check.label}</strong>
+            <p>{check.detail}</p>
+          </div>
+          <StatusPill label={check.status} tone="warn" />
+        </article>
+      ))}
+    </div>
+
+    <div className="ai-value-case-language">
+      <section className="ai-value-case-language-col" aria-label="ROI Bot safe use">
+        <h3>What it can add</h3>
+        <p>{roiBotModelingContext.safeLanguage}</p>
+      </section>
+      <section className="ai-value-case-language-col" aria-label="ROI Bot blocked use">
+        <h3>What stays blocked</h3>
+        <p>{roiBotModelingContext.blockedLanguage}</p>
+      </section>
+    </div>
+
+    <div className="ai-value-token-pilot-chip-list" aria-label="Signals ROI Bot does not change">
+      {roiBotModelingContext.doesNotChange.map((item) => (
+        <span key={item}>{item}</span>
+      ))}
+    </div>
+  </section>
+);
 
 const ValueImprovementLoopPanel = ({ journey }: { journey: Journey }) => {
   const loop = journey.valueImprovementLoop;

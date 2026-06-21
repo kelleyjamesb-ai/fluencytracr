@@ -104,6 +104,48 @@ test("small or suppressed cohorts carry no scores and cannot feed Data Spine by 
   assert.equal(result.feeds.data_spine_ai_fluency_source, false);
 });
 
+test("dashboard client import with fewer than twenty usable respondents cannot feed Data Spine", () => {
+  const intake = buildAIFluencyClientImport(
+    baseInput({
+      cohorts: [
+        cohort({
+          cohort_id: "marketing_under_function_k_min",
+          respondent_count: 19,
+          suppressed: false
+        })
+      ]
+    })
+  );
+  const result = validateAIFluencyClientImport(intake);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(intake.aggregate_summary.usable_respondents, 19);
+  assert.equal(intake.data_spine_source.state, "suppressed");
+  assert.equal(result.feeds.fluency_baseline, false);
+  assert.equal(result.feeds.data_spine_ai_fluency_source, false);
+});
+
+test("dashboard client import with twenty usable respondents can feed Data Spine when approved", () => {
+  const intake = buildAIFluencyClientImport(
+    baseInput({
+      cohorts: [
+        cohort({
+          cohort_id: "marketing_at_function_k_min",
+          respondent_count: 20,
+          suppressed: false
+        })
+      ]
+    })
+  );
+  const result = validateAIFluencyClientImport(intake);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(intake.aggregate_summary.usable_respondents, 20);
+  assert.equal(intake.data_spine_source.state, "present");
+  assert.equal(result.feeds.fluency_baseline, true);
+  assert.equal(result.feeds.data_spine_ai_fluency_source, true);
+});
+
 test("client or org drift fails closed", () => {
   const intake = buildAIFluencyClientImport(baseInput());
   intake.fluency_baseline.client_id = "client_other";

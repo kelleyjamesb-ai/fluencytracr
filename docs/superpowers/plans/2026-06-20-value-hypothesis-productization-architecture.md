@@ -294,13 +294,21 @@ orchestration. It is not yet ready for live upload parsing, live dashboard
 pulls, live BigQuery query execution, persistence, backend routes, or
 customer-facing financial output.
 
+The AI Fluency dashboard import runner has now been added as a batch layer over
+the single-row client import adapter. It accepts already-parsed aggregate rows
+from the readiness export shape, imports approved rows, holds pending rows, and
+suppresses low-count rows without parsing files or widening the claim boundary.
+The current Google Sheets bridge is an additive Apps Script export tab that
+allows the workbook to keep respondent-level analysis tabs while FluencyTracr
+consumes only the aggregate `Aggregate Readiness Export` output.
+
 Recommended next implementation slices:
 
 - Blueprint upload parser adapter: convert PDF/PPT/DOC/Google document content
   into the approved Blueprint Extraction Draft contract with human approval.
-- AI Fluency dashboard import runner: pull or receive aggregate dashboard
-  exports by `client_id`/`org_id` and normalize them through the existing client
-  import adapter.
+- AI Fluency file/dashboard adapter: harden the Google Sheets export path and,
+  later, parse or receive CSV/JSON dashboard files upstream before passing
+  aggregate rows into the dashboard import runner.
 - Glean/BigQuery aggregate export adapter: produce the approved VBD-token
   aggregate object upstream from BigQuery without exposing SQL, raw rows, or
   live query execution inside this shared engine.

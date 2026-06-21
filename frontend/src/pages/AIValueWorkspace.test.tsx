@@ -154,6 +154,14 @@ describe("AIValueWorkspace executive spine", () => {
 
     const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(within(map).getByText(/Function cluster map/i)).toBeInTheDocument();
+    const scoringModel = within(map).getByRole("region", { name: /Overall VBD scoring model/i });
+    expect(within(scoringModel).getByText(/Overall VBD Score/i)).toBeInTheDocument();
+    expect(within(scoringModel).getByText("53")).toBeInTheDocument();
+    expect(within(scoringModel).getByText(/Velocity 0\.30 \+ Breadth 0\.30 \+ Depth 0\.40/i)).toBeInTheDocument();
+    expect(within(scoringModel).getByText(/Integration Score/i)).toBeInTheDocument();
+    expect(within(scoringModel).getByText(/Breadth 0\.40 \+ Depth 0\.60/i)).toBeInTheDocument();
+    expect(within(scoringModel).getByText(/Fixed quadrant line 60/i)).toBeInTheDocument();
+    expect(within(scoringModel).getByText(/not a configurable control/i)).toBeInTheDocument();
     expect(within(map).getAllByText(/Engineering \/ Software Development/i).length).toBeGreaterThan(0);
     expect(within(map).getAllByText(/Customer or Account Success/i).length).toBeGreaterThan(0);
     expect(within(map).getAllByText(/Finance or Accounting/i).length).toBeGreaterThan(0);
@@ -161,22 +169,39 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(map).getByText(/Measured AI surfaces:/i)).toBeInTheDocument();
     expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
     expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Bubble size shows combined Velocity, Breadth, and Depth/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Bubble size shows Overall VBD Score/i)).toBeInTheDocument();
+    const highIntegrationGuide = within(map).getByLabelText(/High integration quadrant guide/i);
+    expect(within(highIntegrationGuide).getByText(/Deep but slow/i)).toBeInTheDocument();
+    expect(within(highIntegrationGuide).getByText(/High-fluency flow/i)).toBeInTheDocument();
+    expect(within(highIntegrationGuide).getByText(/low velocity \/ high integration/i)).toBeInTheDocument();
+    expect(within(highIntegrationGuide).getByText(/high velocity \/ high integration/i)).toBeInTheDocument();
+    const lowIntegrationGuide = within(map).getByLabelText(/Low integration quadrant guide/i);
+    expect(within(lowIntegrationGuide).getByText("Low integration")).toBeInTheDocument();
+    expect(within(lowIntegrationGuide).getByText("Fast but shallow")).toBeInTheDocument();
+    expect(within(lowIntegrationGuide).getByText(/low velocity \/ low integration/i)).toBeInTheDocument();
+    expect(within(lowIntegrationGuide).getByText(/high velocity \/ low integration/i)).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Organizational AI Fluency framework/i })).not.toBeInTheDocument();
     const quadrantMap = within(map).getByLabelText("VBD quadrant map");
-    expect(within(quadrantMap).getByText("Fast but shallow")).toBeInTheDocument();
-    expect(within(quadrantMap).getByText("High-fluency flow")).toBeInTheDocument();
-    expect(within(quadrantMap).getByText("Low integration")).toBeInTheDocument();
-    expect(within(quadrantMap).getByText("Deep but slow")).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/Adoption is ahead of workflow change/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/AI is embedded enough to scale/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/Find the work fit before scaling/i)).toBeInTheDocument();
-    expect(within(quadrantMap).getByText(/Good use case, slow spread/i)).toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Fast but shallow/)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/High-fluency flow/)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Low integration/)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Deep but slow/)).not.toBeInTheDocument();
+    expect(quadrantMap.textContent).not.toMatch(/Quadrant Strength/i);
+    expect(quadrantMap.textContent).not.toMatch(/Quadrant Share/i);
+    expect(within(quadrantMap).queryByText(/Adoption is ahead of workflow change/i)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/AI is embedded enough to scale/i)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Find the work fit before scaling/i)).not.toBeInTheDocument();
+    expect(within(quadrantMap).queryByText(/Good use case, slow spread/i)).not.toBeInTheDocument();
     expect(within(quadrantMap).queryByText(/Watch for/i)).not.toBeInTheDocument();
     expect(within(quadrantMap).queryByText(/Low verification/i)).not.toBeInTheDocument();
+    expect(quadrantMap.querySelectorAll("[aria-label]")).toHaveLength(0);
+    expect(quadrantMap.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
     const definitions = within(map).getByLabelText(/Quadrant definitions/i);
+    expect(within(definitions).getByText(/Quadrant Strength 79 · Quadrant Share 29%/)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Quadrant Strength 59 · Quadrant Share 18%/)).toBeInTheDocument();
     expect(within(definitions).getByText(/Watch for: Immediate accept, Low verification/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Watch for: Repeat use, Verification/i)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Workflow-connected use/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Human-only fallback/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Workflow drag/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Engineering \/ Software Development/i)).toBeInTheDocument();
@@ -184,13 +209,25 @@ describe("AIValueWorkspace executive spine", () => {
     const yAxis = container.querySelector(".ai-value-vbd-y-axis");
     expect(yAxis).toBeInstanceOf(HTMLElement);
     expect(within(yAxis as HTMLElement).getByText("High")).toHaveClass("ai-value-vbd-axis-high");
-    expect(within(yAxis as HTMLElement).getByText("Velocity")).toHaveClass("ai-value-vbd-axis-title");
+    expect(within(yAxis as HTMLElement).getByText("Integration")).toHaveClass("ai-value-vbd-axis-title");
     expect(within(yAxis as HTMLElement).getByText("Low")).toHaveClass("ai-value-vbd-axis-low");
     expect(container.querySelectorAll(".ai-value-vbd-grid h4, .ai-value-vbd-grid .ai-value-map-label")).toHaveLength(0);
     expect(container.querySelectorAll(".ai-value-vbd-function-marker")).toHaveLength(0);
     const bubbles = container.querySelectorAll(".ai-value-vbd-function-bubble");
     expect(bubbles).toHaveLength(17);
     expect(Array.from(bubbles).every((bubble) => bubble instanceof HTMLElement && bubble.style.getPropertyValue("--vbd-bubble-size"))).toBe(true);
+    const engineeringBubble = container.querySelector(
+      '[aria-label^="Engineering / Software Development"]'
+    );
+    expect(engineeringBubble).toBeInstanceOf(HTMLElement);
+    expect(engineeringBubble).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining("Overall VBD Score 87")
+    );
+    expect(engineeringBubble).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining("Integration Score 87")
+    );
     const marketingBubble = container.querySelector(
       '[aria-label^="Marketing & Communications"]'
     );
@@ -199,8 +236,10 @@ describe("AIValueWorkspace executive spine", () => {
     );
     expect(marketingBubble).toBeInstanceOf(HTMLElement);
     expect(businessOperationsBubble).toBeInstanceOf(HTMLElement);
-    expect(parseFloat((marketingBubble as HTMLElement).style.left)).toBeLessThan(50);
-    expect(parseFloat((businessOperationsBubble as HTMLElement).style.left)).toBeLessThan(50);
+    expect(parseFloat((marketingBubble as HTMLElement).style.left)).toBeGreaterThan(60);
+    expect(parseFloat((marketingBubble as HTMLElement).style.top)).toBeGreaterThan(40);
+    expect(parseFloat((businessOperationsBubble as HTMLElement).style.left)).toBeGreaterThan(60);
+    expect(parseFloat((businessOperationsBubble as HTMLElement).style.top)).toBeGreaterThan(40);
     expect(
       Array.from(bubbles).some(
         (bubble) => bubble instanceof HTMLElement && bubble.style.getPropertyValue("--vbd-bubble-size") !== bubbles[0].style.getPropertyValue("--vbd-bubble-size")
@@ -211,7 +250,7 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("shows aggregate token controls with dynamic VBD month-window sorting", () => {
+  it("shows aggregate token controls with dynamic VBD month-window movement", () => {
     const { container } = renderWorkspace("/ai-value-workspace/vbd");
 
     const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
@@ -223,10 +262,11 @@ describe("AIValueWorkspace executive spine", () => {
       "aria-pressed",
       "true"
     );
-    expect(within(overlay).getByRole("button", { name: "VBD with Token" })).toHaveAttribute(
+    expect(within(overlay).getByRole("button", { name: "VBD + Token" })).toHaveAttribute(
       "aria-pressed",
       "false"
     );
+    expect(within(overlay).queryByRole("button", { name: "VBD with Token" })).not.toBeInTheDocument();
     expect(within(overlay).getByRole("button", { name: "1 month" })).toHaveAttribute("aria-pressed", "true");
     expect(within(overlay).getByRole("button", { name: "3 months" })).toBeInTheDocument();
     expect(within(overlay).getByRole("button", { name: "6 months" })).toBeInTheDocument();
@@ -237,8 +277,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(overlay).getByText(/Strategy context only/i)).toBeInTheDocument();
     expect(within(overlay).getByText(/VBD scenario controls/i)).toBeInTheDocument();
     expect(within(overlay).getByText(/Simulated aggregate context for workflow review/i)).toBeInTheDocument();
-    expect(within(overlay).getByText(/Month controls move the circles in VBD/i)).toBeInTheDocument();
-    expect(within(overlay).getByText(/VBD with Token adds token context/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/Month controls switch between example aggregate snapshots/i)).toBeInTheDocument();
+    expect(within(overlay).getByText(/VBD \+ Token adds a token intensity overlay/i)).toBeInTheDocument();
     expect(within(overlay).getByText(/not ROI, productivity, causality, people attribution, financial output, savings, or efficiency proof/i)).toBeInTheDocument();
     const graphic = container.querySelector(".ai-value-vbd-layout");
     const overlayControls = container.querySelector(".ai-value-vbd-token-overlay");
@@ -253,8 +293,10 @@ describe("AIValueWorkspace executive spine", () => {
       '[aria-label^="Customer or Account Success"]'
     ) as HTMLElement;
     expect(customerSuccessBubble).toBeInstanceOf(HTMLElement);
-    expect(customerSuccessBubble.style.left).toBe("66%");
-    expect(customerSuccessBubble.style.top).toBe("58%");
+    expect(customerSuccessBubble.style.left).toBe("42%");
+    expect(customerSuccessBubble.style.top).toBe("38%");
+    expect(customerSuccessBubble).toHaveClass("ai-value-vbd-function-bubble-deep-slow");
+    expect(customerSuccessBubble.getAttribute("aria-label")).toMatch(/Deep but slow/i);
     const customerSuccessVbdOneMonth = {
       left: customerSuccessBubble.style.left,
       top: customerSuccessBubble.style.top
@@ -269,20 +311,26 @@ describe("AIValueWorkspace executive spine", () => {
     );
     expect(customerSuccessBubble.style.left).not.toBe(customerSuccessVbdOneMonth.left);
     expect(customerSuccessBubble.style.top).not.toBe(customerSuccessVbdOneMonth.top);
+    expect(customerSuccessBubble).toHaveClass("ai-value-vbd-function-bubble-flow");
+    expect(customerSuccessBubble.getAttribute("aria-label")).toMatch(/High-fluency flow/i);
     const customerSuccessVbdTwelveMonths = {
       left: customerSuccessBubble.style.left,
       top: customerSuccessBubble.style.top
     };
 
-    fireEvent.click(within(overlay).getByRole("button", { name: "VBD with Token" }));
-    expect(within(overlay).getByRole("button", { name: "VBD with Token" })).toHaveAttribute(
+    fireEvent.click(within(overlay).getByRole("button", { name: "VBD + Token" }));
+    expect(within(overlay).getByRole("button", { name: "VBD + Token" })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
-    expect(customerSuccessBubble.style.left).not.toBe(customerSuccessVbdTwelveMonths.left);
-    expect(customerSuccessBubble.style.top).not.toBe(customerSuccessVbdTwelveMonths.top);
+    expect(customerSuccessBubble.style.left).toBe(customerSuccessVbdTwelveMonths.left);
+    expect(customerSuccessBubble.style.top).toBe(customerSuccessVbdTwelveMonths.top);
     expect(customerSuccessBubble).toHaveClass("ai-value-vbd-function-bubble-token-overlay");
     expect(customerSuccessBubble.getAttribute("aria-label")).toMatch(/aggregate token intensity/i);
+    expect(within(map).queryByText(/Overall VBD Score/i)).not.toBeInTheDocument();
+    expect(within(map).queryByText(/Quadrant Strength/i)).not.toBeInTheDocument();
+    expect(within(map).getByText(/Token usage by quadrant/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Token usage by function/i)).toBeInTheDocument();
     expect(within(map).queryByRole("heading", { name: /Function review context/i })).not.toBeInTheDocument();
     expect(within(overlay).getByText(/High token context/i)).toBeInTheDocument();
     const quadrantContext = container.querySelector(".ai-value-vbd-token-quadrants");
@@ -295,9 +343,10 @@ describe("AIValueWorkspace executive spine", () => {
     const customerSuccessTokenLeftAtTwelveMonths = customerSuccessBubble.style.left;
     fireEvent.click(within(overlay).getByRole("button", { name: "3 months" }));
     expect(customerSuccessBubble.style.left).not.toBe(customerSuccessTokenLeftAtTwelveMonths);
+    expect(customerSuccessBubble.getAttribute("aria-label")).toMatch(/aggregate token intensity Very high/i);
 
     expect(container.querySelectorAll(".ai-value-vbd-function-bubble")).toHaveLength(17);
-    expect(container.textContent).not.toMatch(/highest|leader|leaderboard|rank|score|function usage order|token usage by function/i);
+    expect(container.textContent).not.toMatch(/highest|leader|leaderboard|rank|function usage order/i);
     expect(container.textContent).not.toMatch(
       /680000|420000|10968|2194|org-synthetic|evidence_snapshot|token_probe|source_readiness|aggregate_interaction_count|users_in_scope|workflow_id|customer_id|pilot_id|source_id/i
     );
@@ -848,6 +897,72 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
+  it("keeps function-based metric choice while showing modeled readiness checks for selected metrics", async () => {
+    stubJourneyFetch(journeyObjects);
+    renderWorkspace("/ai-value-workspace/metrics");
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /Outcome metric setup/i })).toBeInTheDocument();
+    });
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    const functionSelect = within(bridge).getByRole("combobox", { name: /Org function/i }) as HTMLSelectElement;
+
+    fireEvent.change(functionSelect, { target: { value: "Sales or Business Development" } });
+    expect(within(bridge).getByRole("checkbox", { name: /Pipeline velocity improvement/i })).toBeInTheDocument();
+    expect(within(bridge).queryByRole("checkbox", { name: /Forecast variance/i })).not.toBeInTheDocument();
+
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Pipeline velocity improvement/i }));
+
+    const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
+    const scenario = within(watchPlan).getByRole("region", { name: /Illustrative review scenario/i });
+    expect(within(watchPlan).getByText(/Same-window context for review, not attribution/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Month 1 0% baseline .* Month 6 \+8.5%/i)).toBeInTheDocument();
+    expect(within(watchPlan).getAllByText(/Pipeline velocity improvement/i).length).toBeGreaterThan(1);
+    expect(within(watchPlan).getByText(/AI Fluency 64% to 77%/i)).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/VBD 72\/76\/74 to 77\/81\/78/i)).toBeInTheDocument();
+    expect(
+      within(watchPlan).getByText(
+        /Aggregate token intensity context changed from 74 to 79; not a value, productivity, or efficiency score/i
+      )
+    ).toBeInTheDocument();
+    expect(within(scenario).getByText(/Readiness check/i)).toBeInTheDocument();
+    expect(
+      within(scenario).getByText(/Candidate for business-owner review after evidence and controls check/i)
+    ).toBeInTheDocument();
+    expect(
+      within(scenario).getByText(
+        /Planning-only comparison range \+2% to \+12%; not predicted or attributed movement/i
+      )
+    ).toBeInTheDocument();
+    expect(within(scenario).getByText(/Aggregate sample basis 1,250 to 1,410 aggregate responses/i)).toBeInTheDocument();
+    expect(
+      within(watchPlan).getByText(
+        /Finance review status: no FluencyTracr financial calculation; any finance context must come from customer-owned review/i
+      )
+    ).toBeInTheDocument();
+    expect(within(watchPlan).getByText(/Review candidate only/i)).toBeInTheDocument();
+    expect(
+      within(watchPlan).getByText(/does not prove ROI, causality, productivity/i)
+    ).toBeInTheDocument();
+    expect(scenario.textContent).not.toMatch(/synthetic/i);
+
+    const storedWatchPlan = JSON.parse(
+      localStorage.getItem(SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY) ?? "{}"
+    );
+    const pipelineMetric = storedWatchPlan.selectionsByFunction[
+      "Sales or Business Development"
+    ].metrics.find((metric: { id: string }) => metric.id === "sales-pipeline-velocity");
+    expect(pipelineMetric).toMatchObject({
+      id: "sales-pipeline-velocity",
+      name: "Pipeline velocity improvement",
+      sourceSystem: "CRM",
+      measurementUnit: "percentage",
+      owner: "Revenue Operations"
+    });
+    expect(pipelineMetric.movementScenario).toBeUndefined();
+  });
+
   it("falls back for stale saved metric IDs", async () => {
     const savedWatchPlan = (metrics: Array<Record<string, string>>) => ({
       activeFunctionArea: "Customer or Account Success",
@@ -1064,6 +1179,17 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(roi).getByText(/Base case/i)).toBeInTheDocument();
     expect(within(roi).getByText(/Expanded/i)).toBeInTheDocument();
     expect(within(roi).getByText(/Potential capacity-creation opportunity for customer-owned validation/i)).toBeInTheDocument();
+    const roiBot = within(roi).getByRole("region", { name: /ROI Bot modeling context/i });
+    expect(within(roiBot).getByRole("heading", { name: /ROI Bot companion lane/i })).toBeInTheDocument();
+    expect(within(roiBot).getByText(/Source tags and pull dates required/i)).toBeInTheDocument();
+    expect(within(roiBot).getByText(/Business or finance owner confirms pricing, volume, revenue, EBITDA, or cost assumptions/i)).toBeInTheDocument();
+    expect(within(roiBot).getByText(/Does not change claim readiness/i)).toBeInTheDocument();
+    expect(within(roiBot).getByText(/FluencyTracr governance/i)).toBeInTheDocument();
+    expect(within(roiBot).getByText(/AI Fluency dashboard interpretation/i)).toBeInTheDocument();
+    expect(within(roiBot).getByText(/VBD score or quadrant placement/i)).toBeInTheDocument();
+    expect(
+      within(roiBot).getByText(/does not prove ROI, productivity, causality, EBITDA movement, revenue movement, savings, or AI value attribution/i)
+    ).toBeInTheDocument();
     expect(within(roi).getByText(/No realized ROI claim/i)).toBeInTheDocument();
     expect(within(roi).getByText(/No customer-facing economic figures/i)).toBeInTheDocument();
     expect(within(roi).getByText(/Review submitted customer export with Support Operations before stronger value language/i)).toBeInTheDocument();

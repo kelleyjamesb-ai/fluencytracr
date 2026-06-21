@@ -444,6 +444,120 @@ describe("AIValueJourney", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
+  it("keeps the journey on one Northstar workflow family when multiple seeded chains exist", async () => {
+    const multiWorkflowObjects = [
+      ...objects,
+      {
+        object_type: "blueprint",
+        object_id: "bp_sales_proposal_response",
+        workflow_family: "sales_proposal_response",
+        valid: true,
+        validation: {}
+      },
+      {
+        object_type: "metrics_library",
+        object_id: "metrics_sales_v1",
+        workflow_family: "sales_proposal_response",
+        valid: true,
+        validation: { metric_count: 1 }
+      },
+      {
+        object_type: "roi_scenario",
+        object_id: "roi_sales",
+        workflow_family: "sales_proposal_response",
+        valid: true,
+        validation: {}
+      },
+      {
+        object_type: "evidence_readiness",
+        object_id: "readiness_sales",
+        workflow_family: "sales_proposal_response",
+        valid: true,
+        validation: { decision: "READY_FOR_EXECUTIVE_VALIDATION" }
+      },
+      {
+        object_type: "value_evidence_case",
+        object_id: "value_evidence_case_sales_proposal_response_v1",
+        workflow_family: "sales_proposal_response",
+        valid: true,
+        validation: {}
+      }
+    ];
+    const payloads = cloneDetails();
+    payloads["blueprint/bp_sales_proposal_response"] = {
+      ...payloads["blueprint/bp_support"],
+      blueprint_id: "bp_sales_proposal_response",
+      workflow_family: "sales_proposal_response",
+      workflow_name: "Sales proposal and RFP response",
+      value_routes: { primary: "REVENUE_EXPANSION", secondary: [] }
+    };
+    payloads["metrics_library/metrics_sales_v1"] = {
+      library_id: "metrics_sales_v1",
+      workflow_family: "sales_proposal_response",
+      metrics: [
+        {
+          metric_id: "sales_proposal_turnaround_days",
+          workflow_family: "sales_proposal_response",
+          name: "Proposal turnaround time",
+          value_route: "REVENUE_EXPANSION",
+          source_system: {
+            source_type: "crm_system",
+            source_name: "CRM and proposal workspace",
+            approved_grain: "aggregate workflow window"
+          },
+          measurement_unit: "days",
+          baseline_rule: "Compare against an approved pre-period window.",
+          allowed_claim_level: "CAVEATED_VALUE_INVESTIGATION"
+        }
+      ]
+    };
+    payloads["roi_scenario/roi_sales"] = {
+      ...payloads["roi_scenario/roi_support"],
+      roi_scenario_id: "roi_sales",
+      workflow: {
+        workflow_family: "sales_proposal_response",
+        workflow_name: "Sales proposal and RFP response",
+        value_route: "REVENUE_EXPANSION"
+      },
+      selected_metric: {
+        metric_id: "sales_proposal_turnaround_days",
+        name: "Proposal turnaround time",
+        measurement_unit: "days",
+        source_system: {
+          source_type: "crm_system",
+          source_name: "CRM and proposal workspace",
+          approved_grain: "aggregate workflow window"
+        },
+        baseline_rule: "Compare against an approved pre-period window."
+      }
+    };
+    payloads["evidence_readiness/readiness_sales"] = {
+      ...payloads["evidence_readiness/readiness_v1"],
+      readiness_id: "readiness_sales",
+      workflow_family: "sales_proposal_response"
+    };
+    stubJourneyFetch(multiWorkflowObjects, payloads);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Sales proposal and RFP response/i).length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByText(/Proposal turnaround time/i).length).toBeGreaterThan(0);
+    const urls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) =>
+      String(call[0])
+    );
+    expect(
+      urls.some((url) => url.includes("/ai-value/objects/blueprint/bp_sales_proposal_response"))
+    ).toBe(true);
+    expect(
+      urls.some((url) => url.includes("/ai-value/objects/metrics_library/metrics_sales_v1"))
+    ).toBe(true);
+    expect(urls.some((url) => url.includes("/ai-value/objects/roi_scenario/roi_sales"))).toBe(
+      true
+    );
+  });
+
   it("shows the selected Blueprint workflow as the handoff into downstream value work", async () => {
     const { container } = renderPage();
 
@@ -512,7 +626,7 @@ describe("AIValueJourney", () => {
     const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
     expect(within(watchPlan).getByText(/Customer or Account Success/i)).toBeInTheDocument();
     expect(within(watchPlan).getByText(/Median resolution time/i)).toBeInTheDocument();
-    expect(within(watchPlan).getByText(/Time to First Value/i)).toBeInTheDocument();
+    expect(within(watchPlan).getAllByText(/Time to First Value/i).length).toBeGreaterThan(0);
     const blueprintContext = within(bridge).getByRole("region", {
       name: /Blueprint metric context/i
     });

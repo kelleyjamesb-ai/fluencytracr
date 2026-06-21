@@ -23,6 +23,8 @@ const RESULT_SCHEMA_VERSION =
 const DERIVATION_VERSION =
   "ai_value_ai_fluency_client_import_2026_06";
 
+const MIN_DATA_SPINE_IMPORT_RESPONDENT_COUNT = 20;
+
 const REQUIRED_FALSE_BOUNDARY_FIELDS = [
   "persists_output",
   "creates_migrations",
@@ -93,6 +95,7 @@ export interface BuildAIFluencyClientImportInput {
   orgId: string;
   clientId: string;
   dashboardExportId: string;
+  sourceRef?: string;
   instrumentId: string;
   collectionMode: string;
   workflowFamily: string;
@@ -199,6 +202,10 @@ function aggregateSummary(cohorts: any[]): any {
       (sum, cohort) => sum + Number(cohort?.respondent_count ?? 0),
       0
     ),
+    usable_respondents: usable.reduce(
+      (sum, cohort) => sum + Number(cohort?.respondent_count ?? 0),
+      0
+    ),
     usable_cohort_count: usable.length,
     suppressed_cohort_count: cohorts.length - usable.length,
     weighted_construct_means: Object.fromEntries(
@@ -245,6 +252,9 @@ function sourceState(
 ): string {
   if (!baselineValidation.valid) return "held";
   if (summary.usable_cohort_count === 0) return "suppressed";
+  if (summary.usable_respondents < MIN_DATA_SPINE_IMPORT_RESPONDENT_COUNT) {
+    return "suppressed";
+  }
   if (input.ownerApprovalState !== "approved" || input.reviewState !== "clear") return "held";
   return "present";
 }
@@ -279,7 +289,7 @@ export function buildAIFluencyClientImport(
     data_spine_source: {
       state,
       intake_mode: "ai_fluency_dashboard_export",
-      source_ref: input.dashboardExportId,
+      source_ref: input.sourceRef ?? input.dashboardExportId,
       org_id: input.orgId,
       client_id: input.clientId,
       workflow_family: input.workflowFamily,

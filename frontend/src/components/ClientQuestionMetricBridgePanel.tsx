@@ -30,6 +30,168 @@ export type FunctionMetricPlan = {
   metrics: FunctionMetricOption[];
 };
 
+type MetricMovementScenario = {
+  metric: {
+    monthOne: string;
+    monthSix: string;
+  };
+  aiFluency: {
+    monthOne: string;
+    monthSix: string;
+  };
+  vbd: {
+    monthOne: string;
+    monthSix: string;
+  };
+  tokenIntensity: {
+    monthOne: string;
+    monthSix: string;
+  };
+  financeContext: {
+    monthOne: string;
+    monthSix: string;
+  };
+  readinessCheck: {
+    state: string;
+    expectedRange: string;
+    sampleBasis: string;
+    note: string;
+  };
+  recommendation: string;
+  caveat: string;
+};
+
+const modeledMovementScenarios: Record<string, MetricMovementScenario> = {
+  "cs-time-to-first-value": {
+    metric: {
+      monthOne: "64 days",
+      monthSix: "52 days"
+    },
+    aiFluency: {
+      monthOne: "64%",
+      monthSix: "77%"
+    },
+    vbd: {
+      monthOne: "42/55/66",
+      monthSix: "55/66/72"
+    },
+    tokenIntensity: {
+      monthOne: "80",
+      monthSix: "88"
+    },
+    financeContext: {
+      monthOne: "Month 1 value held",
+      monthSix: "Month 6 value held"
+    },
+    readinessCheck: {
+      state: "Candidate for business-owner review after evidence and controls check",
+      expectedRange: "-8 to -18 days",
+      sampleBasis: "1,250 to 1,410 aggregate responses",
+      note: "Falls inside a plausible six-month onboarding improvement band for a scaled enablement and workflow-change window."
+    },
+    recommendation:
+      "Review candidate only; confirm customer-owned outcome evidence, controls, and assumptions before any stronger value language.",
+    caveat:
+      "Illustrative scenario only. FluencyTracr does not prove ROI, causality, productivity, individual/team/manager performance, or financial impact; finance context requires customer validation before any external value claim."
+  },
+  "sales-pipeline-velocity": {
+    metric: {
+      monthOne: "0% baseline",
+      monthSix: "+8.5%"
+    },
+    aiFluency: {
+      monthOne: "64%",
+      monthSix: "77%"
+    },
+    vbd: {
+      monthOne: "72/76/74",
+      monthSix: "77/81/78"
+    },
+    tokenIntensity: {
+      monthOne: "74",
+      monthSix: "79"
+    },
+    financeContext: {
+      monthOne: "Month 1 value held",
+      monthSix: "Month 6 value held"
+    },
+    readinessCheck: {
+      state: "Candidate for business-owner review after evidence and controls check",
+      expectedRange: "+2% to +12%",
+      sampleBasis: "1,250 to 1,410 aggregate responses",
+      note: "Movement sits inside a realistic six-month variance band for sales operating metrics; it is a review signal, not attribution."
+    },
+    recommendation:
+      "Review candidate only; confirm customer-owned outcome evidence, controls, and assumptions before any stronger value language.",
+    caveat:
+      "Illustrative scenario only. FluencyTracr does not prove ROI, causality, productivity, individual/team/manager performance, or financial impact; finance context requires customer validation before any external value claim."
+  },
+  "support-mttr": {
+    metric: {
+      monthOne: "18.5 hours",
+      monthSix: "15.1 hours"
+    },
+    aiFluency: {
+      monthOne: "64%",
+      monthSix: "77%"
+    },
+    vbd: {
+      monthOne: "42/48/48",
+      monthSix: "52/58/57"
+    },
+    tokenIntensity: {
+      monthOne: "58",
+      monthSix: "65"
+    },
+    financeContext: {
+      monthOne: "Month 1 value held",
+      monthSix: "Month 6 value held"
+    },
+    readinessCheck: {
+      state: "Needs controls review",
+      expectedRange: "-1.5 to -4.8 hours",
+      sampleBasis: "1,250 to 1,410 aggregate responses",
+      note: "Improvement is sized like a plausible support workflow movement, especially when quality guardrails still need validation."
+    },
+    recommendation:
+      "Review candidate only; customer owners decide whether this belongs in a separate capacity, retention, or cost-quality investigation.",
+    caveat:
+      "Illustrative scenario only. FluencyTracr does not prove ROI, causality, productivity, individual/team/manager performance, or financial impact; finance context requires customer validation before any external value claim."
+  },
+  "fin-forecast-variance": {
+    metric: {
+      monthOne: "9.2%",
+      monthSix: "7.4%"
+    },
+    aiFluency: {
+      monthOne: "64%",
+      monthSix: "77%"
+    },
+    vbd: {
+      monthOne: "26/38/44",
+      monthSix: "35/46/53"
+    },
+    tokenIntensity: {
+      monthOne: "42",
+      monthSix: "51"
+    },
+    financeContext: {
+      monthOne: "Month 1 value held",
+      monthSix: "Month 6 value held"
+    },
+    readinessCheck: {
+      state: "Needs finance-owner review",
+      expectedRange: "-0.8 to -2.6 pts",
+      sampleBasis: "1,250 to 1,410 aggregate responses",
+      note: "Forecast variance movement is intentionally modest because finance workflows usually require more control and validation."
+    },
+    recommendation:
+      "Review candidate only; customer owners decide whether this belongs in a separate finance-owned investigation.",
+    caveat:
+      "Illustrative scenario only. FluencyTracr does not prove ROI, causality, productivity, individual/team/manager performance, or financial impact; finance context requires customer validation before any external value claim."
+  }
+};
+
 const customerSuccessMetrics = (bridge: ClientQuestionMetricBridge): FunctionMetricOption[] => {
   const bridgeMetrics = bridge.items.map((item) => ({
     id: `bridge-${item.id}`,
@@ -338,7 +500,7 @@ export const buildFunctionMetricPlans = (bridge: ClientQuestionMetricBridge): Fu
         measurementUnit: "currency per ticket",
         owner: "IT Operations",
         why: "Connects service improvement to an operational cost metric finance can inspect.",
-        watches: "Aggregate workflow productivity after evidence gates clear",
+        watches: "Aggregate workflow movement after evidence gates clear",
         status: "Recommended next"
       },
       {
@@ -1244,6 +1406,15 @@ export const ClientQuestionMetricBridgePanel = ({
   const activeSelection = selectionsByFunction[selectedPlan.functionArea];
   const selectedMetricIds = activeSelection?.metrics.map((metric) => metric.id) ?? [];
   const selectedMetrics = activeSelection?.metrics ?? [];
+  const selectedMetricScenarios = selectedMetrics
+    .map((metric) => ({
+      metric,
+      scenario: modeledMovementScenarios[metric.id]
+    }))
+    .filter(
+      (entry): entry is { metric: SelectedOutcomeMetric; scenario: MetricMovementScenario } =>
+        Boolean(entry.scenario)
+    );
 
   useEffect(() => {
     if (!activeSelection) return;
@@ -1363,6 +1534,73 @@ export const ClientQuestionMetricBridgePanel = ({
               </ul>
             ) : (
               <p>Choose at least one client-owned metric for this function.</p>
+            )}
+            {selectedMetricScenarios.length > 0 && (
+              <section
+                className="ai-value-metric-movement-scenario"
+                aria-label="Illustrative review scenario"
+              >
+                <span className="ai-value-map-label">Illustrative review scenario only</span>
+                <h4>Same-window context for review, not attribution</h4>
+                {selectedMetricScenarios.map(({ metric, scenario }) => {
+                  return (
+                    <article className="ai-value-metric-scenario-card" key={metric.id}>
+                      <div>
+                        <strong>{metric.name}</strong>
+                        <p>
+                          Month 1 {scenario.metric.monthOne} · Month 6{" "}
+                          {scenario.metric.monthSix}
+                        </p>
+                      </div>
+                      <div className="ai-value-map-grid">
+                        <div className="ai-value-map-cell">
+                          <span className="ai-value-map-label">Human signal</span>
+                          <p>
+                            AI Fluency {scenario.aiFluency.monthOne} to{" "}
+                            {scenario.aiFluency.monthSix}
+                          </p>
+                        </div>
+                        <div className="ai-value-map-cell">
+                          <span className="ai-value-map-label">Workflow signal</span>
+                          <p>
+                            VBD {scenario.vbd.monthOne} to {scenario.vbd.monthSix}
+                          </p>
+                        </div>
+                        <div className="ai-value-map-cell">
+                          <span className="ai-value-map-label">Spend / intensity context</span>
+                          <p>
+                            Aggregate token intensity context changed from{" "}
+                            {scenario.tokenIntensity.monthOne} to{" "}
+                            {scenario.tokenIntensity.monthSix}; not a value,
+                            productivity, or efficiency score.
+                          </p>
+                        </div>
+                        <div className="ai-value-map-cell">
+                          <span className="ai-value-map-label">Customer-owned finance review status</span>
+                          <p>
+                            Finance review status: no FluencyTracr financial
+                            calculation; any finance context must come from
+                            customer-owned review.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="ai-value-readiness-check">
+                        <span className="ai-value-map-label">Readiness check</span>
+                        <strong>{scenario.readinessCheck.state}</strong>
+                        <p>
+                          Planning-only comparison range{" "}
+                          {scenario.readinessCheck.expectedRange}; not predicted
+                          or attributed movement.
+                        </p>
+                        <p>Aggregate sample basis {scenario.readinessCheck.sampleBasis}</p>
+                        <small>{scenario.readinessCheck.note}</small>
+                      </div>
+                      <p>{scenario.recommendation}</p>
+                      <p className="ai-value-inline-alert">{scenario.caveat}</p>
+                    </article>
+                  );
+                })}
+              </section>
             )}
           </section>
         </div>
