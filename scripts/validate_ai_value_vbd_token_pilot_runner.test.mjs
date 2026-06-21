@@ -403,6 +403,110 @@ test("pilot runner rejects duplicate window ids", () => {
   assert.ok(run.gaps.some((gap) => /duplicate window_id/i.test(gap)), run.gaps.join("; "));
 });
 
+test("pilot runner rejects mixed-slice windows before movement is interpreted", () => {
+  const mixedComparison = comparisonWindow();
+  mixedComparison.evidence_snapshot = {
+    ...mixedComparison.evidence_snapshot,
+    org_id: "org-other",
+    workflow: {
+      ...mixedComparison.evidence_snapshot.workflow,
+      workflow_family: "customer_support_other",
+      function_area: "support_ops"
+    },
+    vbd_operating_map: {
+      ...mixedComparison.evidence_snapshot.vbd_operating_map,
+      breadth: {
+        ...mixedComparison.evidence_snapshot.vbd_operating_map.breadth,
+        approved_aggregate_grain: "region"
+      }
+    },
+    privacy_boundary: {
+      ...mixedComparison.evidence_snapshot.privacy_boundary,
+      approved_aggregate_grain: "region"
+    }
+  };
+  mixedComparison.token_efficiency_signal = tokenSignal(
+    "comparison",
+    "2026-04-01",
+    "2026-05-31",
+    comparisonTokenSummary()
+  );
+  mixedComparison.token_efficiency_signal.org_id = "org-other";
+  mixedComparison.token_efficiency_signal.workflow_family = "customer_support_other";
+  mixedComparison.token_efficiency_signal.function_area = "support_ops";
+  mixedComparison.token_efficiency_signal.approved_aggregate_grain = "region";
+
+  const run = buildRun([baselineWindow(), mixedComparison]);
+
+  assert.equal(run.valid, false);
+  assert.equal(run.pilot_decision, "hold_for_evidence");
+  assert.ok(
+    run.gaps.some((gap) => /must match baseline window/i.test(gap)),
+    run.gaps.join("; ")
+  );
+});
+
+test("pilot runner returns fail-closed output for malformed non-array windows", () => {
+  const run = buildVbdTokenPilotRunFromWindowEvidence({
+    pilotRunId: "vbd_token_pilot_run_malformed",
+    orgId: "org-synthetic-cs-50",
+    workflowFamily: "customer_success_account_health_review",
+    generatedAt: "2026-06-16T00:00:00.000Z",
+    windows: { not: "an array" }
+  });
+
+  assert.equal(run.valid, false);
+  assert.equal(run.pilot_decision, "hold_for_evidence");
+  assert.ok(run.gaps.includes("windows must be an array"), run.gaps.join("; "));
+});
+
+test("pilot runner rejects unsafe pilot scope strings before echoing scope as valid", () => {
+  const run = buildRun(undefined, {
+    pilotScope: {
+      population_label: "Pilot for jane@example.com",
+      users_in_scope: 50,
+      approved_aggregate_grain: "function",
+      minimum_cohort_threshold: 5,
+      synthetic_fixture: true
+    }
+  });
+
+  assert.equal(run.valid, false);
+  assert.equal(run.pilot_decision, "hold_for_evidence");
+  assert.ok(
+    run.gaps.some((gap) => /Forbidden metadata value/i.test(gap)),
+    run.gaps.join("; ")
+  );
+});
+
+test("pilot runner validation recomputes decisions from held windows", () => {
+  const run = clone(buildRun());
+  run.window_sequence[1].vbd_posture = "held";
+  run.window_sequence[1].strategy_zone = "hold_for_evidence";
+  run.window_sequence[1].vbd_token_efficiency_map.vbd_posture = "held";
+  run.window_sequence[1].vbd_token_efficiency_map.strategy_zone = "hold_for_evidence";
+  run.pilot_decision = "ready_for_strategy_review";
+
+  const result = validateVbdTokenPilotRun(run);
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.includes("pilot_decision must be hold_for_evidence"),
+    result.gaps.join("; ")
+  );
+});
+
+test("pilot runner validation compares flattened window summaries to embedded maps", () => {
+  const run = clone(buildRun());
+  run.window_sequence[1].strategy_zone = "optimize_cost";
+
+  const result = validateVbdTokenPilotRun(run);
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.some((gap) => /strategy_zone must match embedded/i.test(gap)),
+    result.gaps.join("; ")
+  );
+});
+
 test("pilot runner examples validate", () => {
   const example = JSON.parse(
     readFileSync(

@@ -32,7 +32,7 @@ const BLOCKED_CLAIM_LABELS: Record<string, string> = {
   hr_analytics: "Individual-level people analytics",
   productivity_measurement: "Productivity measurement",
   realized_roi_calculation: "Value Accounting",
-  customer_facing_economic_output: "Customer-Facing Value Evidence",
+  customer_facing_economic_output: "Blocked Customer-Facing Economic Output",
   dashboard_or_runtime_implementation: "Always-on dashboarding"
 };
 

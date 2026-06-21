@@ -119,8 +119,9 @@ The runner does not:
 
 The runner must never emit ROI proof, EBITA or EBITDA claims, financial
 attribution, causality claims, productivity claims, headcount reduction claims,
-individual attribution, manager/team ranking, people decisioning, confidence
-percentages, probability outputs, or customer-facing prediction.
+or individual attribution; it must never emit manager/team ranking, people
+decisioning, confidence percentages, probability outputs, or customer-facing
+prediction.
 
 ## Finance Context Boundary
 

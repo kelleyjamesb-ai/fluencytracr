@@ -774,7 +774,7 @@ const vbdPostureLabels: Record<string, string> = {
 
 const tokenPostureLabels: Record<string, string> = {
   efficient: "Efficient token posture",
-  moderate_intensity: "Moderate token intensity",
+  moderate: "Moderate token intensity",
   high_intensity: "High token intensity",
   held_or_suppressed: "Held or suppressed"
 };
@@ -1901,7 +1901,6 @@ const PilotWindowCard = ({
 const VbdPage = () => (
   <section className="ai-value-focused-stack" aria-label="VBD operating map workspace">
     <VbdMapPanel />
-    <VbdTokenPilotReviewPanel />
   </section>
 );
 

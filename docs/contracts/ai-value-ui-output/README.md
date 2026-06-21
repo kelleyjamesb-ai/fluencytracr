@@ -49,7 +49,7 @@ Every valid output must explicitly keep these capabilities disabled:
 - confidence percentages
 - probability outputs
 - person-level output
-- manager or team ranking
+- no manager or team ranking
 
 ## Forbidden Fields And Language
 

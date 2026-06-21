@@ -2,6 +2,28 @@
 
 ## Last Completed
 
+- AI Value VBD x Token / Org Fluency UI review repair (PR #364, 2026-06-21):
+  addressed the open review fixes and the failing GitHub action on
+  `codex/OrgFluency-ui-ux-update`. The VBD x Token map now lets suppressed,
+  held, and not-computed dimension evidence override stale positive labels, and
+  direct identifier values are rejected even inside negative privacy caveats.
+  The contract-only pilot runner now fails closed for malformed `windows`,
+  rejects mixed org/workflow/function/grain bindings, scrubs unsafe pilot scope
+  strings, recomputes validation decisions from held windows, and compares
+  flattened window summaries to embedded VBD/token maps. The frontend no longer
+  renders the contract-only pilot review panel, uses the canonical `moderate`
+  token posture key, and has a stable localStorage test stub for the current
+  Vitest environment. The GitHub action failure was fixed by preserving the
+  causality gate as review-eligible context only, with `causality_claim`
+  blocked instead of unlocked. No new route, persistence, migration, ingestion
+  job, customer-facing economic output, ROI/proof claim, causality unlock,
+  productivity claim, individual attribution, manager/team ranking, or
+  contract-only pilot UI was added. Verification:
+  `npm run build --workspace shared`; `npm run test:ci --workspace backend`;
+  `npm test --workspace frontend`; `npm run build --workspace frontend`;
+  `node scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs`;
+  `node scripts/validate_ai_value_vbd_token_pilot_runner.test.mjs`;
+  `bash scripts/ci_docs_contract_sweep.sh`.
 - AI Value VBD x Token Pilot Runner slice (user-requested, 2026-06-16):
   added the contract-only aggregate pilot runner for composing VBD x Token
   Efficiency Maps across time windows, with a synthetic 50-person Customer

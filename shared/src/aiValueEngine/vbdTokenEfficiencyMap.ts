@@ -162,6 +162,12 @@ const UNSAFE_METADATA_VALUE_PATTERNS = [
   /(?:^|_)person_level_(?:productivity|hris|records?)(?:_|$)/i
 ];
 
+const IDENTIFIER_METADATA_VALUE_PATTERNS = [
+  /(?:^|_)(?:employee_emails?|employee_names?|employee_ids?|user_emails?|user_names?|user_ids?|person_emails?|person_names?|person_ids?|person_identifiers?)(?:_|$)/i,
+  /(?:^|_)(?:direct_identifiers?|direct_person_identifier|direct_names?)(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable|pseudonymous|tokenized)_(?:ids?|identifiers?|users?|persons?|employees?)(?:_|$)/i
+];
+
 const NEGATIVE_PRIVACY_CAVEAT_PATTERNS = [
   /\bno\b/i,
   /\bnot\b/i,
@@ -222,6 +228,10 @@ function evidenceState(value: any): string {
 }
 
 function vbdDimensionState(value: any): string {
+  const evidence = String(value?.evidence_state ?? "");
+  if (["suppressed", "held", "not_computed"].includes(evidence)) {
+    return evidence;
+  }
   return String(value?.state ?? value?.evidence_state ?? "missing");
 }
 
@@ -414,6 +424,12 @@ function isUnsafeMetadataValue(value: string): boolean {
     UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
 }
 
+function containsDirectIdentifierValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    IDENTIFIER_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
 function isTopLevelCaveatPath(path: string[]): boolean {
   return normalizeKey(path[0] ?? "") === "caveats" && path.length <= 2;
 }
@@ -428,7 +444,10 @@ function collectUnsafeMetadataValues(
   path: string[] = []
 ): string[] {
   if (typeof value === "string") {
-    const safeNegativeCaveat = isTopLevelCaveatPath(path) && isNegativePrivacyCaveat(value);
+    const safeNegativeCaveat =
+      isTopLevelCaveatPath(path) &&
+      isNegativePrivacyCaveat(value) &&
+      !containsDirectIdentifierValue(value);
     if (!isSafePolicyListPath(path) && !safeNegativeCaveat && isUnsafeMetadataValue(value)) {
       values.push(`${path.join(".")}: ${value}`);
     }

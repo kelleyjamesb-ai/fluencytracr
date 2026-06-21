@@ -38,7 +38,7 @@ The Measurement Cell must not:
 - store raw prompts, responses, transcripts, rows, query text, or file content;
 - store user IDs, employee IDs, emails, names, hashed IDs, or joinable person
   identifiers;
-- support individual attribution, manager ranking, team ranking, department
+- must not support individual attribution, manager ranking, team ranking, department
   ranking, HR analytics, people decisioning, headcount reduction, compensation
   inference, performance inference, promotion inference, discipline inference,
   or attrition prediction;

@@ -423,30 +423,14 @@ describe("AIValueWorkspace executive spine", () => {
     ]);
   });
 
-  it("adds a governed VBD token pilot movement review to the VBD step", () => {
+  it("keeps the contract-only VBD token pilot runner out of the VBD UI step", () => {
     const { container } = renderWorkspace("/ai-value-workspace/vbd");
 
-    const review = screen.getByRole("region", { name: /VBD token pilot movement review/i });
-    expect(review).toBeInTheDocument();
-    expect(within(review).getByRole("heading", { name: /VBD and token movement/i })).toBeInTheDocument();
-    expect(within(review).getByText(/Customer Success account health review/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Ready for strategy review/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Replicate governed pattern/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Baseline window/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Comparison window/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Shallow work integration/i)).toBeInTheDocument();
-    expect(within(review).getByText(/High work integration/i)).toBeInTheDocument();
-    expect(within(review).getAllByText(/High token intensity/i).length).toBeGreaterThan(0);
-    expect(within(review).getAllByText(/Efficient token posture/i).length).toBeGreaterThan(0);
-    expect(within(review).getByText(/38% lower/i)).toBeInTheDocument();
-    expect(within(review).getByText(/78% lower/i)).toBeInTheDocument();
-    expect(within(review).getByText(/52 pts lower/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Aggregate strategy planning/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Workflow design review/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Blocked: economic proof/i)).toBeInTheDocument();
-    expect(within(review).getByText(/Blocked: people-level attribution/i)).toBeInTheDocument();
-    expect(within(review).getAllByText(/strategy context only/i).length).toBeGreaterThan(0);
-    expect(review.textContent).not.toMatch(/replicate_governed_pattern|realized_roi|manager_or_team_ranking/i);
+    expect(screen.queryByRole("region", { name: /VBD token pilot movement review/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/VBD and token movement/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Replicate governed pattern/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Baseline window/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Comparison window/i)).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent);
   });

@@ -160,6 +160,17 @@ const TRUE_ONLY_KEY_PATTERNS = [
   /^contains_hris_inference_from_ai_usage$/i
 ];
 
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+const UNSAFE_METADATA_VALUE_PATTERNS = [
+  /(?:^|_)(?:raw_rows?|raw_query|raw_prompts?|raw_responses?|raw_transcripts?|raw_content)(?:_|$)/i,
+  /(?:^|_)(?:prompt_text|query_text|sql_text|file_contents?)(?:_|$)/i,
+  /(?:^|_)(?:employee_emails?|employee_names?|employee_ids?|user_emails?|user_names?|user_ids?|person_emails?|person_names?|person_ids?|person_identifiers?)(?:_|$)/i,
+  /(?:^|_)(?:direct_identifiers?|direct_person_identifier|direct_names?)(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable|pseudonymous|tokenized)_(?:ids?|identifiers?|users?|persons?|employees?)(?:_|$)/i,
+  /(?:^|_)person_level_(?:productivity|hris|records?)(?:_|$)/i
+];
+
 export interface BuildVbdTokenPilotRunWindowInput {
   window_id: string;
   window_label?: string;
@@ -288,6 +299,42 @@ function collectForbiddenKeys(
   return keys;
 }
 
+function isSafePolicyListPath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return normalizedPath.length <= 2 &&
+    (normalizedPath[0] === "allowed_uses" || normalizedPath[0] === "blocked_uses");
+}
+
+function isUnsafeMetadataValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function collectUnsafeMetadataValues(
+  value: any,
+  values: string[] = [],
+  path: string[] = []
+): string[] {
+  if (typeof value === "string") {
+    if (!isSafePolicyListPath(path) && isUnsafeMetadataValue(value)) {
+      values.push(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectUnsafeMetadataValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectUnsafeMetadataValues(nested, values, [...path, key]);
+  }
+  return values;
+}
+
 function falseFeeds(): any {
   return {
     evidence_snapshot_context: true,
@@ -311,7 +358,7 @@ function persistencePolicy(): any {
 }
 
 function defaultPilotScope(input: BuildVbdTokenPilotRunInput): any {
-  const first = input.windows?.[0];
+  const first = Array.isArray(input.windows) ? input.windows[0] : undefined;
   const snapshot = first?.evidence_snapshot;
   return {
     population_label: null,
@@ -354,7 +401,8 @@ function buildWindowSequence(
   input: BuildVbdTokenPilotRunInput,
   generatedAt: string
 ): any[] {
-  return [...(input.windows ?? [])].sort(compareWindowInputs).map((windowInput) => {
+  const windows = Array.isArray(input.windows) ? input.windows : [];
+  return [...windows].sort(compareWindowInputs).map((windowInput) => {
     const map = buildVbdTokenEfficiencyMapFromEvidenceSnapshotAndTokenSignal(
       windowInput.evidence_snapshot,
       windowInput.token_efficiency_signal,
@@ -383,6 +431,43 @@ function buildWindowSequence(
   });
 }
 
+function windowBindingValue(window: any): any {
+  const map = window?.vbd_token_efficiency_map ?? {};
+  return {
+    org_id: map.org_id ?? null,
+    workflow_family: map.workflow_family ?? null,
+    function_area: map.function_area ?? null,
+    approved_aggregate_grain: map.approved_aggregate_grain ?? null,
+    minimum_cohort_threshold: map.minimum_cohort_threshold ?? null
+  };
+}
+
+function collectWindowBindingGaps(windowSequence: any[]): string[] {
+  const gaps: string[] = [];
+  const first = windowBindingValue(windowSequence[0]);
+  windowSequence.forEach((window, index) => {
+    if (index === 0) return;
+    const current = windowBindingValue(window);
+    for (const field of Object.keys(first)) {
+      if (current[field] !== first[field]) {
+        gaps.push(`window_sequence[${index}].${field} must match baseline window`);
+      }
+    }
+  });
+  return gaps;
+}
+
+function collectWindowMapSummaryGaps(window: any, index: number): string[] {
+  const gaps: string[] = [];
+  const map = window?.vbd_token_efficiency_map ?? {};
+  for (const field of ["vbd_posture", "token_posture", "strategy_zone"]) {
+    if (window?.[field] !== map?.[field]) {
+      gaps.push(`window_sequence[${index}].${field} must match embedded vbd_token_efficiency_map.${field}`);
+    }
+  }
+  return gaps;
+}
+
 function collectBuildGaps(
   input: BuildVbdTokenPilotRunInput,
   windowSequence: any[]
@@ -397,6 +482,13 @@ function collectBuildGaps(
   for (const duplicate of duplicateWindowIds(input.windows)) {
     gaps.push(`Duplicate window_id cannot build a pilot run: ${duplicate}`);
   }
+  const unsafePilotScopeValues = collectUnsafeMetadataValues(input.pilotScope ?? {}, [], ["pilot_scope"]);
+  if (unsafePilotScopeValues.length > 0) {
+    gaps.push(
+      `Forbidden metadata value(s) present: ${Array.from(new Set(unsafePilotScopeValues)).sort().join(", ")}`
+    );
+  }
+  gaps.push(...collectWindowBindingGaps(windowSequence));
   for (const [index, window] of windowSequence.entries()) {
     const mapValidation = validateVbdTokenEfficiencyMap(window.vbd_token_efficiency_map);
     if (!mapValidation.valid) {
@@ -411,6 +503,7 @@ function collectBuildGaps(
         ).join("; ")}`
       );
     }
+    gaps.push(...collectWindowMapSummaryGaps(window, index));
   }
   return gaps;
 }
@@ -516,7 +609,9 @@ export function buildVbdTokenPilotRunFromWindowEvidence(
   const finalZone =
     windowSequence[windowSequence.length - 1]?.strategy_zone ?? "hold_for_evidence";
   const motion = motionFor(finalZone, pilotDecision !== "ready_for_strategy_review");
-  const firstSnapshot = input.windows?.[0]?.evidence_snapshot ?? null;
+  const firstSnapshot = Array.isArray(input.windows)
+    ? input.windows[0]?.evidence_snapshot ?? null
+    : null;
   const pilotScope = {
     ...defaultPilotScope(input),
     ...(input.pilotScope ?? {})
@@ -614,6 +709,16 @@ export function validateVbdTokenPilotRun(
   if (!ALLOWED_DECISIONS.has(String(run?.pilot_decision))) {
     gaps.push(`pilot_decision has invalid value ${String(run?.pilot_decision)}`);
   }
+  const expectedPilotDecision = decisionFor(
+    Array.isArray(run?.gaps) ? run.gaps : [],
+    Array.isArray(run?.window_sequence) ? run.window_sequence : []
+  );
+  if (
+    ALLOWED_DECISIONS.has(String(run?.pilot_decision)) &&
+    run?.pilot_decision !== expectedPilotDecision
+  ) {
+    gaps.push(`pilot_decision must be ${expectedPilotDecision}`);
+  }
   if (
     run?.valid === false &&
     !["hold_for_more_windows", "hold_for_evidence"].includes(String(run?.pilot_decision))
@@ -661,7 +766,9 @@ export function validateVbdTokenPilotRun(
           `window_sequence[${index}].vbd_token_efficiency_map is invalid: ${mapValidation.gaps.join("; ")}`
         );
       }
+      gaps.push(...collectWindowMapSummaryGaps(window, index));
     });
+    gaps.push(...collectWindowBindingGaps(run.window_sequence));
   }
   if (!ALLOWED_MOTIONS.has(String(run?.recommended_next_motion?.motion))) {
     gaps.push(
@@ -701,6 +808,12 @@ export function validateVbdTokenPilotRun(
   const forbiddenKeys = collectForbiddenKeys(run);
   if (forbiddenKeys.length > 0) {
     gaps.push(`Forbidden field(s) present: ${Array.from(new Set(forbiddenKeys)).sort().join(", ")}`);
+  }
+  const unsafeMetadataValues = collectUnsafeMetadataValues(run);
+  if (unsafeMetadataValues.length > 0) {
+    gaps.push(
+      `Forbidden metadata value(s) present: ${Array.from(new Set(unsafeMetadataValues)).sort().join(", ")}`
+    );
   }
   if (!Array.isArray(run?.caveats) || run.caveats.length === 0) {
     gaps.push("caveats must contain at least one caveat");

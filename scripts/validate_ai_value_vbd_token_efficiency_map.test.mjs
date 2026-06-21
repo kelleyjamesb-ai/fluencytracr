@@ -365,6 +365,30 @@ test("suppressed or not-computed breadth holds VBD maps", () => {
   }
 });
 
+test("suppressed or held dimension evidence wins over stale positive posture labels", () => {
+  for (const evidenceState of ["suppressed", "held", "not_computed"]) {
+    const map = buildMap(
+      baseSnapshot({
+        vbd_operating_map: {
+          ...highVbdOperatingMap(),
+          velocity: {
+            ...highVbdOperatingMap().velocity,
+            state: "high",
+            evidence_state: evidenceState,
+            caveats: [`Velocity evidence is ${evidenceState} and cannot be interpreted.`]
+          }
+        }
+      }),
+      tokenSignal(),
+      { mapId: `vbd_token_efficiency_map_velocity_evidence_${evidenceState}` }
+    );
+
+    expectValidMap(map);
+    assert.equal(map.strategy_zone, "hold_for_evidence", evidenceState);
+    assert.notEqual(map.vbd_posture, "high_work_integration", evidenceState);
+  }
+});
+
 test("emerging VBD maps hold when aggregate slices are suppressed", () => {
   const snapshot = baseSnapshot({
     aggregate_telemetry_summary: {
@@ -583,6 +607,23 @@ test("map allows negative privacy caveats that name blocked artifacts", () => {
   };
 
   expectValidMap(map);
+});
+
+test("map rejects direct identifiers even inside negative privacy caveats", () => {
+  const map = {
+    ...clone(buildMap()),
+    caveats: [
+      ...buildMap().caveats,
+      "No employee email jane@example.com is emitted."
+    ]
+  };
+
+  const result = validateVbdTokenEfficiencyMap(map);
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.some((gap) => /Forbidden metadata value/i.test(gap)),
+    result.gaps.join("; ")
+  );
 });
 
 test("map examples validate", () => {
