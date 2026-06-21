@@ -94,6 +94,68 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
+  it("shows the governed source package review queue on the workspace overview", () => {
+    const { container } = renderWorkspace();
+
+    const queue = screen.getByRole("region", { name: /Source Package Review Queue/i });
+    expect(queue).toBeInTheDocument();
+    expect(within(queue).getByRole("heading", { name: /Source Package Review Queue/i })).toBeInTheDocument();
+    expect(within(queue).getByText(/Evidence intake queue/i)).toBeInTheDocument();
+    expect(
+      within(queue).getByText(/Data Spine gate before Measurement Cell assembly/i)
+    ).toBeInTheDocument();
+    expect(
+      within(queue).getByText(/Review aggregate source lanes before the Data Spine gate tests them/i)
+    ).toBeInTheDocument();
+
+    const lanes = within(queue).getAllByRole("article");
+    expect(lanes).toHaveLength(6);
+    expect(within(queue).getByText("Blueprint")).toBeInTheDocument();
+    expect(within(queue).getByText("AI Fluency")).toBeInTheDocument();
+    expect(within(queue).getByText("VBD / Token")).toBeInTheDocument();
+    expect(within(queue).getByText("Customer metric")).toBeInTheDocument();
+    expect(within(queue).getByText("ROI assumption context")).toBeInTheDocument();
+    expect(within(queue).getByText("Governance")).toBeInTheDocument();
+
+    for (const status of ["parsed", "approved", "aligned", "held", "uploaded", "suppressed", "missing"]) {
+      expect(within(queue).getAllByText(status).length).toBeGreaterThan(0);
+    }
+    expect(within(queue).getByText("3 of 6 lanes clear for Data Spine review")).toBeInTheDocument();
+    expect(
+      within(queue).getByText(/Held or suppressed lanes stay out of finance-context investigation readiness/i)
+    ).toBeInTheDocument();
+    expect(within(queue).getByText("Next action")).toBeInTheDocument();
+    expect(within(queue).getByText(/Map parsed value routes to workflow_family/i)).toBeInTheDocument();
+    expect(within(queue).getByText(/Resolve metric owner approval/i)).toBeInTheDocument();
+    expect(within(queue).getByText(/Regenerate at aggregate threshold/i)).toBeInTheDocument();
+
+    expect(within(queue).getByText("Data Spine alignment keys")).toBeInTheDocument();
+    expect(within(queue).getByText("org_id")).toBeInTheDocument();
+    expect(within(queue).getByText("client_id")).toBeInTheDocument();
+    expect(within(queue).getByText("workflow_family")).toBeInTheDocument();
+    expect(within(queue).getByText("function_area")).toBeInTheDocument();
+    expect(within(queue).getByText("cohort_key")).toBeInTheDocument();
+    expect(within(queue).getByText("baseline_window")).toBeInTheDocument();
+    expect(within(queue).getByText("comparison_window")).toBeInTheDocument();
+    expect(within(queue).getByText("Review queue labels")).toBeInTheDocument();
+    expect(within(queue).getByText("metric_id")).toBeInTheDocument();
+    expect(within(queue).getByText("source_ref")).toBeInTheDocument();
+    expect(within(queue).getByText("owner_role")).toBeInTheDocument();
+    expect(within(queue).getByText("review_state")).toBeInTheDocument();
+    expect(within(queue).getAllByText("Clear for review")).toHaveLength(3);
+    expect(within(queue).getAllByText("Hold before review")).toHaveLength(3);
+    expect(within(queue).getByText(/aggregate evidence status only/i)).toBeInTheDocument();
+    expect(within(queue).queryByText(/prepare_finance_context_investigation_packet/i)).not.toBeInTheDocument();
+
+    expect(queue.textContent).not.toMatch(/confidence\s*%|probability|financial attribution|causal proof/i);
+    expect(queue.textContent).not.toMatch(/individual|person-level|manager ranking|team ranking/i);
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "ROI proof",
+      "productivity proof",
+      "customer-facing financial output"
+    ]);
+  });
+
   it("keeps the AI Fluency page focused on the organizational example", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 

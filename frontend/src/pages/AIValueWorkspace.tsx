@@ -841,6 +841,140 @@ const StatusPill = ({ label, tone = "neutral" }: { label: string; tone?: "neutra
   <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>
 );
 
+type SourcePackageReviewStatus =
+  | "missing"
+  | "uploaded"
+  | "parsed"
+  | "held"
+  | "approved"
+  | "suppressed"
+  | "aligned";
+
+type SourcePackageReviewLane = {
+  id: string;
+  label: string;
+  evidenceLayer: string;
+  sourceMode: string;
+  status: SourcePackageReviewStatus;
+  ownerRole: string;
+  sourceRef: string;
+  nextAction: string;
+  caveat: string;
+  dataSpineReviewClear: boolean;
+};
+
+const sourcePackageStatusTone: Record<SourcePackageReviewStatus, "neutral" | "warn" | "good"> = {
+  missing: "warn",
+  uploaded: "neutral",
+  parsed: "neutral",
+  held: "warn",
+  approved: "good",
+  suppressed: "warn",
+  aligned: "good"
+};
+
+const sourcePackageSourceStates = [
+  "missing",
+  "uploaded",
+  "parsed",
+  "held",
+  "approved",
+  "suppressed",
+  "aligned"
+] satisfies SourcePackageReviewStatus[];
+
+const sourcePackageAlignmentKeys = [
+  "org_id",
+  "client_id",
+  "workflow_family",
+  "function_area",
+  "cohort_key",
+  "baseline_window",
+  "comparison_window"
+] as const;
+
+const sourcePackageReadinessChecks = [
+  "metric_id",
+  "source_ref",
+  "owner_role",
+  "review_state"
+] as const;
+
+const sourcePackageReviewLanes = [
+  {
+    id: "blueprint",
+    label: "Blueprint",
+    evidenceLayer: "Workflow and value route",
+    sourceMode: "blueprint_document_upload",
+    status: "parsed",
+    ownerRole: "Value team",
+    sourceRef: "Blueprint extraction reference",
+    nextAction: "Map parsed value routes to workflow_family and confirm owner review.",
+    caveat: "Parsed Blueprint text still needs source-bound approval before Measurement Cell handoff.",
+    dataSpineReviewClear: false
+  },
+  {
+    id: "ai-fluency",
+    label: "AI Fluency",
+    evidenceLayer: "Aggregate instrument movement",
+    sourceMode: "ai_fluency_dashboard_export",
+    status: "approved",
+    ownerRole: "AI Fluency owner",
+    sourceRef: "Aggregate dashboard export",
+    nextAction: "Refresh approved aggregate export for the same baseline and comparison windows.",
+    caveat: "Aggregate movement can inform readiness only when the dashboard export stays source-bound.",
+    dataSpineReviewClear: true
+  },
+  {
+    id: "vbd-token",
+    label: "VBD / Token",
+    evidenceLayer: "VBD and token intensity context",
+    sourceMode: "scrubbed_glean_bigquery_export",
+    status: "aligned",
+    ownerRole: "Glean review",
+    sourceRef: "Scrubbed aggregate telemetry summary",
+    nextAction: "Keep VBD and token windows aligned to the selected workflow family.",
+    caveat: "Token intensity is operating context only and does not change the VBD formula.",
+    dataSpineReviewClear: true
+  },
+  {
+    id: "customer-metric",
+    label: "Customer metric",
+    evidenceLayer: "Selected business metric",
+    sourceMode: "customer_metric_aggregate_export",
+    status: "held",
+    ownerRole: "Metric owner",
+    sourceRef: "Customer metric source reference",
+    nextAction: "Resolve metric owner approval, metric definition, and same-window alignment.",
+    caveat: "Metric movement stays held until the owner and source system approve the aggregate lane.",
+    dataSpineReviewClear: false
+  },
+  {
+    id: "assumption-context",
+    label: "ROI assumption context",
+    evidenceLayer: "Scenario assumptions",
+    sourceMode: "assumption_approval",
+    status: "uploaded",
+    ownerRole: "Business owner",
+    sourceRef: "Assumption approval reference",
+    nextAction: "Tag source date, assumption owner, and approval state before finance-context review.",
+    caveat: "Assumptions are scenario context only and cannot substitute for a Measurement Cell.",
+    dataSpineReviewClear: false
+  },
+  {
+    id: "governance",
+    label: "Governance",
+    evidenceLayer: "Aggregate boundary controls",
+    sourceMode: "governance_attestation",
+    status: "approved",
+    ownerRole: "Governance reviewer",
+    sourceRef: "Governance attestation reference",
+    nextAction: "Regenerate at aggregate threshold if any lane becomes held or suppressed.",
+    caveat: "Governance clears source boundaries only; it cannot override a held or suppressed lane.",
+    dataSpineReviewClear: true
+  }
+] satisfies SourcePackageReviewLane[];
+
 const labelFromToken = (
   value: unknown,
   labels: Record<string, string>,
@@ -1166,6 +1300,8 @@ const WorkspaceHome = ({
       </article>
     </section>
 
+    <SourcePackageReviewQueuePanel />
+
     <section className="ai-value-phase-grid" aria-label="Workspace phase cards">
       {workspacePages.filter((page) => page.slug !== "home").map((page, index) => (
         <article className="ai-value-panel ai-value-phase-card" key={page.slug}>
@@ -1188,6 +1324,117 @@ const WorkspaceHome = ({
 
   </>
 );
+
+const SourcePackageReviewQueuePanel = () => {
+  const dataSpineClearLaneCount = sourcePackageReviewLanes.filter(
+    (lane) => lane.dataSpineReviewClear
+  ).length;
+
+  return (
+    <section
+      className="ai-value-source-package-queue"
+      aria-label="Source Package Review Queue"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Evidence intake queue</p>
+          <h3>Source Package Review Queue</h3>
+          <p>
+            Review aggregate source lanes before the Data Spine gate tests them.
+          </p>
+        </div>
+        <div className="ai-value-source-package-head-actions">
+          <StatusPill label="Data Spine gate before Measurement Cell assembly" tone="warn" />
+          <StatusPill
+            label={`${dataSpineClearLaneCount} of ${sourcePackageReviewLanes.length} lanes clear for Data Spine review`}
+            tone="good"
+          />
+        </div>
+      </div>
+
+      <div
+        className="ai-value-source-package-summary"
+        role="group"
+        aria-label="Source package review boundaries"
+      >
+        <div>
+          <span className="ai-value-map-label">Data Spine alignment keys</span>
+          <div className="ai-value-source-package-key-list">
+            {sourcePackageAlignmentKeys.map((key) => (
+              <span key={key}>{key}</span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <span className="ai-value-map-label">Review queue labels</span>
+          <div className="ai-value-source-package-status-list">
+            {sourcePackageSourceStates.map((status) => (
+              <StatusPill key={status} label={status} tone={sourcePackageStatusTone[status]} />
+            ))}
+          </div>
+          <div className="ai-value-source-package-key-list ai-value-source-package-readiness-list">
+            {sourcePackageReadinessChecks.map((check) => (
+              <span key={check}>{check}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="ai-value-source-package-lane-grid">
+        {sourcePackageReviewLanes.map((lane) => (
+          <article
+            className={`ai-value-source-package-lane ai-value-source-package-lane-${lane.status}`}
+            key={lane.id}
+            aria-label={`${lane.label} source package lane`}
+          >
+            <div className="ai-value-source-package-lane-head">
+              <div>
+                <span className="ai-value-map-label">{lane.sourceMode}</span>
+                <h4>{lane.label}</h4>
+              </div>
+              <StatusPill label={lane.status} tone={sourcePackageStatusTone[lane.status]} />
+            </div>
+            <dl className="ai-value-source-package-facts">
+              <div>
+                <dt>Evidence layer</dt>
+                <dd>{lane.evidenceLayer}</dd>
+              </div>
+              <div>
+                <dt>Owner role</dt>
+                <dd>{lane.ownerRole}</dd>
+              </div>
+              <div>
+                <dt>Source reference</dt>
+                <dd>{lane.sourceRef}</dd>
+              </div>
+              <div>
+                <dt>Data Spine state</dt>
+                <dd>{lane.dataSpineReviewClear ? "Clear for review" : "Hold before review"}</dd>
+              </div>
+            </dl>
+            <div className="ai-value-source-package-action">
+              <span className="ai-value-map-label">Action needed</span>
+              <p>{lane.nextAction}</p>
+            </div>
+            <p className="ai-value-source-package-caveat">{lane.caveat}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="ai-value-source-package-footer">
+        <div>
+          <span className="ai-value-map-label">Next action</span>
+          <strong>Close held lanes before finance-context investigation readiness.</strong>
+        </div>
+        <p>
+          Held or suppressed lanes stay out of finance-context investigation readiness.
+          Source Packages show aggregate evidence status only; they do not create
+          Data Spine or Measurement Cell readiness by themselves.
+        </p>
+      </div>
+    </section>
+  );
+};
 
 const VbdFrameworkPanel = () => (
   <section
