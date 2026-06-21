@@ -63,6 +63,7 @@
     "test:ai-value-customer-metric-intake": "npm run build --workspace shared && node --test scripts/validate_ai_value_customer_metric_intake.test.mjs",
     "test:ai-value-real-data-intake-packet-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_real_data_intake_packet_runner.test.mjs",
     "test:ai-value-operator-intake-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_operator_intake_adapter.test.mjs",
+    "test:ai-value-operator-time-series-run": "npm run build --workspace shared && node --test scripts/validate_ai_value_operator_time_series_run.test.mjs",
     "test:ai-value-measurement-cell-assembly-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_cell_assembly_runner.test.mjs",
     "test:ai-value-adversarial-client-fixture-pack": "npm run build --workspace shared && node --test scripts/validate_ai_value_adversarial_client_fixture_pack.test.mjs",
     "test:ai-value-ui-output-contract": "npm run build --workspace shared && node --test scripts/validate_ai_value_ui_output_contract.test.mjs",

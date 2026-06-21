@@ -268,6 +268,17 @@ export type {
 } from "./operatorIntakeAdapter";
 
 export {
+  AI_VALUE_OPERATOR_TIME_SERIES_RUN_SCHEMA_VERSION,
+  buildOperatorTimeSeriesRun,
+  validateOperatorTimeSeriesRun
+} from "./operatorTimeSeriesRun";
+export type {
+  BuildOperatorTimeSeriesRunInput,
+  BuildOperatorTimeSeriesWindowInput,
+  OperatorTimeSeriesRunValidationResult
+} from "./operatorTimeSeriesRun";
+
+export {
   AI_VALUE_MEASUREMENT_CELL_SCHEMA_VERSION,
   buildMeasurementCell,
   validateMeasurementCell

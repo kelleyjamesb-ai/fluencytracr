@@ -2,6 +2,32 @@
 
 ## Last Completed
 
+- AI Value Operator Time-Series Run slice (user-requested, 2026-06-21):
+  added the governed operator time-series run layer over the existing
+  aggregate-safe Operator Intake Adapter. The new contract builds metadata-only
+  governed run references across Day 0, 30, 60, 90, 180, and 365 milestone
+  windows, holds incomplete milestone series, keeps rolling 30-day series as
+  operating context only, and fails closed on mixed identity, unsupported or
+  repeated milestones, invalid child operator runs, stale embedded validation,
+  derived reference drift, wrapper/child cadence drift, unsafe value language,
+  forbidden fields, route/schema/persistence side doors, ROI/EBITA/EBITDA,
+  causality, productivity, confidence percentages, probabilities,
+  person-level output, ranking, or customer-facing financial output. Added the
+  contract doc, package script, shared export, targeted validator tests, and a
+  metadata-only LMSYS assurance manifest case. No backend route, persistence,
+  schema, UI, connector, confidence model, finance-context feed, or
+  customer-facing financial output was added. Verification:
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-measurement-cell`;
+  `npm run test:ai-value-data-spine-readiness`;
+  `npm run test:ai-value-value-hypothesis-readiness-packet-runner`;
+  `npm run test:seed`; `npm run build --workspace shared`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Value VBD x Token / Org Fluency UI review repair (PR #364, 2026-06-21):
   addressed the open review fixes and the failing GitHub action on
   `codex/OrgFluency-ui-ux-update`. The VBD x Token map now lets suppressed,
