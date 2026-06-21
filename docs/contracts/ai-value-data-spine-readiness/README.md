@@ -61,6 +61,11 @@ BigQuery rows, raw exports, prompts, responses, transcripts, query text, SQL,
 or files. Those transformations must happen upstream and pass only approved
 aggregate structured objects into this contract.
 
+Source references must remain metadata-only. The validator rejects unsafe
+source-ref values that carry direct identifiers, raw prompt/content markers,
+SQL/query text, financial claims, probability/confidence outputs, productivity
+claims, or ranking language.
+
 ## Readiness States
 
 - `NOT_READY`
@@ -68,7 +73,8 @@ aggregate structured objects into this contract.
 - `MEASUREMENT_CELL_READY`
 
 `MEASUREMENT_CELL_READY` requires all source lanes to be present, approved,
-clear, aggregate-only, source-bound, and aligned.
+clear, aggregate-only, source-bound, owner-role tagged, and aligned. The
+customer metric lane must also carry `metric_id`.
 
 ## BigQuery / Glean Boundary
 

@@ -188,6 +188,16 @@ export type {
 } from "./dataSpineReadiness";
 
 export {
+  AI_VALUE_SOURCE_PACKAGE_REVIEW_QUEUE_SCHEMA_VERSION,
+  buildSourcePackageReviewQueue,
+  validateSourcePackageReviewQueue
+} from "./sourcePackageReviewQueue";
+export type {
+  BuildSourcePackageReviewQueueInput,
+  SourcePackageReviewQueueValidationResult
+} from "./sourcePackageReviewQueue";
+
+export {
   AI_VALUE_BLUEPRINT_EXTRACTION_DRAFT_SCHEMA_VERSION,
   buildBlueprintExtractionDraft,
   validateBlueprintExtractionDraft

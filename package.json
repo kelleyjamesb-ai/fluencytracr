@@ -51,6 +51,7 @@
     "test:ai-value-value-hypothesis-readiness-packet-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_value_hypothesis_readiness_packet_runner.test.mjs",
     "test:ai-value-measurement-cell": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_cell.test.mjs",
     "test:ai-value-source-packages": "npm run build --workspace shared && node --test scripts/validate_ai_value_source_packages.test.mjs",
+    "test:ai-value-source-package-review-queue": "npm run build --workspace shared && node --test scripts/validate_ai_value_source_package_review_queue.test.mjs",
     "test:ai-value-scrubbed-glean-export-converter": "npm run build --workspace shared && node --test scripts/validate_ai_value_scrubbed_glean_export_converter.test.mjs",
     "test:ai-value-pilot-intake-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_pilot_intake_runner.test.mjs",
     "test:ai-value-data-spine-readiness": "npm run build --workspace shared && node --test scripts/validate_ai_value_data_spine_readiness.test.mjs",

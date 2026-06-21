@@ -139,19 +139,33 @@ const FORBIDDEN_FIELD_PATTERNS = [
   /person_level_hris/i,
   /manager_ranking/i,
   /team_ranking/i,
+  /manager_rank/i,
+  /team_rank/i,
   /people_decisioning/i,
+  /^confidence$/i,
   /^confidence_percentage$/i,
   /^confidence_percent$/i,
   /^probability$/i,
+  /probability_score/i,
   /contribution_probability/i,
   /contribution_likelihood/i,
   /^roi$/i,
   /realized_roi/i,
+  /roi_(?:value|amount|calculation|result|impact)/i,
   /^ebita$/i,
+  /ebita_(?:value|amount|impact|calculation|result)/i,
   /^ebitda$/i,
+  /ebitda_(?:value|amount|impact|calculation|result)/i,
+  /dollar(?:ized)?_(?:value|amount|impact|output)/i,
+  /financial_impact/i,
   /financial_attribution/i,
   /^financial_output$/i,
+  /^customer_facing_economic_output$/i,
   /^customer_facing_financial_output$/i,
+  /causality_claim/i,
+  /causal_proof/i,
+  /productivity_claim/i,
+  /productivity_lift/i,
   /^backend_routes?$/i,
   /^frontend_ui$/i,
   /^persistence_table$/i,
@@ -160,9 +174,76 @@ const FORBIDDEN_FIELD_PATTERNS = [
 
 const GOVERNED_KEY_ALLOWLIST = new Set([
   "blocked_uses",
-  "boundary_policy",
-  ...REQUIRED_FALSE_BOUNDARY_FLAGS
+  "boundary_policy"
 ]);
+
+const FEED_KEYS = new Set([
+  "measurement_cell_input",
+  "value_hypothesis_packet_runner",
+  "customer_facing_financial_output"
+]);
+
+const SAFE_ALLOWED_USES = [
+  "source_alignment_review",
+  "measurement_cell_preparation",
+  "value_hypothesis_packet_preparation"
+];
+
+const PRIVACY_AND_RAW_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_(?:id|identifier|email)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i,
+  /(?:^|_)raw_(?:rows?|files?|prompt|response|transcript|content|events?)(?:_|$)/i,
+  /(?:^|_)(?:prompt|transcript)(?:_|$)/i,
+  /(?:^|_)select(?:_|$)/i,
+  /(?:^|_)from_raw(?:_|$)/i,
+  /(?:^|_)sql_text(?:_|$)/i,
+  /(?:^|_)bigquery_sql(?:_|$)/i,
+  /(?:^|_)file_contents?(?:_|$)/i,
+  /(?:^|_)response_(?:text|body|content|message|raw|value)(?:_|$)/i,
+  /(?:^|_)llm_response(?:_|$)/i
+];
+
+const CLAIM_AND_OUTPUT_VALUE_PATTERNS = [
+  /^roi$/i,
+  /(?:^|_)roi(?:_|$)/i,
+  /realized_roi/i,
+  /return_on_investment/i,
+  /^ebita$/i,
+  /(?:^|_)ebita(?:_|$)/i,
+  /^ebitda$/i,
+  /(?:^|_)ebitda(?:_|$)/i,
+  /financial_(?:impact|output|claim|attribution)/i,
+  /customer_facing_economic_output/i,
+  /customer_facing_financial_output/i,
+  /dollar(?:ized)?_(?:value|amount|impact|output)/i,
+  /probability_output/i,
+  /probability_score/i,
+  /confidence_(?:score|percentage|percent)/i,
+  /^confidence$/i,
+  /(?:^|_)p_value(?:_|$)/i,
+  /causality/i,
+  /causal/i,
+  /productivity_claim/i,
+  /manager_(?:score|ranking)/i,
+  /manager_rank/i,
+  /team_(?:score|ranking)/i,
+  /team_rank/i,
+  /productivity_lift/i
+];
+
+const CAVEAT_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_(?:id|identifier|email)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i
+];
+
+const FORBIDDEN_VALUE_PATTERNS = [
+  ...PRIVACY_AND_RAW_VALUE_PATTERNS,
+  ...CLAIM_AND_OUTPUT_VALUE_PATTERNS
+];
 
 export interface DataSpineIntakeReadinessValidationResult {
   schema_version: string;
@@ -241,6 +322,7 @@ function canonicalSource(input: BuildDataSpineIntakeReadinessInput, source: any 
     cohort_key: source.cohort_key ?? input.cohortKey,
     baseline_window: source.baseline_window ?? input.baselineWindow,
     comparison_window: source.comparison_window ?? input.comparisonWindow,
+    owner_role: source.owner_role ?? null,
     owner_approval_state: normalizeState(source.owner_approval_state, "missing"),
     review_state: normalizeState(source.review_state, "needs_review"),
     aggregate_only: source.aggregate_only ?? true,
@@ -283,15 +365,87 @@ function collectForbiddenFields(
   for (const [key, nested] of Object.entries(value)) {
     const normalized = normalizeKey(key);
     const currentPath = [...path, key];
+    const forbiddenBoundaryFlag = REQUIRED_FALSE_BOUNDARY_FLAGS.includes(normalized);
     if (
-      !GOVERNED_KEY_ALLOWLIST.has(normalized) &&
-      FORBIDDEN_FIELD_PATTERNS.some((pattern) => pattern.test(key) || pattern.test(normalized))
+      !isAllowedGovernedKey(key, currentPath, nested) &&
+      (
+        forbiddenBoundaryFlag ||
+        FORBIDDEN_FIELD_PATTERNS.some((pattern) => pattern.test(key) || pattern.test(normalized))
+      )
     ) {
       fields.add(currentPath.join("."));
     }
     collectForbiddenFields(nested, fields, currentPath);
   }
   return fields;
+}
+
+function isAllowedGovernedKey(key: string, path: string[], value: any): boolean {
+  const normalizedKey = normalizeKey(key);
+  const normalizedPath = path.map(normalizeKey);
+  if (
+    normalizedPath.length === 1 &&
+    GOVERNED_KEY_ALLOWLIST.has(normalizedKey)
+  ) {
+    return true;
+  }
+  if (
+    normalizedPath.length === 2 &&
+    normalizedPath[0] === "boundary_policy" &&
+    REQUIRED_FALSE_BOUNDARY_FLAGS.includes(normalizedKey) &&
+    value === false
+  ) {
+    return true;
+  }
+  if (
+    normalizedPath.length === 2 &&
+    normalizedPath[0] === "feeds" &&
+    FEED_KEYS.has(normalizedKey)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isValueCheckExemptPath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return normalizedPath[0] === "blocked_uses" ||
+    normalizedPath[0] === "boundary_policy";
+}
+
+function valuePatternsForPath(path: string[]): RegExp[] {
+  const normalizedPath = path.map(normalizeKey);
+  if (normalizedPath[0] === "required_caveats") {
+    return CAVEAT_VALUE_PATTERNS;
+  }
+  return FORBIDDEN_VALUE_PATTERNS;
+}
+
+function collectForbiddenValues(
+  value: any,
+  values: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
+  if (typeof value === "string") {
+    if (!isValueCheckExemptPath(path)) {
+      const normalizedValue = normalizeKey(value);
+      if (
+        valuePatternsForPath(path).some((pattern) => pattern.test(value) || pattern.test(normalizedValue))
+      ) {
+        values.add(path.join(".") || "<root>");
+      }
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectForbiddenValues(item, values, [...path, String(index)]));
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectForbiddenValues(nested, values, [...path, key]);
+  }
+  return values;
 }
 
 function sourceGapKey(sourceKey: string): string {
@@ -306,19 +460,22 @@ function sourceGapKey(sourceKey: string): string {
   }
 }
 
-function sourceReady(source: any): boolean {
-  return source.state === "present" &&
-    source.source_ref &&
-    source.owner_approval_state === "approved" &&
-    source.review_state === "clear" &&
-    source.aggregate_only === true &&
-    source.aligned === true;
+function sourceReady(sourceKey: string, source: any): boolean {
+  return source?.state === "present" &&
+    Boolean(source?.source_ref) &&
+    Boolean(source?.owner_role) &&
+    (sourceKey !== "customer_metric" || Boolean(source?.metric_id)) &&
+    source?.owner_approval_state === "approved" &&
+    source?.review_state === "clear" &&
+    source?.aggregate_only === true &&
+    source?.aligned === true &&
+    collectForbiddenValues(source).size === 0;
 }
 
 function deriveMissingEvidence(sourceReadiness: Record<string, any>): string[] {
   const missing: string[] = [];
   for (const key of SOURCE_KEYS) {
-    if (!sourceReady(sourceReadiness[key])) missing.push(sourceGapKey(key));
+    if (!sourceReady(key, sourceReadiness[key])) missing.push(sourceGapKey(key));
   }
   return missing;
 }
@@ -561,6 +718,9 @@ function collectReadinessStateGaps(spine: any): string[] {
 
 function collectBoundaryGaps(spine: any): string[] {
   const gaps: string[] = [];
+  if (!sameStringSet(spine?.allowed_uses, SAFE_ALLOWED_USES)) {
+    gaps.push("allowed_uses must match safe Data Spine allowed uses");
+  }
   for (const use of REQUIRED_BLOCKED_USES) {
     if (!stringsOf(spine?.blocked_uses).includes(use)) {
       gaps.push(`blocked_uses missing ${use}`);
@@ -576,6 +736,9 @@ function collectBoundaryGaps(spine: any): string[] {
   }
   for (const field of [...collectForbiddenFields(spine)].sort()) {
     gaps.push(`Forbidden field detected: ${field}`);
+  }
+  for (const value of [...collectForbiddenValues(spine)].sort()) {
+    gaps.push(`Forbidden value detected: ${value}`);
   }
   return gaps;
 }
