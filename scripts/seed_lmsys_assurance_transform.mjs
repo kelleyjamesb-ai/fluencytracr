@@ -1251,6 +1251,38 @@ export function buildAssuranceCases(options = {}) {
       events: []
     },
     {
+      id: "operator_workflow_internal_review",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-operator-workflow`,
+      operator_workflow_manifest: {
+        source_contract:
+          "docs/contracts/ai-value-operator-workflow/README.md",
+        aggregate_only: true,
+        internal_operator_review_only: true,
+        child_objects_revalidated: true,
+        source_review_status_required: true,
+        measurement_cell_status_required: true,
+        time_series_status_required: true,
+        packet_preparation_status_required: true,
+        emits_missing_evidence: true,
+        emits_review_queue: true,
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false,
+        person_level_fields_included: false,
+        creates_backend_routes: false,
+        creates_frontend_ui: false,
+        persists_source_data: false
+      },
+      expected: {
+        operator_workflow: "CONTRACT_ONLY",
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false
+      },
+      events: []
+    },
+    {
       id: "duplicate_execution_ids_across_orgs",
       org_id: "lmsys-org-tenant-a",
       workflow_id: `${workflowPrefix}-shared-model`,

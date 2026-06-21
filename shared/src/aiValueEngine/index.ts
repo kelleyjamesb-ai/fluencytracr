@@ -279,6 +279,16 @@ export type {
 } from "./operatorTimeSeriesRun";
 
 export {
+  AI_VALUE_OPERATOR_WORKFLOW_SCHEMA_VERSION,
+  buildOperatorWorkflow,
+  validateOperatorWorkflow
+} from "./operatorWorkflow";
+export type {
+  BuildOperatorWorkflowInput,
+  OperatorWorkflowValidationResult
+} from "./operatorWorkflow";
+
+export {
   AI_VALUE_MEASUREMENT_CELL_SCHEMA_VERSION,
   buildMeasurementCell,
   validateMeasurementCell

@@ -121,6 +121,7 @@ assert.deepEqual(ids, [
   "ghost_use_residual_fires",
   "ghost_use_suppressed_by_ambiguity",
   "operator_time_series_governed_references",
+  "operator_workflow_internal_review",
   "outcome_evidence_suppress_with_outcomes",
   "outcome_evidence_surface_no_outcomes",
   "outcome_evidence_surface_with_outcomes",
@@ -137,7 +138,8 @@ assert.deepEqual(ids, [
 assert.ok(cases.every((entry) =>
   Array.isArray(entry.events) ||
   Array.isArray(entry.invalid_payloads) ||
-  entry.operator_time_series_manifest
+  entry.operator_time_series_manifest ||
+  entry.operator_workflow_manifest
 ));
 const dogfoodBqCases = cases.filter((entry) => entry.dogfood_bq_manifest);
 assert.deepEqual(dogfoodBqCases.map((entry) => entry.id).sort(), [
@@ -224,6 +226,33 @@ for (const entry of operatorTimeSeriesCases) {
   assert.equal(entry.operator_time_series_manifest.customer_facing_financial_output, false);
   assert.equal(entry.operator_time_series_manifest.person_level_fields_included, false);
   assert.equal(entry.expected.operator_time_series, "CONTRACT_ONLY");
+}
+const operatorWorkflowCases = cases.filter((entry) => entry.operator_workflow_manifest);
+assert.deepEqual(operatorWorkflowCases.map((entry) => entry.id).sort(), [
+  "operator_workflow_internal_review"
+]);
+for (const entry of operatorWorkflowCases) {
+  assert.equal(
+    entry.operator_workflow_manifest.source_contract,
+    "docs/contracts/ai-value-operator-workflow/README.md"
+  );
+  assert.equal(entry.operator_workflow_manifest.aggregate_only, true);
+  assert.equal(entry.operator_workflow_manifest.internal_operator_review_only, true);
+  assert.equal(entry.operator_workflow_manifest.child_objects_revalidated, true);
+  assert.equal(entry.operator_workflow_manifest.source_review_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.measurement_cell_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.time_series_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.packet_preparation_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.emits_missing_evidence, true);
+  assert.equal(entry.operator_workflow_manifest.emits_review_queue, true);
+  assert.equal(entry.operator_workflow_manifest.confidence_model_feed, false);
+  assert.equal(entry.operator_workflow_manifest.finance_context_investigation_feed, false);
+  assert.equal(entry.operator_workflow_manifest.customer_facing_financial_output, false);
+  assert.equal(entry.operator_workflow_manifest.person_level_fields_included, false);
+  assert.equal(entry.operator_workflow_manifest.creates_backend_routes, false);
+  assert.equal(entry.operator_workflow_manifest.creates_frontend_ui, false);
+  assert.equal(entry.operator_workflow_manifest.persists_source_data, false);
+  assert.equal(entry.expected.operator_workflow, "CONTRACT_ONLY");
 }
 const forwardedDistributionCases = cases.filter((entry) => entry.forwarded_distribution_manifest);
 assert.deepEqual(forwardedDistributionCases.map((entry) => entry.id).sort(), [
