@@ -289,6 +289,17 @@ export type {
 } from "./operatorWorkflow";
 
 export {
+  AI_VALUE_OPERATOR_EVIDENCE_PACKAGE_RUN_SCHEMA_VERSION,
+  buildOperatorEvidencePackageRun,
+  validateOperatorEvidencePackageRun
+} from "./operatorEvidencePackageRunner";
+export type {
+  BuildOperatorEvidencePackageRunInput,
+  BuildOperatorEvidencePackageWindowInput,
+  OperatorEvidencePackageRunValidationResult
+} from "./operatorEvidencePackageRunner";
+
+export {
   AI_VALUE_MEASUREMENT_CELL_SCHEMA_VERSION,
   buildMeasurementCell,
   validateMeasurementCell

@@ -2,6 +2,33 @@
 
 ## Last Completed
 
+- AI Value Operator Evidence Package Runner slice (user-requested, 2026-06-21):
+  added the governed package runner that composes already-parsed aggregate
+  window inputs into Operator Intake Adapter runs, an Operator Time-Series Run,
+  an Operator Workflow, and one internal operator package state. The runner is
+  intentionally thin: it reuses existing child contracts, recomputes embedded
+  child validations, fails closed on identity/window/source/packet drift, keeps
+  rolling 30-day windows as operating context only, and blocks ROI Bot or
+  assumption context from substituting for reviewed Source Packages,
+  Measurement Cells, governed milestone evidence, or Value Hypothesis packets.
+  Added the contract doc, package script, shared export, validator tests, and
+  LMSYS assurance manifest/self-test coverage. No UI, backend route,
+  persistence, schema, migration, ingestion job, live BigQuery/Glean connector,
+  confidence model, probability output, finance-context feed, ROI/EBITA/EBITDA
+  proof, causality claim, productivity claim, person-level output, ranking, or
+  customer-facing financial output was added. Verification:
+  `npm run test:ai-value-operator-evidence-package-runner`;
+  `npm run test:ai-value-operator-workflow`;
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-value-hypothesis-readiness-packet-runner`;
+  `npm run test:ai-value-data-spine-readiness`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run test:ai-value-measurement-cell`; `npm run test:seed`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Value Operator Time-Series Run slice (user-requested, 2026-06-21):
   added the governed operator time-series run layer over the existing
   aggregate-safe Operator Intake Adapter. The new contract builds metadata-only

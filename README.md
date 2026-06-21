@@ -177,6 +177,7 @@ is not the lead positioning for this repository.
 - AI Value Operator Intake Adapter: [docs/contracts/ai-value-operator-intake-adapter/README.md](docs/contracts/ai-value-operator-intake-adapter/README.md)
 - AI Value Operator Time-Series Run: [docs/contracts/ai-value-operator-time-series-run/README.md](docs/contracts/ai-value-operator-time-series-run/README.md)
 - AI Value Operator Workflow: [docs/contracts/ai-value-operator-workflow/README.md](docs/contracts/ai-value-operator-workflow/README.md)
+- AI Value Operator Evidence Package Runner: [docs/contracts/ai-value-operator-evidence-package-runner/README.md](docs/contracts/ai-value-operator-evidence-package-runner/README.md)
 - AI Value Claim Boundary schema: [schemas/ai-value-intelligence/claim-boundary.schema.json](schemas/ai-value-intelligence/claim-boundary.schema.json)
 - Customer Support AI Value claim boundary fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json](docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json)
 - AI Value Executive Packet schema: [schemas/ai-value-intelligence/executive-packet.schema.json](schemas/ai-value-intelligence/executive-packet.schema.json)

@@ -1283,6 +1283,39 @@ export function buildAssuranceCases(options = {}) {
       events: []
     },
     {
+      id: "operator_evidence_package_runner",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-operator-evidence-package`,
+      operator_evidence_package_manifest: {
+        source_contract:
+          "docs/contracts/ai-value-operator-evidence-package-runner/README.md",
+        aggregate_only: true,
+        internal_operator_review_only: true,
+        composes_operator_intake_runs: true,
+        composes_operator_time_series_run: true,
+        composes_operator_workflow: true,
+        child_objects_revalidated: true,
+        stale_validation_rejected: true,
+        required_milestone_days: [0, 30, 60, 90, 180, 365],
+        rolling_30_day_context_only: true,
+        assumptions_cannot_substitute_for_evidence: true,
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false,
+        person_level_fields_included: false,
+        creates_backend_routes: false,
+        creates_frontend_ui: false,
+        persists_source_data: false
+      },
+      expected: {
+        operator_evidence_package: "CONTRACT_ONLY",
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false
+      },
+      events: []
+    },
+    {
       id: "duplicate_execution_ids_across_orgs",
       org_id: "lmsys-org-tenant-a",
       workflow_id: `${workflowPrefix}-shared-model`,
