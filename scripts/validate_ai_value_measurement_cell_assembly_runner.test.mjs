@@ -7,6 +7,7 @@ import {
   buildDataSpineIntakeReadiness,
   buildMeasurementCellAssemblyRun,
   buildRealDataIntakePacketRun,
+  buildSourcePackageReviewQueue,
   validateMeasurementCell,
   validateMeasurementCellAssemblyRun
 } from "../shared/dist/aiValueEngine/index.js";
@@ -74,6 +75,7 @@ function source(plan, overrides = {}) {
     cohort_key: "workflow_family:customer_support_case_resolution|eligible_cases:2300",
     baseline_window: baselineWindow,
     comparison_window: comparisonWindow,
+    owner_role: "source_owner",
     owner_approval_state: "approved",
     review_state: "clear",
     aggregate_only: true,
@@ -235,6 +237,71 @@ function realDataRun(plan, dataSpine = readyDataSpine(plan)) {
   });
 }
 
+function sourcePackageExample(file, dataSpine, overrides = {}) {
+  const pkg = readJson(`${CONTRACTS}/ai-value-source-packages/examples/${file}`);
+  return {
+    ...pkg,
+    org_id: dataSpine.org_id,
+    covered_window: dataSpine.comparison_window,
+    ...overrides
+  };
+}
+
+function matchingSourcePackages(dataSpine) {
+  const sources = dataSpine.source_readiness;
+  return [
+    sourcePackageExample("layer-2-user-voice-package.json", dataSpine, {
+      source_package_id: "source_package_layer_2_ai_fluency_assembly",
+      source_refs: {
+        source_readiness_id: "source_readiness_ai_fluency_assembly",
+        aggregate_export_id: sources.ai_fluency.source_ref
+      }
+    }),
+    sourcePackageExample("layer-1-bigquery-telemetry-package.json", dataSpine, {
+      source_package_id: "source_package_layer_1_vbd_token_assembly",
+      source_refs: {
+        source_readiness_id: "source_readiness_vbd_token_assembly",
+        aggregate_probe_id: sources.vbd_token.source_ref,
+        reportability_signal_families: [
+          "assistant",
+          "search_document_retrieval",
+          "agent_run"
+        ]
+      }
+    }),
+    sourcePackageExample("layer-3-system-of-record-outcome-package.json", dataSpine, {
+      source_package_id: "source_package_layer_3_customer_metric_assembly",
+      source_refs: {
+        source_readiness_id: "source_readiness_customer_metric_assembly",
+        aggregate_outcome_export_id: sources.customer_metric.source_ref
+      }
+    }),
+    sourcePackageExample("assumption-approval-package.json", dataSpine, {
+      source_package_id: "source_package_assumption_assembly",
+      source_refs: {
+        source_readiness_id: "source_readiness_assumption_assembly",
+        assumption_approval_export_id: sources.assumption.source_ref
+      }
+    }),
+    sourcePackageExample("governance-control-package.json", dataSpine, {
+      source_package_id: "source_package_governance_assembly",
+      source_refs: {
+        source_readiness_id: "source_readiness_governance_assembly",
+        governance_control_export_id: sources.governance.source_ref
+      }
+    })
+  ];
+}
+
+function reviewedSourceQueue(dataSpine, overrides = {}) {
+  const queue = buildSourcePackageReviewQueue({
+    dataSpineReadiness: dataSpine,
+    sourcePackages: matchingSourcePackages(dataSpine),
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  return { ...queue, ...overrides };
+}
+
 function measurementCellInput(plan = fullPlan(), dataSpine = readyDataSpine(plan), overrides = {}) {
   const sources = dataSpine.source_readiness;
   const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
@@ -346,6 +413,7 @@ test("aligned Data Spine and real-data intake output assemble a validated Measur
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_day_30",
@@ -362,6 +430,89 @@ test("aligned Data Spine and real-data intake output assemble a validated Measur
   assert.equal(run.feeds.value_hypothesis_packet_runner, true);
   assert.equal(run.feeds.finance_context_investigation_planning, true);
   assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("ready Data Spine cannot assemble Measurement Cell without reviewed source package queue", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: measurementCellInput(plan, dataSpine),
+    runId: "measurement_cell_assembly_support_missing_source_review",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateMeasurementCellAssemblyRun(run);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.decision, "HELD_FOR_SOURCE_PACKAGE_REVIEW");
+  assert.equal(run.measurement_cell, null);
+  assert.ok(run.missing_evidence.includes("SOURCE_PACKAGE_REVIEW_QUEUE_REQUIRED"));
+  assert.equal(run.feeds.measurement_cell, false);
+  assert.equal(run.feeds.value_hypothesis_packet_runner, false);
+  assert.equal(run.feeds.finance_context_investigation_planning, false);
+});
+
+test("held source package review queue blocks Measurement Cell assembly", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+  const queue = reviewedSourceQueue(dataSpine);
+  queue.queue_state = "HELD_FOR_SOURCE_REVIEW";
+  queue.lanes.find((lane) => lane.lane_key === "vbd_token").source_state = "suppressed";
+  queue.lanes.find((lane) => lane.lane_key === "vbd_token").review_state = "suppressed";
+  queue.lanes.find((lane) => lane.lane_key === "vbd_token").data_spine_review_clear = false;
+  queue.lanes.find((lane) => lane.lane_key === "vbd_token").gaps = [
+    "VBD_TOKEN_AGGREGATE_REQUIRED"
+  ];
+  queue.missing_evidence = ["VBD_TOKEN_AGGREGATE_REQUIRED"];
+
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue: queue,
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: measurementCellInput(plan, dataSpine),
+    runId: "measurement_cell_assembly_support_held_source_review",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateMeasurementCellAssemblyRun(run);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.decision, "HELD_FOR_SOURCE_PACKAGE_REVIEW");
+  assert.equal(run.measurement_cell, null);
+  assert.ok(run.missing_evidence.includes("VBD_TOKEN_AGGREGATE_REQUIRED"));
+  assert.equal(run.feeds.measurement_cell, false);
+  assert.equal(run.feeds.value_hypothesis_packet_runner, false);
+});
+
+test("misaligned source package review queue fails closed before Measurement Cell assembly", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+  const queue = reviewedSourceQueue(dataSpine, {
+    org_id: "org_other",
+    data_spine_readiness_id: "data_spine_other"
+  });
+
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue: queue,
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: measurementCellInput(plan, dataSpine),
+    runId: "measurement_cell_assembly_support_misaligned_source_review",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateMeasurementCellAssemblyRun(run);
+
+  assert.equal(result.valid, false);
+  assert.equal(run.decision, "BLOCKED");
+  assert.equal(run.measurement_cell, null);
+  assert.equal(result.feeds.measurement_cell, false);
+  assert.equal(result.feeds.value_hypothesis_packet_runner, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("source_package_review_queue.org_id")));
+  assert.ok(result.gaps.some((gap) => gap.includes("source_package_review_queue.data_spine_readiness_id")));
 });
 
 test("held Data Spine blocks Measurement Cell assembly even when cell input is present", () => {
@@ -450,6 +601,7 @@ test("rolling 30-day Data Spine assembles operating context without finance plan
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: input,
     runId: "measurement_cell_assembly_support_rolling",
@@ -474,6 +626,7 @@ test("source-ref and window drift fail before packet-runner feed", () => {
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: input,
     runId: "measurement_cell_assembly_support_drift",
@@ -502,6 +655,7 @@ test("ROI, probability, person-level, route, persistence, and UI side doors fail
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: input,
     runId: "measurement_cell_assembly_support_unsafe",
@@ -530,6 +684,7 @@ test("Measurement Plan metric and window drift block assembly even when Data Spi
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: driftedPlan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_plan_drift",
     generatedAt: "2026-06-20T00:00:00.000Z"
@@ -562,6 +717,7 @@ test("real-data intake drift across function, cohort, windows, metric, and sourc
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     realDataIntakePacketRun: driftedRealDataRun,
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_real_data_drift",
@@ -586,6 +742,7 @@ test("stale embedded validation feed objects cannot validate after tampering", (
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_stale_validation",

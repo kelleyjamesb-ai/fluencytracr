@@ -94,6 +94,51 @@ function sourcePackageExample(file, overrides = {}) {
   };
 }
 
+function matchingSourcePackages() {
+  return [
+    sourcePackageExample("layer-2-user-voice-package.json", {
+      source_package_id: "source_package_layer_2_ai_fluency_day_90",
+      source_refs: {
+        source_readiness_id: "source_readiness_ai_fluency",
+        aggregate_export_id: "ai_fluency_client_northstar_day_90"
+      }
+    }),
+    sourcePackageExample("layer-1-bigquery-telemetry-package.json", {
+      source_package_id: "source_package_layer_1_vbd_token_day_90",
+      source_refs: {
+        source_readiness_id: "source_readiness_vbd_token",
+        aggregate_probe_id: "scrubbed_glean_vbd_token_day_90",
+        reportability_signal_families: [
+          "assistant",
+          "search_document_retrieval",
+          "agent_run"
+        ]
+      }
+    }),
+    sourcePackageExample("layer-3-system-of-record-outcome-package.json", {
+      source_package_id: "source_package_layer_3_customer_metric_day_90",
+      source_refs: {
+        source_readiness_id: "source_readiness_customer_metric",
+        aggregate_outcome_export_id: "customer_metric_campaign_cycle_day_90"
+      }
+    }),
+    sourcePackageExample("assumption-approval-package.json", {
+      source_package_id: "source_package_assumption_day_90",
+      source_refs: {
+        source_readiness_id: "source_readiness_assumption",
+        assumption_approval_export_id: "finance_assumption_approval_day_90"
+      }
+    }),
+    sourcePackageExample("governance-control-package.json", {
+      source_package_id: "source_package_governance_day_90",
+      source_refs: {
+        source_readiness_id: "source_readiness_governance",
+        governance_control_export_id: "governance_attestation_day_90"
+      }
+    })
+  ];
+}
+
 test("review queue summarizes held Data Spine lanes without creating Measurement Cell or finance feeds", () => {
   const input = baseInput();
   input.sources.customerMetric.state = "submitted";
@@ -232,7 +277,29 @@ test("same org and window source package must still bind to lane source ref", ()
   assert.ok(vbdTokenLane.gaps.includes("VBD_TOKEN_SOURCE_PACKAGE_MISALIGNED"));
 });
 
-test("clear review queue does not expose downstream Data Spine feed flags", () => {
+test("clear review queue requires reviewed packages and does not expose downstream Data Spine feed flags", () => {
+  const dataSpineReadiness = buildDataSpineIntakeReadiness(baseInput());
+
+  const queue = buildSourcePackageReviewQueue({
+    dataSpineReadiness,
+    sourcePackages: matchingSourcePackages(),
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateSourcePackageReviewQueue(queue);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(queue.queue_state, "DATA_SPINE_REVIEW_READY");
+  assert.equal(queue.lanes.find((lane) => lane.lane_key === "ai_fluency").source_package_ids.length, 1);
+  assert.equal(queue.lanes.find((lane) => lane.lane_key === "vbd_token").source_package_ids.length, 1);
+  assert.equal(queue.lanes.find((lane) => lane.lane_key === "customer_metric").source_package_ids.length, 1);
+  assert.equal(queue.lanes.find((lane) => lane.lane_key === "assumption").source_package_ids.length, 1);
+  assert.equal(queue.lanes.find((lane) => lane.lane_key === "governance").source_package_ids.length, 1);
+  assert.equal(queue.feeds.measurement_cell_input, false);
+  assert.equal(queue.feeds.finance_context_investigation, false);
+  assert.equal(queue.data_spine_validation_result.feeds, undefined);
+});
+
+test("package-backed lanes cannot clear queue review without matching Source Packages", () => {
   const dataSpineReadiness = buildDataSpineIntakeReadiness(baseInput());
 
   const queue = buildSourcePackageReviewQueue({
@@ -242,10 +309,20 @@ test("clear review queue does not expose downstream Data Spine feed flags", () =
   const result = validateSourcePackageReviewQueue(queue);
 
   assert.equal(result.valid, true, result.gaps.join("; "));
-  assert.equal(queue.queue_state, "DATA_SPINE_REVIEW_READY");
+  assert.equal(queue.queue_state, "HELD_FOR_SOURCE_REVIEW");
+  for (const laneKey of [
+    "ai_fluency",
+    "vbd_token",
+    "customer_metric",
+    "assumption",
+    "governance"
+  ]) {
+    const lane = queue.lanes.find((item) => item.lane_key === laneKey);
+    assert.equal(lane.data_spine_review_clear, false);
+    assert.ok(lane.gaps.includes(`${laneKey.toUpperCase()}_SOURCE_PACKAGE_REQUIRED`));
+  }
   assert.equal(queue.feeds.measurement_cell_input, false);
   assert.equal(queue.feeds.finance_context_investigation, false);
-  assert.equal(queue.data_spine_validation_result.feeds, undefined);
 });
 
 test("review queue holds lanes missing readiness checklist fields", () => {

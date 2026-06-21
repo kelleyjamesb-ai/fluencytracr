@@ -321,9 +321,13 @@ function sourceReadyForReview(source: any): boolean {
     source?.aligned === true;
 }
 
+function packageBackedLane(laneKey: LaneKey): boolean {
+  return Boolean(SOURCE_PACKAGE_TYPE_BY_LANE[laneKey]);
+}
+
 function packageReadyForReview(lane: any): boolean {
   if (!Array.isArray(lane?.source_package_ids) || lane.source_package_ids.length === 0) {
-    return true;
+    return !packageBackedLane(lane?.lane_key);
   }
   return lane.source_package_valid === true &&
     lane.source_package_alignment_clear === true &&
@@ -368,6 +372,12 @@ function expectedLaneGaps(laneKey: LaneKey, lane: any): string[] {
   gaps.push(...laneChecklistGaps(laneKey, lane));
   if (lane?.source_package_valid === false) {
     gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_INVALID"));
+  }
+  if (
+    packageBackedLane(laneKey) &&
+    (!Array.isArray(lane?.source_package_ids) || lane.source_package_ids.length === 0)
+  ) {
+    gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_REQUIRED"));
   }
   if (lane?.source_package_alignment_clear === false) {
     gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_MISALIGNED"));
@@ -427,6 +437,9 @@ function buildLane(
 
   if (!sourceReady) gaps.push(sourceGapKey(laneKey));
   gaps.push(...laneChecklistGaps(laneKey, source));
+  if (packageBackedLane(laneKey) && packageIds.length === 0) {
+    gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_REQUIRED"));
+  }
   if (invalidPackage) gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_INVALID"));
   if (misalignedPackage) gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_MISALIGNED"));
   if (nonFeedablePackage) gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_NOT_FEEDABLE"));

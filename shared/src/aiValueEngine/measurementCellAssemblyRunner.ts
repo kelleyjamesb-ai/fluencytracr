@@ -27,6 +27,10 @@ import {
   validateRealDataIntakePacketRun,
   type RealDataIntakePacketRunValidationResult
 } from "./realDataIntakePacketRunner";
+import {
+  validateSourcePackageReviewQueue,
+  type SourcePackageReviewQueueValidationResult
+} from "./sourcePackageReviewQueue";
 
 export const AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_SCHEMA_VERSION =
   "FT_AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_2026_06";
@@ -71,6 +75,7 @@ const REQUIRED_FALSE_BOUNDARY_FIELDS = [
 const ALLOWED_DECISIONS = new Set([
   "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER",
   "HELD_FOR_DATA_SPINE",
+  "HELD_FOR_SOURCE_PACKAGE_REVIEW",
   "HELD_FOR_REAL_DATA_INTAKE",
   "HELD_FOR_MEASUREMENT_CELL",
   "BLOCKED"
@@ -90,6 +95,8 @@ const ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "measurement_plan_validation_result",
   "data_spine_readiness",
   "data_spine_validation_result",
+  "source_package_review_queue",
+  "source_package_review_validation_result",
   "real_data_intake_packet_run",
   "real_data_intake_validation_result",
   "measurement_cell_input",
@@ -184,6 +191,7 @@ export interface BuildMeasurementCellAssemblyRunInput {
   dataSpineReadiness: any;
   measurementPlan?: any | null;
   measurementCellInput: BuildMeasurementCellInput & Record<string, any>;
+  sourcePackageReviewQueue?: any | null;
   realDataIntakePacketRun?: any | null;
   runId?: string;
   generatedAt?: string;
@@ -366,6 +374,8 @@ function collectTopLevelGaps(run: any): string[] {
     "measurement_plan_validation_result",
     "data_spine_readiness",
     "data_spine_validation_result",
+    "source_package_review_queue",
+    "source_package_review_validation_result",
     "measurement_cell_input",
     "measurement_cell_validation_result",
     "gaps",
@@ -578,13 +588,109 @@ function collectRealDataBindingGaps(run: any): string[] {
   return gaps;
 }
 
+function collectSourcePackageReviewBindingGaps(run: any): string[] {
+  const gaps: string[] = [];
+  const queue = run?.source_package_review_queue;
+  const spine = run?.data_spine_readiness;
+  if (!queue || !spine) return gaps;
+  if (queue.data_spine_readiness_id !== spine.data_spine_readiness_id) {
+    gaps.push("source_package_review_queue.data_spine_readiness_id must match Data Spine");
+  }
+  if (queue.org_id !== spine.org_id) {
+    gaps.push("source_package_review_queue.org_id must match Data Spine org_id");
+  }
+  if (queue.client_id !== spine.client_id) {
+    gaps.push("source_package_review_queue.client_id must match Data Spine client_id");
+  }
+  if (queue.workflow_family !== spine.workflow_family) {
+    gaps.push("source_package_review_queue.workflow_family must match Data Spine workflow_family");
+  }
+  if (queue.function_area !== spine.function_area) {
+    gaps.push("source_package_review_queue.function_area must match Data Spine function_area");
+  }
+  if (queue.cohort_key !== spine.cohort_key) {
+    gaps.push("source_package_review_queue.cohort_key must match Data Spine cohort_key");
+  }
+  if (!sameWindow(queue.baseline_window, spine.baseline_window)) {
+    gaps.push("source_package_review_queue.baseline_window must match Data Spine baseline_window");
+  }
+  if (!sameWindow(queue.comparison_window, spine.comparison_window)) {
+    gaps.push("source_package_review_queue.comparison_window must match Data Spine comparison_window");
+  }
+  return gaps;
+}
+
+function sourcePackageReviewMissingEvidence(
+  queue: any,
+  queueValidation: SourcePackageReviewQueueValidationResult | null,
+  dataSpineValidation: DataSpineIntakeReadinessValidationResult
+): string[] {
+  if (!dataSpineValidation.valid || !dataSpineValidation.feeds.measurement_cell_input) {
+    return [];
+  }
+  if (!queue) return ["SOURCE_PACKAGE_REVIEW_QUEUE_REQUIRED"];
+  if (!queueValidation?.valid) return ["SOURCE_PACKAGE_REVIEW_QUEUE_INVALID"];
+  if (queue.queue_state !== "DATA_SPINE_REVIEW_READY") {
+    return [
+      ...stringsOf(queue.missing_evidence),
+      ...(stringsOf(queue.missing_evidence).length === 0
+        ? ["SOURCE_PACKAGE_REVIEW_QUEUE_NOT_CLEAR"]
+        : [])
+    ];
+  }
+  return [];
+}
+
+function sourcePackageReviewCleared(
+  queue: any,
+  queueValidation: SourcePackageReviewQueueValidationResult | null,
+  bindingGaps: string[],
+  dataSpineValidation: DataSpineIntakeReadinessValidationResult
+): boolean {
+  if (!dataSpineValidation.valid || !dataSpineValidation.feeds.measurement_cell_input) {
+    return true;
+  }
+  return Boolean(queue) &&
+    queueValidation?.valid === true &&
+    queue.queue_state === "DATA_SPINE_REVIEW_READY" &&
+    bindingGaps.length === 0;
+}
+
 function collectDecisionFeedGaps(
   run: any,
-  cellValidation: MeasurementCellValidationResult | null
+  cellValidation: MeasurementCellValidationResult | null,
+  sourcePackageReviewValidation: SourcePackageReviewQueueValidationResult | null
 ): string[] {
   const gaps: string[] = [];
   const decision = String(run?.decision ?? "");
   const feeds = run?.feeds ?? {};
+  const dataSpineValidation = run?.data_spine_readiness
+    ? validateDataSpineIntakeReadiness(run.data_spine_readiness)
+    : null;
+  const sourcePackageReviewBindingGaps =
+    collectSourcePackageReviewBindingGaps(run);
+  const sourceReviewNeeded =
+    dataSpineValidation?.valid === true &&
+    dataSpineValidation.feeds.measurement_cell_input === true;
+  const sourceReviewClear =
+    sourcePackageReviewCleared(
+      run?.source_package_review_queue,
+      sourcePackageReviewValidation,
+      sourcePackageReviewBindingGaps,
+      dataSpineValidation ?? {
+        schema_version: "",
+        data_spine_readiness_id: null,
+        org_id: null,
+        client_id: null,
+        valid: false,
+        gaps: [],
+        feeds: {
+          measurement_cell_input: false,
+          value_hypothesis_packet_runner: false,
+          customer_facing_financial_output: false
+        }
+      }
+    );
   const downstreamFeeds = [
     "measurement_cell",
     "value_hypothesis_packet_runner",
@@ -593,6 +699,9 @@ function collectDecisionFeedGaps(
     "bayesian_research_design_planning"
   ];
   if (decision === "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER") {
+    if (sourceReviewNeeded && !sourceReviewClear) {
+      gaps.push("READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER requires a valid DATA_SPINE_REVIEW_READY Source Package Review Queue");
+    }
     if (!cellValidation?.valid) {
       gaps.push("READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER requires a valid Measurement Cell");
     }
@@ -609,6 +718,7 @@ function collectDecisionFeedGaps(
   }
   if ([
     "HELD_FOR_DATA_SPINE",
+    "HELD_FOR_SOURCE_PACKAGE_REVIEW",
     "HELD_FOR_REAL_DATA_INTAKE",
     "HELD_FOR_MEASUREMENT_CELL",
     "BLOCKED"
@@ -618,6 +728,19 @@ function collectDecisionFeedGaps(
         gaps.push(`feeds.${field} must be false when decision is ${decision}`);
       }
     }
+  }
+  if (
+    decision === "HELD_FOR_SOURCE_PACKAGE_REVIEW" &&
+    (!sourceReviewNeeded || sourceReviewClear)
+  ) {
+    gaps.push("HELD_FOR_SOURCE_PACKAGE_REVIEW requires a missing or uncleared Source Package Review Queue for a Measurement Cell ready Data Spine");
+  }
+  if (
+    sourceReviewNeeded &&
+    !sourceReviewClear &&
+    !["HELD_FOR_SOURCE_PACKAGE_REVIEW", "BLOCKED"].includes(decision)
+  ) {
+    gaps.push("missing, held, invalid, or misaligned Source Package Review Queue must block Measurement Cell assembly");
   }
   return gaps;
 }
@@ -638,6 +761,9 @@ export function buildMeasurementCellAssemblyRun(
     ? validateMeasurementPlan(measurementPlan)
     : null;
   const dataSpineValidation = validateDataSpineIntakeReadiness(input.dataSpineReadiness);
+  const sourcePackageReviewValidation = input.sourcePackageReviewQueue
+    ? validateSourcePackageReviewQueue(input.sourcePackageReviewQueue)
+    : null;
   const realDataValidation = input.realDataIntakePacketRun
     ? validateRealDataIntakePacketRun(input.realDataIntakePacketRun)
     : null;
@@ -646,18 +772,40 @@ export function buildMeasurementCellAssemblyRun(
   const preAssemblyRun = {
     measurement_plan: measurementPlan,
     data_spine_readiness: input.dataSpineReadiness,
+    source_package_review_queue: input.sourcePackageReviewQueue ?? null,
     real_data_intake_packet_run: input.realDataIntakePacketRun ?? null,
     measurement_cell_input: input.measurementCellInput
   };
+  const sourcePackageReviewBindingGaps =
+    collectSourcePackageReviewBindingGaps(preAssemblyRun);
+  const sourcePackageReviewMissing = sourcePackageReviewMissingEvidence(
+    input.sourcePackageReviewQueue,
+    sourcePackageReviewValidation,
+    dataSpineValidation
+  );
+  const sourcePackageReviewBlockingGaps = [
+    ...(sourcePackageReviewValidation && !sourcePackageReviewValidation.valid
+      ? sourcePackageReviewValidation.gaps.map((gap) => `source_package_review_queue: ${gap}`)
+      : []),
+    ...sourcePackageReviewBindingGaps
+  ];
   const inputGaps = [
     ...collectBindingGaps(preAssemblyRun),
     ...collectRealDataBindingGaps(preAssemblyRun),
+    ...sourcePackageReviewBlockingGaps,
     ...collectUnsafeInputGaps(input.measurementCellInput)
   ];
+  const sourceReviewCleared = sourcePackageReviewCleared(
+    input.sourcePackageReviewQueue,
+    sourcePackageReviewValidation,
+    sourcePackageReviewBindingGaps,
+    dataSpineValidation
+  );
   const canAssemble =
     planValidation?.valid === true &&
     dataSpineValidation.valid &&
     dataSpineValidation.feeds.measurement_cell_input &&
+    sourceReviewCleared &&
     (!realDataValidation || realDataValidation.valid) &&
     (!realDataValidation || realDataValidation.feeds.measurement_cell_input) &&
     inputGaps.length === 0;
@@ -670,6 +818,9 @@ export function buildMeasurementCellAssemblyRun(
       ? planValidation.gaps.map((gap) => `measurement_plan: ${gap}`)
       : ["measurement_plan is required for Measurement Cell assembly"]),
     ...dataSpineValidation.gaps.map((gap) => `data_spine_readiness: ${gap}`),
+    ...(sourcePackageReviewValidation
+      ? sourcePackageReviewValidation.gaps.map((gap) => `source_package_review_queue: ${gap}`)
+      : []),
     ...(realDataValidation
       ? realDataValidation.gaps.map((gap) => `real_data_intake_packet_run: ${gap}`)
       : []),
@@ -680,6 +831,10 @@ export function buildMeasurementCellAssemblyRun(
     decision = "BLOCKED";
   } else if (!dataSpineValidation.feeds.measurement_cell_input) {
     decision = "HELD_FOR_DATA_SPINE";
+  } else if (!sourceReviewCleared) {
+    decision = sourcePackageReviewBlockingGaps.length > 0
+      ? "BLOCKED"
+      : "HELD_FOR_SOURCE_PACKAGE_REVIEW";
   } else if (realDataValidation && !realDataValidation.valid) {
     decision = "BLOCKED";
   } else if (realDataValidation && !realDataValidation.feeds.measurement_cell_input) {
@@ -712,13 +867,20 @@ export function buildMeasurementCellAssemblyRun(
     measurement_plan_validation_result: planValidation,
     data_spine_readiness: input.dataSpineReadiness,
     data_spine_validation_result: dataSpineValidation,
+    source_package_review_queue: input.sourcePackageReviewQueue ?? null,
+    source_package_review_validation_result: sourcePackageReviewValidation,
     real_data_intake_packet_run: input.realDataIntakePacketRun ?? null,
     real_data_intake_validation_result: realDataValidation,
     measurement_cell_input: input.measurementCellInput,
     measurement_cell: measurementCell,
     measurement_cell_validation_result: measurementCellValidation,
     gaps,
-    missing_evidence: input.dataSpineReadiness?.missing_evidence ?? [],
+    missing_evidence: [
+      ...new Set([
+        ...stringsOf(input.dataSpineReadiness?.missing_evidence),
+        ...sourcePackageReviewMissing
+      ])
+    ],
     feeds: decision === "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER"
       ? feedsFromCell(measurementCellValidation)
       : falseFeeds(),
@@ -733,6 +895,7 @@ export function buildMeasurementCellAssemblyRun(
     ),
     required_caveats: [
       "Measurement Cell Assembly Runner assembles aggregate Measurement Cells only after Data Spine Readiness and source binding clear.",
+      "A Data Spine that is otherwise Measurement Cell ready must have a valid Source Package Review Queue in DATA_SPINE_REVIEW_READY before assembly can proceed.",
       "The runner does not parse uploads, run BigQuery, create backend routes, create frontend UI, persist objects, or create Value Hypothesis packets directly.",
       "Rolling 30-day Measurement Cells are operating context only and cannot feed finance-context or Bayesian research planning.",
       "No ROI, EBITA, EBITDA, causality, productivity, financial attribution, confidence percentage, probability, person-level output, ranking, or customer-facing financial output is produced."
@@ -754,6 +917,9 @@ export function validateMeasurementCellAssemblyRun(
   const realDataValidation = run?.real_data_intake_packet_run
     ? validateRealDataIntakePacketRun(run.real_data_intake_packet_run)
     : null;
+  const sourcePackageReviewValidation = run?.source_package_review_queue
+    ? validateSourcePackageReviewQueue(run.source_package_review_queue)
+    : null;
   const cellValidation = run?.measurement_cell
     ? validateMeasurementCell(run.measurement_cell)
     : null;
@@ -761,18 +927,20 @@ export function validateMeasurementCellAssemblyRun(
   const bindingGaps = [
     ...collectBindingGaps(run),
     ...collectRealDataBindingGaps(run),
+    ...collectSourcePackageReviewBindingGaps(run),
     ...collectUnsafeInputGaps(run?.measurement_cell_input)
   ];
   const blockedOrMisaligned = blockedDecision ||
     planValidation?.valid === false ||
     dataSpineValidation?.valid === false ||
+    sourcePackageReviewValidation?.valid === false ||
     realDataValidation?.valid === false ||
     bindingGaps.length > 0;
   const gaps = [
     ...collectTopLevelGaps(run),
     ...collectPolicyGaps(run),
     ...bindingGaps,
-    ...collectDecisionFeedGaps(run, cellValidation),
+    ...collectDecisionFeedGaps(run, cellValidation, sourcePackageReviewValidation),
     ...(blockedOrMisaligned
       ? ["blocked or misaligned Measurement Cell assembly runs cannot validate"]
       : []),
@@ -781,6 +949,9 @@ export function validateMeasurementCellAssemblyRun(
       : []),
     ...(dataSpineValidation && !validationMatchesEmbedded(run?.data_spine_validation_result, dataSpineValidation)
       ? ["data_spine_validation_result must match recomputed Data Spine validation"]
+      : []),
+    ...(sourcePackageReviewValidation && !validationMatchesEmbedded(run?.source_package_review_validation_result, sourcePackageReviewValidation)
+      ? ["source_package_review_validation_result must match recomputed Source Package Review Queue validation"]
       : []),
     ...(realDataValidation && !validationMatchesEmbedded(run?.real_data_intake_validation_result, realDataValidation)
       ? ["real_data_intake_validation_result must match recomputed Real Data Intake validation"]

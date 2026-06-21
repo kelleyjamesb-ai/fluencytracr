@@ -73,12 +73,15 @@ Each lane is reviewed for:
 
 A lane can clear queue review only when the Data Spine source lane is present,
 approved, clear, aggregate-only, aligned, source-bound, and owner-role tagged.
-Customer metric lanes must also carry `metric_id`. If Source Packages are
-supplied for that lane, they must be valid, feedable, and aligned to the same
-`org_id`, comparison window, and lane `source_ref` through the package type's
-canonical `source_refs` key. A suppressed Source Package can be valid metadata
-while still blocking the lane from feeding evidence. A valid Source Package from
-another org, window, or source reference must also block the lane.
+Customer metric lanes must also carry `metric_id`. Package-backed lanes
+(`ai_fluency`, `vbd_token`, `customer_metric`, `assumption`, and
+`governance`) must have matching Source Packages before the queue can reach
+`DATA_SPINE_REVIEW_READY`. Those packages must be valid, feedable, and aligned
+to the same `org_id`, comparison window, and lane `source_ref` through the
+package type's canonical `source_refs` key. A suppressed Source Package can be
+valid metadata while still blocking the lane from feeding evidence. A valid
+Source Package from another org, window, or source reference must also block the
+lane.
 
 ## Queue States
 
@@ -152,14 +155,19 @@ The authoritative downstream gates remain:
 ```text
 Source Package Review Queue
 -> Data Spine Readiness
+-> Measurement Cell Assembly Runner
 -> Measurement Cell
 -> Value Hypothesis Readiness packet
 ```
 
-The queue is a coordination layer for source review. Data Spine Readiness owns
-cross-source alignment. Measurement Cell owns finance-context evidence
-alignment. Value Hypothesis Readiness owns readiness-state assembly and
-governed output boundaries.
+The queue is a coordination layer for source review. `DATA_SPINE_REVIEW_READY`
+means the queue can be used as a preflight binding by the Measurement Cell
+Assembly Runner, but the queue still does not feed Measurement Cell input,
+finance-context investigation, or packet readiness directly. Data Spine
+Readiness owns cross-source alignment. Measurement Cell Assembly owns the
+queue-to-cell handoff. Measurement Cell owns finance-context evidence alignment.
+Value Hypothesis Readiness owns readiness-state assembly and governed output
+boundaries.
 
 ## Validation
 

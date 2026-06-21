@@ -77,6 +77,7 @@ function source(plan, overrides = {}) {
       window_start: plan.windows.comparison_window_start,
       window_end: plan.windows.comparison_window_end
     },
+    owner_role: "source_owner",
     owner_approval_state: "approved",
     review_state: "clear",
     aggregate_only: true,
