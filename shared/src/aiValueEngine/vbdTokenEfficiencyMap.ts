@@ -151,6 +151,37 @@ const TRUE_ONLY_KEY_PATTERNS = [
   /^creates_ingestion_jobs$/i
 ];
 
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+const UNSAFE_METADATA_VALUE_PATTERNS = [
+  /(?:^|_)(?:raw_rows?|raw_query|raw_prompts?|raw_responses?|raw_transcripts?|raw_content)(?:_|$)/i,
+  /(?:^|_)(?:prompt_text|query_text|sql_text|file_contents?)(?:_|$)/i,
+  /(?:^|_)(?:employee_emails?|employee_names?|employee_ids?|user_emails?|user_names?|user_ids?|person_emails?|person_names?|person_ids?|person_identifiers?)(?:_|$)/i,
+  /(?:^|_)(?:direct_identifiers?|direct_person_identifier|direct_names?)(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable|pseudonymous|tokenized)_(?:ids?|identifiers?|users?|persons?|employees?)(?:_|$)/i,
+  /(?:^|_)person_level_(?:productivity|hris|records?)(?:_|$)/i
+];
+
+const IDENTIFIER_METADATA_VALUE_PATTERNS = [
+  /(?:^|_)(?:employee_emails?|employee_names?|employee_ids?|user_emails?|user_names?|user_ids?|person_emails?|person_names?|person_ids?|person_identifiers?)(?:_|$)/i,
+  /(?:^|_)(?:direct_identifiers?|direct_person_identifier|direct_names?)(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable|pseudonymous|tokenized)_(?:ids?|identifiers?|users?|persons?|employees?)(?:_|$)/i
+];
+
+const NEGATIVE_PRIVACY_CAVEAT_PATTERNS = [
+  /\bno\b/i,
+  /\bnot\b/i,
+  /\bnever\b/i,
+  /\bwithout\b/i,
+  /\bblocked?\b/i,
+  /\bexcluded?\b/i,
+  /\bnot emitted\b/i,
+  /\bare not emitted\b/i,
+  /\bmust not\b/i,
+  /\bcannot\b/i,
+  /\bdoes not\b/i
+];
+
 export interface BuildVbdTokenEfficiencyMapOptions {
   mapId?: string;
   generatedAt?: string;
@@ -196,6 +227,33 @@ function evidenceState(value: any): string {
   return String(value?.evidence_state ?? "unknown");
 }
 
+function vbdDimensionState(value: any): string {
+  const evidence = String(value?.evidence_state ?? "");
+  if (["suppressed", "held", "not_computed"].includes(evidence)) {
+    return evidence;
+  }
+  return String(value?.state ?? value?.evidence_state ?? "missing");
+}
+
+function positiveNumber(value: any): number {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0;
+}
+
+function snapshotMinimumCohortThreshold(snapshot: any): any {
+  return snapshot?.privacy_boundary?.minimum_cohort_threshold ??
+    snapshot?.aggregate_telemetry_summary?.k_min_summary?.minimum_cohort_threshold ??
+    null;
+}
+
+function hasSuppressedVbdSlices(map: any): boolean {
+  return [
+    map?.velocity?.suppressed_or_unknown_slices,
+    map?.breadth?.suppressed_or_unknown_slices,
+    map?.depth?.suppressed_or_unknown_slices
+  ].some((value) => positiveNumber(value) > 0);
+}
+
 function snapshotWorkflowFamily(snapshot: any): string | null {
   return snapshot?.workflow?.workflow_family ?? snapshot?.workflow_family ?? null;
 }
@@ -227,13 +285,27 @@ function deriveVbdPosture(snapshot: any): string {
   const map = snapshot?.vbd_operating_map;
   if (!map) return "unknown";
   const states = [
-    evidenceState(map.velocity),
-    evidenceState(map.depth)
+    vbdDimensionState(map.velocity),
+    vbdDimensionState(map.breadth),
+    vbdDimensionState(map.depth),
+    String(map.operating_mode ?? "missing")
   ];
   if (states.includes("suppressed")) return "suppressed";
-  if (states.includes("held") || states.includes("not_computed")) return "held";
+  if (states.includes("held") ||
+      states.includes("not_computed") ||
+      states.includes("missing") ||
+      hasSuppressedVbdSlices(map)) {
+    return "held";
+  }
   if (map.operating_mode === "high_fluency_flow") return "high_work_integration";
   if (map.depth?.state === "embedded" || map.breadth?.state === "broad") {
+    return "emerging_work_integration";
+  }
+  if (
+    map.depth?.state === "developing" ||
+    map.breadth?.state === "emerging" ||
+    ["fast_but_shallow", "deep_but_slow"].includes(String(map.operating_mode))
+  ) {
     return "emerging_work_integration";
   }
   if (map.depth?.state === "shallow" || map.breadth?.state === "narrow") {
@@ -271,10 +343,10 @@ function deriveStrategyZone(vbdPosture: string, tokenPosture: string): string {
     "high_work_integration",
     "emerging_work_integration"
   ].includes(vbdPosture);
-  const highToken = tokenPosture === "high_intensity";
-  if (highVbd && highToken) return "optimize_cost";
+  const costReviewToken = ["high_intensity", "moderate"].includes(tokenPosture);
+  if (highVbd && costReviewToken) return "optimize_cost";
   if (highVbd) return "replicate_pattern";
-  if (highToken) return "mitigate_friction";
+  if (tokenPosture === "high_intensity") return "mitigate_friction";
   return "activate_workflow";
 }
 
@@ -292,6 +364,27 @@ function collectBindingGaps(snapshot: any, tokenSignal: any): string[] {
   const snapshotGrain = snapshot?.privacy_boundary?.approved_aggregate_grain;
   if (snapshotGrain !== tokenSignal?.approved_aggregate_grain) {
     gaps.push("approved_aggregate_grain must match between Evidence Snapshot and Token Efficiency Signal");
+  }
+  const snapshotMinimum = snapshotMinimumCohortThreshold(snapshot);
+  const tokenMinimum = tokenSignal?.minimum_cohort_threshold;
+  if (
+    snapshotMinimum !== undefined &&
+    snapshotMinimum !== null &&
+    tokenMinimum !== undefined &&
+    tokenMinimum !== null &&
+    Number(snapshotMinimum) !== Number(tokenMinimum)
+  ) {
+    gaps.push("minimum_cohort_threshold must match between Evidence Snapshot and Token Efficiency Signal");
+  }
+  const tokenPostureMinimum = tokenSignal?.k_min_posture?.minimum_cohort_threshold;
+  if (
+    snapshotMinimum !== undefined &&
+    snapshotMinimum !== null &&
+    tokenPostureMinimum !== undefined &&
+    tokenPostureMinimum !== null &&
+    Number(snapshotMinimum) !== Number(tokenPostureMinimum)
+  ) {
+    gaps.push("k_min_posture.minimum_cohort_threshold must match Evidence Snapshot minimum_cohort_threshold");
   }
   return gaps;
 }
@@ -317,6 +410,60 @@ function collectForbiddenKeys(
     collectForbiddenKeys(nested, keys, [...path, key]);
   }
   return keys;
+}
+
+function isSafePolicyListPath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return normalizedPath.length <= 2 &&
+    (normalizedPath[0] === "allowed_uses" || normalizedPath[0] === "blocked_uses");
+}
+
+function isUnsafeMetadataValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    UNSAFE_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function containsDirectIdentifierValue(value: string): boolean {
+  const normalizedValue = normalizeKey(value);
+  return EMAIL_VALUE_PATTERN.test(value) ||
+    IDENTIFIER_METADATA_VALUE_PATTERNS.some((pattern) => pattern.test(normalizedValue));
+}
+
+function isTopLevelCaveatPath(path: string[]): boolean {
+  return normalizeKey(path[0] ?? "") === "caveats" && path.length <= 2;
+}
+
+function isNegativePrivacyCaveat(value: string): boolean {
+  return NEGATIVE_PRIVACY_CAVEAT_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+function collectUnsafeMetadataValues(
+  value: any,
+  values: string[] = [],
+  path: string[] = []
+): string[] {
+  if (typeof value === "string") {
+    const safeNegativeCaveat =
+      isTopLevelCaveatPath(path) &&
+      isNegativePrivacyCaveat(value) &&
+      !containsDirectIdentifierValue(value);
+    if (!isSafePolicyListPath(path) && !safeNegativeCaveat && isUnsafeMetadataValue(value)) {
+      values.push(`${path.join(".")}: ${value}`);
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectUnsafeMetadataValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectUnsafeMetadataValues(nested, values, [...path, key]);
+  }
+  return values;
 }
 
 function requiredCaveats(snapshot: any, tokenSignal: any): string[] {
@@ -387,7 +534,7 @@ export function buildVbdTokenEfficiencyMapFromEvidenceSnapshotAndTokenSignal(
     approved_aggregate_grain:
       evidenceSnapshot?.privacy_boundary?.approved_aggregate_grain ?? null,
     minimum_cohort_threshold:
-      evidenceSnapshot?.privacy_boundary?.minimum_cohort_threshold ??
+      snapshotMinimumCohortThreshold(evidenceSnapshot) ??
       tokenEfficiencySignal?.minimum_cohort_threshold ??
       null,
     k_min_posture: tokenEfficiencySignal?.k_min_posture ?? null,
@@ -473,11 +620,27 @@ export function validateVbdTokenEfficiencyMap(
   if (!Array.isArray(map?.gaps)) {
     gaps.push("gaps must be an array");
   }
+  if (map?.valid === true && Array.isArray(map?.gaps) && map.gaps.length > 0) {
+    gaps.push("valid maps must not carry gaps");
+  }
   if (map?.valid === false && String(map?.strategy_zone) !== "hold_for_evidence") {
     gaps.push("invalid maps must use strategy_zone hold_for_evidence");
   }
   if (map?.valid === false && Array.isArray(map?.gaps) && map.gaps.length === 0) {
     gaps.push("invalid maps must carry gaps");
+  }
+  const expectedStrategyZone = deriveStrategyZone(
+    String(map?.vbd_posture ?? "unknown"),
+    String(map?.token_posture ?? "unknown")
+  );
+  if (
+    ALLOWED_VBD_POSTURES.has(String(map?.vbd_posture)) &&
+    ALLOWED_TOKEN_POSTURES.has(String(map?.token_posture)) &&
+    map?.strategy_zone !== expectedStrategyZone
+  ) {
+    gaps.push(
+      `strategy_zone must be ${expectedStrategyZone} for vbd_posture ${String(map?.vbd_posture)} and token_posture ${String(map?.token_posture)}`
+    );
   }
   if (Number(map?.minimum_cohort_threshold) < 5) {
     gaps.push("minimum_cohort_threshold must be at least 5");
@@ -519,6 +682,12 @@ export function validateVbdTokenEfficiencyMap(
   const forbiddenKeys = collectForbiddenKeys(map);
   if (forbiddenKeys.length > 0) {
     gaps.push(`Forbidden field(s) present: ${Array.from(new Set(forbiddenKeys)).sort().join(", ")}`);
+  }
+  const unsafeMetadataValues = collectUnsafeMetadataValues(map);
+  if (unsafeMetadataValues.length > 0) {
+    gaps.push(
+      `Forbidden metadata value(s) present: ${Array.from(new Set(unsafeMetadataValues)).sort().join(", ")}`
+    );
   }
   if (!Array.isArray(map?.caveats) || map.caveats.length === 0) {
     gaps.push("caveats must contain at least one caveat");

@@ -32,7 +32,7 @@ const BLOCKED_CLAIM_LABELS: Record<string, string> = {
   hr_analytics: "Individual-level people analytics",
   productivity_measurement: "Productivity measurement",
   realized_roi_calculation: "Value Accounting",
-  customer_facing_economic_output: "Customer-Facing Value Evidence",
+  customer_facing_economic_output: "Blocked Customer-Facing Economic Output",
   dashboard_or_runtime_implementation: "Always-on dashboarding"
 };
 
@@ -252,8 +252,8 @@ function ebitaImpactSection(summary: any): string {
     ? "Realized financial language is allowed only within the finance-validated workflow and window."
     : "No realized financial claim is allowed.";
   const customerFacingLine = summary.customer_facing_allowed
-    ? "Customer-facing economic language is approved for the stated scope."
-    : "Customer-facing economic language is not approved.";
+    ? "Customer-facing economic language is not approved in the current program; a future contract is required."
+    : "Customer-facing economic language is not approved in the current program; a future contract is required.";
   const causalityLine = summary.causality_claim_allowed
     ? "Causality language is approved by the evidence design."
     : "Causality language is not approved.";

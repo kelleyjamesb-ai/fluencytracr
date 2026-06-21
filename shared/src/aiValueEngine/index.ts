@@ -110,6 +110,31 @@ export type {
 } from "./claimReadinessSnapshot";
 
 export {
+  AI_VALUE_HYPOTHESIS_READINESS_SCHEMA_VERSION,
+  ValueHypothesisReadinessSchema,
+  buildValueHypothesisReadinessFromMeasurementPlanAndClaimSnapshot,
+  validateValueHypothesisReadiness
+} from "./valueHypothesisReadiness";
+export type {
+  BuildValueHypothesisReadinessOptions,
+  ValueHypothesisReadiness,
+  ValueHypothesisReadinessValidationResult
+} from "./valueHypothesisReadiness";
+
+export {
+  AI_VALUE_HYPOTHESIS_READINESS_PACKET_SCHEMA_VERSION,
+  buildValueHypothesisReadinessPacket,
+  validateValueHypothesisReadinessPacket
+} from "./valueHypothesisReadinessPacketRunner";
+export type {
+  BuildValueHypothesisReadinessPacketInput,
+  RoiBotContextInput,
+  SelectedMetricMovementInput,
+  ValueHypothesisReadinessPacket,
+  ValueHypothesisReadinessPacketValidationResult
+} from "./valueHypothesisReadinessPacketRunner";
+
+export {
   AI_VALUE_EXECUTIVE_READOUT_SNAPSHOT_SCHEMA_VERSION,
   ExecutiveReadoutSnapshotSchema,
   buildExecutiveReadoutSnapshotFromClaimReadinessSnapshot,
@@ -153,6 +178,106 @@ export type {
 } from "./aiValuePilotIntakeRunner";
 
 export {
+  AI_VALUE_DATA_SPINE_READINESS_SCHEMA_VERSION,
+  buildDataSpineIntakeReadiness,
+  validateDataSpineIntakeReadiness
+} from "./dataSpineReadiness";
+export type {
+  BuildDataSpineIntakeReadinessInput,
+  DataSpineIntakeReadinessValidationResult
+} from "./dataSpineReadiness";
+
+export {
+  AI_VALUE_BLUEPRINT_EXTRACTION_DRAFT_SCHEMA_VERSION,
+  buildBlueprintExtractionDraft,
+  validateBlueprintExtractionDraft
+} from "./blueprintExtractionDraft";
+export type {
+  BlueprintExtractionDraftValidationResult,
+  BuildBlueprintExtractionDraftInput
+} from "./blueprintExtractionDraft";
+
+export {
+  AI_VALUE_AI_FLUENCY_CLIENT_IMPORT_SCHEMA_VERSION,
+  buildAIFluencyClientImport,
+  validateAIFluencyClientImport
+} from "./aiFluencyClientImport";
+export type {
+  AIFluencyClientImportValidationResult,
+  BuildAIFluencyClientImportInput
+} from "./aiFluencyClientImport";
+
+export {
+  AI_VALUE_AI_FLUENCY_DASHBOARD_IMPORT_RUN_SCHEMA_VERSION,
+  buildAIFluencyDashboardImportRun,
+  validateAIFluencyDashboardImportRun
+} from "./aiFluencyDashboardImportRunner";
+export type {
+  AIFluencyDashboardImportRunValidationResult,
+  BuildAIFluencyDashboardImportRunInput
+} from "./aiFluencyDashboardImportRunner";
+
+export {
+  AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
+  buildVbdTokenAggregateIntake,
+  validateVbdTokenAggregateIntake
+} from "./vbdTokenAggregateIntake";
+export type {
+  BuildVbdTokenAggregateIntakeInput,
+  VbdTokenAggregateIntakeValidationResult
+} from "./vbdTokenAggregateIntake";
+
+export {
+  AI_VALUE_CUSTOMER_METRIC_INTAKE_SCHEMA_VERSION,
+  buildCustomerMetricIntake,
+  validateCustomerMetricIntake
+} from "./customerMetricIntake";
+export type {
+  BuildCustomerMetricIntakeInput,
+  CustomerMetricIntakeValidationResult
+} from "./customerMetricIntake";
+
+export {
+  AI_VALUE_REAL_DATA_INTAKE_PACKET_RUN_SCHEMA_VERSION,
+  buildRealDataIntakePacketRun,
+  validateRealDataIntakePacketRun
+} from "./realDataIntakePacketRunner";
+export type {
+  BuildRealDataIntakePacketRunInput,
+  RealDataIntakePacketRunValidationResult
+} from "./realDataIntakePacketRunner";
+
+export {
+  AI_VALUE_MEASUREMENT_CELL_SCHEMA_VERSION,
+  buildMeasurementCell,
+  validateMeasurementCell
+} from "./measurementCell";
+export type {
+  BuildMeasurementCellInput,
+  MeasurementCellValidationResult
+} from "./measurementCell";
+
+export {
+  AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_SCHEMA_VERSION,
+  buildMeasurementCellAssemblyRun,
+  validateMeasurementCellAssemblyRun
+} from "./measurementCellAssemblyRunner";
+export type {
+  BuildMeasurementCellAssemblyRunInput,
+  MeasurementCellAssemblyRunValidationResult
+} from "./measurementCellAssemblyRunner";
+
+export {
+  AI_VALUE_UI_OUTPUT_SCHEMA_VERSION,
+  buildValueHypothesisUiOutput,
+  validateValueHypothesisUiOutput
+} from "./valueHypothesisUiOutput";
+export type {
+  BuildValueHypothesisUiOutputInput,
+  ValueHypothesisUiOutputValidationResult
+} from "./valueHypothesisUiOutput";
+
+export {
   AI_VALUE_TOKEN_EFFICIENCY_SIGNAL_SCHEMA_VERSION,
   TokenEfficiencySignalSchema,
   buildTokenEfficiencySignalFromAggregateSummary,
@@ -173,6 +298,17 @@ export type {
   BuildVbdTokenEfficiencyMapOptions,
   VbdTokenEfficiencyMapValidationResult
 } from "./vbdTokenEfficiencyMap";
+
+export {
+  AI_VALUE_VBD_TOKEN_PILOT_RUN_SCHEMA_VERSION,
+  buildVbdTokenPilotRunFromWindowEvidence,
+  validateVbdTokenPilotRun
+} from "./vbdTokenPilotRunner";
+export type {
+  BuildVbdTokenPilotRunInput,
+  BuildVbdTokenPilotRunWindowInput,
+  VbdTokenPilotRunValidationResult
+} from "./vbdTokenPilotRunner";
 
 export {
   EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,

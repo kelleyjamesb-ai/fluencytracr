@@ -134,8 +134,7 @@ const ALLOWED_FINANCIAL_CLAIM_GATE_MODES = new Set([
   "BLOCKED",
   "INTERNAL_MODELING",
   "EXECUTIVE_CAVEATED",
-  "FINANCE_VALIDATED",
-  "CUSTOMER_FACING_APPROVED"
+  "FINANCE_VALIDATED"
 ]);
 
 const ALLOWED_WORKFORCE_ANALYTICS_GATE_MODES = new Set([
@@ -685,16 +684,20 @@ function collectFinancialClaimGateGaps(scenario: any): string[] {
       `financial_claim_gate.allowed_outputs.${output} must be true when ${output} is requested`,
       gaps
     );
+    if (output === "realized_roi_calculation") {
+      gaps.push(
+        "financial_claim_gate.allowed_outputs.realized_roi_calculation is blocked in the current program; use finance-context review only"
+      );
+      continue;
+    }
+    if (output === "customer_facing_economic_output") {
+      gaps.push(
+        "financial_claim_gate.allowed_outputs.customer_facing_economic_output is blocked in the current program; a future customer-facing financial-output contract is required"
+      );
+      continue;
+    }
     if (gate.mode === "BLOCKED") {
       gaps.push(`financial_claim_gate.mode BLOCKED cannot allow ${output}`);
-    }
-    if (
-      output === "customer_facing_economic_output" &&
-      gate.mode !== "CUSTOMER_FACING_APPROVED"
-    ) {
-      gaps.push(
-        "financial_claim_gate.allowed_outputs.customer_facing_economic_output requires mode CUSTOMER_FACING_APPROVED"
-      );
     }
     for (const requirement of FINANCIAL_GATE_REQUIREMENTS[output]) {
       requireTrue(
@@ -802,9 +805,7 @@ export function validateRoiScenario(scenario: any): RoiScenarioValidationResult 
           String(readinessDecision ?? "")
         ),
       customer_facing_economic_output:
-        gaps.length === 0 &&
-        scenario?.financial_claim_gate?.mode === "CUSTOMER_FACING_APPROVED" &&
-        scenario?.financial_claim_gate?.allowed_outputs?.customer_facing_economic_output === true
+        false
     }
   };
 }

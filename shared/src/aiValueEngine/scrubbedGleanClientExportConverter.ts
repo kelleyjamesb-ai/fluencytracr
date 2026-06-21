@@ -133,6 +133,7 @@ const FORBIDDEN_KEY_PATTERNS = [
   /(?:^|_)query(?:_|$)/i,
   /query_text/i,
   /sql_text/i,
+  /bigquery_sql/i,
   /^file_contents?$/i,
   /file_content/i,
   /email/i,

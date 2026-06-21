@@ -45,7 +45,7 @@ describe("AIValueReadoutPrototype", () => {
     expect(within(gate).getByText(/Executive Caveated/i)).toBeInTheDocument();
     expect(within(gate).getByText(/Aggregate Workflow Capacity/i)).toBeInTheDocument();
     expect(within(gate).getByText(/Value Accounting/i)).toBeInTheDocument();
-    expect(within(gate).getByText(/Customer-Facing Value Evidence/i)).toBeInTheDocument();
+    expect(within(gate).getByText(/Customer-Facing Economic Output/i)).toBeInTheDocument();
 
     const ebita = screen.getByRole("region", { name: /Financial translation/i });
     expect(within(ebita).getByText(/No realized financial claim is allowed/i)).toBeInTheDocument();

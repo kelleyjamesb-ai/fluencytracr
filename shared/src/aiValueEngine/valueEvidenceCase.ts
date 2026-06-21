@@ -81,7 +81,7 @@ const CLAIM_LEVELS = [
   "INTERNAL_HYPOTHESIS_ONLY",
   "CAVEATED_VALUE_INVESTIGATION",
   "SUPPORTED_VALUE_MOVEMENT",
-  "VALIDATED_VALUE_REALIZATION",
+  "FINANCE_CONTEXT_REVIEW_ELIGIBLE",
   "BLOCKED"
 ] as const;
 
@@ -90,7 +90,7 @@ const CLAIM_RANK: Record<string, number> = {
   INTERNAL_HYPOTHESIS_ONLY: 1,
   CAVEATED_VALUE_INVESTIGATION: 2,
   SUPPORTED_VALUE_MOVEMENT: 3,
-  VALIDATED_VALUE_REALIZATION: 4
+  FINANCE_CONTEXT_REVIEW_ELIGIBLE: 4
 };
 
 const MAX_CLAIM_BY_EVIDENCE: Record<string, string> = {
@@ -98,7 +98,7 @@ const MAX_CLAIM_BY_EVIDENCE: Record<string, string> = {
   DIRECTIONAL: "INTERNAL_HYPOTHESIS_ONLY",
   CAVEATED: "CAVEATED_VALUE_INVESTIGATION",
   SUPPORTED: "SUPPORTED_VALUE_MOVEMENT",
-  STRONG: "VALIDATED_VALUE_REALIZATION",
+  STRONG: "FINANCE_CONTEXT_REVIEW_ELIGIBLE",
   BLOCKED: "BLOCKED"
 };
 
@@ -136,13 +136,13 @@ export const EVIDENCE_GATED_CLAIMS = [
 
 export const CLAIM_UNLOCK_REQUIREMENTS: Record<string, string> = {
   roi_proof:
-    "Accepted aggregate outcome evidence with exact window alignment, resolved customer-owned assumptions, and customer-approved economic inputs.",
+    "Accepted aggregate outcome evidence with exact window alignment, resolved customer-owned assumptions, and customer-approved economic inputs. Review-eligible context only; not ROI proof.",
   realized_roi_calculation:
-    "The customer computes realized ROI from its own approved inputs; the case references the customer's validated figures.",
+    "The customer computes any realized value outside FluencyTracr. Review-eligible context only; no realized ROI calculation is emitted.",
   customer_facing_economic_output:
-    "Economic figures are presented only as customer-computed, customer-approved values referenced by this case.",
+    "Customer-facing economic output remains blocked unless a later explicit customer-facing financial-output contract promotes that exact scope.",
   causality_claim:
-    "An approved baseline/comparison evidence design (control or quasi-experimental) reviewed by the customer's analytics owner."
+    "An approved baseline/comparison evidence design can make causality reviewable internally, but it does not authorize a causality claim."
 };
 
 function customerValidationSatisfied(validation: any): boolean {
@@ -173,10 +173,9 @@ function sanitizeApprovedEvidenceDesign(design: any): any | null {
 }
 
 /**
- * Which evidence-gated claims are unlocked for this case. ROI-family claims
- * unlock at the VALIDATED rung (token STRONG) — accepted evidence, aligned
- * windows, resolved assumptions, customer-approved economic inputs.
- * Causality additionally requires an approved comparison evidence design.
+ * Which evidence-gated claims have enough evidence for internal review
+ * context. This is not an unlock for ROI proof, realized ROI calculation,
+ * customer-facing economic output, or causality claims.
  */
 function deriveClaimGateStates(evidenceCase: any): Record<string, boolean> {
   const validated =
@@ -641,19 +640,14 @@ function collectSafeLanguageGaps(evidenceCase: any): string[] {
   const caveats = Array.isArray(safe.required_caveats) ? safe.required_caveats : [];
   const gates = deriveClaimGateStates(evidenceCase);
   if (gates.roi_proof) {
-    // Realized-value language is unlocked: figures must be customer-owned
-    // and causality must still be disclaimed until its own gate opens.
     if (!caveats.some((caveat: any) => CUSTOMER_FIGURES_CAVEAT_PATTERN.test(String(caveat)))) {
       gaps.push(
         "safe_value_language.required_caveats must state that realized-value figures are customer-approved or customer-computed"
       );
     }
-    if (
-      !gates.causality_claim &&
-      !caveats.some((caveat: any) => CAUSALITY_CAVEAT_PATTERN.test(String(caveat)))
-    ) {
+    if (!caveats.some((caveat: any) => NON_CAUSAL_CAVEAT_PATTERN.test(String(caveat)))) {
       gaps.push(
-        "safe_value_language.required_caveats must state that this does not prove causality"
+        "safe_value_language.required_caveats must state that this does not prove ROI or causality"
       );
     }
   } else if (!caveats.some((caveat: any) => NON_CAUSAL_CAVEAT_PATTERN.test(String(caveat)))) {
@@ -693,7 +687,7 @@ function collectSafeLanguageGaps(evidenceCase: any): string[] {
     }
   }
   for (const claim of EVIDENCE_GATED_CLAIMS) {
-    if (!gates[claim] && !blockedClaims.has(claim)) {
+    if (!blockedClaims.has(claim)) {
       gaps.push(`blocked_claims missing ${claim}`);
     }
   }
@@ -705,7 +699,7 @@ function collectSafeLanguageGaps(evidenceCase: any): string[] {
         gaps.push(`claim_gates missing ${claim}`);
         continue;
       }
-      const expected = gates[claim] ? "UNLOCKED" : "LOCKED";
+      const expected = gates[claim] ? "REVIEW_ELIGIBLE_CONTEXT_ONLY" : "LOCKED";
       if (entry.state !== expected) {
         gaps.push(`claim_gates.${claim} must be ${expected}`);
       }
@@ -872,9 +866,9 @@ const SAFE_PHRASES_BY_LEVEL: Record<string, string[]> = {
     "The next step is to decide whether to scale, coach, or redesign, and when to remeasure."
   ],
   STRONG: [
-    "Customer-validated realized value is supportable for this workflow slice: accepted outcome evidence, aligned windows, resolved assumptions, and customer-approved economic inputs.",
-    "Realized-value figures are the customer's own, computed from inputs the customer approved and referenced by this case.",
-    "The next step is to scale the workflow and remeasure on the same slice to keep the validation current."
+    "Customer-approved economic inputs are sufficient for internal finance-context review of this workflow slice.",
+    "Any realized-value figures remain customer-owned and outside FluencyTracr; this case does not compute or approve ROI.",
+    "The next step is a governed finance-context investigation, followed by remeasurement on the same workflow slice."
   ],
   BLOCKED: [
     "Value language is blocked for this workflow slice until governance gates pass."
@@ -888,8 +882,9 @@ const REQUIRED_CAVEATS = [
 ];
 
 const VALIDATED_CAVEATS = [
-  "Realized-value figures are customer-computed and customer-approved; FluencyTracr does not compute or store economic output.",
-  "This supports realized value for this workflow slice and window; it does not prove causality.",
+  "Customer-computed and customer-approved figures may be referenced as finance-context inputs only; FluencyTracr does not compute or store economic output.",
+  "This does not prove ROI or causality.",
+  "Customer-facing financial or economic output remains blocked unless a later explicit contract promotes that exact scope.",
   "All evidence is aggregate-only and workflow-sliced; no person-level data crosses into FluencyTracr."
 ];
 
@@ -1080,15 +1075,13 @@ export function buildValueEvidenceCase(
     },
     blocked_claims: [
       ...PRIVACY_BOUNDARY_CLAIMS,
-      ...EVIDENCE_GATED_CLAIMS.filter((claim) =>
-        claim === "causality_claim" ? !causalityUnlocked : !validated
-      )
+      ...EVIDENCE_GATED_CLAIMS
     ],
     claim_gates: EVIDENCE_GATED_CLAIMS.map((claim) => ({
       claim,
       state:
         (claim === "causality_claim" ? causalityUnlocked : validated)
-          ? "UNLOCKED"
+          ? "REVIEW_ELIGIBLE_CONTEXT_ONLY"
           : "LOCKED",
       unlock_requirements: CLAIM_UNLOCK_REQUIREMENTS[claim]
     })),

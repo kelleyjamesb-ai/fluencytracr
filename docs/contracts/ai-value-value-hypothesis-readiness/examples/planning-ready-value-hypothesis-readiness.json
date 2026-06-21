@@ -1,0 +1,214 @@
+{
+  "schema_version": "FT_AI_VALUE_HYPOTHESIS_READINESS_2026_06",
+  "value_hypothesis_readiness_id": "value_hypothesis_readiness_example_planning_ready",
+  "org_id": "org_example",
+  "measurement_plan_id": "measurement_plan_example_support",
+  "claim_readiness_snapshot_id": "claim_readiness_snapshot_example_support",
+  "evidence_snapshot_id": "evidence_snapshot_example_support",
+  "workflow": {
+    "workflow_family": "customer_support_case_resolution",
+    "workflow_name": "Support case resolution",
+    "function_area": "customer_support"
+  },
+  "window": {
+    "window_start": "2026-05-01",
+    "window_end": "2026-05-31",
+    "window_label": "Month 1"
+  },
+  "alignment_keys": {
+    "org_id": "org_example",
+    "workflow_id": null,
+    "workflow_family": "customer_support_case_resolution",
+    "function_area": "customer_support",
+    "cohort_key": "workflow_family",
+    "baseline_window": {
+      "start": "2026-05-01",
+      "end": "2026-05-31"
+    },
+    "comparison_window": {
+      "start": null,
+      "end": null
+    },
+    "metric_id": "support_median_resolution_hours",
+    "source_ref": "bq_probe_example_support",
+    "owner_role": "ai_program_owner",
+    "review_state": "PLANNING_READY"
+  },
+  "value_hypothesis": {
+    "value_hypothesis_id": "value_hypothesis_example_support_capacity",
+    "hypothesis_statement": "If support teams use approved assistants for case triage and answer drafting, eligible support cases should move through review faster while quality controls remain intact.",
+    "value_route": "capacity_creation",
+    "business_objective": "Improve support case resolution capacity without weakening quality controls.",
+    "sponsor_role": "support_business_owner",
+    "owner_role": "ai_program_owner"
+  },
+  "readiness_state": "PLANNING_READY",
+  "contribution_evidence_tier": "NONE",
+  "allowed_review_modes": [
+    "internal_evidence_review"
+  ],
+  "factors": {
+    "blueprint_quality": {
+      "state": "present",
+      "source_bound": true
+    },
+    "ai_fluency_movement": {
+      "state": "missing",
+      "role": "human_readiness_context_only",
+      "cannot_upgrade_financial_readiness": true
+    },
+    "vbd_movement": {
+      "state": "present",
+      "role": "workflow_integration_context_only",
+      "token_usage_role": "spend_or_intensity_context_only",
+      "cannot_upgrade_financial_readiness": true
+    },
+    "metric_movement": {
+      "state": "missing",
+      "metric_id": "support_median_resolution_hours",
+      "window_aligned": true,
+      "customer_owned_or_approved": true
+    },
+    "evidence_quality": {
+      "state": "held",
+      "coverage_status": "telemetry_only_caveated"
+    },
+    "assumption_quality": {
+      "state": "held",
+      "owner_approved": false,
+      "roi_bot_context_only": true
+    },
+    "comparison_design_strength": {
+      "state": "baseline_only",
+      "emits_probability": false,
+      "emits_causality": false
+    },
+    "governance_clearance": {
+      "state": "present",
+      "hard_gate": true
+    }
+  },
+  "quality_gates": {
+    "measurement_plan_validated": true,
+    "claim_readiness_snapshot_validated": true,
+    "source_binding_validated": true,
+    "suppression_gates_cleared": true,
+    "aggregate_only": true,
+    "playbook_coverage_sufficient": false,
+    "selected_metric_defined": true,
+    "business_owner_context_present": true,
+    "finance_context_ready": false,
+    "caveats_propagated": true,
+    "blocked_claims_enforced": true
+  },
+  "review_boundaries": {
+    "customer_facing_output_allowed": false,
+    "financial_output_allowed": false,
+    "roi_proof_allowed": false,
+    "causality_claim_allowed": false,
+    "productivity_claim_allowed": false,
+    "ebita_claim_allowed": false,
+    "headcount_reduction_claim_allowed": false,
+    "team_or_manager_ranking_allowed": false
+  },
+  "suppression": {
+    "verdict": "HELD_INTERNAL_ONLY",
+    "suppression_reason": null,
+    "suppression_bucket_key": "workflow:customer_support_case_resolution|function:customer_support|window:2026-05-01:2026-05-31",
+    "suppression_applies_per_slice": true,
+    "hidden_values_exposed": false,
+    "suppressed_lanes": [],
+    "held_lanes": [],
+    "missing_lanes": [],
+    "reason_codes": []
+  },
+  "holds": [
+    "AI_FLUENCY_MOVEMENT_MISSING",
+    "METRIC_MOVEMENT_MISSING",
+    "ASSUMPTION_OWNER_APPROVAL_MISSING",
+    "PLAYBOOK_COVERAGE_INCOMPLETE"
+  ],
+  "required_caveats": [
+    "Value Hypothesis Readiness is an internal operating state, not ROI proof, causality, productivity measurement, or customer-facing financial output.",
+    "Layer 2 aggregate AI Fluency movement is missing.",
+    "Selected metric movement is missing."
+  ],
+  "blocked_claims": [
+    "roi_proof",
+    "causality_claim",
+    "productivity_claim",
+    "ebita_claim",
+    "headcount_reduction_claim",
+    "individual_scoring",
+    "team_or_manager_ranking",
+    "people_decisioning",
+    "customer_facing_economic_output"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "causality_claim",
+    "productivity_claim",
+    "ebita_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  "source_refs": {
+    "bigquery_probe_result_id": "bq_probe_example_support",
+    "source_readiness_ids": [
+      "source_readiness_example_support"
+    ],
+    "notes": [
+      "Read-only aggregate probe summary; no raw rows retained."
+    ]
+  },
+  "source_provenance": {
+    "measurement_plan_schema_version": "FT_AI_VALUE_MEASUREMENT_PLAN_2026_06",
+    "claim_readiness_snapshot_schema_version": "FT_AI_VALUE_CLAIM_READINESS_SNAPSHOT_2026_06",
+    "source_refs": {
+      "bigquery_probe_result_id": "bq_probe_example_support",
+      "source_readiness_ids": [
+        "source_readiness_example_support"
+      ],
+      "notes": [
+        "Read-only aggregate probe summary; no raw rows retained."
+      ]
+    },
+    "window": {
+      "window_start": "2026-05-01",
+      "window_end": "2026-05-31",
+      "window_label": "Month 1"
+    },
+    "provenance_caveats": []
+  },
+  "roi_bot_context": {
+    "present": false,
+    "scenario_context_only": true
+  },
+  "derived_from": {
+    "measurement_plan_id": "measurement_plan_example_support",
+    "measurement_plan_schema_version": "FT_AI_VALUE_MEASUREMENT_PLAN_2026_06",
+    "claim_readiness_snapshot_id": "claim_readiness_snapshot_example_support",
+    "claim_readiness_snapshot_schema_version": "FT_AI_VALUE_CLAIM_READINESS_SNAPSHOT_2026_06",
+    "builder": "ai_value_hypothesis_readiness_builder_2026_06"
+  },
+  "validation": {
+    "measurement_plan_validated": true,
+    "claim_readiness_snapshot_validated": true,
+    "source_binding_validated": true,
+    "no_confidence_percent": true,
+    "no_customer_facing_financial_output": true
+  },
+  "persistence_policy": {
+    "persisted": false,
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "creates_ingestion_jobs": false
+  },
+  "created_at": "2026-06-19T00:00:00.000Z",
+  "derivation_version": "ai_value_hypothesis_readiness_builder_2026_06"
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "FT_AI_VALUE_ADVERSARIAL_CLIENT_FIXTURE_2026_06",
+  "file_name": "adversarial-rolling-window-finance-boundary.json",
+  "fixture_id": "rolling_window_finance_boundary",
+  "source_posture": "synthetic_rehearsal_input_spec",
+  "scenario": "Rolling 30-day Measurement Cell is otherwise complete but cannot feed finance-context or Bayesian planning.",
+  "customer_evidence_allowed": false,
+  "finance_context_allowed": false,
+  "customer_facing_financial_output_allowed": false,
+  "expected": {
+    "decision": "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER",
+    "validation_valid": true,
+    "true_feeds": [
+      "value_hypothesis_packet_runner"
+    ],
+    "false_feeds": [
+      "finance_context_investigation_planning",
+      "bayesian_research_design_planning",
+      "customer_facing_financial_output"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "financial_attribution",
+    "causality_claim",
+    "confidence_percentage",
+    "customer_facing_financial_output"
+  ]
+}

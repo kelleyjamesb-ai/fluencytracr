@@ -1,0 +1,223 @@
+{
+  "schema_version": "FT_AI_VALUE_MEASUREMENT_CELL_2026_06",
+  "measurement_cell_id": "measurement_cell_org_northstar_enterprise_metric_window_mismatch",
+  "org_id": "org-northstar-enterprise",
+  "function_area": "marketing",
+  "workflow_family": "campaign_brief_to_launch",
+  "workflow_id": "workflow_campaign_brief_to_launch",
+  "cohort_key": "function:marketing|eligible_seats:240",
+  "time_window": {
+    "time_window_id": "day_90",
+    "window_label": "Day 90",
+    "window_mode": "milestone",
+    "anchor_date": "2026-09-30",
+    "days_since_launch": 90,
+    "cadence": "milestone",
+    "window_start": "2026-09-01",
+    "window_end": "2026-09-30",
+    "baseline_window": {
+      "window_start": "2026-06-01",
+      "window_end": "2026-06-30"
+    },
+    "comparison_window": {
+      "window_start": "2026-09-01",
+      "window_end": "2026-09-30"
+    },
+    "prior_window_ref": "measurement_cell_org_northstar_enterprise_marketing_day_60",
+    "window_day_count": 30
+  },
+  "blueprint_alignment": {
+    "value_route": "revenue_expansion",
+    "value_promise": "Shorten campaign planning cycles while maintaining quality review coverage.",
+    "workflow_family": "campaign_brief_to_launch",
+    "expected_metric_id": "marketing_campaign_cycle_days",
+    "expected_metric_direction": "decrease",
+    "expected_metric_lag_days": 60,
+    "owner_role": "marketing_operations_leader",
+    "assumption_refs": [
+      "blueprint_assumption_marketing_cycle_time"
+    ],
+    "source_ref": "blueprint_source_marketing_2026_q3"
+  },
+  "ai_fluency_context": {
+    "evidence_state": "present",
+    "fluency_score": 72,
+    "dimension_scores": {},
+    "response_count": 126,
+    "suppression_state": "CLEAR",
+    "source_ref": "ai_fluency_marketing_day_90",
+    "role": "aggregate_human_readiness_context_only"
+  },
+  "vbd_context": {
+    "evidence_state": "present",
+    "velocity": 76,
+    "breadth": 69,
+    "depth": 71,
+    "integration_score": 70.2,
+    "overall_vbd_score": 71.8,
+    "prior_overall_vbd_score": 49.4,
+    "vbd_momentum": 22.4,
+    "normalized_vbd_momentum_30d": 7.4667,
+    "vbd_quadrant": "high_fluency_flow",
+    "sustained_vbd_exposure": 60.6,
+    "suppression_state": "CLEAR",
+    "source_ref": "vbd_marketing_day_90",
+    "role": "aggregate_behavioral_exposure_context_only"
+  },
+  "selected_metric": {
+    "metric_id": "marketing_pipeline_created",
+    "metric_name": "Pipeline created",
+    "metric_source_system": "customer_marketing_operations_system",
+    "metric_unit": "usd",
+    "metric_direction": "increase",
+    "metric_sensitivity": "medium",
+    "expected_lag_days": 90,
+    "normalization_denominator": "approved_campaign_count",
+    "baseline_value": 2000000,
+    "comparison_value": 2300000,
+    "baseline_window": {
+      "window_start": "2026-05-01",
+      "window_end": "2026-05-31"
+    },
+    "comparison_window": {
+      "window_start": "2026-08-01",
+      "window_end": "2026-08-31"
+    },
+    "owner_approval_state": "approved",
+    "suppression_state": "CLEAR",
+    "source_ref": "metric_export_marketing_pipeline_day_90",
+    "role": "customer_owned_selected_metric"
+  },
+  "metric_movement": {
+    "movement_state": "present",
+    "direction_adjusted_delta": 300000,
+    "expected_direction": "increase",
+    "moved_in_expected_direction": true,
+    "interpretation_boundary": "This intentionally mismatched example must not feed review."
+  },
+  "token_context": {
+    "evidence_state": "present",
+    "token_total": 1880000,
+    "token_per_active_seat": 7833,
+    "token_intensity_band": "moderate",
+    "source_ref": "token_context_marketing_day_90",
+    "role": "spend_or_intensity_context_only"
+  },
+  "yield_context": {
+    "metric_yield": 4950.495,
+    "token_efficiency_yield": 0.1596,
+    "sustained_vbd_exposure": 60.6,
+    "interpretation_boundary": "Yield is review context only and must not become ROI proof, productivity scoring, or financial attribution."
+  },
+  "confounders": [
+    {
+      "confounder_type": "campaign_seasonality",
+      "state": "documented",
+      "source_ref": "marketing_ops_seasonality_note_2026_q3"
+    }
+  ],
+  "evidence_design": {
+    "design_type": "matched_comparison",
+    "design_strength_tier": "comparison_supported",
+    "comparison_cell_ref": "measurement_cell_org_northstar_marketing_lower_exposure_day_90",
+    "controls_documented": true,
+    "baseline_stability": "stable",
+    "source_ref": "research_design_marketing_day_90",
+    "confidence_ceiling_policy": "Future contribution confidence cannot exceed the evidence design strength."
+  },
+  "finance_review_context": {
+    "finance_owner_state": "finance_context_review",
+    "financial_driver": "revenue_growth",
+    "metric_to_financial_driver_pathway": "Pipeline created is not the Blueprint-selected metric for this Measurement Cell.",
+    "scenario_context_only": true,
+    "source_ref": "finance_context_marketing_day_90"
+  },
+  "governance": {
+    "aggregate_only": true,
+    "suppression_state": "CLEAR",
+    "source_binding_validated": true,
+    "review_state": "FINANCE_CONTEXT_INVESTIGATION_READY",
+    "source_refs_validated": true,
+    "privacy_boundary": {
+      "aggregate_only": true,
+      "contains_direct_identifiers": false,
+      "contains_raw_content": false,
+      "contains_person_level_productivity": false,
+      "contains_person_level_hris_records": false,
+      "contains_hashed_or_joinable_person_identifiers": false,
+      "contains_manager_or_team_ranking": false,
+      "contains_department_ranking": false,
+      "contains_people_decisioning": false,
+      "contains_compensation_or_performance_inference": false,
+      "contains_promotion_or_discipline_inference": false,
+      "contains_attrition_prediction": false,
+      "contains_hris_inference_from_ai_usage": false
+    },
+    "claim_boundary": {
+      "customer_facing_output_allowed": false,
+      "financial_output_allowed": false,
+      "roi_proof_allowed": false,
+      "causality_claim_allowed": false,
+      "productivity_claim_allowed": false,
+      "ebita_claim_allowed": false,
+      "ebitda_claim_allowed": false,
+      "confidence_percentage_allowed": false,
+      "person_or_group_ranking_allowed": false
+    }
+  },
+  "allowed_uses": [
+    "measurement_cell_alignment",
+    "internal_evidence_review",
+    "value_hypothesis_readiness_input",
+    "business_owner_metric_review",
+    "finance_context_investigation_planning",
+    "bayesian_research_design_planning"
+  ],
+  "blocked_uses": [
+    "realized_roi",
+    "ebita_claim",
+    "ebitda_claim",
+    "financial_attribution",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "department_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output",
+    "customer_facing_prediction"
+  ],
+  "value_proof_policy": {
+    "measurement_cell_is_roi_proof": false,
+    "measurement_cell_is_financial_output": false,
+    "measurement_cell_computes_causality": false,
+    "measurement_cell_emits_confidence_percentage": false,
+    "measurement_cell_emits_probability": false,
+    "metric_movement_upgrades_suppressed_vbd": false,
+    "token_usage_changes_vbd_formula": false,
+    "allows_person_or_group_ranking": false,
+    "downstream_claim_strength_upgrade_allowed": false
+  },
+  "persistence_policy": {
+    "persisted": false,
+    "creates_migrations": false,
+    "creates_prisma_schema": false,
+    "creates_backend_routes": false,
+    "creates_frontend_ui": false,
+    "creates_ingestion_jobs": false,
+    "creates_customer_facing_exports": false
+  },
+  "source_refs": {
+    "blueprint_source_ref": "blueprint_source_marketing_2026_q3",
+    "ai_fluency_source_ref": "ai_fluency_marketing_day_90",
+    "vbd_source_ref": "vbd_marketing_day_90",
+    "metric_source_ref": "metric_export_marketing_pipeline_day_90",
+    "token_source_ref": "token_context_marketing_day_90"
+  },
+  "required_caveats": [
+    "This example is intentionally invalid because the selected metric and windows do not align to the Blueprint promise.",
+    "Metric movement cannot rescue a Measurement Cell with identity or window drift."
+  ],
+  "derivation_version": "ai_value_measurement_cell_example_2026_06"
+}

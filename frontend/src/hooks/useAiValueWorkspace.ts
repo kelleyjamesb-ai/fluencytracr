@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 import {
   ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
   ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY,
-  type AiValueObjectSummary,
   listAiValueObjects,
   putAiValueObject,
   runAiValueSpine,
@@ -15,6 +14,7 @@ import {
   buildKickoffContext,
   type AiValueWorkspaceViewModel
 } from "../lib/aiValueViewModel";
+import { selectAiValueWorkspaceChain } from "../lib/aiValueFlowSelection";
 import seedBlueprint from "../../../docs/contracts/ai-value-intelligence/examples/customer-support-blueprint.json";
 import seedMetricsLibrary from "../../../docs/contracts/ai-value-intelligence/examples/customer-support-metrics-library.json";
 
@@ -31,10 +31,6 @@ const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "A
 const sessionOrgId = () => (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
 const activeValueObjectId = (queryName: string, storageKey: string) =>
   new URLSearchParams(window.location.search).get(queryName) ?? localStorage.getItem(storageKey);
-const preferredObject = (
-  objects: AiValueObjectSummary[],
-  preferredId: string | null
-) => objects.find((object) => object.object_id === preferredId) ?? objects[0];
 
 export const useAiValueWorkspace = (): AiValueWorkspaceState => {
   const [mode, setMode] = useState<AiValueWorkspaceMode>("example");
@@ -82,24 +78,31 @@ export const useAiValueWorkspace = (): AiValueWorkspaceState => {
         "engagementId",
         ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY
       );
-      const blueprint = preferredObject(blueprints, preferredBlueprintId);
-      const blueprintId = blueprint?.object_id;
-      const libraryId = libraries[0]?.object_id;
-      if (!blueprintId || !libraryId) {
-        throw new Error("No workshop objects available");
-      }
-
-      // Prefer the full value chain when kickoff objects exist for this org.
       const engagements = (await listAiValueObjects(role, "engagement")).objects;
       const baselines = (await listAiValueObjects(role, "fluency_baseline")).objects;
-      const engagement = preferredObject(engagements, preferredEngagementId);
+      const evidenceCases = (await listAiValueObjects(role, "value_evidence_case")).objects;
+      const selection = selectAiValueWorkspaceChain({
+        blueprints,
+        libraries,
+        engagements,
+        baselines,
+        evidenceCases,
+        preferredBlueprintId,
+        preferredEngagementId
+      });
+      if (!selection) {
+        throw new Error("No workshop objects available");
+      }
+      const blueprintId = selection.blueprint.object_id;
+      const libraryId = selection.metricsLibrary.object_id;
 
-      if (engagement) {
+      // Prefer the full value chain when kickoff objects exist for this org.
+      if (selection.engagement) {
         const { run } = await runAiValueChain(role, {
           blueprintId,
           metricsLibraryId: libraryId,
-          engagementId: engagement.object_id,
-          fluencyBaselineId: baselines[0]?.object_id
+          engagementId: selection.engagement.object_id,
+          fluencyBaselineId: selection.fluencyBaseline?.object_id
         });
         if (!run.spine) {
           throw new Error(`Value chain held at ${run.halted_at ?? "kickoff"}`);

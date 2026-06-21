@@ -2,6 +2,49 @@
 
 ## Last Completed
 
+- AI Value VBD x Token / Org Fluency UI review repair (PR #364, 2026-06-21):
+  addressed the open review fixes and the failing GitHub action on
+  `codex/OrgFluency-ui-ux-update`. The VBD x Token map now lets suppressed,
+  held, and not-computed dimension evidence override stale positive labels, and
+  direct identifier values are rejected even inside negative privacy caveats.
+  The contract-only pilot runner now fails closed for malformed `windows`,
+  rejects mixed org/workflow/function/grain bindings, scrubs unsafe pilot scope
+  strings, recomputes validation decisions from held windows, and compares
+  flattened window summaries to embedded VBD/token maps. The frontend no longer
+  renders the contract-only pilot review panel, uses the canonical `moderate`
+  token posture key, and has a stable localStorage test stub for the current
+  Vitest environment. The GitHub action failure was fixed by preserving the
+  causality gate as review-eligible context only, with `causality_claim`
+  blocked instead of unlocked. No new route, persistence, migration, ingestion
+  job, customer-facing economic output, ROI/proof claim, causality unlock,
+  productivity claim, individual attribution, manager/team ranking, or
+  contract-only pilot UI was added. Verification:
+  `npm run build --workspace shared`; `npm run test:ci --workspace backend`;
+  `npm test --workspace frontend`; `npm run build --workspace frontend`;
+  `node scripts/validate_ai_value_vbd_token_efficiency_map.test.mjs`;
+  `node scripts/validate_ai_value_vbd_token_pilot_runner.test.mjs`;
+  `bash scripts/ci_docs_contract_sweep.sh`.
+- AI Value VBD x Token Pilot Runner slice (user-requested, 2026-06-16):
+  added the contract-only aggregate pilot runner for composing VBD x Token
+  Efficiency Maps across time windows, with a synthetic 50-person Customer
+  Success example that shows movement from `mitigate_friction` to
+  `replicate_pattern`. The runner sorts windows chronologically, requires at
+  least two windows for movement, preserves held evidence as
+  `hold_for_evidence`, rejects unsafe downstream feeds/privacy flags/tiny
+  cohort context, and emits strategy posture only. Also hardened the Pilot
+  Intake Runner so held/non-present Source Packages cannot feed evidence
+  assembly. No migrations, backend routes, frontend UI, ingestion jobs,
+  persistence, claim readiness snapshots, executive readout snapshots,
+  reportability readiness, ROI/productivity/causality/ranking/people-decisioning,
+  or customer-facing financial output were added. Verification:
+  `npm run test:ai-value-vbd-token-pilot-runner`;
+  `npm run test:ai-value-vbd-token-efficiency-map`;
+  `npm run test:ai-value-token-efficiency-signal`;
+  `npm run test:ai-value-pilot-intake-runner`;
+  `npm run test:ai-value-evidence-collection-assembler`;
+  `npm run test:ai-value-blueprint-consistency`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Value support-pilot GSR adapter review repair (user-requested, 2026-06-14 UTC):
   tightened `buildSupportPilotGleanReadinessMapFromRuntimeEvidence` so reportability
   readiness only builds from full Playbook coverage, source packages must match
@@ -267,3 +310,7 @@
 - Stage 2 for Source Evidence Import should define the reviewer workflow around uploaded aggregate packages before implementing any persistence or live source connection.
 - Next Source Evidence Import step should decide whether to add a reviewer upload/workspace for sanitized aggregate packages, or first define the exact Glean/customer export templates needed for survey, external outcomes, financial approvals, and customer-level product telemetry.
 - Next Trust Episode Boundary / AI Work Evidence step, if approved by the human, is to review the internal pilot packet language and decide whether to turn the aggregate variable names and AI Manager Outcomes Recommendations into a client pilot export checklist. Keep it API-free unless a later product decision explicitly approves aggregate result persistence or serving after repeated pilots.
+
+- AI Value Platform Value Hypothesis Readiness architecture slice (2026-06-20): added the Real Data Intake Packet Runner contract and shared runner for already-parsed aggregate-safe source objects. The runner validates Data Spine Readiness, Measurement Plan binding, scrubbed Glean aggregate exports, Pilot Intake output, and Measurement Cell preparation feeds without parsing uploads, running BigQuery, adding routes/UI, creating persistence, or emitting ROI, causality, productivity, confidence, probability, financial attribution, or customer-facing financial output. Data Spine validation now rejects forged `MEASUREMENT_CELL_READY` states, stale missing-evidence lists, feed tampering, non-aggregate lanes, and source alignment drift. The real-data runner now recomputes nested validations, binds Data Spine windows to Measurement Plan windows, rejects held-feed tampering, blocks ROI Bot / ROI Sheet assumption substitution, and fails closed on route/persistence/UI/confidence/financial side doors. AI Fluency aggregate session export now supports optional `client_id` and aggregate source-binding metadata so AI Fluency imports can align by org/client without respondent-level data. Verification: `npm run test:ai-fluency-aggregator`, `npm run test:ai-value-ai-fluency-intake-bridge`, `npm run test:ai-value-data-spine-readiness`, `npm run test:ai-value-real-data-intake-packet-runner`, `npm run test:ai-value-scrubbed-glean-export-converter`, `npm run test:ai-value-pilot-intake-runner`, `npm run test:ai-value-evidence-collection-assembler`, `npm run test:ai-value-vbd-token-pilot-runner`, `npm run test:ai-value-measurement-cell`, `npm run test:ai-value-value-hypothesis-readiness-packet-runner`, and `git diff --check`.
+
+- Remaining productization truth after the 2026-06-20 architecture slice: Blueprint upload parsing is still upstream/contract-only; Glean/BigQuery VBD and token support is scrubbed aggregate summary support, not a live query runner; customer metric import/manual entry is represented through aggregate evidence contracts but not a dedicated import UI; the runner prepares Measurement Cell assembly but does not create finance-context readiness or a confidence model. Next bounded step should be a developer/operator intake adapter that accepts approved aggregate source references and returns Data Spine plus runner output, or the first actual AI Fluency dashboard export adapter, before more UI expansion.

@@ -28,6 +28,75 @@ Blueprint, metrics, evidence readiness, scenario modeling, claim boundaries,
 executive readouts, and sponsor decisions still matter. They are supporting
 objects inside the spine, not separate product destinations.
 
+## Governed Evidence Stack With ROI Bot
+
+ROI Bot belongs in the governed evidence stack as a sourced usage-analytics and
+financial-assumption companion. It does not replace FluencyTracr governance,
+the AI Fluency Instrument, the VBD Operating Map, or customer-owned outcome
+evidence.
+
+```text
+Blueprint Measurement Contract
++ AI Fluency dashboard movement
++ VBD operating movement
++ selected customer-owned metric movement
++ source-tagged usage actuals and assumptions from ROI Bot
++ evidence quality and comparison design
++ FluencyTracr governance gates
+= Value Hypothesis Readiness for internal review, business-owner review, or
+  finance-context investigation
+```
+
+Allowed ROI Bot role:
+
+- Pull live usage actuals, token/FlexCredit context, adoption context, and
+  source tags from approved Glean analytics sources.
+- Carry pricing, contract, adoption, volume, loaded-cost, revenue, or EBITDA
+  assumptions into scenario review when the assumption owner is explicit.
+- Package a sourced HTML or PPTX artifact after FluencyTracr caveats and
+  claim boundaries are carried through.
+
+Blocked ROI Bot role:
+
+- No bypass of suppression, aggregate-only, or fail-closed governance.
+- No replacement of the AI Fluency Instrument. The current example is a
+  placeholder for a future live aggregate dashboard after individual
+  instruments are collected and aggregated.
+- No change to the VBD formula, VBD quadrant assignment, or VBD/token overlay.
+- No ROI proof, productivity proof, causality proof, financial attribution, or
+  customer-facing economic output from usage actuals or scenario assumptions
+  alone.
+
+## Value Hypothesis Readiness
+
+Value Hypothesis Readiness is the first productized operating packet for this
+spine. It connects Blueprint, aggregate AI Fluency movement, VBD/token context,
+customer-owned metric movement, ROI Bot or ROI Sheet assumptions, comparison
+design, source refs, and governance into one internal state.
+
+Allowed states:
+
+- `SUPPRESSED`
+- `NOT_READY`
+- `PLANNING_READY`
+- `EVIDENCE_REVIEW_READY`
+- `BUSINESS_OWNER_REVIEW_READY`
+- `FINANCE_CONTEXT_INVESTIGATION_READY`
+
+Contribution evidence is tiered without percentages:
+
+- `NONE`
+- `DIRECTIONAL_ALIGNMENT`
+- `PRE_POST_SUPPORTED`
+- `MATCHED_COMPARISON_READY`
+- `CONTROLLED_TEST_READY`
+- `CALIBRATED_ATTRIBUTION_READY`
+
+The shared contract is
+[`docs/contracts/ai-value-value-hypothesis-readiness/README.md`](../contracts/ai-value-value-hypothesis-readiness/README.md).
+It is internal-only and blocks customer-facing financial output, ROI proof,
+causality, productivity claims, individual scoring, and manager or team ranking.
+
 ## VBD Definitions
 
 Use these definitions as canonical for the AI Value Platform (amended
@@ -53,6 +122,14 @@ is developing and where intervention may be needed. Value claims require a
 customer-owned function outcome metric, accepted or caveated outcome evidence,
 and claim review.
 
+For longitudinal measurement, use
+[Blueprint To Finance Review Readiness Spine](./BLUEPRINT_TO_FINANCE_REVIEW_READINESS_SPINE.md)
+as the docs-only companion concept. It defines the Measurement Cell grain, VBD
+Momentum, Signal Emergence, Metric Yield, Token Efficiency Yield, and the future
+Bayesian modeling posture without authorizing runtime scoring, confidence
+percentages, customer-facing economic output, ROI proof, financial attribution,
+or causality claims.
+
 ## What Good Looks Like
 
 | Layer | Good looks like | Failure mode |
@@ -73,7 +150,7 @@ software and fixtures already in the repo.
 | AI Fluency Baseline | Are we building AI capability? | `customer-support-fluency-baseline.json`; `shared/src/aiValueEngine/fluencyBaseline.ts`; aggregate cohort validation in `scripts/ai_value_engine.test.mjs`. | Aggregate fluency context, suppressed small cohorts, instrument metadata, readiness summary, and no person-level scoring. | Function-level fluency trend over time; direct mapping from fluency dimensions to VBD intervention choices; richer client result import path. |
 | VBD Operating Map | Is AI becoming real work? | `docs/concepts/VELOCITY.md`; `docs/concepts/DEPTH.md`; `customer-support-aggregate-api-push-package.json`; VBD context in `value-improvement-loop.schema.json`; VBD UI map in `frontend/src/pages/AIValueWorkspace.tsx`. | Velocity and Breadth aggregate package examples; Depth concept grounding; VBD status as intervention context; Velocity x Depth quadrant language. | First-class VBD map schema; function/workflow plotting data; Breadth heatmap; longitudinal VBD snapshots; validated Depth signals by function. |
 | Function Outcome Metric | What outcome should move? | `metric-definition.schema.json`; `customer-support-metrics-library.json`; `sales-pipeline-metrics-library.json`; `shared/src/aiValueEngine/metrics.ts`; Blueprint-to-metric adapter. | Governed metric names, definitions, value routes, source systems, units, baseline/comparison rules, owners, and allowed claim levels. | Broader function metrics library; source-system connector requirements; metric selection UX tied to function and VBD quadrant. |
-| Value Evidence Case | What proof do we have? | `value-evidence-case.schema.json`; `customer-support-value-evidence-case.json`; `shared/src/aiValueEngine/valueEvidenceCase.ts`; `data-boundary-roi-evidence.schema.json`; `customer-support-data-boundary-roi-evidence.json`; `evidence-readiness.schema.json`; `customer-support-outcome-evidence-export.json`; baseline/comparison API-push fixtures; `roi-scenario.schema.json`; `claim-boundary.schema.json`; `executive-packet.schema.json`. | The unified `value_evidence_case` object assembles client/workflow context, fluency summary, VBD state under the amended canon, outcome metric, data-boundary status, outcome evidence review state, windows, assumptions, evidence level, safe language, scenario posture, sponsor decision, and the next intervention/retest action; the engine enforces the evidence ladder fail-closed. | Case persistence and API registration; UI presentation of the case; case history across retest cycles. |
+| Value Evidence Case | What proof do we have? | `value-evidence-case.schema.json`; `customer-support-value-evidence-case.json`; `shared/src/aiValueEngine/valueEvidenceCase.ts`; `data-boundary-roi-evidence.schema.json`; `customer-support-data-boundary-roi-evidence.json`; `evidence-readiness.schema.json`; `customer-support-outcome-evidence-export.json`; baseline/comparison API-push fixtures; `roi-scenario.schema.json`; `claim-boundary.schema.json`; `executive-packet.schema.json`. | The unified `value_evidence_case` object assembles client/workflow context, fluency summary, VBD state under the amended canon, outcome metric, data-boundary status, outcome evidence review state, windows, assumptions, evidence level, safe language, scenario posture, sponsor decision, and the next intervention/retest action; the engine enforces the evidence ladder fail-closed. ROI Bot can contribute source-tagged usage actuals and assumption context for internal review only. | Case persistence and API registration; UI presentation of the case; case history across retest cycles; governed capture of source tags, pull dates, and assumption owners from ROI Bot outputs. |
 | Intervention / Retest | What should we change next? | `value-improvement-loop.schema.json`; `customer-support-value-improvement-loop.json`; `shared/src/aiValueEngine/valueImprovement.ts`; Scenario and Decisions UI panel. | Advisory blockers, recommended interventions, retest window, next data needed, and guarded caveats when a value target is not improving. | Intervention history; owner workflow; retest result object; learning loop that records which interventions move VBD and outcomes. |
 
 ## Evidence Quality Ladder

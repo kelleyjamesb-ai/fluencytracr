@@ -11,6 +11,7 @@ import {
   type RealEvidenceMaterializerParams,
   type RealEvidenceMaterializerResult
 } from "../lib/aiValueApi";
+import { selectAiValueJourneyObjects } from "../lib/aiValueFlowSelection";
 
 export type JourneyStageKey =
   | "readiness"
@@ -2524,16 +2525,22 @@ export const useAiValueJourney = (): AiValueJourney => {
         byType[summary.object_type].push(summary);
       }
 
-      const items = buildEvidenceItems(byType);
-      const blueprintSummary = latest(byType.blueprint);
-      const metricsLibrarySummary = latest(byType.metrics_library);
+      const selectedObjects = selectAiValueJourneyObjects(byType);
+      const items = buildEvidenceItems(byType).filter(
+        (item) =>
+          !selectedObjects.workflowFamily ||
+          item.workflowFamily === selectedObjects.workflowFamily
+      );
+      const blueprintSummary = selectedObjects.blueprint ?? latest(byType.blueprint);
+      const metricsLibrarySummary =
+        selectedObjects.metricsLibrary ?? latest(byType.metrics_library);
       const [engagement, blueprint, metricsLibrary, readiness, scenario, roiScenario] = await Promise.all([
-        maybeFetchPayload(role, latest(byType.engagement)),
+        maybeFetchPayload(role, selectedObjects.engagement ?? latest(byType.engagement)),
         maybeFetchPayload(role, blueprintSummary),
         maybeFetchPayload(role, metricsLibrarySummary),
-        maybeFetchPayload(role, latest(byType.evidence_readiness)),
-        maybeFetchPayload(role, latest(byType.value_scenario)),
-        maybeFetchPayload(role, latest(byType.roi_scenario))
+        maybeFetchPayload(role, selectedObjects.readiness ?? latest(byType.evidence_readiness)),
+        maybeFetchPayload(role, selectedObjects.scenario ?? latest(byType.value_scenario)),
+        maybeFetchPayload(role, selectedObjects.roiScenario ?? latest(byType.roi_scenario))
       ]);
       const nextMaterializerRequest = blueprintSummary && metricsLibrarySummary
         ? {

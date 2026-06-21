@@ -1,0 +1,29 @@
+{
+  "schema_version": "FT_AI_VALUE_ADVERSARIAL_CLIENT_FIXTURE_2026_06",
+  "file_name": "adversarial-window-mismatch-held.json",
+  "fixture_id": "mismatched_windows",
+  "source_posture": "synthetic_rehearsal_input_spec",
+  "scenario": "Data Spine was prepared from a different comparison window than the Measurement Plan.",
+  "customer_evidence_allowed": false,
+  "finance_context_allowed": false,
+  "customer_facing_financial_output_allowed": false,
+  "expected": {
+    "decision": "BLOCKED",
+    "validation_valid": false,
+    "false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ],
+    "gaps_include": [
+      "comparison_window"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "financial_attribution",
+    "causality_claim",
+    "confidence_percentage",
+    "customer_facing_financial_output"
+  ]
+}

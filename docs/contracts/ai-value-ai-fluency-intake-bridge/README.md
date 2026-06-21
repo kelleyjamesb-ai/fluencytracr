@@ -61,6 +61,12 @@ metadata and aggregate summary. It must not store raw responses, respondent
 records, direct identifiers, hashed or joinable identifiers, person-level HRIS,
 person-level productivity, or `manager_or_team_ranking` fields.
 
+Aggregate AI Fluency exports may carry `client_id` and source-binding metadata
+so the import can align to the same client/org/workflow/window spine used by
+Data Spine Readiness. Client binding is aggregate metadata only; it does not
+authorize respondent-level import, dashboard row storage, raw survey response
+storage, or person-level joins.
+
 When no baseline is provided, the bridge creates a safe placeholder and marks
 Layer 2 evidence as missing. Missing evidence remains missing; it cannot be
 treated as support.

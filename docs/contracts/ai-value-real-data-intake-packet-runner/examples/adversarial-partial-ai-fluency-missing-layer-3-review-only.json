@@ -1,0 +1,29 @@
+{
+  "schema_version": "FT_AI_VALUE_ADVERSARIAL_CLIENT_FIXTURE_2026_06",
+  "file_name": "adversarial-partial-ai-fluency-missing-layer-3-review-only.json",
+  "fixture_id": "partial_ai_fluency_missing_layer_3",
+  "source_posture": "synthetic_rehearsal_input_spec",
+  "scenario": "AI Fluency is partial and the customer-owned Layer 3 metric is missing.",
+  "customer_evidence_allowed": false,
+  "finance_context_allowed": false,
+  "customer_facing_financial_output_allowed": false,
+  "expected": {
+    "real_data_decision": "HELD_FOR_DATA_SPINE",
+    "real_data_false_feeds": [
+      "measurement_cell_input",
+      "value_hypothesis_packet_runner",
+      "customer_facing_financial_output"
+    ],
+    "real_data_missing_evidence_include": [
+      "AI_FLUENCY_AGGREGATE_REQUIRED",
+      "CUSTOMER_METRIC_REQUIRED"
+    ]
+  },
+  "blocked_claims": [
+    "roi_proof",
+    "financial_attribution",
+    "causality_claim",
+    "confidence_percentage",
+    "customer_facing_financial_output"
+  ]
+}

@@ -200,8 +200,8 @@ describe("AI value evidence case API", () => {
         gate.state
       ])
     );
-    expect(gateState.causality_claim).toBe("UNLOCKED");
-    expect(response.body.payload.blocked_claims).not.toContain("causality_claim");
+    expect(gateState.causality_claim).toBe("REVIEW_ELIGIBLE_CONTEXT_ONLY");
+    expect(response.body.payload.blocked_claims).toContain("causality_claim");
   });
 
   it("returns 404 when a referenced source object is missing", async () => {

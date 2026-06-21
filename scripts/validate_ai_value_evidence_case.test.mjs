@@ -244,7 +244,7 @@ test("keeps supported evidence caveated and non-causal", () => {
   );
 });
 
-test("customer validation unlocks realized-value language while causality stays gated", () => {
+test("customer validation creates finance-context review eligibility while value claims stay blocked", () => {
   const inputs = loadInputs();
   const acceptedExport = {
     ...inputs.outcomeEvidenceExport,
@@ -269,37 +269,39 @@ test("customer validation unlocks realized-value language while causality stays 
     customerValidation
   });
 
-  // Realized-value language unlocks at the VALIDATED rung.
+  // STRONG evidence now means internal finance-context review eligibility,
+  // not ROI proof, realized value, causality, or customer-facing output.
   assert.equal(validatedCase.evidence_quality.evidence_level, "STRONG");
   assert.equal(
     validatedCase.safe_value_language.allowed_claim_level,
-    "VALIDATED_VALUE_REALIZATION"
+    "FINANCE_CONTEXT_REVIEW_ELIGIBLE"
   );
 
-  // ROI-family gates open; causality stays locked without an approved design.
+  // ROI-family gates become review-eligible context only; causality stays
+  // locked without an approved design.
   const gateState = Object.fromEntries(
     validatedCase.claim_gates.map((gate) => [gate.claim, gate.state])
   );
-  assert.equal(gateState.roi_proof, "UNLOCKED");
-  assert.equal(gateState.realized_roi_calculation, "UNLOCKED");
-  assert.equal(gateState.customer_facing_economic_output, "UNLOCKED");
+  assert.equal(gateState.roi_proof, "REVIEW_ELIGIBLE_CONTEXT_ONLY");
+  assert.equal(gateState.realized_roi_calculation, "REVIEW_ELIGIBLE_CONTEXT_ONLY");
+  assert.equal(gateState.customer_facing_economic_output, "REVIEW_ELIGIBLE_CONTEXT_ONLY");
   assert.equal(gateState.causality_claim, "LOCKED");
 
-  // Privacy boundaries never relax; causality stays in blocked claims.
+  // Privacy and value-claim boundaries never relax in this phase.
   for (const claim of [
     "individual_scoring",
     "team_or_manager_ranking",
     "hr_analytics",
     "productivity_measurement",
+    "roi_proof",
+    "realized_roi_calculation",
+    "customer_facing_economic_output",
     "causality_claim"
   ]) {
     assert.ok(validatedCase.blocked_claims.includes(claim), claim);
   }
-  assert.ok(!validatedCase.blocked_claims.includes("roi_proof"));
-  assert.ok(!validatedCase.blocked_claims.includes("customer_facing_economic_output"));
 
-  // Figures stay customer-owned: the platform still never computes economic
-  // output, and the caveats say so.
+  // Figures stay customer-owned finance context only.
   assert.equal(
     validatedCase.economic_output_policy.customer_facing_economic_output,
     false
@@ -311,7 +313,7 @@ test("customer validation unlocks realized-value language while causality stays 
   );
   assert.ok(
     validatedCase.safe_value_language.required_caveats.some((caveat) =>
-      /does not prove causality/i.test(caveat)
+      /does not prove ROI or causality/i.test(caveat)
     )
   );
   assert.equal(validateAiValueEvidenceCase(validatedCase).valid, true);
@@ -328,7 +330,7 @@ test("customer validation unlocks realized-value language while causality stays 
   );
 });
 
-test("approved evidence design unlocks causality and survives validation", () => {
+test("approved evidence design creates causality review eligibility but not a causality claim", () => {
   const inputs = loadInputs();
   const acceptedExport = {
     ...inputs.outcomeEvidenceExport,
@@ -362,8 +364,8 @@ test("approved evidence design unlocks causality and survives validation", () =>
 
   assert.equal(validatedCase.evidence_design.design_state, "APPROVED_COMPARISON_DESIGN");
   assert.equal(validatedCase.evidence_design.design_type, "matched_comparison");
-  assert.equal(gateState.causality_claim, "UNLOCKED");
-  assert.ok(!validatedCase.blocked_claims.includes("causality_claim"));
+  assert.equal(gateState.causality_claim, "REVIEW_ELIGIBLE_CONTEXT_ONLY");
+  assert.ok(validatedCase.blocked_claims.includes("causality_claim"));
   assert.equal(validateAiValueEvidenceCase(validatedCase).valid, true);
 });
 
@@ -406,10 +408,11 @@ test("does not persist free-form customer validation statements", () => {
   );
 });
 
-test("published schema allows validated value realization claim level", () => {
+test("published schema allows finance-context review eligible claim level", () => {
   const schema = readJson("schemas/ai-value-intelligence/value-evidence-case.schema.json");
   const allowed =
     schema.properties.safe_value_language.properties.allowed_claim_level.enum;
 
-  assert.ok(allowed.includes("VALIDATED_VALUE_REALIZATION"));
+  assert.ok(allowed.includes("FINANCE_CONTEXT_REVIEW_ELIGIBLE"));
+  assert.equal(allowed.includes("VALIDATED_VALUE_REALIZATION"), false);
 });

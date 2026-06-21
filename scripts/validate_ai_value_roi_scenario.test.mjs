@@ -359,7 +359,7 @@ test("routes dollarized fields through the financial claim gate instead of broad
   assert.equal(gated.valid, true);
 });
 
-test("allows realized ROI only when the financial claim gate has baseline, comparison, costs, finance, and confounds", () => {
+test("blocks realized ROI even when finance context fields are present", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.financial_claim_gate.mode = "FINANCE_VALIDATED";
   scenario.financial_claim_gate.allowed_outputs.realized_roi_calculation = true;
@@ -377,15 +377,19 @@ test("allows realized ROI only when the financial claim gate has baseline, compa
 
   assert.equal(result.valid, false);
   assert.equal(
-    result.gaps.includes("financial_claim_gate.allowed_outputs.realized_roi_calculation requires data_sufficiency.confounds_reviewed"),
+    result.gaps.includes("financial_claim_gate.allowed_outputs.realized_roi_calculation is blocked in the current program; use finance-context review only"),
     true
   );
 
   scenario.financial_claim_gate.data_sufficiency.confounds_reviewed = true;
 
-  const allowed = validateAiValueRoiScenario(scenario);
+  const stillBlocked = validateAiValueRoiScenario(scenario);
 
-  assert.equal(allowed.valid, true);
+  assert.equal(stillBlocked.valid, false);
+  assert.equal(
+    stillBlocked.gaps.includes("financial_claim_gate.allowed_outputs.realized_roi_calculation is blocked in the current program; use finance-context review only"),
+    true
+  );
 });
 
 test("rejects individual scoring present no matter what financial gate is approved", () => {
@@ -472,7 +476,7 @@ test("rejects HRIS inference present no matter what financial gate is approved",
   assert.equal(result.gaps.includes("Forbidden field detected: hris_inference"), true);
 });
 
-test("requires customer-facing approval and governance signoff for customer-facing economic output", () => {
+test("blocks customer-facing economic output even when finance and governance fields are present", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.financial_claim_gate.mode = "FINANCE_VALIDATED";
   scenario.financial_claim_gate.allowed_outputs.customer_facing_economic_output = true;
@@ -482,21 +486,17 @@ test("requires customer-facing approval and governance signoff for customer-faci
 
   assert.equal(result.valid, false);
   assert.equal(
-    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output requires mode CUSTOMER_FACING_APPROVED"),
-    true
-  );
-  assert.equal(
-    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output requires data_sufficiency.legal_or_governance_approved"),
+    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output is blocked in the current program; a future customer-facing financial-output contract is required"),
     true
   );
 
   scenario.financial_claim_gate.mode = "CUSTOMER_FACING_APPROVED";
   scenario.financial_claim_gate.data_sufficiency.legal_or_governance_approved = true;
 
-  const allowed = validateAiValueRoiScenario(scenario);
+  const stillBlocked = validateAiValueRoiScenario(scenario);
 
-  assert.equal(allowed.valid, true);
-  assert.equal(allowed.feeds.customer_facing_economic_output, true);
+  assert.equal(stillBlocked.valid, false);
+  assert.equal(stillBlocked.feeds.customer_facing_economic_output, false);
 });
 
 test("routes customer-facing economic output fields through the financial claim gate", () => {
@@ -513,7 +513,7 @@ test("routes customer-facing economic output fields through the financial claim 
     true
   );
   assert.equal(
-    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output requires mode CUSTOMER_FACING_APPROVED"),
+    result.gaps.includes("financial_claim_gate.allowed_outputs.customer_facing_economic_output is blocked in the current program; a future customer-facing financial-output contract is required"),
     true
   );
 });

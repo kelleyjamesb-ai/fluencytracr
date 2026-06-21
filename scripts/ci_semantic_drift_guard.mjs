@@ -26,8 +26,8 @@ const ALLOWLIST_PATHS = new Set([
   "docs/en/ROADMAP.md"
 ]);
 
-const SAFE_LINE_CONTEXT = /(\b(no|not|never|without|avoid|blocked|rejects?|forbidden|prohibited|out of scope|does not|do not|cannot|must not|is not|are not|should not|instead of|rather than|deprecated|legacy|quarantine|quarantined)\b|FORBIDDEN_TERMS)/i;
-const SAFE_BLOCK_CONTEXT = /(\b(always blocked|blocked claims|blocked_claims|non-capabilities|what .* does not claim|what .* is not|must not include|must never include|must not contain|must not permit|must not appear|must not claim|does not include|do not claim|forbidden|prohibited|out of scope|rejected|rejects?|guardrails?|non-goals?)\b|FORBIDDEN_TERMS)/i;
+const SAFE_LINE_CONTEXT = /(\b(no|not|never|without|avoid|block(?:ed|s)?|rejects?|forbidden|prohibited|out of scope|does not|do not|cannot|must not|must never|is not|are not|should not|instead of|rather than|deprecated|legacy|quarantine|quarantined)\b|FORBIDDEN_TERMS)/i;
+const SAFE_BLOCK_CONTEXT = /(\b(no|block(?:ed|s)?|always blocked|blocked claims|blocked_claims|non-capabilities|what .* does not claim|what .* is not|must not|must never|cannot|does not|must not include|must never include|must not contain|must not permit|must not appear|must not claim|does not include|do not claim|forbidden|prohibited|out of scope|rejected|rejects?|guardrails?|non-goals?)\b|FORBIDDEN_TERMS)/i;
 
 const DISALLOWED = [
   /FluencyScore/,
@@ -78,6 +78,8 @@ function* walk(target) {
 
 const findings = [];
 
+const isAllowedProductPhrase = (line) => /\bAI Fluency scores?\b/i.test(line);
+
 const hasSafeBlockContext = (lines, index) => {
   for (let offset = 1; offset <= 20; offset += 1) {
     const candidate = lines[index - offset];
@@ -112,6 +114,9 @@ for (const root of SCAN_ROOTS) {
     lines.forEach((line, index) => {
       for (const pattern of DISALLOWED) {
         if (pattern.test(line)) {
+          if (isAllowedProductPhrase(line)) {
+            return;
+          }
           if (SAFE_LINE_CONTEXT.test(line) || hasSafeBlockContext(lines, index)) {
             return;
           }
