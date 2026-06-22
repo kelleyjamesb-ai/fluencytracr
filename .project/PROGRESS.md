@@ -2,6 +2,22 @@
 
 ## Last Completed
 
+- AI Value productization decision-gate pass (user-requested, 2026-06-22):
+  created the controlled scrubbed aggregate pilot runbook and the hold/guard
+  decisions for legacy readout isolation, Measurement Cell persistence,
+  Measurement Cell Series persistence, customer projection, export governance,
+  and confidence research readiness. The safe outcome is: controlled pilot
+  runbook promoted as docs-only; physical Measurement Cell tables, Series
+  persistence, customer projection/export, and confidence research remain held
+  until actual scrubbed aggregate pilot evidence and repeated aligned milestone
+  evidence exist. Phase 5 implementation was intentionally stopped because the
+  Phase 4 decision is `HOLD_FOR_MORE_PILOT_EVIDENCE`. No Prisma schema,
+  migration, repository, backend route, frontend UI, persistence write, live
+  Glean/BigQuery execution, connector, export package, confidence math,
+  ROI/EBITDA, causality, productivity, probability, or customer-facing
+  financial output was added. Verification:
+  `git diff --check`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`.
 - Measurement Cell Series / Evidence Continuity Manifest slice
   (user-requested, 2026-06-22): added a contract-only Measurement Cell Series
   over repeated Measurement Cell Assembly outputs. The layer emits compact

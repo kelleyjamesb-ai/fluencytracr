@@ -4,7 +4,7 @@
 
 **Goal:** Move FluencyTracr from a productized internal evidence spine to a controlled pilot and explicit persistence promotion decision without overstating customer, finance, connector, or confidence readiness.
 
-**Architecture:** The current state is `internal_operator_review_ready__customer_productization_blocked`. The next work should prove the existing governed source handoff, Data Spine, Measurement Cell, Series, and review-posture path on a controlled scrubbed aggregate pilot before adding Measurement Cell persistence or customer-facing surfaces. Every step preserves the aggregate-only, fail-closed posture and keeps UI, live connectors, confidence math, ROI, causality, productivity, probability, and customer-facing financial output blocked until explicitly promoted.
+**Architecture:** The current state is `internal_operator_review_ready__customer_productization_blocked`. The next work should demonstrate the existing governed source handoff, Data Spine, Measurement Cell, Series, and review-posture path on a controlled scrubbed aggregate pilot before adding Measurement Cell persistence or customer-facing surfaces. Every step preserves the aggregate-only, fail-closed posture and keeps UI, live connectors, confidence math, ROI, causality, productivity, probability, and customer-facing financial output blocked until explicitly promoted.
 
 **Tech Stack:** Markdown architecture/contract docs, existing TypeScript shared engine, Node test runner, docs contract sweep, V1 governance gates, future Prisma/Postgres only after promotion.
 
@@ -34,6 +34,15 @@ Waiting:
 - source-bound customer routes or UI;
 - live Glean or BigQuery execution;
 - confidence math or finance output.
+
+## Current Execution Result
+
+Phases 1-4 have produced docs-only gates and decision records. Phase 4 records
+`HOLD_FOR_MORE_PILOT_EVIDENCE`, so Phase 5 implementation is intentionally
+blocked in this goal. Phases 6-8 are completed only as hold decisions: Series
+persistence, customer projection/export, and confidence research remain blocked
+pending controlled pilot evidence, repeated milestone evidence, and explicit
+promotion decisions.
 
 ## Phase 1: Close Productization Gate
 
@@ -96,7 +105,7 @@ Expected: all commands exit `0`.
 - Create: `docs/architecture/AI_VALUE_CONTROLLED_AGGREGATE_PILOT_RUNBOOK.md`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Write the pilot runbook**
+- [x] **Step 1: Write the pilot runbook**
 
 The runbook must require these inputs:
 
@@ -111,11 +120,11 @@ reviewed assumption source ref
 reviewed governance source ref
 validated Data Spine alignment envelope
 validated Source Package Review Queue posture
-validated Measurement Cell Assembly output
-validated Measurement Cell Series output
+Measurement Cell Assembly candidate inputs for recomputed validation
+Measurement Cell Series candidate milestone set for recomputed validation
 ```
 
-- [ ] **Step 2: Define pilot pass/fail criteria**
+- [x] **Step 2: Define pilot pass/fail criteria**
 
 Pass requires:
 
@@ -141,7 +150,7 @@ no probability fields
 no confidence or score-like fields
 ```
 
-- [ ] **Step 3: Add pilot stop conditions**
+- [x] **Step 3: Add pilot stop conditions**
 
 Stop the pilot if any of these occur:
 
@@ -156,7 +165,7 @@ finance-context review is described as ROI or EBITDA readiness
 live Glean or BigQuery execution is implied
 ```
 
-- [ ] **Step 4: Verify the runbook**
+- [x] **Step 4: Verify the runbook**
 
 Run:
 
@@ -179,12 +188,12 @@ Expected: all commands exit `0`.
 - Inspect: `docs/architecture/AI_VALUE_CONTRACT_CHAIN_INTEGRATION_AUDIT.md`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Document the isolation decision**
+- [x] **Step 1: Document the isolation decision**
 
 Decision value:
 
 ```text
-legacy_readout_internal_or_prototype_only
+ROUTE_AND_UI_GUARD_REQUIRED
 ```
 
 Required rule:
@@ -193,7 +202,7 @@ Required rule:
 Legacy executive_packet routes and rendered HTML readout paths are not source-bound Executive Readout Snapshot output, customer-facing readout output, export packages, or finance-ready artifacts.
 ```
 
-- [ ] **Step 2: Decide whether code isolation is needed**
+- [x] **Step 2: Decide whether code isolation is needed**
 
 Record one of these exact outcomes:
 
@@ -206,7 +215,7 @@ ROUTE_AND_UI_GUARD_REQUIRED
 
 Choose `ROUTE_AND_UI_GUARD_REQUIRED` if a route or UI can present `executive_packet` output without a visible internal/prototype audience boundary.
 
-- [ ] **Step 3: Verify the decision**
+- [x] **Step 3: Verify the decision**
 
 Run:
 
@@ -228,7 +237,7 @@ Expected: all commands exit `0`.
 - Existing: `docs/architecture/AI_VALUE_PRODUCTIZATION_GATE_DECISION.md`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Write the promotion decision**
+- [x] **Step 1: Write the promotion decision**
 
 Decision values:
 
@@ -239,13 +248,13 @@ HOLD_FOR_LEGACY_READOUT_ISOLATION
 REJECT_CURRENT_PERSISTENCE_SCOPE
 ```
 
-- [ ] **Step 2: Require promotion evidence**
+- [x] **Step 2: Require promotion evidence**
 
 Promotion requires:
 
 ```text
 controlled scrubbed aggregate pilot passed
-legacy readout isolation decision complete
+legacy readout route/UI guard posture resolved
 stable selected-path binding verified
 value hypothesis binding verified
 metric drift guard verified
@@ -255,7 +264,7 @@ JSONB smuggling guard specified
 no route/UI/export dependency created
 ```
 
-- [ ] **Step 3: Keep Series persistence blocked**
+- [x] **Step 3: Keep Series persistence blocked**
 
 The decision must state:
 
@@ -263,7 +272,7 @@ The decision must state:
 Measurement Cell Series persistence remains blocked until at least one repeated Measurement Cell workflow has been validated across the governed milestone windows.
 ```
 
-- [ ] **Step 4: Verify the decision**
+- [x] **Step 4: Verify the decision**
 
 Run:
 
@@ -287,13 +296,16 @@ Expected: all commands exit `0`.
 - Create: `scripts/validate_ai_value_measurement_cell_snapshot_persistence.test.mjs`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Stop if Phase 4 is not promoted**
+- [x] **Step 1: Stop if Phase 4 is not promoted**
 
 Do not edit Prisma or backend code unless Phase 4 decision is exactly:
 
 ```text
 PROMOTE_MEASUREMENT_CELL_SNAPSHOTS
 ```
+
+Execution result: Phase 4 is `HOLD_FOR_MORE_PILOT_EVIDENCE`. Steps 2-4 are not
+safe to execute in this goal and remain intentionally unchecked.
 
 - [ ] **Step 2: Write red tests first**
 
@@ -377,7 +389,7 @@ Expected: all commands exit `0`.
 - Existing: `docs/architecture/AI_VALUE_PHYSICAL_DATA_MODEL.md`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Stop unless repeated milestone evidence exists**
+- [x] **Step 1: Record stop because repeated milestone evidence is missing**
 
 Required milestone evidence:
 
@@ -393,7 +405,11 @@ Day 365
 Each milestone must preserve the same org/client/workflow/function/cohort,
 metric, selected expectation path, source-ref posture, and approval lineage.
 
-- [ ] **Step 2: Keep rolling windows quarantined**
+Execution result: repeated governed milestone evidence is missing, so this
+phase records `HOLD_FOR_REPEATED_MILESTONE_EVIDENCE` rather than satisfied
+promotion prerequisites.
+
+- [x] **Step 2: Keep rolling windows quarantined**
 
 The decision must state:
 
@@ -401,7 +417,7 @@ The decision must state:
 rolling_30_day_context is operating context only and cannot feed evidence continuity, finance-context investigation, Bayesian research planning, confidence research, customer-facing output, or export.
 ```
 
-- [ ] **Step 3: Verify the decision**
+- [x] **Step 3: Verify the decision**
 
 Run:
 
@@ -424,7 +440,7 @@ Expected: all commands exit `0`.
 - Existing: `docs/contracts/ai-value-customer-exposure-policy/README.md`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Define source-bound projection rules**
+- [x] **Step 1: Define source-bound projection rules**
 
 Projection rules must preserve:
 
@@ -443,7 +459,7 @@ window provenance
 audience boundary
 ```
 
-- [ ] **Step 2: Keep exports blocked until governance exists**
+- [x] **Step 2: Keep exports blocked until governance exists**
 
 Blocked export types:
 
@@ -460,7 +476,7 @@ Measurement Cell payload export
 Measurement Cell Series payload export
 ```
 
-- [ ] **Step 3: Verify decisions**
+- [x] **Step 3: Verify decisions**
 
 Run:
 
@@ -482,13 +498,15 @@ Expected: all commands exit `0`.
 - Existing: `docs/architecture/AI_VALUE_PHYSICAL_DATA_MODEL.md`
 - Modify: `.project/PROGRESS.md`
 
-- [ ] **Step 1: Stop unless prerequisites are met**
+- [x] **Step 1: Record stop because prerequisites are missing**
 
 Prerequisites:
 
 ```text
-Measurement Cell persistence promoted and implemented
-Measurement Cell Series persistence promoted or explicitly not required
+Measurement Cell persistence promoted and implemented, or separate governance
+promotion records equivalent aggregate evidence sufficiency
+Measurement Cell Series persistence promoted, or separate governance promotion
+records equivalent aggregate evidence sufficiency
 repeated milestone windows aligned
 customer metric movement available as aggregate evidence
 comparison design documented
@@ -497,12 +515,16 @@ legacy readout isolation complete
 customer-facing output still blocked
 ```
 
-- [ ] **Step 2: Define research boundary**
+Execution result: prerequisites are missing, so this phase records
+`HOLD_CONFIDENCE_RESEARCH_FOR_REPEATED_ALIGNED_EVIDENCE` rather than satisfied
+research prerequisites.
+
+- [x] **Step 2: Define research boundary**
 
 Allowed research framing:
 
 ```text
-AI-influenced operational metric movement
+aggregate operational metric movement associated with governed AI work evidence
 evidence design strength
 metric specificity
 source alignment
@@ -521,7 +543,7 @@ customer-facing contribution model output
 finance-output probability
 ```
 
-- [ ] **Step 3: Verify decision**
+- [x] **Step 3: Verify decision**
 
 Run:
 
@@ -541,10 +563,11 @@ Do these next, in order:
 2. Phase 2: runbook for one controlled scrubbed aggregate pilot.
 3. Phase 3: isolate legacy readout and generic object authority risk.
 4. Phase 4: decide whether to promote Measurement Cell snapshots.
-5. Phase 5: implement Measurement Cell snapshots only if promoted.
+5. Phase 5: stop; do not implement Measurement Cell snapshots because Phase 4
+   is held.
 6. Phase 6: defer Series persistence until repeated milestone evidence exists.
-7. Phase 7: customer projection and export governance.
-8. Phase 8: confidence research readiness.
+7. Phase 7: keep customer projection and exports blocked pending governance.
+8. Phase 8: hold confidence research until repeated aligned evidence exists.
 
 Do not skip from Phase 1 to Phase 5. The pilot and legacy-readout isolation
 are the safety checks that keep persistence from becoming accidental product
