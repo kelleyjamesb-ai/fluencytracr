@@ -49,17 +49,13 @@ Existing relevant durable objects include:
 - `ai_value_objects`
 
 The current architecture authority for implemented persistence is
-`docs/architecture/AI_VALUE_PERSISTENCE_DESIGN.md`.
+`docs/architecture/AI_VALUE_PERSISTENCE_DESIGN.md`. The current physical
+readiness review is `docs/architecture/AI_VALUE_PHYSICAL_DATA_MODEL.md`.
 
-There is an authority conflict to reconcile before physical modeling:
-
-- `AI_VALUE_PERSISTENCE_DESIGN.md` records backend-only Claim Readiness and
-  Executive Readout Snapshot persistence as promoted and implemented.
-- `AI_VALUE_BLUEPRINT_CONTRACT_CROSSWALK.md` still describes Claim Readiness
-  Snapshot and Executive Readout Snapshot as non-persisted or design-only.
-
-Before adding tables, migrations, or repository methods, reconcile the
-crosswalk so it reflects the current implemented persistence authority.
+The earlier crosswalk/persistence wording conflict has been narrowed for this
+pass: `AI_VALUE_BLUEPRINT_CONTRACT_CROSSWALK.md` points Claim Readiness and
+Executive Readout Snapshot posture back to the existing backend-only
+persistence authority without promoting new persistence here.
 
 ## 3. Design Principles
 
