@@ -55,6 +55,10 @@ documented value-realization layers:
   customer-side transformer in the customer's cloud, sending only aggregate
   cohort distributions to FluencyTracr, and storing immutable verdicts against
   governed calibration baselines.
+  This is bounded aggregate ingest, not a production Sigma/BigQuery AI Value
+  pipeline: FluencyTracr does not run live Sigma/BigQuery queries for the AI
+  Value spine, ingest raw rows, or authorize customer-facing value output from
+  this path.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -183,6 +187,7 @@ is not the lead positioning for this repository.
 - AI Value Operator Time-Series Run: [docs/contracts/ai-value-operator-time-series-run/README.md](docs/contracts/ai-value-operator-time-series-run/README.md)
 - AI Value Operator Workflow: [docs/contracts/ai-value-operator-workflow/README.md](docs/contracts/ai-value-operator-workflow/README.md)
 - AI Value Operator Evidence Package Runner: [docs/contracts/ai-value-operator-evidence-package-runner/README.md](docs/contracts/ai-value-operator-evidence-package-runner/README.md)
+- AI Value Controlled Aggregate Fixture Review: [docs/contracts/ai-value-controlled-aggregate-fixture-review/README.md](docs/contracts/ai-value-controlled-aggregate-fixture-review/README.md)
 - AI Value Claim Boundary schema: [schemas/ai-value-intelligence/claim-boundary.schema.json](schemas/ai-value-intelligence/claim-boundary.schema.json)
 - Customer Support AI Value claim boundary fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json](docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json)
 - AI Value Executive Packet schema: [schemas/ai-value-intelligence/executive-packet.schema.json](schemas/ai-value-intelligence/executive-packet.schema.json)

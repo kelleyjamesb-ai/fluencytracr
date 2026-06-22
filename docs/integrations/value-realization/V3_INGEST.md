@@ -5,6 +5,12 @@ aggregate ingest, governed calibration, and verdict replay. Raw GCE stays in
 the customer environment. FluencyTracr receives only cohort-level aggregate
 records.
 
+Boundary note: this is bounded V3 aggregate ingest, not the AI Value
+Sigma/BigQuery production data pipeline. It does not authorize FluencyTracr to
+run live Sigma, Glean, or BigQuery queries for the AI Value spine, ingest raw
+rows, create pipeline persistence, or produce customer-facing value, finance, or
+confidence output.
+
 ## Flow
 
 1. Customer schedules the transformer in their cloud environment.

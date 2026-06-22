@@ -120,6 +120,10 @@ pre-computed cohort distributions only. When a V3 aggregate verdict is
 aggregate-only block that downstream consumers such as Quality Multiplier can
 re-check without raw telemetry.
 
+This endpoint is bounded aggregate ingest. It is not live Sigma, Glean, or
+BigQuery execution for the AI Value spine, not pipeline run persistence, not
+source package clearance, and not customer-facing value output.
+
 Suppressed V3 verdicts never include `forwarded_distribution`. The forwarded
 block must not contain raw GCE rows, raw prompt or output text, transcripts,
 raw skill names, action rows, direct identifiers, or any sub-5 cohort evidence.

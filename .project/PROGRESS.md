@@ -2,6 +2,51 @@
 
 ## Last Completed
 
+- AI Value controlled aggregate fixture review executable path
+  (user-requested, 2026-06-22): added the first runnable saved-fixture
+  controlled review harness. The new command runs a saved aggregate fixture
+  through Data Spine Intake Readiness, Real Data Intake Packet Runner, and Pilot
+  Intake Runner, then emits only a compact internal fixture review package. It
+  passes only to `READY_FOR_MEASUREMENT_CELL_ASSEMBLY` and keeps Source Package
+  clearance, Measurement Cell input/snapshots/series, evidence continuity
+  snapshots, claim/executive snapshots, legacy `executive_packet`, HTML readout,
+  API export, customer share packages, reportability readiness, finance-context,
+  confidence-model, probability, ROI/EBITDA, causality, productivity,
+  customer-facing output, live BigQuery/Sigma/Glean execution, ingestion jobs,
+  routes, UI, repositories, migrations, schemas, persistence, and output-file
+  writes blocked. The harness also fails closed before engine execution on
+  unsafe source refs, source-ref drift against the Data Spine, missing/unknown
+  suppression posture, missing Layer 1 VBD summary, missing aggregate summaries,
+  non-aggregate Layer 1 posture, generic `ai_value_objects` authority, raw rows,
+  query text, prompts, transcripts, identifiers, decomposed identifier aliases,
+  raw-data aliases, unsafe connector statuses, and JSON-style smuggling fields.
+  Passed reviews carry a compact reviewed-source-ref hash so stale source-ref
+  edits cannot validate as clean review objects. Verification:
+  `npm run test:ai-value-controlled-aggregate-fixture-review` passed 14/14;
+  `npm run run:ai-value-controlled-aggregate-fixture-review` emitted
+  `PASSED_INTERNAL_FIXTURE_REVIEW` / `READY_FOR_MEASUREMENT_CELL_ASSEMBLY` with
+  five source packages counted and all downstream feeds false;
+  `npm run test:ai-value-real-data-intake-packet-runner` passed 12/12;
+  `npm run test:ai-value-pilot-intake-runner` passed 7/7;
+  `npm run test:ai-value-scrubbed-glean-export-converter` passed 18/18;
+  `npm run test:ai-value-data-spine-readiness` passed 12/12;
+  `npm run test:ai-value-source-package-review-queue` passed 13/13;
+  `npm run build --workspace shared` passed; `git diff --check` passed.
+- AI Value data pipeline readiness decision (user-requested, 2026-06-22):
+  documented that the Sigma/BigQuery production data pipeline is not built yet.
+  The repo currently supports reviewed scrubbed aggregate summaries and
+  contract-only intake/handoff layers, not live BigQuery query execution, live
+  Sigma dashboard execution/export ingestion, live Glean pulls, raw-row parsers,
+  ingestion jobs, durable pipeline run storage, or customer-facing pipeline
+  output. The safe next path is docs-only source inventory, aggregate
+  extraction, and pipeline run review manifests before any saved-fixture adapter
+  or live execution promotion. Also added boundary notes to V3 ingest, the
+  dogfood BigQuery adapter, the BigQuery availability audit, and the API ingest
+  doc so bounded aggregate ingest cannot be misread as live AI Value
+  Sigma/BigQuery pipeline authorization. No code, schema, migration, route, UI,
+  persistence write, connector, live execution, export, confidence math,
+  ROI/EBITDA, causality, productivity, probability, or customer-facing financial
+  output was added.
 - AI Value productization decision-gate pass (user-requested, 2026-06-22):
   created the controlled scrubbed aggregate pilot runbook and the hold/guard
   decisions for legacy readout isolation, Measurement Cell persistence,

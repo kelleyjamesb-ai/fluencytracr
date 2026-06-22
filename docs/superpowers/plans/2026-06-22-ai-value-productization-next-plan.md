@@ -21,6 +21,8 @@ Built:
 - stable approved expectation-path binding requirements;
 - future Measurement Cell / Series projection sketches;
 - Productization Gate Decision.
+- data pipeline readiness decision documenting that Sigma/BigQuery execution is
+  not built yet.
 
 Waiting:
 
@@ -33,6 +35,7 @@ Waiting:
 - persistence writes;
 - source-bound customer routes or UI;
 - live Glean or BigQuery execution;
+- live Sigma execution or dashboard-row ingestion;
 - confidence math or finance output.
 
 ## Current Execution Result
@@ -43,6 +46,11 @@ blocked in this goal. Phases 6-8 are completed only as hold decisions: Series
 persistence, customer projection/export, and confidence research remain blocked
 pending controlled pilot evidence, repeated milestone evidence, and explicit
 promotion decisions.
+
+Next step completed after this pass: `AI_VALUE_DATA_PIPELINE_READINESS_DECISION`
+records that the Sigma/BigQuery data pipeline is not built yet. Future pipeline
+work must start with source inventory, aggregate extraction, and pipeline run
+review manifests before any saved-fixture adapter or live execution is promoted.
 
 ## Phase 1: Close Productization Gate
 
@@ -99,7 +107,7 @@ Expected: all commands exit `0`.
 
 ## Phase 2: Controlled Scrubbed Aggregate Pilot
 
-**Goal:** Prove the existing internal evidence spine with one controlled aggregate pilot before promoting new persistence.
+**Goal:** Demonstrate the existing internal evidence spine with one controlled aggregate pilot before promoting new persistence.
 
 **Files:**
 - Create: `docs/architecture/AI_VALUE_CONTROLLED_AGGREGATE_PILOT_RUNBOOK.md`

@@ -7,6 +7,12 @@ against Glean dogfood scrubbed BigQuery tables. It does not add a production
 connector, customer data path, dashboard, ROI calculation, causality engine, or
 person-level surface.
 
+Boundary note: this internal dogfood adapter is not the AI Value
+Sigma/BigQuery production data pipeline. A dry-run or bounded dogfood query must
+not be treated as source package clearance, Measurement Cell proof, customer
+projection, export approval, confidence-model input, or customer-facing value
+output.
+
 ## What It Does
 
 - Reads only date-sharded scrubbed Glean dogfood tables in `scio-apps`.
