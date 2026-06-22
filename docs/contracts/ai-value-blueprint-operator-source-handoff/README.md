@@ -34,9 +34,41 @@ The handoff produces:
 - `operator_source` for the Data Spine `blueprint` lane;
 - `blueprint_alignment_context` for the operator-provided Measurement Cell
   input, including org/client/workflow/function/cohort/window/source alignment
-  keys and selected Blueprint promise context; and
+  keys, selected Blueprint promise context, and approved expectation context;
+  and
 - `source_package_reference: null`, because Blueprint is reviewed as an
   approved structured source lane, not a package-backed evidence lane.
+
+## Blueprint Alignment Context
+
+When present on the approved Blueprint Extraction Draft,
+`blueprint_alignment_context` carries:
+
+- `blueprint_expectation_ref`
+- `blueprint_customer_approval_state`
+- `blueprint_customer_approver_role`
+- `expected_behavior_pathways`
+- `expected_metric_id`
+- `expected_metric_name`
+- `expected_metric_direction`
+- `expected_metric_lag_days`
+- `expected_metric_system_recommended`
+- `expected_metric_customer_selected`
+- `value_driver`
+
+This context is source-bound preparation for Measurement Cell alignment only.
+It does not feed Measurement Cell directly, clear Source Package Review Queue,
+authorize finance-context investigation, feed confidence modeling, or create
+customer-facing financial output.
+
+`value_driver` is bounded to `revenue`, `cost`, `capacity`, `quality`, `risk`,
+or `not_selected`. The handoff must reject `ebitda`, ROI, probability,
+confidence, productivity, raw prompt/transcript, direct identifier, or ranking
+language in these expectation fields.
+
+The handoff must not infer missing customer metric approval. Approved
+expectation context must arrive from the validated Blueprint Extraction Draft
+with explicit `expected_metric_customer_selected: true`.
 
 ## Feed Rules
 
@@ -49,7 +81,8 @@ The handoff can be `READY_FOR_OPERATOR_INTAKE` only when:
 - the operator source has `state: present`;
 - the source is aggregate-only, source-bound, owner-role tagged, approved, and
   clear; and
-- the Blueprint alignment context matches the operator source identity.
+- the Blueprint alignment context matches the operator source identity and
+  carries only governed expectation context.
 
 Pending or unapproved drafts are `HELD_FOR_BLUEPRINT_APPROVAL`. Invalid,
 rejected, or blocked drafts are `BLOCKED`.

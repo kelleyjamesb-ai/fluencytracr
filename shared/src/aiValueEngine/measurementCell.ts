@@ -111,6 +111,30 @@ const ALLOWED_FINANCE_OWNER_STATES = new Set([
   "not_required"
 ]);
 
+const ALLOWED_EXPECTED_BEHAVIORS = new Set([
+  "knowledge_retrieval",
+  "reuse",
+  "delegation",
+  "verification"
+]);
+
+const ALLOWED_EXPECTED_VBD_SIGNALS = new Set([
+  "velocity",
+  "breadth",
+  "depth",
+  "integration",
+  "not_selected"
+]);
+
+const ALLOWED_VALUE_DRIVERS = new Set([
+  "revenue",
+  "cost",
+  "capacity",
+  "quality",
+  "risk",
+  "not_selected"
+]);
+
 const ALLOWED_REVIEW_STATES = new Set([
   "SUPPRESSED",
   "NOT_READY",
@@ -794,6 +818,17 @@ function collectAlignmentGaps(cell: any): string[] {
   ) {
     gaps.push("selected_metric.metric_direction must match blueprint_alignment.expected_metric_direction");
   }
+  const blueprintLag = cell?.blueprint_alignment?.expected_metric_lag_days;
+  const selectedLag = cell?.selected_metric?.expected_lag_days;
+  if (
+    blueprintLag !== undefined &&
+    blueprintLag !== null &&
+    selectedLag !== undefined &&
+    selectedLag !== null &&
+    Number(blueprintLag) !== Number(selectedLag)
+  ) {
+    gaps.push("selected_metric.expected_lag_days must match blueprint_alignment.expected_metric_lag_days");
+  }
   if (cell?.governance?.source_binding_validated !== true) {
     gaps.push("governance.source_binding_validated must be true");
   }
@@ -898,6 +933,38 @@ function collectAlignmentGaps(cell: any): string[] {
   ) {
     gaps.push("selected_metric.comparison_window must match time_window.comparison_window");
   }
+  if (
+    cell?.blueprint_alignment?.baseline_window?.window_start &&
+    cell?.time_window?.baseline_window?.window_start &&
+    cell.blueprint_alignment.baseline_window.window_start !==
+      cell.time_window.baseline_window.window_start
+  ) {
+    gaps.push("blueprint_alignment.baseline_window must match time_window.baseline_window");
+  }
+  if (
+    cell?.blueprint_alignment?.baseline_window?.window_end &&
+    cell?.time_window?.baseline_window?.window_end &&
+    cell.blueprint_alignment.baseline_window.window_end !==
+      cell.time_window.baseline_window.window_end
+  ) {
+    gaps.push("blueprint_alignment.baseline_window must match time_window.baseline_window");
+  }
+  if (
+    cell?.blueprint_alignment?.comparison_window?.window_start &&
+    cell?.time_window?.comparison_window?.window_start &&
+    cell.blueprint_alignment.comparison_window.window_start !==
+      cell.time_window.comparison_window.window_start
+  ) {
+    gaps.push("blueprint_alignment.comparison_window must match time_window.comparison_window");
+  }
+  if (
+    cell?.blueprint_alignment?.comparison_window?.window_end &&
+    cell?.time_window?.comparison_window?.window_end &&
+    cell.blueprint_alignment.comparison_window.window_end !==
+      cell.time_window.comparison_window.window_end
+  ) {
+    gaps.push("blueprint_alignment.comparison_window must match time_window.comparison_window");
+  }
   for (const path of [
     "blueprint_alignment.source_ref",
     "ai_fluency_context.source_ref",
@@ -948,6 +1015,104 @@ function collectAlignmentGaps(cell: any): string[] {
     ) {
       gaps.push(`${topLevelPath} must match ${nestedPath}`);
     }
+  }
+  return gaps;
+}
+
+function collectBlueprintExpectationGaps(cell: any): string[] {
+  const gaps: string[] = [];
+  const alignment = cell?.blueprint_alignment ?? {};
+  const hasExpectationContext =
+    Boolean(alignment.blueprint_expectation_ref) ||
+    Boolean(alignment.blueprint_customer_approval_state) ||
+    Boolean(alignment.blueprint_customer_approver_role) ||
+    (Array.isArray(alignment.expected_behavior_pathways) &&
+      alignment.expected_behavior_pathways.length > 0) ||
+    alignment.expected_metric_system_recommended !== undefined &&
+      alignment.expected_metric_system_recommended !== null ||
+    alignment.expected_metric_customer_selected !== undefined &&
+      alignment.expected_metric_customer_selected !== null ||
+    (
+      alignment.value_driver !== undefined &&
+      alignment.value_driver !== null &&
+      alignment.value_driver !== "not_selected"
+    );
+  const pathways = alignment.expected_behavior_pathways;
+  if (pathways !== undefined) {
+    if (!Array.isArray(pathways)) {
+      gaps.push("blueprint_alignment.expected_behavior_pathways must be an array");
+    } else {
+      pathways.forEach((pathway: any, index: number) => {
+        const prefix = `blueprint_alignment.expected_behavior_pathways.${index}`;
+        if (!ALLOWED_EXPECTED_BEHAVIORS.has(String(pathway?.behavior))) {
+          gaps.push(`${prefix}.behavior is invalid`);
+        }
+        if (!ALLOWED_EXPECTED_VBD_SIGNALS.has(String(pathway?.expected_vbd_signal))) {
+          gaps.push(`${prefix}.expected_vbd_signal is invalid`);
+        }
+        if (typeof pathway?.system_recommended !== "boolean") {
+          gaps.push(`${prefix}.system_recommended must be boolean`);
+        }
+        if (pathway?.customer_selected !== true) {
+          gaps.push(`${prefix}.customer_selected must be true for approved Blueprint expectations`);
+        }
+      });
+    }
+  }
+  const lag = alignment.expected_metric_lag_days;
+  if (lag !== undefined && lag !== null && (!Number.isFinite(Number(lag)) || Number(lag) < 0)) {
+    gaps.push("blueprint_alignment.expected_metric_lag_days must be a non-negative number or null");
+  }
+  if (
+    alignment.expected_metric_system_recommended !== undefined &&
+    alignment.expected_metric_system_recommended !== null &&
+    typeof alignment.expected_metric_system_recommended !== "boolean"
+  ) {
+    gaps.push("blueprint_alignment.expected_metric_system_recommended must be boolean");
+  }
+  if (
+    alignment.expected_metric_customer_selected !== undefined &&
+    alignment.expected_metric_customer_selected !== null &&
+    alignment.expected_metric_customer_selected !== true
+  ) {
+    gaps.push("blueprint_alignment.expected_metric_customer_selected must be true for approved Blueprint expectations");
+  }
+  if (
+    alignment.value_driver !== undefined &&
+    !ALLOWED_VALUE_DRIVERS.has(String(alignment.value_driver))
+  ) {
+    gaps.push("blueprint_alignment.value_driver is invalid");
+  }
+  if (
+    alignment.blueprint_customer_approval_state !== undefined &&
+    alignment.blueprint_customer_approval_state !== null &&
+    alignment.blueprint_customer_approval_state !== "approved"
+  ) {
+    gaps.push("blueprint_alignment.blueprint_customer_approval_state must be approved");
+  }
+  if (hasExpectationContext) {
+    requireField(
+      alignment.blueprint_expectation_ref,
+      "blueprint_alignment.blueprint_expectation_ref",
+      gaps
+    );
+    if (alignment.blueprint_customer_approval_state !== "approved") {
+      gaps.push("blueprint_alignment.blueprint_customer_approval_state must be approved for Blueprint expectation context");
+    }
+    requireField(
+      alignment.blueprint_customer_approver_role,
+      "blueprint_alignment.blueprint_customer_approver_role",
+      gaps
+    );
+  }
+  if (
+    alignment.blueprint_expectation_ref !== undefined &&
+    alignment.blueprint_expectation_ref !== null &&
+    cell?.source_refs?.blueprint_source_ref !== undefined &&
+    cell?.source_refs?.blueprint_source_ref !== null &&
+    alignment.blueprint_expectation_ref !== cell.source_refs.blueprint_source_ref
+  ) {
+    gaps.push("blueprint_alignment.blueprint_expectation_ref must match source_refs.blueprint_source_ref");
   }
   return gaps;
 }
@@ -1178,6 +1343,7 @@ export function validateMeasurementCell(cell: any): MeasurementCellValidationRes
   const gaps = [
     ...collectTopLevelGaps(cell),
     ...collectAlignmentGaps(cell),
+    ...collectBlueprintExpectationGaps(cell),
     ...collectContextGaps(cell),
     ...collectGovernanceGaps(cell),
     ...collectUsePolicyGaps(cell),
@@ -1278,14 +1444,37 @@ export function buildMeasurementCell(input: BuildMeasurementCellInput): any {
     },
     blueprint_alignment: {
       ...sourceIdentity(input.blueprintAlignment, input, governance),
+      blueprint_expectation_ref: input.blueprintAlignment?.blueprint_expectation_ref ?? null,
+      blueprint_customer_approval_state:
+        input.blueprintAlignment?.blueprint_customer_approval_state ?? null,
+      blueprint_customer_approver_role:
+        input.blueprintAlignment?.blueprint_customer_approver_role ?? null,
       value_route: input.blueprintAlignment?.value_route ?? "unclassified",
       value_promise: input.blueprintAlignment?.value_promise ?? null,
+      expected_behavior_pathways:
+        Array.isArray(input.blueprintAlignment?.expected_behavior_pathways)
+          ? input.blueprintAlignment.expected_behavior_pathways
+          : [],
       workflow_family: input.blueprintAlignment?.workflow_family ?? input.workflowFamily,
       expected_metric_id: input.blueprintAlignment?.expected_metric_id ??
         input.selectedMetric?.metric_id,
+      expected_metric_name: input.blueprintAlignment?.expected_metric_name ??
+        input.selectedMetric?.metric_name ??
+        null,
       expected_metric_direction: input.blueprintAlignment?.expected_metric_direction ??
         input.selectedMetric?.metric_direction,
       expected_metric_lag_days: input.blueprintAlignment?.expected_metric_lag_days ?? null,
+      expected_metric_system_recommended:
+        input.blueprintAlignment?.expected_metric_system_recommended ?? null,
+      expected_metric_customer_selected:
+        input.blueprintAlignment?.expected_metric_customer_selected ?? null,
+      value_driver: input.blueprintAlignment?.value_driver ?? "not_selected",
+      baseline_window: input.blueprintAlignment?.baseline_window ??
+        input.timeWindow.baseline_window ??
+        null,
+      comparison_window: input.blueprintAlignment?.comparison_window ??
+        input.timeWindow.comparison_window ??
+        null,
       owner_role: input.blueprintAlignment?.owner_role ?? null,
       assumption_refs: stringsOf(input.blueprintAlignment?.assumption_refs),
       source_ref: input.blueprintAlignment?.source_ref ?? null

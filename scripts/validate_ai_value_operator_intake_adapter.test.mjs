@@ -288,12 +288,16 @@ function blueprintExtractionInput(plan, overrides = {}) {
     baselineWindow,
     comparisonWindow,
     metricCandidates: [
-      {
-        metric_id: plan.metric_selection.primary_metric.metric_id,
-        metric_name: plan.metric_selection.primary_metric.metric_name,
-        expected_direction: "decrease"
-      }
-    ],
+	      {
+	        metric_id: plan.metric_selection.primary_metric.metric_id,
+	        metric_name: plan.metric_selection.primary_metric.metric_name,
+	        expected_direction: "decrease",
+	        expected_lag_days: 30,
+	        system_recommended: true,
+	        customer_selected: true,
+	        value_driver: "capacity"
+	      }
+	    ],
     assumptions: [
       {
         assumption_id: "case_mix_stability",

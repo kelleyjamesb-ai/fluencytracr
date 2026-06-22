@@ -67,6 +67,30 @@ const ALLOWED_DECISIONS = new Set([
   "BLOCKED"
 ]);
 
+const ALLOWED_EXPECTED_BEHAVIORS = new Set([
+  "knowledge_retrieval",
+  "reuse",
+  "delegation",
+  "verification"
+]);
+
+const ALLOWED_EXPECTED_VBD_SIGNALS = new Set([
+  "velocity",
+  "breadth",
+  "depth",
+  "integration",
+  "not_selected"
+]);
+
+const ALLOWED_VALUE_DRIVERS = new Set([
+  "revenue",
+  "cost",
+  "capacity",
+  "quality",
+  "risk",
+  "not_selected"
+]);
+
 const FORBIDDEN_FIELD_PATTERNS = [
   /^raw_rows?$/i,
   /^rows$/i,
@@ -229,6 +253,12 @@ function firstMetric(draft: any): any | null {
   return Array.isArray(metrics) && metrics.length > 0 ? metrics[0] : null;
 }
 
+function finiteNumberOrNull(value: any): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 function operatorSourceFrom(draft: any): any {
   return {
     ...draft.data_spine_source,
@@ -238,6 +268,7 @@ function operatorSourceFrom(draft: any): any {
 
 function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
   const metric = firstMetric(draft);
+  const fields = draft?.extracted_fields ?? {};
   return {
     org_id: operatorSource?.org_id ?? null,
     client_id: operatorSource?.client_id ?? null,
@@ -248,15 +279,94 @@ function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
     comparison_window: operatorSource?.comparison_window ?? null,
     source_review_state: operatorSource?.review_state ?? null,
     owner_approval_state: operatorSource?.owner_approval_state ?? null,
+    blueprint_expectation_ref:
+      fields.blueprint_expectation_ref ??
+      operatorSource?.blueprint_expectation_ref ??
+      null,
+    blueprint_customer_approval_state:
+      fields.blueprint_customer_approval_state ?? null,
+    blueprint_customer_approver_role:
+      fields.blueprint_customer_approver_role ?? draft?.approver_role ?? null,
     value_route: draft?.extracted_fields?.value_route ?? "unclassified",
     value_promise: draft?.extracted_fields?.value_hypothesis ?? null,
+    expected_behavior_pathways: Array.isArray(fields.expected_behavior_pathways)
+      ? fields.expected_behavior_pathways
+      : [],
     expected_metric_id: metric?.metric_id ?? null,
+    expected_metric_name: metric?.metric_name ?? metric?.metric_id ?? null,
     expected_metric_direction: metric?.expected_direction ?? "unknown",
-    expected_metric_lag_days: null,
+	    expected_metric_lag_days: finiteNumberOrNull(
+	      fields.expected_metric_lag_days ?? metric?.expected_lag_days
+	    ),
+	    expected_metric_system_recommended:
+	      fields.expected_metric_system_recommended ?? metric?.system_recommended ?? null,
+	    expected_metric_customer_selected:
+	      fields.expected_metric_customer_selected ?? metric?.customer_selected ?? null,
+    value_driver: fields.value_driver ?? metric?.value_driver ?? "not_selected",
     owner_role: draft?.owner_role ?? null,
     assumption_refs: stringsOf(draft?.extracted_fields?.assumption_refs),
     source_ref: operatorSource?.source_ref ?? null
   };
+}
+
+function collectExpectationGaps(handoff: any): string[] {
+  const gaps: string[] = [];
+  const context = handoff?.blueprint_alignment_context;
+  if (!context) return gaps;
+  if (context.blueprint_expectation_ref !== undefined &&
+      context.blueprint_expectation_ref !== null &&
+      handoff?.operator_source?.blueprint_expectation_ref !== undefined &&
+      context.blueprint_expectation_ref !== handoff.operator_source.blueprint_expectation_ref) {
+    gaps.push("blueprint_alignment_context.blueprint_expectation_ref must match operator_source.blueprint_expectation_ref");
+  }
+  if (context.blueprint_customer_approval_state !== "approved") {
+    gaps.push("blueprint_alignment_context.blueprint_customer_approval_state must be approved");
+  }
+  if (
+    handoff?.operator_source?.blueprint_customer_approval_state !== undefined &&
+    context.blueprint_customer_approval_state !== handoff.operator_source.blueprint_customer_approval_state
+  ) {
+    gaps.push("blueprint_alignment_context.blueprint_customer_approval_state must match operator_source.blueprint_customer_approval_state");
+  }
+  requireField(
+    context.blueprint_customer_approver_role,
+    "blueprint_alignment_context.blueprint_customer_approver_role",
+    gaps
+  );
+  if (!Array.isArray(context.expected_behavior_pathways)) {
+    gaps.push("blueprint_alignment_context.expected_behavior_pathways must be an array");
+  } else {
+    context.expected_behavior_pathways.forEach((pathway: any, index: number) => {
+      const prefix = `blueprint_alignment_context.expected_behavior_pathways.${index}`;
+      if (!ALLOWED_EXPECTED_BEHAVIORS.has(String(pathway?.behavior))) {
+        gaps.push(`${prefix}.behavior is invalid`);
+      }
+      if (!ALLOWED_EXPECTED_VBD_SIGNALS.has(String(pathway?.expected_vbd_signal))) {
+        gaps.push(`${prefix}.expected_vbd_signal is invalid`);
+      }
+      if (typeof pathway?.system_recommended !== "boolean") {
+        gaps.push(`${prefix}.system_recommended must be boolean`);
+      }
+      if (pathway?.customer_selected !== true) {
+        gaps.push(`${prefix}.customer_selected must be true for approved Blueprint expectations`);
+      }
+    });
+  }
+  const lag = context.expected_metric_lag_days;
+  if (lag !== undefined && lag !== null && (!Number.isFinite(Number(lag)) || Number(lag) < 0)) {
+    gaps.push("blueprint_alignment_context.expected_metric_lag_days must be a non-negative number or null");
+  }
+  if (context.expected_metric_system_recommended !== undefined &&
+      typeof context.expected_metric_system_recommended !== "boolean") {
+    gaps.push("blueprint_alignment_context.expected_metric_system_recommended must be boolean");
+  }
+  if (context.expected_metric_customer_selected !== true) {
+    gaps.push("blueprint_alignment_context.expected_metric_customer_selected must be true for approved Blueprint expectations");
+  }
+  if (!ALLOWED_VALUE_DRIVERS.has(String(context.value_driver))) {
+    gaps.push("blueprint_alignment_context.value_driver is invalid");
+  }
+  return gaps;
 }
 
 function collectForbiddenFields(
@@ -455,11 +565,31 @@ function collectReadySourceGaps(handoff: any): string[] {
   ) {
     gaps.push("blueprint_alignment_context.source_review_state must match operator_source.review_state");
   }
+  for (const key of [
+    "expected_metric_id",
+    "expected_metric_direction"
+  ]) {
+    if (
+      handoff?.operator_source?.[key] !== undefined &&
+      handoff?.operator_source?.[key] !== null &&
+      handoff?.blueprint_alignment_context?.[key] !== handoff.operator_source[key]
+    ) {
+      gaps.push(`blueprint_alignment_context.${key} must match operator_source.${key}`);
+    }
+  }
   for (const field of [
+    "blueprint_expectation_ref",
+    "blueprint_customer_approval_state",
+    "blueprint_customer_approver_role",
     "value_route",
     "value_promise",
+    "expected_behavior_pathways",
     "expected_metric_id",
+    "expected_metric_name",
     "expected_metric_direction",
+    "expected_metric_system_recommended",
+    "expected_metric_customer_selected",
+    "value_driver",
     "owner_role",
     "source_review_state",
     "assumption_refs",
@@ -473,6 +603,7 @@ function collectReadySourceGaps(handoff: any): string[] {
   if (handoff?.source_package_reference !== null) {
     gaps.push("source_package_reference must be null for Blueprint handoff");
   }
+  gaps.push(...collectExpectationGaps(handoff));
   return gaps;
 }
 
