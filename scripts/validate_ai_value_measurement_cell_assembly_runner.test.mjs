@@ -243,6 +243,11 @@ function sourcePackageExample(file, dataSpine, overrides = {}) {
     ...pkg,
     org_id: dataSpine.org_id,
     covered_window: dataSpine.comparison_window,
+    source_owner_role: "source_owner",
+    source_owner_attestation: {
+      ...pkg.source_owner_attestation,
+      attested_by_role: "source_owner"
+    },
     ...overrides
   };
 }

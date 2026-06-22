@@ -411,6 +411,11 @@ function sourcePackageAlignedToSource(laneKey: LaneKey, pkg: SourcePackage, sour
   const sourceRefMatches = !refKey ||
     !source?.source_ref ||
     pkg?.source_refs?.[refKey] === source.source_ref;
+  const sourceOwnerRoleMatches = !source?.owner_role ||
+    (
+      packageContext?.source_owner_role === source.owner_role &&
+      packageContext?.source_owner_attestation?.attested_by_role === source.owner_role
+    );
   const optionalPackageContextMatches = [
     ["client_id", "client_id"],
     ["workflow_family", "workflow_family"],
@@ -429,6 +434,7 @@ function sourcePackageAlignedToSource(laneKey: LaneKey, pkg: SourcePackage, sour
   return pkg?.org_id === source?.org_id &&
     sameWindow(pkg?.covered_window, source?.comparison_window) &&
     sourceRefMatches &&
+    sourceOwnerRoleMatches &&
     optionalPackageContextMatches &&
     optionalBaselineWindowMatches;
 }

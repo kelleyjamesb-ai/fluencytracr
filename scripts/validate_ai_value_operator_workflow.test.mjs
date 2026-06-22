@@ -161,6 +161,11 @@ function sourcePackageExample(file, plan, overrides = {}) {
     ...pkg,
     org_id: plan.org_id,
     covered_window: comparisonWindow,
+    source_owner_role: "source_owner",
+    source_owner_attestation: {
+      ...pkg.source_owner_attestation,
+      attested_by_role: "source_owner"
+    },
     ...overrides
   };
 }

@@ -90,6 +90,11 @@ function sourcePackageExample(file, overrides = {}) {
     ...pkg,
     org_id: "org_northstar",
     covered_window: comparisonWindow,
+    source_owner_role: "source_owner",
+    source_owner_attestation: {
+      ...pkg.source_owner_attestation,
+      attested_by_role: "source_owner"
+    },
     ...overrides
   };
 }
@@ -275,6 +280,32 @@ test("same org and window source package must still bind to lane source ref", ()
   assert.equal(vbdTokenLane.source_package_alignment_clear, false);
   assert.equal(vbdTokenLane.source_package_can_feed_evidence, false);
   assert.ok(vbdTokenLane.gaps.includes("VBD_TOKEN_SOURCE_PACKAGE_MISALIGNED"));
+});
+
+test("source package owner attestation must match the lane owner role", () => {
+  const dataSpineReadiness = buildDataSpineIntakeReadiness(baseInput());
+  const packages = matchingSourcePackages();
+  const layer2 = packages.find((pkg) =>
+    pkg.source_package_type === "layer_2_user_voice_empirical_export"
+  );
+  layer2.source_owner_role = "other_owner";
+  layer2.source_owner_attestation.attested_by_role = "other_owner";
+
+  const queue = buildSourcePackageReviewQueue({
+    dataSpineReadiness,
+    sourcePackages: packages,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateSourcePackageReviewQueue(queue);
+  const aiFluencyLane = queue.lanes.find((lane) => lane.lane_key === "ai_fluency");
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(queue.queue_state, "HELD_FOR_SOURCE_REVIEW");
+  assert.equal(aiFluencyLane.source_package_valid, true);
+  assert.equal(aiFluencyLane.source_package_alignment_clear, false);
+  assert.equal(aiFluencyLane.source_package_can_feed_evidence, false);
+  assert.equal(aiFluencyLane.data_spine_review_clear, false);
+  assert.ok(aiFluencyLane.gaps.includes("AI_FLUENCY_SOURCE_PACKAGE_MISALIGNED"));
 });
 
 test("clear review queue requires reviewed packages and does not expose downstream Data Spine feed flags", () => {

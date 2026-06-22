@@ -152,6 +152,11 @@ function sourcePackageExample(file, plan, overrides = {}) {
     ...pkg,
     org_id: plan.org_id,
     covered_window: comparisonWindow,
+    source_owner_role: "source_owner",
+    source_owner_attestation: {
+      ...pkg.source_owner_attestation,
+      attested_by_role: "source_owner"
+    },
     ...overrides
   };
 }
@@ -627,6 +632,61 @@ test("operator time-series rejects null or blank milestone day metadata", () => 
   }
 });
 
+test("operator time-series does not coerce blank child milestone metadata to Day 0 when child window can infer day", () => {
+  for (const daysSinceLaunch of [null, ""]) {
+    const input = operatorInputForDay(30);
+    input.measurementCellInput = measurementCellInput(
+      input.measurementPlan,
+      30,
+      input.sources,
+      {
+        timeWindow: {
+          days_since_launch: daysSinceLaunch
+        }
+      }
+    );
+    const series = buildOperatorTimeSeriesRun(baseSeriesInput([], {
+      windows: [
+        {
+          operatorIntakeInput: input
+        }
+      ]
+    }));
+    const result = validateOperatorTimeSeriesRun(series);
+
+    assert.equal(series.time_windows[0].milestone_day, 30);
+    assert.notEqual(series.time_windows[0].milestone_day, 0, `${String(daysSinceLaunch)} should not infer Day 0`);
+    assert.equal(result.valid, true, result.gaps.join("; "));
+    assert.equal(series.decision, "HELD_FOR_INSUFFICIENT_GOVERNED_RUNS");
+    assert.equal(result.feeds.confidence_model, false);
+  }
+});
+
+test("operator time-series fails closed when child milestone metadata is blank and not inferable", () => {
+  for (const daysSinceLaunch of [null, ""]) {
+    const childRun = buildOperatorIntakeAdapterRun(operatorInputForDay(30));
+    childRun.measurement_cell_assembly_run.measurement_cell.time_window = {
+      ...childRun.measurement_cell_assembly_run.measurement_cell.time_window,
+      time_window_id: "milestone_missing_day",
+      window_label: "Missing milestone day",
+      days_since_launch: daysSinceLaunch
+    };
+    const series = buildOperatorTimeSeriesRun(baseSeriesInput([], {
+      windows: [
+        {
+          operatorIntakeRun: childRun
+        }
+      ]
+    }));
+    const result = validateOperatorTimeSeriesRun(series);
+
+    assert.notEqual(series.time_windows[0].milestone_day, 0, `${String(daysSinceLaunch)} should not infer Day 0`);
+    assert.equal(result.valid, false, `${String(daysSinceLaunch)} should fail closed`);
+    assert.ok(result.gaps.some((gap) => /requires numeric milestone_day/i.test(gap)));
+    assert.equal(result.feeds.confidence_model, false);
+  }
+});
+
 test("operator time-series rejects unsafe allowed-use values and claim language", () => {
   const unsafeValues = [
     "confidence_model_execution",
@@ -654,6 +714,44 @@ test("operator time-series rejects unsafe allowed-use values and claim language"
   assert.equal(result.feeds.confidence_model, false);
 });
 
+test("operator time-series rejects unsafe allowed-use variants and note-like strings", () => {
+  const unsafeAllowedUses = [
+    "roi_metric_selection",
+    "probability_model_review",
+    "finance_context_review",
+    "customer_facing_financial_readout",
+    "confidence_percentage_review"
+  ];
+  for (const unsafeValue of unsafeAllowedUses) {
+    const series = buildOperatorTimeSeriesRun(baseSeriesInput());
+    series.allowed_uses = [...series.allowed_uses, unsafeValue];
+    const result = validateOperatorTimeSeriesRun(series);
+
+    assert.equal(result.valid, false, unsafeValue);
+    assert.ok(result.gaps.some((gap) => gap.includes("allowed_uses") && gap.includes(unsafeValue)), unsafeValue);
+    assert.equal(result.feeds.confidence_model, false);
+  }
+
+  const series = buildOperatorTimeSeriesRun(baseSeriesInput());
+  series.time_series_readiness.notes = [
+    "Finance context investigation is ready for customer-facing financial readout."
+  ];
+  const result = validateOperatorTimeSeriesRun(series);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => /Unsafe claim language detected: time_series_readiness\.notes/i.test(gap)));
+  assert.equal(result.feeds.confidence_model, false);
+
+  const singularNoteSeries = buildOperatorTimeSeriesRun(baseSeriesInput());
+  singularNoteSeries.time_series_readiness.note =
+    "Finance context investigation is ready for customer-facing financial output.";
+  const singularNoteResult = validateOperatorTimeSeriesRun(singularNoteSeries);
+
+  assert.equal(singularNoteResult.valid, false);
+  assert.ok(singularNoteResult.gaps.some((gap) => /Unsafe claim language detected: time_series_readiness\.note/i.test(gap)));
+  assert.equal(singularNoteResult.feeds.confidence_model, false);
+});
+
 test("operator time-series rejects spoofed child object keys outside validated window paths", () => {
   const series = buildOperatorTimeSeriesRun(baseSeriesInput());
   series.validation_summary.operator_intake_run = {
@@ -666,6 +764,31 @@ test("operator time-series rejects spoofed child object keys outside validated w
 
   assert.equal(result.valid, false);
   assert.ok(result.gaps.some((gap) => /validation_summary.operator_intake_run.raw_rows/i.test(gap)));
+  assert.equal(result.feeds.confidence_model, false);
+});
+
+test("operator time-series only exempts child object scans at numeric time-window paths", () => {
+  const series = buildOperatorTimeSeriesRun(baseSeriesInput());
+  series.time_windows = {
+    malformed_window: {
+      operator_intake_run: {
+        raw_rows: [{ unsafe: "raw" }],
+        user_id: "person_123"
+      },
+      operator_intake_validation_result: {
+        confidence_percentage: 0.91
+      }
+    }
+  };
+  const result = validateOperatorTimeSeriesRun(series);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) =>
+    /time_windows\.malformed_window\.operator_intake_run\.raw_rows/i.test(gap)
+  ));
+  assert.ok(result.gaps.some((gap) =>
+    /time_windows\.malformed_window\.operator_intake_validation_result\.confidence_percentage/i.test(gap)
+  ));
   assert.equal(result.feeds.confidence_model, false);
 });
 

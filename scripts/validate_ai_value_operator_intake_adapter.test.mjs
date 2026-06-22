@@ -226,6 +226,11 @@ function sourcePackageExample(file, plan, overrides = {}) {
     ...pkg,
     org_id: plan.org_id,
     covered_window: comparisonWindow,
+    source_owner_role: "source_owner",
+    source_owner_attestation: {
+      ...pkg.source_owner_attestation,
+      attested_by_role: "source_owner"
+    },
     ...overrides
   };
 }
@@ -623,6 +628,81 @@ test("AI Fluency operator source handoff fails closed when context alignment dri
   assert.equal(result.feeds.finance_context_investigation, false);
   assert.equal(result.feeds.confidence_model, false);
   assert.equal(result.feeds.customer_facing_financial_output, false);
+});
+
+test("AI Fluency operator source handoff blocks duplicate parser source refs before operator intake", () => {
+  const plan = fullPlan();
+  const clearRecord = aiFluencyAggregateRecord(plan);
+  const heldRecord = aiFluencyAggregateRecord(plan, {
+    response_count: 18,
+    suppression_state: "suppressed_low_n",
+    overall_ai_fluency_score: "",
+    source_owner_role: "held_source_owner",
+    review_state: "held_suppressed_low_n",
+    caveats: "Held duplicate row should not bind to the imported source."
+  });
+  const parseRun = parseRunFromAIFluencyRecords(
+    [heldRecord, clearRecord],
+    "ai_fluency_aggregate_export_parse_operator_duplicate_source_ref"
+  );
+  const dashboardRun = buildAIFluencyDashboardImportRun({
+    dashboardExport: parseRun.dashboard_export,
+    runId: "ai_fluency_dashboard_import_operator_duplicate_source_ref",
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoff = buildAIFluencyOperatorSourceHandoff({
+    parseRun,
+    dashboardImportRun: dashboardRun,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateAIFluencyOperatorSourceHandoff(handoff);
+
+  assert.equal(dashboardRun.feedable_data_spine_sources.length, 1);
+  assert.equal(handoff.decision, "BLOCKED");
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) =>
+    /source_ref must match exactly one parser dashboard_export record/i.test(gap)
+  ));
+  assert.equal(handoff.operator_source, null);
+  assert.equal(handoff.ai_fluency_context, null);
+  assert.equal(result.feeds.operator_intake_source, false);
+  assert.equal(result.feeds.measurement_cell_context_fragment, false);
+});
+
+test("AI Fluency operator source handoff blocks unsafe source_ref variants", () => {
+  const plan = fullPlan();
+  const unsafeRefs = [
+    "raw_prompt_export_123",
+    "raw-prompt-export",
+    "rawPromptExport"
+  ];
+
+  for (const sourceRef of unsafeRefs) {
+    const record = aiFluencyAggregateRecord(plan, { source_ref: sourceRef });
+    const parseRun = parseRunFromAIFluencyRecords(
+      [record],
+      `ai_fluency_aggregate_export_parse_operator_unsafe_${sourceRef}`
+    );
+    const dashboardRun = buildAIFluencyDashboardImportRun({
+      dashboardExport: parseRun.dashboard_export,
+      runId: `ai_fluency_dashboard_import_operator_unsafe_${sourceRef}`,
+      generatedAt: "2026-06-21T00:00:00.000Z"
+    });
+    const handoff = buildAIFluencyOperatorSourceHandoff({
+      parseRun,
+      dashboardImportRun: dashboardRun,
+      generatedAt: "2026-06-21T00:00:00.000Z"
+    });
+    const result = validateAIFluencyOperatorSourceHandoff(handoff);
+
+    assert.equal(dashboardRun.feedable_data_spine_sources.length, 1);
+    assert.equal(result.valid, false, sourceRef);
+    assert.ok(result.gaps.some((gap) =>
+      gap.includes("Unsafe identifier value detected") && gap.includes("source_ref")
+    ), sourceRef);
+    assert.equal(result.feeds.operator_intake_source, false);
+    assert.equal(result.feeds.measurement_cell_context_fragment, false);
+  }
 });
 
 test("operator intake adapter blocks suppressed AI Fluency parser runs from feeding operator intake", () => {

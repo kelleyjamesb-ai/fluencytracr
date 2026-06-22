@@ -199,6 +199,10 @@ function stringsOf(value: any): string[] {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
 }
 
+function validationMatchesEmbedded(embedded: any, recomputed: any): boolean {
+  return JSON.stringify(embedded ?? null) === JSON.stringify(recomputed ?? null);
+}
+
 function requireField(value: any, path: string, gaps: string[]): void {
   if (value === undefined || value === null || value === "") {
     gaps.push(`${path} is missing`);
@@ -608,11 +612,13 @@ export function validateRealDataIntakePacketRun(
     ...(blockedOrMisaligned
       ? ["blocked or misaligned intake runs cannot validate as a real-data packet"]
       : []),
-    ...(dataSpineValidation && run?.data_spine_validation_result?.valid !== dataSpineValidation.valid
-      ? ["data_spine_validation_result.valid must match recomputed Data Spine validation"]
+    ...(dataSpineValidation &&
+      !validationMatchesEmbedded(run?.data_spine_validation_result, dataSpineValidation)
+      ? ["data_spine_validation_result must match recomputed Data Spine validation"]
       : []),
-    ...(planValidation && run?.measurement_plan_validation_result?.valid !== planValidation.valid
-      ? ["measurement_plan_validation_result.valid must match recomputed Measurement Plan validation"]
+    ...(planValidation &&
+      !validationMatchesEmbedded(run?.measurement_plan_validation_result, planValidation)
+      ? ["measurement_plan_validation_result must match recomputed Measurement Plan validation"]
       : []),
     ...evidenceInputGaps,
     ...heldEvidenceFeedGaps

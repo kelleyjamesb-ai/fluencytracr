@@ -25,6 +25,9 @@ const RESULT_SCHEMA_VERSION =
 const DERIVATION_VERSION =
   "ai_value_operator_time_series_run_2026_06";
 
+const TIME_SERIES_READINESS_NOTE =
+  "Operator time-series run references are confidence-model candidate input for later design review only; no confidence, probability, ROI, causality, productivity, financial attribution, or customer-facing financial output is emitted.";
+
 const REQUIRED_MILESTONE_DAYS = [0, 30, 60, 90, 180, 365];
 
 const ALLOWED_WINDOW_MODES = new Set([
@@ -54,6 +57,12 @@ const REQUIRED_BLOCKED_USES = [
   "customer_facing_financial_output",
   "confidence_percentage",
   "probability_output"
+];
+
+const REQUIRED_ALLOWED_USES = [
+  "operator_time_series_review",
+  "governed_run_reference_preparation",
+  "confidence_model_design_review_input"
 ];
 
 const REQUIRED_FALSE_BOUNDARY_FIELDS = [
@@ -211,6 +220,19 @@ const UNSAFE_CLAIM_LANGUAGE_PATTERNS = [
   /\battribution\s+probability\b/i
 ];
 
+const UNSAFE_NOTE_LANGUAGE_PATTERNS = [
+  /\bfinance[-_\s]?context\s+investigation\b/i,
+  /\bcustomer[-_\s]?facing\s+(?:financial|economic)\b/i,
+  /\bfinancial\s+(?:readout|output|impact|attribution)\b/i,
+  /\b(?:roi|ebita|ebitda)\b/i,
+  /\bprobability\s+(?:model|output|score|readout)\b/i,
+  /\bconfidence\s+(?:percentage|percent|score|output|readout)\b/i
+];
+
+const SAFE_NOTE_VALUES = new Set([
+  TIME_SERIES_READINESS_NOTE
+]);
+
 export interface BuildOperatorTimeSeriesWindowInput {
   milestoneDay?: number | null;
   windowMode?: "milestone" | "rolling_30_day" | string;
@@ -269,6 +291,23 @@ function validationMatchesEmbedded(embedded: any, recomputed: any): boolean {
   return JSON.stringify(embedded ?? null) === JSON.stringify(recomputed ?? null);
 }
 
+function timeWindowsOf(series: any): any[] {
+  return Array.isArray(series?.time_windows) ? series.time_windows : [];
+}
+
+function isNumericPathPart(value: string): boolean {
+  return /^(?:0|[1-9]\d*)$/.test(value);
+}
+
+function isValidatedTimeWindowChildPath(path: string[], key: string): boolean {
+  return (
+    path.length === 2 &&
+    normalizeKey(path[0]) === "time_windows" &&
+    isNumericPathPart(path[1]) &&
+    VALIDATED_CHILD_OBJECT_FIELDS.has(normalizeKey(key))
+  );
+}
+
 function collectForbiddenFields(
   value: any,
   fields: Set<string> = new Set(),
@@ -284,11 +323,7 @@ function collectForbiddenFields(
   for (const [key, nested] of Object.entries(value)) {
     const normalized = normalizeKey(key);
     const currentPath = [...path, key];
-    if (
-      path.length === 2 &&
-      path[0] === "time_windows" &&
-      VALIDATED_CHILD_OBJECT_FIELDS.has(normalized)
-    ) {
+    if (isValidatedTimeWindowChildPath(path, key)) {
       continue;
     }
     const isFalseBoundaryFlag = nested === false &&
@@ -312,10 +347,22 @@ function collectUnsafeStringValues(
 ): Set<string> {
   if (typeof value === "string") {
     const normalized = normalizeKey(value);
-    const inBlockedUses = path.map(normalizeKey).includes("blocked_uses");
+    const normalizedPath = path.map(normalizeKey);
+    const inBlockedUses = normalizedPath.includes("blocked_uses");
+    const inAllowedUses = normalizedPath.includes("allowed_uses");
+    const inNoteLikeField = normalizedPath.some((part) =>
+      part === "note" ||
+      part === "notes" ||
+      part.endsWith("_note") ||
+      part.endsWith("_notes")
+    );
     if (
       !inBlockedUses &&
-      (UNSAFE_USE_VALUE_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+      ((inAllowedUses && !REQUIRED_ALLOWED_USES.includes(value)) ||
+        (inNoteLikeField &&
+          !SAFE_NOTE_VALUES.has(value) &&
+          UNSAFE_NOTE_LANGUAGE_PATTERNS.some((pattern) => pattern.test(value))) ||
+        UNSAFE_USE_VALUE_PATTERNS.some((pattern) => pattern.test(normalized)) ||
         UNSAFE_CLAIM_LANGUAGE_PATTERNS.some((pattern) => pattern.test(value)))
     ) {
       values.add(`${path.join(".")}: ${value}`);
@@ -330,12 +377,7 @@ function collectUnsafeStringValues(
     return values;
   }
   for (const [key, nested] of Object.entries(value)) {
-    const normalized = normalizeKey(key);
-    if (
-      path.length === 2 &&
-      path[0] === "time_windows" &&
-      VALIDATED_CHILD_OBJECT_FIELDS.has(normalized)
-    ) {
+    if (isValidatedTimeWindowChildPath(path, key)) {
       continue;
     }
     collectUnsafeStringValues(nested, values, [...path, key]);
@@ -395,8 +437,15 @@ function inferMilestoneDay(
   operatorRun: any
 ): number | null {
   if (typeof window.milestoneDay === "number") return window.milestoneDay;
-  const days = Number(timeWindowOf(operatorRun)?.days_since_launch);
-  return Number.isFinite(days) ? days : null;
+  const rawDays = timeWindowOf(operatorRun)?.days_since_launch;
+  if (typeof rawDays === "number") {
+    return Number.isFinite(rawDays) ? rawDays : null;
+  }
+  if (typeof rawDays === "string" && rawDays.trim() !== "") {
+    const days = Number(rawDays);
+    return Number.isFinite(days) ? days : null;
+  }
+  return null;
 }
 
 function governedRunReference(
@@ -491,7 +540,7 @@ function windowRecord(
 
 function structuralWindowGaps(series: any): string[] {
   const gaps: string[] = [];
-  const windows = Array.isArray(series?.time_windows) ? series.time_windows : [];
+  const windows = timeWindowsOf(series);
   if (windows.length === 0) {
     gaps.push("time_windows must include at least one window");
     return gaps;
@@ -553,7 +602,7 @@ function identityGaps(series: any): string[] {
     ["function_area", series?.function_area],
     ["cohort_key", series?.cohort_key]
   ];
-  for (const window of series?.time_windows ?? []) {
+  for (const window of timeWindowsOf(series)) {
     const run = window?.operator_intake_run;
     for (const [field, expected] of checks) {
       if (run?.[field] !== expected) {
@@ -566,7 +615,7 @@ function identityGaps(series: any): string[] {
 
 function recomputedValidationGaps(series: any): string[] {
   const gaps: string[] = [];
-  for (const window of series?.time_windows ?? []) {
+  for (const window of timeWindowsOf(series)) {
     if (!window?.operator_intake_run) continue;
     const recomputed = validateOperatorIntakeAdapterRun(window.operator_intake_run);
     if (!validationMatchesEmbedded(window.operator_intake_validation_result, recomputed)) {
@@ -604,7 +653,7 @@ function compactReference(reference: any): any {
 
 function derivedSurfaceGaps(series: any): string[] {
   const gaps: string[] = [];
-  const windows = Array.isArray(series?.time_windows) ? series.time_windows : [];
+  const windows = timeWindowsOf(series);
   const expectedReferences = windows
     .map(referenceFromWindow)
     .filter(Boolean)
@@ -642,7 +691,7 @@ function derivedSurfaceGaps(series: any): string[] {
 
 function childWindowModeGaps(series: any): string[] {
   const gaps: string[] = [];
-  for (const window of series?.time_windows ?? []) {
+  for (const window of timeWindowsOf(series)) {
     const childMode = String(
       timeWindowOf(window?.operator_intake_run)?.window_mode ??
       window?.operator_intake_run?.time_series_readiness?.window_mode ??
@@ -710,6 +759,17 @@ function topLevelGaps(series: any): string[] {
 
 function policyGaps(series: any): string[] {
   const gaps: string[] = [];
+  const allowedUses = stringsOf(series?.allowed_uses);
+  for (const use of REQUIRED_ALLOWED_USES) {
+    if (!allowedUses.includes(use)) {
+      gaps.push(`allowed_uses missing ${use}`);
+    }
+  }
+  for (const use of allowedUses) {
+    if (!REQUIRED_ALLOWED_USES.includes(use)) {
+      gaps.push(`allowed_uses contains unsupported or unsafe use: ${use}`);
+    }
+  }
   for (const use of REQUIRED_BLOCKED_USES) {
     if (!stringsOf(series?.blocked_uses).includes(use)) {
       gaps.push(`blocked_uses missing ${use}`);
@@ -740,14 +800,15 @@ function policyGaps(series: any): string[] {
 
 function decisionGaps(series: any): string[] {
   const gaps: string[] = [];
+  const windows = timeWindowsOf(series);
   const structuralGaps = structuralWindowGaps(series);
   const identityDrift = identityGaps(series);
-  const nestedInvalid = (series?.time_windows ?? []).some((window: any) =>
+  const nestedInvalid = windows.some((window: any) =>
     window?.operator_intake_validation_result?.valid === false
   );
   const rollingOnly = series?.time_series_readiness?.rolling_30_day_context_only === true;
   const completeMilestone = series?.time_series_readiness?.complete_milestone_series === true;
-  const allGoverned = (series?.time_windows ?? []).every((window: any) =>
+  const allGoverned = windows.length > 0 && windows.every((window: any) =>
     window?.governed_run_reference_ready === true
   );
   const missingMilestoneEvidence = stringsOf(series?.missing_evidence).some((item) =>
@@ -885,15 +946,10 @@ export function buildOperatorTimeSeriesRun(input: BuildOperatorTimeSeriesRunInpu
         decision === "READY_FOR_CONFIDENCE_MODEL_DESIGN_REVIEW",
       confidence_model_feed: false,
       finance_context_investigation_feed: false,
-      note:
-        "Operator time-series run references are confidence-model candidate input for later design review only; no confidence, probability, ROI, causality, productivity, financial attribution, or customer-facing financial output is emitted."
+      note: TIME_SERIES_READINESS_NOTE
     },
     feeds: feedsForDecision(decision),
-    allowed_uses: [
-      "operator_time_series_review",
-      "governed_run_reference_preparation",
-      "confidence_model_design_review_input"
-    ],
+    allowed_uses: [...REQUIRED_ALLOWED_USES],
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     boundary_policy: Object.fromEntries(
       REQUIRED_FALSE_BOUNDARY_FIELDS.map((field) => [field, false])

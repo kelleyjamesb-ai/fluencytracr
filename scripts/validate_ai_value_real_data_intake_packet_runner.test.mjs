@@ -415,6 +415,47 @@ test("validator recomputes nested Data Spine validation after tampering", () => 
   assert.ok(result.gaps.some((gap) => gap.includes("Data Spine validation")));
 });
 
+test("validator rejects stale embedded Data Spine validation details even when validity is unchanged", () => {
+  const plan = fullPlan();
+  const run = buildRealDataIntakePacketRun({
+    dataSpineReadiness: readyDataSpine(plan),
+    measurementPlan: plan,
+    scrubbedGleanExports: fullExportPacket(plan),
+    runId: "real_data_intake_packet_run_stale_spine_validation_details",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  run.data_spine_validation_result.gaps = ["stale validation gap"];
+  run.data_spine_validation_result.feeds.measurement_cell_input = false;
+
+  const result = validateRealDataIntakePacketRun(run);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_input, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("data_spine_validation_result must match recomputed Data Spine validation")
+  ));
+});
+
+test("validator rejects stale embedded Measurement Plan validation details even when validity is unchanged", () => {
+  const plan = fullPlan();
+  const run = buildRealDataIntakePacketRun({
+    dataSpineReadiness: readyDataSpine(plan),
+    measurementPlan: plan,
+    scrubbedGleanExports: fullExportPacket(plan),
+    runId: "real_data_intake_packet_run_stale_plan_validation_details",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  run.measurement_plan_validation_result.gaps = ["stale plan validation gap"];
+
+  const result = validateRealDataIntakePacketRun(run);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_input, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("measurement_plan_validation_result must match recomputed Measurement Plan validation")
+  ));
+});
+
 test("held Data Spine packets cannot expose downstream feeds after tampering", () => {
   const plan = fullPlan();
   const dataSpine = readyDataSpine(plan);

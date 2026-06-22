@@ -124,6 +124,17 @@ const EMAIL_VALUE_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 const DIRECT_IDENTIFIER_VALUE_PATTERN =
   /\b(?:respondent|employee|user|person)(?:[_:/-](?:id[_:/-]?)?)?[0-9a-f]{3,}\b/i;
 
+const UNSAFE_VALUE_PATTERNS = [
+  /raw_(?:prompt|response|transcript|content|file|export|event|row)/i,
+  /(?:^|_)confidence_percentage(?:_|$)/i,
+  /(?:^|_)probability(?:_|$)/i,
+  /(?:^|_)roi(?:_|$)/i,
+  /(?:^|_)ebita(?:_|$)/i,
+  /(?:^|_)ebitda(?:_|$)/i,
+  /(?:^|_)financial_attribution(?:_|$)/i,
+  /(?:^|_)customer_facing_financial(?:_|$)/i
+];
+
 export interface BuildAIFluencyOperatorSourceHandoffInput {
   parseRun: any;
   dashboardImportRun: any;
@@ -244,11 +255,56 @@ function selectFeedableSource(
   return null;
 }
 
-function recordForSource(parseRun: any, sourceRef: string | null): any | null {
+function recordsForSource(parseRun: any, sourceRef: string | null): any[] {
   const records = Array.isArray(parseRun?.dashboard_export?.records)
     ? parseRun.dashboard_export.records
     : [];
-  return records.find((record: any) => record?.source_ref === sourceRef) ?? null;
+  return records.filter((record: any) => record?.source_ref === sourceRef);
+}
+
+function alignmentMismatch(record: any, selectedSource: any): string[] {
+  const gaps: string[] = [];
+  for (const key of [
+    "org_id",
+    "client_id",
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "owner_approval_state"
+  ]) {
+    if (
+      selectedSource?.[key] !== undefined &&
+      record?.[key] !== undefined &&
+      String(record[key]) !== String(selectedSource[key])
+    ) {
+      gaps.push(`parser record ${key} must match selected feedable source ${key}`);
+    }
+  }
+  if (
+    selectedSource?.baseline_window?.window_start &&
+    record?.baseline_window_start !== selectedSource.baseline_window.window_start
+  ) {
+    gaps.push("parser record baseline_window_start must match selected feedable source baseline_window.window_start");
+  }
+  if (
+    selectedSource?.baseline_window?.window_end &&
+    record?.baseline_window_end !== selectedSource.baseline_window.window_end
+  ) {
+    gaps.push("parser record baseline_window_end must match selected feedable source baseline_window.window_end");
+  }
+  if (
+    selectedSource?.comparison_window?.window_start &&
+    record?.comparison_window_start !== selectedSource.comparison_window.window_start
+  ) {
+    gaps.push("parser record comparison_window_start must match selected feedable source comparison_window.window_start");
+  }
+  if (
+    selectedSource?.comparison_window?.window_end &&
+    record?.comparison_window_end !== selectedSource.comparison_window.window_end
+  ) {
+    gaps.push("parser record comparison_window_end must match selected feedable source comparison_window.window_end");
+  }
+  return gaps;
 }
 
 function operatorSourceFrom(selectedSource: any, record: any): any {
@@ -326,9 +382,16 @@ function collectForbiddenValues(
   path: string[] = []
 ): Set<string> {
   if (typeof value === "string") {
+    const normalizedValue = normalizeKey(value);
     if (
       !isValueExemptPath(path) &&
-      (EMAIL_VALUE_PATTERN.test(value) || DIRECT_IDENTIFIER_VALUE_PATTERN.test(value))
+      (
+        EMAIL_VALUE_PATTERN.test(value) ||
+        DIRECT_IDENTIFIER_VALUE_PATTERN.test(value) ||
+        UNSAFE_VALUE_PATTERNS.some((pattern) =>
+          pattern.test(value) || pattern.test(normalizedValue)
+        )
+      )
     ) {
       fields.add(path.join(".") || "value");
     }
@@ -359,15 +422,22 @@ export function buildAIFluencyOperatorSourceHandoff(
   const selectedSource = inputGaps.length === 0
     ? selectFeedableSource(input.dashboardImportRun, input.sourceRef, inputGaps)
     : null;
-  const selectedRecord = selectedSource
-    ? recordForSource(input.parseRun, selectedSource.source_ref)
-    : null;
+  const matchingRecords = selectedSource
+    ? recordsForSource(input.parseRun, selectedSource.source_ref)
+    : [];
+  const selectedRecord = matchingRecords.length === 1 ? matchingRecords[0] : null;
 
-  if (selectedSource && !selectedRecord) {
+  if (selectedSource && matchingRecords.length === 0) {
     inputGaps.push("selected feedable AI Fluency source must exist in parser dashboard_export records");
+  }
+  if (selectedSource && matchingRecords.length > 1) {
+    inputGaps.push("selected feedable AI Fluency source_ref must match exactly one parser dashboard_export record");
   }
   if (selectedRecord && !selectedRecord.source_owner_role) {
     inputGaps.push("selected AI Fluency parser record must include source_owner_role");
+  }
+  if (selectedRecord && selectedSource) {
+    inputGaps.push(...alignmentMismatch(selectedRecord, selectedSource));
   }
 
   const blocked = inputGaps.length > 0;

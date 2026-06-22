@@ -2,6 +2,35 @@
 
 ## Last Completed
 
+- Governed data-pipe hardening slice (user-requested, 2026-06-21):
+  reset the subagent approach by closing completed/stale agents, then used a
+  fresh bounded Code/Bug/Adversarial pattern with the main thread as final
+  integrator. Hardened the operator data spine by requiring Real Data Intake
+  embedded Data Spine and Measurement Plan validations to match the full
+  recomputed validation objects, not only `.valid`. Hardened Operator
+  Time-Series validation against blank milestone coercion, unsupported
+  `allowed_uses`, unsafe note-like claim language, malformed non-array
+  `time_windows`, and spoofed child-object forbidden-field skips outside
+  numeric `time_windows.<index>` paths. Hardened the AI Fluency Operator
+  Source Handoff so duplicate parser `source_ref` rows cannot contaminate a
+  reviewed feedable source, parser records must align to the selected
+  dashboard source, and unsafe raw/financial/probability-style source refs are
+  blocked before operator intake. Hardened Source Package Review Queue
+  alignment so source packages cannot clear a lane unless source owner role
+  and source-owner attestation match the lane owner role. No UI, backend
+  route, persistence, schema, migration, live connector, confidence model,
+  probability output, finance-context feed, ROI/EBITA/EBITDA proof,
+  causality, productivity, person-level output, ranking, or customer-facing
+  financial output was added. Verification:
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-workflow`;
+  `npm run test:ai-value-operator-evidence-package-runner`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Fluency Operator Source Handoff slice (user-requested, 2026-06-21):
   added the governed bridge from a validated aggregate AI Fluency parser run
   and Dashboard Import Runner output into the Operator Intake Adapter source
