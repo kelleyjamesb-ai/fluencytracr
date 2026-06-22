@@ -356,6 +356,40 @@ test("package-backed lanes cannot clear queue review without matching Source Pac
   assert.equal(queue.feeds.finance_context_investigation, false);
 });
 
+test("forged package lane booleans cannot clear review without compact package evidence", () => {
+  const dataSpineReadiness = buildDataSpineIntakeReadiness(baseInput());
+
+  const queue = buildSourcePackageReviewQueue({
+    dataSpineReadiness,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  for (const lane of queue.lanes.filter((item) => item.lane_key !== "blueprint")) {
+    lane.source_package_ids = [`forged_package_${lane.lane_key}`];
+    lane.source_package_valid = true;
+    lane.source_package_alignment_clear = true;
+    lane.source_package_can_feed_evidence = true;
+    lane.source_package_evidence = [];
+    lane.data_spine_review_clear = true;
+    lane.gaps = [];
+  }
+  queue.queue_state = "DATA_SPINE_REVIEW_READY";
+  queue.missing_evidence = [];
+
+  const result = validateSourcePackageReviewQueue(queue);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_input, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("AI_FLUENCY_SOURCE_PACKAGE_EVIDENCE_REQUIRED")
+  ));
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("lanes[1].data_spine_review_clear must reflect source and source package posture")
+  ));
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("queue_state must match data spine validation and lane posture")
+  ));
+});
+
 test("review queue holds lanes missing readiness checklist fields", () => {
   const input = baseInput();
   input.sources.vbdToken.owner_role = "";

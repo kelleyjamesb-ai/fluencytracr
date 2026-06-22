@@ -1047,6 +1047,42 @@ test("operator intake adapter rejects stale embedded validation after source tam
   assert.ok(result.gaps.some((gap) => gap.includes("Data Spine validation")));
 });
 
+test("held operator intake adapter runs cannot forge Measurement Cell Assembly feed", () => {
+  const run = buildOperatorIntakeAdapterRun(baseOperatorInput({
+    sourcePackages: [],
+    runId: "operator_intake_adapter_run_forged_held_feed"
+  }));
+  run.feeds.measurement_cell_assembly_run = true;
+
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_assembly_run, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("held or blocked operator intake runs cannot feed Measurement Cell Assembly")
+  ));
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("feeds.measurement_cell_assembly_run must match recomputed operator intake decision")
+  ));
+});
+
+test("operator intake adapter rejects unsafe string values in adapter-owned fields", () => {
+  const run = buildOperatorIntakeAdapterRun(baseOperatorInput({
+    runId: "operator_intake_adapter_run_unsafe_string_values"
+  }));
+  run.required_caveats.push("raw_prompt jane@example.com");
+  run.missing_evidence.push("employee_email:jane@example.com");
+  run.time_series_readiness.note = "select * from raw_events";
+
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_assembly_run, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("required_caveats")));
+  assert.ok(result.gaps.some((gap) => gap.includes("missing_evidence")));
+  assert.ok(result.gaps.some((gap) => gap.includes("time_series_readiness.note")));
+});
+
 test("operator intake adapter rejects confidence, probability, raw, route, persistence, and financial side doors", () => {
   const run = buildOperatorIntakeAdapterRun(baseOperatorInput({
     runId: "operator_intake_adapter_run_unsafe"

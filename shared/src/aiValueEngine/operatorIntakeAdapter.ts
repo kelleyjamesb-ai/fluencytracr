@@ -211,6 +211,38 @@ const FALSE_BOUNDARY_CONTAINERS = new Set([
   "value_proof_policy"
 ]);
 
+const PRIVACY_AND_RAW_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_(?:id|identifier|email)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i,
+  /(?:^|_)raw_(?:rows?|files?|prompt|response|transcript|content|events?)(?:_|$)/i,
+  /(?:^|_)(?:prompt|transcript)(?:_|$)/i,
+  /(?:^|_)select(?:_|$)/i,
+  /(?:^|_)from_raw(?:_|$)/i,
+  /(?:^|_)sql_text(?:_|$)/i,
+  /(?:^|_)bigquery_sql(?:_|$)/i,
+  /(?:^|_)file_contents?(?:_|$)/i,
+  /(?:^|_)response_(?:text|body|content|message|raw|value)(?:_|$)/i,
+  /(?:^|_)llm_response(?:_|$)/i
+];
+
+const CAVEAT_IDENTIFIER_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_(?:id|identifier|email)(?:_|$)/i,
+  /(?:^|_)(?:user|employee|person|direct|manager)_[a-z]*\d[a-z0-9]*(?:_|$)/i,
+  /(?:^|_)(?:hashed|joinable)_(?:id|identifier|user|person|employee)(?:_|$)/i
+];
+
+const UNSAFE_CLAIM_VALUE_PATTERNS = [
+  /\bproved?\s+(?:roi|savings|financial impact|ebita|ebitda|productivity|causality)\b/i,
+  /\b(?:roi|savings|ebita|ebitda|financial impact|productivity lift)\b.{0,48}\b(?:due to|caused by|attributed to|from ai|by ai)\b/i,
+  /\b\d{1,3}%\s+(?:confidence|probability)\b/i,
+  /\b(?:confidence|probability)\s*(?:score|level)?\s*(?:of|=|:)?\s*0?\.\d+\b/i,
+  /\battribution\s+probability\b/i,
+  /\bcustomer[-_\s]?facing\s+(?:financial|economic)\s+output\s+(?:allowed|ready|approved)\b/i
+];
+
 export interface BuildOperatorIntakeAdapterRunInput {
   orgId: string;
   clientId: string;
@@ -309,6 +341,59 @@ function collectForbiddenFields(
   return fields;
 }
 
+function isValidatedChildObjectPath(path: string[]): boolean {
+  return path.length > 0 && VALIDATED_CHILD_OBJECT_FIELDS.has(normalizeKey(path[0]));
+}
+
+function isValueCheckExemptPath(path: string[]): boolean {
+  const normalizedPath = path.map(normalizeKey);
+  return normalizedPath[0] === "blocked_uses" ||
+    normalizedPath[0] === "boundary_policy" ||
+    isValidatedChildObjectPath(normalizedPath);
+}
+
+function valuePatternsForPath(path: string[]): RegExp[] {
+  const normalizedPath = path.map(normalizeKey);
+  if (normalizedPath[0] === "required_caveats") {
+    return CAVEAT_IDENTIFIER_VALUE_PATTERNS;
+  }
+  return [
+    ...PRIVACY_AND_RAW_VALUE_PATTERNS,
+    ...UNSAFE_CLAIM_VALUE_PATTERNS
+  ];
+}
+
+function collectForbiddenValues(
+  value: any,
+  values: Set<string> = new Set(),
+  path: string[] = []
+): Set<string> {
+  if (typeof value === "string") {
+    if (!isValueCheckExemptPath(path)) {
+      const normalizedValue = normalizeKey(value);
+      if (
+        valuePatternsForPath(path).some((pattern) =>
+          pattern.test(value) || pattern.test(normalizedValue)
+        )
+      ) {
+        values.add(path.join(".") || "<root>");
+      }
+    }
+    return values;
+  }
+  if (!value || typeof value !== "object") return values;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectForbiddenValues(item, values, [...path, String(index)])
+    );
+    return values;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    collectForbiddenValues(nested, values, [...path, key]);
+  }
+  return values;
+}
+
 function falseFeeds(): OperatorIntakeAdapterRunValidationResult["feeds"] {
   return {
     data_spine_readiness: false,
@@ -348,10 +433,11 @@ function feedsForDecision(
 
 function feedState(
   run: any,
-  valid: boolean
+  valid: boolean,
+  recomputedFeeds: OperatorIntakeAdapterRunValidationResult["feeds"]
 ): OperatorIntakeAdapterRunValidationResult["feeds"] {
   if (!valid) return falseFeeds();
-  return run?.feeds ?? falseFeeds();
+  return recomputedFeeds;
 }
 
 function baseRunId(input: BuildOperatorIntakeAdapterRunInput): string {
@@ -436,6 +522,22 @@ function collectPolicyGaps(run: any): string[] {
   }
   for (const field of [...collectForbiddenFields(run)].sort()) {
     gaps.push(`Forbidden field detected: ${field}`);
+  }
+  for (const value of [...collectForbiddenValues(run)].sort()) {
+    gaps.push(`Forbidden value detected: ${value}`);
+  }
+  return gaps;
+}
+
+function collectFeedConsistencyGaps(
+  run: any,
+  recomputedFeeds: OperatorIntakeAdapterRunValidationResult["feeds"]
+): string[] {
+  const gaps: string[] = [];
+  for (const [field, expected] of Object.entries(recomputedFeeds)) {
+    if (run?.feeds?.[field] !== expected) {
+      gaps.push(`feeds.${field} must match recomputed operator intake decision`);
+    }
   }
   return gaps;
 }
@@ -541,10 +643,10 @@ function collectDecisionGaps(
     gaps.push("HELD_FOR_MEASUREMENT_CELL_ASSEMBLY requires an uncleared Measurement Cell Assembly Run");
   }
   if (
-    decision === "BLOCKED" &&
+    decision !== "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION" &&
     run?.feeds?.measurement_cell_assembly_run === true
   ) {
-    gaps.push("blocked operator intake runs cannot feed Measurement Cell Assembly");
+    gaps.push("held or blocked operator intake runs cannot feed Measurement Cell Assembly");
   }
   return gaps;
 }
@@ -749,9 +851,16 @@ export function validateOperatorIntakeAdapterRun(
     queueValidation?.valid === false ||
     realDataValidation?.valid === false ||
     assemblyValidation?.valid === false;
+  const recomputedFeeds = feedsForDecision(String(run?.decision ?? ""), {
+    dataSpine: dataSpineValidation,
+    queue: queueValidation,
+    realData: realDataValidation,
+    assembly: assemblyValidation
+  });
   const gaps = [
     ...collectTopLevelGaps(run),
     ...collectPolicyGaps(run),
+    ...collectFeedConsistencyGaps(run, recomputedFeeds),
     ...collectBindingGaps(run),
     ...collectDecisionGaps(
       run,
@@ -792,6 +901,6 @@ export function validateOperatorIntakeAdapterRun(
     client_id: run?.client_id ?? null,
     valid,
     gaps,
-    feeds: feedState(run, valid)
+    feeds: feedState(run, valid, recomputedFeeds)
   };
 }

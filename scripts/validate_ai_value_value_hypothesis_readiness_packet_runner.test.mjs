@@ -477,6 +477,11 @@ function sourcePackageExample(file, dataSpine, overrides = {}) {
     ...pkg,
     org_id: dataSpine.org_id,
     covered_window: dataSpine.comparison_window,
+    source_owner_role: "source_owner",
+    source_owner_attestation: {
+      ...pkg.source_owner_attestation,
+      attested_by_role: "source_owner"
+    },
     ...overrides
   };
 }
@@ -724,6 +729,24 @@ test("validated Measurement Cell Assembly Run can drive finance-context readines
   assert.equal(validation.feeds.finance_context_investigation, true);
   assert.equal(validation.feeds.customer_facing_output, false);
   assert.equal(validation.feeds.financial_output, false);
+});
+
+test("Measurement Cell Assembly Run must bind to the packet Measurement Plan", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const otherPlan = promotePlanToFullPlaybookReady(buildMeasurementPlan({
+    measurementPlanId: "measurement_plan_other_packet_test"
+  }));
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const measurementCellAssemblyRun = buildPacketMeasurementCellAssemblyRun(otherPlan);
+
+  assert.throws(
+    () => buildPacket({
+      plan,
+      claimSnapshot,
+      measurementCellAssemblyRun
+    }),
+    /Measurement Cell Assembly Run measurement_plan_id must match packet Measurement Plan/
+  );
 });
 
 test("packet validation rejects finance-context readiness without Measurement Cell validation binding", () => {
