@@ -31,6 +31,10 @@ import {
   validateSourcePackageReviewQueue,
   type SourcePackageReviewQueueValidationResult
 } from "./sourcePackageReviewQueue";
+import {
+  validateBlueprintOperatorSourceHandoff,
+  type BlueprintOperatorSourceHandoffValidationResult
+} from "./blueprintOperatorSourceHandoff";
 
 export const AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_SCHEMA_VERSION =
   "FT_AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_2026_06";
@@ -97,6 +101,8 @@ const ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "data_spine_validation_result",
   "source_package_review_queue",
   "source_package_review_validation_result",
+  "blueprint_operator_source_handoff",
+  "blueprint_operator_source_handoff_validation_result",
   "real_data_intake_packet_run",
   "real_data_intake_validation_result",
   "measurement_cell_input",
@@ -192,6 +198,7 @@ export interface BuildMeasurementCellAssemblyRunInput {
   measurementPlan?: any | null;
   measurementCellInput: BuildMeasurementCellInput & Record<string, any>;
   sourcePackageReviewQueue?: any | null;
+  blueprintOperatorSourceHandoff?: any | null;
   realDataIntakePacketRun?: any | null;
   runId?: string;
   generatedAt?: string;
@@ -435,6 +442,198 @@ function collectPolicyGaps(run: any): string[] {
 
 function sourceRefOf(spine: any, sourceKey: string): string | null {
   return spine?.source_readiness?.[sourceKey]?.source_ref ?? null;
+}
+
+const BLUEPRINT_SELECTED_PATH_FIELDS = [
+  "expectation_path_id",
+  "expected_behavior",
+  "expected_vbd_signal",
+  "expected_metric_id",
+  "expected_metric_direction",
+  "expected_metric_lag_days",
+  "expected_metric_system_recommended",
+  "expected_metric_customer_selected",
+  "value_driver",
+  "metric_role",
+  "customer_approval_state",
+  "approver_role",
+  "source_ref"
+];
+
+function hasSelectedBlueprintPathContext(alignment: any): boolean {
+  return Boolean(alignment?.expectation_path_id) ||
+    (alignment?.approved_expectation_path !== undefined &&
+      alignment.approved_expectation_path !== null);
+}
+
+function valuesDiffer(left: any, right: any): boolean {
+  return JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
+}
+
+function collectSelectedPathGaps(
+  actualPath: any,
+  actualLabel: string,
+  expectedPath: any,
+  expectedLabel: string
+): string[] {
+  const gaps: string[] = [];
+  if (!expectedPath) return gaps;
+  if (!actualPath) {
+    gaps.push(`${actualLabel} is required when ${expectedLabel} is present`);
+    return gaps;
+  }
+  for (const field of BLUEPRINT_SELECTED_PATH_FIELDS) {
+    if (valuesDiffer(actualPath?.[field], expectedPath?.[field])) {
+      gaps.push(`${actualLabel}.${field} must match ${expectedLabel}`);
+    }
+  }
+  return gaps;
+}
+
+function collectBlueprintPathBindingGaps(
+  run: any,
+  handoffValidation: BlueprintOperatorSourceHandoffValidationResult | null
+): string[] {
+  const gaps: string[] = [];
+  const handoff = run?.blueprint_operator_source_handoff;
+  const spine = run?.data_spine_readiness;
+  const inputAlignment = run?.measurement_cell_input?.blueprintAlignment;
+  const cellAlignment = run?.measurement_cell?.blueprint_alignment;
+  const dataSpineValidation = spine
+    ? validateDataSpineIntakeReadiness(spine)
+    : null;
+  const dataSpineReadyForAssembly =
+    dataSpineValidation?.valid === true &&
+    dataSpineValidation.feeds.measurement_cell_input === true;
+  const hasPathContext = hasSelectedBlueprintPathContext(inputAlignment) ||
+    hasSelectedBlueprintPathContext(cellAlignment);
+  const selectedPathId = inputAlignment?.expectation_path_id ?? null;
+  const selectedPath = inputAlignment?.approved_expectation_path ?? null;
+  if (!handoff) {
+    if (dataSpineReadyForAssembly && hasPathContext) {
+      gaps.push("blueprint_operator_source_handoff is required when selected Blueprint expectation path context is present");
+    }
+    return gaps;
+  }
+  if (!handoffValidation?.valid) {
+    gaps.push("blueprint_operator_source_handoff must validate before Measurement Cell assembly");
+  }
+  if (handoff?.decision !== "READY_FOR_OPERATOR_INTAKE") {
+    gaps.push("blueprint_operator_source_handoff.decision must be READY_FOR_OPERATOR_INTAKE");
+  }
+  const context = handoff?.blueprint_alignment_context ?? {};
+  for (const [contextField, expected, expectedLabel] of [
+    ["org_id", spine?.org_id, "Data Spine org_id"],
+    ["client_id", spine?.client_id, "Data Spine client_id"],
+    ["workflow_family", spine?.workflow_family, "Data Spine workflow_family"],
+    ["function_area", spine?.function_area, "Data Spine function_area"],
+    ["cohort_key", spine?.cohort_key, "Data Spine cohort_key"]
+  ]) {
+    if (
+      expected !== undefined &&
+      expected !== null &&
+      context?.[contextField] !== expected
+    ) {
+      gaps.push(`blueprint_operator_source_handoff.blueprint_alignment_context.${contextField} must match ${expectedLabel}`);
+    }
+  }
+  if (!sameWindow(context?.baseline_window, spine?.baseline_window)) {
+    gaps.push("blueprint_operator_source_handoff.blueprint_alignment_context.baseline_window must match Data Spine baseline_window");
+  }
+  if (!sameWindow(context?.comparison_window, spine?.comparison_window)) {
+    gaps.push("blueprint_operator_source_handoff.blueprint_alignment_context.comparison_window must match Data Spine comparison_window");
+  }
+  if (context?.source_ref !== sourceRefOf(spine, "blueprint")) {
+    gaps.push("blueprint_operator_source_handoff.blueprint_alignment_context.source_ref must match Data Spine blueprint source_ref");
+  }
+  if (context?.source_ref !== inputAlignment?.source_ref) {
+    gaps.push("measurementCellInput.blueprintAlignment.source_ref must match blueprint_operator_source_handoff source_ref");
+  }
+  if (
+    inputAlignment?.blueprint_expectation_ref &&
+    context?.blueprint_expectation_ref &&
+    inputAlignment.blueprint_expectation_ref !== context.blueprint_expectation_ref
+  ) {
+    gaps.push("measurementCellInput.blueprintAlignment.blueprint_expectation_ref must match blueprint_operator_source_handoff");
+  }
+  if (selectedPathId || context?.expectation_path_id) {
+    if (!selectedPathId) {
+      gaps.push("measurementCellInput.blueprintAlignment.expectation_path_id is required when Blueprint handoff path proof is present");
+    }
+    if (selectedPathId !== context?.expectation_path_id) {
+      gaps.push("measurementCellInput.blueprintAlignment.expectation_path_id must match blueprint_operator_source_handoff selected expectation_path_id");
+    }
+  }
+  gaps.push(
+    ...collectSelectedPathGaps(
+      selectedPath,
+      "measurementCellInput.blueprintAlignment.approved_expectation_path",
+      context?.approved_expectation_path,
+      "blueprint_operator_source_handoff selected path"
+    )
+  );
+  if (Array.isArray(context?.approved_expectation_paths) && selectedPathId) {
+    const registryMatch = context.approved_expectation_paths.some((path: any) =>
+      path?.expectation_path_id === selectedPathId
+    );
+    if (!registryMatch) {
+      gaps.push("measurementCellInput.blueprintAlignment.expectation_path_id must exist in blueprint_operator_source_handoff approved_expectation_paths");
+    }
+  }
+  if (
+    context?.approved_expectation_path?.expected_metric_id &&
+    run?.measurement_cell_input?.selectedMetric?.metric_id &&
+    context.approved_expectation_path.expected_metric_id !==
+      run.measurement_cell_input.selectedMetric.metric_id
+  ) {
+    gaps.push("blueprint_operator_source_handoff selected expectation_path_id metric must match measurementCellInput.selectedMetric.metric_id");
+  }
+  if (run?.measurement_cell) {
+    if (cellAlignment?.source_ref !== inputAlignment?.source_ref) {
+      gaps.push("measurement_cell.blueprint_alignment.source_ref must match measurementCellInput.blueprintAlignment.source_ref");
+    }
+    if (cellAlignment?.source_ref !== context?.source_ref) {
+      gaps.push("measurement_cell.blueprint_alignment.source_ref must match blueprint_operator_source_handoff source_ref");
+    }
+    if (
+      inputAlignment?.blueprint_expectation_ref &&
+      cellAlignment?.blueprint_expectation_ref !== inputAlignment.blueprint_expectation_ref
+    ) {
+      gaps.push("measurement_cell.blueprint_alignment.blueprint_expectation_ref must match measurementCellInput.blueprintAlignment.blueprint_expectation_ref");
+    }
+    if (
+      context?.blueprint_expectation_ref &&
+      cellAlignment?.blueprint_expectation_ref !== context.blueprint_expectation_ref
+    ) {
+      gaps.push("measurement_cell.blueprint_alignment.blueprint_expectation_ref must match blueprint_operator_source_handoff");
+    }
+    if (selectedPathId && cellAlignment?.expectation_path_id !== selectedPathId) {
+      gaps.push("measurement_cell.blueprint_alignment.expectation_path_id must match measurementCellInput.blueprintAlignment.expectation_path_id");
+    }
+    if (
+      context?.expectation_path_id &&
+      cellAlignment?.expectation_path_id !== context.expectation_path_id
+    ) {
+      gaps.push("measurement_cell.blueprint_alignment.expectation_path_id must match blueprint_operator_source_handoff selected expectation_path_id");
+    }
+    gaps.push(
+      ...collectSelectedPathGaps(
+        cellAlignment?.approved_expectation_path,
+        "measurement_cell.blueprint_alignment.approved_expectation_path",
+        context?.approved_expectation_path,
+        "blueprint_operator_source_handoff selected path"
+      )
+    );
+    if (
+      context?.approved_expectation_path?.expected_metric_id &&
+      run?.measurement_cell?.selected_metric?.metric_id &&
+      context.approved_expectation_path.expected_metric_id !==
+        run.measurement_cell.selected_metric.metric_id
+    ) {
+      gaps.push("blueprint_operator_source_handoff selected expectation_path_id metric must match measurement_cell.selected_metric.metric_id");
+    }
+  }
+  return gaps;
 }
 
 function collectBindingGaps(run: any): string[] {
@@ -764,6 +963,9 @@ export function buildMeasurementCellAssemblyRun(
   const sourcePackageReviewValidation = input.sourcePackageReviewQueue
     ? validateSourcePackageReviewQueue(input.sourcePackageReviewQueue)
     : null;
+  const blueprintHandoffValidation = input.blueprintOperatorSourceHandoff
+    ? validateBlueprintOperatorSourceHandoff(input.blueprintOperatorSourceHandoff)
+    : null;
   const realDataValidation = input.realDataIntakePacketRun
     ? validateRealDataIntakePacketRun(input.realDataIntakePacketRun)
     : null;
@@ -773,6 +975,7 @@ export function buildMeasurementCellAssemblyRun(
     measurement_plan: measurementPlan,
     data_spine_readiness: input.dataSpineReadiness,
     source_package_review_queue: input.sourcePackageReviewQueue ?? null,
+    blueprint_operator_source_handoff: input.blueprintOperatorSourceHandoff ?? null,
     real_data_intake_packet_run: input.realDataIntakePacketRun ?? null,
     measurement_cell_input: input.measurementCellInput
   };
@@ -792,6 +995,7 @@ export function buildMeasurementCellAssemblyRun(
   const inputGaps = [
     ...collectBindingGaps(preAssemblyRun),
     ...collectRealDataBindingGaps(preAssemblyRun),
+    ...collectBlueprintPathBindingGaps(preAssemblyRun, blueprintHandoffValidation),
     ...sourcePackageReviewBlockingGaps,
     ...collectUnsafeInputGaps(input.measurementCellInput)
   ];
@@ -806,6 +1010,7 @@ export function buildMeasurementCellAssemblyRun(
     dataSpineValidation.valid &&
     dataSpineValidation.feeds.measurement_cell_input &&
     sourceReviewCleared &&
+    (!blueprintHandoffValidation || blueprintHandoffValidation.valid) &&
     (!realDataValidation || realDataValidation.valid) &&
     (!realDataValidation || realDataValidation.feeds.measurement_cell_input) &&
     inputGaps.length === 0;
@@ -820,6 +1025,9 @@ export function buildMeasurementCellAssemblyRun(
     ...dataSpineValidation.gaps.map((gap) => `data_spine_readiness: ${gap}`),
     ...(sourcePackageReviewValidation
       ? sourcePackageReviewValidation.gaps.map((gap) => `source_package_review_queue: ${gap}`)
+      : []),
+    ...(blueprintHandoffValidation
+      ? blueprintHandoffValidation.gaps.map((gap) => `blueprint_operator_source_handoff: ${gap}`)
       : []),
     ...(realDataValidation
       ? realDataValidation.gaps.map((gap) => `real_data_intake_packet_run: ${gap}`)
@@ -869,6 +1077,8 @@ export function buildMeasurementCellAssemblyRun(
     data_spine_validation_result: dataSpineValidation,
     source_package_review_queue: input.sourcePackageReviewQueue ?? null,
     source_package_review_validation_result: sourcePackageReviewValidation,
+    blueprint_operator_source_handoff: input.blueprintOperatorSourceHandoff ?? null,
+    blueprint_operator_source_handoff_validation_result: blueprintHandoffValidation,
     real_data_intake_packet_run: input.realDataIntakePacketRun ?? null,
     real_data_intake_validation_result: realDataValidation,
     measurement_cell_input: input.measurementCellInput,
@@ -920,6 +1130,9 @@ export function validateMeasurementCellAssemblyRun(
   const sourcePackageReviewValidation = run?.source_package_review_queue
     ? validateSourcePackageReviewQueue(run.source_package_review_queue)
     : null;
+  const blueprintHandoffValidation = run?.blueprint_operator_source_handoff
+    ? validateBlueprintOperatorSourceHandoff(run.blueprint_operator_source_handoff)
+    : null;
   const cellValidation = run?.measurement_cell
     ? validateMeasurementCell(run.measurement_cell)
     : null;
@@ -928,12 +1141,14 @@ export function validateMeasurementCellAssemblyRun(
     ...collectBindingGaps(run),
     ...collectRealDataBindingGaps(run),
     ...collectSourcePackageReviewBindingGaps(run),
+    ...collectBlueprintPathBindingGaps(run, blueprintHandoffValidation),
     ...collectUnsafeInputGaps(run?.measurement_cell_input)
   ];
   const blockedOrMisaligned = blockedDecision ||
     planValidation?.valid === false ||
     dataSpineValidation?.valid === false ||
     sourcePackageReviewValidation?.valid === false ||
+    blueprintHandoffValidation?.valid === false ||
     realDataValidation?.valid === false ||
     bindingGaps.length > 0;
   const gaps = [
@@ -952,6 +1167,9 @@ export function validateMeasurementCellAssemblyRun(
       : []),
     ...(sourcePackageReviewValidation && !validationMatchesEmbedded(run?.source_package_review_validation_result, sourcePackageReviewValidation)
       ? ["source_package_review_validation_result must match recomputed Source Package Review Queue validation"]
+      : []),
+    ...(blueprintHandoffValidation && !validationMatchesEmbedded(run?.blueprint_operator_source_handoff_validation_result, blueprintHandoffValidation)
+      ? ["blueprint_operator_source_handoff_validation_result must match recomputed Blueprint Operator Source Handoff validation"]
       : []),
     ...(realDataValidation && !validationMatchesEmbedded(run?.real_data_intake_validation_result, realDataValidation)
       ? ["real_data_intake_validation_result must match recomputed Real Data Intake validation"]

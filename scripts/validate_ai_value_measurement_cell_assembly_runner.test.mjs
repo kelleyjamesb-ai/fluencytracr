@@ -4,6 +4,8 @@ import test from "node:test";
 
 import {
   AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_SCHEMA_VERSION,
+  buildBlueprintExtractionDraft,
+  buildBlueprintOperatorSourceHandoff,
   buildDataSpineIntakeReadiness,
   buildMeasurementCellAssemblyRun,
   buildRealDataIntakePacketRun,
@@ -310,6 +312,7 @@ function reviewedSourceQueue(dataSpine, overrides = {}) {
 function measurementCellInput(plan = fullPlan(), dataSpine = readyDataSpine(plan), overrides = {}) {
   const sources = dataSpine.source_readiness;
   const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  const expectationPathId = overrides.expectationPathId ?? "expectation_path_resolution_time_capacity";
   const base = {
     orgId: plan.org_id,
     functionArea: plan.workflow_scope.function_area,
@@ -326,11 +329,33 @@ function measurementCellInput(plan = fullPlan(), dataSpine = readyDataSpine(plan
       prior_window_ref: "measurement_cell_support_day_0"
     },
     blueprintAlignment: {
+      expectation_path_id: expectationPathId,
+      blueprint_expectation_ref: sources.blueprint.source_ref,
+      blueprint_customer_approval_state: "approved",
+      blueprint_customer_approver_role: "customer_value_owner",
       value_route: plan.value_hypothesis.value_route,
       value_promise: plan.value_hypothesis.hypothesis_statement,
       expected_metric_id: plan.metric_selection.primary_metric.metric_id,
       expected_metric_direction: "decrease",
       expected_metric_lag_days: 30,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "capacity",
+      approved_expectation_path: {
+        expectation_path_id: expectationPathId,
+        expected_behavior: "knowledge_retrieval",
+        expected_vbd_signal: "depth",
+        expected_metric_id: plan.metric_selection.primary_metric.metric_id,
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 30,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "capacity",
+        metric_role: "primary",
+        source_ref: sources.blueprint.source_ref,
+        customer_approval_state: "approved",
+        approver_role: "customer_value_owner"
+      },
       owner_role: plan.value_hypothesis.owner_role,
       assumption_refs: ["support_assumption_approval_day_30"],
       source_ref: sources.blueprint.source_ref
@@ -409,16 +434,90 @@ function measurementCellInput(plan = fullPlan(), dataSpine = readyDataSpine(plan
       review_state: "FINANCE_CONTEXT_INVESTIGATION_READY"
     }
   };
-  return { ...base, ...overrides };
+  const { expectationPathId: _expectationPathId, ...restOverrides } = overrides;
+  return { ...base, ...restOverrides };
+}
+
+function blueprintOperatorSourceHandoff(plan = fullPlan(), dataSpine = readyDataSpine(plan), overrides = {}) {
+  const expectationPathId = overrides.expectationPathId ?? "expectation_path_resolution_time_capacity";
+  const draft = buildBlueprintExtractionDraft({
+    draftId: dataSpine.source_readiness.blueprint.source_ref,
+    orgId: plan.org_id,
+    clientId: dataSpine.client_id,
+    documentSourceRef: "blueprint_upload_support_approved",
+    extractionState: "parsed",
+    approvalState: "approved",
+    ownerRole: "customer_value_owner",
+    approverRole: "customer_value_owner",
+    workflowFamily: plan.workflow_scope.workflow_family,
+    workflowName: "Support case resolution",
+    functionArea: plan.workflow_scope.function_area,
+    cohortKey: dataSpine.cohort_key,
+    valueHypothesis: plan.value_hypothesis.hypothesis_statement,
+    valueRoute: "CAPACITY_CREATION",
+    baselineWindow: dataSpine.baseline_window,
+    comparisonWindow: dataSpine.comparison_window,
+    metricCandidates: [
+      {
+        metric_id: plan.metric_selection.primary_metric.metric_id,
+        metric_name: plan.metric_selection.primary_metric.metric_name,
+        expected_direction: "decrease",
+        expected_lag_days: 30,
+        system_recommended: true,
+        customer_selected: true,
+        value_driver: "capacity"
+      }
+    ],
+    approvedExpectationPaths: [
+      {
+        expectation_path_id: expectationPathId,
+        expected_behavior: "knowledge_retrieval",
+        expected_vbd_signal: "depth",
+        expected_metric_id: plan.metric_selection.primary_metric.metric_id,
+        expected_metric_name: plan.metric_selection.primary_metric.metric_name,
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 30,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "capacity",
+        metric_role: "primary"
+      }
+    ],
+    assumptions: [
+      "case_mix_stability",
+      "volume_context",
+      "staffing_and_coverage_context",
+      "channel_mix_context",
+      "process_or_policy_context",
+      "knowledge_base_context",
+      "metric_definition_stability",
+      "ai_rollout_context"
+    ].map((assumption_id) => ({
+      assumption_id,
+      owner: "customer_value_owner",
+      state: "submitted"
+    })),
+    sourceRefs: {
+      document_source_ref: "blueprint_upload_support_approved",
+      extraction_run_ref: "blueprint_extraction_support_approved"
+    },
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  return buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
 }
 
 test("aligned Data Spine and real-data intake output assemble a validated Measurement Cell", () => {
   const plan = fullPlan();
   const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
     sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    blueprintOperatorSourceHandoff: blueprintHandoff,
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_day_30",
@@ -435,15 +534,21 @@ test("aligned Data Spine and real-data intake output assemble a validated Measur
   assert.equal(run.feeds.value_hypothesis_packet_runner, true);
   assert.equal(run.feeds.finance_context_investigation_planning, true);
   assert.equal(run.feeds.customer_facing_financial_output, false);
+  assert.equal(
+    run.measurement_cell.blueprint_alignment.expectation_path_id,
+    "expectation_path_resolution_time_capacity"
+  );
 });
 
 test("ready Data Spine cannot assemble Measurement Cell without reviewed source package queue", () => {
   const plan = fullPlan();
   const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
 
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
+    blueprintOperatorSourceHandoff: blueprintHandoff,
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_missing_source_review",
@@ -463,6 +568,7 @@ test("ready Data Spine cannot assemble Measurement Cell without reviewed source 
 test("held source package review queue blocks Measurement Cell assembly", () => {
   const plan = fullPlan();
   const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
   const queue = reviewedSourceQueue(dataSpine);
   queue.queue_state = "HELD_FOR_SOURCE_REVIEW";
   queue.lanes.find((lane) => lane.lane_key === "vbd_token").source_state = "suppressed";
@@ -477,6 +583,7 @@ test("held source package review queue blocks Measurement Cell assembly", () => 
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
     sourcePackageReviewQueue: queue,
+    blueprintOperatorSourceHandoff: blueprintHandoff,
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_held_source_review",
@@ -495,6 +602,7 @@ test("held source package review queue blocks Measurement Cell assembly", () => 
 test("misaligned source package review queue fails closed before Measurement Cell assembly", () => {
   const plan = fullPlan();
   const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
   const queue = reviewedSourceQueue(dataSpine, {
     org_id: "org_other",
     data_spine_readiness_id: "data_spine_other"
@@ -504,6 +612,7 @@ test("misaligned source package review queue fails closed before Measurement Cel
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
     sourcePackageReviewQueue: queue,
+    blueprintOperatorSourceHandoff: blueprintHandoff,
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_misaligned_source_review",
@@ -581,6 +690,7 @@ test("rolling 30-day Data Spine assembles operating context without finance plan
   plan.windows.comparison_window_start = "2026-09-01";
   plan.windows.comparison_window_end = "2026-09-30";
   const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
   const input = measurementCellInput(plan, dataSpine, {
     timeWindow: {
       time_window_id: "rolling_30d_2026_09_30",
@@ -607,6 +717,7 @@ test("rolling 30-day Data Spine assembles operating context without finance plan
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
     sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    blueprintOperatorSourceHandoff: blueprintHandoff,
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: input,
     runId: "measurement_cell_assembly_support_rolling",
@@ -644,6 +755,120 @@ test("source-ref and window drift fail before packet-runner feed", () => {
   assert.equal(result.feeds.value_hypothesis_packet_runner, false);
   assert.ok(result.gaps.some((gap) => gap.includes("vbdContext.source_ref")));
   assert.ok(result.gaps.some((gap) => gap.includes("comparison_window")));
+});
+
+test("selected Blueprint expectation path spoofing blocks Measurement Cell assembly before packet readiness", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
+  const input = measurementCellInput(plan, dataSpine, {
+    expectationPathId: "expectation_path_resolution_time_spoofed"
+  });
+
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    blueprintOperatorSourceHandoff: blueprintHandoff,
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: input,
+    runId: "measurement_cell_assembly_support_spoofed_expectation_path",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateMeasurementCellAssemblyRun(run);
+
+  assert.equal(run.decision, "BLOCKED");
+  assert.equal(result.valid, false);
+  assert.equal(run.measurement_cell, null);
+  assert.ok(result.gaps.some((gap) => /expectation_path_id/i.test(gap)));
+  assert.equal(result.feeds.measurement_cell, false);
+  assert.equal(result.feeds.value_hypothesis_packet_runner, false);
+});
+
+test("selected Blueprint expectation path requires Blueprint operator handoff proof", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: measurementCellInput(plan, dataSpine),
+    runId: "measurement_cell_assembly_support_missing_blueprint_handoff",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateMeasurementCellAssemblyRun(run);
+
+  assert.equal(run.decision, "BLOCKED");
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => /blueprint_operator_source_handoff is required/i.test(gap)));
+  assert.equal(result.feeds.measurement_cell, false);
+  assert.equal(result.feeds.value_hypothesis_packet_runner, false);
+});
+
+test("valid Blueprint handoff from another identity or window cannot bind Measurement Cell assembly", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+  const otherPlan = fullPlan({
+    org_id: "org_other",
+    windows: {
+      ...plan.windows,
+      baseline_window_start: "2025-10-01",
+      baseline_window_end: "2025-10-31"
+    }
+  });
+  const otherDataSpine = readyDataSpine(otherPlan);
+  const wrongHandoff = blueprintOperatorSourceHandoff(otherPlan, otherDataSpine);
+
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    blueprintOperatorSourceHandoff: wrongHandoff,
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: measurementCellInput(plan, dataSpine),
+    runId: "measurement_cell_assembly_support_wrong_blueprint_handoff",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateMeasurementCellAssemblyRun(run);
+
+  assert.equal(wrongHandoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(run.decision, "BLOCKED");
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => /blueprint_operator_source_handoff.*org_id/i.test(gap)));
+  assert.ok(result.gaps.some((gap) => /blueprint_operator_source_handoff.*baseline_window/i.test(gap)));
+  assert.equal(result.feeds.measurement_cell, false);
+  assert.equal(result.feeds.value_hypothesis_packet_runner, false);
+});
+
+test("tampered emitted Measurement Cell Blueprint path cannot refresh validation and pass assembly", () => {
+  const plan = fullPlan();
+  const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    blueprintOperatorSourceHandoff: blueprintHandoff,
+    realDataIntakePacketRun: realDataRun(plan, dataSpine),
+    measurementCellInput: measurementCellInput(plan, dataSpine),
+    runId: "measurement_cell_assembly_support_tampered_cell_path",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const tampered = clone(run);
+  tampered.measurement_cell.blueprint_alignment.expectation_path_id =
+    "expectation_path_resolution_time_spoofed";
+  tampered.measurement_cell.blueprint_alignment.approved_expectation_path.expectation_path_id =
+    "expectation_path_resolution_time_spoofed";
+  tampered.measurement_cell_validation_result = validateMeasurementCell(tampered.measurement_cell);
+
+  const result = validateMeasurementCellAssemblyRun(tampered);
+
+  assert.equal(tampered.measurement_cell_validation_result.valid, true);
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => /measurement_cell\.blueprint_alignment\.expectation_path_id/i.test(gap)));
+  assert.equal(result.feeds.measurement_cell, false);
+  assert.equal(result.feeds.value_hypothesis_packet_runner, false);
 });
 
 test("ROI, probability, person-level, route, persistence, and UI side doors fail closed", () => {
@@ -744,10 +969,12 @@ test("real-data intake drift across function, cohort, windows, metric, and sourc
 test("stale embedded validation feed objects cannot validate after tampering", () => {
   const plan = fullPlan();
   const dataSpine = readyDataSpine(plan);
+  const blueprintHandoff = blueprintOperatorSourceHandoff(plan, dataSpine);
   const run = buildMeasurementCellAssemblyRun({
     dataSpineReadiness: dataSpine,
     measurementPlan: plan,
     sourcePackageReviewQueue: reviewedSourceQueue(dataSpine),
+    blueprintOperatorSourceHandoff: blueprintHandoff,
     realDataIntakePacketRun: realDataRun(plan, dataSpine),
     measurementCellInput: measurementCellInput(plan, dataSpine),
     runId: "measurement_cell_assembly_support_stale_validation",

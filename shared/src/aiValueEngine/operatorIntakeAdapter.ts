@@ -255,6 +255,7 @@ export interface BuildOperatorIntakeAdapterRunInput {
   measurementPlan: any;
   sourcePackages?: any[];
   scrubbedGleanExports?: any[];
+  blueprintOperatorSourceHandoff?: any | null;
   measurementCellInput: any;
   runId?: string;
   generatedAt?: string;
@@ -733,6 +734,7 @@ export function buildOperatorIntakeAdapterRun(
     dataSpineReadiness,
     measurementPlan: input.measurementPlan,
     sourcePackageReviewQueue,
+    blueprintOperatorSourceHandoff: input.blueprintOperatorSourceHandoff ?? null,
     realDataIntakePacketRun: realDataRun,
     measurementCellInput: input.measurementCellInput,
     runId: `${baseRunId(input)}_measurement_cell_assembly`,

@@ -798,6 +798,7 @@ test("operator intake adapter accepts approved Blueprint source handoff without 
   const input = baseOperatorInput({
     sources,
     sourcePackages: matchingSourcePackages(plan, sources),
+    blueprintOperatorSourceHandoff: handoff,
     measurementCellInput: measurementCellInput(plan, sources, {
       blueprintAlignment: handoff.blueprint_alignment_context
     }),
@@ -820,6 +821,10 @@ test("operator intake adapter accepts approved Blueprint source handoff without 
   assert.equal(handoff.blueprint_alignment_context.expected_metric_id, plan.metric_selection.primary_metric.metric_id);
   assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
   assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(
+    run.measurement_cell_assembly_run.blueprint_operator_source_handoff.run_id,
+    handoff.run_id
+  );
   assert.equal(run.data_spine_readiness.source_readiness.blueprint.source_ref, draft.data_spine_source.source_ref);
   assert.equal(run.source_package_review_queue.lanes.find((lane) => lane.lane_key === "blueprint").data_spine_review_clear, true);
   assert.equal(run.feeds.measurement_cell_assembly_run, true);

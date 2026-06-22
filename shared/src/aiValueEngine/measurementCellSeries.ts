@@ -458,6 +458,12 @@ function metricIdOf(run: any): string | null {
     null;
 }
 
+function expectationPathIdOf(run: any): string | null {
+  return run?.measurement_cell?.blueprint_alignment?.expectation_path_id ??
+    run?.measurement_cell_input?.blueprintAlignment?.expectation_path_id ??
+    null;
+}
+
 function windowOf(run: any): any {
   return run?.measurement_cell?.time_window ??
     run?.measurement_cell_input?.timeWindow ??
@@ -554,6 +560,7 @@ function windowRecord(
       cohort_key: null,
       measurement_plan_id: null,
       metric_id: null,
+      expectation_path_id: null,
       window: null,
       source_refs: {
         blueprint_source_ref: null,
@@ -602,6 +609,7 @@ function windowRecord(
     cohort_key: run?.cohort_key ?? cell?.cohort_key ?? null,
     measurement_plan_id: run?.measurement_plan_id ?? null,
     metric_id: metricIdOf(run),
+    expectation_path_id: expectationPathIdOf(run),
     window: {
       time_window_id: windowOf(run)?.time_window_id ?? null,
       window_mode: windowOf(run)?.window_mode ?? "milestone",
@@ -669,6 +677,7 @@ function repeatedRefsFromWindows(windows: any[]): any[] {
       cohort_key: window.cohort_key ?? null,
       measurement_plan_id: window.measurement_plan_id ?? null,
       metric_id: window.metric_id ?? null,
+      expectation_path_id: window.expectation_path_id ?? null,
       window: deepClone(window.window ?? null),
       source_refs: deepClone(window.source_refs ?? null),
       assembly_decision: window.assembly_decision ?? null,
@@ -746,6 +755,17 @@ function identityAndMetricGaps(series: any, windows: any[]): string[] {
   );
   if (metricIds.length > 1) {
     gaps.push("metric_id must remain aligned across Measurement Cell windows");
+  }
+  const expectationPathIds = uniqueStrings(
+    windows
+      .filter((window) => window.status !== "missing")
+      .map((window) => String(window.expectation_path_id ?? ""))
+  );
+  if (expectationPathIds.some((pathId) => pathId.length === 0)) {
+    gaps.push("expectation_path_id is required for each non-missing Measurement Cell window");
+  }
+  if (expectationPathIds.length > 1) {
+    gaps.push("expectation_path_id must remain aligned across Measurement Cell windows");
   }
   return gaps;
 }
@@ -847,6 +867,7 @@ function continuityManifest(windows: any[]): any {
       measurement_cell_assembly_run_id:
         window.measurement_cell_assembly_run_id ?? null,
       measurement_cell_id: window.measurement_cell_id ?? null,
+      expectation_path_id: window.expectation_path_id ?? null,
       assembly_decision: window.assembly_decision ?? null,
       assembly_validation_valid: window.assembly_validation_valid === true,
       missing_evidence: stringsOf(window.missing_evidence),
@@ -887,6 +908,11 @@ function alignmentManifest(series: any, windows: any[]): any {
       .filter((window) => window.status !== "missing")
       .map((window) => String(window.metric_id ?? ""))
   );
+  const expectationPathIds = uniqueStrings(
+    windows
+      .filter((window) => window.status !== "missing")
+      .map((window) => String(window.expectation_path_id ?? ""))
+  );
   return {
     aligned: drift.length === 0,
     identity: {
@@ -897,6 +923,10 @@ function alignmentManifest(series: any, windows: any[]): any {
       cohort_key: series?.cohort_key ?? null
     },
     metric_id: metricIds.length === 1 ? metricIds[0] : null,
+    expectation_path_id:
+      expectationPathIds.length === 1 && expectationPathIds[0] !== ""
+        ? expectationPathIds[0]
+        : null,
     source_ref_lanes: [
       "blueprint_source_ref",
       "ai_fluency_source_ref",

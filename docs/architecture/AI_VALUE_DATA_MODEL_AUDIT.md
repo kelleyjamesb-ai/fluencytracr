@@ -1,13 +1,16 @@
 # AI Value Data Model Audit
 
-Status: planning audit only
+Status: historical planning audit only; superseded for current persistence
+authority by `docs/architecture/AI_VALUE_PERSISTENCE_DESIGN.md` and for the
+approved expectation-path data-model pass by
+`docs/architecture/AI_VALUE_LOGICAL_DATA_MODEL.md`.
 
 Phase: `phase-ai-value-data-model-audit`
 
 This document does not create migrations, routes, schemas, ingestion, UI, or
-governance changes. It audits the current AI Value Platform state and proposes
-the minimum durable product-state model needed before additional framework or
-readout work continues.
+governance changes. It audited the AI Value Platform state at the time it was
+written. Treat proposed durable-state language here as historical planning
+context unless a later current authority document re-promotes that exact scope.
 
 ## 1. Purpose
 

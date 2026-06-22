@@ -233,6 +233,10 @@ Validation posture:
 - `selected_metric_id` must match the selected path metric.
 - selected direction and lag must match the approved path.
 - `source_ref` must be safe and must align to the Blueprint source handoff.
+- selected path lineage must be proven by a validated Blueprint Operator Source
+  Handoff before Measurement Cell Assembly can emit a cell.
+- emitted `measurement_cell.blueprint_alignment` lineage must match the
+  validated handoff, not only the original Measurement Cell input.
 - full `approved_expectation_paths` arrays are blocked downstream.
 
 Persistence posture:
@@ -394,13 +398,13 @@ Fail-first rule:
 - Day 60 with the same metric but a different `expectation_path_id` must block
   continuity rather than appear as a continuous series.
 
-Current contract gap:
+Contract hardening status:
 
-- The logical model requires `expectation_path_id` alignment, but the current
-  Measurement Cell Series contract and validator do not yet carry that field.
-  Physical modeling is blocked until the Series contract and validator either
-  add `expectation_path_id` alignment or explicitly reject duplicate metric
-  usage across approved paths.
+- Measurement Cell Series now carries `expectation_path_id` in compact window
+  refs, repeated Measurement Cell refs, and the alignment manifest. Physical
+  modeling is still blocked until the broader data-model readiness gate clears,
+  but same-metric / different-path continuity drift is now a contract-level
+  block.
 
 Persistence posture:
 
@@ -554,11 +558,12 @@ The repo is not ready for physical data-model work until these are true:
 1. Prior Blueprint approved-expectation-path implementation work is committed
    or otherwise isolated from the next branch.
 2. `AI_VALUE_BLUEPRINT_CONTRACT_CROSSWALK.md` is reconciled with
-   `AI_VALUE_PERSISTENCE_DESIGN.md`.
+   `AI_VALUE_PERSISTENCE_DESIGN.md` without promoting new persistence in this
+   pass.
 3. Measurement Cell Series alignment includes `expectation_path_id`, or the
    contract rejects duplicate metric usage across approved paths.
 4. Measurement Cell Assembly proves the selected path came from the approved
-   Blueprint handoff registry.
+   Blueprint handoff registry and binds the emitted cell back to that proof.
 5. Future review posture language avoids generic confidence fields and uses
    explicit non-confidence posture.
 6. Future finance fields use a held route such as `financial_review_route`
@@ -592,15 +597,20 @@ Do not add:
 
 ## 9. Recommended Next Slice
 
-The next safe slice is docs and contract reconciliation, not physical storage:
+This pass closes the contract-level lineage prerequisites for selected
+Blueprint expectation paths:
 
-1. Update the Blueprint crosswalk so persistence status matches the current
-   backend-only snapshot authority.
-2. Harden Measurement Cell Series contract language so `expectation_path_id` is
-   an alignment key.
-3. Harden Measurement Cell Assembly contract language so selected-path spoofing
-   fails closed.
-4. Add or update focused negative tests in the already-modified implementation
-   slice before any persistence design turns physical.
+1. The crosswalk points to existing persistence authority without promoting new
+   persistence here.
+2. Measurement Cell Series treats `expectation_path_id` as an alignment key.
+3. Measurement Cell Assembly requires validated Blueprint handoff proof for
+   selected-path context and rejects emitted-cell path tampering.
+4. Negative tests cover missing proof, wrong proof, same-metric path drift, and
+   stale embedded validation.
 
-Only after those four steps should the physical data-model pass begin.
+The next safe slice is a separate physical data-model readiness review. That
+review should decide whether existing backend-only persistence is sufficient or
+whether a promoted Measurement Cell / Series persistence design is needed. It
+must still avoid UI, routes, schemas, migrations, live execution, confidence
+math, ROI, causality, productivity, probability, and customer-facing financial
+output until explicitly authorized.

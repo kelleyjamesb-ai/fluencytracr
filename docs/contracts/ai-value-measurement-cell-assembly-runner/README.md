@@ -16,6 +16,7 @@ create a second measurement object.
 ```text
 Data Spine Readiness
 -> Source Package Review Queue
+-> Blueprint Operator Source Handoff path proof when selected path context is present
 -> Measurement Plan
 -> optional Real Data Intake Packet Run
 -> Measurement Cell Assembly Runner
@@ -34,6 +35,8 @@ Required:
 Optional:
 
 - `sourcePackageReviewQueue`
+- `blueprintOperatorSourceHandoff` unless selected Blueprint expectation-path
+  context is present
 - `realDataIntakePacketRun`
 - `runId`
 - `generatedAt`
@@ -47,6 +50,16 @@ closed as `BLOCKED`.
 If a Real Data Intake Packet Run is supplied, it must validate and feed
 Measurement Cell input. Held or invalid real-data intake cannot be used as a
 shortcut into assembly.
+
+If `measurementCellInput.blueprintAlignment` carries selected
+`expectation_path_id` or `approved_expectation_path` context, a Blueprint
+Operator Source Handoff is required. It must validate, be
+`READY_FOR_OPERATOR_INTAKE`, and bind to the same org, client, workflow,
+function, cohort, baseline/comparison windows, Blueprint source ref, selected
+metric, selected `expectation_path_id`, and selected approved path before
+assembly can proceed. The runner uses the handoff only as compact selected-path
+proof. The full approved expectation-path registry must not be copied into the
+Measurement Cell.
 
 The Measurement Plan is required for a ready handoff. The runner binds the
 assembled cell to the selected workflow, function, primary metric, and
@@ -66,8 +79,9 @@ baseline/comparison windows in that plan.
   intake packet is held and cannot feed Measurement Cell assembly.
 - `HELD_FOR_MEASUREMENT_CELL`: source binding cleared but the Measurement Cell
   itself does not validate.
-- `BLOCKED`: source identity, source refs, windows, unsafe fields, or nested
-  validation fail closed.
+- `BLOCKED`: source identity, source refs, windows, unsafe fields, missing
+  required Blueprint path proof, selected Blueprint expectation-path spoofing,
+  or nested validation fail closed.
 
 ## Alignment Rules
 
@@ -103,6 +117,15 @@ When a Source Package Review Queue is supplied, it must bind back to the same
 Data Spine readiness id, org, client, workflow family, function, cohort, and
 baseline/comparison windows. The runner recomputes queue validation and does
 not trust embedded queue validation results as proof.
+
+When selected Blueprint expectation-path context is present, the Blueprint
+Operator Source Handoff must bind the same Blueprint source ref, selected
+`expectation_path_id`, selected approved path, selected metric, org, client,
+workflow, function, cohort, and baseline/comparison windows used by Data Spine
+and `measurementCellInput.blueprintAlignment`. The emitted
+`measurement_cell.blueprint_alignment` path must also match the handoff. The
+handoff and embedded Measurement Cell validation result are both recomputed;
+embedded validation results are not trusted as proof.
 
 The runner recomputes nested validations during validation and compares the
 embedded validation objects against the recomputed results. Embedded validation
