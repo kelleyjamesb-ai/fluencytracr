@@ -49,6 +49,23 @@ All inputs must be already-parsed aggregate-safe structured objects. The
 adapter does not parse files, read Google Sheets, run BigQuery, or inspect raw
 customer exports.
 
+For the AI Fluency source lane, the recommended upstream bridge is the
+AI Fluency Operator Source Handoff:
+
+```text
+AI Fluency Aggregate Export Parser
+-> AI Fluency Dashboard Import Runner
+-> AI Fluency Operator Source Handoff
+-> Operator Intake Adapter
+```
+
+That handoff can provide the `sources.aiFluency` operator source, the
+operator-provided `measurementCellInput.aiFluencyContext` fragment, and the
+layer-2 `source_refs.aggregate_export_id` reference for Source Package review.
+It remains a source-preparation object only; it does not validate Measurement
+Cells, feed finance-context investigation, feed a confidence model, or create
+customer-facing financial output.
+
 ## Decisions
 
 - `READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION`: Data Spine, Source Package

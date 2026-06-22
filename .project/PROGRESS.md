@@ -2,6 +2,25 @@
 
 ## Last Completed
 
+- AI Fluency Operator Source Handoff slice (user-requested, 2026-06-21):
+  added the governed bridge from a validated aggregate AI Fluency parser run
+  and Dashboard Import Runner output into the Operator Intake Adapter source
+  lane. The handoff emits the `sources.aiFluency` operator source, an
+  aligned AI Fluency Measurement Cell context fragment, and the layer-2 Source
+  Package `aggregate_export_id` reference while keeping direct Measurement
+  Cell feed, finance-context investigation, confidence model, probabilities,
+  ROI/EBITA/EBITDA, causality, productivity, person-level output, ranking, UI,
+  routes, persistence, schemas, migrations, live Google Sheets, and BigQuery
+  execution blocked. It also fails closed on parser/dashboard invalidity,
+  suppressed dashboard rows, source-ref drift, unsafe fields, unsafe
+  identifier values, and context/source alignment drift. Verification:
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-ai-fluency-aggregate-export-parser`;
+  `npm run test:ai-value-ai-fluency-dashboard-import-runner`;
+  `npm run test:ai-value-ai-fluency-client-import`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Value Operator Evidence Package Runner slice (user-requested, 2026-06-21):
   added the governed package runner that composes already-parsed aggregate
   window inputs into Operator Intake Adapter runs, an Operator Time-Series Run,

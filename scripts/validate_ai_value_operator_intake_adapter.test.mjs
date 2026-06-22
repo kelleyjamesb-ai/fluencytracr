@@ -4,13 +4,54 @@ import test from "node:test";
 
 import {
   AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION,
+  buildAIFluencyAggregateExportParseRun,
+  buildAIFluencyDashboardImportRun,
+  buildAIFluencyOperatorSourceHandoff,
   buildOperatorIntakeAdapterRun,
+  validateAIFluencyAggregateExportParseRun,
+  validateAIFluencyDashboardImportRun,
+  validateAIFluencyOperatorSourceHandoff,
   validateMeasurementCellAssemblyRun,
   validateOperatorIntakeAdapterRun
 } from "../shared/dist/aiValueEngine/index.js";
 
 const CONTRACTS = "docs/contracts";
 const SOURCE_PACKAGE_EXAMPLES = "docs/contracts/ai-value-source-packages/examples";
+const AI_FLUENCY_CSV_HEADERS = [
+  "client_id",
+  "org_id",
+  "instrument_id",
+  "instrument_version",
+  "collection_mode",
+  "dashboard_export_id",
+  "baseline_window_start",
+  "baseline_window_end",
+  "comparison_window_start",
+  "comparison_window_end",
+  "function_area",
+  "workflow_family",
+  "cohort_key",
+  "eligible_population_count",
+  "response_count",
+  "response_rate",
+  "suppression_state",
+  "k_min_posture",
+  "overall_ai_fluency_score",
+  "confidence_score",
+  "usage_quality_score",
+  "behavior_change_score",
+  "leadership_reinforcement_score",
+  "capability_growth_score",
+  "baseline_overall_ai_fluency_score",
+  "comparison_overall_ai_fluency_score",
+  "movement_delta",
+  "movement_direction",
+  "source_ref",
+  "source_owner_role",
+  "owner_approval_state",
+  "review_state",
+  "caveats"
+];
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -79,6 +120,71 @@ function source(plan, overrides = {}) {
     aggregate_only: true,
     ...overrides
   };
+}
+
+function csvValue(value) {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function aiFluencyAggregateRecord(plan, overrides = {}) {
+  const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  return {
+    client_id: "client_example",
+    org_id: plan.org_id,
+    instrument_id: "ai-fluency-instrument-24",
+    instrument_version: "2.3",
+    collection_mode: "aggregated_dashboard_export",
+    dashboard_export_id: "ai_fluency_operator_dashboard_export_day_30",
+    baseline_window_start: baselineWindow.window_start,
+    baseline_window_end: baselineWindow.window_end,
+    comparison_window_start: comparisonWindow.window_start,
+    comparison_window_end: comparisonWindow.window_end,
+    function_area: plan.workflow_scope.function_area,
+    workflow_family: plan.workflow_scope.workflow_family,
+    cohort_key: "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+    eligible_population_count: 2300,
+    response_count: 126,
+    response_rate: 0.55,
+    suppression_state: "none",
+    k_min_posture: "k_min_20_function_level",
+    overall_ai_fluency_score: 72,
+    confidence_score: 74,
+    usage_quality_score: 70,
+    behavior_change_score: 68,
+    leadership_reinforcement_score: 71,
+    capability_growth_score: 77,
+    baseline_overall_ai_fluency_score: 59,
+    comparison_overall_ai_fluency_score: 72,
+    movement_delta: 13,
+    movement_direction: "improved",
+    source_ref: "ai_fluency_support_day_30_parser_run",
+    source_owner_role: "source_owner",
+    owner_approval_state: "approved",
+    review_state: "approved_for_import",
+    caveats:
+      "Already-exported aggregate AI Fluency readiness row. Movement is descriptive readiness context only.",
+    ...overrides
+  };
+}
+
+function aiFluencyCsvText(records) {
+  return [
+    AI_FLUENCY_CSV_HEADERS.join(","),
+    ...records.map((record) =>
+      AI_FLUENCY_CSV_HEADERS.map((header) => csvValue(record[header])).join(",")
+    )
+  ].join("\n");
+}
+
+function parseRunFromAIFluencyRecords(records, parseId) {
+  return buildAIFluencyAggregateExportParseRun({
+    sourceType: "csv",
+    sourceText: aiFluencyCsvText(records),
+    parseId,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
 }
 
 function operatorSources(plan = fullPlan(), overrides = {}) {
@@ -416,6 +522,224 @@ test("operator intake adapter composes approved aggregate source inputs into a v
   assert.equal(run.feeds.value_hypothesis_packet_runner, false);
   assert.equal(run.feeds.finance_context_investigation, false);
   assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter accepts approved AI Fluency parser-run context through dashboard import boundary", () => {
+  const plan = fullPlan();
+  const record = aiFluencyAggregateRecord(plan);
+  const parseRun = parseRunFromAIFluencyRecords(
+    [record],
+    "ai_fluency_aggregate_export_parse_operator_day_30"
+  );
+  const parseValidation = validateAIFluencyAggregateExportParseRun(parseRun);
+  const dashboardRun = buildAIFluencyDashboardImportRun({
+    dashboardExport: parseRun.dashboard_export,
+    runId: "ai_fluency_dashboard_import_operator_day_30",
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const dashboardValidation = validateAIFluencyDashboardImportRun(dashboardRun);
+  const handoff = buildAIFluencyOperatorSourceHandoff({
+    parseRun,
+    dashboardImportRun: dashboardRun,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoffValidation = validateAIFluencyOperatorSourceHandoff(handoff);
+  const sources = operatorSources(plan, { aiFluency: handoff.operator_source });
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages: matchingSourcePackages(plan, sources),
+    measurementCellInput: measurementCellInput(plan, sources, {
+      aiFluencyContext: handoff.ai_fluency_context
+    }),
+    runId: "operator_intake_adapter_run_parser_imported_ai_fluency"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(parseValidation.valid, true, parseValidation.gaps.join("; "));
+  assert.equal(parseValidation.feeds.dashboard_import_runner, true);
+  assert.equal(dashboardValidation.valid, true, dashboardValidation.gaps.join("; "));
+  assert.equal(dashboardValidation.feeds.data_spine_ai_fluency_sources, true);
+  assert.equal(handoffValidation.valid, true, handoffValidation.gaps.join("; "));
+  assert.equal(handoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(handoff.feeds.operator_intake_source, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.ai_fluency_context.org_id, plan.org_id);
+  assert.equal(handoff.ai_fluency_context.client_id, record.client_id);
+  assert.equal(handoff.ai_fluency_context.workflow_family, plan.workflow_scope.workflow_family);
+  assert.equal(handoff.ai_fluency_context.function_area, plan.workflow_scope.function_area);
+  assert.equal(handoff.ai_fluency_context.cohort_key, record.cohort_key);
+  assert.deepEqual(handoff.ai_fluency_context.baseline_window, {
+    window_start: record.baseline_window_start,
+    window_end: record.baseline_window_end
+  });
+  assert.deepEqual(handoff.ai_fluency_context.comparison_window, {
+    window_start: record.comparison_window_start,
+    window_end: record.comparison_window_end
+  });
+  assert.equal(handoff.ai_fluency_context.owner_approval_state, "approved");
+  assert.equal(handoff.ai_fluency_context.source_review_state, "clear");
+  assert.equal(dashboardRun.feedable_data_spine_sources.length, 1);
+  assert.equal(sources.aiFluency.owner_role, "source_owner");
+  assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.data_spine_readiness.source_readiness.ai_fluency.source_ref, record.source_ref);
+  assert.equal(run.source_package_review_queue.queue_state, "DATA_SPINE_REVIEW_READY");
+  assert.equal(run.feeds.measurement_cell_assembly_run, true);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("AI Fluency operator source handoff fails closed when context alignment drifts", () => {
+  const plan = fullPlan();
+  const record = aiFluencyAggregateRecord(plan);
+  const parseRun = parseRunFromAIFluencyRecords(
+    [record],
+    "ai_fluency_aggregate_export_parse_operator_drift"
+  );
+  const dashboardRun = buildAIFluencyDashboardImportRun({
+    dashboardExport: parseRun.dashboard_export,
+    runId: "ai_fluency_dashboard_import_operator_drift",
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoff = buildAIFluencyOperatorSourceHandoff({
+    parseRun,
+    dashboardImportRun: dashboardRun,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const drifted = clone(handoff);
+  drifted.ai_fluency_context.function_area = "Marketing";
+
+  const result = validateAIFluencyOperatorSourceHandoff(drifted);
+
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.includes("ai_fluency_context.function_area must match operator_source.function_area")
+  );
+  assert.equal(result.feeds.operator_intake_source, false);
+  assert.equal(result.feeds.measurement_cell_context_fragment, false);
+  assert.equal(result.feeds.finance_context_investigation, false);
+  assert.equal(result.feeds.confidence_model, false);
+  assert.equal(result.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter blocks suppressed AI Fluency parser runs from feeding operator intake", () => {
+  const plan = fullPlan();
+  const record = aiFluencyAggregateRecord(plan, {
+    response_count: 18,
+    response_rate: 0.04,
+    suppression_state: "suppressed_low_n",
+    overall_ai_fluency_score: "",
+    confidence_score: "",
+    usage_quality_score: "",
+    behavior_change_score: "",
+    leadership_reinforcement_score: "",
+    capability_growth_score: "",
+    baseline_overall_ai_fluency_score: "",
+    comparison_overall_ai_fluency_score: "",
+    movement_delta: "",
+    movement_direction: "held",
+    source_ref: "ai_fluency_support_day_30_suppressed_parser_run",
+    review_state: "held_suppressed_low_n",
+    caveats: "Suppressed because response_count is below the dashboard import gate."
+  });
+  const parseRun = parseRunFromAIFluencyRecords(
+    [record],
+    "ai_fluency_aggregate_export_parse_operator_suppressed_day_30"
+  );
+  const parseValidation = validateAIFluencyAggregateExportParseRun(parseRun);
+  const dashboardRun = buildAIFluencyDashboardImportRun({
+    dashboardExport: parseRun.dashboard_export,
+    runId: "ai_fluency_dashboard_import_operator_suppressed_day_30",
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const dashboardValidation = validateAIFluencyDashboardImportRun(dashboardRun);
+  const handoff = buildAIFluencyOperatorSourceHandoff({
+    parseRun,
+    dashboardImportRun: dashboardRun,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoffValidation = validateAIFluencyOperatorSourceHandoff(handoff);
+  const sources = operatorSources(plan, {
+    aiFluency: source(plan, {
+      state: "suppressed",
+      intake_mode: "ai_fluency_dashboard_export",
+      source_ref: null,
+      owner_role: record.source_owner_role,
+      owner_approval_state: "approved",
+      review_state: "suppressed",
+      aggregate_only: true
+    })
+  });
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages: matchingSourcePackages(plan, sources),
+    measurementCellInput: measurementCellInput(plan, sources, {
+      aiFluencyContext: {
+        evidence_state: "suppressed",
+        source_ref: null,
+        response_count: record.response_count,
+        suppression_state: "SUPPRESSED"
+      }
+    }),
+    runId: "operator_intake_adapter_run_suppressed_parser_import"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(parseValidation.valid, true, parseValidation.gaps.join("; "));
+  assert.equal(parseValidation.feeds.dashboard_import_runner, true);
+  assert.equal(dashboardValidation.valid, true, dashboardValidation.gaps.join("; "));
+  assert.equal(dashboardValidation.feeds.data_spine_ai_fluency_sources, false);
+  assert.equal(handoffValidation.valid, true, handoffValidation.gaps.join("; "));
+  assert.equal(handoff.decision, "HELD_NO_FEEDABLE_AI_FLUENCY_SOURCE");
+  assert.equal(handoff.feeds.operator_intake_source, false);
+  assert.equal(handoff.feeds.measurement_cell_context_fragment, false);
+  assert.equal(dashboardRun.summary.suppressed_count, 1);
+  assert.equal(dashboardRun.feedable_data_spine_sources.length, 0);
+  assert.equal(run.decision, "HELD_FOR_DATA_SPINE");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.ok(run.missing_evidence.includes("AI_FLUENCY_AGGREGATE_REQUIRED"));
+  assert.equal(run.feeds.measurement_cell_assembly_run, false);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter blocks invalid AI Fluency parser runs before operator source handoff", () => {
+  const plan = fullPlan();
+  const record = aiFluencyAggregateRecord(plan, {
+    org_id: "",
+    source_ref: "ai_fluency_support_day_30_missing_org"
+  });
+  const parseRun = parseRunFromAIFluencyRecords(
+    [record],
+    "ai_fluency_aggregate_export_parse_operator_invalid_day_30"
+  );
+  const dashboardRun = buildAIFluencyDashboardImportRun({
+    dashboardExport: parseRun.dashboard_export,
+    runId: "ai_fluency_dashboard_import_operator_invalid_day_30",
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoff = buildAIFluencyOperatorSourceHandoff({
+    parseRun,
+    dashboardImportRun: dashboardRun,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoffValidation = validateAIFluencyOperatorSourceHandoff(handoff);
+
+  assert.equal(validateAIFluencyAggregateExportParseRun(parseRun).valid, false);
+  assert.equal(handoff.decision, "BLOCKED");
+  assert.equal(handoffValidation.valid, false);
+  assert.equal(handoff.operator_source, null);
+  assert.equal(handoff.ai_fluency_context, null);
+  assert.equal(handoff.feeds.operator_intake_source, false);
+  assert.equal(handoff.feeds.measurement_cell_context_fragment, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
 });
 
 test("operator intake adapter holds when reviewed source packages are missing", () => {

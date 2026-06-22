@@ -243,6 +243,16 @@ export type {
 } from "./aiFluencyAggregateExportParser";
 
 export {
+  AI_VALUE_AI_FLUENCY_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildAIFluencyOperatorSourceHandoff,
+  validateAIFluencyOperatorSourceHandoff
+} from "./aiFluencyOperatorSourceHandoff";
+export type {
+  AIFluencyOperatorSourceHandoffValidationResult,
+  BuildAIFluencyOperatorSourceHandoffInput
+} from "./aiFluencyOperatorSourceHandoff";
+
+export {
   AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
   buildVbdTokenAggregateIntake,
   validateVbdTokenAggregateIntake
