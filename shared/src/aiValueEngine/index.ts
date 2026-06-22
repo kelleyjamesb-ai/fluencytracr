@@ -208,6 +208,16 @@ export type {
 } from "./blueprintExtractionDraft";
 
 export {
+  AI_VALUE_BLUEPRINT_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildBlueprintOperatorSourceHandoff,
+  validateBlueprintOperatorSourceHandoff
+} from "./blueprintOperatorSourceHandoff";
+export type {
+  BlueprintOperatorSourceHandoffValidationResult,
+  BuildBlueprintOperatorSourceHandoffInput
+} from "./blueprintOperatorSourceHandoff";
+
+export {
   AI_VALUE_AI_FLUENCY_CLIENT_IMPORT_SCHEMA_VERSION,
   buildAIFluencyClientImport,
   validateAIFluencyClientImport

@@ -7,10 +7,13 @@ import {
   buildAIFluencyAggregateExportParseRun,
   buildAIFluencyDashboardImportRun,
   buildAIFluencyOperatorSourceHandoff,
+  buildBlueprintExtractionDraft,
+  buildBlueprintOperatorSourceHandoff,
   buildOperatorIntakeAdapterRun,
   validateAIFluencyAggregateExportParseRun,
   validateAIFluencyDashboardImportRun,
   validateAIFluencyOperatorSourceHandoff,
+  validateBlueprintOperatorSourceHandoff,
   validateMeasurementCellAssemblyRun,
   validateOperatorIntakeAdapterRun
 } from "../shared/dist/aiValueEngine/index.js";
@@ -165,6 +168,83 @@ function aiFluencyAggregateRecord(plan, overrides = {}) {
     review_state: "approved_for_import",
     caveats:
       "Already-exported aggregate AI Fluency readiness row. Movement is descriptive readiness context only.",
+    ...overrides
+  };
+}
+
+function blueprintExtractionInput(plan, overrides = {}) {
+  const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  return {
+    draftId: "blueprint_extraction_draft_support_approved_operator",
+    orgId: plan.org_id,
+    clientId: "client_example",
+    documentSourceRef: "blueprint_upload_doc_ref_support_001",
+    extractionState: "parsed",
+    approvalState: "approved",
+    ownerRole: plan.value_hypothesis.owner_role,
+    approverRole: "customer_business_owner",
+    workflowFamily: plan.workflow_scope.workflow_family,
+    workflowName: "Customer support case resolution",
+    functionArea: plan.workflow_scope.function_area,
+    cohortKey: "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+    valueHypothesis: plan.value_hypothesis.hypothesis_statement,
+    valueRoute: "CAPACITY_CREATION",
+    baselineWindow,
+    comparisonWindow,
+    metricCandidates: [
+      {
+        metric_id: plan.metric_selection.primary_metric.metric_id,
+        metric_name: plan.metric_selection.primary_metric.metric_name,
+        expected_direction: "decrease"
+      }
+    ],
+    assumptions: [
+      {
+        assumption_id: "case_mix_stability",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "volume_context",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "staffing_and_coverage_context",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "channel_mix_context",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "process_or_policy_context",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "knowledge_base_context",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "metric_definition_stability",
+        owner: "support_ops_owner",
+        state: "submitted"
+      },
+      {
+        assumption_id: "ai_rollout_context",
+        owner: "support_ops_owner",
+        state: "submitted"
+      }
+    ],
+    sourceRefs: {
+      document_source_ref: "blueprint_upload_doc_ref_support_001",
+      extraction_run_ref: "blueprint_extraction_run_support_001"
+    },
+    generatedAt: "2026-06-21T00:00:00.000Z",
     ...overrides
   };
 }
@@ -591,6 +671,48 @@ test("operator intake adapter accepts approved AI Fluency parser-run context thr
   assert.equal(result.valid, true, result.gaps.join("; "));
   assert.equal(run.data_spine_readiness.source_readiness.ai_fluency.source_ref, record.source_ref);
   assert.equal(run.source_package_review_queue.queue_state, "DATA_SPINE_REVIEW_READY");
+  assert.equal(run.feeds.measurement_cell_assembly_run, true);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter accepts approved Blueprint source handoff without bypassing Measurement Cell governance", () => {
+  const plan = fullPlan();
+  const draft = buildBlueprintExtractionDraft(blueprintExtractionInput(plan));
+  const handoff = buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoffValidation = validateBlueprintOperatorSourceHandoff(handoff);
+  const sources = operatorSources(plan, { blueprint: handoff.operator_source });
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages: matchingSourcePackages(plan, sources),
+    measurementCellInput: measurementCellInput(plan, sources, {
+      blueprintAlignment: handoff.blueprint_alignment_context
+    }),
+    runId: "operator_intake_adapter_run_blueprint_source_handoff"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(handoffValidation.valid, true, handoffValidation.gaps.join("; "));
+  assert.equal(handoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(handoff.feeds.operator_intake_source, true);
+  assert.equal(handoff.feeds.measurement_cell_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
+  assert.equal(handoff.operator_source.owner_role, plan.value_hypothesis.owner_role);
+  assert.equal(handoff.blueprint_alignment_context.source_ref, handoff.operator_source.source_ref);
+  assert.equal(handoff.blueprint_alignment_context.expected_metric_id, plan.metric_selection.primary_metric.metric_id);
+  assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.data_spine_readiness.source_readiness.blueprint.source_ref, draft.data_spine_source.source_ref);
+  assert.equal(run.source_package_review_queue.lanes.find((lane) => lane.lane_key === "blueprint").data_spine_review_clear, true);
   assert.equal(run.feeds.measurement_cell_assembly_run, true);
   assert.equal(run.feeds.finance_context_investigation, false);
   assert.equal(run.feeds.confidence_model, false);
