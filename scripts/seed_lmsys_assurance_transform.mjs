@@ -1225,6 +1225,97 @@ export function buildAssuranceCases(options = {}) {
       expectedVelocityIndex: 1.1
     }),
     {
+      id: "operator_time_series_governed_references",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-operator-time-series`,
+      operator_time_series_manifest: {
+        source_contract:
+          "docs/contracts/ai-value-operator-time-series-run/README.md",
+        aggregate_only: true,
+        metadata_only_run_references: true,
+        required_milestone_days: [0, 30, 60, 90, 180, 365],
+        rolling_30_day_context_only: true,
+        child_operator_runs_revalidated: true,
+        source_reference_reconciliation_required: true,
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false,
+        person_level_fields_included: false
+      },
+      expected: {
+        operator_time_series: "CONTRACT_ONLY",
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false
+      },
+      events: []
+    },
+    {
+      id: "operator_workflow_internal_review",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-operator-workflow`,
+      operator_workflow_manifest: {
+        source_contract:
+          "docs/contracts/ai-value-operator-workflow/README.md",
+        aggregate_only: true,
+        internal_operator_review_only: true,
+        child_objects_revalidated: true,
+        source_review_status_required: true,
+        measurement_cell_status_required: true,
+        time_series_status_required: true,
+        packet_preparation_status_required: true,
+        emits_missing_evidence: true,
+        emits_review_queue: true,
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false,
+        person_level_fields_included: false,
+        creates_backend_routes: false,
+        creates_frontend_ui: false,
+        persists_source_data: false
+      },
+      expected: {
+        operator_workflow: "CONTRACT_ONLY",
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false
+      },
+      events: []
+    },
+    {
+      id: "operator_evidence_package_runner",
+      org_id: orgId,
+      workflow_id: `${workflowPrefix}-operator-evidence-package`,
+      operator_evidence_package_manifest: {
+        source_contract:
+          "docs/contracts/ai-value-operator-evidence-package-runner/README.md",
+        aggregate_only: true,
+        internal_operator_review_only: true,
+        composes_operator_intake_runs: true,
+        composes_operator_time_series_run: true,
+        composes_operator_workflow: true,
+        child_objects_revalidated: true,
+        stale_validation_rejected: true,
+        required_milestone_days: [0, 30, 60, 90, 180, 365],
+        rolling_30_day_context_only: true,
+        assumptions_cannot_substitute_for_evidence: true,
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false,
+        person_level_fields_included: false,
+        creates_backend_routes: false,
+        creates_frontend_ui: false,
+        persists_source_data: false
+      },
+      expected: {
+        operator_evidence_package: "CONTRACT_ONLY",
+        confidence_model_feed: false,
+        finance_context_investigation_feed: false,
+        customer_facing_financial_output: false
+      },
+      events: []
+    },
+    {
       id: "duplicate_execution_ids_across_orgs",
       org_id: "lmsys-org-tenant-a",
       workflow_id: `${workflowPrefix}-shared-model`,

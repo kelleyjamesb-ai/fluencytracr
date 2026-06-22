@@ -146,6 +146,35 @@ test("dashboard client import with twenty usable respondents can feed Data Spine
   assert.equal(result.feeds.data_spine_ai_fluency_source, true);
 });
 
+test("blank construct means do not become zero-valued aggregate diagnostics", () => {
+  const intake = buildAIFluencyClientImport(
+    baseInput({
+      cohorts: [
+        cohort({
+          cohort_id: "marketing_blank_scores",
+          respondent_count: 20,
+          suppressed: false,
+          construct_scores: {
+            confidence: { mean: null },
+            usage_quality: { mean: null },
+            behavior_change: { mean: null },
+            leadership_reinforcement: { mean: null },
+            capability_growth: { mean: null }
+          }
+        })
+      ]
+    })
+  );
+  const result = validateAIFluencyClientImport(intake);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    Object.hasOwn(intake.aggregate_summary.weighted_construct_means, "confidence"),
+    false
+  );
+  assert.equal(result.feeds.data_spine_ai_fluency_source, false);
+});
+
 test("client or org drift fails closed", () => {
   const intake = buildAIFluencyClientImport(baseInput());
   intake.fluency_baseline.client_id = "client_other";

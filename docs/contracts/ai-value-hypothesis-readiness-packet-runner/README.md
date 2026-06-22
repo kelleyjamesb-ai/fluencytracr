@@ -18,6 +18,8 @@ The runner accepts only:
 - a validated Measurement Plan,
 - a validated Claim Readiness Snapshot,
 - optional selected metric movement context,
+- optional Measurement Cell context,
+- optional Measurement Cell Assembly Run context,
 - optional ROI Bot context as scenario context only,
 - optional packet ids and timestamps.
 
@@ -29,16 +31,26 @@ itself.
 
 Measurement Cell alignment remains optional for `PLANNING_READY`,
 `EVIDENCE_REVIEW_READY`, and `BUSINESS_OWNER_REVIEW_READY` packets. For
-`FINANCE_CONTEXT_INVESTIGATION_READY`, a valid Measurement Cell is mandatory.
+`FINANCE_CONTEXT_INVESTIGATION_READY`, a valid Measurement Cell Assembly Run is
+mandatory. A standalone valid Measurement Cell may support internal review
+context, but it cannot unlock finance-context investigation readiness without
+the assembly validation binding.
 
 When a Measurement Cell is provided, the runner applies it as a fail-closed
 evidence alignment gate before deriving selected metric movement. The runner may
 derive selected metric movement only when the cell is valid, aligned to the
 selected Measurement Plan metric and windows, and is not held or suppressed.
 
-Held, suppressed, invalid, or misaligned cells do not upgrade readiness or fill
-evidence gaps. They are recorded as missing evidence for the selected metric
-movement lane.
+When a Measurement Cell Assembly Run is provided, the runner recomputes assembly
+validation and requires `READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER`,
+`feeds.value_hypothesis_packet_runner === true`, and a source-bound assembly
+binding back to the same Measurement Cell. Finance-context investigation
+readiness also requires the assembly run to feed
+`finance_context_investigation_planning`.
+
+Held, suppressed, invalid, misaligned, or non-assembled cells do not upgrade
+finance-context readiness or fill evidence gaps. They are recorded as missing
+evidence for the selected metric movement or assembly lane.
 
 The Measurement Cell is an evidence alignment gate only. It is not ROI proof, a
 confidence model, causality evidence, productivity measurement, financial

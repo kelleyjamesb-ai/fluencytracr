@@ -120,6 +120,9 @@ assert.deepEqual(ids, [
   "ghost_use_does_not_persist",
   "ghost_use_residual_fires",
   "ghost_use_suppressed_by_ambiguity",
+  "operator_evidence_package_runner",
+  "operator_time_series_governed_references",
+  "operator_workflow_internal_review",
   "outcome_evidence_suppress_with_outcomes",
   "outcome_evidence_surface_no_outcomes",
   "outcome_evidence_surface_with_outcomes",
@@ -133,7 +136,13 @@ assert.deepEqual(ids, [
   "velocity_customer_low",
   "velocity_saturated_calibration_cohort"
 ]);
-assert.ok(cases.every((entry) => Array.isArray(entry.events) || Array.isArray(entry.invalid_payloads)));
+assert.ok(cases.every((entry) =>
+  Array.isArray(entry.events) ||
+  Array.isArray(entry.invalid_payloads) ||
+  entry.operator_time_series_manifest ||
+  entry.operator_evidence_package_manifest ||
+  entry.operator_workflow_manifest
+));
 const dogfoodBqCases = cases.filter((entry) => entry.dogfood_bq_manifest);
 assert.deepEqual(dogfoodBqCases.map((entry) => entry.id).sort(), [
   "dogfood_bq_refused_query_no_partition",
@@ -195,6 +204,88 @@ for (const entry of outcomeEvidenceCases) {
     assert.equal(payload.persona_id, null);
     assert.ok(payload.cohort_size >= 5);
   }
+}
+const operatorTimeSeriesCases = cases.filter((entry) => entry.operator_time_series_manifest);
+assert.deepEqual(operatorTimeSeriesCases.map((entry) => entry.id).sort(), [
+  "operator_time_series_governed_references"
+]);
+for (const entry of operatorTimeSeriesCases) {
+  assert.equal(
+    entry.operator_time_series_manifest.source_contract,
+    "docs/contracts/ai-value-operator-time-series-run/README.md"
+  );
+  assert.equal(entry.operator_time_series_manifest.aggregate_only, true);
+  assert.equal(entry.operator_time_series_manifest.metadata_only_run_references, true);
+  assert.deepEqual(
+    entry.operator_time_series_manifest.required_milestone_days,
+    [0, 30, 60, 90, 180, 365]
+  );
+  assert.equal(entry.operator_time_series_manifest.rolling_30_day_context_only, true);
+  assert.equal(entry.operator_time_series_manifest.child_operator_runs_revalidated, true);
+  assert.equal(entry.operator_time_series_manifest.source_reference_reconciliation_required, true);
+  assert.equal(entry.operator_time_series_manifest.confidence_model_feed, false);
+  assert.equal(entry.operator_time_series_manifest.finance_context_investigation_feed, false);
+  assert.equal(entry.operator_time_series_manifest.customer_facing_financial_output, false);
+  assert.equal(entry.operator_time_series_manifest.person_level_fields_included, false);
+  assert.equal(entry.expected.operator_time_series, "CONTRACT_ONLY");
+}
+const operatorWorkflowCases = cases.filter((entry) => entry.operator_workflow_manifest);
+assert.deepEqual(operatorWorkflowCases.map((entry) => entry.id).sort(), [
+  "operator_workflow_internal_review"
+]);
+for (const entry of operatorWorkflowCases) {
+  assert.equal(
+    entry.operator_workflow_manifest.source_contract,
+    "docs/contracts/ai-value-operator-workflow/README.md"
+  );
+  assert.equal(entry.operator_workflow_manifest.aggregate_only, true);
+  assert.equal(entry.operator_workflow_manifest.internal_operator_review_only, true);
+  assert.equal(entry.operator_workflow_manifest.child_objects_revalidated, true);
+  assert.equal(entry.operator_workflow_manifest.source_review_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.measurement_cell_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.time_series_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.packet_preparation_status_required, true);
+  assert.equal(entry.operator_workflow_manifest.emits_missing_evidence, true);
+  assert.equal(entry.operator_workflow_manifest.emits_review_queue, true);
+  assert.equal(entry.operator_workflow_manifest.confidence_model_feed, false);
+  assert.equal(entry.operator_workflow_manifest.finance_context_investigation_feed, false);
+  assert.equal(entry.operator_workflow_manifest.customer_facing_financial_output, false);
+  assert.equal(entry.operator_workflow_manifest.person_level_fields_included, false);
+  assert.equal(entry.operator_workflow_manifest.creates_backend_routes, false);
+  assert.equal(entry.operator_workflow_manifest.creates_frontend_ui, false);
+  assert.equal(entry.operator_workflow_manifest.persists_source_data, false);
+  assert.equal(entry.expected.operator_workflow, "CONTRACT_ONLY");
+}
+const operatorEvidencePackageCases = cases.filter((entry) => entry.operator_evidence_package_manifest);
+assert.deepEqual(operatorEvidencePackageCases.map((entry) => entry.id).sort(), [
+  "operator_evidence_package_runner"
+]);
+for (const entry of operatorEvidencePackageCases) {
+  assert.equal(
+    entry.operator_evidence_package_manifest.source_contract,
+    "docs/contracts/ai-value-operator-evidence-package-runner/README.md"
+  );
+  assert.equal(entry.operator_evidence_package_manifest.aggregate_only, true);
+  assert.equal(entry.operator_evidence_package_manifest.internal_operator_review_only, true);
+  assert.equal(entry.operator_evidence_package_manifest.composes_operator_intake_runs, true);
+  assert.equal(entry.operator_evidence_package_manifest.composes_operator_time_series_run, true);
+  assert.equal(entry.operator_evidence_package_manifest.composes_operator_workflow, true);
+  assert.equal(entry.operator_evidence_package_manifest.child_objects_revalidated, true);
+  assert.equal(entry.operator_evidence_package_manifest.stale_validation_rejected, true);
+  assert.deepEqual(
+    entry.operator_evidence_package_manifest.required_milestone_days,
+    [0, 30, 60, 90, 180, 365]
+  );
+  assert.equal(entry.operator_evidence_package_manifest.rolling_30_day_context_only, true);
+  assert.equal(entry.operator_evidence_package_manifest.assumptions_cannot_substitute_for_evidence, true);
+  assert.equal(entry.operator_evidence_package_manifest.confidence_model_feed, false);
+  assert.equal(entry.operator_evidence_package_manifest.finance_context_investigation_feed, false);
+  assert.equal(entry.operator_evidence_package_manifest.customer_facing_financial_output, false);
+  assert.equal(entry.operator_evidence_package_manifest.person_level_fields_included, false);
+  assert.equal(entry.operator_evidence_package_manifest.creates_backend_routes, false);
+  assert.equal(entry.operator_evidence_package_manifest.creates_frontend_ui, false);
+  assert.equal(entry.operator_evidence_package_manifest.persists_source_data, false);
+  assert.equal(entry.expected.operator_evidence_package, "CONTRACT_ONLY");
 }
 const forwardedDistributionCases = cases.filter((entry) => entry.forwarded_distribution_manifest);
 assert.deepEqual(forwardedDistributionCases.map((entry) => entry.id).sort(), [

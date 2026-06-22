@@ -14,6 +14,10 @@ import {
   validateValueHypothesisReadiness
 } from "./valueHypothesisReadiness";
 import { validateMeasurementCell } from "./measurementCell";
+import {
+  validateMeasurementCellAssemblyRun,
+  type MeasurementCellAssemblyRunValidationResult
+} from "./measurementCellAssemblyRunner";
 
 export const AI_VALUE_HYPOTHESIS_READINESS_PACKET_SCHEMA_VERSION =
   "FT_AI_VALUE_HYPOTHESIS_READINESS_PACKET_2026_06";
@@ -173,6 +177,7 @@ export interface BuildValueHypothesisReadinessPacketInput {
   claimReadinessSnapshot: any;
   selectedMetricMovement?: SelectedMetricMovementInput;
   measurementCell?: any;
+  measurementCellAssemblyRun?: any;
   roiBotContext?: RoiBotContextInput;
   comparisonDesignState?: BuildValueHypothesisReadinessOptions["comparisonDesignState"];
 }
@@ -473,68 +478,130 @@ function normalizeSelectedMetricMovementForReadiness(
 function normalizeMeasurementCellInput(
   plan: any,
   claimSnapshot: any,
-  measurementCell?: any
+  measurementCell?: any,
+  measurementCellAssemblyRun?: any
 ): {
   selectedMetricMovement?: SelectedMetricMovementInput;
   comparisonDesignState?: BuildValueHypothesisReadinessOptions["comparisonDesignState"];
   evidenceSource?: any;
   validationBinding?: any;
+  assemblyValidationBinding?: any;
   missingEvidence: string[];
   validated: boolean;
+  assemblyValidated: boolean;
   assumptionOwnerApproved: boolean;
 } {
-  if (!measurementCell) {
+  const assemblyValidation: MeasurementCellAssemblyRunValidationResult | null =
+    measurementCellAssemblyRun
+      ? validateMeasurementCellAssemblyRun(measurementCellAssemblyRun)
+      : null;
+  if (measurementCellAssemblyRun && !assemblyValidation?.valid) {
+    throw new Error(
+      `Measurement Cell Assembly Run is invalid and cannot build packet: ${assemblyValidation?.gaps.join("; ")}`
+    );
+  }
+  if (
+    measurementCellAssemblyRun &&
+    (
+      measurementCellAssemblyRun.decision !== "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER" ||
+      measurementCellAssemblyRun.feeds?.value_hypothesis_packet_runner !== true ||
+      !measurementCellAssemblyRun.measurement_cell
+    )
+  ) {
+    throw new Error("Measurement Cell Assembly Run must be ready for Value Hypothesis packet preparation");
+  }
+
+  const assemblyCell = measurementCellAssemblyRun?.measurement_cell ?? null;
+  const activeMeasurementCell = assemblyCell ?? measurementCell;
+  if (
+    measurementCell &&
+    assemblyCell &&
+    measurementCell.measurement_cell_id !== assemblyCell.measurement_cell_id
+  ) {
+    throw new Error("measurementCell must match measurementCellAssemblyRun.measurement_cell when both are supplied");
+  }
+
+  if (!activeMeasurementCell) {
     return {
       missingEvidence: [],
       validated: false,
+      assemblyValidated: false,
       assumptionOwnerApproved: false
     };
   }
 
-  if (measurementCell.org_id !== plan?.org_id) {
+  if (activeMeasurementCell.org_id !== plan?.org_id) {
     throw new Error("Measurement Cell org_id must match measurement plan org_id");
   }
-  const cellValidation = validateMeasurementCell(measurementCell);
+  const cellValidation = validateMeasurementCell(activeMeasurementCell);
   if (!cellValidation.valid) {
     throw new Error(
       `Measurement Cell is invalid and cannot build packet: ${cellValidation.gaps.join("; ")}`
     );
   }
-  assertMeasurementCellAligns(plan, claimSnapshot, measurementCell);
+  assertMeasurementCellAligns(plan, claimSnapshot, activeMeasurementCell);
   const validationBinding = measurementCellValidationBindingOf(
-    measurementCell,
+    activeMeasurementCell,
     cellValidation
   );
+  const assemblyValidated =
+    assemblyValidation?.valid === true &&
+    measurementCellAssemblyRun?.decision === "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER" &&
+    measurementCellAssemblyRun?.feeds?.value_hypothesis_packet_runner === true &&
+    measurementCellAssemblyRun?.measurement_cell?.measurement_cell_id ===
+      activeMeasurementCell.measurement_cell_id;
+  const assemblyValidationBinding = assemblyValidated
+    ? {
+        validator: "validateMeasurementCellAssemblyRun",
+        validation_schema_version: assemblyValidation.schema_version,
+        assembly_run_schema_version: measurementCellAssemblyRun.schema_version,
+        run_id: measurementCellAssemblyRun.run_id,
+        data_spine_readiness_id:
+          measurementCellAssemblyRun.data_spine_readiness?.data_spine_readiness_id ?? null,
+        source_package_review_queue_id:
+          measurementCellAssemblyRun.source_package_review_queue
+            ?.source_package_review_queue_id ?? null,
+        measurement_cell_id: activeMeasurementCell.measurement_cell_id,
+        source_bound: true,
+        validated: true,
+        feeds_value_hypothesis_packet_runner:
+          measurementCellAssemblyRun.feeds?.value_hypothesis_packet_runner === true,
+        feeds_finance_context_investigation_planning:
+          measurementCellAssemblyRun.feeds?.finance_context_investigation_planning === true
+      }
+    : null;
 
   const selectedMetricOwnerApprovalState =
-    measurementCell.selected_metric?.owner_approval_state ?? "missing";
+    activeMeasurementCell.selected_metric?.owner_approval_state ?? "missing";
   const selectedMetricOwnerApproved =
     selectedMetricOwnerApprovalState === "approved";
-  const metricMovementHeld = measurementCellHasSuppression(measurementCell) ||
+  const metricMovementHeld = measurementCellHasSuppression(activeMeasurementCell) ||
     cellValidation.feeds.value_hypothesis_readiness_input !== true ||
-    measurementCell.metric_movement?.movement_state !== "present" ||
+    activeMeasurementCell.metric_movement?.movement_state !== "present" ||
     !selectedMetricOwnerApproved;
   const financeContextHeld =
-    cellValidation.feeds.finance_context_investigation_planning !== true;
+    !assemblyValidated ||
+    cellValidation.feeds.finance_context_investigation_planning !== true ||
+    measurementCellAssemblyRun?.feeds?.finance_context_investigation_planning !== true;
   const selectedMetricMovement: SelectedMetricMovementInput = {
-    metric_id: String(measurementCell.selected_metric.metric_id),
+    metric_id: String(activeMeasurementCell.selected_metric.metric_id),
     state: metricMovementHeld ? "held" : "present",
-    baseline_window: measurementCellBaselineWindow(measurementCell),
-    comparison_window: measurementCellComparisonWindow(measurementCell),
-    source_ref: measurementCell.selected_metric.source_ref ?? null,
+    baseline_window: measurementCellBaselineWindow(activeMeasurementCell),
+    comparison_window: measurementCellComparisonWindow(activeMeasurementCell),
+    source_ref: activeMeasurementCell.selected_metric.source_ref ?? null,
     owner_role:
-      measurementCell.blueprint_alignment?.owner_role ??
-      measurementCell.selected_metric?.owner_role ??
+      activeMeasurementCell.blueprint_alignment?.owner_role ??
+      activeMeasurementCell.selected_metric?.owner_role ??
       null,
     owner_approval_state: selectedMetricOwnerApprovalState,
     expected_direction:
-      measurementCell.metric_movement?.expected_direction ??
-      measurementCell.selected_metric?.metric_direction ??
+      activeMeasurementCell.metric_movement?.expected_direction ??
+      activeMeasurementCell.selected_metric?.metric_direction ??
       null,
     observed_direction:
-      measurementCell.metric_movement?.moved_in_expected_direction === true
+      activeMeasurementCell.metric_movement?.moved_in_expected_direction === true
         ? "moved_in_expected_direction"
-        : measurementCell.metric_movement?.moved_in_expected_direction === false
+        : activeMeasurementCell.metric_movement?.moved_in_expected_direction === false
           ? "did_not_move_in_expected_direction"
           : "unknown"
   };
@@ -543,33 +610,45 @@ function normalizeMeasurementCellInput(
     selectedMetricMovement,
     comparisonDesignState: metricMovementHeld
       ? "pre_post"
-      : measurementCellDesignState(measurementCell),
+      : measurementCellDesignState(activeMeasurementCell),
     evidenceSource: {
       state: financeContextHeld ? "held" : "present",
-      measurement_cell_id: measurementCell.measurement_cell_id,
+      measurement_cell_id: activeMeasurementCell.measurement_cell_id,
+      assembly_run_id: measurementCellAssemblyRun?.run_id ?? null,
       source_bound: true,
       feeds_value_hypothesis_readiness:
         cellValidation.feeds.value_hypothesis_readiness_input === true,
       feeds_finance_context_investigation:
-        cellValidation.feeds.finance_context_investigation_planning === true,
-      design_type: measurementCell.evidence_design?.design_type ?? null,
+        assemblyValidated &&
+        cellValidation.feeds.finance_context_investigation_planning === true &&
+        measurementCellAssemblyRun?.feeds?.finance_context_investigation_planning === true,
+      design_type: activeMeasurementCell.evidence_design?.design_type ?? null,
       token_usage_role: "spend_or_intensity_context_only",
       yield_role: "review_context_only",
-      source_refs: deepClone(measurementCell.source_refs ?? {}),
-      validation_binding: validationBinding
+      source_refs: deepClone(activeMeasurementCell.source_refs ?? {}),
+      validation_binding: validationBinding,
+      assembly_validation_binding: assemblyValidationBinding
     },
     validationBinding,
+    assemblyValidationBinding,
     missingEvidence: uniqueStrings([
       ...(metricMovementHeld || financeContextHeld
         ? ["MEASUREMENT_CELL_HELD_OR_SUPPRESSED"]
+        : []),
+      ...(!assemblyValidated &&
+          cellValidation.feeds.finance_context_investigation_planning === true
+        ? ["MEASUREMENT_CELL_ASSEMBLY_RUN_REQUIRED_FOR_FINANCE_CONTEXT"]
         : []),
       ...(!selectedMetricOwnerApproved
         ? ["METRIC_OWNER_APPROVAL_REQUIRED"]
         : [])
     ]),
     validated: true,
+    assemblyValidated,
     assumptionOwnerApproved:
-      cellValidation.feeds.finance_context_investigation_planning === true
+      assemblyValidated &&
+      cellValidation.feeds.finance_context_investigation_planning === true &&
+      measurementCellAssemblyRun?.feeds?.finance_context_investigation_planning === true
   };
 }
 
@@ -701,7 +780,8 @@ export function buildValueHypothesisReadinessPacket(
   const measurementCellContext = normalizeMeasurementCellInput(
     input.measurementPlan,
     input.claimReadinessSnapshot,
-    input.measurementCell
+    input.measurementCell,
+    input.measurementCellAssemblyRun
   );
   const selectedMetricMovement =
     normalizeSelectedMetricMovementForReadiness(
@@ -789,13 +869,19 @@ export function buildValueHypothesisReadinessPacket(
       measurement_plan_id: readiness.measurement_plan_id,
       claim_readiness_snapshot_id: readiness.claim_readiness_snapshot_id,
       value_hypothesis_readiness_id: readiness.value_hypothesis_readiness_id,
+      measurement_cell_assembly_run_id:
+        input.measurementCellAssemblyRun?.run_id ?? null,
       runner: DERIVATION_VERSION
     },
     validation: {
       value_hypothesis_readiness_validated: true,
       measurement_cell_validated: measurementCellContext.validated,
+      measurement_cell_assembly_validated:
+        measurementCellContext.assemblyValidated,
       measurement_cell_validation_binding:
         measurementCellContext.validationBinding ?? null,
+      measurement_cell_assembly_validation_binding:
+        measurementCellContext.assemblyValidationBinding ?? null,
       no_confidence_percent: true,
       no_customer_facing_financial_output: true
     },
@@ -915,15 +1001,19 @@ function collectMeasurementCellFinanceGateGaps(packet: any): string[] {
   const measurementCell = packet?.evidence_sources?.measurement_cell;
   if (
     packet?.validation?.measurement_cell_validated !== true ||
+    packet?.validation?.measurement_cell_assembly_validated !== true ||
     measurementCell?.state !== "present" ||
     measurementCell?.feeds_finance_context_investigation !== true
   ) {
     gaps.push(
-      "FINANCE_CONTEXT_INVESTIGATION_READY requires Measurement Cell evidence that is validated, present, aligned, not held, not suppressed, and finance-context feeding"
+      "FINANCE_CONTEXT_INVESTIGATION_READY requires Measurement Cell evidence that is validated through Measurement Cell Assembly, present, aligned, not held, not suppressed, and finance-context feeding"
     );
   }
   const packetBinding = packet?.validation?.measurement_cell_validation_binding;
   const evidenceBinding = measurementCell?.validation_binding;
+  const packetAssemblyBinding =
+    packet?.validation?.measurement_cell_assembly_validation_binding;
+  const evidenceAssemblyBinding = measurementCell?.assembly_validation_binding;
   if (
     !packetBinding ||
     !evidenceBinding ||
@@ -939,6 +1029,24 @@ function collectMeasurementCellFinanceGateGaps(packet: any): string[] {
   ) {
     gaps.push(
       "FINANCE_CONTEXT_INVESTIGATION_READY requires a source-bound Measurement Cell validation binding"
+    );
+  }
+  if (
+    !packetAssemblyBinding ||
+    !evidenceAssemblyBinding ||
+    JSON.stringify(packetAssemblyBinding) !== JSON.stringify(evidenceAssemblyBinding) ||
+    packetAssemblyBinding.validator !== "validateMeasurementCellAssemblyRun" ||
+    packetAssemblyBinding.validated !== true ||
+    packetAssemblyBinding.source_bound !== true ||
+    packetAssemblyBinding.run_id !== measurementCell?.assembly_run_id ||
+    packetAssemblyBinding.measurement_cell_id !== measurementCell?.measurement_cell_id ||
+    packetAssemblyBinding.feeds_value_hypothesis_packet_runner !== true ||
+    packetAssemblyBinding.feeds_finance_context_investigation_planning !== true ||
+    !packetAssemblyBinding.data_spine_readiness_id ||
+    !packetAssemblyBinding.source_package_review_queue_id
+  ) {
+    gaps.push(
+      "FINANCE_CONTEXT_INVESTIGATION_READY requires a source-bound Measurement Cell Assembly validation binding"
     );
   }
   return gaps;

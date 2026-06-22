@@ -2,6 +2,107 @@
 
 ## Last Completed
 
+- Governed data-pipe hardening slice (user-requested, 2026-06-21):
+  reset the subagent approach by closing completed/stale agents, then used a
+  fresh bounded Code/Bug/Adversarial pattern with the main thread as final
+  integrator. Hardened the operator data spine by requiring Real Data Intake
+  embedded Data Spine and Measurement Plan validations to match the full
+  recomputed validation objects, not only `.valid`. Hardened Operator
+  Time-Series validation against blank milestone coercion, unsupported
+  `allowed_uses`, unsafe note-like claim language, malformed non-array
+  `time_windows`, and spoofed child-object forbidden-field skips outside
+  numeric `time_windows.<index>` paths. Hardened the AI Fluency Operator
+  Source Handoff so duplicate parser `source_ref` rows cannot contaminate a
+  reviewed feedable source, parser records must align to the selected
+  dashboard source, and unsafe raw/financial/probability-style source refs are
+  blocked before operator intake. Hardened Source Package Review Queue
+  alignment so source packages cannot clear a lane unless source owner role
+  and source-owner attestation match the lane owner role. No UI, backend
+  route, persistence, schema, migration, live connector, confidence model,
+  probability output, finance-context feed, ROI/EBITA/EBITDA proof,
+  causality, productivity, person-level output, ranking, or customer-facing
+  financial output was added. Verification:
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-workflow`;
+  `npm run test:ai-value-operator-evidence-package-runner`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
+- AI Fluency Operator Source Handoff slice (user-requested, 2026-06-21):
+  added the governed bridge from a validated aggregate AI Fluency parser run
+  and Dashboard Import Runner output into the Operator Intake Adapter source
+  lane. The handoff emits the `sources.aiFluency` operator source, an
+  aligned AI Fluency Measurement Cell context fragment, and the layer-2 Source
+  Package `aggregate_export_id` reference while keeping direct Measurement
+  Cell feed, finance-context investigation, confidence model, probabilities,
+  ROI/EBITA/EBITDA, causality, productivity, person-level output, ranking, UI,
+  routes, persistence, schemas, migrations, live Google Sheets, and BigQuery
+  execution blocked. It also fails closed on parser/dashboard invalidity,
+  suppressed dashboard rows, source-ref drift, unsafe fields, unsafe
+  identifier values, and context/source alignment drift. Verification:
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-ai-fluency-aggregate-export-parser`;
+  `npm run test:ai-value-ai-fluency-dashboard-import-runner`;
+  `npm run test:ai-value-ai-fluency-client-import`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
+- AI Value Operator Evidence Package Runner slice (user-requested, 2026-06-21):
+  added the governed package runner that composes already-parsed aggregate
+  window inputs into Operator Intake Adapter runs, an Operator Time-Series Run,
+  an Operator Workflow, and one internal operator package state. The runner is
+  intentionally thin: it reuses existing child contracts, recomputes embedded
+  child validations, fails closed on identity/window/source/packet drift, keeps
+  rolling 30-day windows as operating context only, and blocks ROI Bot or
+  assumption context from substituting for reviewed Source Packages,
+  Measurement Cells, governed milestone evidence, or Value Hypothesis packets.
+  Added the contract doc, package script, shared export, validator tests, and
+  LMSYS assurance manifest/self-test coverage. No UI, backend route,
+  persistence, schema, migration, ingestion job, live BigQuery/Glean connector,
+  confidence model, probability output, finance-context feed, ROI/EBITA/EBITDA
+  proof, causality claim, productivity claim, person-level output, ranking, or
+  customer-facing financial output was added. Verification:
+  `npm run test:ai-value-operator-evidence-package-runner`;
+  `npm run test:ai-value-operator-workflow`;
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-value-hypothesis-readiness-packet-runner`;
+  `npm run test:ai-value-data-spine-readiness`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run test:ai-value-measurement-cell`; `npm run test:seed`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
+- AI Value Operator Time-Series Run slice (user-requested, 2026-06-21):
+  added the governed operator time-series run layer over the existing
+  aggregate-safe Operator Intake Adapter. The new contract builds metadata-only
+  governed run references across Day 0, 30, 60, 90, 180, and 365 milestone
+  windows, holds incomplete milestone series, keeps rolling 30-day series as
+  operating context only, and fails closed on mixed identity, unsupported or
+  repeated milestones, invalid child operator runs, stale embedded validation,
+  derived reference drift, wrapper/child cadence drift, unsafe value language,
+  forbidden fields, route/schema/persistence side doors, ROI/EBITA/EBITDA,
+  causality, productivity, confidence percentages, probabilities,
+  person-level output, ranking, or customer-facing financial output. Added the
+  contract doc, package script, shared export, targeted validator tests, and a
+  metadata-only LMSYS assurance manifest case. No backend route, persistence,
+  schema, UI, connector, confidence model, finance-context feed, or
+  customer-facing financial output was added. Verification:
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-measurement-cell`;
+  `npm run test:ai-value-data-spine-readiness`;
+  `npm run test:ai-value-value-hypothesis-readiness-packet-runner`;
+  `npm run test:seed`; `npm run build --workspace shared`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - AI Value VBD x Token / Org Fluency UI review repair (PR #364, 2026-06-21):
   addressed the open review fixes and the failing GitHub action on
   `codex/OrgFluency-ui-ux-update`. The VBD x Token map now lets suppressed,
@@ -313,4 +414,14 @@
 
 - AI Value Platform Value Hypothesis Readiness architecture slice (2026-06-20): added the Real Data Intake Packet Runner contract and shared runner for already-parsed aggregate-safe source objects. The runner validates Data Spine Readiness, Measurement Plan binding, scrubbed Glean aggregate exports, Pilot Intake output, and Measurement Cell preparation feeds without parsing uploads, running BigQuery, adding routes/UI, creating persistence, or emitting ROI, causality, productivity, confidence, probability, financial attribution, or customer-facing financial output. Data Spine validation now rejects forged `MEASUREMENT_CELL_READY` states, stale missing-evidence lists, feed tampering, non-aggregate lanes, and source alignment drift. The real-data runner now recomputes nested validations, binds Data Spine windows to Measurement Plan windows, rejects held-feed tampering, blocks ROI Bot / ROI Sheet assumption substitution, and fails closed on route/persistence/UI/confidence/financial side doors. AI Fluency aggregate session export now supports optional `client_id` and aggregate source-binding metadata so AI Fluency imports can align by org/client without respondent-level data. Verification: `npm run test:ai-fluency-aggregator`, `npm run test:ai-value-ai-fluency-intake-bridge`, `npm run test:ai-value-data-spine-readiness`, `npm run test:ai-value-real-data-intake-packet-runner`, `npm run test:ai-value-scrubbed-glean-export-converter`, `npm run test:ai-value-pilot-intake-runner`, `npm run test:ai-value-evidence-collection-assembler`, `npm run test:ai-value-vbd-token-pilot-runner`, `npm run test:ai-value-measurement-cell`, `npm run test:ai-value-value-hypothesis-readiness-packet-runner`, and `git diff --check`.
 
+- AI Value Platform Source Package Review Queue spine gate slice (2026-06-21): hardened the governed evidence spine so package-backed Source Package Review Queue lanes cannot clear without matching valid, feedable, aligned Source Packages; Measurement Cell Assembly now requires a valid `DATA_SPINE_REVIEW_READY` queue when Data Spine is otherwise Measurement Cell ready; and Value Hypothesis Readiness Packet Runner now requires a validated Measurement Cell Assembly binding before `FINANCE_CONTEXT_INVESTIGATION_READY`. Standalone Measurement Cells can support internal review context but cannot unlock finance-context investigation readiness. The slice added no UI, routes, schemas, persistence, connectors, tunable thresholds, new suppression reasons, ROI proof, causality, productivity claims, financial attribution, confidence percentages, probability output, person-level output, ranking, or customer-facing financial output. Verification: `npm run test:ai-value-source-package-review-queue`, `npm run test:ai-value-measurement-cell-assembly-runner`, `npm run test:ai-value-value-hypothesis-readiness-packet-runner`, `npm run test:ai-value-real-data-intake-packet-runner`, `npm run test:ai-value-data-spine-readiness`, `npm run test:ai-value-source-packages`, `npm run test:ai-value-measurement-cell`, `npm run test:ai-value-value-hypothesis-readiness`, `npm run test:ai-value-ui-output-contract`, `npm run test:ai-value-claim-boundary`, `npm run build --workspace shared`, `bash scripts/ci_docs_contract_sweep.sh`, `python3 scripts/ci_v1_governance_gates.py`, and `git diff --check`.
+
+- AI Value Platform Operator Intake Adapter slice (2026-06-21): added a thin shared-engine composer that takes operator-selected, already-parsed aggregate-safe source objects and assembles Data Spine Readiness, Source Package Review Queue, Real Data Intake Packet Run, and Measurement Cell Assembly Run into one governed operator run. The adapter prepares governed time-series run references for later review, but it does not feed Value Hypothesis packet execution, finance-context investigation, confidence modeling, or customer-facing financial output. Source Package Review Queue alignment was also hardened so optional package context fields such as client, workflow, function, cohort, metric, and baseline window cannot drift while still clearing by org/window/source ref alone. The slice added no UI, routes, JSON schemas, persistence, connectors, tunable thresholds, new suppression reasons, ROI proof, causality, productivity claims, financial attribution, confidence percentages, probability output, person-level output, ranking, or customer-facing financial output. Verification: `npm run test:ai-value-operator-intake-adapter`, `npm run test:ai-value-source-package-review-queue`, `npm run test:ai-value-real-data-intake-packet-runner`, `npm run test:ai-value-measurement-cell-assembly-runner`, `npm run test:ai-value-data-spine-readiness`, `npm run test:ai-value-source-packages`, `npm run test:ai-value-measurement-cell`, `npm run test:ai-value-value-hypothesis-readiness-packet-runner`, `npm run build --workspace shared`, `bash scripts/ci_docs_contract_sweep.sh`, `python3 scripts/ci_v1_governance_gates.py`, and `git diff --check`.
+
+- AI Value Platform Operator Workflow MVP slice (2026-06-21): added a governed shared-engine `Operator Workflow` contract that summarizes Source Package Review Queue, Operator Intake Adapter, Measurement Cell Assembly, Operator Time-Series Run, and Value Hypothesis Readiness Packet status into one internal operator state with `READY_FOR_INTERNAL_PACKET_REVIEW`, source/Measurement Cell/time-series/packet holds, missing evidence, blocked reasons, review queue, and next actions. The workflow recomputes child validations, fails closed on identity drift and stale validation, keeps rolling 30-day context held as operating context, and blocks ROI Bot assumptions, unsafe finance/confidence/probability fields, raw rows, person-level fields, route/persistence/schema side doors, operator override, force-ready, thresholds, and new suppression reasons. It emits no confidence model feed, finance-context investigation feed, customer-facing financial output, UI, routes, schemas, persistence, connectors, ROI proof, causality, productivity claims, financial attribution, confidence percentages, probability output, person-level output, or ranking. Verification: red/green `npm run build --workspace shared && node --test scripts/validate_ai_value_operator_workflow.test.mjs`; `npm run test:ai-value-operator-workflow`; `npm run test:seed`; `npm run test:ai-value-operator-time-series-run`; `npm run test:ai-value-operator-intake-adapter`; `npm run test:ai-value-source-package-review-queue`; `npm run test:ai-value-measurement-cell-assembly-runner`; `npm run test:ai-value-real-data-intake-packet-runner`; `npm run test:ai-value-data-spine-readiness`; `npm run test:ai-value-measurement-cell`; `npm run test:ai-value-value-hypothesis-readiness-packet-runner`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; and `git diff --check`.
+
 - Remaining productization truth after the 2026-06-20 architecture slice: Blueprint upload parsing is still upstream/contract-only; Glean/BigQuery VBD and token support is scrubbed aggregate summary support, not a live query runner; customer metric import/manual entry is represented through aggregate evidence contracts but not a dedicated import UI; the runner prepares Measurement Cell assembly but does not create finance-context readiness or a confidence model. Next bounded step should be a developer/operator intake adapter that accepts approved aggregate source references and returns Data Spine plus runner output, or the first actual AI Fluency dashboard export adapter, before more UI expansion.
+
+- AI Value Platform AI Fluency Aggregate Export Parser slice (2026-06-21): added the governed local parser/adapter from the Google Sheets `Aggregate Readiness Export` CSV/JSON shape into the existing AI Fluency Dashboard Import Runner input. The parser emits a governed parse run, preserves stale `k_min_posture` values for downstream blocking, normalizes blank numeric cells to `null`, canonicalizes organization rollup aliases to review-only overall rows, requires aligned aggregate source fields before handoff, and fails closed on respondent/person-level headers, unsafe identifier values, ROI/probability/confidence/financial-attribution/productivity/causality language, and route/schema/persistence/UI hints. The downstream Dashboard Import Runner was hardened to require `k_min_20_function_level`, treat organization-overall aliases as non-feedable, keep `Suppressed Small Cohort Group` non-feedable even if count fields drift, and block missing source alignment keys. AI Fluency client-import summaries no longer turn null construct means into zero-valued diagnostics. This slice added no Apps Script changes, UI, backend routes, schemas, persistence, live connectors, tunable thresholds, new suppression reasons, Measurement Cell feed, confidence percentages, probability output, ROI proof, causality, productivity claims, financial attribution, person-level output, ranking, or customer-facing financial output. Verification: `npm run test:ai-value-ai-fluency-aggregate-export-parser`, `npm run test:ai-value-ai-fluency-dashboard-import-runner`, `npm run test:ai-value-ai-fluency-client-import`, `npm run test:ai-value-google-sheets-aggregate-export-adapter`, `npm run build --workspace shared`, `bash scripts/ci_docs_contract_sweep.sh`, `python3 scripts/ci_v1_governance_gates.py`, and `git diff --check`.
+
+- AI Value Platform Blueprint Operator Source Handoff slice (2026-06-21): added a governed shared-engine handoff from validated, approved Blueprint Extraction Drafts into the Operator Intake Adapter source lane and Measurement Cell Blueprint alignment context. The handoff supplies the missing operator-safe `owner_role`, preserves Blueprint source alignment keys, separates Data Spine source review state from Measurement Cell readiness review state, and blocks pending/unapproved/invalid drafts from feeding operator intake. It explicitly does not parse uploads, run Glean or BigQuery, persist output, create routes/UI/schemas, feed Measurement Cell directly, feed finance-context investigation, feed confidence modeling, calculate ROI, prove causality, emit productivity claims, create probability/confidence outputs, or create customer-facing financial output. Verification: red/green `npm run build --workspace shared && node --test scripts/validate_ai_value_blueprint_operator_source_handoff.test.mjs`; `npm run test:ai-value-blueprint-operator-source-handoff`; `npm run test:ai-value-blueprint-extraction-draft`; `npm run test:ai-value-operator-intake-adapter`; `npm run test:ai-value-data-spine-readiness`; `npm run test:ai-value-source-package-review-queue`; `npm run test:ai-value-measurement-cell-assembly-runner`; `npm run test:ai-value-real-data-intake-packet-runner`; `npm run test:ai-value-operator-workflow`; `npm run test:ai-value-operator-evidence-package-runner`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; and `git diff --check`.

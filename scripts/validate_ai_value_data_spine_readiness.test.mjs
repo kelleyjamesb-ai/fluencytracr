@@ -46,6 +46,7 @@ function source(overrides = {}) {
       window_start: "2026-09-01",
       window_end: "2026-09-30"
     },
+    owner_role: "source_owner",
     owner_approval_state: "approved",
     review_state: "clear",
     aggregate_only: true,
@@ -170,6 +171,21 @@ test("manual customer metric entry can align when approved and window-bound", ()
   assert.equal(spine.feeds.measurement_cell_input, true);
 });
 
+test("Data Spine cannot reach Measurement Cell readiness without owner role or metric identity", () => {
+  const input = baseInput();
+  input.sources.vbdToken.owner_role = "";
+  input.sources.customerMetric.metric_id = "";
+  const spine = buildDataSpineIntakeReadiness(input);
+  const result = validateDataSpineIntakeReadiness(spine);
+
+  assert.equal(spine.readiness_state, "INTAKE_REVIEW_READY");
+  assert.equal(spine.feeds.measurement_cell_input, false);
+  assert.ok(spine.missing_evidence.includes("VBD_TOKEN_AGGREGATE_REQUIRED"));
+  assert.ok(spine.missing_evidence.includes("CUSTOMER_METRIC_REQUIRED"));
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(result.feeds.measurement_cell_input, false);
+});
+
 test("missing VBD token aggregate does not get rescued by other sources", () => {
   const input = baseInput();
   input.sources.vbdToken.state = "missing";
@@ -240,6 +256,11 @@ test("unsafe raw, person, connector, confidence, and financial fields fail", () 
   spine.confidence_percentage = 87;
   spine.financial_output = true;
   spine.backend_route = "/api/data-spine";
+  spine.computes_roi = true;
+  spine.emits_probability = true;
+  spine.creates_backend_routes = true;
+  spine.customer_facing_financial_output = true;
+  spine.allowed_uses.push("realized_roi", "customer_facing_financial_output");
 
   const result = validateDataSpineIntakeReadiness(spine);
 
@@ -251,4 +272,25 @@ test("unsafe raw, person, connector, confidence, and financial fields fail", () 
   assert.ok(result.gaps.some((gap) => gap.includes("confidence_percentage")));
   assert.ok(result.gaps.some((gap) => gap.includes("financial_output")));
   assert.ok(result.gaps.some((gap) => gap.includes("backend_route")));
+  assert.ok(result.gaps.some((gap) => gap.includes("computes_roi")));
+  assert.ok(result.gaps.some((gap) => gap.includes("emits_probability")));
+  assert.ok(result.gaps.some((gap) => gap.includes("creates_backend_routes")));
+  assert.ok(result.gaps.some((gap) => gap.includes("customer_facing_financial_output")));
+  assert.ok(result.gaps.some((gap) => gap.includes("allowed_uses")));
+});
+
+test("unsafe source reference values cannot feed Measurement Cell readiness", () => {
+  const input = baseInput();
+  input.sources.vbdToken.source_ref = "raw_prompt jane@example.com";
+  const spine = buildDataSpineIntakeReadiness(input);
+  const result = validateDataSpineIntakeReadiness(spine);
+
+  assert.equal(spine.readiness_state, "INTAKE_REVIEW_READY");
+  assert.equal(spine.feeds.measurement_cell_input, false);
+  assert.equal(spine.feeds.value_hypothesis_packet_runner, false);
+  assert.ok(spine.missing_evidence.includes("VBD_TOKEN_AGGREGATE_REQUIRED"));
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_input, false);
+  assert.equal(result.feeds.value_hypothesis_packet_runner, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("source_readiness.vbd_token.source_ref")));
 });

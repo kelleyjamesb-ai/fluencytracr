@@ -293,6 +293,37 @@ test("dashboard import runner keeps organization overall rows review-only and no
   assert.equal(result.feeds.data_spine_ai_fluency_sources, false);
 });
 
+test("dashboard import runner treats organization rollup aliases as review-only", () => {
+  const exported = dashboardExport();
+  exported.records = [
+    {
+      ...exported.records[0],
+      function_area: "Overall",
+      workflow_family: "ai_fluency_readiness",
+      cohort_key: "all_approved_responses",
+      response_count: 1188,
+      owner_approval_state: "approved",
+      review_state: "approved_for_import",
+      source_ref:
+        "ai-fluency-dashboard-export://atlantic-media/beta-2026/m6/org-overall-alias"
+    }
+  ];
+
+  const run = buildAIFluencyDashboardImportRun({
+    dashboardExport: exported,
+    runId: "ai_fluency_dashboard_import_run_org_overall_alias_review_only",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateAIFluencyDashboardImportRun(run);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.summary.imported_count, 0);
+  assert.equal(run.summary.held_count, 1);
+  assert.equal(run.feedable_data_spine_sources.length, 0);
+  assert.equal(run.row_results[0].decision, "HELD");
+  assert.equal(result.feeds.data_spine_ai_fluency_sources, false);
+});
+
 test("dashboard import runner blocks stale k-min posture labels", () => {
   const exported = dashboardExport();
   const staleKMinPosture = "k_min_30_function_level";
@@ -305,6 +336,28 @@ test("dashboard import runner blocks stale k-min posture labels", () => {
   const run = buildAIFluencyDashboardImportRun({
     dashboardExport: exported,
     runId: "ai_fluency_dashboard_import_run_stale_k_min",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateAIFluencyDashboardImportRun(run);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.data_spine_ai_fluency_sources, false);
+  assert.equal(run.summary.imported_count, 0);
+  assert.equal(run.feedable_data_spine_sources.length, 0);
+  assert.ok(result.gaps.some((gap) => gap.includes("k_min_posture")));
+});
+
+test("dashboard import runner blocks missing k-min posture labels", () => {
+  const exported = dashboardExport();
+  exported.records[0] = {
+    ...exported.records[0],
+    response_count: 20,
+    k_min_posture: ""
+  };
+
+  const run = buildAIFluencyDashboardImportRun({
+    dashboardExport: exported,
+    runId: "ai_fluency_dashboard_import_run_missing_k_min",
     generatedAt: "2026-06-20T00:00:00.000Z"
   });
   const result = validateAIFluencyDashboardImportRun(run);
@@ -362,6 +415,43 @@ test("dashboard import runner treats non-none suppression states as non-importab
   assert.equal(run.row_results[0].client_import.feeds.data_spine_ai_fluency_source, false);
   assert.equal(run.summary.imported_count, 1);
   assert.equal(run.feedable_data_spine_sources.length, 1);
+});
+
+test("dashboard import runner keeps suppressed small cohort group non-feedable even if count fields drift", () => {
+  const exported = dashboardExport();
+  exported.records = [
+    {
+      ...exported.records[0],
+      function_area: "Suppressed Small Cohort Group",
+      workflow_family: "ai_fluency_readiness",
+      cohort_key: "suppressed_small_cohort_group",
+      response_count: 20,
+      response_rate: 0.2,
+      suppression_state: "none",
+      owner_approval_state: "approved",
+      review_state: "approved_for_import",
+      source_ref:
+        "ai-fluency-dashboard-export://atlantic-media/beta-2026/m6/suppressed-small-cohort-group"
+    }
+  ];
+
+  const run = buildAIFluencyDashboardImportRun({
+    dashboardExport: exported,
+    runId: "ai_fluency_dashboard_import_run_suppressed_small_cohort_group",
+    generatedAt: "2026-06-20T00:00:00.000Z"
+  });
+  const result = validateAIFluencyDashboardImportRun(run);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.summary.imported_count, 0);
+  assert.equal(run.summary.suppressed_count, 1);
+  assert.equal(run.feedable_data_spine_sources.length, 0);
+  assert.equal(run.row_results[0].decision, "SUPPRESSED");
+  assert.deepEqual(
+    run.row_results[0].client_import.fluency_baseline.cohorts[0].construct_scores,
+    {}
+  );
+  assert.equal(result.feeds.data_spine_ai_fluency_sources, false);
 });
 
 test("dashboard import runner blocks mixed source alignment across org client export and windows", () => {

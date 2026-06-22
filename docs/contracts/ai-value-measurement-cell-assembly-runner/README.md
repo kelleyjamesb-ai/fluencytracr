@@ -15,6 +15,7 @@ create a second measurement object.
 
 ```text
 Data Spine Readiness
+-> Source Package Review Queue
 -> Measurement Plan
 -> optional Real Data Intake Packet Run
 -> Measurement Cell Assembly Runner
@@ -32,9 +33,16 @@ Required:
 
 Optional:
 
+- `sourcePackageReviewQueue`
 - `realDataIntakePacketRun`
 - `runId`
 - `generatedAt`
+
+When Data Spine is otherwise ready to feed Measurement Cell input, a valid
+Source Package Review Queue in `DATA_SPINE_REVIEW_READY` is mandatory before
+assembly can proceed. Missing or held source review produces
+`HELD_FOR_SOURCE_PACKAGE_REVIEW`; invalid or misaligned source review fails
+closed as `BLOCKED`.
 
 If a Real Data Intake Packet Run is supplied, it must validate and feed
 Measurement Cell input. Held or invalid real-data intake cannot be used as a
@@ -47,10 +55,13 @@ baseline/comparison windows in that plan.
 ## Decisions
 
 - `READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER`: Data Spine is ready, source refs
-  align to the Measurement Plan, the optional Real Data Intake packet is valid
-  if supplied, and the built Measurement Cell validates.
+  align to the Measurement Plan, the Source Package Review Queue is valid and
+  `DATA_SPINE_REVIEW_READY`, the optional Real Data Intake packet is valid if
+  supplied, and the built Measurement Cell validates.
 - `HELD_FOR_DATA_SPINE`: Data Spine is structurally valid but not ready to feed
   Measurement Cell assembly.
+- `HELD_FOR_SOURCE_PACKAGE_REVIEW`: Data Spine is otherwise ready, but the
+  Source Package Review Queue is missing or still held for source review.
 - `HELD_FOR_REAL_DATA_INTAKE`: Data Spine is ready but the supplied real-data
   intake packet is held and cannot feed Measurement Cell assembly.
 - `HELD_FOR_MEASUREMENT_CELL`: source binding cleared but the Measurement Cell
@@ -87,6 +98,11 @@ the Measurement Plan across:
 When a Real Data Intake Packet Run is supplied, it must bind back to the same
 Measurement Plan, Data Spine readiness id, function, cohort, windows, customer
 metric id, and source refs.
+
+When a Source Package Review Queue is supplied, it must bind back to the same
+Data Spine readiness id, org, client, workflow family, function, cohort, and
+baseline/comparison windows. The runner recomputes queue validation and does
+not trust embedded queue validation results as proof.
 
 The runner recomputes nested validations during validation and compares the
 embedded validation objects against the recomputed results. Embedded validation

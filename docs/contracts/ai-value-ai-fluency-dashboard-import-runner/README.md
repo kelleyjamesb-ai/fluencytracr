@@ -19,6 +19,7 @@ AI Fluency dashboard CSV/JSON export
 -> AI Fluency Dashboard Import Runner
 -> AI Fluency Client Import objects
 -> Data Spine AI Fluency sources
+-> optional AI Fluency Operator Source Handoff for operator intake
 ```
 
 This runner does not parse CSV, Excel, PDF, slides, docs, or dashboard files.
@@ -105,6 +106,14 @@ financial attribution model.
 If the Google Sheets adapter emits a review-only organization overall row, the
 runner may preserve it for row-level diagnostics, but it must not produce a
 Data Spine AI Fluency source from that row.
+
+Downstream operator use should pass validated parser and dashboard-import
+outputs through the AI Fluency Operator Source Handoff before operator intake.
+That downstream handoff is source preparation only: it may prepare an operator
+source, a Measurement Cell context fragment, and a source-package reference,
+but it must not validate a Measurement Cell, feed finance-context
+investigation, feed a confidence model, or create customer-facing financial
+output.
 
 ## Output Decisions
 

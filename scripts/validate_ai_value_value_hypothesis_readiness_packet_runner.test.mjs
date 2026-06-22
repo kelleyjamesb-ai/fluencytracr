@@ -1,15 +1,20 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  buildDataSpineIntakeReadiness,
   buildClaimReadinessHandoffFromEvidenceSnapshot,
   buildClaimReadinessSnapshotFromEvidenceSnapshotAndHandoff,
+  buildMeasurementCellAssemblyRun,
   buildPlaybookMeasurementPlanDraft,
+  buildSourcePackageReviewQueue,
   buildTelemetryEvidenceSnapshotDraft,
   buildValueHypothesisReadinessPacket,
   validateClaimReadinessHandoff,
   validateClaimReadinessSnapshot,
   validateEvidenceSnapshot,
+  validateMeasurementCellAssemblyRun,
   validateMeasurementPlan,
   validateValueHypothesisReadinessPacket
 } from "../shared/dist/aiValueEngine/index.js";
@@ -18,6 +23,8 @@ import {
 } from "../shared/dist/aiValueEngine/measurementCell.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
+const SOURCE_PACKAGE_EXAMPLES = "docs/contracts/ai-value-source-packages/examples";
+const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 
 const EXPECTED_COVERAGE_SIGNALS = {
   layer_1_platform_telemetry: [
@@ -253,6 +260,7 @@ function buildPacket({
   claimSnapshot = buildClaimSnapshot(),
   selectedMetricMovement,
   measurementCell,
+  measurementCellAssemblyRun,
   roiBotContext,
   comparisonDesignState
 } = {}) {
@@ -264,14 +272,15 @@ function buildPacket({
     claimReadinessSnapshot: claimSnapshot,
     selectedMetricMovement,
     measurementCell,
+    measurementCellAssemblyRun,
     roiBotContext,
     comparisonDesignState,
     generatedAt: "2026-06-19T00:00:00.000Z"
   });
 }
 
-function buildPacketMeasurementCell(overrides = {}) {
-  return buildMeasurementCell({
+function packetMeasurementCellInput(overrides = {}) {
+  return {
     orgId: "org_packet_example",
     functionArea: "customer_support",
     workflowFamily: "customer_support_case_resolution",
@@ -381,7 +390,161 @@ function buildPacketMeasurementCell(overrides = {}) {
       review_state: "FINANCE_CONTEXT_INVESTIGATION_READY"
     },
     ...overrides
+  };
+}
+
+function buildPacketMeasurementCell(overrides = {}) {
+  return buildMeasurementCell(packetMeasurementCellInput(overrides));
+}
+
+function packetWindow(plan) {
+  return {
+    baselineWindow: {
+      window_start: plan.windows.baseline_window_start,
+      window_end: plan.windows.baseline_window_end
+    },
+    comparisonWindow: {
+      window_start: plan.windows.comparison_window_start,
+      window_end: plan.windows.comparison_window_end
+    }
+  };
+}
+
+function packetSource(plan, dataSpineWindow, overrides = {}) {
+  return {
+    state: "present",
+    intake_mode: "structured_object",
+    source_ref: "source_ref_default",
+    org_id: plan.org_id,
+    client_id: "client_packet_example",
+    workflow_family: plan.workflow_scope.workflow_family,
+    function_area: plan.workflow_scope.function_area,
+    cohort_key: "function:customer_support|eligible_seats:500",
+    baseline_window: dataSpineWindow.baselineWindow,
+    comparison_window: dataSpineWindow.comparisonWindow,
+    owner_role: "source_owner",
+    owner_approval_state: "approved",
+    review_state: "clear",
+    aggregate_only: true,
+    ...overrides
+  };
+}
+
+function packetDataSpine(plan) {
+  const windows = packetWindow(plan);
+  return buildDataSpineIntakeReadiness({
+    orgId: plan.org_id,
+    clientId: "client_packet_example",
+    workflowFamily: plan.workflow_scope.workflow_family,
+    functionArea: plan.workflow_scope.function_area,
+    cohortKey: "function:customer_support|eligible_seats:500",
+    baselineWindow: windows.baselineWindow,
+    comparisonWindow: windows.comparisonWindow,
+    sources: {
+      blueprint: packetSource(plan, windows, {
+        source_ref: "measurement_plan_value_hypothesis_packet_test",
+        intake_mode: "blueprint_structured_import"
+      }),
+      aiFluency: packetSource(plan, windows, {
+        source_ref: "source_readiness_value_hypothesis_packet_test",
+        intake_mode: "ai_fluency_dashboard_export"
+      }),
+      vbdToken: packetSource(plan, windows, {
+        source_ref: "bq_probe_value_hypothesis_packet_test",
+        intake_mode: "scrubbed_glean_bigquery_export"
+      }),
+      customerMetric: packetSource(plan, windows, {
+        source_ref: "outcome_evidence_value_hypothesis_packet_test",
+        intake_mode: "customer_metric_aggregate_export",
+        metric_id: "support_median_resolution_hours"
+      }),
+      assumption: packetSource(plan, windows, {
+        source_ref: "support_resolution_assumption",
+        intake_mode: "assumption_approval"
+      }),
+      governance: packetSource(plan, windows, {
+        source_ref: "governance_attestation_packet_test",
+        intake_mode: "governance_attestation"
+      })
+    },
+    generatedAt: "2026-06-19T00:00:00.000Z"
   });
+}
+
+function sourcePackageExample(file, dataSpine, overrides = {}) {
+  const pkg = readJson(`${SOURCE_PACKAGE_EXAMPLES}/${file}`);
+  return {
+    ...pkg,
+    org_id: dataSpine.org_id,
+    covered_window: dataSpine.comparison_window,
+    ...overrides
+  };
+}
+
+function packetSourcePackages(dataSpine) {
+  const sources = dataSpine.source_readiness;
+  return [
+    sourcePackageExample("layer-2-user-voice-package.json", dataSpine, {
+      source_package_id: "source_package_packet_ai_fluency",
+      source_refs: {
+        source_readiness_id: "source_readiness_packet_ai_fluency",
+        aggregate_export_id: sources.ai_fluency.source_ref
+      }
+    }),
+    sourcePackageExample("layer-1-bigquery-telemetry-package.json", dataSpine, {
+      source_package_id: "source_package_packet_vbd_token",
+      source_refs: {
+        source_readiness_id: "source_readiness_packet_vbd_token",
+        aggregate_probe_id: sources.vbd_token.source_ref,
+        reportability_signal_families: [
+          "assistant",
+          "search_document_retrieval",
+          "agent_run"
+        ]
+      }
+    }),
+    sourcePackageExample("layer-3-system-of-record-outcome-package.json", dataSpine, {
+      source_package_id: "source_package_packet_customer_metric",
+      source_refs: {
+        source_readiness_id: "source_readiness_packet_customer_metric",
+        aggregate_outcome_export_id: sources.customer_metric.source_ref
+      }
+    }),
+    sourcePackageExample("assumption-approval-package.json", dataSpine, {
+      source_package_id: "source_package_packet_assumption",
+      source_refs: {
+        source_readiness_id: "source_readiness_packet_assumption",
+        assumption_approval_export_id: sources.assumption.source_ref
+      }
+    }),
+    sourcePackageExample("governance-control-package.json", dataSpine, {
+      source_package_id: "source_package_packet_governance",
+      source_refs: {
+        source_readiness_id: "source_readiness_packet_governance",
+        governance_control_export_id: sources.governance.source_ref
+      }
+    })
+  ];
+}
+
+function buildPacketMeasurementCellAssemblyRun(plan, overrides = {}) {
+  const dataSpine = packetDataSpine(plan);
+  const sourcePackageReviewQueue = buildSourcePackageReviewQueue({
+    dataSpineReadiness: dataSpine,
+    sourcePackages: packetSourcePackages(dataSpine),
+    generatedAt: "2026-06-19T00:00:00.000Z"
+  });
+  const run = buildMeasurementCellAssemblyRun({
+    dataSpineReadiness: dataSpine,
+    measurementPlan: plan,
+    sourcePackageReviewQueue,
+    measurementCellInput: packetMeasurementCellInput(overrides),
+    runId: "measurement_cell_assembly_run_value_hypothesis_packet_test",
+    generatedAt: "2026-06-19T00:00:00.000Z"
+  });
+  const validation = validateMeasurementCellAssemblyRun(run);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  return run;
 }
 
 test("packet runner assembles a planning-ready packet for Glean review", () => {
@@ -490,7 +653,7 @@ test("direct selected metric movement without owner approval stays evidence-revi
   assert.equal(packet.evidence_sources.selected_metric_movement.customer_owned_or_approved, false);
 });
 
-test("validated Measurement Cell can drive packet metric movement and design alignment", () => {
+test("direct validated Measurement Cell cannot reach finance-context readiness without assembly binding", () => {
   const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
   const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
   const measurementCell = buildPacketMeasurementCell();
@@ -519,9 +682,43 @@ test("validated Measurement Cell can drive packet metric movement and design ali
   const validation = validateValueHypothesisReadinessPacket(packet);
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(packet.validation.measurement_cell_validated, true);
-  assert.equal(packet.evidence_sources.measurement_cell.state, "present");
+  assert.equal(packet.evidence_sources.measurement_cell.state, "held");
   assert.equal(packet.evidence_sources.measurement_cell.measurement_cell_id, measurementCell.measurement_cell_id);
+  assert.equal(packet.evidence_sources.measurement_cell.feeds_finance_context_investigation, false);
+  assert.equal(packet.readiness.readiness_state, "BUSINESS_OWNER_REVIEW_READY");
+  assert.equal(packet.readiness.contribution_evidence_tier, "MATCHED_COMPARISON_READY");
+  assert.ok(packet.missing_evidence.includes("MEASUREMENT_CELL_ASSEMBLY_RUN_REQUIRED_FOR_FINANCE_CONTEXT"));
+  assert.ok(!packet.allowed_next_actions.includes("prepare_finance_context_investigation_packet"));
+  assert.equal(validation.feeds.finance_context_investigation, false);
+  assert.equal(validation.feeds.customer_facing_output, false);
+  assert.equal(validation.feeds.financial_output, false);
+});
+
+test("validated Measurement Cell Assembly Run can drive finance-context readiness", () => {
+  const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
+  const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const measurementCellAssemblyRun = buildPacketMeasurementCellAssemblyRun(plan);
+  const packet = buildPacket({
+    plan,
+    claimSnapshot,
+    measurementCellAssemblyRun,
+    roiBotContext: {
+      present: true,
+      scenario_context_only: true,
+      source_tags: ["roi_bot_usage_actuals"],
+      pull_date: "2026-06-19",
+      assumptions_owner_role: "finance_partner",
+      owner_approval_state: "approved"
+    }
+  });
+
+  const validation = validateValueHypothesisReadinessPacket(packet);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(packet.validation.measurement_cell_validated, true);
+  assert.equal(packet.validation.measurement_cell_assembly_validated, true);
+  assert.equal(packet.evidence_sources.measurement_cell.state, "present");
   assert.equal(packet.evidence_sources.measurement_cell.feeds_finance_context_investigation, true);
+  assert.equal(packet.evidence_sources.measurement_cell.assembly_run_id, measurementCellAssemblyRun.run_id);
   assert.equal(packet.readiness.readiness_state, "FINANCE_CONTEXT_INVESTIGATION_READY");
   assert.equal(packet.readiness.contribution_evidence_tier, "MATCHED_COMPARISON_READY");
   assert.equal(validation.feeds.finance_context_investigation, true);
@@ -532,10 +729,11 @@ test("validated Measurement Cell can drive packet metric movement and design ali
 test("packet validation rejects finance-context readiness without Measurement Cell validation binding", () => {
   const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
   const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const measurementCellAssemblyRun = buildPacketMeasurementCellAssemblyRun(plan);
   const packet = buildPacket({
     plan,
     claimSnapshot,
-    measurementCell: buildPacketMeasurementCell(),
+    measurementCellAssemblyRun,
     roiBotContext: {
       present: true,
       scenario_context_only: true,
@@ -800,10 +998,11 @@ test("ROI Bot approval alone cannot upgrade a missing metric packet", () => {
 test("packet validation rejects finance-context readiness without Measurement Cell evidence", () => {
   const plan = promotePlanToFullPlaybookReady(buildMeasurementPlan());
   const claimSnapshot = buildClaimSnapshot({ fullPlaybook: true });
+  const measurementCellAssemblyRun = buildPacketMeasurementCellAssemblyRun(plan);
   const packet = buildPacket({
     plan,
     claimSnapshot,
-    measurementCell: buildPacketMeasurementCell()
+    measurementCellAssemblyRun
   });
   const tamperedPacket = clone(packet);
   delete tamperedPacket.evidence_sources.measurement_cell;

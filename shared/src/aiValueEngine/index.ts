@@ -188,6 +188,16 @@ export type {
 } from "./dataSpineReadiness";
 
 export {
+  AI_VALUE_SOURCE_PACKAGE_REVIEW_QUEUE_SCHEMA_VERSION,
+  buildSourcePackageReviewQueue,
+  validateSourcePackageReviewQueue
+} from "./sourcePackageReviewQueue";
+export type {
+  BuildSourcePackageReviewQueueInput,
+  SourcePackageReviewQueueValidationResult
+} from "./sourcePackageReviewQueue";
+
+export {
   AI_VALUE_BLUEPRINT_EXTRACTION_DRAFT_SCHEMA_VERSION,
   buildBlueprintExtractionDraft,
   validateBlueprintExtractionDraft
@@ -196,6 +206,16 @@ export type {
   BlueprintExtractionDraftValidationResult,
   BuildBlueprintExtractionDraftInput
 } from "./blueprintExtractionDraft";
+
+export {
+  AI_VALUE_BLUEPRINT_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildBlueprintOperatorSourceHandoff,
+  validateBlueprintOperatorSourceHandoff
+} from "./blueprintOperatorSourceHandoff";
+export type {
+  BlueprintOperatorSourceHandoffValidationResult,
+  BuildBlueprintOperatorSourceHandoffInput
+} from "./blueprintOperatorSourceHandoff";
 
 export {
   AI_VALUE_AI_FLUENCY_CLIENT_IMPORT_SCHEMA_VERSION,
@@ -216,6 +236,31 @@ export type {
   AIFluencyDashboardImportRunValidationResult,
   BuildAIFluencyDashboardImportRunInput
 } from "./aiFluencyDashboardImportRunner";
+
+export {
+  AI_VALUE_AI_FLUENCY_AGGREGATE_EXPORT_PARSE_RUN_SCHEMA_VERSION,
+  AI_VALUE_AI_FLUENCY_AGGREGATE_EXPORT_PARSER_SCHEMA_VERSION,
+  AIFluencyAggregateExportParserError,
+  buildAIFluencyAggregateExportParseRun,
+  parseAIFluencyAggregateExport,
+  validateAIFluencyAggregateExportParseRun
+} from "./aiFluencyAggregateExportParser";
+export type {
+  AIFluencyAggregateExportParseRunValidationResult,
+  AIFluencyAggregateExportParserInput,
+  AIFluencyAggregateExportParserInputObject,
+  BuildAIFluencyAggregateExportParseRunInput
+} from "./aiFluencyAggregateExportParser";
+
+export {
+  AI_VALUE_AI_FLUENCY_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildAIFluencyOperatorSourceHandoff,
+  validateAIFluencyOperatorSourceHandoff
+} from "./aiFluencyOperatorSourceHandoff";
+export type {
+  AIFluencyOperatorSourceHandoffValidationResult,
+  BuildAIFluencyOperatorSourceHandoffInput
+} from "./aiFluencyOperatorSourceHandoff";
 
 export {
   AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
@@ -246,6 +291,48 @@ export type {
   BuildRealDataIntakePacketRunInput,
   RealDataIntakePacketRunValidationResult
 } from "./realDataIntakePacketRunner";
+
+export {
+  AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION,
+  buildOperatorIntakeAdapterRun,
+  validateOperatorIntakeAdapterRun
+} from "./operatorIntakeAdapter";
+export type {
+  BuildOperatorIntakeAdapterRunInput,
+  OperatorIntakeAdapterRunValidationResult
+} from "./operatorIntakeAdapter";
+
+export {
+  AI_VALUE_OPERATOR_TIME_SERIES_RUN_SCHEMA_VERSION,
+  buildOperatorTimeSeriesRun,
+  validateOperatorTimeSeriesRun
+} from "./operatorTimeSeriesRun";
+export type {
+  BuildOperatorTimeSeriesRunInput,
+  BuildOperatorTimeSeriesWindowInput,
+  OperatorTimeSeriesRunValidationResult
+} from "./operatorTimeSeriesRun";
+
+export {
+  AI_VALUE_OPERATOR_WORKFLOW_SCHEMA_VERSION,
+  buildOperatorWorkflow,
+  validateOperatorWorkflow
+} from "./operatorWorkflow";
+export type {
+  BuildOperatorWorkflowInput,
+  OperatorWorkflowValidationResult
+} from "./operatorWorkflow";
+
+export {
+  AI_VALUE_OPERATOR_EVIDENCE_PACKAGE_RUN_SCHEMA_VERSION,
+  buildOperatorEvidencePackageRun,
+  validateOperatorEvidencePackageRun
+} from "./operatorEvidencePackageRunner";
+export type {
+  BuildOperatorEvidencePackageRunInput,
+  BuildOperatorEvidencePackageWindowInput,
+  OperatorEvidencePackageRunValidationResult
+} from "./operatorEvidencePackageRunner";
 
 export {
   AI_VALUE_MEASUREMENT_CELL_SCHEMA_VERSION,
