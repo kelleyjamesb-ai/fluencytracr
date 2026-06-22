@@ -2,6 +2,72 @@
 
 ## Last Completed
 
+- AI Value controlled Measurement Cell assembly executable path
+  (user-requested, 2026-06-22): added the next controlled executable gate after the
+  controlled aggregate fixture review. The new command runs the saved aggregate
+  fixture through Controlled Aggregate Fixture Review, verifies the reviewed
+  source-ref hash, reviewed aggregate-context hash, and reviewed Blueprint
+  expectation hash, rebuilds Data Spine Readiness, cross-checks scrubbed export
+  owner/approver/attestation posture
+  and actual Real Data Intake source packages for source owner/attestation/ref/
+  grain drift, rebuilds Source Package Review Queue metadata,
+  Blueprint selected-path validation from reviewed Blueprint expectation input,
+  requires fixture-derived aggregate AI Fluency, VBD, token, selected metric,
+  governance, and assumption context, and Real Data Intake in memory, then calls
+  the existing Measurement Cell Assembly Runner and
+  emits only compact internal Measurement Cell candidate metadata. Passed output
+  includes the assembly run
+  id, Measurement Cell ref, selected metric id, selected expectation path id,
+  reviewed-source-ref hash, reviewed aggregate-context hash, reviewed Blueprint
+  expectation hash, compact candidate integrity hash, source package count, and
+  validation summary. Passed-candidate validation is fixture-bound: standalone
+  compact-object validation is not treated as provenance proof. It does not
+  emit full Measurement Plan, Data
+  Spine, Source Package Review Queue, Real Data Intake, Pilot Intake, Source Package,
+  Blueprint handoff, Measurement Cell input, Measurement Cell payload,
+  Measurement Cell Series, evidence snapshot, claim handoff, executive packet,
+  customer export, JSON payload, route/UI/schema/persistence/live connector, or
+  customer-facing output objects. It fails closed on missing/held/suppressed
+  aggregate telemetry, missing Layer 1 VBD or token summary, missing aggregate
+  AI Fluency summary, missing or stale reviewed Blueprint expectation input,
+  reviewed source-ref drift, stale hash/feed contradictions, aggregate metric
+  summary drift, non-exact selected metric binding,
+  unsupported source-lane aggregate grain, scrubbed export owner/approver/
+  attestation drift,
+  actual Real Data source-package owner/attestation/ref/grain drift, unsafe
+  lane-bound source refs including lane-prefixed encoded-looking refs, raw rows,
+  query text, prompts, transcripts, user
+  identifiers, unsafe caveat/gap text leakage, nested metadata/source-ref
+  smuggling, nested compact container/policy-map payload smuggling, mirrored
+  compact hash tampering, recomputed self-hash forgery, hand-filled
+  passed-candidate metadata that does not match a fixture-bound rerun, fake ready
+  Measurement Cell refs on held candidates, ROI/EBITDA, finance-output,
+  confidence, probability, causality, productivity, persistence, routes, UI,
+  schemas, repositories, migrations, live BigQuery/Sigma/Glean execution,
+  camel/suffixed child-payload aliases, and full child-object smuggling. The
+  layer intentionally keeps Source Package clearance, Measurement Cell
+  snapshots/series, evidence continuity,
+  Value Hypothesis packet runner, finance-context investigation, confidence
+  model, probability output, ROI/EBITDA, causality, productivity, persistence,
+  and customer-facing output feeds false. No shared schema, migration,
+  repository, backend route, frontend UI, persistence write, live connector,
+  confidence math, ROI math, causality logic, productivity measurement,
+  probability output, finance output, or customer-facing financial output was
+  added. Verification:
+  `npm run test:ai-value-controlled-measurement-cell-assembly` passed 39/39;
+  `npm run run:ai-value-controlled-measurement-cell-assembly` emitted
+  `PASSED_INTERNAL_MEASUREMENT_CELL_CANDIDATE_REVIEW` with
+  `READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER` as the underlying assembly
+  decision while keeping downstream feeds false;
+  `npm run test:ai-value-controlled-aggregate-fixture-review` passed 16/16;
+  `npm run test:ai-value-real-data-intake-packet-runner` passed 12/12;
+  `npm run test:ai-value-evidence-collection-assembler` passed 22/22;
+  `npm run test:ai-value-source-package-review-queue` passed 13/13;
+  `npm run test:ai-value-measurement-cell-assembly-runner` passed 16/16;
+  `npm run test:ai-value-measurement-cell` passed 31/31;
+  `npm run test:ai-value-data-spine-readiness` passed 12/12;
+  `git diff --check` passed; `bash scripts/ci_docs_contract_sweep.sh` passed;
+  `python3 scripts/ci_v1_governance_gates.py` passed.
 - AI Value controlled aggregate fixture review executable path
   (user-requested, 2026-06-22): added the first runnable saved-fixture
   controlled review harness. The new command runs a saved aggregate fixture

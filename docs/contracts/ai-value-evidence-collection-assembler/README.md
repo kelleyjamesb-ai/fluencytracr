@@ -36,8 +36,10 @@ posture, and aggregate-safe workforce context. They cannot create full Playbook
 coverage by themselves.
 
 Evidence-bearing Source Packages must match the Measurement Plan's `org_id`,
-covered baseline window, and approved aggregate grain before they can feed the
-draft Evidence Snapshot. Aggregate workforce context packages may use a
+covered comparison window, and approved aggregate grain before they can feed the
+draft Evidence Snapshot. The emitted draft Evidence Snapshot uses that same
+validated comparison window so accepted source packages cannot become a stale
+baseline-window snapshot. Aggregate workforce context packages may use a
 separate approved aggregate grain such as role family or cohort, but remain
 context only and cannot upgrade coverage.
 

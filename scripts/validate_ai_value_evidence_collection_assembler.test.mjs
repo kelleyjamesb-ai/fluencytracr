@@ -49,7 +49,14 @@ function plan(overrides = {}) {
 }
 
 function sourcePackage(file) {
-  return readJson(`${SOURCE_EXAMPLES}/${file}`);
+  const pkg = readJson(`${SOURCE_EXAMPLES}/${file}`);
+  return {
+    ...pkg,
+    covered_window: {
+      window_start: "2026-06-01",
+      window_end: "2026-06-30"
+    }
+  };
 }
 
 function packageSet(names) {
@@ -153,6 +160,10 @@ test("measurement plan plus Layer 1 package only produces layer_1_only snapshot 
   const assembly = buildAssembly(packageSet(["layer1"]));
   expectValidAssembly(assembly);
   const snapshot = assembly.draft_evidence_snapshot_input;
+  assert.equal(snapshot.window.window_start, "2026-06-01");
+  assert.equal(snapshot.window.window_end, "2026-06-30");
+  assert.equal(snapshot.aggregate_telemetry_summary.probe_window_start, "2026-06-01");
+  assert.equal(snapshot.aggregate_telemetry_summary.probe_window_end, "2026-06-30");
   assert.equal(snapshot.playbook_coverage.coverage_status, "layer_1_only");
   for (const use of REQUIRED_BLOCKED_USES) {
     assert.ok(snapshot.blocked_uses.includes(use), `missing blocked use ${use}`);

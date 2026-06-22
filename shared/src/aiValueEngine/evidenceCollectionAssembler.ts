@@ -331,10 +331,10 @@ function getPath(value: any, path: string): any {
 
 function expectedPackageValueForPlan(plan: any, path: string): any {
   if (path === "covered_window.window_start") {
-    return plan?.windows?.baseline_window_start;
+    return plan?.windows?.comparison_window_start;
   }
   if (path === "covered_window.window_end") {
-    return plan?.windows?.baseline_window_end;
+    return plan?.windows?.comparison_window_end;
   }
   if (path === "approved_aggregate_grain") {
     return plan?.workflow_scope?.approved_aggregate_grain;
@@ -455,10 +455,12 @@ function buildTelemetrySummary(layer1Package: any, plan: any): any {
   return {
     probe_window_start:
       layer1Package?.covered_window?.window_start ??
+      plan?.windows?.comparison_window_start ??
       plan?.windows?.baseline_window_start ??
       null,
     probe_window_end:
       layer1Package?.covered_window?.window_end ??
+      plan?.windows?.comparison_window_end ??
       plan?.windows?.baseline_window_end ??
       null,
     aggregate_event_count: layer1KMinClear ? 1 : null,
@@ -917,13 +919,26 @@ export function buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages(
   const sourceRefPackages = validPackages.filter(packageCanFeedSourceRef);
   const layer1Package = findPackageByType(validPackages, "layer_1_bigquery_telemetry_summary");
   const workforcePackage = findPackageByType(validPackages, "aggregate_workforce_context_export");
+  const windowSourcePackage = validPackages.find((pkg) =>
+    pkg?.covered_window?.window_start && pkg?.covered_window?.window_end
+  );
+  const snapshotWindowStart =
+    windowSourcePackage?.covered_window?.window_start ??
+    measurementPlan?.windows?.comparison_window_start ??
+    measurementPlan?.windows?.baseline_window_start ??
+    "";
+  const snapshotWindowEnd =
+    windowSourcePackage?.covered_window?.window_end ??
+    measurementPlan?.windows?.comparison_window_end ??
+    measurementPlan?.windows?.baseline_window_end ??
+    "";
   const snapshot = buildTelemetryEvidenceSnapshotDraft({
     orgId: measurementPlan?.org_id ?? "unknown_org",
     workflowFamily: measurementPlan?.workflow_scope?.workflow_family ?? "unknown_workflow",
     workflowName: measurementPlan?.workflow_scope?.workflow_name ?? null,
     functionArea: measurementPlan?.workflow_scope?.function_area ?? null,
-    windowStart: measurementPlan?.windows?.baseline_window_start ?? "",
-    windowEnd: measurementPlan?.windows?.baseline_window_end ?? "",
+    windowStart: snapshotWindowStart,
+    windowEnd: snapshotWindowEnd,
     aggregateTelemetrySummary: buildTelemetrySummary(layer1Package, measurementPlan),
     aggregateWorkforceContext: buildAggregateWorkforceContext(workforcePackage),
     sourceRefs: buildSourceRefs(sourceRefPackages, validPackages),
@@ -961,7 +976,7 @@ export function buildEvidenceSnapshotInputFromMeasurementPlanAndSourcePackages(
   snapshot.derivation_version = "ai_value_evidence_collection_assembler_2026_06";
 
   const fallbackAssemblyId =
-    `evidence_collection_assembly_${safeIdPart(String(measurementPlan?.org_id ?? "unknown_org"))}_${safeIdPart(String(measurementPlan?.workflow_scope?.workflow_family ?? "unknown_workflow"))}_${safeIdPart(String(measurementPlan?.windows?.baseline_window_start ?? "unknown_window"))}`;
+    `evidence_collection_assembly_${safeIdPart(String(measurementPlan?.org_id ?? "unknown_org"))}_${safeIdPart(String(measurementPlan?.workflow_scope?.workflow_family ?? "unknown_workflow"))}_${safeIdPart(String(snapshotWindowStart || "unknown_window"))}`;
 
   return {
     schema_version: EVIDENCE_COLLECTION_ASSEMBLY_SCHEMA_VERSION,

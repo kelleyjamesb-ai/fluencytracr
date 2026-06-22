@@ -286,6 +286,57 @@ test("controlled aggregate fixture review holds unknown or missing aggregate tel
   );
 });
 
+test("controlled aggregate fixture review treats null, empty, and boolean numeric telemetry as missing", () => {
+  const cases = [
+    {
+      name: "null VBD baseline",
+      mutate: (fixture) => {
+        fixture.scrubbed_glean_exports[0].vbd_summary.baseline_index = null;
+      },
+      expectedGap: "vbd_summary.baseline_index is required"
+    },
+    {
+      name: "empty VBD comparison",
+      mutate: (fixture) => {
+        fixture.scrubbed_glean_exports[0].vbd_summary.comparison_index = "";
+      },
+      expectedGap: "vbd_summary.comparison_index is required"
+    },
+    {
+      name: "boolean suppressed slices",
+      mutate: (fixture) => {
+        fixture.scrubbed_glean_exports[0].k_min_posture.suppressed_or_unknown_slices = false;
+      },
+      expectedGap: "k_min_posture.suppressed_or_unknown_slices is required"
+    },
+    {
+      name: "whitespace VBD baseline",
+      mutate: (fixture) => {
+        fixture.scrubbed_glean_exports[0].vbd_summary.baseline_index = "   ";
+      },
+      expectedGap: "vbd_summary.baseline_index is required"
+    }
+  ];
+
+  for (const { name, mutate, expectedGap } of cases) {
+    const fixture = clone(readJson(FIXTURE_PATH));
+    mutate(fixture);
+
+    const review = runControlledAggregateFixtureReviewFromObject(fixture);
+
+    assert.equal(
+      review.review_state,
+      "HELD_FOR_SUPPRESSED_AGGREGATE_TELEMETRY",
+      name
+    );
+    assert.equal(review.engine_executed, false, name);
+    assert.ok(
+      review.validation_summary.gaps.some((gap) => gap.includes(expectedGap)),
+      `${name}: ${review.validation_summary.gaps.join("; ")}`
+    );
+  }
+});
+
 test("controlled aggregate fixture review blocks source-ref drift against the Data Spine", () => {
   const fixture = clone(readJson(FIXTURE_PATH));
   fixture.scrubbed_glean_exports[2].aggregate_probe_id =
@@ -520,6 +571,21 @@ test("controlled aggregate fixture review validation rejects stale or contradict
   ]) {
     assert.ok(validation.gaps.some((gap) => gap.includes(token)), `missing ${token}`);
   }
+});
+
+test("controlled aggregate fixture review validation rejects extra unreviewed source refs", () => {
+  const review = runControlledAggregateFixtureReviewFromObject(readJson(FIXTURE_PATH));
+  const tampered = clone(review);
+  tampered.internal_review_package.reviewed_source_refs.extra_unreviewed_ref =
+    "blueprint_extra_ref";
+
+  const validation = validateControlledAggregateFixtureReview(tampered);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("extra_unreviewed_ref")),
+    validation.gaps.join("; ")
+  );
 });
 
 test("controlled aggregate fixture review validation rejects nested child objects and unsafe stale gaps", () => {

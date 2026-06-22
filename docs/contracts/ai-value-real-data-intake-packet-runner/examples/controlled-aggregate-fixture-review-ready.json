@@ -4,6 +4,114 @@
   "run_id": "real_data_intake_packet_run_support_controlled_fixture_day_30",
   "generated_at": "2026-06-22T00:00:00.000Z",
   "measurement_plan_path": "docs/contracts/ai-value-measurement-plan/examples/full-playbook-ready-plan.json",
+  "blueprint_extraction_input": {
+    "draftId": "blueprint_parse_support_approved_day_30",
+    "orgId": "org_example",
+    "clientId": "client_example",
+    "documentSourceRef": "blueprint_parse_support_approved_day_30_document_source",
+    "extractionState": "parsed",
+    "approvalState": "approved",
+    "ownerRole": "workflow_owner",
+    "approverRole": "workflow_owner",
+    "workflowFamily": "customer_support_case_resolution",
+    "workflowName": "Support case resolution",
+    "functionArea": "customer_support",
+    "cohortKey": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+    "valueHypothesis": "If the support workflow uses AI for case triage and answer drafting, then eligible cases should move faster while quality and escalation posture remain governed.",
+    "valueRoute": "CAPACITY_CREATION",
+    "baselineWindow": {
+      "window_start": "2026-05-01",
+      "window_end": "2026-05-31"
+    },
+    "comparisonWindow": {
+      "window_start": "2026-06-01",
+      "window_end": "2026-06-30"
+    },
+    "expectedBehaviorPathways": [
+      {
+        "behavior": "knowledge_retrieval",
+        "expected_vbd_signal": "depth",
+        "system_recommended": true,
+        "customer_selected": true
+      }
+    ],
+    "metricCandidates": [
+      {
+        "metric_id": "support_median_resolution_hours",
+        "metric_name": "Median resolution time",
+        "expected_direction": "decrease",
+        "expected_lag_days": 30,
+        "system_recommended": true,
+        "customer_selected": true,
+        "value_driver": "capacity"
+      }
+    ],
+    "approvedExpectationPaths": [
+      {
+        "expectation_path_id": "expectation_path_support_median_resolution_hours_capacity",
+        "expected_behavior": "knowledge_retrieval",
+        "expected_vbd_signal": "depth",
+        "expected_metric_id": "support_median_resolution_hours",
+        "expected_metric_name": "Median resolution time",
+        "expected_metric_direction": "decrease",
+        "expected_metric_lag_days": 30,
+        "expected_metric_system_recommended": true,
+        "expected_metric_customer_selected": true,
+        "value_driver": "capacity",
+        "metric_role": "primary",
+        "customer_approval_state": "approved",
+        "approver_role": "workflow_owner",
+        "source_ref": "blueprint_parse_support_approved_day_30"
+      }
+    ],
+    "assumptions": [
+      {
+        "assumption_id": "case_mix_stability",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "volume_context",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "staffing_and_coverage_context",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "channel_mix_context",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "process_or_policy_context",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "knowledge_base_context",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "metric_definition_stability",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      },
+      {
+        "assumption_id": "ai_rollout_context",
+        "owner": "workflow_owner",
+        "state": "submitted"
+      }
+    ],
+    "sourceRefs": {
+      "document_source_ref": "blueprint_parse_support_approved_day_30_document_source",
+      "extraction_run_ref": "blueprint_parse_support_approved_day_30_extraction_run"
+    },
+    "generatedAt": "2026-06-22T00:00:00.000Z"
+  },
   "data_spine_input": {
     "org_id": "org_example",
     "client_id": "client_example",
@@ -175,8 +283,8 @@
       },
       "generated_at": "2026-06-22T00:00:00.000Z",
       "covered_window": {
-        "window_start": "2026-05-01",
-        "window_end": "2026-05-31"
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
       },
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
@@ -237,6 +345,13 @@
         "movement_direction": "improved",
         "aggregate_only": true
       },
+      "token_summary": {
+        "total_tokens": 1880000,
+        "token_per_active_seat": 7833,
+        "token_intensity_band": "moderate",
+        "aggregate_interaction_count": 2400,
+        "aggregate_workflow_count": 620
+      },
       "allowed_uses": [
         "evidence_collection_input",
         "source_availability_summary"
@@ -278,8 +393,8 @@
       },
       "generated_at": "2026-06-22T00:00:00.000Z",
       "covered_window": {
-        "window_start": "2026-05-01",
-        "window_end": "2026-05-31"
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
       },
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
@@ -318,7 +433,12 @@
       "metric_or_signal_summary": {
         "summary_type": "aggregate_export_metadata_summary",
         "aggregate_signal_name": "aggregate_ai_fluency_baseline_summary",
-        "aggregate_value_present": true
+        "aggregate_value_present": true,
+        "overall_ai_fluency_score": 72,
+        "usage_quality_score": 70,
+        "behavior_change_score": 68,
+        "leadership_reinforcement_score": 71,
+        "capability_growth_score": 77
       },
       "allowed_uses": [
         "evidence_collection_input",
@@ -353,7 +473,7 @@
       "approver_role": "customer_business_owner",
       "attestation": {
         "attestation_state": "attested",
-        "attested_by_role": "customer_business_owner",
+        "attested_by_role": "customer_metric_owner",
         "attested_at": "2026-06-22T00:00:00.000Z",
         "caveats": [
           "Aggregate metadata only."
@@ -361,8 +481,8 @@
       },
       "generated_at": "2026-06-22T00:00:00.000Z",
       "covered_window": {
-        "window_start": "2026-05-01",
-        "window_end": "2026-05-31"
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
       },
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
@@ -400,7 +520,9 @@
       "metric_or_signal_summary": {
         "summary_type": "customer_owned_aggregate_metric_summary",
         "aggregate_metric_name": "aggregate_support_median_resolution_hours",
-        "aggregate_value_present": true
+        "aggregate_value_present": true,
+        "baseline_value": 18,
+        "comparison_value": 14
       },
       "allowed_uses": [
         "evidence_collection_input",
@@ -443,8 +565,8 @@
       },
       "generated_at": "2026-06-22T00:00:00.000Z",
       "covered_window": {
-        "window_start": "2026-05-01",
-        "window_end": "2026-05-31"
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
       },
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
@@ -525,8 +647,8 @@
       },
       "generated_at": "2026-06-22T00:00:00.000Z",
       "covered_window": {
-        "window_start": "2026-05-01",
-        "window_end": "2026-05-31"
+        "window_start": "2026-06-01",
+        "window_end": "2026-06-30"
       },
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
@@ -594,6 +716,8 @@
     "engine_decision": "READY_FOR_MEASUREMENT_CELL_ASSEMBLY",
     "source_package_count": 5,
     "next_gate": "measurement_cell_assembly_candidate_only",
+    "reviewed_aggregate_context_hash": "6c8d03765abed1b6ef643733571d8b70d58960fe8390ff95236a21520c72a8c2",
+    "reviewed_blueprint_expectation_hash": "0f5717eddfc5119e80c52e535d7b0b06a096db9d4c0cf0fffb9030203fa59fc3",
     "reviewed_source_refs": {
       "blueprint": "blueprint_parse_support_approved_day_30",
       "ai_fluency": "ai_fluency_support_day_30",

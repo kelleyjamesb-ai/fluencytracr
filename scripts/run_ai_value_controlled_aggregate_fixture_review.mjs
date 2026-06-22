@@ -121,6 +121,7 @@ const ALLOWED_FIXTURE_FIELDS = new Set([
   "generated_at",
   "measurement_plan_path",
   "measurement_plan",
+  "blueprint_extraction_input",
   "data_spine_input",
   "data_spine_readiness",
   "scrubbed_glean_exports",
@@ -161,6 +162,17 @@ const REVIEWED_SOURCE_REF_LANES = [
   "assumption",
   "governance"
 ];
+
+const SAFE_SOURCE_REF_PATTERN = /^[a-z][a-z0-9_]{2,159}$/;
+
+const LANE_SOURCE_REF_PATTERNS = {
+  blueprint: /^(?:blueprint|blueprint_parse|blueprint_extraction_draft)_[a-z0-9_]{2,150}$/,
+  ai_fluency: /^ai_fluency_[a-z0-9_]{2,150}$/,
+  vbd_token: /^scrubbed_glean_vbd_token_[a-z0-9_]{2,150}$/,
+  customer_metric: /^[a-z0-9_]*metric_[a-z0-9_]{2,150}$/,
+  assumption: /^[a-z0-9_]*assumption_[a-z0-9_]{2,150}$/,
+  governance: /^[a-z0-9_]*governance_[a-z0-9_]{2,150}$/
+};
 
 const EXEMPT_VALUE_PATHS = new Set([
   "blocked_uses",
@@ -352,6 +364,38 @@ function hashReviewedSourceRefs(refs) {
   return createHash("sha256")
     .update(JSON.stringify(canonicalRefs))
     .digest("hex");
+}
+
+function sourceRefIsSafe(value) {
+  return typeof value === "string" &&
+    SAFE_SOURCE_REF_PATTERN.test(value) &&
+    value.length <= 160;
+}
+
+function sourceRefIsSafeForLane(lane, value) {
+  return sourceRefIsSafe(value) &&
+    (LANE_SOURCE_REF_PATTERNS[lane]?.test(value) ?? true);
+}
+
+function collectReviewedSourceRefsShapeGaps(refs, pathPrefix) {
+  const gaps = [];
+  if (!refs || typeof refs !== "object" || Array.isArray(refs)) {
+    gaps.push(`${pathPrefix} must be an object`);
+    return gaps;
+  }
+  for (const key of Object.keys(refs)) {
+    if (!REVIEWED_SOURCE_REF_LANES.includes(key)) {
+      gaps.push(`${pathPrefix}.${key} is not an allowed reviewed source lane`);
+    }
+  }
+  for (const lane of REVIEWED_SOURCE_REF_LANES) {
+    if (!refs[lane]) {
+      gaps.push(`${pathPrefix}.${lane} is required`);
+    } else if (!sourceRefIsSafeForLane(lane, refs[lane])) {
+      gaps.push(`${pathPrefix}.${lane} must be a safe lane-bound reviewed source ref`);
+    }
+  }
+  return gaps;
 }
 
 function falseFeeds(internalFixtureReview = false) {
@@ -588,8 +632,7 @@ function dataSpineInputFromFixture(fixture) {
 }
 
 function buildDataSpineFromFixture(fixture) {
-  if (fixture.data_spine_readiness) return deepClone(fixture.data_spine_readiness);
-  const input = fixture.data_spine_input ?? {};
+  const input = dataSpineInputFromFixture(fixture);
   return buildDataSpineIntakeReadiness({
     orgId: input.org_id,
     clientId: input.client_id,
@@ -704,6 +747,7 @@ function collectExpectedSourceRefGaps(fixture, dataSpine) {
   if (!expected || typeof expected !== "object" || Array.isArray(expected)) {
     return ["expected.reviewed_source_refs is required"];
   }
+  gaps.push(...collectReviewedSourceRefsShapeGaps(expected, "expected.reviewed_source_refs"));
   const actual = packageRefsFromDataSpine(dataSpine);
   for (const lane of REVIEWED_SOURCE_REF_LANES) {
     if (!expected[lane]) {
@@ -730,6 +774,8 @@ function collectDataSpinePreflightGaps(dataSpine) {
     }
     if (!source.source_ref) {
       gaps.push(`${path}.source_ref is required`);
+    } else if (!sourceRefIsSafeForLane(lane, source.source_ref)) {
+      gaps.push(`${path}.source_ref must be a safe lane-bound reviewed source ref`);
     }
     if (!source.owner_role) {
       gaps.push(`${path}.owner_role is required`);
@@ -805,6 +851,12 @@ function collectReviewConsistencyGaps(review) {
     ) {
       gaps.push("internal_review_package.reviewed_source_refs is required for PASSED_INTERNAL_FIXTURE_REVIEW");
     } else {
+      gaps.push(
+        ...collectReviewedSourceRefsShapeGaps(
+          reviewedSourceRefs,
+          "internal_review_package.reviewed_source_refs"
+        )
+      );
       for (const lane of REVIEWED_SOURCE_REF_LANES) {
         if (!reviewedSourceRefs[lane]) {
           gaps.push(`internal_review_package.reviewed_source_refs.${lane} is required for PASSED_INTERNAL_FIXTURE_REVIEW`);
@@ -919,6 +971,18 @@ function collectReviewConsistencyGaps(review) {
       ) {
         gaps.push("internal_review_package.reviewed_source_refs_hash must match reviewed_source_refs when BLOCKED after engine execution");
       }
+      if (
+        reviewedSourceRefs &&
+        typeof reviewedSourceRefs === "object" &&
+        !Array.isArray(reviewedSourceRefs)
+      ) {
+        gaps.push(
+          ...collectReviewedSourceRefsShapeGaps(
+            reviewedSourceRefs,
+            "internal_review_package.reviewed_source_refs"
+          )
+        );
+      }
     } else {
       gaps.push("engine_executed must be boolean for BLOCKED review");
     }
@@ -940,6 +1004,18 @@ function collectReviewConsistencyGaps(review) {
 
 function collectSuppressedAggregateGaps(fixture) {
   const gaps = [];
+  const finiteRequiredNumber = (value) => {
+    if (
+      value === null ||
+      value === undefined ||
+      typeof value === "boolean" ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      return null;
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
   for (const [index, exportRecord] of (fixture.scrubbed_glean_exports ?? []).entries()) {
     const prefix = `scrubbed_glean_exports.${index}`;
     const evidenceState = String(exportRecord?.evidence_state ?? "");
@@ -950,8 +1026,8 @@ function collectSuppressedAggregateGaps(fixture) {
       gaps.push(`${prefix}.k_min_posture.cohort_threshold_met must be true`);
     }
     const suppressedValue = exportRecord?.k_min_posture?.suppressed_or_unknown_slices;
-    const suppressed = Number(suppressedValue);
-    if (suppressedValue === undefined || suppressedValue === null || !Number.isFinite(suppressed)) {
+    const suppressed = finiteRequiredNumber(suppressedValue);
+    if (suppressed === null) {
       gaps.push(`${prefix}.k_min_posture.suppressed_or_unknown_slices is required`);
     } else if (suppressed > 0) {
       gaps.push(`${prefix}.k_min_posture.suppressed_or_unknown_slices must be 0`);
@@ -960,10 +1036,10 @@ function collectSuppressedAggregateGaps(fixture) {
       if (!exportRecord?.vbd_summary || typeof exportRecord.vbd_summary !== "object") {
         gaps.push(`${prefix}.vbd_summary is required`);
       } else {
-        if (!Number.isFinite(Number(exportRecord.vbd_summary.baseline_index))) {
+        if (finiteRequiredNumber(exportRecord.vbd_summary.baseline_index) === null) {
           gaps.push(`${prefix}.vbd_summary.baseline_index is required`);
         }
-        if (!Number.isFinite(Number(exportRecord.vbd_summary.comparison_index))) {
+        if (finiteRequiredNumber(exportRecord.vbd_summary.comparison_index) === null) {
           gaps.push(`${prefix}.vbd_summary.comparison_index is required`);
         }
         if (exportRecord.vbd_summary.aggregate_only !== true) {
@@ -1117,11 +1193,16 @@ export function runControlledAggregateFixtureReviewFromObject(
 
   const dataSpinePreflightGaps = collectDataSpinePreflightGaps(dataSpine);
   if (dataSpinePreflightGaps.length > 0) {
+    const unsafeSourceRef = dataSpinePreflightGaps.some((gap) =>
+      gap.includes("safe lane-bound reviewed source ref")
+    );
     return blockedReview(
       fixture,
-      "HELD_FOR_DATA_SPINE",
+      unsafeSourceRef ? "BLOCKED" : "HELD_FOR_DATA_SPINE",
       dataSpinePreflightGaps,
-      "fix_data_spine_before_engine_execution"
+      unsafeSourceRef
+        ? "fix_fixture_before_engine_execution"
+        : "fix_data_spine_before_engine_execution"
     );
   }
 
