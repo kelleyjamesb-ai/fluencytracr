@@ -55,11 +55,24 @@ When present on the approved Blueprint Extraction Draft,
 - `expected_metric_system_recommended`
 - `expected_metric_customer_selected`
 - `value_driver`
+- `approved_expectation_paths`
+- `expectation_path_id`
+- `approved_expectation_path`
 
 This context is source-bound preparation for Measurement Cell alignment only.
 It does not feed Measurement Cell directly, clear Source Package Review Queue,
 authorize finance-context investigation, feed confidence modeling, or create
 customer-facing financial output.
+
+The handoff carries the full approved path registry for operator context, then
+selects exactly one path into `expectation_path_id` and
+`approved_expectation_path`. Selection defaults to the single primary path. The
+flattened fields such as `expected_metric_id`, `expected_metric_direction`,
+`expected_metric_lag_days`, and `value_driver` must match that selected path.
+
+The full registry is for handoff context only. A Measurement Cell should bind to
+one selected `approved_expectation_path`; it should not carry the full
+`approved_expectation_paths` registry or become a multi-metric cell.
 
 `value_driver` is bounded to `revenue`, `cost`, `capacity`, `quality`, `risk`,
 or `not_selected`. The handoff must reject `ebitda`, ROI, probability,

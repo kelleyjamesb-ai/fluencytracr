@@ -181,6 +181,84 @@ test("approved Blueprint extraction preserves customer-reviewed measurement expe
   assert.equal(draft.feeds.customer_facing_financial_output, false);
 });
 
+test("approved Blueprint extraction preserves multiple approved expectation paths", () => {
+  const approvedExpectationPaths = [
+    {
+      expectation_path_id: "path_campaign_brief_to_cycle_time",
+      expected_behavior: "knowledge_retrieval",
+      expected_vbd_signal: "depth",
+      expected_metric_id: "marketing_campaign_cycle_days",
+      expected_metric_name: "Campaign cycle time",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 60,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "capacity",
+      metric_role: "primary",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+    },
+    {
+      expectation_path_id: "path_campaign_brief_to_rework_rate",
+      expected_behavior: "verification",
+      expected_vbd_signal: "integration",
+      expected_metric_id: "marketing_rework_rate",
+      expected_metric_name: "Campaign rework rate",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 90,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "quality",
+      metric_role: "supporting",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+    }
+  ];
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      approvalState: "approved",
+      approverRole: "customer_business_owner",
+      approvedExpectationPaths,
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_direction: "decrease",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        },
+        {
+          metric_id: "marketing_rework_rate",
+          metric_name: "Campaign rework rate",
+          expected_direction: "decrease",
+          expected_lag_days: 90,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "quality"
+        }
+      ]
+    })
+  );
+  const result = validateBlueprintExtractionDraft(draft);
+  const approvedInputs =
+    draft.blueprint_validation_input.source_requirements.approved_aggregate_inputs;
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(draft.extracted_fields.approved_expectation_paths.length, 2);
+  assert.equal(
+    draft.extracted_fields.approved_expectation_paths[1].metric_role,
+    "supporting"
+  );
+  assert.equal(approvedInputs.outcome_signals.length, 2);
+  assert.equal(approvedInputs.approved_expectation_paths.length, 2);
+  assert.equal(draft.feeds.measurement_cell_input, false);
+  assert.equal(draft.feeds.customer_facing_financial_output, false);
+});
+
 test("Blueprint measurement expectations fail closed on unsafe or unapproved values", () => {
   const draft = buildBlueprintExtractionDraft(
     baseInput({

@@ -91,6 +91,11 @@ const ALLOWED_VALUE_DRIVERS = new Set([
   "not_selected"
 ]);
 
+const ALLOWED_METRIC_ROLES = new Set([
+  "primary",
+  "supporting"
+]);
+
 const FORBIDDEN_FIELD_PATTERNS = [
   /^raw_rows?$/i,
   /^rows$/i,
@@ -253,6 +258,15 @@ function firstMetric(draft: any): any | null {
   return Array.isArray(metrics) && metrics.length > 0 ? metrics[0] : null;
 }
 
+function approvedExpectationPathsFrom(draft: any): any[] {
+  const paths = draft?.extracted_fields?.approved_expectation_paths;
+  return Array.isArray(paths) ? paths : [];
+}
+
+function selectedApprovedExpectationPathFrom(paths: any[]): any | null {
+  return paths.find((path) => path?.metric_role === "primary") ?? paths[0] ?? null;
+}
+
 function finiteNumberOrNull(value: any): number | null {
   if (value === undefined || value === null || value === "") return null;
   const numeric = Number(value);
@@ -269,6 +283,9 @@ function operatorSourceFrom(draft: any): any {
 function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
   const metric = firstMetric(draft);
   const fields = draft?.extracted_fields ?? {};
+  const approvedExpectationPaths = approvedExpectationPathsFrom(draft);
+  const approvedExpectationPath =
+    selectedApprovedExpectationPathFrom(approvedExpectationPaths);
   return {
     org_id: operatorSource?.org_id ?? null,
     client_id: operatorSource?.client_id ?? null,
@@ -292,17 +309,40 @@ function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
     expected_behavior_pathways: Array.isArray(fields.expected_behavior_pathways)
       ? fields.expected_behavior_pathways
       : [],
-    expected_metric_id: metric?.metric_id ?? null,
-    expected_metric_name: metric?.metric_name ?? metric?.metric_id ?? null,
-    expected_metric_direction: metric?.expected_direction ?? "unknown",
-	    expected_metric_lag_days: finiteNumberOrNull(
-	      fields.expected_metric_lag_days ?? metric?.expected_lag_days
-	    ),
-	    expected_metric_system_recommended:
-	      fields.expected_metric_system_recommended ?? metric?.system_recommended ?? null,
-	    expected_metric_customer_selected:
-	      fields.expected_metric_customer_selected ?? metric?.customer_selected ?? null,
-    value_driver: fields.value_driver ?? metric?.value_driver ?? "not_selected",
+    approved_expectation_paths: approvedExpectationPaths,
+    expectation_path_id: approvedExpectationPath?.expectation_path_id ?? null,
+    approved_expectation_path: approvedExpectationPath,
+    expected_metric_id:
+      approvedExpectationPath?.expected_metric_id ?? metric?.metric_id ?? null,
+    expected_metric_name:
+      approvedExpectationPath?.expected_metric_name ??
+      metric?.metric_name ??
+      metric?.metric_id ??
+      null,
+    expected_metric_direction:
+      approvedExpectationPath?.expected_metric_direction ??
+      metric?.expected_direction ??
+      "unknown",
+    expected_metric_lag_days: finiteNumberOrNull(
+      approvedExpectationPath?.expected_metric_lag_days ??
+        fields.expected_metric_lag_days ??
+        metric?.expected_lag_days
+    ),
+    expected_metric_system_recommended:
+      approvedExpectationPath?.expected_metric_system_recommended ??
+      fields.expected_metric_system_recommended ??
+      metric?.system_recommended ??
+      null,
+    expected_metric_customer_selected:
+      approvedExpectationPath?.expected_metric_customer_selected ??
+      fields.expected_metric_customer_selected ??
+      metric?.customer_selected ??
+      null,
+    value_driver:
+      approvedExpectationPath?.value_driver ??
+      fields.value_driver ??
+      metric?.value_driver ??
+      "not_selected",
     owner_role: draft?.owner_role ?? null,
     assumption_refs: stringsOf(draft?.extracted_fields?.assumption_refs),
     source_ref: operatorSource?.source_ref ?? null
@@ -365,6 +405,101 @@ function collectExpectationGaps(handoff: any): string[] {
   }
   if (!ALLOWED_VALUE_DRIVERS.has(String(context.value_driver))) {
     gaps.push("blueprint_alignment_context.value_driver is invalid");
+  }
+  const paths = context.approved_expectation_paths;
+  if (!Array.isArray(paths)) {
+    gaps.push("blueprint_alignment_context.approved_expectation_paths must be an array");
+  } else {
+    const ids = new Set<string>();
+    let primaryCount = 0;
+    paths.forEach((path: any, index: number) => {
+      const prefix = `blueprint_alignment_context.approved_expectation_paths.${index}`;
+      requireField(path?.expectation_path_id, `${prefix}.expectation_path_id`, gaps);
+      if (path?.expectation_path_id) {
+        const id = String(path.expectation_path_id);
+        if (ids.has(id)) {
+          gaps.push(`${prefix}.expectation_path_id must be unique`);
+        }
+        ids.add(id);
+      }
+      if (path?.metric_role === "primary") primaryCount += 1;
+      if (
+        path?.expected_behavior !== undefined &&
+        path.expected_behavior !== null &&
+        !ALLOWED_EXPECTED_BEHAVIORS.has(String(path.expected_behavior))
+      ) {
+        gaps.push(`${prefix}.expected_behavior is invalid`);
+      }
+      if (
+        path?.expected_vbd_signal !== undefined &&
+        path.expected_vbd_signal !== null &&
+        !ALLOWED_EXPECTED_VBD_SIGNALS.has(String(path.expected_vbd_signal))
+      ) {
+        gaps.push(`${prefix}.expected_vbd_signal is invalid`);
+      }
+      if (!ALLOWED_METRIC_ROLES.has(String(path?.metric_role))) {
+        gaps.push(`${prefix}.metric_role is invalid`);
+      }
+      if (!ALLOWED_VALUE_DRIVERS.has(String(path?.value_driver))) {
+        gaps.push(`${prefix}.value_driver is invalid`);
+      }
+      const pathLag = path?.expected_metric_lag_days;
+      if (
+        pathLag !== undefined &&
+        pathLag !== null &&
+        (!Number.isFinite(Number(pathLag)) || Number(pathLag) < 0)
+      ) {
+        gaps.push(`${prefix}.expected_metric_lag_days must be a non-negative number or null`);
+      }
+      requireField(path?.expected_metric_id, `${prefix}.expected_metric_id`, gaps);
+      requireField(path?.expected_metric_direction, `${prefix}.expected_metric_direction`, gaps);
+      requireField(path?.approver_role, `${prefix}.approver_role`, gaps);
+      if (typeof path?.expected_metric_system_recommended !== "boolean") {
+        gaps.push(`${prefix}.expected_metric_system_recommended must be boolean`);
+      }
+      if (path?.expected_metric_customer_selected !== true) {
+        gaps.push(`${prefix}.expected_metric_customer_selected must be true for approved Blueprint expectations`);
+      }
+      if (path?.customer_approval_state !== "approved") {
+        gaps.push(`${prefix}.customer_approval_state must be approved`);
+      }
+      if (path?.source_ref !== context.blueprint_expectation_ref) {
+        gaps.push(`${prefix}.source_ref must match blueprint_alignment_context.blueprint_expectation_ref`);
+      }
+    });
+    if (paths.length === 0) {
+      gaps.push("blueprint_alignment_context.approved_expectation_paths must include at least one approved expectation path");
+    }
+    if (paths.length > 0 && primaryCount !== 1) {
+      gaps.push("blueprint_alignment_context.approved_expectation_paths must include exactly one primary path");
+    }
+    const selected = selectedApprovedExpectationPathFrom(paths);
+    if (!selected) {
+      gaps.push("blueprint_alignment_context.approved_expectation_path is missing");
+    } else {
+      if (context.expectation_path_id !== selected.expectation_path_id) {
+        gaps.push("blueprint_alignment_context.expectation_path_id must match selected approved_expectation_path");
+      }
+      if (
+        JSON.stringify(context.approved_expectation_path ?? null) !==
+        JSON.stringify(selected ?? null)
+      ) {
+        gaps.push("blueprint_alignment_context.approved_expectation_path must match selected approved expectation path");
+      }
+      for (const [field, selectedValue] of [
+        ["expected_metric_id", selected.expected_metric_id],
+        ["expected_metric_name", selected.expected_metric_name],
+        ["expected_metric_direction", selected.expected_metric_direction],
+        ["expected_metric_lag_days", selected.expected_metric_lag_days],
+        ["expected_metric_system_recommended", selected.expected_metric_system_recommended],
+        ["expected_metric_customer_selected", selected.expected_metric_customer_selected],
+        ["value_driver", selected.value_driver]
+      ]) {
+        if (JSON.stringify(context[field] ?? null) !== JSON.stringify(selectedValue ?? null)) {
+          gaps.push(`blueprint_alignment_context.${field} must match selected approved_expectation_path`);
+        }
+      }
+    }
   }
   return gaps;
 }
@@ -584,6 +719,9 @@ function collectReadySourceGaps(handoff: any): string[] {
     "value_route",
     "value_promise",
     "expected_behavior_pathways",
+    "approved_expectation_paths",
+    "expectation_path_id",
+    "approved_expectation_path",
     "expected_metric_id",
     "expected_metric_name",
     "expected_metric_direction",

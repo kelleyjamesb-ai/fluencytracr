@@ -191,6 +191,90 @@ test("Blueprint handoff carries customer-approved expectation context for Measur
   assert.equal(handoff.feeds.customer_facing_financial_output, false);
 });
 
+test("Blueprint handoff carries approved expectation path registry and selected path context", () => {
+  const approvedExpectationPaths = [
+    {
+      expectation_path_id: "path_campaign_brief_to_cycle_time",
+      expected_behavior: "knowledge_retrieval",
+      expected_vbd_signal: "depth",
+      expected_metric_id: "marketing_campaign_cycle_days",
+      expected_metric_name: "Campaign cycle time",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 60,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "capacity",
+      metric_role: "primary",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+    },
+    {
+      expectation_path_id: "path_campaign_brief_to_rework_rate",
+      expected_behavior: "verification",
+      expected_vbd_signal: "integration",
+      expected_metric_id: "marketing_rework_rate",
+      expected_metric_name: "Campaign rework rate",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 90,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "quality",
+      metric_role: "supporting",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+    }
+  ];
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      approvedExpectationPaths,
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_direction: "decrease",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        },
+        {
+          metric_id: "marketing_rework_rate",
+          metric_name: "Campaign rework rate",
+          expected_direction: "decrease",
+          expected_lag_days: 90,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "quality"
+        }
+      ]
+    })
+  );
+  const handoff = buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateBlueprintOperatorSourceHandoff(handoff);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(handoff.blueprint_alignment_context.expectation_path_id, "path_campaign_brief_to_cycle_time");
+  assert.equal(handoff.blueprint_alignment_context.approved_expectation_paths.length, 2);
+  assert.equal(
+    handoff.blueprint_alignment_context.approved_expectation_path.expected_metric_id,
+    "marketing_campaign_cycle_days"
+  );
+  assert.equal(
+    handoff.blueprint_alignment_context.approved_expectation_paths[1].metric_role,
+    "supporting"
+  );
+  assert.equal(handoff.feeds.measurement_cell_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
+});
+
 test("pending Blueprint extraction stays held and cannot feed operator intake", () => {
   const draft = buildBlueprintExtractionDraft(
     baseInput({

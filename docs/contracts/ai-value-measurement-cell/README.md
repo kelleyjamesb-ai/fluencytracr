@@ -34,6 +34,8 @@ by the Blueprint Operator Source Handoff:
 - `blueprint_expectation_ref`
 - `blueprint_customer_approval_state`
 - `blueprint_customer_approver_role`
+- `expectation_path_id`
+- `approved_expectation_path`
 - `expected_behavior_pathways`
 - `expected_metric_id`
 - `expected_metric_name`
@@ -62,6 +64,18 @@ Explicit expectation context must carry `blueprint_expectation_ref`,
 `blueprint_customer_approver_role`. Legacy Measurement Cells that carry only
 older metric id/direction/lag alignment fields remain valid without upgrading
 into customer-approved expectation context.
+
+When `expectation_path_id` is present, the Measurement Cell must carry exactly
+one `approved_expectation_path`. The selected path must match the cell's
+selected metric id, metric direction, and expected lag when those values are
+present. The Measurement Cell must not carry the full
+`approved_expectation_paths` registry; one cell stays at one
+org/function/workflow/cohort/window/metric grain.
+
+This path binding is measurement contract context only. It does not authorize a
+data schema, persistence model, route, UI, live connector, confidence formula,
+ROI calculation, EBITDA output, probability, causality claim, productivity
+claim, or customer-facing financial output.
 
 `expected_metric_lag_days` is descriptive review context only. It must not be
 used as a threshold, surfacing gate, confidence input, model parameter, or

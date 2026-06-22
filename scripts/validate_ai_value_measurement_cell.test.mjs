@@ -471,6 +471,125 @@ test("requires full expectation binding when approved Blueprint state is present
   assert.equal(result.feeds.finance_context_investigation_planning, false);
 });
 
+test("binds a Measurement Cell to one approved Blueprint expectation path", () => {
+  const cell = buildMeasurementCell(baseInput({
+    blueprintAlignment: {
+      ...baseInput().blueprintAlignment,
+      expectation_path_id: "path_campaign_brief_to_cycle_time",
+      approved_expectation_path: {
+        expectation_path_id: "path_campaign_brief_to_cycle_time",
+        expected_behavior: "knowledge_retrieval",
+        expected_vbd_signal: "depth",
+        expected_metric_id: "marketing_campaign_cycle_days",
+        expected_metric_name: "Campaign cycle time",
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 60,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "capacity",
+        metric_role: "primary",
+        customer_approval_state: "approved",
+        approver_role: "customer_business_owner",
+        source_ref: "blueprint_source_marketing_2026_q3"
+      }
+    }
+  }));
+  const result = validateMeasurementCell(cell);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(cell.blueprint_alignment.expectation_path_id, "path_campaign_brief_to_cycle_time");
+  assert.equal(
+    cell.blueprint_alignment.approved_expectation_path.metric_role,
+    "primary"
+  );
+  assert.equal(result.feeds.customer_facing_financial_output, false);
+});
+
+test("rejects Measurement Cell drift from the referenced approved expectation path", () => {
+  const cell = buildMeasurementCell(baseInput({
+    blueprintAlignment: {
+      ...baseInput().blueprintAlignment,
+      expectation_path_id: "path_campaign_brief_to_rework_rate",
+      approved_expectation_path: {
+        expectation_path_id: "path_campaign_brief_to_rework_rate",
+        expected_behavior: "verification",
+        expected_vbd_signal: "integration",
+        expected_metric_id: "marketing_rework_rate",
+        expected_metric_name: "Campaign rework rate",
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 90,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "quality",
+        metric_role: "supporting",
+        customer_approval_state: "approved",
+        approver_role: "customer_business_owner",
+        source_ref: "blueprint_source_marketing_2026_q3"
+      }
+    }
+  }));
+  const result = validateMeasurementCell(cell);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("approved_expectation_path.expected_metric_id")));
+  assert.ok(result.gaps.some((gap) => gap.includes("approved_expectation_path.expected_metric_lag_days")));
+  assert.equal(result.feeds.value_hypothesis_readiness_input, false);
+  assert.equal(result.feeds.finance_context_investigation_planning, false);
+});
+
+test("rejects full Blueprint expectation path registry on a Measurement Cell", () => {
+  const cell = buildMeasurementCell(baseInput({
+    blueprintAlignment: {
+      ...baseInput().blueprintAlignment,
+      expectation_path_id: "path_campaign_brief_to_cycle_time",
+      approved_expectation_path: {
+        expectation_path_id: "path_campaign_brief_to_cycle_time",
+        expected_behavior: "knowledge_retrieval",
+        expected_vbd_signal: "depth",
+        expected_metric_id: "marketing_campaign_cycle_days",
+        expected_metric_name: "Campaign cycle time",
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 60,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "capacity",
+        metric_role: "primary",
+        customer_approval_state: "approved",
+        approver_role: "customer_business_owner",
+        source_ref: "blueprint_source_marketing_2026_q3"
+      }
+    }
+  }));
+  cell.blueprint_alignment.approved_expectation_paths = [
+    cell.blueprint_alignment.approved_expectation_path,
+    {
+      expectation_path_id: "path_campaign_brief_to_rework_rate",
+      expected_behavior: "verification",
+      expected_vbd_signal: "integration",
+      expected_metric_id: "marketing_rework_rate",
+      expected_metric_name: "Campaign rework rate",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 90,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "quality",
+      metric_role: "supporting",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_source_marketing_2026_q3"
+    }
+  ];
+
+  const result = validateMeasurementCell(cell);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("approved_expectation_paths must not carry")
+  ));
+  assert.equal(result.feeds.value_hypothesis_readiness_input, false);
+  assert.equal(result.feeds.finance_context_investigation_planning, false);
+});
+
 test("rejects unsafe value-claim language inside allowed text fields", () => {
   const cell = buildMeasurementCell(baseInput());
   cell.finance_review_context.metric_to_financial_driver_pathway =
