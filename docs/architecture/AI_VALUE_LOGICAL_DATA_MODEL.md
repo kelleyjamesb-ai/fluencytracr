@@ -159,6 +159,11 @@ Key fields:
 - `system_recommended`
 - `customer_approval_state`
 
+`value_driver` is driver metadata only. It must use only the governed
+Blueprint driver set: `Revenue`, `Cost`, `Capacity`, `Quality`, or `Risk`.
+It must not introduce sub-drivers, weights, rankings, normalized pathway
+tables, or freeform pathway taxonomy.
+
 Blocked fields:
 
 - raw Blueprint text
@@ -201,14 +206,27 @@ Key fields:
 
 - `blueprint_expectation_ref`
 - `hypothesis_id`
+- `value_hypothesis_ref`
+- `approved_blueprint_ref`
+- `approved_blueprint_payload_hash`
 - `expectation_path_id`
+- `expectation_path_version`
+- `expectation_path_hash`
 - `selected_metric_id`
+- `metric_definition_ref`
+- `metric_definition_hash`
+- `metric_direction`
+- `metric_unit`
+- `expected_metric_lag_days`
+- `value_driver`
 - `source_ref`
 - `customer_approval_state`
-- `approver_role`
+- `approval_state`
+- `approved_at`
+- `approved_by_role`
 - `economic_dependency_allowed`
 - `claim_upgrade_allowed`
-- `confidence_input_allowed`
+- `research_model_input_allowed`
 - `customer_facing_financial_output_allowed`
 
 Required fixed values:
@@ -217,7 +235,7 @@ Required fixed values:
 {
   "economic_dependency_allowed": false,
   "claim_upgrade_allowed": false,
-  "confidence_input_allowed": false,
+  "research_model_input_allowed": false,
   "customer_facing_financial_output_allowed": false
 }
 ```
@@ -226,8 +244,14 @@ Validation posture:
 
 - `expectation_path_id` must exist in the approved Blueprint expectation-path
   registry.
-- `selected_metric_id` must match the selected path metric.
-- selected direction and lag must match the approved path.
+- `expectation_path_version`, `expectation_path_hash`,
+  `approved_blueprint_payload_hash`, `approved_blueprint_ref` or
+  `value_hypothesis_ref`, `approved_at`, `approved_by_role`, and
+  `approval_state` must align to the approved Blueprint Hypothesis.
+- `selected_metric_id`, metric definition, metric unit, metric direction, and
+  expected lag must match the approved path.
+- `value_driver` must be one of `Revenue`, `Cost`, `Capacity`, `Quality`, or
+  `Risk`; no freeform pathway labels are allowed.
 - `source_ref` must be safe and must align to the Blueprint source handoff.
 - selected path lineage must be proven by a validated Blueprint Operator Source
   Handoff before Measurement Cell Assembly can emit a cell.
@@ -374,6 +398,14 @@ Series alignment keys:
 - `cohort_key`
 - `metric_id`
 - `expectation_path_id`
+- `expectation_path_version`
+- `expectation_path_hash`
+- `approved_blueprint_payload_hash`
+- `value_hypothesis_ref`
+- `approval_state`
+- `approved_at`
+- `approved_by_role`
+- `value_driver`
 - source refs
 - milestone sequence
 - window mode
@@ -388,11 +420,16 @@ Output posture:
 - no trend inference
 - no confidence math
 - no finance output
+- rolling 30-day operating context cannot populate milestone continuity or
+  review posture
 
 Fail-first rule:
 
 - Day 60 with the same metric but a different `expectation_path_id` must block
   continuity rather than appear as a continuous series.
+- Rolling 30-day context is not a milestone series and cannot feed evidence
+  continuity, finance-context investigation, Bayesian research planning,
+  confidence research, customer-facing output, or any readout/export path.
 
 Contract hardening status:
 
@@ -464,7 +501,9 @@ Recommended field language:
 - `evidence_review_posture`
 - `source_quality_band`
 - `financial_review_route`
-- `not_ai_contribution_confidence`
+- `contribution_model_not_authorized`
+- `research_model_not_promoted`
+- `financial_claim_blocked`
 - `required_caveats`
 - `blocked_claims`
 - `blocked_uses`
@@ -479,7 +518,9 @@ Required fixed value:
 
 ```json
 {
-  "not_ai_contribution_confidence": true
+  "contribution_model_not_authorized": true,
+  "research_model_not_promoted": true,
+  "financial_claim_blocked": true
 }
 ```
 
@@ -561,7 +602,7 @@ The repo is not ready for physical data-model work until these are true:
 4. Measurement Cell Assembly proves the selected path came from the approved
    Blueprint handoff registry and binds the emitted cell back to that proof.
 5. Future review posture language avoids generic confidence fields and uses
-   explicit non-confidence posture.
+   explicit non-authorizing posture.
 6. Future finance fields use a held route such as `financial_review_route`
    rather than positive permission flags.
 7. VBD, Depth, and token context are carried only as caveated Layer 1 behavior
@@ -583,7 +624,7 @@ Do not add:
 - connector state
 - raw source storage
 - full expectation-path registry downstream of the Blueprint/Hypothesis layer
-- confidence model inputs or outputs
+- research model inputs or outputs
 - probability outputs
 - ROI outputs
 - EBITDA outputs
@@ -591,7 +632,7 @@ Do not add:
 - productivity outputs
 - customer-facing financial output
 
-## 9. Recommended Next Slice
+## 9. Physical Readiness Cross-Reference
 
 This pass closes the contract-level lineage prerequisites for selected
 Blueprint expectation paths:
@@ -604,9 +645,8 @@ Blueprint expectation paths:
 4. Negative tests cover missing proof, wrong proof, same-metric path drift, and
    stale embedded validation.
 
-The next safe slice is a separate physical data-model readiness review. That
-review should decide whether existing backend-only persistence is sufficient or
-whether a promoted Measurement Cell / Series persistence design is needed. It
-must still avoid UI, routes, schemas, migrations, live execution, confidence
-math, ROI, causality, productivity, probability, and customer-facing financial
-output until explicitly authorized.
+The separate physical data-model readiness review now lives in
+`docs/architecture/AI_VALUE_PHYSICAL_DATA_MODEL.md`. It remains the current
+cross-reference for future persistence gates and does not authorize UI, routes,
+schemas, migrations, live execution, confidence math, ROI, causality,
+productivity, probability, or customer-facing financial output.
