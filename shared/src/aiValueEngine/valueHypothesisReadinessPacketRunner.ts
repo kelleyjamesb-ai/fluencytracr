@@ -475,6 +475,37 @@ function normalizeSelectedMetricMovementForReadiness(
   };
 }
 
+function assertMeasurementCellAssemblyRunAlignsToPlan(
+  plan: any,
+  measurementCellAssemblyRun: any
+): void {
+  if (!measurementCellAssemblyRun) return;
+  if (measurementCellAssemblyRun.measurement_plan_id !== plan?.measurement_plan_id) {
+    throw new Error("Measurement Cell Assembly Run measurement_plan_id must match packet Measurement Plan");
+  }
+  if (
+    measurementCellAssemblyRun.measurement_plan?.measurement_plan_id &&
+    measurementCellAssemblyRun.measurement_plan.measurement_plan_id !== plan?.measurement_plan_id
+  ) {
+    throw new Error("Measurement Cell Assembly Run embedded Measurement Plan must match packet Measurement Plan");
+  }
+  if (measurementCellAssemblyRun.org_id !== plan?.org_id) {
+    throw new Error("Measurement Cell Assembly Run org_id must match packet Measurement Plan");
+  }
+  if (
+    measurementCellAssemblyRun.workflow_family !==
+    plan?.workflow_scope?.workflow_family
+  ) {
+    throw new Error("Measurement Cell Assembly Run workflow_family must match packet Measurement Plan");
+  }
+  if (
+    measurementCellAssemblyRun.function_area !==
+    plan?.workflow_scope?.function_area
+  ) {
+    throw new Error("Measurement Cell Assembly Run function_area must match packet Measurement Plan");
+  }
+}
+
 function normalizeMeasurementCellInput(
   plan: any,
   claimSnapshot: any,
@@ -510,6 +541,7 @@ function normalizeMeasurementCellInput(
   ) {
     throw new Error("Measurement Cell Assembly Run must be ready for Value Hypothesis packet preparation");
   }
+  assertMeasurementCellAssemblyRunAlignsToPlan(plan, measurementCellAssemblyRun);
 
   const assemblyCell = measurementCellAssemblyRun?.measurement_cell ?? null;
   const activeMeasurementCell = assemblyCell ?? measurementCell;

@@ -9,6 +9,11 @@ Validator: `shared/src/aiValueEngine/operatorTimeSeriesRun.ts`
 The Operator Time-Series Run is a contract-only wrapper for repeated governed
 Operator Intake Adapter runs.
 
+The separate [Measurement Cell Series](../ai-value-measurement-cell-series/README.md)
+contract can inspect repeated Measurement Cell Assembly continuity before this
+operator-run layer. Measurement Cell Series continuity coverage is metadata
+only; it does not inherit or imply `READY_FOR_CONFIDENCE_MODEL_DESIGN_REVIEW`.
+
 It assembles metadata-only run references across a repeated measurement cadence:
 
 ```text

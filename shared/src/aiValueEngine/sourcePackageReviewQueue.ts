@@ -329,6 +329,9 @@ function packageReadyForReview(lane: any): boolean {
   if (!Array.isArray(lane?.source_package_ids) || lane.source_package_ids.length === 0) {
     return !packageBackedLane(lane?.lane_key);
   }
+  if (!sourcePackageEvidenceSupportsLane(lane?.lane_key, lane)) {
+    return false;
+  }
   return lane.source_package_valid === true &&
     lane.source_package_alignment_clear === true &&
     lane.source_package_can_feed_evidence === true;
@@ -379,6 +382,14 @@ function expectedLaneGaps(laneKey: LaneKey, lane: any): string[] {
   ) {
     gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_REQUIRED"));
   }
+  if (
+    packageBackedLane(laneKey) &&
+    Array.isArray(lane?.source_package_ids) &&
+    lane.source_package_ids.length > 0 &&
+    !sourcePackageEvidencePresentAndTyped(laneKey, lane)
+  ) {
+    gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_EVIDENCE_REQUIRED"));
+  }
   if (lane?.source_package_alignment_clear === false) {
     gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_MISALIGNED"));
   }
@@ -396,6 +407,100 @@ function sourcePackagesForLane(laneKey: LaneKey, sourcePackages: SourcePackage[]
   const packageType = SOURCE_PACKAGE_TYPE_BY_LANE[laneKey];
   if (!packageType) return [];
   return sourcePackages.filter((pkg) => pkg?.source_package_type === packageType);
+}
+
+function packageEvidenceRecords(
+  laneKey: LaneKey,
+  packages: SourcePackage[],
+  validationResults: ReturnType<typeof validateSourcePackage>[],
+  alignmentResults: boolean[]
+): any[] {
+  const refKey = SOURCE_PACKAGE_REF_KEY_BY_LANE[laneKey];
+  return packages.map((pkg, index) => {
+    const validation = validationResults[index];
+    const alignmentClear = alignmentResults[index] === true;
+    return {
+      source_package_id: pkg.source_package_id,
+      source_package_type: pkg.source_package_type,
+      evidence_state: pkg.evidence_state,
+      source_ref: refKey ? pkg.source_refs?.[refKey] ?? null : null,
+      validation_schema_version: validation.schema_version,
+      validation_valid: validation.valid === true,
+      alignment_clear: alignmentClear,
+      can_feed_evidence:
+        validation.valid === true &&
+        validation.feeds.evidence_snapshot_source_ref === true &&
+        alignmentClear
+    };
+  });
+}
+
+function sourcePackageEvidenceOf(lane: any): any[] {
+  return Array.isArray(lane?.source_package_evidence)
+    ? lane.source_package_evidence
+    : [];
+}
+
+function sourcePackageEvidencePresentAndTyped(laneKey: LaneKey, lane: any): boolean {
+  const packageIds = stringsOf(lane?.source_package_ids);
+  if (packageIds.length === 0) return !packageBackedLane(laneKey);
+  const evidence = sourcePackageEvidenceOf(lane);
+  if (evidence.length !== packageIds.length) return false;
+  const evidenceIds = evidence.map((item) => String(item?.source_package_id ?? ""));
+  if (JSON.stringify([...evidenceIds].sort()) !== JSON.stringify([...packageIds].sort())) {
+    return false;
+  }
+  return evidence.every((item) =>
+    item?.source_package_type === SOURCE_PACKAGE_TYPE_BY_LANE[laneKey] &&
+    typeof item?.validation_schema_version === "string"
+  );
+}
+
+function sourcePackageEvidenceConsistent(laneKey: LaneKey, lane: any): boolean {
+  if (!sourcePackageEvidencePresentAndTyped(laneKey, lane)) return false;
+  return sourcePackageEvidenceOf(lane).every((item) =>
+    item.validation_valid === true &&
+    item.alignment_clear === true &&
+    item.can_feed_evidence === true
+  );
+}
+
+function sourcePackageEvidenceSupportsLane(laneKey: LaneKey, lane: any): boolean {
+  return LANE_KEYS.includes(laneKey) && sourcePackageEvidenceConsistent(laneKey, lane);
+}
+
+function packageEvidenceDerivedPosture(lane: any): {
+  valid: boolean | null;
+  alignmentClear: boolean | null;
+  canFeedEvidence: boolean | null;
+} {
+  const packageIds = stringsOf(lane?.source_package_ids);
+  if (packageIds.length === 0) {
+    return {
+      valid: null,
+      alignmentClear: null,
+      canFeedEvidence: null
+    };
+  }
+  const evidence = sourcePackageEvidenceOf(lane);
+  return {
+    valid:
+      evidence.length > 0 &&
+      evidence.length === packageIds.length &&
+      evidence.every((item) => item?.validation_valid === true),
+    alignmentClear:
+      evidence.length > 0 &&
+      evidence.length === packageIds.length &&
+      evidence.every((item) => item?.alignment_clear === true),
+    canFeedEvidence:
+      evidence.length > 0 &&
+      evidence.length === packageIds.length &&
+      evidence.every((item) =>
+        item?.validation_valid === true &&
+        item?.alignment_clear === true &&
+        item?.can_feed_evidence === true
+      )
+  };
 }
 
 function sameWindow(left: any, right: any): boolean {
@@ -456,6 +561,12 @@ function buildLane(
   );
   const packageIds = packages.map((pkg) => pkg.source_package_id);
   const packageStates = packages.map((pkg) => String(pkg.evidence_state));
+  const sourcePackageEvidence = packageEvidenceRecords(
+    laneKey,
+    packages,
+    packageValidationResults,
+    packageAlignmentResults
+  );
   const sourceReady = sourceReadyForReview(source);
   const gaps: string[] = [];
 
@@ -501,6 +612,7 @@ function buildLane(
     source_package_valid: sourcePackageValid,
     source_package_alignment_clear: sourcePackageAlignmentClear,
     source_package_can_feed_evidence: sourcePackageCanFeedEvidence,
+    source_package_evidence: sourcePackageEvidence,
     data_spine_review_clear: false,
     gaps,
     next_action: gaps.length === 0
@@ -666,6 +778,7 @@ function collectLaneGaps(queue: any): string[] {
       "aggregate_only",
       "aligned",
       "source_package_ids",
+      "source_package_evidence",
       "data_spine_review_clear",
       "gaps",
       "next_action"
@@ -690,6 +803,16 @@ function collectLaneGaps(queue: any): string[] {
         if (!stringsOf(lane?.gaps).includes(expectedGap)) {
           gaps.push(`${path}.gaps missing ${expectedGap}`);
         }
+      }
+      const derivedPosture = packageEvidenceDerivedPosture(lane);
+      if (lane?.source_package_valid !== derivedPosture.valid) {
+        gaps.push(`${path}.source_package_valid must match compact source package evidence`);
+      }
+      if (lane?.source_package_alignment_clear !== derivedPosture.alignmentClear) {
+        gaps.push(`${path}.source_package_alignment_clear must match compact source package evidence`);
+      }
+      if (lane?.source_package_can_feed_evidence !== derivedPosture.canFeedEvidence) {
+        gaps.push(`${path}.source_package_can_feed_evidence must match compact source package evidence`);
       }
     }
   }
