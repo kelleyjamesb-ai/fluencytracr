@@ -77,6 +77,12 @@ DOC, BigQuery rows, Glean queries, or customer source files.
   validation, identity drift, window drift, or derived-summary drift fails
   closed.
 
+The [Measurement Cell Series](../ai-value-measurement-cell-series/README.md)
+contract may be used before this runner to inspect repeated Measurement Cell
+Assembly continuity. That compatibility is metadata-only and does not create a
+parallel package runner, execute confidence models, feed finance-context
+investigation, or emit customer-facing financial output.
+
 ## Time Windows
 
 Milestone windows are the time-bound path:

@@ -2,6 +2,70 @@
 
 ## Last Completed
 
+- Measurement Cell Series / Evidence Continuity Manifest slice
+  (user-requested, 2026-06-22): added a contract-only Measurement Cell Series
+  over repeated Measurement Cell Assembly outputs. The layer emits compact
+  per-window Measurement Cell references, a full-window Evidence Continuity
+  Manifest, cross-window alignment metadata, and metadata-only compatibility
+  with the existing Operator Time-Series / Operator Evidence Package path. It
+  uses continuity-only decisions (`CONTINUITY_COVERAGE_COMPLETE`,
+  `HELD_FOR_EVIDENCE_CONTINUITY`, `BLOCKED`), preserves held/suppressed/
+  missing/blocked windows in the manifest, and prevents later ready windows
+  from rescuing earlier unsafe windows. The implementation rejects missing,
+  repeated, unsupported, or out-of-order milestones; stale embedded
+  Measurement Cell Assembly validation; org/client/workflow/function/cohort/
+  metric/window/source-ref drift; bare direct-reference bypasses; nested child
+  payload leakage; raw rows, query text, prompts, transcripts, user/person
+  identifiers, ranking fields, ROI, finance, confidence, probability,
+  causality, productivity, and customer-facing financial output fields or
+  unsafe wording. No UI, routes, persistence, schemas, migrations, live
+  BigQuery/Glean execution, connector, confidence math, ROI math, causality
+  logic, productivity measurement, probability output, finance output, or
+  customer-facing financial output was added. Verification:
+  `npm run test:ai-value-measurement-cell-series`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-operator-time-series-run`;
+  `npm run test:ai-value-operator-evidence-package-runner`;
+  `npm run test:ai-value-operator-source-handoff-bundle`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-value-hypothesis-readiness-packet-runner`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
+- Operator Source Handoff productization slice (user-requested, 2026-06-22):
+  completed parts 1-4 using Code, Bug/QA, and Adversarial subagents with the
+  main thread as final integrator. Added and hardened VBD + Token, Customer
+  Metric, Assumption / Governance, and six-lane Operator Source Handoff Bundle
+  contracts. The bundle covers Blueprint, AI Fluency, VBD/token, customer
+  metric, assumption, and governance lanes; recomputes lane handoffs from
+  embedded inputs; rejects stale or tampered handoffs; emits only compact
+  operator sources, Measurement Cell context fragments, source-package
+  alignment references, and an alignment manifest; and keeps Source Package
+  Review Queue, Measurement Cell, finance-context, confidence-model,
+  customer-facing output, and customer-facing financial output feeds blocked.
+  Customer Metric was hardened for top-level identity drift, side-channel
+  fields, unsafe caveat language, movement tampering, and unsafe source refs.
+  No UI, backend route, persistence, schema, migration, live BigQuery/Glean
+  execution, connector, confidence math, ROI/probability/causality/
+  productivity claim, person-level output, ranking, or customer-facing
+  financial output was added. Verification:
+  `npm run test:ai-value-blueprint-operator-source-handoff`;
+  `npm run test:ai-value-vbd-token-operator-source-handoff`;
+  `npm run test:ai-value-customer-metric-operator-source-handoff`;
+  `npm run test:ai-value-assumption-governance-operator-source-handoff`;
+  `npm run test:ai-value-operator-source-handoff-bundle`;
+  `npm run test:ai-value-operator-intake-adapter`;
+  `npm run test:ai-value-vbd-token-aggregate-intake`;
+  `npm run test:ai-value-customer-metric-intake`;
+  `npm run test:ai-value-data-spine-readiness`;
+  `npm run test:ai-value-source-package-review-queue`;
+  `npm run test:ai-value-measurement-cell-assembly-runner`;
+  `npm run test:ai-value-blueprint-extraction-draft`;
+  `npm run test:ai-value-ai-fluency-aggregate-export-parser`;
+  `npm run test:ai-value-ai-fluency-dashboard-import-runner`;
+  `npm run test:ai-value-real-data-intake-packet-runner`;
+  `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
 - Governed data-pipe hardening slice (user-requested, 2026-06-21):
   reset the subagent approach by closing completed/stale agents, then used a
   fresh bounded Code/Bug/Adversarial pattern with the main thread as final

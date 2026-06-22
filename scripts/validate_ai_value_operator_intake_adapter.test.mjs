@@ -9,13 +9,23 @@ import {
   buildAIFluencyOperatorSourceHandoff,
   buildBlueprintExtractionDraft,
   buildBlueprintOperatorSourceHandoff,
+  buildAssumptionGovernanceOperatorSourceHandoff,
+  buildCustomerMetricIntake,
+  buildCustomerMetricOperatorSourceHandoff,
   buildOperatorIntakeAdapterRun,
+  buildVbdTokenAggregateIntake,
+  buildVbdTokenOperatorSourceHandoff,
   validateAIFluencyAggregateExportParseRun,
   validateAIFluencyDashboardImportRun,
   validateAIFluencyOperatorSourceHandoff,
+  validateAssumptionGovernanceOperatorSourceHandoff,
   validateBlueprintOperatorSourceHandoff,
+  validateCustomerMetricIntake,
+  validateCustomerMetricOperatorSourceHandoff,
   validateMeasurementCellAssemblyRun,
-  validateOperatorIntakeAdapterRun
+  validateOperatorIntakeAdapterRun,
+  validateVbdTokenAggregateIntake,
+  validateVbdTokenOperatorSourceHandoff
 } from "../shared/dist/aiValueEngine/index.js";
 
 const CONTRACTS = "docs/contracts";
@@ -170,6 +180,92 @@ function aiFluencyAggregateRecord(plan, overrides = {}) {
       "Already-exported aggregate AI Fluency readiness row. Movement is descriptive readiness context only.",
     ...overrides
   };
+}
+
+function vbdTokenAggregateIntake(plan, overrides = {}) {
+  const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  return buildVbdTokenAggregateIntake({
+    intakeId: "vbd_token_aggregate_intake_support_day_30",
+    orgId: plan.org_id,
+    clientId: "client_example",
+    sourceRef: "scrubbed_glean_vbd_token_support_day_30",
+    sourceOwnerRole: "source_owner",
+    ownerApprovalState: "approved",
+    reviewState: "clear",
+    workflowFamily: plan.workflow_scope.workflow_family,
+    workflowId: "workflow_support_case_resolution",
+    functionArea: plan.workflow_scope.function_area,
+    cohortKey: "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+    baselineWindow,
+    comparisonWindow,
+    vbd: {
+      velocity: 76,
+      breadth: 69,
+      depth: 71,
+      threshold: 60
+    },
+    tokenSummary: {
+      total_tokens: 1880000,
+      aggregate_interaction_count: 920,
+      aggregate_workflow_count: 340,
+      high_intensity_workflow_share: 0.22,
+      average_tokens_per_interaction: 2043,
+      average_tokens_per_workflow: 5529,
+      token_per_active_seat: 7833,
+      token_intensity_band: "moderate"
+    },
+    kMinPosture: {
+      minimum_cohort_threshold: 5,
+      cohort_threshold_met: true,
+      total_slices: 8,
+      k_min_clear_slices: 8,
+      suppressed_or_unknown_slices: 0
+    },
+    sourceOwnerAttestation: {
+      attestation_state: "attested",
+      attested_by_role: "source_owner",
+      attested_at: "2026-06-21T00:00:00.000Z"
+    },
+    generatedAt: "2026-06-21T00:00:00.000Z",
+    ...overrides
+  });
+}
+
+function customerMetricIntake(plan, overrides = {}) {
+  const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  return buildCustomerMetricIntake({
+    measurementPlan: plan,
+    orgId: plan.org_id,
+    clientId: "client_example",
+    workflowFamily: plan.workflow_scope.workflow_family,
+    functionArea: plan.workflow_scope.function_area,
+    cohortKey: "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+    intakeMode: "customer_metric_aggregate_export",
+    metric: {
+      metric_id: plan.metric_selection.primary_metric.metric_id,
+      metric_name: plan.metric_selection.primary_metric.metric_name,
+      metric_category: plan.metric_selection.primary_metric.metric_category,
+      metric_unit: "hours",
+      metric_direction: "decrease",
+      metric_sensitivity: "high",
+      source_system_type: plan.metric_selection.primary_metric.source_system_type,
+      source_system_name: "customer_support_system",
+      normalization_denominator: "eligible_case_count"
+    },
+    baselineWindow,
+    comparisonWindow,
+    baselineValue: 18,
+    comparisonValue: 14,
+    sourceRef: "support_metric_resolution_hours_day_30",
+    sourceOwnerRole: "customer_data_owner",
+    metricOwnerRole: plan.metric_selection.primary_metric.metric_owner_role,
+    ownerApprovalState: "approved",
+    reviewState: "clear",
+    freshnessState: "current",
+    aggregateOnly: true,
+    generatedAt: "2026-06-22T00:00:00.000Z",
+    ...overrides
+  });
 }
 
 function blueprintExtractionInput(plan, overrides = {}) {
@@ -714,6 +810,290 @@ test("operator intake adapter accepts approved Blueprint source handoff without 
   assert.equal(run.data_spine_readiness.source_readiness.blueprint.source_ref, draft.data_spine_source.source_ref);
   assert.equal(run.source_package_review_queue.lanes.find((lane) => lane.lane_key === "blueprint").data_spine_review_clear, true);
   assert.equal(run.feeds.measurement_cell_assembly_run, true);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter accepts approved VBD token source handoff without bypassing Source Package review", () => {
+  const plan = fullPlan();
+  const aggregateIntake = vbdTokenAggregateIntake(plan);
+  const intakeValidation = validateVbdTokenAggregateIntake(aggregateIntake);
+  const handoff = buildVbdTokenOperatorSourceHandoff({
+    aggregateIntake,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoffValidation = validateVbdTokenOperatorSourceHandoff(handoff);
+  const sources = operatorSources(plan, { vbdToken: handoff.operator_source });
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages: matchingSourcePackages(plan, sources),
+    measurementCellInput: measurementCellInput(plan, sources, {
+      vbdContext: handoff.vbd_context,
+      tokenContext: handoff.token_context
+    }),
+    runId: "operator_intake_adapter_run_vbd_token_source_handoff"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(intakeValidation.valid, true, intakeValidation.gaps.join("; "));
+  assert.equal(intakeValidation.feeds.data_spine_vbd_token_source, true);
+  assert.equal(handoffValidation.valid, true, handoffValidation.gaps.join("; "));
+  assert.equal(handoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(handoff.feeds.operator_intake_source, true);
+  assert.equal(handoff.feeds.measurement_cell_vbd_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_token_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
+  assert.equal(handoff.source_package_reference.source_refs.aggregate_probe_id, handoff.source_ref);
+  assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.data_spine_readiness.source_readiness.vbd_token.source_ref, aggregateIntake.source_ref);
+  const vbdTokenLane = run.source_package_review_queue.lanes.find((lane) =>
+    lane.lane_key === "vbd_token"
+  );
+  assert.ok(vbdTokenLane.source_package_ids.includes("source_package_layer_1_vbd_token_operator"));
+  assert.equal(vbdTokenLane.source_package_alignment_clear, true);
+  assert.equal(vbdTokenLane.source_package_can_feed_evidence, true);
+  assert.equal(run.feeds.measurement_cell_assembly_run, true);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter still holds a valid VBD token handoff without matching Layer 1 Source Package", () => {
+  const plan = fullPlan();
+  const aggregateIntake = vbdTokenAggregateIntake(plan);
+  const handoff = buildVbdTokenOperatorSourceHandoff({
+    aggregateIntake,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const sources = operatorSources(plan, { vbdToken: handoff.operator_source });
+  const sourcePackages = matchingSourcePackages(plan, sources).filter((sourcePackage) =>
+    sourcePackage.source_package_type !== "layer_1_bigquery_telemetry_summary"
+  );
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages,
+    measurementCellInput: measurementCellInput(plan, sources, {
+      vbdContext: handoff.vbd_context,
+      tokenContext: handoff.token_context
+    }),
+    runId: "operator_intake_adapter_run_vbd_token_handoff_missing_layer_1_package"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(validateVbdTokenOperatorSourceHandoff(handoff).valid, true);
+  assert.equal(run.decision, "HELD_FOR_SOURCE_PACKAGE_REVIEW");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.source_package_review_queue.queue_state, "HELD_FOR_SOURCE_REVIEW");
+  assert.ok(run.missing_evidence.includes("VBD_TOKEN_SOURCE_PACKAGE_REQUIRED"));
+  assert.equal(run.feeds.measurement_cell_assembly_run, false);
+  assert.equal(run.feeds.value_hypothesis_packet_runner, false);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter accepts approved Customer Metric handoff without bypassing Source Package review", () => {
+  const plan = fullPlan();
+  const intake = customerMetricIntake(plan);
+  const intakeValidation = validateCustomerMetricIntake(intake);
+  const handoff = buildCustomerMetricOperatorSourceHandoff({
+    customerMetricIntake: intake,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  const handoffValidation = validateCustomerMetricOperatorSourceHandoff(handoff);
+  const sources = operatorSources(plan, { customerMetric: handoff.operator_source });
+  const sourcePackages = matchingSourcePackages(plan, sources).map((sourcePackage) =>
+    sourcePackage.source_package_type === "layer_3_business_system_of_record_outcome_export"
+      ? {
+          ...sourcePackage,
+          source_owner_role: handoff.operator_source.owner_role,
+          source_owner_attestation: {
+            ...sourcePackage.source_owner_attestation,
+            attested_by_role: handoff.operator_source.owner_role
+          }
+        }
+      : sourcePackage
+  );
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages,
+    measurementCellInput: measurementCellInput(plan, sources, {
+      selectedMetric: handoff.selected_metric_context
+    }),
+    runId: "operator_intake_adapter_run_customer_metric_source_handoff"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(intakeValidation.valid, true, intakeValidation.gaps.join("; "));
+  assert.equal(intakeValidation.feeds.data_spine_customer_metric_source, true);
+  assert.equal(handoffValidation.valid, true, handoffValidation.gaps.join("; "));
+  assert.equal(handoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(handoff.feeds.operator_intake_source, true);
+  assert.equal(handoff.feeds.measurement_cell_selected_metric_context_fragment, true);
+  assert.equal(handoff.feeds.metric_movement_context_fragment, true);
+  assert.equal(handoff.feeds.layer_3_metric_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
+  assert.equal(
+    handoff.metric_movement_context.interpretation,
+    "descriptive_movement_only"
+  );
+  assert.equal(
+    handoff.source_package_reference.source_refs.aggregate_outcome_export_id,
+    handoff.source_ref
+  );
+  assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(
+    run.data_spine_readiness.source_readiness.customer_metric.source_ref,
+    intake.source_ref
+  );
+  const customerMetricLane = run.source_package_review_queue.lanes.find((lane) =>
+    lane.lane_key === "customer_metric"
+  );
+  assert.ok(customerMetricLane.source_package_ids.includes("source_package_layer_3_customer_metric_operator"));
+  assert.equal(customerMetricLane.source_package_alignment_clear, true);
+  assert.equal(customerMetricLane.source_package_can_feed_evidence, true);
+  assert.equal(run.feeds.measurement_cell_assembly_run, true);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter still holds a valid Customer Metric handoff without matching Layer 3 Source Package", () => {
+  const plan = fullPlan();
+  const intake = customerMetricIntake(plan);
+  const handoff = buildCustomerMetricOperatorSourceHandoff({
+    customerMetricIntake: intake,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  const sources = operatorSources(plan, { customerMetric: handoff.operator_source });
+  const sourcePackages = matchingSourcePackages(plan, sources).filter((sourcePackage) =>
+    sourcePackage.source_package_type !== "layer_3_business_system_of_record_outcome_export"
+  );
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages,
+    measurementCellInput: measurementCellInput(plan, sources, {
+      selectedMetric: handoff.selected_metric_context
+    }),
+    runId: "operator_intake_adapter_run_customer_metric_handoff_missing_layer_3_package"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(validateCustomerMetricOperatorSourceHandoff(handoff).valid, true);
+  assert.equal(run.decision, "HELD_FOR_SOURCE_PACKAGE_REVIEW");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.source_package_review_queue.queue_state, "HELD_FOR_SOURCE_REVIEW");
+  assert.ok(run.missing_evidence.includes("CUSTOMER_METRIC_SOURCE_PACKAGE_REQUIRED"));
+  assert.equal(run.feeds.measurement_cell_assembly_run, false);
+  assert.equal(run.feeds.value_hypothesis_packet_runner, false);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter accepts approved assumption and governance handoffs without bypassing Source Package review", () => {
+  const plan = fullPlan();
+  const baseSources = operatorSources(plan);
+  const assumptionHandoff = buildAssumptionGovernanceOperatorSourceHandoff({
+    lane: "assumption",
+    source: baseSources.assumption,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  const governanceHandoff = buildAssumptionGovernanceOperatorSourceHandoff({
+    lane: "governance",
+    source: baseSources.governance,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  const sources = operatorSources(plan, {
+    assumption: assumptionHandoff.operator_source,
+    governance: governanceHandoff.operator_source
+  });
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages: matchingSourcePackages(plan, sources),
+    measurementCellInput: measurementCellInput(plan, sources),
+    runId: "operator_intake_adapter_run_assumption_governance_source_handoffs"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(validateAssumptionGovernanceOperatorSourceHandoff(assumptionHandoff).valid, true);
+  assert.equal(validateAssumptionGovernanceOperatorSourceHandoff(governanceHandoff).valid, true);
+  assert.equal(assumptionHandoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(governanceHandoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(assumptionHandoff.source_package_reference.source_refs.assumption_approval_export_id, assumptionHandoff.source_ref);
+  assert.equal(governanceHandoff.source_package_reference.source_refs.governance_control_export_id, governanceHandoff.source_ref);
+  assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.data_spine_readiness.source_readiness.assumption.source_ref, assumptionHandoff.source_ref);
+  assert.equal(run.data_spine_readiness.source_readiness.governance.source_ref, governanceHandoff.source_ref);
+  assert.equal(run.source_package_review_queue.lanes.find((lane) => lane.lane_key === "assumption").source_package_alignment_clear, true);
+  assert.equal(run.source_package_review_queue.lanes.find((lane) => lane.lane_key === "governance").source_package_alignment_clear, true);
+  assert.equal(run.feeds.measurement_cell_assembly_run, true);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.confidence_model, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("operator intake adapter still holds assumption and governance handoffs without matching packages", () => {
+  const plan = fullPlan();
+  const baseSources = operatorSources(plan);
+  const assumptionHandoff = buildAssumptionGovernanceOperatorSourceHandoff({
+    lane: "assumption",
+    source: baseSources.assumption,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  const governanceHandoff = buildAssumptionGovernanceOperatorSourceHandoff({
+    lane: "governance",
+    source: baseSources.governance,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  const sources = operatorSources(plan, {
+    assumption: assumptionHandoff.operator_source,
+    governance: governanceHandoff.operator_source
+  });
+  const sourcePackages = matchingSourcePackages(plan, sources).filter((sourcePackage) =>
+    !["assumption_approval_export", "governance_control_export"].includes(
+      sourcePackage.source_package_type
+    )
+  );
+  const input = baseOperatorInput({
+    sources,
+    sourcePackages,
+    measurementCellInput: measurementCellInput(plan, sources),
+    runId: "operator_intake_adapter_run_assumption_governance_handoffs_missing_packages"
+  });
+
+  const run = buildOperatorIntakeAdapterRun(input);
+  const result = validateOperatorIntakeAdapterRun(run);
+
+  assert.equal(validateAssumptionGovernanceOperatorSourceHandoff(assumptionHandoff).valid, true);
+  assert.equal(validateAssumptionGovernanceOperatorSourceHandoff(governanceHandoff).valid, true);
+  assert.equal(run.decision, "HELD_FOR_SOURCE_PACKAGE_REVIEW");
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(run.source_package_review_queue.queue_state, "HELD_FOR_SOURCE_REVIEW");
+  assert.ok(run.missing_evidence.includes("ASSUMPTION_SOURCE_PACKAGE_REQUIRED"));
+  assert.ok(run.missing_evidence.includes("GOVERNANCE_SOURCE_PACKAGE_REQUIRED"));
+  assert.equal(run.feeds.measurement_cell_assembly_run, false);
+  assert.equal(run.feeds.value_hypothesis_packet_runner, false);
   assert.equal(run.feeds.finance_context_investigation, false);
   assert.equal(run.feeds.confidence_model, false);
   assert.equal(run.feeds.customer_facing_financial_output, false);

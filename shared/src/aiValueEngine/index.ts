@@ -273,6 +273,36 @@ export type {
 } from "./vbdTokenAggregateIntake";
 
 export {
+  AI_VALUE_VBD_TOKEN_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildVbdTokenOperatorSourceHandoff,
+  validateVbdTokenOperatorSourceHandoff
+} from "./vbdTokenOperatorSourceHandoff";
+export type {
+  BuildVbdTokenOperatorSourceHandoffInput,
+  VbdTokenOperatorSourceHandoffValidationResult
+} from "./vbdTokenOperatorSourceHandoff";
+
+export {
+  AI_VALUE_ASSUMPTION_GOVERNANCE_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildAssumptionGovernanceOperatorSourceHandoff,
+  validateAssumptionGovernanceOperatorSourceHandoff
+} from "./assumptionGovernanceOperatorSourceHandoff";
+export type {
+  AssumptionGovernanceOperatorSourceHandoffValidationResult,
+  BuildAssumptionGovernanceOperatorSourceHandoffInput
+} from "./assumptionGovernanceOperatorSourceHandoff";
+
+export {
+  AI_VALUE_OPERATOR_SOURCE_HANDOFF_BUNDLE_SCHEMA_VERSION,
+  buildOperatorSourceHandoffBundle,
+  validateOperatorSourceHandoffBundle
+} from "./operatorSourceHandoffBundle";
+export type {
+  BuildOperatorSourceHandoffBundleInput,
+  OperatorSourceHandoffBundleValidationResult
+} from "./operatorSourceHandoffBundle";
+
+export {
   AI_VALUE_CUSTOMER_METRIC_INTAKE_SCHEMA_VERSION,
   buildCustomerMetricIntake,
   validateCustomerMetricIntake
@@ -281,6 +311,16 @@ export type {
   BuildCustomerMetricIntakeInput,
   CustomerMetricIntakeValidationResult
 } from "./customerMetricIntake";
+
+export {
+  AI_VALUE_CUSTOMER_METRIC_OPERATOR_SOURCE_HANDOFF_SCHEMA_VERSION,
+  buildCustomerMetricOperatorSourceHandoff,
+  validateCustomerMetricOperatorSourceHandoff
+} from "./customerMetricOperatorSourceHandoff";
+export type {
+  BuildCustomerMetricOperatorSourceHandoffInput,
+  CustomerMetricOperatorSourceHandoffValidationResult
+} from "./customerMetricOperatorSourceHandoff";
 
 export {
   AI_VALUE_REAL_DATA_INTAKE_PACKET_RUN_SCHEMA_VERSION,
@@ -353,6 +393,17 @@ export type {
   BuildMeasurementCellAssemblyRunInput,
   MeasurementCellAssemblyRunValidationResult
 } from "./measurementCellAssemblyRunner";
+
+export {
+  AI_VALUE_MEASUREMENT_CELL_SERIES_SCHEMA_VERSION,
+  buildMeasurementCellSeries,
+  validateMeasurementCellSeries
+} from "./measurementCellSeries";
+export type {
+  BuildMeasurementCellSeriesInput,
+  BuildMeasurementCellSeriesWindowInput,
+  MeasurementCellSeriesValidationResult
+} from "./measurementCellSeries";
 
 export {
   AI_VALUE_UI_OUTPUT_SCHEMA_VERSION,

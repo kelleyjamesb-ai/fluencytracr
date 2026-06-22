@@ -13,9 +13,13 @@ financial output.
 ```text
 Scrubbed aggregate Glean / BigQuery export summary
 -> VBD Token Aggregate Intake
--> Data Spine VBD-token source
--> Measurement Cell VBD context
+-> VBD + Token Operator Source Handoff
+-> Operator Intake Adapter
+-> Data Spine VBD-token source and Measurement Cell VBD/token context fragments
 ```
+
+The operator handoff prepares source and context fragments only. Reviewed
+Layer 1 Source Package clearance remains owned by Source Package Review Queue.
 
 ## VBD Formulas
 

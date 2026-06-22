@@ -66,6 +66,70 @@ It remains a source-preparation object only; it does not validate Measurement
 Cells, feed finance-context investigation, feed a confidence model, or create
 customer-facing financial output.
 
+For the VBD/token source lane, the recommended upstream bridge is the
+VBD + Token Operator Source Handoff:
+
+```text
+VBD Token Aggregate Intake
+-> VBD + Token Operator Source Handoff
+-> Operator Intake Adapter
+```
+
+That handoff can provide the `sources.vbdToken` operator source plus
+operator-provided `measurementCellInput.vbdContext` and
+`measurementCellInput.tokenContext` fragments. Its
+`source_package_reference.source_refs.aggregate_probe_id` is an alignment hint
+only. A matching valid, feedable, aligned Layer 1 Source Package remains
+required before Source Package Review Queue can clear the `vbd_token` lane.
+
+For the customer metric lane, the recommended upstream bridge is the Customer
+Metric Operator Source Handoff:
+
+```text
+Customer Metric Intake
+-> Customer Metric Operator Source Handoff
+-> Operator Intake Adapter
+```
+
+That handoff can provide the `sources.customerMetric` operator source plus
+operator-provided `measurementCellInput.selectedMetric` context. Its
+`source_package_reference.source_refs.aggregate_outcome_export_id` is an
+alignment hint only. A matching valid, feedable, aligned Layer 3 Source Package
+remains required before Source Package Review Queue can clear the
+`customer_metric` lane. Customer metric movement is descriptive customer-owned
+aggregate movement only, not AI impact proof, ROI, causality, productivity,
+confidence, probability, finance output, or customer-facing financial output.
+
+For assumption and governance lanes, the recommended upstream bridge is the
+Assumption / Governance Operator Source Handoff:
+
+```text
+Approved aggregate assumption or governance source posture
+-> Assumption / Governance Operator Source Handoff
+-> Operator Intake Adapter
+```
+
+That handoff can provide `sources.assumption` and `sources.governance` source
+objects plus package reference hints using `assumption_approval_export_id` and
+`governance_control_export_id`. Assumption approval is not ROI or finance
+approval, and governance attestation is not an override. Matching valid,
+feedable, aligned Source Packages remain required before Source Package Review
+Queue can clear either lane.
+
+For cross-lane preparation, the Operator Source Handoff Bundle can compact the
+VBD/token, customer metric, assumption, and governance handoffs into a
+preparation manifest:
+
+```text
+Governed lane handoffs
+-> Operator Source Handoff Bundle
+-> Operator Intake Adapter
+```
+
+The bundle remains preparation-only. It does not clear Source Package Review
+Queue, validate Measurement Cell readiness, feed finance-context
+investigation, feed a confidence model, or create customer-facing output.
+
 ## Decisions
 
 - `READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION`: Data Spine, Source Package
