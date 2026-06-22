@@ -298,6 +298,97 @@ test("Blueprint measurement expectations fail closed on unsafe or unapproved val
   assert.ok(result.gaps.every((gap) => !gap.includes("ebitda")));
 });
 
+test("approved Blueprint extraction validates every metric candidate before emitting outcome signals", () => {
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      approvalState: "approved",
+      approverRole: "customer_business_owner",
+      approvedExpectationPaths: [
+        {
+          expectation_path_id: "path_campaign_brief_to_cycle_time",
+          expected_behavior: "knowledge_retrieval",
+          expected_vbd_signal: "depth",
+          expected_metric_id: "marketing_campaign_cycle_days",
+          expected_metric_name: "Campaign cycle time",
+          expected_metric_direction: "decrease",
+          expected_metric_lag_days: 60,
+          expected_metric_system_recommended: true,
+          expected_metric_customer_selected: true,
+          value_driver: "capacity",
+          metric_role: "primary",
+          customer_approval_state: "approved",
+          approver_role: "customer_business_owner",
+          source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+        }
+      ],
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_direction: "decrease",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        },
+        {
+          metric_id: "marketing_rework_rate",
+          metric_name: "Campaign rework rate",
+          expected_direction: "decrease",
+          expected_lag_days: 90,
+          system_recommended: true,
+          customer_selected: false,
+          value_driver: "ebitda"
+        }
+      ]
+    })
+  );
+  const result = validateBlueprintExtractionDraft(draft);
+  const approvedInputs =
+    draft.blueprint_validation_input.source_requirements.approved_aggregate_inputs;
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.blueprint_validation_input, false);
+  assert.equal(result.feeds.data_spine_blueprint_source, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("metric_candidates.1.customer_selected")));
+  assert.ok(result.gaps.some((gap) => gap.includes("metric_candidates.1.value_driver")));
+  assert.ok(
+    approvedInputs.outcome_signals.every((signal) =>
+      signal.metric_id !== "marketing_rework_rate"
+    )
+  );
+});
+
+test("approved Blueprint extraction normalizes missing metric direction to monitor", () => {
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      approvalState: "approved",
+      approverRole: "customer_business_owner",
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        }
+      ]
+    })
+  );
+  const result = validateBlueprintExtractionDraft(draft);
+  const approvedPath = draft.extracted_fields.approved_expectation_paths[0];
+  const outcomeSignal =
+    draft.blueprint_validation_input.source_requirements.approved_aggregate_inputs
+      .outcome_signals[0];
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(draft.extracted_fields.expected_metric_direction, "monitor");
+  assert.equal(draft.data_spine_source.expected_metric_direction, "monitor");
+  assert.equal(approvedPath.expected_metric_direction, "monitor");
+  assert.equal(outcomeSignal.expected_direction, "monitor");
+});
+
 test("approved Blueprint extraction fails closed when metric approval is missing", () => {
   const draft = buildBlueprintExtractionDraft(
     baseInput({
