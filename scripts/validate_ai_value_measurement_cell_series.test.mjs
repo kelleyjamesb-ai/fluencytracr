@@ -4,6 +4,8 @@ import test from "node:test";
 
 import {
   AI_VALUE_MEASUREMENT_CELL_SERIES_SCHEMA_VERSION,
+  buildBlueprintExtractionDraft,
+  buildBlueprintOperatorSourceHandoff,
   buildMeasurementCellSeries,
   buildOperatorIntakeAdapterRun,
   validateMeasurementCellAssemblyRun,
@@ -153,6 +155,78 @@ function operatorSources(plan = fullPlan(), day = 30, overrides = {}) {
     }),
     ...overrides
   };
+}
+
+function blueprintOperatorSourceHandoff(plan = fullPlan(), day = 30, sources = operatorSources(plan, day), overrides = {}) {
+  const expectationPathId = overrides.expectationPathId ?? "expectation_path_resolution_time_capacity";
+  const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  const draft = buildBlueprintExtractionDraft({
+    draftId: sources.blueprint.source_ref,
+    orgId: plan.org_id,
+    clientId: sources.blueprint.client_id,
+    documentSourceRef: `blueprint_upload_support_approved_day_${day}`,
+    extractionState: "parsed",
+    approvalState: "approved",
+    ownerRole: "customer_value_owner",
+    approverRole: "customer_value_owner",
+    workflowFamily: plan.workflow_scope.workflow_family,
+    workflowName: "Support case resolution",
+    functionArea: plan.workflow_scope.function_area,
+    cohortKey: sources.blueprint.cohort_key,
+    valueHypothesis: plan.value_hypothesis.hypothesis_statement,
+    valueRoute: "CAPACITY_CREATION",
+    baselineWindow,
+    comparisonWindow,
+    metricCandidates: [
+      {
+        metric_id: plan.metric_selection.primary_metric.metric_id,
+        metric_name: plan.metric_selection.primary_metric.metric_name,
+        expected_direction: "decrease",
+        expected_lag_days: 30,
+        system_recommended: true,
+        customer_selected: true,
+        value_driver: "capacity"
+      }
+    ],
+    approvedExpectationPaths: [
+      {
+        expectation_path_id: expectationPathId,
+        expected_behavior: "knowledge_retrieval",
+        expected_vbd_signal: "depth",
+        expected_metric_id: plan.metric_selection.primary_metric.metric_id,
+        expected_metric_name: plan.metric_selection.primary_metric.metric_name,
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 30,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "capacity",
+        metric_role: "primary"
+      }
+    ],
+    assumptions: [
+      "case_mix_stability",
+      "volume_context",
+      "staffing_and_coverage_context",
+      "channel_mix_context",
+      "process_or_policy_context",
+      "knowledge_base_context",
+      "metric_definition_stability",
+      "ai_rollout_context"
+    ].map((assumption_id) => ({
+      assumption_id,
+      owner: "customer_value_owner",
+      state: "submitted"
+    })),
+    sourceRefs: {
+      document_source_ref: `blueprint_upload_support_approved_day_${day}`,
+      extraction_run_ref: `blueprint_extraction_support_approved_day_${day}`
+    },
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+  return buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
 }
 
 function sourcePackageExample(file, plan, overrides = {}) {
@@ -319,6 +393,7 @@ function fullExportPacket(plan = fullPlan(), day = 30) {
 
 function measurementCellInput(plan = fullPlan(), day = 30, sources = operatorSources(plan, day), overrides = {}) {
   const { baselineWindow, comparisonWindow } = windowsFromPlan(plan);
+  const expectationPathId = overrides.expectationPathId ?? "expectation_path_resolution_time_capacity";
   const base = {
     orgId: plan.org_id,
     functionArea: plan.workflow_scope.function_area,
@@ -338,11 +413,33 @@ function measurementCellInput(plan = fullPlan(), day = 30, sources = operatorSou
       prior_window_ref: day === 0 ? null : `measurement_cell_support_day_${Math.max(0, day - 30)}`
     },
     blueprintAlignment: {
+      expectation_path_id: expectationPathId,
+      blueprint_expectation_ref: sources.blueprint.source_ref,
+      blueprint_customer_approval_state: "approved",
+      blueprint_customer_approver_role: "customer_value_owner",
       value_route: plan.value_hypothesis.value_route,
       value_promise: plan.value_hypothesis.hypothesis_statement,
       expected_metric_id: plan.metric_selection.primary_metric.metric_id,
       expected_metric_direction: "decrease",
       expected_metric_lag_days: 30,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "capacity",
+      approved_expectation_path: {
+        expectation_path_id: expectationPathId,
+        expected_behavior: "knowledge_retrieval",
+        expected_vbd_signal: "depth",
+        expected_metric_id: plan.metric_selection.primary_metric.metric_id,
+        expected_metric_direction: "decrease",
+        expected_metric_lag_days: 30,
+        expected_metric_system_recommended: true,
+        expected_metric_customer_selected: true,
+        value_driver: "capacity",
+        metric_role: "primary",
+        source_ref: sources.blueprint.source_ref,
+        customer_approval_state: "approved",
+        approver_role: "customer_value_owner"
+      },
       owner_role: plan.value_hypothesis.owner_role,
       assumption_refs: [sources.assumption.source_ref],
       source_ref: sources.blueprint.source_ref
@@ -421,12 +518,39 @@ function measurementCellInput(plan = fullPlan(), day = 30, sources = operatorSou
       review_state: day === 0 ? "BUSINESS_OWNER_REVIEW_READY" : "FINANCE_CONTEXT_INVESTIGATION_READY"
     }
   };
-  return { ...base, ...overrides, timeWindow: { ...base.timeWindow, ...(overrides.timeWindow ?? {}) } };
+  const { expectationPathId: _expectationPathId, ...restOverrides } = overrides;
+  return { ...base, ...restOverrides, timeWindow: { ...base.timeWindow, ...(restOverrides.timeWindow ?? {}) } };
 }
 
 function operatorInputForDay(day = 30, overrides = {}) {
   const plan = fullPlan(day);
-  const sources = overrides.sources ?? operatorSources(plan, day);
+  const sourceOverrides = overrides.sources;
+  const providedHandoff = Object.prototype.hasOwnProperty.call(
+    overrides,
+    "blueprintOperatorSourceHandoff"
+  )
+    ? overrides.blueprintOperatorSourceHandoff
+    : undefined;
+  const initialSources = sourceOverrides ?? operatorSources(plan, day);
+  const blueprintHandoff = providedHandoff === undefined
+    ? blueprintOperatorSourceHandoff(plan, day, initialSources)
+    : providedHandoff;
+  const sources = blueprintHandoff?.operator_source
+    ? { ...initialSources, blueprint: blueprintHandoff.operator_source }
+    : initialSources;
+  const measurementInput = overrides.measurementCellInput ??
+    measurementCellInput(plan, day, sources, {
+      ...(blueprintHandoff?.blueprint_alignment_context
+        ? { blueprintAlignment: blueprintHandoff.blueprint_alignment_context }
+        : {})
+    });
+  const {
+    sources: _sources,
+    blueprintOperatorSourceHandoff: _blueprintOperatorSourceHandoff,
+    measurementCellInput: _measurementCellInput,
+    sourcePackages: _sourcePackages,
+    ...restOverrides
+  } = overrides;
   return {
     orgId: plan.org_id,
     clientId: "client_example",
@@ -437,12 +561,13 @@ function operatorInputForDay(day = 30, overrides = {}) {
     comparisonWindow: windowsFromPlan(plan).comparisonWindow,
     sources,
     measurementPlan: plan,
-    sourcePackages: matchingSourcePackages(plan, day, sources),
+    sourcePackages: _sourcePackages ?? matchingSourcePackages(plan, day, sources),
     scrubbedGleanExports: fullExportPacket(plan, day),
-    measurementCellInput: measurementCellInput(plan, day, sources),
+    blueprintOperatorSourceHandoff: blueprintHandoff,
+    measurementCellInput: measurementInput,
     runId: `operator_intake_adapter_run_support_day_${day}`,
     generatedAt: "2026-06-22T00:00:00.000Z",
-    ...overrides
+    ...restOverrides
   };
 }
 
@@ -652,6 +777,32 @@ test("measurement cell series blocks cross-window identity, metric, window, and 
   assert.equal(unsupportedWindow.decision, "BLOCKED");
   assert.equal(unsupportedResult.valid, false);
   assert.ok(unsupportedResult.gaps.some((gap) => /unsupported milestone day 120/i.test(gap)));
+});
+
+test("measurement cell series blocks same-metric expectation path drift across milestone windows", () => {
+  const windows = MILESTONE_DAYS.map((day) => ({
+    milestoneDay: day,
+    measurementCellAssemblyRun: day === 60
+      ? assemblyRunForDay(day, {
+          measurementCellInput: measurementCellInput(
+            fullPlan(day),
+            day,
+            operatorSources(fullPlan(day), day),
+            { expectationPathId: "expectation_path_resolution_time_quality" }
+          )
+        })
+      : assemblyRunForDay(day)
+  }));
+
+  const series = buildMeasurementCellSeries(baseSeriesInput([], { windows }));
+  const result = validateMeasurementCellSeries(series);
+
+  assert.equal(series.decision, "BLOCKED");
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => /expectation_path_id/i.test(gap)));
+  assert.equal(result.feeds.operator_time_series_preparation_compatibility, false);
+  assert.equal(result.feeds.confidence_model, false);
+  assert.equal(result.feeds.finance_context_investigation, false);
 });
 
 test("measurement cell series blocks stale embedded Measurement Cell Assembly validation", () => {

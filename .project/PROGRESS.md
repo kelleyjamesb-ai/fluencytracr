@@ -2,6 +2,67 @@
 
 ## Last Completed
 
+- AI Value controlled aggregate fixture review executable path
+  (user-requested, 2026-06-22): added the first runnable saved-fixture
+  controlled review harness. The new command runs a saved aggregate fixture
+  through Data Spine Intake Readiness, Real Data Intake Packet Runner, and Pilot
+  Intake Runner, then emits only a compact internal fixture review package. It
+  passes only to `READY_FOR_MEASUREMENT_CELL_ASSEMBLY` and keeps Source Package
+  clearance, Measurement Cell input/snapshots/series, evidence continuity
+  snapshots, claim/executive snapshots, legacy `executive_packet`, HTML readout,
+  API export, customer share packages, reportability readiness, finance-context,
+  confidence-model, probability, ROI/EBITDA, causality, productivity,
+  customer-facing output, live BigQuery/Sigma/Glean execution, ingestion jobs,
+  routes, UI, repositories, migrations, schemas, persistence, and output-file
+  writes blocked. The harness also fails closed before engine execution on
+  unsafe source refs, source-ref drift against the Data Spine, missing/unknown
+  suppression posture, missing Layer 1 VBD summary, missing aggregate summaries,
+  non-aggregate Layer 1 posture, generic `ai_value_objects` authority, raw rows,
+  query text, prompts, transcripts, identifiers, decomposed identifier aliases,
+  raw-data aliases, unsafe connector statuses, and JSON-style smuggling fields.
+  Passed reviews carry a compact reviewed-source-ref hash so stale source-ref
+  edits cannot validate as clean review objects. Verification:
+  `npm run test:ai-value-controlled-aggregate-fixture-review` passed 14/14;
+  `npm run run:ai-value-controlled-aggregate-fixture-review` emitted
+  `PASSED_INTERNAL_FIXTURE_REVIEW` / `READY_FOR_MEASUREMENT_CELL_ASSEMBLY` with
+  five source packages counted and all downstream feeds false;
+  `npm run test:ai-value-real-data-intake-packet-runner` passed 12/12;
+  `npm run test:ai-value-pilot-intake-runner` passed 7/7;
+  `npm run test:ai-value-scrubbed-glean-export-converter` passed 18/18;
+  `npm run test:ai-value-data-spine-readiness` passed 12/12;
+  `npm run test:ai-value-source-package-review-queue` passed 13/13;
+  `npm run build --workspace shared` passed; `git diff --check` passed.
+- AI Value data pipeline readiness decision (user-requested, 2026-06-22):
+  documented that the Sigma/BigQuery production data pipeline is not built yet.
+  The repo currently supports reviewed scrubbed aggregate summaries and
+  contract-only intake/handoff layers, not live BigQuery query execution, live
+  Sigma dashboard execution/export ingestion, live Glean pulls, raw-row parsers,
+  ingestion jobs, durable pipeline run storage, or customer-facing pipeline
+  output. The safe next path is docs-only source inventory, aggregate
+  extraction, and pipeline run review manifests before any saved-fixture adapter
+  or live execution promotion. Also added boundary notes to V3 ingest, the
+  dogfood BigQuery adapter, the BigQuery availability audit, and the API ingest
+  doc so bounded aggregate ingest cannot be misread as live AI Value
+  Sigma/BigQuery pipeline authorization. No code, schema, migration, route, UI,
+  persistence write, connector, live execution, export, confidence math,
+  ROI/EBITDA, causality, productivity, probability, or customer-facing financial
+  output was added.
+- AI Value productization decision-gate pass (user-requested, 2026-06-22):
+  created the controlled scrubbed aggregate pilot runbook and the hold/guard
+  decisions for legacy readout isolation, Measurement Cell persistence,
+  Measurement Cell Series persistence, customer projection, export governance,
+  and confidence research readiness. The safe outcome is: controlled pilot
+  runbook promoted as docs-only; physical Measurement Cell tables, Series
+  persistence, customer projection/export, and confidence research remain held
+  until actual scrubbed aggregate pilot evidence and repeated aligned milestone
+  evidence exist. Phase 5 implementation was intentionally stopped because the
+  Phase 4 decision is `HOLD_FOR_MORE_PILOT_EVIDENCE`. No Prisma schema,
+  migration, repository, backend route, frontend UI, persistence write, live
+  Glean/BigQuery execution, connector, export package, confidence math,
+  ROI/EBITDA, causality, productivity, probability, or customer-facing
+  financial output was added. Verification:
+  `git diff --check`; `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`.
 - Measurement Cell Series / Evidence Continuity Manifest slice
   (user-requested, 2026-06-22): added a contract-only Measurement Cell Series
   over repeated Measurement Cell Assembly outputs. The layer emits compact
@@ -489,3 +550,10 @@
 - AI Value Platform AI Fluency Aggregate Export Parser slice (2026-06-21): added the governed local parser/adapter from the Google Sheets `Aggregate Readiness Export` CSV/JSON shape into the existing AI Fluency Dashboard Import Runner input. The parser emits a governed parse run, preserves stale `k_min_posture` values for downstream blocking, normalizes blank numeric cells to `null`, canonicalizes organization rollup aliases to review-only overall rows, requires aligned aggregate source fields before handoff, and fails closed on respondent/person-level headers, unsafe identifier values, ROI/probability/confidence/financial-attribution/productivity/causality language, and route/schema/persistence/UI hints. The downstream Dashboard Import Runner was hardened to require `k_min_20_function_level`, treat organization-overall aliases as non-feedable, keep `Suppressed Small Cohort Group` non-feedable even if count fields drift, and block missing source alignment keys. AI Fluency client-import summaries no longer turn null construct means into zero-valued diagnostics. This slice added no Apps Script changes, UI, backend routes, schemas, persistence, live connectors, tunable thresholds, new suppression reasons, Measurement Cell feed, confidence percentages, probability output, ROI proof, causality, productivity claims, financial attribution, person-level output, ranking, or customer-facing financial output. Verification: `npm run test:ai-value-ai-fluency-aggregate-export-parser`, `npm run test:ai-value-ai-fluency-dashboard-import-runner`, `npm run test:ai-value-ai-fluency-client-import`, `npm run test:ai-value-google-sheets-aggregate-export-adapter`, `npm run build --workspace shared`, `bash scripts/ci_docs_contract_sweep.sh`, `python3 scripts/ci_v1_governance_gates.py`, and `git diff --check`.
 
 - AI Value Platform Blueprint Operator Source Handoff slice (2026-06-21): added a governed shared-engine handoff from validated, approved Blueprint Extraction Drafts into the Operator Intake Adapter source lane and Measurement Cell Blueprint alignment context. The handoff supplies the missing operator-safe `owner_role`, preserves Blueprint source alignment keys, separates Data Spine source review state from Measurement Cell readiness review state, and blocks pending/unapproved/invalid drafts from feeding operator intake. It explicitly does not parse uploads, run Glean or BigQuery, persist output, create routes/UI/schemas, feed Measurement Cell directly, feed finance-context investigation, feed confidence modeling, calculate ROI, prove causality, emit productivity claims, create probability/confidence outputs, or create customer-facing financial output. Verification: red/green `npm run build --workspace shared && node --test scripts/validate_ai_value_blueprint_operator_source_handoff.test.mjs`; `npm run test:ai-value-blueprint-operator-source-handoff`; `npm run test:ai-value-blueprint-extraction-draft`; `npm run test:ai-value-operator-intake-adapter`; `npm run test:ai-value-data-spine-readiness`; `npm run test:ai-value-source-package-review-queue`; `npm run test:ai-value-measurement-cell-assembly-runner`; `npm run test:ai-value-real-data-intake-packet-runner`; `npm run test:ai-value-operator-workflow`; `npm run test:ai-value-operator-evidence-package-runner`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; and `git diff --check`.
+
+- AI Value Platform Blueprint expectation-path lineage hardening slice (2026-06-22): Measurement Cell Assembly now requires validated Blueprint Operator Source Handoff proof whenever selected Blueprint `expectation_path_id` / `approved_expectation_path` context is present, binds that proof to org/client/workflow/function/cohort/windows/source ref/selected metric, and rejects emitted Measurement Cell path tampering even when embedded cell validation is refreshed. Operator Intake can pass the Blueprint handoff through to Assembly, and Measurement Cell Series now carries `expectation_path_id` through window refs, repeated refs, continuity, and alignment manifests while blocking same-metric/different-path drift. The logical data model and contracts were updated to keep this contract-first and to defer physical modeling. This added no UI, routes, schemas, migrations, persistence, live Glean/BigQuery execution, confidence math, ROI, causality, productivity, probability, or customer-facing financial output. Verification: `npm run test:ai-value-blueprint-operator-source-handoff`; `npm run test:ai-value-measurement-cell`; `npm run test:ai-value-measurement-cell-assembly-runner`; `npm run test:ai-value-operator-intake-adapter`; `npm run test:ai-value-measurement-cell-series`; `npm run test:ai-value-operator-source-handoff-bundle`; `npm run build --workspace shared`; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; and `git diff --check`.
+
+- AI Value Platform Physical Data Model Readiness Review slice (2026-06-22): added `docs/architecture/AI_VALUE_PHYSICAL_DATA_MODEL.md` as a docs-only physical projection/readiness review over the existing Prisma/Postgres AI Value spine. It names typed append-only tables as current authority, marks `ai_value_objects` as non-authoritative compatibility storage, maps logical objects to existing physical projections, defines the canonical alignment envelope, lists forbidden physical columns/JSON keys, and keeps Measurement Cell / Series / Evidence Continuity persistence as future candidates behind an explicit promotion gate. It also updates the logical model to treat the crosswalk persistence wording as narrowed for this pass. This added no Prisma schema changes, migrations, repository methods, routes, UI, persistence writes, live Glean/BigQuery execution, confidence math, ROI, causality, productivity, probability, or customer-facing financial output. Verification: docs/governance sweep before commit.
+- AI Value Platform Physical Data Model Readiness Review amendment (2026-06-22): tightened the docs-only future-promotion gate for Measurement Cell / Series persistence with stable approved expectation-path identity (`expectation_path_id`, version, hash, approved Blueprint payload hash, approval metadata, and value hypothesis binding), governed value-driver metadata limited to Revenue/Cost/Capacity/Quality/Risk, compact/null assembly payload rules, rolling 30-day operating-context quarantine, JSONB smuggling tests, and safer blocked-use posture names. This keeps the central decision unchanged: no physical tables, Prisma schema changes, migrations, repository methods, routes, UI, persistence writes, live Glean/BigQuery execution, confidence math, ROI, causality, productivity, probability, or customer-facing financial output in this pass.
+- AI Value Platform Productization Gate Decision slice (2026-06-22): added `docs/architecture/AI_VALUE_PRODUCTIZATION_GATE_DECISION.md` as a docs-only gate over what may be stored, opened, rendered, exported, or described as ready after the operator source handoff, Measurement Cell Series, Blueprint expectation-path, and physical data-model readiness work. Decision is `internal_operator_review_ready__customer_productization_blocked`: the governed internal evidence spine is productized for operator review, while customer-facing productization, live connectors, physical Measurement Cell / Series persistence, rendered source-bound readouts, exports, confidence math, ROI, causality, productivity, probability, and customer-facing financial output remain blocked pending separate promotion gates.
+- AI Value Platform Productization Next Plan update (2026-06-22): added `docs/superpowers/plans/2026-06-22-ai-value-productization-next-plan.md` to sequence the next work after the Productization Gate. The plan orders the next safe steps as: commit the gate, run a controlled scrubbed aggregate pilot, isolate legacy readout/generic object authority risk, make a Measurement Cell persistence promotion decision, implement `measurement_cell_snapshots` only if promoted, defer Measurement Cell Series persistence until repeated milestone evidence exists, then handle customer projection/export governance and confidence research readiness. It keeps physical data-model implementation waiting on promotion and adds no schemas, migrations, repositories, routes, UI, persistence writes, live connectors, confidence math, ROI, causality, productivity, probability, or customer-facing financial output.

@@ -644,7 +644,7 @@ function buildWindowRun(
       cohortKey: input.cohortKey,
       baselineWindow: deepClone(baselineWindow),
       comparisonWindow: deepClone(comparisonWindow),
-      sources: window.sources,
+      sources: window.sources ?? {},
       measurementPlan: windowPlan,
       sourcePackages: window.sourcePackages ?? [],
       scrubbedGleanExports: window.scrubbedGleanExports ?? [],

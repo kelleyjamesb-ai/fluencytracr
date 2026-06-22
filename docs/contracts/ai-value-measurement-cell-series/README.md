@@ -32,7 +32,8 @@ recomputed result.
 - `measurement_cell_windows`: compact per-window status records
 - `repeated_measurement_cell_refs`: compact Measurement Cell reference list
 - `evidence_continuity_manifest`: full-window continuity manifest
-- `alignment_manifest`: cross-window identity, metric, source-ref, and milestone alignment
+- `alignment_manifest`: cross-window identity, metric, selected
+  `expectation_path_id`, source-ref, and milestone alignment
 - `operator_time_series_compatibility`: metadata-only compatibility reference for the existing Operator path
 
 Valid decisions:
@@ -53,7 +54,9 @@ The series blocks on:
 - missing, repeated, unsupported, or out-of-order milestone windows
 - held, suppressed, missing, or blocked Measurement Cell Assembly windows
 - stale embedded validation
-- org, client, workflow, function, cohort, metric, window, or source-ref drift
+- org, client, workflow, function, cohort, metric, selected
+  `expectation_path_id`, window, or source-ref drift
+- missing `expectation_path_id` on non-missing Measurement Cell windows
 - bare direct references that do not carry recomputed Measurement Cell Assembly validation metadata
 - unsafe fields or values, including raw rows, query text, prompts, transcripts, user identifiers, person identifiers, ranking fields, ROI, finance, confidence, probability, causality, productivity, or customer-facing financial output
 

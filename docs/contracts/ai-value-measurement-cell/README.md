@@ -26,6 +26,61 @@ Top-level `source_refs` must match the nested source refs on Blueprint,
 AI Fluency, VBD, selected metric, and token context lanes when those refs are
 present. Source-ref drift fails validation.
 
+## Blueprint Expectation Context
+
+`blueprint_alignment` may carry customer-approved expectation context prepared
+by the Blueprint Operator Source Handoff:
+
+- `blueprint_expectation_ref`
+- `blueprint_customer_approval_state`
+- `blueprint_customer_approver_role`
+- `expectation_path_id`
+- `approved_expectation_path`
+- `expected_behavior_pathways`
+- `expected_metric_id`
+- `expected_metric_name`
+- `expected_metric_direction`
+- `expected_metric_lag_days`
+- `expected_metric_system_recommended`
+- `expected_metric_customer_selected`
+- `value_driver`
+- `baseline_window`
+- `comparison_window`
+
+These fields keep the customer-approved theory of change visible when the
+Measurement Cell aligns observed aggregate evidence. They are not a separate
+Blueprint Hypothesis object, Measurement Plan object, confidence model, formula,
+weight, coefficient, ROI field, causality claim, or customer-facing financial
+output.
+
+When expectation context is present, the validator fails closed on unsafe
+behavior labels, unsafe VBD-signal labels, unapproved metric selection, negative
+lag values, unsafe `value_driver` values, Blueprint source-ref drift, metric lag
+drift, and Blueprint window drift. Absent/null expectation fields remain
+compatible with legacy Measurement Cells.
+
+Explicit expectation context must carry `blueprint_expectation_ref`,
+`blueprint_customer_approval_state: approved`, and
+`blueprint_customer_approver_role`. Legacy Measurement Cells that carry only
+older metric id/direction/lag alignment fields remain valid without upgrading
+into customer-approved expectation context.
+
+When `expectation_path_id` is present, the Measurement Cell must carry exactly
+one `approved_expectation_path`. The selected path must match the cell's
+selected metric id, metric direction, and expected lag when those values are
+present. The Measurement Cell must not carry the full
+`approved_expectation_paths` registry; one cell stays at one
+org/function/workflow/cohort/window/metric grain.
+
+This path binding is measurement contract context only. It does not authorize a
+data schema, persistence model, route, UI, live connector, confidence formula,
+ROI calculation, EBITDA output, probability, causality claim, productivity
+claim, or customer-facing financial output.
+
+`expected_metric_lag_days` is descriptive review context only. It must not be
+used as a threshold, surfacing gate, confidence input, model parameter, or
+timing promise.
+
 ## Non-Goals
 
 The Measurement Cell must not:
@@ -33,6 +88,8 @@ The Measurement Cell must not:
 - calculate ROI, EBITA, EBITDA, savings, financial impact, or value-at-risk;
 - emit a confidence percentage, probability, attribution score, or prediction;
 - prove causality, productivity, or finance movement;
+- turn Blueprint expectation context into a confidence score, probability,
+  threshold, or economic dependency;
 - rescue suppressed VBD, AI Fluency, metric, or governance evidence;
 - use token intensity as value proof or as a hidden VBD formula modifier;
 - store raw prompts, responses, transcripts, rows, query text, or file content;

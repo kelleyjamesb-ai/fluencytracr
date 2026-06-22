@@ -309,6 +309,10 @@ function sameWindow(left: any, right: any): boolean {
   return left?.window_start === right?.window_start && left?.window_end === right?.window_end;
 }
 
+function ownerRoleOf(source: any): string | null {
+  return source?.owner_role ?? source?.source_owner_role ?? source?.sourceOwnerRole ?? null;
+}
+
 function canonicalSource(input: BuildDataSpineIntakeReadinessInput, source: any = {}): any {
   const state = normalizeState(source.state, source.source_ref ? "present" : "missing");
   return {
@@ -322,7 +326,7 @@ function canonicalSource(input: BuildDataSpineIntakeReadinessInput, source: any 
     cohort_key: source.cohort_key ?? input.cohortKey,
     baseline_window: source.baseline_window ?? input.baselineWindow,
     comparison_window: source.comparison_window ?? input.comparisonWindow,
-    owner_role: source.owner_role ?? null,
+    owner_role: ownerRoleOf(source),
     owner_approval_state: normalizeState(source.owner_approval_state, "missing"),
     review_state: normalizeState(source.review_state, "needs_review"),
     aggregate_only: source.aggregate_only ?? true,
@@ -514,13 +518,14 @@ function baseFeeds(ready: boolean): DataSpineIntakeReadinessValidationResult["fe
 export function buildDataSpineIntakeReadiness(
   input: BuildDataSpineIntakeReadinessInput
 ): any {
+  const sources = input.sources ?? {};
   const source_readiness: Record<string, any> = {
-    blueprint: canonicalSource(input, input.sources.blueprint),
-    ai_fluency: canonicalSource(input, input.sources.aiFluency),
-    vbd_token: canonicalSource(input, input.sources.vbdToken),
-    customer_metric: canonicalSource(input, input.sources.customerMetric),
-    assumption: canonicalSource(input, input.sources.assumption),
-    governance: canonicalSource(input, input.sources.governance)
+    blueprint: canonicalSource(input, sources.blueprint),
+    ai_fluency: canonicalSource(input, sources.aiFluency),
+    vbd_token: canonicalSource(input, sources.vbdToken),
+    customer_metric: canonicalSource(input, sources.customerMetric),
+    assumption: canonicalSource(input, sources.assumption),
+    governance: canonicalSource(input, sources.governance)
   };
 
   for (const source of Object.values(source_readiness)) {

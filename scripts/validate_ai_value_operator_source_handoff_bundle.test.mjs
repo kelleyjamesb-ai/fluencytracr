@@ -162,7 +162,10 @@ function blueprintInput(overrides = {}) {
         metric_id: alignment.metricId,
         metric_name:
           alignment.measurementPlan.metric_selection.primary_metric.metric_name,
-        expected_direction: "decrease"
+        expected_direction: "decrease",
+        system_recommended: true,
+        customer_selected: true,
+        value_driver: "capacity"
       }
     ],
     assumptions: [

@@ -6,6 +6,12 @@ Phase: `phase-ai-value-bigquery-signal-availability-audit`
 
 Related prior phase: `docs/architecture/AI_VALUE_DATA_MODEL_AUDIT.md`
 
+Pipeline boundary: this audit classifies aggregate source availability and
+governed evidence-contract readiness. It does not authorize a production
+Sigma/BigQuery AI Value data pipeline, live query execution, pipeline
+persistence, customer projection, export packages, confidence research, ROI,
+causality, productivity, probability, or customer-facing financial output.
+
 This document does not create migrations, routes, schemas, ingestion, UI,
 backend services, frontend views, BigQuery jobs, or governance changes. It
 audits whether the current repository contains enough source contracts,
@@ -85,7 +91,7 @@ blocked.
 
 | Classification | Meaning |
 | --- | --- |
-| `available_now` | Existing repo code or contract can produce aggregate, governed evidence for this signal today. |
+| `available_now` | Existing repo code or contract can produce aggregate, governed evidence for this signal today; this does not mean production Sigma/BigQuery pipeline authorization. |
 | `partially_available` | Some fields, contracts, or materializers exist, but the signal is incomplete, caveated, or not end-to-end. |
 | `derivable_with_existing_data` | Existing BigQuery/repo data appears sufficient, but no governed production materializer currently emits the snapshot field. |
 | `requires_customer_export` | The source is customer-owned or approval-owned and must arrive as an aggregate export or attested package. |

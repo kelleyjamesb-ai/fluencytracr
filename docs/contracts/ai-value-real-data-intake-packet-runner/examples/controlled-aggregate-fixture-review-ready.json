@@ -1,0 +1,606 @@
+{
+  "schema_version": "FT_AI_VALUE_CONTROLLED_AGGREGATE_FIXTURE_2026_06",
+  "fixture_id": "controlled_aggregate_fixture_review_support_day_30",
+  "run_id": "real_data_intake_packet_run_support_controlled_fixture_day_30",
+  "generated_at": "2026-06-22T00:00:00.000Z",
+  "measurement_plan_path": "docs/contracts/ai-value-measurement-plan/examples/full-playbook-ready-plan.json",
+  "data_spine_input": {
+    "org_id": "org_example",
+    "client_id": "client_example",
+    "workflow_family": "customer_support_case_resolution",
+    "function_area": "customer_support",
+    "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+    "baseline_window": {
+      "window_start": "2026-05-01",
+      "window_end": "2026-05-31"
+    },
+    "comparison_window": {
+      "window_start": "2026-06-01",
+      "window_end": "2026-06-30"
+    },
+    "sources": {
+      "blueprint": {
+        "state": "present",
+        "intake_mode": "blueprint_document_upload",
+        "source_ref": "blueprint_parse_support_approved_day_30",
+        "org_id": "org_example",
+        "client_id": "client_example",
+        "workflow_family": "customer_support_case_resolution",
+        "function_area": "customer_support",
+        "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+        "baseline_window": {
+          "window_start": "2026-05-01",
+          "window_end": "2026-05-31"
+        },
+        "comparison_window": {
+          "window_start": "2026-06-01",
+          "window_end": "2026-06-30"
+        },
+        "owner_role": "workflow_owner",
+        "owner_approval_state": "approved",
+        "review_state": "clear",
+        "aggregate_only": true
+      },
+      "aiFluency": {
+        "state": "present",
+        "intake_mode": "ai_fluency_dashboard_export",
+        "source_ref": "ai_fluency_support_day_30",
+        "org_id": "org_example",
+        "client_id": "client_example",
+        "workflow_family": "customer_support_case_resolution",
+        "function_area": "customer_support",
+        "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+        "baseline_window": {
+          "window_start": "2026-05-01",
+          "window_end": "2026-05-31"
+        },
+        "comparison_window": {
+          "window_start": "2026-06-01",
+          "window_end": "2026-06-30"
+        },
+        "owner_role": "customer_research_owner",
+        "owner_approval_state": "approved",
+        "review_state": "clear",
+        "aggregate_only": true
+      },
+      "vbdToken": {
+        "state": "present",
+        "intake_mode": "scrubbed_glean_bigquery_export",
+        "source_ref": "scrubbed_glean_vbd_token_support_day_30",
+        "connector_status": "scrubbed_export_only",
+        "org_id": "org_example",
+        "client_id": "client_example",
+        "workflow_family": "customer_support_case_resolution",
+        "function_area": "customer_support",
+        "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+        "baseline_window": {
+          "window_start": "2026-05-01",
+          "window_end": "2026-05-31"
+        },
+        "comparison_window": {
+          "window_start": "2026-06-01",
+          "window_end": "2026-06-30"
+        },
+        "owner_role": "customer_data_platform_owner",
+        "owner_approval_state": "approved",
+        "review_state": "clear",
+        "aggregate_only": true
+      },
+      "customerMetric": {
+        "state": "present",
+        "intake_mode": "customer_metric_aggregate_export",
+        "source_ref": "support_metric_resolution_hours_day_30",
+        "metric_id": "support_median_resolution_hours",
+        "org_id": "org_example",
+        "client_id": "client_example",
+        "workflow_family": "customer_support_case_resolution",
+        "function_area": "customer_support",
+        "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+        "baseline_window": {
+          "window_start": "2026-05-01",
+          "window_end": "2026-05-31"
+        },
+        "comparison_window": {
+          "window_start": "2026-06-01",
+          "window_end": "2026-06-30"
+        },
+        "owner_role": "customer_metric_owner",
+        "owner_approval_state": "approved",
+        "review_state": "clear",
+        "aggregate_only": true
+      },
+      "assumption": {
+        "state": "present",
+        "intake_mode": "assumption_approval",
+        "source_ref": "support_assumption_approval_day_30",
+        "org_id": "org_example",
+        "client_id": "client_example",
+        "workflow_family": "customer_support_case_resolution",
+        "function_area": "customer_support",
+        "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+        "baseline_window": {
+          "window_start": "2026-05-01",
+          "window_end": "2026-05-31"
+        },
+        "comparison_window": {
+          "window_start": "2026-06-01",
+          "window_end": "2026-06-30"
+        },
+        "owner_role": "finance_or_business_owner",
+        "owner_approval_state": "approved",
+        "review_state": "clear",
+        "aggregate_only": true
+      },
+      "governance": {
+        "state": "present",
+        "intake_mode": "governance_attestation",
+        "source_ref": "support_governance_attestation_day_30",
+        "org_id": "org_example",
+        "client_id": "client_example",
+        "workflow_family": "customer_support_case_resolution",
+        "function_area": "customer_support",
+        "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
+        "baseline_window": {
+          "window_start": "2026-05-01",
+          "window_end": "2026-05-31"
+        },
+        "comparison_window": {
+          "window_start": "2026-06-01",
+          "window_end": "2026-06-30"
+        },
+        "owner_role": "customer_governance_owner",
+        "owner_approval_state": "approved",
+        "review_state": "clear",
+        "aggregate_only": true
+      }
+    }
+  },
+  "scrubbed_glean_exports": [
+    {
+      "schema_version": "FT_AI_VALUE_SCRUBBED_GLEAN_CLIENT_EXPORT_2026_06",
+      "export_id": "controlled_fixture_layer_1_platform_telemetry_day_30",
+      "request_id": "client_evidence_request_measurement_plan_example_full_playbook_ready_layer_1",
+      "org_id": "org_example",
+      "measurement_plan_id": "measurement_plan_example_full_playbook_ready",
+      "evidence_layer": "layer_1_platform_telemetry",
+      "source_owner_role": "customer_data_platform_owner",
+      "approver_role": "customer_data_platform_owner",
+      "attestation": {
+        "attestation_state": "attested",
+        "attested_by_role": "customer_data_platform_owner",
+        "attested_at": "2026-06-22T00:00:00.000Z",
+        "caveats": [
+          "Aggregate metadata only."
+        ]
+      },
+      "generated_at": "2026-06-22T00:00:00.000Z",
+      "covered_window": {
+        "window_start": "2026-05-01",
+        "window_end": "2026-05-31"
+      },
+      "aggregate_grain": "workflow_family",
+      "minimum_cohort_threshold": 5,
+      "k_min_posture": {
+        "minimum_cohort_threshold": 5,
+        "cohort_threshold_met": true,
+        "total_slices": 8,
+        "k_min_clear_slices": 8,
+        "suppressed_or_unknown_slices": 0
+      },
+      "evidence_state": "present",
+      "privacy_boundary": {
+        "aggregate_only": true,
+        "contains_direct_identifiers": false,
+        "contains_raw_content": false,
+        "contains_raw_rows": false,
+        "contains_raw_files": false,
+        "contains_raw_prompts": false,
+        "contains_raw_responses": false,
+        "contains_transcripts": false,
+        "contains_query_text": false,
+        "contains_file_contents": false,
+        "contains_person_level_productivity": false,
+        "contains_person_level_hris_records": false,
+        "contains_hashed_or_joinable_person_identifiers": false,
+        "contains_manager_or_team_ranking": false,
+        "contains_people_decisioning": false,
+        "contains_compensation_or_performance_inference": false,
+        "contains_promotion_or_discipline_inference": false,
+        "contains_attrition_prediction": false,
+        "contains_hris_inference_from_ai_usage": false
+      },
+      "source_readiness_id": "source_readiness_vbd_token_support_day_30",
+      "aggregate_probe_id": "scrubbed_glean_vbd_token_support_day_30",
+      "source_tables": [
+        "scrubbed_llm_call",
+        "scrubbed_client_analytics",
+        "scrubbed_workflows"
+      ],
+      "table_families_checked": [
+        "scrubbed_llm_call",
+        "scrubbed_client_analytics",
+        "scrubbed_workflows"
+      ],
+      "signal_families": [
+        "assistant",
+        "search_document_retrieval",
+        "agent_run"
+      ],
+      "covered_signal_families": [
+        "assistant",
+        "search_document_retrieval",
+        "agent_run"
+      ],
+      "vbd_summary": {
+        "baseline_index": 0.42,
+        "comparison_index": 0.58,
+        "movement_direction": "improved",
+        "aggregate_only": true
+      },
+      "allowed_uses": [
+        "evidence_collection_input",
+        "source_availability_summary"
+      ],
+      "blocked_uses": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ],
+      "notes": [
+        "Aggregate metadata only."
+      ],
+      "caveats": [
+        "Layer 1 telemetry is source availability evidence only."
+      ]
+    },
+    {
+      "schema_version": "FT_AI_VALUE_SCRUBBED_GLEAN_CLIENT_EXPORT_2026_06",
+      "export_id": "controlled_fixture_layer_2_user_voice_day_30",
+      "request_id": "client_evidence_request_measurement_plan_example_full_playbook_ready_layer_2",
+      "org_id": "org_example",
+      "measurement_plan_id": "measurement_plan_example_full_playbook_ready",
+      "evidence_layer": "layer_2_user_voice_empirical",
+      "source_owner_role": "customer_research_owner",
+      "approver_role": "customer_research_owner",
+      "attestation": {
+        "attestation_state": "attested",
+        "attested_by_role": "customer_research_owner",
+        "attested_at": "2026-06-22T00:00:00.000Z",
+        "caveats": [
+          "Aggregate metadata only."
+        ]
+      },
+      "generated_at": "2026-06-22T00:00:00.000Z",
+      "covered_window": {
+        "window_start": "2026-05-01",
+        "window_end": "2026-05-31"
+      },
+      "aggregate_grain": "workflow_family",
+      "minimum_cohort_threshold": 5,
+      "k_min_posture": {
+        "minimum_cohort_threshold": 5,
+        "cohort_threshold_met": true,
+        "total_slices": 8,
+        "k_min_clear_slices": 8,
+        "suppressed_or_unknown_slices": 0
+      },
+      "evidence_state": "present",
+      "privacy_boundary": {
+        "aggregate_only": true,
+        "contains_direct_identifiers": false,
+        "contains_raw_content": false,
+        "contains_raw_rows": false,
+        "contains_raw_files": false,
+        "contains_raw_prompts": false,
+        "contains_raw_responses": false,
+        "contains_transcripts": false,
+        "contains_query_text": false,
+        "contains_file_contents": false,
+        "contains_person_level_productivity": false,
+        "contains_person_level_hris_records": false,
+        "contains_hashed_or_joinable_person_identifiers": false,
+        "contains_manager_or_team_ranking": false,
+        "contains_people_decisioning": false,
+        "contains_compensation_or_performance_inference": false,
+        "contains_promotion_or_discipline_inference": false,
+        "contains_attrition_prediction": false,
+        "contains_hris_inference_from_ai_usage": false
+      },
+      "source_readiness_id": "source_readiness_ai_fluency_support_day_30",
+      "aggregate_probe_id": "ai_fluency_support_day_30",
+      "aggregate_export_id": "ai_fluency_support_day_30",
+      "metric_or_signal_summary": {
+        "summary_type": "aggregate_export_metadata_summary",
+        "aggregate_signal_name": "aggregate_ai_fluency_baseline_summary",
+        "aggregate_value_present": true
+      },
+      "allowed_uses": [
+        "evidence_collection_input",
+        "evidence_snapshot_preparation"
+      ],
+      "blocked_uses": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ],
+      "notes": [
+        "Aggregate metadata only."
+      ],
+      "caveats": [
+        "Layer 2 user voice evidence is aggregate context only."
+      ]
+    },
+    {
+      "schema_version": "FT_AI_VALUE_SCRUBBED_GLEAN_CLIENT_EXPORT_2026_06",
+      "export_id": "controlled_fixture_layer_3_outcome_day_30",
+      "request_id": "client_evidence_request_measurement_plan_example_full_playbook_ready_layer_3",
+      "org_id": "org_example",
+      "measurement_plan_id": "measurement_plan_example_full_playbook_ready",
+      "evidence_layer": "layer_3_business_system_outcomes",
+      "source_owner_role": "customer_metric_owner",
+      "approver_role": "customer_business_owner",
+      "attestation": {
+        "attestation_state": "attested",
+        "attested_by_role": "customer_business_owner",
+        "attested_at": "2026-06-22T00:00:00.000Z",
+        "caveats": [
+          "Aggregate metadata only."
+        ]
+      },
+      "generated_at": "2026-06-22T00:00:00.000Z",
+      "covered_window": {
+        "window_start": "2026-05-01",
+        "window_end": "2026-05-31"
+      },
+      "aggregate_grain": "workflow_family",
+      "minimum_cohort_threshold": 5,
+      "k_min_posture": {
+        "minimum_cohort_threshold": 5,
+        "cohort_threshold_met": true,
+        "total_slices": 8,
+        "k_min_clear_slices": 8,
+        "suppressed_or_unknown_slices": 0
+      },
+      "evidence_state": "present",
+      "privacy_boundary": {
+        "aggregate_only": true,
+        "contains_direct_identifiers": false,
+        "contains_raw_content": false,
+        "contains_raw_rows": false,
+        "contains_raw_files": false,
+        "contains_raw_prompts": false,
+        "contains_raw_responses": false,
+        "contains_transcripts": false,
+        "contains_query_text": false,
+        "contains_file_contents": false,
+        "contains_person_level_productivity": false,
+        "contains_person_level_hris_records": false,
+        "contains_hashed_or_joinable_person_identifiers": false,
+        "contains_manager_or_team_ranking": false,
+        "contains_people_decisioning": false,
+        "contains_compensation_or_performance_inference": false,
+        "contains_promotion_or_discipline_inference": false,
+        "contains_attrition_prediction": false,
+        "contains_hris_inference_from_ai_usage": false
+      },
+      "source_readiness_id": "source_readiness_customer_metric_support_day_30",
+      "aggregate_probe_id": "support_metric_resolution_hours_day_30",
+      "metric_or_signal_summary": {
+        "summary_type": "customer_owned_aggregate_metric_summary",
+        "aggregate_metric_name": "aggregate_support_median_resolution_hours",
+        "aggregate_value_present": true
+      },
+      "allowed_uses": [
+        "evidence_collection_input",
+        "evidence_snapshot_preparation"
+      ],
+      "blocked_uses": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ],
+      "notes": [
+        "Aggregate metadata only."
+      ],
+      "caveats": [
+        "Layer 3 outcome evidence is customer-owned aggregate context only."
+      ]
+    },
+    {
+      "schema_version": "FT_AI_VALUE_SCRUBBED_GLEAN_CLIENT_EXPORT_2026_06",
+      "export_id": "controlled_fixture_governance_day_30",
+      "request_id": "client_evidence_request_measurement_plan_example_full_playbook_ready_governance",
+      "org_id": "org_example",
+      "measurement_plan_id": "measurement_plan_example_full_playbook_ready",
+      "evidence_layer": "governance_evidence",
+      "source_owner_role": "customer_governance_owner",
+      "approver_role": "customer_governance_owner",
+      "attestation": {
+        "attestation_state": "attested",
+        "attested_by_role": "customer_governance_owner",
+        "attested_at": "2026-06-22T00:00:00.000Z",
+        "caveats": [
+          "Aggregate metadata only."
+        ]
+      },
+      "generated_at": "2026-06-22T00:00:00.000Z",
+      "covered_window": {
+        "window_start": "2026-05-01",
+        "window_end": "2026-05-31"
+      },
+      "aggregate_grain": "workflow_family",
+      "minimum_cohort_threshold": 5,
+      "k_min_posture": {
+        "minimum_cohort_threshold": 5,
+        "cohort_threshold_met": true,
+        "total_slices": 8,
+        "k_min_clear_slices": 8,
+        "suppressed_or_unknown_slices": 0
+      },
+      "evidence_state": "present",
+      "privacy_boundary": {
+        "aggregate_only": true,
+        "contains_direct_identifiers": false,
+        "contains_raw_content": false,
+        "contains_raw_rows": false,
+        "contains_raw_files": false,
+        "contains_raw_prompts": false,
+        "contains_raw_responses": false,
+        "contains_transcripts": false,
+        "contains_query_text": false,
+        "contains_file_contents": false,
+        "contains_person_level_productivity": false,
+        "contains_person_level_hris_records": false,
+        "contains_hashed_or_joinable_person_identifiers": false,
+        "contains_manager_or_team_ranking": false,
+        "contains_people_decisioning": false,
+        "contains_compensation_or_performance_inference": false,
+        "contains_promotion_or_discipline_inference": false,
+        "contains_attrition_prediction": false,
+        "contains_hris_inference_from_ai_usage": false
+      },
+      "source_readiness_id": "source_readiness_governance_support_day_30",
+      "aggregate_probe_id": "support_governance_attestation_day_30",
+      "metric_or_signal_summary": {
+        "summary_type": "governance_control_export_summary",
+        "aggregate_signal_name": "aggregate_governance_control_summary",
+        "aggregate_value_present": true
+      },
+      "allowed_uses": [
+        "evidence_collection_input",
+        "governance_review"
+      ],
+      "blocked_uses": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ],
+      "notes": [
+        "Aggregate metadata only."
+      ],
+      "caveats": [
+        "Governance evidence is source-control context only."
+      ]
+    },
+    {
+      "schema_version": "FT_AI_VALUE_SCRUBBED_GLEAN_CLIENT_EXPORT_2026_06",
+      "export_id": "controlled_fixture_assumption_day_30",
+      "request_id": "client_evidence_request_measurement_plan_example_full_playbook_ready_assumption",
+      "org_id": "org_example",
+      "measurement_plan_id": "measurement_plan_example_full_playbook_ready",
+      "evidence_layer": "assumption_evidence",
+      "source_owner_role": "finance_or_business_owner",
+      "approver_role": "finance_or_business_owner",
+      "attestation": {
+        "attestation_state": "attested",
+        "attested_by_role": "finance_or_business_owner",
+        "attested_at": "2026-06-22T00:00:00.000Z",
+        "caveats": [
+          "Aggregate metadata only."
+        ]
+      },
+      "generated_at": "2026-06-22T00:00:00.000Z",
+      "covered_window": {
+        "window_start": "2026-05-01",
+        "window_end": "2026-05-31"
+      },
+      "aggregate_grain": "workflow_family",
+      "minimum_cohort_threshold": 5,
+      "k_min_posture": {
+        "minimum_cohort_threshold": 5,
+        "cohort_threshold_met": true,
+        "total_slices": 8,
+        "k_min_clear_slices": 8,
+        "suppressed_or_unknown_slices": 0
+      },
+      "evidence_state": "present",
+      "privacy_boundary": {
+        "aggregate_only": true,
+        "contains_direct_identifiers": false,
+        "contains_raw_content": false,
+        "contains_raw_rows": false,
+        "contains_raw_files": false,
+        "contains_raw_prompts": false,
+        "contains_raw_responses": false,
+        "contains_transcripts": false,
+        "contains_query_text": false,
+        "contains_file_contents": false,
+        "contains_person_level_productivity": false,
+        "contains_person_level_hris_records": false,
+        "contains_hashed_or_joinable_person_identifiers": false,
+        "contains_manager_or_team_ranking": false,
+        "contains_people_decisioning": false,
+        "contains_compensation_or_performance_inference": false,
+        "contains_promotion_or_discipline_inference": false,
+        "contains_attrition_prediction": false,
+        "contains_hris_inference_from_ai_usage": false
+      },
+      "source_readiness_id": "source_readiness_assumption_support_day_30",
+      "aggregate_probe_id": "support_assumption_approval_day_30",
+      "metric_or_signal_summary": {
+        "summary_type": "assumption_approval_export_summary",
+        "aggregate_signal_name": "aggregate_assumption_approval_summary",
+        "aggregate_value_present": true
+      },
+      "allowed_uses": [
+        "evidence_collection_input",
+        "assumption_review"
+      ],
+      "blocked_uses": [
+        "realized_roi",
+        "ebita_claim",
+        "causality_claim",
+        "productivity_claim",
+        "headcount_reduction_claim",
+        "individual_attribution",
+        "manager_or_team_ranking",
+        "people_decisioning",
+        "customer_facing_financial_output"
+      ],
+      "notes": [
+        "Aggregate metadata only."
+      ],
+      "caveats": [
+        "Assumption evidence is owner-attested context only."
+      ]
+    }
+  ],
+  "expected": {
+    "review_state": "PASSED_INTERNAL_FIXTURE_REVIEW",
+    "engine_decision": "READY_FOR_MEASUREMENT_CELL_ASSEMBLY",
+    "source_package_count": 5,
+    "next_gate": "measurement_cell_assembly_candidate_only",
+    "reviewed_source_refs": {
+      "blueprint": "blueprint_parse_support_approved_day_30",
+      "ai_fluency": "ai_fluency_support_day_30",
+      "vbd_token": "scrubbed_glean_vbd_token_support_day_30",
+      "customer_metric": "support_metric_resolution_hours_day_30",
+      "assumption": "support_assumption_approval_day_30",
+      "governance": "support_governance_attestation_day_30"
+    }
+  }
+}

@@ -67,6 +67,35 @@ const ALLOWED_APPROVAL_STATES = new Set([
   "held"
 ]);
 
+const ALLOWED_EXPECTED_BEHAVIORS = new Set([
+  "knowledge_retrieval",
+  "reuse",
+  "delegation",
+  "verification"
+]);
+
+const ALLOWED_EXPECTED_VBD_SIGNALS = new Set([
+  "velocity",
+  "breadth",
+  "depth",
+  "integration",
+  "not_selected"
+]);
+
+const ALLOWED_VALUE_DRIVERS = new Set([
+  "revenue",
+  "cost",
+  "capacity",
+  "quality",
+  "risk",
+  "not_selected"
+]);
+
+const ALLOWED_METRIC_ROLES = new Set([
+  "primary",
+  "supporting"
+]);
+
 const FORBIDDEN_FIELD_PATTERNS = [
   /^raw_document_text$/i,
   /^document_text$/i,
@@ -144,6 +173,8 @@ export interface BuildBlueprintExtractionDraftInput {
   baselineWindow: any;
   comparisonWindow: any;
   metricCandidates: any[];
+  expectedBehaviorPathways?: any[];
+  approvedExpectationPaths?: any[];
   assumptions: any[];
   sourceRefs?: Record<string, any>;
   generatedAt?: string;
@@ -179,6 +210,22 @@ function safeIdPart(value: string): string {
 
 function stringsOf(value: any): string[] {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
+}
+
+function firstMetric(input: BuildBlueprintExtractionDraftInput): any {
+  return Array.isArray(input.metricCandidates) && input.metricCandidates.length > 0
+    ? input.metricCandidates[0]
+    : {};
+}
+
+function finiteNumberOrNull(value: any): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function expectedBehaviorPathways(value: any): any[] {
+  return Array.isArray(value) ? value : [];
 }
 
 function requireField(value: any, path: string, gaps: string[]): void {
@@ -227,7 +274,7 @@ function collectUnsafeText(
       ) &&
       FORBIDDEN_TEXT_PATTERNS.some((pattern) => pattern.test(value))
     ) {
-      values.add(`${path.join(".")}: ${value}`);
+      values.add(path.join(".") || "value");
     }
     return values;
   }
@@ -260,7 +307,81 @@ function sourceCoverage(): any {
   };
 }
 
+function selectedBehaviorPathway(input: BuildBlueprintExtractionDraftInput, index: number): any {
+  const pathways = expectedBehaviorPathways(input.expectedBehaviorPathways);
+  return pathways[index] ?? pathways[0] ?? {};
+}
+
+function normalizeApprovedExpectationPath(
+  path: any,
+  input: BuildBlueprintExtractionDraftInput,
+  blueprintExpectationRef: string,
+  index: number
+): any {
+  const behaviorPathway = selectedBehaviorPathway(input, index);
+  const metric = input.metricCandidates.find((candidate) =>
+    candidate?.metric_id && candidate.metric_id === path?.expected_metric_id
+  ) ?? input.metricCandidates[index] ?? {};
+  return {
+    expectation_path_id:
+      path?.expectation_path_id ??
+      `expectation_path_${safeIdPart(input.workflowFamily)}_${safeIdPart(String(path?.expected_metric_id ?? metric?.metric_id ?? `metric_${index + 1}`))}`,
+    expected_behavior:
+      path?.expected_behavior ?? path?.behavior ?? behaviorPathway?.behavior ?? null,
+    expected_vbd_signal:
+      path?.expected_vbd_signal ?? behaviorPathway?.expected_vbd_signal ?? "not_selected",
+    expected_metric_id: path?.expected_metric_id ?? metric?.metric_id ?? null,
+    expected_metric_name:
+      path?.expected_metric_name ?? metric?.metric_name ?? metric?.metric_id ?? null,
+    expected_metric_direction:
+      path?.expected_metric_direction ?? metric?.expected_direction ?? null,
+    expected_metric_lag_days: finiteNumberOrNull(
+      path?.expected_metric_lag_days ?? metric?.expected_lag_days
+    ),
+    expected_metric_system_recommended:
+      path?.expected_metric_system_recommended ?? metric?.system_recommended ?? null,
+    expected_metric_customer_selected:
+      path?.expected_metric_customer_selected ?? metric?.customer_selected ?? null,
+    value_driver: path?.value_driver ?? metric?.value_driver ?? "not_selected",
+    metric_role: path?.metric_role ?? (index === 0 ? "primary" : "supporting"),
+    customer_approval_state:
+      path?.customer_approval_state ?? normalizeKey(input.approvalState),
+    approver_role: path?.approver_role ?? input.approverRole ?? null,
+    source_ref: path?.source_ref ?? blueprintExpectationRef
+  };
+}
+
+function approvedExpectationPaths(
+  input: BuildBlueprintExtractionDraftInput,
+  blueprintExpectationRef: string
+): any[] {
+  const explicit = Array.isArray(input.approvedExpectationPaths)
+    ? input.approvedExpectationPaths
+    : null;
+  const source = explicit && explicit.length > 0
+    ? explicit
+    : input.metricCandidates.map((metric, index) => ({
+        expected_metric_id: metric?.metric_id,
+        expected_metric_name: metric?.metric_name ?? metric?.metric_id,
+        expected_metric_direction: metric?.expected_direction,
+        expected_metric_lag_days: metric?.expected_lag_days,
+        expected_metric_system_recommended: metric?.system_recommended,
+        expected_metric_customer_selected: metric?.customer_selected,
+        value_driver: metric?.value_driver,
+        metric_role: index === 0 ? "primary" : "supporting"
+      }));
+  return source.map((path, index) =>
+    normalizeApprovedExpectationPath(path, input, blueprintExpectationRef, index)
+  );
+}
+
+function selectedExpectationPath(paths: any[]): any {
+  return paths.find((path) => path?.metric_role === "primary") ?? paths[0] ?? {};
+}
+
 function approvedAggregateInputs(input: BuildBlueprintExtractionDraftInput): any {
+  const blueprintExpectationRef = input.draftId ??
+    `blueprint_extraction_draft_${safeIdPart(input.orgId)}_${safeIdPart(input.workflowFamily)}`;
   return {
     case_population: {
       eligible_cases: null,
@@ -275,8 +396,13 @@ function approvedAggregateInputs(input: BuildBlueprintExtractionDraftInput): any
     outcome_signals: input.metricCandidates.map((metric) => ({
       metric_id: metric.metric_id,
       metric_name: metric.metric_name ?? metric.metric_id,
-      expected_direction: metric.expected_direction ?? "monitor"
-    }))
+      expected_direction: metric.expected_direction ?? "monitor",
+      expected_lag_days: finiteNumberOrNull(metric.expected_lag_days),
+      system_recommended: metric.system_recommended ?? null,
+      customer_selected: metric.customer_selected ?? null,
+      value_driver: metric.value_driver ?? "not_selected"
+    })),
+    approved_expectation_paths: approvedExpectationPaths(input, blueprintExpectationRef)
   };
 }
 
@@ -342,6 +468,11 @@ export function buildBlueprintExtractionDraft(
   const extractionState = normalizeKey(input.extractionState);
   const draftId = input.draftId ??
     `blueprint_extraction_draft_${safeIdPart(input.orgId)}_${safeIdPart(input.workflowFamily)}`;
+  const metric = firstMetric(input);
+  const approvalState = normalizeKey(input.approvalState);
+  const blueprintExpectationRef = draftId;
+  const paths = approvedExpectationPaths(input, blueprintExpectationRef);
+  const selectedPath = selectedExpectationPath(paths);
   const blueprint = approved ? blueprintInput(input) : null;
   return {
     schema_version: AI_VALUE_BLUEPRINT_EXTRACTION_DRAFT_SCHEMA_VERSION,
@@ -351,7 +482,7 @@ export function buildBlueprintExtractionDraft(
     document_source_ref: input.documentSourceRef,
     source_posture: "upstream_structured_reference_only",
     extraction_state: extractionState,
-    approval_state: normalizeKey(input.approvalState),
+    approval_state: approvalState,
     owner_role: input.ownerRole,
     approver_role: input.approverRole ?? null,
     workflow_family: input.workflowFamily,
@@ -359,8 +490,27 @@ export function buildBlueprintExtractionDraft(
     function_area: input.functionArea,
     cohort_key: input.cohortKey,
     extracted_fields: {
+      blueprint_expectation_ref: blueprintExpectationRef,
+      blueprint_customer_approval_state: approved ? "approved" : approvalState,
+      blueprint_customer_approver_role: input.approverRole ?? null,
       value_hypothesis: input.valueHypothesis,
       value_route: input.valueRoute,
+      expected_behavior_pathways: expectedBehaviorPathways(
+        input.expectedBehaviorPathways
+      ),
+      approved_expectation_paths: paths,
+      expected_metric_id: selectedPath.expected_metric_id ?? metric.metric_id ?? null,
+      expected_metric_name:
+        selectedPath.expected_metric_name ?? metric.metric_name ?? metric.metric_id ?? null,
+      expected_metric_direction:
+        selectedPath.expected_metric_direction ?? metric.expected_direction ?? "monitor",
+      expected_metric_lag_days:
+        selectedPath.expected_metric_lag_days ?? metric.expected_lag_days ?? null,
+      expected_metric_system_recommended:
+        selectedPath.expected_metric_system_recommended ?? metric.system_recommended ?? null,
+      expected_metric_customer_selected:
+        selectedPath.expected_metric_customer_selected ?? metric.customer_selected ?? null,
+      value_driver: selectedPath.value_driver ?? metric.value_driver ?? "not_selected",
       metric_candidates: input.metricCandidates,
       baseline_window: input.baselineWindow,
       comparison_window: input.comparisonWindow,
@@ -380,6 +530,11 @@ export function buildBlueprintExtractionDraft(
       comparison_window: input.comparisonWindow,
       owner_approval_state: approved ? "approved" : "submitted",
       review_state: approved ? "clear" : "needs_review",
+      blueprint_expectation_ref: blueprintExpectationRef,
+      blueprint_customer_approval_state: approved ? "approved" : approvalState,
+      expected_metric_id: selectedPath.expected_metric_id ?? metric.metric_id ?? null,
+      expected_metric_direction:
+        selectedPath.expected_metric_direction ?? metric.expected_direction ?? "monitor",
       aggregate_only: true,
       parser_productized: false,
       live_pull_performed: false
@@ -424,6 +579,269 @@ function blueprintFeeds(draft: any, valid: boolean): any {
     measurement_cell_input: false,
     customer_facing_financial_output: false
   };
+}
+
+function collectExpectationGaps(draft: any): string[] {
+  const gaps: string[] = [];
+  const fields = draft?.extracted_fields ?? {};
+  const dataSource = draft?.data_spine_source ?? {};
+  const pathways = fields.expected_behavior_pathways;
+  if (pathways !== undefined) {
+    if (!Array.isArray(pathways)) {
+      gaps.push("extracted_fields.expected_behavior_pathways must be an array");
+    } else {
+      pathways.forEach((pathway: any, index: number) => {
+        const prefix = `extracted_fields.expected_behavior_pathways.${index}`;
+        if (!ALLOWED_EXPECTED_BEHAVIORS.has(String(pathway?.behavior))) {
+          gaps.push(`${prefix}.behavior is invalid`);
+        }
+        if (!ALLOWED_EXPECTED_VBD_SIGNALS.has(String(pathway?.expected_vbd_signal))) {
+          gaps.push(`${prefix}.expected_vbd_signal is invalid`);
+        }
+        if (typeof pathway?.system_recommended !== "boolean") {
+          gaps.push(`${prefix}.system_recommended must be boolean`);
+        }
+        if (typeof pathway?.customer_selected !== "boolean") {
+          gaps.push(`${prefix}.customer_selected must be boolean`);
+        }
+        if (draft?.approval_state === "approved" && pathway?.customer_selected !== true) {
+          gaps.push(`${prefix}.customer_selected must be true for approved Blueprint expectations`);
+        }
+      });
+    }
+  }
+  const lag = fields.expected_metric_lag_days;
+  if (lag !== undefined && lag !== null && (!Number.isFinite(Number(lag)) || Number(lag) < 0)) {
+    gaps.push("extracted_fields.expected_metric_lag_days must be a non-negative number or null");
+  }
+  if (
+    fields.expected_metric_system_recommended !== undefined &&
+    fields.expected_metric_system_recommended !== null &&
+    typeof fields.expected_metric_system_recommended !== "boolean"
+  ) {
+    gaps.push("extracted_fields.expected_metric_system_recommended must be boolean");
+  }
+  if (
+    fields.expected_metric_customer_selected !== undefined &&
+    fields.expected_metric_customer_selected !== null &&
+    typeof fields.expected_metric_customer_selected !== "boolean"
+  ) {
+    gaps.push("extracted_fields.expected_metric_customer_selected must be boolean");
+  }
+  if (draft?.approval_state === "approved") {
+    requireField(
+      fields.blueprint_expectation_ref,
+      "extracted_fields.blueprint_expectation_ref",
+      gaps
+    );
+    requireField(
+      dataSource.blueprint_expectation_ref,
+      "data_spine_source.blueprint_expectation_ref",
+      gaps
+    );
+    if (!Array.isArray(fields.metric_candidates) || fields.metric_candidates.length === 0) {
+      gaps.push("extracted_fields.metric_candidates must include a customer-selected metric for approved Blueprint expectations");
+    }
+    requireField(
+      fields.expected_metric_id,
+      "extracted_fields.expected_metric_id",
+      gaps
+    );
+    requireField(
+      fields.expected_metric_direction,
+      "extracted_fields.expected_metric_direction",
+      gaps
+    );
+    if (typeof fields.expected_metric_system_recommended !== "boolean") {
+      gaps.push("extracted_fields.expected_metric_system_recommended must be boolean for approved Blueprint expectations");
+    }
+  }
+  if (
+    draft?.approval_state === "approved" &&
+    fields.expected_metric_customer_selected !== true
+  ) {
+    gaps.push("extracted_fields.expected_metric_customer_selected must be true for approved Blueprint expectations");
+  }
+  if (fields.value_driver !== undefined && !ALLOWED_VALUE_DRIVERS.has(String(fields.value_driver))) {
+    gaps.push("extracted_fields.value_driver is invalid");
+  }
+  if (draft?.approval_state === "approved") {
+    if (fields.blueprint_customer_approval_state !== "approved") {
+      gaps.push("extracted_fields.blueprint_customer_approval_state must be approved");
+    }
+    requireField(
+      fields.blueprint_customer_approver_role,
+      "extracted_fields.blueprint_customer_approver_role",
+      gaps
+    );
+  }
+  if (
+    fields.blueprint_expectation_ref &&
+    dataSource.blueprint_expectation_ref &&
+    fields.blueprint_expectation_ref !== dataSource.blueprint_expectation_ref
+  ) {
+    gaps.push("data_spine_source.blueprint_expectation_ref must match extracted_fields.blueprint_expectation_ref");
+  }
+  if (
+    fields.expected_metric_id &&
+    dataSource.expected_metric_id &&
+    fields.expected_metric_id !== dataSource.expected_metric_id
+  ) {
+    gaps.push("data_spine_source.expected_metric_id must match extracted_fields.expected_metric_id");
+  }
+  if (
+    fields.expected_metric_direction &&
+    dataSource.expected_metric_direction &&
+    fields.expected_metric_direction !== dataSource.expected_metric_direction
+  ) {
+    gaps.push("data_spine_source.expected_metric_direction must match extracted_fields.expected_metric_direction");
+  }
+  gaps.push(...collectApprovedExpectationPathGaps(draft));
+  return gaps;
+}
+
+function collectApprovedExpectationPathGaps(draft: any): string[] {
+  const gaps: string[] = [];
+  const fields = draft?.extracted_fields ?? {};
+  const paths = fields.approved_expectation_paths;
+  const approved = draft?.approval_state === "approved";
+  if (paths === undefined) {
+    if (approved) {
+      gaps.push("extracted_fields.approved_expectation_paths must be present for approved Blueprint expectations");
+    }
+    return gaps;
+  }
+  if (!Array.isArray(paths)) {
+    gaps.push("extracted_fields.approved_expectation_paths must be an array");
+    return gaps;
+  }
+  if (approved && paths.length === 0) {
+    gaps.push("extracted_fields.approved_expectation_paths must include at least one approved expectation path");
+  }
+  const ids = new Set<string>();
+  let primaryCount = 0;
+  paths.forEach((path: any, index: number) => {
+    const prefix = `extracted_fields.approved_expectation_paths.${index}`;
+    requireField(path?.expectation_path_id, `${prefix}.expectation_path_id`, gaps);
+    if (path?.expectation_path_id) {
+      const id = String(path.expectation_path_id);
+      if (ids.has(id)) {
+        gaps.push(`${prefix}.expectation_path_id must be unique`);
+      }
+      ids.add(id);
+    }
+    if (path?.metric_role === "primary") primaryCount += 1;
+    if (
+      path?.expected_behavior !== undefined &&
+      path.expected_behavior !== null &&
+      !ALLOWED_EXPECTED_BEHAVIORS.has(String(path.expected_behavior))
+    ) {
+      gaps.push(`${prefix}.expected_behavior is invalid`);
+    }
+    if (
+      path?.expected_vbd_signal !== undefined &&
+      path.expected_vbd_signal !== null &&
+      !ALLOWED_EXPECTED_VBD_SIGNALS.has(String(path.expected_vbd_signal))
+    ) {
+      gaps.push(`${prefix}.expected_vbd_signal is invalid`);
+    }
+    if (!ALLOWED_METRIC_ROLES.has(String(path?.metric_role))) {
+      gaps.push(`${prefix}.metric_role is invalid`);
+    }
+    if (!ALLOWED_VALUE_DRIVERS.has(String(path?.value_driver))) {
+      gaps.push(`${prefix}.value_driver is invalid`);
+    }
+    const lag = path?.expected_metric_lag_days;
+    if (lag !== undefined && lag !== null && (!Number.isFinite(Number(lag)) || Number(lag) < 0)) {
+      gaps.push(`${prefix}.expected_metric_lag_days must be a non-negative number or null`);
+    }
+    if (
+      path?.expected_metric_system_recommended !== undefined &&
+      path.expected_metric_system_recommended !== null &&
+      typeof path.expected_metric_system_recommended !== "boolean"
+    ) {
+      gaps.push(`${prefix}.expected_metric_system_recommended must be boolean`);
+    }
+    if (
+      path?.expected_metric_customer_selected !== undefined &&
+      path.expected_metric_customer_selected !== null &&
+      typeof path.expected_metric_customer_selected !== "boolean"
+    ) {
+      gaps.push(`${prefix}.expected_metric_customer_selected must be boolean`);
+    }
+    if (approved) {
+      requireField(path?.expected_metric_id, `${prefix}.expected_metric_id`, gaps);
+      requireField(path?.expected_metric_direction, `${prefix}.expected_metric_direction`, gaps);
+      requireField(path?.approver_role, `${prefix}.approver_role`, gaps);
+      if (typeof path?.expected_metric_system_recommended !== "boolean") {
+        gaps.push(`${prefix}.expected_metric_system_recommended must be boolean for approved Blueprint expectations`);
+      }
+      if (path?.expected_metric_customer_selected !== true) {
+        gaps.push(`${prefix}.expected_metric_customer_selected must be true for approved Blueprint expectations`);
+      }
+      if (path?.customer_approval_state !== "approved") {
+        gaps.push(`${prefix}.customer_approval_state must be approved`);
+      }
+      if (path?.source_ref !== fields.blueprint_expectation_ref) {
+        gaps.push(`${prefix}.source_ref must match extracted_fields.blueprint_expectation_ref`);
+      }
+      const matchingMetric = Array.isArray(fields.metric_candidates)
+        ? fields.metric_candidates.find((metric: any) =>
+            metric?.metric_id === path?.expected_metric_id
+          )
+        : null;
+      if (!matchingMetric) {
+        gaps.push(`${prefix}.expected_metric_id must match a metric candidate`);
+      } else {
+        if (
+          matchingMetric.expected_direction !== undefined &&
+          path?.expected_metric_direction !== matchingMetric.expected_direction
+        ) {
+          gaps.push(`${prefix}.expected_metric_direction must match metric_candidates`);
+        }
+        const metricLag = finiteNumberOrNull(matchingMetric.expected_lag_days);
+        if (
+          metricLag !== null &&
+          finiteNumberOrNull(path?.expected_metric_lag_days) !== metricLag
+        ) {
+          gaps.push(`${prefix}.expected_metric_lag_days must match metric_candidates`);
+        }
+        if (
+          matchingMetric.value_driver !== undefined &&
+          path?.value_driver !== matchingMetric.value_driver
+        ) {
+          gaps.push(`${prefix}.value_driver must match metric_candidates`);
+        }
+      }
+    }
+  });
+  if (approved && paths.length > 0 && primaryCount !== 1) {
+    gaps.push("extracted_fields.approved_expectation_paths must include exactly one primary path");
+  }
+  const selected = selectedExpectationPath(paths);
+  if (selected?.expectation_path_id) {
+    for (const [field, selectedValue] of [
+      ["expected_metric_id", selected.expected_metric_id],
+      ["expected_metric_direction", selected.expected_metric_direction],
+      ["expected_metric_lag_days", selected.expected_metric_lag_days],
+      ["expected_metric_system_recommended", selected.expected_metric_system_recommended],
+      ["expected_metric_customer_selected", selected.expected_metric_customer_selected],
+      ["value_driver", selected.value_driver]
+    ]) {
+      if (JSON.stringify(fields[field] ?? null) !== JSON.stringify(selectedValue ?? null)) {
+        gaps.push(`extracted_fields.${field} must match selected approved expectation path`);
+      }
+    }
+  }
+  const approvedInputs =
+    draft?.blueprint_validation_input?.source_requirements?.approved_aggregate_inputs;
+  if (
+    approvedInputs?.approved_expectation_paths !== undefined &&
+    JSON.stringify(approvedInputs.approved_expectation_paths) !== JSON.stringify(paths)
+  ) {
+    gaps.push("blueprint_validation_input.source_requirements.approved_aggregate_inputs.approved_expectation_paths must match extracted_fields.approved_expectation_paths");
+  }
+  return gaps;
 }
 
 export function validateBlueprintExtractionDraft(
@@ -502,6 +920,7 @@ export function validateBlueprintExtractionDraft(
   if (draft?.feeds?.customer_facing_financial_output !== false) {
     gaps.push("feeds.customer_facing_financial_output must be false");
   }
+  gaps.push(...collectExpectationGaps(draft));
   for (const field of [...collectForbiddenFields(draft)].sort()) {
     gaps.push(`Forbidden field detected: ${field}`);
   }

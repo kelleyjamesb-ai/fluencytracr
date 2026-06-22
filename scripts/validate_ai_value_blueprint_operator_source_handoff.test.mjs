@@ -35,12 +35,15 @@ function baseInput(overrides = {}) {
       window_end: "2026-09-30"
     },
     metricCandidates: [
-      {
-        metric_id: "marketing_campaign_cycle_days",
-        metric_name: "Campaign cycle time",
-        expected_direction: "decrease"
-      }
-    ],
+	      {
+	        metric_id: "marketing_campaign_cycle_days",
+	        metric_name: "Campaign cycle time",
+	        expected_direction: "decrease",
+	        system_recommended: true,
+	        customer_selected: true,
+	        value_driver: "capacity"
+	      }
+	    ],
     assumptions: [
       {
         assumption_id: "case_mix_stability",
@@ -128,6 +131,150 @@ test("approved Blueprint extraction handoff prepares operator source and Bluepri
   assert.deepEqual(handoff.source_package_reference, null);
 });
 
+test("Blueprint handoff carries customer-approved expectation context for Measurement Cell alignment", () => {
+  const expectedBehaviorPathways = [
+    {
+      behavior: "knowledge_retrieval",
+      expected_vbd_signal: "depth",
+      system_recommended: true,
+      customer_selected: true
+    },
+    {
+      behavior: "reuse",
+      expected_vbd_signal: "breadth",
+      system_recommended: true,
+      customer_selected: true
+    }
+  ];
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      expectedBehaviorPathways,
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_direction: "decrease",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        }
+      ]
+    })
+  );
+  const handoff = buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateBlueprintOperatorSourceHandoff(handoff);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(handoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.deepEqual(
+    handoff.blueprint_alignment_context.expected_behavior_pathways,
+    expectedBehaviorPathways
+  );
+  assert.equal(handoff.blueprint_alignment_context.expected_metric_lag_days, 60);
+  assert.equal(
+    handoff.blueprint_alignment_context.expected_metric_system_recommended,
+    true
+  );
+  assert.equal(
+    handoff.blueprint_alignment_context.expected_metric_customer_selected,
+    true
+  );
+  assert.equal(handoff.blueprint_alignment_context.value_driver, "capacity");
+  assert.equal(handoff.feeds.measurement_cell_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
+});
+
+test("Blueprint handoff carries approved expectation path registry and selected path context", () => {
+  const approvedExpectationPaths = [
+    {
+      expectation_path_id: "path_campaign_brief_to_cycle_time",
+      expected_behavior: "knowledge_retrieval",
+      expected_vbd_signal: "depth",
+      expected_metric_id: "marketing_campaign_cycle_days",
+      expected_metric_name: "Campaign cycle time",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 60,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "capacity",
+      metric_role: "primary",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+    },
+    {
+      expectation_path_id: "path_campaign_brief_to_rework_rate",
+      expected_behavior: "verification",
+      expected_vbd_signal: "integration",
+      expected_metric_id: "marketing_rework_rate",
+      expected_metric_name: "Campaign rework rate",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 90,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
+      value_driver: "quality",
+      metric_role: "supporting",
+      customer_approval_state: "approved",
+      approver_role: "customer_business_owner",
+      source_ref: "blueprint_extraction_draft_northstar_marketing_day_0"
+    }
+  ];
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      approvedExpectationPaths,
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_direction: "decrease",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        },
+        {
+          metric_id: "marketing_rework_rate",
+          metric_name: "Campaign rework rate",
+          expected_direction: "decrease",
+          expected_lag_days: 90,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "quality"
+        }
+      ]
+    })
+  );
+  const handoff = buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateBlueprintOperatorSourceHandoff(handoff);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(handoff.blueprint_alignment_context.expectation_path_id, "path_campaign_brief_to_cycle_time");
+  assert.equal(handoff.blueprint_alignment_context.approved_expectation_paths.length, 2);
+  assert.equal(
+    handoff.blueprint_alignment_context.approved_expectation_path.expected_metric_id,
+    "marketing_campaign_cycle_days"
+  );
+  assert.equal(
+    handoff.blueprint_alignment_context.approved_expectation_paths[1].metric_role,
+    "supporting"
+  );
+  assert.equal(handoff.feeds.measurement_cell_context_fragment, true);
+  assert.equal(handoff.feeds.measurement_cell_direct_feed, false);
+  assert.equal(handoff.feeds.finance_context_investigation, false);
+  assert.equal(handoff.feeds.confidence_model, false);
+  assert.equal(handoff.feeds.customer_facing_financial_output, false);
+});
+
 test("pending Blueprint extraction stays held and cannot feed operator intake", () => {
   const draft = buildBlueprintExtractionDraft(
     baseInput({
@@ -181,6 +328,53 @@ test("invalid Blueprint extraction blocks before operator source handoff", () =>
   assert.equal(result.feeds.customer_facing_financial_output, false);
 });
 
+test("Blueprint handoff rejects unapproved metric selection or unsafe value-driver context", () => {
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_direction: "decrease",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        }
+      ]
+    })
+  );
+  const handoff = buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const drifted = clone(handoff);
+  drifted.blueprint_alignment_context.expected_metric_customer_selected = false;
+  drifted.blueprint_alignment_context.value_driver = "ebitda";
+  drifted.blueprint_alignment_context.expected_behavior_pathways = [
+    {
+      behavior: "prompt_transcript_review",
+      expected_vbd_signal: "depth",
+      system_recommended: true,
+      customer_selected: true
+    }
+  ];
+
+  const result = validateBlueprintOperatorSourceHandoff(drifted);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("expected_metric_customer_selected")));
+  assert.ok(result.gaps.some((gap) => gap.includes("value_driver")));
+  assert.ok(result.gaps.some((gap) => gap.includes("expected_behavior_pathways")));
+  assert.ok(result.gaps.every((gap) => !gap.includes("prompt_transcript_review")));
+  assert.ok(result.gaps.every((gap) => !gap.includes("ebitda")));
+  assert.equal(result.feeds.operator_intake_source, false);
+  assert.equal(result.feeds.measurement_cell_context_fragment, false);
+  assert.equal(result.feeds.finance_context_investigation, false);
+  assert.equal(result.feeds.confidence_model, false);
+  assert.equal(result.feeds.customer_facing_financial_output, false);
+});
+
 test("Blueprint handoff fails closed when alignment context drifts from operator source", () => {
   const draft = buildBlueprintExtractionDraft(baseInput());
   const handoff = buildBlueprintOperatorSourceHandoff({
@@ -189,11 +383,13 @@ test("Blueprint handoff fails closed when alignment context drifts from operator
   });
   const drifted = clone(handoff);
   drifted.blueprint_alignment_context.function_area = "sales";
+  drifted.operator_source.expected_metric_id = "different_metric";
 
   const result = validateBlueprintOperatorSourceHandoff(drifted);
 
   assert.equal(result.valid, false);
   assert.ok(result.gaps.includes("blueprint_alignment_context.function_area must match operator_source.function_area"));
+  assert.ok(result.gaps.includes("blueprint_alignment_context.expected_metric_id must match operator_source.expected_metric_id"));
   assert.equal(result.feeds.operator_intake_source, false);
   assert.equal(result.feeds.measurement_cell_context_fragment, false);
   assert.equal(result.feeds.finance_context_investigation, false);
