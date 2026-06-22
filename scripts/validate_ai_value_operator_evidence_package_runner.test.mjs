@@ -332,11 +332,16 @@ function measurementCellInput(plan = fullPlan(), day = 30, sources = operatorSou
       window_day_count: windowMode === "rolling_30_day" ? 30 : undefined
     },
     blueprintAlignment: {
+      blueprint_expectation_ref: sources.blueprint.source_ref,
+      blueprint_customer_approval_state: "approved",
+      blueprint_customer_approver_role: "customer_business_owner",
       value_route: plan.value_hypothesis.value_route,
       value_promise: plan.value_hypothesis.hypothesis_statement,
       expected_metric_id: plan.metric_selection.primary_metric.metric_id,
       expected_metric_direction: "decrease",
       expected_metric_lag_days: 30,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
       owner_role: plan.value_hypothesis.owner_role,
       assumption_refs: [sources.assumption.source_ref],
       source_ref: sources.blueprint.source_ref
@@ -586,6 +591,27 @@ test("operator evidence package runner holds source review when reviewed source 
   assert.ok(run.missing_evidence.includes("SOURCE_PACKAGE_REVIEW_REQUIRED"));
   assert.ok(!run.recommended_next_actions.includes("prepare_finance_context_investigation_packet"));
   assert.equal(run.feeds.finance_context_investigation, false);
+});
+
+test("operator evidence package runner holds instead of throwing when fresh window sources are omitted", () => {
+  const windows = MILESTONE_DAYS.map((day) => {
+    const window = packageWindow(day, {
+      sourcePackages: []
+    });
+    delete window.sources;
+    return window;
+  });
+  let run;
+  assert.doesNotThrow(() => {
+    run = buildOperatorEvidencePackageRun(packageInput({ windows }));
+  });
+  const validation = validateOperatorEvidencePackageRun(run);
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.notEqual(run.package_state, "READY_FOR_INTERNAL_OPERATOR_WORKFLOW_REVIEW");
+  assert.equal(run.feeds.operator_workflow_review, false);
+  assert.equal(run.feeds.finance_context_investigation, false);
+  assert.equal(run.feeds.customer_facing_financial_output, false);
 });
 
 test("operator evidence package runner does not let stale prebuilt intake bypass fresh held source inputs", () => {

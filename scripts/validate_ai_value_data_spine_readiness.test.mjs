@@ -118,6 +118,23 @@ test("aligned approved data spine can feed Measurement Cell and packet preparati
   }
 });
 
+test("source owner-role aliases preserve ready source lanes", () => {
+  const input = baseInput();
+  input.sources.aiFluency.source_owner_role = input.sources.aiFluency.owner_role;
+  input.sources.vbdToken.sourceOwnerRole = input.sources.vbdToken.owner_role;
+  delete input.sources.aiFluency.owner_role;
+  delete input.sources.vbdToken.owner_role;
+
+  const spine = buildDataSpineIntakeReadiness(input);
+  const result = validateDataSpineIntakeReadiness(spine);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(spine.readiness_state, "MEASUREMENT_CELL_READY");
+  assert.equal(spine.source_readiness.ai_fluency.owner_role, "source_owner");
+  assert.equal(spine.source_readiness.vbd_token.owner_role, "source_owner");
+  assert.equal(spine.feeds.measurement_cell_input, true);
+});
+
 test("contract examples validate", () => {
   for (const file of [
     "aligned-measurement-cell-ready.json",

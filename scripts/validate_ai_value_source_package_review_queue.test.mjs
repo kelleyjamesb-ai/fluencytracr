@@ -390,6 +390,34 @@ test("forged package lane booleans cannot clear review without compact package e
   ));
 });
 
+test("compact package evidence must bind to the lane source ref", () => {
+  const dataSpineReadiness = buildDataSpineIntakeReadiness(baseInput());
+  const queue = buildSourcePackageReviewQueue({
+    dataSpineReadiness,
+    sourcePackages: matchingSourcePackages(),
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const vbdTokenLane = queue.lanes.find((lane) => lane.lane_key === "vbd_token");
+  vbdTokenLane.source_package_evidence = vbdTokenLane.source_package_evidence.map((item) => ({
+    ...item,
+    source_ref: "stale_or_unreviewed_vbd_source_ref"
+  }));
+
+  const result = validateSourcePackageReviewQueue(queue);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.feeds.measurement_cell_input, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("VBD_TOKEN_SOURCE_PACKAGE_EVIDENCE_SOURCE_REF_MISMATCH")
+  ));
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("source_package_alignment_clear must match compact source package evidence")
+  ));
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("data_spine_review_clear must reflect source and source package posture")
+  ));
+});
+
 test("review queue holds lanes missing readiness checklist fields", () => {
   const input = baseInput();
   input.sources.vbdToken.owner_role = "";

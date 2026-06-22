@@ -390,6 +390,16 @@ function expectedLaneGaps(laneKey: LaneKey, lane: any): string[] {
   ) {
     gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_EVIDENCE_REQUIRED"));
   }
+  if (
+    packageBackedLane(laneKey) &&
+    Array.isArray(lane?.source_package_ids) &&
+    lane.source_package_ids.length > 0 &&
+    sourceReadyForReview(lane) &&
+    lane?.source_package_alignment_clear === true &&
+    !sourcePackageEvidenceBoundToLane(laneKey, lane)
+  ) {
+    gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_EVIDENCE_SOURCE_REF_MISMATCH"));
+  }
   if (lane?.source_package_alignment_clear === false) {
     gaps.push(packageGapKey(laneKey, "SOURCE_PACKAGE_MISALIGNED"));
   }
@@ -441,6 +451,12 @@ function sourcePackageEvidenceOf(lane: any): any[] {
     : [];
 }
 
+function laneSourceRef(lane: any): string | null {
+  return typeof lane?.source_ref === "string" && lane.source_ref.length > 0
+    ? lane.source_ref
+    : null;
+}
+
 function sourcePackageEvidencePresentAndTyped(laneKey: LaneKey, lane: any): boolean {
   const packageIds = stringsOf(lane?.source_package_ids);
   if (packageIds.length === 0) return !packageBackedLane(laneKey);
@@ -456,8 +472,16 @@ function sourcePackageEvidencePresentAndTyped(laneKey: LaneKey, lane: any): bool
   );
 }
 
+function sourcePackageEvidenceBoundToLane(laneKey: LaneKey, lane: any): boolean {
+  if (!sourcePackageEvidencePresentAndTyped(laneKey, lane)) return false;
+  const expectedSourceRef = laneSourceRef(lane);
+  if (!expectedSourceRef) return false;
+  return sourcePackageEvidenceOf(lane).every((item) => item?.source_ref === expectedSourceRef);
+}
+
 function sourcePackageEvidenceConsistent(laneKey: LaneKey, lane: any): boolean {
   if (!sourcePackageEvidencePresentAndTyped(laneKey, lane)) return false;
+  if (!sourcePackageEvidenceBoundToLane(laneKey, lane)) return false;
   return sourcePackageEvidenceOf(lane).every((item) =>
     item.validation_valid === true &&
     item.alignment_clear === true &&
@@ -469,7 +493,7 @@ function sourcePackageEvidenceSupportsLane(laneKey: LaneKey, lane: any): boolean
   return LANE_KEYS.includes(laneKey) && sourcePackageEvidenceConsistent(laneKey, lane);
 }
 
-function packageEvidenceDerivedPosture(lane: any): {
+function packageEvidenceDerivedPosture(laneKey: LaneKey, lane: any): {
   valid: boolean | null;
   alignmentClear: boolean | null;
   canFeedEvidence: boolean | null;
@@ -483,18 +507,20 @@ function packageEvidenceDerivedPosture(lane: any): {
     };
   }
   const evidence = sourcePackageEvidenceOf(lane);
+  const presentAndTyped = sourcePackageEvidencePresentAndTyped(laneKey, lane);
+  const boundEvidence = sourcePackageEvidenceBoundToLane(laneKey, lane);
+  const bindingSatisfied = !sourceReadyForReview(lane) || boundEvidence;
   return {
     valid:
-      evidence.length > 0 &&
-      evidence.length === packageIds.length &&
+      presentAndTyped &&
       evidence.every((item) => item?.validation_valid === true),
     alignmentClear:
-      evidence.length > 0 &&
-      evidence.length === packageIds.length &&
+      presentAndTyped &&
+      bindingSatisfied &&
       evidence.every((item) => item?.alignment_clear === true),
     canFeedEvidence:
-      evidence.length > 0 &&
-      evidence.length === packageIds.length &&
+      presentAndTyped &&
+      bindingSatisfied &&
       evidence.every((item) =>
         item?.validation_valid === true &&
         item?.alignment_clear === true &&
@@ -804,7 +830,7 @@ function collectLaneGaps(queue: any): string[] {
           gaps.push(`${path}.gaps missing ${expectedGap}`);
         }
       }
-      const derivedPosture = packageEvidenceDerivedPosture(lane);
+      const derivedPosture = packageEvidenceDerivedPosture(lane.lane_key, lane);
       if (lane?.source_package_valid !== derivedPosture.valid) {
         gaps.push(`${path}.source_package_valid must match compact source package evidence`);
       }

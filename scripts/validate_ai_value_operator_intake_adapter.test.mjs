@@ -575,11 +575,16 @@ function measurementCellInput(plan = fullPlan(), sources = operatorSources(plan)
       prior_window_ref: "measurement_cell_support_day_0"
     },
     blueprintAlignment: {
+      blueprint_expectation_ref: sources.blueprint.source_ref,
+      blueprint_customer_approval_state: "approved",
+      blueprint_customer_approver_role: "customer_business_owner",
       value_route: plan.value_hypothesis.value_route,
       value_promise: plan.value_hypothesis.hypothesis_statement,
       expected_metric_id: plan.metric_selection.primary_metric.metric_id,
       expected_metric_direction: "decrease",
       expected_metric_lag_days: 30,
+      expected_metric_system_recommended: true,
+      expected_metric_customer_selected: true,
       owner_role: plan.value_hypothesis.owner_role,
       assumption_refs: [sources.assumption.source_ref],
       source_ref: sources.blueprint.source_ref
@@ -691,7 +696,11 @@ test("operator intake adapter composes approved aggregate source inputs into a v
   assert.equal(run.schema_version, AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION);
   assert.equal(result.valid, true, result.gaps.join("; "));
   assert.equal(assemblyResult.valid, true, assemblyResult.gaps.join("; "));
-  assert.equal(run.decision, "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION");
+  assert.equal(
+    run.decision,
+    "READY_FOR_VALUE_HYPOTHESIS_PACKET_PREPARATION",
+    run.measurement_cell_assembly_run?.gaps?.join("; ")
+  );
   assert.equal(run.data_spine_readiness.readiness_state, "MEASUREMENT_CELL_READY");
   assert.equal(run.source_package_review_queue.queue_state, "DATA_SPINE_REVIEW_READY");
   assert.equal(run.real_data_intake_packet_run.decision, "READY_FOR_MEASUREMENT_CELL_ASSEMBLY");
@@ -813,6 +822,51 @@ test("operator intake adapter accepts approved Blueprint source handoff without 
   assert.equal(run.feeds.finance_context_investigation, false);
   assert.equal(run.feeds.confidence_model, false);
   assert.equal(run.feeds.customer_facing_financial_output, false);
+});
+
+test("AI Fluency operator source handoff binds parser records to the imported dashboard export", () => {
+  const plan = fullPlan();
+  const importedRecord = aiFluencyAggregateRecord(plan);
+  const staleRecord = aiFluencyAggregateRecord(plan, {
+    dashboard_export_id: "ai_fluency_operator_dashboard_export_stale",
+    source_ref: importedRecord.source_ref,
+    source_owner_role: "stale_source_owner",
+    overall_ai_fluency_score: 12,
+    confidence_score: 12,
+    usage_quality_score: 12,
+    behavior_change_score: 12,
+    leadership_reinforcement_score: 12,
+    capability_growth_score: 12
+  });
+  const importedParseRun = parseRunFromAIFluencyRecords(
+    [importedRecord],
+    "ai_fluency_aggregate_export_parse_operator_imported"
+  );
+  const staleParseRun = parseRunFromAIFluencyRecords(
+    [staleRecord],
+    "ai_fluency_aggregate_export_parse_operator_stale"
+  );
+  const dashboardRun = buildAIFluencyDashboardImportRun({
+    dashboardExport: importedParseRun.dashboard_export,
+    runId: "ai_fluency_dashboard_import_operator_imported",
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const handoff = buildAIFluencyOperatorSourceHandoff({
+    parseRun: staleParseRun,
+    dashboardImportRun: dashboardRun,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateAIFluencyOperatorSourceHandoff(handoff);
+
+  assert.equal(handoff.decision, "BLOCKED");
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) =>
+    gap.includes("AI Fluency parser dashboard_export_id must match dashboard import run dashboard_export_id")
+  ));
+  assert.equal(handoff.operator_source, null);
+  assert.equal(handoff.ai_fluency_context, null);
+  assert.equal(result.feeds.operator_intake_source, false);
+  assert.equal(result.feeds.measurement_cell_context_fragment, false);
 });
 
 test("operator intake adapter accepts approved VBD token source handoff without bypassing Source Package review", () => {

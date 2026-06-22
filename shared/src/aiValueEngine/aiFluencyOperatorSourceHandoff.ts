@@ -255,11 +255,32 @@ function selectFeedableSource(
   return null;
 }
 
-function recordsForSource(parseRun: any, sourceRef: string | null): any[] {
+function parserDashboardExportId(parseRun: any): string | null {
   const records = Array.isArray(parseRun?.dashboard_export?.records)
     ? parseRun.dashboard_export.records
     : [];
-  return records.filter((record: any) => record?.source_ref === sourceRef);
+  const dashboardExportIds: string[] = [...new Set<string>(
+    records
+      .map((record: any) => record?.dashboard_export_id)
+      .filter((dashboardExportId: any): dashboardExportId is string =>
+        typeof dashboardExportId === "string" && dashboardExportId.length > 0
+      )
+  )];
+  return dashboardExportIds.length === 1 ? dashboardExportIds[0] : null;
+}
+
+function recordsForSource(
+  parseRun: any,
+  sourceRef: string | null,
+  dashboardExportId: string | null
+): any[] {
+  const records = Array.isArray(parseRun?.dashboard_export?.records)
+    ? parseRun.dashboard_export.records
+    : [];
+  return records.filter((record: any) =>
+    record?.source_ref === sourceRef &&
+    record?.dashboard_export_id === dashboardExportId
+  );
 }
 
 function alignmentMismatch(record: any, selectedSource: any): string[] {
@@ -422,8 +443,16 @@ export function buildAIFluencyOperatorSourceHandoff(
   const selectedSource = inputGaps.length === 0
     ? selectFeedableSource(input.dashboardImportRun, input.sourceRef, inputGaps)
     : null;
-  const matchingRecords = selectedSource
-    ? recordsForSource(input.parseRun, selectedSource.source_ref)
+  const parseDashboardExportId = parserDashboardExportId(input.parseRun);
+  const importDashboardExportId = input.dashboardImportRun?.dashboard_export_id ?? null;
+  const dashboardExportIdsMatch =
+    Boolean(parseDashboardExportId && importDashboardExportId) &&
+    parseDashboardExportId === importDashboardExportId;
+  if (selectedSource && !dashboardExportIdsMatch) {
+    inputGaps.push("AI Fluency parser dashboard_export_id must match dashboard import run dashboard_export_id");
+  }
+  const matchingRecords = selectedSource && dashboardExportIdsMatch
+    ? recordsForSource(input.parseRun, selectedSource.source_ref, importDashboardExportId)
     : [];
   const selectedRecord = matchingRecords.length === 1 ? matchingRecords[0] : null;
 
