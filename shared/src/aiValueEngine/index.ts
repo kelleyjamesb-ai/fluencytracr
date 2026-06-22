@@ -228,6 +228,21 @@ export type {
 } from "./aiFluencyDashboardImportRunner";
 
 export {
+  AI_VALUE_AI_FLUENCY_AGGREGATE_EXPORT_PARSE_RUN_SCHEMA_VERSION,
+  AI_VALUE_AI_FLUENCY_AGGREGATE_EXPORT_PARSER_SCHEMA_VERSION,
+  AIFluencyAggregateExportParserError,
+  buildAIFluencyAggregateExportParseRun,
+  parseAIFluencyAggregateExport,
+  validateAIFluencyAggregateExportParseRun
+} from "./aiFluencyAggregateExportParser";
+export type {
+  AIFluencyAggregateExportParseRunValidationResult,
+  AIFluencyAggregateExportParserInput,
+  AIFluencyAggregateExportParserInputObject,
+  BuildAIFluencyAggregateExportParseRunInput
+} from "./aiFluencyAggregateExportParser";
+
+export {
   AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
   buildVbdTokenAggregateIntake,
   validateVbdTokenAggregateIntake

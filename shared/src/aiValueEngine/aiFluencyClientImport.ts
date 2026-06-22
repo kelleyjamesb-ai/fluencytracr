@@ -190,8 +190,8 @@ function aggregateSummary(cohorts: any[]): any {
   for (const cohort of usable) {
     const weight = Number(cohort.respondent_count ?? 0);
     for (const [construct, entry] of Object.entries(cohort.construct_scores ?? {})) {
-      const mean = Number((entry as any)?.mean);
-      if (!Number.isFinite(mean) || weight <= 0) continue;
+      const mean = (entry as any)?.mean;
+      if (typeof mean !== "number" || !Number.isFinite(mean) || weight <= 0) continue;
       totals[construct] = totals[construct] ?? { sum: 0, weight: 0 };
       totals[construct].sum += mean * weight;
       totals[construct].weight += weight;

@@ -115,6 +115,22 @@ const SOURCE_ALIGNMENT_KEYS = [
   "comparison_window_end"
 ];
 
+const ORGANIZATION_OVERALL_ALIASES = new Set([
+  "organization_overall",
+  "organization",
+  "org_overall",
+  "overall",
+  "all_functions",
+  "all_function",
+  "all_approved_responses"
+]);
+
+const SUPPRESSED_SMALL_COHORT_ALIASES = new Set([
+  "suppressed_small_cohort_group",
+  "suppressed_small_cohort",
+  "suppressed_cohort_group"
+]);
+
 const EMAIL_VALUE_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 
 const DIRECT_IDENTIFIER_VALUE_PATTERN =
@@ -273,6 +289,15 @@ function collectForbiddenValues(
 function sourceAlignmentGaps(records: any[]): string[] {
   const gaps: string[] = [];
   for (const key of SOURCE_ALIGNMENT_KEYS) {
+    records.forEach((record, index) => {
+      if (
+        record?.[key] === undefined ||
+        record?.[key] === null ||
+        record?.[key] === ""
+      ) {
+        gaps.push(`records[${index}].${key} is missing`);
+      }
+    });
     const values = new Set(
       records
         .map((record) => record?.[key])
@@ -289,12 +314,7 @@ function sourceAlignmentGaps(records: any[]): string[] {
 function kMinPostureGaps(records: any[]): string[] {
   const gaps: string[] = [];
   records.forEach((record, index) => {
-    if (
-      record?.k_min_posture !== undefined &&
-      record?.k_min_posture !== null &&
-      record?.k_min_posture !== "" &&
-      String(record.k_min_posture) !== EXPECTED_K_MIN_POSTURE
-    ) {
+    if (String(record?.k_min_posture ?? "") !== EXPECTED_K_MIN_POSTURE) {
       gaps.push(`records[${index}].k_min_posture must be ${EXPECTED_K_MIN_POSTURE}`);
     }
   });
@@ -353,8 +373,12 @@ function rowIsSuppressed(record: any): boolean {
   const suppression = normalizeKey(String(record?.suppression_state ?? "none"));
   const review = normalizedReviewState(record?.review_state);
   const responseCount = numberOrNull(record?.response_count) ?? 0;
+  const functionArea = normalizeKey(String(record?.function_area ?? ""));
+  const cohortKey = normalizeKey(String(record?.cohort_key ?? ""));
   return suppression.startsWith("suppressed") ||
     review === "suppressed" ||
+    SUPPRESSED_SMALL_COHORT_ALIASES.has(functionArea) ||
+    SUPPRESSED_SMALL_COHORT_ALIASES.has(cohortKey) ||
     responseCount < MIN_IMPORTABLE_RESPONSE_COUNT;
 }
 
@@ -365,8 +389,8 @@ function rowHasClearSuppressionState(record: any): boolean {
 function rowIsOrganizationOverall(record: any): boolean {
   const functionArea = normalizeKey(String(record?.function_area ?? ""));
   const cohortKey = normalizeKey(String(record?.cohort_key ?? ""));
-  return functionArea === "organization_overall" ||
-    (functionArea === "organization" && cohortKey === "all_approved_responses");
+  return ORGANIZATION_OVERALL_ALIASES.has(functionArea) ||
+    cohortKey === "all_approved_responses";
 }
 
 function constructScores(record: any, suppressed: boolean): any {
