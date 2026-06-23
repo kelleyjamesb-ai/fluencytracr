@@ -2,6 +2,33 @@
 
 ## Last Completed
 
+- AI Value psychological adoption model and connector-promotion design pass
+  (user-requested, 2026-06-22): amended the logical AI Value model so aggregate
+  AI Fluency psychological context is explicit rather than hidden inside a
+  single score. The model now separates AI attitude, behavioral intent,
+  observed AI behavior / VBD, selected metric movement, and Blueprint
+  expectation alignment. Attitude and intent are leading-indicator context
+  only; they cannot prove value, rescue missing observed behavior, feed finance
+  output, or become contribution-model math. The physical readiness review now
+  records this as a future compact aggregate projection boundary, not a new
+  table: no raw instrument answers, respondent records, adoption-conversion
+  scores, model scores, ROI, EBITDA, causality, productivity, probability, or
+  customer-facing financial output. The data-pipeline readiness decision now
+  points to three docs-only connector-promotion contracts: Source Inventory
+  Manifest, Aggregate Extraction Manifest, and Pipeline Run Review Manifest.
+  CODE, BUG, and ADVERSARIAL review tightened the slice before commit: Source
+  Inventory now requires terminal owner/legal/k-min/suppression review states;
+  Aggregate Extraction uses aggregate definition and upstream attestation refs
+  instead of live run handles; Pipeline Run Review is manual promotion-review
+  context only, uses a non-authorizing Source Package Review Queue posture ref,
+  carries the strictest false boundary policy, and cannot be read as intake
+  permission. These designs define the safe path toward BigQuery/Sigma wiring
+  while keeping live execution, credentials, query text, raw rows, persistence,
+  routes, UI, exports, confidence math, ROI, causality, productivity,
+  probability, finance output, and customer-facing output blocked behind a
+  separate Pipeline Promotion Decision. Verification: `git diff --check`,
+  `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py` passed.
 - AI Value controlled aggregate connector adapter / review packet
   (user-requested, 2026-06-22): added the next credential-safe executable
   layer after the controlled aggregate pipeline dry run. The new shared adapter

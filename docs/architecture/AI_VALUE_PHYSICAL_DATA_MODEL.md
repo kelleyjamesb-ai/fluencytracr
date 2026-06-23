@@ -77,6 +77,7 @@ Recommended current projection:
 | Approved Blueprint Hypothesis | `value_hypotheses.payload_json` plus `source_refs_json` | Use existing authority first; do not create `blueprint_hypotheses` yet |
 | Blueprint Expectation Path Registry | Embedded inside approved Blueprint/Hypothesis payload only | Do not normalize full registry into rows |
 | Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
+| AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff payloads; future compact projection only if promoted | Leading-indicator context only; no value proof, model score, or standalone table |
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
 | Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
@@ -88,6 +89,7 @@ Projection detail:
 | Logical object | Existing table / JSON field | Indexed physical columns today | Future-only / not authorized |
 | --- | --- | --- | --- |
 | Approved Blueprint Hypothesis | `value_hypotheses.payload_json`, `source_refs_json` | `org_id`, `value_hypothesis_id`, `workflow_family`, `status`, `created_at` | No standalone `blueprint_hypotheses`; no normalized expectation paths |
+| AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff contract payloads and generic source/evidence refs today; future compact context only if promoted | No AI Fluency-specific indexed columns or standalone context projection today | No standalone adoption-context table, no raw survey responses, no model score, no value proof |
 | Measurement Plan | `measurement_plans.payload_json`, `source_package_requirements_json`, `assumptions_json` | `org_id`, `measurement_plan_id`, `value_hypothesis_id`, `workflow_family`, baseline window, `readiness_state` | No admin threshold table; no route/UI authorization |
 | Source Package Ref | `source_package_refs.source_refs_json`, `validation_json`, `k_min_posture_json`, `privacy_boundary_json` | `org_id`, `source_package_id`, `source_package_type`, `measurement_plan_id`, `workflow_family`, covered window | No full source package payload table unless refs prove insufficient |
 | Evidence Snapshot | `evidence_snapshots.payload_json`, `source_refs_json`, `blocked_uses_json` | `org_id`, `evidence_snapshot_id`, `measurement_plan_id`, `workflow_family`, window, `coverage_status`, `snapshot_type` | No continuity snapshot type until explicitly promoted |
@@ -492,7 +494,75 @@ Blocked design:
 - no rescue behavior for missing, held, suppressed, or blocked windows.
 - no rolling 30-day row may populate milestone continuity or review posture.
 
-## 9. Future Projection Sketch: Evidence Continuity Projection
+## 9. Future Projection Sketch: AI Fluency Psychological Adoption Context
+
+Status: candidate projection sketch only. This section is non-authorizing: it
+must not be copied into Prisma, schemas, repositories, migrations, routes, UI,
+persistence services, research-model inputs, exports, or customer-facing
+outputs without a later explicit promotion decision.
+
+Purpose: preserve the distinction between aggregate psychological readiness and
+observed behavior. This sidecar aggregate context can help internal operators
+compare stated AI attitude / behavioral intent context with observed
+AI-enabled work-pattern refs, but it cannot imply directional dependency,
+conversion, value proof, causality, productivity, ROI, EBITDA, or financial
+output.
+
+Recommended physical posture:
+
+- Prefer existing aggregate AI Fluency import and source-handoff payloads until
+  repeated pilots prove a durable projection is needed.
+- If later promoted, first consider a compact extension inside existing
+  aggregate evidence lineage rather than a standalone table.
+- Do not persist raw instrument responses, raw text responses, respondent
+  records, or joinable person identifiers.
+- Do not persist an adoption-conversion score, contribution-model field, model
+  score, probability, finance, ROI, EBITDA, causality, productivity, or
+  customer-facing output field.
+
+Allowed compact fields if separately promoted:
+
+| Field | Requirement |
+| --- | --- |
+| `org_id` | required |
+| `client_id` | required when available |
+| `measurement_plan_id` | required when tied to a Measurement Cell |
+| `workflow_family` | required |
+| `function_area` | required |
+| `cohort_key` | required |
+| `baseline_window_start` / `baseline_window_end` | required |
+| `comparison_window_start` / `comparison_window_end` | required when follow-up context is present |
+| `source_ref` | compact, reviewed AI Fluency source ref only |
+| `source_owner_role` | required |
+| `owner_approval_state` | required |
+| `review_state` | required |
+| `k_min_posture` | required |
+| `suppression_posture` | required |
+| `construct_summary_json` | aggregate construct means or bands only |
+| `readiness_context_json` | optional compact posture labels only |
+| `observed_behavior_ref` | optional compact VBD / Measurement Cell ref only |
+| `required_caveats_json` | required array |
+| `blocked_uses_json` | required array |
+
+`construct_summary_json` may carry governed AI Fluency construct names only as
+aggregate instrument context. If a legacy instrument construct is literally
+named `confidence`, it must remain nested inside the aggregate instrument
+construct map and must not become a top-level physical column, model score,
+probability, or customer-facing claim.
+
+Blocked design:
+
+- no standalone `ai_fluency_psychological_scores` table;
+- no raw survey response table;
+- no respondent, user, employee, manager, team, or department ranking;
+- no behavioral-intent-to-value conversion score;
+- no model score or contribution-model output;
+- no finance, ROI, EBITDA, causality, productivity, probability, or
+  customer-facing financial output;
+- no customer-facing interpretation that treats positive attitude or intent as
+  value evidence.
+
+## 10. Future Projection Sketch: Evidence Continuity Projection
 
 Status: candidate projection only; no table yet.
 
@@ -505,7 +575,7 @@ Recommended physical posture:
 - Do not add new `evidence_snapshots.snapshot_type` values until a migration
   is explicitly authorized.
 
-## 10. Tables Not To Add
+## 11. Tables Not To Add
 
 Do not add these tables in the next implementation slice:
 
@@ -515,6 +585,8 @@ Do not add these tables in the next implementation slice:
 | `blueprint_expectation_bindings` | Selected binding should stay compact lineage inside a promoted Measurement Cell, not a standalone source of authority |
 | `operator_source_handoff_bundles` | Bundles are preparation manifests, not durable proof |
 | `source_packages` | `source_package_refs` remains the safer metadata-only spine unless refs prove insufficient |
+| `ai_fluency_psychological_scores` | Would turn leading-indicator context into an over-strong product object and create score semantics too early |
+| `adoption_conversion_scores` | Research-only concept; do not persist score-like conversion outputs before a separate research promotion |
 | `measurement_cells` | Use only the promoted compact `measurement_cell_snapshots` projection; do not create a full-object table |
 | `measurement_cell_series` | Use only the candidate `measurement_cell_series_snapshots` design after explicit promotion; current contracts do not authorize persistence |
 | `evidence_continuity_manifests` | Continuity remains contract output; if promoted, extend evidence lineage deliberately |
@@ -523,7 +595,7 @@ Do not add these tables in the next implementation slice:
 | `productivity_scores` | Person or workforce productivity scoring is prohibited |
 | `team_rankings` | Comparative team/manager/department ranking is prohibited |
 
-## 11. Additional Promotion Gate
+## 12. Additional Promotion Gate
 
 Before any additional Measurement Cell or Series persistence beyond
 `measurement_cell_snapshots`, require:
@@ -542,12 +614,17 @@ Before any additional Measurement Cell or Series persistence beyond
    selected-path binding fields, missing value hypothesis linkage,
    rolling-window misuse, non-compact `assembly_payload_json`, and
    confidence-containing key names are rejected before any write.
-5. Repository methods that accept only already validated contract objects and
+5. Red/green tests proving aggregate AI Fluency psychological context, if
+   promoted, rejects raw survey responses, respondent identifiers, raw text
+   answers, person-level records, ranking fields, adoption-conversion scores,
+   model-score fields, ROI, EBITDA, causality, productivity, probability,
+   confidence-like output fields, and customer-facing financial output.
+6. Repository methods that accept only already validated contract objects and
    recompute validation before writes.
-6. Append-only versioning with `supersedes_id` for corrections.
-7. RLS enablement and direct access revocation in the migration itself.
-8. No customer-facing read path, export, rendered readout, or financial output.
-9. Operator Workflow and Value Hypothesis Readiness remain downstream review
+7. Append-only versioning with `supersedes_id` for corrections.
+8. RLS enablement and direct access revocation in the migration itself.
+9. No customer-facing read path, export, rendered readout, or financial output.
+10. Operator Workflow and Value Hypothesis Readiness remain downstream review
    gates, not bypassed by persisted Measurement Cell / Series rows.
 
 This document alone cannot trigger additional migrations. A future
@@ -556,7 +633,7 @@ adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
 migrations, repositories, schemas, routes, UI, persistence writes, live
 execution, research-model inputs, or customer-facing output.
 
-## 12. Recommended Next Decision Slice
+## 13. Recommended Next Decision Slice
 
 Recommended next move:
 
