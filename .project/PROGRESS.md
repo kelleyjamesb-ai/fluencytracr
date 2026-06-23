@@ -2,6 +2,17 @@
 
 ## Last Completed
 
+- AI Value review-gate follow-up fixes (user-requested, 2026-06-23):
+  addressed the review comments on Measurement Cell snapshot binding, initial
+  snapshot lineage, baseline-only evidence-collection windows, controlled
+  aggregate reviewed source-ref hash ordering, required pilot-package caveat
+  preservation, and backend test readiness for ignored shared build output. No
+  canonical events, suppression reasons, routes, UI, ROI, causality,
+  productivity, person-level fields, customer-facing economic output, or live
+  connector behavior was added. Verification passed for the shared build,
+  evidence collection assembler suite, controlled aggregate pipeline dry-run
+  suite, controlled pilot evidence package suite, and backend AI Value minimal
+  persistence suite.
 - AI Value AI Fluency construct distinction amendment (user-requested,
   2026-06-22): clarified that the AI Fluency psychological adoption context is
   anchored in the five governed AI Fluency dimensions: confidence, usage

@@ -24,6 +24,15 @@ const DEFAULT_FIXTURE_PATH =
 
 const ALLOWED_SOURCE_SYSTEMS = new Set(["bigquery_export", "sigma_export"]);
 
+const REVIEWED_SOURCE_REF_LANES = [
+  "blueprint",
+  "ai_fluency",
+  "vbd_token",
+  "customer_metric",
+  "assumption",
+  "governance"
+];
+
 const REQUIRED_BLOCKED_USES = [
   "realized_roi",
   "ebita_claim",
@@ -121,14 +130,12 @@ function readJson(path) {
 
 function reviewedSourceRefsHash(fixture) {
   const refs = fixture?.expected?.reviewed_source_refs ?? {};
-  return sha256Json({
-    blueprint: refs.blueprint ?? null,
-    ai_fluency: refs.ai_fluency ?? null,
-    vbd_token: refs.vbd_token ?? null,
-    customer_metric: refs.customer_metric ?? null,
-    assumption: refs.assumption ?? null,
-    governance: refs.governance ?? null
-  });
+  const canonicalRefs = Object.fromEntries(
+    REVIEWED_SOURCE_REF_LANES.map((lane) => [lane, refs?.[lane] ?? null])
+  );
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalRefs))
+    .digest("hex");
 }
 
 function sourceRefFor(sourceSystem, fixture) {

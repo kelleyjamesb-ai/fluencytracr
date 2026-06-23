@@ -330,11 +330,17 @@ function getPath(value: any, path: string): any {
 }
 
 function expectedPackageValueForPlan(plan: any, path: string): any {
+  const comparisonWindowSelected =
+    plan?.windows?.comparison_window_start && plan?.windows?.comparison_window_end;
   if (path === "covered_window.window_start") {
-    return plan?.windows?.comparison_window_start;
+    return comparisonWindowSelected
+      ? plan.windows.comparison_window_start
+      : plan?.windows?.baseline_window_start;
   }
   if (path === "covered_window.window_end") {
-    return plan?.windows?.comparison_window_end;
+    return comparisonWindowSelected
+      ? plan.windows.comparison_window_end
+      : plan?.windows?.baseline_window_end;
   }
   if (path === "approved_aggregate_grain") {
     return plan?.workflow_scope?.approved_aggregate_grain;

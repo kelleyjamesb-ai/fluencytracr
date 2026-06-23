@@ -44,6 +44,16 @@ const MEASUREMENT_CELL_PROMOTION_DECISION = path.resolve(
   "../../docs/architecture/AI_VALUE_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION.md"
 );
 const REPO_ROOT = path.resolve(__dirname, "../..");
+let controlledRunnerDistReady = false;
+
+const ensureControlledRunnerDistReady = () => {
+  if (controlledRunnerDistReady) return;
+  execFileSync("npm", ["run", "build", "--workspace", "shared"], {
+    cwd: REPO_ROOT,
+    stdio: "pipe"
+  });
+  controlledRunnerDistReady = true;
+};
 
 const readJson = (relativePath: string) =>
   JSON.parse(fs.readFileSync(path.join(EXAMPLE_ROOT, relativePath), "utf8"));
@@ -242,6 +252,7 @@ const buildExecutiveReadoutSnapshotInput = () => {
 };
 
 const controlledMeasurementCellAssemblyRun = () => {
+  ensureControlledRunnerDistReady();
   const script = `
     import { readFileSync } from "node:fs";
     import { buildControlledMeasurementCellAssemblyArtifactsFromObject } from "./scripts/run_ai_value_controlled_measurement_cell_assembly.mjs";
@@ -261,6 +272,7 @@ const controlledMeasurementCellAssemblyRun = () => {
 };
 
 const controlledMeasurementCellAssemblyRunsForMilestones = (milestoneDays: number[]) => {
+  ensureControlledRunnerDistReady();
   const script = `
     import { readFileSync } from "node:fs";
     import { buildControlledMeasurementCellAssemblyArtifactsFromObject } from "./scripts/run_ai_value_controlled_measurement_cell_assembly.mjs";
@@ -408,6 +420,7 @@ describe("AI Value minimal persistence migration", () => {
     expect(migrationSql).toContain('"value_driver" TEXT NOT NULL');
     expect(migrationSql).toContain('"assembly_payload_json" JSONB');
     expect(migrationSql).toContain("measurement_cell_snapshots_value_driver_check");
+    expect(migrationSql).toContain("measurement_cell_snapshots_supersedes_version_check");
     expect(migrationSql).toContain("measurement_cell_snapshots_assembly_payload_null_or_object_check");
     expect(migrationSql).toContain("ALTER TABLE public.measurement_cell_snapshots ENABLE ROW LEVEL SECURITY");
     expect(migrationSql).toContain("REVOKE ALL ON TABLE public.measurement_cell_snapshots");
@@ -815,6 +828,38 @@ describe("AI Value minimal persistence repository", () => {
     expect(corrected.version).toBe(2);
     expect(corrected.supersedes_id).toBe(stored.id);
     expect(store.aiValueMeasurementCellSnapshots.size).toBe(2);
+  });
+
+  it("binds Measurement Cell snapshots when only a value hypothesis ref is present", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_ref =
+      assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id;
+    assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id = null;
+
+    const stored = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(stored.value_hypothesis_id).toBeNull();
+    expect(stored.value_hypothesis_ref).toBe(
+      assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_ref
+    );
+    expect(stored.value_hypothesis_binding_state).toBe("bound");
+  });
+
+  it("rejects supersedes lineage on initial Measurement Cell snapshot versions", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 1,
+        supersedesId: "measurement_cell_snapshot_unrelated",
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
   });
 
   it("persists repeated milestone Measurement Cell snapshots as distinct cell identities, not versions", async () => {

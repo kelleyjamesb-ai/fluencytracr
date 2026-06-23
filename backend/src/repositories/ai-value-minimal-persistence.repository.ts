@@ -1446,7 +1446,15 @@ const validateMeasurementCellAssemblyPayload = (
 const ensureMeasurementCellSnapshotSupersedes = async (
   record: AiValueMeasurementCellSnapshotStoredRecord
 ): Promise<void> => {
-  if (record.version === 1) return;
+  if (record.version === 1) {
+    if (record.supersedes_id) {
+      throw new AiValuePersistenceValidationError(
+        "Initial Measurement Cell Snapshot versions cannot supersede another snapshot",
+        ["supersedes_id must be null when version is 1"]
+      );
+    }
+    return;
+  }
   if (!record.supersedes_id) {
     throw new AiValuePersistenceValidationError(
       "Measurement Cell Snapshot corrections require explicit lineage",
@@ -1833,7 +1841,8 @@ const buildMeasurementCellSnapshotRecord = (
     measurement_plan_id: asString(run.measurement_plan_id),
     value_hypothesis_id: asOptionalString(valueHypothesis.value_hypothesis_id),
     value_hypothesis_ref: asOptionalString(valueHypothesis.value_hypothesis_ref),
-    value_hypothesis_binding_state: asOptionalString(valueHypothesis.value_hypothesis_id)
+    value_hypothesis_binding_state: asOptionalString(valueHypothesis.value_hypothesis_id) ||
+      asOptionalString(valueHypothesis.value_hypothesis_ref)
       ? "bound"
       : "inapplicable",
     approved_blueprint_ref: asString(alignment.source_ref),
