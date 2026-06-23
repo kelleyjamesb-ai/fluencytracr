@@ -819,6 +819,19 @@ describe("AI Value minimal persistence repository", () => {
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
 
+    const superseded = Array.from(
+      store.aiValueMeasurementCellSnapshots.values()
+    ).find((record) => record.id === stored.id);
+    if (!superseded) throw new Error("expected stored Measurement Cell snapshot");
+    for (const field of [
+      "baseline_window_start",
+      "baseline_window_end",
+      "comparison_window_start",
+      "comparison_window_end"
+    ] as const) {
+      superseded[field] = new Date(superseded[field]).toISOString();
+    }
+
     const corrected = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
       version: 2,

@@ -692,6 +692,13 @@ const compareField = (
   }
 };
 
+const normalizeDateOnlyForComparison = (value: unknown): unknown => {
+  if (typeof value !== "string") return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toISOString().slice(0, 10);
+};
+
 const expectedPilotRunStatus = (
   coverageStatus: string,
   requiredCaveats: string[]
@@ -1514,6 +1521,12 @@ const measurementCellSnapshotLineageDriftGaps = (
   superseded: AiValueMeasurementCellSnapshotStoredRecord
 ): string[] => {
   const gaps: string[] = [];
+  const dateOnlyFields = new Set([
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end"
+  ]);
   for (const field of [
     "measurement_plan_id",
     "value_hypothesis_id",
@@ -1547,11 +1560,17 @@ const measurementCellSnapshotLineageDriftGaps = (
     "comparison_window_start",
     "comparison_window_end"
   ] as const) {
+    const expected = dateOnlyFields.has(field)
+      ? normalizeDateOnlyForComparison(superseded[field])
+      : superseded[field];
+    const actual = dateOnlyFields.has(field)
+      ? normalizeDateOnlyForComparison(record[field])
+      : record[field];
     compareField(
       gaps,
       `superseded Measurement Cell Snapshot ${field} must match correction`,
-      superseded[field],
-      record[field]
+      expected,
+      actual
     );
   }
   return gaps;

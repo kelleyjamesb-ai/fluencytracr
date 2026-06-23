@@ -224,6 +224,7 @@ function approvedExpectationPathBinding() {
       metric_id: "support_median_resolution_hours",
       driver: "Capacity"
     }),
+    expected_metric_id: "support_median_resolution_hours",
     approved_blueprint_payload_hash: sha256Json({ blueprint: "approved_support_resolution" }),
     approval_state: "customer_approved",
     approved_at: "2026-06-22T00:00:00.000Z",
@@ -563,6 +564,50 @@ test("source inventory manifest allows the governed AI Fluency confidence aggreg
   );
 });
 
+test("aggregate extraction manifest allows the governed AI Fluency confidence metric only by exact allowlist", () => {
+  const source = buildSourceInventoryManifest();
+  source.source_inventory_manifest_id = "source_inventory_bigquery_export_ai_fluency";
+  source.source_lane = "ai_fluency";
+  source.approved_source_ref = "bigquery_export_ai_fluency_support_day_30";
+  source.approved_output_fields = [
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "window_start",
+    "window_end",
+    "ai_fluency_confidence_mean"
+  ];
+
+  const extraction = buildAggregateExtractionManifest(source);
+  extraction.aggregate_extraction_manifest_id =
+    "aggregate_extraction_bigquery_export_ai_fluency_governed_metric";
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.metric_definitions = ["ai_fluency_confidence_mean"];
+  extraction.aggregate_output_ref = "bigquery_export_ai_fluency_governed_metric_output";
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+
+  const unsafe = clone(extraction);
+  unsafe.metric_definitions = ["confidence_score"];
+  const unsafeValidation = validateAiValueAggregateExtractionManifest(
+    unsafe,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(unsafeValidation.valid, false);
+  assert.ok(
+    unsafeValidation.gaps.some((gap) =>
+      gap.includes("metric_definitions must be governed aggregate metric identifiers")
+    ),
+    unsafeValidation.gaps.join("; ")
+  );
+});
+
 test("source inventory manifest fails closed on unsafe refs, raw fields, aliases, and non-false boundaries", () => {
   const source = buildSourceInventoryManifest();
   source.source_owner_attestation = "APPROVED";
@@ -741,6 +786,24 @@ test("aggregate extraction manifest rejects safe but unapproved metric definitio
   );
 });
 
+test("aggregate extraction manifest rejects dimension fields as metric definitions", () => {
+  const { source, extraction } = validChain();
+  extraction.metric_definitions = ["workflow_family"];
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) =>
+      gap.includes("metric_definitions must be governed aggregate metric identifiers")
+    ),
+    validation.gaps.join("; ")
+  );
+});
+
 test("aggregate extraction manifest fails closed instead of throwing when source inventory context is missing", () => {
   const source = buildSourceInventoryManifest();
   const extraction = buildAggregateExtractionManifest(source);
@@ -807,6 +870,47 @@ test("pipeline run review manifest fails closed on path, metric, source-ref, and
   assert.ok(validation.gaps.some((gap) => gap.includes("expectation_path_id must match")));
   assert.ok(validation.gaps.some((gap) => gap.includes("reviewed_aggregate_source_refs")));
   assert.ok(validation.gaps.some((gap) => gap.includes("source_inventory_validation_hash")));
+});
+
+test("pipeline run review metric must match the approved expectation path metric", () => {
+  const { source, extraction, review, binding } = validChain();
+  source.approved_output_fields.push("first_contact_resolution");
+  extraction.metric_definitions.push("first_contact_resolution");
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  review.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  review.aggregate_extraction_manifest_ref = manifestRefFromExtraction(extraction);
+  review.validation_result_refs.source_inventory_validation_hash =
+    validationProofHash(source, validateAiValueSourceInventoryManifest(source));
+  review.validation_result_refs.aggregate_extraction_validation_hash =
+    validationProofHash(
+      extraction,
+      validateAiValueAggregateExtractionManifest(
+        extraction,
+        { sourceInventoryManifest: source }
+      )
+    );
+  review.metric_id = "first_contact_resolution";
+  review.data_spine_alignment_envelope.metric_id = "first_contact_resolution";
+  review.source_package_review_queue_posture_ref.queue_ref = expectedQueueRef(
+    source,
+    extraction,
+    review,
+    binding
+  );
+
+  const validation = validateAiValuePipelineRunReviewManifest(review, {
+    sourceInventoryManifest: source,
+    aggregateExtractionManifest: extraction,
+    approvedExpectationPathBinding: binding
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) =>
+      gap.includes("approvedExpectationPathBinding.expected_metric_id")
+    ),
+    validation.gaps.join("; ")
+  );
 });
 
 test("pipeline run review manifest rejects coordinated expectation-path drift against approved binding", () => {

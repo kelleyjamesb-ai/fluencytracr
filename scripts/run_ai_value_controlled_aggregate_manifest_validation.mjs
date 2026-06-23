@@ -390,6 +390,33 @@ function connectorAdapterRefPassed(ref) {
     isPlainObject(ref.pipeline_dry_run_ref);
 }
 
+function compactPipelineDryRunRef(ref) {
+  if (!isPlainObject(ref)) return null;
+  return {
+    dry_run_id: ref.dry_run_id ?? null,
+    dry_run_state: ref.dry_run_state ?? null,
+    source_system: ref.source_system ?? null,
+    source_export_ref: ref.source_export_ref ?? null,
+    manifest_hash: ref.manifest_hash ?? null,
+    aggregate_fixture_hash: ref.aggregate_fixture_hash ?? null,
+    reviewed_source_refs_hash: ref.reviewed_source_refs_hash ?? null,
+    reviewed_aggregate_context_hash: ref.reviewed_aggregate_context_hash ?? null,
+    reviewed_blueprint_expectation_hash: ref.reviewed_blueprint_expectation_hash ?? null,
+    candidate_integrity_hash: ref.candidate_integrity_hash ?? null,
+    expectation_path_id: ref.expectation_path_id ?? null
+  };
+}
+
+function compactConnectorAdapterRef(adapter) {
+  if (!isPlainObject(adapter)) return null;
+  return {
+    adapter_run_id: adapter.adapter_run_id ?? null,
+    adapter_state: adapter.adapter_state ?? null,
+    connector_manifest_ref: adapter.connector_manifest_ref ?? null,
+    pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
+  };
+}
+
 function sourceOwnerRole(sourceSystem) {
   return sourceSystem === "sigma_export"
     ? "customer_analytics_owner"
@@ -455,6 +482,7 @@ function approvedExpectationPathBindingFromFixture(fixture, adapter) {
       approved_at: path?.approved_at ?? "2026-06-21T00:00:00.000Z",
       approved_by_role: path?.approver_role ?? "workflow_owner"
     }),
+    expected_metric_id: path?.expected_metric_id ?? selectedMetricId(fixture),
     approved_blueprint_payload_hash:
       fixture?.expected?.reviewed_blueprint_expectation_hash ??
       sha256Json(fixture?.blueprint_extraction_input ?? {}),
@@ -745,7 +773,7 @@ function combinedGaps(validations) {
   );
 }
 
-function blockedPackage({ sourceSystem, adapter, adapterValidation, generatedAt }) {
+function blockedPackage({ sourceSystem, adapterValidation, generatedAt, gaps }) {
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
     manifest_validation_state: "BLOCKED",
@@ -765,7 +793,7 @@ function blockedPackage({ sourceSystem, adapter, adapterValidation, generatedAt 
       aggregate_extraction_manifest_valid: false,
       pipeline_run_review_manifest_valid: false,
       manifest_chain_valid: false,
-      gaps: sanitizeGaps(adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
+      gaps: sanitizeGaps(gaps ?? adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
     },
     feeds: packageFeeds(false),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
@@ -848,26 +876,35 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
     reviewValidation.valid &&
     chainValidation.valid;
 
+  const validationGaps = combinedGaps([
+    ["source_inventory_manifest", sourceValidation],
+    ["aggregate_extraction_manifest", extractionValidation],
+    ["pipeline_run_review_manifest", reviewValidation],
+    ["manifest_chain", chainValidation]
+  ]);
+
+  if (!valid) {
+    return blockedPackage({
+      sourceSystem: adapter.source_system,
+      adapterValidation,
+      generatedAt: adapter.generated_at,
+      gaps: validationGaps
+    });
+  }
+
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
-    manifest_validation_state: valid
-      ? "PASSED_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION"
-      : "BLOCKED",
+    manifest_validation_state: "PASSED_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION",
     source_system: adapter.source_system,
-    adapter_run_id: valid ? adapter.adapter_run_id : null,
-    connector_adapter_ref: valid ? {
-      adapter_run_id: adapter.adapter_run_id,
-      adapter_state: adapter.adapter_state,
-      connector_manifest_ref: adapter.connector_manifest_ref,
-      pipeline_dry_run_ref: adapter.pipeline_dry_run_ref
-    } : null,
+    adapter_run_id: adapter.adapter_run_id,
+    connector_adapter_ref: compactConnectorAdapterRef(adapter),
     approved_expectation_path_binding: binding,
-    manifests: valid ? {
+    manifests: {
       source_inventory_manifest: sourceInventoryManifest,
       aggregate_extraction_manifest: aggregateExtractionManifest,
       pipeline_run_review_manifest: pipelineRunReviewManifest
-    } : null,
-    manifest_refs: valid ? {
+    },
+    manifest_refs: {
       source_inventory_manifest_ref: manifestRefFromInventory(sourceInventoryManifest),
       aggregate_extraction_manifest_ref: manifestRefFromExtraction(aggregateExtractionManifest),
       pipeline_run_review_manifest_ref: {
@@ -883,26 +920,21 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
         metric_id: pipelineRunReviewManifest.metric_id,
         expectation_path_id: pipelineRunReviewManifest.expectation_path_id
       }
-    } : null,
+    },
     validation_summary: {
       schema_version: RESULT_SCHEMA_VERSION,
-      valid,
-      connector_adapter_valid: valid && adapterValidation.valid === true,
+      valid: true,
+      connector_adapter_valid: adapterValidation.valid === true,
       source_inventory_manifest_valid: sourceValidation.valid === true,
       aggregate_extraction_manifest_valid: extractionValidation.valid === true,
       pipeline_run_review_manifest_valid: reviewValidation.valid === true,
       manifest_chain_valid: chainValidation.valid === true,
-      gaps: combinedGaps([
-        ["source_inventory_manifest", sourceValidation],
-        ["aggregate_extraction_manifest", extractionValidation],
-        ["pipeline_run_review_manifest", reviewValidation],
-        ["manifest_chain", chainValidation]
-      ])
+      gaps: validationGaps
     },
-    feeds: packageFeeds(valid),
+    feeds: packageFeeds(true),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
     blocked_uses: [...REQUIRED_BLOCKED_USES],
-    required_caveats: valid ? [...PACKAGE_PASSED_CAVEATS] : [...PACKAGE_BLOCKED_CAVEATS],
+    required_caveats: [...PACKAGE_PASSED_CAVEATS],
     generated_at: adapter.generated_at
   };
 }

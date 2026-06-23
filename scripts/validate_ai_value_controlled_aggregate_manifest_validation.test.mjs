@@ -53,6 +53,7 @@ const FORBIDDEN_OUTPUT_KEYS = [
   "person_id",
   "email",
   "source_packages",
+  "measurement_cell_ref",
   "measurement_cell",
   "measurement_cell_series",
   "payload_json",
@@ -91,6 +92,11 @@ function assertPassedPackage(manifestPackage, sourceSystem) {
   assert.equal(manifestPackage.validation_summary.aggregate_extraction_manifest_valid, true);
   assert.equal(manifestPackage.validation_summary.pipeline_run_review_manifest_valid, true);
   assert.equal(manifestPackage.validation_summary.manifest_chain_valid, true);
+  assert.equal(
+    hasNestedKey(manifestPackage.connector_adapter_ref, "measurement_cell_ref"),
+    false,
+    "connector adapter ref must not carry Measurement Cell candidate refs"
+  );
   assert.equal(manifestPackage.feeds.controlled_aggregate_manifest_validation, true);
   assert.equal(manifestPackage.feeds.manual_operator_promotion_review, true);
   assert.equal(
@@ -302,6 +308,14 @@ test("controlled aggregate manifest validation fails closed on live execution an
   );
 
   assert.equal(validation.valid, false);
+  assert.equal(manifestPackage.manifest_validation_state, "BLOCKED");
+  assert.equal(manifestPackage.connector_adapter_ref, null);
+  assert.equal(manifestPackage.approved_expectation_path_binding, null);
+  assert.equal(manifestPackage.manifests, null);
+  assert.equal(manifestPackage.manifest_refs, null);
+  assert.equal(JSON.stringify(manifestPackage).includes("person@example.com"), false);
+  assert.equal(JSON.stringify(manifestPackage).includes("SELECT user_id"), false);
+  assert.equal(JSON.stringify(manifestPackage).includes("raw_rows"), false);
   assert.ok(
     validation.gaps.some((gap) => gap.includes("source_inventory_manifest")),
     validation.gaps.join("; ")
