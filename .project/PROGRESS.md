@@ -2,6 +2,50 @@
 
 ## Last Completed
 
+- AI Value controlled aggregate pipeline dry-run promotion
+  (user-requested, 2026-06-22): added the next executable bridge from a
+  BigQuery/Sigma-shaped scrubbed aggregate export manifest into the existing
+  reviewed source-package path and compact internal Measurement Cell candidate
+  proof. The new shared layer and runner validate a controlled dry-run manifest,
+  require reviewed aggregate fixture binding, recompute the controlled
+  Measurement Cell assembly candidate from the fixture path, and emit only
+  compact dry-run metadata: dry-run id, source system, manifest ref/hash,
+  aggregate fixture hash, reviewed source-ref hash, reviewed aggregate-context
+  hash, reviewed Blueprint expectation hash, Measurement Cell candidate ref,
+  selected metric, selected expectation path, candidate integrity hash, source
+  package count, caveats, blocked uses, false boundary policy, and validation
+  summary. The only true downstream feed is
+  `measurement_cell_candidate_proof`; live BigQuery execution, live Sigma
+  execution, live Glean query, durable pipeline-run storage, Source Package
+  clearance, Measurement Cell snapshot candidate, Measurement Cell snapshot,
+  Measurement Cell Series, evidence continuity, claim readiness, executive
+  readout, exports, customer sharing, reportability, Value Hypothesis packet
+  runner, finance context, confidence model, probability output, ROI/EBITDA,
+  financial attribution, causality, productivity, and customer-facing output
+  feeds remain false. The dry run fails closed on unsupported source systems,
+  non-dry-run execution, source-owner/attestation drift, org/client/workflow/
+  function/cohort/window drift, stale reviewed hashes, missing fixture-bound
+  expected candidate proof, hand-edited passed envelopes, unsafe source refs,
+  encoded-looking refs, connector job/API/run refs, live connector flags, query
+  text, raw rows, prompts, transcripts, identifiers, preview/metric/raw export
+  payloads, nested metadata/payload smuggling, full child objects, JSON payload
+  aliases, unsafe caveat/gap language, ROI, EBITA/EBITDA, finance-output,
+  confidence, probability, p-value, causality, productivity, schemas, routes,
+  UI, repositories, migrations, persistence, and customer-facing financial
+  output. No shared schema, migration, repository, backend route, frontend UI,
+  persistence write, live connector, live query execution, confidence math, ROI
+  math, causality logic, productivity measurement, probability output, finance
+  output, or customer-facing financial output was added. Verification:
+  `npm run test:ai-value-controlled-aggregate-pipeline-dry-run` passed 18/18;
+  inherited full-slice verification also passed
+  `npm run test:ai-value-controlled-aggregate-fixture-review`,
+  `npm run test:ai-value-controlled-measurement-cell-assembly`,
+  `npm run test:ai-value-real-data-intake-packet-runner`,
+  `npm run test:ai-value-source-package-review-queue`,
+  `npm run test:ai-value-measurement-cell-assembly-runner`,
+  `npm run test:ai-value-measurement-cell`, `git diff --check`,
+  `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py`.
 - AI Value controlled Measurement Cell assembly executable path
   (user-requested, 2026-06-22): added the next controlled executable gate after the
   controlled aggregate fixture review. The new command runs the saved aggregate

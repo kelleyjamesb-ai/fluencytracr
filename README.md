@@ -59,6 +59,12 @@ documented value-realization layers:
   pipeline: FluencyTracr does not run live Sigma/BigQuery queries for the AI
   Value spine, ingest raw rows, or authorize customer-facing value output from
   this path.
+- **AI Value controlled aggregate pipeline dry run:** proves that a
+  BigQuery/Sigma-shaped scrubbed aggregate export manifest can enter the
+  existing source-review path and produce a compact internal Measurement Cell
+  candidate proof. It does not run BigQuery/Sigma, persist pipeline runs, create
+  Measurement Cell snapshots, or emit customer-facing value/finance/confidence
+  output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -189,6 +195,7 @@ is not the lead positioning for this repository.
 - AI Value Operator Evidence Package Runner: [docs/contracts/ai-value-operator-evidence-package-runner/README.md](docs/contracts/ai-value-operator-evidence-package-runner/README.md)
 - AI Value Controlled Aggregate Fixture Review: [docs/contracts/ai-value-controlled-aggregate-fixture-review/README.md](docs/contracts/ai-value-controlled-aggregate-fixture-review/README.md)
 - AI Value Controlled Measurement Cell Assembly: [docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md](docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md)
+- AI Value Controlled Aggregate Pipeline Dry Run: [docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md](docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md)
 - AI Value Claim Boundary schema: [schemas/ai-value-intelligence/claim-boundary.schema.json](schemas/ai-value-intelligence/claim-boundary.schema.json)
 - Customer Support AI Value claim boundary fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json](docs/contracts/ai-value-intelligence/examples/customer-support-claim-boundary.json)
 - AI Value Executive Packet schema: [schemas/ai-value-intelligence/executive-packet.schema.json](schemas/ai-value-intelligence/executive-packet.schema.json)
