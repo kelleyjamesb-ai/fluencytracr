@@ -2,6 +2,27 @@
 
 ## Last Completed
 
+- AI Value Measurement Cell Preflight Runner (user-requested, 2026-06-23):
+  added an executable internal proof that a reviewed BigQuery/Sigma-style
+  aggregate package can flow through aggregate export review, controlled
+  aggregate pipeline dry run, controlled Measurement Cell assembly, and into a
+  compact Measurement Cell snapshot-candidate ref. BigQuery uses the BigQuery
+  Aggregate Export Review validator; Sigma-shaped inputs must pass the existing
+  Aggregate Connector Boundary Plan validator before they can be represented as
+  aggregate connector-boundary proof. The runner emits only compact review,
+  pipeline, assembly, selected-path, metric, window, source-ref, and
+  integrity-hash metadata, with reviewed boundary and pipeline refs bound to
+  the same scrubbed `source_export_ref`. It blocks or holds on live execution,
+  raw rows, query
+  text, prompts, transcripts, identifiers, suppressed aggregate telemetry,
+  unsafe refs, stale hashes, source-ref drift, Measurement Plan override drift,
+  hand-edited passed states, child/open-container payload smuggling,
+  persistence, routes, UI, schemas, migrations, customer-facing output,
+  research-model feed, probability output, ROI, causality, productivity, or
+  finance-output claims. It does not persist Measurement Cell snapshots.
+  Verification: `npm run build --workspace shared && node --test
+  scripts/validate_ai_value_measurement_cell_preflight_runner.test.mjs` passed
+  9/9 before the broader governance sweep.
 - AI Value Measurement Cell Snapshot internal gate and operator projection
   API (user-requested, 2026-06-23): added an internal/operator-only
   `GET /api/v1/ai-value/measurement-cell-snapshots` projection over persisted
