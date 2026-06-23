@@ -308,6 +308,8 @@ function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
       null,
     blueprint_customer_approval_state:
       fields.blueprint_customer_approval_state ?? null,
+    blueprint_customer_approved_at:
+      fields.blueprint_customer_approved_at ?? null,
     blueprint_customer_approver_role:
       fields.blueprint_customer_approver_role ?? draft?.approver_role ?? null,
     value_route: draft?.extracted_fields?.value_route ?? "unclassified",

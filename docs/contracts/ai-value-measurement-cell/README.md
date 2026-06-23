@@ -33,6 +33,7 @@ by the Blueprint Operator Source Handoff:
 
 - `blueprint_expectation_ref`
 - `blueprint_customer_approval_state`
+- `blueprint_customer_approved_at`
 - `blueprint_customer_approver_role`
 - `expectation_path_id`
 - `approved_expectation_path`
@@ -60,10 +61,11 @@ drift, and Blueprint window drift. Absent/null expectation fields remain
 compatible with legacy Measurement Cells.
 
 Explicit expectation context must carry `blueprint_expectation_ref`,
-`blueprint_customer_approval_state: approved`, and
-`blueprint_customer_approver_role`. Legacy Measurement Cells that carry only
-older metric id/direction/lag alignment fields remain valid without upgrading
-into customer-approved expectation context.
+`blueprint_customer_approval_state: approved`,
+`blueprint_customer_approved_at`, and `blueprint_customer_approver_role` when
+the cell is promoted into persisted snapshot lineage. Legacy Measurement Cells
+that carry only older metric id/direction/lag alignment fields remain valid
+without upgrading into customer-approved expectation context.
 
 When `expectation_path_id` is present, the Measurement Cell must carry exactly
 one `approved_expectation_path`. The selected path must match the cell's
@@ -72,10 +74,13 @@ present. The Measurement Cell must not carry the full
 `approved_expectation_paths` registry; one cell stays at one
 org/function/workflow/cohort/window/metric grain.
 
-This path binding is measurement contract context only. It does not authorize a
-data schema, persistence model, route, UI, live connector, confidence formula,
-ROI calculation, EBITDA output, probability, causality claim, productivity
-claim, or customer-facing financial output.
+This path binding is measurement contract context only. It does not authorize
+full Measurement Cell object persistence, routes, UI, live connectors,
+confidence formulas, ROI calculation, EBITDA output, probability, causality
+claims, productivity claims, or customer-facing financial output. A separate
+promotion decision authorizes only a compact backend-internal
+`measurement_cell_snapshots` projection built from a recomputed-valid
+Measurement Cell Assembly Run.
 
 `expected_metric_lag_days` is descriptive review context only. It must not be
 used as a threshold, surfacing gate, confidence input, model parameter, or
@@ -99,8 +104,8 @@ The Measurement Cell must not:
   ranking, HR analytics, people decisioning, headcount reduction, compensation
   inference, performance inference, promotion inference, discipline inference,
   or attrition prediction;
-- create schemas, backend routes, persistence, ingestion jobs, frontend UI, or
-  customer-facing exports.
+- create full-object persistence, backend routes, ingestion jobs, frontend UI,
+  or customer-facing exports.
 
 The validator also rejects unsafe claim language in normal text fields, such as
 phrasing that says AI proved ROI, created savings, drove EBITDA impact, or

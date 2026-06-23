@@ -1,10 +1,11 @@
 # AI Value Productization Gate Decision
 
-Status: decision only. This document does not create backend routes, frontend
-UI, Prisma schema changes, migrations, repository methods, persistence writes,
-live Glean or BigQuery execution, export packages, rendered customer readouts,
-confidence math, ROI, causality, productivity, probability, or customer-facing
-financial output.
+Status: productization gate decision. A later Measurement Cell persistence
+decision may supersede this document only for the exact table and write-path
+scope it names. This document does not create backend routes, frontend UI, live
+Glean or BigQuery execution, export packages, rendered customer readouts,
+confidence math, ROI, causality, productivity, probability, or
+customer-facing financial output.
 
 Phase: `phase-ai-value-productization-gate-decision`
 
@@ -29,6 +30,7 @@ Primary anchors:
 
 - [AI Value Logical Data Model](./AI_VALUE_LOGICAL_DATA_MODEL.md)
 - [AI Value Physical Data Model Readiness Review](./AI_VALUE_PHYSICAL_DATA_MODEL.md)
+- [AI Value Measurement Cell Persistence Promotion Decision](./AI_VALUE_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION.md)
 - [AI Value Productization Next Plan](../superpowers/plans/2026-06-22-ai-value-productization-next-plan.md)
 - [Operator Source Handoff Bundle](../contracts/ai-value-operator-source-handoff-bundle/README.md)
 - [AI Value Measurement Cell Series](../contracts/ai-value-measurement-cell-series/README.md)
@@ -41,11 +43,11 @@ The product has a productized internal evidence spine.
 
 The product is not yet a customer-facing value product.
 
-The data model is designed and readiness-reviewed, but not physically
-implemented beyond the already-existing typed append-only tables. Measurement
-Cell, Measurement Cell Series, and Evidence Continuity persistence are waiting
-for a separate promotion decision before any Prisma schema, migration,
-repository, route, UI, or persistence-service work starts.
+The data model is designed and readiness-reviewed. A later decision promotes
+only backend-internal `measurement_cell_snapshots` persistence. Measurement
+Cell Series, Evidence Continuity, customer-facing reads, routes, UI, exports,
+live connectors, confidence research inputs, and finance outputs remain
+blocked until separate promotion gates authorize those exact scopes.
 
 ## 3. Current Productization State
 
@@ -55,10 +57,10 @@ repository, route, UI, or persistence-service work starts.
 | Operator Source Handoffs | Contract-hardened lanes and bundle | Internal source/context preparation ready; not live connector execution |
 | Data Spine | Governed alignment and readiness posture | Internal assembly input ready when all gates clear |
 | Blueprint expectation paths | Approved selected-path binding hardened | Measurement contract context ready; not financial proof |
-| Measurement Cell Assembly | Contract output with validated alignment | Internal review ready; not first-class persisted product state |
+| Measurement Cell Assembly | Contract output with validated alignment | Internal review ready; may feed backend-internal `measurement_cell_snapshots` only after recomputed validation |
 | Measurement Cell Series | Contract-only continuity layer over milestones | Internal continuity/alignment review ready; not trend, finance, confidence, or customer output |
 | Operator Workflow / Package Runner | Compact internal package/run posture | Internal packet review ready; not customer export |
-| Physical data model | Docs-only readiness/projection review | Waiting on promotion before new tables |
+| Physical data model | Readiness-reviewed; `measurement_cell_snapshots` separately promoted | Only the backend-internal snapshot table/write path is promoted; all other tables remain blocked |
 | Customer exposure / readouts | Older route/UI surfaces exist | Customer productization blocked until source-bound projection and readout gates are promoted |
 | Confidence / finance layer | Not implemented | Blocked until repeated aligned evidence and later research governance |
 
@@ -74,6 +76,9 @@ append-only AI Value spine:
 - `claim_readiness_snapshots` as backend-only internal claim posture
 - `executive_readout_snapshots` as backend-only internal readout posture
 - `ai_value_pilot_runs`
+- `measurement_cell_snapshots` as backend-only compact Measurement Cell
+  evidence lineage, only under the separate Measurement Cell persistence
+  promotion decision
 
 `ai_value_objects` may remain compatibility or demo storage only. It must not
 be described as authoritative evidence proof, Measurement Cell continuity,
@@ -82,7 +87,6 @@ source-bound readout state, or customer-facing value state.
 Do not store yet:
 
 - Measurement Cell Assembly Runs as durable product state;
-- `measurement_cell_snapshots`;
 - `measurement_cell_series_snapshots`;
 - Evidence Continuity Snapshots;
 - Operator Source Handoff Bundles as durable proof;
@@ -177,7 +181,7 @@ Allowed language:
 - `Measurement Cell Series continuity/alignment review ready`
 - `controlled scrubbed aggregate pilot ready`
 - `physical data model readiness reviewed`
-- `awaiting physical persistence promotion decision`
+- `backend-internal Measurement Cell snapshot persistence promoted`
 
 Blocked language:
 
@@ -185,7 +189,7 @@ Blocked language:
 - `customer-facing value product ready`
 - `live Glean connector ready`
 - `live BigQuery connector ready`
-- `Measurement Cell persistence ready`
+- `customer-facing Measurement Cell persistence ready`
 - `Measurement Cell authorized` unless the validated Measurement Cell gate
   has actually cleared
 - `finance-ready`
@@ -222,14 +226,15 @@ EBITDA impact, customer-facing economic output, or model confidence.
 | Measurement Cell Assembly | Contract output only | Internal operator | Internal posture only | No customer export | Measurement contract output ready |
 | Measurement Cell Series | Contract output only | Internal operator | Internal alignment only | No customer export | Continuity/alignment review ready |
 | Rolling 30-day context | Operating context only | Internal operator | Internal posture only | No | Operating context only |
-| Physical Measurement Cell tables | No | No | No | No | Waiting on promotion |
+| Physical Measurement Cell tables | `measurement_cell_snapshots` only | Internal backend service only | Compact lineage only | No customer export | Promoted by separate decision |
 | Executive readout route/output | Existing legacy/prototype only | Internal/demo | Not customer-facing | No | Not productized readout |
 | Live Glean / BigQuery execution | No | No | No | No | Not ready |
 | Confidence / finance layer | No | No | No | No | Not ready |
 
-## 10. Required Next Gate Before Persistence
+## 10. Required Next Gate Before Additional Persistence
 
-Before any Measurement Cell or Series persistence implementation, require:
+Before any persistence beyond backend-internal `measurement_cell_snapshots`,
+require:
 
 1. A separate promotion decision naming the exact table scope.
 2. Static proof that no existing route, UI, export, or readout depends on the
@@ -242,8 +247,8 @@ Before any Measurement Cell or Series persistence implementation, require:
    Smuggling checks must cover unsafe values hidden inside caveats, refs,
    labels, notes, summaries, validation payloads, source-ref payloads, JSONB
    blobs, or any compact posture field.
-4. A decision on whether Measurement Cell persistence precedes or follows a
-   controlled scrubbed aggregate pilot.
+4. A decision on whether the existing controlled scrubbed aggregate pilot
+   evidence is sufficient for the next exact table scope.
 5. A decision on whether any old `executive_packet` readout route must be
    relabeled, blocked, or isolated before new source-bound readout work starts.
 
@@ -261,11 +266,10 @@ Before any customer-facing route, UI, readout, or export, require:
 
 ## 12. Recommended Next Move
 
-Do not build the physical data model yet.
-
-Run one controlled scrubbed aggregate pilot through the current spine, then use
-the results to decide whether `measurement_cell_snapshots` should be promoted
-first.
+Build only the executable backend-internal `measurement_cell_snapshots` slice
+authorized by the separate Measurement Cell persistence promotion decision.
+Do not build Series persistence, customer-facing projections, exports, live
+connectors, confidence research inputs, or finance outputs in that slice.
 
 The pilot should validate:
 

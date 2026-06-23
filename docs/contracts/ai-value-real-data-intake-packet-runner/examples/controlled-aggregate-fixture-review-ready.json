@@ -11,6 +11,7 @@
     "documentSourceRef": "blueprint_parse_support_approved_day_30_document_source",
     "extractionState": "parsed",
     "approvalState": "approved",
+    "approvedAt": "2026-06-21T00:00:00.000Z",
     "ownerRole": "workflow_owner",
     "approverRole": "workflow_owner",
     "workflowFamily": "customer_support_case_resolution",
@@ -60,6 +61,7 @@
         "value_driver": "capacity",
         "metric_role": "primary",
         "customer_approval_state": "approved",
+        "approved_at": "2026-06-21T00:00:00.000Z",
         "approver_role": "workflow_owner",
         "source_ref": "blueprint_parse_support_approved_day_30"
       }
@@ -717,7 +719,7 @@
     "source_package_count": 5,
     "next_gate": "measurement_cell_assembly_candidate_only",
     "reviewed_aggregate_context_hash": "6c8d03765abed1b6ef643733571d8b70d58960fe8390ff95236a21520c72a8c2",
-    "reviewed_blueprint_expectation_hash": "0f5717eddfc5119e80c52e535d7b0b06a096db9d4c0cf0fffb9030203fa59fc3",
+    "reviewed_blueprint_expectation_hash": "8c2cb0a86d5b12272bcdc01374662b2dd08856e4f6ac250656f644d25d80ce2a",
     "reviewed_source_refs": {
       "blueprint": "blueprint_parse_support_approved_day_30",
       "ai_fluency": "ai_fluency_support_day_30",

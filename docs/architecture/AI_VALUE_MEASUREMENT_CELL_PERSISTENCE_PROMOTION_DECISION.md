@@ -1,27 +1,32 @@
 # AI Value Measurement Cell Persistence Promotion Decision
 
-Status: decision only. This document does not create backend routes, frontend
-UI, Prisma schema changes, migrations, repository methods, persistence writes,
-live Glean or BigQuery execution, export packages, rendered customer readouts,
-confidence math, ROI, causality, productivity, probability, or customer-facing
-financial output.
+Status: promoted for one backend-internal physical persistence slice only.
+This document does not create backend routes, frontend UI, live Glean or
+BigQuery execution, export packages, rendered customer readouts, confidence
+math, ROI, causality, productivity, probability, or customer-facing financial
+output.
 
 Phase: `phase-ai-value-measurement-cell-persistence-promotion-decision`
 
-Decision: `PILOT_EVIDENCE_READY__HOLD_FOR_SEPARATE_PROMOTION_DECISION`
+Decision: `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`
 
 ## 1. Purpose
 
-The physical data-model readiness review defines a non-authorizing projection
-sketch for future `measurement_cell_snapshots`. The productization gate says
-new physical tables remain blocked until a controlled scrubbed aggregate pilot
-and promotion decision demonstrate what can safely persist.
+The physical data-model readiness review originally defined a non-authorizing
+projection sketch for future `measurement_cell_snapshots`. The controlled
+scrubbed aggregate pilot and this promotion decision now demonstrate the exact
+compact backend-internal scope that can safely persist.
 
-This document records the current promotion decision.
+This document records the current promotion decision. It authorizes only the
+bounded implementation of append-only `measurement_cell_snapshots` for
+validated internal Measurement Cell evidence. It does not authorize any
+customer-facing surface or downstream model.
 
 ## 2. Decision
 
-Do not implement `measurement_cell_snapshots` yet.
+Implement `measurement_cell_snapshots` now, but only as a backend-internal,
+append-only, compact snapshot of a recomputed valid Measurement Cell Assembly
+Run.
 
 The controlled saved-fixture pilot evidence package now demonstrates that the
 reviewed aggregate fixture can flow through Controlled Aggregate Fixture
@@ -34,7 +39,7 @@ evidence.
 Decision value:
 
 ```text
-PILOT_EVIDENCE_READY__HOLD_FOR_SEPARATE_PROMOTION_DECISION
+PROMOTE_MEASUREMENT_CELL_SNAPSHOTS
 ```
 
 Decision bundle:
@@ -43,10 +48,11 @@ Decision bundle:
 PILOT_PASSED_PROMOTION_REVIEW_READY
 MEASUREMENT_CELL_SNAPSHOT_PROMOTION_REVIEW_READY
 RECOMMEND_REVISIT_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION
-HOLD_PHYSICAL_MEASUREMENT_CELL_TABLES
-HOLD_RUNTIME_PERSISTENCE_AND_MIGRATIONS
+PROMOTE_BACKEND_INTERNAL_MEASUREMENT_CELL_SNAPSHOT_TABLE
+PROMOTE_APPEND_ONLY_VALIDATED_MEASUREMENT_CELL_SNAPSHOT_WRITE_PATH
+HOLD_CUSTOMER_FACING_READ_PATHS_AND_EXPORTS
 HOLD_SERIES_PERSISTENCE_FOR_SEPARATE_PROMOTION_DECISION
-REQUIRE_SEPARATE_PROMOTION_DECISION_BEFORE_SCHEMA_AUTHORIZATION
+REQUIRE_SEPARATE_PROMOTION_DECISION_BEFORE_SERIES_OR_CONNECTOR_AUTHORIZATION
 ```
 
 Reason:
@@ -63,17 +69,21 @@ Reason:
   continuity/alignment behavior across Day 0 / 30 / 60 / 90 / 180 / 365, and
   holds when Day 0 is missing or rolling 30-day windows are used as continuity
   evidence;
-- the pilot output package does not resolve old readout route/UI isolation;
-- persistence would imply runtime and product-state maturity that the current
-  decision has not separately authorized.
+- the pilot output package does not resolve old readout route/UI isolation,
+  which remains blocked and is not required for an internal backend-only write
+  path;
+- the physical data-model readiness review has now named the stable path,
+  approval, metric, lag, source-ref, JSONB-smuggling, and rolling-window
+  requirements that must be enforced before writes.
 
-This is not a partial approval for physical tables. It authorizes only
-controlled pilot promotion-review evidence, decision records, required
-evidence criteria, and a future table-readiness checklist.
+This is a narrow approval for one physical table and one validated write path.
+It is not approval for Series persistence, Evidence Continuity persistence,
+routes, UI, exports, live connectors, readouts, confidence research inputs,
+finance outputs, or customer-facing output.
 
-## 3. Promotion Requirements
+## 3. Promotion Basis
 
-Promotion may be reconsidered only after all conditions are met:
+Promotion is based on the following completed or explicitly held conditions:
 
 | Requirement | Current status |
 | --- | --- |
@@ -82,7 +92,7 @@ Promotion may be reconsidered only after all conditions are met:
 | Controlled aggregate pilot executed | Complete for saved aggregate fixture |
 | Pilot result is `PILOT_PASSED_PROMOTION_REVIEW_READY` | Complete for saved aggregate fixture |
 | Legacy readout isolation decision exists | Complete |
-| Legacy readout route/UI guard posture resolved | Held |
+| Legacy readout route/UI guard posture resolved | Held; not a blocker for internal backend-only snapshot persistence |
 | Stable selected-path binding verified in pilot | Complete for saved aggregate fixture |
 | Value hypothesis binding verified in pilot | Complete for saved aggregate fixture |
 | Metric drift guard verified in pilot | Complete for saved aggregate fixture |
@@ -91,22 +101,19 @@ Promotion may be reconsidered only after all conditions are met:
 | Repeated Measurement Cell Series continuity/alignment verified | Complete for controlled Day 0 / 30 / 60 / 90 / 180 / 365 fixture variants |
 | Missing Day 0 fails closed | Complete |
 | Rolling 30-day windows blocked from continuity evidence | Complete |
-| JSONB smuggling guard specified for persistence | Required next-test list generated |
-| No route/UI/export dependency created | Must be rechecked before promotion |
+| JSONB smuggling guard specified for persistence | Complete; must be proven by red/green tests before implementation |
+| No route/UI/export dependency created | Required implementation invariant |
 
 ## 4. What Remains Blocked
 
 Do not add:
 
-- `measurement_cell_snapshots`;
 - `measurement_cell_series_snapshots`;
 - Evidence Continuity persistence;
-- Prisma schema changes;
-- migrations;
-- repository methods;
 - backend routes;
 - frontend UI;
-- persistence writes;
+- persistence writes except the single append-only validated backend
+  Measurement Cell snapshot write path authorized here;
 - live Glean execution;
 - live BigQuery execution;
 - export packages;
@@ -119,9 +126,18 @@ Do not add:
 - probability output;
 - customer-facing financial output.
 
-## 5. Required Red/Green Tests If Later Promoted
+The only physical persistence object authorized by this decision is:
 
-If a later decision changes to `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`, the
+- `measurement_cell_snapshots`.
+
+The only repository write path authorized by this decision is:
+
+- append-only persistence of a compact validated Measurement Cell snapshot
+  projection, built from a recomputed valid Measurement Cell Assembly Run.
+
+## 5. Required Red/Green Tests For This Promotion
+
+Because this decision is now `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`, the
 implementation slice must write failing tests first for:
 
 - path drift;
@@ -153,18 +169,18 @@ implementation slice must write failing tests first for:
 - JSONB smuggling through `source_refs_json`;
 - JSONB smuggling through `blueprint_path_binding_json`.
 
-## 6. Future Implementation Scope If Promoted
+## 6. Implementation Scope
 
-If and only if a later decision is exactly
-`PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`, the implementation scope must be limited
-to:
+Because the decision is exactly `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`, the
+implementation scope is limited to:
 
 - one append-only `measurement_cell_snapshots` table;
 - migration-level RLS enablement;
 - direct `anon` and `authenticated` access revocation;
 - backend service write path only;
-- already validated Measurement Cell contract input only;
+- already validated Measurement Cell Assembly Run input only;
 - recomputed validation before write;
+- compact Measurement Cell snapshot projection only;
 - compact source refs;
 - compact selected path binding;
 - required caveats;
@@ -197,18 +213,22 @@ confidence research, customer-facing output, export, or persistence promotion.
 
 ## 8. Recommended Next Move
 
-Use the controlled pilot evidence package:
+Execute the promoted TDD implementation slice using the controlled pilot
+evidence package:
 
 ```text
 docs/contracts/ai-value-controlled-pilot-evidence-package/README.md
 ```
 
-Then make a separate explicit decision to either:
+Then keep the next decisions separate:
 
-- change this decision to `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS` and open the
-  dedicated TDD implementation slice; or
-- keep `HOLD_PHYSICAL_MEASUREMENT_CELL_TABLES` and record the remaining
-  blocker.
+- defer `measurement_cell_series_snapshots` until a separate Series promotion
+  decision authorizes durable Series product state;
+- defer live BigQuery, Sigma, and Glean connectors until the snapshot write
+  path is verified and connector-specific source-boundary contracts are
+  promoted;
+- defer customer-facing projections, exports, confidence research inputs, and
+  finance outputs until separate promotion gates authorize those exact scopes.
 
 ## 9. Verification
 

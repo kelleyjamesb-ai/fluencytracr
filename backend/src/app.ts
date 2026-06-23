@@ -873,7 +873,11 @@ const REQUIRED_AI_VALUE_TABLES = [
   "value_hypotheses",
   "measurement_plans",
   "source_package_refs",
-  "evidence_snapshots"
+  "evidence_snapshots",
+  "ai_value_pilot_runs",
+  "claim_readiness_snapshots",
+  "executive_readout_snapshots",
+  "measurement_cell_snapshots"
 ] as const;
 
 const REQUIRED_PERSISTENCE_TABLES = [

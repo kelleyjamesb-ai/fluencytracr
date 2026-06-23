@@ -40,7 +40,11 @@ describe("health postgres disclosure", () => {
           { tablename: "value_hypotheses" },
           { tablename: "measurement_plans" },
           { tablename: "source_package_refs" },
-          { tablename: "evidence_snapshots" }
+          { tablename: "evidence_snapshots" },
+          { tablename: "ai_value_pilot_runs" },
+          { tablename: "claim_readiness_snapshots" },
+          { tablename: "executive_readout_snapshots" },
+          { tablename: "measurement_cell_snapshots" }
         ],
         auditEvent: {
           findFirst: async () => null,
@@ -88,6 +92,10 @@ describe("health postgres disclosure", () => {
     expect(response.status).toBe(503);
     expect(response.body.status).toBe("degraded");
     expect(response.body.missing_tables).toContain("evidence_snapshots");
+    expect(response.body.missing_tables).toContain("ai_value_pilot_runs");
+    expect(response.body.missing_tables).toContain("claim_readiness_snapshots");
+    expect(response.body.missing_tables).toContain("executive_readout_snapshots");
+    expect(response.body.missing_tables).toContain("measurement_cell_snapshots");
   });
 
   it("reports Phase 4 AI Value persistence tables in ops readiness schema gaps", async () => {
@@ -122,12 +130,20 @@ describe("health postgres disclosure", () => {
     expect(response.status).toBe(503);
     expect(response.body.status).toBe("schema_incomplete");
     expect(response.body.missing_tables).toContain("evidence_snapshots");
+    expect(response.body.missing_tables).toContain("ai_value_pilot_runs");
+    expect(response.body.missing_tables).toContain("claim_readiness_snapshots");
+    expect(response.body.missing_tables).toContain("executive_readout_snapshots");
+    expect(response.body.missing_tables).toContain("measurement_cell_snapshots");
     expect(response.body.required_tables).toEqual(
       expect.arrayContaining([
         "value_hypotheses",
         "measurement_plans",
         "source_package_refs",
-        "evidence_snapshots"
+        "evidence_snapshots",
+        "ai_value_pilot_runs",
+        "claim_readiness_snapshots",
+        "executive_readout_snapshots",
+        "measurement_cell_snapshots"
       ])
     );
   });
@@ -158,7 +174,11 @@ describe("health postgres disclosure", () => {
         "value_hypotheses",
         "measurement_plans",
         "source_package_refs",
-        "evidence_snapshots"
+        "evidence_snapshots",
+        "ai_value_pilot_runs",
+        "claim_readiness_snapshots",
+        "executive_readout_snapshots",
+        "measurement_cell_snapshots"
       ])
     );
   });

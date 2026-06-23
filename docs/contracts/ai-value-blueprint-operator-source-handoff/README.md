@@ -46,6 +46,7 @@ When present on the approved Blueprint Extraction Draft,
 
 - `blueprint_expectation_ref`
 - `blueprint_customer_approval_state`
+- `blueprint_customer_approved_at`
 - `blueprint_customer_approver_role`
 - `expected_behavior_pathways`
 - `expected_metric_id`

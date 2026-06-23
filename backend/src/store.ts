@@ -206,6 +206,59 @@ export type AiValuePilotRunStoredRecord = {
   created_by_role: string;
 };
 
+export type AiValueMeasurementCellSnapshotStoredRecord = {
+  id: string;
+  org_id: string;
+  client_id: string | null;
+  measurement_cell_id: string;
+  measurement_cell_assembly_run_id: string;
+  measurement_plan_id: string;
+  value_hypothesis_id: string | null;
+  value_hypothesis_ref: string | null;
+  value_hypothesis_binding_state: string;
+  approved_blueprint_ref: string;
+  approved_blueprint_payload_hash: string;
+  blueprint_expectation_ref: string;
+  expectation_path_id: string;
+  expectation_path_version: number;
+  expectation_path_hash: string;
+  approval_state: string;
+  approved_at: string;
+  approved_by_role: string;
+  value_driver: string;
+  metric_id: string;
+  metric_definition_ref: string;
+  metric_definition_hash: string;
+  metric_owner_approval_state: string;
+  metric_direction: string;
+  metric_unit: string;
+  expected_metric_lag_days: number;
+  workflow_family: string;
+  workflow_id: string | null;
+  function_area: string;
+  cohort_key: string;
+  window_mode: string;
+  milestone_day: number;
+  baseline_window_start: string;
+  baseline_window_end: string;
+  comparison_window_start: string;
+  comparison_window_end: string;
+  assembly_decision: string;
+  payload: Record<string, unknown>;
+  assembly_payload: Record<string, unknown> | null;
+  validation: Record<string, unknown>;
+  assembly_validation: Record<string, unknown>;
+  source_refs: Record<string, unknown>;
+  blueprint_path_binding: Record<string, unknown>;
+  required_caveats: string[];
+  blocked_uses: string[];
+  version: number;
+  supersedes_id: string | null;
+  generated_at: string;
+  created_at: string;
+  created_by_role: string;
+};
+
 export type OrgRecord = {
   id: string;
   name: string;
@@ -674,6 +727,7 @@ class MemoryStore {
   aiValueClaimReadinessSnapshots = new Map<string, AiValueClaimReadinessSnapshotStoredRecord>();
   aiValueExecutiveReadoutSnapshots = new Map<string, AiValueExecutiveReadoutSnapshotStoredRecord>();
   aiValuePilotRuns = new Map<string, AiValuePilotRunStoredRecord>();
+  aiValueMeasurementCellSnapshots = new Map<string, AiValueMeasurementCellSnapshotStoredRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
   baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
@@ -724,6 +778,7 @@ class MemoryStore {
     this.aiValueClaimReadinessSnapshots.clear();
     this.aiValueExecutiveReadoutSnapshots.clear();
     this.aiValuePilotRuns.clear();
+    this.aiValueMeasurementCellSnapshots.clear();
     this.workflowVisibilityPolicyConfigs.clear();
     this.baselineResetEvents.clear();
   }

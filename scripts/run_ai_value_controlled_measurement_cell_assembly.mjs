@@ -778,6 +778,7 @@ export function reviewedBlueprintExpectationHash(fixture) {
         documentSourceRef: input.documentSourceRef ?? null,
         extractionState: input.extractionState ?? null,
         approvalState: input.approvalState ?? null,
+        approvedAt: input.approvedAt ?? null,
         ownerRole: input.ownerRole ?? null,
         approverRole: input.approverRole ?? null,
         workflowFamily: input.workflowFamily ?? null,
@@ -884,6 +885,9 @@ function collectBlueprintInputGaps(fixture, measurementPlan, dataSpine) {
   if (String(input.approvalState ?? "") !== "approved") {
     gaps.push("blueprint_extraction_input.approvalState must be approved");
   }
+  if (!input.approvedAt) {
+    gaps.push("blueprint_extraction_input.approvedAt is required for approved Blueprint expectations");
+  }
   if (input.ownerRole !== blueprintSource?.owner_role) {
     gaps.push("blueprint_extraction_input.ownerRole must match Data Spine blueprint owner_role");
   }
@@ -908,6 +912,16 @@ function collectBlueprintInputGaps(fixture, measurementPlan, dataSpine) {
     }
     if (selectedPath?.customer_approval_state !== "approved") {
       gaps.push("blueprint_extraction_input primary expectation path must be approved");
+    }
+    if (!selectedPath?.approved_at) {
+      gaps.push("blueprint_extraction_input primary expectation path approved_at is required");
+    }
+    if (
+      input.approvedAt &&
+      selectedPath?.approved_at &&
+      selectedPath.approved_at !== input.approvedAt
+    ) {
+      gaps.push("blueprint_extraction_input primary expectation path approved_at must match approvedAt");
     }
     if (selectedPath?.source_ref !== blueprintSource?.source_ref) {
       gaps.push("blueprint_extraction_input primary expectation path source_ref must match Data Spine blueprint source_ref");
@@ -1154,6 +1168,7 @@ function measurementCellInput(plan, dataSpine, fixture, blueprintHandoff) {
       expectation_path_id: expectationPath.expectation_path_id,
       blueprint_expectation_ref: alignmentContext.blueprint_expectation_ref,
       blueprint_customer_approval_state: alignmentContext.blueprint_customer_approval_state,
+      blueprint_customer_approved_at: alignmentContext.blueprint_customer_approved_at,
       blueprint_customer_approver_role: alignmentContext.blueprint_customer_approver_role,
       value_route: alignmentContext.value_route,
       value_promise: alignmentContext.value_promise,

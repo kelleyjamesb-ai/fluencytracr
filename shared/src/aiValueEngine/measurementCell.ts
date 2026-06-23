@@ -1600,6 +1600,8 @@ export function buildMeasurementCell(input: BuildMeasurementCellInput): any {
       approved_expectation_path: approvedExpectationPath,
       blueprint_customer_approval_state:
         input.blueprintAlignment?.blueprint_customer_approval_state ?? null,
+      blueprint_customer_approved_at:
+        input.blueprintAlignment?.blueprint_customer_approved_at ?? null,
       blueprint_customer_approver_role:
         input.blueprintAlignment?.blueprint_customer_approver_role ?? null,
       value_route: input.blueprintAlignment?.value_route ?? "unclassified",

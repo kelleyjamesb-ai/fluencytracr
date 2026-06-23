@@ -162,6 +162,7 @@ export interface BuildBlueprintExtractionDraftInput {
   documentSourceRef: string;
   extractionState: string;
   approvalState: string;
+  approvedAt?: string | null;
   ownerRole: string;
   approverRole?: string | null;
   workflowFamily: string;
@@ -352,6 +353,7 @@ function normalizeApprovedExpectationPath(
     metric_role: path?.metric_role ?? (index === 0 ? "primary" : "supporting"),
     customer_approval_state:
       path?.customer_approval_state ?? normalizeKey(input.approvalState),
+    approved_at: path?.approved_at ?? input.approvedAt ?? null,
     approver_role: path?.approver_role ?? input.approverRole ?? null,
     source_ref: path?.source_ref ?? blueprintExpectationRef
   };
@@ -499,6 +501,7 @@ export function buildBlueprintExtractionDraft(
     extracted_fields: {
       blueprint_expectation_ref: blueprintExpectationRef,
       blueprint_customer_approval_state: approved ? "approved" : approvalState,
+      blueprint_customer_approved_at: input.approvedAt ?? null,
       blueprint_customer_approver_role: input.approverRole ?? null,
       value_hypothesis: input.valueHypothesis,
       value_route: input.valueRoute,
@@ -539,6 +542,7 @@ export function buildBlueprintExtractionDraft(
       review_state: approved ? "clear" : "needs_review",
       blueprint_expectation_ref: blueprintExpectationRef,
       blueprint_customer_approval_state: approved ? "approved" : approvalState,
+      blueprint_customer_approved_at: input.approvedAt ?? null,
       expected_metric_id: selectedPath.expected_metric_id ?? metric.metric_id ?? null,
       expected_metric_direction:
         normalizeExpectedMetricDirection(selectedPath.expected_metric_direction ?? metric.expected_direction),
