@@ -512,6 +512,52 @@ describe("AI value spine run API", () => {
     expect(response.body.persisted.length).toBe(4);
   });
 
+  it("does not persist a mismatched explicit fluency baseline ref from value-chain run", async () => {
+    await storeUpstreamObjects();
+    const engagement = readExample("customer-support-engagement.json");
+    const wrongBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      baseline_id: "fluency_baseline_wrong_workflow_explicit",
+      workflow_family: "sales_pipeline_hygiene"
+    };
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
+      .set(writeAuth)
+      .send(engagement)
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${wrongBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(wrongBaseline)
+      .expect(201);
+
+    const response = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        engagement_id: engagement.engagement_id,
+        fluency_baseline_id: wrongBaseline.baseline_id,
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.run.fluency_baseline.status).toBe("VALID");
+    expect(response.body.run.spine.halted_at).toBeNull();
+    expect(
+      response.body.run.spine.stages.executive_packet.object.source_refs.fluency_baseline_id
+    ).toBeUndefined();
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    expect(
+      (stored?.payload.source_refs as Record<string, unknown> | undefined)
+        ?.fluency_baseline_id
+    ).toBeUndefined();
+  });
+
   it("rejects fluency baselines with respondent identifiers", async () => {
     const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
     const tainted = JSON.parse(JSON.stringify(fluencyBaseline));
@@ -649,7 +695,10 @@ describe("AI value spine run API", () => {
   it("renders the executive readout HTML from stored objects", async () => {
     await storeUpstreamObjects();
     const engagement = readExample("customer-support-engagement.json");
-    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+    const fluencyBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      workflow_family: "customer_support_case_resolution"
+    };
     await request(app)
       .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
       .set(writeAuth)

@@ -532,6 +532,37 @@ test("controlled aggregate manifest validators accept Sigma-shaped reviewed aggr
   assert.equal(chainValidation.valid, true, chainValidation.gaps.join("; "));
 });
 
+test("source inventory manifest allows the governed AI Fluency confidence aggregate field only by exact allowlist", () => {
+  const source = buildSourceInventoryManifest();
+  source.source_inventory_manifest_id = "source_inventory_bigquery_export_ai_fluency";
+  source.source_lane = "ai_fluency";
+  source.approved_source_ref = "bigquery_export_ai_fluency_support_day_30";
+  source.approved_output_fields = [
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "window_start",
+    "window_end",
+    "ai_fluency_confidence_mean"
+  ];
+
+  const validation = validateAiValueSourceInventoryManifest(source);
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+
+  const unsafe = clone(source);
+  unsafe.approved_output_fields.push("confidence_score");
+  const unsafeValidation = validateAiValueSourceInventoryManifest(unsafe);
+
+  assert.equal(unsafeValidation.valid, false);
+  assert.ok(
+    unsafeValidation.gaps.some((gap) =>
+      gap.includes("approved_output_fields must be governed aggregate field names")
+    ),
+    unsafeValidation.gaps.join("; ")
+  );
+});
+
 test("source inventory manifest fails closed on unsafe refs, raw fields, aliases, and non-false boundaries", () => {
   const source = buildSourceInventoryManifest();
   source.source_owner_attestation = "APPROVED";
