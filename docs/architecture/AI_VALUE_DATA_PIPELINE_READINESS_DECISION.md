@@ -43,6 +43,9 @@ Current repo support:
 - internal dogfood BigQuery adapter paths for governed aggregate testing;
 - controlled aggregate connector adapter / review packet proof for
   BigQuery/Sigma-shaped saved aggregate fixtures;
+- controlled aggregate manifest validation proof that a saved connector review
+  packet can become Source Inventory, Aggregate Extraction, and Pipeline Run
+  Review manifests without persistence or live execution;
 - aggregate AI Fluency dashboard import contracts;
 - VBD/token aggregate intake contracts;
 - customer metric aggregate/manual-entry contracts;
@@ -276,7 +279,7 @@ Proceed in this order only:
 1. Source inventory manifest design. `DONE_DOCS_ONLY`
 2. Aggregate extraction manifest design. `DONE_DOCS_ONLY`
 3. Pipeline run review manifest design. `DONE_DOCS_ONLY`
-4. Saved aggregate fixture adapter decision.
+4. Saved aggregate fixture adapter decision. `PROMOTED_SAVED_FIXTURE_ONLY`
 5. Controlled scrubbed aggregate pilot execution.
 6. Measurement Cell persistence promotion reconsideration.
 7. Separate live pipeline concept / boundary review decision.
@@ -285,13 +288,15 @@ Do not skip from this readiness decision to live BigQuery/Sigma execution.
 
 ## 10. Recommended Next Move
 
-The three future contract docs now exist in docs-only form:
+The three future contract docs now exist and have an executable saved-fixture
+validation layer:
 
 - Source Inventory Manifest;
 - Aggregate Extraction Manifest;
-- Pipeline Run Review Manifest.
+- Pipeline Run Review Manifest;
+- Controlled Aggregate Manifest Validation.
 
-Next safe move for pipeline work:
+Completed safe move for pipeline work:
 
 1. Bind the controlled aggregate connector adapter output to these three
    contract shapes using saved fixture data only.
@@ -300,8 +305,13 @@ Next safe move for pipeline work:
    identifiers, Source Package clearance aliases, Measurement Cell snapshot
    aliases, ROI, EBITDA, causality, productivity, probability, confidence-like
    model fields, and customer-facing output.
-3. Only after that, draft a separate Pipeline Promotion Decision. That decision
-   may still hold live BigQuery/Sigma execution.
+
+Next safe move:
+
+Draft a separate Pipeline Promotion Decision. That decision may still hold live
+BigQuery/Sigma execution and must not promote manifest persistence, Series
+persistence, customer-facing output, confidence research, or finance output
+unless each exact scope is separately authorized.
 
 ## 11. Verification
 

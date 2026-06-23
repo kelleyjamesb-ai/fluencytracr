@@ -439,6 +439,39 @@ function validChain() {
   return { source, extraction, review, binding };
 }
 
+function validSigmaChain() {
+  const source = buildSourceInventoryManifest();
+  source.source_system = "sigma_export";
+  source.source_owner_role = "customer_analytics_owner";
+  source.source_inventory_manifest_id = "source_inventory_sigma_export_support_resolution";
+  source.approved_source_ref = "sigma_export_support_resolution_vbd_token_aggregate";
+
+  const extraction = buildAggregateExtractionManifest(source);
+  extraction.aggregate_extraction_manifest_id = "aggregate_extraction_sigma_export_support_resolution";
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.approved_aggregate_definition_ref = "aggregate_definition_sigma_export_support_resolution";
+  extraction.upstream_aggregate_attestation_ref =
+    "aggregate_attestation_sigma_export_support_resolution";
+  extraction.aggregate_output_ref = "sigma_export_support_resolution_vbd_token_output";
+
+  const review = buildPipelineRunReviewManifest(source, extraction);
+  const binding = approvedExpectationPathBinding();
+  review.pipeline_run_review_manifest_id = "pipeline_run_review_sigma_export_support_resolution";
+  review.validation_result_refs.source_inventory_validation_ref =
+    "source_inventory_validation_sigma_export_support_resolution";
+  review.validation_result_refs.aggregate_extraction_validation_ref =
+    "aggregate_extraction_validation_sigma_export_support_resolution";
+  review.validation_result_refs.connector_adapter_ref =
+    "connector_adapter_review_sigma_export_support_resolution";
+  review.source_package_review_queue_posture_ref.queue_ref = expectedQueueRef(
+    source,
+    extraction,
+    review,
+    binding
+  );
+  return { source, extraction, review, binding };
+}
+
 function assertNoSensitiveEcho(validation) {
   const serialized = JSON.stringify(validation.gaps);
   assert.equal(serialized.includes("person@example.com"), false);
@@ -471,6 +504,32 @@ test("controlled aggregate manifest validators accept a fully aligned manifest c
   assert.equal(reviewValidation.valid, true, reviewValidation.gaps.join("; "));
   assert.equal(chainValidation.valid, true, chainValidation.gaps.join("; "));
   assert.equal(sourceValidation.schema_version, "FT_AI_VALUE_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_2026_06");
+});
+
+test("controlled aggregate manifest validators accept Sigma-shaped reviewed aggregate refs", () => {
+  const { source, extraction, review, binding } = validSigmaChain();
+
+  const sourceValidation = validateAiValueSourceInventoryManifest(source);
+  const extractionValidation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+  const reviewValidation = validateAiValuePipelineRunReviewManifest(review, {
+    sourceInventoryManifest: source,
+    aggregateExtractionManifest: extraction,
+    approvedExpectationPathBinding: binding
+  });
+  const chainValidation = validateAiValueControlledAggregateManifestChain({
+    sourceInventoryManifest: source,
+    aggregateExtractionManifest: extraction,
+    pipelineRunReviewManifest: review,
+    approvedExpectationPathBinding: binding
+  });
+
+  assert.equal(sourceValidation.valid, true, sourceValidation.gaps.join("; "));
+  assert.equal(extractionValidation.valid, true, extractionValidation.gaps.join("; "));
+  assert.equal(reviewValidation.valid, true, reviewValidation.gaps.join("; "));
+  assert.equal(chainValidation.valid, true, chainValidation.gaps.join("; "));
 });
 
 test("source inventory manifest fails closed on unsafe refs, raw fields, aliases, and non-false boundaries", () => {

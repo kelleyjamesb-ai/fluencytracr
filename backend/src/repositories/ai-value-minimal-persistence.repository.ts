@@ -1444,12 +1444,7 @@ const validateMeasurementCellAssemblyPayload = (
 };
 
 const ensureMeasurementCellSnapshotSupersedes = async (
-  record: {
-    org_id: string;
-    measurement_cell_id: string;
-    version: number;
-    supersedes_id: string | null;
-  }
+  record: AiValueMeasurementCellSnapshotStoredRecord
 ): Promise<void> => {
   if (record.version === 1) return;
   if (!record.supersedes_id) {
@@ -1472,6 +1467,13 @@ const ensureMeasurementCellSnapshotSupersedes = async (
         ["supersedes_id must reference an existing snapshot for the same org and measurement_cell_id"]
       );
     }
+    const lineageGaps = measurementCellSnapshotLineageDriftGaps(record, superseded);
+    if (lineageGaps.length > 0) {
+      throw new AiValuePersistenceValidationError(
+        "Measurement Cell Snapshot correction cannot change selected path, metric, or milestone identity",
+        lineageGaps
+      );
+    }
     return;
   }
   const superseded = await getPrisma().measurementCellSnapshot.findUnique({
@@ -1487,6 +1489,64 @@ const ensureMeasurementCellSnapshotSupersedes = async (
       ["supersedes_id must reference an existing snapshot for the same org and measurement_cell_id"]
     );
   }
+  const lineageGaps = measurementCellSnapshotLineageDriftGaps(
+    record,
+    measurementCellSnapshotRowToRecord(superseded)
+  );
+  if (lineageGaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot correction cannot change selected path, metric, or milestone identity",
+      lineageGaps
+    );
+  }
+};
+
+const measurementCellSnapshotLineageDriftGaps = (
+  record: AiValueMeasurementCellSnapshotStoredRecord,
+  superseded: AiValueMeasurementCellSnapshotStoredRecord
+): string[] => {
+  const gaps: string[] = [];
+  for (const field of [
+    "measurement_plan_id",
+    "value_hypothesis_id",
+    "value_hypothesis_ref",
+    "value_hypothesis_binding_state",
+    "approved_blueprint_ref",
+    "approved_blueprint_payload_hash",
+    "blueprint_expectation_ref",
+    "expectation_path_id",
+    "expectation_path_version",
+    "expectation_path_hash",
+    "approval_state",
+    "approved_at",
+    "approved_by_role",
+    "value_driver",
+    "metric_id",
+    "metric_definition_ref",
+    "metric_definition_hash",
+    "metric_owner_approval_state",
+    "metric_direction",
+    "metric_unit",
+    "expected_metric_lag_days",
+    "workflow_family",
+    "workflow_id",
+    "function_area",
+    "cohort_key",
+    "window_mode",
+    "milestone_day",
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end"
+  ] as const) {
+    compareField(
+      gaps,
+      `superseded Measurement Cell Snapshot ${field} must match correction`,
+      superseded[field],
+      record[field]
+    );
+  }
+  return gaps;
 };
 
 const buildMeasurementCellSnapshotRecord = (
