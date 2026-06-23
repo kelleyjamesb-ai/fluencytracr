@@ -267,26 +267,24 @@ Before any customer-facing route, UI, readout, or export, require:
 
 ## 12. Recommended Next Move
 
-Build only the non-live BigQuery/Sigma Aggregate Connector Boundary Plan
-validator authorized by the separate Pipeline Promotion Decision.
+Use the non-live BigQuery/Sigma Aggregate Connector Boundary Plan validator as
+internal operator-review evidence for the next gate.
 
 Do not build controlled aggregate manifest persistence, Series persistence,
 customer-facing projections, exports, live connectors, confidence research
-inputs, or finance outputs in that slice.
+inputs, or finance outputs without a separate exact-scope promotion decision.
 
-The boundary validator should prove:
+The next decision should choose one:
 
-- source-owner attested aggregate export plans can be reviewed without live
-  execution;
-- BigQuery/Sigma source-system metadata remains compact and non-executable;
-- aggregate definition refs do not contain SQL or query text;
-- source refs do not contain job IDs, query IDs, dashboard URLs, API handles,
-  export URLs, credentials, raw rows, prompts, transcripts, or identifiers;
-- k-min, suppression, owner review, freshness, and legal/trust posture remain
-  explicit;
-- manifest persistence, Source Package clearance, Measurement Cell readiness,
-  Series persistence, customer-facing output, confidence research, and finance
-  output remain false.
+- hold live connector implementation and keep using saved aggregate fixtures;
+- draft a live pipeline concept review while still forbidding FluencyTracr
+  credentials, query execution, raw rows, query text, identifiers, customer
+  output, confidence research, and finance output;
+- separately evaluate controlled manifest persistence, without coupling it to
+  live BigQuery/Sigma execution.
+
+After that decision, sequence the next productization gates separately:
+
 - Evidence Snapshot safety;
 - Claim Readiness construction;
 - blocked-claim and blocked-use propagation;

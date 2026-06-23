@@ -312,11 +312,16 @@ Completed safe move for pipeline work:
 
 Next safe move:
 
-Build the non-live BigQuery/Sigma Aggregate Connector Boundary Plan validator
-authorized by the Pipeline Promotion Decision. That validator must review
-source-owner attested aggregate export plans only. It must not run BigQuery or
-Sigma, store manifest/pipeline runs, promote Series persistence, create
-customer-facing output, feed confidence research, or create finance output.
+Use the non-live BigQuery/Sigma Aggregate Connector Boundary Plan validator as
+internal operator-review evidence for the next decision.
+
+Next decision gate:
+
+- hold live connector implementation;
+- or draft a separate live pipeline concept review that still forbids
+  FluencyTracr credentials, query execution, raw rows, query text, identifiers,
+  manifest persistence, Series persistence, customer-facing output, confidence
+  research, and finance output unless each exact scope is separately promoted.
 
 ## 11. Verification
 

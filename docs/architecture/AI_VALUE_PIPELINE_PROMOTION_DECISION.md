@@ -180,10 +180,11 @@ This decision unlocks only the next non-live executable layer:
 BigQuery/Sigma Aggregate Connector Boundary Plan
 ```
 
-That layer should validate a reviewed aggregate export plan without executing
-it. It should produce an internal operator-review boundary decision, not a
-source package, not a Measurement Cell, not a persisted manifest, and not a
-customer-facing output.
+That layer now lives at
+[AI Value Aggregate Connector Boundary Plan](../contracts/ai-value-aggregate-connector-boundary-plan/README.md).
+It validates a reviewed aggregate export plan without executing it. It produces
+an internal operator-review boundary decision, not a source package, not a
+Measurement Cell, not a persisted manifest, and not a customer-facing output.
 
 ## 9. Verification
 
