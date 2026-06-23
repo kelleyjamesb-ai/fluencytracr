@@ -179,6 +179,18 @@ describe("AI value object API", () => {
           ...((packet.sections as any).workflow as Record<string, unknown>),
           queryText: "select * from raw_events"
         },
+        claim_boundary: {
+          ...((packet.sections as any).claim_boundary as Record<string, unknown>),
+          safe_claims: [
+            ...(((packet.sections as any).claim_boundary.safe_claims as unknown[]) ?? []),
+            "This packet supports ROI."
+          ],
+          required_caveats: [
+            ...(((packet.sections as any).claim_boundary.required_caveats as unknown[]) ?? []),
+            '{"rawRows":[],"rawEvents":[]}',
+            "Causation support is available."
+          ]
+        },
         metrics: [
           {
             ...((packet.sections as any).metrics[0] as Record<string, unknown>),
@@ -197,8 +209,92 @@ describe("AI value object API", () => {
     expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
     expect(
       response.body.gaps.some((gap: string) => gap.includes("rawRows")) &&
-      response.body.gaps.some((gap: string) => gap.includes("queryText"))
+      response.body.gaps.some((gap: string) => gap.includes("queryText")) &&
+      response.body.gaps.some((gap: string) => gap.includes("safe_claims")) &&
+      response.body.gaps.some((gap: string) => gap.includes("required_caveats"))
     ).toBe(true);
+  });
+
+  it("rejects legacy executive packets missing required source refs", async () => {
+    const packet = readExample("customer-support-executive-packet.json");
+    const tainted = JSON.parse(JSON.stringify(packet));
+    delete tainted.source_refs.readiness_id;
+
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/executive_packet/${packet.packet_id}`)
+      .set(writeAuth)
+      .send(tainted);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      response.body.gaps.some((gap: string) =>
+        gap.includes("source_refs.readiness_id is missing")
+      )
+    ).toBe(true);
+  });
+
+  it.each([
+    ["array", []],
+    ["string", "bp_customer_support_case_resolution"]
+  ])("rejects legacy executive packets with %s source refs", async (_label, sourceRefs) => {
+    const packet = readExample("customer-support-executive-packet.json");
+    const tainted = {
+      ...packet,
+      source_refs: sourceRefs
+    };
+
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/executive_packet/${packet.packet_id}`)
+      .set(writeAuth)
+      .send(tainted);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      response.body.gaps.some((gap: string) =>
+        gap.includes("source_refs must be an object")
+      )
+    ).toBe(true);
+  });
+
+  it.each([
+    ["claim boundary", (packet: any) => {
+      packet.sections.claim_boundary.safe_claims = { text: "Internal only." };
+    }],
+    ["EBITA summary", (packet: any) => {
+      packet.ebita_impact_summary = {
+        status: "DIRECTIONAL_EBITA_BRIDGE",
+        realized_ebita_claim_allowed: false,
+        customer_facing_allowed: false,
+        causality_claim_allowed: false,
+        primary_ebita_levers: ["capacity"],
+        evidence_quality: {
+          adoption_evidence: "PRESENT",
+          workflow_evidence: "PRESENT",
+          outcome_evidence: "PRESENT",
+          financial_evidence: "CAVEATED",
+          overall_ebita_confidence: "CAVEATED"
+        },
+        allowed_phrases: { text: "Internal only." },
+        required_caveats: ["No realized EBITA claim is allowed."],
+        blocked_claims: { claim: "usage_proves_ebita" },
+        next_evidence_actions: ["Keep the readout internal."]
+      };
+    }]
+  ])("rejects malformed legacy executive packet %s string lists", async (_label, mutate) => {
+    const packet = readExample("customer-support-executive-packet.json");
+    const tainted = JSON.parse(JSON.stringify(packet));
+    mutate(tainted);
+
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/executive_packet/${packet.packet_id}`)
+      .set(writeAuth)
+      .send(tainted);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(response.body.gaps.length).toBeGreaterThan(0);
   });
 
   it("rejects legacy executive packets that authorize customer-facing financial language", async () => {
@@ -667,6 +763,96 @@ describe("AI value spine run API", () => {
       response.body.gaps.some((gap: string) => gap.includes("sections"))
     ).toBe(true);
   });
+
+  it("fails closed when a stored legacy executive packet loses required source refs", async () => {
+    await storeUpstreamObjects();
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    const sourceRefs = {
+      ...((stored.payload.source_refs as Record<string, unknown>) ?? {})
+    };
+    delete sourceRefs.readiness_id;
+    stored.payload = {
+      ...stored.payload,
+      source_refs: sourceRefs
+    };
+
+    const readout = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(readoutAuth);
+    expect(readout.status).toBe(422);
+    expect(readout.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      readout.body.gaps.some((gap: string) =>
+        gap.includes("source_refs.readiness_id is missing")
+      )
+    ).toBe(true);
+
+    const detail = await request(app)
+      .get(`/api/v1/ai-value/objects/executive_packet/${executivePacketId}`)
+      .set(readoutAuth);
+    expect(detail.status).toBe(422);
+    expect(detail.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      detail.body.gaps.some((gap: string) =>
+        gap.includes("source_refs.readiness_id is missing")
+      )
+    ).toBe(true);
+  });
+
+  it.each([
+    ["array", []],
+    ["string", "bp_customer_support_case_resolution"]
+  ])(
+    "fails closed when a stored legacy executive packet has %s source refs",
+    async (_label, sourceRefs) => {
+      await storeUpstreamObjects();
+      await request(app)
+        .post("/api/v1/ai-value/spine/run")
+        .set(writeAuth)
+        .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+        .expect(200);
+
+      const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+      const stored = store.aiValueObjects.get(storeKey);
+      expect(stored).toBeDefined();
+      if (!stored) return;
+      stored.payload = {
+        ...stored.payload,
+        source_refs: sourceRefs
+      };
+
+      const readout = await request(app)
+        .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+        .set(readoutAuth);
+      expect(readout.status).toBe(422);
+      expect(readout.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+      expect(
+        readout.body.gaps.some((gap: string) =>
+          gap.includes("source_refs must be an object")
+        )
+      ).toBe(true);
+
+      const detail = await request(app)
+        .get(`/api/v1/ai-value/objects/executive_packet/${executivePacketId}`)
+        .set(readoutAuth);
+      expect(detail.status).toBe(422);
+      expect(detail.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+      expect(
+        detail.body.gaps.some((gap: string) =>
+          gap.includes("source_refs must be an object")
+        )
+      ).toBe(true);
+    }
+  );
 
   it("fails closed when generic detail reads a stale legacy executive packet", async () => {
     await storeUpstreamObjects();

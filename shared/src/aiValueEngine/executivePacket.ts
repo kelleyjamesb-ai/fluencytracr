@@ -33,6 +33,17 @@ const ALLOWED_EBITA_IMPACT_STATUSES = new Set([
   "CUSTOMER_FACING_APPROVED"
 ]);
 
+const ALLOWED_EBITA_EVIDENCE_QUALITY_VALUES = new Set([
+  "MISSING",
+  "BLOCKED",
+  "SUPPRESSED",
+  "DIRECTIONAL",
+  "CAVEATED",
+  "PRESENT",
+  "SUPPORTED",
+  "FINANCE_VALIDATED"
+]);
+
 const ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "schema_version",
   "packet_id",
@@ -58,6 +69,14 @@ const ALLOWED_SOURCE_REF_FIELDS = new Set([
   "engagement_id",
   "fluency_baseline_id"
 ]);
+
+const REQUIRED_SOURCE_REF_FIELDS = [
+  "blueprint_id",
+  "metrics_library_id",
+  "scenario_id",
+  "readiness_id",
+  "claim_boundary_id"
+];
 
 const LEGACY_ALLOWED_GOVERNANCE_FIELD_PATHS = new Set([
   "customer_facing_economic_output",
@@ -199,18 +218,38 @@ const FORBIDDEN_PACKET_FIELD_PATTERNS = [
 
 const HARD_FORBIDDEN_PACKET_VALUE_PATTERNS = [
   /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /https?:\/\/\S+/i,
+  /\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/i,
   /\bselect\s+.+\bfrom\b/i,
   /\braw_events?\b/i,
   /\braw_rows?\b/i,
-  /\bprompt\b/i,
-  /\btranscript\b/i,
-  /\buser[_\s-]?id\b/i,
+  /\braw\s+events?\b/i,
+  /\braw\s+rows?\b/i,
+  /\bprompts?\b/i,
+  /\btranscripts?\b/i,
+  /\buser[_\s-]?ids?\b/i,
   /\bquery[_\s-]?text\b/i,
   /\bsql[_\s-]?text\b/i,
+  /\bsigma\b/i,
+  /\bbigquery\b/i,
+  /\bdashboard[_\s-]?url\b/i,
+  /\bsigma[_\s-]?dashboard\b/i,
+  /\bbigquery[_\s-]?table\b/i,
+  /\bjob[_\s-]?id\b/i,
+  /\bjob_[A-Za-z0-9_-]+\b/i,
+  /\btable[_\s-]?ref\b/i,
+  /\btable_[A-Za-z0-9_-]+\b/i,
+  /\bhigh\s+confidence\b/i,
+  /\b(?:confidence|probability)\b/i,
   /\b(?:confidence|probability)\s*(?:score|percentage|percent|model|output)\b/i,
   /\b\d{1,3}%\s*(?:confidence|probability)\b/i,
   /\b\d{1,3}\s*percent\s*(?:confidence|probability)\b/i,
   /\bhigh\s+probability\b/i,
+  /\$\s?\d/,
+  /\brevenue\s+lift\b/i,
+  /\bcost\s+savings?\b/i,
+  /\b(?:individual|employee|named\s+employee)\s+productivity\b/i,
+  /\bproductivity\s+(?:lift|gain|improvement|measurement|score|claim)\b/i,
   /\b(?:ROI|EBITA|EBITDA|finance|financial|customer[-_\s]?facing)\s*[-_\s]?ready\b/i
 ];
 
@@ -225,20 +264,46 @@ const CONTEXTUAL_FORBIDDEN_PACKET_VALUE_PATTERNS = [
   /\bAI\s+caused\b/i,
   /\bcaused\s+(?:EBITA|ROI|productivity|financial\s+impact|outcome|lift)\b/i,
   /\bproved\s+(?:ROI|EBITA|financial\s+impact|causality|productivity)\b/i,
-  /\b(?:ROI|EBITA|financial\s+impact|realized\s+financial\s+claim)\b\s+(?:is\s+)?(?:proven|proved|guaranteed)\b/i
+  /\b(?:ROI|EBITA|financial\s+impact|realized\s+financial\s+claim)\b\s+(?:is\s+)?(?:proven|proved|guaranteed)\b/i,
+  /\bcaus(?:al(?:ity)?|ation)(?:\s+language)?\b.*\b(?:approved|authorized|allowed|supported|supports?|support)\b/i,
+  /\b(?:approved|authorized|allowed|supported|supports?|support)\b.*\bcaus(?:al(?:ity)?|ation)(?:\s+language)?\b/i,
+  /\b(?:causality|causation)\b.*\b(?:established|validated|proven|proved)\b/i,
+  /\bcausal\s+evidence\b.*\b(?:strong|supported|available|ready|approved|established)\b/i,
+  /\bcausal\s+claim\s+(?:ready|approved|authorized|allowed|supported)\b/i,
+  /\bAI\s+(?:improved|increased|caused)\s+productivity\b/i,
+  /\b(?:proves?|validates?|demonstrates?|establish(?:ed|es)?|shows?)\b.*\b(?:ROI|EBITA|EBITDA|financial\s+impact|EBITDA\s+impact|revenue\s+lift|cost\s+savings?|savings|causality|causation|productivity)\b/i,
+  /\b(?:ROI|EBITA|EBITDA|financial\s+impact|EBITDA\s+impact)\b.*\b(?:is\s+)?(?:established|validated|proven|proved)\b/i,
+  /\b(?:finance|financial|economic)\s+(?:case|impact|claim|output)\b.*\b(?:established|validated|proven|approved|ready)\b/i,
+  /\bcustomer[-_\s]?facing\s+readout\b.*\b(?:safe|approved|authorized|allowed|ready)\b/i,
+  /\b(?:this\s+packet\s+is\s+)?customer[-_\s]?facing\s+(?:safe|ready|approved|authorized|allowed)\b/i,
+  /\bproductivity\b\s+(?:increased|improved)\b.*\b(?:after|from|because|due\s+to|following)\b/i,
+  /\bproductivity\b.*\b(?:approved|authorized|allowed|supported|supports?|output|claim|lift|gain|improvement|measurement|score)\b/i,
+  /\b(?:approved|authorized|allowed|supported|supports?)\b.*\bproductivity\b/i,
+  /\b(?:this\s+packet\s+)?supports\s+(?:ROI|EBITA|EBITDA)\b/i,
+  /\b(?:ROI|EBITA|EBITDA)\b\s+(?:is\s+)?(?:supported|approved|authorized|allowed)\b/i,
+  /\b(?:ROI|EBITA|EBITDA|finance|financial|economic)\s+(?:support|approval)\s+(?:is\s+)?(?:available|approved|authorized|allowed|ready|safe)\b/i,
+  /\b(?:finance|financial|economic)\s+support\s+is\s+available\b/i,
+  /\b(?:ROI|EBITA|EBITDA|finance|financial|economic)\b.*\b(?:output|claim|calculation)\b.*\b(?:approved|authorized|allowed|supported|supports?)\b/i,
+  /\b(?:approved|authorized|allowed|supported|supports?)\b.*\b(?:ROI|EBITA|EBITDA|finance|financial|economic)\b.*\b(?:output|claim|calculation)\b/i
 ];
 
 const FORBIDDEN_SOURCE_REF_VALUE_PATTERNS = [
   /^https?:\/\//i,
   /^bq:\/\//i,
   /\bselect\s+.+\bfrom\b/i,
+  /^(?:bq|bigquery|big_query|query|job|raw|table|dashboard|sigma|sql|prompt|transcript|user|users|email|respondent|employee|export|api|source|live)/i,
+  /(?:^|[_-])(?:bq|bigquery|big_query|query|job|raw|table|dashboard|sigma|sql|prompt|transcript|user|users|email|respondent|employee|export|api|source|live)[a-z0-9_-]*(?:[_-]|$)/i,
+  /(?:^|[_-])user(?:[_-]?(?:ids?|identifier))[a-z0-9_-]*(?:[_-]|$)/i,
+  /(?:^|[_-])(?:query|job|raw)(?:[_-]|$)/i,
   /(?:^|_)bq(?:_|$)/i,
   /(?:^|_)bigquery(?:_|$)/i,
+  /(?:^|_)big_query(?:_|$)/i,
   /(?:^|_)sigma(?:_|$)/i,
   /(?:^|_)dashboard(?:_|$)/i,
   /^query[_-]/i,
   /^job[_-]/i,
   /^raw[_-]/i,
+  /raw[_-]?events?/i,
   /raw[_-]?rows?/i,
   /(?:^|[_-])table(?:[_-]|$)/i,
   /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/
@@ -305,13 +370,13 @@ export interface ExecutiveEbitaImpactSummary {
 }
 
 function containsForbiddenClaimLanguage(values: any): boolean {
-  return (values ?? []).some((value: any) =>
+  return (Array.isArray(values) ? values : []).some((value: any) =>
     FORBIDDEN_CLAIM_PATTERNS.some((pattern) => pattern.test(String(value)))
   );
 }
 
 function containsForbiddenEbitaLanguage(values: any): boolean {
-  return (values ?? []).some((value: any) =>
+  return (Array.isArray(values) ? values : []).some((value: any) =>
     FORBIDDEN_EBITA_LANGUAGE_PATTERNS.some((pattern) => pattern.test(String(value)))
   );
 }
@@ -331,23 +396,58 @@ function normalizeKey(value: string): string {
 function isSafeDenialOrCaveat(value: string): boolean {
   return [
     /\bnot\s+proven\b/i,
+    /\bnot\s+established\b/i,
+    /\bnot\s+validated\b/i,
     /\bnot\s+approved\b/i,
     /\bnot\s+customer[-_\s]?facing\b/i,
     /\binternal\s+or\s+caveated\b/i,
     /\bdo\s+not\s+use\s+causal\s+language\b/i,
+    /\bno\s+(?:causation|causal(?:ity)?)(?:\s+(?:language|claim|support))?\s+(?:is\s+)?(?:available|supported|allowed|approved|authorized)\b/i,
+    /\bcausation\s+support\s+is\s+not\s+available\b/i,
     /\bno\s+customer[-_\s]?facing\b.*\b(?:output|language)\b.*\b(?:authorized|allowed|approved)\b/i,
-    /\bno\s+(?:realized\s+)?(?:ROI|EBITA|financial|causal|causality|productivity)\b.*\b(?:claim|output|language|proof|calculation)\b.*\b(?:allowed|authorized|approved)?\b/i
+    /\bno\s+(?:realized\s+)?(?:ROI|EBITA|financial|causal|causality|causation|productivity)\b.*\b(?:claim|output|language|proof|calculation)\b.*\b(?:is\s+)?(?:allowed|authorized|approved)?\b/i
   ].some((pattern) => pattern.test(value));
 }
 
 function packetScalarValueIsForbidden(value: unknown): boolean {
   const text = String(value);
+  const trimmed = text.trim();
+  if (/^[{[]/.test(trimmed)) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === "object") {
+        return true;
+      }
+    } catch {
+      // Non-JSON prose that starts with braces is handled by the text scanner.
+    }
+  }
+  const hardPatternTextVariants = [text, normalizeKey(text)];
+  if (
+    HARD_FORBIDDEN_PACKET_VALUE_PATTERNS.some((pattern) =>
+      hardPatternTextVariants.some((variant) => pattern.test(variant))
+    )
+  ) {
+    return true;
+  }
+  if (
+    (CAVEAT_OVERRIDABLE_PACKET_VALUE_PATTERNS.some((pattern) => pattern.test(text)) ||
+      CONTEXTUAL_FORBIDDEN_PACKET_VALUE_PATTERNS.some((pattern) => pattern.test(text))) &&
+    !isSafeDenialOrCaveat(text)
+  ) {
+    return true;
+  }
   const fragments = text
-    .split(/[.;\n]+|\s+(?:but|yet|however|and)\s+/i)
+    .split(/[.;:,\n]+|\s+(?:although|because|but|despite|even\s+though|though|notwithstanding|provided|unless|yet|however|while|and)\s+/i)
     .map((fragment) => fragment.trim())
     .filter(Boolean);
   for (const fragment of fragments.length > 0 ? fragments : [text]) {
-    if (HARD_FORBIDDEN_PACKET_VALUE_PATTERNS.some((pattern) => pattern.test(fragment))) {
+    const hardPatternFragmentVariants = [fragment, normalizeKey(fragment)];
+    if (
+      HARD_FORBIDDEN_PACKET_VALUE_PATTERNS.some((pattern) =>
+        hardPatternFragmentVariants.some((variant) => pattern.test(variant))
+      )
+    ) {
       return true;
     }
     if (isSafeDenialOrCaveat(fragment)) {
@@ -401,8 +501,17 @@ function collectForbiddenPacketFieldPaths(value: any, path: string[] = []): stri
 }
 
 function validateSourceRefs(sourceRefs: any, gaps: string[]): void {
-  if (!sourceRefs || typeof sourceRefs !== "object" || Array.isArray(sourceRefs)) {
+  if (sourceRefs === undefined || sourceRefs === null) {
     return;
+  }
+  if (typeof sourceRefs !== "object" || Array.isArray(sourceRefs)) {
+    gaps.push("source_refs must be an object");
+    return;
+  }
+  for (const field of REQUIRED_SOURCE_REF_FIELDS) {
+    if (typeof sourceRefs[field] !== "string" || sourceRefs[field].trim().length === 0) {
+      gaps.push(`source_refs.${field} is missing`);
+    }
   }
   for (const [field, value] of Object.entries(sourceRefs)) {
     if (!ALLOWED_SOURCE_REF_FIELDS.has(field)) {
@@ -412,10 +521,16 @@ function validateSourceRefs(sourceRefs: any, gaps: string[]): void {
     if (value === undefined || value === null) {
       continue;
     }
+    const rawValue = typeof value === "string" ? value : "";
+    const normalizedValue = normalizeKey(rawValue);
     if (
       typeof value !== "string" ||
-      value.length === 0 ||
-      FORBIDDEN_SOURCE_REF_VALUE_PATTERNS.some((pattern) => pattern.test(normalizeKey(value)))
+      rawValue.trim().length === 0 ||
+      rawValue !== rawValue.trim() ||
+      !/^[a-z][a-z0-9_-]*$/.test(rawValue) ||
+      FORBIDDEN_SOURCE_REF_VALUE_PATTERNS.some((pattern) =>
+        pattern.test(rawValue) || pattern.test(normalizedValue)
+      )
     ) {
       gaps.push(`Unsafe executive packet source ref value: source_refs.${field}`);
     }
@@ -473,10 +588,111 @@ function validateExecutivePacketNestedShape(packet: any, gaps: string[]): void {
   );
 }
 
+function validateStringField(value: any, path: string, gaps: string[]): void {
+  if (typeof value !== "string" || value.length === 0) {
+    gaps.push(`${path} must be a string`);
+  }
+}
+
+function validateExecutivePacketNestedTypes(packet: any, gaps: string[]): void {
+  const sections = packet?.sections ?? {};
+  validateStringField(sections?.workflow?.hypothesis, "sections.workflow.hypothesis", gaps);
+  stringArray(
+    sections?.workflow?.current_state_steps,
+    "sections.workflow.current_state_steps",
+    gaps
+  );
+  stringArray(
+    sections?.workflow?.future_state_steps,
+    "sections.workflow.future_state_steps",
+    gaps
+  );
+
+  const metrics = Array.isArray(sections.metrics) ? sections.metrics : [];
+  metrics.forEach((metric: any, index: number) => {
+    for (const field of METRIC_SECTION_FIELDS) {
+      validateStringField(metric?.[field], `sections.metrics.${index}.${field}`, gaps);
+    }
+  });
+
+  validateStringField(sections?.scenario?.scenario_id, "sections.scenario.scenario_id", gaps);
+  stringArray(sections?.scenario?.output_units, "sections.scenario.output_units", gaps);
+  if (!Array.isArray(sections?.scenario?.bands)) {
+    gaps.push("sections.scenario.bands must be an array");
+  }
+  const bands = Array.isArray(sections?.scenario?.bands) ? sections.scenario.bands : [];
+  bands.forEach((band: any, index: number) => {
+    validateStringField(band?.band, `sections.scenario.bands.${index}.band`, gaps);
+    validateStringField(
+      band?.interpretation,
+      `sections.scenario.bands.${index}.interpretation`,
+      gaps
+    );
+    stringArray(
+      band?.included_metric_ids,
+      `sections.scenario.bands.${index}.included_metric_ids`,
+      gaps
+    );
+  });
+
+  validateStringField(sections?.readiness?.decision, "sections.readiness.decision", gaps);
+  stringArray(sections?.readiness?.rationale, "sections.readiness.rationale", gaps);
+  for (const field of READINESS_CHECK_FIELDS) {
+    validateStringField(
+      sections?.readiness?.checks?.[field],
+      `sections.readiness.checks.${field}`,
+      gaps
+    );
+  }
+
+  validateStringField(
+    sections?.claim_boundary?.claim_state,
+    "sections.claim_boundary.claim_state",
+    gaps
+  );
+  stringArray(sections?.claim_boundary?.safe_claims, "sections.claim_boundary.safe_claims", gaps);
+  stringArray(
+    sections?.claim_boundary?.caveated_claims,
+    "sections.claim_boundary.caveated_claims",
+    gaps
+  );
+  stringArray(
+    sections?.claim_boundary?.blocked_claims,
+    "sections.claim_boundary.blocked_claims",
+    gaps
+  );
+  stringArray(
+    sections?.claim_boundary?.required_caveats,
+    "sections.claim_boundary.required_caveats",
+    gaps
+  );
+  stringArray(sections.next_actions, "sections.next_actions", gaps, { requireItems: true });
+}
+
 function sectionArray(section: any, path: string, gaps: string[]): void {
   if (!Array.isArray(section) || section.length === 0) {
     gaps.push(`${path} must include at least one item`);
   }
+}
+
+function stringArray(
+  section: any,
+  path: string,
+  gaps: string[],
+  options: { requireItems?: boolean } = {}
+): void {
+  if (!Array.isArray(section)) {
+    gaps.push(`${path} must be an array`);
+    return;
+  }
+  if (options.requireItems && section.length === 0) {
+    gaps.push(`${path} must include at least one item`);
+  }
+  section.forEach((item, index) => {
+    if (typeof item !== "string") {
+      gaps.push(`${path}.${index} must be a string`);
+    }
+  });
 }
 
 const uniqueStrings = (values: any[]): string[] => [
@@ -797,9 +1013,7 @@ function validateEbitaImpactSummary(summary: any, gaps: string[]): void {
     "blocked_claims",
     "next_evidence_actions"
   ]) {
-    if (!Array.isArray(summary[field])) {
-      gaps.push(`ebita_impact_summary.${field} must be an array`);
-    }
+    stringArray(summary[field], `ebita_impact_summary.${field}`, gaps);
   }
   const quality = summary.evidence_quality ?? {};
   for (const field of [
@@ -810,11 +1024,17 @@ function validateEbitaImpactSummary(summary: any, gaps: string[]): void {
     "overall_ebita_confidence"
   ]) {
     requireField(quality[field], `ebita_impact_summary.evidence_quality.${field}`, gaps);
+    if (
+      typeof quality[field] !== "string" ||
+      !ALLOWED_EBITA_EVIDENCE_QUALITY_VALUES.has(quality[field])
+    ) {
+      gaps.push(`ebita_impact_summary.evidence_quality.${field} is invalid: ${quality[field]}`);
+    }
   }
   if (containsForbiddenEbitaLanguage(summary.allowed_phrases)) {
     gaps.push("ebita_impact_summary.allowed_phrases contains forbidden financial claim language");
   }
-  const blocked = new Set(summary.blocked_claims ?? []);
+  const blocked = new Set(Array.isArray(summary.blocked_claims) ? summary.blocked_claims : []);
   for (const claim of REQUIRED_EBITA_BLOCKED_CLAIMS) {
     if (!blocked.has(claim)) {
       gaps.push(`ebita_impact_summary.blocked_claims missing ${claim}`);
@@ -885,6 +1105,7 @@ export function validateExecutivePacket(packet: any): ExecutivePacketValidationR
   }
   validateSourceRefs(packet?.source_refs, gaps);
   validateExecutivePacketNestedShape(packet, gaps);
+  validateExecutivePacketNestedTypes(packet, gaps);
   for (const field of [
     "schema_version",
     "packet_id",

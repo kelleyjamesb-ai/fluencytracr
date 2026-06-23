@@ -17,6 +17,12 @@
     "source_refs",
     "sections"
   ],
+  "$defs": {
+    "source_ref": {
+      "type": "string",
+      "pattern": "^(?!(?:bq|bigquery|big_query|query|job|raw|table|dashboard|sigma|sql|prompt|transcript|user|users|email|respondent|employee|export|api|source|live))(?!(?:.*(?:raw[_-]?(?:rows?|events?)|user(?:[_-]?(?:ids?|identifier)))))(?!(?:.*(?:^|[_-])(?:bq|bigquery|big_query|query|job|raw|sigma|dashboard|table|sql|prompt|transcript|user|users|email|respondent|employee|export|api|source|live)[a-z0-9_-]*(?:[_-]|$)))[a-z][a-z0-9_-]*$"
+    }
+  },
   "properties": {
     "schema_version": {
       "const": "FT_AI_VALUE_EXECUTIVE_PACKET_2026_06"
@@ -48,15 +54,15 @@
         "claim_boundary_id"
       ],
       "properties": {
-        "blueprint_id": { "type": "string" },
-        "metrics_library_id": { "type": "string" },
-        "scenario_id": { "type": "string" },
-        "readiness_id": { "type": "string" },
-        "claim_boundary_id": { "type": "string" },
-        "roi_scenario_id": { "type": "string" },
-        "ebita_bridge_id": { "type": "string" },
-        "engagement_id": { "type": "string" },
-        "fluency_baseline_id": { "type": "string" }
+        "blueprint_id": { "$ref": "#/$defs/source_ref" },
+        "metrics_library_id": { "$ref": "#/$defs/source_ref" },
+        "scenario_id": { "$ref": "#/$defs/source_ref" },
+        "readiness_id": { "$ref": "#/$defs/source_ref" },
+        "claim_boundary_id": { "$ref": "#/$defs/source_ref" },
+        "roi_scenario_id": { "$ref": "#/$defs/source_ref" },
+        "ebita_bridge_id": { "$ref": "#/$defs/source_ref" },
+        "engagement_id": { "$ref": "#/$defs/source_ref" },
+        "fluency_baseline_id": { "$ref": "#/$defs/source_ref" }
       },
       "additionalProperties": false
     },
