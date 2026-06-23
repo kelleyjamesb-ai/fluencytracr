@@ -512,6 +512,38 @@ context with observed AI-enabled work-pattern refs, but it cannot imply
 directional dependency, conversion, value proof, causality, productivity, ROI,
 EBITDA, or financial output.
 
+The physical model must preserve three separate layers:
+
+```text
+AI Fluency Construct Context
+  - confidence
+  - usage_quality / ease of use display label
+  - behavior_change / stated AI behavior display label
+  - leadership_reinforcement / leadership support display label
+  - capability_growth / competency
+
+AI Fluency Psychological Context
+  - ai_attitude
+  - behavioral_intent / AI intent display label
+
+Observed Behavior / VBD Context
+  - velocity
+  - breadth
+  - depth
+```
+
+`behavior_change` is the governed construct key for instrument-derived behavior.
+"Stated AI behavior" is display or review language over that same instrument
+evidence, not a second independent field. Psychological context may reference
+that instrument behavior view only through `construct_summary_json.behavior_change`.
+`usage_quality` and `behavioral_intent` remain the governed construct keys;
+ease-of-use and AI intent are display language only.
+Observed behavior / VBD is telemetry-derived aggregate work-pattern evidence.
+Future persistence must not collapse these into one generic behavior field.
+The difference between stated behavior and observed behavior may support
+internal diagnostic review, but it is not value proof, causality, productivity,
+ROI, EBITDA, probability, model score, or customer-facing output.
+
 Recommended physical posture:
 
 - Prefer existing aggregate AI Fluency import and source-handoff payloads until
@@ -543,8 +575,10 @@ Allowed compact fields if separately promoted:
 | `k_min_posture` | required |
 | `suppression_posture` | required |
 | `construct_summary_json` | aggregate five-dimension AI Fluency construct means or bands only |
+| `psychological_context_json` | optional standalone aggregate attitude and behavioral-intent posture only; never standalone evidence |
 | `readiness_context_json` | optional compact posture labels only |
-| `observed_behavior_ref` | optional compact VBD / Measurement Cell ref only |
+| `observed_behavior_ref` | optional for standalone context; required compact VBD / Measurement Cell ref when tied to Measurement Cell evidence or alignment framing |
+| `selected_metric_movement_ref` | required compact customer metric movement ref when tied to Measurement Cell evidence or alignment framing |
 | `required_caveats_json` | required array |
 | `blocked_uses_json` | required array |
 
@@ -556,6 +590,50 @@ remain a compact VBD / Measurement Cell ref. If a legacy instrument construct
 is literally named `confidence`, it must remain nested inside the aggregate
 instrument construct map and must not become a top-level physical column, model
 score, probability, or customer-facing claim.
+
+`psychological_context_json`, if separately promoted, may carry only aggregate
+AI attitude and AI intent / behavioral-intent posture as standalone contextual
+posture, never standalone evidence. Instrument-reported behavior must remain
+in the governed `behavior_change` construct summary, even when product
+language calls it "stated AI behavior." Standalone psychological context
+cannot create readiness, evidence, Measurement Cell, or alignment state. If
+this context is tied to Measurement Cell evidence or alignment framing,
+`observed_behavior_ref` and `selected_metric_movement_ref` are required and
+must be source-bound, unsuppressed, non-held, and aligned to the approved
+expectation path. Psychological context must not carry raw survey answers,
+item-level responses, free-text answers, respondent identifiers,
+adoption-conversion scores, model scores, probability, finance, causality,
+productivity, ROI, EBITDA, or customer-facing output.
+
+The internal Value Evidence Alignment frame is non-persistent framing only:
+
+```text
+Value_Evidence_Alignment is reviewable only when all of the following are present:
+  Gate_Clear
+  Source_Bound
+  AI_Fluency_Construct_Context
+  AI_Fluency_Psychological_Context_Availability
+  Observed_Behavior_VBD_Context
+  Selected_Metric_Movement
+  Blueprint_Expectation_Path_Alignment
+  Assumption_Governance_Context
+```
+
+Future persistence must store only the governed ingredients and lineage needed
+to review that alignment. The non-computational alignment frame is undefined
+and must remain held unless observed VBD context and selected customer metric
+movement are both present, source-bound, unsuppressed, non-held, and aligned to
+the approved expectation path. Psychological context availability may add
+caveats or hold the frame when unsafe or incomplete, but it cannot strengthen,
+clear, upgrade, or rescue readiness. Instrument context alone must not produce
+an alignment state. Future persistence must not store
+`value_evidence_alignment`, alignment scores, numeric weights, contribution
+confidence, probability, finance output, ROI, causality, productivity,
+customer-facing output, or any frame result. It is not executable pseudocode
+and produces no boolean, numeric, score, or stored result. Any future numeric
+weights or model outputs require a separate exact-scope research and promotion
+decision, repeated aligned evidence, and red/green implementation and
+governance tests that explicitly authorize that scope.
 
 Blocked design:
 
@@ -643,6 +721,12 @@ implementation slice must cite a separate explicit promotion decision before
 adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
 migrations, repositories, schemas, unpromoted routes, UI, persistence writes,
 live execution, research-model inputs, or customer-facing output.
+
+The [AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md)
+is the required gate before any internal research design may begin. A passed
+packet does not authorize `research_model_inputs`, numeric weights, model
+outputs, routes, UI, persistence, exports, ROI, causality, productivity,
+probability, finance output, or customer-facing output.
 
 ## 13. Recommended Next Decision Slice
 

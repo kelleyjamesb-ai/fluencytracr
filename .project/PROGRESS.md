@@ -2,6 +2,43 @@
 
 ## Last Completed
 
+- AI Value Research Promotion Readiness Packet gate (user-requested,
+  2026-06-23): added a contract-only Research Promotion Readiness Packet as
+  the final governance gate between the productized internal evidence spine
+  and any later internal research design. The packet requires repeated Day 0 /
+  30 / 60 / 90 / 180 / 365 compact Measurement Cell snapshot refs, unless a
+  later named validator-backed alternative clears the same milestone, observed
+  VBD, selected metric movement, path, suppression, source-bound, and compact
+  ref gates. It also requires stable approved expectation-path binding,
+  reviewed source lane refs, distinct AI Fluency construct / psychological
+  context-availability / observed VBD behavior / selected metric movement refs,
+  assumption governance, source package review posture, Data Spine alignment,
+  caveats, blocked uses, and fail-closed decisions. It can return only
+  `READY_FOR_INTERNAL_RESEARCH_DESIGN`, held states, or boundary leakage
+  rejection; even the ready state authorizes only a separate internal research
+  design, not model implementation, numeric weights, durable research-model
+  inputs, probability output, ROI/EBITDA, finance output, causality,
+  productivity, customer-facing output, routes, UI, schemas, migrations,
+  persistence writes, or live connectors. Amended the existing research
+  readiness decision to remove stale prerequisite language and point to this
+  packet as the required next gate.
+- AI Value AI Fluency model-alignment amendment (user-requested, 2026-06-23):
+  clarified the logical and physical AI Value data models so the AI Fluency
+  layer preserves three distinct contexts: the five-factor AI Fluency construct
+  (`confidence`, `usage_quality` / ease of use, `behavior_change` / stated AI
+  behavior, `leadership_reinforcement` / leadership support, and
+  `capability_growth` / competency), instrument psychological context
+  (AI attitude and behavioral intent, with stated behavior treated only as a
+  view over governed `behavior_change`), and observed behavior / VBD context
+  (velocity, breadth, depth). Added a non-persistent, non-computational
+  internal Value Evidence Alignment frame and made it undefined unless observed
+  VBD context and selected customer metric movement are both present,
+  source-bound, unsuppressed, non-held, and aligned to the approved expectation
+  path. The amendment explicitly blocks alignment scores, numeric weights,
+  adoption-conversion scores, contribution confidence, probability, ROI/EBITDA,
+  finance output, causality, productivity, customer-facing output, raw survey
+  answers, respondent identifiers, and collapsing stated behavior with observed
+  behavior.
 - AI Value Measurement Cell Preflight Runner (user-requested, 2026-06-23):
   added an executable internal proof that a reviewed BigQuery/Sigma-style
   aggregate package can flow through aggregate export review, controlled
