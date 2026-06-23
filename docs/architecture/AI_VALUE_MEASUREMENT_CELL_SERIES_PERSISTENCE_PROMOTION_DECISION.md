@@ -2,13 +2,13 @@
 
 Status: decision only. This document does not create backend routes, frontend
 UI, Prisma schema changes, migrations, repository methods, persistence writes,
-live Glean or BigQuery execution, export packages, rendered customer readouts,
-confidence math, ROI, causality, productivity, probability, or customer-facing
-financial output.
+live Glean, BigQuery, or Sigma execution, export packages, rendered customer
+readouts, confidence math, ROI, causality, productivity, probability, or
+customer-facing financial output.
 
 Phase: `phase-ai-value-measurement-cell-series-persistence-promotion-decision`
 
-Decision: `HOLD_FOR_REPEATED_MILESTONE_EVIDENCE`
+Decision: `HOLD_FOR_EXACT_SERIES_PERSISTENCE_SCOPE_DECISION`
 
 ## 1. Purpose
 
@@ -27,14 +27,15 @@ Do not implement `measurement_cell_series_snapshots` yet.
 Decision value:
 
 ```text
-HOLD_FOR_REPEATED_MILESTONE_EVIDENCE
+HOLD_FOR_EXACT_SERIES_PERSISTENCE_SCOPE_DECISION
 ```
 
 Reason:
 
-- Measurement Cell persistence is not promoted;
-- the controlled scrubbed aggregate pilot now produces promotion-review
-  evidence for the saved aggregate fixture;
+- backend-internal Measurement Cell snapshot persistence is now promoted by a
+  separate exact-scope decision;
+- the controlled scrubbed aggregate pilot produces promotion-review evidence
+  for the saved aggregate fixture;
 - the repeated controlled pilot package now validates generated Day 0 / 30 /
   60 / 90 / 180 / 365 milestone variants through the existing Measurement Cell
   Series continuity/alignment contract;
@@ -111,12 +112,12 @@ If a later decision promotes Series persistence, tests must reject:
 
 ## 6. Recommended Next Move
 
-Keep Series persistence blocked. Use the repeated controlled pilot package as
-internal review evidence, then revisit Measurement Cell persistence first.
+Keep Series persistence blocked. Use the repeated controlled pilot package and
+backend-internal Measurement Cell snapshots as internal review evidence only.
 
-Do not reconsider Series persistence until Measurement Cell snapshots are
-promoted or the repo records an explicit decision that durable Series
-snapshots are not required for the next pilot.
+Do not reconsider Series persistence until the repo records an explicit
+decision naming the exact `measurement_cell_series_snapshots` table,
+projection, and read-path purpose required for the next pilot.
 
 ## 7. Verification
 

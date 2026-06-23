@@ -52,6 +52,8 @@ CREATE TABLE "measurement_cell_snapshots" (
 
   CONSTRAINT "measurement_cell_snapshots_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "measurement_cell_snapshots_version_check" CHECK ("version" >= 1),
+  CONSTRAINT "measurement_cell_snapshots_supersedes_version_check"
+    CHECK (("version" = 1 AND "supersedes_id" IS NULL) OR ("version" > 1 AND "supersedes_id" IS NOT NULL)),
   CONSTRAINT "measurement_cell_snapshots_expectation_path_version_check"
     CHECK ("expectation_path_version" >= 1),
   CONSTRAINT "measurement_cell_snapshots_expected_metric_lag_days_check"

@@ -274,7 +274,7 @@ Implemented column requirements:
 | `function_area` | text | required |
 | `cohort_key` | text | required |
 | `window_mode` | text | required |
-| `milestone_day` | integer | nullable for rolling windows |
+| `milestone_day` | integer | required; `measurement_cell_snapshots` persistence is milestone-only |
 | `baseline_window_start` | timestamp | required |
 | `baseline_window_end` | timestamp | required |
 | `comparison_window_start` | timestamp | required |
@@ -332,6 +332,9 @@ Implemented constraint requirements:
 - `blocked_uses_json` must preserve blocked ROI, causality, productivity,
   confidence, probability, person-level, ranking, and customer-facing financial
   output uses through validator enforcement before persistence.
+- `window_mode` must be `milestone` and `milestone_day` must be one of Day 0 /
+  30 / 60 / 90 / 180 / 365. Rolling 30-day Measurement Cells remain operating
+  context only and must fail closed before snapshot persistence.
 - `assembly_payload_json` must be null by default. If retained, it may contain
   only compact IDs, assembly decision, compact source refs, caveats, blocked
   uses, and validation posture. It must not duplicate raw source context,

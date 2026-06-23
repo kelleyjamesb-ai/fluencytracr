@@ -354,6 +354,23 @@ export type {
 } from "./controlledAggregateConnectorAdapter";
 
 export {
+  AI_VALUE_AGGREGATE_EXTRACTION_MANIFEST_SCHEMA_VERSION,
+  AI_VALUE_PIPELINE_RUN_REVIEW_MANIFEST_SCHEMA_VERSION,
+  AI_VALUE_SOURCE_INVENTORY_MANIFEST_SCHEMA_VERSION,
+  validateAiValueAggregateExtractionManifest,
+  validateAiValueControlledAggregateManifestChain,
+  validateAiValuePipelineRunReviewManifest,
+  validateAiValueSourceInventoryManifest
+} from "./controlledAggregatePipelineManifests";
+export type {
+  AiValueApprovedExpectationPathBinding,
+  AiValueControlledAggregateManifestValidationResult,
+  ValidateAiValueAggregateExtractionManifestOptions,
+  ValidateAiValueControlledAggregateManifestChainInput,
+  ValidateAiValuePipelineRunReviewManifestOptions
+} from "./controlledAggregatePipelineManifests";
+
+export {
   AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION,
   buildOperatorIntakeAdapterRun,
   validateOperatorIntakeAdapterRun

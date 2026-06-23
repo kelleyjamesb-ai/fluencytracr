@@ -44,6 +44,16 @@ const MEASUREMENT_CELL_PROMOTION_DECISION = path.resolve(
   "../../docs/architecture/AI_VALUE_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION.md"
 );
 const REPO_ROOT = path.resolve(__dirname, "../..");
+let controlledRunnerDistReady = false;
+
+const ensureControlledRunnerDistReady = () => {
+  if (controlledRunnerDistReady) return;
+  execFileSync("npm", ["run", "build", "--workspace", "shared"], {
+    cwd: REPO_ROOT,
+    stdio: "pipe"
+  });
+  controlledRunnerDistReady = true;
+};
 
 const readJson = (relativePath: string) =>
   JSON.parse(fs.readFileSync(path.join(EXAMPLE_ROOT, relativePath), "utf8"));
@@ -242,6 +252,7 @@ const buildExecutiveReadoutSnapshotInput = () => {
 };
 
 const controlledMeasurementCellAssemblyRun = () => {
+  ensureControlledRunnerDistReady();
   const script = `
     import { readFileSync } from "node:fs";
     import { buildControlledMeasurementCellAssemblyArtifactsFromObject } from "./scripts/run_ai_value_controlled_measurement_cell_assembly.mjs";
@@ -251,6 +262,36 @@ const controlledMeasurementCellAssemblyRun = () => {
       throw new Error(JSON.stringify(artifacts.assemblyValidation ?? artifacts.candidate?.validation_summary ?? {}));
     }
     process.stdout.write(JSON.stringify(artifacts.assemblyRun));
+  `;
+  return JSON.parse(
+    execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+      cwd: REPO_ROOT,
+      encoding: "utf8"
+    })
+  );
+};
+
+const controlledMeasurementCellAssemblyRunsForMilestones = (milestoneDays: number[]) => {
+  ensureControlledRunnerDistReady();
+  const script = `
+    import { readFileSync } from "node:fs";
+    import { buildControlledMeasurementCellAssemblyArtifactsFromObject } from "./scripts/run_ai_value_controlled_measurement_cell_assembly.mjs";
+    const fixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
+    const milestoneDays = ${JSON.stringify(milestoneDays)};
+    const runs = milestoneDays.map((milestoneDay) => {
+      const variant = JSON.parse(JSON.stringify(fixture));
+      variant.expected = {
+        ...variant.expected,
+        milestone_day: milestoneDay,
+        window_mode: "milestone"
+      };
+      const artifacts = buildControlledMeasurementCellAssemblyArtifactsFromObject(variant, { cwd: process.cwd() });
+      if (artifacts.assemblyValidation?.valid !== true || artifacts.assemblyRun?.decision !== "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER") {
+        throw new Error(JSON.stringify({ milestoneDay, validation: artifacts.assemblyValidation ?? artifacts.candidate?.validation_summary ?? {} }));
+      }
+      return artifacts.assemblyRun;
+    });
+    process.stdout.write(JSON.stringify(runs));
   `;
   return JSON.parse(
     execFileSync(process.execPath, ["--input-type=module", "-e", script], {
@@ -379,6 +420,7 @@ describe("AI Value minimal persistence migration", () => {
     expect(migrationSql).toContain('"value_driver" TEXT NOT NULL');
     expect(migrationSql).toContain('"assembly_payload_json" JSONB');
     expect(migrationSql).toContain("measurement_cell_snapshots_value_driver_check");
+    expect(migrationSql).toContain("measurement_cell_snapshots_supersedes_version_check");
     expect(migrationSql).toContain("measurement_cell_snapshots_assembly_payload_null_or_object_check");
     expect(migrationSql).toContain("ALTER TABLE public.measurement_cell_snapshots ENABLE ROW LEVEL SECURITY");
     expect(migrationSql).toContain("REVOKE ALL ON TABLE public.measurement_cell_snapshots");
@@ -786,6 +828,85 @@ describe("AI Value minimal persistence repository", () => {
     expect(corrected.version).toBe(2);
     expect(corrected.supersedes_id).toBe(stored.id);
     expect(store.aiValueMeasurementCellSnapshots.size).toBe(2);
+  });
+
+  it("binds Measurement Cell snapshots when only a value hypothesis ref is present", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_ref =
+      assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id;
+    assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id = null;
+
+    const stored = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(stored.value_hypothesis_id).toBeNull();
+    expect(stored.value_hypothesis_ref).toBe(
+      assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_ref
+    );
+    expect(stored.value_hypothesis_binding_state).toBe("bound");
+  });
+
+  it("rejects supersedes lineage on initial Measurement Cell snapshot versions", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 1,
+        supersedesId: "measurement_cell_snapshot_unrelated",
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+  });
+
+  it("persists repeated milestone Measurement Cell snapshots as distinct cell identities, not versions", async () => {
+    const milestoneDays = [0, 30, 60, 90, 180, 365];
+    const assemblyRuns = controlledMeasurementCellAssemblyRunsForMilestones(milestoneDays);
+    const stored = [];
+
+    for (const assemblyRun of assemblyRuns) {
+      stored.push(
+        await persistAiValueMeasurementCellSnapshot({
+          measurementCellAssemblyRun: assemblyRun,
+          version: 1,
+          createdByRole: "value_realization_pm"
+        })
+      );
+    }
+
+    expect(stored).toHaveLength(milestoneDays.length);
+    expect(new Set(stored.map((record) => record.measurement_cell_id)).size).toBe(
+      milestoneDays.length
+    );
+    expect(stored.map((record) => record.milestone_day).sort((a, b) => a - b)).toEqual(
+      milestoneDays
+    );
+    expect(stored.every((record) => record.window_mode === "milestone")).toBe(true);
+    expect(store.aiValueMeasurementCellSnapshots.size).toBe(milestoneDays.length);
+
+    const day30 = stored.find((record) => record.milestone_day === 30);
+    const day60Run = assemblyRuns.find(
+      (run: any) => run.measurement_cell.time_window.days_since_launch === 60
+    );
+    const sameCellDifferentWindow = clone(day60Run);
+    sameCellDifferentWindow.measurement_cell.measurement_cell_id =
+      day30?.measurement_cell_id;
+    sameCellDifferentWindow.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(sameCellDifferentWindow.measurement_cell);
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: sameCellDifferentWindow,
+        version: 2,
+        supersedesId: day30?.id,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toThrow(
+      "Measurement Cell Snapshot correction cannot change selected path, metric, or milestone identity"
+    );
   });
 
   it("fails drifted Measurement Cell snapshot bindings before persistence", async () => {

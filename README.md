@@ -69,6 +69,19 @@ documented value-realization layers:
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,
   routes, UI, or customer-facing output.
+- **AI Value aggregate connector boundary plan:** proves that a
+  source-owner-attested BigQuery/Sigma aggregate export plan can pass a
+  validator-only boundary review before any live connector exists. It does not
+  run BigQuery/Sigma, store connector or pipeline runs, persist manifests,
+  create Source Packages or Measurement Cells, or emit model, finance, or
+  customer-facing output.
+- **AI Value controlled aggregate manifest validation:** proves that the saved
+  BigQuery/Sigma-shaped connector review packet can be represented as Source
+  Inventory, Aggregate Extraction, and Pipeline Run Review manifests for
+  operator promotion review. It remains non-persistent and does not authorize
+  live connector execution, Source Package clearance, Measurement Cell or
+  Series persistence, confidence math, finance output, or customer-facing
+  output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -201,6 +214,8 @@ is not the lead positioning for this repository.
 - AI Value Controlled Measurement Cell Assembly: [docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md](docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md)
 - AI Value Controlled Aggregate Pipeline Dry Run: [docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md](docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md)
 - AI Value Controlled Aggregate Connector Adapter: [docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md](docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md)
+- AI Value Aggregate Connector Boundary Plan: [docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md](docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md)
+- AI Value Controlled Aggregate Manifest Validation: [docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md](docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)

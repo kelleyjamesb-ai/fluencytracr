@@ -1137,6 +1137,11 @@ function collectPolicyGaps(pilotPackage) {
       gaps.push(`blocked_uses must include ${use}`);
     }
   }
+  for (const caveat of requiredCaveats()) {
+    if (!pilotPackage?.required_caveats?.includes(caveat)) {
+      gaps.push(`required_caveats must include ${caveat}`);
+    }
+  }
   if (
     ![
       "HOLD_FOR_REPEATED_MILESTONE_EVIDENCE",
@@ -1282,6 +1287,11 @@ export function validateControlledPilotEvidencePackage(pilotPackage, options = {
 
 function collectRepeatedPackageGaps(pilotPackage) {
   const gaps = [];
+  const repeatedCaveat =
+    "Repeated milestone evidence is internal continuity and alignment review only; it does not promote Series persistence.";
+  if (!pilotPackage?.required_caveats?.includes(repeatedCaveat)) {
+    gaps.push(`required_caveats must include ${repeatedCaveat}`);
+  }
   if (!Array.isArray(pilotPackage?.series_boundary?.observed_milestones)) {
     gaps.push("series_boundary.observed_milestones must be an array");
   }

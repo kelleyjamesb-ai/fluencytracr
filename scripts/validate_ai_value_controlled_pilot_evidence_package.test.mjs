@@ -175,6 +175,21 @@ test("controlled pilot evidence package demonstrates the saved aggregate fixture
   assert.equal(serialized.includes("ROI proof"), false);
 });
 
+test("controlled pilot evidence package validator preserves required caveats with recomputed hash", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const pilotPackage = runControlledPilotEvidencePackageFromObject(fixture);
+  pilotPackage.required_caveats = [];
+  pilotPackage.package_integrity_hash = recomputePackageHash(pilotPackage);
+
+  const validation = validateControlledPilotEvidencePackage(pilotPackage);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("required_caveats must include")),
+    validation.gaps.join("; ")
+  );
+});
+
 test("controlled pilot evidence package rejects unsafe raw, identifier, live connector, finance, and model fields", () => {
   const fixture = clone(readJson(FIXTURE_PATH));
   fixture.raw_rows = [{ user_id: "user_123", transcript: "raw transcript" }];
@@ -346,6 +361,24 @@ test("controlled repeated pilot evidence package validator rejects nested child-
       `missing unsafe-field gap for ${key}`
     );
   }
+});
+
+test("controlled repeated pilot evidence package validator preserves repeated-run caveat with recomputed hash", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const repeatedPackage = runControlledRepeatedPilotEvidencePackageFromObject(fixture);
+  repeatedPackage.required_caveats = repeatedPackage.required_caveats.filter(
+    (caveat) => !/Repeated milestone evidence/i.test(caveat)
+  );
+  repeatedPackage.package_integrity_hash = recomputePackageHash(repeatedPackage);
+
+  const validation =
+    validateControlledRepeatedPilotEvidencePackage(repeatedPackage);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("Repeated milestone evidence")),
+    validation.gaps.join("; ")
+  );
 });
 
 test("controlled repeated pilot evidence package demonstrates Day 0 through Day 365 can flow through Measurement Cell Series review", () => {

@@ -8,7 +8,7 @@ probability, or customer-facing financial output.
 
 Phase: `phase-ai-value-data-pipeline-readiness-decision`
 
-Decision: `PIPELINE_NOT_BUILT__READINESS_DESIGN_REQUIRED`
+Decision: `PIPELINE_NOT_BUILT__SAVED_FIXTURE_VALIDATION_BOUNDARY_PROMOTED`
 
 ## 1. Purpose
 
@@ -43,6 +43,9 @@ Current repo support:
 - internal dogfood BigQuery adapter paths for governed aggregate testing;
 - controlled aggregate connector adapter / review packet proof for
   BigQuery/Sigma-shaped saved aggregate fixtures;
+- controlled aggregate manifest validation proof that a saved connector review
+  packet can become Source Inventory, Aggregate Extraction, and Pipeline Run
+  Review manifests without persistence or live execution;
 - aggregate AI Fluency dashboard import contracts;
 - VBD/token aggregate intake contracts;
 - customer metric aggregate/manual-entry contracts;
@@ -71,19 +74,22 @@ Do not build the Sigma/BigQuery data pipeline yet.
 Decision value:
 
 ```text
-PIPELINE_NOT_BUILT__READINESS_DESIGN_REQUIRED
+PIPELINE_NOT_BUILT__SAVED_FIXTURE_VALIDATION_BOUNDARY_PROMOTED
 ```
 
 Reason:
 
-- the controlled scrubbed aggregate pilot has not been executed;
-- Measurement Cell persistence is held;
+- the saved-fixture connector adapter and manifest validation boundary is now
+  executable and promoted for internal operator review;
+- backend-internal Measurement Cell snapshot persistence is promoted by a
+  separate exact-scope decision;
+- controlled aggregate manifest persistence remains held;
 - Series persistence is held;
 - customer projection and exports are held;
 - confidence research is held;
 - live execution would introduce raw-row, query-text, identifier, source-drift,
-  and overclaim risks before the governed aggregate pilot demonstrates the
-  boundary.
+  and overclaim risks before a separate live pipeline concept review is
+  promoted.
 
 ## 4. Future Pipeline Boundary
 
@@ -187,6 +193,7 @@ Before any code implementation, add docs/contracts for:
    - `HOLD_FOR_SUPPRESSION_REVIEW`
    - `HOLD_FOR_SECURITY_AND_TRUST_REVIEW`
    - `PROMOTE_SAVED_AGGREGATE_FIXTURE_ADAPTER`
+   - `PROMOTE_SAVED_FIXTURE_VALIDATION_BOUNDARY__HOLD_LIVE_PIPELINE_AND_MANIFEST_PERSISTENCE`
    - `PROMOTE_SEPARATE_LIVE_PIPELINE_CONCEPT_REVIEW`
    - `REJECT_CURRENT_PIPELINE_SCOPE`
 
@@ -197,7 +204,7 @@ Current docs-only status:
 | Source Inventory Manifest | Drafted in `docs/contracts/ai-value-source-inventory-manifest/README.md` |
 | Aggregate Extraction Manifest | Drafted in `docs/contracts/ai-value-aggregate-extraction-manifest/README.md` |
 | Pipeline Run Review Manifest | Drafted in `docs/contracts/ai-value-pipeline-run-review-manifest/README.md` |
-| Pipeline Promotion Decision | Not promoted; live connector implementation remains blocked |
+| Pipeline Promotion Decision | Saved-fixture boundary promoted in `docs/architecture/AI_VALUE_PIPELINE_PROMOTION_DECISION.md`; live connector implementation remains blocked |
 
 These documents are readiness contracts only. They do not authorize live
 execution, credentials, query storage, raw rows, persistence, routes, UI,
@@ -276,22 +283,24 @@ Proceed in this order only:
 1. Source inventory manifest design. `DONE_DOCS_ONLY`
 2. Aggregate extraction manifest design. `DONE_DOCS_ONLY`
 3. Pipeline run review manifest design. `DONE_DOCS_ONLY`
-4. Saved aggregate fixture adapter decision.
-5. Controlled scrubbed aggregate pilot execution.
-6. Measurement Cell persistence promotion reconsideration.
-7. Separate live pipeline concept / boundary review decision.
+4. Saved aggregate fixture adapter decision. `PROMOTED_SAVED_FIXTURE_ONLY`
+5. Controlled scrubbed aggregate pilot execution. `DONE_SAVED_FIXTURE_REVIEW_ONLY`
+6. Measurement Cell persistence promotion reconsideration. `PROMOTED_MEASUREMENT_CELL_SNAPSHOTS_ONLY`
+7. Separate live pipeline concept / boundary review decision. `NOT_STARTED`
 
 Do not skip from this readiness decision to live BigQuery/Sigma execution.
 
 ## 10. Recommended Next Move
 
-The three future contract docs now exist in docs-only form:
+The three future contract docs now exist and have an executable saved-fixture
+validation layer:
 
 - Source Inventory Manifest;
 - Aggregate Extraction Manifest;
-- Pipeline Run Review Manifest.
+- Pipeline Run Review Manifest;
+- Controlled Aggregate Manifest Validation.
 
-Next safe move for pipeline work:
+Completed safe move for pipeline work:
 
 1. Bind the controlled aggregate connector adapter output to these three
    contract shapes using saved fixture data only.
@@ -300,8 +309,19 @@ Next safe move for pipeline work:
    identifiers, Source Package clearance aliases, Measurement Cell snapshot
    aliases, ROI, EBITDA, causality, productivity, probability, confidence-like
    model fields, and customer-facing output.
-3. Only after that, draft a separate Pipeline Promotion Decision. That decision
-   may still hold live BigQuery/Sigma execution.
+
+Next safe move:
+
+Use the non-live BigQuery/Sigma Aggregate Connector Boundary Plan validator as
+internal operator-review evidence for the next decision.
+
+Next decision gate:
+
+- hold live connector implementation;
+- or draft a separate live pipeline concept review that still forbids
+  FluencyTracr credentials, query execution, raw rows, query text, identifiers,
+  manifest persistence, Series persistence, customer-facing output, confidence
+  research, and finance output unless each exact scope is separately promoted.
 
 ## 11. Verification
 

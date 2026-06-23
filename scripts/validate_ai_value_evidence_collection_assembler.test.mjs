@@ -332,6 +332,27 @@ test("source packages must match measurement plan source binding", () => {
   );
 });
 
+test("baseline-only plans still bind source package covered windows to the baseline window", () => {
+  const baselineOnlyPlan = plan({
+    comparisonWindowStart: null,
+    comparisonWindowEnd: null
+  });
+  const wrongWindow = clone(sourcePackage("layer-1-bigquery-telemetry-package.json"));
+  wrongWindow.covered_window.window_start = "2026-06-01";
+  wrongWindow.covered_window.window_end = "2026-06-30";
+
+  const assembly = buildAssembly([wrongWindow], { plan: baselineOnlyPlan });
+  const result = validateEvidenceCollectionAssembly(assembly);
+
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.some((gap) =>
+      /covered_window\.window_start.*does not match measurement plan/i.test(gap)
+    ),
+    result.gaps.join("; ")
+  );
+});
+
 test("aggregate workforce context may provide approved context without upgrading source grain", () => {
   const assembly = buildAssembly(packageSet(["layer1", "workforce"]));
   expectValidAssembly(assembly);

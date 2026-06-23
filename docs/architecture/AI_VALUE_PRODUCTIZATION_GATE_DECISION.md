@@ -3,8 +3,8 @@
 Status: productization gate decision. A later Measurement Cell persistence
 decision may supersede this document only for the exact table and write-path
 scope it names. This document does not create backend routes, frontend UI, live
-Glean or BigQuery execution, export packages, rendered customer readouts,
-confidence math, ROI, causality, productivity, probability, or
+Glean, BigQuery, or Sigma execution, export packages, rendered customer
+readouts, confidence math, ROI, causality, productivity, probability, or
 customer-facing financial output.
 
 Phase: `phase-ai-value-productization-gate-decision`
@@ -31,6 +31,7 @@ Primary anchors:
 - [AI Value Logical Data Model](./AI_VALUE_LOGICAL_DATA_MODEL.md)
 - [AI Value Physical Data Model Readiness Review](./AI_VALUE_PHYSICAL_DATA_MODEL.md)
 - [AI Value Measurement Cell Persistence Promotion Decision](./AI_VALUE_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION.md)
+- [AI Value Pipeline Promotion Decision](./AI_VALUE_PIPELINE_PROMOTION_DECISION.md)
 - [AI Value Productization Next Plan](../superpowers/plans/2026-06-22-ai-value-productization-next-plan.md)
 - [Operator Source Handoff Bundle](../contracts/ai-value-operator-source-handoff-bundle/README.md)
 - [AI Value Measurement Cell Series](../contracts/ai-value-measurement-cell-series/README.md)
@@ -228,7 +229,7 @@ EBITDA impact, customer-facing economic output, or model confidence.
 | Rolling 30-day context | Operating context only | Internal operator | Internal posture only | No | Operating context only |
 | Physical Measurement Cell tables | `measurement_cell_snapshots` only | Internal backend service only | Compact lineage only | No customer export | Promoted by separate decision |
 | Executive readout route/output | Existing legacy/prototype only | Internal/demo | Not customer-facing | No | Not productized readout |
-| Live Glean / BigQuery execution | No | No | No | No | Not ready |
+| Live Glean / BigQuery / Sigma execution | No | No | No | No | Not ready |
 | Confidence / finance layer | No | No | No | No | Not ready |
 
 ## 10. Required Next Gate Before Additional Persistence
@@ -266,19 +267,24 @@ Before any customer-facing route, UI, readout, or export, require:
 
 ## 12. Recommended Next Move
 
-Build only the executable backend-internal `measurement_cell_snapshots` slice
-authorized by the separate Measurement Cell persistence promotion decision.
-Do not build Series persistence, customer-facing projections, exports, live
-connectors, confidence research inputs, or finance outputs in that slice.
+Use the non-live BigQuery/Sigma Aggregate Connector Boundary Plan validator as
+internal operator-review evidence for the next gate.
 
-The pilot should validate:
+Do not build controlled aggregate manifest persistence, Series persistence,
+customer-facing projections, exports, live connectors, confidence research
+inputs, or finance outputs without a separate exact-scope promotion decision.
 
-- real source-package conversion without raw payload leakage;
-- alignment envelope integrity;
-- approved expectation-path binding;
-- Measurement Cell Assembly behavior;
-- Measurement Cell Series milestone behavior;
-- rolling 30-day quarantine;
+The next decision should choose one:
+
+- hold live connector implementation and keep using saved aggregate fixtures;
+- draft a live pipeline concept review while still forbidding FluencyTracr
+  credentials, query execution, raw rows, query text, identifiers, customer
+  output, confidence research, and finance output;
+- separately evaluate controlled manifest persistence, without coupling it to
+  live BigQuery/Sigma execution.
+
+After that decision, sequence the next productization gates separately:
+
 - Evidence Snapshot safety;
 - Claim Readiness construction;
 - blocked-claim and blocked-use propagation;

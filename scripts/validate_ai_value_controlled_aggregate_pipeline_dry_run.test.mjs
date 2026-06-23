@@ -527,6 +527,20 @@ test("shared controlled aggregate pipeline dry run builder cannot pass with an a
   assert.equal(validation.valid, false);
 });
 
+test("controlled aggregate pipeline dry run keeps reviewed source-ref hashes aligned with candidate proof", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const dryRun = runControlledAggregatePipelineDryRunFromObject(fixture);
+  const validation = validateControlledAggregatePipelineDryRun(dryRun, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(
+    dryRun.manifest_ref.reviewed_source_refs_hash,
+    dryRun.candidate_ref.reviewed_source_refs_hash
+  );
+});
+
 test("controlled aggregate pipeline dry run validator rejects unsafe language in passed caveats and gaps", () => {
   const packageResult = runControlledAggregatePipelineDryRunFromObject(readJson(FIXTURE_PATH));
   const tampered = clone(packageResult);
