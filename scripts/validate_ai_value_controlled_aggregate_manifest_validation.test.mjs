@@ -19,6 +19,7 @@ const REQUIRED_FALSE_FEEDS = [
   "credential_access",
   "query_execution",
   "raw_row_ingestion",
+  "dashboard_row_ingestion",
   "durable_manifest_storage",
   "source_package_clearance",
   "measurement_cell_creation",
