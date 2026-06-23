@@ -342,6 +342,48 @@ test("controlled aggregate manifest validation catches hand-edited passed packag
   );
 });
 
+test("controlled aggregate manifest validation binds connector adapter summary validity", () => {
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    readJson(FIXTURE_PATH),
+    { sourceSystem: "bigquery_export" }
+  );
+  const tampered = clone(manifestPackage);
+  tampered.validation_summary.connector_adapter_valid = false;
+
+  const validation = validateControlledAggregateManifestValidationPackage(
+    tampered,
+    { sourceFixture: readJson(FIXTURE_PATH) }
+  );
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("connector_adapter_valid")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("controlled aggregate manifest validation derives source lanes from selected metrics", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    fixture,
+    { sourceSystem: "bigquery_export" }
+  );
+  const validation = validateControlledAggregateManifestValidationPackage(
+    manifestPackage,
+    { sourceFixture: fixture }
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(
+    manifestPackage.manifests.source_inventory_manifest.source_lane,
+    "customer_metric"
+  );
+  assert.equal(
+    manifestPackage.manifests.aggregate_extraction_manifest.source_package_lane,
+    "customer_metric"
+  );
+});
+
 test("controlled aggregate manifest validation fails closed on wrapper-level smuggling", () => {
   const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
     readJson(FIXTURE_PATH),

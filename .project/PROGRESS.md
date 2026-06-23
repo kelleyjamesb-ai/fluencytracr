@@ -2,6 +2,23 @@
 
 ## Last Completed
 
+- AI Value PR #369 follow-up review fixes (user-requested, 2026-06-23):
+  addressed additional review comments on approved AI Fluency confidence
+  aggregate fields, manifest-validation connector adapter summary binding,
+  source-lane derivation, unsafe validation-summary gap text, and mismatched
+  Fluency baseline provenance. Controlled aggregate manifest validation now
+  derives `source_lane` from the selected metric instead of hard-coding VBD
+  token evidence, recomputes `connector_adapter_valid`, and keeps sanitized
+  validation-summary gap enforcement. Value-chain runs now copy
+  `fluency_baseline_id` only after optional workflow-family compatibility
+  clears, and mismatched baseline context holds before spine persistence.
+  Readout context selection also ignores explicit baseline refs for other
+  workflows. No canonical events, suppression reasons, live connectors,
+  routes beyond existing handler validation, UI, ROI, causality, productivity,
+  person-level fields, or customer-facing economic output was added.
+  Verification passed for shared build, controlled aggregate manifest
+  validation suite, controlled aggregate manifest validator suite, AI Value
+  engine suite, backend AI Value object API suite, and diff check.
 - AI Value PR #369 manifest review-comment fixes (user-requested,
   2026-06-23): addressed the unresolved review threads on controlled aggregate
   manifest validation, aggregate connector boundary plans, controlled aggregate

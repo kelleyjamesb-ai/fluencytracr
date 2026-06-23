@@ -403,7 +403,7 @@ function selectedSourceLane(fixture, options = {}) {
     fixture?.source_lane ??
     fixture?.expected?.controlled_aggregate_source_lane;
   if (candidate === undefined || candidate === null || candidate === "") {
-    return "vbd_token";
+    return sourceLaneForMetric(selectedMetricId(fixture));
   }
   return ALLOWED_SOURCE_LANES.has(String(candidate))
     ? String(candidate)
@@ -437,6 +437,22 @@ function selectedMetricId(fixture) {
     ? fixture.blueprint_extraction_input.metricCandidates[0] ?? null
     : null;
   return path?.expected_metric_id ?? candidate?.metric_id ?? "support_median_resolution_hours";
+}
+
+function sourceLaneForMetric(metricId) {
+  if (String(metricId ?? "").startsWith("ai_fluency_")) return "ai_fluency";
+  if (
+    [
+      "token_count",
+      "token_cost_index",
+      "token_efficiency_index",
+      "vbd_quality_index",
+      "vbd_reuse_index"
+    ].includes(String(metricId ?? ""))
+  ) {
+    return "vbd_token";
+  }
+  return "customer_metric";
 }
 
 function approvedExpectationPathBindingFromFixture(fixture, adapter) {
