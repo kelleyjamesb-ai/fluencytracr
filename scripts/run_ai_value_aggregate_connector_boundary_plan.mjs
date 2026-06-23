@@ -711,7 +711,7 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
       adapter,
       adapterValidation,
       generatedAt: adapter.generated_at,
-      gaps: ["boundary plan must match recomputed saved-fixture boundary plan"]
+      validationGaps: ["boundary plan must match recomputed saved-fixture boundary plan"]
     });
   }
   merged.boundary_plan_state = validation.valid
