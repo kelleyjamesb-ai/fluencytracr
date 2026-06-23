@@ -1060,7 +1060,8 @@ function collectSuppressedAggregateGaps(fixture) {
   return gaps;
 }
 
-function loadMeasurementPlan(fixture, cwd = process.cwd()) {
+function loadMeasurementPlan(fixture, cwd = process.cwd(), override = null) {
+  if (override) return deepClone(override);
   if (fixture.measurement_plan) return deepClone(fixture.measurement_plan);
   const planPath = resolve(cwd, fixture.measurement_plan_path);
   return JSON.parse(readFileSync(planPath, "utf8"));
@@ -1166,7 +1167,11 @@ export function runControlledAggregateFixtureReviewFromObject(
   let measurementPlan;
   let dataSpine;
   try {
-    measurementPlan = loadMeasurementPlan(fixture, options.cwd);
+    measurementPlan = loadMeasurementPlan(
+      fixture,
+      options.cwd,
+      options.measurementPlanOverride
+    );
     dataSpine = buildDataSpineFromFixture(fixture);
   } catch (error) {
     return blockedReview(fixture, "BLOCKED", [

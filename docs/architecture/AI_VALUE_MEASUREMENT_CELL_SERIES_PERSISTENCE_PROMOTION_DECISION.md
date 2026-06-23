@@ -33,12 +33,16 @@ HOLD_FOR_REPEATED_MILESTONE_EVIDENCE
 Reason:
 
 - Measurement Cell persistence is not promoted;
-- no controlled scrubbed aggregate pilot has produced a promotion-ready result;
-- no repeated Measurement Cell workflow has been validated across all governed
-  milestone windows;
+- the controlled scrubbed aggregate pilot now produces promotion-review
+  evidence for the saved aggregate fixture;
+- the repeated controlled pilot package now validates generated Day 0 / 30 /
+  60 / 90 / 180 / 365 milestone variants through the existing Measurement Cell
+  Series continuity/alignment contract;
+- the repeated package is still internal review evidence only and does not
+  authorize durable Series product state;
 - rolling 30-day operating context remains quarantined;
-- Series persistence would imply continuity maturity that the current evidence
-  does not yet support.
+- Series persistence would imply product-state maturity that the current
+  decision has not separately authorized.
 
 ## 3. Required Milestone Evidence
 
@@ -107,8 +111,8 @@ If a later decision promotes Series persistence, tests must reject:
 
 ## 6. Recommended Next Move
 
-Keep Series persistence blocked. Execute the controlled scrubbed aggregate
-pilot and revisit Measurement Cell persistence first.
+Keep Series persistence blocked. Use the repeated controlled pilot package as
+internal review evidence, then revisit Measurement Cell persistence first.
 
 Do not reconsider Series persistence until Measurement Cell snapshots are
 promoted or the repo records an explicit decision that durable Series

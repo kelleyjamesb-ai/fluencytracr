@@ -695,7 +695,8 @@ function buildDataSpineFromFixture(fixture) {
   });
 }
 
-function loadMeasurementPlan(fixture, cwd = process.cwd()) {
+function loadMeasurementPlan(fixture, cwd = process.cwd(), override = null) {
+  if (override) return deepClone(override);
   if (fixture.measurement_plan) return deepClone(fixture.measurement_plan);
   return JSON.parse(readFileSync(resolve(cwd, fixture.measurement_plan_path), "utf8"));
 }
@@ -718,7 +719,7 @@ function exportByLayer(fixture, layer) {
   ) ?? null;
 }
 
-function reviewedAggregateContextHash(fixture) {
+export function reviewedAggregateContextHash(fixture) {
   const compact = (fixture?.scrubbed_glean_exports ?? []).map((record) => ({
     export_id: record?.export_id ?? null,
     request_id: record?.request_id ?? null,
@@ -767,7 +768,7 @@ function reviewedAggregateContextHash(fixture) {
   return createHash("sha256").update(JSON.stringify(compact)).digest("hex");
 }
 
-function reviewedBlueprintExpectationHash(fixture) {
+export function reviewedBlueprintExpectationHash(fixture) {
   const input = fixture?.blueprint_extraction_input ?? null;
   const compact = input
     ? {
@@ -1125,6 +1126,8 @@ function measurementCellInput(plan, dataSpine, fixture, blueprintHandoff) {
   const alignmentContext = blueprintHandoff.blueprint_alignment_context;
   const expectationPath = alignmentContext.approved_expectation_path;
   const lagDays = expectedLagDaysFromPath(expectationPath);
+  const milestoneDay = finiteNumber(fixture?.expected?.milestone_day) ?? lagDays;
+  const windowMode = fixture?.expected?.window_mode ?? "milestone";
   const metricDirection = expectationPath?.expected_metric_direction ?? metric.expected_direction;
   return {
     orgId: dataSpine.org_id,
@@ -1133,16 +1136,19 @@ function measurementCellInput(plan, dataSpine, fixture, blueprintHandoff) {
     workflowId: plan.workflow_scope?.workflow_id ?? `workflow_${safeIdPart(dataSpine.workflow_family)}`,
     cohortKey: dataSpine.cohort_key,
     timeWindow: {
-      time_window_id: milestoneWindowIdFromLag(lagDays),
-      window_label: lagDays === null ? "Day unknown" : `Day ${lagDays}`,
-      window_mode: "milestone",
-      days_since_launch: lagDays,
-      cadence: "milestone",
+      time_window_id: milestoneWindowIdFromLag(milestoneDay),
+      window_label: milestoneDay === null ? "Day unknown" : `Day ${milestoneDay}`,
+      window_mode: windowMode,
+      days_since_launch: milestoneDay,
+      cadence: windowMode === "rolling_30_day" ? "rolling_30_day" : "milestone",
       window_start: comparisonWindow.window_start,
       window_end: comparisonWindow.window_end,
       baseline_window: baselineWindow,
       comparison_window: comparisonWindow,
-      prior_window_ref: "measurement_cell_day_0"
+      prior_window_ref:
+        milestoneDay === 0 || milestoneDay === null
+          ? null
+          : `measurement_cell_day_${Math.max(0, milestoneDay - 30)}`
     },
     blueprintAlignment: {
       expectation_path_id: expectationPath.expectation_path_id,
@@ -1222,10 +1228,14 @@ function measurementCellInput(plan, dataSpine, fixture, blueprintHandoff) {
       }
     ],
     evidenceDesign: {
-      design_type: "matched_comparison",
-      design_strength_tier: "comparison_supported",
-      comparison_cell_ref: "measurement_cell_support_lower_exposure_day_30",
-      controls_documented: true,
+      design_type: milestoneDay === 0 ? "assumption_only" : "matched_comparison",
+      design_strength_tier:
+        milestoneDay === 0 ? "planning_context_only" : "comparison_supported",
+      comparison_cell_ref:
+        milestoneDay === 0
+          ? null
+          : `measurement_cell_support_lower_exposure_day_${milestoneDay}`,
+      controls_documented: milestoneDay !== 0,
       baseline_stability: "stable",
       source_ref: sources.governance.source_ref
     },
@@ -1391,30 +1401,41 @@ function blockedCandidate(
   });
 }
 
-export function runControlledMeasurementCellAssemblyFromObject(
+export function buildControlledMeasurementCellAssemblyArtifactsFromObject(
   fixture,
   options = {}
 ) {
   const cwd = options.cwd ?? process.cwd();
-  const review = runControlledAggregateFixtureReviewFromObject(fixture, { cwd });
+  const review = runControlledAggregateFixtureReviewFromObject(fixture, {
+    cwd,
+    measurementPlanOverride: options.measurementPlanOverride
+  });
   const reviewValidation = validateControlledAggregateFixtureReview(review);
 
   if (!reviewValidation.valid) {
-    return blockedCandidate(
-      fixture,
+    return {
+      candidate: blockedCandidate(
+        fixture,
+        review,
+        reviewValidation.gaps.map((gap) => `controlled_aggregate_review: ${gap}`)
+      ),
       review,
-      reviewValidation.gaps.map((gap) => `controlled_aggregate_review: ${gap}`)
-    );
+      reviewValidation
+    };
   }
 
   if (fixture?.schema_version !== FIXTURE_SCHEMA_VERSION) {
-    return blockedCandidate(
-      fixture,
+    return {
+      candidate: blockedCandidate(
+        fixture,
+        review,
+        [`schema_version must be ${FIXTURE_SCHEMA_VERSION}`],
+        "BLOCKED",
+        true
+      ),
       review,
-      [`schema_version must be ${FIXTURE_SCHEMA_VERSION}`],
-      "BLOCKED",
-      true
-    );
+      reviewValidation
+    };
   }
 
   const passedReview = controlledReviewPassed(review);
@@ -1424,27 +1445,35 @@ export function runControlledMeasurementCellAssemblyFromObject(
       review.review_state === "BLOCKED"
         ? "BLOCKED"
         : "HELD_FOR_CONTROLLED_AGGREGATE_REVIEW";
-    return blockedCandidate(
-      fixture,
+    return {
+      candidate: blockedCandidate(
+        fixture,
+        review,
+        [
+          ...(review.validation_summary?.gaps ?? []),
+          ...collectExpectedAggregateContextHashGaps(fixture)
+        ],
+        heldState,
+        true
+      ),
       review,
-      [
-        ...(review.validation_summary?.gaps ?? []),
-        ...collectExpectedAggregateContextHashGaps(fixture)
-      ],
-      heldState,
-      true
-    );
+      reviewValidation
+    };
   }
 
   const reviewedRefs = reviewedSourceRefsOf(review);
   if (reviewedSourceRefsHashOf(review) !== hashReviewedSourceRefs(reviewedRefs)) {
-    return blockedCandidate(
-      fixture,
+    return {
+      candidate: blockedCandidate(
+        fixture,
+        review,
+        ["internal_review_package.reviewed_source_refs_hash must match reviewed_source_refs"],
+        "BLOCKED",
+        true
+      ),
       review,
-      ["internal_review_package.reviewed_source_refs_hash must match reviewed_source_refs"],
-      "BLOCKED",
-      true
-    );
+      reviewValidation
+    };
   }
 
   let measurementPlan;
@@ -1454,27 +1483,43 @@ export function runControlledMeasurementCellAssemblyFromObject(
   let blueprintHandoff;
   let assemblyRun;
   try {
-    measurementPlan = loadMeasurementPlan(fixture, cwd);
+    measurementPlan = loadMeasurementPlan(
+      fixture,
+      cwd,
+      options.measurementPlanOverride
+    );
     dataSpine = buildDataSpineFromFixture(fixture);
     const actualRefs = packageRefsFromDataSpine(dataSpine);
-      const refGaps = REVIEWED_SOURCE_REF_LANES
-        .filter((lane) => actualRefs[lane] !== reviewedRefs[lane])
-        .map((lane) => `review_ref.reviewed_source_refs.${lane} must match rebuilt Data Spine source_ref`);
-      if (refGaps.length > 0) {
-        return blockedCandidate(fixture, review, refGaps, "BLOCKED", true);
-      }
+    const refGaps = REVIEWED_SOURCE_REF_LANES
+      .filter((lane) => actualRefs[lane] !== reviewedRefs[lane])
+      .map((lane) => `review_ref.reviewed_source_refs.${lane} must match rebuilt Data Spine source_ref`);
+    if (refGaps.length > 0) {
+      return {
+        candidate: blockedCandidate(fixture, review, refGaps, "BLOCKED", true),
+        review,
+        reviewValidation,
+        measurementPlan,
+        dataSpine
+      };
+    }
 
-      const preAssemblyGaps = [
+    const preAssemblyGaps = [
       ...collectExpectedAggregateContextHashGaps(fixture),
       ...collectExpectedBlueprintExpectationHashGaps(fixture),
       ...collectSourceLaneAggregateGrainGaps(fixture, measurementPlan),
-        ...collectBlueprintInputGaps(fixture, measurementPlan, dataSpine),
-        ...collectScrubbedExportOwnerGaps(fixture, dataSpine),
-        ...collectAggregateContentGaps(fixture, measurementPlan)
-      ];
-      if (preAssemblyGaps.length > 0) {
-        return blockedCandidate(fixture, review, preAssemblyGaps, "BLOCKED", true);
-      }
+      ...collectBlueprintInputGaps(fixture, measurementPlan, dataSpine),
+      ...collectScrubbedExportOwnerGaps(fixture, dataSpine),
+      ...collectAggregateContentGaps(fixture, measurementPlan)
+    ];
+    if (preAssemblyGaps.length > 0) {
+      return {
+        candidate: blockedCandidate(fixture, review, preAssemblyGaps, "BLOCKED", true),
+        review,
+        reviewValidation,
+        measurementPlan,
+        dataSpine
+      };
+    }
 
     realDataRun = buildRealDataIntakePacketRun({
       dataSpineReadiness: dataSpine,
@@ -1486,7 +1531,14 @@ export function runControlledMeasurementCellAssemblyFromObject(
     const realDataSourcePackageGaps =
       collectRealDataSourcePackageGaps(realDataRun, dataSpine);
       if (realDataSourcePackageGaps.length > 0) {
-        return blockedCandidate(fixture, review, realDataSourcePackageGaps, "BLOCKED", true);
+        return {
+          candidate: blockedCandidate(fixture, review, realDataSourcePackageGaps, "BLOCKED", true),
+          review,
+          reviewValidation,
+          measurementPlan,
+          dataSpine,
+          realDataRun
+        };
       }
     sourceQueue = buildSourcePackageReviewQueue({
       dataSpineReadiness: dataSpine,
@@ -1510,9 +1562,19 @@ export function runControlledMeasurementCellAssemblyFromObject(
       generatedAt: fixture.generated_at
     });
   } catch (error) {
-    return blockedCandidate(fixture, review, [
-      error instanceof Error ? error.message : String(error)
-    ], "BLOCKED", true);
+    return {
+      candidate: blockedCandidate(fixture, review, [
+        error instanceof Error ? error.message : String(error)
+      ], "BLOCKED", true),
+      review,
+      reviewValidation,
+      measurementPlan,
+      dataSpine,
+      realDataRun,
+      sourceQueue,
+      blueprintHandoff,
+      assemblyRun
+    };
   }
 
   const assemblyValidation = validateMeasurementCellAssemblyRun(assemblyRun);
@@ -1528,7 +1590,7 @@ export function runControlledMeasurementCellAssemblyFromObject(
         ? "BLOCKED"
         : "HELD_FOR_MEASUREMENT_CELL_ASSEMBLY";
 
-  return candidateEnvelope({
+  const candidate = candidateEnvelope({
     fixture,
     review,
     assemblyState,
@@ -1554,6 +1616,28 @@ export function runControlledMeasurementCellAssemblyFromObject(
     assemblyRun,
     blueprintHandoff
   });
+  return {
+    candidate,
+    review,
+    reviewValidation,
+    measurementPlan,
+    dataSpine,
+    realDataRun,
+    sourceQueue,
+    blueprintHandoff,
+    assemblyRun,
+    assemblyValidation
+  };
+}
+
+export function runControlledMeasurementCellAssemblyFromObject(
+  fixture,
+  options = {}
+) {
+  return buildControlledMeasurementCellAssemblyArtifactsFromObject(
+    fixture,
+    options
+  ).candidate;
 }
 
 export function runControlledMeasurementCellAssembly(path, options = {}) {
@@ -1904,7 +1988,10 @@ function collectFixtureBoundCandidateGaps(candidate, options = {}) {
   }
   const expectedCandidate = runControlledMeasurementCellAssemblyFromObject(
     sourceFixture,
-    { cwd: options.cwd ?? process.cwd() }
+    {
+      cwd: options.cwd ?? process.cwd(),
+      measurementPlanOverride: options.measurementPlanOverride
+    }
   );
   if (JSON.stringify(candidate) !== JSON.stringify(expectedCandidate)) {
     return ["passed candidate must match fixture-bound controlled Measurement Cell assembly output"];

@@ -726,6 +726,12 @@ function structuralWindowGaps(windows: any[]): string[] {
     ) {
       gaps.push(`${window.window_id}.window.days_since_launch must match milestone_day`);
     }
+    if (
+      window.status !== "missing" &&
+      window?.window?.window_mode !== "milestone"
+    ) {
+      gaps.push(`${window.window_id}.window.window_mode must be milestone for evidence continuity`);
+    }
     seen.add(window.milestone_day);
     previous = window.milestone_day;
   }

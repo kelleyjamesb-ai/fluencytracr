@@ -8,7 +8,7 @@ financial output.
 
 Phase: `phase-ai-value-measurement-cell-persistence-promotion-decision`
 
-Decision: `HOLD_FOR_MORE_PILOT_EVIDENCE`
+Decision: `PILOT_EVIDENCE_READY__HOLD_FOR_SEPARATE_PROMOTION_DECISION`
 
 ## 1. Purpose
 
@@ -23,36 +23,53 @@ This document records the current promotion decision.
 
 Do not implement `measurement_cell_snapshots` yet.
 
+The controlled saved-fixture pilot evidence package now demonstrates that the
+reviewed aggregate fixture can flow through Controlled Aggregate Fixture
+Review and Controlled Measurement Cell Assembly into compact
+promotion-review evidence. Its repeated mode also demonstrates that generated
+Day 0 / 30 / 60 / 90 / 180 / 365 milestone variants can pass the existing
+Measurement Cell Series continuity/alignment contract as internal review
+evidence.
+
 Decision value:
 
 ```text
-HOLD_FOR_MORE_PILOT_EVIDENCE
+PILOT_EVIDENCE_READY__HOLD_FOR_SEPARATE_PROMOTION_DECISION
 ```
 
 Decision bundle:
 
 ```text
-PROMOTE_DOCS_ONLY_PILOT_RUNBOOK
+PILOT_PASSED_PROMOTION_REVIEW_READY
+MEASUREMENT_CELL_SNAPSHOT_PROMOTION_REVIEW_READY
+RECOMMEND_REVISIT_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION
 HOLD_PHYSICAL_MEASUREMENT_CELL_TABLES
 HOLD_RUNTIME_PERSISTENCE_AND_MIGRATIONS
-REQUIRE_CONTROLLED_PILOT_EVIDENCE_BEFORE_SCHEMA_AUTHORIZATION
+HOLD_SERIES_PERSISTENCE_FOR_SEPARATE_PROMOTION_DECISION
+REQUIRE_SEPARATE_PROMOTION_DECISION_BEFORE_SCHEMA_AUTHORIZATION
 ```
 
 Reason:
 
-- the controlled scrubbed aggregate pilot runbook exists, but the pilot has
-  not been executed;
+- the controlled scrubbed aggregate pilot runbook exists and the saved-fixture
+  pilot evidence package now emits `PILOT_PASSED_PROMOTION_REVIEW_READY`;
 - legacy readout isolation is decisioned as `ROUTE_AND_UI_GUARD_REQUIRED`, but
   no route/UI guard implementation has been promoted or completed;
-- no pilot output package demonstrates source conversion, alignment, path
-  binding, Measurement Cell Assembly, Series milestone behavior, blocked-claim
-  propagation, and old readout isolation end to end;
+- the pilot output package demonstrates source conversion, alignment, stable
+  selected-path binding, value hypothesis binding, Measurement Cell Assembly,
+  blocked-use propagation, source-ref safety, and promotion-review evidence for
+  one saved aggregate fixture;
+- the repeated pilot output package demonstrates Measurement Cell Series
+  continuity/alignment behavior across Day 0 / 30 / 60 / 90 / 180 / 365, and
+  holds when Day 0 is missing or rolling 30-day windows are used as continuity
+  evidence;
+- the pilot output package does not resolve old readout route/UI isolation;
 - persistence would imply runtime and product-state maturity that the current
-  evidence does not yet support.
+  decision has not separately authorized.
 
 This is not a partial approval for physical tables. It authorizes only
-runbooks, decision records, required evidence criteria, and a future
-table-readiness checklist.
+controlled pilot promotion-review evidence, decision records, required
+evidence criteria, and a future table-readiness checklist.
 
 ## 3. Promotion Requirements
 
@@ -62,16 +79,19 @@ Promotion may be reconsidered only after all conditions are met:
 | --- | --- |
 | Productization Gate Decision exists | Complete |
 | Controlled Aggregate Pilot Runbook exists | Complete |
-| Controlled aggregate pilot executed | Missing |
-| Pilot result is `PILOT_PASSED_PROMOTION_REVIEW_READY` | Missing |
+| Controlled aggregate pilot executed | Complete for saved aggregate fixture |
+| Pilot result is `PILOT_PASSED_PROMOTION_REVIEW_READY` | Complete for saved aggregate fixture |
 | Legacy readout isolation decision exists | Complete |
 | Legacy readout route/UI guard posture resolved | Held |
-| Stable selected-path binding verified in pilot | Missing |
-| Value hypothesis binding verified in pilot | Missing |
-| Metric drift guard verified in pilot | Missing |
-| Lag drift guard verified in pilot | Missing |
-| Source-ref safety verified in pilot | Missing |
-| JSONB smuggling guard specified for persistence | Designed only |
+| Stable selected-path binding verified in pilot | Complete for saved aggregate fixture |
+| Value hypothesis binding verified in pilot | Complete for saved aggregate fixture |
+| Metric drift guard verified in pilot | Complete for saved aggregate fixture |
+| Lag drift guard verified in pilot | Complete for saved aggregate fixture |
+| Source-ref safety verified in pilot | Complete for saved aggregate fixture |
+| Repeated Measurement Cell Series continuity/alignment verified | Complete for controlled Day 0 / 30 / 60 / 90 / 180 / 365 fixture variants |
+| Missing Day 0 fails closed | Complete |
+| Rolling 30-day windows blocked from continuity evidence | Complete |
+| JSONB smuggling guard specified for persistence | Required next-test list generated |
 | No route/UI/export dependency created | Must be rechecked before promotion |
 
 ## 4. What Remains Blocked
@@ -168,7 +188,7 @@ Measurement Cell Series persistence remains blocked.
 Required future statement:
 
 ```text
-Measurement Cell Series persistence remains blocked until at least one repeated Measurement Cell workflow has been validated across the governed milestone windows.
+Measurement Cell Series persistence remains blocked even after repeated milestone validation until Measurement Cell snapshots are promoted and a separate Series promotion decision authorizes durable Series product state.
 ```
 
 Rolling 30-day context remains operating context only and cannot feed evidence
@@ -177,13 +197,18 @@ confidence research, customer-facing output, export, or persistence promotion.
 
 ## 8. Recommended Next Move
 
-Execute the controlled scrubbed aggregate pilot from:
+Use the controlled pilot evidence package:
 
 ```text
-docs/architecture/AI_VALUE_CONTROLLED_AGGREGATE_PILOT_RUNBOOK.md
+docs/contracts/ai-value-controlled-pilot-evidence-package/README.md
 ```
 
-Then revisit this decision with the actual pilot result.
+Then make a separate explicit decision to either:
+
+- change this decision to `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS` and open the
+  dedicated TDD implementation slice; or
+- keep `HOLD_PHYSICAL_MEASUREMENT_CELL_TABLES` and record the remaining
+  blocker.
 
 ## 9. Verification
 
