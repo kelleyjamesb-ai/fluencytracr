@@ -849,6 +849,32 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.value_hypothesis_binding_state).toBe("bound");
   });
 
+  it("normalizes persisted Measurement Cell snapshot window dates during correction lineage checks", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const stored = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+    const persistedRecord = Array.from(store.aiValueMeasurementCellSnapshots.values())
+      .find((entry) => entry.id === stored.id);
+    if (!persistedRecord) throw new Error("expected stored Measurement Cell snapshot");
+    persistedRecord.baseline_window_start = `${persistedRecord.baseline_window_start}T00:00:00.000Z`;
+    persistedRecord.baseline_window_end = `${persistedRecord.baseline_window_end}T00:00:00.000Z`;
+    persistedRecord.comparison_window_start = `${persistedRecord.comparison_window_start}T00:00:00.000Z`;
+    persistedRecord.comparison_window_end = `${persistedRecord.comparison_window_end}T00:00:00.000Z`;
+
+    const corrected = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 2,
+      supersedesId: stored.id,
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(corrected.version).toBe(2);
+    expect(corrected.supersedes_id).toBe(stored.id);
+  });
+
   it("rejects supersedes lineage on initial Measurement Cell snapshot versions", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
 

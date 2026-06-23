@@ -205,6 +205,10 @@ test("aggregate connector boundary plan rejects live handles, query text, creden
   });
 
   assert.equal(validation.valid, false);
+  assert.equal(JSON.stringify(plan).includes("person@example.com"), false);
+  assert.equal(JSON.stringify(plan).includes("SELECT user_id"), false);
+  assert.equal(hasNestedKey(plan, "raw_rows"), false);
+  assert.equal(hasNestedKey(plan, "credential_ref"), false);
   assert.ok(validation.gaps.some((gap) => gap.includes("aggregate_definition_ref")));
   assert.ok(validation.gaps.some((gap) => gap.includes("aggregate_output_ref")));
   assert.ok(validation.gaps.some((gap) => gap.includes("boundary_plan")));
