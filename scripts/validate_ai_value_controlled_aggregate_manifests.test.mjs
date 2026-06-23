@@ -93,6 +93,7 @@ const REQUIRED_BLOCKED_USES = [
   "credential_access",
   "query_execution",
   "raw_row_ingestion",
+  "dashboard_row_ingestion",
   "source_package_clearance",
   "measurement_cell_creation",
   "measurement_cell_snapshot_persistence",
@@ -558,6 +559,78 @@ test("source inventory manifest allows the governed AI Fluency confidence aggreg
   assert.ok(
     unsafeValidation.gaps.some((gap) =>
       gap.includes("approved_output_fields must be governed aggregate field names")
+    ),
+    unsafeValidation.gaps.join("; ")
+  );
+});
+
+test("source inventory manifest requires aggregate grain fields and unique output fields", () => {
+  const source = buildSourceInventoryManifest();
+  source.approved_output_fields = ["support_median_resolution_hours"];
+
+  const missingGrainValidation = validateAiValueSourceInventoryManifest(source);
+
+  assert.equal(missingGrainValidation.valid, false);
+  assert.ok(
+    missingGrainValidation.gaps.some((gap) =>
+      gap.includes("approved_output_fields must include required aggregate grain fields")
+    ),
+    missingGrainValidation.gaps.join("; ")
+  );
+
+  const duplicate = buildSourceInventoryManifest();
+  duplicate.approved_output_fields.push("window_end");
+
+  const duplicateValidation = validateAiValueSourceInventoryManifest(duplicate);
+
+  assert.equal(duplicateValidation.valid, false);
+  assert.ok(
+    duplicateValidation.gaps.some((gap) =>
+      gap.includes("approved_output_fields must not contain duplicate")
+    ),
+    duplicateValidation.gaps.join("; ")
+  );
+});
+
+test("aggregate extraction manifest allows the governed AI Fluency confidence metric only by exact allowlist", () => {
+  const source = buildSourceInventoryManifest();
+  source.source_inventory_manifest_id = "source_inventory_bigquery_export_ai_fluency";
+  source.source_lane = "ai_fluency";
+  source.approved_source_ref = "bigquery_export_ai_fluency_support_day_30";
+  source.approved_output_fields = [
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "window_start",
+    "window_end",
+    "ai_fluency_confidence_mean"
+  ];
+
+  const extraction = buildAggregateExtractionManifest(source);
+  extraction.aggregate_extraction_manifest_id =
+    "aggregate_extraction_bigquery_export_ai_fluency_governed_metric";
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.metric_definitions = ["ai_fluency_confidence_mean"];
+  extraction.aggregate_output_ref = "bigquery_export_ai_fluency_governed_metric_output";
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+
+  const unsafe = clone(extraction);
+  unsafe.metric_definitions = ["confidence_score"];
+  const unsafeValidation = validateAiValueAggregateExtractionManifest(
+    unsafe,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(unsafeValidation.valid, false);
+  assert.ok(
+    unsafeValidation.gaps.some((gap) =>
+      gap.includes("metric_definitions must be governed aggregate metric identifiers")
     ),
     unsafeValidation.gaps.join("; ")
   );

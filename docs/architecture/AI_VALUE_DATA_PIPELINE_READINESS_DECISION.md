@@ -46,6 +46,10 @@ Current repo support:
 - controlled aggregate manifest validation proof that a saved connector review
   packet can become Source Inventory, Aggregate Extraction, and Pipeline Run
   Review manifests without persistence or live execution;
+- BigQuery Aggregate Export Review proof that a passed non-live BigQuery
+  boundary plan can become a compact upstream-attested aggregate export review
+  package without SQL text, job metadata, project/dataset/table refs,
+  persistence, live execution, or customer-facing output;
 - aggregate AI Fluency dashboard import contracts;
 - VBD/token aggregate intake contracts;
 - customer metric aggregate/manual-entry contracts;
@@ -309,11 +313,16 @@ Completed safe move for pipeline work:
    identifiers, Source Package clearance aliases, Measurement Cell snapshot
    aliases, ROI, EBITDA, causality, productivity, probability, confidence-like
    model fields, and customer-facing output.
+3. Add a BigQuery Aggregate Export Review package that derives only from a
+   passed saved-fixture boundary plan and fails closed on SQL, query text,
+   BigQuery job metadata, project/dataset/table refs, raw rows, credentials,
+   stale copied validation, and Measurement Cell / Source Package overclaims.
 
 Next safe move:
 
-Use the non-live BigQuery/Sigma Aggregate Connector Boundary Plan validator as
-internal operator-review evidence for the next decision.
+Use the non-live BigQuery Aggregate Export Review package as internal
+operator-review evidence for the next decision, while keeping live BigQuery
+execution and manifest persistence held.
 
 Next decision gate:
 

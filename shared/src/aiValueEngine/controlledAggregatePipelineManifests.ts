@@ -102,6 +102,14 @@ const APPROVED_AGGREGATE_METRIC_FIELD_NAMES = new Set([
   "customer_metric_value"
 ]);
 
+const REQUIRED_AGGREGATE_GRAIN_OUTPUT_FIELDS = [
+  "workflow_family",
+  "function_area",
+  "cohort_key",
+  "window_start",
+  "window_end"
+];
+
 const SOURCE_INVENTORY_ALLOWED_USES = [
   "source_inventory_review",
   "aggregate_extraction_candidate"
@@ -122,6 +130,7 @@ const REQUIRED_BLOCKED_USES = [
   "credential_access",
   "query_execution",
   "raw_row_ingestion",
+  "dashboard_row_ingestion",
   "source_package_clearance",
   "measurement_cell_creation",
   "measurement_cell_snapshot_persistence",
@@ -1133,6 +1142,18 @@ export function validateAiValueSourceInventoryManifest(
     !manifest.approved_output_fields.every((field: any) => safeAggregateFieldName(field))
   ) {
     gaps.push("approved_output_fields must be governed aggregate field names");
+  }
+  if (Array.isArray(manifest.approved_output_fields)) {
+    const uniqueFields = new Set(manifest.approved_output_fields);
+    if (uniqueFields.size !== manifest.approved_output_fields.length) {
+      gaps.push("approved_output_fields must not contain duplicate field names");
+    }
+    for (const field of REQUIRED_AGGREGATE_GRAIN_OUTPUT_FIELDS) {
+      if (!uniqueFields.has(field)) {
+        gaps.push("approved_output_fields must include required aggregate grain fields");
+        break;
+      }
+    }
   }
 
   gaps.push(...collectExactArrayGaps(manifest.allowed_uses, SOURCE_INVENTORY_ALLOWED_USES, "allowed_uses"));
