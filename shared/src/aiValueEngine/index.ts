@@ -344,6 +344,16 @@ export type {
 } from "./controlledAggregatePipelineDryRun";
 
 export {
+  AI_VALUE_CONTROLLED_AGGREGATE_CONNECTOR_ADAPTER_SCHEMA_VERSION,
+  buildControlledAggregateConnectorAdapter,
+  validateControlledAggregateConnectorAdapter
+} from "./controlledAggregateConnectorAdapter";
+export type {
+  BuildControlledAggregateConnectorAdapterInput,
+  ControlledAggregateConnectorAdapterValidationResult
+} from "./controlledAggregateConnectorAdapter";
+
+export {
   AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION,
   buildOperatorIntakeAdapterRun,
   validateOperatorIntakeAdapterRun

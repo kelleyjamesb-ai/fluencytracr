@@ -2,6 +2,45 @@
 
 ## Last Completed
 
+- AI Value controlled aggregate connector adapter / review packet
+  (user-requested, 2026-06-22): added the next credential-safe executable
+  layer after the controlled aggregate pipeline dry run. The new shared adapter
+  and runner turn a fixture-bound, passed BigQuery/Sigma-shaped aggregate dry-run
+  proof into a compact internal connector review packet. It validates source
+  system, reviewed aggregate-export adapter mode, no-live-execution posture,
+  source-owner approval, owner attestation, aggregate export ref, org/client/
+  workflow/function/cohort/window binding, connector manifest hash, and compact
+  pipeline dry-run refs before producing packet metadata. Passed output includes
+  only adapter run id, source system, connector manifest ref/hash, aggregate
+  export ref, identity binding, owner review posture, compact pipeline dry-run
+  ref, Measurement Cell candidate proof reference, caveats, blocked uses, false
+  boundary policy, and validation summary. It fails closed on unsupported source
+  systems, live BigQuery/Sigma/Glean/customer connector execution, credential
+  indicators, query execution, raw-row ingestion, prompt/transcript/user
+  identifier indicators, connector job/API/query refs, active connector status,
+  ingestion jobs, unsafe or encoded-looking aggregate export refs, owner/
+  attestation drift, identity/window drift, stale connector manifest hash, stale
+  or hand-edited pipeline dry-run refs, child payload smuggling, JSON payload
+  aliases, ROI/EBITDA, finance-output, financial attribution, confidence,
+  probability, p-value, causality, productivity, persistence, schemas, routes,
+  UI, and customer-facing output. The only true feeds are internal adapter
+  review, connector review packet, pipeline dry-run review, and Measurement Cell
+  candidate proof; live connector execution, credentials, durable connector-run
+  storage, Source Package clearance, Measurement Cell snapshots, Series,
+  finance context, research model feed, exports, and customer-facing financial
+  output remain false. No shared schema, migration, repository, backend route,
+  frontend UI, persistence write, live connector, live query execution,
+  confidence math, ROI math, causality logic, productivity measurement,
+  probability output, finance output, or customer-facing financial output was
+  added. Verification:
+  `npm run test:ai-value-controlled-aggregate-connector-adapter` passed 21/21;
+  `npm run test:ai-value-controlled-aggregate-pipeline-dry-run` passed 18/18;
+  `npm run test:ai-value-controlled-aggregate-fixture-review` passed 16/16;
+  `npm run test:ai-value-controlled-measurement-cell-assembly` passed 39/39;
+  `npm run test:ai-value-real-data-intake-packet-runner` passed 12/12;
+  `npm run test:ai-value-source-package-review-queue` passed 13/13;
+  `git diff --check`, `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py` passed.
 - AI Value controlled aggregate pipeline dry-run promotion
   (user-requested, 2026-06-22): added the next executable bridge from a
   BigQuery/Sigma-shaped scrubbed aggregate export manifest into the existing
