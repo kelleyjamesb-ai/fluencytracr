@@ -388,7 +388,7 @@ test("controlled aggregate manifest validation preserves per-manifest summary fl
   assert.equal(validation.valid, false);
 });
 
-test("controlled aggregate manifest validation derives source lanes from selected metrics", () => {
+test("controlled aggregate manifest validation keeps the default VBD lane for the selected support metric", () => {
   const fixture = readJson(FIXTURE_PATH);
   const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
     fixture,
@@ -402,11 +402,11 @@ test("controlled aggregate manifest validation derives source lanes from selecte
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(
     manifestPackage.manifests.source_inventory_manifest.source_lane,
-    "customer_metric"
+    "vbd_token"
   );
   assert.equal(
     manifestPackage.manifests.aggregate_extraction_manifest.source_package_lane,
-    "customer_metric"
+    "vbd_token"
   );
 });
 

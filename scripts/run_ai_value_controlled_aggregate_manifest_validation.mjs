@@ -447,7 +447,8 @@ function sourceLaneForMetric(metricId) {
       "token_cost_index",
       "token_efficiency_index",
       "vbd_quality_index",
-      "vbd_reuse_index"
+      "vbd_reuse_index",
+      "support_median_resolution_hours"
     ].includes(String(metricId ?? ""))
   ) {
     return "vbd_token";

@@ -451,11 +451,8 @@ test("runValueChain does not copy a Fluency baseline ref for a different workflo
   assert.equal(unscopedRun.fluency_baseline.status, "VALID");
   assert.equal(unscopedRun.spine.halted_at, null);
   assert.equal(
-    Object.hasOwn(
-      unscopedRun.spine.stages.executive_packet.object.source_refs,
-      "fluency_baseline_id"
-    ),
-    false
+    unscopedRun.spine.stages.executive_packet.object.source_refs.fluency_baseline_id,
+    unscopedBaseline.baseline_id
   );
 
   const mismatchedBaseline = {
@@ -470,15 +467,10 @@ test("runValueChain does not copy a Fluency baseline ref for a different workflo
     metricsLibrary
   });
 
-  assert.equal(mismatchedRun.fluency_baseline.status, "VALID");
-  assert.equal(mismatchedRun.spine.halted_at, null);
-  assert.equal(
-    Object.hasOwn(
-      mismatchedRun.spine.stages.executive_packet.object.source_refs,
-      "fluency_baseline_id"
-    ),
-    false
-  );
+  assert.equal(mismatchedRun.fluency_baseline.status, "HELD");
+  assert.equal(mismatchedRun.halted_at, "fluency_baseline");
+  assert.equal(mismatchedRun.decision, "HOLD_FOR_FLUENCY_BASELINE_TRACEABILITY");
+  assert.equal(mismatchedRun.spine, null);
 });
 
 test("runValueChain halts when the engagement does not cover the workflow", () => {

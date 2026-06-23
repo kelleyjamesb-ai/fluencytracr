@@ -2,6 +2,19 @@
 
 ## Last Completed
 
+- AI Value PR #371 conflict-resolution rebase (user-requested, 2026-06-23):
+  rebased `codex/pr369-review-comments` onto current `origin/main` and
+  resolved overlaps from PR #370's legacy readout isolation and blocked-package
+  hardening. The resolved branch keeps stricter blocked manifest-validation
+  packages free of adapter refs while preserving recomputed per-manifest
+  validation flags, keeps validated non-VBD lane override coverage, preserves
+  VBD lane handling for the default support metric, and aligns value-chain
+  tests with fail-closed mismatched Fluency baseline behavior. No canonical
+  events, suppression reasons, live connectors, UI, ROI, causality,
+  productivity, person-level fields, or customer-facing economic output was
+  added. Verification passed for shared build, AI Value engine suite,
+  controlled aggregate manifest validator suite, controlled aggregate manifest
+  validation package suite, backend AI Value object API suite, and diff check.
 - AI Value PR #371 controlled aggregate manifest review fixes
   (user-requested, 2026-06-23): addressed the follow-up review comments on
   approved expectation-path hash binding, approved AI Fluency scalar metric
