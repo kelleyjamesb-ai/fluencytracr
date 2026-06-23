@@ -2,6 +2,36 @@
 
 ## Last Completed
 
+- AI Value Measurement Cell Snapshot internal gate and operator projection
+  API (user-requested, 2026-06-23): added an internal/operator-only
+  `GET /api/v1/ai-value/measurement-cell-snapshots` projection over persisted
+  `measurement_cell_snapshots`. The response exposes compact snapshot status,
+  internal projection gate posture, selected expectation-path lineage,
+  metric/window lineage, the five Measurement Cell source refs only, caveats,
+  and blocked uses. `EXEC_VIEWER` is denied; `ADMIN`, `GOV_OPERATOR`, and
+  `ENABLEMENT_LEAD` are allowed. The route keeps customer-facing output,
+  customer-facing financial output, source-bound readout, and export
+  authorization false. Projection gate clearance now also requires projection
+  safety, strict validation metadata, and compact binding checks, so stale
+  validation flags, held assembly decisions, incomplete blocked-use posture,
+  path/metric/lag drift, unsafe or non-compact source refs, unsafe projected
+  scalar values, unsafe caveat/use text, raw rows, query text, prompts,
+  transcripts, identifiers, confidence/probability/model-score aliases, ROI,
+  causality, productivity, or finance-output smuggling hold or omit the
+  internal projection instead of clearing it. Held projections strip source
+  refs, and the API emits only a projection-safe blocked-use posture rather
+  than mirroring the full persisted governance array. The response does not
+  expose payloads, assembly payloads, validation payloads, UI, migrations,
+  schemas, live connectors, exports, or customer-facing readouts. Optional
+  compact assembly payloads must bind to the same assembly run, Measurement
+  Cell, validation posture, caveats, and blocked uses before persistence.
+  Added the projection contract and linked it from README; amended the
+  Measurement Cell persistence decision with a separate follow-up internal
+  projection note.
+  Verification: `npm test --workspace backend -- --runTestsByPath
+  tests/ai_value_minimal_persistence.test.ts tests/ai_value_objects_api.test.ts`
+  passed 91/91; `npm run build --workspace backend`; docs contract sweep;
+  `git diff --check`; and V1 governance gates passed.
 - AI Value review-gate follow-up fixes (user-requested, 2026-06-23):
   addressed the review comments on Measurement Cell snapshot binding, initial
   snapshot lineage, baseline-only evidence-collection windows, controlled

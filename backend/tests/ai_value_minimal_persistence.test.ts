@@ -434,6 +434,13 @@ describe("AI Value minimal persistence migration", () => {
     expect(table).not.toContain('"causality');
     expect(table).not.toContain('"productivity');
     expect(table).not.toContain('"raw_rows"');
+    expect(table).not.toContain('"row_id"');
+    expect(table).not.toContain('"span_id"');
+    expect(table).not.toContain('"trace_id"');
+    expect(table).not.toContain('"email_hash"');
+    expect(table).not.toContain('"user_hash"');
+    expect(table).not.toContain('"person_hash"');
+    expect(table).not.toContain('"employee_hash"');
     expect(table).not.toContain('"query_text"');
     expect(table).not.toContain('"sql_text"');
     expect(table).not.toContain('"prompt"');
@@ -466,6 +473,13 @@ describe("AI Value minimal persistence migration", () => {
       "hashed_user_id",
       "hashed_employee_id",
       "joinable_person_identifier",
+      "row_id",
+      "span_id",
+      "trace_id",
+      "email_hash",
+      "user_hash",
+      "person_hash",
+      "employee_hash",
       "raw_rows",
       "raw_content",
       "raw_prompt",
@@ -1040,6 +1054,161 @@ describe("AI Value minimal persistence repository", () => {
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
 
+    const smuggledSourceRefNotesObject = clone(controlledMeasurementCellAssemblyRun());
+    smuggledSourceRefNotesObject.measurement_cell.source_refs.notes = {
+      package_ref: "source_package_compact_ref",
+      table_family: "aggregate_summary"
+    };
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: smuggledSourceRefNotesObject,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const smuggledSourceRefPackageArray = clone(controlledMeasurementCellAssemblyRun());
+    smuggledSourceRefPackageArray.measurement_cell.source_refs.source_package_ids = [
+      {
+        source_package_id: "source_package_compact_ref",
+        source_package_type: "layer_1_summary"
+      }
+    ];
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: smuggledSourceRefPackageArray,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const smuggledBlueprintSourceRef = clone(controlledMeasurementCellAssemblyRun());
+    smuggledBlueprintSourceRef.measurement_cell.source_refs.blueprint_source_ref = {
+      ref: "blueprint_review_ref_support_resolution"
+    };
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: smuggledBlueprintSourceRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeIdentifierCases: Array<[
+      string,
+      (run: any, assemblyPayload: Record<string, unknown>) => void
+    ]> = [
+      [
+        "row_id in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "row_id:row_123";
+        }
+      ],
+      [
+        "bare row identifier in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "row_123";
+        }
+      ],
+      [
+        "span_id in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "span_id:span_123";
+        }
+      ],
+      [
+        "bare span identifier in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "span_abc123";
+        }
+      ],
+      [
+        "trace_id in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "trace_id:trace_123";
+        }
+      ],
+      [
+        "bare trace identifier in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "trace_123";
+        }
+      ],
+      [
+        "email_hash in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "email_hash:abc123";
+        }
+      ],
+      [
+        "hashed email in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "hashed_email:abc123";
+        }
+      ],
+      [
+        "user_hash in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "user_hash:abc123";
+        }
+      ],
+      [
+        "person_hash in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "person_hash:abc123";
+        }
+      ],
+      [
+        "employee_hash in source refs",
+        (run: any) => {
+          run.measurement_cell.source_refs.notes = "employee_hash:abc123";
+        }
+      ],
+      [
+        "row_id in full assembly run",
+        (run: any) => {
+          run.measurement_cell.row_id = "row_123";
+        }
+      ],
+      [
+        "span_id in assembly payload",
+        (_run: any, assemblyPayload: Record<string, unknown>) => {
+          assemblyPayload.source_refs = {
+            aggregate_probe_id: "aggregate_probe_ref",
+            notes: "span_id:span_123"
+          };
+        }
+      ]
+    ];
+
+    for (const [label, mutate] of unsafeIdentifierCases) {
+      const unsafeIdentifierRun = clone(controlledMeasurementCellAssemblyRun());
+      const assemblyPayload: Record<string, unknown> | null =
+        label === "span_id in assembly payload"
+          ? {
+              assembly_run_id: unsafeIdentifierRun.run_id,
+              assembly_decision: unsafeIdentifierRun.decision,
+              measurement_cell_id:
+                unsafeIdentifierRun.measurement_cell.measurement_cell_id,
+              validation: {
+                validator: "validateMeasurementCellAssemblyRun",
+                valid: true
+              },
+              required_caveats: [],
+              blocked_uses: unsafeIdentifierRun.measurement_cell.blocked_uses
+            }
+          : null;
+      mutate(unsafeIdentifierRun, assemblyPayload ?? {});
+      await expect(
+        persistAiValueMeasurementCellSnapshot({
+          measurementCellAssemblyRun: unsafeIdentifierRun,
+          version: 1,
+          createdByRole: "value_realization_pm",
+          assemblyPayload
+        })
+      ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+    }
+
     const unsafePathBinding = clone(controlledMeasurementCellAssemblyRun());
     unsafePathBinding.measurement_cell.blueprint_alignment.approved_expectation_paths = [
       unsafePathBinding.measurement_cell.blueprint_alignment.approved_expectation_path
@@ -1086,6 +1255,33 @@ describe("AI Value minimal persistence repository", () => {
           },
           required_caveats: [],
           blocked_uses: unsafeCompactAssemblyPayload.measurement_cell.blocked_uses
+        }
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const driftedCompactAssemblyPayload = controlledMeasurementCellAssemblyRun();
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: driftedCompactAssemblyPayload,
+        version: 1,
+        createdByRole: "value_realization_pm",
+        assemblyPayload: {
+          assembly_run_id: "measurement_cell_assembly_run_drifted",
+          assembly_decision: driftedCompactAssemblyPayload.decision,
+          measurement_cell_id:
+            driftedCompactAssemblyPayload.measurement_cell.measurement_cell_id,
+          validation: {
+            validator: "validateMeasurementCellAssemblyRun",
+            valid: true,
+            run_id: driftedCompactAssemblyPayload.run_id,
+            measurement_cell_id:
+              driftedCompactAssemblyPayload.measurement_cell.measurement_cell_id,
+            gaps: []
+          },
+          required_caveats:
+            driftedCompactAssemblyPayload.measurement_cell.required_caveats,
+          blocked_uses:
+            driftedCompactAssemblyPayload.measurement_cell.blocked_uses
         }
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
@@ -1716,6 +1912,29 @@ describe("AI Value minimal persistence repository", () => {
         }
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    for (const unsafeTokenizedRef of [
+      "roi_model_ref",
+      "confidence_score",
+      "probability_score",
+      "finance_output",
+      "prompt_text",
+      "response_text"
+    ]) {
+      const tokenizedRefPlan = measurementPlan();
+      await expect(
+        persistAiValueMeasurementPlan({
+          measurementPlan: tokenizedRefPlan,
+          version: 1,
+          valueHypothesisId:
+            tokenizedRefPlan.value_hypothesis.value_hypothesis_id,
+          createdByRole: "value_realization_pm",
+          sourceRefs: {
+            aggregate_export_id: unsafeTokenizedRef
+          }
+        })
+      ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+    }
 
     expect(store.aiValueMeasurementPlans.size).toBe(0);
     expect(store.aiValueSourcePackageRefs.size).toBe(0);

@@ -1,10 +1,10 @@
 # AI Value Physical Data Model Readiness Review
 
-Status: docs-only physical readiness review. This document does not authorize
-new Prisma schema changes, migrations, repository methods, backend routes,
-frontend UI, live Glean or BigQuery execution, persistence writes, confidence
-math, ROI, causality, productivity, probability, or customer-facing financial
-output.
+Status: physical readiness review and promotion ledger. This document does not
+authorize additional Prisma schema changes, migrations, repository methods,
+backend routes, frontend UI, live Glean or BigQuery execution, persistence
+writes, confidence math, ROI, causality, productivity, probability, or
+customer-facing financial output without a separate promotion decision.
 
 Phase: `phase-ai-value-physical-data-model`
 
@@ -96,7 +96,7 @@ Projection detail:
 | Claim Readiness Snapshot | `claim_readiness_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `handoff_id`, `measurement_plan_id`, `claim_readiness_state` | No customer-facing financial output; no positive contribution-model field |
 | Executive Readout Snapshot | `executive_readout_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `executive_readout_snapshot_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `measurement_plan_id`, `readout_state` | No rendered readout route/UI/export from this pass |
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
-| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver` | No full Measurement Cell object, route, UI, export, or customer read path |
+| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver` | No full Measurement Cell object, frontend UI, export, rendered readout, or customer-facing read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
 ## 4. Canonical Alignment Envelope
@@ -615,8 +615,9 @@ Before any additional Measurement Cell or Series persistence beyond
    lag drift, metric drift, unsafe source refs, raw rows, query text, prompts,
    transcripts, user identifiers, full expectation-path registries, ROI
    fields, EBITDA or finance-output fields, causality fields, productivity
-   fields, probability fields, confidence or score-like fields, UI, route,
-   schema, live execution, override, and threshold side doors.
+   fields, probability fields, confidence or score-like fields, frontend UI,
+   customer-facing route, schema, live execution, override, and threshold side
+   doors.
 3. Red/green tests proving JSONB-bearing fields cannot smuggle blocked content
    through `payload_json`, `validation_json`, `source_refs_json`, or
    `blueprint_path_binding_json`.
@@ -640,8 +641,8 @@ Before any additional Measurement Cell or Series persistence beyond
 This document alone cannot trigger additional migrations. A future
 implementation slice must cite a separate explicit promotion decision before
 adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
-migrations, repositories, schemas, routes, UI, persistence writes, live
-execution, research-model inputs, or customer-facing output.
+migrations, repositories, schemas, unpromoted routes, UI, persistence writes,
+live execution, research-model inputs, or customer-facing output.
 
 ## 13. Recommended Next Decision Slice
 

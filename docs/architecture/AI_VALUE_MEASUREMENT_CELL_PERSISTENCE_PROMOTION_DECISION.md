@@ -240,4 +240,17 @@ bash scripts/ci_docs_contract_sweep.sh
 python3 scripts/ci_v1_governance_gates.py
 ```
 
+## 10. Follow-Up Internal Projection Slice
+
+A later bounded productization slice may expose the compact
+`measurement_cell_snapshots` row through the internal/operator-only projection
+contract in
+`docs/contracts/ai-value-measurement-cell-snapshot-projection/README.md`.
+
+That follow-up contract does not change this decision's original persistence
+scope. It still does not authorize frontend pages, customer-facing read paths,
+exports, rendered readouts, live connector execution, Series persistence,
+confidence research inputs, ROI, causality, productivity, probability, finance
+output, or customer-facing financial output.
+
 Expected: all commands exit `0`.

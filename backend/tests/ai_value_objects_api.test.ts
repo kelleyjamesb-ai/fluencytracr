@@ -1,16 +1,62 @@
+import crypto from "node:crypto";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
+import type { Role } from "@learnaire/shared";
 import request from "supertest";
 
 import { app } from "../src/app";
 import { store } from "../src/store";
+import type { AiValueMeasurementCellSnapshotStoredRecord } from "../src/store";
 
 const ORG_ID = "org-northstar-enterprise";
 const writeAuth = { "x-role": "ADMIN", "x-org-id": ORG_ID };
 const readAuth = { "x-role": "EXEC_VIEWER", "x-org-id": ORG_ID };
 const readoutAuth = { "x-role": "ENABLEMENT_LEAD", "x-org-id": ORG_ID };
+const govOperatorAuth = { "x-role": "GOV_OPERATOR", "x-org-id": ORG_ID };
 const otherOrgAuth = { "x-role": "ADMIN", "x-org-id": "org-2" };
+
+const base64Url = (value: Buffer | string) =>
+  Buffer.from(value)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const signJwt = (payload: Record<string, unknown>, secret: string) => {
+  const header = { alg: "HS256", typ: "JWT" };
+  const encodedHeader = base64Url(JSON.stringify(header));
+  const encodedPayload = base64Url(JSON.stringify(payload));
+  const signedContent = `${encodedHeader}.${encodedPayload}`;
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(signedContent)
+    .digest();
+  return `${signedContent}.${base64Url(signature)}`;
+};
+
+const jwtHeaders = (role: Role, orgId: string, secret: string) => ({
+  authorization: `Bearer ${signJwt(
+    {
+      sub: "measurement-cell-projection-test",
+      role,
+      org_id: orgId,
+      exp: Math.floor(Date.now() / 1000) + 3600
+    },
+    secret
+  )}`
+});
+
+const collectKeys = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap(collectKeys);
+  }
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, nested]) => [
+    key,
+    ...collectKeys(nested)
+  ]);
+};
 
 const readExample = (name: string): Record<string, unknown> =>
   JSON.parse(
@@ -31,6 +77,146 @@ const blueprintId = blueprint.blueprint_id as string;
 const metricsLibraryId = metricsLibrary.library_id as string;
 const roiScenarioId = roiScenario.roi_scenario_id as string;
 const executivePacketId = "executive_packet_customer_support_case_resolution_v1";
+
+const measurementCellSnapshotRecord = (
+  overrides: Partial<AiValueMeasurementCellSnapshotStoredRecord> = {}
+): AiValueMeasurementCellSnapshotStoredRecord => ({
+  id: "measurement_cell_snapshot_projection_example",
+  org_id: ORG_ID,
+  client_id: "client-northstar",
+  measurement_cell_id: "measurement_cell_support_resolution_day_30",
+  measurement_cell_assembly_run_id: "measurement_cell_assembly_support_resolution_day_30",
+  measurement_plan_id: "measurement_plan_support_resolution",
+  value_hypothesis_id: "value_hypothesis_support_resolution",
+  value_hypothesis_ref: null,
+  value_hypothesis_binding_state: "bound",
+  approved_blueprint_ref: "blueprint_review_ref_support_resolution",
+  approved_blueprint_payload_hash: "a".repeat(64),
+  blueprint_expectation_ref: "blueprint_expectation_ref_support_resolution",
+  expectation_path_id: "expectation_path_support_resolution_capacity",
+  expectation_path_version: 1,
+  expectation_path_hash: "b".repeat(64),
+  approval_state: "approved",
+  approved_at: "2026-06-13T18:00:00.000Z",
+  approved_by_role: "workflow_owner",
+  value_driver: "Capacity",
+  metric_id: "support_median_resolution_hours",
+  metric_definition_ref: "metric_definition_ref_support_resolution",
+  metric_definition_hash: "c".repeat(64),
+  metric_owner_approval_state: "approved",
+  metric_direction: "decrease",
+  metric_unit: "hours",
+  expected_metric_lag_days: 30,
+  workflow_family: "customer_support_case_resolution",
+  workflow_id: "workflow_support_case_resolution",
+  function_area: "customer_support",
+  cohort_key: "support_agents_northstar",
+  window_mode: "milestone",
+  milestone_day: 30,
+  baseline_window_start: "2026-01-01T00:00:00.000Z",
+  baseline_window_end: "2026-01-31T23:59:59.000Z",
+  comparison_window_start: "2026-03-01T00:00:00.000Z",
+  comparison_window_end: "2026-03-31T23:59:59.000Z",
+  assembly_decision: "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER",
+  payload: {
+    measurement_cell_id: "measurement_cell_support_resolution_day_30",
+    selected_path: {
+      expectation_path_id: "expectation_path_support_resolution_capacity",
+      expectation_path_version: 1,
+      expectation_path_hash: "b".repeat(64),
+      approved_blueprint_payload_hash: "a".repeat(64),
+      approved_blueprint_ref: "blueprint_review_ref_support_resolution",
+      blueprint_expectation_ref: "blueprint_expectation_ref_support_resolution",
+      approval_state: "approved",
+      approved_at: "2026-06-13T18:00:00.000Z",
+      approved_by_role: "workflow_owner",
+      value_driver: "Capacity",
+      expected_metric_id: "support_median_resolution_hours",
+      expected_metric_direction: "decrease",
+      expected_metric_lag_days: 30
+    },
+    selected_metric: {
+      metric_id: "support_median_resolution_hours",
+      metric_definition_ref: "metric_definition_ref_support_resolution",
+      metric_definition_hash: "c".repeat(64),
+      metric_owner_approval_state: "approved",
+      metric_direction: "decrease",
+      metric_unit: "hours",
+      expected_metric_lag_days: 30
+    },
+    time_window: {
+      window_mode: "milestone",
+      milestone_day: 30,
+      baseline_window: {
+        window_start: "2026-01-01T00:00:00.000Z",
+        window_end: "2026-01-31T23:59:59.000Z"
+      },
+      comparison_window: {
+        window_start: "2026-03-01T00:00:00.000Z",
+        window_end: "2026-03-31T23:59:59.000Z"
+      }
+    }
+  },
+  assembly_payload: null,
+  validation: {
+    validator: "validateMeasurementCell",
+    valid: true,
+    measurement_cell_id: "measurement_cell_support_resolution_day_30",
+    gaps: []
+  },
+  assembly_validation: {
+    validator: "validateMeasurementCellAssemblyRun",
+    valid: true,
+    run_id: "measurement_cell_assembly_support_resolution_day_30",
+    measurement_cell_id: "measurement_cell_support_resolution_day_30",
+    gaps: []
+  },
+  source_refs: {
+    blueprint_source_ref: "blueprint_review_ref_support_resolution",
+    ai_fluency_source_ref: "ai_fluency_aggregate_ref_support_resolution",
+    vbd_source_ref: "vbd_token_aggregate_ref_support_resolution",
+    metric_source_ref: "metric_definition_ref_support_resolution",
+    token_source_ref: "token_aggregate_ref_support_resolution"
+  },
+  blueprint_path_binding: {
+    expectation_path_id: "expectation_path_support_resolution_capacity",
+    expectation_path_version: 1,
+    expectation_path_hash: "b".repeat(64),
+    approved_blueprint_payload_hash: "a".repeat(64),
+    approved_blueprint_ref: "blueprint_review_ref_support_resolution",
+    blueprint_expectation_ref: "blueprint_expectation_ref_support_resolution",
+    approval_state: "approved",
+    approved_at: "2026-06-13T18:00:00.000Z",
+    approved_by_role: "workflow_owner",
+    value_driver: "Capacity",
+    expected_metric_id: "support_median_resolution_hours",
+    expected_metric_direction: "decrease",
+    expected_metric_lag_days: 30
+  },
+  required_caveats: [
+    "Internal Measurement Cell snapshot projection only; not customer-facing output."
+  ],
+  blocked_uses: [
+    "realized_roi",
+    "ebita_claim",
+    "ebitda_claim",
+    "financial_attribution",
+    "causality_claim",
+    "productivity_claim",
+    "headcount_reduction_claim",
+    "individual_attribution",
+    "manager_or_team_ranking",
+    "department_ranking",
+    "people_decisioning",
+    "customer_facing_financial_output"
+  ],
+  version: 1,
+  supersedes_id: null,
+  generated_at: "2026-03-31T23:59:59.000Z",
+  created_at: "2026-04-01T00:00:00.000Z",
+  created_by_role: "value_realization_pm",
+  ...overrides
+});
 
 beforeEach(() => {
   store.reset();
@@ -145,6 +331,700 @@ describe("AI value object API", () => {
       .set(readAuth);
     expect(filtered.body.objects).toHaveLength(1);
     expect(filtered.body.objects[0].object_type).toBe("blueprint");
+  });
+
+  it("projects Measurement Cell snapshots for internal operators without raw persistence payloads", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord()
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["content-disposition"]).toBeUndefined();
+    expect(response.headers["x-ai-value-projection-boundary"]).toBe("internal_operator");
+    expect(response.headers["x-ai-value-customer-facing-output"]).toBe("false");
+    expect(response.headers["x-ai-value-customer-facing-financial-output"]).toBe("false");
+    expect(response.headers["x-ai-value-source-bound-projection"]).toBe("true");
+    expect(response.headers["x-ai-value-source-bound-readout"]).toBe("false");
+    expect(response.headers["x-ai-value-export-authorized"]).toBe("false");
+    expect(response.body.projection_schema_version).toBe(
+      "FT_AI_VALUE_MEASUREMENT_CELL_OPERATOR_PROJECTION_2026_06"
+    );
+    expect(response.body.audience).toBe("internal_operator");
+    expect(response.body.customer_facing_output).toBe(false);
+    expect(response.body.export_authorized).toBe(false);
+    expect(response.body.source_bound_readout).toBe(false);
+    expect(response.body.source_bound_projection).toBe(true);
+    expect(response.body.snapshots).toHaveLength(1);
+
+    const [snapshot] = response.body.snapshots;
+    expect(snapshot.internal_projection_gate).toEqual({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_CLEAR",
+      internal_projection_gate_clear: true,
+      measurement_cell_gate_valid: true,
+      assembly_gate_valid: true,
+      approval_state: "approved",
+      metric_owner_approval_state: "approved",
+      customer_facing_output: false,
+      export_authorized: false
+    });
+    expect(snapshot.lineage).toMatchObject({
+      measurement_plan_id: "measurement_plan_support_resolution",
+      measurement_cell_assembly_run_id:
+        "measurement_cell_assembly_support_resolution_day_30",
+      value_hypothesis_id: "value_hypothesis_support_resolution",
+      approved_blueprint_ref: "blueprint_review_ref_support_resolution",
+      approved_blueprint_payload_hash: "a".repeat(64),
+      blueprint_expectation_ref: "blueprint_expectation_ref_support_resolution",
+      expectation_path_hash: "b".repeat(64),
+      metric_definition_ref: "metric_definition_ref_support_resolution",
+      metric_definition_hash: "c".repeat(64),
+      version: 1
+    });
+    expect(snapshot.measurement_cell_id).toBe(
+      "measurement_cell_support_resolution_day_30"
+    );
+    expect(snapshot.selected_path).toMatchObject({
+      expectation_path_id: "expectation_path_support_resolution_capacity",
+      approval_state: "approved",
+      value_driver: "Capacity"
+    });
+    expect(snapshot.metric).toMatchObject({
+      metric_id: "support_median_resolution_hours",
+      metric_direction: "decrease",
+      metric_unit: "hours",
+      expected_metric_lag_days: 30
+    });
+    expect(snapshot.window).toMatchObject({
+      window_mode: "milestone",
+      milestone_day: 30
+    });
+    expect(snapshot.source_refs).toEqual({
+      blueprint_source_ref: "blueprint_review_ref_support_resolution",
+      ai_fluency_source_ref: "ai_fluency_aggregate_ref_support_resolution",
+      vbd_source_ref: "vbd_token_aggregate_ref_support_resolution",
+      metric_source_ref: "metric_definition_ref_support_resolution",
+      token_source_ref: "token_aggregate_ref_support_resolution"
+    });
+
+    const serialized = JSON.stringify(response.body);
+    expect(snapshot).not.toHaveProperty("payload");
+    expect(snapshot).not.toHaveProperty("assembly_payload");
+    expect(snapshot).not.toHaveProperty("validation");
+    expect(snapshot).not.toHaveProperty("assembly_validation");
+    const projectedKeys = collectKeys(response.body);
+    for (const forbiddenKey of [
+      "payload",
+      "assembly_payload",
+      "validation",
+      "assembly_validation",
+      "source_refs_json"
+    ]) {
+      expect(projectedKeys).not.toContain(forbiddenKey);
+    }
+    for (const forbiddenValue of [
+      "raw_rows",
+      "query_text",
+      "sql_text",
+      "SELECT * FROM raw_events",
+      "prompt",
+      "transcript",
+      "user_id",
+      "row_id",
+      "span_id",
+      "ebitda",
+      "probability",
+      "confidence",
+      "score",
+      "operator note that should not project"
+    ]) {
+      expect(serialized.toLowerCase()).not.toContain(forbiddenValue.toLowerCase());
+    }
+  });
+
+  it("holds Measurement Cell snapshot projection gate when stored compact rows contain unsafe source context", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        payload: {
+          measurement_cell_id: "measurement_cell_support_resolution_day_30",
+          raw_rows: ["must never project"],
+          confidence_score: 0.91
+        },
+        assembly_payload: {
+          measurement_cell: {
+            prompts: ["must never project"]
+          }
+        },
+        validation: {
+          validator: "validateMeasurementCell",
+          valid: true,
+          score: 0.91
+        },
+        source_refs: {
+          blueprint_source_ref: "row_id:row_123",
+          ai_fluency_source_ref: "ai_fluency_aggregate_ref_support_resolution",
+          vbd_source_ref: "vbd_token_aggregate_ref_support_resolution",
+          metric_source_ref: "SELECT * FROM raw_events",
+          token_source_ref: "token_aggregate_ref_support_resolution",
+          notes: "operator note that should not project",
+          query_text: "SELECT * FROM raw_events"
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    const [snapshot] = response.body.snapshots;
+    expect(snapshot.internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      measurement_cell_gate_valid: true,
+      assembly_gate_valid: true,
+      customer_facing_output: false,
+      export_authorized: false
+    });
+    expect(snapshot.source_refs).toEqual({});
+
+    const serialized = JSON.stringify(response.body).toLowerCase();
+    for (const forbiddenValue of [
+      "raw_rows",
+      "row_id",
+      "row_123",
+      "query_text",
+      "select * from raw_events",
+      "prompt",
+      "confidence",
+      "score",
+      "operator note that should not project"
+    ]) {
+      expect(serialized).not.toContain(forbiddenValue);
+    }
+  });
+
+  it("holds Measurement Cell snapshot projection gate and strips non-compact source refs", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        source_refs: {
+          blueprint_source_ref: JSON.stringify({
+            source_package_id: "source_package_layer_1",
+            package_payload: {
+              record_count: 42,
+              source_label: "operator_uploaded_package"
+            }
+          }),
+          ai_fluency_source_ref: "ai_fluency_aggregate_ref_support_resolution",
+          vbd_source_ref: "vbd_token_aggregate_ref_support_resolution",
+          metric_source_ref: "metric_definition_ref_support_resolution",
+          token_source_ref: "token_aggregate_ref_support_resolution"
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      customer_facing_output: false,
+      export_authorized: false
+    });
+    expect(response.body.snapshots[0].source_refs).toEqual({});
+    const serialized = JSON.stringify(response.body).toLowerCase();
+    for (const forbiddenValue of [
+      "source_package_id",
+      "package_payload",
+      "record_count",
+      "operator_uploaded_package"
+    ]) {
+      expect(serialized).not.toContain(forbiddenValue);
+    }
+  });
+
+  it("holds Measurement Cell snapshot projection gate when assembly decision is held", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        assembly_decision: "HELD_FOR_SOURCE_PACKAGE_REVIEW"
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      customer_facing_output: false,
+      export_authorized: false
+    });
+    expect(response.body.snapshots[0].source_refs).toEqual({});
+  });
+
+  it("holds Measurement Cell snapshot projection gate when blocked-use posture is incomplete", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        blocked_uses: []
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      customer_facing_output: false,
+      export_authorized: false
+    });
+    expect(response.body.snapshots[0].source_refs).toEqual({});
+  });
+
+  it("strips source refs from held Measurement Cell snapshot projections", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        validation: {
+          validator: "validateMeasurementCell",
+          valid: false
+        },
+        source_refs: {
+          blueprint_source_ref: "suppressed_package_ref",
+          ai_fluency_source_ref: "ai_fluency_aggregate_ref_support_resolution",
+          vbd_source_ref: "vbd_token_aggregate_ref_support_resolution",
+          metric_source_ref: "metric_definition_ref_support_resolution",
+          token_source_ref: "token_aggregate_ref_support_resolution"
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false
+    });
+    expect(response.body.snapshots[0].source_refs).toEqual({});
+    expect(JSON.stringify(response.body)).not.toContain("suppressed_package_ref");
+  });
+
+  it("holds Measurement Cell snapshot projection gate when stored path and metric bindings drift", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        metric_id: "support_escalation_rate",
+        expected_metric_lag_days: 60,
+        payload: {
+          measurement_cell_id: "measurement_cell_support_resolution_day_30",
+          selected_path: {
+            expectation_path_id: "expectation_path_support_resolution_capacity",
+            expected_metric_id: "support_median_resolution_hours",
+            expected_metric_direction: "decrease",
+            expected_metric_lag_days: 30
+          },
+          selected_metric: {
+            metric_id: "support_escalation_rate",
+            expected_metric_lag_days: 60
+          }
+        },
+        blueprint_path_binding: {
+          expectation_path_id: "expectation_path_support_resolution_capacity",
+          expectation_path_version: 1,
+          expectation_path_hash: "b".repeat(64),
+          approved_blueprint_payload_hash: "a".repeat(64),
+          approved_blueprint_ref: "blueprint_review_ref_support_resolution",
+          blueprint_expectation_ref: "blueprint_expectation_ref_support_resolution",
+          approval_state: "approved",
+          approved_at: "2026-06-13T18:00:00.000Z",
+          approved_by_role: "workflow_owner",
+          value_driver: "Capacity",
+          expected_metric_id: "support_median_resolution_hours",
+          expected_metric_direction: "decrease",
+          expected_metric_lag_days: 30
+        },
+        validation: {
+          validator: "validateMeasurementCell",
+          valid: true,
+          measurement_cell_id: "measurement_cell_support_resolution_day_30",
+          gaps: []
+        },
+        assembly_validation: {
+          validator: "validateMeasurementCellAssemblyRun",
+          valid: true,
+          run_id: "measurement_cell_assembly_support_resolution_day_30",
+          measurement_cell_id: "measurement_cell_support_resolution_day_30",
+          gaps: []
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0]).toMatchObject({
+      metric: {
+        metric_id: "support_escalation_rate",
+        expected_metric_lag_days: 60
+      }
+    });
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      measurement_cell_gate_valid: true,
+      assembly_gate_valid: true,
+      approval_state: "approved",
+      metric_owner_approval_state: "approved",
+      customer_facing_output: false,
+      export_authorized: false
+    });
+  });
+
+  it("omits Measurement Cell snapshot projections with unsafe projected scalar values", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        metric_id: "confidence_score"
+      })
+    );
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_quality_day_30:1`,
+      measurementCellSnapshotRecord({
+        id: "measurement_cell_snapshot_projection_unsafe_ref",
+        measurement_cell_id: "measurement_cell_support_quality_day_30",
+        approved_blueprint_ref: "SELECT * FROM raw_events"
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toEqual([]);
+    const serialized = JSON.stringify(response.body).toLowerCase();
+    for (const forbiddenValue of [
+      "confidence_score",
+      "select * from raw_events",
+      "raw_events"
+    ]) {
+      expect(serialized).not.toContain(forbiddenValue);
+    }
+  });
+
+  it("omits Measurement Cell snapshot projections with unsafe caveats or blocked uses", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        required_caveats: ["contact jane@example.com for the source package"],
+        blocked_uses: [
+          "customer_facing_output",
+          "export",
+          "prompt: copy transcript into report"
+        ]
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toEqual([]);
+    const serialized = JSON.stringify(response.body).toLowerCase();
+    for (const forbiddenValue of [
+      "jane@example.com",
+      "copy transcript",
+      "source package"
+    ]) {
+      expect(serialized).not.toContain(forbiddenValue);
+    }
+  });
+
+  it("holds Measurement Cell snapshot projection gate when stored validation metadata is stale", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        validation: {
+          validator: "validateMeasurementCell",
+          valid: true,
+          measurement_cell_id: "measurement_cell_support_resolution_day_30",
+          gaps: ["stale path validation"]
+        }
+      })
+    );
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_quality_day_30:1`,
+      measurementCellSnapshotRecord({
+        id: "measurement_cell_snapshot_projection_wrong_run",
+        measurement_cell_id: "measurement_cell_support_quality_day_30",
+        assembly_validation: {
+          validator: "validateMeasurementCellAssemblyRun",
+          valid: true,
+          run_id: "measurement_cell_assembly_drifted",
+          measurement_cell_id: "measurement_cell_support_quality_day_30",
+          gaps: []
+        },
+        payload: {
+          ...measurementCellSnapshotRecord().payload,
+          measurement_cell_id: "measurement_cell_support_quality_day_30"
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(2);
+    for (const snapshot of response.body.snapshots) {
+      expect(snapshot.internal_projection_gate).toMatchObject({
+        internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+        internal_projection_gate_clear: false,
+        customer_facing_output: false,
+        export_authorized: false
+      });
+    }
+  });
+
+  it("holds Measurement Cell snapshot projection gate when stored assembly payload binding drifts", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        assembly_payload: {
+          assembly_run_id: "measurement_cell_assembly_drifted",
+          assembly_decision: "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER",
+          measurement_cell_id: "measurement_cell_support_resolution_day_30",
+          validation: {
+            validator: "validateMeasurementCellAssemblyRun",
+            valid: true,
+            run_id: "measurement_cell_assembly_support_resolution_day_30",
+            measurement_cell_id: "measurement_cell_support_resolution_day_30",
+            gaps: []
+          },
+          required_caveats: [
+            "Internal Measurement Cell snapshot projection only; not customer-facing output."
+          ],
+          blocked_uses: [
+            "customer_facing_output",
+            "export",
+            "rendered_readout",
+            "financial_claim",
+            "contribution_model"
+          ]
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      measurement_cell_gate_valid: true,
+      assembly_gate_valid: true,
+      customer_facing_output: false,
+      export_authorized: false
+    });
+  });
+
+  it("keeps Measurement Cell snapshot projections internal and org-scoped", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord()
+    );
+
+    const execViewer = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readAuth);
+    expect(execViewer.status).toBe(403);
+
+    const govOperator = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(govOperatorAuth);
+    expect(govOperator.status).toBe(200);
+    expect(govOperator.body.audience).toBe("internal_operator");
+
+    const otherOrg = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(otherOrgAuth);
+    expect(otherOrg.status).toBe(200);
+    expect(otherOrg.body.snapshots).toEqual([]);
+  });
+
+  it("enforces JWT role and org scope for Measurement Cell snapshot projections", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalJwtSecret = process.env.JWT_SECRET;
+    const originalDevHeaderAuth = process.env.DEV_HEADER_AUTH;
+    const jwtSecret = "measurement-cell-projection-jwt-secret";
+    process.env.NODE_ENV = "production";
+    process.env.JWT_SECRET = jwtSecret;
+    delete process.env.DEV_HEADER_AUTH;
+
+    try {
+      store.aiValueMeasurementCellSnapshots.set(
+        `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+        measurementCellSnapshotRecord()
+      );
+
+      const allowed = await request(app)
+        .get("/api/v1/ai-value/measurement-cell-snapshots")
+        .set(jwtHeaders("ENABLEMENT_LEAD", ORG_ID, jwtSecret));
+      expect(allowed.status).toBe(200);
+      expect(allowed.body.snapshots).toHaveLength(1);
+
+      const deniedRole = await request(app)
+        .get("/api/v1/ai-value/measurement-cell-snapshots")
+        .set(jwtHeaders("EXEC_VIEWER", ORG_ID, jwtSecret));
+      expect(deniedRole.status).toBe(403);
+
+      const otherOrg = await request(app)
+        .get("/api/v1/ai-value/measurement-cell-snapshots")
+        .set(jwtHeaders("ENABLEMENT_LEAD", "org-2", jwtSecret));
+      expect(otherOrg.status).toBe(200);
+      expect(otherOrg.body.snapshots).toEqual([]);
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+      if (originalJwtSecret === undefined) {
+        delete process.env.JWT_SECRET;
+      } else {
+        process.env.JWT_SECRET = originalJwtSecret;
+      }
+      if (originalDevHeaderAuth === undefined) {
+        delete process.env.DEV_HEADER_AUTH;
+      } else {
+        process.env.DEV_HEADER_AUTH = originalDevHeaderAuth;
+      }
+    }
+  });
+
+  it("does not project legacy generic AI value objects as Measurement Cell snapshots", async () => {
+    store.aiValueObjects.set(`${ORG_ID}:measurement_cell_snapshot:legacy`, {
+      org_id: ORG_ID,
+      object_type: "measurement_cell_snapshot",
+      object_id: "legacy",
+      schema_version: "legacy",
+      workflow_family: "customer_support_case_resolution",
+      payload: {
+        measurement_cell_id: "legacy",
+        raw_rows: [{ user_id: "person-123" }],
+        customer_ready: true
+      },
+      validation: { valid: true },
+      valid: true,
+      created_at: "2026-04-01T00:00:00.000Z",
+      updated_at: "2026-04-01T00:00:00.000Z"
+    });
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toEqual([]);
+    expect(JSON.stringify(response.body)).not.toContain("person-123");
+  });
+
+  it("filters Measurement Cell snapshot projections and returns the latest version by cell", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord()
+    );
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:2`,
+      measurementCellSnapshotRecord({
+        id: "measurement_cell_snapshot_projection_example_v2",
+        version: 2,
+        supersedes_id: "measurement_cell_snapshot_projection_example"
+      })
+    );
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_quality_day_30:1`,
+      measurementCellSnapshotRecord({
+        id: "measurement_cell_snapshot_quality_example",
+        measurement_cell_id: "measurement_cell_support_quality_day_30",
+        metric_id: "support_quality_review_pass_rate",
+        expectation_path_id: "expectation_path_support_quality",
+        expectation_path_hash: "d".repeat(64)
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .query({
+        measurement_plan_id: "measurement_plan_support_resolution",
+        workflow_family: "customer_support_case_resolution",
+        metric_id: "support_median_resolution_hours",
+        expectation_path_id: "expectation_path_support_resolution_capacity"
+      })
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0]).toMatchObject({
+      measurement_cell_snapshot_id: "measurement_cell_snapshot_projection_example_v2",
+      measurement_cell_id: "measurement_cell_support_resolution_day_30",
+      version: 2
+    });
+  });
+
+  it("holds Measurement Cell snapshot projection gate when stored validation is stale", async () => {
+    store.aiValueMeasurementCellSnapshots.set(
+      `${ORG_ID}:measurement_cell_support_resolution_day_30:1`,
+      measurementCellSnapshotRecord({
+        validation: {
+          validator: "validateMeasurementCell",
+          valid: false
+        }
+      })
+    );
+
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(200);
+    expect(response.body.snapshots).toHaveLength(1);
+    expect(response.body.snapshots[0].internal_projection_gate).toMatchObject({
+      internal_projection_gate_state: "INTERNAL_PROJECTION_GATE_HELD",
+      internal_projection_gate_clear: false,
+      measurement_cell_gate_valid: false,
+      assembly_gate_valid: true,
+      customer_facing_output: false,
+      export_authorized: false
+    });
   });
 
   it("stores a governed ROI scenario as a reusable value-modeling object", async () => {
