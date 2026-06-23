@@ -258,7 +258,7 @@ const readinessMatchesPacket = (
 
 const fluencyBaselineMatchesPacket = (
   baseline: Record<string, unknown>,
-  packetWorkflowFamily: string | undefined,
+  packetWorkflowFamily: string,
   orgId: string
 ): boolean => {
   const baselineOrgId = stringRef(baseline.org_id);
@@ -625,6 +625,13 @@ export function registerAiValueRoutes(app: Express): void {
 
       const packet = packetRecord.payload as Record<string, unknown>;
       const packetWorkflowFamily = stringRef(packet.workflow_family);
+      if (!packetWorkflowFamily) {
+        return res.status(422).json({
+          error: "executive packet failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          gaps: ["workflow_family must be a string"]
+        });
+      }
       const sourceRefs =
         packet.source_refs && typeof packet.source_refs === "object"
           ? packet.source_refs as Record<string, unknown>

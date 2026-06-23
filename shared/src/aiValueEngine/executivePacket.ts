@@ -594,6 +594,12 @@ function validateStringField(value: any, path: string, gaps: string[]): void {
   }
 }
 
+function validatePresentStringField(value: any, path: string, gaps: string[]): void {
+  if (value !== undefined && value !== null && typeof value !== "string") {
+    gaps.push(`${path} must be a string`);
+  }
+}
+
 function validateExecutivePacketNestedTypes(packet: any, gaps: string[]): void {
   const sections = packet?.sections ?? {};
   validateStringField(sections?.workflow?.hypothesis, "sections.workflow.hypothesis", gaps);
@@ -1110,6 +1116,7 @@ export function validateExecutivePacket(packet: any): ExecutivePacketValidationR
     "schema_version",
     "packet_id",
     "workflow_family",
+    "workflow_name",
     "value_route",
     "decision",
     "claim_state",
@@ -1117,6 +1124,17 @@ export function validateExecutivePacket(packet: any): ExecutivePacketValidationR
     "sections"
   ]) {
     requireField(packet?.[field], field, gaps);
+  }
+  for (const field of [
+    "schema_version",
+    "packet_id",
+    "workflow_family",
+    "workflow_name",
+    "value_route",
+    "decision",
+    "claim_state"
+  ]) {
+    validatePresentStringField(packet?.[field], field, gaps);
   }
   if (packet?.schema_version &&
       packet.schema_version !== "FT_AI_VALUE_EXECUTIVE_PACKET_2026_06") {

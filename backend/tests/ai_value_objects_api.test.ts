@@ -1102,6 +1102,48 @@ describe("AI value spine run API", () => {
     expect(readout.text).not.toContain("1999-01-01_to_1999-01-31");
   });
 
+  it("fails closed when a stored legacy executive packet has a non-string workflow family", async () => {
+    await storeUpstreamObjects();
+    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+    delete fluencyBaseline.workflow_family;
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${fluencyBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(fluencyBaseline)
+      .expect(201);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    stored.payload = {
+      ...stored.payload,
+      workflow_family: { value: "customer_support_case_resolution" },
+      source_refs: {
+        ...((stored.payload.source_refs as Record<string, unknown>) ?? {}),
+        fluency_baseline_id: fluencyBaseline.baseline_id
+      }
+    };
+
+    const readout = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(readoutAuth);
+
+    expect(readout.status).toBe(422);
+    expect(readout.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      readout.body.gaps.some((gap: string) =>
+        gap.includes("workflow_family must be a string")
+      )
+    ).toBe(true);
+  });
+
   it("does not attach outcome evidence through a stale readiness binding", async () => {
     await storeUpstreamObjects();
     const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
