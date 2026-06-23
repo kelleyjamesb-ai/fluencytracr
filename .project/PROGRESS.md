@@ -2,6 +2,21 @@
 
 ## Last Completed
 
+- AI Value PR #372 legacy readout governance conflict-resolution rebase
+  (user-requested, 2026-06-23): rebased
+  `codex/OrgFluency-legacy-readout-governance` onto current `origin/main`,
+  skipped the older controlled-aggregate hardening commit whose behavior is
+  superseded by PR #371 on main, and replayed the BigQuery aggregate export
+  review commit. Resolved additive test conflicts by keeping current compact
+  blocked-artifact expectations plus BigQuery export review coverage. Fixed the
+  boundary-plan drift path to pass `validationGaps` into blocked summaries so
+  recomputed saved-fixture drift diagnostics are preserved. No canonical
+  events, suppression reasons, live connectors, UI, ROI, causality,
+  productivity, person-level fields, or customer-facing economic output was
+  added. Verification passed for shared build, BigQuery aggregate export review
+  suite, aggregate connector boundary-plan suite, controlled aggregate manifest
+  validator suite, controlled aggregate manifest validation package suite, and
+  diff check.
 - AI Value PR #371 conflict-resolution rebase (user-requested, 2026-06-23):
   rebased `codex/pr369-review-comments` onto current `origin/main` and
   resolved overlaps from PR #370's legacy readout isolation and blocked-package

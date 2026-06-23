@@ -383,11 +383,19 @@ function safeWindow(window) {
   if (!isPlainObject(window)) return false;
   const start = window.window_start;
   const end = window.window_end;
-  return typeof start === "string" &&
-    typeof end === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(start) &&
-    /^\d{4}-\d{2}-\d{2}$/.test(end) &&
+  return isValidIsoDate(start) &&
+    isValidIsoDate(end) &&
     start <= end;
+}
+
+function isValidIsoDate(value) {
+  const dateString = String(value ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
 }
 
 function safePolicyPath(path) {
@@ -577,7 +585,7 @@ function blockedPlan({
     aggregate_grain: null,
     source_alignment: null,
     source_quality_posture: null,
-    connector_adapter_ref: compactConnectorAdapterRef(adapter),
+    connector_adapter_ref: null,
     allowed_uses: [],
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     feeds: packageFeeds(false),
@@ -695,6 +703,15 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
       adapterValidation,
       generatedAt: adapter.generated_at,
       validationGaps: validation.gaps
+    });
+  }
+  if (sha256Json(stripValidation(merged)) !== sha256Json(stripValidation(plan))) {
+    return blockedPlan({
+      sourceSystem: adapter.source_system,
+      adapter,
+      adapterValidation,
+      generatedAt: adapter.generated_at,
+      validationGaps: ["boundary plan must match recomputed saved-fixture boundary plan"]
     });
   }
   merged.boundary_plan_state = validation.valid

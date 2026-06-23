@@ -186,6 +186,14 @@ It validates a reviewed aggregate export plan without executing it. It produces
 an internal operator-review boundary decision, not a source package, not a
 Measurement Cell, not a persisted manifest, and not a customer-facing output.
 
+The BigQuery-specific non-live follow-on now lives at
+[AI Value BigQuery Aggregate Export Review](../contracts/ai-value-bigquery-aggregate-export-review/README.md).
+It accepts only a passed `bigquery_export` boundary plan and produces compact
+upstream-attested aggregate export review metadata. It does not retain SQL,
+query text, BigQuery job metadata, project/dataset/table refs, credentials, raw
+rows, or customer-facing output, and it does not promote live connector
+implementation.
+
 ## 9. Verification
 
 When this decision is changed, run:
