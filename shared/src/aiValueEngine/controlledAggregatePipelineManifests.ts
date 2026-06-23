@@ -99,8 +99,7 @@ const APPROVED_AGGREGATE_METRIC_FIELD_NAMES = new Set([
   "ai_fluency_behavior_change_mean",
   "ai_fluency_leadership_reinforcement_mean",
   "ai_fluency_capability_growth_mean",
-  "customer_metric_value",
-  "governed_value_driver"
+  "customer_metric_value"
 ]);
 
 const SOURCE_INVENTORY_ALLOWED_USES = [
@@ -414,6 +413,17 @@ const APPROVED_EXPECTATION_PATH_BINDING_FIELDS = new Set([
   "approved_blueprint_payload_hash",
   "approval_state",
   "approved_at",
+  "approved_by_role",
+  "value_driver"
+]);
+
+const APPROVED_EXPECTATION_PATH_BINDING_REQUIRED_FIELDS = new Set([
+  "expectation_path_id",
+  "expectation_path_version",
+  "expectation_path_hash",
+  "approved_blueprint_payload_hash",
+  "approval_state",
+  "approved_at",
   "approved_by_role"
 ]);
 
@@ -592,6 +602,7 @@ export interface AiValueApprovedExpectationPathBinding {
   approval_state: string;
   approved_at: string;
   approved_by_role: string;
+  value_driver?: string;
 }
 
 export interface ValidateAiValueAggregateExtractionManifestOptions {
@@ -773,7 +784,16 @@ function isFalseBoundaryFlag(path: string[], key: string, nested: any): boolean 
 function isAllowedGovernanceListValue(path: string[], value: string): boolean {
   const parent = normalizeKey(path[path.length - 2] ?? "");
   const leafIsArrayIndex = /^\d+$/.test(path[path.length - 1] ?? "");
-  if (!leafIsArrayIndex) return false;
+  if (!leafIsArrayIndex) {
+    const leaf = normalizeKey(path[path.length - 1] ?? "");
+    return (
+      leaf === "metric_id" &&
+      APPROVED_AGGREGATE_METRIC_FIELD_NAMES.has(value)
+    ) || (
+      leaf === "queue_ref" &&
+      /^source_package_review_queue_[a-z0-9_]+$/.test(value)
+    );
+  }
   return (parent === "blocked_uses" && REQUIRED_BLOCKED_USES.includes(value)) ||
     (parent === "blocked_claims" && REQUIRED_BLOCKED_CLAIMS.includes(value)) ||
     (parent === "stop_conditions" && REQUIRED_BLOCKED_USES.includes(value)) ||
@@ -981,7 +1001,11 @@ function collectCommonIdentityGaps(left: any, right: any, leftName: string, righ
 
 function collectSafeMetadataGaps(value: any, fields: string[], label: string): string[] {
   return fields
-    .filter((field) => !safeString(value?.[field], 160))
+    .filter((field) =>
+      field === "metric_id"
+        ? !safeAggregateMetricFieldName(value?.[field])
+        : !safeString(value?.[field], 160)
+    )
     .map((field) => `${label}.${field} must be safe metadata`);
 }
 
@@ -999,29 +1023,50 @@ function safeAggregateMetricFieldName(value: any): string | null {
 
 function expectedExpectationPathHashes(
   expectationPathId: string,
-  metricId: string
+  metricId: string,
+  binding: any
 ): string[] {
-  const common = {
-    expectation_path_id: expectationPathId,
-    value_driver: "capacity",
-    approved_at: "2026-06-21T00:00:00.000Z",
-    approved_by_role: "workflow_owner"
-  };
-  return [
+  const hashes = [
     sha256Json({
-      ...common,
+      expectation_path_id: expectationPathId,
       expected_metric_id: metricId
     }),
     sha256Json({
-      ...common,
+      expectation_path_id: expectationPathId,
       metric_id: metricId
-    }),
+    })
+  ];
+  if (typeof binding?.approved_at === "string" && typeof binding?.approved_by_role === "string") {
+    const valueDrivers = typeof binding?.value_driver === "string"
+      ? [binding.value_driver]
+      : ["capacity"];
+    hashes.push(
+      ...valueDrivers.flatMap((valueDriver) => [
+        sha256Json({
+          expectation_path_id: expectationPathId,
+          expected_metric_id: metricId,
+          value_driver: valueDriver,
+          approved_at: binding.approved_at,
+          approved_by_role: binding.approved_by_role
+        }),
+        sha256Json({
+          expectation_path_id: expectationPathId,
+          metric_id: metricId,
+          value_driver: valueDriver,
+          approved_at: binding.approved_at,
+          approved_by_role: binding.approved_by_role
+        })
+      ])
+    );
+  }
+  hashes.push(
     sha256Json({
       expectation_path_id: expectationPathId,
       metric_id: metricId,
       driver: "Capacity"
     })
-  ];
+  );
+  return hashes;
 }
 
 export function validateAiValueSourceInventoryManifest(
@@ -1246,7 +1291,7 @@ export function validateAiValuePipelineRunReviewManifest(
     ));
     gaps.push(...collectRequiredNestedFieldGaps(
       approvedExpectationPathBinding,
-      APPROVED_EXPECTATION_PATH_BINDING_FIELDS,
+      APPROVED_EXPECTATION_PATH_BINDING_REQUIRED_FIELDS,
       "approvedExpectationPathBinding"
     ));
   }
@@ -1299,7 +1344,8 @@ export function validateAiValuePipelineRunReviewManifest(
     typeof approvedExpectationPathBinding?.expectation_path_hash === "string" &&
     !expectedExpectationPathHashes(
       manifest.expectation_path_id,
-      manifest.metric_id
+      manifest.metric_id,
+      approvedExpectationPathBinding
     ).includes(approvedExpectationPathBinding.expectation_path_hash)
   ) {
     gaps.push("approvedExpectationPathBinding.expectation_path_hash must bind to pipeline review metric_id");
@@ -1321,6 +1367,12 @@ export function validateAiValuePipelineRunReviewManifest(
   }
   if (!safeString(approvedExpectationPathBinding?.approved_by_role, 120)) {
     gaps.push("approvedExpectationPathBinding.approved_by_role must be safe metadata");
+  }
+  if (
+    approvedExpectationPathBinding?.value_driver !== undefined &&
+    !safeString(approvedExpectationPathBinding.value_driver, 120)
+  ) {
+    gaps.push("approvedExpectationPathBinding.value_driver must be safe metadata");
   }
   if (!Array.isArray(aggregateExtractionManifest?.metric_definitions) ||
     !aggregateExtractionManifest.metric_definitions.includes(manifest.metric_id)) {
@@ -1350,6 +1402,12 @@ export function validateAiValuePipelineRunReviewManifest(
     }
     if (field.endsWith("_hash")) {
       if (!safeHash(value)) gaps.push(`data_spine_alignment_envelope.${field} must be a sha256 hex string`);
+      continue;
+    }
+    if (field === "metric_id") {
+      if (!safeAggregateMetricFieldName(value)) {
+        gaps.push("data_spine_alignment_envelope.metric_id must be a governed aggregate metric identifier");
+      }
       continue;
     }
     if (!safeString(value, 160)) gaps.push(`data_spine_alignment_envelope.${field} must be safe metadata`);

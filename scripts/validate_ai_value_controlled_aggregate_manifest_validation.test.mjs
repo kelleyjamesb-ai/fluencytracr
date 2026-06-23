@@ -362,6 +362,32 @@ test("controlled aggregate manifest validation binds connector adapter summary v
   );
 });
 
+test("controlled aggregate manifest validation preserves per-manifest summary flags when blocked", () => {
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    readJson(FIXTURE_PATH),
+    {
+      sourceSystem: "bigquery_export",
+      pipelineRunReviewManifestOverrides: {
+        validation_result_refs: {
+          source_inventory_validation_hash: "0".repeat(64)
+        }
+      }
+    }
+  );
+  const validation = validateControlledAggregateManifestValidationPackage(
+    manifestPackage,
+    { sourceFixture: readJson(FIXTURE_PATH) }
+  );
+
+  assert.equal(manifestPackage.manifest_validation_state, "BLOCKED");
+  assert.equal(manifestPackage.manifests, null);
+  assert.equal(manifestPackage.validation_summary.source_inventory_manifest_valid, true);
+  assert.equal(manifestPackage.validation_summary.aggregate_extraction_manifest_valid, true);
+  assert.equal(manifestPackage.validation_summary.pipeline_run_review_manifest_valid, false);
+  assert.equal(manifestPackage.validation_summary.manifest_chain_valid, false);
+  assert.equal(validation.valid, false);
+});
+
 test("controlled aggregate manifest validation derives source lanes from selected metrics", () => {
   const fixture = readJson(FIXTURE_PATH);
   const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(

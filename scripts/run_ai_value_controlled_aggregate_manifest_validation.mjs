@@ -479,7 +479,8 @@ function approvedExpectationPathBindingFromFixture(fixture, adapter) {
         ? "customer_approved"
         : path?.customer_approval_state ?? "customer_approved",
     approved_at: path?.approved_at ?? "2026-06-21T00:00:00.000Z",
-    approved_by_role: path?.approver_role ?? "workflow_owner"
+    approved_by_role: path?.approver_role ?? "workflow_owner",
+    value_driver: path?.value_driver ?? "capacity"
   };
 }
 
@@ -793,7 +794,11 @@ function blockedPackage({
   adapter,
   adapterValidation,
   generatedAt,
-  validationGaps
+  validationGaps,
+  sourceValidation,
+  extractionValidation,
+  reviewValidation,
+  chainValidation
 }) {
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
@@ -810,10 +815,10 @@ function blockedPackage({
       schema_version: RESULT_SCHEMA_VERSION,
       valid: false,
       connector_adapter_valid: false,
-      source_inventory_manifest_valid: false,
-      aggregate_extraction_manifest_valid: false,
-      pipeline_run_review_manifest_valid: false,
-      manifest_chain_valid: false,
+      source_inventory_manifest_valid: sourceValidation?.valid === true,
+      aggregate_extraction_manifest_valid: extractionValidation?.valid === true,
+      pipeline_run_review_manifest_valid: reviewValidation?.valid === true,
+      manifest_chain_valid: chainValidation?.valid === true,
       gaps: sanitizeGaps(
         validationGaps ??
         adapterValidation?.gaps ??
@@ -914,7 +919,11 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
       adapter,
       adapterValidation,
       generatedAt: adapter.generated_at,
-      validationGaps
+      validationGaps,
+      sourceValidation,
+      extractionValidation,
+      reviewValidation,
+      chainValidation
     });
   }
 
@@ -929,7 +938,7 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
       adapter_run_id: adapter.adapter_run_id,
       adapter_state: adapter.adapter_state,
       connector_manifest_ref: adapter.connector_manifest_ref,
-      pipeline_dry_run_ref: adapter.pipeline_dry_run_ref
+      pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
     } : null,
     approved_expectation_path_binding: binding,
     manifests: valid ? {

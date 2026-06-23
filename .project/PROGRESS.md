@@ -2,6 +2,21 @@
 
 ## Last Completed
 
+- AI Value PR #371 controlled aggregate manifest review fixes
+  (user-requested, 2026-06-23): addressed the follow-up review comments on
+  approved expectation-path hash binding, approved AI Fluency scalar metric
+  validation, metric identifier allowlisting, and blocked manifest-validation
+  summary diagnostics. Pipeline review validation now accepts fixture-derived
+  approved-path metadata in expectation hashes, treats approved AI Fluency
+  metric identifiers as governed scalar metadata during forbidden-value scans,
+  and keeps `governed_value_driver` approved only as output metadata, not as a
+  selectable metric. Blocked validation packages now preserve the recomputed
+  per-manifest source, extraction, review, and chain flags instead of marking
+  every stage failed. No canonical events, suppression reasons, live
+  connectors, UI, ROI, causality, productivity, person-level fields, or
+  customer-facing economic output was added. Verification passed for shared
+  build, controlled aggregate manifest validator suite, controlled aggregate
+  manifest validation package suite, and diff check.
 - AI Value PR #369 follow-up review fixes (user-requested, 2026-06-23):
   addressed additional review comments on approved AI Fluency confidence
   aggregate fields, manifest-validation connector adapter summary binding,
