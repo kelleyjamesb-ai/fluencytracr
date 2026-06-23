@@ -134,7 +134,20 @@ audience boundary.
 Legacy `executive_packet` HTML/readout paths remain compatibility or prototype
 surfaces. They must not be treated as source-bound Executive Readout Snapshot
 output, customer-facing rendered readout, export package, or finance-ready
-artifact.
+artifact. The legacy backend HTML route is now role-limited to internal
+reviewer/admin roles and injects an explicit internal/prototype audience
+boundary; UI links and any future source-bound customer projection remain held
+behind separate gates.
+
+Legacy route isolation also requires that generic object-detail access does not
+expose full `executive_packet` payloads to `EXEC_VIEWER`, that legacy HTML
+readouts do not attach evidence or kickoff context by workflow-family fallback,
+that readiness refs match the packet before they can provide outcome evidence,
+that only accepted attachment-eligible outcome evidence can render as support,
+and that shared legacy packet validation blocks unsafe source refs, unexpected
+nested packet fields, unsafe field/value smuggling, caveat-laundered finance or
+confidence language, and customer-facing, causal, or realized-financial
+authorization branches.
 
 Do not render as customer-facing output yet:
 
@@ -228,7 +241,7 @@ EBITDA impact, customer-facing economic output, or model confidence.
 | Measurement Cell Series | Contract output only | Internal operator | Internal alignment only | No customer export | Continuity/alignment review ready |
 | Rolling 30-day context | Operating context only | Internal operator | Internal posture only | No | Operating context only |
 | Physical Measurement Cell tables | `measurement_cell_snapshots` only | Internal backend service only | Compact lineage only | No customer export | Promoted by separate decision |
-| Executive readout route/output | Existing legacy/prototype only | Internal/demo | Not customer-facing | No | Not productized readout |
+| Executive readout route/output | Existing legacy/prototype only | Internal reviewer/admin route guard; no generic viewer payload access | Not customer-facing | No | Not productized readout |
 | Live Glean / BigQuery / Sigma execution | No | No | No | No | Not ready |
 | Confidence / finance layer | No | No | No | No | Not ready |
 
@@ -250,8 +263,11 @@ require:
    blobs, or any compact posture field.
 4. A decision on whether the existing controlled scrubbed aggregate pilot
    evidence is sufficient for the next exact table scope.
-5. A decision on whether any old `executive_packet` readout route must be
-   relabeled, blocked, or isolated before new source-bound readout work starts.
+5. Legacy `executive_packet` readout isolation must remain enforced before new
+   source-bound readout work starts, including role limits, generic payload
+   denial, explicit source/context refs only, accepted-only outcome evidence
+   attachment, stale-readiness denial, no-export/no-store headers, closed
+   nested packet validation, and fail-closed shared packet validation.
 
 ## 11. Required Next Gate Before Customer Exposure
 
@@ -288,4 +304,4 @@ After that decision, sequence the next productization gates separately:
 - Evidence Snapshot safety;
 - Claim Readiness construction;
 - blocked-claim and blocked-use propagation;
-- old readout-route isolation from customer-ready claims.
+- UI/source-bound projection isolation from customer-ready claims.
