@@ -4,7 +4,7 @@
   "title": "AI Value Executive Validation Packet",
   "description": "Docs-backed local schema for a governed AI Value executive validation packet. This is not customer-facing economic output.",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "schema_version",
     "packet_id",
@@ -54,8 +54,11 @@
         "readiness_id": { "type": "string" },
         "claim_boundary_id": { "type": "string" },
         "roi_scenario_id": { "type": "string" },
-        "ebita_bridge_id": { "type": "string" }
-      }
+        "ebita_bridge_id": { "type": "string" },
+        "engagement_id": { "type": "string" },
+        "fluency_baseline_id": { "type": "string" }
+      },
+      "additionalProperties": false
     },
     "sections": {
       "type": "object",
@@ -66,7 +69,141 @@
         "readiness",
         "claim_boundary",
         "next_actions"
-      ]
+      ],
+      "properties": {
+        "workflow": {
+          "type": "object",
+          "required": ["hypothesis", "current_state_steps", "future_state_steps"],
+          "properties": {
+            "hypothesis": { "type": "string" },
+            "current_state_steps": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "future_state_steps": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "metric_id",
+              "name",
+              "value_route",
+              "measurement_unit",
+              "owner"
+            ],
+            "properties": {
+              "metric_id": { "type": "string" },
+              "name": { "type": "string" },
+              "value_route": { "type": "string" },
+              "measurement_unit": { "type": "string" },
+              "owner": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "scenario": {
+          "type": "object",
+          "required": ["scenario_id", "bands", "output_units"],
+          "properties": {
+            "scenario_id": { "type": "string" },
+            "bands": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["band", "interpretation", "included_metric_ids"],
+                "properties": {
+                  "band": { "type": "string" },
+                  "interpretation": { "type": "string" },
+                  "included_metric_ids": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "output_units": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "readiness": {
+          "type": "object",
+          "required": ["decision", "checks", "rationale"],
+          "properties": {
+            "decision": { "type": "string" },
+            "checks": {
+              "type": "object",
+              "required": [
+                "workflow_state",
+                "metric_state",
+                "baseline_state",
+                "assumption_state",
+                "scenario_state",
+                "governance_state"
+              ],
+              "properties": {
+                "workflow_state": { "type": "string" },
+                "metric_state": { "type": "string" },
+                "baseline_state": { "type": "string" },
+                "assumption_state": { "type": "string" },
+                "scenario_state": { "type": "string" },
+                "governance_state": { "type": "string" }
+              },
+              "additionalProperties": false
+            },
+            "rationale": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "claim_boundary": {
+          "type": "object",
+          "required": [
+            "claim_state",
+            "safe_claims",
+            "caveated_claims",
+            "blocked_claims",
+            "required_caveats"
+          ],
+          "properties": {
+            "claim_state": { "type": "string" },
+            "safe_claims": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "caveated_claims": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "blocked_claims": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "required_caveats": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
     },
     "ebita_impact_summary": {
       "type": "object",
@@ -89,13 +226,12 @@
             "NO_FINANCIAL_TRANSLATION",
             "DIRECTIONAL_EBITA_BRIDGE",
             "MODELED_EBITA_SCENARIO",
-            "FINANCE_VALIDATED_EBITA_CASE",
-            "CUSTOMER_FACING_APPROVED"
+            "FINANCE_VALIDATED_EBITA_CASE"
           ]
         },
-        "realized_ebita_claim_allowed": { "type": "boolean" },
-        "customer_facing_allowed": { "type": "boolean" },
-        "causality_claim_allowed": { "type": "boolean" },
+        "realized_ebita_claim_allowed": { "const": false },
+        "customer_facing_allowed": { "const": false },
+        "causality_claim_allowed": { "const": false },
         "primary_ebita_levers": {
           "type": "array",
           "items": { "type": "string" }
@@ -110,11 +246,21 @@
             "overall_ebita_confidence"
           ],
           "properties": {
-            "adoption_evidence": { "type": "string" },
-            "workflow_evidence": { "type": "string" },
-            "outcome_evidence": { "type": "string" },
-            "financial_evidence": { "type": "string" },
-            "overall_ebita_confidence": { "type": "string" }
+            "adoption_evidence": {
+              "enum": ["MISSING", "BLOCKED", "SUPPRESSED", "DIRECTIONAL", "CAVEATED", "PRESENT", "SUPPORTED", "FINANCE_VALIDATED"]
+            },
+            "workflow_evidence": {
+              "enum": ["MISSING", "BLOCKED", "SUPPRESSED", "DIRECTIONAL", "CAVEATED", "PRESENT", "SUPPORTED", "FINANCE_VALIDATED"]
+            },
+            "outcome_evidence": {
+              "enum": ["MISSING", "BLOCKED", "SUPPRESSED", "DIRECTIONAL", "CAVEATED", "PRESENT", "SUPPORTED", "FINANCE_VALIDATED"]
+            },
+            "financial_evidence": {
+              "enum": ["MISSING", "BLOCKED", "SUPPRESSED", "DIRECTIONAL", "CAVEATED", "PRESENT", "SUPPORTED", "FINANCE_VALIDATED"]
+            },
+            "overall_ebita_confidence": {
+              "enum": ["MISSING", "BLOCKED", "SUPPRESSED", "DIRECTIONAL", "CAVEATED", "PRESENT", "SUPPORTED", "FINANCE_VALIDATED"]
+            }
           },
           "additionalProperties": false
         },

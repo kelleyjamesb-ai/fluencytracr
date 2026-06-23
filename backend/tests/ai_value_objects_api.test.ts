@@ -9,6 +9,7 @@ import { store } from "../src/store";
 const ORG_ID = "org-northstar-enterprise";
 const writeAuth = { "x-role": "ADMIN", "x-org-id": ORG_ID };
 const readAuth = { "x-role": "EXEC_VIEWER", "x-org-id": ORG_ID };
+const readoutAuth = { "x-role": "ENABLEMENT_LEAD", "x-org-id": ORG_ID };
 const otherOrgAuth = { "x-role": "ADMIN", "x-org-id": "org-2" };
 
 const readExample = (name: string): Record<string, unknown> =>
@@ -29,6 +30,7 @@ const roiScenario = readExample("customer-support-roi-scenario.json");
 const blueprintId = blueprint.blueprint_id as string;
 const metricsLibraryId = metricsLibrary.library_id as string;
 const roiScenarioId = roiScenario.roi_scenario_id as string;
+const executivePacketId = "executive_packet_customer_support_case_resolution_v1";
 
 beforeEach(() => {
   store.reset();
@@ -166,6 +168,87 @@ describe("AI value object API", () => {
     expect(fetched.body.payload.roi_scenario_id).toBe(roiScenarioId);
     expect(fetched.body.payload.economic_output_policy.customer_facing_economic_output).toBe(false);
   });
+
+  it("rejects legacy executive packet payload smuggling", async () => {
+    const packet = readExample("customer-support-executive-packet.json");
+    const tainted = {
+      ...packet,
+      sections: {
+        ...(packet.sections as Record<string, unknown>),
+        workflow: {
+          ...((packet.sections as any).workflow as Record<string, unknown>),
+          queryText: "select * from raw_events"
+        },
+        metrics: [
+          {
+            ...((packet.sections as any).metrics[0] as Record<string, unknown>),
+            rawRows: [{ payloadJson: "unsafe" }]
+          }
+        ]
+      }
+    };
+
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/executive_packet/${packet.packet_id}`)
+      .set(writeAuth)
+      .send(tainted);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      response.body.gaps.some((gap: string) => gap.includes("rawRows")) &&
+      response.body.gaps.some((gap: string) => gap.includes("queryText"))
+    ).toBe(true);
+  });
+
+  it("rejects legacy executive packets that authorize customer-facing financial language", async () => {
+    const packet = readExample("customer-support-executive-packet.json");
+    const tainted = {
+      ...packet,
+      ebita_impact_summary: {
+        status: "CUSTOMER_FACING_APPROVED",
+        realized_ebita_claim_allowed: false,
+        customer_facing_allowed: true,
+        causality_claim_allowed: false,
+        primary_ebita_levers: ["capacity"],
+        evidence_quality: {
+          adoption_evidence: "PRESENT",
+          workflow_evidence: "PRESENT",
+          outcome_evidence: "PRESENT",
+          financial_evidence: "PRESENT",
+          overall_ebita_confidence: "FINANCE_VALIDATED"
+        },
+        allowed_phrases: ["Internal finance context remains caveated."],
+        required_caveats: ["No customer-facing financial output is authorized."],
+        blocked_claims: [
+          "usage_proves_ebita",
+          "ai_caused_ebita_without_causal_design",
+          "headcount_reduction_from_usage",
+          "individual_productivity_claim",
+          "individual_productivity_measurement",
+          "named_employee_productivity",
+          "manager_or_team_ranking",
+          "team_or_manager_ranking",
+          "hris_inference"
+        ],
+        next_evidence_actions: ["Keep the readout internal."]
+      }
+    };
+
+    const response = await request(app)
+      .put(`/api/v1/ai-value/objects/executive_packet/${packet.packet_id}`)
+      .set(writeAuth)
+      .send(tainted);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      response.body.gaps.some((gap: string) =>
+        gap.includes("CUSTOMER_FACING_APPROVED") ||
+        gap.includes("customer_facing_allowed must be false")
+      )
+    ).toBe(true);
+  });
 });
 
 describe("AI value spine run API", () => {
@@ -211,6 +294,18 @@ describe("AI value spine run API", () => {
     expect(readiness.status).toBe(200);
     expect(readiness.body.valid).toBe(true);
     expect(readiness.body.payload.decision).toBe("HOLD_FOR_ASSUMPTIONS");
+
+    const executivePacket = await request(app)
+      .get(`/api/v1/ai-value/objects/executive_packet/${executivePacketId}`)
+      .set(readAuth);
+    expect(executivePacket.status).toBe(403);
+    expect(executivePacket.body.reason).toBe("LEGACY_READOUT_INTERNAL_ONLY");
+
+    const internalPacket = await request(app)
+      .get(`/api/v1/ai-value/objects/executive_packet/${executivePacketId}`)
+      .set(readoutAuth);
+    expect(internalPacket.status).toBe(200);
+    expect(internalPacket.body.payload.packet_id).toBe(executivePacketId);
   });
 
   it("does not persist stage outputs when persist is false", async () => {
@@ -470,18 +565,35 @@ describe("AI value spine run API", () => {
       .send(fluencyBaseline)
       .expect(201);
     await request(app)
-      .post("/api/v1/ai-value/spine/run")
+      .post("/api/v1/ai-value/value-chain/run")
       .set(writeAuth)
-      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        engagement_id: engagement.engagement_id,
+        fluency_baseline_id: fluencyBaseline.baseline_id
+      })
       .expect(200);
 
     const readout = await request(app)
       .get(
-        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+        `/api/v1/ai-value/readout/${executivePacketId}/html`
       )
-      .set(readAuth);
+      .set(readoutAuth);
     expect(readout.status).toBe(200);
     expect(readout.headers["content-type"]).toContain("text/html");
+    expect(readout.headers["x-ai-value-readout-boundary"]).toBe(
+      "legacy_internal_prototype"
+    );
+    expect(readout.headers["x-ai-value-source-bound"]).toBe("false");
+    expect(readout.headers["x-ai-value-customer-facing-output"]).toBe("false");
+    expect(readout.headers["x-ai-value-export-authorized"]).toBe("false");
+    expect(readout.headers["cache-control"]).toContain("no-store");
+    expect(readout.headers["content-disposition"]).toBeUndefined();
+    expect(readout.text).toContain(
+      "Internal/prototype readout. Not source-bound customer output."
+    );
+    expect(readout.text).toContain("Legacy compatibility surface only");
     expect(readout.text).toContain("Value realization planning artifact");
     expect(readout.text).toContain("Northstar Enterprise");
     expect(readout.text).toContain("Where the team started");
@@ -490,8 +602,101 @@ describe("AI value spine run API", () => {
 
     const missing = await request(app)
       .get("/api/v1/ai-value/readout/not_a_packet/html")
-      .set(readAuth);
+      .set(readoutAuth);
     expect(missing.status).toBe(404);
+  });
+
+  it("keeps the legacy executive readout route out of EXEC_VIEWER access", async () => {
+    await storeUpstreamObjects();
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const response = await request(app)
+      .get(
+        `/api/v1/ai-value/readout/${executivePacketId}/html`
+      )
+      .set(readAuth);
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe("Insufficient permissions for this endpoint");
+  });
+
+  it("keeps the legacy executive readout route scoped to the authenticated org", async () => {
+    await storeUpstreamObjects();
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const response = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(otherOrgAuth);
+
+    expect(response.status).toBe(404);
+    expect(response.body.reason).toBe("OBJECT_NOT_FOUND");
+  });
+
+  it("fails closed when a stored legacy executive packet no longer validates", async () => {
+    await storeUpstreamObjects();
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    stored.payload = {
+      ...stored.payload,
+      sections: undefined
+    };
+
+    const response = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(readoutAuth);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      response.body.gaps.some((gap: string) => gap.includes("sections"))
+    ).toBe(true);
+  });
+
+  it("fails closed when generic detail reads a stale legacy executive packet", async () => {
+    await storeUpstreamObjects();
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    stored.payload = {
+      ...stored.payload,
+      source_refs: {
+        ...((stored.payload.source_refs as Record<string, unknown>) ?? {}),
+        bigquery_table_id: "project.dataset.table"
+      }
+    };
+
+    const response = await request(app)
+      .get(`/api/v1/ai-value/objects/executive_packet/${executivePacketId}`)
+      .set(readoutAuth);
+
+    expect(response.status).toBe(422);
+    expect(response.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      response.body.gaps.some((gap: string) => gap.includes("bigquery_table_id"))
+    ).toBe(true);
   });
 
   it.each([
@@ -505,9 +710,9 @@ describe("AI value spine run API", () => {
     [
       "submitted",
       "SUBMITTED",
-      "Customer export awaiting review",
-      "Review is pending",
-      "Submission alone does not support ROI or causality claims."
+      "Customer outcome evidence needed",
+      "Ask the data owner for the approved aggregate export",
+      "Stronger value language stays held until source, window, and metric evidence are attached."
     ],
     [
       "accepted",
@@ -519,12 +724,12 @@ describe("AI value spine run API", () => {
     [
       "rejected",
       "REJECTED",
-      "Customer export needs correction",
-      "Request a corrected aggregate export",
-      "Rejected evidence stays out of the value story."
+      "Customer outcome evidence needed",
+      "Ask the data owner for the approved aggregate export",
+      "Stronger value language stays held until source, window, and metric evidence are attached."
     ]
   ])(
-    "renders evidence-aware executive readout language when outcome evidence is %s",
+    "renders source-bound evidence-aware executive readout language when outcome evidence is %s",
     async (_label, reviewState, statusText, actionText, caveatText) => {
       await storeUpstreamObjects();
       const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
@@ -562,9 +767,9 @@ describe("AI value spine run API", () => {
 
       const readout = await request(app)
         .get(
-          "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+          `/api/v1/ai-value/readout/${executivePacketId}/html`
         )
-        .set(readAuth)
+        .set(readoutAuth)
         .expect(200);
 
       expect(readout.text).toContain(statusText);
@@ -575,21 +780,14 @@ describe("AI value spine run API", () => {
     }
   );
 
-  it("does not use mismatched accepted evidence as caveated readout support", async () => {
+  it("does not use accepted evidence as caveated readout support without explicit source binding", async () => {
     await storeUpstreamObjects();
     const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
-    const mismatchedExport = {
-      ...outcomeExport,
-      windows: {
-        ...(outcomeExport.windows as Record<string, unknown>),
-        baseline: "2020-01-01_to_2020-01-31"
-      }
-    };
 
     await request(app)
       .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
       .set(writeAuth)
-      .send(mismatchedExport)
+      .send(outcomeExport)
       .expect(201);
     await request(app)
       .post(
@@ -606,16 +804,16 @@ describe("AI value spine run API", () => {
 
     const readout = await request(app)
       .get(
-        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+        `/api/v1/ai-value/readout/${executivePacketId}/html`
       )
-      .set(readAuth)
+      .set(readoutAuth)
       .expect(200);
 
     expect(readout.text).toContain("Customer outcome evidence needed");
     expect(readout.text).not.toContain("Customer export accepted for caveated review");
   });
 
-  it("renders executive readout context only for the packet workflow", async () => {
+  it("does not attach engagement or fluency context by workflow-family fallback", async () => {
     await storeUpstreamObjects();
     const engagement = readExample("customer-support-engagement.json");
     const foreignEngagement = JSON.parse(JSON.stringify(engagement));
@@ -665,17 +863,179 @@ describe("AI value spine run API", () => {
 
     const readout = await request(app)
       .get(
-        "/api/v1/ai-value/readout/executive_packet_customer_support_case_resolution_v1/html"
+        `/api/v1/ai-value/readout/${executivePacketId}/html`
       )
-      .set(readAuth);
+      .set(readoutAuth);
 
     expect(readout.status).toBe(200);
-    expect(readout.text).toContain("Northstar Enterprise");
+    expect(readout.text).not.toContain("Northstar Enterprise");
     expect(readout.text).not.toContain("Wrong Workflow Corp");
-    expect(readout.text).toContain("Where the team started");
-    expect(readout.text).toContain("2026-03-15_to_2026-03-31");
+    expect(readout.text).not.toContain("Where the team started");
+    expect(readout.text).not.toContain("2026-03-15_to_2026-03-31");
     expect(readout.text).not.toContain("1999-01-01_to_1999-01-31");
   });
+
+  it("does not attach AI Fluency context through a stale explicit baseline ref", async () => {
+    await storeUpstreamObjects();
+    const wrongBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      baseline_id: "fluency_baseline_wrong_workflow",
+      workflow_family: "sales_pipeline_hygiene",
+      window: "1999-01-01_to_1999-01-31"
+    };
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${wrongBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(wrongBaseline)
+      .expect(201);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    stored.payload = {
+      ...stored.payload,
+      source_refs: {
+        ...((stored.payload.source_refs as Record<string, unknown>) ?? {}),
+        fluency_baseline_id: wrongBaseline.baseline_id
+      }
+    };
+
+    const readout = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(readoutAuth)
+      .expect(200);
+
+    expect(readout.text).not.toContain("Where the team started");
+    expect(readout.text).not.toContain("1999-01-01_to_1999-01-31");
+  });
+
+  it("does not attach outcome evidence through a stale readiness binding", async () => {
+    await storeUpstreamObjects();
+    const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+      .set(writeAuth)
+      .send(outcomeExport)
+      .expect(201);
+    await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED" })
+      .expect(200);
+
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const wrongReadiness = readExample("customer-support-evidence-readiness.json");
+    wrongReadiness.readiness_id = "readiness_wrong_workflow_v1";
+    wrongReadiness.workflow_family = "sales_pipeline_hygiene";
+    wrongReadiness.source_refs = {
+      ...(wrongReadiness.source_refs as Record<string, unknown>),
+      outcome_evidence_export_id: outcomeExport.export_id
+    };
+    await request(app)
+      .put("/api/v1/ai-value/objects/evidence_readiness/readiness_wrong_workflow_v1")
+      .set(writeAuth)
+      .send(wrongReadiness)
+      .expect(201);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    stored.payload = {
+      ...stored.payload,
+      source_refs: {
+        ...((stored.payload.source_refs as Record<string, unknown>) ?? {}),
+        readiness_id: "readiness_wrong_workflow_v1"
+      }
+    };
+
+    const readout = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(readoutAuth)
+      .expect(200);
+
+    expect(readout.text).toContain("Customer outcome evidence needed");
+    expect(readout.text).not.toContain("Customer export accepted for caveated review");
+  });
+
+  it.each([
+    ["SUBMITTED", null],
+    ["REJECTED", { decision: "REJECTED" }]
+  ])(
+    "does not attach %s outcome evidence through explicit readiness refs",
+    async (_label, reviewDecision) => {
+      await storeUpstreamObjects();
+      const outcomeExport = readExample("customer-support-outcome-evidence-export.json");
+
+      await request(app)
+        .put(`/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}`)
+        .set(writeAuth)
+        .send(outcomeExport)
+        .expect(201);
+      if (reviewDecision) {
+        await request(app)
+          .post(
+            `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
+          )
+          .set(writeAuth)
+          .send(reviewDecision)
+          .expect(200);
+      }
+
+      await request(app)
+        .post("/api/v1/ai-value/spine/run")
+        .set(writeAuth)
+        .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+        .expect(200);
+
+      const explicitReadiness = readExample("customer-support-evidence-readiness.json");
+      explicitReadiness.source_refs = {
+        ...(explicitReadiness.source_refs as Record<string, unknown>),
+        outcome_evidence_export_id: outcomeExport.export_id
+      };
+      await request(app)
+        .put(`/api/v1/ai-value/objects/evidence_readiness/${explicitReadiness.readiness_id}`)
+        .set(writeAuth)
+        .send(explicitReadiness)
+        .expect(201);
+
+      const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+      const stored = store.aiValueObjects.get(storeKey);
+      expect(stored).toBeDefined();
+      if (!stored) return;
+      stored.payload = {
+        ...stored.payload,
+        source_refs: {
+          ...((stored.payload.source_refs as Record<string, unknown>) ?? {}),
+          readiness_id: explicitReadiness.readiness_id
+        }
+      };
+
+      const readout = await request(app)
+        .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+        .set(readoutAuth)
+        .expect(200);
+
+      expect(readout.text).toContain("Customer outcome evidence needed");
+      expect(readout.text).not.toContain("Customer export accepted for caveated review");
+      expect(readout.text).not.toContain("Support case system");
+    }
+  );
 
   it("requires a write role to run the spine", async () => {
     const response = await request(app)

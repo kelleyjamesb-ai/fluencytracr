@@ -128,6 +128,16 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
   // Stage 0c: customer outcome evidence (optional; only ACCEPTED attaches).
   let sourceCoverageOverrides: Record<string, string> | undefined;
   let evidenceRefs: Record<string, string> | undefined;
+  const packetContextRefs: Record<string, string> = {};
+  if (result.engagement.status === "VALID" && typeof input.engagement?.engagement_id === "string") {
+    packetContextRefs.engagement_id = input.engagement.engagement_id;
+  }
+  if (
+    result.fluency_baseline.status === "VALID" &&
+    typeof input.fluencyBaseline?.baseline_id === "string"
+  ) {
+    packetContextRefs.fluency_baseline_id = input.fluencyBaseline.baseline_id;
+  }
   if (input.outcomeEvidenceExport !== undefined) {
     const validation = validateOutcomeEvidenceExport(input.outcomeEvidenceExport, {
       metricsLibrary: input.metricsLibrary,
@@ -180,7 +190,8 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     scenario: input.scenario,
     ids: input.ids,
     sourceCoverageOverrides,
-    evidenceRefs
+    evidenceRefs,
+    packetContextRefs
   });
   result.spine = spine;
   result.decision = spine.decision;

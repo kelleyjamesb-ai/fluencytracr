@@ -390,8 +390,9 @@ test("finance validated EBITA case allows finance-validated language only", () =
 
   assert.equal(result.valid, true);
   assert.equal(packet.ebita_impact_summary.status, "FINANCE_VALIDATED_EBITA_CASE");
-  assert.equal(packet.ebita_impact_summary.realized_ebita_claim_allowed, true);
+  assert.equal(packet.ebita_impact_summary.realized_ebita_claim_allowed, false);
   assert.equal(packet.ebita_impact_summary.customer_facing_allowed, false);
+  assert.equal(packet.ebita_impact_summary.causality_claim_allowed, false);
   assert.equal(
     packet.ebita_impact_summary.allowed_phrases.includes(
       "Finance-attested assumptions support a finance-validated EBITA case for this workflow and window."
@@ -400,7 +401,7 @@ test("finance validated EBITA case allows finance-validated language only", () =
   );
 });
 
-test("customer-facing EBITA approval requires both ROI gate and EBITA bridge approval", () => {
+test("customer-facing EBITA approval is downgraded before executive packet validation", () => {
   const withoutRoiApproval = buildPacketWithEbita(
     ebitaBridge("CUSTOMER_FACING_APPROVED"),
     financeValidatedRoiScenario()
@@ -417,9 +418,17 @@ test("customer-facing EBITA approval requires both ROI gate and EBITA bridge app
   );
 
   assert.equal(withoutRoiApproval.ebita_impact_summary.customer_facing_allowed, false);
-  assert.equal(withoutRoiApproval.ebita_impact_summary.realized_ebita_claim_allowed, true);
+  assert.equal(withoutRoiApproval.ebita_impact_summary.realized_ebita_claim_allowed, false);
   assert.equal(withoutAggregateEvidence.ebita_impact_summary.customer_facing_allowed, false);
-  assert.equal(withRoiApproval.ebita_impact_summary.customer_facing_allowed, true);
+  assert.equal(withRoiApproval.ebita_impact_summary.status, "FINANCE_VALIDATED_EBITA_CASE");
+  assert.equal(withRoiApproval.ebita_impact_summary.customer_facing_allowed, false);
+  assert.equal(withRoiApproval.ebita_impact_summary.realized_ebita_claim_allowed, false);
+  assert.equal(
+    withRoiApproval.ebita_impact_summary.allowed_phrases.includes(
+      "This economic output is approved for customer-facing use within the stated scope and caveats."
+    ),
+    false
+  );
   assert.equal(
     validateExecutiveValidationPacket(withRoiApproval).valid,
     true
@@ -468,7 +477,214 @@ test("causality language requires aggregate outcome evidence and aligned windows
     withoutAcceptedOutcomeEvidence.ebita_impact_summary.causality_claim_allowed,
     false
   );
-  assert.equal(withAggregateOutcomeEvidence.ebita_impact_summary.causality_claim_allowed, true);
+  assert.equal(withAggregateOutcomeEvidence.ebita_impact_summary.causality_claim_allowed, false);
+  assert.equal(validateExecutiveValidationPacket(withAggregateOutcomeEvidence).valid, true);
+});
+
+test("rejects manually authorized customer-facing or causal EBITA packet branches", () => {
+  const packet = buildPacketWithEbita(
+    ebitaBridge("FINANCE_VALIDATED_EBITA_CASE"),
+    financeValidatedRoiScenario()
+  );
+  packet.ebita_impact_summary.status = "CUSTOMER_FACING_APPROVED";
+  packet.ebita_impact_summary.realized_ebita_claim_allowed = true;
+  packet.ebita_impact_summary.customer_facing_allowed = true;
+  packet.ebita_impact_summary.causality_claim_allowed = true;
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("ebita_impact_summary.status CUSTOMER_FACING_APPROVED is not authorized for executive packets"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("ebita_impact_summary.realized_ebita_claim_allowed must be false"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("ebita_impact_summary.customer_facing_allowed must be false"),
+    true
+  );
+  assert.equal(
+    result.gaps.includes("ebita_impact_summary.causality_claim_allowed must be false"),
+    true
+  );
+});
+
+test("rejects unsafe executive packet field names and values after key normalization", () => {
+  const packet = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json"
+  );
+  packet.sections.workflow.queryText = "select * from raw_events";
+  packet.sections.next_actions.push("Review the transcript with user id abc123.");
+  packet.sections.metrics[0].rawRows = [{ payloadJson: "unsafe" }];
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.some((gap) => gap.includes("sections.metrics.0.rawRows")),
+    true
+  );
+  assert.equal(
+    result.gaps.some((gap) => gap.includes("sections.workflow.queryText")),
+    true
+  );
+  assert.equal(
+    result.gaps.some((gap) => gap.includes("sections.next_actions.1")),
+    true
+  );
+});
+
+test("rejects nested executive packet shape smuggling", () => {
+  const packet = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json"
+  );
+  packet.sections.readiness.export_authorized = true;
+  packet.sections.readiness.customer_packet = { allowed: true };
+  packet.sections.workflow.source_dump = {
+    rows: [{ aggregate: "looks harmless but is not part of the packet contract" }]
+  };
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  for (const expected of [
+    "sections.readiness.export_authorized",
+    "sections.readiness.customer_packet",
+    "sections.workflow.source_dump"
+  ]) {
+    assert.equal(
+      result.gaps.some((gap) => gap.includes(expected)),
+      true,
+      `${expected} should be rejected`
+    );
+  }
+});
+
+test("rejects unsafe executive packet source refs and score or finance aliases", () => {
+  const packet = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json"
+  );
+  packet.source_refs.bigquery_table_id = "project.dataset.table";
+  packet.source_refs.sigma_dashboard_url = "https://sigma.example/dashboard/123";
+  packet.source_refs.query_id = "query_123";
+  packet.source_refs.raw_rows_export_id = "raw_rows_export_123";
+  packet.source_refs.engagement_id = "https://sigma.example/dashboard/123";
+  packet.source_refs.blueprint_id = "bq://project.dataset.table";
+  packet.source_refs.metrics_library_id = "query_123";
+  packet.source_refs.claim_boundary_id = "dashboard_123";
+  packet.source_refs.readiness_id = "bigquery_export_123";
+  packet.source_refs.scenario_id = "sigma_dashboard_123";
+  packet.sections.metrics[0].model_score = 0.91;
+  packet.sections.readiness.roi_estimate = 50000;
+  packet.sections.readiness.financial_result = "revenue_lift";
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  for (const expected of [
+    "source_refs.bigquery_table_id",
+    "source_refs.sigma_dashboard_url",
+    "source_refs.query_id",
+    "source_refs.raw_rows_export_id",
+    "source_refs.engagement_id",
+    "source_refs.blueprint_id",
+    "source_refs.metrics_library_id",
+    "source_refs.claim_boundary_id",
+    "source_refs.readiness_id",
+    "source_refs.scenario_id",
+    "sections.metrics.0.model_score",
+    "sections.readiness.roi_estimate",
+    "sections.readiness.financial_result"
+  ]) {
+    assert.equal(
+      result.gaps.some((gap) => gap.includes(expected)),
+      true,
+      `${expected} should be rejected`
+    );
+  }
+});
+
+test("rejects unsafe finance or confidence text even when a caveat appears first", () => {
+  const packet = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json"
+  );
+  packet.sections.next_actions.push(
+    "No customer-facing output is authorized. This packet is ROI ready with 91 percent confidence."
+  );
+  packet.sections.claim_boundary.caveated_claims.push(
+    "No customer-facing financial language is allowed, but there is high probability of EBITDA ready output."
+  );
+  packet.sections.claim_boundary.required_caveats.push(
+    "No customer-facing output is authorized but customer-facing financial output is approved for customer-facing use."
+  );
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.some((gap) => gap.includes("sections.next_actions.1")),
+    true
+  );
+  assert.equal(
+    result.gaps.some((gap) => gap.includes("sections.claim_boundary.caveated_claims.1")),
+    true
+  );
+  assert.equal(
+    result.gaps.some((gap) => gap.includes("sections.claim_boundary.required_caveats.2")),
+    true
+  );
+});
+
+test("rejects score-like financial confidence values in executive packets", () => {
+  const packet = buildPacketWithEbita(
+    ebitaBridge("FINANCE_VALIDATED_EBITA_CASE"),
+    financeValidatedRoiScenario()
+  );
+  packet.ebita_impact_summary.evidence_quality.overall_ebita_confidence =
+    "93% confidence score";
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.some((gap) =>
+      gap.includes("ebita_impact_summary.evidence_quality.overall_ebita_confidence")
+    ),
+    true
+  );
+});
+
+test("executive packet schema mirrors legacy isolation posture", () => {
+  const schema = readJson("schemas/ai-value-intelligence/executive-packet.schema.json");
+
+  assert.equal(schema.additionalProperties, false);
+  assert.equal(schema.properties.source_refs.additionalProperties, false);
+  assert.equal(
+    schema.properties.ebita_impact_summary.properties.status.enum.includes(
+      "CUSTOMER_FACING_APPROVED"
+    ),
+    false
+  );
+  assert.equal(schema.properties.sections.additionalProperties, false);
+  assert.equal(
+    schema.properties.sections.properties.metrics.items.additionalProperties,
+    false
+  );
+  assert.deepEqual(
+    schema.properties.ebita_impact_summary.properties.realized_ebita_claim_allowed,
+    { const: false }
+  );
+  assert.deepEqual(
+    schema.properties.ebita_impact_summary.properties.customer_facing_allowed,
+    { const: false }
+  );
+  assert.deepEqual(
+    schema.properties.ebita_impact_summary.properties.causality_claim_allowed,
+    { const: false }
+  );
 });
 
 test("usage-only financial claims are downgraded and blocked", () => {
