@@ -745,7 +745,40 @@ function combinedGaps(validations) {
   );
 }
 
-function blockedPackage({ sourceSystem, adapter, adapterValidation, generatedAt }) {
+function compactPipelineDryRunRef(ref) {
+  if (!isPlainObject(ref)) return null;
+  return {
+    dry_run_id: ref.dry_run_id ?? null,
+    dry_run_state: ref.dry_run_state ?? null,
+    source_system: ref.source_system ?? null,
+    source_export_ref: ref.source_export_ref ?? null,
+    manifest_hash: ref.manifest_hash ?? null,
+    aggregate_fixture_hash: ref.aggregate_fixture_hash ?? null,
+    reviewed_source_refs_hash: ref.reviewed_source_refs_hash ?? null,
+    reviewed_aggregate_context_hash: ref.reviewed_aggregate_context_hash ?? null,
+    reviewed_blueprint_expectation_hash: ref.reviewed_blueprint_expectation_hash ?? null,
+    candidate_integrity_hash: ref.candidate_integrity_hash ?? null,
+    expectation_path_id: ref.expectation_path_id ?? null
+  };
+}
+
+function compactConnectorAdapterRef(adapter) {
+  if (!isPlainObject(adapter)) return null;
+  return {
+    adapter_run_id: adapter.adapter_run_id ?? null,
+    adapter_state: adapter.adapter_state ?? null,
+    connector_manifest_ref: adapter.connector_manifest_ref ?? null,
+    pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
+  };
+}
+
+function blockedPackage({
+  sourceSystem,
+  adapter,
+  adapterValidation,
+  generatedAt,
+  validationGaps
+}) {
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
     manifest_validation_state: "BLOCKED",
@@ -765,7 +798,11 @@ function blockedPackage({ sourceSystem, adapter, adapterValidation, generatedAt 
       aggregate_extraction_manifest_valid: false,
       pipeline_run_review_manifest_valid: false,
       manifest_chain_valid: false,
-      gaps: sanitizeGaps(adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
+      gaps: sanitizeGaps(
+        validationGaps ??
+        adapterValidation?.gaps ??
+        ["connector adapter validation did not pass"]
+      )
     },
     feeds: packageFeeds(false),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
@@ -848,6 +885,23 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
     reviewValidation.valid &&
     chainValidation.valid;
 
+  const validationGaps = combinedGaps([
+    ["source_inventory_manifest", sourceValidation],
+    ["aggregate_extraction_manifest", extractionValidation],
+    ["pipeline_run_review_manifest", reviewValidation],
+    ["manifest_chain", chainValidation]
+  ]);
+
+  if (!valid) {
+    return blockedPackage({
+      sourceSystem,
+      adapter,
+      adapterValidation,
+      generatedAt: adapter.generated_at,
+      validationGaps
+    });
+  }
+
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
     manifest_validation_state: valid
@@ -892,12 +946,7 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
       aggregate_extraction_manifest_valid: extractionValidation.valid === true,
       pipeline_run_review_manifest_valid: reviewValidation.valid === true,
       manifest_chain_valid: chainValidation.valid === true,
-      gaps: combinedGaps([
-        ["source_inventory_manifest", sourceValidation],
-        ["aggregate_extraction_manifest", extractionValidation],
-        ["pipeline_run_review_manifest", reviewValidation],
-        ["manifest_chain", chainValidation]
-      ])
+      gaps: validationGaps
     },
     feeds: packageFeeds(valid),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
@@ -1054,6 +1103,10 @@ export function validateControlledAggregateManifestValidationPackage(
       JSON.stringify(recomputedValidationGaps)
   ) {
     gaps.push("validation_summary.gaps must match recomputed validation");
+  } else if (
+    manifestPackage.validation_summary.gaps.some((gap) => sanitizeGaps([gap])[0] !== gap)
+  ) {
+    gaps.push("validation_summary.gaps must not contain unsafe values");
   }
 
   if (

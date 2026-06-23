@@ -741,6 +741,45 @@ test("aggregate extraction manifest rejects safe but unapproved metric definitio
   );
 });
 
+test("aggregate extraction manifest allows approved AI fluency confidence aggregate fields", () => {
+  const { source, extraction } = validChain();
+  source.source_lane = "ai_fluency";
+  source.approved_output_fields = [
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "window_start",
+    "window_end",
+    "ai_fluency_confidence_mean"
+  ];
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.source_package_lane = "ai_fluency";
+  extraction.metric_definitions = ["ai_fluency_confidence_mean"];
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});
+
+test("aggregate extraction manifest rejects dimension fields as metric definitions", () => {
+  const { source, extraction } = validChain();
+  extraction.metric_definitions = ["workflow_family"];
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("metric_definitions")),
+    validation.gaps.join("; ")
+  );
+});
+
 test("aggregate extraction manifest fails closed instead of throwing when source inventory context is missing", () => {
   const source = buildSourceInventoryManifest();
   const extraction = buildAggregateExtractionManifest(source);
@@ -807,6 +846,49 @@ test("pipeline run review manifest fails closed on path, metric, source-ref, and
   assert.ok(validation.gaps.some((gap) => gap.includes("expectation_path_id must match")));
   assert.ok(validation.gaps.some((gap) => gap.includes("reviewed_aggregate_source_refs")));
   assert.ok(validation.gaps.some((gap) => gap.includes("source_inventory_validation_hash")));
+});
+
+test("pipeline run review manifest binds approved expectation path hash to selected metric", () => {
+  const { source, extraction, review, binding } = validChain();
+  extraction.metric_definitions = [
+    "support_median_resolution_hours",
+    "escalation_rate"
+  ];
+  extraction.aggregate_output_hash = sha256Json({
+    aggregate: "support_resolution",
+    metrics: extraction.metric_definitions
+  });
+  review.aggregate_extraction_manifest_ref = manifestRefFromExtraction(extraction);
+  review.metric_id = "escalation_rate";
+  review.data_spine_alignment_envelope.metric_id = "escalation_rate";
+  review.reviewed_aggregate_source_refs[1] = extraction.aggregate_output_ref;
+  review.source_package_review_queue_posture_ref.queue_ref = expectedQueueRef(
+    source,
+    extraction,
+    review,
+    binding
+  );
+  review.validation_result_refs.aggregate_extraction_validation_hash =
+    validationProofHash(
+      extraction,
+      validateAiValueAggregateExtractionManifest(extraction, {
+        sourceInventoryManifest: source
+      })
+    );
+
+  const validation = validateAiValuePipelineRunReviewManifest(review, {
+    sourceInventoryManifest: source,
+    aggregateExtractionManifest: extraction,
+    approvedExpectationPathBinding: binding
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) =>
+      gap.includes("expectation_path_hash must bind")
+    ),
+    validation.gaps.join("; ")
+  );
 });
 
 test("pipeline run review manifest rejects coordinated expectation-path drift against approved binding", () => {

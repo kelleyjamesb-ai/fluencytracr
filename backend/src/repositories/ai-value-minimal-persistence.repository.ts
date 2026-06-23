@@ -692,6 +692,39 @@ const compareField = (
   }
 };
 
+const normalizeDateOnlyComparisonValue = (value: unknown): unknown => {
+  if (typeof value !== "string") return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return value.slice(0, 10);
+  return value;
+};
+
+const compareMeasurementCellSnapshotLineageField = (
+  gaps: string[],
+  field: string,
+  expected: unknown,
+  actual: unknown
+) => {
+  const dateOnlyFields = new Set([
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end"
+  ]);
+  const expectedValue = dateOnlyFields.has(field)
+    ? normalizeDateOnlyComparisonValue(expected)
+    : expected;
+  const actualValue = dateOnlyFields.has(field)
+    ? normalizeDateOnlyComparisonValue(actual)
+    : actual;
+  compareField(
+    gaps,
+    `superseded Measurement Cell Snapshot ${field} must match correction`,
+    expectedValue,
+    actualValue
+  );
+};
+
 const expectedPilotRunStatus = (
   coverageStatus: string,
   requiredCaveats: string[]
@@ -1547,9 +1580,9 @@ const measurementCellSnapshotLineageDriftGaps = (
     "comparison_window_start",
     "comparison_window_end"
   ] as const) {
-    compareField(
+    compareMeasurementCellSnapshotLineageField(
       gaps,
-      `superseded Measurement Cell Snapshot ${field} must match correction`,
+      field,
       superseded[field],
       record[field]
     );

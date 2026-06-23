@@ -2,6 +2,23 @@
 
 ## Last Completed
 
+- AI Value PR #369 manifest review-comment fixes (user-requested,
+  2026-06-23): addressed the unresolved review threads on controlled aggregate
+  manifest validation, aggregate connector boundary plans, controlled aggregate
+  pipeline manifest validation, and Measurement Cell snapshot correction
+  lineage. Blocked manifest-validation and boundary-plan builders now return
+  compact blocked artifacts instead of unsafe merged payloads. Manifest
+  validation packages compact pipeline dry-run refs, reject validation-summary
+  gap smuggling, allow the approved aggregate AI Fluency confidence mean field,
+  reject dimension fields as metrics, bind the reviewed metric to the approved
+  expectation-path hash, and normalize persisted date-only window fields during
+  correction lineage checks. No canonical events, suppression reasons, routes,
+  UI, live connectors, ROI, causality, productivity, person-level fields,
+  persistence expansion, or customer-facing economic output was added.
+  Verification passed for shared build, controlled aggregate manifest
+  validation suite, aggregate connector boundary-plan suite, controlled
+  aggregate manifest validator suite, backend AI Value minimal persistence
+  suite, and diff check.
 - AI Value review-gate follow-up fixes (user-requested, 2026-06-23):
   addressed the review comments on Measurement Cell snapshot binding, initial
   snapshot lineage, baseline-only evidence-collection windows, controlled
