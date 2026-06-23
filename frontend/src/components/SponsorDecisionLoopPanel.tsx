@@ -14,14 +14,23 @@ interface DecisionHandoffPreview {
   caveat: string;
 }
 
+const reportDisplayCopy = (value: string) =>
+  value
+    .replace(/Executive Readout/g, "Executive Report")
+    .replace(/executive readout/g, "executive report")
+    .replace(/Readout/g, "Report")
+    .replace(/readout/g, "report")
+    .replace(/Value-readout/g, "Value report")
+    .replace(/value-readout/g, "value report");
+
 const handoffDraftLinesForPreview = (preview: DecisionHandoffPreview) => [
   "Decision handoff draft",
-  `Selected move: ${preview.selectedMove}`,
-  `Owner: ${preview.owner}`,
-  `Target: ${preview.target}`,
-  `Required evidence or input: ${preview.requiredInput}`,
-  `Safe next action: ${preview.safeNextAction}`,
-  `Caveat: ${preview.caveat}`,
+  `Selected move: ${reportDisplayCopy(preview.selectedMove)}`,
+  `Owner: ${reportDisplayCopy(preview.owner)}`,
+  `Target: ${reportDisplayCopy(preview.target)}`,
+  `Required evidence or input: ${reportDisplayCopy(preview.requiredInput)}`,
+  `Safe next action: ${reportDisplayCopy(preview.safeNextAction)}`,
+  `Caveat: ${reportDisplayCopy(preview.caveat)}`,
   "No task is created; this is a local handoff draft."
 ];
 
@@ -67,8 +76,8 @@ const previewForDecision = (
   if (selectedMove === "Hold value language") {
     return {
       selectedMove,
-      owner: "Value-readout owner",
-      target: "ROI Scenario Readiness and Executive Operating Packet",
+      owner: "Value report owner",
+      target: "Evidence Checkpoint and Executive Report",
       requiredInput: "Blocked language, reviewed caveats, and unresolved evidence gaps",
       safeNextAction: "Prepare a hold-language handoff before sponsor sharing",
       caveat:
@@ -196,7 +205,7 @@ export const SponsorDecisionLoopPanel = ({
           <p className="eyebrow">Decision Loop</p>
           <h2>Sponsor Decision</h2>
           <p>
-            Turn the readout into the next operating move: expand, strengthen
+            Turn the report into the next operating move: expand, strengthen
             evidence, correct the export, hold language, or return to Blueprint.
           </p>
         </div>
@@ -207,16 +216,16 @@ export const SponsorDecisionLoopPanel = ({
         <div className="ai-value-map-cell ai-value-map-cell-wide">
           <span className="ai-value-map-label">Recommended next move</span>
           <strong>Recommended: {loop.recommendedOptionLabel}</strong>
-          <p>{loop.recommendedReason}</p>
-          <small>{loop.nextAction}</small>
+          <p>{reportDisplayCopy(loop.recommendedReason)}</p>
+          <small>{reportDisplayCopy(loop.nextAction)}</small>
         </div>
         <div className="ai-value-map-cell">
           <span className="ai-value-map-label">Agent follow-up boundary</span>
-          <p>{loop.agentFollowUp}</p>
+          <p>{reportDisplayCopy(loop.agentFollowUp)}</p>
         </div>
         <div className="ai-value-map-cell">
           <span className="ai-value-map-label">Caveat that stays attached</span>
-          <p>{loop.caveat}</p>
+          <p>{reportDisplayCopy(loop.caveat)}</p>
         </div>
       </div>
 
@@ -234,24 +243,24 @@ export const SponsorDecisionLoopPanel = ({
         <div className="ai-value-map-grid">
           <div className="ai-value-map-cell">
             <span className="ai-value-map-label">Selected move</span>
-            <p>{preview.selectedMove}</p>
+            <p>{reportDisplayCopy(preview.selectedMove)}</p>
           </div>
           <div className="ai-value-map-cell">
             <span className="ai-value-map-label">Owner</span>
-            <p>{preview.owner}</p>
+            <p>{reportDisplayCopy(preview.owner)}</p>
           </div>
           <div className="ai-value-map-cell">
             <span className="ai-value-map-label">Where this goes next</span>
-            <p>{preview.target}</p>
+            <p>{reportDisplayCopy(preview.target)}</p>
           </div>
           <div className="ai-value-map-cell">
             <span className="ai-value-map-label">Required evidence or input</span>
-            <p>{preview.requiredInput}</p>
+            <p>{reportDisplayCopy(preview.requiredInput)}</p>
           </div>
           <div className="ai-value-map-cell ai-value-map-cell-wide">
             <span className="ai-value-map-label">Safe next action</span>
-            <p>{preview.safeNextAction}</p>
-            <small>{preview.caveat}</small>
+            <p>{reportDisplayCopy(preview.safeNextAction)}</p>
+            <small>{reportDisplayCopy(preview.caveat)}</small>
           </div>
         </div>
         <p className="ai-value-decision-preview-note">
@@ -301,8 +310,8 @@ export const SponsorDecisionLoopPanel = ({
               <h3>{option.label}</h3>
               {option.recommended && <StatusPill label="Recommended move" tone="good" />}
             </div>
-            <p>{option.detail}</p>
-            <small>{option.action}</small>
+            <p>{reportDisplayCopy(option.detail)}</p>
+            <small>{reportDisplayCopy(option.action)}</small>
             <div className="ai-value-chip-row">
               {option.feedsNext.map((target) => (
                 <StatusPill key={target} label={`Feeds ${target}`} />

@@ -8,6 +8,13 @@ const StatusPill = ({
   tone?: "neutral" | "warn" | "good";
 }) => <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>;
 
+const reportDisplayCopy = (value: string) =>
+  value
+    .replace(/Executive Readout/g, "Executive Report")
+    .replace(/executive readout/g, "executive report")
+    .replace(/Readout/g, "Report")
+    .replace(/readout/g, "report");
+
 export const ExecutiveReadoutPreviewPanel = ({
   preview,
   packetIds,
@@ -19,28 +26,28 @@ export const ExecutiveReadoutPreviewPanel = ({
 }) => (
   <section
     className="ai-value-panel ai-value-readout-preview-panel"
-    aria-label="Executive readout preview"
+    aria-label="Executive report preview"
   >
     <div className="ai-value-section-head">
       <div>
         <p className="eyebrow">Preview &amp; Share</p>
-        <h2>Executive Readout Preview</h2>
+        <h2>Executive Report Preview</h2>
         <p>
           See what will open for the sponsor before sharing it, and keep the
-          evidence caveats attached to the readout.
+          evidence caveats attached to the report.
         </p>
       </div>
-      <StatusPill label={preview.statusLabel} tone={preview.statusTone} />
+      <StatusPill label={reportDisplayCopy(preview.statusLabel)} tone={preview.statusTone} />
     </div>
 
     <div className="ai-value-map-grid">
       <div className="ai-value-map-cell ai-value-map-cell-wide">
         <span className="ai-value-map-label">What will open</span>
-        <p>{preview.whatWillOpen}</p>
+        <p>{reportDisplayCopy(preview.whatWillOpen)}</p>
       </div>
       <div className="ai-value-map-cell">
         <span className="ai-value-map-label">Language held</span>
-        <p>{preview.heldLanguage}</p>
+        <p>{reportDisplayCopy(preview.heldLanguage)}</p>
       </div>
       <div className="ai-value-map-cell">
         <span className="ai-value-map-label">Next owner</span>
@@ -48,11 +55,11 @@ export const ExecutiveReadoutPreviewPanel = ({
       </div>
       <div className="ai-value-map-cell ai-value-map-cell-wide">
         <span className="ai-value-map-label">Next action</span>
-        <p>{preview.nextAction}</p>
+        <p>{reportDisplayCopy(preview.nextAction)}</p>
       </div>
       <div className="ai-value-map-cell ai-value-map-cell-wide">
         <span className="ai-value-map-label">Caveat that travels</span>
-        <p>{preview.caveat}</p>
+        <p>{reportDisplayCopy(preview.caveat)}</p>
       </div>
     </div>
 
@@ -65,11 +72,11 @@ export const ExecutiveReadoutPreviewPanel = ({
             key={packetId}
             onClick={() => onOpenReadout(packetId)}
           >
-            Open executive readout
+            Open executive report
           </button>
         ))
       ) : (
-        <StatusPill label="Generate readout first" tone="warn" />
+        <StatusPill label="Generate report first" tone="warn" />
       )}
     </div>
   </section>
