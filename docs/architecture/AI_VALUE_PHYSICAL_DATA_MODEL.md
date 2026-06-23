@@ -501,12 +501,13 @@ must not be copied into Prisma, schemas, repositories, migrations, routes, UI,
 persistence services, research-model inputs, exports, or customer-facing
 outputs without a later explicit promotion decision.
 
-Purpose: preserve the distinction between aggregate psychological readiness and
-observed behavior. This sidecar aggregate context can help internal operators
-compare stated AI attitude / behavioral intent context with observed
-AI-enabled work-pattern refs, but it cannot imply directional dependency,
-conversion, value proof, causality, productivity, ROI, EBITDA, or financial
-output.
+Purpose: preserve the distinction between the five-dimension AI Fluency
+construct, instrument-reported adoption signals, and observed telemetry
+behavior. This sidecar aggregate context can help internal operators compare AI
+attitude, instrument-reported behavior / use-practice, and behavioral intent
+context with observed AI-enabled work-pattern refs, but it cannot imply
+directional dependency, conversion, value proof, causality, productivity, ROI,
+EBITDA, or financial output.
 
 Recommended physical posture:
 
@@ -538,17 +539,20 @@ Allowed compact fields if separately promoted:
 | `review_state` | required |
 | `k_min_posture` | required |
 | `suppression_posture` | required |
-| `construct_summary_json` | aggregate construct means or bands only |
+| `construct_summary_json` | aggregate five-dimension AI Fluency construct means or bands only |
 | `readiness_context_json` | optional compact posture labels only |
 | `observed_behavior_ref` | optional compact VBD / Measurement Cell ref only |
 | `required_caveats_json` | required array |
 | `blocked_uses_json` | required array |
 
 `construct_summary_json` may carry governed AI Fluency construct names only as
-aggregate instrument context. If a legacy instrument construct is literally
-named `confidence`, it must remain nested inside the aggregate instrument
-construct map and must not become a top-level physical column, model score,
-probability, or customer-facing claim.
+aggregate instrument context: confidence, usage quality, behavior change,
+leadership reinforcement, and capability growth. Instrument-reported behavior
+change is not the same as observed telemetry behavior; observed behavior must
+remain a compact VBD / Measurement Cell ref. If a legacy instrument construct
+is literally named `confidence`, it must remain nested inside the aggregate
+instrument construct map and must not become a top-level physical column, model
+score, probability, or customer-facing claim.
 
 Blocked design:
 
@@ -556,6 +560,9 @@ Blocked design:
 - no raw survey response table;
 - no respondent, user, employee, manager, team, or department ranking;
 - no behavioral-intent-to-value conversion score;
+- no attitude, instrument-reported behavior/practice, or intent context may
+  rescue missing, held, suppressed, or misaligned VBD, Measurement Cell, or
+  customer metric evidence;
 - no model score or contribution-model output;
 - no finance, ROI, EBITDA, causality, productivity, probability, or
   customer-facing financial output;

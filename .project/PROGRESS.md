@@ -2,6 +2,18 @@
 
 ## Last Completed
 
+- AI Value AI Fluency construct distinction amendment (user-requested,
+  2026-06-22): clarified that the AI Fluency psychological adoption context is
+  anchored in the five governed AI Fluency dimensions: confidence, usage
+  quality, behavior change, leadership reinforcement, and capability growth.
+  The docs now separate instrument-reported behavior / use-practice from
+  observed telemetry behavior: the former is aggregate AI Fluency context, while
+  observed AI behavior remains compact VBD / Measurement Cell evidence only.
+  No scoring, weighting, persistence, schema, route, UI, live connector,
+  confidence math, ROI, causality, productivity, probability, finance output,
+  or customer-facing output was added. Verification: `git diff --check`,
+  `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py` passed.
 - AI Value psychological adoption model and connector-promotion design pass
   (user-requested, 2026-06-22): amended the logical AI Value model so aggregate
   AI Fluency psychological context is explicit rather than hidden inside a

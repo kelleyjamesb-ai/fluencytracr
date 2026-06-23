@@ -78,12 +78,13 @@ persistence authority without promoting new persistence here.
 9. VBD, Depth, and token context remain Layer 1 behavior context only.
 10. Layer 1 behavior context cannot upgrade claims, unlock economic dependency,
     or authorize customer-facing financial output.
-11. Aggregate AI Fluency attitude and intent context are leading indicators of
-    adoption readiness only. They do not prove value, behavior change, metric
-    movement, causality, productivity, ROI, or financial output.
+11. Aggregate AI Fluency attitude, instrument-reported behavior/practice, and
+    intent context are leading indicators of adoption readiness only. They do
+    not prove value, observed telemetry behavior change, metric movement,
+    causality, productivity, ROI, or financial output.
 12. Observed AI behavior / VBD is the first behavioral evidence layer. Stated
-    attitude and intent cannot substitute for observed behavior or customer
-    metric movement.
+    attitude, instrument-reported behavior/practice, and intent cannot
+    substitute for observed behavior or customer metric movement.
 13. Future review posture must avoid positive finance or confidence semantics.
 14. Corrections create new versions or snapshots. Evidence-bearing posture is
     not silently mutated.
@@ -274,27 +275,46 @@ Persistence posture:
 
 ### 4.3.1 AI Fluency Psychological Adoption Context
 
-Purpose: aggregate Layer 2 context that separates human adoption psychology
-from observed behavior and customer-owned metric movement.
+Purpose: aggregate Layer 2 context that keeps the AI Fluency construct clear
+while separating instrument-reported adoption signals from observed telemetry
+behavior and customer-owned metric movement.
 
 Logical owner: AI Fluency Client Import, AI Fluency Dashboard Import Runner,
 and AI Fluency Operator Source Handoff.
 
-Core context buckets:
+AI Fluency construct:
 
 ```text
-AI Fluency Instrument context
-AI attitude / intent context
-Observed AI behavior / VBD refs
-Selected metric movement refs
-Blueprint expectation alignment refs
+AI Fluency Instrument
+  contains five governed dimensions:
+    confidence
+    usage_quality
+    behavior_change
+    leadership_reinforcement
+    capability_growth
 ```
 
-No directional, causal, probability, contribution, or conversion dependency is
-implied by these buckets.
+Blueprint-governed comparison buckets:
+
+```text
+Blueprint expectation frame
+  - AI Fluency five-dimension construct context
+  - AI attitude context
+  - instrument-reported behavior / use-practice context
+  - behavioral intent context
+  - observed AI behavior / VBD refs
+  - selected metric movement refs
+  - Blueprint expectation alignment refs
+```
+
+These are non-sequential comparison buckets. No causal, probability,
+contribution, scoring, or conversion dependency is authorized or implied.
 
 Allowed aggregate constructs:
 
+- `confidence` only as a nested AI Fluency instrument dimension, never as a
+  top-level confidence score, probability, model score, or claim-confidence
+  field
 - `ai_attitude`
 - `behavioral_intent`
 - `capability_belief` when mapped from governed instrument items
@@ -307,24 +327,31 @@ Allowed aggregate constructs:
 
 Interpretation posture:
 
+- The five AI Fluency dimensions are instrument construct context, not separate
+  value evidence.
 - AI attitude means aggregate orientation toward AI.
-- Behavioral intent means aggregate willingness to use AI in real work.
+- Instrument-reported behavior / use-practice means aggregate self-reported
+  behavior-change or usage-quality context from the AI Fluency instrument.
+- Behavioral intent means aggregate willingness or stated intent to use AI in
+  real work.
 - Observed AI behavior means aggregate workflow telemetry or VBD evidence, not
-  survey sentiment.
-- Positive attitude plus strong intent means psychological readiness to change,
-  not value proof.
-- High intent with low observed behavior is an enablement or friction signal,
+  survey sentiment or instrument-reported behavior.
+- Positive attitude, reported behavior/practice, and strong intent mean
+  psychological and adoption-readiness context, not value proof.
+- Strong instrument-reported behavior or intent with low observed telemetry
+  behavior is an enablement, workflow, access, or measurement-friction signal,
   not negative value evidence.
-- Low intent with high observed behavior is a possible mandate or compliance
-  risk signal, not proof of healthy adoption.
+- Low intent with high observed telemetry behavior is a possible mandate,
+  compliance, or workflow-pressure signal, not proof of healthy adoption.
 
 Allowed context:
 
 - aggregate construct means or bands from approved AI Fluency exports;
 - aggregate collection window and cohort metadata;
 - suppression, k-min, owner review, and source-ref posture;
-- readiness or friction posture derived from aggregate attitude/intent versus
-  observed behavior, only as internal diagnostic context;
+- readiness or friction posture derived from aggregate attitude, instrument
+  behavior/practice, and intent beside observed telemetry behavior, only as
+  internal diagnostic context;
 - caveats and blocked uses.
 
 Blocked context:
