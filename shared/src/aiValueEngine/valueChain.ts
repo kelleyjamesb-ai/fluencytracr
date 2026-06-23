@@ -64,6 +64,17 @@ const notRun = () => ({
   hold_reason: null
 });
 
+function stringValue(value: any): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function fluencyBaselineMatchesBlueprintWorkflow(baseline: any, blueprint: any): boolean {
+  const baselineWorkflowFamily = stringValue(baseline?.workflow_family);
+  if (!baselineWorkflowFamily) return false;
+  const blueprintWorkflowFamily = stringValue(blueprint?.workflow_family);
+  return Boolean(blueprintWorkflowFamily) && baselineWorkflowFamily === blueprintWorkflowFamily;
+}
+
 export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
   const result: ValueChainRunResult = {
     schema_version: VALUE_CHAIN_RESULT_SCHEMA_VERSION,
@@ -86,7 +97,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     result.engagement = {
       status: validation.valid ? (covers ? "VALID" : "HELD") : "INVALID",
       validation,
-      object: input.engagement,
+      object: validation.valid ? input.engagement : null,
       generated: false,
       hold_reason: validation.valid
         ? covers
@@ -113,7 +124,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     result.fluency_baseline = {
       status: validation.valid ? "VALID" : "INVALID",
       validation,
-      object: input.fluencyBaseline,
+      object: validation.valid ? input.fluencyBaseline : null,
       generated: false,
       hold_reason: validation.valid ? null : "fluency baseline validation gaps",
       summary: validation.valid ? summarizeFluencyBaseline(input.fluencyBaseline) : null
@@ -128,6 +139,17 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
   // Stage 0c: customer outcome evidence (optional; only ACCEPTED attaches).
   let sourceCoverageOverrides: Record<string, string> | undefined;
   let evidenceRefs: Record<string, string> | undefined;
+  const packetContextRefs: Record<string, string> = {};
+  if (result.engagement.status === "VALID" && typeof input.engagement?.engagement_id === "string") {
+    packetContextRefs.engagement_id = input.engagement.engagement_id;
+  }
+  if (
+    result.fluency_baseline.status === "VALID" &&
+    typeof input.fluencyBaseline?.baseline_id === "string" &&
+    fluencyBaselineMatchesBlueprintWorkflow(input.fluencyBaseline, input.blueprint)
+  ) {
+    packetContextRefs.fluency_baseline_id = input.fluencyBaseline.baseline_id;
+  }
   if (input.outcomeEvidenceExport !== undefined) {
     const validation = validateOutcomeEvidenceExport(input.outcomeEvidenceExport, {
       metricsLibrary: input.metricsLibrary,
@@ -138,7 +160,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     result.outcome_evidence = {
       status: validation.valid ? (attached ? "VALID" : "HELD") : "INVALID",
       validation,
-      object: input.outcomeEvidenceExport,
+      object: validation.valid ? input.outcomeEvidenceExport : null,
       generated: false,
       hold_reason: attached
         ? null
@@ -180,7 +202,8 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     scenario: input.scenario,
     ids: input.ids,
     sourceCoverageOverrides,
-    evidenceRefs
+    evidenceRefs,
+    packetContextRefs
   });
   result.spine = spine;
   result.decision = spine.decision;

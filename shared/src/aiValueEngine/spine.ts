@@ -65,6 +65,8 @@ export interface SpineRunInput {
   sourceCoverageOverrides?: Record<string, string>;
   /** Evidence provenance, recorded on the readiness object's source refs. */
   evidenceRefs?: Record<string, string>;
+  /** Compact upstream context refs, recorded on the executive packet only. */
+  packetContextRefs?: Record<string, string>;
 }
 
 export interface SpineRunResult {
@@ -221,6 +223,7 @@ export function runSpine(input: SpineRunInput): SpineRunResult {
     scenario: scenarioObject,
     readiness: readinessObject,
     claimBoundary: claimBoundaryObject,
+    packetContextRefs: input.packetContextRefs,
     packetId: input.ids?.packetId
   });
   const packetValidation = validateExecutivePacket(packet);

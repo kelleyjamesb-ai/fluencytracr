@@ -194,6 +194,94 @@ const evidenceReviewForReadout = (
   };
 };
 
+const LEGACY_READOUT_BOUNDARY =
+  "Internal/prototype readout. Not source-bound customer output.";
+
+const LEGACY_READOUT_BANNER = `
+  <div class="banner" data-ai-value-readout-boundary="legacy_internal_prototype">
+    <strong>${LEGACY_READOUT_BOUNDARY}</strong>
+    Legacy compatibility surface only. This is not a source-bound Executive
+    Readout Snapshot, export package, customer-facing financial output, ROI
+    proof, causality proof, productivity output, probability output, or
+    confidence-model output.
+  </div>`;
+
+const applyLegacyReadoutBoundary = (html: string): string => {
+  if (!html.includes("<body>")) {
+    return `${LEGACY_READOUT_BANNER}\n${html}`;
+  }
+  return html.replace("<body>", `<body>\n${LEGACY_READOUT_BANNER}`);
+};
+
+const legacyExecutivePacketIsolationGaps = (
+  packet: Record<string, unknown>
+): string[] => {
+  const summary = objectRef(packet.ebita_impact_summary);
+  if (!summary) return [];
+
+  const gaps: string[] = [];
+  if (summary.status === "CUSTOMER_FACING_APPROVED") {
+    gaps.push("legacy executive packet cannot carry CUSTOMER_FACING_APPROVED status");
+  }
+  if (summary.realized_ebita_claim_allowed === true) {
+    gaps.push("legacy executive packet cannot authorize realized financial language");
+  }
+  if (summary.customer_facing_allowed === true) {
+    gaps.push("legacy executive packet cannot authorize customer-facing financial language");
+  }
+  if (summary.causality_claim_allowed === true) {
+    gaps.push("legacy executive packet cannot authorize causality language");
+  }
+  return gaps;
+};
+
+const readinessMatchesPacket = (
+  readiness: Record<string, unknown>,
+  packet: Record<string, unknown>,
+  packetSourceRefs: Record<string, unknown>
+): boolean => {
+  if (stringRef(readiness.workflow_family) !== stringRef(packet.workflow_family)) {
+    return false;
+  }
+  if (stringRef(readiness.value_route) !== stringRef(packet.value_route)) {
+    return false;
+  }
+  const readinessRefs = objectRef(readiness.source_refs);
+  if (!readinessRefs) return false;
+  for (const ref of ["blueprint_id", "metrics_library_id", "scenario_id"]) {
+    if (stringRef(readinessRefs[ref]) !== stringRef(packetSourceRefs[ref])) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const fluencyBaselineMatchesPacket = (
+  baseline: Record<string, unknown>,
+  packetWorkflowFamily: string,
+  orgId: string
+): boolean => {
+  const baselineOrgId = stringRef(baseline.org_id);
+  if (baselineOrgId && baselineOrgId !== orgId) return false;
+
+  const baselineWorkflowFamily = stringRef(baseline.workflow_family);
+  if (
+    baselineWorkflowFamily &&
+    (!packetWorkflowFamily || baselineWorkflowFamily !== packetWorkflowFamily)
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+const invalidExecutivePacketGaps = (payload: Record<string, unknown>): string[] => {
+  const validation = aiValueEngine.validateExecutivePacket(payload);
+  return validation.valid
+    ? legacyExecutivePacketIsolationGaps(payload)
+    : [...validation.gaps, ...legacyExecutivePacketIsolationGaps(payload)];
+};
+
 export function registerAiValueRoutes(app: Express): void {
   app.post(
     "/api/v1/ai-value/materialize/real-evidence",
@@ -403,7 +491,18 @@ export function registerAiValueRoutes(app: Express): void {
         });
       }
 
-      const validation = config.validate(payload);
+      const baseValidation = config.validate(payload);
+      const legacyIsolationGaps =
+        objectType === "executive_packet"
+          ? legacyExecutivePacketIsolationGaps(payload)
+          : [];
+      const validation = legacyIsolationGaps.length > 0
+        ? {
+            ...baseValidation,
+            valid: false,
+            gaps: [...baseValidation.gaps, ...legacyIsolationGaps]
+          }
+        : baseValidation;
       if (!validation.valid) {
         // Fail closed: invalid objects are rejected, never stored.
         return res.status(422).json({
@@ -475,6 +574,22 @@ export function registerAiValueRoutes(app: Express): void {
           reason: "OBJECT_NOT_FOUND"
         });
       }
+      if (objectType === "executive_packet" && req.role === "EXEC_VIEWER") {
+        return res.status(403).json({
+          error: "legacy executive packet payloads are internal only",
+          reason: "LEGACY_READOUT_INTERNAL_ONLY"
+        });
+      }
+      if (objectType === "executive_packet") {
+        const gaps = invalidExecutivePacketGaps(record.payload);
+        if (gaps.length > 0) {
+          return res.status(422).json({
+            error: "executive packet failed engine validation",
+            reason: "ENGINE_VALIDATION_FAILED",
+            gaps
+          });
+        }
+      }
       return res.json({
         ...recordSummary(record),
         payload: record.payload
@@ -484,7 +599,7 @@ export function registerAiValueRoutes(app: Express): void {
 
   app.get(
     "/api/v1/ai-value/readout/:packetId/html",
-    rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
     async (req: RequestWithRole, res) => {
       const orgId = requireOrg(req, res);
       if (!orgId) return;
@@ -498,17 +613,25 @@ export function registerAiValueRoutes(app: Express): void {
         });
       }
       const packetValidation = aiValueEngine.validateExecutivePacket(packetRecord.payload);
-      if (!packetValidation.valid) {
+      const legacyIsolationGaps = legacyExecutivePacketIsolationGaps(packetRecord.payload);
+      if (!packetValidation.valid || legacyIsolationGaps.length > 0) {
         // Fail closed: a stored packet that no longer validates never renders.
         return res.status(422).json({
           error: "executive packet failed engine validation",
           reason: "ENGINE_VALIDATION_FAILED",
-          gaps: packetValidation.gaps
+          gaps: [...packetValidation.gaps, ...legacyIsolationGaps]
         });
       }
 
       const packet = packetRecord.payload as Record<string, unknown>;
       const packetWorkflowFamily = stringRef(packet.workflow_family);
+      if (!packetWorkflowFamily) {
+        return res.status(422).json({
+          error: "executive packet failed engine validation",
+          reason: "ENGINE_VALIDATION_FAILED",
+          gaps: ["workflow_family must be a string"]
+        });
+      }
       const sourceRefs =
         packet.source_refs && typeof packet.source_refs === "object"
           ? packet.source_refs as Record<string, unknown>
@@ -519,35 +642,39 @@ export function registerAiValueRoutes(app: Express): void {
       const fluencyBaselineRef = stringRef(sourceRefs.fluency_baseline_id);
       const readinessRef = stringRef(sourceRefs.readiness_id);
 
-      const engagements = await listAiValueObjects(orgId, "engagement");
       let engagementPayload: Record<string, unknown> | null = null;
-      for (const record of engagements) {
-        const validation = aiValueEngine.validateEngagement(record.payload);
-        const coversPacketWorkflow = aiValueEngine.engagementCoversWorkflowFamily(
-          record.payload,
-          packetWorkflowFamily
-        );
-        const matchesSourceRef = engagementRef ? record.object_id === engagementRef : true;
-        if (validation.valid && coversPacketWorkflow && matchesSourceRef) {
-          engagementPayload = record.payload;
-          break;
+      if (engagementRef) {
+        const record = await getAiValueObject(orgId, "engagement", engagementRef);
+        if (record) {
+          const validation = aiValueEngine.validateEngagement(record.payload);
+          const coversPacketWorkflow = aiValueEngine.engagementCoversWorkflowFamily(
+            record.payload,
+            packetWorkflowFamily
+          );
+          if (validation.valid && coversPacketWorkflow) {
+            engagementPayload = record.payload;
+          }
         }
       }
 
-      const baselines = await listAiValueObjects(orgId, "fluency_baseline");
       let fluencySummary: Record<string, unknown> | null = null;
-      const validBaselines = baselines.filter((record) =>
-        aiValueEngine.validateFluencyBaseline(record.payload).valid
-      );
-      const matchedBaseline = fluencyBaselineRef
-        ? validBaselines.find((record) => record.object_id === fluencyBaselineRef)
-        : validBaselines.find(
-            (record) =>
-              packetWorkflowFamily && record.workflow_family === packetWorkflowFamily
-          ) ??
-          validBaselines.find((record) => !record.workflow_family);
-      if (matchedBaseline) {
-        fluencySummary = aiValueEngine.summarizeFluencyBaseline(matchedBaseline.payload);
+      if (fluencyBaselineRef) {
+        const matchedBaseline = await getAiValueObject(
+          orgId,
+          "fluency_baseline",
+          fluencyBaselineRef
+        );
+        if (
+          matchedBaseline &&
+          aiValueEngine.validateFluencyBaseline(matchedBaseline.payload).valid &&
+          fluencyBaselineMatchesPacket(
+            matchedBaseline.payload,
+            packetWorkflowFamily,
+            orgId
+          )
+        ) {
+          fluencySummary = aiValueEngine.summarizeFluencyBaseline(matchedBaseline.payload);
+        }
       }
 
       const blueprintContextRecord = blueprintRef
@@ -573,11 +700,7 @@ export function registerAiValueRoutes(app: Express): void {
         });
       const canUseEvidenceForReadout = (payload: Record<string, unknown>) => {
         const validation = validateEvidenceForReadout(payload);
-        if (!validation.valid) return false;
-        return (
-          validation.review_state !== "ACCEPTED" ||
-          validation.cross_check_gaps.length === 0
-        );
+        return validation.feeds.evidence_attachment;
       };
 
       let outcomeEvidenceRef: string | null = null;
@@ -589,7 +712,8 @@ export function registerAiValueRoutes(app: Express): void {
         );
         if (
           readinessRecord &&
-          aiValueEngine.validateEvidenceReadiness(readinessRecord.payload).valid
+          aiValueEngine.validateEvidenceReadiness(readinessRecord.payload).valid &&
+          readinessMatchesPacket(readinessRecord.payload, packet, sourceRefs)
         ) {
           const readinessSourceRefs = objectRef(readinessRecord.payload.source_refs);
           outcomeEvidenceRef = stringRef(readinessSourceRefs?.outcome_evidence_export_id);
@@ -611,26 +735,19 @@ export function registerAiValueRoutes(app: Express): void {
         }
       }
 
-      if (!outcomeEvidencePayload) {
-        const outcomeEvidenceRecords = await listAiValueObjects(
-          orgId,
-          "outcome_evidence_export"
-        );
-        const candidates = outcomeEvidenceRecords
-          .filter((record) => record.workflow_family === packetWorkflowFamily)
-          .filter((record) => canUseEvidenceForReadout(record.payload))
-          .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
-        outcomeEvidencePayload = candidates[0]?.payload ?? null;
-      }
-
       const html = aiValueEngine.renderExecutiveReadoutHtml({
         packet,
         engagement: engagementPayload,
         fluencySummary,
         evidenceReview: evidenceReviewForReadout(packet, outcomeEvidencePayload)
       });
+      res.set("x-ai-value-readout-boundary", "legacy_internal_prototype");
+      res.set("x-ai-value-source-bound", "false");
+      res.set("x-ai-value-customer-facing-output", "false");
+      res.set("x-ai-value-export-authorized", "false");
+      res.set("cache-control", "no-store");
       res.set("content-type", "text/html; charset=utf-8");
-      return res.send(html);
+      return res.send(applyLegacyReadoutBoundary(html));
     }
   );
 

@@ -1,14 +1,14 @@
 # AI Value Legacy Readout Isolation Decision
 
-Status: decision only. This document does not create backend routes, frontend
-UI, Prisma schema changes, migrations, repository methods, persistence writes,
-live Glean or BigQuery execution, export packages, rendered customer readouts,
-confidence math, ROI, causality, productivity, probability, or customer-facing
-financial output.
+Status: backend legacy readout route guard implemented. This document does not
+create frontend UI, Prisma schema changes, migrations, repository methods,
+persistence writes, live Glean or BigQuery execution, export packages,
+source-bound rendered customer readouts, confidence math, ROI, causality,
+productivity, probability, or customer-facing financial output.
 
 Phase: `phase-ai-value-legacy-readout-isolation-decision`
 
-Decision: `ROUTE_AND_UI_GUARD_REQUIRED`
+Decision: `ROUTE_GUARD_IMPLEMENTED__UI_GUARD_AND_SOURCE_BOUND_PROJECTION_HELD`
 
 ## 1. Purpose
 
@@ -37,7 +37,7 @@ compatibility. They must not become product proof.
 
 ## 3. Decision
 
-`ROUTE_AND_UI_GUARD_REQUIRED`
+`ROUTE_GUARD_IMPLEMENTED__UI_GUARD_AND_SOURCE_BOUND_PROJECTION_HELD`
 
 Reason:
 
@@ -50,6 +50,22 @@ Reason:
   future customer projection boundary;
 - source-bound readout projection, export governance, and legal/trust review
   are not yet promoted.
+- the backend legacy readout HTML route now requires an internal reviewer/admin
+  role, returns legacy/internal boundary headers, injects the required
+  internal/prototype audience label into the HTML, and still fails closed when
+  the stored packet no longer validates.
+- the generic object detail route now blocks `EXEC_VIEWER` access to full
+  legacy `executive_packet` payloads.
+- the legacy HTML route no longer attaches outcome evidence by workflow-family
+  fallback; it only renders outcome evidence when an explicit readiness source
+  reference is present, valid for readout, and `ACCEPTED` with clean
+  attachment cross-checks.
+- shared legacy packet validation now fails closed on surprise top-level fields,
+  unexpected nested section fields, unsafe source-ref keys or values, unsafe
+  nested field keys after normalization, unsafe scalar values such as
+  prompts/transcripts/query text/identifiers, unsafe finance/confidence language
+  hidden behind caveats, and customer-facing, causal, or realized-financial
+  authorization branches.
 
 ## 4. Allowed Current Use
 
@@ -80,20 +96,26 @@ Do not describe or use legacy readout paths as:
 - authoritative product state;
 - customer-safe claim output.
 
-## 6. Required Future Route Guard
+## 6. Implemented Route Guard
 
 Before any new source-bound readout, customer projection, or export work, the
 backend route layer must enforce all required postures for legacy readout
-routes. The selected decision is `ROUTE_AND_UI_GUARD_REQUIRED`; a label-only
-guard is not sufficient.
+routes. The selected route decision is now implemented for the legacy HTML
+route. A label-only guard remains insufficient.
 
 | Guard posture | Requirement |
 | --- | --- |
-| `internal_only_label` | Response includes internal/prototype/legacy audience boundary |
-| `role_limited` | Route is restricted to internal reviewer/admin roles |
+| `internal_only_label` | Implemented: response includes internal/prototype/legacy audience boundary |
+| `role_limited` | Implemented: route is restricted to internal reviewer/admin roles |
 | `source_bound_projection_required` | Customer-safe readout routes must use a separate projected source-bound contract |
-| `export_blocked` | Route cannot be used to download or package customer-facing artifacts |
-| `invalid_payload_fail_closed` | Stored packet that no longer validates cannot render |
+| `export_blocked` | Implemented for legacy HTML: no download disposition, `no-store`, and export-authorized false header |
+| `invalid_payload_fail_closed` | Implemented: stored packet that no longer validates cannot render |
+| `generic_payload_exposure_denied` | Implemented: `EXEC_VIEWER` cannot fetch full `executive_packet` payloads through the generic detail route |
+| `explicit_source_ref_only` | Implemented: outcome evidence is not attached by latest-workflow-family fallback |
+| `accepted_evidence_only` | Implemented: submitted/rejected outcome evidence cannot attach even when explicitly referenced by readiness |
+| `explicit_context_ref_only` | Implemented: engagement and AI Fluency kickoff context are not attached by workflow-family fallback |
+| `stale_readiness_binding_denied` | Implemented: readiness must match packet workflow, value route, and upstream refs before it can provide outcome evidence |
+| `nested_payload_smuggling_denied` | Implemented: runtime packet validation rejects unexpected nested section fields, unsafe source refs, and unsafe values hidden inside caveated text |
 
 Route tests must cover:
 
@@ -103,6 +125,12 @@ Route tests must cover:
 - invalid packet fail-closed behavior;
 - raw/person-level payload rejection;
 - finance/customer-facing output denial;
+- no-export/no-store headers;
+- explicit source-ref-only evidence attachment;
+- accepted-only outcome evidence attachment;
+- explicit context-ref-only engagement/fluency attachment;
+- stale readiness binding denial;
+- nested payload, source-ref, and caveat smuggling denial;
 - caveat and blocked-claim carry-forward.
 
 ## 7. Required Future UI Guard
@@ -147,19 +175,20 @@ decision.
 
 ## 9. Promotion Impact
 
-Measurement Cell persistence promotion is blocked until this decision is
-accounted for.
+Measurement Cell snapshot persistence has been promoted separately for
+backend-internal compact lineage only. This decision is now accounted for at the
+legacy backend route level, but customer-facing readout/productization remains
+blocked.
 
-If implementation begins later, the implementation slice must decide whether
-to:
+Remaining implementation, if promoted later, must decide whether to:
 
-- add route guard tests;
 - add UI labels;
-- isolate legacy readout routes from customer roles;
 - replace legacy links with source-bound projection links;
 - keep legacy routes internal/prototype only.
 
-This decision does not itself authorize that implementation.
+This decision does not authorize source-bound customer projection, exports,
+frontend UI, rendered customer readouts, customer-facing financial output,
+confidence math, ROI, causality, productivity, or probability output.
 
 ## 10. Verification
 

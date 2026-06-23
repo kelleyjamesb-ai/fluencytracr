@@ -411,6 +411,68 @@ test("runValueChain runs kickoff through executive packet", () => {
   assert.equal(run.customer_facing_economic_output, false);
 });
 
+test("runValueChain does not copy a Fluency baseline ref for a different workflow family", () => {
+  const matchingBaseline = {
+    ...fluencyBaseline,
+    workflow_family: blueprint.workflow_family
+  };
+  const matchingRun = runValueChain({
+    engagement,
+    fluencyBaseline: matchingBaseline,
+    blueprint,
+    metricsLibrary
+  });
+
+  assert.equal(matchingRun.fluency_baseline.status, "VALID");
+  assert.equal(
+    matchingRun.spine.stages.executive_packet.object.source_refs.fluency_baseline_id,
+    matchingBaseline.baseline_id
+  );
+
+  const unscopedBaseline = {
+    ...fluencyBaseline,
+    baseline_id: "fluency_baseline_without_workflow_binding"
+  };
+  const unscopedRun = runValueChain({
+    engagement,
+    fluencyBaseline: unscopedBaseline,
+    blueprint,
+    metricsLibrary
+  });
+
+  assert.equal(unscopedRun.fluency_baseline.status, "VALID");
+  assert.equal(unscopedRun.spine.halted_at, null);
+  assert.equal(
+    Object.hasOwn(
+      unscopedRun.spine.stages.executive_packet.object.source_refs,
+      "fluency_baseline_id"
+    ),
+    false
+  );
+
+  const mismatchedBaseline = {
+    ...fluencyBaseline,
+    baseline_id: "fluency_baseline_wrong_workflow",
+    workflow_family: "sales_pipeline_hygiene"
+  };
+  const mismatchedRun = runValueChain({
+    engagement,
+    fluencyBaseline: mismatchedBaseline,
+    blueprint,
+    metricsLibrary
+  });
+
+  assert.equal(mismatchedRun.fluency_baseline.status, "VALID");
+  assert.equal(mismatchedRun.spine.halted_at, null);
+  assert.equal(
+    Object.hasOwn(
+      mismatchedRun.spine.stages.executive_packet.object.source_refs,
+      "fluency_baseline_id"
+    ),
+    false
+  );
+});
+
 test("runValueChain halts when the engagement does not cover the workflow", () => {
   const foreign = JSON.parse(JSON.stringify(engagement));
   for (const useCase of foreign.use_cases) useCase.workflow_family = "some_other_family";
@@ -426,7 +488,35 @@ test("runValueChain halts on an invalid fluency baseline instead of dropping it"
   const run = runValueChain({ engagement, fluencyBaseline: broken, blueprint, metricsLibrary });
   assert.equal(run.halted_at, "fluency_baseline");
   assert.equal(run.decision, "HOLD_FOR_FLUENCY_BASELINE");
+  assert.equal(run.fluency_baseline.object, null);
   assert.equal(run.spine, null);
+});
+
+test("runValueChain does not retain invalid raw upstream objects in stage results", () => {
+  const invalidEngagement = {
+    engagement_id: "engagement_invalid",
+    raw_rows: [{ employee_email: "person@example.com" }]
+  };
+  const engagementRun = runValueChain({
+    engagement: invalidEngagement,
+    blueprint,
+    metricsLibrary
+  });
+  assert.equal(engagementRun.engagement.status, "INVALID");
+  assert.equal(engagementRun.engagement.object, null);
+
+  const invalidEvidence = {
+    export_id: "outcome_invalid",
+    raw_rows: [{ query_text: "SELECT user_id FROM raw_rows" }]
+  };
+  const evidenceRun = runValueChain({
+    engagement,
+    outcomeEvidenceExport: invalidEvidence,
+    blueprint,
+    metricsLibrary
+  });
+  assert.equal(evidenceRun.outcome_evidence.status, "INVALID");
+  assert.equal(evidenceRun.outcome_evidence.object, null);
 });
 
 test("runValueChain without kickoff context behaves like the spine", () => {

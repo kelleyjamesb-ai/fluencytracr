@@ -758,6 +758,17 @@ function isAllowedGovernanceListValue(path: string[], value: string): boolean {
     (parent === "required_caveats" && SAFE_CAVEAT_VALUES.has(value));
 }
 
+function isAllowedAggregateFieldValue(path: string[], value: string): boolean {
+  if (!APPROVED_AGGREGATE_FIELD_NAMES.has(value)) return false;
+  const parent = normalizeKey(path[path.length - 2] ?? "");
+  const leaf = normalizeKey(path[path.length - 1] ?? "");
+  const leafIsArrayIndex = /^\d+$/.test(path[path.length - 1] ?? "");
+  if (leafIsArrayIndex && ["approved_output_fields", "metric_definitions"].includes(parent)) {
+    return true;
+  }
+  return leaf === "metric_id";
+}
+
 function collectForbiddenFields(value: any, fields: Set<string> = new Set(), path: string[] = []): Set<string> {
   if (!value || typeof value !== "object") return fields;
   if (Array.isArray(value)) {
@@ -782,6 +793,7 @@ function collectForbiddenValues(value: any, values: Set<string> = new Set(), pat
     const normalized = normalizeKey(value);
     if (
       !isAllowedGovernanceListValue(path, value) &&
+      !isAllowedAggregateFieldValue(path, value) &&
       FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value) || pattern.test(normalized))
     ) {
       values.add(path.join(".") || "<root>");
@@ -945,7 +957,7 @@ function collectSafeMetadataGaps(value: any, fields: string[], label: string): s
 }
 
 function safeAggregateFieldName(value: any): string | null {
-  if (!safeString(value, 120)) return null;
+  if (typeof value !== "string" || value.length === 0 || value.length > 120) return null;
   return APPROVED_AGGREGATE_FIELD_NAMES.has(value) ? value : null;
 }
 
