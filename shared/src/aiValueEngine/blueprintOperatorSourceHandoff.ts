@@ -273,6 +273,12 @@ function finiteNumberOrNull(value: any): number | null {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
+function normalizeExpectedMetricDirection(value: any): string {
+  return value === undefined || value === null || value === ""
+    ? "monitor"
+    : String(value);
+}
+
 function operatorSourceFrom(draft: any): any {
   return {
     ...draft.data_spine_source,
@@ -302,6 +308,8 @@ function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
       null,
     blueprint_customer_approval_state:
       fields.blueprint_customer_approval_state ?? null,
+    blueprint_customer_approved_at:
+      fields.blueprint_customer_approved_at ?? null,
     blueprint_customer_approver_role:
       fields.blueprint_customer_approver_role ?? draft?.approver_role ?? null,
     value_route: draft?.extracted_fields?.value_route ?? "unclassified",
@@ -320,9 +328,10 @@ function blueprintAlignmentContextFrom(draft: any, operatorSource: any): any {
       metric?.metric_id ??
       null,
     expected_metric_direction:
-      approvedExpectationPath?.expected_metric_direction ??
-      metric?.expected_direction ??
-      "unknown",
+      normalizeExpectedMetricDirection(
+        approvedExpectationPath?.expected_metric_direction ??
+          metric?.expected_direction
+      ),
     expected_metric_lag_days: finiteNumberOrNull(
       approvedExpectationPath?.expected_metric_lag_days ??
         fields.expected_metric_lag_days ??

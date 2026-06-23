@@ -333,6 +333,27 @@ export type {
 } from "./realDataIntakePacketRunner";
 
 export {
+  AI_VALUE_CONTROLLED_AGGREGATE_PIPELINE_DRY_RUN_SCHEMA_VERSION,
+  buildControlledAggregatePipelineDryRun,
+  validateControlledAggregatePipelineDryRun,
+  validateControlledAggregatePipelineRunManifest
+} from "./controlledAggregatePipelineDryRun";
+export type {
+  BuildControlledAggregatePipelineDryRunInput,
+  ControlledAggregatePipelineDryRunValidationResult
+} from "./controlledAggregatePipelineDryRun";
+
+export {
+  AI_VALUE_CONTROLLED_AGGREGATE_CONNECTOR_ADAPTER_SCHEMA_VERSION,
+  buildControlledAggregateConnectorAdapter,
+  validateControlledAggregateConnectorAdapter
+} from "./controlledAggregateConnectorAdapter";
+export type {
+  BuildControlledAggregateConnectorAdapterInput,
+  ControlledAggregateConnectorAdapterValidationResult
+} from "./controlledAggregateConnectorAdapter";
+
+export {
   AI_VALUE_OPERATOR_INTAKE_ADAPTER_RUN_SCHEMA_VERSION,
   buildOperatorIntakeAdapterRun,
   validateOperatorIntakeAdapterRun

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Move FluencyTracr from a productized internal evidence spine to a controlled pilot and explicit persistence promotion decision without overstating customer, finance, connector, or confidence readiness.
+**Goal:** Move FluencyTracr from a productized internal evidence spine through the controlled pilot and promoted backend-internal Measurement Cell snapshot persistence, without overstating customer, finance, connector, or confidence readiness.
 
-**Architecture:** The current state is `internal_operator_review_ready__customer_productization_blocked`. The next work should demonstrate the existing governed source handoff, Data Spine, Measurement Cell, Series, and review-posture path on a controlled scrubbed aggregate pilot before adding Measurement Cell persistence or customer-facing surfaces. Every step preserves the aggregate-only, fail-closed posture and keeps UI, live connectors, confidence math, ROI, causality, productivity, probability, and customer-facing financial output blocked until explicitly promoted.
+**Architecture:** The current state is `backend_internal_measurement_cell_snapshot_persistence_promoted__customer_productization_blocked`. The controlled scrubbed aggregate pilot has demonstrated the governed source handoff, Data Spine, Measurement Cell, Series, and review-posture path. `measurement_cell_snapshots` is promoted only as compact backend-internal persistence. Every next step preserves the aggregate-only, fail-closed posture and keeps UI, live connectors, confidence math, ROI, causality, productivity, probability, and customer-facing financial output blocked until explicitly promoted.
 
 **Tech Stack:** Markdown architecture/contract docs, existing TypeScript shared engine, Node test runner, docs contract sweep, V1 governance gates, future Prisma/Postgres only after promotion.
 
@@ -12,27 +12,31 @@
 
 ## Current State
 
-The data model has been built as a logical and physical readiness model, not as physical database implementation.
+The data model has been built as a logical model, physical readiness model, and now a first backend-internal Measurement Cell snapshot table.
 
 Built:
 
 - logical AI Value data model;
 - physical data-model readiness review;
 - stable approved expectation-path binding requirements;
-- future Measurement Cell / Series projection sketches;
+- promoted Measurement Cell snapshot projection;
+- future Measurement Cell Series projection sketch;
 - Productization Gate Decision.
 - data pipeline readiness decision documenting that Sigma/BigQuery execution is
   not built yet.
 
-Waiting:
+Now implemented:
 
 - `measurement_cell_snapshots`;
+- Prisma schema change for `measurement_cell_snapshots`;
+- migration for `measurement_cell_snapshots`;
+- compact append-only repository write path;
+- health/readiness table check.
+
+Waiting:
+
 - `measurement_cell_series_snapshots`;
 - Evidence Continuity persistence;
-- Prisma schema changes;
-- migrations;
-- repositories;
-- persistence writes;
 - source-bound customer routes or UI;
 - live Glean or BigQuery execution;
 - live Sigma execution or dashboard-row ingestion;
@@ -40,17 +44,16 @@ Waiting:
 
 ## Current Execution Result
 
-Phases 1-4 have produced docs-only gates and decision records. Phase 4 records
-`HOLD_FOR_MORE_PILOT_EVIDENCE`, so Phase 5 implementation is intentionally
-blocked in this goal. Phases 6-8 are completed only as hold decisions: Series
-persistence, customer projection/export, and confidence research remain blocked
-pending controlled pilot evidence, repeated milestone evidence, and explicit
-promotion decisions.
+Phases 1-5 have now produced the controlled pilot evidence, explicit
+`PROMOTE_MEASUREMENT_CELL_SNAPSHOTS` decision, and backend-internal compact
+snapshot implementation. Phases 6-8 remain hold decisions: Series persistence,
+customer projection/export, and confidence research remain blocked pending
+separate promotion decisions, repeated milestone evidence, and governance
+review.
 
-Next step completed after this pass: `AI_VALUE_DATA_PIPELINE_READINESS_DECISION`
-records that the Sigma/BigQuery data pipeline is not built yet. Future pipeline
-work must start with source inventory, aggregate extraction, and pipeline run
-review manifests before any saved-fixture adapter or live execution is promoted.
+The Sigma/BigQuery data pipeline is still not built. Future pipeline work must
+start with source inventory, aggregate extraction, and pipeline run review
+manifests before any saved-fixture adapter or live execution is promoted.
 
 ## Phase 1: Close Productization Gate
 
@@ -299,9 +302,11 @@ Expected: all commands exit `0`.
 **Files, if promoted:**
 - Modify: `backend/prisma/schema.prisma`
 - Create: `backend/prisma/migrations/<timestamp>_add_measurement_cell_snapshots/migration.sql`
-- Create: `backend/src/repositories/measurement-cell-snapshot.repository.ts`
-- Create: `backend/tests/measurement_cell_snapshot.repository.test.ts`
-- Create: `scripts/validate_ai_value_measurement_cell_snapshot_persistence.test.mjs`
+- Modify: `backend/src/repositories/ai-value-minimal-persistence.repository.ts`
+- Modify: `backend/tests/ai_value_minimal_persistence.test.ts`
+- Modify: `backend/src/store.ts`
+- Modify: `backend/src/app.ts`
+- Modify: `backend/tests/health_postgres.test.ts`
 - Modify: `.project/PROGRESS.md`
 
 - [x] **Step 1: Stop if Phase 4 is not promoted**
@@ -312,10 +317,12 @@ Do not edit Prisma or backend code unless Phase 4 decision is exactly:
 PROMOTE_MEASUREMENT_CELL_SNAPSHOTS
 ```
 
-Execution result: Phase 4 is `HOLD_FOR_MORE_PILOT_EVIDENCE`. Steps 2-4 are not
-safe to execute in this goal and remain intentionally unchecked.
+Execution result: Phase 4 is `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`. Steps 2-4
+were executed as a backend-internal compact persistence slice. Series,
+customer-facing reads, routes, UI, exports, connectors, confidence research
+inputs, and finance outputs remain blocked.
 
-- [ ] **Step 2: Write red tests first**
+- [x] **Step 2: Write red tests first**
 
 Tests must reject:
 
@@ -343,7 +350,7 @@ JSONB smuggling through source_refs_json
 JSONB smuggling through blueprint_path_binding_json
 ```
 
-- [ ] **Step 3: Implement only the promoted table**
+- [x] **Step 3: Implement only the promoted table**
 
 Allowed implementation:
 
@@ -571,11 +578,12 @@ Do these next, in order:
 2. Phase 2: runbook for one controlled scrubbed aggregate pilot.
 3. Phase 3: isolate legacy readout and generic object authority risk.
 4. Phase 4: decide whether to promote Measurement Cell snapshots.
-5. Phase 5: stop; do not implement Measurement Cell snapshots because Phase 4
-   is held.
-6. Phase 6: defer Series persistence until repeated milestone evidence exists.
+5. Phase 5: implemented backend-internal compact `measurement_cell_snapshots`.
+6. Phase 6: defer Series persistence until a separate promotion decision.
 7. Phase 7: keep customer projection and exports blocked pending governance.
 8. Phase 8: hold confidence research until repeated aligned evidence exists.
+9. Next data-pipeline phase: design BigQuery/Sigma source inventory, aggregate
+   extraction, and pipeline run review manifests without live execution first.
 
 Do not skip from Phase 1 to Phase 5. The pilot and legacy-readout isolation
 are the safety checks that keep persistence from becoming accidental product

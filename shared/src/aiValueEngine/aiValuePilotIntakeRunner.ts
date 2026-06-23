@@ -333,8 +333,18 @@ function collectBindingGaps(
   const gaps: string[] = [];
   const orgId = orgIdOf(plan);
   const measurementPlanId = measurementPlanIdOf(plan);
-  const windowStart = String(plan?.windows?.baseline_window_start ?? "");
-  const windowEnd = String(plan?.windows?.baseline_window_end ?? "");
+  const comparisonStart = plan?.windows?.comparison_window_start;
+  const comparisonEnd = plan?.windows?.comparison_window_end;
+  const windowStart = String(
+    comparisonStart && comparisonEnd
+      ? comparisonStart
+      : plan?.windows?.baseline_window_start ?? ""
+  );
+  const windowEnd = String(
+    comparisonStart && comparisonEnd
+      ? comparisonEnd
+      : plan?.windows?.baseline_window_end ?? ""
+  );
   const aggregateGrain = String(plan?.workflow_scope?.approved_aggregate_grain ?? "");
 
   for (const [index, result] of conversionResults.entries()) {

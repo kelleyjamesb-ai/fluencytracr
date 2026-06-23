@@ -191,6 +191,41 @@ test("Blueprint handoff carries customer-approved expectation context for Measur
   assert.equal(handoff.feeds.customer_facing_financial_output, false);
 });
 
+test("Blueprint handoff uses normalized monitor direction when approved metric direction is omitted", () => {
+  const draft = buildBlueprintExtractionDraft(
+    baseInput({
+      metricCandidates: [
+        {
+          metric_id: "marketing_campaign_cycle_days",
+          metric_name: "Campaign cycle time",
+          expected_lag_days: 60,
+          system_recommended: true,
+          customer_selected: true,
+          value_driver: "capacity"
+        }
+      ]
+    })
+  );
+  const handoff = buildBlueprintOperatorSourceHandoff({
+    draft,
+    generatedAt: "2026-06-21T00:00:00.000Z"
+  });
+  const result = validateBlueprintOperatorSourceHandoff(handoff);
+
+  assert.equal(result.valid, true, result.gaps.join("; "));
+  assert.equal(handoff.decision, "READY_FOR_OPERATOR_INTAKE");
+  assert.equal(handoff.operator_source.expected_metric_direction, "monitor");
+  assert.equal(
+    handoff.blueprint_alignment_context.expected_metric_direction,
+    "monitor"
+  );
+  assert.equal(
+    handoff.blueprint_alignment_context.approved_expectation_path
+      .expected_metric_direction,
+    "monitor"
+  );
+});
+
 test("Blueprint handoff carries approved expectation path registry and selected path context", () => {
   const approvedExpectationPaths = [
     {

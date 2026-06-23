@@ -2,6 +2,194 @@
 
 ## Last Completed
 
+- AI Value AI Fluency construct distinction amendment (user-requested,
+  2026-06-22): clarified that the AI Fluency psychological adoption context is
+  anchored in the five governed AI Fluency dimensions: confidence, usage
+  quality, behavior change, leadership reinforcement, and capability growth.
+  The docs now separate instrument-reported behavior / use-practice from
+  observed telemetry behavior: the former is aggregate AI Fluency context, while
+  observed AI behavior remains compact VBD / Measurement Cell evidence only.
+  No scoring, weighting, persistence, schema, route, UI, live connector,
+  confidence math, ROI, causality, productivity, probability, finance output,
+  or customer-facing output was added. Verification: `git diff --check`,
+  `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py` passed.
+- AI Value psychological adoption model and connector-promotion design pass
+  (user-requested, 2026-06-22): amended the logical AI Value model so aggregate
+  AI Fluency psychological context is explicit rather than hidden inside a
+  single score. The model now separates AI attitude, behavioral intent,
+  observed AI behavior / VBD, selected metric movement, and Blueprint
+  expectation alignment. Attitude and intent are leading-indicator context
+  only; they cannot prove value, rescue missing observed behavior, feed finance
+  output, or become contribution-model math. The physical readiness review now
+  records this as a future compact aggregate projection boundary, not a new
+  table: no raw instrument answers, respondent records, adoption-conversion
+  scores, model scores, ROI, EBITDA, causality, productivity, probability, or
+  customer-facing financial output. The data-pipeline readiness decision now
+  points to three docs-only connector-promotion contracts: Source Inventory
+  Manifest, Aggregate Extraction Manifest, and Pipeline Run Review Manifest.
+  CODE, BUG, and ADVERSARIAL review tightened the slice before commit: Source
+  Inventory now requires terminal owner/legal/k-min/suppression review states;
+  Aggregate Extraction uses aggregate definition and upstream attestation refs
+  instead of live run handles; Pipeline Run Review is manual promotion-review
+  context only, uses a non-authorizing Source Package Review Queue posture ref,
+  carries the strictest false boundary policy, and cannot be read as intake
+  permission. These designs define the safe path toward BigQuery/Sigma wiring
+  while keeping live execution, credentials, query text, raw rows, persistence,
+  routes, UI, exports, confidence math, ROI, causality, productivity,
+  probability, finance output, and customer-facing output blocked behind a
+  separate Pipeline Promotion Decision. Verification: `git diff --check`,
+  `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py` passed.
+- AI Value controlled aggregate connector adapter / review packet
+  (user-requested, 2026-06-22): added the next credential-safe executable
+  layer after the controlled aggregate pipeline dry run. The new shared adapter
+  and runner turn a fixture-bound, passed BigQuery/Sigma-shaped aggregate dry-run
+  proof into a compact internal connector review packet. It validates source
+  system, reviewed aggregate-export adapter mode, no-live-execution posture,
+  source-owner approval, owner attestation, aggregate export ref, org/client/
+  workflow/function/cohort/window binding, connector manifest hash, and compact
+  pipeline dry-run refs before producing packet metadata. Passed output includes
+  only adapter run id, source system, connector manifest ref/hash, aggregate
+  export ref, identity binding, owner review posture, compact pipeline dry-run
+  ref, Measurement Cell candidate proof reference, caveats, blocked uses, false
+  boundary policy, and validation summary. It fails closed on unsupported source
+  systems, live BigQuery/Sigma/Glean/customer connector execution, credential
+  indicators, query execution, raw-row ingestion, prompt/transcript/user
+  identifier indicators, connector job/API/query refs, active connector status,
+  ingestion jobs, unsafe or encoded-looking aggregate export refs, owner/
+  attestation drift, identity/window drift, stale connector manifest hash, stale
+  or hand-edited pipeline dry-run refs, child payload smuggling, JSON payload
+  aliases, ROI/EBITDA, finance-output, financial attribution, confidence,
+  probability, p-value, causality, productivity, persistence, schemas, routes,
+  UI, and customer-facing output. The only true feeds are internal adapter
+  review, connector review packet, pipeline dry-run review, and Measurement Cell
+  candidate proof; live connector execution, credentials, durable connector-run
+  storage, Source Package clearance, Measurement Cell snapshots, Series,
+  finance context, research model feed, exports, and customer-facing financial
+  output remain false. No shared schema, migration, repository, backend route,
+  frontend UI, persistence write, live connector, live query execution,
+  confidence math, ROI math, causality logic, productivity measurement,
+  probability output, finance output, or customer-facing financial output was
+  added. Verification:
+  `npm run test:ai-value-controlled-aggregate-connector-adapter` passed 21/21;
+  `npm run test:ai-value-controlled-aggregate-pipeline-dry-run` passed 18/18;
+  `npm run test:ai-value-controlled-aggregate-fixture-review` passed 16/16;
+  `npm run test:ai-value-controlled-measurement-cell-assembly` passed 39/39;
+  `npm run test:ai-value-real-data-intake-packet-runner` passed 12/12;
+  `npm run test:ai-value-source-package-review-queue` passed 13/13;
+  `git diff --check`, `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py` passed.
+- AI Value controlled aggregate pipeline dry-run promotion
+  (user-requested, 2026-06-22): added the next executable bridge from a
+  BigQuery/Sigma-shaped scrubbed aggregate export manifest into the existing
+  reviewed source-package path and compact internal Measurement Cell candidate
+  proof. The new shared layer and runner validate a controlled dry-run manifest,
+  require reviewed aggregate fixture binding, recompute the controlled
+  Measurement Cell assembly candidate from the fixture path, and emit only
+  compact dry-run metadata: dry-run id, source system, manifest ref/hash,
+  aggregate fixture hash, reviewed source-ref hash, reviewed aggregate-context
+  hash, reviewed Blueprint expectation hash, Measurement Cell candidate ref,
+  selected metric, selected expectation path, candidate integrity hash, source
+  package count, caveats, blocked uses, false boundary policy, and validation
+  summary. The only true downstream feed is
+  `measurement_cell_candidate_proof`; live BigQuery execution, live Sigma
+  execution, live Glean query, durable pipeline-run storage, Source Package
+  clearance, Measurement Cell snapshot candidate, Measurement Cell snapshot,
+  Measurement Cell Series, evidence continuity, claim readiness, executive
+  readout, exports, customer sharing, reportability, Value Hypothesis packet
+  runner, finance context, confidence model, probability output, ROI/EBITDA,
+  financial attribution, causality, productivity, and customer-facing output
+  feeds remain false. The dry run fails closed on unsupported source systems,
+  non-dry-run execution, source-owner/attestation drift, org/client/workflow/
+  function/cohort/window drift, stale reviewed hashes, missing fixture-bound
+  expected candidate proof, hand-edited passed envelopes, unsafe source refs,
+  encoded-looking refs, connector job/API/run refs, live connector flags, query
+  text, raw rows, prompts, transcripts, identifiers, preview/metric/raw export
+  payloads, nested metadata/payload smuggling, full child objects, JSON payload
+  aliases, unsafe caveat/gap language, ROI, EBITA/EBITDA, finance-output,
+  confidence, probability, p-value, causality, productivity, schemas, routes,
+  UI, repositories, migrations, persistence, and customer-facing financial
+  output. No shared schema, migration, repository, backend route, frontend UI,
+  persistence write, live connector, live query execution, confidence math, ROI
+  math, causality logic, productivity measurement, probability output, finance
+  output, or customer-facing financial output was added. Verification:
+  `npm run test:ai-value-controlled-aggregate-pipeline-dry-run` passed 18/18;
+  inherited full-slice verification also passed
+  `npm run test:ai-value-controlled-aggregate-fixture-review`,
+  `npm run test:ai-value-controlled-measurement-cell-assembly`,
+  `npm run test:ai-value-real-data-intake-packet-runner`,
+  `npm run test:ai-value-source-package-review-queue`,
+  `npm run test:ai-value-measurement-cell-assembly-runner`,
+  `npm run test:ai-value-measurement-cell`, `git diff --check`,
+  `bash scripts/ci_docs_contract_sweep.sh`, and
+  `python3 scripts/ci_v1_governance_gates.py`.
+- AI Value controlled Measurement Cell assembly executable path
+  (user-requested, 2026-06-22): added the next controlled executable gate after the
+  controlled aggregate fixture review. The new command runs the saved aggregate
+  fixture through Controlled Aggregate Fixture Review, verifies the reviewed
+  source-ref hash, reviewed aggregate-context hash, and reviewed Blueprint
+  expectation hash, rebuilds Data Spine Readiness, cross-checks scrubbed export
+  owner/approver/attestation posture
+  and actual Real Data Intake source packages for source owner/attestation/ref/
+  grain drift, rebuilds Source Package Review Queue metadata,
+  Blueprint selected-path validation from reviewed Blueprint expectation input,
+  requires fixture-derived aggregate AI Fluency, VBD, token, selected metric,
+  governance, and assumption context, and Real Data Intake in memory, then calls
+  the existing Measurement Cell Assembly Runner and
+  emits only compact internal Measurement Cell candidate metadata. Passed output
+  includes the assembly run
+  id, Measurement Cell ref, selected metric id, selected expectation path id,
+  reviewed-source-ref hash, reviewed aggregate-context hash, reviewed Blueprint
+  expectation hash, compact candidate integrity hash, source package count, and
+  validation summary. Passed-candidate validation is fixture-bound: standalone
+  compact-object validation is not treated as provenance proof. It does not
+  emit full Measurement Plan, Data
+  Spine, Source Package Review Queue, Real Data Intake, Pilot Intake, Source Package,
+  Blueprint handoff, Measurement Cell input, Measurement Cell payload,
+  Measurement Cell Series, evidence snapshot, claim handoff, executive packet,
+  customer export, JSON payload, route/UI/schema/persistence/live connector, or
+  customer-facing output objects. It fails closed on missing/held/suppressed
+  aggregate telemetry, missing Layer 1 VBD or token summary, missing aggregate
+  AI Fluency summary, missing or stale reviewed Blueprint expectation input,
+  reviewed source-ref drift, stale hash/feed contradictions, aggregate metric
+  summary drift, non-exact selected metric binding,
+  unsupported source-lane aggregate grain, scrubbed export owner/approver/
+  attestation drift,
+  actual Real Data source-package owner/attestation/ref/grain drift, unsafe
+  lane-bound source refs including lane-prefixed encoded-looking refs, raw rows,
+  query text, prompts, transcripts, user
+  identifiers, unsafe caveat/gap text leakage, nested metadata/source-ref
+  smuggling, nested compact container/policy-map payload smuggling, mirrored
+  compact hash tampering, recomputed self-hash forgery, hand-filled
+  passed-candidate metadata that does not match a fixture-bound rerun, fake ready
+  Measurement Cell refs on held candidates, ROI/EBITDA, finance-output,
+  confidence, probability, causality, productivity, persistence, routes, UI,
+  schemas, repositories, migrations, live BigQuery/Sigma/Glean execution,
+  camel/suffixed child-payload aliases, and full child-object smuggling. The
+  layer intentionally keeps Source Package clearance, Measurement Cell
+  snapshots/series, evidence continuity,
+  Value Hypothesis packet runner, finance-context investigation, confidence
+  model, probability output, ROI/EBITDA, causality, productivity, persistence,
+  and customer-facing output feeds false. No shared schema, migration,
+  repository, backend route, frontend UI, persistence write, live connector,
+  confidence math, ROI math, causality logic, productivity measurement,
+  probability output, finance output, or customer-facing financial output was
+  added. Verification:
+  `npm run test:ai-value-controlled-measurement-cell-assembly` passed 39/39;
+  `npm run run:ai-value-controlled-measurement-cell-assembly` emitted
+  `PASSED_INTERNAL_MEASUREMENT_CELL_CANDIDATE_REVIEW` with
+  `READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER` as the underlying assembly
+  decision while keeping downstream feeds false;
+  `npm run test:ai-value-controlled-aggregate-fixture-review` passed 16/16;
+  `npm run test:ai-value-real-data-intake-packet-runner` passed 12/12;
+  `npm run test:ai-value-evidence-collection-assembler` passed 22/22;
+  `npm run test:ai-value-source-package-review-queue` passed 13/13;
+  `npm run test:ai-value-measurement-cell-assembly-runner` passed 16/16;
+  `npm run test:ai-value-measurement-cell` passed 31/31;
+  `npm run test:ai-value-data-spine-readiness` passed 12/12;
+  `git diff --check` passed; `bash scripts/ci_docs_contract_sweep.sh` passed;
+  `python3 scripts/ci_v1_governance_gates.py` passed.
 - AI Value controlled aggregate fixture review executable path
   (user-requested, 2026-06-22): added the first runnable saved-fixture
   controlled review harness. The new command runs a saved aggregate fixture
@@ -556,4 +744,7 @@
 - AI Value Platform Physical Data Model Readiness Review slice (2026-06-22): added `docs/architecture/AI_VALUE_PHYSICAL_DATA_MODEL.md` as a docs-only physical projection/readiness review over the existing Prisma/Postgres AI Value spine. It names typed append-only tables as current authority, marks `ai_value_objects` as non-authoritative compatibility storage, maps logical objects to existing physical projections, defines the canonical alignment envelope, lists forbidden physical columns/JSON keys, and keeps Measurement Cell / Series / Evidence Continuity persistence as future candidates behind an explicit promotion gate. It also updates the logical model to treat the crosswalk persistence wording as narrowed for this pass. This added no Prisma schema changes, migrations, repository methods, routes, UI, persistence writes, live Glean/BigQuery execution, confidence math, ROI, causality, productivity, probability, or customer-facing financial output. Verification: docs/governance sweep before commit.
 - AI Value Platform Physical Data Model Readiness Review amendment (2026-06-22): tightened the docs-only future-promotion gate for Measurement Cell / Series persistence with stable approved expectation-path identity (`expectation_path_id`, version, hash, approved Blueprint payload hash, approval metadata, and value hypothesis binding), governed value-driver metadata limited to Revenue/Cost/Capacity/Quality/Risk, compact/null assembly payload rules, rolling 30-day operating-context quarantine, JSONB smuggling tests, and safer blocked-use posture names. This keeps the central decision unchanged: no physical tables, Prisma schema changes, migrations, repository methods, routes, UI, persistence writes, live Glean/BigQuery execution, confidence math, ROI, causality, productivity, probability, or customer-facing financial output in this pass.
 - AI Value Platform Productization Gate Decision slice (2026-06-22): added `docs/architecture/AI_VALUE_PRODUCTIZATION_GATE_DECISION.md` as a docs-only gate over what may be stored, opened, rendered, exported, or described as ready after the operator source handoff, Measurement Cell Series, Blueprint expectation-path, and physical data-model readiness work. Decision is `internal_operator_review_ready__customer_productization_blocked`: the governed internal evidence spine is productized for operator review, while customer-facing productization, live connectors, physical Measurement Cell / Series persistence, rendered source-bound readouts, exports, confidence math, ROI, causality, productivity, probability, and customer-facing financial output remain blocked pending separate promotion gates.
-- AI Value Platform Productization Next Plan update (2026-06-22): added `docs/superpowers/plans/2026-06-22-ai-value-productization-next-plan.md` to sequence the next work after the Productization Gate. The plan orders the next safe steps as: commit the gate, run a controlled scrubbed aggregate pilot, isolate legacy readout/generic object authority risk, make a Measurement Cell persistence promotion decision, implement `measurement_cell_snapshots` only if promoted, defer Measurement Cell Series persistence until repeated milestone evidence exists, then handle customer projection/export governance and confidence research readiness. It keeps physical data-model implementation waiting on promotion and adds no schemas, migrations, repositories, routes, UI, persistence writes, live connectors, confidence math, ROI, causality, productivity, probability, or customer-facing financial output.
+- AI Value Platform Productization Next Plan update (2026-06-22): added `docs/superpowers/plans/2026-06-22-ai-value-productization-next-plan.md` to sequence the next work after the Productization Gate. The plan orders the next safe steps as: commit the gate, run a controlled scrubbed aggregate pilot, isolate legacy readout/generic object authority risk, make a Measurement Cell persistence promotion decision, implement `measurement_cell_snapshots` only if promoted, defer Measurement Cell Series persistence until repeated milestone evidence exists, then handle customer projection/export governance and confidence research readiness. This note has been superseded for `measurement_cell_snapshots` by the later Measurement Cell Snapshot Data Model Promotion slice; Series, connectors, customer-facing output, confidence math, ROI, causality, productivity, probability, and finance output remain blocked.
+- AI Value Platform Controlled Pilot Evidence Package slice (2026-06-22): added an executable wrapper that runs the saved scrubbed aggregate fixture through Controlled Aggregate Fixture Review and Controlled Measurement Cell Assembly, then emits a compact promotion-review evidence package with source/path/hash alignment, Measurement Cell candidate state, blocked uses, caveats, and an explicit Measurement Cell snapshot promotion-review recommendation. The Measurement Cell persistence decision initially recorded `PILOT_EVIDENCE_READY__HOLD_FOR_SEPARATE_PROMOTION_DECISION`; that hold has been superseded for backend-internal `measurement_cell_snapshots` only by the later Measurement Cell Snapshot Data Model Promotion slice. The single-window package keeps Series persistence held for repeated milestone evidence and does not add routes, UI, exports, live BigQuery/Sigma/Glean execution, confidence math, ROI, causality, productivity, probability, customer-facing output, or finance output.
+- AI Value Platform Repeated Controlled Pilot Evidence Package slice (2026-06-22): extended the controlled pilot package with an executable repeated milestone mode over Day 0 / 30 / 60 / 90 / 180 / 365. The repeated mode generates compact governed milestone variants from the saved aggregate fixture, runs each through Controlled Aggregate Fixture Review and Controlled Measurement Cell Assembly, passes private Assembly runs into the existing Measurement Cell Series contract, and emits only compact continuity/alignment summary fields. A fully aligned governed milestone series can return `CONTINUITY_COVERAGE_COMPLETE` for internal review; a 30 / 60 / 90 / 180 / 365 package without Day 0 holds; rolling 30-day windows are quarantined and emit no milestone continuity counts or compact refs. Series persistence remains held for a separate promotion decision, and the slice adds no schemas, migrations, repositories, routes, UI, persistence writes, live BigQuery/Sigma/Glean execution, confidence math, ROI, causality, productivity, probability, customer-facing output, or finance output.
+- AI Value Platform Measurement Cell Snapshot Data Model Promotion slice (2026-06-22): promoted `measurement_cell_snapshots` from readiness sketch to backend-internal physical persistence. Added a compact append-only Prisma/Postgres table, store record, repository write path, and health/readiness table check. The write path accepts only recomputed-valid Measurement Cell Assembly Runs, stores compact lineage rather than the full Measurement Cell or assembly bundle, derives stable expectation-path / approved Blueprint / metric hashes, requires approved selected-path and value-hypothesis binding, fails closed on path, approval, metric, lag, source-ref, rolling-window, full-registry, full-payload, and JSONB-smuggling drift, and preserves caveats/blocked uses. Measurement Cell Series persistence, Evidence Continuity persistence, routes, UI, exports, live BigQuery/Sigma/Glean connectors, confidence research inputs, confidence math, ROI, EBITDA/finance output, causality, productivity, probability, customer-facing output, and customer-facing financial output remain blocked behind separate promotion decisions.

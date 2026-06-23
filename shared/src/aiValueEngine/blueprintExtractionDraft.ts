@@ -162,6 +162,7 @@ export interface BuildBlueprintExtractionDraftInput {
   documentSourceRef: string;
   extractionState: string;
   approvalState: string;
+  approvedAt?: string | null;
   ownerRole: string;
   approverRole?: string | null;
   workflowFamily: string;
@@ -222,6 +223,12 @@ function finiteNumberOrNull(value: any): number | null {
   if (value === undefined || value === null || value === "") return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function normalizeExpectedMetricDirection(value: any): string {
+  return value === undefined || value === null || value === ""
+    ? "monitor"
+    : String(value);
 }
 
 function expectedBehaviorPathways(value: any): any[] {
@@ -334,7 +341,7 @@ function normalizeApprovedExpectationPath(
     expected_metric_name:
       path?.expected_metric_name ?? metric?.metric_name ?? metric?.metric_id ?? null,
     expected_metric_direction:
-      path?.expected_metric_direction ?? metric?.expected_direction ?? null,
+      normalizeExpectedMetricDirection(path?.expected_metric_direction ?? metric?.expected_direction),
     expected_metric_lag_days: finiteNumberOrNull(
       path?.expected_metric_lag_days ?? metric?.expected_lag_days
     ),
@@ -346,6 +353,7 @@ function normalizeApprovedExpectationPath(
     metric_role: path?.metric_role ?? (index === 0 ? "primary" : "supporting"),
     customer_approval_state:
       path?.customer_approval_state ?? normalizeKey(input.approvalState),
+    approved_at: path?.approved_at ?? input.approvedAt ?? null,
     approver_role: path?.approver_role ?? input.approverRole ?? null,
     source_ref: path?.source_ref ?? blueprintExpectationRef
   };
@@ -382,6 +390,7 @@ function selectedExpectationPath(paths: any[]): any {
 function approvedAggregateInputs(input: BuildBlueprintExtractionDraftInput): any {
   const blueprintExpectationRef = input.draftId ??
     `blueprint_extraction_draft_${safeIdPart(input.orgId)}_${safeIdPart(input.workflowFamily)}`;
+  const paths = approvedExpectationPaths(input, blueprintExpectationRef);
   return {
     case_population: {
       eligible_cases: null,
@@ -393,16 +402,16 @@ function approvedAggregateInputs(input: BuildBlueprintExtractionDraftInput): any
       skill_invocations: null,
       agent_runs: null
     },
-    outcome_signals: input.metricCandidates.map((metric) => ({
-      metric_id: metric.metric_id,
-      metric_name: metric.metric_name ?? metric.metric_id,
-      expected_direction: metric.expected_direction ?? "monitor",
-      expected_lag_days: finiteNumberOrNull(metric.expected_lag_days),
-      system_recommended: metric.system_recommended ?? null,
-      customer_selected: metric.customer_selected ?? null,
-      value_driver: metric.value_driver ?? "not_selected"
+    outcome_signals: paths.map((path) => ({
+      metric_id: path.expected_metric_id,
+      metric_name: path.expected_metric_name ?? path.expected_metric_id,
+      expected_direction: path.expected_metric_direction,
+      expected_lag_days: finiteNumberOrNull(path.expected_metric_lag_days),
+      system_recommended: path.expected_metric_system_recommended ?? null,
+      customer_selected: path.expected_metric_customer_selected ?? null,
+      value_driver: path.value_driver ?? "not_selected"
     })),
-    approved_expectation_paths: approvedExpectationPaths(input, blueprintExpectationRef)
+    approved_expectation_paths: paths
   };
 }
 
@@ -492,6 +501,7 @@ export function buildBlueprintExtractionDraft(
     extracted_fields: {
       blueprint_expectation_ref: blueprintExpectationRef,
       blueprint_customer_approval_state: approved ? "approved" : approvalState,
+      blueprint_customer_approved_at: input.approvedAt ?? null,
       blueprint_customer_approver_role: input.approverRole ?? null,
       value_hypothesis: input.valueHypothesis,
       value_route: input.valueRoute,
@@ -503,7 +513,7 @@ export function buildBlueprintExtractionDraft(
       expected_metric_name:
         selectedPath.expected_metric_name ?? metric.metric_name ?? metric.metric_id ?? null,
       expected_metric_direction:
-        selectedPath.expected_metric_direction ?? metric.expected_direction ?? "monitor",
+        normalizeExpectedMetricDirection(selectedPath.expected_metric_direction ?? metric.expected_direction),
       expected_metric_lag_days:
         selectedPath.expected_metric_lag_days ?? metric.expected_lag_days ?? null,
       expected_metric_system_recommended:
@@ -532,9 +542,10 @@ export function buildBlueprintExtractionDraft(
       review_state: approved ? "clear" : "needs_review",
       blueprint_expectation_ref: blueprintExpectationRef,
       blueprint_customer_approval_state: approved ? "approved" : approvalState,
+      blueprint_customer_approved_at: input.approvedAt ?? null,
       expected_metric_id: selectedPath.expected_metric_id ?? metric.metric_id ?? null,
       expected_metric_direction:
-        selectedPath.expected_metric_direction ?? metric.expected_direction ?? "monitor",
+        normalizeExpectedMetricDirection(selectedPath.expected_metric_direction ?? metric.expected_direction),
       aggregate_only: true,
       parser_productized: false,
       live_pull_performed: false
@@ -662,6 +673,7 @@ function collectExpectationGaps(draft: any): string[] {
   ) {
     gaps.push("extracted_fields.expected_metric_customer_selected must be true for approved Blueprint expectations");
   }
+  gaps.push(...collectMetricCandidateGaps(draft));
   if (fields.value_driver !== undefined && !ALLOWED_VALUE_DRIVERS.has(String(fields.value_driver))) {
     gaps.push("extracted_fields.value_driver is invalid");
   }
@@ -697,6 +709,53 @@ function collectExpectationGaps(draft: any): string[] {
     gaps.push("data_spine_source.expected_metric_direction must match extracted_fields.expected_metric_direction");
   }
   gaps.push(...collectApprovedExpectationPathGaps(draft));
+  return gaps;
+}
+
+function collectMetricCandidateGaps(draft: any): string[] {
+  const gaps: string[] = [];
+  const fields = draft?.extracted_fields ?? {};
+  const candidates = fields.metric_candidates;
+  if (candidates === undefined) return gaps;
+  if (!Array.isArray(candidates)) {
+    gaps.push("extracted_fields.metric_candidates must be an array");
+    return gaps;
+  }
+  const approved = draft?.approval_state === "approved";
+  candidates.forEach((metric: any, index: number) => {
+    const prefix = `extracted_fields.metric_candidates.${index}`;
+    if (approved) {
+      requireField(metric?.metric_id, `${prefix}.metric_id`, gaps);
+    }
+    const lag = metric?.expected_lag_days;
+    if (lag !== undefined && lag !== null && (!Number.isFinite(Number(lag)) || Number(lag) < 0)) {
+      gaps.push(`${prefix}.expected_lag_days must be a non-negative number or null`);
+    }
+    if (
+      metric?.system_recommended !== undefined &&
+      metric.system_recommended !== null &&
+      typeof metric.system_recommended !== "boolean"
+    ) {
+      gaps.push(`${prefix}.system_recommended must be boolean`);
+    }
+    if (
+      metric?.customer_selected !== undefined &&
+      metric.customer_selected !== null &&
+      typeof metric.customer_selected !== "boolean"
+    ) {
+      gaps.push(`${prefix}.customer_selected must be boolean`);
+    }
+    if (
+      metric?.value_driver !== undefined &&
+      metric.value_driver !== null &&
+      !ALLOWED_VALUE_DRIVERS.has(String(metric.value_driver))
+    ) {
+      gaps.push(`${prefix}.value_driver is invalid`);
+    }
+    if (approved && metric?.customer_selected !== true) {
+      gaps.push(`${prefix}.customer_selected must be true for approved Blueprint expectations`);
+    }
+  });
   return gaps;
 }
 

@@ -310,8 +310,8 @@ function baseExport(plan, day, evidenceLayer, overrides = {}) {
     },
     generated_at: "2026-06-22T00:00:00.000Z",
     covered_window: {
-      window_start: plan.windows.baseline_window_start,
-      window_end: plan.windows.baseline_window_end
+      window_start: plan.windows.comparison_window_start,
+      window_end: plan.windows.comparison_window_end
     },
     aggregate_grain: plan.workflow_scope.approved_aggregate_grain,
     minimum_cohort_threshold: plan.workflow_scope.minimum_cohort_threshold,
@@ -602,6 +602,24 @@ function suppressedAssemblyRunForDay(day = 90) {
 
 function baseSeriesInput(days = MILESTONE_DAYS, overrides = {}) {
   const seedPlan = fullPlan(days[0] ?? 30);
+  const windows = days.map((day) => {
+    const measurementCellAssemblyRun = assemblyRunForDay(day);
+    if (MILESTONE_DAYS.includes(day)) {
+      assert.equal(
+        measurementCellAssemblyRun.decision,
+        "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER",
+        `day ${day} fixture must assemble a Measurement Cell before Series review`
+      );
+      assert.ok(
+        measurementCellAssemblyRun.measurement_cell,
+        `day ${day} fixture must include a Measurement Cell before Series review`
+      );
+    }
+    return {
+      milestoneDay: day,
+      measurementCellAssemblyRun
+    };
+  });
   return {
     measurementCellSeriesId: "measurement_cell_series_support_case_resolution",
     orgId: seedPlan.org_id,
@@ -609,10 +627,7 @@ function baseSeriesInput(days = MILESTONE_DAYS, overrides = {}) {
     workflowFamily: seedPlan.workflow_scope.workflow_family,
     functionArea: seedPlan.workflow_scope.function_area,
     cohortKey: "workflow_family:customer_support_case_resolution|eligible_cases:2300",
-    windows: days.map((day) => ({
-      milestoneDay: day,
-      measurementCellAssemblyRun: assemblyRunForDay(day)
-    })),
+    windows,
     generatedAt: "2026-06-22T00:00:00.000Z",
     ...overrides
   };

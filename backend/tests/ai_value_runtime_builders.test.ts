@@ -41,8 +41,25 @@ const governancePackage = () => sourcePackage("governance-control-package");
 const assumptionPackage = () => sourcePackage("assumption-approval-package");
 const workforcePackage = () => sourcePackage("aggregate-workforce-context-package");
 
-const supportPilotLayer1Package = () => {
-  const pkg = layer1Package();
+const alignPackageToPlanComparisonWindow = (pkg: any, plan: any) => ({
+  ...pkg,
+  covered_window: {
+    window_start: plan.windows.comparison_window_start,
+    window_end: plan.windows.comparison_window_end
+  }
+});
+
+const fullPlaybookPackages = (plan: any) =>
+  [
+    layer1Package(),
+    layer2Package(),
+    layer3Package(),
+    governancePackage(),
+    assumptionPackage()
+  ].map((pkg) => alignPackageToPlanComparisonWindow(pkg, plan));
+
+const supportPilotLayer1Package = (basePackage = layer1Package()) => {
+  const pkg = clone(basePackage);
   pkg.source_refs = {
     ...pkg.source_refs,
     covered_signal_families: [
@@ -56,7 +73,7 @@ const supportPilotLayer1Package = () => {
 
 const withSupportPilotSignalFamilyEvidence = (packages: any[]) => {
   const readinessPackages = clone(packages);
-  readinessPackages[0] = supportPilotLayer1Package();
+  readinessPackages[0] = supportPilotLayer1Package(readinessPackages[0]);
   return readinessPackages;
 };
 
@@ -150,25 +167,20 @@ const persistRefs = async (plan: any, packages: any[]) => {
 
 const buildFullPlaybookRuntimeResult = async (
   suffix: string,
-  packages = [
-    layer1Package(),
-    layer2Package(),
-    layer3Package(),
-    governancePackage(),
-    assumptionPackage()
-  ]
+  packages?: any[]
 ) => {
   const plan = fullPlan();
+  const runtimePackages = packages ?? fullPlaybookPackages(plan);
   await persistPlan(plan);
-  await persistRefs(plan, packages);
+  await persistRefs(plan, runtimePackages);
 
   return {
     plan,
-    packages,
+    packages: runtimePackages,
     result: await buildAiValueClaimReadinessHandoffInternal({
       orgId: plan.org_id,
       measurementPlanId: plan.measurement_plan_id,
-      sourcePackages: packages,
+      sourcePackages: runtimePackages,
       evidenceSnapshotId: `runtime_snapshot_${suffix}`,
       handoffId: `runtime_handoff_${suffix}`,
       generatedAt: "2026-06-13T18:09:00.000Z",
@@ -251,13 +263,7 @@ describe("AI Value runtime builders internal service", () => {
 
   it("persists Claim Readiness and Executive Readout Snapshots when explicitly requested", async () => {
     const plan = fullPlan();
-    const packages = [
-      layer1Package(),
-      layer2Package(),
-      layer3Package(),
-      governancePackage(),
-      assumptionPackage()
-    ];
+    const packages = fullPlaybookPackages(plan);
     await persistPlan(plan);
     await persistRefs(plan, packages);
 
@@ -296,13 +302,7 @@ describe("AI Value runtime builders internal service", () => {
 
   it("persists pilot-run lineage after downstream snapshots are persisted in the same internal chain", async () => {
     const plan = fullPlan();
-    const packages = [
-      layer1Package(),
-      layer2Package(),
-      layer3Package(),
-      governancePackage(),
-      assumptionPackage()
-    ];
+    const packages = fullPlaybookPackages(plan);
     await persistPlan(plan);
     await persistRefs(plan, packages);
 
@@ -344,13 +344,7 @@ describe("AI Value runtime builders internal service", () => {
 
   it("builds full Playbook coverage only when all required evidence packages are bound", async () => {
     const plan = fullPlan();
-    const packages = [
-      layer1Package(),
-      layer2Package(),
-      layer3Package(),
-      governancePackage(),
-      assumptionPackage()
-    ];
+    const packages = fullPlaybookPackages(plan);
     await persistPlan(plan);
     await persistRefs(plan, packages);
 
@@ -384,13 +378,7 @@ describe("AI Value runtime builders internal service", () => {
       expect.arrayContaining(REQUIRED_SUPPORT_PILOT_METRIC_IDS)
     );
 
-    const packages = [
-      layer1Package(),
-      layer2Package(),
-      layer3Package(),
-      governancePackage(),
-      assumptionPackage()
-    ];
+    const packages = fullPlaybookPackages(plan);
     await persistPlan(plan);
     await persistRefs(plan, packages);
 
@@ -633,7 +621,7 @@ describe("AI Value runtime builders internal service", () => {
     const { packages, result } = await buildFullPlaybookRuntimeResult(
       "support_pilot_duplicate_adapter_source"
     );
-    const duplicateLayer1 = clone(supportPilotLayer1Package());
+    const duplicateLayer1 = clone(supportPilotLayer1Package(packages[0]));
     duplicateLayer1.source_package_id = "source_package_layer_1_duplicate_for_adapter";
     duplicateLayer1.source_refs.aggregate_probe_id = "probe_layer_1_duplicate_for_adapter";
 
@@ -742,7 +730,12 @@ describe("AI Value runtime builders internal service", () => {
 
   it("fails closed when a full Playbook plan is missing required source packages", async () => {
     const plan = fullPlan();
-    const packages = [layer1Package(), layer2Package(), governancePackage(), assumptionPackage()];
+    const packages = [
+      layer1Package(),
+      layer2Package(),
+      governancePackage(),
+      assumptionPackage()
+    ].map((pkg) => alignPackageToPlanComparisonWindow(pkg, plan));
     await persistPlan(plan);
     await persistRefs(plan, packages);
 

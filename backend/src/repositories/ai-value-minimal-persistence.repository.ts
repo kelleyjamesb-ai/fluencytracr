@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { aiValueEngine } from "@learnaire/shared";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "../db";
 import {
@@ -10,6 +10,7 @@ import {
   type AiValueEvidenceSnapshotStoredRecord,
   type AiValueExecutiveReadoutSnapshotStoredRecord,
   type AiValueHypothesisStoredRecord,
+  type AiValueMeasurementCellSnapshotStoredRecord,
   type AiValueMeasurementPlanStoredRecord,
   type AiValuePilotRunStoredRecord,
   type AiValueSourcePackageRefStoredRecord
@@ -76,6 +77,27 @@ const FORBIDDEN_PERSISTENCE_STRING_PATTERNS = [
   /person_level_(?:hris|productivity|analytics|record)/i
 ];
 
+const FORBIDDEN_SOURCE_REF_STRING_PATTERNS = [
+  /\b(?:roi|ebitda?|causality|productivity|probability|confidence|score)\b/i,
+  /\b(?:finance|financial)\s+(?:output|impact|claim|attribution)\b/i,
+  /\bcustomer[-_\s]?facing\s+(?:finance|financial|economic)\s+output\b/i
+];
+
+const FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_KEY_PATTERNS = [
+  /(^|_)(?:confidence|probability)(?:$|_)/i,
+  /(^|_)score(?:$|_)/i,
+  /(^|_)(?:roi|ebitda?)(?:$|_)/i,
+  /financial_(?:output|impact|claim|attribution)/i,
+  /(^|_)causality(?:$|_)/i,
+  /(^|_)productivity(?:$|_)/i
+];
+
+const FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS = [
+  /\b(?:roi|ebitda?|causality|productivity|probability|confidence|score)\b/i,
+  /\b(?:finance|financial)\s+(?:output|impact|claim|attribution)\b/i,
+  /\bcustomer[-_\s]?facing\s+(?:finance|financial|economic)\s+output\b/i
+];
+
 const normalizeKey = (value: string): string =>
   value
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -113,7 +135,12 @@ const ALLOWED_SOURCE_REF_KEYS = new Set([
   "v3_verdict_ids",
   "value_hypothesis_id",
   "velocity_observation_ids",
-  "vbd_summary"
+  "vbd_summary",
+  "blueprint_source_ref",
+  "ai_fluency_source_ref",
+  "vbd_source_ref",
+  "metric_source_ref",
+  "token_source_ref"
 ]);
 
 export interface PersistAiValueHypothesisInput {
@@ -171,6 +198,14 @@ export interface PersistAiValuePilotRunInput {
   supersedesId?: string | null;
 }
 
+export interface PersistAiValueMeasurementCellSnapshotInput {
+  measurementCellAssemblyRun: Record<string, unknown>;
+  version: number;
+  createdByRole: string;
+  supersedesId?: string | null;
+  assemblyPayload?: Record<string, unknown> | null;
+}
+
 export interface LoadAiValueMeasurementPlanInput {
   orgId: string;
   measurementPlanId: string;
@@ -210,6 +245,84 @@ const stableStringify = (value: unknown): string => {
   }
   return JSON.stringify(value);
 };
+
+const stableHash = (value: unknown): string =>
+  createHash("sha256").update(stableStringify(value)).digest("hex");
+
+const titleCaseValueDriver = (value: unknown): string | null => {
+  const normalized = asString(value).toLowerCase();
+  const drivers: Record<string, string> = {
+    revenue: "Revenue",
+    cost: "Cost",
+    capacity: "Capacity",
+    quality: "Quality",
+    risk: "Risk"
+  };
+  return drivers[normalized] ?? null;
+};
+
+const requireStringField = (
+  value: unknown,
+  label: string,
+  gaps: string[]
+): string => {
+  const text = asString(value);
+  if (!text) {
+    gaps.push(`${label} is required`);
+  }
+  return text;
+};
+
+const requirePositiveIntegerField = (
+  value: unknown,
+  label: string,
+  gaps: string[]
+): number => {
+  const numeric = Number(value);
+  if (!Number.isInteger(numeric) || numeric < 1) {
+    gaps.push(`${label} must be a positive integer`);
+    return 0;
+  }
+  return numeric;
+};
+
+const requireIntegerOrNull = (
+  value: unknown,
+  label: string,
+  gaps: string[]
+): number | null => {
+  if (value === undefined || value === null) return null;
+  const numeric = Number(value);
+  if (!Number.isInteger(numeric)) {
+    gaps.push(`${label} must be an integer when present`);
+    return null;
+  }
+  return numeric;
+};
+
+const compactValidation = (
+  validation: Record<string, unknown>,
+  validator: string
+): Record<string, unknown> => ({
+  schema_version: asString(validation.schema_version),
+  validator,
+  valid: validation.valid === true,
+  measurement_cell_id: asOptionalString(validation.measurement_cell_id),
+  run_id: asOptionalString(validation.run_id),
+  gaps: asStringArray(validation.gaps)
+});
+
+const unsupportedFields = (
+  value: Record<string, unknown>,
+  allowed: Set<string>,
+  label: string
+): string[] =>
+  Object.keys(value)
+    .filter((key) => !allowed.has(key))
+    .map((key) => `${label}.${key} is not allowed`);
+
+const hasOwn = (value: Record<string, unknown>, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(value, key);
 
 const kMinThresholdMetForSnapshot = (snapshot: Record<string, unknown>): boolean => {
   const telemetrySummary = asRecord(snapshot.aggregate_telemetry_summary);
@@ -293,6 +406,13 @@ const scanForbiddenPersistenceKeys = (
     const safeFalsePrivacyFlag = normalizedKey.startsWith("contains_") && nested === false;
     const safeFalseGovernanceFlag = [
       "can_authorize_people_decisioning",
+      "ebita_claim_allowed",
+      "ebitda_claim_allowed",
+      "financial_attribution_allowed",
+      "financial_claim_allowed",
+      "financial_output_allowed",
+      "productivity_claim_allowed",
+      "roi_claim_allowed",
       "customer_facing_financial_output_allowed",
       "customer_facing_readout_allowed"
     ].includes(normalizedKey) && nested === false;
@@ -322,10 +442,106 @@ const enforceSafeMetadata = (value: Record<string, unknown>, objectLabel: string
   enforcePersistenceDenylist(value, objectLabel);
 };
 
+const pathIsPostureText = (path: string): boolean =>
+  /(^|\.)(blocked_uses|blocked_claims|blocked_dimensions|blocked_interpretation|required_controls|coverage_signals|covered_signals)(\.|\[|$)/.test(
+    path
+  ) || /(^|\.)(required_caveats|required_signals|expected_signals|missing_signals|present_signals)(\.|\[|$)/.test(path);
+
+const scanForbiddenMeasurementCellSnapshotTerms = (
+  value: unknown,
+  path: string,
+  gaps: string[]
+) => {
+  if (typeof value === "string") {
+    if (
+      !pathIsPostureText(path) &&
+      FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
+        pattern.test(value)
+      )
+    ) {
+      gaps.push(`forbidden Measurement Cell Snapshot value at ${path || "<root>"} is not allowed`);
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) =>
+      scanForbiddenMeasurementCellSnapshotTerms(entry, `${path}[${index}]`, gaps)
+    );
+    return;
+  }
+
+  if (!value || typeof value !== "object") return;
+
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    const nestedPath = path ? `${path}.${key}` : key;
+    const normalizedKey = normalizeKey(key);
+    const safeFalseGovernanceFlag = [
+      "ebita_claim_allowed",
+      "ebitda_claim_allowed",
+      "financial_attribution_allowed",
+      "financial_claim_allowed",
+      "financial_output_allowed",
+      "productivity_claim_allowed",
+      "roi_claim_allowed",
+      "customer_facing_financial_output_allowed"
+    ].includes(normalizedKey) && nested === false;
+    if (
+      !safeFalseGovernanceFlag &&
+      FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_KEY_PATTERNS.some((pattern) =>
+        pattern.test(normalizedKey)
+      )
+    ) {
+      gaps.push(`forbidden Measurement Cell Snapshot field ${nestedPath} is not allowed`);
+    }
+    scanForbiddenMeasurementCellSnapshotTerms(nested, nestedPath, gaps);
+  }
+};
+
+const enforceMeasurementCellSnapshotDenylist = (
+  value: unknown,
+  objectLabel: string
+) => {
+  enforcePersistenceDenylist(value, objectLabel);
+  const gaps: string[] = [];
+  scanForbiddenMeasurementCellSnapshotTerms(value, "", gaps);
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      `${objectLabel} contains fields that cannot be persisted`,
+      gaps
+    );
+  }
+};
+
+const scanForbiddenSourceRefValues = (
+  value: unknown,
+  path: string,
+  gaps: string[]
+) => {
+  if (typeof value === "string") {
+    if (FORBIDDEN_SOURCE_REF_STRING_PATTERNS.some((pattern) => pattern.test(value))) {
+      gaps.push(`forbidden source ref value at ${path || "<root>"} is not allowed`);
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) =>
+      scanForbiddenSourceRefValues(entry, `${path}[${index}]`, gaps)
+    );
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    const nestedPath = path ? `${path}.${key}` : key;
+    scanForbiddenSourceRefValues(nested, nestedPath, gaps);
+  }
+};
+
 const enforceSourceRefs = (value: Record<string, unknown>, objectLabel: string) => {
   const gaps = Object.keys(value)
     .filter((key) => !ALLOWED_SOURCE_REF_KEYS.has(key))
     .map((key) => `source ref field ${key} is not allowed`);
+  scanForbiddenSourceRefValues(value, "", gaps);
   if (gaps.length > 0) {
     throw new AiValuePersistenceValidationError(
       `${objectLabel} contains unsupported source refs`,
@@ -361,6 +577,12 @@ const executiveReadoutSnapshotKey = (
 
 const pilotRunKey = (orgId: string, pilotRunId: string, version: number) =>
   `${orgId}:${pilotRunId}:${version}`;
+
+const measurementCellSnapshotKey = (
+  orgId: string,
+  measurementCellId: string,
+  version: number
+) => `${orgId}:${measurementCellId}:${version}`;
 
 const latestByVersion = <T extends { version: number }>(records: T[]): T | null =>
   records.sort((a, b) => b.version - a.version)[0] ?? null;
@@ -543,6 +765,40 @@ const PILOT_RUN_STATUSES = new Set([
   "held_for_governance",
   "held_for_source_binding"
 ]);
+
+const MEASUREMENT_CELL_ASSEMBLY_PAYLOAD_ALLOWED_FIELDS = new Set([
+  "assembly_run_id",
+  "assembly_decision",
+  "measurement_cell_id",
+  "source_refs",
+  "validation",
+  "required_caveats",
+  "blocked_uses"
+]);
+
+const MEASUREMENT_CELL_ASSEMBLY_PAYLOAD_VALIDATION_ALLOWED_FIELDS = new Set([
+  "schema_version",
+  "validator",
+  "valid",
+  "measurement_cell_id",
+  "run_id",
+  "gaps"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES = [
+  "realized_roi",
+  "ebita_claim",
+  "ebitda_claim",
+  "financial_attribution",
+  "causality_claim",
+  "productivity_claim",
+  "headcount_reduction_claim",
+  "individual_attribution",
+  "manager_or_team_ranking",
+  "department_ranking",
+  "people_decisioning",
+  "customer_facing_financial_output"
+];
 
 const validatePilotRunLedgerShape = (pilotRun: Record<string, unknown>): void => {
   const gaps: string[] = [];
@@ -1145,6 +1401,431 @@ const ensurePilotRunSnapshotLineage = async (
   }
 };
 
+const validateMeasurementCellAssemblyPayload = (
+  payload: Record<string, unknown> | null | undefined
+): Record<string, unknown> | null => {
+  if (payload === undefined || payload === null) return null;
+  const gaps = unsupportedFields(
+    payload,
+    MEASUREMENT_CELL_ASSEMBLY_PAYLOAD_ALLOWED_FIELDS,
+    "assembly_payload"
+  );
+  const validation = asRecord(payload.validation);
+  if (Object.keys(validation).length > 0) {
+    gaps.push(
+      ...unsupportedFields(
+        validation,
+        MEASUREMENT_CELL_ASSEMBLY_PAYLOAD_VALIDATION_ALLOWED_FIELDS,
+        "assembly_payload.validation"
+      )
+    );
+  }
+  enforceMeasurementCellSnapshotDenylist(
+    payload,
+    "Measurement Cell Snapshot assembly payload"
+  );
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot assembly payload is not compact",
+      gaps
+    );
+  }
+  if (payload.source_refs !== undefined && payload.source_refs !== null) {
+    enforceSourceRefs(
+      asRecord(payload.source_refs),
+      "Measurement Cell Snapshot assembly payload source refs"
+    );
+    enforceMeasurementCellSnapshotDenylist(
+      asRecord(payload.source_refs),
+      "Measurement Cell Snapshot assembly payload source refs"
+    );
+  }
+  return payload;
+};
+
+const ensureMeasurementCellSnapshotSupersedes = async (
+  record: {
+    org_id: string;
+    measurement_cell_id: string;
+    version: number;
+    supersedes_id: string | null;
+  }
+): Promise<void> => {
+  if (record.version === 1) return;
+  if (!record.supersedes_id) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot corrections require explicit lineage",
+      ["supersedes_id is required when version is greater than 1"]
+    );
+  }
+  if (!usePrisma()) {
+    const superseded = Array.from(store.aiValueMeasurementCellSnapshots.values()).find(
+      (entry) => entry.id === record.supersedes_id
+    );
+    if (
+      !superseded ||
+      superseded.org_id !== record.org_id ||
+      superseded.measurement_cell_id !== record.measurement_cell_id
+    ) {
+      throw new AiValuePersistenceValidationError(
+        "Measurement Cell Snapshot supersedes_id must reference the same cell",
+        ["supersedes_id must reference an existing snapshot for the same org and measurement_cell_id"]
+      );
+    }
+    return;
+  }
+  const superseded = await getPrisma().measurementCellSnapshot.findUnique({
+    where: { id: record.supersedes_id }
+  });
+  if (
+    !superseded ||
+    superseded.orgId !== record.org_id ||
+    superseded.measurementCellId !== record.measurement_cell_id
+  ) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot supersedes_id must reference the same cell",
+      ["supersedes_id must reference an existing snapshot for the same org and measurement_cell_id"]
+    );
+  }
+};
+
+const buildMeasurementCellSnapshotRecord = (
+  input: PersistAiValueMeasurementCellSnapshotInput
+): AiValueMeasurementCellSnapshotStoredRecord => {
+  const run = input.measurementCellAssemblyRun;
+  const cell = asRecord(run.measurement_cell);
+  const measurementCellValidation = aiValueEngine.validateMeasurementCell(cell);
+  requireValid(measurementCellValidation, "Measurement Cell");
+  const assemblyValidation = aiValueEngine.validateMeasurementCellAssemblyRun(run);
+  requireValid(assemblyValidation, "Measurement Cell Assembly Run");
+
+  const embeddedCellValidation = asRecord(run.measurement_cell_validation_result);
+  if (
+    Object.keys(embeddedCellValidation).length === 0 ||
+    stableStringify(embeddedCellValidation) !== stableStringify(measurementCellValidation)
+  ) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot validation must be recomputed and match embedded validation",
+      ["measurement_cell_validation_result must match recomputed Measurement Cell validation"]
+    );
+  }
+
+  const alignment = asRecord(cell.blueprint_alignment);
+  if (hasOwn(alignment, "approved_expectation_paths")) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot cannot persist full expectation-path registries",
+      ["measurement_cell.blueprint_alignment.approved_expectation_paths is not allowed"]
+    );
+  }
+  const selectedPath = asRecord(alignment.approved_expectation_path);
+  const metric = asRecord(cell.selected_metric);
+  const timeWindow = asRecord(cell.time_window);
+  const baselineWindow = asRecord(timeWindow.baseline_window);
+  const comparisonWindow = asRecord(timeWindow.comparison_window);
+  const valueHypothesis = asRecord(asRecord(run.measurement_plan).value_hypothesis);
+  const handoff = asRecord(run.blueprint_operator_source_handoff);
+  const handoffContext = asRecord(handoff.blueprint_alignment_context);
+  const sourceRefs = asRecord(cell.source_refs);
+  const gaps: string[] = [];
+
+  const expectationPathId = requireStringField(
+    alignment.expectation_path_id,
+    "expectation_path_id",
+    gaps
+  );
+  compareField(
+    gaps,
+    "Measurement Cell selected path id must match approved expectation path",
+    expectationPathId,
+    selectedPath.expectation_path_id
+  );
+  compareField(
+    gaps,
+    "Measurement Cell selected path id must match Blueprint handoff",
+    expectationPathId,
+    handoffContext.expectation_path_id
+  );
+  compareField(
+    gaps,
+    "Measurement Cell selected metric must match approved expectation path",
+    metric.metric_id,
+    selectedPath.expected_metric_id
+  );
+  compareField(
+    gaps,
+    "Measurement Cell metric direction must match approved expectation path",
+    metric.metric_direction,
+    selectedPath.expected_metric_direction
+  );
+  compareField(
+    gaps,
+    "Measurement Cell expected lag must match approved expectation path",
+    metric.expected_lag_days,
+    selectedPath.expected_metric_lag_days
+  );
+  const approvalState = requireStringField(
+    alignment.blueprint_customer_approval_state,
+    "approval_state",
+    gaps
+  );
+  if (approvalState !== "approved") {
+    gaps.push("approval_state must be approved");
+  }
+  const approvedByRole = requireStringField(
+    alignment.blueprint_customer_approver_role ?? selectedPath.approver_role,
+    "approved_by_role",
+    gaps
+  );
+  const valueDriver = titleCaseValueDriver(selectedPath.value_driver ?? alignment.value_driver);
+  if (!valueDriver) {
+    gaps.push("value_driver must be one of Revenue, Cost, Capacity, Quality, or Risk");
+  }
+  const expectationPathVersion = requirePositiveIntegerField(
+    selectedPath.expectation_path_version ?? 1,
+    "expectation_path_version",
+    gaps
+  );
+  const metricId = requireStringField(metric.metric_id, "metric_id", gaps);
+  const metricDefinitionRef = requireStringField(
+    metric.source_ref,
+    "metric_definition_ref",
+    gaps
+  );
+  const metricOwnerApprovalState = requireStringField(
+    metric.owner_approval_state,
+    "metric_owner_approval_state",
+    gaps
+  );
+  const metricDirection = requireStringField(
+    metric.metric_direction,
+    "metric_direction",
+    gaps
+  );
+  const metricUnit = requireStringField(metric.metric_unit, "metric_unit", gaps);
+  const expectedMetricLagDays = Number(metric.expected_lag_days);
+  if (!Number.isInteger(expectedMetricLagDays) || expectedMetricLagDays < 0) {
+    gaps.push("expected_metric_lag_days must be a non-negative integer");
+  }
+  const approvedAt = requireStringField(
+    selectedPath.approved_at ??
+      alignment.blueprint_customer_approved_at ??
+      handoffContext.blueprint_customer_approved_at,
+    "approved_at",
+    gaps
+  );
+  compareField(
+    gaps,
+    "Measurement Cell approval timestamp must match approved expectation path",
+    approvedAt,
+    selectedPath.approved_at
+  );
+  compareField(
+    gaps,
+    "Measurement Cell approval timestamp must match Blueprint alignment",
+    approvedAt,
+    alignment.blueprint_customer_approved_at
+  );
+  compareField(
+    gaps,
+    "Measurement Cell approval timestamp must match Blueprint handoff",
+    approvedAt,
+    handoffContext.blueprint_customer_approved_at
+  );
+  const milestoneDay = requireIntegerOrNull(
+    timeWindow.days_since_launch,
+    "milestone_day",
+    gaps
+  );
+  if (timeWindow.window_mode === "milestone" && milestoneDay === null) {
+    gaps.push("milestone_day is required for milestone Measurement Cell snapshots");
+  }
+  if (
+    milestoneDay !== null &&
+    ![0, 30, 60, 90, 180, 365].includes(milestoneDay)
+  ) {
+    gaps.push("milestone_day must be one of Day 0, 30, 60, 90, 180, or 365");
+  }
+  const generatedAt = requireStringField(run.generated_at, "generated_at", gaps);
+  const blockedUses = asStringArray(cell.blocked_uses);
+  for (const use of MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES) {
+    if (!blockedUses.includes(use)) {
+      gaps.push(`blocked_uses missing ${use}`);
+    }
+  }
+  if (timeWindow.window_mode === "rolling_30_day") {
+    gaps.push("rolling_30_day Measurement Cells cannot be persisted as milestone evidence");
+  }
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot binding failed validation before persistence",
+      gaps
+    );
+  }
+
+  parseDate(asString(baselineWindow.window_start), "baseline_window_start");
+  parseDate(asString(baselineWindow.window_end), "baseline_window_end");
+  parseDate(asString(comparisonWindow.window_start), "comparison_window_start");
+  parseDate(asString(comparisonWindow.window_end), "comparison_window_end");
+  parseDate(approvedAt, "approved_at");
+  parseDate(generatedAt, "generated_at");
+
+  const expectationPathHash = stableHash(selectedPath);
+  const approvedBlueprintPayloadHash = stableHash(handoffContext);
+  const metricDefinitionHash = stableHash({
+    metric_id: metricId,
+    metric_name: metric.metric_name,
+    metric_source_system: metric.metric_source_system,
+    metric_unit: metricUnit,
+    metric_direction: metricDirection,
+    owner_approval_state: metricOwnerApprovalState,
+    source_ref: metricDefinitionRef
+  });
+  const blueprintPathBinding = {
+    expectation_path_id: expectationPathId,
+    expectation_path_version: expectationPathVersion,
+    expectation_path_hash: expectationPathHash,
+    approved_blueprint_payload_hash: approvedBlueprintPayloadHash,
+    approved_blueprint_ref: asString(alignment.source_ref),
+    blueprint_expectation_ref: asString(alignment.blueprint_expectation_ref),
+    approval_state: approvalState,
+    approved_at: approvedAt,
+    approved_by_role: approvedByRole,
+    value_driver: valueDriver,
+    expected_metric_id: metricId,
+    expected_metric_direction: metricDirection,
+    expected_metric_lag_days: expectedMetricLagDays
+  };
+  const compactPayload = {
+    measurement_cell_id: asString(cell.measurement_cell_id),
+    org_id: asString(cell.org_id),
+    client_id: asOptionalString(run.client_id),
+    measurement_plan_id: asString(run.measurement_plan_id),
+    measurement_cell_assembly_run_id: asString(run.run_id),
+    workflow_family: asString(cell.workflow_family),
+    workflow_id: asOptionalString(cell.workflow_id),
+    function_area: asString(cell.function_area),
+    cohort_key: asString(cell.cohort_key),
+    time_window: {
+      time_window_id: asString(timeWindow.time_window_id),
+      window_mode: asString(timeWindow.window_mode),
+      milestone_day: milestoneDay,
+      baseline_window: {
+        window_start: asString(baselineWindow.window_start),
+        window_end: asString(baselineWindow.window_end)
+      },
+      comparison_window: {
+        window_start: asString(comparisonWindow.window_start),
+        window_end: asString(comparisonWindow.window_end)
+      }
+    },
+    selected_path: blueprintPathBinding,
+    selected_metric: {
+      metric_id: metricId,
+      metric_definition_ref: metricDefinitionRef,
+      metric_definition_hash: metricDefinitionHash,
+      metric_owner_approval_state: metricOwnerApprovalState,
+      metric_direction: metricDirection,
+      metric_unit: metricUnit,
+      expected_metric_lag_days: expectedMetricLagDays,
+      baseline_value: metric.baseline_value ?? null,
+      comparison_value: metric.comparison_value ?? null
+    },
+    source_refs: sourceRefs,
+    assembly_decision: asString(run.decision)
+  };
+  const assemblyPayload = validateMeasurementCellAssemblyPayload(
+    input.assemblyPayload ?? null
+  );
+
+  enforceMeasurementCellSnapshotDenylist(compactPayload, "Measurement Cell Snapshot payload");
+  enforceMeasurementCellSnapshotDenylist(
+    compactValidation(measurementCellValidation as unknown as Record<string, unknown>, "validateMeasurementCell"),
+    "Measurement Cell Snapshot validation"
+  );
+  enforceMeasurementCellSnapshotDenylist(
+    compactValidation(assemblyValidation as unknown as Record<string, unknown>, "validateMeasurementCellAssemblyRun"),
+    "Measurement Cell Snapshot assembly validation"
+  );
+  enforceSourceRefs(sourceRefs, "Measurement Cell Snapshot source refs");
+  enforceMeasurementCellSnapshotDenylist(
+    sourceRefs,
+    "Measurement Cell Snapshot source refs"
+  );
+  enforceMeasurementCellSnapshotDenylist(
+    blueprintPathBinding,
+    "Measurement Cell Snapshot Blueprint path binding"
+  );
+  enforceMeasurementCellSnapshotDenylist(
+    { required_caveats: asStringArray(cell.required_caveats) },
+    "Measurement Cell Snapshot caveats"
+  );
+  enforceMeasurementCellSnapshotDenylist(
+    { blocked_uses: blockedUses },
+    "Measurement Cell Snapshot blocked uses"
+  );
+
+  return {
+    id: randomUUID(),
+    org_id: asString(cell.org_id),
+    client_id: asOptionalString(run.client_id),
+    measurement_cell_id: asString(cell.measurement_cell_id),
+    measurement_cell_assembly_run_id: asString(run.run_id),
+    measurement_plan_id: asString(run.measurement_plan_id),
+    value_hypothesis_id: asOptionalString(valueHypothesis.value_hypothesis_id),
+    value_hypothesis_ref: asOptionalString(valueHypothesis.value_hypothesis_ref),
+    value_hypothesis_binding_state: asOptionalString(valueHypothesis.value_hypothesis_id)
+      ? "bound"
+      : "inapplicable",
+    approved_blueprint_ref: asString(alignment.source_ref),
+    approved_blueprint_payload_hash: approvedBlueprintPayloadHash,
+    blueprint_expectation_ref: asString(alignment.blueprint_expectation_ref),
+    expectation_path_id: expectationPathId,
+    expectation_path_version: expectationPathVersion,
+    expectation_path_hash: expectationPathHash,
+    approval_state: approvalState,
+    approved_at: approvedAt,
+    approved_by_role: approvedByRole,
+    value_driver: valueDriver ?? "",
+    metric_id: metricId,
+    metric_definition_ref: metricDefinitionRef,
+    metric_definition_hash: metricDefinitionHash,
+    metric_owner_approval_state: metricOwnerApprovalState,
+    metric_direction: metricDirection,
+    metric_unit: metricUnit,
+    expected_metric_lag_days: expectedMetricLagDays,
+    workflow_family: asString(cell.workflow_family),
+    workflow_id: asOptionalString(cell.workflow_id),
+    function_area: asString(cell.function_area),
+    cohort_key: asString(cell.cohort_key),
+    window_mode: asString(timeWindow.window_mode),
+    milestone_day: milestoneDay as number,
+    baseline_window_start: asString(baselineWindow.window_start),
+    baseline_window_end: asString(baselineWindow.window_end),
+    comparison_window_start: asString(comparisonWindow.window_start),
+    comparison_window_end: asString(comparisonWindow.window_end),
+    assembly_decision: asString(run.decision),
+    payload: compactPayload,
+    assembly_payload: assemblyPayload,
+    validation: compactValidation(
+      measurementCellValidation as unknown as Record<string, unknown>,
+      "validateMeasurementCell"
+    ),
+    assembly_validation: compactValidation(
+      assemblyValidation as unknown as Record<string, unknown>,
+      "validateMeasurementCellAssemblyRun"
+    ),
+    source_refs: sourceRefs,
+    blueprint_path_binding: blueprintPathBinding,
+    required_caveats: asStringArray(cell.required_caveats),
+    blocked_uses: blockedUses,
+    version: input.version,
+    supersedes_id: input.supersedesId ?? null,
+    generated_at: generatedAt,
+    created_at: new Date().toISOString(),
+    created_by_role: input.createdByRole
+  };
+};
+
 export async function loadAiValueMeasurementPlan(
   input: LoadAiValueMeasurementPlanInput
 ): Promise<AiValueMeasurementPlanStoredRecord | null> {
@@ -1596,6 +2277,96 @@ export async function persistAiValueEvidenceSnapshot(
     });
     const createdRecord = evidenceSnapshotRowToRecord(created);
     store.aiValueEvidenceSnapshots.set(key, createdRecord);
+    return createdRecord;
+  } catch (error: any) {
+    return translatePrismaDuplicate(error);
+  }
+}
+
+export async function persistAiValueMeasurementCellSnapshot(
+  input: PersistAiValueMeasurementCellSnapshotInput
+): Promise<AiValueMeasurementCellSnapshotStoredRecord> {
+  ensureVersion(input.version);
+  enforceSafeMetadata(
+    {
+      createdByRole: input.createdByRole,
+      supersedesId: input.supersedesId ?? null
+    },
+    "Measurement Cell Snapshot metadata"
+  );
+  const record = buildMeasurementCellSnapshotRecord(input);
+  const key = measurementCellSnapshotKey(
+    record.org_id,
+    record.measurement_cell_id,
+    record.version
+  );
+  rejectDuplicate(store.aiValueMeasurementCellSnapshots.has(key));
+  await ensureMeasurementCellSnapshotSupersedes(record);
+
+  if (!usePrisma()) {
+    store.aiValueMeasurementCellSnapshots.set(key, record);
+    return record;
+  }
+
+  try {
+    const created = await getPrisma().measurementCellSnapshot.create({
+      data: {
+        id: record.id,
+        orgId: record.org_id,
+        clientId: record.client_id,
+        measurementCellId: record.measurement_cell_id,
+        measurementCellAssemblyRunId: record.measurement_cell_assembly_run_id,
+        measurementPlanId: record.measurement_plan_id,
+        valueHypothesisId: record.value_hypothesis_id,
+        valueHypothesisRef: record.value_hypothesis_ref,
+        valueHypothesisBindingState: record.value_hypothesis_binding_state,
+        approvedBlueprintRef: record.approved_blueprint_ref,
+        approvedBlueprintPayloadHash: record.approved_blueprint_payload_hash,
+        blueprintExpectationRef: record.blueprint_expectation_ref,
+        expectationPathId: record.expectation_path_id,
+        expectationPathVersion: record.expectation_path_version,
+        expectationPathHash: record.expectation_path_hash,
+        approvalState: record.approval_state,
+        approvedAt: parseDate(record.approved_at, "approved_at"),
+        approvedByRole: record.approved_by_role,
+        valueDriver: record.value_driver,
+        metricId: record.metric_id,
+        metricDefinitionRef: record.metric_definition_ref,
+        metricDefinitionHash: record.metric_definition_hash,
+        metricOwnerApprovalState: record.metric_owner_approval_state,
+        metricDirection: record.metric_direction,
+        metricUnit: record.metric_unit,
+        expectedMetricLagDays: record.expected_metric_lag_days,
+        workflowFamily: record.workflow_family,
+        workflowId: record.workflow_id,
+        functionArea: record.function_area,
+        cohortKey: record.cohort_key,
+        windowMode: record.window_mode,
+        milestoneDay: record.milestone_day,
+        baselineWindowStart: parseDate(record.baseline_window_start, "baseline_window_start"),
+        baselineWindowEnd: parseDate(record.baseline_window_end, "baseline_window_end"),
+        comparisonWindowStart: parseDate(record.comparison_window_start, "comparison_window_start"),
+        comparisonWindowEnd: parseDate(record.comparison_window_end, "comparison_window_end"),
+        assemblyDecision: record.assembly_decision,
+        payloadJson: record.payload as Prisma.InputJsonValue,
+        assemblyPayloadJson: record.assembly_payload === null
+          ? Prisma.DbNull
+          : record.assembly_payload as Prisma.InputJsonValue,
+        validationJson: record.validation as Prisma.InputJsonValue,
+        assemblyValidationJson: record.assembly_validation as Prisma.InputJsonValue,
+        sourceRefsJson: record.source_refs as Prisma.InputJsonValue,
+        blueprintPathBindingJson: record.blueprint_path_binding as Prisma.InputJsonValue,
+        requiredCaveatsJson: record.required_caveats as Prisma.InputJsonValue,
+        blockedUsesJson: record.blocked_uses as Prisma.InputJsonValue,
+        version: record.version,
+        supersedesId: record.supersedes_id,
+        generatedAt: parseDate(record.generated_at, "generated_at"),
+        createdAt: new Date(record.created_at),
+        createdByRole: record.created_by_role
+      }
+    });
+    const createdRecord = measurementCellSnapshotRowToRecord(created);
+    store.aiValueMeasurementCellSnapshots.set(key, createdRecord);
     return createdRecord;
   } catch (error: any) {
     return translatePrismaDuplicate(error);
@@ -2246,6 +3017,112 @@ function executiveReadoutSnapshotRowToRecord(row: {
     blocked_claims: row.blockedClaimsJson as string[],
     version: row.version,
     supersedes_id: row.supersedesId,
+    created_at: row.createdAt.toISOString(),
+    created_by_role: row.createdByRole
+  };
+}
+
+function measurementCellSnapshotRowToRecord(row: {
+  id: string;
+  orgId: string;
+  clientId: string | null;
+  measurementCellId: string;
+  measurementCellAssemblyRunId: string;
+  measurementPlanId: string;
+  valueHypothesisId: string | null;
+  valueHypothesisRef: string | null;
+  valueHypothesisBindingState: string;
+  approvedBlueprintRef: string;
+  approvedBlueprintPayloadHash: string;
+  blueprintExpectationRef: string;
+  expectationPathId: string;
+  expectationPathVersion: number;
+  expectationPathHash: string;
+  approvalState: string;
+  approvedAt: Date;
+  approvedByRole: string;
+  valueDriver: string;
+  metricId: string;
+  metricDefinitionRef: string;
+  metricDefinitionHash: string;
+  metricOwnerApprovalState: string;
+  metricDirection: string;
+  metricUnit: string;
+  expectedMetricLagDays: number;
+  workflowFamily: string;
+  workflowId: string | null;
+  functionArea: string;
+  cohortKey: string;
+  windowMode: string;
+  milestoneDay: number;
+  baselineWindowStart: Date;
+  baselineWindowEnd: Date;
+  comparisonWindowStart: Date;
+  comparisonWindowEnd: Date;
+  assemblyDecision: string;
+  payloadJson: Prisma.JsonValue;
+  assemblyPayloadJson: Prisma.JsonValue | null;
+  validationJson: Prisma.JsonValue;
+  assemblyValidationJson: Prisma.JsonValue;
+  sourceRefsJson: Prisma.JsonValue;
+  blueprintPathBindingJson: Prisma.JsonValue;
+  requiredCaveatsJson: Prisma.JsonValue;
+  blockedUsesJson: Prisma.JsonValue;
+  version: number;
+  supersedesId: string | null;
+  generatedAt: Date;
+  createdAt: Date;
+  createdByRole: string;
+}): AiValueMeasurementCellSnapshotStoredRecord {
+  return {
+    id: row.id,
+    org_id: row.orgId,
+    client_id: row.clientId,
+    measurement_cell_id: row.measurementCellId,
+    measurement_cell_assembly_run_id: row.measurementCellAssemblyRunId,
+    measurement_plan_id: row.measurementPlanId,
+    value_hypothesis_id: row.valueHypothesisId,
+    value_hypothesis_ref: row.valueHypothesisRef,
+    value_hypothesis_binding_state: row.valueHypothesisBindingState,
+    approved_blueprint_ref: row.approvedBlueprintRef,
+    approved_blueprint_payload_hash: row.approvedBlueprintPayloadHash,
+    blueprint_expectation_ref: row.blueprintExpectationRef,
+    expectation_path_id: row.expectationPathId,
+    expectation_path_version: row.expectationPathVersion,
+    expectation_path_hash: row.expectationPathHash,
+    approval_state: row.approvalState,
+    approved_at: row.approvedAt.toISOString(),
+    approved_by_role: row.approvedByRole,
+    value_driver: row.valueDriver,
+    metric_id: row.metricId,
+    metric_definition_ref: row.metricDefinitionRef,
+    metric_definition_hash: row.metricDefinitionHash,
+    metric_owner_approval_state: row.metricOwnerApprovalState,
+    metric_direction: row.metricDirection,
+    metric_unit: row.metricUnit,
+    expected_metric_lag_days: row.expectedMetricLagDays,
+    workflow_family: row.workflowFamily,
+    workflow_id: row.workflowId,
+    function_area: row.functionArea,
+    cohort_key: row.cohortKey,
+    window_mode: row.windowMode,
+    milestone_day: row.milestoneDay,
+    baseline_window_start: row.baselineWindowStart.toISOString(),
+    baseline_window_end: row.baselineWindowEnd.toISOString(),
+    comparison_window_start: row.comparisonWindowStart.toISOString(),
+    comparison_window_end: row.comparisonWindowEnd.toISOString(),
+    assembly_decision: row.assemblyDecision,
+    payload: row.payloadJson as Record<string, unknown>,
+    assembly_payload: row.assemblyPayloadJson as Record<string, unknown> | null,
+    validation: row.validationJson as Record<string, unknown>,
+    assembly_validation: row.assemblyValidationJson as Record<string, unknown>,
+    source_refs: row.sourceRefsJson as Record<string, unknown>,
+    blueprint_path_binding: row.blueprintPathBindingJson as Record<string, unknown>,
+    required_caveats: row.requiredCaveatsJson as string[],
+    blocked_uses: row.blockedUsesJson as string[],
+    version: row.version,
+    supersedes_id: row.supersedesId,
+    generated_at: row.generatedAt.toISOString(),
     created_at: row.createdAt.toISOString(),
     created_by_role: row.createdByRole
   };

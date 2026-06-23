@@ -24,6 +24,7 @@ The immediate model is:
 
 ```text
 Approved Blueprint Hypothesis
+-> aggregate AI Fluency Psychological Adoption Context
 -> selected Blueprint Expectation Binding
 -> Measurement Cell Binding
 -> Measurement Cell Series
@@ -77,8 +78,15 @@ persistence authority without promoting new persistence here.
 9. VBD, Depth, and token context remain Layer 1 behavior context only.
 10. Layer 1 behavior context cannot upgrade claims, unlock economic dependency,
     or authorize customer-facing financial output.
-11. Future review posture must avoid positive finance or confidence semantics.
-12. Corrections create new versions or snapshots. Evidence-bearing posture is
+11. Aggregate AI Fluency attitude, instrument-reported behavior/practice, and
+    intent context are leading indicators of adoption readiness only. They do
+    not prove value, observed telemetry behavior change, metric movement,
+    causality, productivity, ROI, or financial output.
+12. Observed AI behavior / VBD is the first behavioral evidence layer. Stated
+    attitude, instrument-reported behavior/practice, and intent cannot
+    substitute for observed behavior or customer metric movement.
+13. Future review posture must avoid positive finance or confidence semantics.
+14. Corrections create new versions or snapshots. Evidence-bearing posture is
     not silently mutated.
 
 ## 4. Logical Entities
@@ -264,6 +272,117 @@ Persistence posture:
 - May be embedded as compact lineage in future Measurement Cell persistence
   only after physical design approval.
 - Do not persist as an independent table yet.
+
+### 4.3.1 AI Fluency Psychological Adoption Context
+
+Purpose: aggregate Layer 2 context that keeps the AI Fluency construct clear
+while separating instrument-reported adoption signals from observed telemetry
+behavior and customer-owned metric movement.
+
+Logical owner: AI Fluency Client Import, AI Fluency Dashboard Import Runner,
+and AI Fluency Operator Source Handoff.
+
+AI Fluency construct:
+
+```text
+AI Fluency Instrument
+  contains five governed dimensions:
+    confidence
+    usage_quality
+    behavior_change
+    leadership_reinforcement
+    capability_growth
+```
+
+Blueprint-governed comparison buckets:
+
+```text
+Blueprint expectation frame
+  - AI Fluency five-dimension construct context
+  - AI attitude context
+  - instrument-reported behavior / use-practice context
+  - behavioral intent context
+  - observed AI behavior / VBD refs
+  - selected metric movement refs
+  - Blueprint expectation alignment refs
+```
+
+These are non-sequential comparison buckets. No causal, probability,
+contribution, scoring, or conversion dependency is authorized or implied.
+
+Allowed aggregate constructs:
+
+- `confidence` only as a nested AI Fluency instrument dimension, never as a
+  top-level confidence score, probability, model score, or claim-confidence
+  field
+- `ai_attitude`
+- `behavioral_intent`
+- `capability_belief` when mapped from governed instrument items
+- `trust_posture` when mapped from governed instrument items
+- `usage_quality`
+- `behavior_change`
+- `leadership_reinforcement`
+- `capability_growth`
+- `perceived_ai_impact`
+
+Interpretation posture:
+
+- The five AI Fluency dimensions are instrument construct context, not separate
+  value evidence.
+- AI attitude means aggregate orientation toward AI.
+- Instrument-reported behavior / use-practice means aggregate self-reported
+  behavior-change or usage-quality context from the AI Fluency instrument.
+- Behavioral intent means aggregate willingness or stated intent to use AI in
+  real work.
+- Observed AI behavior means aggregate workflow telemetry or VBD evidence, not
+  survey sentiment or instrument-reported behavior.
+- Positive attitude, reported behavior/practice, and strong intent mean
+  psychological and adoption-readiness context, not value proof.
+- Strong instrument-reported behavior or intent with low observed telemetry
+  behavior is an enablement, workflow, access, or measurement-friction signal,
+  not negative value evidence.
+- Low intent with high observed telemetry behavior is a possible mandate,
+  compliance, or workflow-pressure signal, not proof of healthy adoption.
+
+Allowed context:
+
+- aggregate construct means or bands from approved AI Fluency exports;
+- aggregate collection window and cohort metadata;
+- suppression, k-min, owner review, and source-ref posture;
+- readiness or friction posture derived from aggregate attitude, instrument
+  behavior/practice, and intent beside observed telemetry behavior, only as
+  internal diagnostic context;
+- caveats and blocked uses.
+
+Blocked context:
+
+- individual survey answers;
+- respondent identifiers;
+- emails, names, user IDs, employee IDs, person IDs, or joinable identifiers;
+- team, manager, department, or employee ranking;
+- raw text responses;
+- raw prompts, transcripts, files, or query text;
+- ROI, EBITDA, dollarized impact, financial attribution, causality proof,
+  productivity scoring, probability, AI contribution confidence, model scores,
+  or customer-facing financial output.
+
+Relationship to Measurement Cells:
+
+- Psychological adoption context may be carried as caveated aggregate context
+  beside the selected Measurement Cell when source-bound and window-aligned.
+- It must not be a Measurement Cell gate by itself.
+- It must not rescue missing, held, suppressed, or misaligned VBD or customer
+  metric evidence.
+- It may later support research planning only after a separate research-model
+  promotion decision authorizes the exact scope.
+
+Persistence posture:
+
+- Logical only in this pass.
+- Store, if promoted later, only compact aggregate construct summaries and
+  source-bound lineage, not raw instrument responses.
+- Do not add an independent physical table, migration, route, UI, or model
+  input in this pass.
 
 ### 4.4 Operator Source Bundle Lineage
 
@@ -554,6 +673,10 @@ Blueprint Expectation Path Registry entry
 Blueprint Expectation Binding
   1 -> many Measurement Cell Bindings across windows
 
+AI Fluency Psychological Adoption Context
+  1 -> many Measurement Cell Bindings as optional caveated aggregate context
+  0 -> 0 value proof, finance output, or model score outputs
+
 Measurement Cell Binding
   1 -> 1 selected metric
   1 -> 1 selected expectation path
@@ -580,6 +703,7 @@ Review Posture Snapshot
 | Approved Blueprint Hypothesis | `value_hypotheses` or future approved Blueprint Hypothesis persistence | Use existing authority first; no new table in this pass |
 | Blueprint Expectation Path Registry | Embedded in approved Blueprint/Hypothesis payload only | Logical only; do not normalize yet |
 | Blueprint Expectation Binding | Compact field group in future Measurement Cell lineage | Logical only |
+| AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff contracts | Logical context only; no standalone table in this pass |
 | Operator Source Bundle Lineage | `source_package_refs` plus compact source refs if later promoted | Do not persist bundle as proof |
 | Measurement Cell Binding | Future Measurement Cell persistence, if promoted | Not authorized in this pass |
 | Measurement Cell Series | Future continuity snapshot, if promoted | Not authorized in this pass |
@@ -607,6 +731,11 @@ The repo is not ready for physical data-model work until these are true:
    rather than positive permission flags.
 7. VBD, Depth, and token context are carried only as caveated Layer 1 behavior
    context with `economic_dependency_allowed: false`.
+8. Psychological adoption context is source-bound, aggregate-only, and clearly
+   labeled as leading-indicator context rather than value proof.
+9. Any future adoption-conversion model uses governed research terminology and
+   avoids physical or JSON key names that imply contribution confidence,
+   probability, causality, productivity, ROI, or financial output.
 
 ## 8. What Not To Model Yet
 
@@ -624,6 +753,9 @@ Do not add:
 - connector state
 - raw source storage
 - full expectation-path registry downstream of the Blueprint/Hypothesis layer
+- raw AI Fluency instrument answers
+- individual or joinable respondent records
+- adoption-conversion scores
 - research model inputs or outputs
 - probability outputs
 - ROI outputs

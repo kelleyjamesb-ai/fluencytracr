@@ -64,9 +64,11 @@ validated contract output until a table is promoted.
 Do not add physical tables in this pass.
 
 The current spine can carry the next pilot/readiness state through existing
-append-only tables while Measurement Cell and Series persistence remains
-unpromoted. The newly hardened selected-path lineage should be treated as a
-contract prerequisite, not as automatic authorization for new database objects.
+append-only tables plus the separately promoted backend-internal
+`measurement_cell_snapshots` table. Measurement Cell Series and Evidence
+Continuity persistence remain unpromoted. The hardened selected-path lineage
+is a contract prerequisite, not automatic authorization for any additional
+database objects.
 
 Recommended current projection:
 
@@ -74,9 +76,10 @@ Recommended current projection:
 | --- | --- | --- |
 | Approved Blueprint Hypothesis | `value_hypotheses.payload_json` plus `source_refs_json` | Use existing authority first; do not create `blueprint_hypotheses` yet |
 | Blueprint Expectation Path Registry | Embedded inside approved Blueprint/Hypothesis payload only | Do not normalize full registry into rows |
-| Selected Blueprint Expectation Binding | Compact lineage inside Measurement Cell contract output | Future Measurement Cell persistence only if promoted |
+| Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
+| AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff payloads; future compact projection only if promoted | Leading-indicator context only; no value proof, model score, or standalone table |
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
-| Measurement Cell Binding | Derived contract output | Candidate future projection sketch only after promotion |
+| Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
 | Evidence Continuity Snapshot | Derived from Measurement Cell Series | Future extension of evidence lineage only if promoted |
 | Review Posture Snapshot | `claim_readiness_snapshots` and `executive_readout_snapshots` | Existing backend-only authority |
@@ -86,13 +89,14 @@ Projection detail:
 | Logical object | Existing table / JSON field | Indexed physical columns today | Future-only / not authorized |
 | --- | --- | --- | --- |
 | Approved Blueprint Hypothesis | `value_hypotheses.payload_json`, `source_refs_json` | `org_id`, `value_hypothesis_id`, `workflow_family`, `status`, `created_at` | No standalone `blueprint_hypotheses`; no normalized expectation paths |
+| AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff contract payloads and generic source/evidence refs today; future compact context only if promoted | No AI Fluency-specific indexed columns or standalone context projection today | No standalone adoption-context table, no raw survey responses, no model score, no value proof |
 | Measurement Plan | `measurement_plans.payload_json`, `source_package_requirements_json`, `assumptions_json` | `org_id`, `measurement_plan_id`, `value_hypothesis_id`, `workflow_family`, baseline window, `readiness_state` | No admin threshold table; no route/UI authorization |
 | Source Package Ref | `source_package_refs.source_refs_json`, `validation_json`, `k_min_posture_json`, `privacy_boundary_json` | `org_id`, `source_package_id`, `source_package_type`, `measurement_plan_id`, `workflow_family`, covered window | No full source package payload table unless refs prove insufficient |
 | Evidence Snapshot | `evidence_snapshots.payload_json`, `source_refs_json`, `blocked_uses_json` | `org_id`, `evidence_snapshot_id`, `measurement_plan_id`, `workflow_family`, window, `coverage_status`, `snapshot_type` | No continuity snapshot type until explicitly promoted |
 | Claim Readiness Snapshot | `claim_readiness_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `handoff_id`, `measurement_plan_id`, `claim_readiness_state` | No customer-facing financial output; no positive contribution-model field |
 | Executive Readout Snapshot | `executive_readout_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `executive_readout_snapshot_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `measurement_plan_id`, `readout_state` | No rendered readout route/UI/export from this pass |
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
-| Measurement Cell Binding | Contract output only | None | Candidate `measurement_cell_snapshots` projection sketch only after promotion |
+| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver` | No full Measurement Cell object, route, UI, export, or customer read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
 ## 4. Canonical Alignment Envelope
@@ -225,20 +229,17 @@ for:
 Those objects are contract-hardened enough to model physically, but not yet
 promoted enough to persist.
 
-## 7. Future Projection Sketch: `measurement_cell_snapshots`
+## 7. Promoted Projection: `measurement_cell_snapshots`
 
-Status: candidate future projection sketch only. This section is
-non-authorizing: it must not be copied into Prisma, schemas, repositories,
-migrations, routes, UI, or persistence services without a later explicit
-promotion decision.
+Status: promoted for backend-internal compact snapshot persistence by
+`AI_VALUE_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION.md`.
 
 Purpose: append-only durable snapshot of one validated Measurement Cell and
-its selected Blueprint expectation-path binding.
+its selected Blueprint expectation-path binding. The stored row is compact
+lineage, not a full Measurement Cell object, full assembly bundle, customer
+readout, connector output, confidence input, or finance output.
 
-Do not implement until a later promotion explicitly authorizes Measurement
-Cell persistence.
-
-Non-authorizing column requirements if separately promoted:
+Implemented column requirements:
 
 | Column | Type | Requirement |
 | --- | --- | --- |
@@ -279,7 +280,7 @@ Non-authorizing column requirements if separately promoted:
 | `comparison_window_start` | timestamp | required |
 | `comparison_window_end` | timestamp | required |
 | `assembly_decision` | text | required |
-| `payload_json` | jsonb | validated Measurement Cell payload |
+| `payload_json` | jsonb | compact validated Measurement Cell projection only |
 | `assembly_payload_json` | jsonb | null by default; otherwise compact allowlisted assembly posture only |
 | `validation_json` | jsonb | recomputed Measurement Cell validation |
 | `assembly_validation_json` | jsonb | recomputed assembly validation |
@@ -293,7 +294,7 @@ Non-authorizing column requirements if separately promoted:
 | `created_at` | timestamp | required default |
 | `created_by_role` | text | required |
 
-Non-authorizing constraint requirements if separately promoted:
+Implemented constraint requirements:
 
 - unique `(org_id, measurement_cell_id, version)`;
 - `version >= 1`;
@@ -341,7 +342,7 @@ Non-authorizing constraint requirements if separately promoted:
 - `blueprint_path_binding_json` must contain exactly one selected path binding
   and must include the stable path identity fields listed above.
 
-Index considerations if separately promoted:
+Implemented index considerations:
 
 - `(org_id, measurement_plan_id)`;
 - `(org_id, workflow_family, function_area)`;
@@ -355,6 +356,7 @@ Index considerations if separately promoted:
 Blocked design:
 
 - no full `approved_expectation_paths` registry;
+- no full Measurement Cell payload;
 - no ungoverned pathway taxonomy such as `capacity_creation`,
   `quality_improvement`, or `experience_improvement`;
 - no raw source package payloads;
@@ -492,7 +494,82 @@ Blocked design:
 - no rescue behavior for missing, held, suppressed, or blocked windows.
 - no rolling 30-day row may populate milestone continuity or review posture.
 
-## 9. Future Projection Sketch: Evidence Continuity Projection
+## 9. Future Projection Sketch: AI Fluency Psychological Adoption Context
+
+Status: candidate projection sketch only. This section is non-authorizing: it
+must not be copied into Prisma, schemas, repositories, migrations, routes, UI,
+persistence services, research-model inputs, exports, or customer-facing
+outputs without a later explicit promotion decision.
+
+Purpose: preserve the distinction between the five-dimension AI Fluency
+construct, instrument-reported adoption signals, and observed telemetry
+behavior. This sidecar aggregate context can help internal operators compare AI
+attitude, instrument-reported behavior / use-practice, and behavioral intent
+context with observed AI-enabled work-pattern refs, but it cannot imply
+directional dependency, conversion, value proof, causality, productivity, ROI,
+EBITDA, or financial output.
+
+Recommended physical posture:
+
+- Prefer existing aggregate AI Fluency import and source-handoff payloads until
+  repeated pilots prove a durable projection is needed.
+- If later promoted, first consider a compact extension inside existing
+  aggregate evidence lineage rather than a standalone table.
+- Do not persist raw instrument responses, raw text responses, respondent
+  records, or joinable person identifiers.
+- Do not persist an adoption-conversion score, contribution-model field, model
+  score, probability, finance, ROI, EBITDA, causality, productivity, or
+  customer-facing output field.
+
+Allowed compact fields if separately promoted:
+
+| Field | Requirement |
+| --- | --- |
+| `org_id` | required |
+| `client_id` | required when available |
+| `measurement_plan_id` | required when tied to a Measurement Cell |
+| `workflow_family` | required |
+| `function_area` | required |
+| `cohort_key` | required |
+| `baseline_window_start` / `baseline_window_end` | required |
+| `comparison_window_start` / `comparison_window_end` | required when follow-up context is present |
+| `source_ref` | compact, reviewed AI Fluency source ref only |
+| `source_owner_role` | required |
+| `owner_approval_state` | required |
+| `review_state` | required |
+| `k_min_posture` | required |
+| `suppression_posture` | required |
+| `construct_summary_json` | aggregate five-dimension AI Fluency construct means or bands only |
+| `readiness_context_json` | optional compact posture labels only |
+| `observed_behavior_ref` | optional compact VBD / Measurement Cell ref only |
+| `required_caveats_json` | required array |
+| `blocked_uses_json` | required array |
+
+`construct_summary_json` may carry governed AI Fluency construct names only as
+aggregate instrument context: confidence, usage quality, behavior change,
+leadership reinforcement, and capability growth. Instrument-reported behavior
+change is not the same as observed telemetry behavior; observed behavior must
+remain a compact VBD / Measurement Cell ref. If a legacy instrument construct
+is literally named `confidence`, it must remain nested inside the aggregate
+instrument construct map and must not become a top-level physical column, model
+score, probability, or customer-facing claim.
+
+Blocked design:
+
+- no standalone `ai_fluency_psychological_scores` table;
+- no raw survey response table;
+- no respondent, user, employee, manager, team, or department ranking;
+- no behavioral-intent-to-value conversion score;
+- no attitude, instrument-reported behavior/practice, or intent context may
+  rescue missing, held, suppressed, or misaligned VBD, Measurement Cell, or
+  customer metric evidence;
+- no model score or contribution-model output;
+- no finance, ROI, EBITDA, causality, productivity, probability, or
+  customer-facing financial output;
+- no customer-facing interpretation that treats positive attitude or intent as
+  value evidence.
+
+## 10. Future Projection Sketch: Evidence Continuity Projection
 
 Status: candidate projection only; no table yet.
 
@@ -505,7 +582,7 @@ Recommended physical posture:
 - Do not add new `evidence_snapshots.snapshot_type` values until a migration
   is explicitly authorized.
 
-## 10. Tables Not To Add
+## 11. Tables Not To Add
 
 Do not add these tables in the next implementation slice:
 
@@ -515,7 +592,9 @@ Do not add these tables in the next implementation slice:
 | `blueprint_expectation_bindings` | Selected binding should stay compact lineage inside a promoted Measurement Cell, not a standalone source of authority |
 | `operator_source_handoff_bundles` | Bundles are preparation manifests, not durable proof |
 | `source_packages` | `source_package_refs` remains the safer metadata-only spine unless refs prove insufficient |
-| `measurement_cells` | Use only the candidate `measurement_cell_snapshots` design after explicit promotion; current contracts do not authorize persistence |
+| `ai_fluency_psychological_scores` | Would turn leading-indicator context into an over-strong product object and create score semantics too early |
+| `adoption_conversion_scores` | Research-only concept; do not persist score-like conversion outputs before a separate research promotion |
+| `measurement_cells` | Use only the promoted compact `measurement_cell_snapshots` projection; do not create a full-object table |
 | `measurement_cell_series` | Use only the candidate `measurement_cell_series_snapshots` design after explicit promotion; current contracts do not authorize persistence |
 | `evidence_continuity_manifests` | Continuity remains contract output; if promoted, extend evidence lineage deliberately |
 | `research_model_inputs` | Confidence-model research is not authorized yet |
@@ -523,9 +602,10 @@ Do not add these tables in the next implementation slice:
 | `productivity_scores` | Person or workforce productivity scoring is prohibited |
 | `team_rankings` | Comparative team/manager/department ranking is prohibited |
 
-## 11. Promotion Gate
+## 12. Additional Promotion Gate
 
-Before any migration for Measurement Cell or Series persistence, require:
+Before any additional Measurement Cell or Series persistence beyond
+`measurement_cell_snapshots`, require:
 
 1. A promoted contract decision that names the exact table scope.
 2. Red/green tests proving persistence rejects path drift, approval drift,
@@ -541,9 +621,11 @@ Before any migration for Measurement Cell or Series persistence, require:
    selected-path binding fields, missing value hypothesis linkage,
    rolling-window misuse, non-compact `assembly_payload_json`, and
    confidence-containing key names are rejected before any write.
-5. Static governance tests for this docs-only phase must stay static: no Prisma
-   model, migration, schema file, repository method, route, UI, persistence
-   service, or future payload validator may be created by this amendment.
+5. Red/green tests proving aggregate AI Fluency psychological context, if
+   promoted, rejects raw survey responses, respondent identifiers, raw text
+   answers, person-level records, ranking fields, adoption-conversion scores,
+   model-score fields, ROI, EBITDA, causality, productivity, probability,
+   confidence-like output fields, and customer-facing financial output.
 6. Repository methods that accept only already validated contract objects and
    recompute validation before writes.
 7. Append-only versioning with `supersedes_id` for corrections.
@@ -552,24 +634,21 @@ Before any migration for Measurement Cell or Series persistence, require:
 10. Operator Workflow and Value Hypothesis Readiness remain downstream review
    gates, not bypassed by persisted Measurement Cell / Series rows.
 
-This document alone cannot trigger a migration. A future implementation slice
-must cite a separate explicit promotion decision before adding physical tables,
-Prisma models, migrations, repositories, schemas, routes, UI, persistence
-writes, live execution, research-model inputs, or customer-facing output.
+This document alone cannot trigger additional migrations. A future
+implementation slice must cite a separate explicit promotion decision before
+adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
+migrations, repositories, schemas, routes, UI, persistence writes, live
+execution, research-model inputs, or customer-facing output.
 
-## 12. Recommended Next Decision Slice
-
-Do not start with migrations, schemas, repositories, routes, UI, payload
-validators, or persistence services.
+## 13. Recommended Next Decision Slice
 
 Recommended next move:
 
-1. Add a docs-only promotion decision for whether
-   `measurement_cell_snapshots` should be implemented first.
-2. If and only if a separate promotion decision authorizes implementation,
-   open a dedicated implementation slice for `measurement_cell_snapshots` with
-   the migration, repository, validator, and service-write boundaries named
-   before any code is changed.
-3. Defer `measurement_cell_series_snapshots` until at least one repeated
+1. Verify the promoted `measurement_cell_snapshots` write path against the
+   controlled pilot package and governance checks.
+2. Defer `measurement_cell_series_snapshots` until at least one repeated
    Measurement Cell workflow has been validated end to end across the required
    milestone windows.
+3. Keep live BigQuery, Sigma, Glean connectors, customer-facing projections,
+   exports, confidence research inputs, and finance outputs behind separate
+   promotion decisions.
