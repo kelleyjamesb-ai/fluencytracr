@@ -82,6 +82,10 @@ The preflight runner blocks or holds on:
 
 Held snapshot candidates do not authorize source package clearance or snapshot
 persistence. Passed snapshot candidates remain internal proof artifacts only.
+The separately promoted backend-internal Measurement Cell Snapshot write path
+must require a passed snapshot candidate ref, recompute the durable snapshot
+binding, and reject the write if the candidate path, metric, window, source
+refs, hashes, approval, or source-bound lineage drift.
 
 ## Non-Authorization
 
@@ -100,7 +104,7 @@ This contract does not authorize:
 - backend routes;
 - frontend UI;
 - Source Package clearance;
-- Measurement Cell snapshot persistence;
+- Measurement Cell snapshot persistence by this preflight runner;
 - Measurement Cell Series persistence;
 - finance-context investigation;
 - confidence math;

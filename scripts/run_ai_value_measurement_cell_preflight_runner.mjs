@@ -297,6 +297,16 @@ const FORBIDDEN_STRING_PATTERNS = [
 
 const SAFE_COMPACT_SOURCE_REF_PATTERN = /^[a-z0-9][a-z0-9_:-]{1,179}$/;
 
+const FORBIDDEN_COMPACT_SOURCE_REF_VALUE_PATTERNS = [
+  /(?:^|[_:-])select(?:[_:-]|$)/i,
+  /(?:^|[_:-])raw[_:-]?rows?(?:[_:-]|$)/i,
+  /(?:^|[_:-])query[_:-]?text(?:[_:-]|$)/i,
+  /(?:^|[_:-])sql[_:-]?text(?:[_:-]|$)/i,
+  /(?:^|[_:-])(?:prompt|response|transcript)[_:-]?(?:text|content)(?:[_:-]|$)/i,
+  /(?:^|[_:-])(?:user|person)[_:-]?id(?:[_:-]|$)/i,
+  /(?:^|[_:-])employee[_:-]?(?:id|email)(?:[_:-]|$)/i
+];
+
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (!value || typeof value !== "object") return value;
@@ -882,15 +892,34 @@ function collectUnsafeSnapshotSourceRefs(sourceRefs) {
   if (!sourceRefs || typeof sourceRefs !== "object" || Array.isArray(sourceRefs)) {
     return ["snapshot_candidate_ref.source_refs must be an object"];
   }
-  return Object.entries(sourceRefs).flatMap(([key, value]) => {
-    if (
-      typeof value !== "string" ||
-      !SAFE_COMPACT_SOURCE_REF_PATTERN.test(value)
-    ) {
-      return [`snapshot_candidate_ref.source_refs.${key} must be safe compact metadata`];
+  const gaps = [];
+  for (const key of ALLOWED_SNAPSHOT_SOURCE_REF_FIELDS) {
+    if (sourceRefs[key] === undefined || sourceRefs[key] === null) {
+      gaps.push(`snapshot_candidate_ref.source_refs.${key} is required`);
     }
-    return [];
-  });
+  }
+  return [
+    ...gaps,
+    ...Object.entries(sourceRefs).flatMap(([key, value]) => {
+      if (
+        typeof value !== "string" ||
+        !SAFE_COMPACT_SOURCE_REF_PATTERN.test(value)
+      ) {
+        return [`snapshot_candidate_ref.source_refs.${key} must be safe compact metadata`];
+      }
+      if (
+        FORBIDDEN_COMPACT_SOURCE_REF_VALUE_PATTERNS.some((pattern) =>
+          pattern.test(value)
+        )
+      ) {
+        return [`snapshot_candidate_ref.source_refs.${key} contains unsafe text`];
+      }
+      if (value === key) {
+        return [`snapshot_candidate_ref.source_refs.${key} must carry a reviewed source ref, not the source-ref key name`];
+      }
+      return [];
+    })
+  ];
 }
 
 function compareField(gaps, label, expected, actual) {
@@ -955,7 +984,7 @@ export function validateMeasurementCellPreflight(preflight, options = {}) {
           "snapshot_candidate_ref.source_refs"
         )
       : []),
-    ...(preflight?.snapshot_candidate_ref?.source_refs
+    ...(preflight?.snapshot_candidate_ref
       ? collectUnsafeSnapshotSourceRefs(preflight.snapshot_candidate_ref.source_refs)
       : []),
     ...collectExactArrayGap(preflight?.blocked_uses, REQUIRED_BLOCKED_USES, "blocked_uses"),
@@ -1031,6 +1060,12 @@ export function validateMeasurementCellPreflight(preflight, options = {}) {
       "snapshot_candidate_ref.snapshot_candidate_hash",
       expected.snapshot_candidate_ref?.snapshot_candidate_hash,
       preflight.snapshot_candidate_ref?.snapshot_candidate_hash
+    );
+    compareField(
+      gaps,
+      "snapshot_candidate_ref.source_refs",
+      expected.snapshot_candidate_ref?.source_refs,
+      preflight.snapshot_candidate_ref?.source_refs
     );
     compareField(
       gaps,

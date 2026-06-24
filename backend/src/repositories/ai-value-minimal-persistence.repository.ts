@@ -199,6 +199,60 @@ const MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEY_SET = new Set(
 const COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN =
   /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,191}$/;
 
+const FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS = [
+  /(?:^|[._:/-])select(?:[._:/-]|$)/i,
+  /(?:^|[._:/-])raw[._:/-]?rows?(?:[._:/-]|$)/i,
+  /(?:^|[._:/-])query[._:/-]?text(?:[._:/-]|$)/i,
+  /(?:^|[._:/-])sql[._:/-]?text(?:[._:/-]|$)/i,
+  /(?:^|[._:/-])(?:prompt|response|transcript)[._:/-]?(?:text|content)(?:[._:/-]|$)/i,
+  /(?:^|[._:/-])(?:user|person)[._:/-]?id(?:[._:/-]|$)/i,
+  /(?:^|[._:/-])employee[._:/-]?(?:id|email)(?:[._:/-]|$)/i
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_READY_STATE =
+  "READY_FOR_MEASUREMENT_CELL_SNAPSHOT_PERSISTENCE_REVIEW";
+
+const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_SCHEMA_VERSION =
+  "FT_AI_VALUE_MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_2026_06";
+
+const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_REF_KEYS = new Set([
+  "snapshot_candidate_state",
+  "snapshot_candidate_schema_version",
+  "measurement_cell_id",
+  "measurement_cell_assembly_run_id",
+  "measurement_plan_id",
+  "value_hypothesis_ref",
+  "approved_blueprint_ref",
+  "approved_blueprint_payload_hash",
+  "blueprint_expectation_ref",
+  "expectation_path_id",
+  "expectation_path_version",
+  "expectation_path_hash",
+  "approval_state",
+  "approved_at",
+  "approved_by_role",
+  "value_driver",
+  "metric_id",
+  "metric_definition_ref",
+  "metric_definition_hash",
+  "metric_owner_approval_state",
+  "metric_direction",
+  "metric_unit",
+  "expected_metric_lag_days",
+  "workflow_family",
+  "workflow_id",
+  "function_area",
+  "cohort_key",
+  "window_mode",
+  "milestone_day",
+  "baseline_window_start",
+  "baseline_window_end",
+  "comparison_window_start",
+  "comparison_window_end",
+  "source_refs",
+  "snapshot_candidate_hash"
+]);
+
 export interface PersistAiValueHypothesisInput {
   measurementPlan: Record<string, unknown>;
   version: number;
@@ -260,6 +314,7 @@ export interface PersistAiValueMeasurementCellSnapshotInput {
   createdByRole: string;
   supersedesId?: string | null;
   assemblyPayload?: Record<string, unknown> | null;
+  snapshotCandidateRef?: Record<string, unknown> | null;
 }
 
 export interface LoadAiValueMeasurementPlanInput {
@@ -687,6 +742,10 @@ const enforceCompactMeasurementCellSnapshotSourceRef = (
     value.trim() !== value ||
     !COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN.test(value) ||
     /[{}[\]"'`]/.test(value) ||
+    value === key ||
+    FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS.some(
+      (pattern) => pattern.test(value)
+    ) ||
     FORBIDDEN_SOURCE_REF_STRING_PATTERNS.some((pattern) => pattern.test(value)) ||
     FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
       pattern.test(value)
@@ -722,6 +781,112 @@ const compactMeasurementCellSnapshotSourceRefs = (
     );
   }
   return compact;
+};
+
+const measurementCellSnapshotCandidateFromRecord = (
+  record: AiValueMeasurementCellSnapshotStoredRecord
+): Record<string, unknown> => ({
+  snapshot_candidate_state: MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_READY_STATE,
+  snapshot_candidate_schema_version: MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_SCHEMA_VERSION,
+  measurement_cell_id: record.measurement_cell_id,
+  measurement_cell_assembly_run_id: record.measurement_cell_assembly_run_id,
+  measurement_plan_id: record.measurement_plan_id,
+  value_hypothesis_ref: record.value_hypothesis_id ?? record.value_hypothesis_ref,
+  approved_blueprint_ref: record.approved_blueprint_ref,
+  approved_blueprint_payload_hash: record.approved_blueprint_payload_hash,
+  blueprint_expectation_ref: record.blueprint_expectation_ref,
+  expectation_path_id: record.expectation_path_id,
+  expectation_path_version: record.expectation_path_version,
+  expectation_path_hash: record.expectation_path_hash,
+  approval_state: record.approval_state,
+  approved_at: record.approved_at,
+  approved_by_role: record.approved_by_role,
+  value_driver: record.value_driver,
+  metric_id: record.metric_id,
+  metric_definition_ref: record.metric_definition_ref,
+  metric_definition_hash: record.metric_definition_hash,
+  metric_owner_approval_state: record.metric_owner_approval_state,
+  metric_direction: record.metric_direction,
+  metric_unit: record.metric_unit,
+  expected_metric_lag_days: record.expected_metric_lag_days,
+  workflow_family: record.workflow_family,
+  workflow_id: record.workflow_id,
+  function_area: record.function_area,
+  cohort_key: record.cohort_key,
+  window_mode: record.window_mode,
+  milestone_day: record.milestone_day,
+  baseline_window_start: record.baseline_window_start,
+  baseline_window_end: record.baseline_window_end,
+  comparison_window_start: record.comparison_window_start,
+  comparison_window_end: record.comparison_window_end,
+  source_refs: record.source_refs
+});
+
+const validateMeasurementCellSnapshotCandidateRef = (
+  record: AiValueMeasurementCellSnapshotStoredRecord,
+  snapshotCandidateRef: Record<string, unknown> | null | undefined
+): void => {
+  if (snapshotCandidateRef === undefined || snapshotCandidateRef === null) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot candidate ref is required before persistence",
+      ["snapshotCandidateRef is required for Measurement Cell Snapshot persistence"]
+    );
+  }
+
+  const candidate = asRecord(snapshotCandidateRef);
+  const gaps: string[] = [];
+  if (Object.keys(candidate).length === 0) {
+    gaps.push("snapshotCandidateRef must be a non-empty object when provided");
+  }
+  for (const key of Object.keys(candidate)) {
+    if (!MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_REF_KEYS.has(key)) {
+      gaps.push(`snapshotCandidateRef.${key} is not allowed`);
+    }
+  }
+
+  let candidateSourceRefs: Record<string, string> | null = null;
+  try {
+    candidateSourceRefs = compactMeasurementCellSnapshotSourceRefs(
+      asRecord(candidate.source_refs)
+    );
+  } catch (error) {
+    if (error instanceof AiValuePersistenceValidationError) {
+      gaps.push(...error.gaps.map((gap) => `snapshotCandidateRef.${gap}`));
+    } else {
+      throw error;
+    }
+  }
+
+  const expectedCandidate = measurementCellSnapshotCandidateFromRecord(record);
+  const expectedCandidateWithHash = {
+    ...expectedCandidate,
+    snapshot_candidate_hash: stableHash(expectedCandidate)
+  };
+  for (const [field, expected] of Object.entries(expectedCandidateWithHash)) {
+    const actual = field === "source_refs" ? candidateSourceRefs : candidate[field];
+    compareField(
+      gaps,
+      `snapshotCandidateRef.${field} must match recomputed Measurement Cell Snapshot binding`,
+      field.endsWith("_window_start") || field.endsWith("_window_end")
+        ? normalizeDateOnlyForComparison(expected)
+        : expected,
+      field.endsWith("_window_start") || field.endsWith("_window_end")
+        ? normalizeDateOnlyForComparison(actual)
+        : actual
+    );
+  }
+
+  enforceMeasurementCellSnapshotDenylist(
+    candidate,
+    "Measurement Cell Snapshot candidate ref"
+  );
+
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot candidate ref must match recomputed persistence binding",
+      gaps
+    );
+  }
 };
 
 const measurementPlanKey = (orgId: string, measurementPlanId: string, version: number) =>
@@ -2220,7 +2385,7 @@ const buildMeasurementCellSnapshotRecord = (
     "Measurement Cell Snapshot blocked uses"
   );
 
-  return {
+  const record: AiValueMeasurementCellSnapshotStoredRecord = {
     id: randomUUID(),
     org_id: asString(cell.org_id),
     client_id: asOptionalString(run.client_id),
@@ -2281,6 +2446,11 @@ const buildMeasurementCellSnapshotRecord = (
     created_at: new Date().toISOString(),
     created_by_role: input.createdByRole
   };
+  validateMeasurementCellSnapshotCandidateRef(
+    record,
+    input.snapshotCandidateRef
+  );
+  return record;
 };
 
 export async function loadAiValueMeasurementPlan(

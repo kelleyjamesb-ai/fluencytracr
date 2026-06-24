@@ -305,6 +305,51 @@ const controlledMeasurementCellAssemblyRun = () => {
   );
 };
 
+const controlledMeasurementCellPreflightCandidateRefCache = new Map<
+  number,
+  Record<string, unknown>
+>();
+
+const controlledMeasurementCellPreflightCandidateRef = (
+  milestoneDay = 30
+): Record<string, unknown> => {
+  const cached = controlledMeasurementCellPreflightCandidateRefCache.get(milestoneDay);
+  if (cached) return clone(cached);
+
+  ensureControlledRunnerDistReady();
+  const script = `
+    import { readFileSync } from "node:fs";
+    import { runMeasurementCellPreflightFromObject, validateMeasurementCellPreflight } from "./scripts/run_ai_value_measurement_cell_preflight_runner.mjs";
+    const fixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
+    fixture.expected = {
+      ...fixture.expected,
+      milestone_day: ${JSON.stringify(milestoneDay)},
+      window_mode: "milestone"
+    };
+    const preflight = runMeasurementCellPreflightFromObject(fixture, {
+      sourceSystem: "bigquery_export",
+      cwd: process.cwd()
+    });
+    const validation = validateMeasurementCellPreflight(preflight, {
+      sourceFixture: fixture,
+      sourceSystem: "bigquery_export",
+      cwd: process.cwd()
+    });
+    if (preflight.preflight_state !== "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT" || !preflight.snapshot_candidate_ref || validation.valid !== true) {
+      throw new Error(JSON.stringify({ validation, validation_summary: preflight.validation_summary ?? {} }));
+    }
+    process.stdout.write(JSON.stringify(preflight.snapshot_candidate_ref));
+  `;
+  const candidate = JSON.parse(
+    execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+      cwd: REPO_ROOT,
+      encoding: "utf8"
+    })
+  );
+  controlledMeasurementCellPreflightCandidateRefCache.set(milestoneDay, candidate);
+  return clone(candidate);
+};
+
 const controlledMeasurementCellAssemblyRunsForMilestones = (milestoneDays: number[]) => {
   ensureControlledRunnerDistReady();
   const script = `
@@ -794,8 +839,10 @@ describe("AI Value minimal persistence repository", () => {
 
   it("persists controlled pilot Measurement Cell snapshots append-only as compact internal snapshots", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const snapshotCandidateRef = controlledMeasurementCellPreflightCandidateRef();
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+      snapshotCandidateRef,
       version: 1,
       createdByRole: "value_realization_pm"
     });
@@ -833,6 +880,14 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.validation.valid).toBe(true);
     expect(stored.assembly_validation.valid).toBe(true);
     expect(stored.source_refs).toEqual(assemblyRun.measurement_cell.source_refs);
+    expect(stored.source_refs).toEqual(snapshotCandidateRef.source_refs);
+    expect(stored.metric_id).toBe(snapshotCandidateRef.metric_id);
+    expect(stored.expectation_path_id).toBe(
+      snapshotCandidateRef.expectation_path_id
+    );
+    expect(stored.measurement_cell_id).toBe(
+      snapshotCandidateRef.measurement_cell_id
+    );
     expect(stored.source_refs).toEqual({
       blueprint_source_ref: "blueprint_parse_support_approved_day_30",
       ai_fluency_source_ref: "ai_fluency_support_day_30",
@@ -864,6 +919,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -872,6 +928,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef,
         version: 2,
         createdByRole: "value_realization_pm"
       })
@@ -892,6 +949,7 @@ describe("AI Value minimal persistence repository", () => {
 
     const corrected = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+      snapshotCandidateRef,
       version: 2,
       supersedesId: stored.id,
       createdByRole: "value_realization_pm"
@@ -899,6 +957,84 @@ describe("AI Value minimal persistence repository", () => {
     expect(corrected.version).toBe(2);
     expect(corrected.supersedes_id).toBe(stored.id);
     expect(store.aiValueMeasurementCellSnapshots.size).toBe(2);
+  });
+
+  it("rejects Measurement Cell snapshot persistence without reviewed preflight candidate proof", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toThrow("candidate ref is required");
+    expect(store.aiValueMeasurementCellSnapshots.size).toBe(0);
+  });
+
+  it("rejects Measurement Cell snapshot persistence when the preflight candidate drifts", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const snapshotCandidateRef = controlledMeasurementCellPreflightCandidateRef();
+
+    const metricDrift = clone(snapshotCandidateRef);
+    metricDrift.metric_id = "support_escalation_rate";
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: metricDrift,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toThrow("candidate ref must match recomputed persistence binding");
+
+    const sourceRefDrift = clone(snapshotCandidateRef);
+    (sourceRefDrift.source_refs as Record<string, unknown>).vbd_source_ref =
+      "scrubbed_glean_vbd_token_support_other_day_30";
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: sourceRefDrift,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toThrow("candidate ref must match recomputed persistence binding");
+
+    const unsafeSourceRef = clone(snapshotCandidateRef);
+    (unsafeSourceRef.source_refs as Record<string, unknown>).vbd_source_ref =
+      "select_user_id_from_raw_rows";
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: unsafeSourceRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const placeholderAssemblyRef = clone(assemblyRun);
+    placeholderAssemblyRef.measurement_cell.source_refs.blueprint_source_ref =
+      "blueprint_source_ref";
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: placeholderAssemblyRef,
+        snapshotCandidateRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const smuggledPayload = clone(snapshotCandidateRef);
+    smuggledPayload.payload_json = {
+      raw_rows: [{ user_id: "person-123" }]
+    };
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: smuggledPayload,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
   });
 
   it("canonicalizes Measurement Cell snapshot caveats and blocked uses before persistence", async () => {
@@ -918,6 +1054,7 @@ describe("AI Value minimal persistence repository", () => {
 
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
       version: 1,
       createdByRole: "value_realization_pm"
     });
@@ -940,6 +1077,7 @@ describe("AI Value minimal persistence repository", () => {
 
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
       version: 1,
       createdByRole: "value_realization_pm"
     });
@@ -957,6 +1095,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         supersedesId: "measurement_cell_snapshot_unrelated",
         createdByRole: "value_realization_pm"
@@ -968,11 +1107,13 @@ describe("AI Value minimal persistence repository", () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
     const initial = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
       version: 1,
       createdByRole: "value_realization_pm"
     });
     const corrected = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
       version: 2,
       supersedesId: initial.id,
       createdByRole: "value_realization_pm"
@@ -981,6 +1122,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 3,
         supersedesId: initial.id,
         createdByRole: "value_realization_pm"
@@ -1007,6 +1149,7 @@ describe("AI Value minimal persistence repository", () => {
       const assemblyRun = controlledMeasurementCellAssemblyRun();
       const stored = await persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       });
@@ -1065,11 +1208,13 @@ describe("AI Value minimal persistence repository", () => {
       const assemblyRun = controlledMeasurementCellAssemblyRun();
       const initial = await persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       });
       const corrected = await persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 2,
         supersedesId: initial.id,
         createdByRole: "value_realization_pm"
@@ -1081,6 +1226,7 @@ describe("AI Value minimal persistence repository", () => {
       await expect(
         persistAiValueMeasurementCellSnapshot({
           measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
           version: 3,
           supersedesId: initial.id,
           createdByRole: "value_realization_pm"
@@ -1105,9 +1251,13 @@ describe("AI Value minimal persistence repository", () => {
     const stored = [];
 
     for (const assemblyRun of assemblyRuns) {
+      const milestoneDay = assemblyRun.measurement_cell.time_window.days_since_launch;
       stored.push(
         await persistAiValueMeasurementCellSnapshot({
           measurementCellAssemblyRun: assemblyRun,
+          snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(
+            milestoneDay
+          ),
           version: 1,
           createdByRole: "value_realization_pm"
         })
@@ -1137,13 +1287,12 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: sameCellDifferentWindow,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(60),
         version: 2,
         supersedesId: day30?.id,
         createdByRole: "value_realization_pm"
       })
-    ).rejects.toThrow(
-      "Measurement Cell Snapshot correction cannot change selected path, metric, or milestone identity"
-    );
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
   });
 
   it("fails drifted Measurement Cell snapshot bindings before persistence", async () => {
@@ -1152,6 +1301,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: pathDrift,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1162,6 +1312,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: approvalDrift,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1173,6 +1324,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: approvalTimestampDrift,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1183,6 +1335,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: milestoneDrift,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1193,6 +1346,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: metricDrift,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1203,6 +1357,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: lagDrift,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1215,6 +1370,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafePayload,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1225,6 +1381,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeValidation,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1235,6 +1392,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefs,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1247,6 +1405,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefNotes,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1262,6 +1421,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeRequiredCaveat,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1277,6 +1437,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeNegativePostureCaveat,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1292,6 +1453,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeBlockedUse,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1304,6 +1466,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefSummary,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1317,6 +1480,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: smuggledSourceRefNotesObject,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1332,6 +1496,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: smuggledSourceRefPackageArray,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1344,6 +1509,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: smuggledBlueprintSourceRef,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1457,6 +1623,7 @@ describe("AI Value minimal persistence repository", () => {
       await expect(
         persistAiValueMeasurementCellSnapshot({
           measurementCellAssemblyRun: unsafeIdentifierRun,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
           version: 1,
           createdByRole: "value_realization_pm",
           assemblyPayload
@@ -1471,6 +1638,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafePathBinding,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1480,6 +1648,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeAssemblyPayload,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm",
         assemblyPayload: {
@@ -1492,6 +1661,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeCompactAssemblyPayload,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm",
         assemblyPayload: {
@@ -1518,6 +1688,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: driftedCompactAssemblyPayload,
+        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
         version: 1,
         createdByRole: "value_realization_pm",
         assemblyPayload: {

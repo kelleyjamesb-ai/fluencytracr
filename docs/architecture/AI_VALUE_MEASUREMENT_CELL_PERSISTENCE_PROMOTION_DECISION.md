@@ -180,6 +180,8 @@ implementation scope is limited to:
 - backend service write path only;
 - already validated Measurement Cell Assembly Run input only;
 - recomputed validation before write;
+- required compact Measurement Cell preflight snapshot-candidate ref binding
+  that must match the recomputed durable snapshot row before write;
 - compact Measurement Cell snapshot persistence/write path only;
 - compact source refs;
 - compact selected path binding;

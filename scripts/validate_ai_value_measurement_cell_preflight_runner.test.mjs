@@ -124,6 +124,13 @@ const REQUIRED_CAVEATS = [
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
+function assertValidationGap(validation, token) {
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes(token)),
+    `missing gap for ${token}: ${validation.gaps.join("; ")}`
+  );
+}
+
 function hasNestedKey(value, key) {
   if (!value || typeof value !== "object") return false;
   if (Array.isArray(value)) return value.some((item) => hasNestedKey(item, key));
@@ -170,6 +177,16 @@ function assertPassedPreflight(preflight, sourceSystem) {
     preflight.snapshot_candidate_ref.measurement_cell_id,
     "measurement_cell_org_example_customer_support_customer_support_case_resolution_workflow_family_customer_support_case_resolution_eligible_cases_2300_day_30_support_median_resolution_hours"
   );
+  assert.deepEqual(preflight.snapshot_candidate_ref.source_refs, {
+    blueprint_source_ref: "blueprint_parse_support_approved_day_30",
+    ai_fluency_source_ref: "ai_fluency_support_day_30",
+    vbd_source_ref: "scrubbed_glean_vbd_token_support_day_30",
+    metric_source_ref: "support_metric_resolution_hours_day_30",
+    token_source_ref: "scrubbed_glean_vbd_token_support_day_30"
+  });
+  for (const [key, value] of Object.entries(preflight.snapshot_candidate_ref.source_refs)) {
+    assert.notEqual(value, key, `${key} must carry the reviewed source ref, not the key name`);
+  }
   assert.equal(
     preflight.snapshot_candidate_ref.expectation_path_id,
     "expectation_path_support_median_resolution_hours_capacity"
@@ -301,6 +318,68 @@ test("Measurement Cell preflight validator rejects hand-edited passed snapshot c
       validation.gaps.some((gap) => gap.includes(token)),
       `missing gap for ${token}`
     );
+  }
+});
+
+test("Measurement Cell preflight validator rejects unsafe snapshot candidate source refs", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const preflight = runMeasurementCellPreflightFromObject(fixture);
+
+  const keyNameValues = clone(preflight);
+  keyNameValues.snapshot_candidate_ref.source_refs = Object.fromEntries(
+    Object.keys(preflight.snapshot_candidate_ref.source_refs).map((key) => [key, key])
+  );
+  const keyNameValidation = validateMeasurementCellPreflight(keyNameValues, {
+    sourceFixture: fixture
+  });
+  assert.equal(keyNameValidation.valid, false);
+  assertValidationGap(keyNameValidation, "key name");
+  assertValidationGap(keyNameValidation, "snapshot_candidate_ref.source_refs");
+
+  const missingRequiredRef = clone(preflight);
+  delete missingRequiredRef.snapshot_candidate_ref.source_refs.token_source_ref;
+  const missingRequiredValidation = validateMeasurementCellPreflight(missingRequiredRef, {
+    sourceFixture: fixture
+  });
+  assert.equal(missingRequiredValidation.valid, false);
+  assertValidationGap(missingRequiredValidation, "token_source_ref is required");
+
+  const swappedRefs = clone(preflight);
+  const blueprintRef =
+    swappedRefs.snapshot_candidate_ref.source_refs.blueprint_source_ref;
+  swappedRefs.snapshot_candidate_ref.source_refs.blueprint_source_ref =
+    swappedRefs.snapshot_candidate_ref.source_refs.ai_fluency_source_ref;
+  swappedRefs.snapshot_candidate_ref.source_refs.ai_fluency_source_ref = blueprintRef;
+  const swappedValidation = validateMeasurementCellPreflight(swappedRefs, {
+    sourceFixture: fixture
+  });
+  assert.equal(swappedValidation.valid, false);
+  assertValidationGap(swappedValidation, "snapshot_candidate_ref.source_refs");
+
+  const rawLookingRef = clone(preflight);
+  rawLookingRef.snapshot_candidate_ref.source_refs.vbd_source_ref =
+    "select_user_id_from_raw_rows";
+  const rawLookingValidation = validateMeasurementCellPreflight(rawLookingRef, {
+    sourceFixture: fixture
+  });
+  assert.equal(rawLookingValidation.valid, false);
+  assertValidationGap(rawLookingValidation, "source_refs.vbd_source_ref");
+  assertValidationGap(rawLookingValidation, "unsafe text");
+
+  for (const unsafeRef of [
+    "support_metric_sql_text_day_30",
+    "support_metric_prompt_text_day_30",
+    "support_metric_response_text_day_30",
+    "support_metric_transcript_text_day_30"
+  ]) {
+    const unsafeTextRef = clone(preflight);
+    unsafeTextRef.snapshot_candidate_ref.source_refs.metric_source_ref = unsafeRef;
+    const unsafeTextValidation = validateMeasurementCellPreflight(unsafeTextRef, {
+      sourceFixture: fixture
+    });
+    assert.equal(unsafeTextValidation.valid, false);
+    assertValidationGap(unsafeTextValidation, "source_refs.metric_source_ref");
+    assertValidationGap(unsafeTextValidation, "unsafe text");
   }
 });
 
