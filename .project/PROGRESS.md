@@ -2,6 +2,41 @@
 
 ## Last Completed
 
+- AI Value upstream acceptance persistence boundary hardening (user-requested,
+  2026-06-24): added an exact physical data-model hold decision for upstream
+  aggregate handoff / acceptance-package persistence. The data model remains
+  intentionally centered on the promoted backend-internal
+  `measurement_cell_snapshots` table; upstream handoffs, acceptance packages,
+  manifest packages, pipeline runs, connector runs, package JSON, and
+  `measurement_cell_series_snapshots` remain non-persistent until a later
+  exact-scope promotion decision and red/green tests authorize them. Hardened
+  the upstream pipeline handoff validator so encoded payload keys, dashboard
+  handles, table handles, workbook IDs, and related handle-shaped smuggling
+  reject before acceptance. This adds no Prisma schema, migration, repository
+  write, route, UI, live BigQuery/Sigma/Glean execution, persistence write,
+  export, research-model feed, confidence math, ROI/EBITDA, finance output,
+  causality, productivity, probability, or customer-facing output.
+- AI Value Upstream Aggregate Handoff Acceptance Package (user-requested,
+  2026-06-24): added the next executable infrastructure layer after Upstream
+  Aggregate Pipeline Handoff. The acceptance package requires a recomputed,
+  fixture-backed `READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW`
+  handoff, emits only compact upstream handoff refs, compact Source Inventory /
+  Aggregate Extraction / Pipeline Run Review manifest refs, Data Spine alignment
+  refs, and Source Package Review Queue posture refs, and can return only
+  `PASSED_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_PACKAGE`,
+  `HOLD_FOR_VALID_UPSTREAM_AGGREGATE_PIPELINE_HANDOFF`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It rejects full manifests, payload JSON,
+  validation/source-ref JSON smuggling, SQL/query text, encoded payloads,
+  dashboard/workbook/table handles, raw rows, prompts, transcripts,
+  identifiers, credentials, live execution, persistence, Series persistence,
+  routes, UI, customer projection/export, research-model feed, ROI/EBITA/EBITDA,
+  finance output, causality, productivity, probability, contribution/score-like
+  fields, and customer-facing output. The upstream handoff validator now also
+  requires fixture-backed validation for ready handoffs and performs stricter
+  compact-ref shape/safety checks. This does not add live connectors, routes,
+  UI, schemas, migrations, repository methods, persistence writes, exports,
+  model math, or finance output. Verification added:
+  `npm run test:ai-value-upstream-aggregate-handoff-acceptance-package`.
 - AI Value Upstream Aggregate Pipeline Handoff (user-requested, 2026-06-23):
   added the next executable infrastructure layer after Live Pipeline Concept
   Review. The handoff recomputes the concept review and controlled aggregate

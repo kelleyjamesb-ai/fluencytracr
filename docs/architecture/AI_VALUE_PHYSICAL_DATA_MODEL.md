@@ -79,6 +79,7 @@ Recommended current projection:
 | Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
 | AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff payloads; future compact projection only if promoted | Leading-indicator context only; no value proof, model score, or standalone table |
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
+| Upstream Aggregate Handoff Acceptance Package | Executable validation output only | Do not persist upstream handoffs, acceptance packages, manifest packages, pipeline runs, connector runs, or full package JSON |
 | Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
 | Evidence Continuity Snapshot | Derived from Measurement Cell Series | Future extension of evidence lineage only if promoted |
@@ -96,6 +97,7 @@ Projection detail:
 | Claim Readiness Snapshot | `claim_readiness_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `handoff_id`, `measurement_plan_id`, `claim_readiness_state` | No customer-facing financial output; no positive contribution-model field |
 | Executive Readout Snapshot | `executive_readout_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `executive_readout_snapshot_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `measurement_plan_id`, `readout_state` | No rendered readout route/UI/export from this pass |
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
+| Upstream Aggregate Handoff Acceptance Package | Contract output from upstream aggregate handoff acceptance runner only | None | No upstream handoff table, acceptance package table, manifest package table, pipeline-run table, connector-run table, or persisted package JSON |
 | Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns, compact aggregate-boundary proof | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver`, aggregate source/review/source-export refs | No full Measurement Cell object, frontend UI, export, rendered readout, live connector output, or customer-facing read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
@@ -695,6 +697,13 @@ Do not add these tables in the next implementation slice:
 | `blueprint_expectation_bindings` | Selected binding should stay compact lineage inside a promoted Measurement Cell, not a standalone source of authority |
 | `operator_source_handoff_bundles` | Bundles are preparation manifests, not durable proof |
 | `source_packages` | `source_package_refs` remains the safer metadata-only spine unless refs prove insufficient |
+| `upstream_aggregate_pipeline_handoffs` | Pipeline handoffs are executable validation output, not durable pipeline state |
+| `upstream_aggregate_handoff_acceptance_packages` | Acceptance packages are transient validation output and would become manifest/run persistence if stored wholesale |
+| `upstream_aggregate_handoff_acceptance_snapshots` | Held by `AI_VALUE_UPSTREAM_AGGREGATE_ACCEPTANCE_PERSISTENCE_DECISION.md`; future promotion would require exact table scope and recomputation tests |
+| `controlled_aggregate_manifest_snapshots` | Manifest persistence remains held; compact manifest refs may flow only through validated downstream objects |
+| `pipeline_run_review_manifest_snapshots` | Would imply durable run-review state before manifest persistence is promoted |
+| `pipeline_runs` | Live or durable pipeline execution state is not authorized |
+| `connector_runs` | Connector execution state is not authorized |
 | `ai_fluency_psychological_scores` | Would turn leading-indicator context into an over-strong product object and create score semantics too early |
 | `adoption_conversion_scores` | Research-only concept; do not persist score-like conversion outputs before a separate research promotion |
 | `measurement_cells` | Use only the promoted compact `measurement_cell_snapshots` projection; do not create a full-object table |
@@ -738,6 +747,15 @@ Before any additional Measurement Cell or Series persistence beyond
 10. Operator Workflow and Value Hypothesis Readiness remain downstream review
    gates, not bypassed by persisted Measurement Cell / Series rows.
 
+Before any upstream aggregate handoff, acceptance package, manifest package,
+pipeline-run, or connector-run persistence, require the separate gate in
+`AI_VALUE_UPSTREAM_AGGREGATE_ACCEPTANCE_PERSISTENCE_DECISION.md`. In
+particular, pipeline-handoff-only persistence bypasses, stale validation
+summaries, accepted-ref drift after rehash, full package JSON, encoded payload
+keys, dashboard handles, table handles, workbook IDs, live execution aliases,
+and wrapper JSONB smuggling must fail red/green tests before any migration is
+allowed.
+
 This document alone cannot trigger additional migrations. A future
 implementation slice must cite a separate explicit promotion decision before
 adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
@@ -756,9 +774,12 @@ Recommended next move:
 
 1. Verify the promoted `measurement_cell_snapshots` write path against the
    controlled pilot package and governance checks.
-2. Defer `measurement_cell_series_snapshots` until at least one repeated
+2. Keep upstream aggregate handoff and acceptance package outputs
+   non-persistent until a future exact-scope persistence decision passes the
+   recomputation and smuggling tests named above.
+3. Defer `measurement_cell_series_snapshots` until at least one repeated
    Measurement Cell workflow has been validated end to end across the required
    milestone windows.
-3. Keep live BigQuery, Sigma, Glean connectors, customer-facing projections,
+4. Keep live BigQuery, Sigma, Glean connectors, customer-facing projections,
    exports, confidence research inputs, and finance outputs behind separate
    promotion decisions.

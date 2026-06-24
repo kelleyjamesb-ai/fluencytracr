@@ -194,6 +194,71 @@ const VALIDATION_SUMMARY_FIELDS = new Set([
   "gaps"
 ]);
 
+const SOURCE_INVENTORY_MANIFEST_REF_FIELDS = new Set([
+  "manifest_id",
+  "manifest_hash",
+  "source_lane",
+  "source_system",
+  "source_ref",
+  "org_id",
+  "client_id",
+  "workflow_family",
+  "function_area",
+  "cohort_key",
+  "window",
+  "aggregate_grain"
+]);
+
+const AGGREGATE_EXTRACTION_MANIFEST_REF_FIELDS = new Set([
+  "manifest_id",
+  "manifest_hash",
+  "source_lane",
+  "source_system",
+  "source_ref",
+  "org_id",
+  "client_id",
+  "workflow_family",
+  "function_area",
+  "cohort_key",
+  "window",
+  "aggregate_grain"
+]);
+
+const PIPELINE_RUN_REVIEW_MANIFEST_REF_FIELDS = new Set([
+  "manifest_id",
+  "manifest_hash",
+  "pipeline_review_state",
+  "source_system",
+  "org_id",
+  "client_id",
+  "workflow_family",
+  "function_area",
+  "cohort_key",
+  "metric_id",
+  "expectation_path_id"
+]);
+
+const DATA_SPINE_ALIGNMENT_REF_FIELDS = new Set([
+  "source_system",
+  "source_lane",
+  "org_id",
+  "client_id",
+  "workflow_family",
+  "function_area",
+  "cohort_key",
+  "metric_id",
+  "expectation_path_id"
+]);
+
+const SOURCE_PACKAGE_REVIEW_QUEUE_POSTURE_REF_FIELDS = new Set([
+  "queue_ref",
+  "queue_state",
+  "reviewed_at",
+  "reviewed_by_role"
+]);
+
+const WINDOW_REF_FIELDS = new Set(["window_start", "window_end"]);
+
 const FORBIDDEN_OVERRIDE_KEY_PATTERNS = [
   /raw_?rows?/i,
   /^rows$/i,
@@ -222,6 +287,8 @@ const FORBIDDEN_OVERRIDE_KEY_PATTERNS = [
   /job_?id/i,
   /query_?id/i,
   /api_?run/i,
+  /api_?handle/i,
+  /dashboard_?handle/i,
   /live_?bigquery_?execution/i,
   /live_?sigma_?execution/i,
   /live_?glean_?query/i,
@@ -254,8 +321,14 @@ const FORBIDDEN_OVERRIDE_KEY_PATTERNS = [
   /project_?id/i,
   /dataset_?id/i,
   /table_?id/i,
+  /table_?handle/i,
+  /workbook_?id/i,
+  /workbook_?handle/i,
+  /sigma_?workbook/i,
   /^manifests$/i,
   /full_?manifest/i,
+  /payload/i,
+  /payload_?b64/i,
   /source_?refs?_?json/i,
   /payload_?json/i,
   /validation_?json/i,
@@ -263,17 +336,21 @@ const FORBIDDEN_OVERRIDE_KEY_PATTERNS = [
   /source_?package_?clearance/i,
   /measurement_?cell_?series/i,
   /customer_?facing/i,
+  /customer_?share/i,
+  /executive_?readout/i,
   /export_?creation/i,
   /finance/i,
   /financial/i,
   /roi/i,
+  /ebita/i,
   /ebitda/i,
   /causal/i,
   /productivity/i,
   /probability/i,
   /confidence/i,
   /score/i,
-  /model/i
+  /model/i,
+  /durable_?storage/i
 ];
 
 const FORBIDDEN_VALUE_PATTERNS = [
@@ -286,9 +363,19 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /bquxjob/i,
   /job[_-]?[a-z0-9]+/i,
   /project[_-]?dataset[_-]?table/i,
+  /\b[a-z0-9_-]+\.[a-z0-9_-]+\.[a-z0-9_-]+\b/i,
   /\b(?:project|dataset|table)[_-]?(?:id|ref|name)\b/i,
-  /dashboard[_-]?url/i,
+  /table[_-]?handle/i,
+  /workbook[_-]?(?:id|handle)/i,
+  /api[_-]?handle/i,
+  /dashboard[_-]?(?:url|handle)/i,
+  /sigma[_-]?workbook/i,
   /query[_-]?(?:id|text|ref)/i,
+  /(?:full\s+)?package[_\s-]?json/i,
+  /\b(?:full|acceptance|upstream\s+handoff|manifest)\s+package\s+(?:should\s+be\s+)?(?:stored|persisted|saved)\b/i,
+  /\b(?:full\s+)?manifest\s+(?:should\s+be\s+)?(?:stored|persisted|saved)\b/i,
+  /\b(?:store|persist|save)\s+accepted\s+refs?(?:\s+as\s+json)?\b/i,
+  /\bdurable\s+(?:acceptance|handoff|package|manifest|pipeline|connector)\s+record\b/i,
   /live[_-]?execution/i,
   /live[_-]?(?:bigquery|sigma|glean|connector)/i,
   /\blive\s+(?:bigquery|sigma|glean|connector)\s+(?:execution|query|run)\b/i,
@@ -319,15 +406,22 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /row[_-]?id/i,
   /span[_-]?id/i,
   /customer[_-]?facing/i,
+  /customer[_-]?share/i,
+  /executive[_-]?readout/i,
   /finance/i,
   /financial/i,
   /\broi\b/i,
+  /ebita/i,
   /ebitda/i,
   /causal/i,
   /productivity/i,
   /probability/i,
   /confidence/i,
-  /score/i
+  /score/i,
+  /eyJ[a-z0-9_-]{20,}/i,
+  /[a-z0-9+/]{80,}={0,2}/i,
+  /select%20/i,
+  /s\u200belect/i
 ];
 
 function asRecord(value) {
@@ -344,6 +438,40 @@ function sha256(value) {
   return createHash("sha256")
     .update(JSON.stringify(value))
     .digest("hex");
+}
+
+const EXPECTED_ARTIFACT_CACHE = new Map();
+
+function expectedArtifactFromFixture(fixture, sourceSystem, label, builder, validator) {
+  const key = `${label}:${sourceSystem}:${sha256(fixture)}`;
+  if (!EXPECTED_ARTIFACT_CACHE.has(key)) {
+    const artifact = builder(fixture, { sourceSystem });
+    const validation = artifact?.validation_summary?.valid === true
+      ? artifact.validation_summary
+      : validator(artifact, { sourceFixture: fixture });
+    EXPECTED_ARTIFACT_CACHE.set(key, { artifact, validation });
+  }
+  return EXPECTED_ARTIFACT_CACHE.get(key);
+}
+
+function expectedConceptReviewFromFixture(fixture, sourceSystem) {
+  return expectedArtifactFromFixture(
+    fixture,
+    sourceSystem,
+    "live_pipeline_concept_review",
+    buildLivePipelineConceptReviewFromObject,
+    validateLivePipelineConceptReview
+  );
+}
+
+function expectedManifestPackageFromFixture(fixture, sourceSystem) {
+  return expectedArtifactFromFixture(
+    fixture,
+    sourceSystem,
+    "controlled_aggregate_manifest_validation_package",
+    buildControlledAggregateManifestValidationPackageFromObject,
+    validateControlledAggregateManifestValidationPackage
+  );
 }
 
 function compactToken(value, fallback) {
@@ -400,6 +528,34 @@ function unsupportedFields(value, allowed, label) {
   return Object.keys(record)
     .filter((key) => !allowed.has(key))
     .map((key) => `${label}.${key} is not allowed`);
+}
+
+function scanCompactRefSafety(value, label) {
+  const gaps = [];
+  const visit = (nestedValue) => {
+    if (Array.isArray(nestedValue)) {
+      nestedValue.forEach((item) => visit(item));
+      return;
+    }
+    if (nestedValue && typeof nestedValue === "object") {
+      for (const [key, child] of Object.entries(nestedValue)) {
+        if (FORBIDDEN_OVERRIDE_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+          gaps.push(`${label} contains a forbidden compact-ref key`);
+          continue;
+        }
+        visit(child);
+      }
+      return;
+    }
+    if (
+      typeof nestedValue === "string" &&
+      FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(nestedValue))
+    ) {
+      gaps.push(`${label} contains forbidden compact-ref text`);
+    }
+  };
+  visit(value);
+  return [...new Set(gaps)];
 }
 
 function exactFalseMapGaps(actual, keys, label) {
@@ -509,17 +665,78 @@ function validateManifestPackageRef(ref, sourceSystem) {
     if (Object.keys(nested).length === 0) {
       gaps.push(`manifest_package_ref.${label} is required`);
     }
+    const allowedFields =
+      label === "source_inventory_manifest_ref"
+        ? SOURCE_INVENTORY_MANIFEST_REF_FIELDS
+        : label === "aggregate_extraction_manifest_ref"
+          ? AGGREGATE_EXTRACTION_MANIFEST_REF_FIELDS
+          : PIPELINE_RUN_REVIEW_MANIFEST_REF_FIELDS;
+    gaps.push(
+      ...unsupportedFields(
+        nested,
+        allowedFields,
+        `manifest_package_ref.${label}`
+      )
+    );
     if (nested.source_system !== sourceSystem) {
       gaps.push(`manifest_package_ref.${label}.source_system must match handoff source_system`);
     }
     if (typeof nested.manifest_hash !== "string" || !/^[a-f0-9]{64}$/.test(nested.manifest_hash)) {
       gaps.push(`manifest_package_ref.${label}.manifest_hash must be a sha256 hash`);
     }
+    gaps.push(...scanCompactRefSafety(nested, `manifest_package_ref.${label}`));
+    if (nested.window) {
+      const windowRef = asRecord(nested.window);
+      gaps.push(
+        ...unsupportedFields(
+          windowRef,
+          WINDOW_REF_FIELDS,
+          `manifest_package_ref.${label}.window`
+        )
+      );
+    }
   }
   const alignment = asRecord(record.data_spine_alignment_ref);
+  gaps.push(
+    ...unsupportedFields(
+      alignment,
+      DATA_SPINE_ALIGNMENT_REF_FIELDS,
+      "manifest_package_ref.data_spine_alignment_ref"
+    )
+  );
   if (alignment.source_system !== sourceSystem) {
     gaps.push("manifest_package_ref.data_spine_alignment_ref.source_system must match handoff source_system");
   }
+  for (const requiredAlignmentField of [
+    "source_lane",
+    "org_id",
+    "client_id",
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "metric_id",
+    "expectation_path_id"
+  ]) {
+    if (
+      typeof alignment[requiredAlignmentField] !== "string" ||
+      !alignment[requiredAlignmentField].trim()
+    ) {
+      gaps.push(`manifest_package_ref.data_spine_alignment_ref.${requiredAlignmentField} is required`);
+    }
+  }
+  gaps.push(
+    ...unsupportedFields(
+      asRecord(record.source_package_review_queue_posture_ref),
+      SOURCE_PACKAGE_REVIEW_QUEUE_POSTURE_REF_FIELDS,
+      "manifest_package_ref.source_package_review_queue_posture_ref"
+    )
+  );
+  gaps.push(
+    ...scanCompactRefSafety(
+      record.source_package_review_queue_posture_ref,
+      "manifest_package_ref.source_package_review_queue_posture_ref"
+    )
+  );
   return gaps;
 }
 
@@ -595,9 +812,8 @@ function validateHandoffShape(handoff) {
   for (const key of TRUE_FEEDS) {
     if (feeds[key] !== true && record.handoff_state === READY_STATE) {
       gaps.push(`feeds.${key} must be true for ready upstream handoff`);
-    }
-    if (feeds[key] !== false && record.handoff_state !== READY_STATE) {
-      gaps.push(`feeds.${key} must be false unless upstream handoff is ready`);
+    } else if (feeds[key] !== false && record.handoff_state !== READY_STATE) {
+      gaps.push(`feeds.${key} must remain false unless upstream handoff is ready`);
     }
   }
   for (const key of FALSE_FEEDS) {
@@ -648,25 +864,25 @@ export function buildUpstreamAggregatePipelineHandoffFromObject(
     ? requestedSourceSystem
     : "unsupported_source_system";
   const fixture = clone(sourceFixture);
-  const conceptReview =
-    options.conceptReview ??
-    buildLivePipelineConceptReviewFromObject(fixture, {
-      sourceSystem: sourceSystemSupported ? sourceSystem : "bigquery_export"
-    });
-  const generatedConceptReview = options.conceptReview === undefined;
-  const manifestPackage =
-    options.manifestPackage ??
-    buildControlledAggregateManifestValidationPackageFromObject(fixture, {
-      sourceSystem: sourceSystemSupported ? sourceSystem : "bigquery_export"
-    });
-  const conceptReviewValidation = validateLivePipelineConceptReview(conceptReview, {
-    sourceFixture: fixture,
-    skipFixtureRerun: generatedConceptReview
-  });
-  const manifestPackageValidation = validateControlledAggregateManifestValidationPackage(
-    manifestPackage,
-    { sourceFixture: fixture }
-  );
+  const expectedSourceSystem = sourceSystemSupported ? sourceSystem : "bigquery_export";
+  const expectedConceptReview = options.conceptReview
+    ? null
+    : expectedConceptReviewFromFixture(fixture, expectedSourceSystem);
+  const expectedManifestPackage = options.manifestPackage
+    ? null
+    : expectedManifestPackageFromFixture(fixture, expectedSourceSystem);
+  const conceptReview = options.conceptReview ?? expectedConceptReview.artifact;
+  const manifestPackage = options.manifestPackage ?? expectedManifestPackage.artifact;
+  const conceptReviewValidation =
+    options.conceptReview
+      ? validateLivePipelineConceptReview(conceptReview, { sourceFixture: fixture })
+      : expectedConceptReview.validation;
+  const manifestPackageValidation =
+    options.manifestPackage
+      ? validateControlledAggregateManifestValidationPackage(manifestPackage, {
+          sourceFixture: fixture
+        })
+      : expectedManifestPackage.validation;
   const overrideGaps = [
     ...(!sourceSystemSupported
       ? ["sourceSystem must be bigquery_export or sigma_export"]
@@ -774,14 +990,19 @@ export function validateUpstreamAggregatePipelineHandoff(handoff, options = {}) 
     gaps.push("handoff_hash must match compact upstream handoff envelope");
   }
 
+  if (record.handoff_state === READY_STATE && !options.sourceFixture) {
+    gaps.push("sourceFixture is required to validate ready upstream handoff");
+  }
+
   if (options.sourceFixture && ALLOWED_SOURCE_SYSTEMS.has(record.source_system)) {
-    const expectedReview = buildLivePipelineConceptReviewFromObject(options.sourceFixture, {
-      sourceSystem: record.source_system
-    });
-    const expectedManifestPackage =
-      buildControlledAggregateManifestValidationPackageFromObject(options.sourceFixture, {
-        sourceSystem: record.source_system
-      });
+    const expectedReview = expectedConceptReviewFromFixture(
+      options.sourceFixture,
+      record.source_system
+    ).artifact;
+    const expectedManifestPackage = expectedManifestPackageFromFixture(
+      options.sourceFixture,
+      record.source_system
+    ).artifact;
     const expectedConceptReviewRef = compactConceptReviewRef(expectedReview);
     const expectedManifestPackageRef = compactManifestPackageRef(expectedManifestPackage);
     const expectedHandoffId = `upstream_aggregate_pipeline_handoff_${compactToken(record.source_system, "unsupported_source_system")}_${compactToken(

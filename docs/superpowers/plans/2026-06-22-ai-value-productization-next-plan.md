@@ -34,6 +34,9 @@ Now implemented:
 - health/readiness table check.
 - executable Live Pipeline Concept Gate for BigQuery/Sigma concept-review
   readiness, with live execution still held.
+- executable Upstream Aggregate Handoff Acceptance Package for compact
+  handoff-ref acceptance validation, with live execution and persistence still
+  held.
 
 Waiting:
 
@@ -603,8 +606,13 @@ Do these next, in order:
     payload ingestion, live execution, manifest persistence, Series
     persistence, customer projection, exports, research-model feed, finance
     output, and customer-facing output remain held.
-12. Future data-pipeline phase: consider a later exact-scope upstream package
-    acceptance-test decision only after the handoff validator stays green and
+12. Next data-pipeline phase: executable Upstream Aggregate Handoff Acceptance
+    Package promoted for compact ref acceptance validation only; live
+    BigQuery/Sigma execution, manifest persistence, pipeline-run persistence,
+    routes, UI, exports, research-model feed, finance output, and
+    customer-facing output remain held.
+13. Future data-pipeline phase: consider a later exact-scope upstream package
+    operating decision only after the acceptance package stays green and
     still without credentials, SQL/query handling, raw rows, identifiers, full
     manifest payload ingestion, manifest persistence, Series persistence,
     customer projection, exports, research-model feed, finance output, or
