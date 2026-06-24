@@ -605,10 +605,14 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
   const sourceSystem = options.sourceSystem ?? "bigquery_export";
   const adapter = options.adapter ?? runControlledAggregateConnectorAdapterFromObject(
     fixture,
-    { sourceSystem }
+    {
+      sourceSystem,
+      measurementPlanOverride: options.measurementPlanOverride
+    }
   );
   const adapterValidation = validateControlledAggregateConnectorAdapter(adapter, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    measurementPlanOverride: options.measurementPlanOverride
   });
   if (
     adapterValidation.valid !== true ||
@@ -939,7 +943,10 @@ export function validateAggregateConnectorBoundaryPlan(plan, options = {}) {
   if (hasSourceFixture && expectedValid) {
     const expected = buildAggregateConnectorBoundaryPlanFromObject(
       options.sourceFixture,
-      { sourceSystem: plan?.source_system }
+      {
+        sourceSystem: plan?.source_system,
+        measurementPlanOverride: options.measurementPlanOverride
+      }
     );
     if (JSON.stringify(stripValidation(plan)) !== JSON.stringify(stripValidation(expected))) {
       gaps.push("boundary plan must match recomputed saved-fixture boundary plan");

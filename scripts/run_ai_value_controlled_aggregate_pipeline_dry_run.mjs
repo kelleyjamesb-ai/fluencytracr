@@ -261,9 +261,12 @@ export function runControlledAggregatePipelineDryRunFromObject(
     return blockedDryRun;
   }
 
-  const candidate = runControlledMeasurementCellAssemblyFromObject(fixture);
+  const candidate = runControlledMeasurementCellAssemblyFromObject(fixture, {
+    measurementPlanOverride: options.measurementPlanOverride
+  });
   const candidateValidation = validateControlledMeasurementCellAssembly(candidate, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    measurementPlanOverride: options.measurementPlanOverride
   });
   if (!candidateValidation.valid) {
     const held = buildControlledAggregatePipelineDryRun({
@@ -303,7 +306,9 @@ export function validateControlledAggregatePipelineDryRun(dryRun, options = {}) 
       { sourceSystem: dryRun?.source_system }
     );
     const expectedCandidate =
-      runControlledMeasurementCellAssemblyFromObject(options.sourceFixture);
+      runControlledMeasurementCellAssemblyFromObject(options.sourceFixture, {
+        measurementPlanOverride: options.measurementPlanOverride
+      });
     enrichedOptions.expectedManifestHash = sha256Json(expectedManifest);
     enrichedOptions.expectedAggregateFixtureHash = sha256Json(options.sourceFixture);
     enrichedOptions.expectedReviewedSourceRefsHash =

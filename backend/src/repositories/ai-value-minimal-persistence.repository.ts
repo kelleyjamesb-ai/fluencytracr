@@ -88,6 +88,12 @@ const FORBIDDEN_PERSISTENCE_STRING_PATTERNS = [
 ];
 
 const FORBIDDEN_SOURCE_REF_STRING_PATTERNS = [
+  /https?:\/\//i,
+  /\b(?:console\.cloud\.google|bigquery\.googleapis|sigma(?:computing)?\.com)\b/i,
+  /(?:bquxjob|job|table|dataset|dashboard)[a-z0-9_-]*/i,
+  /(?:^|[_-])(?:bquxjob[a-z0-9]*|job[a-z0-9]*|jobs?|table[a-z0-9]*|table[_-]?ref|dataset[a-z0-9]*|dataset[_-]?ref|project[_-]?dataset[_-]?table|dashboard[a-z0-9]*)(?:[_-]|$)/i,
+  /(?:^|[_-])(?:credential|secret|api[_-]?key|access[_-]?token|refresh[_-]?token)(?:[_-]|$)/i,
+  /(?:^|[_-])(?:bigquery|sigma)[_-]?(?:job|url|dashboard|table|dataset|query)(?:[_-]|$)/i,
   /\b(?:roi|ebitda?|causality|productivity|probability|confidence|score)\b/i,
   /\b(?:finance|financial)\s+(?:output|impact|claim|attribution)\b/i,
   /\bcustomer[-_\s]?facing\s+(?:finance|financial|economic)\s+output\b/i,
@@ -197,16 +203,22 @@ const MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEY_SET = new Set(
 );
 
 const COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN =
-  /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,191}$/;
+  /^[A-Za-z0-9][A-Za-z0-9_-]{0,191}$/;
 
 const FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS = [
-  /(?:^|[._:/-])select(?:[._:/-]|$)/i,
-  /(?:^|[._:/-])raw[._:/-]?rows?(?:[._:/-]|$)/i,
-  /(?:^|[._:/-])query[._:/-]?text(?:[._:/-]|$)/i,
-  /(?:^|[._:/-])sql[._:/-]?text(?:[._:/-]|$)/i,
-  /(?:^|[._:/-])(?:prompt|response|transcript)[._:/-]?(?:text|content)(?:[._:/-]|$)/i,
-  /(?:^|[._:/-])(?:user|person)[._:/-]?id(?:[._:/-]|$)/i,
-  /(?:^|[._:/-])employee[._:/-]?(?:id|email)(?:[._:/-]|$)/i
+  /https?:\/\//i,
+  /\b(?:console\.cloud\.google|bigquery\.googleapis|sigma(?:computing)?\.com)\b/i,
+  /(?:bquxjob|job|table|dataset|dashboard)[a-z0-9_-]*/i,
+  /(?:^|[_-])(?:select|query|sql)(?:[_-]|$)/i,
+  /(?:^|[_-])raw[_-]?rows?(?:[_-]|$)/i,
+  /(?:^|[_-])query[_-]?text(?:[_-]|$)/i,
+  /(?:^|[_-])sql[_-]?text(?:[_-]|$)/i,
+  /(?:^|[_-])(?:prompt|response|transcript)[_-]?(?:text|content)(?:[_-]|$)/i,
+  /(?:^|[_-])(?:user|person)[_-]?id(?:[_-]|$)/i,
+  /(?:^|[_-])employee[_-]?(?:id|email)(?:[_-]|$)/i,
+  /(?:^|[_-])(?:bquxjob[a-z0-9]*|job[a-z0-9]*|jobs?|table[a-z0-9]*|table[_-]?ref|dataset[a-z0-9]*|dataset[_-]?ref|project[_-]?dataset[_-]?table|dashboard[a-z0-9]*)(?:[_-]|$)/i,
+  /(?:^|[_-])(?:credential|secret|api[_-]?key|access[_-]?token|refresh[_-]?token)(?:[_-]|$)/i,
+  /(?:^|[_-])(?:bigquery|sigma)[_-]?(?:job|url|dashboard|table|dataset|query)(?:[_-]|$)/i
 ];
 
 const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_READY_STATE =
@@ -218,6 +230,7 @@ const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_SCHEMA_VERSION =
 const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_REF_KEYS = new Set([
   "snapshot_candidate_state",
   "snapshot_candidate_schema_version",
+  "aggregate_boundary_ref",
   "measurement_cell_id",
   "measurement_cell_assembly_run_id",
   "measurement_plan_id",
@@ -252,6 +265,186 @@ const MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_REF_KEYS = new Set([
   "source_refs",
   "snapshot_candidate_hash"
 ]);
+
+const MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_BOUNDARY_REF_KEYS = new Set([
+  "source_system",
+  "review_id",
+  "review_state",
+  "source_export_ref",
+  "aggregate_definition_ref",
+  "aggregate_output_ref",
+  "review_hash",
+  "pipeline_dry_run_id",
+  "pipeline_source_export_ref",
+  "pipeline_boundary_hash"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_PROOF_KEYS = new Set([
+  "schema_version",
+  "preflight_id",
+  "preflight_state",
+  "source_system",
+  "fixture_id",
+  "engine_executed",
+  "aggregate_export_review_ref",
+  "pipeline_ref",
+  "assembly_ref",
+  "snapshot_candidate_ref",
+  "validation_summary",
+  "feeds",
+  "boundary_policy",
+  "blocked_uses",
+  "required_caveats",
+  "preflight_integrity_hash",
+  "generated_at",
+  "derivation_version"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_REVIEW_REF_KEYS = new Set([
+  "review_id",
+  "review_state",
+  "source_system",
+  "source_owner_role",
+  "execution_boundary",
+  "source_export_ref",
+  "aggregate_definition_ref",
+  "aggregate_output_ref",
+  "review_hash"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_PIPELINE_REF_KEYS = new Set([
+  "dry_run_id",
+  "dry_run_state",
+  "source_export_ref",
+  "manifest_hash",
+  "aggregate_fixture_hash",
+  "reviewed_source_refs_hash",
+  "reviewed_aggregate_context_hash",
+  "reviewed_blueprint_expectation_hash",
+  "candidate_integrity_hash"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_ASSEMBLY_REF_KEYS = new Set([
+  "assembly_run_id",
+  "assembly_state",
+  "assembly_decision",
+  "measurement_cell_ref"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_VALIDATION_SUMMARY_KEYS = new Set([
+  "valid",
+  "aggregate_export_review_valid",
+  "pipeline_dry_run_valid",
+  "measurement_cell_assembly_valid",
+  "snapshot_candidate_valid",
+  "gaps"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_TRUE_FEEDS = [
+  "aggregate_export_review",
+  "controlled_aggregate_pipeline_dry_run",
+  "controlled_measurement_cell_assembly",
+  "measurement_cell_snapshot_candidate_proof"
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_FALSE_FEEDS = [
+  "live_bigquery_execution",
+  "live_sigma_execution",
+  "live_glean_query",
+  "customer_connector_execution",
+  "source_package_clearance",
+  "measurement_cell_snapshot_persistence",
+  "measurement_cell_series_persistence",
+  "backend_route",
+  "frontend_ui",
+  "schema_creation",
+  "customer_facing_output",
+  "customer_facing_financial_output",
+  "customer_facing_economic_output",
+  "research_model_feed",
+  "model_likelihood_output",
+  "value_contribution_model_feed",
+  "model_result_output",
+  "financial_claim"
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_BOUNDARY_FALSE_FIELDS = [
+  "runs_bigquery",
+  "runs_sigma",
+  "runs_glean_query",
+  "runs_customer_connectors",
+  "persists_snapshot",
+  "persists_pipeline_run",
+  "creates_route",
+  "creates_ui",
+  "creates_schema",
+  "creates_migration",
+  "creates_repository",
+  "writes_output_file",
+  "emits_model_likelihood_output",
+  "authorizes_value_contribution_model",
+  "emits_model_result_output",
+  "emits_outcome_proof_claim",
+  "emits_workforce_efficiency_claim",
+  "computes_financial_return",
+  "emits_financial_output",
+  "customer_facing_output",
+  "customer_facing_economic_output"
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_REQUIRED_BLOCKED_USES = [
+  "live_bigquery_execution",
+  "live_sigma_execution",
+  "live_glean_query",
+  "customer_connector_execution",
+  "credential_access",
+  "query_execution",
+  "raw_row_ingestion",
+  "dashboard_row_ingestion",
+  "source_package_clearance",
+  "measurement_cell_snapshot_persistence",
+  "measurement_cell_series_persistence",
+  "route_creation",
+  "ui_creation",
+  "schema_creation",
+  "migration_creation",
+  "repository_creation",
+  "output_file_write",
+  "customer_facing_output",
+  "customer_facing_financial_output",
+  "customer_facing_economic_output",
+  "finance_context_investigation",
+  "realized_roi",
+  "ebitda_claim",
+  "financial_attribution",
+  "causality_claim",
+  "productivity_claim",
+  "probability_output",
+  "score_like_output",
+  "contribution_model_not_authorized",
+  "research_model_not_promoted",
+  "financial_claim_blocked"
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_REQUIRED_CAVEATS = [
+  "Measurement Cell preflight is an internal proof only.",
+  "Snapshot candidate proof does not persist Measurement Cell snapshots.",
+  "No live BigQuery, Sigma, Glean, or customer connector execution occurs.",
+  "Preflight output is not customer-facing output, finance output, or value contribution modeling."
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_SOURCE_SYSTEMS = new Set([
+  "bigquery_export",
+  "sigma_export"
+]);
+
+const MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_PASSED_REVIEW_STATES: Record<
+  string,
+  string
+> = {
+  bigquery_export: "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW",
+  sigma_export: "PASSED_SIGMA_AGGREGATE_CONNECTOR_BOUNDARY_REVIEW"
+};
 
 export interface PersistAiValueHypothesisInput {
   measurementPlan: Record<string, unknown>;
@@ -314,6 +507,7 @@ export interface PersistAiValueMeasurementCellSnapshotInput {
   createdByRole: string;
   supersedesId?: string | null;
   assemblyPayload?: Record<string, unknown> | null;
+  measurementCellPreflightRun?: Record<string, unknown> | null;
   snapshotCandidateRef?: Record<string, unknown> | null;
 }
 
@@ -783,11 +977,648 @@ const compactMeasurementCellSnapshotSourceRefs = (
   return compact;
 };
 
+const enforceCompactAggregateBoundaryRefValue = (
+  label: string,
+  value: unknown,
+  gaps: string[]
+): string => {
+  if (
+    typeof value !== "string" ||
+    value.trim() !== value ||
+    !COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN.test(value) ||
+    /[{}[\]"'`]/.test(value) ||
+    FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS.some(
+      (pattern) => pattern.test(value)
+    ) ||
+    FORBIDDEN_SOURCE_REF_STRING_PATTERNS.some((pattern) => pattern.test(value)) ||
+    FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
+      pattern.test(value)
+    )
+  ) {
+    gaps.push(`aggregate_boundary_ref.${label} must be compact governed metadata`);
+    return "";
+  }
+  return value;
+};
+
+const compactMeasurementCellSnapshotAggregateBoundaryRef = (
+  aggregateBoundaryRef: Record<string, unknown>,
+  sourceRefs: Record<string, string>
+): Record<string, string> => {
+  const gaps: string[] = [];
+  if (Object.keys(aggregateBoundaryRef).length === 0) {
+    gaps.push("aggregate_boundary_ref is required for Measurement Cell Snapshot persistence");
+  }
+  for (const key of Object.keys(aggregateBoundaryRef)) {
+    if (!MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_BOUNDARY_REF_KEYS.has(key)) {
+      gaps.push(`aggregate_boundary_ref.${key} is not allowed`);
+    }
+  }
+
+  const sourceSystem = asString(aggregateBoundaryRef.source_system);
+  const reviewState = asString(aggregateBoundaryRef.review_state);
+  if (!MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_SOURCE_SYSTEMS.has(sourceSystem)) {
+    gaps.push("aggregate_boundary_ref.source_system must be bigquery_export or sigma_export");
+  }
+  const expectedReviewState =
+    MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_PASSED_REVIEW_STATES[sourceSystem];
+  if (!expectedReviewState || reviewState !== expectedReviewState) {
+    gaps.push("aggregate_boundary_ref.review_state must be passed for the source system");
+  }
+
+  const compact: Record<string, string> = {
+    source_system: sourceSystem,
+    review_id: enforceCompactAggregateBoundaryRefValue(
+      "review_id",
+      aggregateBoundaryRef.review_id,
+      gaps
+    ),
+    review_state: reviewState,
+    source_export_ref: enforceCompactAggregateBoundaryRefValue(
+      "source_export_ref",
+      aggregateBoundaryRef.source_export_ref,
+      gaps
+    ),
+    aggregate_definition_ref: enforceCompactAggregateBoundaryRefValue(
+      "aggregate_definition_ref",
+      aggregateBoundaryRef.aggregate_definition_ref,
+      gaps
+    ),
+    aggregate_output_ref: enforceCompactAggregateBoundaryRefValue(
+      "aggregate_output_ref",
+      aggregateBoundaryRef.aggregate_output_ref,
+      gaps
+    ),
+    review_hash: asString(aggregateBoundaryRef.review_hash),
+    pipeline_dry_run_id: enforceCompactAggregateBoundaryRefValue(
+      "pipeline_dry_run_id",
+      aggregateBoundaryRef.pipeline_dry_run_id,
+      gaps
+    ),
+    pipeline_source_export_ref: enforceCompactAggregateBoundaryRefValue(
+      "pipeline_source_export_ref",
+      aggregateBoundaryRef.pipeline_source_export_ref,
+      gaps
+    ),
+    pipeline_boundary_hash: asString(aggregateBoundaryRef.pipeline_boundary_hash)
+  };
+
+  for (const field of [
+    "review_hash",
+    "pipeline_boundary_hash"
+  ]) {
+    if (!/^[a-f0-9]{64}$/.test(compact[field])) {
+      gaps.push(`aggregate_boundary_ref.${field} must be a sha256 hash`);
+    }
+  }
+  const expectedReviewHash = stableHash({
+    review_id: compact.review_id,
+    review_state: compact.review_state,
+    source_export_ref: compact.source_export_ref,
+    aggregate_definition_ref: compact.aggregate_definition_ref,
+    aggregate_output_ref: compact.aggregate_output_ref
+  });
+  if (compact.review_hash !== expectedReviewHash) {
+    gaps.push("aggregate_boundary_ref.review_hash must match compact aggregate review proof");
+  }
+  if (compact.source_export_ref !== compact.pipeline_source_export_ref) {
+    gaps.push("aggregate_boundary_ref.source_export_ref must match pipeline_source_export_ref");
+  }
+  if (!compact.source_export_ref.startsWith(`${sourceSystem}_`)) {
+    gaps.push("aggregate_boundary_ref.source_export_ref must carry the reviewed source-system prefix");
+  }
+  if (
+    sourceRefs.vbd_source_ref &&
+    compact.source_export_ref !== `${sourceSystem}_${sourceRefs.vbd_source_ref}`
+  ) {
+    gaps.push("aggregate_boundary_ref.source_export_ref must bind to source_refs.vbd_source_ref");
+  }
+  for (const lane of ["vbd_source_ref", "token_source_ref"]) {
+    if (!sourceRefs[lane]) {
+      gaps.push(`aggregate_boundary_ref requires source_refs.${lane}`);
+    }
+  }
+
+  enforceMeasurementCellSnapshotDenylist(
+    aggregateBoundaryRef,
+    "Measurement Cell Snapshot aggregate boundary ref"
+  );
+
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot aggregate boundary ref failed validation before persistence",
+      gaps
+    );
+  }
+  return compact;
+};
+
+const validateMeasurementCellPreflightProofShape = (
+  preflight: Record<string, unknown>,
+  gaps: string[]
+): void => {
+  gaps.push(
+    ...unsupportedFields(
+      preflight,
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_PROOF_KEYS,
+      "measurementCellPreflightRun"
+    )
+  );
+  gaps.push(
+    ...unsupportedFields(
+      asRecord(preflight.aggregate_export_review_ref),
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_REVIEW_REF_KEYS,
+      "measurementCellPreflightRun.aggregate_export_review_ref"
+    )
+  );
+  gaps.push(
+    ...unsupportedFields(
+      asRecord(preflight.pipeline_ref),
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_PIPELINE_REF_KEYS,
+      "measurementCellPreflightRun.pipeline_ref"
+    )
+  );
+  gaps.push(
+    ...unsupportedFields(
+      asRecord(preflight.assembly_ref),
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_ASSEMBLY_REF_KEYS,
+      "measurementCellPreflightRun.assembly_ref"
+    )
+  );
+  gaps.push(
+    ...unsupportedFields(
+      asRecord(preflight.validation_summary),
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_VALIDATION_SUMMARY_KEYS,
+      "measurementCellPreflightRun.validation_summary"
+    )
+  );
+  const validationGaps = asRecord(preflight.validation_summary).gaps;
+  if (!Array.isArray(validationGaps)) {
+    gaps.push("measurementCellPreflightRun.validation_summary.gaps must be an array");
+  } else if (validationGaps.some((gap) => typeof gap !== "string")) {
+    gaps.push("measurementCellPreflightRun.validation_summary.gaps must contain only strings");
+  }
+  if (!Array.isArray(preflight.blocked_uses)) {
+    gaps.push("measurementCellPreflightRun.blocked_uses must be an array");
+  } else if (preflight.blocked_uses.some((use) => typeof use !== "string")) {
+    gaps.push("measurementCellPreflightRun.blocked_uses must contain only strings");
+  }
+  if (!Array.isArray(preflight.required_caveats)) {
+    gaps.push("measurementCellPreflightRun.required_caveats must be an array");
+  } else if (preflight.required_caveats.some((caveat) => typeof caveat !== "string")) {
+    gaps.push("measurementCellPreflightRun.required_caveats must contain only strings");
+  }
+};
+
+const compareExactStringArray = (
+  actual: unknown,
+  expected: string[],
+  label: string,
+  gaps: string[]
+): void => {
+  if (
+    !Array.isArray(actual) ||
+    stableStringify(actual) !== stableStringify(expected)
+  ) {
+    gaps.push(`${label} must match the governed preflight contract exactly`);
+  }
+};
+
+const validateExactBooleanMap = (
+  actual: Record<string, unknown>,
+  expected: Record<string, boolean>,
+  label: string,
+  gaps: string[]
+): void => {
+  for (const key of Object.keys(actual)) {
+    if (!hasOwn(expected, key)) {
+      gaps.push(`${label}.${key} is not allowed`);
+    }
+  }
+  for (const [key, expectedValue] of Object.entries(expected)) {
+    if (actual[key] !== expectedValue) {
+      gaps.push(`${label}.${key} must be ${expectedValue}`);
+    }
+  }
+};
+
+const validateMeasurementCellPreflightProofContract = (
+  preflight: Record<string, unknown>,
+  gaps: string[]
+): void => {
+  const expectedFeeds = {
+    ...Object.fromEntries(
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_TRUE_FEEDS.map((feed) => [feed, true])
+    ),
+    ...Object.fromEntries(
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_FALSE_FEEDS.map((feed) => [feed, false])
+    )
+  };
+  validateExactBooleanMap(
+    asRecord(preflight.feeds),
+    expectedFeeds,
+    "measurementCellPreflightRun.feeds",
+    gaps
+  );
+  validateExactBooleanMap(
+    asRecord(preflight.boundary_policy),
+    Object.fromEntries(
+      MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_BOUNDARY_FALSE_FIELDS.map((field) => [
+        field,
+        false
+      ])
+    ),
+    "measurementCellPreflightRun.boundary_policy",
+    gaps
+  );
+  compareExactStringArray(
+    preflight.blocked_uses,
+    MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_REQUIRED_BLOCKED_USES,
+    "measurementCellPreflightRun.blocked_uses",
+    gaps
+  );
+  compareExactStringArray(
+    preflight.required_caveats,
+    MEASUREMENT_CELL_SNAPSHOT_PREFLIGHT_REQUIRED_CAVEATS,
+    "measurementCellPreflightRun.required_caveats",
+    gaps
+  );
+
+  const sourceSystem = asString(preflight.source_system);
+  const aggregateReview = asRecord(preflight.aggregate_export_review_ref);
+  const expectedOwnerRole =
+    sourceSystem === "bigquery_export"
+      ? "customer_data_platform_owner"
+      : sourceSystem === "sigma_export"
+        ? "customer_analytics_owner"
+        : "";
+  const expectedExecutionBoundary =
+    sourceSystem === "bigquery_export"
+      ? "approved_glean_or_customer_bigquery_environment"
+      : sourceSystem === "sigma_export"
+        ? "approved_glean_or_customer_environment"
+        : "";
+  if (expectedOwnerRole && aggregateReview.source_owner_role !== expectedOwnerRole) {
+    gaps.push("measurementCellPreflightRun.aggregate_export_review_ref.source_owner_role must match source system");
+  }
+  if (
+    expectedExecutionBoundary &&
+    aggregateReview.execution_boundary !== expectedExecutionBoundary
+  ) {
+    gaps.push("measurementCellPreflightRun.aggregate_export_review_ref.execution_boundary must match source system");
+  }
+
+  const pipelineRef = asRecord(preflight.pipeline_ref);
+  if (pipelineRef.dry_run_state !== "PASSED_INTERNAL_PIPELINE_DRY_RUN_REVIEW") {
+    gaps.push("measurementCellPreflightRun.pipeline_ref.dry_run_state must be PASSED_INTERNAL_PIPELINE_DRY_RUN_REVIEW");
+  }
+  const assemblyRef = asRecord(preflight.assembly_ref);
+  if (assemblyRef.assembly_state !== "PASSED_INTERNAL_MEASUREMENT_CELL_CANDIDATE_REVIEW") {
+    gaps.push("measurementCellPreflightRun.assembly_ref.assembly_state must be PASSED_INTERNAL_MEASUREMENT_CELL_CANDIDATE_REVIEW");
+  }
+  if (assemblyRef.assembly_decision !== "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER") {
+    gaps.push("measurementCellPreflightRun.assembly_ref.assembly_decision must be READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER");
+  }
+};
+
+const validateMeasurementCellPreflightPipelineHashes = (
+  pipelineRef: Record<string, unknown>,
+  gaps: string[]
+): void => {
+  for (const field of [
+    "manifest_hash",
+    "aggregate_fixture_hash",
+    "reviewed_source_refs_hash",
+    "reviewed_aggregate_context_hash",
+    "reviewed_blueprint_expectation_hash",
+    "candidate_integrity_hash"
+  ]) {
+    if (!/^[a-f0-9]{64}$/.test(asString(pipelineRef[field]))) {
+      gaps.push(`measurementCellPreflightRun.pipeline_ref.${field} must be a sha256 hash`);
+    }
+  }
+};
+
+const compactIdPart = (value: unknown): string =>
+  normalizeKey(asString(value));
+
+const collectMilestoneDayTokens = (value: unknown): number[] => {
+  if (typeof value !== "string") return [];
+  const tokens: number[] = [];
+  for (const match of value.matchAll(/(?:^|_)day_(\d+)(?:_|$)/gi)) {
+    tokens.push(Number(match[1]));
+  }
+  return tokens.filter((token) => Number.isInteger(token));
+};
+
+const validateRequiredMilestoneToken = (
+  label: string,
+  value: unknown,
+  milestoneDay: number,
+  gaps: string[]
+): void => {
+  const tokens = collectMilestoneDayTokens(value);
+  if (tokens.length === 0) {
+    gaps.push(`${label} must include day_${milestoneDay} milestone binding`);
+    return;
+  }
+  if (tokens.some((token) => token !== milestoneDay)) {
+    gaps.push(`${label} milestone binding must match day_${milestoneDay}`);
+  }
+};
+
+const validateAggregateBoundaryMilestoneBinding = (
+  aggregateBoundaryRef: Record<string, string>,
+  sourceRefs: Record<string, string>,
+  preflight: Record<string, unknown>,
+  snapshotCandidateRef: Record<string, unknown>,
+  gaps: string[]
+): void => {
+  const milestoneDay = Number(snapshotCandidateRef.milestone_day);
+  if (!Number.isInteger(milestoneDay)) return;
+
+  for (const key of MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEYS) {
+    validateRequiredMilestoneToken(
+      `source_refs.${key}`,
+      sourceRefs[key],
+      milestoneDay,
+      gaps
+    );
+  }
+  for (const [label, value] of [
+    ["aggregate_boundary_ref.source_export_ref", aggregateBoundaryRef.source_export_ref],
+    [
+      "aggregate_boundary_ref.pipeline_source_export_ref",
+      aggregateBoundaryRef.pipeline_source_export_ref
+    ],
+    ["measurementCellPreflightRun.fixture_id", preflight.fixture_id],
+    ["measurementCellPreflightRun.preflight_id", preflight.preflight_id]
+  ] as Array<[string, unknown]>) {
+    validateRequiredMilestoneToken(label, value, milestoneDay, gaps);
+  }
+};
+
+const compactSnapshotBindingForAggregateBoundaryHash = (
+  snapshotCandidateRef: Record<string, unknown>,
+  sourceRefs: Record<string, string>
+): Record<string, unknown> => ({
+  measurement_cell_id: snapshotCandidateRef.measurement_cell_id,
+  measurement_cell_assembly_run_id:
+    snapshotCandidateRef.measurement_cell_assembly_run_id,
+  measurement_plan_id: snapshotCandidateRef.measurement_plan_id,
+  expectation_path_id: snapshotCandidateRef.expectation_path_id,
+  metric_id: snapshotCandidateRef.metric_id,
+  workflow_family: snapshotCandidateRef.workflow_family,
+  workflow_id: snapshotCandidateRef.workflow_id ?? null,
+  function_area: snapshotCandidateRef.function_area,
+  cohort_key: snapshotCandidateRef.cohort_key,
+  window_mode: snapshotCandidateRef.window_mode,
+  milestone_day: snapshotCandidateRef.milestone_day,
+  baseline_window_start: snapshotCandidateRef.baseline_window_start,
+  baseline_window_end: snapshotCandidateRef.baseline_window_end,
+  comparison_window_start: snapshotCandidateRef.comparison_window_start,
+  comparison_window_end: snapshotCandidateRef.comparison_window_end,
+  source_refs: sourceRefs
+});
+
+const aggregateBoundaryHashSeed = (
+  aggregateBoundaryRef: Record<string, string>,
+  snapshotCandidateRef: Record<string, unknown>,
+  sourceRefs: Record<string, string>
+): Record<string, unknown> => ({
+  schema_version: "FT_AI_VALUE_MEASUREMENT_CELL_PIPELINE_BOUNDARY_HASH_2026_06",
+  aggregate_boundary: {
+    source_system: aggregateBoundaryRef.source_system,
+    review_id: aggregateBoundaryRef.review_id,
+    review_state: aggregateBoundaryRef.review_state,
+    source_export_ref: aggregateBoundaryRef.source_export_ref,
+    aggregate_definition_ref: aggregateBoundaryRef.aggregate_definition_ref,
+    aggregate_output_ref: aggregateBoundaryRef.aggregate_output_ref,
+    review_hash: aggregateBoundaryRef.review_hash,
+    pipeline_dry_run_id: aggregateBoundaryRef.pipeline_dry_run_id,
+    pipeline_source_export_ref: aggregateBoundaryRef.pipeline_source_export_ref
+  },
+  snapshot_binding: compactSnapshotBindingForAggregateBoundaryHash(
+    snapshotCandidateRef,
+    sourceRefs
+  )
+});
+
+const validateAggregateBoundaryHashBinding = (
+  aggregateBoundaryRef: Record<string, string>,
+  snapshotCandidateRef: Record<string, unknown>,
+  sourceRefs: Record<string, string>,
+  gaps: string[]
+): void => {
+  const expectedHash = stableHash(
+    aggregateBoundaryHashSeed(aggregateBoundaryRef, snapshotCandidateRef, sourceRefs)
+  );
+  if (aggregateBoundaryRef.pipeline_boundary_hash !== expectedHash) {
+    gaps.push("aggregate_boundary_ref.pipeline_boundary_hash must match recomputed compact pipeline boundary binding");
+  }
+};
+
+const validateAggregateBoundaryRefIdentity = (
+  aggregateBoundaryRef: Record<string, string>,
+  snapshotCandidateRef: Record<string, unknown>,
+  gaps: string[]
+): void => {
+  const sourceSystem = aggregateBoundaryRef.source_system;
+  const workflowFamily = compactIdPart(snapshotCandidateRef.workflow_family);
+  const functionArea = compactIdPart(snapshotCandidateRef.function_area);
+  const metricId = compactIdPart(snapshotCandidateRef.metric_id);
+  const expectedReviewId = sourceSystem === "bigquery_export"
+    ? [
+        "bigquery_aggregate_export_review",
+        workflowFamily,
+        functionArea,
+        metricId
+      ].join("_")
+    : [
+        "aggregate_connector_boundary_plan",
+        sourceSystem,
+        workflowFamily,
+        functionArea,
+        metricId
+      ].join("_");
+  const expectedDefinitionRef = [
+    "aggregate_definition_review",
+    sourceSystem,
+    workflowFamily,
+    metricId
+  ].join("_");
+  const expectedOutputRef = [
+    "reviewed_aggregate_output",
+    sourceSystem,
+    workflowFamily,
+    metricId
+  ].join("_");
+  const expectedDryRunId = [
+    "controlled_aggregate_pipeline_dry_run",
+    sourceSystem,
+    workflowFamily
+  ].join("_");
+  compareField(
+    gaps,
+    "aggregate_boundary_ref.review_id must match Measurement Cell identity",
+    expectedReviewId,
+    aggregateBoundaryRef.review_id
+  );
+  compareField(
+    gaps,
+    "aggregate_boundary_ref.aggregate_definition_ref must match Measurement Cell identity",
+    expectedDefinitionRef,
+    aggregateBoundaryRef.aggregate_definition_ref
+  );
+  compareField(
+    gaps,
+    "aggregate_boundary_ref.aggregate_output_ref must match Measurement Cell identity",
+    expectedOutputRef,
+    aggregateBoundaryRef.aggregate_output_ref
+  );
+  compareField(
+    gaps,
+    "aggregate_boundary_ref.pipeline_dry_run_id must match Measurement Cell identity",
+    expectedDryRunId,
+    aggregateBoundaryRef.pipeline_dry_run_id
+  );
+};
+
+const stripPreflightIntegrityHash = (
+  preflight: Record<string, unknown>
+): Record<string, unknown> => {
+  const clonePreflight = { ...preflight };
+  delete clonePreflight.preflight_integrity_hash;
+  return clonePreflight;
+};
+
+const aggregateBoundaryRefFromPreflight = (
+  preflightRun: Record<string, unknown> | null | undefined,
+  snapshotCandidateRef: Record<string, unknown>,
+  sourceRefs: Record<string, string>
+): Record<string, string> => {
+  if (preflightRun === undefined || preflightRun === null) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot preflight proof is required before persistence",
+      ["measurementCellPreflightRun is required for Measurement Cell Snapshot persistence"]
+    );
+  }
+  const preflight = asRecord(preflightRun);
+  const gaps: string[] = [];
+  if (Object.keys(preflight).length === 0) {
+    gaps.push("measurementCellPreflightRun must be a non-empty object");
+  }
+  validateMeasurementCellPreflightProofShape(preflight, gaps);
+  validateMeasurementCellPreflightProofContract(preflight, gaps);
+  if (preflight.preflight_state !== "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT") {
+    gaps.push("measurementCellPreflightRun.preflight_state must be PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT");
+  }
+  if (preflight.engine_executed !== true) {
+    gaps.push("measurementCellPreflightRun.engine_executed must be true");
+  }
+
+  const validationSummary = asRecord(preflight.validation_summary);
+  for (const field of [
+    "valid",
+    "aggregate_export_review_valid",
+    "pipeline_dry_run_valid",
+    "measurement_cell_assembly_valid",
+    "snapshot_candidate_valid"
+  ]) {
+    if (validationSummary[field] !== true) {
+      gaps.push(`measurementCellPreflightRun.validation_summary.${field} must be true`);
+    }
+  }
+
+  const feeds = asRecord(preflight.feeds);
+  for (const feed of [
+    "aggregate_export_review",
+    "controlled_aggregate_pipeline_dry_run",
+    "controlled_measurement_cell_assembly",
+    "measurement_cell_snapshot_candidate_proof"
+  ]) {
+    if (feeds[feed] !== true) {
+      gaps.push(`measurementCellPreflightRun.feeds.${feed} must be true`);
+    }
+  }
+  const boundaryPolicy = asRecord(preflight.boundary_policy);
+  for (const [field, value] of Object.entries(boundaryPolicy)) {
+    if (value !== false) {
+      gaps.push(`measurementCellPreflightRun.boundary_policy.${field} must remain false`);
+    }
+  }
+
+  const recomputedPreflightHash = stableHash(stripPreflightIntegrityHash(preflight));
+  if (preflight.preflight_integrity_hash !== recomputedPreflightHash) {
+    gaps.push("measurementCellPreflightRun.preflight_integrity_hash must match compact preflight proof");
+  }
+
+  const preflightCandidate = asRecord(preflight.snapshot_candidate_ref);
+  if (stableStringify(preflightCandidate) !== stableStringify(snapshotCandidateRef)) {
+    gaps.push("snapshotCandidateRef must match measurementCellPreflightRun.snapshot_candidate_ref");
+  }
+
+  const aggregateReview = asRecord(preflight.aggregate_export_review_ref);
+  const pipelineRef = asRecord(preflight.pipeline_ref);
+  validateMeasurementCellPreflightPipelineHashes(pipelineRef, gaps);
+  const aggregateBoundaryRef = {
+    source_system: asString(preflight.source_system),
+    review_id: aggregateReview.review_id,
+    review_state: aggregateReview.review_state,
+    source_export_ref: aggregateReview.source_export_ref,
+    aggregate_definition_ref: aggregateReview.aggregate_definition_ref,
+    aggregate_output_ref: aggregateReview.aggregate_output_ref,
+    review_hash: aggregateReview.review_hash,
+    pipeline_dry_run_id: pipelineRef.dry_run_id,
+    pipeline_source_export_ref: pipelineRef.source_export_ref,
+    pipeline_boundary_hash: asRecord(snapshotCandidateRef.aggregate_boundary_ref)
+      .pipeline_boundary_hash
+  };
+  const compact = compactMeasurementCellSnapshotAggregateBoundaryRef(
+    aggregateBoundaryRef,
+    sourceRefs
+  );
+  if (
+    stableStringify(asRecord(snapshotCandidateRef.aggregate_boundary_ref)) !==
+    stableStringify(compact)
+  ) {
+    gaps.push("snapshotCandidateRef.aggregate_boundary_ref must match measurementCellPreflightRun aggregate proof");
+  }
+  validateAggregateBoundaryRefIdentity(compact, snapshotCandidateRef, gaps);
+  validateAggregateBoundaryMilestoneBinding(
+    compact,
+    sourceRefs,
+    preflight,
+    snapshotCandidateRef,
+    gaps
+  );
+  validateAggregateBoundaryHashBinding(
+    compact,
+    snapshotCandidateRef,
+    sourceRefs,
+    gaps
+  );
+
+  enforceRawSourceIdentifierDenylist(
+    preflight,
+    "Measurement Cell Snapshot preflight proof"
+  );
+
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot preflight proof failed validation before persistence",
+      gaps
+    );
+  }
+  return compact;
+};
+
 const measurementCellSnapshotCandidateFromRecord = (
   record: AiValueMeasurementCellSnapshotStoredRecord
 ): Record<string, unknown> => ({
   snapshot_candidate_state: MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_READY_STATE,
   snapshot_candidate_schema_version: MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_SCHEMA_VERSION,
+  aggregate_boundary_ref: record.aggregate_boundary_ref,
   measurement_cell_id: record.measurement_cell_id,
   measurement_cell_assembly_run_id: record.measurement_cell_assembly_run_id,
   measurement_plan_id: record.measurement_plan_id,
@@ -857,13 +1688,31 @@ const validateMeasurementCellSnapshotCandidateRef = (
     }
   }
 
+  let candidateAggregateBoundaryRef: Record<string, string> | null = null;
+  try {
+    candidateAggregateBoundaryRef = compactMeasurementCellSnapshotAggregateBoundaryRef(
+      asRecord(candidate.aggregate_boundary_ref),
+      candidateSourceRefs ?? {}
+    );
+  } catch (error) {
+    if (error instanceof AiValuePersistenceValidationError) {
+      gaps.push(...error.gaps.map((gap) => `snapshotCandidateRef.${gap}`));
+    } else {
+      throw error;
+    }
+  }
+
   const expectedCandidate = measurementCellSnapshotCandidateFromRecord(record);
   const expectedCandidateWithHash = {
     ...expectedCandidate,
     snapshot_candidate_hash: stableHash(expectedCandidate)
   };
   for (const [field, expected] of Object.entries(expectedCandidateWithHash)) {
-    const actual = field === "source_refs" ? candidateSourceRefs : candidate[field];
+    const actual = field === "source_refs"
+      ? candidateSourceRefs
+      : field === "aggregate_boundary_ref"
+        ? candidateAggregateBoundaryRef
+        : candidate[field];
     compareField(
       gaps,
       `snapshotCandidateRef.${field} must match recomputed Measurement Cell Snapshot binding`,
@@ -2048,6 +2897,13 @@ const measurementCellSnapshotLineageDriftGaps = (
   ]);
   for (const field of [
     "measurement_plan_id",
+    "aggregate_source_system",
+    "aggregate_export_review_ref",
+    "aggregate_export_review_state",
+    "aggregate_source_export_ref",
+    "aggregate_export_review_hash",
+    "pipeline_dry_run_ref",
+    "pipeline_boundary_hash",
     "value_hypothesis_id",
     "value_hypothesis_ref",
     "value_hypothesis_binding_state",
@@ -2092,6 +2948,12 @@ const measurementCellSnapshotLineageDriftGaps = (
       actual
     );
   }
+  compareField(
+    gaps,
+    "superseded Measurement Cell Snapshot aggregate_boundary_ref must match correction",
+    superseded.aggregate_boundary_ref,
+    record.aggregate_boundary_ref
+  );
   return gaps;
 };
 
@@ -2137,6 +2999,18 @@ const buildMeasurementCellSnapshotRecord = (
   const handoffContext = asRecord(handoff.blueprint_alignment_context);
   const sourceRefs = compactMeasurementCellSnapshotSourceRefs(
     asRecord(cell.source_refs)
+  );
+  if (input.snapshotCandidateRef === undefined || input.snapshotCandidateRef === null) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot candidate ref is required before persistence",
+      ["snapshotCandidateRef is required for Measurement Cell Snapshot persistence"]
+    );
+  }
+  const snapshotCandidate = asRecord(input.snapshotCandidateRef);
+  const aggregateBoundaryRef = aggregateBoundaryRefFromPreflight(
+    input.measurementCellPreflightRun,
+    snapshotCandidate,
+    sourceRefs
   );
   const gaps: string[] = [];
 
@@ -2313,6 +3187,7 @@ const buildMeasurementCellSnapshotRecord = (
     client_id: asOptionalString(run.client_id),
     measurement_plan_id: asString(run.measurement_plan_id),
     measurement_cell_assembly_run_id: asString(run.run_id),
+    aggregate_boundary_ref: aggregateBoundaryRef,
     workflow_family: asString(cell.workflow_family),
     workflow_id: asOptionalString(cell.workflow_id),
     function_area: asString(cell.function_area),
@@ -2392,6 +3267,14 @@ const buildMeasurementCellSnapshotRecord = (
     measurement_cell_id: asString(cell.measurement_cell_id),
     measurement_cell_assembly_run_id: asString(run.run_id),
     measurement_plan_id: asString(run.measurement_plan_id),
+    aggregate_source_system: aggregateBoundaryRef.source_system,
+    aggregate_export_review_ref: aggregateBoundaryRef.review_id,
+    aggregate_export_review_state: aggregateBoundaryRef.review_state,
+    aggregate_source_export_ref: aggregateBoundaryRef.source_export_ref,
+    aggregate_export_review_hash: aggregateBoundaryRef.review_hash,
+    pipeline_dry_run_ref: aggregateBoundaryRef.pipeline_dry_run_id,
+    pipeline_boundary_hash: aggregateBoundaryRef.pipeline_boundary_hash,
+    aggregate_boundary_ref: aggregateBoundaryRef,
     value_hypothesis_id: asOptionalString(valueHypothesis.value_hypothesis_id),
     value_hypothesis_ref: asOptionalString(valueHypothesis.value_hypothesis_ref),
     value_hypothesis_binding_state: asOptionalString(valueHypothesis.value_hypothesis_id) ||
@@ -2944,6 +3827,14 @@ export async function persistAiValueMeasurementCellSnapshot(
         measurementCellId: record.measurement_cell_id,
         measurementCellAssemblyRunId: record.measurement_cell_assembly_run_id,
         measurementPlanId: record.measurement_plan_id,
+        aggregateSourceSystem: record.aggregate_source_system,
+        aggregateExportReviewRef: record.aggregate_export_review_ref,
+        aggregateExportReviewState: record.aggregate_export_review_state,
+        aggregateSourceExportRef: record.aggregate_source_export_ref,
+        aggregateExportReviewHash: record.aggregate_export_review_hash,
+        pipelineDryRunRef: record.pipeline_dry_run_ref,
+        pipelineBoundaryHash: record.pipeline_boundary_hash,
+        aggregateBoundaryRefJson: record.aggregate_boundary_ref as Prisma.InputJsonValue,
         valueHypothesisId: record.value_hypothesis_id,
         valueHypothesisRef: record.value_hypothesis_ref,
         valueHypothesisBindingState: record.value_hypothesis_binding_state,
@@ -3656,6 +4547,14 @@ function measurementCellSnapshotRowToRecord(row: {
   measurementCellId: string;
   measurementCellAssemblyRunId: string;
   measurementPlanId: string;
+  aggregateSourceSystem: string;
+  aggregateExportReviewRef: string;
+  aggregateExportReviewState: string;
+  aggregateSourceExportRef: string;
+  aggregateExportReviewHash: string;
+  pipelineDryRunRef: string;
+  pipelineBoundaryHash: string;
+  aggregateBoundaryRefJson: Prisma.JsonValue;
   valueHypothesisId: string | null;
   valueHypothesisRef: string | null;
   valueHypothesisBindingState: string;
@@ -3708,6 +4607,14 @@ function measurementCellSnapshotRowToRecord(row: {
     measurement_cell_id: row.measurementCellId,
     measurement_cell_assembly_run_id: row.measurementCellAssemblyRunId,
     measurement_plan_id: row.measurementPlanId,
+    aggregate_source_system: row.aggregateSourceSystem,
+    aggregate_export_review_ref: row.aggregateExportReviewRef,
+    aggregate_export_review_state: row.aggregateExportReviewState,
+    aggregate_source_export_ref: row.aggregateSourceExportRef,
+    aggregate_export_review_hash: row.aggregateExportReviewHash,
+    pipeline_dry_run_ref: row.pipelineDryRunRef,
+    pipeline_boundary_hash: row.pipelineBoundaryHash,
+    aggregate_boundary_ref: row.aggregateBoundaryRefJson as Record<string, unknown>,
     value_hypothesis_id: row.valueHypothesisId,
     value_hypothesis_ref: row.valueHypothesisRef,
     value_hypothesis_binding_state: row.valueHypothesisBindingState,

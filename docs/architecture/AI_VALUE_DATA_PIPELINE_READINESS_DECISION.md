@@ -320,9 +320,14 @@ Completed safe move for pipeline work:
 
 Next safe move:
 
-Use the non-live BigQuery Aggregate Export Review package as internal
-operator-review evidence for the next decision, while keeping live BigQuery
-execution and manifest persistence held.
+Use the non-live BigQuery Aggregate Export Review and Sigma aggregate-boundary
+proof as internal operator-review evidence for Measurement Cell preflight. A
+passed preflight may bind compact aggregate-boundary proof into a
+backend-internal `measurement_cell_snapshots` row, but only after the snapshot
+candidate and durable row recompute the same selected path, metric, window,
+source refs, review state, source-export ref, review hash, pipeline dry-run ref,
+and compact pipeline-boundary hash. Live BigQuery/Sigma execution, external
+pipeline proof persistence, and manifest persistence remain held.
 
 Next decision gate:
 

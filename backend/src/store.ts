@@ -213,6 +213,14 @@ export type AiValueMeasurementCellSnapshotStoredRecord = {
   measurement_cell_id: string;
   measurement_cell_assembly_run_id: string;
   measurement_plan_id: string;
+  aggregate_source_system: string;
+  aggregate_export_review_ref: string;
+  aggregate_export_review_state: string;
+  aggregate_source_export_ref: string;
+  aggregate_export_review_hash: string;
+  pipeline_dry_run_ref: string;
+  pipeline_boundary_hash: string;
+  aggregate_boundary_ref: Record<string, unknown>;
   value_hypothesis_id: string | null;
   value_hypothesis_ref: string | null;
   value_hypothesis_binding_state: string;

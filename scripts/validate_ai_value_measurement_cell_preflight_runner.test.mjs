@@ -8,6 +8,9 @@ import {
   runMeasurementCellPreflightFromObject,
   validateMeasurementCellPreflight
 } from "./run_ai_value_measurement_cell_preflight_runner.mjs";
+import {
+  buildControlledAggregateFixtureForMilestone
+} from "./run_ai_value_controlled_pilot_evidence_package.mjs";
 
 const FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
@@ -173,6 +176,32 @@ function assertPassedPreflight(preflight, sourceSystem) {
     preflight.snapshot_candidate_ref.snapshot_candidate_schema_version,
     "FT_AI_VALUE_MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_2026_06"
   );
+  assert.deepEqual(preflight.snapshot_candidate_ref.aggregate_boundary_ref, {
+    source_system: sourceSystem,
+    review_id: preflight.aggregate_export_review_ref.review_id,
+    review_state: preflight.aggregate_export_review_ref.review_state,
+    source_export_ref: preflight.aggregate_export_review_ref.source_export_ref,
+    aggregate_definition_ref:
+      preflight.aggregate_export_review_ref.aggregate_definition_ref,
+    aggregate_output_ref: preflight.aggregate_export_review_ref.aggregate_output_ref,
+    review_hash: preflight.aggregate_export_review_ref.review_hash,
+    pipeline_dry_run_id: preflight.pipeline_ref.dry_run_id,
+    pipeline_source_export_ref: preflight.pipeline_ref.source_export_ref,
+    pipeline_boundary_hash:
+      preflight.snapshot_candidate_ref.aggregate_boundary_ref.pipeline_boundary_hash
+  });
+  assert.equal(
+    preflight.snapshot_candidate_ref.aggregate_boundary_ref.source_export_ref,
+    preflight.pipeline_ref.source_export_ref
+  );
+  assert.match(
+    preflight.snapshot_candidate_ref.aggregate_boundary_ref.review_hash,
+    /^[a-f0-9]{64}$/
+  );
+  assert.match(
+    preflight.snapshot_candidate_ref.aggregate_boundary_ref.pipeline_boundary_hash,
+    /^[a-f0-9]{64}$/
+  );
   assert.equal(
     preflight.snapshot_candidate_ref.measurement_cell_id,
     "measurement_cell_org_example_customer_support_customer_support_case_resolution_workflow_family_customer_support_case_resolution_eligible_cases_2300_day_30_support_median_resolution_hours"
@@ -321,6 +350,33 @@ test("Measurement Cell preflight validator rejects hand-edited passed snapshot c
   }
 });
 
+test("Measurement Cell preflight validator rejects aggregate boundary proof drift", () => {
+  const preflight = runMeasurementCellPreflightFromObject(readJson(FIXTURE_PATH));
+  const tampered = clone(preflight);
+  tampered.snapshot_candidate_ref.aggregate_boundary_ref.source_export_ref =
+    "bigquery_export_other_safe_ref";
+  tampered.snapshot_candidate_ref.aggregate_boundary_ref.review_state = "BLOCKED";
+  tampered.snapshot_candidate_ref.snapshot_candidate_hash = "a".repeat(64);
+  tampered.preflight_integrity_hash = "b".repeat(64);
+
+  const validation = validateMeasurementCellPreflight(tampered, {
+    sourceFixture: readJson(FIXTURE_PATH)
+  });
+
+  assert.equal(validation.valid, false);
+  for (const token of [
+    "aggregate_boundary_ref",
+    "source_export_ref",
+    "snapshot_candidate_hash",
+    "preflight_integrity_hash"
+  ]) {
+    assert.ok(
+      validation.gaps.some((gap) => gap.includes(token)),
+      `missing gap for ${token}: ${validation.gaps.join("; ")}`
+    );
+  }
+});
+
 test("Measurement Cell preflight validator rejects unsafe snapshot candidate source refs", () => {
   const fixture = readJson(FIXTURE_PATH);
   const preflight = runMeasurementCellPreflightFromObject(fixture);
@@ -367,6 +423,7 @@ test("Measurement Cell preflight validator rejects unsafe snapshot candidate sou
   assertValidationGap(rawLookingValidation, "unsafe text");
 
   for (const unsafeRef of [
+    "supportjob_id_123_day_30",
     "support_metric_sql_text_day_30",
     "support_metric_prompt_text_day_30",
     "support_metric_response_text_day_30",
@@ -414,25 +471,38 @@ test("Measurement Cell preflight runner holds Sigma when aggregate telemetry is 
   assert.equal(preflight.snapshot_candidate_ref, null);
 });
 
-test("Measurement Cell preflight runner blocks measurement plan overrides until dry-run binding supports them", () => {
-  const fixture = readJson(FIXTURE_PATH);
-  const preflight = runMeasurementCellPreflightFromObject(fixture, {
-    measurementPlanOverride: {
-      measurement_plan_id: "measurement_plan_override_unbound"
+test("Measurement Cell preflight runner binds milestone measurement-plan overrides through dry-run proof", () => {
+  const baseFixture = readJson(FIXTURE_PATH);
+  const { fixture, measurementPlan } = buildControlledAggregateFixtureForMilestone(
+    baseFixture,
+    60,
+    {
+      cwd: process.cwd(),
+      windowMode: "milestone"
     }
+  );
+  const preflight = runMeasurementCellPreflightFromObject(fixture, {
+    measurementPlanOverride: measurementPlan
+  });
+  const validation = validateMeasurementCellPreflight(preflight, {
+    sourceFixture: fixture,
+    measurementPlanOverride: measurementPlan
   });
 
-  assert.equal(preflight.preflight_state, "BLOCKED");
-  assert.equal(preflight.engine_executed, false);
-  assert.equal(preflight.pipeline_ref.dry_run_state, null);
-  assert.equal(preflight.pipeline_ref.candidate_integrity_hash, null);
-  assert.equal(preflight.snapshot_candidate_ref, null);
-  assert.ok(
-    preflight.validation_summary.gaps.some((gap) =>
-      gap.includes("measurement_plan_override")
-    ),
-    preflight.validation_summary.gaps.join("; ")
+  assert.equal(preflight.preflight_state, "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT");
+  assert.equal(validation.valid, true);
+  assert.equal(preflight.snapshot_candidate_ref.milestone_day, 60);
+  assert.match(
+    preflight.snapshot_candidate_ref.aggregate_boundary_ref.source_export_ref,
+    /day_60$/
   );
+
+  const unbound = runMeasurementCellPreflightFromObject(fixture);
+  assert.notEqual(
+    unbound.preflight_state,
+    "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT"
+  );
+  assert.equal(unbound.snapshot_candidate_ref, null);
 });
 
 test("Measurement Cell preflight validator rejects open-container payload smuggling and source-ref drift", () => {

@@ -268,10 +268,12 @@ export function runControlledAggregateConnectorAdapterFromObject(
 ) {
   const fixture = clone(sourceFixture);
   const dryRun = runControlledAggregatePipelineDryRunFromObject(fixture, {
-    sourceSystem: options.sourceSystem
+    sourceSystem: options.sourceSystem,
+    measurementPlanOverride: options.measurementPlanOverride
   });
   const dryRunValidation = validateControlledAggregatePipelineDryRun(dryRun, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    measurementPlanOverride: options.measurementPlanOverride
   });
   const manifest = buildControlledAggregateConnectorManifestFromDryRun(
     dryRun,
@@ -295,7 +297,10 @@ export function validateControlledAggregateConnectorAdapter(adapter, options = {
   if (options.sourceFixture && adapter?.adapter_state === "PASSED_INTERNAL_CONNECTOR_ADAPTER_REVIEW") {
     const expectedDryRun = runControlledAggregatePipelineDryRunFromObject(
       options.sourceFixture,
-      { sourceSystem: adapter?.source_system }
+      {
+        sourceSystem: adapter?.source_system,
+        measurementPlanOverride: options.measurementPlanOverride
+      }
     );
     const expectedManifest = buildControlledAggregateConnectorManifestFromDryRun(
       expectedDryRun,

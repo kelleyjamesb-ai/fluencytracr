@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 
 import { aiValueEngine } from "@learnaire/shared";
@@ -40,6 +41,10 @@ const PILOT_RUN_LINEAGE_MIGRATION = path.resolve(
 const MEASUREMENT_CELL_SNAPSHOT_MIGRATION = path.resolve(
   __dirname,
   "../prisma/migrations/20260622180000_add_measurement_cell_snapshots/migration.sql"
+);
+const MEASUREMENT_CELL_AGGREGATE_BOUNDARY_MIGRATION = path.resolve(
+  __dirname,
+  "../prisma/migrations/20260623193000_bind_measurement_cell_snapshot_aggregate_boundary/migration.sql"
 );
 const MEASUREMENT_CELL_PROMOTION_DECISION = path.resolve(
   __dirname,
@@ -93,6 +98,88 @@ const readJson = (relativePath: string) =>
   JSON.parse(fs.readFileSync(path.join(EXAMPLE_ROOT, relativePath), "utf8"));
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+
+const stableStringifyForTest = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringifyForTest).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringifyForTest(nested)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const stableHashForTest = (value: unknown): string =>
+  createHash("sha256").update(stableStringifyForTest(value)).digest("hex");
+
+const recomputeSnapshotCandidateHashForTest = (
+  candidate: Record<string, unknown>
+) => {
+  const withoutHash = clone(candidate);
+  delete withoutHash.snapshot_candidate_hash;
+  candidate.snapshot_candidate_hash = stableHashForTest(withoutHash);
+};
+
+const recomputePreflightIntegrityHashForTest = (
+  preflight: Record<string, unknown>
+) => {
+  const withoutHash = clone(preflight);
+  delete withoutHash.preflight_integrity_hash;
+  preflight.preflight_integrity_hash = stableHashForTest(withoutHash);
+};
+
+const recomputeAggregateBoundaryHashForTest = (
+  candidate: Record<string, unknown>
+) => {
+  const boundary = (candidate.aggregate_boundary_ref ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const { pipeline_boundary_hash: _ignored, ...aggregateBoundary } = boundary;
+  boundary.pipeline_boundary_hash = stableHashForTest({
+    schema_version: "FT_AI_VALUE_MEASUREMENT_CELL_PIPELINE_BOUNDARY_HASH_2026_06",
+    aggregate_boundary: aggregateBoundary,
+    snapshot_binding: {
+      measurement_cell_id: candidate.measurement_cell_id,
+      measurement_cell_assembly_run_id: candidate.measurement_cell_assembly_run_id,
+      measurement_plan_id: candidate.measurement_plan_id,
+      expectation_path_id: candidate.expectation_path_id,
+      metric_id: candidate.metric_id,
+      workflow_family: candidate.workflow_family,
+      workflow_id: candidate.workflow_id ?? null,
+      function_area: candidate.function_area,
+      cohort_key: candidate.cohort_key,
+      window_mode: candidate.window_mode,
+      milestone_day: candidate.milestone_day,
+      baseline_window_start: candidate.baseline_window_start,
+      baseline_window_end: candidate.baseline_window_end,
+      comparison_window_start: candidate.comparison_window_start,
+      comparison_window_end: candidate.comparison_window_end,
+      source_refs: candidate.source_refs
+    }
+  });
+};
+
+const replaceDaySuffixesForTest = <T>(value: T, day: number): T => {
+  if (typeof value === "string") {
+    return value.replace(/day_\d+/g, `day_${day}`) as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => replaceDaySuffixesForTest(entry, day)) as T;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [
+        key,
+        replaceDaySuffixesForTest(nested, day)
+      ])
+    ) as T;
+  }
+  return value;
+};
 
 const tableBlock = (migrationSql: string, table: string) => {
   const start = migrationSql.indexOf(`CREATE TABLE "${table}"`);
@@ -290,8 +377,16 @@ const controlledMeasurementCellAssemblyRun = () => {
   const script = `
     import { readFileSync } from "node:fs";
     import { buildControlledMeasurementCellAssemblyArtifactsFromObject } from "./scripts/run_ai_value_controlled_measurement_cell_assembly.mjs";
-    const fixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
-    const artifacts = buildControlledMeasurementCellAssemblyArtifactsFromObject(fixture, { cwd: process.cwd() });
+    import { buildControlledAggregateFixtureForMilestone } from "./scripts/run_ai_value_controlled_pilot_evidence_package.mjs";
+    const baseFixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
+    const { fixture, measurementPlan } = buildControlledAggregateFixtureForMilestone(baseFixture, 30, {
+      cwd: process.cwd(),
+      windowMode: "milestone"
+    });
+    const artifacts = buildControlledMeasurementCellAssemblyArtifactsFromObject(fixture, {
+      cwd: process.cwd(),
+      measurementPlanOverride: measurementPlan
+    });
     if (artifacts.assemblyValidation?.valid !== true || artifacts.assemblyRun?.decision !== "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER") {
       throw new Error(JSON.stringify(artifacts.assemblyValidation ?? artifacts.candidate?.validation_summary ?? {}));
     }
@@ -305,66 +400,83 @@ const controlledMeasurementCellAssemblyRun = () => {
   );
 };
 
-const controlledMeasurementCellPreflightCandidateRefCache = new Map<
+const controlledMeasurementCellPreflightResultCache = new Map<
   number,
-  Record<string, unknown>
+  { preflight: Record<string, unknown>; snapshotCandidateRef: Record<string, unknown> }
 >();
 
-const controlledMeasurementCellPreflightCandidateRef = (
+const controlledMeasurementCellPreflightResult = (
   milestoneDay = 30
-): Record<string, unknown> => {
-  const cached = controlledMeasurementCellPreflightCandidateRefCache.get(milestoneDay);
+): { preflight: Record<string, unknown>; snapshotCandidateRef: Record<string, unknown> } => {
+  const cached = controlledMeasurementCellPreflightResultCache.get(milestoneDay);
   if (cached) return clone(cached);
 
   ensureControlledRunnerDistReady();
   const script = `
     import { readFileSync } from "node:fs";
     import { runMeasurementCellPreflightFromObject, validateMeasurementCellPreflight } from "./scripts/run_ai_value_measurement_cell_preflight_runner.mjs";
-    const fixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
-    fixture.expected = {
-      ...fixture.expected,
-      milestone_day: ${JSON.stringify(milestoneDay)},
-      window_mode: "milestone"
-    };
+    import { buildControlledAggregateFixtureForMilestone } from "./scripts/run_ai_value_controlled_pilot_evidence_package.mjs";
+    const baseFixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
+    const { fixture, measurementPlan } = buildControlledAggregateFixtureForMilestone(baseFixture, ${JSON.stringify(milestoneDay)}, {
+      cwd: process.cwd(),
+      windowMode: "milestone"
+    });
     const preflight = runMeasurementCellPreflightFromObject(fixture, {
       sourceSystem: "bigquery_export",
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      measurementPlanOverride: measurementPlan
     });
     const validation = validateMeasurementCellPreflight(preflight, {
       sourceFixture: fixture,
       sourceSystem: "bigquery_export",
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      measurementPlanOverride: measurementPlan
     });
     if (preflight.preflight_state !== "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT" || !preflight.snapshot_candidate_ref || validation.valid !== true) {
       throw new Error(JSON.stringify({ validation, validation_summary: preflight.validation_summary ?? {} }));
     }
-    process.stdout.write(JSON.stringify(preflight.snapshot_candidate_ref));
+    process.stdout.write(JSON.stringify({
+      preflight,
+      snapshotCandidateRef: preflight.snapshot_candidate_ref
+    }));
   `;
-  const candidate = JSON.parse(
+  const result = JSON.parse(
     execFileSync(process.execPath, ["--input-type=module", "-e", script], {
       cwd: REPO_ROOT,
       encoding: "utf8"
     })
   );
-  controlledMeasurementCellPreflightCandidateRefCache.set(milestoneDay, candidate);
-  return clone(candidate);
+  controlledMeasurementCellPreflightResultCache.set(milestoneDay, result);
+  return clone(result);
 };
+
+const controlledMeasurementCellPreflightCandidateRef = (
+  milestoneDay = 30
+): Record<string, unknown> =>
+  controlledMeasurementCellPreflightResult(milestoneDay).snapshotCandidateRef;
+
+const controlledMeasurementCellPreflightRun = (
+  milestoneDay = 30
+): Record<string, unknown> =>
+  controlledMeasurementCellPreflightResult(milestoneDay).preflight;
 
 const controlledMeasurementCellAssemblyRunsForMilestones = (milestoneDays: number[]) => {
   ensureControlledRunnerDistReady();
   const script = `
     import { readFileSync } from "node:fs";
     import { buildControlledMeasurementCellAssemblyArtifactsFromObject } from "./scripts/run_ai_value_controlled_measurement_cell_assembly.mjs";
-    const fixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
+    import { buildControlledAggregateFixtureForMilestone } from "./scripts/run_ai_value_controlled_pilot_evidence_package.mjs";
+    const baseFixture = JSON.parse(readFileSync("docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json", "utf8"));
     const milestoneDays = ${JSON.stringify(milestoneDays)};
     const runs = milestoneDays.map((milestoneDay) => {
-      const variant = JSON.parse(JSON.stringify(fixture));
-      variant.expected = {
-        ...variant.expected,
-        milestone_day: milestoneDay,
-        window_mode: "milestone"
-      };
-      const artifacts = buildControlledMeasurementCellAssemblyArtifactsFromObject(variant, { cwd: process.cwd() });
+      const { fixture: variant, measurementPlan } = buildControlledAggregateFixtureForMilestone(baseFixture, milestoneDay, {
+        cwd: process.cwd(),
+        windowMode: "milestone"
+      });
+      const artifacts = buildControlledMeasurementCellAssemblyArtifactsFromObject(variant, {
+        cwd: process.cwd(),
+        measurementPlanOverride: measurementPlan
+      });
       if (artifacts.assemblyValidation?.valid !== true || artifacts.assemblyRun?.decision !== "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER") {
         throw new Error(JSON.stringify({ milestoneDay, validation: artifacts.assemblyValidation ?? artifacts.candidate?.validation_summary ?? {} }));
       }
@@ -479,6 +591,10 @@ describe("AI Value minimal persistence migration", () => {
   it("promotes only compact internal Measurement Cell snapshot persistence", () => {
     const decision = fs.readFileSync(MEASUREMENT_CELL_PROMOTION_DECISION, "utf8");
     const migrationSql = fs.readFileSync(MEASUREMENT_CELL_SNAPSHOT_MIGRATION, "utf8");
+    const aggregateBoundaryMigrationSql = fs.readFileSync(
+      MEASUREMENT_CELL_AGGREGATE_BOUNDARY_MIGRATION,
+      "utf8"
+    );
     const table = tableBlock(migrationSql, "measurement_cell_snapshots");
 
     expect(decision).toContain("Decision: `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`");
@@ -486,6 +602,17 @@ describe("AI Value minimal persistence migration", () => {
     expect(migrationSql).toContain('CREATE TABLE "measurement_cell_snapshots"');
     expect(migrationSql).toContain("measurement_cell_snapshots_immutable_key");
     expect(migrationSql).toContain('"measurement_cell_assembly_run_id" TEXT NOT NULL');
+    expect(migrationSql).not.toContain('"aggregate_source_system" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain("ALTER TABLE public.measurement_cell_snapshots");
+    expect(aggregateBoundaryMigrationSql).toContain("run an explicit reviewed aggregate-boundary backfill");
+    expect(aggregateBoundaryMigrationSql).toContain('"aggregate_source_system" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"aggregate_export_review_ref" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"aggregate_export_review_state" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"aggregate_source_export_ref" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"aggregate_export_review_hash" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"pipeline_dry_run_ref" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"pipeline_boundary_hash" TEXT NOT NULL');
+    expect(aggregateBoundaryMigrationSql).toContain('"aggregate_boundary_ref_json" JSONB NOT NULL');
     expect(migrationSql).toContain('"expectation_path_id" TEXT NOT NULL');
     expect(migrationSql).toContain('"expectation_path_version" INTEGER NOT NULL');
     expect(migrationSql).toContain('"expectation_path_hash" TEXT NOT NULL');
@@ -499,7 +626,12 @@ describe("AI Value minimal persistence migration", () => {
     expect(migrationSql).toContain('"value_driver" TEXT NOT NULL');
     expect(migrationSql).toContain('"assembly_payload_json" JSONB');
     expect(migrationSql).toContain("measurement_cell_snapshots_value_driver_check");
+    expect(aggregateBoundaryMigrationSql).toContain("measurement_cell_snapshots_aggregate_source_system_check");
+    expect(aggregateBoundaryMigrationSql).toContain("measurement_cell_snapshots_aggregate_review_state_check");
+    expect(aggregateBoundaryMigrationSql).toContain("measurement_cell_snapshots_aggregate_review_hash_check");
+    expect(aggregateBoundaryMigrationSql).toContain("measurement_cell_snapshots_pipeline_boundary_hash_check");
     expect(migrationSql).toContain("measurement_cell_snapshots_supersedes_version_check");
+    expect(aggregateBoundaryMigrationSql).toContain("measurement_cell_snapshots_aggregate_boundary_ref_object_check");
     expect(migrationSql).toContain("measurement_cell_snapshots_assembly_payload_null_or_object_check");
     expect(migrationSql).toContain("ALTER TABLE public.measurement_cell_snapshots ENABLE ROW LEVEL SECURITY");
     expect(migrationSql).toContain("REVOKE ALL ON TABLE public.measurement_cell_snapshots");
@@ -839,9 +971,12 @@ describe("AI Value minimal persistence repository", () => {
 
   it("persists controlled pilot Measurement Cell snapshots append-only as compact internal snapshots", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
-    const snapshotCandidateRef = controlledMeasurementCellPreflightCandidateRef();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
+    const aggregateBoundaryRef =
+      snapshotCandidateRef.aggregate_boundary_ref as Record<string, unknown>;
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+      measurementCellPreflightRun: preflight,
       snapshotCandidateRef,
       version: 1,
       createdByRole: "value_realization_pm"
@@ -852,6 +987,24 @@ describe("AI Value minimal persistence repository", () => {
     );
     expect(stored.measurement_cell_assembly_run_id).toBe(assemblyRun.run_id);
     expect(stored.measurement_plan_id).toBe(assemblyRun.measurement_plan_id);
+    expect(stored.aggregate_source_system).toBe("bigquery_export");
+    expect(stored.aggregate_export_review_ref).toBe(
+      aggregateBoundaryRef.review_id
+    );
+    expect(stored.aggregate_export_review_state).toBe(
+      "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW"
+    );
+    expect(stored.aggregate_source_export_ref).toBe(
+      aggregateBoundaryRef.source_export_ref
+    );
+    expect(stored.aggregate_export_review_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(stored.pipeline_dry_run_ref).toBe(
+      aggregateBoundaryRef.pipeline_dry_run_id
+    );
+    expect(stored.pipeline_boundary_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(stored.aggregate_boundary_ref).toEqual(
+      aggregateBoundaryRef
+    );
     expect(stored.value_hypothesis_id).toBe(
       assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id
     );
@@ -895,6 +1048,9 @@ describe("AI Value minimal persistence repository", () => {
       metric_source_ref: "support_metric_resolution_hours_day_30",
       token_source_ref: "scrubbed_glean_vbd_token_support_day_30"
     });
+    expect(JSON.stringify(stored.aggregate_boundary_ref).toLowerCase()).not.toContain("select");
+    expect(JSON.stringify(stored.aggregate_boundary_ref).toLowerCase()).not.toContain("raw_rows");
+    expect(JSON.stringify(stored.aggregate_boundary_ref).toLowerCase()).not.toContain("query_text");
     expect(stored.blocked_uses).toEqual(
       EXPECTED_MEASUREMENT_CELL_SNAPSHOT_BLOCKED_USES
     );
@@ -919,6 +1075,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
@@ -928,6 +1085,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef,
         version: 2,
         createdByRole: "value_realization_pm"
@@ -949,6 +1107,7 @@ describe("AI Value minimal persistence repository", () => {
 
     const corrected = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
+      measurementCellPreflightRun: preflight,
       snapshotCandidateRef,
       version: 2,
       supersedesId: stored.id,
@@ -972,20 +1131,53 @@ describe("AI Value minimal persistence repository", () => {
     expect(store.aiValueMeasurementCellSnapshots.size).toBe(0);
   });
 
-  it("rejects Measurement Cell snapshot persistence when the preflight candidate drifts", async () => {
+  it("rejects Measurement Cell snapshot persistence without passed preflight proof", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
     const snapshotCandidateRef = controlledMeasurementCellPreflightCandidateRef();
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        snapshotCandidateRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toThrow("preflight proof is required");
+    expect(store.aiValueMeasurementCellSnapshots.size).toBe(0);
+  });
+
+  it("rejects Measurement Cell snapshot persistence without reviewed aggregate boundary proof", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
+    delete (snapshotCandidateRef as Record<string, unknown>).aggregate_boundary_ref;
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+    expect(store.aiValueMeasurementCellSnapshots.size).toBe(0);
+  });
+
+  it("rejects Measurement Cell snapshot persistence when the preflight candidate drifts", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
 
     const metricDrift = clone(snapshotCandidateRef);
     metricDrift.metric_id = "support_escalation_rate";
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef: metricDrift,
         version: 1,
         createdByRole: "value_realization_pm"
       })
-    ).rejects.toThrow("candidate ref must match recomputed persistence binding");
+    ).rejects.toThrow("preflight proof failed validation");
 
     const sourceRefDrift = clone(snapshotCandidateRef);
     (sourceRefDrift.source_refs as Record<string, unknown>).vbd_source_ref =
@@ -993,11 +1185,12 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef: sourceRefDrift,
         version: 1,
         createdByRole: "value_realization_pm"
       })
-    ).rejects.toThrow("candidate ref must match recomputed persistence binding");
+    ).rejects.toThrow("preflight proof failed validation");
 
     const unsafeSourceRef = clone(snapshotCandidateRef);
     (unsafeSourceRef.source_refs as Record<string, unknown>).vbd_source_ref =
@@ -1005,6 +1198,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef: unsafeSourceRef,
         version: 1,
         createdByRole: "value_realization_pm"
@@ -1017,6 +1211,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: placeholderAssemblyRef,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
@@ -1030,15 +1225,345 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
         snapshotCandidateRef: smuggledPayload,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const aggregateBoundaryDrift = clone(snapshotCandidateRef);
+    (aggregateBoundaryDrift.aggregate_boundary_ref as Record<string, unknown>).review_state =
+      "BLOCKED";
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef: aggregateBoundaryDrift,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const forgedAggregateBoundary = clone(snapshotCandidateRef);
+    (
+      forgedAggregateBoundary.aggregate_boundary_ref as Record<string, unknown>
+    ).review_id = "bigquery_aggregate_export_review_forged_support_day_30";
+    (
+      forgedAggregateBoundary.aggregate_boundary_ref as Record<string, unknown>
+    ).review_hash = stableHashForTest({
+      review_id: "bigquery_aggregate_export_review_forged_support_day_30",
+      review_state:
+        (forgedAggregateBoundary.aggregate_boundary_ref as Record<string, unknown>)
+          .review_state,
+      source_export_ref:
+        (forgedAggregateBoundary.aggregate_boundary_ref as Record<string, unknown>)
+          .source_export_ref,
+      aggregate_definition_ref:
+        (forgedAggregateBoundary.aggregate_boundary_ref as Record<string, unknown>)
+          .aggregate_definition_ref,
+      aggregate_output_ref:
+        (forgedAggregateBoundary.aggregate_boundary_ref as Record<string, unknown>)
+          .aggregate_output_ref
+    });
+    recomputeSnapshotCandidateHashForTest(forgedAggregateBoundary);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef: forgedAggregateBoundary,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const selfForgedPreflight = clone(preflight);
+    const selfForgedCandidate = clone(snapshotCandidateRef);
+    const selfForgedBoundary = selfForgedCandidate.aggregate_boundary_ref as Record<
+      string,
+      unknown
+    >;
+    selfForgedBoundary.review_id =
+      "bigquery_aggregate_export_review_forged_support_day_30";
+    selfForgedBoundary.review_hash = stableHashForTest({
+      review_id: selfForgedBoundary.review_id,
+      review_state: selfForgedBoundary.review_state,
+      source_export_ref: selfForgedBoundary.source_export_ref,
+      aggregate_definition_ref: selfForgedBoundary.aggregate_definition_ref,
+      aggregate_output_ref: selfForgedBoundary.aggregate_output_ref
+    });
+    (selfForgedPreflight.aggregate_export_review_ref as Record<string, unknown>).review_id =
+      selfForgedBoundary.review_id;
+    (selfForgedPreflight.aggregate_export_review_ref as Record<string, unknown>).review_hash =
+      selfForgedBoundary.review_hash;
+    (selfForgedPreflight.snapshot_candidate_ref as Record<string, unknown>).aggregate_boundary_ref =
+      selfForgedBoundary;
+    recomputeSnapshotCandidateHashForTest(selfForgedCandidate);
+    (selfForgedPreflight.snapshot_candidate_ref as Record<string, unknown>).snapshot_candidate_hash =
+      selfForgedCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(selfForgedPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: selfForgedPreflight,
+        snapshotCandidateRef: selfForgedCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const forgedBoundaryHashPreflight = clone(preflight);
+    const forgedBoundaryHashCandidate = clone(snapshotCandidateRef);
+    (
+      forgedBoundaryHashCandidate.aggregate_boundary_ref as Record<string, unknown>
+    ).pipeline_boundary_hash = "f".repeat(64);
+    (
+      forgedBoundaryHashPreflight.snapshot_candidate_ref as Record<string, unknown>
+    ).aggregate_boundary_ref =
+      forgedBoundaryHashCandidate.aggregate_boundary_ref;
+    recomputeSnapshotCandidateHashForTest(forgedBoundaryHashCandidate);
+    (
+      forgedBoundaryHashPreflight.snapshot_candidate_ref as Record<string, unknown>
+    ).snapshot_candidate_hash =
+      forgedBoundaryHashCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(forgedBoundaryHashPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: forgedBoundaryHashPreflight,
+        snapshotCandidateRef: forgedBoundaryHashCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const dayDriftPreflight = clone(preflight);
+    const dayDriftCandidate = clone(snapshotCandidateRef);
+    const dayDriftBoundary = dayDriftCandidate.aggregate_boundary_ref as Record<
+      string,
+      unknown
+    >;
+    dayDriftBoundary.source_export_ref =
+      "bigquery_export_scrubbed_glean_vbd_token_support_day_60";
+    dayDriftBoundary.pipeline_source_export_ref =
+      "bigquery_export_scrubbed_glean_vbd_token_support_day_60";
+    dayDriftBoundary.review_hash = stableHashForTest({
+      review_id: dayDriftBoundary.review_id,
+      review_state: dayDriftBoundary.review_state,
+      source_export_ref: dayDriftBoundary.source_export_ref,
+      aggregate_definition_ref: dayDriftBoundary.aggregate_definition_ref,
+      aggregate_output_ref: dayDriftBoundary.aggregate_output_ref
+    });
+    (dayDriftPreflight.aggregate_export_review_ref as Record<string, unknown>).source_export_ref =
+      dayDriftBoundary.source_export_ref;
+    (dayDriftPreflight.aggregate_export_review_ref as Record<string, unknown>).review_hash =
+      dayDriftBoundary.review_hash;
+    (dayDriftPreflight.pipeline_ref as Record<string, unknown>).source_export_ref =
+      dayDriftBoundary.pipeline_source_export_ref;
+    (dayDriftPreflight.snapshot_candidate_ref as Record<string, unknown>).aggregate_boundary_ref =
+      dayDriftBoundary;
+    recomputeSnapshotCandidateHashForTest(dayDriftCandidate);
+    (dayDriftPreflight.snapshot_candidate_ref as Record<string, unknown>).snapshot_candidate_hash =
+      dayDriftCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(dayDriftPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: dayDriftPreflight,
+        snapshotCandidateRef: dayDriftCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const selfConsistentWindowDriftRun = replaceDaySuffixesForTest(
+      clone(assemblyRun),
+      60
+    ) as any;
+    selfConsistentWindowDriftRun.measurement_cell.time_window.days_since_launch = 30;
+    selfConsistentWindowDriftRun.measurement_cell.time_window.time_window_id =
+      "day_30";
+    selfConsistentWindowDriftRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(
+        selfConsistentWindowDriftRun.measurement_cell
+      );
+    const selfConsistentWindowDriftPreflight =
+      replaceDaySuffixesForTest(clone(preflight), 60) as Record<string, unknown>;
+    const selfConsistentWindowDriftCandidate = replaceDaySuffixesForTest(
+      clone(snapshotCandidateRef),
+      60
+    ) as Record<string, unknown>;
+    selfConsistentWindowDriftCandidate.milestone_day = 30;
+    (
+      selfConsistentWindowDriftPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).milestone_day = 30;
+    recomputeSnapshotCandidateHashForTest(selfConsistentWindowDriftCandidate);
+    (
+      selfConsistentWindowDriftPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).snapshot_candidate_hash =
+      selfConsistentWindowDriftCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(selfConsistentWindowDriftPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: selfConsistentWindowDriftRun,
+        measurementCellPreflightRun: selfConsistentWindowDriftPreflight,
+        snapshotCandidateRef: selfConsistentWindowDriftCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeLiveHandleRun = clone(assemblyRun) as any;
+    const unsafeLiveHandlePreflight = clone(preflight);
+    const unsafeLiveHandleCandidate = clone(snapshotCandidateRef);
+    const unsafeLiveHandleRef = "supportjob_id_123_day_30";
+    unsafeLiveHandleRun.measurement_cell.source_refs.vbd_source_ref =
+      unsafeLiveHandleRef;
+    unsafeLiveHandleRun.measurement_cell.source_refs.token_source_ref =
+      unsafeLiveHandleRef;
+    unsafeLiveHandleRun.measurement_cell.vbd_context.source_ref =
+      unsafeLiveHandleRef;
+    unsafeLiveHandleRun.measurement_cell.token_context.source_ref =
+      unsafeLiveHandleRef;
+    unsafeLiveHandleRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(unsafeLiveHandleRun.measurement_cell);
+    (unsafeLiveHandleCandidate.source_refs as Record<string, unknown>).vbd_source_ref =
+      unsafeLiveHandleRef;
+    (unsafeLiveHandleCandidate.source_refs as Record<string, unknown>).token_source_ref =
+      unsafeLiveHandleRef;
+    const unsafeLiveBoundary =
+      unsafeLiveHandleCandidate.aggregate_boundary_ref as Record<string, unknown>;
+    unsafeLiveBoundary.source_export_ref =
+      `bigquery_export_${unsafeLiveHandleRef}`;
+    unsafeLiveBoundary.pipeline_source_export_ref =
+      `bigquery_export_${unsafeLiveHandleRef}`;
+    unsafeLiveBoundary.review_hash = stableHashForTest({
+      review_id: unsafeLiveBoundary.review_id,
+      review_state: unsafeLiveBoundary.review_state,
+      source_export_ref: unsafeLiveBoundary.source_export_ref,
+      aggregate_definition_ref: unsafeLiveBoundary.aggregate_definition_ref,
+      aggregate_output_ref: unsafeLiveBoundary.aggregate_output_ref
+    });
+    (
+      unsafeLiveHandlePreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).source_export_ref = unsafeLiveBoundary.source_export_ref;
+    (
+      unsafeLiveHandlePreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).review_hash = unsafeLiveBoundary.review_hash;
+    (unsafeLiveHandlePreflight.pipeline_ref as Record<string, unknown>).source_export_ref =
+      unsafeLiveBoundary.pipeline_source_export_ref;
+    (
+      unsafeLiveHandlePreflight.snapshot_candidate_ref as Record<string, unknown>
+    ).source_refs = unsafeLiveHandleCandidate.source_refs;
+    (
+      unsafeLiveHandlePreflight.snapshot_candidate_ref as Record<string, unknown>
+    ).aggregate_boundary_ref = unsafeLiveBoundary;
+    recomputeSnapshotCandidateHashForTest(unsafeLiveHandleCandidate);
+    (
+      unsafeLiveHandlePreflight.snapshot_candidate_ref as Record<string, unknown>
+    ).snapshot_candidate_hash = unsafeLiveHandleCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(unsafeLiveHandlePreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeLiveHandleRun,
+        measurementCellPreflightRun: unsafeLiveHandlePreflight,
+        snapshotCandidateRef: unsafeLiveHandleCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafePreflightPolicy = clone(preflight);
+    (unsafePreflightPolicy.feeds as Record<string, unknown>).live_bigquery_execution = true;
+    (unsafePreflightPolicy.feeds as Record<string, unknown>).raw_rows = true;
+    unsafePreflightPolicy.blocked_uses = [];
+    unsafePreflightPolicy.required_caveats = [];
+    unsafePreflightPolicy.boundary_policy = {};
+    recomputePreflightIntegrityHashForTest(unsafePreflightPolicy);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: unsafePreflightPolicy,
+        snapshotCandidateRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeAggregateBoundaryRef = clone(snapshotCandidateRef);
+    (
+      unsafeAggregateBoundaryRef.aggregate_boundary_ref as Record<string, unknown>
+    ).source_export_ref =
+      "bigquery_export_query_text_user_id_raw_rows";
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef: unsafeAggregateBoundaryRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
   });
 
+  it("allows reviewed aggregate boundary proof when VBD and token lane refs are distinct", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
+    const preflightWithDistinctRefs = clone(preflight);
+    assemblyRun.measurement_cell.source_refs.token_source_ref =
+      "scrubbed_glean_token_context_support_day_30";
+    assemblyRun.measurement_cell.token_context.source_ref =
+      "scrubbed_glean_token_context_support_day_30";
+    assemblyRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(assemblyRun.measurement_cell);
+    (snapshotCandidateRef.source_refs as Record<string, unknown>).token_source_ref =
+      "scrubbed_glean_token_context_support_day_30";
+    (
+      preflightWithDistinctRefs.snapshot_candidate_ref as Record<string, unknown>
+    ).source_refs = snapshotCandidateRef.source_refs;
+    recomputeAggregateBoundaryHashForTest(snapshotCandidateRef);
+    (
+      preflightWithDistinctRefs.snapshot_candidate_ref as Record<string, unknown>
+    ).aggregate_boundary_ref = snapshotCandidateRef.aggregate_boundary_ref;
+    recomputeSnapshotCandidateHashForTest(
+      preflightWithDistinctRefs.snapshot_candidate_ref as Record<string, unknown>
+    );
+    snapshotCandidateRef.snapshot_candidate_hash = (
+      preflightWithDistinctRefs.snapshot_candidate_ref as Record<string, unknown>
+    ).snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(preflightWithDistinctRefs);
+
+    const stored = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      measurementCellPreflightRun: preflightWithDistinctRefs,
+      snapshotCandidateRef,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(stored.source_refs.token_source_ref).toBe(
+      "scrubbed_glean_token_context_support_day_30"
+    );
+    expect(stored.aggregate_source_export_ref).toBe(
+      "bigquery_export_scrubbed_glean_vbd_token_support_day_30"
+    );
+  });
+
   it("canonicalizes Measurement Cell snapshot caveats and blocked uses before persistence", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
     assemblyRun.measurement_cell.required_caveats = [
       assemblyRun.measurement_cell.required_caveats[2],
       assemblyRun.measurement_cell.required_caveats[0],
@@ -1054,7 +1579,8 @@ describe("AI Value minimal persistence repository", () => {
 
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+      measurementCellPreflightRun: preflight,
+      snapshotCandidateRef,
       version: 1,
       createdByRole: "value_realization_pm"
     });
@@ -1071,13 +1597,15 @@ describe("AI Value minimal persistence repository", () => {
 
   it("binds Measurement Cell snapshots when only a value hypothesis ref is present", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
     assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_ref =
       assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id;
     assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_id = null;
 
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+      measurementCellPreflightRun: preflight,
+      snapshotCandidateRef,
       version: 1,
       createdByRole: "value_realization_pm"
     });
@@ -1091,11 +1619,13 @@ describe("AI Value minimal persistence repository", () => {
 
   it("rejects supersedes lineage on initial Measurement Cell snapshot versions", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
 
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         supersedesId: "measurement_cell_snapshot_unrelated",
         createdByRole: "value_realization_pm"
@@ -1105,15 +1635,18 @@ describe("AI Value minimal persistence repository", () => {
 
   it("rejects Measurement Cell snapshot corrections that skip the immediately previous version", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
     const initial = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+      measurementCellPreflightRun: preflight,
+      snapshotCandidateRef,
       version: 1,
       createdByRole: "value_realization_pm"
     });
     const corrected = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+      measurementCellPreflightRun: preflight,
+      snapshotCandidateRef,
       version: 2,
       supersedesId: initial.id,
       createdByRole: "value_realization_pm"
@@ -1122,7 +1655,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 3,
         supersedesId: initial.id,
         createdByRole: "value_realization_pm"
@@ -1147,9 +1681,11 @@ describe("AI Value minimal persistence repository", () => {
 
     try {
       const assemblyRun = controlledMeasurementCellAssemblyRun();
+      const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
       const stored = await persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       });
@@ -1162,7 +1698,21 @@ describe("AI Value minimal persistence repository", () => {
         version: 1,
         approvalState: "approved",
         windowMode: "milestone",
-        milestoneDay: 30
+        milestoneDay: 30,
+        aggregateSourceSystem: "bigquery_export",
+        aggregateExportReviewRef:
+          stored.aggregate_boundary_ref.review_id,
+        aggregateExportReviewState:
+          "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW",
+        aggregateSourceExportRef:
+          stored.aggregate_boundary_ref.source_export_ref,
+        aggregateExportReviewHash:
+          stored.aggregate_boundary_ref.review_hash,
+        pipelineDryRunRef:
+          stored.aggregate_boundary_ref.pipeline_dry_run_id,
+        pipelineBoundaryHash:
+          stored.aggregate_boundary_ref.pipeline_boundary_hash,
+        aggregateBoundaryRefJson: stored.aggregate_boundary_ref
       });
       expect(data.assemblyPayloadJson).toBe(Prisma.DbNull);
       expect(JSON.stringify(data.payloadJson).toLowerCase()).not.toContain("raw_rows");
@@ -1206,15 +1756,18 @@ describe("AI Value minimal persistence repository", () => {
 
     try {
       const assemblyRun = controlledMeasurementCellAssemblyRun();
+      const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
       const initial = await persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       });
       const corrected = await persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 2,
         supersedesId: initial.id,
         createdByRole: "value_realization_pm"
@@ -1226,7 +1779,8 @@ describe("AI Value minimal persistence repository", () => {
       await expect(
         persistAiValueMeasurementCellSnapshot({
           measurementCellAssemblyRun: assemblyRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+          measurementCellPreflightRun: preflight,
+          snapshotCandidateRef,
           version: 3,
           supersedesId: initial.id,
           createdByRole: "value_realization_pm"
@@ -1255,6 +1809,9 @@ describe("AI Value minimal persistence repository", () => {
       stored.push(
         await persistAiValueMeasurementCellSnapshot({
           measurementCellAssemblyRun: assemblyRun,
+          measurementCellPreflightRun: controlledMeasurementCellPreflightRun(
+            milestoneDay
+          ),
           snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(
             milestoneDay
           ),
@@ -1271,6 +1828,14 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.map((record) => record.milestone_day).sort((a, b) => a - b)).toEqual(
       milestoneDays
     );
+    for (const record of stored) {
+      expect(record.aggregate_source_export_ref).toContain(
+        `day_${record.milestone_day}`
+      );
+      expect(record.aggregate_boundary_ref.source_export_ref).toBe(
+        record.aggregate_source_export_ref
+      );
+    }
     expect(stored.every((record) => record.window_mode === "milestone")).toBe(true);
     expect(store.aiValueMeasurementCellSnapshots.size).toBe(milestoneDays.length);
 
@@ -1287,6 +1852,7 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: sameCellDifferentWindow,
+        measurementCellPreflightRun: controlledMeasurementCellPreflightRun(60),
         snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(60),
         version: 2,
         supersedesId: day30?.id,
@@ -1296,12 +1862,14 @@ describe("AI Value minimal persistence repository", () => {
   });
 
   it("fails drifted Measurement Cell snapshot bindings before persistence", async () => {
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
     const pathDrift = clone(controlledMeasurementCellAssemblyRun());
     pathDrift.measurement_cell.blueprint_alignment.expectation_path_id = "different_path";
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: pathDrift,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1312,7 +1880,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: approvalDrift,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1324,7 +1893,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: approvalTimestampDrift,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1335,7 +1905,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: milestoneDrift,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1346,7 +1917,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: metricDrift,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1357,7 +1929,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: lagDrift,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1365,12 +1938,14 @@ describe("AI Value minimal persistence repository", () => {
   });
 
   it("fails Measurement Cell snapshot JSONB smuggling before persistence", async () => {
+    const { preflight, snapshotCandidateRef } = controlledMeasurementCellPreflightResult();
     const unsafePayload = clone(controlledMeasurementCellAssemblyRun());
     unsafePayload.measurement_cell.metric_movement.ai_contribution_confidence = 0.91;
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafePayload,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1381,7 +1956,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeValidation,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1392,7 +1968,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefs,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1405,7 +1982,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefNotes,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1421,7 +1999,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeRequiredCaveat,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1437,7 +2016,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeNegativePostureCaveat,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1453,7 +2033,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeBlockedUse,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1466,7 +2047,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefSummary,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1480,7 +2062,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: smuggledSourceRefNotesObject,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1496,7 +2079,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: smuggledSourceRefPackageArray,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1509,7 +2093,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: smuggledBlueprintSourceRef,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1623,7 +2208,8 @@ describe("AI Value minimal persistence repository", () => {
       await expect(
         persistAiValueMeasurementCellSnapshot({
           measurementCellAssemblyRun: unsafeIdentifierRun,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+          measurementCellPreflightRun: preflight,
+          snapshotCandidateRef,
           version: 1,
           createdByRole: "value_realization_pm",
           assemblyPayload
@@ -1638,7 +2224,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafePathBinding,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })
@@ -1648,7 +2235,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeAssemblyPayload,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm",
         assemblyPayload: {
@@ -1661,7 +2249,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeCompactAssemblyPayload,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm",
         assemblyPayload: {
@@ -1688,7 +2277,8 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: driftedCompactAssemblyPayload,
-        snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(),
+        measurementCellPreflightRun: preflight,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm",
         assemblyPayload: {

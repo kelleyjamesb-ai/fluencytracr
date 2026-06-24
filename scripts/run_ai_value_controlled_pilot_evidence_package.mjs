@@ -450,7 +450,7 @@ function loadMeasurementPlan(fixture, cwd) {
   }
 }
 
-function fixtureForMilestone(baseFixture, day, options = {}) {
+export function buildControlledAggregateFixtureForMilestone(baseFixture, day, options = {}) {
   const cwd = options.cwd ?? process.cwd();
   const fixture = replaceDaySuffixes(deepClone(baseFixture), day);
   const { baselineWindow, comparisonWindow } = milestoneWindowsForDay(day);
@@ -873,7 +873,10 @@ export function runControlledRepeatedPilotEvidencePackageFromObject(
     ? options.milestoneDays
     : MILESTONE_DAYS;
   const variants = milestoneDays.map((day) =>
-    fixtureForMilestone(fixture, day, { cwd, windowMode: options.windowMode })
+    buildControlledAggregateFixtureForMilestone(fixture, day, {
+      cwd,
+      windowMode: options.windowMode
+    })
   );
   const candidateRecords = variants.map((variantRecord, index) => {
     const artifacts = buildControlledMeasurementCellAssemblyArtifactsFromObject(

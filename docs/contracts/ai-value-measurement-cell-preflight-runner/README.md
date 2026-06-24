@@ -41,8 +41,8 @@ Passed output may include compact metadata only:
 - aggregate export review ref;
 - controlled pipeline dry-run ref;
 - Measurement Cell assembly ref;
-- one snapshot-candidate ref with selected path, metric, window, and source-ref
-  binding;
+- one snapshot-candidate ref with selected path, metric, window, source-ref
+  binding, and compact aggregate-boundary proof;
 - preflight and snapshot-candidate integrity hashes;
 - compact validation summary;
 - safe caveats, blocked uses, and false boundary policy.
@@ -65,6 +65,9 @@ The preflight runner blocks or holds on:
 - held, missing, stale, or suppressed aggregate telemetry;
 - source-ref drift;
 - reviewed aggregate boundary / pipeline `source_export_ref` mismatch;
+- snapshot-candidate aggregate-boundary proof drift, missing reviewed
+  `source_export_ref`, missing review hash, mismatched pipeline source ref, or
+  unsafe compact boundary refs;
 - stale aggregate fixture, reviewed source-ref, aggregate-context, Blueprint
   expectation, candidate, snapshot-candidate, or preflight integrity hashes;
 - org, client, workflow, function, cohort, selected metric, selected path,
@@ -85,7 +88,7 @@ persistence. Passed snapshot candidates remain internal proof artifacts only.
 The separately promoted backend-internal Measurement Cell Snapshot write path
 must require a passed snapshot candidate ref, recompute the durable snapshot
 binding, and reject the write if the candidate path, metric, window, source
-refs, hashes, approval, or source-bound lineage drift.
+refs, aggregate-boundary proof, hashes, approval, or source-bound lineage drift.
 
 ## Non-Authorization
 

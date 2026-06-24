@@ -182,6 +182,10 @@ implementation scope is limited to:
 - recomputed validation before write;
 - required compact Measurement Cell preflight snapshot-candidate ref binding
   that must match the recomputed durable snapshot row before write;
+- required compact aggregate-boundary proof from the same preflight
+  snapshot-candidate ref, including source system, passed review state,
+  source-export ref, review hash, pipeline dry-run ref, and recomputed compact
+  pipeline-boundary hash;
 - compact Measurement Cell snapshot persistence/write path only;
 - compact source refs;
 - compact selected path binding;
@@ -198,6 +202,11 @@ Still blocked even if Measurement Cell snapshots are promoted:
 - confidence research inputs;
 - finance outputs;
 - live connectors.
+
+The compact aggregate-boundary proof does not authorize live BigQuery, Sigma,
+Glean, or customer connector execution. It only binds an already reviewed
+non-live aggregate export boundary to the internal snapshot row so future
+connector work has a safe reviewed landing point.
 
 ## 7. Series Persistence Boundary
 

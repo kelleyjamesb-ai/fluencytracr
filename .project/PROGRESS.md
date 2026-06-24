@@ -2,6 +2,25 @@
 
 ## Last Completed
 
+- AI Value aggregate-boundary to Measurement Cell snapshot binding
+  (user-requested, 2026-06-23): extended the non-live BigQuery/Sigma
+  reviewed aggregate path so Measurement Cell preflight snapshot candidates now
+  carry compact aggregate-boundary proof: source system, passed review state,
+  source-export ref, aggregate definition/output refs, review hash, pipeline
+  dry-run ref, pipeline source-export ref, and recomputed compact
+  pipeline-boundary hash. The backend-internal `measurement_cell_snapshots` write path
+  now persists only compact queryable proof columns plus
+  `aggregate_boundary_ref_json`, and rejects missing proof, review-state drift,
+  source-export/pipeline drift, Day 0/30/60/90/180/365 milestone drift,
+  unsafe refs including URL/job-like handles, live/query/raw handle smuggling,
+  and correction-lineage drift before any row is written. This does not add
+  live BigQuery/Sigma/Glean execution, connector credentials, raw rows, query
+  text, routes, UI, customer-facing output, Series persistence, confidence
+  math, ROI/EBITDA, finance output, causality, productivity, or probability.
+  Verification added/updated:
+  `npm run test:ai-value-measurement-cell-preflight-runner` and
+  `npm run test --workspace backend -- --runTestsByPath
+  tests/ai_value_minimal_persistence.test.ts`.
 - AI Value Research Promotion Readiness Packet validator (user-requested,
   2026-06-23): added an executable saved-fixture runner and fail-closed test
   suite for the Research Promotion Readiness Packet. The runner derives a

@@ -96,7 +96,7 @@ Projection detail:
 | Claim Readiness Snapshot | `claim_readiness_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `handoff_id`, `measurement_plan_id`, `claim_readiness_state` | No customer-facing financial output; no positive contribution-model field |
 | Executive Readout Snapshot | `executive_readout_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `executive_readout_snapshot_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `measurement_plan_id`, `readout_state` | No rendered readout route/UI/export from this pass |
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
-| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver` | No full Measurement Cell object, frontend UI, export, rendered readout, or customer-facing read path |
+| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns, compact aggregate-boundary proof | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver`, aggregate source/review/source-export refs | No full Measurement Cell object, frontend UI, export, rendered readout, live connector output, or customer-facing read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
 ## 4. Canonical Alignment Envelope
@@ -249,6 +249,14 @@ Implemented column requirements:
 | `measurement_cell_id` | text | required |
 | `measurement_cell_assembly_run_id` | text | required |
 | `measurement_plan_id` | text | required |
+| `aggregate_source_system` | text | required; constrained to `bigquery_export` or `sigma_export` |
+| `aggregate_export_review_ref` | text | required compact review id; not job metadata |
+| `aggregate_export_review_state` | text | required passed review state for the source system |
+| `aggregate_source_export_ref` | text | required compact source-export ref; no URL, query id, job id, table ref, or raw export handle |
+| `aggregate_export_review_hash` | text | required review hash |
+| `pipeline_dry_run_ref` | text | required compact pipeline dry-run id |
+| `pipeline_boundary_hash` | text | required compact pipeline-boundary hash recomputed from aggregate-boundary and snapshot binding |
+| `aggregate_boundary_ref_json` | jsonb | compact allowlisted aggregate-boundary proof only |
 | `value_hypothesis_id` | text | required when `expectation_path_id` is present unless `value_hypothesis_binding_state` is `inapplicable` |
 | `value_hypothesis_ref` | text | required when `value_hypothesis_id` is unavailable and `expectation_path_id` is present unless `value_hypothesis_binding_state` is `inapplicable` |
 | `value_hypothesis_binding_state` | text | required when `expectation_path_id` is present |
@@ -298,6 +306,15 @@ Implemented constraint requirements:
 
 - unique `(org_id, measurement_cell_id, version)`;
 - `version >= 1`;
+- `aggregate_source_system` must be `bigquery_export` or `sigma_export`;
+- `aggregate_export_review_state` must be the passed review state for that
+  source system;
+- `aggregate_export_review_hash` and `pipeline_boundary_hash` must be sha256
+  hashes, with `pipeline_boundary_hash` recomputed from compact boundary,
+  selected path, metric, window, and source-ref binding rather than accepted as
+  an external live-run proof;
+- `aggregate_boundary_ref_json` must be an object and must remain compact
+  allowlisted proof, not a live connector handle or reviewed export payload;
 - `comparison_window_end > comparison_window_start`;
 - `baseline_window_end > baseline_window_start`;
 - `expectation_path_id` must be non-empty;
@@ -327,6 +344,11 @@ Implemented constraint requirements:
 - source package review state and source owner-role posture must be validated
   without storing named approvers, emails, user IDs, row IDs, span IDs, or
   joinable person identifiers;
+- aggregate-boundary proof must be validated from the Measurement Cell
+  preflight snapshot-candidate ref and must fail closed when source system,
+  review state, source-export ref, review hash, pipeline dry-run ref, pipeline
+  source-export ref, compact pipeline-boundary hash, or VBD/token lane binding
+  drifts;
 - `jsonb_typeof(required_caveats_json) = 'array'`;
 - `jsonb_typeof(blocked_uses_json) = 'array'`;
 - `blocked_uses_json` must preserve blocked ROI, causality, productivity,
