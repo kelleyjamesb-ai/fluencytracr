@@ -56,8 +56,8 @@
     ]
   },
   "windows": {
-    "baseline_window_start": "2026-05-01",
-    "baseline_window_end": "2026-05-31",
+    "baseline_window_start": "2026-04-02",
+    "baseline_window_end": "2026-05-01",
     "comparison_window_start": "2026-06-01",
     "comparison_window_end": "2026-06-30",
     "window_alignment_state": "baseline_and_comparison_selected"

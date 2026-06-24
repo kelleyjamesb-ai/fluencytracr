@@ -363,6 +363,10 @@ function trueMap(keys) {
   return Object.fromEntries(keys.map((key) => [key, true]));
 }
 
+function readyFeedMap(handoffState) {
+  return handoffState === READY_STATE ? trueMap(TRUE_FEEDS) : falseMap(TRUE_FEEDS);
+}
+
 function scanUnsafeOverrides(value, path = []) {
   const gaps = [];
   if (Array.isArray(value)) {
@@ -592,6 +596,9 @@ function validateHandoffShape(handoff) {
     if (feeds[key] !== true && record.handoff_state === READY_STATE) {
       gaps.push(`feeds.${key} must be true for ready upstream handoff`);
     }
+    if (feeds[key] !== false && record.handoff_state !== READY_STATE) {
+      gaps.push(`feeds.${key} must be false unless upstream handoff is ready`);
+    }
   }
   for (const key of FALSE_FEEDS) {
     if (feeds[key] !== false) {
@@ -699,7 +706,7 @@ export function buildUpstreamAggregatePipelineHandoffFromObject(
     accepted_components: trueMap([...ACCEPTED_COMPONENT_FIELDS]),
     handoff_requirements: trueMap([...HANDOFF_REQUIREMENT_FIELDS]),
     feeds: {
-      ...trueMap(TRUE_FEEDS),
+      ...readyFeedMap(handoffState),
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),

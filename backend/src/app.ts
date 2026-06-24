@@ -880,15 +880,36 @@ const REQUIRED_AI_VALUE_TABLES = [
   "measurement_cell_snapshots"
 ] as const;
 
+const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
+  "aggregate_source_system",
+  "aggregate_export_review_ref",
+  "aggregate_export_review_state",
+  "aggregate_source_export_ref",
+  "aggregate_export_review_hash",
+  "pipeline_dry_run_ref",
+  "pipeline_boundary_hash",
+  "aggregate_boundary_ref_json"
+] as const;
+
+const REQUIRED_PERSISTENCE_TABLE_COLUMNS = {
+  measurement_cell_snapshots: REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS
+} as const;
+
 const REQUIRED_PERSISTENCE_TABLES = [
   ...REQUIRED_COMPLIANCE_TABLES,
   ...REQUIRED_AI_VALUE_TABLES
 ] as const;
 
+const REQUIRED_PERSISTENCE_COLUMN_BINDINGS = Object.entries(
+  REQUIRED_PERSISTENCE_TABLE_COLUMNS
+).flatMap(([tableName, columns]) =>
+  [...columns].map((columnName) => `${tableName}.${columnName}`)
+);
+
 type DatabaseReadinessResult =
   | { status: "not_configured" }
-  | { status: "ready"; missingTables: []; tableCount: number }
-  | { status: "schema_incomplete"; missingTables: string[]; tableCount: number }
+  | { status: "ready"; missingTables: []; missingColumns: []; tableCount: number }
+  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; tableCount: number }
   | { status: "unavailable"; error: string };
 
 const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
@@ -903,16 +924,46 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
     )) as Array<{ tablename: string }>;
     const tableNames = new Set(rows.map((row) => row.tablename));
     const missingTables = REQUIRED_PERSISTENCE_TABLES.filter((tableName) => !tableNames.has(tableName));
-    if (missingTables.length > 0) {
+    const missingColumns: string[] = [];
+    const requiredColumnTables = Object.keys(REQUIRED_PERSISTENCE_TABLE_COLUMNS)
+      .filter((tableName) => tableNames.has(tableName));
+
+    if (requiredColumnTables.length > 0) {
+      const tableNameList = requiredColumnTables
+        .map((tableName) => `'${tableName}'`)
+        .join(", ");
+      const columnRows = (await prisma.$queryRawUnsafe(
+        `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN (${tableNameList})`
+      )) as Array<{ table_name: string; column_name: string }>;
+      const columnsByTable = new Map<string, Set<string>>();
+      for (const row of columnRows) {
+        const tableColumns = columnsByTable.get(row.table_name) ?? new Set<string>();
+        tableColumns.add(row.column_name);
+        columnsByTable.set(row.table_name, tableColumns);
+      }
+      for (const [tableName, requiredColumns] of Object.entries(REQUIRED_PERSISTENCE_TABLE_COLUMNS)) {
+        if (!tableNames.has(tableName)) continue;
+        const tableColumns = columnsByTable.get(tableName) ?? new Set<string>();
+        for (const columnName of requiredColumns) {
+          if (!tableColumns.has(columnName)) {
+            missingColumns.push(`${tableName}.${columnName}`);
+          }
+        }
+      }
+    }
+
+    if (missingTables.length > 0 || missingColumns.length > 0) {
       return {
         status: "schema_incomplete",
         missingTables: [...missingTables],
+        missingColumns,
         tableCount: tableNames.size
       };
     }
     return {
       status: "ready",
       missingTables: [],
+      missingColumns: [],
       tableCount: tableNames.size
     };
   } catch (error) {
@@ -5642,7 +5693,8 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
   if (readiness.status === "not_configured") {
     return res.json({
       status: "not_configured",
-      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES],
+      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
     });
   }
   if (readiness.status === "unavailable") {
@@ -5650,7 +5702,8 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       status: "unavailable",
       error: "database_unavailable",
       details: process.env.NODE_ENV === "production" ? undefined : readiness.error,
-      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES],
+      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
     });
   }
   if (readiness.status === "schema_incomplete") {
@@ -5658,13 +5711,16 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       status: "schema_incomplete",
       table_count: readiness.tableCount,
       missing_tables: readiness.missingTables,
-      required_tables: [...REQUIRED_PERSISTENCE_TABLES]
+      missing_columns: readiness.missingColumns,
+      required_tables: [...REQUIRED_PERSISTENCE_TABLES],
+      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
     });
   }
   return res.json({
     status: "ready",
     table_count: readiness.tableCount,
-    required_tables: [...REQUIRED_PERSISTENCE_TABLES]
+    required_tables: [...REQUIRED_PERSISTENCE_TABLES],
+    required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
   });
 });
 
@@ -5694,6 +5750,7 @@ app.get("/health", async (_req, res) => {
       status: "degraded",
       error: "database_schema_incomplete",
       missing_tables: readiness.missingTables,
+      missing_columns: readiness.missingColumns,
       fail_closed_total: failClosedMetrics.total,
       details: "Apply pending Prisma migration for compliance persistence models."
     });

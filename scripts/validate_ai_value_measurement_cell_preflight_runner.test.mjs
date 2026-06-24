@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
@@ -11,9 +12,15 @@ import {
 import {
   buildControlledAggregateFixtureForMilestone
 } from "./run_ai_value_controlled_pilot_evidence_package.mjs";
+import {
+  reviewedAggregateContextHash,
+  reviewedBlueprintExpectationHash
+} from "./run_ai_value_controlled_measurement_cell_assembly.mjs";
 
 const FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
+const PLAN_PATH =
+  "docs/contracts/ai-value-measurement-plan/examples/full-playbook-ready-plan.json";
 
 const FORBIDDEN_OUTPUT_KEYS = [
   "raw_rows",
@@ -127,11 +134,64 @@ const REQUIRED_CAVEATS = [
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, canonicalize(value[key])])
+  );
+}
+
+function sha256Json(value) {
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalize(value)))
+    .digest("hex");
+}
+
+function stripPreflightIntegrityHash(preflight) {
+  const next = clone(preflight);
+  delete next.preflight_integrity_hash;
+  return next;
+}
+
+function stripSnapshotCandidateHash(candidate) {
+  const next = clone(candidate);
+  delete next.snapshot_candidate_hash;
+  return next;
+}
+
 function assertValidationGap(validation, token) {
   assert.ok(
     validation.gaps.some((gap) => gap.includes(token)),
     `missing gap for ${token}: ${validation.gaps.join("; ")}`
   );
+}
+
+function setFixtureWindows(fixture, baselineWindow, comparisonWindow) {
+  fixture.data_spine_input.baseline_window = clone(baselineWindow);
+  fixture.data_spine_input.comparison_window = clone(comparisonWindow);
+  for (const source of Object.values(fixture.data_spine_input.sources ?? {})) {
+    source.baseline_window = clone(baselineWindow);
+    source.comparison_window = clone(comparisonWindow);
+  }
+  fixture.blueprint_extraction_input.baselineWindow = clone(baselineWindow);
+  fixture.blueprint_extraction_input.comparisonWindow = clone(comparisonWindow);
+  for (const record of fixture.scrubbed_glean_exports ?? []) {
+    record.covered_window = clone(comparisonWindow);
+  }
+  fixture.expected.reviewed_aggregate_context_hash =
+    reviewedAggregateContextHash(fixture);
+  fixture.expected.reviewed_blueprint_expectation_hash =
+    reviewedBlueprintExpectationHash(fixture);
+}
+
+function setPlanWindows(plan, baselineWindow, comparisonWindow) {
+  plan.windows.baseline_window_start = baselineWindow.window_start;
+  plan.windows.baseline_window_end = baselineWindow.window_end;
+  plan.windows.comparison_window_start = comparisonWindow.window_start;
+  plan.windows.comparison_window_end = comparisonWindow.window_end;
 }
 
 function hasNestedKey(value, key) {
@@ -508,6 +568,59 @@ test("Measurement Cell preflight runner binds milestone measurement-plan overrid
     "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT"
   );
   assert.equal(unbound.snapshot_candidate_ref, null);
+});
+
+test("Measurement Cell preflight runner holds milestone date drift before snapshot candidate proof", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  const measurementPlan = clone(readJson(PLAN_PATH));
+  const baselineWindow = {
+    window_start: "2026-05-01",
+    window_end: "2026-05-31"
+  };
+  const comparisonWindow = {
+    window_start: "2026-06-01",
+    window_end: "2026-06-30"
+  };
+  setFixtureWindows(fixture, baselineWindow, comparisonWindow);
+  setPlanWindows(measurementPlan, baselineWindow, comparisonWindow);
+
+  const preflight = runMeasurementCellPreflightFromObject(fixture, {
+    measurementPlanOverride: measurementPlan
+  });
+
+  assert.equal(preflight.preflight_state, "HELD_FOR_MEASUREMENT_CELL_ASSEMBLY");
+  assert.equal(preflight.snapshot_candidate_ref, null);
+  assert.equal(preflight.validation_summary.snapshot_candidate_valid, false);
+  assert.ok(
+    preflight.validation_summary.gaps.some((gap) =>
+      gap.includes("milestone_day must match the derived comparison-window offset")
+    ),
+    preflight.validation_summary.gaps.join("; ")
+  );
+  assert.equal(preflight.feeds.measurement_cell_snapshot_candidate_proof, false);
+});
+
+test("Measurement Cell preflight validator rejects passed-envelope milestone date drift", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const preflight = runMeasurementCellPreflightFromObject(fixture);
+  const tampered = clone(preflight);
+  tampered.snapshot_candidate_ref.baseline_window_start = "2026-05-01";
+  tampered.snapshot_candidate_ref.baseline_window_end = "2026-05-31";
+  tampered.snapshot_candidate_ref.comparison_window_start = "2026-06-01";
+  tampered.snapshot_candidate_ref.comparison_window_end = "2026-06-30";
+  tampered.snapshot_candidate_ref.snapshot_candidate_hash = sha256Json(
+    stripSnapshotCandidateHash(tampered.snapshot_candidate_ref)
+  );
+  tampered.preflight_integrity_hash = sha256Json(
+    stripPreflightIntegrityHash(tampered)
+  );
+
+  const validation = validateMeasurementCellPreflight(tampered, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(validation.valid, false);
+  assertValidationGap(validation, "milestone_day must match the derived comparison-window offset");
 });
 
 test("Measurement Cell preflight validator rejects open-container payload smuggling and source-ref drift", () => {

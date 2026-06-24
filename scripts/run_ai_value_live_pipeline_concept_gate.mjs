@@ -238,6 +238,11 @@ const FORBIDDEN_OVERRIDE_KEY_PATTERNS = [
 const FORBIDDEN_VALUE_PATTERNS = [
   /https?:\/\//i,
   /secret:\/\//i,
+  /live\s+(?:bigquery|sigma|glean|connector)\s+execution/i,
+  /(?:bigquery|sigma|glean|connector)\s+execution/i,
+  /credential\s+access/i,
+  /query\s+execution/i,
+  /run\s+queries/i,
   /\bselect\b/i,
   /\bfrom\s+[a-z0-9_.-]+/i,
   /\bsql\b/i,
@@ -338,9 +343,6 @@ function mergeSafeOverrides(gate, overrides) {
   const source = asRecord(overrides);
   const next = clone(gate);
 
-  if (ALLOWED_SOURCE_SYSTEMS.has(source.source_system)) {
-    next.source_system = source.source_system;
-  }
   if (SAFE_ROLE_VALUES.has(source.source_owner_role)) {
     next.source_owner_role = source.source_owner_role;
   }
@@ -363,6 +365,30 @@ function falseMap(keys) {
 
 function trueMap(keys) {
   return Object.fromEntries(keys.map((key) => [key, true]));
+}
+
+function readyFeedMap(gateState) {
+  return gateState === READY_STATE ? trueMap(TRUE_FEEDS) : falseMap(TRUE_FEEDS);
+}
+
+function conceptGateHashPayload(gate) {
+  return {
+    schema_version: gate.schema_version,
+    gate_id: gate.gate_id,
+    gate_state: gate.gate_state,
+    source_system: gate.source_system,
+    source_owner_role: gate.source_owner_role,
+    legal_trust_review_state: gate.legal_trust_review_state,
+    proposed_execution_boundary: gate.proposed_execution_boundary,
+    fluencytracr_execution_mode: gate.fluencytracr_execution_mode,
+    prerequisites: gate.prerequisites,
+    upstream_controls: gate.upstream_controls,
+    review_refs: gate.review_refs,
+    feeds: gate.feeds,
+    boundary_policy: gate.boundary_policy,
+    blocked_uses: gate.blocked_uses,
+    required_caveats: gate.required_caveats
+  };
 }
 
 function safePreflightValidation(preflight, sourceFixture, sourceSystem, options = {}) {
@@ -455,8 +481,18 @@ function validateGateShape(gate) {
   if (![READY_STATE, HOLD_STATE, REJECTED_STATE].includes(record.gate_state)) {
     gaps.push("gate_state is not supported");
   }
+  if (!isSafeCompactRef(record.gate_id)) {
+    gaps.push("gate_id must be a compact safe ref");
+  }
   if (!ALLOWED_SOURCE_SYSTEMS.has(record.source_system)) {
     gaps.push("source_system must be bigquery_export or sigma_export");
+  }
+  if (
+    record.concept_gate_hash !== undefined &&
+    (typeof record.concept_gate_hash !== "string" ||
+      !/^[a-f0-9]{64}$/.test(record.concept_gate_hash))
+  ) {
+    gaps.push("concept_gate_hash must be a sha256 hash");
   }
   if (record.proposed_execution_boundary !== "approved_glean_or_customer_environment") {
     gaps.push("proposed_execution_boundary must keep execution upstream");
@@ -530,11 +566,20 @@ function validateGateShape(gate) {
       gaps.push(`review_refs.${key} must be a compact safe ref`);
     }
   }
+  if (
+    ALLOWED_SOURCE_SYSTEMS.has(record.source_system) &&
+    reviewRefs.aggregate_source_system !== record.source_system
+  ) {
+    gaps.push("review_refs.aggregate_source_system must match gate.source_system");
+  }
 
   const feeds = asRecord(record.feeds);
   for (const key of TRUE_FEEDS) {
     if (feeds[key] !== true && record.gate_state === READY_STATE) {
       gaps.push(`feeds.${key} must be true for concept review readiness`);
+    }
+    if (feeds[key] !== false && record.gate_state !== READY_STATE) {
+      gaps.push(`feeds.${key} must be false unless concept review is ready`);
     }
   }
   for (const key of FALSE_FEEDS) {
@@ -600,6 +645,12 @@ export function buildLivePipelineConceptGateFromObject(sourceFixture, options = 
     ...(!sourceSystemSupported
       ? ["sourceSystem must be bigquery_export or sigma_export"]
       : []),
+    ...(Object.prototype.hasOwnProperty.call(
+      asRecord(options.proposalOverrides),
+      "source_system"
+    )
+      ? ["proposalOverrides.source_system cannot change a fixture-bound preflight proof"]
+      : []),
     ...scanUnsafeOverrides(options.proposalOverrides ?? {})
   ];
   const preflightPassed =
@@ -650,7 +701,7 @@ export function buildLivePipelineConceptGateFromObject(sourceFixture, options = 
     },
     review_refs: reviewRefs,
     feeds: {
-      ...trueMap(TRUE_FEEDS),
+      ...readyFeedMap(gateState),
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),
@@ -677,21 +728,7 @@ export function buildLivePipelineConceptGateFromObject(sourceFixture, options = 
     gate.validation_summary.gate_state = gate.gate_state;
     gate.validation_summary.valid = false;
   }
-  gate.concept_gate_hash = sha256({
-    schema_version: gate.schema_version,
-    gate_id: gate.gate_id,
-    gate_state: gate.gate_state,
-    source_system: gate.source_system,
-    proposed_execution_boundary: gate.proposed_execution_boundary,
-    fluencytracr_execution_mode: gate.fluencytracr_execution_mode,
-    prerequisites: gate.prerequisites,
-    upstream_controls: gate.upstream_controls,
-    review_refs: gate.review_refs,
-    feeds: gate.feeds,
-    boundary_policy: gate.boundary_policy,
-    blocked_uses: gate.blocked_uses,
-    required_caveats: gate.required_caveats
-  });
+  gate.concept_gate_hash = sha256(conceptGateHashPayload(gate));
   gate.validation_summary = buildValidationSummary(gate, [
     ...overrideGaps,
     ...preflightValidation.gaps.map((gap) => `measurement_cell_preflight: ${gap}`)
@@ -702,11 +739,25 @@ export function buildLivePipelineConceptGateFromObject(sourceFixture, options = 
 export function validateLivePipelineConceptGate(gate, options = {}) {
   const record = asRecord(gate);
   const gaps = validateGateShape(record);
+  const recomputedHash = sha256(conceptGateHashPayload(record));
+  if (record.concept_gate_hash !== recomputedHash) {
+    gaps.push("concept_gate_hash must match the compact concept gate payload");
+  }
+  if (
+    record.gate_state === READY_STATE &&
+    !options.sourceFixture &&
+    options.skipFixtureRerun !== true
+  ) {
+    gaps.push("sourceFixture is required to validate ready concept gates");
+  }
 
   if (options.sourceFixture && options.skipFixtureRerun !== true) {
     const expected = buildLivePipelineConceptGateFromObject(options.sourceFixture, {
       sourceSystem: record.source_system
     });
+    if (record.gate_id !== expected.gate_id) {
+      gaps.push("gate_id does not match fixture-bound concept gate");
+    }
     const expectedRefs = expected.review_refs;
     for (const key of REVIEW_REF_FIELDS) {
       if (record.review_refs?.[key] !== expectedRefs[key]) {
