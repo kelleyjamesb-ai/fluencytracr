@@ -316,6 +316,48 @@ test("research promotion packet holds when expected behavior or VBD signal is mi
   );
 });
 
+test("research promotion packet holds when selected metric lag is missing", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  delete fixture.blueprint_extraction_input.approvedExpectationPaths[0]
+    .expected_metric_lag_days;
+
+  const packet = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validateResearchPromotionReadinessPacket(packet, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(packet.decision, "HOLD_FOR_SOURCE_OR_PATH_DRIFT");
+  assert.equal(validation.valid, false);
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.equal(packet.expected_pathway_metadata.metric_lag_days, null);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("metric_lag_days")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("research promotion packet makes customer metric id drift visible", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  fixture.data_spine_input.sources.customerMetric.metric_id =
+    "support_average_wait_hours";
+
+  const packet = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validateResearchPromotionReadinessPacket(packet, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(packet.decision, "HOLD_FOR_SOURCE_OR_PATH_DRIFT");
+  assert.equal(validation.valid, false);
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.equal(packet.selected_metric_movement_ref.metric_id, "support_average_wait_hours");
+  assert.equal(packet.selected_metric_movement_ref.movement_state, "held");
+  assert.equal(packet.selected_metric_movement_ref.window_alignment_state, "drifted");
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("selected_metric_movement_ref.metric_id")),
+    validation.gaps.join("; ")
+  );
+});
+
 test("research promotion packet validator does not trust hand-edited ready decisions", () => {
   const packet = buildResearchPromotionReadinessPacketFromObject(readJson(FIXTURE_PATH), {
     milestoneDays: [30, 60, 90, 180, 365]
@@ -393,6 +435,74 @@ test("research promotion packet rejects stringified JSON smuggling in compact sc
   assert.equal(serializedGaps.includes("research_model_feed"), false);
   assert.ok(
     validation.gaps.some((gap) => gap.includes("expectation_path_id")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("research promotion packet suppresses unsafe source refs before packet output", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  fixture.data_spine_input.sources.customerMetric.source_ref =
+    "SELECT user_id FROM raw_rows";
+
+  const packet = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validateResearchPromotionReadinessPacket(packet, {
+    sourceFixture: fixture
+  });
+  const serializedPacket = JSON.stringify(packet);
+  const serializedValidation = JSON.stringify(validation);
+
+  assert.equal(packet.decision, "HOLD_FOR_SOURCE_OR_PATH_DRIFT");
+  assert.equal(validation.valid, false);
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.equal(packet.source_lane_refs.customer_metric.source_ref, null);
+  assert.equal(packet.selected_metric_movement_ref.source_ref, null);
+  assert.equal(serializedPacket.includes("SELECT user_id"), false);
+  assert.equal(serializedPacket.includes("raw_rows"), false);
+  assert.equal(serializedValidation.includes("SELECT user_id"), false);
+});
+
+test("research promotion packet keeps feed closed for invalid reviewer roles", () => {
+  const packet = buildResearchPromotionReadinessPacketFromObject(readJson(FIXTURE_PATH), {
+    reviewerRole: "external_customer"
+  });
+  const validation = validate(packet);
+
+  assert.equal(packet.decision, "HOLD_FOR_GOVERNANCE_REVIEW");
+  assert.equal(packet.reviewer_role, null);
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("reviewer_role")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("research promotion packet validator returns gaps for malformed collection fields", () => {
+  const packet = buildResearchPromotionReadinessPacketFromObject(readJson(FIXTURE_PATH));
+  packet.blocked_uses = {};
+  packet.required_caveats = {};
+  packet.milestone_coverage.window_modes = "milestone";
+  packet.measurement_cell_snapshot_refs = {};
+  packet.source_lane_refs = "not_source_lanes";
+  recompute(packet);
+
+  const validation = validate(packet);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("blocked_uses must be an array")),
+    validation.gaps.join("; ")
+  );
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("required_caveats must be an array")),
+    validation.gaps.join("; ")
+  );
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("measurement_cell_snapshot_refs must be an array")),
+    validation.gaps.join("; ")
+  );
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("source_lane_refs must be an object")),
     validation.gaps.join("; ")
   );
 });

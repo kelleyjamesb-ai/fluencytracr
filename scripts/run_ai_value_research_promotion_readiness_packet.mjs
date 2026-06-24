@@ -410,6 +410,8 @@ const FORBIDDEN_VALUE_PATTERNS = [
 const ISO_TIMESTAMP_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
+const repeatedPilotPackageCache = new Map();
+const sourceBoundPacketHashCache = new Map();
 
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize);
@@ -433,6 +435,16 @@ function clone(value) {
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function arrayOf(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function optionOrDefault(options, key, defaultValue) {
+  return Object.prototype.hasOwnProperty.call(options, key)
+    ? options[key]
+    : defaultValue;
 }
 
 function safeIdPart(value) {
@@ -503,6 +515,12 @@ function safeExpectationPathId(value) {
   return value;
 }
 
+function safeMetricLagDays(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
+}
+
 function loadMeasurementPlan(fixture, cwd) {
   if (fixture?.measurement_plan) return fixture.measurement_plan;
   if (!fixture?.measurement_plan_path) return null;
@@ -517,6 +535,43 @@ function selectedExpectationPath(fixture) {
   return Array.isArray(fixture?.blueprint_extraction_input?.approvedExpectationPaths)
     ? fixture.blueprint_extraction_input.approvedExpectationPaths[0] ?? null
     : null;
+}
+
+function repeatedPilotPackageCacheKey(fixture, options = {}) {
+  return sha256Json({
+    fixture,
+    cwd: options.cwd ?? process.cwd(),
+    milestoneDays: options.milestoneDays ?? REQUIRED_MILESTONE_DAYS,
+    windowMode: options.windowMode ?? "milestone"
+  });
+}
+
+function sourceBoundPacketCacheKey(fixture, options = {}) {
+  return sha256Json({
+    fixture,
+    cwd: options.cwd ?? process.cwd(),
+    milestoneDays: options.milestoneDays ?? REQUIRED_MILESTONE_DAYS,
+    windowMode: options.windowMode ?? "milestone",
+    reviewerRole: optionOrDefault(options, "reviewerRole", "governance_operator")
+  });
+}
+
+function getControlledRepeatedPilotEvidencePackage(fixture, options = {}) {
+  if (options.repeatedPilotEvidencePackage) {
+    return clone(options.repeatedPilotEvidencePackage);
+  }
+  const cacheKey = repeatedPilotPackageCacheKey(fixture, options);
+  if (!repeatedPilotPackageCache.has(cacheKey)) {
+    repeatedPilotPackageCache.set(
+      cacheKey,
+      runControlledRepeatedPilotEvidencePackageFromObject(fixture, {
+        cwd: options.cwd,
+        milestoneDays: options.milestoneDays,
+        windowMode: options.windowMode
+      })
+    );
+  }
+  return clone(repeatedPilotPackageCache.get(cacheKey));
 }
 
 function normalizeValueDriver(value) {
@@ -543,7 +598,7 @@ function pathBinding(path, blueprint, measurementPlan) {
       path?.expected_metric_direction,
       METRIC_DIRECTIONS
     ),
-    metric_lag_days: path?.expected_metric_lag_days ?? null,
+    metric_lag_days: safeMetricLagDays(path?.expected_metric_lag_days),
     value_driver: valueDriver,
     approved_blueprint_ref:
       safeRef(path?.source_ref) ??
@@ -563,9 +618,9 @@ function pathBinding(path, blueprint, measurementPlan) {
 function compactSnapshotRef(ref, binding, expectationPathHash, approvedBlueprintPayloadHash) {
   return {
     snapshot_ref_source: "controlled_recomputed_measurement_cell_snapshot_candidate",
-    window_id: ref?.window_id ?? null,
+    window_id: safeRef(ref?.window_id),
     milestone_day: ref?.milestone_day ?? null,
-    status: ref?.status ?? null,
+    status: safeRef(ref?.status),
     snapshot_ref: compactHashRef("measurement_cell_snapshot_ref", {
       window_id: ref?.window_id,
       milestone_day: ref?.milestone_day,
@@ -575,7 +630,7 @@ function compactSnapshotRef(ref, binding, expectationPathHash, approvedBlueprint
       window_id: ref?.window_id,
       assembly_run_id: ref?.measurement_cell_assembly_run_id
     }),
-    metric_id: ref?.metric_id ?? null,
+    metric_id: safeRef(ref?.metric_id),
     metric_definition_hash: sha256Json({
       metric_id: binding.metric_id,
       metric_name: binding.metric_name,
@@ -601,13 +656,13 @@ function compactSnapshotRef(ref, binding, expectationPathHash, approvedBlueprint
 function sourceLaneRef(source) {
   if (!isPlainObject(source)) return null;
   return {
-    source_ref: source.source_ref ?? null,
-    source_state: source.state ?? null,
-    owner_role: source.owner_role ?? null,
-    review_state: source.review_state ?? null,
+    source_ref: safeRef(source.source_ref),
+    source_state: safeRef(source.state),
+    owner_role: safeRef(source.owner_role),
+    review_state: safeRef(source.review_state),
     aggregate_only: source.aggregate_only === true,
-    freshness_state: source.freshness_state ?? "current_for_approved_window",
-    window_status: source.window_status ?? "current",
+    freshness_state: safeRef(source.freshness_state ?? "current_for_approved_window"),
+    window_status: safeRef(source.window_status ?? "current"),
     source_hash: sha256Json({
       source_ref: source.source_ref ?? null,
       state: source.state ?? null,
@@ -630,8 +685,8 @@ function sourceLaneRefs(fixture) {
     customer_metric: sourceLaneRef(sources.customerMetric),
     assumption_governance: {
       source_ref: [
-        sources.assumption?.source_ref,
-        sources.governance?.source_ref
+        safeRef(sources.assumption?.source_ref),
+        safeRef(sources.governance?.source_ref)
       ].filter(Boolean).join("|") || null,
       source_state:
         sources.assumption?.state === "present" &&
@@ -639,8 +694,8 @@ function sourceLaneRefs(fixture) {
           ? "present"
           : null,
       owner_role: [
-        sources.assumption?.owner_role,
-        sources.governance?.owner_role
+        safeRef(sources.assumption?.owner_role),
+        safeRef(sources.governance?.owner_role)
       ].filter(Boolean).join("|") || null,
       review_state:
         sources.assumption?.review_state === "clear" &&
@@ -697,10 +752,12 @@ function selectedMetricMovementRef(fixture, binding) {
   if (!isPlainObject(source)) return null;
   const exportRecord = customerMetricExport(fixture);
   const summary = exportRecord?.metric_or_signal_summary ?? {};
+  const sourceMetricId = safeRef(source.metric_id);
   const baseline = finiteNumber(summary.baseline_value);
   const comparison = finiteNumber(summary.comparison_value);
   const movementDirection = movementDirectionFor(baseline, comparison);
   const expectedDirection = binding.metric_direction;
+  const metricAligned = sourceMetricId === binding.metric_id;
   const directionAligned =
     expectedDirection === "decrease"
       ? movementDirection === "decrease"
@@ -724,31 +781,36 @@ function selectedMetricMovementRef(fixture, binding) {
     freshnessState === "current_for_approved_window" && windowStatus === "current";
   return {
     context_ref: compactHashRef("selected_metric_movement_ref", source),
-    source_ref: source.source_ref ?? null,
+    source_ref: safeRef(source.source_ref),
     context_scope: "aggregate_customer_metric_movement_only",
     readiness_effect: "required_selected_metric_context",
-    metric_id: binding.metric_id ?? source.metric_id ?? null,
+    metric_id: sourceMetricId,
     metric_direction: expectedDirection ?? null,
     metric_lag_days: binding.metric_lag_days ?? null,
     movement_state:
-      directionAligned && sourceWindowAligned && exportWindowAligned && currentWindow
+      metricAligned &&
+      directionAligned &&
+      sourceWindowAligned &&
+      exportWindowAligned &&
+      currentWindow
         ? "aligned"
         : "held",
     movement_direction: movementDirection,
-    freshness_state: freshnessState,
-    window_status: windowStatus,
+    freshness_state: safeRef(freshnessState),
+    window_status: safeRef(windowStatus),
     window_alignment_state:
-      sourceWindowAligned && exportWindowAligned ? "aligned" : "drifted",
+      metricAligned && sourceWindowAligned && exportWindowAligned ? "aligned" : "drifted",
     baseline_window_hash: sha256Json(baselineWindow),
     comparison_window_hash: sha256Json(comparisonWindow),
     source_hash: sha256Json({
       source_ref: source.source_ref ?? null,
       export_ref: exportRecord?.aggregate_probe_id ?? exportRecord?.export_id ?? null,
-      metric_id: binding.metric_id ?? source.metric_id ?? null,
+      metric_id: sourceMetricId,
       baseline_present: baseline !== null,
       comparison_present: comparison !== null,
       movement_direction: movementDirection,
       expected_direction: expectedDirection,
+      metric_aligned: metricAligned,
       source_window_aligned: sourceWindowAligned,
       export_window_aligned: exportWindowAligned,
       freshness_state: freshnessState,
@@ -762,7 +824,7 @@ function aiFluencyConstructContextRef(fixture) {
   if (!isPlainObject(source)) return null;
   return {
     context_ref: compactHashRef("ai_fluency_construct_context_ref", source),
-    source_ref: source.source_ref ?? null,
+    source_ref: safeRef(source.source_ref),
     context_scope: "aggregate_construct_context_only",
     readiness_effect: "context_only_cannot_upgrade_or_rescue",
     source_hash: sha256Json(source)
@@ -774,7 +836,7 @@ function aiFluencyPsychologicalContextRef(fixture) {
   if (!isPlainObject(source)) return null;
   return {
     context_ref: compactHashRef("ai_fluency_attitude_behavioral_intent_context_ref", source),
-    source_ref: source.source_ref ?? null,
+    source_ref: safeRef(source.source_ref),
     context_scope: "aggregate_attitude_and_behavioral_intent_context_only",
     readiness_effect: "context_only_cannot_upgrade_or_rescue",
     source_hash: sha256Json({
@@ -789,7 +851,7 @@ function observedVbdContextRef(fixture) {
   if (!isPlainObject(source)) return null;
   return {
     context_ref: compactHashRef("observed_vbd_context_ref", source),
-    source_ref: source.source_ref ?? null,
+    source_ref: safeRef(source.source_ref),
     context_scope: "aggregate_velocity_breadth_depth_context_only",
     readiness_effect: "required_observed_behavior_context",
     behavior_source: "observed_telemetry_vbd",
@@ -800,10 +862,10 @@ function observedVbdContextRef(fixture) {
 function assumptionGovernanceRef(fixture) {
   const sources = fixture?.data_spine_input?.sources ?? {};
   const compact = {
-    assumption_source_ref: sources.assumption?.source_ref ?? null,
-    governance_source_ref: sources.governance?.source_ref ?? null,
-    assumption_review_state: sources.assumption?.review_state ?? null,
-    governance_review_state: sources.governance?.review_state ?? null
+    assumption_source_ref: safeRef(sources.assumption?.source_ref),
+    governance_source_ref: safeRef(sources.governance?.source_ref),
+    assumption_review_state: safeRef(sources.assumption?.review_state),
+    governance_review_state: safeRef(sources.governance?.review_state)
   };
   return {
     context_ref: compactHashRef("assumption_governance_ref", compact),
@@ -840,13 +902,13 @@ function dataSpineAlignmentRef(repeatedPackage) {
   const alignment = repeatedPackage?.alignment_summary ?? {};
   return {
     alignment_ref: compactHashRef("data_spine_alignment_ref", alignment),
-    org_id: alignment.org_id ?? null,
-    client_id: alignment.client_id ?? null,
-    workflow_family: alignment.workflow_family ?? null,
-    function_area: alignment.function_area ?? null,
-    cohort_key: alignment.cohort_key ?? null,
-    measurement_plan_id: alignment.measurement_plan_id ?? null,
-    selected_metric_id: alignment.selected_metric_id ?? null,
+    org_id: safeRef(alignment.org_id),
+    client_id: safeRef(alignment.client_id),
+    workflow_family: safeRef(alignment.workflow_family),
+    function_area: safeRef(alignment.function_area),
+    cohort_key: safeRef(alignment.cohort_key),
+    measurement_plan_id: safeRef(alignment.measurement_plan_id),
+    selected_metric_id: safeRef(alignment.selected_metric_id),
     expectation_path_id: safeExpectationPathId(alignment.expectation_path_id),
     reviewed_aggregate_context_hash:
       alignment.reviewed_aggregate_context_hash ?? null,
@@ -908,10 +970,14 @@ function readinessGapsFor({
   binding,
   lanes,
   selectedMetricRef,
-  expectedPathHash
+  expectedPathHash,
+  reviewerRole
 }) {
   const gaps = [];
   gaps.push(...bindingSafetyGaps(path, blueprint, binding));
+  if (!reviewerRole) {
+    gaps.push("reviewer_role must be an internal review role");
+  }
   if (repeatedValidation.valid !== true) {
     gaps.push(
       ...stringsOf(repeatedValidation.gaps).map((gap) =>
@@ -986,7 +1052,7 @@ function readinessGapsFor({
   }
   if (!binding.metric_id) gaps.push("selected metric id is required");
   if (!binding.metric_direction) gaps.push("selected metric direction is required");
-  if (!Number.isFinite(Number(binding.metric_lag_days))) {
+  if (safeMetricLagDays(binding.metric_lag_days) === null) {
     gaps.push("selected metric lag is required");
   }
   if (!binding.value_driver) {
@@ -1042,7 +1108,7 @@ function decisionForGaps(gaps) {
   if (/expectation_path|expected_pathway_metadata|approval|metric|lag|value driver|source_lane_refs\..*source_ref/i.test(gaps.join(" | "))) {
     return HOLD_SOURCE_OR_PATH_DRIFT_DECISION;
   }
-  if (/source_lane_refs|governance|review_state|aggregate_only|source_state/i.test(gaps.join(" | "))) {
+  if (/source_lane_refs|governance|review_state|aggregate_only|source_state|reviewer_role/i.test(gaps.join(" | "))) {
     return HOLD_GOVERNANCE_REVIEW_DECISION;
   }
   return HOLD_REPEATED_DECISION;
@@ -1060,20 +1126,26 @@ export function buildResearchPromotionReadinessPacketFromObject(
 ) {
   const cwd = options.cwd ?? process.cwd();
   const fixture = clone(sourceFixture);
-  const repeatedPackage = options.repeatedPilotEvidencePackage ??
-    runControlledRepeatedPilotEvidencePackageFromObject(fixture, {
-      cwd,
-      milestoneDays: options.milestoneDays,
-      windowMode: options.windowMode
-    });
+  const reviewerRole = safeEnumValue(
+    optionOrDefault(options, "reviewerRole", "governance_operator"),
+    INTERNAL_REVIEW_ROLES
+  );
+  const repeatedPackage = getControlledRepeatedPilotEvidencePackage(fixture, {
+    cwd,
+    milestoneDays: options.milestoneDays,
+    windowMode: options.windowMode,
+    repeatedPilotEvidencePackage: options.repeatedPilotEvidencePackage
+  });
   const repeatedValidation = validateControlledRepeatedPilotEvidencePackage(
     repeatedPackage,
-    {
-      sourceFixture: fixture,
-      cwd,
-      milestoneDays: options.milestoneDays,
-      windowMode: options.windowMode
-    }
+    options.repeatedPilotEvidencePackage
+      ? {
+          sourceFixture: fixture,
+          cwd,
+          milestoneDays: options.milestoneDays,
+          windowMode: options.windowMode
+        }
+      : { cwd }
   );
   const measurementPlan = loadMeasurementPlan(fixture, cwd);
   const blueprint = fixture?.blueprint_extraction_input ?? {};
@@ -1093,7 +1165,8 @@ export function buildResearchPromotionReadinessPacketFromObject(
     binding,
     lanes,
     selectedMetricRef,
-    expectedPathHash: expectationPathHash
+    expectedPathHash: expectationPathHash,
+    reviewerRole
   });
   const decision = decisionForGaps(readinessGaps);
   const milestoneCoverage = repeatedPackage?.series_boundary ?? {};
@@ -1115,7 +1188,7 @@ export function buildResearchPromotionReadinessPacketFromObject(
       }
     ),
     created_at: fixture?.generated_at ?? new Date(0).toISOString(),
-    reviewer_role: options.reviewerRole ?? "governance_operator",
+    reviewer_role: reviewerRole,
     decision,
     approved_blueprint_ref: binding.approved_blueprint_ref,
     value_hypothesis_ref: binding.value_hypothesis_ref,
@@ -1199,10 +1272,20 @@ export function buildResearchPromotionReadinessPacketFromObject(
     generated_at: fixture?.generated_at ?? new Date(0).toISOString(),
     derivation_version: DERIVATION_VERSION
   };
-  return {
+  const packetWithHash = {
     ...packet,
     packet_integrity_hash: researchPromotionPacketIntegrityHash(packet)
   };
+  sourceBoundPacketHashCache.set(
+    sourceBoundPacketCacheKey(fixture, {
+      cwd,
+      milestoneDays: options.milestoneDays,
+      windowMode: options.windowMode,
+      reviewerRole
+    }),
+    packetWithHash.packet_integrity_hash
+  );
+  return packetWithHash;
 }
 
 function collectUnsupportedKeys(value, allowedFields, label) {
@@ -1350,7 +1433,9 @@ function collectShapeGaps(packet) {
   if (!Array.isArray(packet?.validation_summary?.gaps)) {
     gaps.push("validation_summary.gaps must be an array");
   }
-  for (const [lane, ref] of Object.entries(packet?.source_lane_refs ?? {})) {
+  for (const [lane, ref] of Object.entries(
+    isPlainObject(packet?.source_lane_refs) ? packet.source_lane_refs : {}
+  )) {
     gaps.push(
       ...collectUnsupportedKeys(ref, SOURCE_LANE_REF_FIELDS, `source_lane_refs.${lane}`)
     );
@@ -1360,6 +1445,8 @@ function collectShapeGaps(packet) {
 
 function collectPolicyGaps(packet) {
   const gaps = [];
+  const blockedUses = arrayOf(packet?.blocked_uses);
+  const requiredCaveats = arrayOf(packet?.required_caveats);
   if (packet?.feeds?.internal_research_design_review !== (packet?.decision === READY_DECISION)) {
     gaps.push("feeds.internal_research_design_review must match ready decision");
   }
@@ -1374,21 +1461,21 @@ function collectPolicyGaps(packet) {
     }
   }
   for (const use of REQUIRED_BLOCKED_USES) {
-    if (!packet?.blocked_uses?.includes(use)) {
+    if (!blockedUses.includes(use)) {
       gaps.push(`blocked_uses must include ${use}`);
     }
   }
-  for (const use of packet?.blocked_uses ?? []) {
+  for (const use of blockedUses) {
     if (!REQUIRED_BLOCKED_USES.includes(use)) {
       gaps.push("blocked_uses contains ungoverned value");
     }
   }
   for (const caveat of REQUIRED_CAVEATS) {
-    if (!packet?.required_caveats?.includes(caveat)) {
+    if (!requiredCaveats.includes(caveat)) {
       gaps.push(`required_caveats must include governed caveat`);
     }
   }
-  for (const caveat of packet?.required_caveats ?? []) {
+  for (const caveat of requiredCaveats) {
     if (!REQUIRED_CAVEATS.includes(caveat)) {
       gaps.push("required_caveats contains ungoverned value");
     }
@@ -1440,24 +1527,34 @@ function collectReadinessConsistencyGaps(packet) {
   if (!packet?.expected_pathway_metadata?.observed_vbd_signal) {
     gaps.push("expected_pathway_metadata.observed_vbd_signal is required");
   }
+  if (
+    safeMetricLagDays(packet?.expected_pathway_metadata?.metric_lag_days) === null
+  ) {
+    gaps.push("expected_pathway_metadata.metric_lag_days is required");
+  }
   const coverage = packet?.milestone_coverage ?? {};
-  if (JSON.stringify(coverage.required_milestones ?? []) !== JSON.stringify(REQUIRED_MILESTONE_DAYS)) {
+  const requiredMilestones = arrayOf(coverage.required_milestones);
+  const observedMilestones = arrayOf(coverage.observed_milestones);
+  const missingMilestones = arrayOf(coverage.missing_milestones);
+  const windowModes = arrayOf(coverage.window_modes);
+  const snapshotRefs = arrayOf(packet?.measurement_cell_snapshot_refs);
+  if (JSON.stringify(requiredMilestones) !== JSON.stringify(REQUIRED_MILESTONE_DAYS)) {
     gaps.push("milestone_coverage.required_milestones must be Day 0, 30, 60, 90, 180, and 365");
   }
-  const rolling = (coverage.window_modes ?? []).some((mode) => mode !== "milestone");
+  const rolling = windowModes.some((mode) => mode !== "milestone");
   if (rolling) {
     if (coverage.rolling_30_day_context_used_as_milestone !== false) {
       gaps.push("rolling_30_day context must not be marked as milestone evidence");
     }
-    if ((packet?.measurement_cell_snapshot_refs ?? []).length !== 0) {
+    if (snapshotRefs.length !== 0) {
       gaps.push("rolling_30_day context must not emit milestone snapshot refs");
     }
   }
   if (ready) {
-    if (JSON.stringify(coverage.observed_milestones ?? []) !== JSON.stringify(REQUIRED_MILESTONE_DAYS)) {
+    if (JSON.stringify(observedMilestones) !== JSON.stringify(REQUIRED_MILESTONE_DAYS)) {
       gaps.push("ready packet requires all governed milestones");
     }
-    if ((coverage.missing_milestones ?? []).length !== 0) {
+    if (missingMilestones.length !== 0) {
       gaps.push("ready packet cannot have missing milestones");
     }
     for (const field of [
@@ -1470,11 +1567,11 @@ function collectReadinessConsistencyGaps(packet) {
         gaps.push(`ready packet requires milestone_coverage.${field} to be zero`);
       }
     }
-    if ((packet?.measurement_cell_snapshot_refs ?? []).length !== REQUIRED_MILESTONE_DAYS.length) {
+    if (snapshotRefs.length !== REQUIRED_MILESTONE_DAYS.length) {
       gaps.push("ready packet requires compact snapshot refs for each governed milestone");
     }
   }
-  for (const ref of packet?.measurement_cell_snapshot_refs ?? []) {
+  for (const ref of snapshotRefs) {
     if (
       ref.snapshot_ref_source !==
       "controlled_recomputed_measurement_cell_snapshot_candidate"
@@ -1524,7 +1621,9 @@ function collectReadinessConsistencyGaps(packet) {
       gaps.push(`measurement_cell_snapshot_refs.${ref.window_id ?? "unknown"} must use safe compact refs`);
     }
   }
-  for (const [lane, ref] of Object.entries(packet?.source_lane_refs ?? {})) {
+  for (const [lane, ref] of Object.entries(
+    isPlainObject(packet?.source_lane_refs) ? packet.source_lane_refs : {}
+  )) {
     if (!safeRef(ref?.source_ref)) {
       gaps.push(`source_lane_refs.${lane}.source_ref must be a safe compact ref`);
     }
@@ -1673,16 +1772,22 @@ function collectSourceFixtureBoundGaps(packet, options = {}) {
   if (options.sourceFixture?.schema_version !== FIXTURE_SCHEMA_VERSION) {
     return [`sourceFixture.schema_version must be ${FIXTURE_SCHEMA_VERSION}`];
   }
-  const expected = buildResearchPromotionReadinessPacketFromObject(
-    options.sourceFixture,
-    {
-      cwd: options.cwd ?? process.cwd(),
-      milestoneDays: options.milestoneDays,
-      windowMode: options.windowMode,
-      reviewerRole: packet?.reviewer_role
-    }
-  );
-  if (packet?.packet_integrity_hash !== expected.packet_integrity_hash) {
+  const expectedOptions = {
+    cwd: options.cwd ?? process.cwd(),
+    milestoneDays: options.milestoneDays,
+    windowMode: options.windowMode,
+    reviewerRole: packet?.reviewer_role
+  };
+  const cacheKey = sourceBoundPacketCacheKey(options.sourceFixture, expectedOptions);
+  let expectedHash = sourceBoundPacketHashCache.get(cacheKey);
+  if (!expectedHash) {
+    const expected = buildResearchPromotionReadinessPacketFromObject(
+      options.sourceFixture,
+      expectedOptions
+    );
+    expectedHash = expected.packet_integrity_hash;
+  }
+  if (packet?.packet_integrity_hash !== expectedHash) {
     return ["research promotion packet must match source-fixture-bound output"];
   }
   return [];
@@ -1714,7 +1819,7 @@ function printUsageAndExit() {
 }
 
 function cliOptions(argv) {
-  const fixturePath = argv.find((arg) => !arg.startsWith("--"));
+  const fixturePath = argv.filter((arg) => !arg.startsWith("--")).at(-1);
   const milestonesArg = argv.find((arg) => arg.startsWith("--milestones="));
   const windowModeArg = argv.find((arg) => arg.startsWith("--window-mode="));
   return {
@@ -1750,7 +1855,7 @@ if (invokedPath === currentPath) {
   });
   if (!validation.valid) {
     console.error(JSON.stringify(validation, null, 2));
-    process.exitCode = 1;
+    process.exit(1);
   }
   console.log(JSON.stringify(packet, null, 2));
 }
