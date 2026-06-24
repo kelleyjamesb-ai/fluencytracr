@@ -211,6 +211,8 @@ test("aggregate connector boundary plan rejects live handles, query text, creden
 
   const serializedPlan = JSON.stringify(plan);
   assert.equal(validation.valid, false);
+  assert.equal(JSON.stringify(plan).includes("person@example.com"), false);
+  assert.equal(JSON.stringify(plan).includes("SELECT user_id"), false);
   assert.equal(plan.boundary_plan_state, "BLOCKED");
   assert.equal(plan.aggregate_definition_ref, null);
   assert.equal(plan.aggregate_output_ref, null);
@@ -225,6 +227,9 @@ test("aggregate connector boundary plan rejects live handles, query text, creden
   assert.equal(serializedPlan.includes("secret://warehouse/key"), false);
   assert.equal(serializedPlan.includes("measurement_cell_candidate_smuggled"), false);
   assert.ok(validation.gaps.length > 0);
+  assert.ok(validation.gaps.some((gap) => gap.includes("aggregate_definition_ref")));
+  assert.ok(validation.gaps.some((gap) => gap.includes("aggregate_output_ref")));
+  assert.ok(validation.gaps.some((gap) => gap.includes("boundary_plan")));
   assert.equal(JSON.stringify(validation.gaps).includes("person@example.com"), false);
   assert.equal(JSON.stringify(validation.gaps).includes("SELECT user_id"), false);
 });

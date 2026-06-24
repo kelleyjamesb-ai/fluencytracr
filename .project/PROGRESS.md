@@ -171,6 +171,83 @@
   tests/ai_value_minimal_persistence.test.ts tests/ai_value_objects_api.test.ts`
   passed 80/80; `npm run build --workspace backend`; docs contract sweep;
   `git diff --check`; and V1 governance gates passed.
+- AI Value PR #372 legacy readout governance conflict-resolution rebase
+  (user-requested, 2026-06-23): rebased
+  `codex/OrgFluency-legacy-readout-governance` onto current `origin/main`,
+  skipped the older controlled-aggregate hardening commit whose behavior is
+  superseded by PR #371 on main, and replayed the BigQuery aggregate export
+  review commit. Resolved additive test conflicts by keeping current compact
+  blocked-artifact expectations plus BigQuery export review coverage. Fixed the
+  boundary-plan drift path to pass `validationGaps` into blocked summaries so
+  recomputed saved-fixture drift diagnostics are preserved. No canonical
+  events, suppression reasons, live connectors, UI, ROI, causality,
+  productivity, person-level fields, or customer-facing economic output was
+  added. Verification passed for shared build, BigQuery aggregate export review
+  suite, aggregate connector boundary-plan suite, controlled aggregate manifest
+  validator suite, controlled aggregate manifest validation package suite, and
+  diff check.
+- AI Value PR #371 conflict-resolution rebase (user-requested, 2026-06-23):
+  rebased `codex/pr369-review-comments` onto current `origin/main` and
+  resolved overlaps from PR #370's legacy readout isolation and blocked-package
+  hardening. The resolved branch keeps stricter blocked manifest-validation
+  packages free of adapter refs while preserving recomputed per-manifest
+  validation flags, keeps validated non-VBD lane override coverage, preserves
+  VBD lane handling for the default support metric, and aligns value-chain
+  tests with fail-closed mismatched Fluency baseline behavior. No canonical
+  events, suppression reasons, live connectors, UI, ROI, causality,
+  productivity, person-level fields, or customer-facing economic output was
+  added. Verification passed for shared build, AI Value engine suite,
+  controlled aggregate manifest validator suite, controlled aggregate manifest
+  validation package suite, backend AI Value object API suite, and diff check.
+- AI Value PR #371 controlled aggregate manifest review fixes
+  (user-requested, 2026-06-23): addressed the follow-up review comments on
+  approved expectation-path hash binding, approved AI Fluency scalar metric
+  validation, metric identifier allowlisting, and blocked manifest-validation
+  summary diagnostics. Pipeline review validation now accepts fixture-derived
+  approved-path metadata in expectation hashes, treats approved AI Fluency
+  metric identifiers as governed scalar metadata during forbidden-value scans,
+  and keeps `governed_value_driver` approved only as output metadata, not as a
+  selectable metric. Blocked validation packages now preserve the recomputed
+  per-manifest source, extraction, review, and chain flags instead of marking
+  every stage failed. No canonical events, suppression reasons, live
+  connectors, UI, ROI, causality, productivity, person-level fields, or
+  customer-facing economic output was added. Verification passed for shared
+  build, controlled aggregate manifest validator suite, controlled aggregate
+  manifest validation package suite, and diff check.
+- AI Value PR #369 follow-up review fixes (user-requested, 2026-06-23):
+  addressed additional review comments on approved AI Fluency confidence
+  aggregate fields, manifest-validation connector adapter summary binding,
+  source-lane derivation, unsafe validation-summary gap text, and mismatched
+  Fluency baseline provenance. Controlled aggregate manifest validation now
+  derives `source_lane` from the selected metric instead of hard-coding VBD
+  token evidence, recomputes `connector_adapter_valid`, and keeps sanitized
+  validation-summary gap enforcement. Value-chain runs now copy
+  `fluency_baseline_id` only after optional workflow-family compatibility
+  clears, and mismatched baseline context holds before spine persistence.
+  Readout context selection also ignores explicit baseline refs for other
+  workflows. No canonical events, suppression reasons, live connectors,
+  routes beyond existing handler validation, UI, ROI, causality, productivity,
+  person-level fields, or customer-facing economic output was added.
+  Verification passed for shared build, controlled aggregate manifest
+  validation suite, controlled aggregate manifest validator suite, AI Value
+  engine suite, backend AI Value object API suite, and diff check.
+- AI Value PR #369 manifest review-comment fixes (user-requested,
+  2026-06-23): addressed the unresolved review threads on controlled aggregate
+  manifest validation, aggregate connector boundary plans, controlled aggregate
+  pipeline manifest validation, and Measurement Cell snapshot correction
+  lineage. Blocked manifest-validation and boundary-plan builders now return
+  compact blocked artifacts instead of unsafe merged payloads. Manifest
+  validation packages compact pipeline dry-run refs, reject validation-summary
+  gap smuggling, allow the approved aggregate AI Fluency confidence mean field,
+  reject dimension fields as metrics, bind the reviewed metric to the approved
+  expectation-path hash, and normalize persisted date-only window fields during
+  correction lineage checks. No canonical events, suppression reasons, routes,
+  UI, live connectors, ROI, causality, productivity, person-level fields,
+  persistence expansion, or customer-facing economic output was added.
+  Verification passed for shared build, controlled aggregate manifest
+  validation suite, aggregate connector boundary-plan suite, controlled
+  aggregate manifest validator suite, backend AI Value minimal persistence
+  suite, and diff check.
 - AI Value review-gate follow-up fixes (user-requested, 2026-06-23):
   addressed the review comments on Measurement Cell snapshot binding, initial
   snapshot lineage, baseline-only evidence-collection windows, controlled

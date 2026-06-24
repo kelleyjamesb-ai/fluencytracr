@@ -1783,10 +1783,10 @@ const validateMeasurementCellSnapshotCandidateRef = (
       gaps,
       `snapshotCandidateRef.${field} must match recomputed Measurement Cell Snapshot binding`,
       field.endsWith("_window_start") || field.endsWith("_window_end")
-        ? normalizeDateOnlyForComparison(expected)
+        ? normalizeDateOnlyComparisonValue(expected)
         : expected,
       field.endsWith("_window_start") || field.endsWith("_window_end")
-        ? normalizeDateOnlyForComparison(actual)
+        ? normalizeDateOnlyComparisonValue(actual)
         : actual
     );
   }
@@ -1945,11 +1945,37 @@ const compareField = (
   }
 };
 
-const normalizeDateOnlyForComparison = (value: unknown): unknown => {
+const normalizeDateOnlyComparisonValue = (value: unknown): unknown => {
   if (typeof value !== "string") return value;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toISOString().slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return value.slice(0, 10);
+  return value;
+};
+
+const compareMeasurementCellSnapshotLineageField = (
+  gaps: string[],
+  field: string,
+  expected: unknown,
+  actual: unknown
+) => {
+  const dateOnlyFields = new Set([
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end"
+  ]);
+  const expectedValue = dateOnlyFields.has(field)
+    ? normalizeDateOnlyComparisonValue(expected)
+    : expected;
+  const actualValue = dateOnlyFields.has(field)
+    ? normalizeDateOnlyComparisonValue(actual)
+    : actual;
+  compareField(
+    gaps,
+    `superseded Measurement Cell Snapshot ${field} must match correction`,
+    expectedValue,
+    actualValue
+  );
 };
 
 const expectedPilotRunStatus = (
@@ -3001,17 +3027,11 @@ const measurementCellSnapshotLineageDriftGaps = (
     "comparison_window_start",
     "comparison_window_end"
   ] as const) {
-    const expected = dateOnlyFields.has(field)
-      ? normalizeDateOnlyForComparison(superseded[field])
-      : superseded[field];
-    const actual = dateOnlyFields.has(field)
-      ? normalizeDateOnlyForComparison(record[field])
-      : record[field];
-    compareField(
+    compareMeasurementCellSnapshotLineageField(
       gaps,
-      `superseded Measurement Cell Snapshot ${field} must match correction`,
-      expected,
-      actual
+      field,
+      superseded[field],
+      record[field]
     );
   }
   compareField(

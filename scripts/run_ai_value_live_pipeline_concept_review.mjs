@@ -629,8 +629,10 @@ export function buildLivePipelineConceptReviewFromObject(sourceFixture, options 
     buildLivePipelineConceptGateFromObject(fixture, {
       sourceSystem: sourceSystemSupported ? sourceSystem : "bigquery_export"
     });
+  const generatedGate = options.gate === undefined;
   const gateValidation = validateLivePipelineConceptGate(gate, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    skipFixtureRerun: generatedGate
   });
   const overrideGaps = [
     ...(!sourceSystemSupported
@@ -744,7 +746,11 @@ export function validateLivePipelineConceptReview(review, options = {}) {
     gaps.push("review_hash must match compact concept-review envelope");
   }
 
-  if (options.sourceFixture && ALLOWED_SOURCE_SYSTEMS.has(record.source_system)) {
+  if (
+    options.sourceFixture &&
+    options.skipFixtureRerun !== true &&
+    ALLOWED_SOURCE_SYSTEMS.has(record.source_system)
+  ) {
     const expected = buildLivePipelineConceptReviewFromObject(options.sourceFixture, {
       sourceSystem: record.source_system
     });

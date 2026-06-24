@@ -646,13 +646,15 @@ export function buildUpstreamAggregatePipelineHandoffFromObject(
     buildLivePipelineConceptReviewFromObject(fixture, {
       sourceSystem: sourceSystemSupported ? sourceSystem : "bigquery_export"
     });
+  const generatedConceptReview = options.conceptReview === undefined;
   const manifestPackage =
     options.manifestPackage ??
     buildControlledAggregateManifestValidationPackageFromObject(fixture, {
       sourceSystem: sourceSystemSupported ? sourceSystem : "bigquery_export"
     });
   const conceptReviewValidation = validateLivePipelineConceptReview(conceptReview, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    skipFixtureRerun: generatedConceptReview
   });
   const manifestPackageValidation = validateControlledAggregateManifestValidationPackage(
     manifestPackage,

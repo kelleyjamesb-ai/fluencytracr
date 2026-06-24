@@ -1172,7 +1172,8 @@ export function validateMeasurementCellPreflight(preflight, options = {}) {
 
   const passed =
     preflight?.preflight_state === "PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT";
-  if (passed && !options.sourceFixture) {
+  const skipFixtureRerun = options.skipFixtureRerun === true;
+  if (passed && !options.sourceFixture && !skipFixtureRerun) {
     gaps.push("sourceFixture is required to validate passed preflight envelopes");
   }
   if (passed) {
@@ -1191,7 +1192,7 @@ export function validateMeasurementCellPreflight(preflight, options = {}) {
     gaps.push("preflight_state must be PASSED_INTERNAL_MEASUREMENT_CELL_PREFLIGHT");
   }
 
-  if (passed && options.sourceFixture) {
+  if (passed && options.sourceFixture && !skipFixtureRerun) {
     const expected = runMeasurementCellPreflightFromObject(options.sourceFixture, {
       sourceSystem: options.sourceSystem ?? preflight.source_system,
       cwd: options.cwd ?? process.cwd(),
