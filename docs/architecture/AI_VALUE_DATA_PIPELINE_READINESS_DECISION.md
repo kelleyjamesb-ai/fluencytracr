@@ -349,19 +349,26 @@ Completed next decision gate:
   [AI Value Upstream Aggregate Pipeline Handoff Decision](./AI_VALUE_UPSTREAM_AGGREGATE_PIPELINE_HANDOFF_DECISION.md);
 - a passed handoff means only
   `READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW`;
+- executable Upstream Aggregate Handoff Acceptance Package in
+  [AI Value Upstream Aggregate Handoff Acceptance Package Decision](./AI_VALUE_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_PACKAGE_DECISION.md);
+- a passed package means only
+  `PASSED_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_PACKAGE`;
 - neither decision authorizes live execution, credentials, SQL/query handling,
   raw rows, full manifest payload ingestion, manifest persistence, Series
   persistence, customer projection, export, research-model feed, finance
   output, or customer-facing output.
 
-Next decision gate:
+Remaining decision gates:
 
 - hold live connector implementation;
-- or draft a later exact-scope upstream package acceptance-test decision that
-  still forbids FluencyTracr credentials, query execution, raw rows, query
-  text, identifiers, full manifest payload ingestion, manifest persistence,
-  Series persistence, customer-facing output, confidence research, and finance
-  output unless each exact scope is separately promoted.
+- hold upstream handoff / acceptance-package persistence;
+- hold manifest, connector-run, pipeline-run, and package JSON persistence;
+- hold Series persistence, customer projection, export governance,
+  research-model feed, and finance output;
+- require a later exact-scope promotion decision and red/green tests before
+  any held scope can receive FluencyTracr credentials, query execution, raw
+  rows, query text, identifiers, full manifest payload ingestion, persistence,
+  customer-facing output, confidence research, or finance output.
 
 ## 11. Verification
 
