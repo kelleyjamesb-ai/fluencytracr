@@ -349,6 +349,10 @@ Completed next decision gate:
   [AI Value Upstream Aggregate Pipeline Handoff Decision](./AI_VALUE_UPSTREAM_AGGREGATE_PIPELINE_HANDOFF_DECISION.md);
 - a passed handoff means only
   `READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW`;
+- executable Upstream Aggregate Handoff Acceptance Package in
+  [AI Value Upstream Aggregate Handoff Acceptance Package Decision](./AI_VALUE_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_PACKAGE_DECISION.md);
+- a passed package means only
+  `PASSED_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_PACKAGE`;
 - neither decision authorizes live execution, credentials, SQL/query handling,
   raw rows, full manifest payload ingestion, manifest persistence, Series
   persistence, customer projection, export, research-model feed, finance

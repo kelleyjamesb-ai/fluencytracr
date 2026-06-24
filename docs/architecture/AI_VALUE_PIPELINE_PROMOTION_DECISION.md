@@ -217,6 +217,13 @@ upstream package tests. It does not authorize full manifest payload ingestion,
 manifest persistence, live execution, routes, UI, exports, research-model feed,
 finance output, or customer-facing output.
 
+The upstream aggregate handoff acceptance package now lives at
+[AI Value Upstream Aggregate Handoff Acceptance Package](../contracts/ai-value-upstream-aggregate-handoff-acceptance-package/README.md).
+It accepts only recomputed, fixture-backed compact upstream handoff refs for
+internal validation. It does not authorize full manifest payload ingestion,
+manifest persistence, live execution, routes, UI, exports, research-model feed,
+finance output, or customer-facing output.
+
 ## 9. Verification
 
 When this decision is changed, run:
