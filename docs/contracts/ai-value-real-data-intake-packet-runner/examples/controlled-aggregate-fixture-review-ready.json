@@ -21,8 +21,8 @@
     "valueHypothesis": "If the support workflow uses AI for case triage and answer drafting, then eligible cases should move faster while quality and escalation posture remain governed.",
     "valueRoute": "CAPACITY_CREATION",
     "baselineWindow": {
-      "window_start": "2026-05-01",
-      "window_end": "2026-05-31"
+      "window_start": "2026-04-02",
+      "window_end": "2026-05-01"
     },
     "comparisonWindow": {
       "window_start": "2026-06-01",
@@ -121,8 +121,8 @@
     "function_area": "customer_support",
     "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
     "baseline_window": {
-      "window_start": "2026-05-01",
-      "window_end": "2026-05-31"
+      "window_start": "2026-04-02",
+      "window_end": "2026-05-01"
     },
     "comparison_window": {
       "window_start": "2026-06-01",
@@ -139,8 +139,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -161,8 +161,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -184,8 +184,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -207,8 +207,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -229,8 +229,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -251,8 +251,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -719,7 +719,7 @@
     "source_package_count": 5,
     "next_gate": "measurement_cell_assembly_candidate_only",
     "reviewed_aggregate_context_hash": "6c8d03765abed1b6ef643733571d8b70d58960fe8390ff95236a21520c72a8c2",
-    "reviewed_blueprint_expectation_hash": "8c2cb0a86d5b12272bcdc01374662b2dd08856e4f6ac250656f644d25d80ce2a",
+    "reviewed_blueprint_expectation_hash": "dc113b8ee31fabd9ad1d98beae992a9da2e8e254b9b88e28909f05edafaec272",
     "reviewed_source_refs": {
       "blueprint": "blueprint_parse_support_approved_day_30",
       "ai_fluency": "ai_fluency_support_day_30",

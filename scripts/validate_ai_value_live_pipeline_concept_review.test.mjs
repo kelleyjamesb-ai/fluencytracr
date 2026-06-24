@@ -189,6 +189,8 @@ test("live pipeline concept review rejects connector implementation, credentials
 
   assert.equal(validation.valid, false);
   assert.equal(review.review_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(review.feeds.live_pipeline_concept_review, false);
+  assert.equal(review.feeds.upstream_aggregate_pipeline_design_requirements, false);
   assert.equal(review.review_scope.live_connector_implementation_authorized, false);
   assert.equal(review.review_scope.credential_handling_authorized, false);
   assert.equal(review.review_scope.query_execution_authorized, false);
@@ -337,6 +339,8 @@ test("live pipeline concept review holds when the concept gate is not valid", ()
 
   assert.equal(validation.valid, false);
   assert.equal(review.review_state, "HOLD_FOR_VALID_LIVE_PIPELINE_CONCEPT_GATE");
+  assert.equal(review.feeds.live_pipeline_concept_review, false);
+  assert.equal(review.feeds.upstream_aggregate_pipeline_design_requirements, false);
   assert.equal(review.feeds.live_bigquery_execution, false);
   assert.equal(review.boundary_policy.fluencytracr_runs_bigquery, false);
 });
@@ -352,6 +356,8 @@ test("live pipeline concept review rejects unsupported source systems", () => {
   assert.equal(validation.valid, false);
   assert.equal(review.review_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
   assert.equal(review.source_system, "unsupported_source_system");
+  assert.equal(review.feeds.live_pipeline_concept_review, false);
+  assert.equal(review.feeds.upstream_aggregate_pipeline_design_requirements, false);
   assert.equal(review.feeds.live_bigquery_execution, false);
 });
 

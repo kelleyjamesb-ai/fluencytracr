@@ -225,6 +225,8 @@ test("upstream aggregate pipeline handoff rejects live execution, credentials, S
 
   assert.equal(validation.valid, false);
   assert.equal(handoff.handoff_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(handoff.feeds.upstream_aggregate_handoff_acceptance_review, false);
+  assert.equal(handoff.feeds.reviewed_manifest_ref_package, false);
   assert.equal(hasNestedKey(handoff, "manifests"), false);
   assert.equal(hasNestedKey(handoff, "raw_rows"), false);
   assert.equal(hasNestedKey(handoff, "query_text"), false);
@@ -470,6 +472,8 @@ test("upstream aggregate pipeline handoff rejects unsupported source systems", (
   assert.equal(validation.valid, false);
   assert.equal(handoff.handoff_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
   assert.equal(handoff.source_system, "unsupported_source_system");
+  assert.equal(handoff.feeds.upstream_aggregate_handoff_acceptance_review, false);
+  assert.equal(handoff.feeds.reviewed_manifest_ref_package, false);
   assert.equal(handoff.feeds.live_bigquery_execution, false);
 });
 

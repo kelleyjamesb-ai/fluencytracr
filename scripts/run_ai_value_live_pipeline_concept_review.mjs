@@ -361,6 +361,10 @@ function trueMap(keys) {
   return Object.fromEntries(keys.map((key) => [key, true]));
 }
 
+function readyFeedMap(reviewState) {
+  return reviewState === READY_STATE ? trueMap(TRUE_FEEDS) : falseMap(TRUE_FEEDS);
+}
+
 function isSafeCompactRef(value) {
   return (
     typeof value === "string" &&
@@ -575,6 +579,9 @@ function validateReviewShape(review) {
     if (feeds[key] !== true && record.review_state === READY_STATE) {
       gaps.push(`feeds.${key} must be true for ready concept review`);
     }
+    if (feeds[key] !== false && record.review_state !== READY_STATE) {
+      gaps.push(`feeds.${key} must be false unless concept review is ready`);
+    }
   }
   for (const key of FALSE_FEEDS) {
     if (feeds[key] !== false) {
@@ -679,7 +686,7 @@ export function buildLivePipelineConceptReviewFromObject(sourceFixture, options 
     upstream_execution_requirements: trueMap([...UPSTREAM_REQUIREMENT_FIELDS]),
     package_acceptance_requirements: trueMap([...PACKAGE_REQUIREMENT_FIELDS]),
     feeds: {
-      ...trueMap(TRUE_FEEDS),
+      ...readyFeedMap(reviewState),
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),

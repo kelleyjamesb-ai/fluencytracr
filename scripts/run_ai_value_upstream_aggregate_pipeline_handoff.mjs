@@ -491,6 +491,10 @@ function trueMap(keys) {
   return Object.fromEntries(keys.map((key) => [key, true]));
 }
 
+function readyFeedMap(handoffState) {
+  return handoffState === READY_STATE ? trueMap(TRUE_FEEDS) : falseMap(TRUE_FEEDS);
+}
+
 function scanUnsafeOverrides(value, path = []) {
   const gaps = [];
   if (Array.isArray(value)) {
@@ -918,9 +922,7 @@ export function buildUpstreamAggregatePipelineHandoffFromObject(
     accepted_components: trueMap([...ACCEPTED_COMPONENT_FIELDS]),
     handoff_requirements: trueMap([...HANDOFF_REQUIREMENT_FIELDS]),
     feeds: {
-      ...(handoffState === READY_STATE
-        ? trueMap(TRUE_FEEDS)
-        : falseMap(TRUE_FEEDS)),
+      ...readyFeedMap(handoffState),
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),

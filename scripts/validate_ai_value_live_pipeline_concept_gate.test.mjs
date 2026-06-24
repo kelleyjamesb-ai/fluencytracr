@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
@@ -63,6 +64,29 @@ const FORBIDDEN_OUTPUT_KEYS = [
 ];
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
+const clone = (value) => JSON.parse(JSON.stringify(value));
+
+function gateHashForTest(gate) {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      schema_version: gate.schema_version,
+      gate_id: gate.gate_id,
+      gate_state: gate.gate_state,
+      source_system: gate.source_system,
+      source_owner_role: gate.source_owner_role,
+      legal_trust_review_state: gate.legal_trust_review_state,
+      proposed_execution_boundary: gate.proposed_execution_boundary,
+      fluencytracr_execution_mode: gate.fluencytracr_execution_mode,
+      prerequisites: gate.prerequisites,
+      upstream_controls: gate.upstream_controls,
+      review_refs: gate.review_refs,
+      feeds: gate.feeds,
+      boundary_policy: gate.boundary_policy,
+      blocked_uses: gate.blocked_uses,
+      required_caveats: gate.required_caveats
+    }))
+    .digest("hex");
+}
 
 function hasNestedKey(value, key) {
   if (!value || typeof value !== "object") return false;
@@ -213,6 +237,25 @@ test("live pipeline concept gate rejects live-only execution aliases", () => {
   assert.equal(gate.boundary_policy.fluencytracr_executes_queries, false);
 });
 
+test("live pipeline concept gate rejects phrase-form live execution intent", () => {
+  const gate = buildLivePipelineConceptGateFromObject(readJson(FIXTURE_PATH), {
+    sourceSystem: "bigquery_export",
+    proposalOverrides: {
+      notes: "authorize live BigQuery execution and credential access"
+    }
+  });
+  const validation = validateLivePipelineConceptGate(gate, {
+    sourceFixture: readJson(FIXTURE_PATH)
+  });
+
+  assert.equal(validation.valid, false);
+  assert.equal(gate.gate_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(gate.feeds.live_pipeline_concept_review, false);
+  assert.equal(gate.feeds.connector_boundary_requirements, false);
+  assert.equal(gate.boundary_policy.fluencytracr_runs_bigquery, false);
+  assert.equal(gate.boundary_policy.fluencytracr_uses_credentials, false);
+});
+
 test("live pipeline concept gate rejects unsupported source systems instead of coercing to BigQuery", () => {
   const gate = buildLivePipelineConceptGateFromObject(readJson(FIXTURE_PATH), {
     sourceSystem: "bigquery_live"
@@ -245,8 +288,117 @@ test("live pipeline concept gate holds when Measurement Cell preflight proof is 
 
   assert.equal(validation.valid, false);
   assert.equal(gate.gate_state, "HOLD_FOR_VALID_MEASUREMENT_CELL_PREFLIGHT");
+  assert.equal(gate.feeds.live_pipeline_concept_review, false);
+  assert.equal(gate.feeds.connector_boundary_requirements, false);
   assert.equal(gate.feeds.live_bigquery_execution, false);
   assert.equal(gate.prerequisites.measurement_cell_preflight_valid, false);
+});
+
+test("live pipeline concept gate rejects forged fixture-bound gate identity", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const gate = buildLivePipelineConceptGateFromObject(fixture, {
+    sourceSystem: "bigquery_export"
+  });
+  const tampered = clone(gate);
+  tampered.gate_id = "live_pipeline_concept_gate_bigquery_export_other_workflow";
+  tampered.concept_gate_hash = gateHashForTest(tampered);
+
+  const validation = validateLivePipelineConceptGate(tampered, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("gate_id")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("live pipeline concept gate requires fixture-bound validation for ready gates", () => {
+  const gate = buildLivePipelineConceptGateFromObject(readJson(FIXTURE_PATH), {
+    sourceSystem: "bigquery_export"
+  });
+  const validation = validateLivePipelineConceptGate(gate);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("sourceFixture is required")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("live pipeline concept gate validator rejects held gates with ready feeds", () => {
+  const gate = buildLivePipelineConceptGateFromObject(readJson(FIXTURE_PATH), {
+    sourceSystem: "bigquery_export",
+    preflight: {
+      preflight_state: "PASSED_MEASUREMENT_CELL_PREFLIGHT",
+      validation_summary: {
+        valid: false,
+        gaps: ["stale preflight proof"]
+      }
+    }
+  });
+  const tampered = clone(gate);
+  tampered.feeds.live_pipeline_concept_review = true;
+  tampered.feeds.connector_boundary_requirements = true;
+  tampered.concept_gate_hash = gateHashForTest(tampered);
+
+  const validation = validateLivePipelineConceptGate(tampered, {
+    sourceFixture: readJson(FIXTURE_PATH)
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("must be false unless concept review is ready")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("live pipeline concept gate rejects source-system overrides that desync preflight refs", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const gate = buildLivePipelineConceptGateFromObject(fixture, {
+    sourceSystem: "bigquery_export",
+    proposalOverrides: {
+      source_system: "sigma_export"
+    }
+  });
+  const validation = validateLivePipelineConceptGate(gate, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(validation.valid, false);
+  assert.equal(gate.gate_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(gate.source_system, "bigquery_export");
+  assert.equal(gate.review_refs.aggregate_source_system, "bigquery_export");
+  assert.equal(gate.feeds.live_pipeline_concept_review, false);
+  assert.equal(gate.feeds.connector_boundary_requirements, false);
+  assert.ok(
+    gate.validation_summary.gaps.some((gap) => gap.includes("source_system")),
+    gate.validation_summary.gaps.join("; ")
+  );
+});
+
+test("live pipeline concept gate validator rejects source-system and review-ref drift", () => {
+  const gate = buildLivePipelineConceptGateFromObject(readJson(FIXTURE_PATH), {
+    sourceSystem: "bigquery_export"
+  });
+  const tampered = clone(gate);
+  tampered.source_system = "sigma_export";
+  tampered.concept_gate_hash = "b".repeat(64);
+
+  const validation = validateLivePipelineConceptGate(tampered);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) =>
+      gap.includes("review_refs.aggregate_source_system")
+    ),
+    validation.gaps.join("; ")
+  );
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("concept_gate_hash")),
+    validation.gaps.join("; ")
+  );
 });
 
 test("live pipeline concept gate rejects persistence, Series, customer output, and model overreach aliases", () => {
