@@ -97,6 +97,13 @@ suppressed, missing, blocked, or stale windows must remain visible and force a
 hold. Later ready windows cannot rescue earlier held, suppressed, missing, or
 blocked windows.
 
+The saved-fixture executable validator may emit
+`snapshot_ref_source: controlled_recomputed_measurement_cell_snapshot_candidate`
+only when it recomputes the controlled repeated pilot evidence package from the
+source fixture. This is a non-persisted validator-backed candidate ref, not a
+durable `measurement_cell_snapshots` row, Series persistence, or source package
+payload.
+
 Rolling 30-day operating context is not milestone evidence. It cannot feed
 evidence continuity, research design readiness, finance-context investigation,
 customer-facing output, exports, trend language, or improvement language.
@@ -282,6 +289,7 @@ cite a separate exact-scope promotion decision.
 When this contract is changed, run:
 
 ```bash
+npm run test:ai-value-research-promotion-readiness-packet
 git diff --check
 bash scripts/ci_docs_contract_sweep.sh
 python3 scripts/ci_v1_governance_gates.py

@@ -82,6 +82,12 @@ documented value-realization layers:
   live connector execution, Source Package clearance, Measurement Cell or
   Series persistence, confidence math, finance output, or customer-facing
   output.
+- **AI Value research promotion readiness packet:** proves that repeated
+  governed Day 0 / 30 / 60 / 90 / 180 / 365 aggregate evidence can become a
+  compact internal research-design gate. It emits only refs, hashes, caveats,
+  blocked uses, and false boundary feeds; it does not authorize model math,
+  numeric weights, persistence, exports, finance output, or customer-facing
+  output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

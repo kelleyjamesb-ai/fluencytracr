@@ -2,6 +2,23 @@
 
 ## Last Completed
 
+- AI Value Research Promotion Readiness Packet validator (user-requested,
+  2026-06-23): added an executable saved-fixture runner and fail-closed test
+  suite for the Research Promotion Readiness Packet. The runner derives a
+  compact packet from the controlled repeated pilot evidence package, requires
+  Day 0 / 30 / 60 / 90 / 180 / 365 milestone coverage, non-persisted
+  `controlled_recomputed_measurement_cell_snapshot_candidate` refs with
+  per-window approved-path / Blueprint / value-hypothesis / metric / lag /
+  value-driver binding, reviewed compact source lane refs, AI Fluency
+  construct context, optional psychological context as
+  context-only, observed VBD context, selected customer metric movement,
+  assumption/governance posture, Source Package review posture, and Data Spine
+  alignment. It holds on missing Day 0 or rolling-window-only evidence, rejects
+  unsafe refs and raw/model/finance/score/customer-facing smuggling, and never
+  emits UI, routes, schemas, migrations, persistence writes, live connectors,
+  model math, numeric weights, probability, ROI/EBITDA, finance output,
+  causality, productivity, or customer-facing output. Verification added:
+  `npm run test:ai-value-research-promotion-readiness-packet`.
 - AI Value Research Promotion Readiness Packet gate (user-requested,
   2026-06-23): added a contract-only Research Promotion Readiness Packet as
   the final governance gate between the productized internal evidence spine
