@@ -777,6 +777,8 @@ function validatePackageShape(packageRecord) {
   for (const key of TRUE_FEEDS) {
     if (feeds[key] !== true && record.acceptance_state === PASSED_STATE) {
       gaps.push(`feeds.${key} must be true for passed acceptance package`);
+    } else if (feeds[key] !== false && record.acceptance_state !== PASSED_STATE) {
+      gaps.push(`feeds.${key} must remain false unless acceptance package is passed`);
     }
   }
   for (const key of FALSE_FEEDS) {
@@ -882,7 +884,9 @@ export function buildUpstreamAggregateHandoffAcceptancePackageFromObject(
       : emptyAcceptedRefs(),
     acceptance_requirements: trueMap(ACCEPTANCE_REQUIREMENT_FIELDS),
     feeds: {
-      ...trueMap(TRUE_FEEDS),
+      ...(acceptanceState === PASSED_STATE
+        ? trueMap(TRUE_FEEDS)
+        : falseMap(TRUE_FEEDS)),
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),

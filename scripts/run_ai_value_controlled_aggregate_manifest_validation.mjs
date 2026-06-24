@@ -392,33 +392,6 @@ function connectorAdapterRefPassed(ref) {
     isPlainObject(ref.pipeline_dry_run_ref);
 }
 
-function compactPipelineDryRunRef(ref) {
-  if (!isPlainObject(ref)) return null;
-  return {
-    dry_run_id: ref.dry_run_id ?? null,
-    dry_run_state: ref.dry_run_state ?? null,
-    source_system: ref.source_system ?? null,
-    source_export_ref: ref.source_export_ref ?? null,
-    manifest_hash: ref.manifest_hash ?? null,
-    aggregate_fixture_hash: ref.aggregate_fixture_hash ?? null,
-    reviewed_source_refs_hash: ref.reviewed_source_refs_hash ?? null,
-    reviewed_aggregate_context_hash: ref.reviewed_aggregate_context_hash ?? null,
-    reviewed_blueprint_expectation_hash: ref.reviewed_blueprint_expectation_hash ?? null,
-    candidate_integrity_hash: ref.candidate_integrity_hash ?? null,
-    expectation_path_id: ref.expectation_path_id ?? null
-  };
-}
-
-function compactConnectorAdapterRef(adapter) {
-  if (!isPlainObject(adapter)) return null;
-  return {
-    adapter_run_id: adapter.adapter_run_id ?? null,
-    adapter_state: adapter.adapter_state ?? null,
-    connector_manifest_ref: adapter.connector_manifest_ref ?? null,
-    pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
-  };
-}
-
 function sourceOwnerRole(sourceSystem) {
   return sourceSystem === "sigma_export"
     ? "customer_analytics_owner"
@@ -432,7 +405,7 @@ function selectedSourceLane(fixture, options = {}) {
     fixture?.source_lane ??
     fixture?.expected?.controlled_aggregate_source_lane;
   if (candidate === undefined || candidate === null || candidate === "") {
-    return "vbd_token";
+    return sourceLaneForMetric(selectedMetricId(fixture));
   }
   return ALLOWED_SOURCE_LANES.has(String(candidate))
     ? String(candidate)
@@ -468,6 +441,23 @@ function selectedMetricId(fixture) {
   return path?.expected_metric_id ?? candidate?.metric_id ?? "support_median_resolution_hours";
 }
 
+function sourceLaneForMetric(metricId) {
+  if (String(metricId ?? "").startsWith("ai_fluency_")) return "ai_fluency";
+  if (
+    [
+      "token_count",
+      "token_cost_index",
+      "token_efficiency_index",
+      "vbd_quality_index",
+      "vbd_reuse_index",
+      "support_median_resolution_hours"
+    ].includes(String(metricId ?? ""))
+  ) {
+    return "vbd_token";
+  }
+  return "customer_metric";
+}
+
 function approvedExpectationPathBindingFromFixture(fixture, adapter) {
   const path = selectedExpectationPath(fixture);
   const expectationPathId =
@@ -484,7 +474,6 @@ function approvedExpectationPathBindingFromFixture(fixture, adapter) {
       approved_at: path?.approved_at ?? "2026-06-21T00:00:00.000Z",
       approved_by_role: path?.approver_role ?? "workflow_owner"
     }),
-    expected_metric_id: path?.expected_metric_id ?? selectedMetricId(fixture),
     approved_blueprint_payload_hash:
       fixture?.expected?.reviewed_blueprint_expectation_hash ??
       sha256Json(fixture?.blueprint_extraction_input ?? {}),
@@ -493,7 +482,8 @@ function approvedExpectationPathBindingFromFixture(fixture, adapter) {
         ? "customer_approved"
         : path?.customer_approval_state ?? "customer_approved",
     approved_at: path?.approved_at ?? "2026-06-21T00:00:00.000Z",
-    approved_by_role: path?.approver_role ?? "workflow_owner"
+    approved_by_role: path?.approver_role ?? "workflow_owner",
+    value_driver: path?.value_driver ?? "capacity"
   };
 }
 
@@ -775,7 +765,44 @@ function combinedGaps(validations) {
   );
 }
 
-function blockedPackage({ sourceSystem, adapterValidation, generatedAt, gaps }) {
+function compactPipelineDryRunRef(ref) {
+  if (!isPlainObject(ref)) return null;
+  return {
+    dry_run_id: ref.dry_run_id ?? null,
+    dry_run_state: ref.dry_run_state ?? null,
+    source_system: ref.source_system ?? null,
+    source_export_ref: ref.source_export_ref ?? null,
+    manifest_hash: ref.manifest_hash ?? null,
+    aggregate_fixture_hash: ref.aggregate_fixture_hash ?? null,
+    reviewed_source_refs_hash: ref.reviewed_source_refs_hash ?? null,
+    reviewed_aggregate_context_hash: ref.reviewed_aggregate_context_hash ?? null,
+    reviewed_blueprint_expectation_hash: ref.reviewed_blueprint_expectation_hash ?? null,
+    candidate_integrity_hash: ref.candidate_integrity_hash ?? null,
+    expectation_path_id: ref.expectation_path_id ?? null
+  };
+}
+
+function compactConnectorAdapterRef(adapter) {
+  if (!isPlainObject(adapter)) return null;
+  return {
+    adapter_run_id: adapter.adapter_run_id ?? null,
+    adapter_state: adapter.adapter_state ?? null,
+    connector_manifest_ref: adapter.connector_manifest_ref ?? null,
+    pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
+  };
+}
+
+function blockedPackage({
+  sourceSystem,
+  adapter,
+  adapterValidation,
+  generatedAt,
+  validationGaps,
+  sourceValidation,
+  extractionValidation,
+  reviewValidation,
+  chainValidation
+}) {
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
     manifest_validation_state: "BLOCKED",
@@ -791,11 +818,15 @@ function blockedPackage({ sourceSystem, adapterValidation, generatedAt, gaps }) 
       schema_version: RESULT_SCHEMA_VERSION,
       valid: false,
       connector_adapter_valid: false,
-      source_inventory_manifest_valid: false,
-      aggregate_extraction_manifest_valid: false,
-      pipeline_run_review_manifest_valid: false,
-      manifest_chain_valid: false,
-      gaps: sanitizeGaps(gaps ?? adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
+      source_inventory_manifest_valid: sourceValidation?.valid === true,
+      aggregate_extraction_manifest_valid: extractionValidation?.valid === true,
+      pipeline_run_review_manifest_valid: reviewValidation?.valid === true,
+      manifest_chain_valid: chainValidation?.valid === true,
+      gaps: sanitizeGaps(
+        validationGaps ??
+        adapterValidation?.gaps ??
+        ["connector adapter validation did not pass"]
+      )
     },
     feeds: packageFeeds(false),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
@@ -887,26 +918,38 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
 
   if (!valid) {
     return blockedPackage({
-      sourceSystem: adapter.source_system,
+      sourceSystem,
+      adapter,
       adapterValidation,
       generatedAt: adapter.generated_at,
-      gaps: validationGaps
+      validationGaps,
+      sourceValidation,
+      extractionValidation,
+      reviewValidation,
+      chainValidation
     });
   }
 
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
-    manifest_validation_state: "PASSED_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION",
+    manifest_validation_state: valid
+      ? "PASSED_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION"
+      : "BLOCKED",
     source_system: adapter.source_system,
-    adapter_run_id: adapter.adapter_run_id,
-    connector_adapter_ref: compactConnectorAdapterRef(adapter),
+    adapter_run_id: valid ? adapter.adapter_run_id : null,
+    connector_adapter_ref: valid ? {
+      adapter_run_id: adapter.adapter_run_id,
+      adapter_state: adapter.adapter_state,
+      connector_manifest_ref: adapter.connector_manifest_ref,
+      pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
+    } : null,
     approved_expectation_path_binding: binding,
-    manifests: {
+    manifests: valid ? {
       source_inventory_manifest: sourceInventoryManifest,
       aggregate_extraction_manifest: aggregateExtractionManifest,
       pipeline_run_review_manifest: pipelineRunReviewManifest
-    },
-    manifest_refs: {
+    } : null,
+    manifest_refs: valid ? {
       source_inventory_manifest_ref: manifestRefFromInventory(sourceInventoryManifest),
       aggregate_extraction_manifest_ref: manifestRefFromExtraction(aggregateExtractionManifest),
       pipeline_run_review_manifest_ref: {
@@ -922,21 +965,21 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
         metric_id: pipelineRunReviewManifest.metric_id,
         expectation_path_id: pipelineRunReviewManifest.expectation_path_id
       }
-    },
+    } : null,
     validation_summary: {
       schema_version: RESULT_SCHEMA_VERSION,
-      valid: true,
-      connector_adapter_valid: adapterValidation.valid === true,
+      valid,
+      connector_adapter_valid: valid && adapterValidation.valid === true,
       source_inventory_manifest_valid: sourceValidation.valid === true,
       aggregate_extraction_manifest_valid: extractionValidation.valid === true,
       pipeline_run_review_manifest_valid: reviewValidation.valid === true,
       manifest_chain_valid: chainValidation.valid === true,
       gaps: validationGaps
     },
-    feeds: packageFeeds(true),
+    feeds: packageFeeds(valid),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
     blocked_uses: [...REQUIRED_BLOCKED_USES],
-    required_caveats: [...PACKAGE_PASSED_CAVEATS],
+    required_caveats: valid ? [...PACKAGE_PASSED_CAVEATS] : [...PACKAGE_BLOCKED_CAVEATS],
     generated_at: adapter.generated_at
   };
 }
@@ -1088,6 +1131,10 @@ export function validateControlledAggregateManifestValidationPackage(
       JSON.stringify(recomputedValidationGaps)
   ) {
     gaps.push("validation_summary.gaps must match recomputed validation");
+  } else if (
+    manifestPackage.validation_summary.gaps.some((gap) => sanitizeGaps([gap])[0] !== gap)
+  ) {
+    gaps.push("validation_summary.gaps must not contain unsafe values");
   }
 
   if (

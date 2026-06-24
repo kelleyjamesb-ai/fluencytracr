@@ -259,6 +259,8 @@ test("upstream aggregate pipeline handoff rejects boolean-only live aliases inst
 
   assert.equal(validation.valid, false);
   assert.equal(handoff.handoff_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(handoff.feeds.upstream_aggregate_handoff_acceptance_review, false);
+  assert.equal(handoff.feeds.reviewed_manifest_ref_package, false);
   assert.equal(handoff.feeds.live_bigquery_execution, false);
   assert.equal(handoff.boundary_policy.fluencytracr_runs_bigquery, false);
   assert.equal(handoff.boundary_policy.fluencytracr_executes_queries, false);
@@ -425,8 +427,36 @@ test("upstream aggregate pipeline handoff holds when concept review is not valid
 
   assert.equal(validation.valid, false);
   assert.equal(handoff.handoff_state, "HOLD_FOR_VALID_LIVE_PIPELINE_CONCEPT_REVIEW");
+  assert.equal(handoff.feeds.upstream_aggregate_handoff_acceptance_review, false);
+  assert.equal(handoff.feeds.reviewed_manifest_ref_package, false);
   assert.equal(handoff.feeds.live_bigquery_execution, false);
   assert.equal(handoff.boundary_policy.fluencytracr_runs_bigquery, false);
+});
+
+test("upstream aggregate pipeline handoff validator rejects non-ready positive feeds", () => {
+  const handoff = buildUpstreamAggregatePipelineHandoffFromObject(readJson(FIXTURE_PATH), {
+    sourceSystem: "bigquery_export",
+    conceptReview: {
+      review_state: "READY_FOR_UPSTREAM_AGGREGATE_PIPELINE_DESIGN",
+      validation_summary: {
+        valid: false,
+        gaps: ["stale concept review"]
+      }
+    }
+  });
+  const tampered = clone(handoff);
+  tampered.feeds.upstream_aggregate_handoff_acceptance_review = true;
+  tampered.feeds.reviewed_manifest_ref_package = true;
+
+  const validation = validateUpstreamAggregatePipelineHandoff(tampered, {
+    sourceFixture: readJson(FIXTURE_PATH)
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("must remain false unless")),
+    validation.gaps.join("; ")
+  );
 });
 
 test("upstream aggregate pipeline handoff rejects unsupported source systems", () => {

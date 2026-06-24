@@ -517,54 +517,41 @@ describe("AI value spine run API", () => {
     expect(response.body.run.engagement.covers_workflow_family).toBe(true);
     expect(response.body.run.fluency_baseline.status).toBe("VALID");
     expect(response.body.run.fluency_baseline.summary.suppressed_cohorts).toBe(1);
+    expect(
+      response.body.run.spine.stages.readiness.object.source_refs
+        .fluency_baseline_id
+    ).toBe(fluencyBaseline.baseline_id);
     expect(response.body.run.spine.halted_at).toBeNull();
     expect(response.body.persisted.length).toBe(4);
   });
 
-  it("does not persist a mismatched explicit fluency baseline ref from value-chain run", async () => {
+  it("holds value-chain runs instead of persisting stale foreign fluency baseline refs", async () => {
     await storeUpstreamObjects();
-    const engagement = readExample("customer-support-engagement.json");
-    const wrongBaseline = {
+    const foreignBaseline = {
       ...readExample("customer-support-fluency-baseline.json"),
-      baseline_id: "fluency_baseline_wrong_workflow_explicit",
+      baseline_id: "fluency_baseline_foreign_sales",
       workflow_family: "sales_pipeline_hygiene"
     };
-
     await request(app)
-      .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${foreignBaseline.baseline_id}`)
       .set(writeAuth)
-      .send(engagement)
-      .expect(201);
-    await request(app)
-      .put(`/api/v1/ai-value/objects/fluency_baseline/${wrongBaseline.baseline_id}`)
-      .set(writeAuth)
-      .send(wrongBaseline)
+      .send(foreignBaseline)
       .expect(201);
 
     const response = await request(app)
       .post("/api/v1/ai-value/value-chain/run")
       .set(writeAuth)
       .send({
-        engagement_id: engagement.engagement_id,
-        fluency_baseline_id: wrongBaseline.baseline_id,
+        fluency_baseline_id: foreignBaseline.baseline_id,
         blueprint_id: blueprintId,
         metrics_library_id: metricsLibraryId
       });
 
     expect(response.status).toBe(200);
-    expect(response.body.run.fluency_baseline.status).toBe("VALID");
-    expect(response.body.run.spine.halted_at).toBeNull();
-    expect(
-      response.body.run.spine.stages.executive_packet.object.source_refs.fluency_baseline_id
-    ).toBeUndefined();
-
-    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
-    const stored = store.aiValueObjects.get(storeKey);
-    expect(stored).toBeDefined();
-    expect(
-      (stored?.payload.source_refs as Record<string, unknown> | undefined)
-        ?.fluency_baseline_id
-    ).toBeUndefined();
+    expect(response.body.run.halted_at).toBe("fluency_baseline");
+    expect(response.body.run.decision).toBe("HOLD_FOR_FLUENCY_BASELINE_TRACEABILITY");
+    expect(response.body.run.spine).toBeNull();
+    expect(response.body.persisted).toHaveLength(0);
   });
 
   it("rejects fluency baselines with respondent identifiers", async () => {

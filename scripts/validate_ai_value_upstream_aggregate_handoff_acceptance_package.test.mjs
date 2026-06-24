@@ -240,6 +240,8 @@ test("upstream aggregate handoff acceptance package rejects execution, persisten
 
   assert.equal(validation.valid, false);
   assert.equal(packageRecord.acceptance_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(packageRecord.feeds.upstream_aggregate_handoff_acceptance_package, false);
+  assert.equal(packageRecord.feeds.reviewed_manifest_ref_package, false);
   assert.equal(packageRecord.feeds.live_bigquery_execution, false);
   assert.equal(packageRecord.feeds.manifest_persistence, false);
   assert.equal(packageRecord.boundary_policy.creates_customer_projection, false);
@@ -410,7 +412,37 @@ test("upstream aggregate handoff acceptance package holds when upstream handoff 
     packageRecord.acceptance_state,
     "HOLD_FOR_VALID_UPSTREAM_AGGREGATE_PIPELINE_HANDOFF"
   );
+  assert.equal(packageRecord.feeds.upstream_aggregate_handoff_acceptance_package, false);
+  assert.equal(packageRecord.feeds.reviewed_manifest_ref_package, false);
   assert.equal(packageRecord.feeds.live_bigquery_execution, false);
+});
+
+test("upstream aggregate handoff acceptance package validator rejects non-passed positive feeds", () => {
+  const packageRecord = buildUpstreamAggregateHandoffAcceptancePackageFromObject(
+    readJson(FIXTURE_PATH),
+    {
+      upstreamHandoff: {
+        handoff_state: "READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW",
+        validation_summary: {
+          valid: false,
+          gaps: ["stale handoff"]
+        }
+      }
+    }
+  );
+  const tampered = clone(packageRecord);
+  tampered.feeds.upstream_aggregate_handoff_acceptance_package = true;
+  tampered.feeds.reviewed_manifest_ref_package = true;
+
+  const validation = validateUpstreamAggregateHandoffAcceptancePackage(tampered, {
+    sourceFixture: readJson(FIXTURE_PATH)
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("must remain false unless")),
+    validation.gaps.join("; ")
+  );
 });
 
 test("upstream aggregate handoff acceptance package does not echo unsafe refs from invalid handoff", () => {

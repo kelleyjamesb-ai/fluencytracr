@@ -365,11 +365,12 @@ function trueMap(keys) {
   return Object.fromEntries(keys.map((key) => [key, true]));
 }
 
-function safePreflightValidation(preflight, sourceFixture, sourceSystem) {
+function safePreflightValidation(preflight, sourceFixture, sourceSystem, options = {}) {
   try {
     return validateMeasurementCellPreflight(preflight, {
       sourceFixture,
-      sourceSystem
+      sourceSystem,
+      skipFixtureRerun: options.skipFixtureRerun === true
     });
   } catch (error) {
     return {
@@ -587,10 +588,12 @@ export function buildLivePipelineConceptGateFromObject(sourceFixture, options = 
     runMeasurementCellPreflightFromObject(fixture, {
       sourceSystem: preflightSourceSystem
     });
+  const generatedPreflight = options.preflight === undefined;
   const preflightValidation = safePreflightValidation(
     preflight,
     fixture,
-    preflightSourceSystem
+    preflightSourceSystem,
+    { skipFixtureRerun: generatedPreflight }
   );
   const reviewRefs = compactReviewRefs(preflight);
   const overrideGaps = [
@@ -700,7 +703,7 @@ export function validateLivePipelineConceptGate(gate, options = {}) {
   const record = asRecord(gate);
   const gaps = validateGateShape(record);
 
-  if (options.sourceFixture) {
+  if (options.sourceFixture && options.skipFixtureRerun !== true) {
     const expected = buildLivePipelineConceptGateFromObject(options.sourceFixture, {
       sourceSystem: record.source_system
     });

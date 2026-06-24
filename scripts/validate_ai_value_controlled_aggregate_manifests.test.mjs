@@ -225,7 +225,6 @@ function approvedExpectationPathBinding() {
       metric_id: "support_median_resolution_hours",
       driver: "Capacity"
     }),
-    expected_metric_id: "support_median_resolution_hours",
     approved_blueprint_payload_hash: sha256Json({ blueprint: "approved_support_resolution" }),
     approval_state: "customer_approved",
     approved_at: "2026-06-22T00:00:00.000Z",
@@ -815,6 +814,29 @@ test("aggregate extraction manifest rejects safe but unapproved metric definitio
   );
 });
 
+test("aggregate extraction manifest allows approved AI fluency confidence aggregate fields", () => {
+  const { source, extraction } = validChain();
+  source.source_lane = "ai_fluency";
+  source.approved_output_fields = [
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "window_start",
+    "window_end",
+    "ai_fluency_confidence_mean"
+  ];
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.source_package_lane = "ai_fluency";
+  extraction.metric_definitions = ["ai_fluency_confidence_mean"];
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});
+
 test("aggregate extraction manifest rejects dimension fields as metric definitions", () => {
   const { source, extraction } = validChain();
   extraction.metric_definitions = ["workflow_family"];
@@ -826,9 +848,25 @@ test("aggregate extraction manifest rejects dimension fields as metric definitio
 
   assert.equal(validation.valid, false);
   assert.ok(
-    validation.gaps.some((gap) =>
-      gap.includes("metric_definitions must be governed aggregate metric identifiers")
-    ),
+    validation.gaps.some((gap) => gap.includes("metric_definitions")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("aggregate extraction manifest rejects value-driver labels as metric definitions", () => {
+  const { source, extraction } = validChain();
+  source.approved_output_fields.push("governed_value_driver");
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.metric_definitions = ["governed_value_driver"];
+
+  const validation = validateAiValueAggregateExtractionManifest(
+    extraction,
+    { sourceInventoryManifest: source }
+  );
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("metric_definitions")),
     validation.gaps.join("; ")
   );
 });
@@ -901,25 +939,65 @@ test("pipeline run review manifest fails closed on path, metric, source-ref, and
   assert.ok(validation.gaps.some((gap) => gap.includes("source_inventory_validation_hash")));
 });
 
-test("pipeline run review metric must match the approved expectation path metric", () => {
+test("pipeline run review manifest binds approved expectation path hash to selected metric", () => {
   const { source, extraction, review, binding } = validChain();
-  source.approved_output_fields.push("first_contact_resolution");
-  extraction.metric_definitions.push("first_contact_resolution");
-  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
-  review.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.metric_definitions = [
+    "support_median_resolution_hours",
+    "escalation_rate"
+  ];
+  extraction.aggregate_output_hash = sha256Json({
+    aggregate: "support_resolution",
+    metrics: extraction.metric_definitions
+  });
   review.aggregate_extraction_manifest_ref = manifestRefFromExtraction(extraction);
-  review.validation_result_refs.source_inventory_validation_hash =
-    validationProofHash(source, validateAiValueSourceInventoryManifest(source));
+  review.metric_id = "escalation_rate";
+  review.data_spine_alignment_envelope.metric_id = "escalation_rate";
+  review.reviewed_aggregate_source_refs[1] = extraction.aggregate_output_ref;
+  review.source_package_review_queue_posture_ref.queue_ref = expectedQueueRef(
+    source,
+    extraction,
+    review,
+    binding
+  );
   review.validation_result_refs.aggregate_extraction_validation_hash =
     validationProofHash(
       extraction,
-      validateAiValueAggregateExtractionManifest(
-        extraction,
-        { sourceInventoryManifest: source }
-      )
+      validateAiValueAggregateExtractionManifest(extraction, {
+        sourceInventoryManifest: source
+      })
     );
-  review.metric_id = "first_contact_resolution";
-  review.data_spine_alignment_envelope.metric_id = "first_contact_resolution";
+
+  const validation = validateAiValuePipelineRunReviewManifest(review, {
+    sourceInventoryManifest: source,
+    aggregateExtractionManifest: extraction,
+    approvedExpectationPathBinding: binding
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) =>
+      gap.includes("expectation_path_hash must bind")
+    ),
+    validation.gaps.join("; ")
+  );
+});
+
+test("pipeline run review manifest accepts fixture-derived approved path metadata in the hash", () => {
+  const { source, extraction, review, binding } = validChain();
+  binding.value_driver = "quality";
+  binding.approved_at = "2026-06-23T12:00:00.000Z";
+  binding.approved_by_role = "customer_value_owner";
+  binding.expectation_path_hash = sha256Json({
+    expectation_path_id: binding.expectation_path_id,
+    expected_metric_id: review.metric_id,
+    value_driver: binding.value_driver,
+    approved_at: binding.approved_at,
+    approved_by_role: binding.approved_by_role
+  });
+  review.data_spine_alignment_envelope.expectation_path_hash =
+    binding.expectation_path_hash;
+  review.data_spine_alignment_envelope.approved_at = binding.approved_at;
+  review.data_spine_alignment_envelope.approved_by_role = binding.approved_by_role;
   review.source_package_review_queue_posture_ref.queue_ref = expectedQueueRef(
     source,
     extraction,
@@ -933,13 +1011,65 @@ test("pipeline run review metric must match the approved expectation path metric
     approvedExpectationPathBinding: binding
   });
 
-  assert.equal(validation.valid, false);
-  assert.ok(
-    validation.gaps.some((gap) =>
-      gap.includes("approvedExpectationPathBinding.expected_metric_id")
-    ),
-    validation.gaps.join("; ")
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});
+
+test("pipeline run review manifest accepts approved AI Fluency metrics through scalar metadata checks", () => {
+  const { source, extraction, review, binding } = validChain();
+  source.source_lane = "ai_fluency";
+  source.approved_output_fields = [
+    "workflow_family",
+    "function_area",
+    "cohort_key",
+    "window_start",
+    "window_end",
+    "ai_fluency_confidence_mean"
+  ];
+  extraction.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  extraction.source_package_lane = "ai_fluency";
+  extraction.metric_definitions = ["ai_fluency_confidence_mean"];
+  extraction.aggregate_output_hash = sha256Json({
+    aggregate: "support_resolution",
+    metric: "ai_fluency_confidence_mean"
+  });
+  review.source_inventory_manifest_ref = manifestRefFromInventory(source);
+  review.aggregate_extraction_manifest_ref = manifestRefFromExtraction(extraction);
+  review.metric_id = "ai_fluency_confidence_mean";
+  review.reviewed_aggregate_source_refs = [
+    source.approved_source_ref,
+    extraction.aggregate_output_ref
+  ];
+  review.data_spine_alignment_envelope.source_lane = "ai_fluency";
+  review.data_spine_alignment_envelope.metric_id = "ai_fluency_confidence_mean";
+  binding.expectation_path_hash = sha256Json({
+    expectation_path_id: binding.expectation_path_id,
+    expected_metric_id: "ai_fluency_confidence_mean"
+  });
+  review.data_spine_alignment_envelope.expectation_path_hash =
+    binding.expectation_path_hash;
+  review.validation_result_refs.source_inventory_validation_hash =
+    validationProofHash(source, validateAiValueSourceInventoryManifest(source));
+  review.validation_result_refs.aggregate_extraction_validation_hash =
+    validationProofHash(
+      extraction,
+      validateAiValueAggregateExtractionManifest(extraction, {
+        sourceInventoryManifest: source
+      })
+    );
+  review.source_package_review_queue_posture_ref.queue_ref = expectedQueueRef(
+    source,
+    extraction,
+    review,
+    binding
   );
+
+  const validation = validateAiValuePipelineRunReviewManifest(review, {
+    sourceInventoryManifest: source,
+    aggregateExtractionManifest: extraction,
+    approvedExpectationPathBinding: binding
+  });
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
 });
 
 test("pipeline run review manifest rejects coordinated expectation-path drift against approved binding", () => {

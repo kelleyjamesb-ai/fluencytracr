@@ -352,6 +352,74 @@ test("controlled aggregate manifest validation catches hand-edited passed packag
   );
 });
 
+test("controlled aggregate manifest validation binds connector adapter summary validity", () => {
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    readJson(FIXTURE_PATH),
+    { sourceSystem: "bigquery_export" }
+  );
+  const tampered = clone(manifestPackage);
+  tampered.validation_summary.connector_adapter_valid = false;
+
+  const validation = validateControlledAggregateManifestValidationPackage(
+    tampered,
+    { sourceFixture: readJson(FIXTURE_PATH) }
+  );
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("connector_adapter_valid")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("controlled aggregate manifest validation preserves per-manifest summary flags when blocked", () => {
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    readJson(FIXTURE_PATH),
+    {
+      sourceSystem: "bigquery_export",
+      pipelineRunReviewManifestOverrides: {
+        validation_result_refs: {
+          source_inventory_validation_hash: "0".repeat(64)
+        }
+      }
+    }
+  );
+  const validation = validateControlledAggregateManifestValidationPackage(
+    manifestPackage,
+    { sourceFixture: readJson(FIXTURE_PATH) }
+  );
+
+  assert.equal(manifestPackage.manifest_validation_state, "BLOCKED");
+  assert.equal(manifestPackage.manifests, null);
+  assert.equal(manifestPackage.validation_summary.source_inventory_manifest_valid, true);
+  assert.equal(manifestPackage.validation_summary.aggregate_extraction_manifest_valid, true);
+  assert.equal(manifestPackage.validation_summary.pipeline_run_review_manifest_valid, false);
+  assert.equal(manifestPackage.validation_summary.manifest_chain_valid, false);
+  assert.equal(validation.valid, false);
+});
+
+test("controlled aggregate manifest validation keeps the default VBD lane for the selected support metric", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    fixture,
+    { sourceSystem: "bigquery_export" }
+  );
+  const validation = validateControlledAggregateManifestValidationPackage(
+    manifestPackage,
+    { sourceFixture: fixture }
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(
+    manifestPackage.manifests.source_inventory_manifest.source_lane,
+    "vbd_token"
+  );
+  assert.equal(
+    manifestPackage.manifests.aggregate_extraction_manifest.source_package_lane,
+    "vbd_token"
+  );
+});
+
 test("controlled aggregate manifest validation fails closed on wrapper-level smuggling", () => {
   const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
     readJson(FIXTURE_PATH),
@@ -384,6 +452,32 @@ test("controlled aggregate manifest validation fails closed on wrapper-level smu
   assert.ok(validation.gaps.some((gap) => gap.includes("boundary_policy")));
   assert.ok(validation.gaps.some((gap) => gap.includes("validation_summary")));
   assert.ok(validation.gaps.some((gap) => gap.includes("required_caveats")));
+  assert.equal(JSON.stringify(validation.gaps).includes("person@example.com"), false);
+  assert.equal(JSON.stringify(validation.gaps).includes("SELECT user_id"), false);
+});
+
+test("controlled aggregate manifest validation rejects validation-summary gap smuggling", () => {
+  const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
+    readJson(FIXTURE_PATH),
+    { sourceSystem: "bigquery_export" }
+  );
+  const tampered = clone(manifestPackage);
+  tampered.validation_summary.gaps = [
+    "SELECT user_id FROM raw_rows",
+    "person@example.com",
+    "confidence_score=0.91"
+  ];
+
+  const validation = validateControlledAggregateManifestValidationPackage(
+    tampered,
+    { sourceFixture: readJson(FIXTURE_PATH) }
+  );
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("validation_summary.gaps")),
+    validation.gaps.join("; ")
+  );
   assert.equal(JSON.stringify(validation.gaps).includes("person@example.com"), false);
   assert.equal(JSON.stringify(validation.gaps).includes("SELECT user_id"), false);
 });

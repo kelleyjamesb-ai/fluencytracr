@@ -808,6 +808,8 @@ function validateHandoffShape(handoff) {
   for (const key of TRUE_FEEDS) {
     if (feeds[key] !== true && record.handoff_state === READY_STATE) {
       gaps.push(`feeds.${key} must be true for ready upstream handoff`);
+    } else if (feeds[key] !== false && record.handoff_state !== READY_STATE) {
+      gaps.push(`feeds.${key} must remain false unless upstream handoff is ready`);
     }
   }
   for (const key of FALSE_FEEDS) {
@@ -916,7 +918,9 @@ export function buildUpstreamAggregatePipelineHandoffFromObject(
     accepted_components: trueMap([...ACCEPTED_COMPONENT_FIELDS]),
     handoff_requirements: trueMap([...HANDOFF_REQUIREMENT_FIELDS]),
     feeds: {
-      ...trueMap(TRUE_FEEDS),
+      ...(handoffState === READY_STATE
+        ? trueMap(TRUE_FEEDS)
+        : falseMap(TRUE_FEEDS)),
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),

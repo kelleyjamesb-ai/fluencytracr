@@ -560,7 +560,13 @@ function aggregateOutputRef(sourceSystem, adapter, metricId) {
   ].map(safeIdPart).join("_");
 }
 
-function blockedPlan({ sourceSystem, adapter, adapterValidation, generatedAt, gaps }) {
+function blockedPlan({
+  sourceSystem,
+  adapter,
+  adapterValidation,
+  generatedAt,
+  validationGaps
+}) {
   const plan = {
     schema_version: AGGREGATE_CONNECTOR_BOUNDARY_PLAN_SCHEMA_VERSION,
     boundary_plan_state: "BLOCKED",
@@ -590,7 +596,11 @@ function blockedPlan({ sourceSystem, adapter, adapterValidation, generatedAt, ga
       valid: false,
       connector_adapter_valid: adapterValidation?.valid === true,
       boundary_plan_valid: false,
-      gaps: sanitizeGaps(gaps ?? adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
+      gaps: sanitizeGaps(
+        validationGaps ??
+        adapterValidation?.gaps ??
+        ["connector adapter validation did not pass"]
+      )
     },
     generated_at: generatedAt ?? new Date(0).toISOString()
   };
@@ -692,11 +702,11 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
   });
   if (!validation.valid) {
     return blockedPlan({
-      sourceSystem: adapter.source_system,
+      sourceSystem,
       adapter,
       adapterValidation,
       generatedAt: adapter.generated_at,
-      gaps: validation.gaps
+      validationGaps: validation.gaps
     });
   }
   if (sha256Json(stripValidation(merged)) !== sha256Json(stripValidation(plan))) {
@@ -705,7 +715,7 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
       adapter,
       adapterValidation,
       generatedAt: adapter.generated_at,
-      gaps: ["boundary plan must match recomputed saved-fixture boundary plan"]
+      validationGaps: ["boundary plan must match recomputed saved-fixture boundary plan"]
     });
   }
   merged.boundary_plan_state = validation.valid
