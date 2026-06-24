@@ -28,8 +28,8 @@ export const MEASUREMENT_CELL_PREFLIGHT_RUNNER_SCHEMA_VERSION =
 const DEFAULT_FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
 
-const PROJECTION_SCHEMA_VERSION =
-  "FT_AI_VALUE_MEASUREMENT_CELL_OPERATOR_PROJECTION_2026_06";
+const SNAPSHOT_CANDIDATE_SCHEMA_VERSION =
+  "FT_AI_VALUE_MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_2026_06";
 
 const ALLOWED_SOURCE_SYSTEMS = new Set(["bigquery_export", "sigma_export"]);
 
@@ -180,7 +180,7 @@ const ALLOWED_ASSEMBLY_REF_FIELDS = new Set([
 
 const ALLOWED_SNAPSHOT_CANDIDATE_FIELDS = new Set([
   "snapshot_candidate_state",
-  "projection_schema_version",
+  "snapshot_candidate_schema_version",
   "measurement_cell_id",
   "measurement_cell_assembly_run_id",
   "measurement_plan_id",
@@ -541,8 +541,8 @@ function buildSnapshotCandidateRef(assemblyRun) {
     assemblyRun.blueprint_operator_source_handoff?.blueprint_alignment_context ??
     {};
   const candidate = {
-    snapshot_candidate_state: "READY_FOR_INTERNAL_OPERATOR_PROJECTION",
-    projection_schema_version: PROJECTION_SCHEMA_VERSION,
+    snapshot_candidate_state: "READY_FOR_MEASUREMENT_CELL_SNAPSHOT_PERSISTENCE_REVIEW",
+    snapshot_candidate_schema_version: SNAPSHOT_CANDIDATE_SCHEMA_VERSION,
     measurement_cell_id: cell.measurement_cell_id,
     measurement_cell_assembly_run_id: assemblyRun.run_id,
     measurement_plan_id: assemblyRun.measurement_plan_id,

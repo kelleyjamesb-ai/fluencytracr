@@ -17,9 +17,6 @@ import {
   upsertAiValueObject
 } from "./repositories/ai-value-object.repository";
 import {
-  listAiValueMeasurementCellSnapshotProjections
-} from "./repositories/ai-value-minimal-persistence.repository";
-import {
   AiValueMaterializerNotFoundError,
   AiValueMaterializerValidationError,
   materializeRealEvidence
@@ -529,52 +526,6 @@ export function registerAiValueRoutes(app: Express): void {
       });
 
       return res.status(201).json(recordSummary(record));
-    }
-  );
-
-  app.get(
-    "/api/v1/ai-value/measurement-cell-snapshots",
-    rbacMiddleware(["ADMIN", "GOV_OPERATOR", "ENABLEMENT_LEAD"]),
-    async (req: RequestWithRole, res) => {
-      const orgId = requireOrg(req, res);
-      if (!orgId) return;
-
-      const snapshots = await listAiValueMeasurementCellSnapshotProjections({
-        orgId,
-        measurementPlanId: stringRef(req.query.measurement_plan_id) ?? undefined,
-        workflowFamily: stringRef(req.query.workflow_family) ?? undefined,
-        metricId: stringRef(req.query.metric_id) ?? undefined,
-        expectationPathId: stringRef(req.query.expectation_path_id) ?? undefined
-      });
-
-      res.set("x-ai-value-projection-boundary", "internal_operator");
-      res.set("x-ai-value-customer-facing-output", "false");
-      res.set("x-ai-value-customer-facing-financial-output", "false");
-      res.set("x-ai-value-source-bound-projection", "true");
-      res.set("x-ai-value-source-bound-readout", "false");
-      res.set("x-ai-value-export-authorized", "false");
-      res.set("cache-control", "no-store");
-      return res.json({
-        projection_schema_version: "FT_AI_VALUE_MEASUREMENT_CELL_OPERATOR_PROJECTION_2026_06",
-        audience: "internal_operator",
-        customer_facing_output: false,
-        customer_facing_financial_output: false,
-        source_bound_projection: true,
-        source_bound_readout: false,
-        export_authorized: false,
-        contribution_model_not_authorized: true,
-        research_model_not_promoted: true,
-        financial_claim_blocked: true,
-        blocked_uses: [
-          "customer_facing_output",
-          "export",
-          "rendered_readout",
-          "live_connector_execution",
-          "financial_claim",
-          "contribution_model"
-        ],
-        snapshots
-      });
     }
   );
 

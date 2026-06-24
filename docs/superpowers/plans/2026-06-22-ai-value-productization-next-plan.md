@@ -19,7 +19,7 @@ Built:
 - logical AI Value data model;
 - physical data-model readiness review;
 - stable approved expectation-path binding requirements;
-- promoted Measurement Cell snapshot projection;
+- promoted Measurement Cell snapshot persistence/write path;
 - future Measurement Cell Series projection sketch;
 - Productization Gate Decision.
 - data pipeline readiness decision documenting that Sigma/BigQuery execution is

@@ -80,7 +80,7 @@ The preflight runner blocks or holds on:
 - ROI, EBITDA, finance-output, causality, productivity, probability, score, or
   research-model fields.
 
-Held projections do not authorize source package clearance or snapshot
+Held snapshot candidates do not authorize source package clearance or snapshot
 persistence. Passed snapshot candidates remain internal proof artifacts only.
 
 ## Non-Authorization

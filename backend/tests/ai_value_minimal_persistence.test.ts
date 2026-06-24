@@ -3,7 +3,9 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 
 import { aiValueEngine } from "@learnaire/shared";
+import { Prisma } from "@prisma/client";
 
+import * as db from "../src/db";
 import {
   AiValuePersistenceAlreadyExistsError,
   AiValuePersistenceValidationError,
@@ -45,6 +47,38 @@ const MEASUREMENT_CELL_PROMOTION_DECISION = path.resolve(
 );
 const REPO_ROOT = path.resolve(__dirname, "../..");
 let controlledRunnerDistReady = false;
+
+const EXPECTED_MEASUREMENT_CELL_SNAPSHOT_BLOCKED_USES = [
+  "realized_roi",
+  "ebita_claim",
+  "ebitda_claim",
+  "financial_attribution",
+  "causality_claim",
+  "productivity_claim",
+  "headcount_reduction_claim",
+  "individual_attribution",
+  "manager_or_team_ranking",
+  "department_ranking",
+  "people_decisioning",
+  "customer_facing_financial_output",
+  "customer_facing_prediction",
+  "customer_facing_output",
+  "customer_facing_economic_output",
+  "snapshot_read_projection",
+  "snapshot_read_route",
+  "snapshot_export",
+  "rendered_readout",
+  "frontend_ui",
+  "live_connector_execution",
+  "live_bigquery_execution",
+  "live_sigma_execution",
+  "live_glean_query",
+  "measurement_cell_series_persistence",
+  "contribution_model",
+  "research_model_feed",
+  "probability_output",
+  "score_output"
+];
 
 const ensureControlledRunnerDistReady = () => {
   if (controlledRunnerDistReady) return;
@@ -758,7 +792,7 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.blocked_uses).toEqual(executiveReadoutSnapshot.blocked_uses);
   });
 
-  it("persists controlled pilot Measurement Cell snapshots append-only as compact internal projections", async () => {
+  it("persists controlled pilot Measurement Cell snapshots append-only as compact internal snapshots", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
     const stored = await persistAiValueMeasurementCellSnapshot({
       measurementCellAssemblyRun: assemblyRun,
@@ -799,6 +833,16 @@ describe("AI Value minimal persistence repository", () => {
     expect(stored.validation.valid).toBe(true);
     expect(stored.assembly_validation.valid).toBe(true);
     expect(stored.source_refs).toEqual(assemblyRun.measurement_cell.source_refs);
+    expect(stored.source_refs).toEqual({
+      blueprint_source_ref: "blueprint_parse_support_approved_day_30",
+      ai_fluency_source_ref: "ai_fluency_support_day_30",
+      vbd_source_ref: "scrubbed_glean_vbd_token_support_day_30",
+      metric_source_ref: "support_metric_resolution_hours_day_30",
+      token_source_ref: "scrubbed_glean_vbd_token_support_day_30"
+    });
+    expect(stored.blocked_uses).toEqual(
+      EXPECTED_MEASUREMENT_CELL_SNAPSHOT_BLOCKED_USES
+    );
     expect(stored.blueprint_path_binding).toMatchObject({
       expectation_path_id: stored.expectation_path_id,
       expectation_path_version: 1,
@@ -857,6 +901,37 @@ describe("AI Value minimal persistence repository", () => {
     expect(store.aiValueMeasurementCellSnapshots.size).toBe(2);
   });
 
+  it("canonicalizes Measurement Cell snapshot caveats and blocked uses before persistence", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    assemblyRun.measurement_cell.required_caveats = [
+      assemblyRun.measurement_cell.required_caveats[2],
+      assemblyRun.measurement_cell.required_caveats[0],
+      assemblyRun.measurement_cell.required_caveats[1],
+      assemblyRun.measurement_cell.required_caveats[1]
+    ];
+    assemblyRun.measurement_cell.blocked_uses = [
+      ...assemblyRun.measurement_cell.blocked_uses.slice().reverse(),
+      assemblyRun.measurement_cell.blocked_uses[0]
+    ];
+    assemblyRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(assemblyRun.measurement_cell);
+
+    const stored = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(stored.required_caveats).toEqual([
+      "Measurement Cells are aggregate alignment objects, not ROI proof, financial attribution, causality, productivity measurement, or customer-facing financial output.",
+      "Metric movement cannot rescue suppressed VBD, AI Fluency, or governance evidence.",
+      "Bayesian modeling remains future research until a later governed decision promotes it."
+    ]);
+    expect(stored.blocked_uses).toEqual(
+      EXPECTED_MEASUREMENT_CELL_SNAPSHOT_BLOCKED_USES
+    );
+  });
+
   it("binds Measurement Cell snapshots when only a value hypothesis ref is present", async () => {
     const assemblyRun = controlledMeasurementCellAssemblyRun();
     assemblyRun.measurement_plan.value_hypothesis.value_hypothesis_ref =
@@ -887,6 +962,141 @@ describe("AI Value minimal persistence repository", () => {
         createdByRole: "value_realization_pm"
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+  });
+
+  it("rejects Measurement Cell snapshot corrections that skip the immediately previous version", async () => {
+    const assemblyRun = controlledMeasurementCellAssemblyRun();
+    const initial = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+    const corrected = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: assemblyRun,
+      version: 2,
+      supersedesId: initial.id,
+      createdByRole: "value_realization_pm"
+    });
+
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 3,
+        supersedesId: initial.id,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toThrow("immediately previous version");
+    expect(corrected.supersedes_id).toBe(initial.id);
+  });
+
+  it("writes Measurement Cell snapshots through the Prisma branch with compact JSON only", async () => {
+    const previousDatabaseUrl = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = "postgresql://unit-test";
+    const create = jest.fn(async ({ data }) => ({
+      ...data,
+      assemblyPayloadJson: null
+    }));
+    const getPrismaSpy = jest.spyOn(db, "getPrisma").mockReturnValue({
+      measurementCellSnapshot: {
+        create,
+        findUnique: jest.fn()
+      }
+    } as any);
+
+    try {
+      const assemblyRun = controlledMeasurementCellAssemblyRun();
+      const stored = await persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      });
+
+      expect(create).toHaveBeenCalledTimes(1);
+      const data = create.mock.calls[0]?.[0]?.data;
+      expect(data).toMatchObject({
+        orgId: stored.org_id,
+        measurementCellId: stored.measurement_cell_id,
+        version: 1,
+        approvalState: "approved",
+        windowMode: "milestone",
+        milestoneDay: 30
+      });
+      expect(data.assemblyPayloadJson).toBe(Prisma.DbNull);
+      expect(JSON.stringify(data.payloadJson).toLowerCase()).not.toContain("raw_rows");
+      expect(JSON.stringify(data.payloadJson).toLowerCase()).not.toContain("query_text");
+      expect(JSON.stringify(data.payloadJson).toLowerCase()).not.toContain("confidence");
+      expect(JSON.stringify(data.payloadJson).toLowerCase()).not.toContain("roi");
+      expect(stored.assembly_payload).toBeNull();
+    } finally {
+      getPrismaSpy.mockRestore();
+      if (previousDatabaseUrl === undefined) {
+        delete process.env.DATABASE_URL;
+      } else {
+        process.env.DATABASE_URL = previousDatabaseUrl;
+      }
+    }
+  });
+
+  it("rejects skipped Measurement Cell snapshot correction lineage through the Prisma branch", async () => {
+    const previousDatabaseUrl = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = "postgresql://unit-test";
+    let initialRow: any = null;
+    const create = jest.fn(async ({ data }) => {
+      const row = {
+        ...data,
+        assemblyPayloadJson: null
+      };
+      if (data.version === 1) {
+        initialRow = row;
+      }
+      return row;
+    });
+    const findUnique = jest.fn(async ({ where }) =>
+      where.id === initialRow?.id ? initialRow : null
+    );
+    const getPrismaSpy = jest.spyOn(db, "getPrisma").mockReturnValue({
+      measurementCellSnapshot: {
+        create,
+        findUnique
+      }
+    } as any);
+
+    try {
+      const assemblyRun = controlledMeasurementCellAssemblyRun();
+      const initial = await persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      });
+      const corrected = await persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        version: 2,
+        supersedesId: initial.id,
+        createdByRole: "value_realization_pm"
+      });
+
+      expect(corrected.version).toBe(2);
+      expect(corrected.supersedes_id).toBe(initial.id);
+
+      await expect(
+        persistAiValueMeasurementCellSnapshot({
+          measurementCellAssemblyRun: assemblyRun,
+          version: 3,
+          supersedesId: initial.id,
+          createdByRole: "value_realization_pm"
+        })
+      ).rejects.toThrow("immediately previous version");
+
+      expect(findUnique).toHaveBeenCalledWith({ where: { id: initial.id } });
+      expect(create).toHaveBeenCalledTimes(2);
+    } finally {
+      getPrismaSpy.mockRestore();
+      if (previousDatabaseUrl === undefined) {
+        delete process.env.DATABASE_URL;
+      } else {
+        process.env.DATABASE_URL = previousDatabaseUrl;
+      }
+    }
   });
 
   it("persists repeated milestone Measurement Cell snapshots as distinct cell identities, not versions", async () => {
@@ -1037,6 +1247,51 @@ describe("AI Value minimal persistence repository", () => {
     await expect(
       persistAiValueMeasurementCellSnapshot({
         measurementCellAssemblyRun: unsafeSourceRefNotes,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeRequiredCaveat = clone(controlledMeasurementCellAssemblyRun());
+    unsafeRequiredCaveat.measurement_cell.required_caveats = [
+      ...unsafeRequiredCaveat.measurement_cell.required_caveats,
+      "ROI confidence score ready for finance output."
+    ];
+    unsafeRequiredCaveat.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(unsafeRequiredCaveat.measurement_cell);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeRequiredCaveat,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeNegativePostureCaveat = clone(controlledMeasurementCellAssemblyRun());
+    unsafeNegativePostureCaveat.measurement_cell.required_caveats = [
+      ...unsafeNegativePostureCaveat.measurement_cell.required_caveats,
+      "ROI confidence output is not blocked for finance output."
+    ];
+    unsafeNegativePostureCaveat.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(unsafeNegativePostureCaveat.measurement_cell);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeNegativePostureCaveat,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeBlockedUse = clone(controlledMeasurementCellAssemblyRun());
+    unsafeBlockedUse.measurement_cell.blocked_uses = [
+      ...unsafeBlockedUse.measurement_cell.blocked_uses,
+      "ROI confidence output authorized for finance output"
+    ];
+    unsafeBlockedUse.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(unsafeBlockedUse.measurement_cell);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeBlockedUse,
         version: 1,
         createdByRole: "value_realization_pm"
       })

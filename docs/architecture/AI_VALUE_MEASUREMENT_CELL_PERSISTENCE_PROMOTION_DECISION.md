@@ -13,7 +13,7 @@ Decision: `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`
 ## 1. Purpose
 
 The physical data-model readiness review originally defined a non-authorizing
-projection sketch for future `measurement_cell_snapshots`. The controlled
+physical persistence sketch for future `measurement_cell_snapshots`. The controlled
 scrubbed aggregate pilot and this promotion decision now demonstrate the exact
 compact backend-internal scope that can safely persist.
 
@@ -180,7 +180,7 @@ implementation scope is limited to:
 - backend service write path only;
 - already validated Measurement Cell Assembly Run input only;
 - recomputed validation before write;
-- compact Measurement Cell snapshot projection only;
+- compact Measurement Cell snapshot persistence/write path only;
 - compact source refs;
 - compact selected path binding;
 - required caveats;
@@ -242,15 +242,16 @@ python3 scripts/ci_v1_governance_gates.py
 
 ## 10. Follow-Up Internal Projection Slice
 
-A later bounded productization slice may expose the compact
-`measurement_cell_snapshots` row through the internal/operator-only projection
-contract in
-`docs/contracts/ai-value-measurement-cell-snapshot-projection/README.md`.
+A later bounded productization slice may propose an internal/operator-only
+projection contract over compact `measurement_cell_snapshots` rows, but no
+read route or projection contract is authorized by this persistence promotion
+slice.
 
-That follow-up contract does not change this decision's original persistence
-scope. It still does not authorize frontend pages, customer-facing read paths,
+That future follow-up must not change this decision's original persistence
+scope. It still must not authorize frontend pages, customer-facing read paths,
 exports, rendered readouts, live connector execution, Series persistence,
 confidence research inputs, ROI, causality, productivity, probability, finance
-output, or customer-facing financial output.
+output, or customer-facing financial output without a separate exact-scope
+promotion decision.
 
 Expected: all commands exit `0`.

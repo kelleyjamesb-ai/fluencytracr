@@ -129,6 +129,16 @@ const FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS = [
   /(?:^|[_-])(?:prompt|response|transcript)[_-](?:text|content)(?:[_-]|$)/i
 ];
 
+const MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEATS = [
+  "Measurement Cells are aggregate alignment objects, not ROI proof, financial attribution, causality, productivity measurement, or customer-facing financial output.",
+  "Metric movement cannot rescue suppressed VBD, AI Fluency, or governance evidence.",
+  "Bayesian modeling remains future research until a later governed decision promotes it."
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEAT_SET = new Set(
+  MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEATS
+);
+
 const normalizeKey = (value: string): string =>
   value
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -173,6 +183,21 @@ const ALLOWED_SOURCE_REF_KEYS = new Set([
   "metric_source_ref",
   "token_source_ref"
 ]);
+
+const MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEYS = [
+  "blueprint_source_ref",
+  "ai_fluency_source_ref",
+  "vbd_source_ref",
+  "metric_source_ref",
+  "token_source_ref"
+];
+
+const MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEY_SET = new Set(
+  MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEYS
+);
+
+const COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN =
+  /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,191}$/;
 
 export interface PersistAiValueHypothesisInput {
   measurementPlan: Record<string, unknown>;
@@ -247,104 +272,6 @@ export interface ListAiValueSourcePackageRefsInput {
   orgId: string;
   measurementPlanId: string;
   latestOnly?: boolean;
-}
-
-export interface ListAiValueMeasurementCellSnapshotsInput {
-  orgId: string;
-  measurementPlanId?: string;
-  workflowFamily?: string;
-  metricId?: string;
-  expectationPathId?: string;
-  latestOnly?: boolean;
-}
-
-export interface AiValueMeasurementCellSnapshotOperatorProjection {
-  projection_schema_version: "FT_AI_VALUE_MEASUREMENT_CELL_OPERATOR_PROJECTION_2026_06";
-  measurement_cell_snapshot_id: string;
-  measurement_cell_id: string;
-  measurement_cell_assembly_run_id: string;
-  measurement_plan_id: string;
-  value_hypothesis_id: string | null;
-  value_hypothesis_ref: string | null;
-  value_hypothesis_binding_state: string;
-  version: number;
-  internal_review_only: true;
-  customer_facing_output: false;
-  source_bound_projection: true;
-  source_bound_readout: false;
-  export_authorized: false;
-  contribution_model_not_authorized: true;
-  research_model_not_promoted: true;
-  financial_claim_blocked: true;
-  workflow: {
-    workflow_family: string;
-    workflow_id: string | null;
-    function_area: string;
-    cohort_key: string;
-  };
-  internal_projection_gate: {
-    internal_projection_gate_state:
-      | "INTERNAL_PROJECTION_GATE_CLEAR"
-      | "INTERNAL_PROJECTION_GATE_HELD";
-    internal_projection_gate_clear: boolean;
-    measurement_cell_gate_valid: boolean;
-    assembly_gate_valid: boolean;
-    approval_state: string;
-    metric_owner_approval_state: string;
-    customer_facing_output: false;
-    export_authorized: false;
-  };
-  lineage: {
-    measurement_plan_id: string;
-    measurement_cell_assembly_run_id: string;
-    value_hypothesis_id: string | null;
-    value_hypothesis_ref: string | null;
-    value_hypothesis_binding_state: string;
-    approved_blueprint_ref: string;
-    approved_blueprint_payload_hash: string;
-    blueprint_expectation_ref: string;
-    expectation_path_hash: string;
-    metric_definition_ref: string;
-    metric_definition_hash: string;
-    version: number;
-    supersedes_id: string | null;
-    generated_at: string;
-    created_at: string;
-  };
-  selected_path: {
-    expectation_path_id: string;
-    expectation_path_version: number;
-    expectation_path_hash: string;
-    approved_blueprint_ref: string;
-    approved_blueprint_payload_hash: string;
-    blueprint_expectation_ref: string;
-    approval_state: string;
-    approved_at: string;
-    approved_by_role: string;
-    value_driver: string;
-  };
-  metric: {
-    metric_id: string;
-    metric_definition_ref: string;
-    metric_definition_hash: string;
-    metric_owner_approval_state: string;
-    metric_direction: string;
-    metric_unit: string;
-    expected_metric_lag_days: number;
-  };
-  window: {
-    window_mode: string;
-    milestone_day: number;
-    baseline_window_start: string;
-    baseline_window_end: string;
-    comparison_window_start: string;
-    comparison_window_end: string;
-  };
-  source_refs: Record<string, string | string[]>;
-  required_caveats: string[];
-  blocked_uses: string[];
-  generated_at: string;
-  created_at: string;
 }
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -627,7 +554,13 @@ const enforceSafeMetadata = (value: Record<string, unknown>, objectLabel: string
 const pathIsPostureText = (path: string): boolean =>
   /(^|\.)(blocked_uses|blocked_claims|blocked_dimensions|blocked_interpretation|required_controls|coverage_signals|covered_signals)(\.|\[|$)/.test(
     path
-  ) || /(^|\.)(required_caveats|required_signals|expected_signals|missing_signals|present_signals)(\.|\[|$)/.test(path);
+  ) || /(^|\.)(required_signals|expected_signals|missing_signals|present_signals)(\.|\[|$)/.test(path);
+
+const pathIsRequiredCaveat = (path: string): boolean =>
+  /(^|\.)required_caveats(\.|\[|$)/.test(path);
+
+const safeRequiredCaveatText = (value: string): boolean =>
+  MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEAT_SET.has(value);
 
 const scanForbiddenMeasurementCellSnapshotTerms = (
   value: unknown,
@@ -637,6 +570,7 @@ const scanForbiddenMeasurementCellSnapshotTerms = (
   if (typeof value === "string") {
     if (
       !pathIsPostureText(path) &&
+      !(pathIsRequiredCaveat(path) && safeRequiredCaveatText(value)) &&
       FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
         pattern.test(value)
       )
@@ -743,667 +677,51 @@ const enforceSourceRefs = (value: Record<string, unknown>, objectLabel: string) 
   enforcePersistenceDenylist(value, objectLabel);
 };
 
-const MEASUREMENT_CELL_PROJECTION_SOURCE_REF_KEYS = new Set([
-  "blueprint_source_ref",
-  "ai_fluency_source_ref",
-  "vbd_source_ref",
-  "metric_source_ref",
-  "token_source_ref"
-]);
-
-const MEASUREMENT_CELL_PROJECTION_BLOCKED_USES = [
-  "customer_facing_output",
-  "export",
-  "rendered_readout",
-  "customer_facing_financial_output",
-  "financial_claim",
-  "contribution_model"
-];
-
-const COMPACT_PROJECTION_SOURCE_REF_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,191}$/;
-
-const FORBIDDEN_EXPOSED_POSTURE_STRING_PATTERNS = [
-  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
-  /(^|[^a-z0-9])(?:user|person|employee)[-_:](?:id[-_:])?[0-9][a-z0-9_-]*/i,
-  /(^|[^a-z0-9])(?:row|span|trace)[-_:]id[-_:][a-z0-9_-]+/i,
-  /(^|[^a-z0-9])(?:row|span|trace)[-_][a-z0-9_-]*[0-9][a-z0-9_-]*/i,
-  /(?:email|user|person|employee)[-_ ]hash/i,
-  /hashed[-_ ](?:email|user|person|employee)/i,
-  /\braw\s+(?:rows?|prompt|response|transcript|content)\b/i,
-  /\b(?:query|sql)\s+text\b/i,
-  /\bfile\s+contents?\b/i,
-  /\bselect\s+.+\bfrom\b/i,
-  /\b(?:prompts?|responses?|transcripts?)\b/i
-];
-
-const isCompactProjectionSourceRef = (value: unknown): value is string =>
-  typeof value === "string" &&
-  value.trim() === value &&
-  COMPACT_PROJECTION_SOURCE_REF_PATTERN.test(value) &&
-  !/[{}[\]"'`]/.test(value) &&
-  !unsafeProjectionScalarValue(value);
-
-const projectSafeSourceRefs = (
-  sourceRefs: Record<string, unknown>
-): Record<string, string | string[]> => {
-  const projected: Record<string, string | string[]> = {};
-  for (const [key, value] of Object.entries(sourceRefs)) {
-    if (!MEASUREMENT_CELL_PROJECTION_SOURCE_REF_KEYS.has(key)) continue;
-    if (isCompactProjectionSourceRef(value)) {
-      projected[key] = value;
-    }
-  }
-  return projected;
-};
-
-const collectProjectionSafetyGaps = (
-  runCheck: () => void
-): string[] => {
-  try {
-    runCheck();
-    return [];
-  } catch (error) {
-    if (error instanceof AiValuePersistenceValidationError) {
-      return error.gaps;
-    }
-    throw error;
-  }
-};
-
-const unsafeProjectionScalarValue = (value: unknown): boolean =>
-  typeof value === "string" &&
-  (
-    FORBIDDEN_PERSISTENCE_STRING_PATTERNS.some((pattern) => pattern.test(value)) ||
+const enforceCompactMeasurementCellSnapshotSourceRef = (
+  key: string,
+  value: unknown,
+  gaps: string[]
+): string => {
+  if (
+    typeof value !== "string" ||
+    value.trim() !== value ||
+    !COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN.test(value) ||
+    /[{}[\]"'`]/.test(value) ||
     FORBIDDEN_SOURCE_REF_STRING_PATTERNS.some((pattern) => pattern.test(value)) ||
     FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
       pattern.test(value)
     )
-  );
-
-const measurementCellSnapshotProjectedScalarGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => {
-  const projectedScalars: Array<[string, unknown]> = [
-    ["measurement_cell_snapshot_id", record.id],
-    ["measurement_cell_id", record.measurement_cell_id],
-    ["measurement_cell_assembly_run_id", record.measurement_cell_assembly_run_id],
-    ["measurement_plan_id", record.measurement_plan_id],
-    ["value_hypothesis_id", record.value_hypothesis_id],
-    ["value_hypothesis_ref", record.value_hypothesis_ref],
-    ["value_hypothesis_binding_state", record.value_hypothesis_binding_state],
-    ["workflow_family", record.workflow_family],
-    ["workflow_id", record.workflow_id],
-    ["function_area", record.function_area],
-    ["cohort_key", record.cohort_key],
-    ["approval_state", record.approval_state],
-    ["metric_owner_approval_state", record.metric_owner_approval_state],
-    ["approved_blueprint_ref", record.approved_blueprint_ref],
-    ["approved_blueprint_payload_hash", record.approved_blueprint_payload_hash],
-    ["blueprint_expectation_ref", record.blueprint_expectation_ref],
-    ["expectation_path_id", record.expectation_path_id],
-    ["expectation_path_hash", record.expectation_path_hash],
-    ["approved_at", record.approved_at],
-    ["approved_by_role", record.approved_by_role],
-    ["value_driver", record.value_driver],
-    ["metric_id", record.metric_id],
-    ["metric_definition_ref", record.metric_definition_ref],
-    ["metric_definition_hash", record.metric_definition_hash],
-    ["metric_direction", record.metric_direction],
-    ["metric_unit", record.metric_unit],
-    ["window_mode", record.window_mode],
-    ["baseline_window_start", record.baseline_window_start],
-    ["baseline_window_end", record.baseline_window_end],
-    ["comparison_window_start", record.comparison_window_start],
-    ["comparison_window_end", record.comparison_window_end],
-    ["generated_at", record.generated_at],
-    ["created_at", record.created_at]
-  ];
-  return projectedScalars
-    .filter(([, value]) => unsafeProjectionScalarValue(value))
-    .map(([field]) => `projected scalar field ${field} is not safe to return`);
+  ) {
+    gaps.push(`source_refs.${key} must be a compact governed source ref`);
+    return "";
+  }
+  return value;
 };
 
-const measurementCellSnapshotProjectionValidationGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => {
+const compactMeasurementCellSnapshotSourceRefs = (
+  sourceRefs: Record<string, unknown>
+): Record<string, string> => {
   const gaps: string[] = [];
-  const validation = asRecord(record.validation);
-  compareField(
-    gaps,
-    "projection validation.validator must be validateMeasurementCell",
-    "validateMeasurementCell",
-    validation.validator
-  );
-  compareField(
-    gaps,
-    "projection validation.valid must be true",
-    true,
-    validation.valid
-  );
-  if (asStringArray(validation.gaps).length > 0) {
-    gaps.push("projection validation.gaps must be empty");
-  }
-  const validationCellId = asOptionalString(validation.measurement_cell_id);
-  if (validationCellId !== null) {
-    compareField(
-      gaps,
-      "projection validation.measurement_cell_id must match Measurement Cell",
-      record.measurement_cell_id,
-      validationCellId
-    );
-  }
-  return gaps;
-};
-
-const measurementCellSnapshotProjectionAssemblyValidationGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => {
-  const gaps: string[] = [];
-  const validation = asRecord(record.assembly_validation);
-  compareField(
-    gaps,
-    "projection assembly_validation.validator must be validateMeasurementCellAssemblyRun",
-    "validateMeasurementCellAssemblyRun",
-    validation.validator
-  );
-  compareField(
-    gaps,
-    "projection assembly_validation.valid must be true",
-    true,
-    validation.valid
-  );
-  if (asStringArray(validation.gaps).length > 0) {
-    gaps.push("projection assembly_validation.gaps must be empty");
-  }
-  const validationRunId = asOptionalString(validation.run_id);
-  if (validationRunId !== null) {
-    compareField(
-      gaps,
-      "projection assembly_validation.run_id must match assembly run",
-      record.measurement_cell_assembly_run_id,
-      validationRunId
-    );
-  }
-  const validationCellId = asOptionalString(validation.measurement_cell_id);
-  if (validationCellId !== null) {
-    compareField(
-      gaps,
-      "projection assembly_validation.measurement_cell_id must match Measurement Cell",
-      record.measurement_cell_id,
-      validationCellId
-    );
-  }
-  return gaps;
-};
-
-const measurementCellSnapshotProjectionSafetyGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => [
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      record.payload,
-      "Measurement Cell Snapshot projection payload"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() => {
-    if (record.assembly_payload !== null) {
-      validateMeasurementCellAssemblyPayload(
-        record.assembly_payload,
-        {
-          run: {
-            run_id: record.measurement_cell_assembly_run_id,
-            decision: record.assembly_decision
-          },
-          cell: {
-            measurement_cell_id: record.measurement_cell_id,
-            required_caveats: record.required_caveats,
-            blocked_uses: record.blocked_uses
-          }
-        }
-      );
-    }
-  }),
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      record.validation,
-      "Measurement Cell Snapshot projection validation"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      record.assembly_validation,
-      "Measurement Cell Snapshot projection assembly validation"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() =>
-    enforceSourceRefs(
-      record.source_refs,
-      "Measurement Cell Snapshot projection source refs"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      record.source_refs,
-      "Measurement Cell Snapshot projection source refs"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      record.blueprint_path_binding,
-      "Measurement Cell Snapshot projection Blueprint path binding"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      { required_caveats: record.required_caveats },
-      "Measurement Cell Snapshot projection caveats"
-    )
-  ),
-  ...collectProjectionSafetyGaps(() =>
-    enforceMeasurementCellSnapshotDenylist(
-      { blocked_uses: record.blocked_uses },
-      "Measurement Cell Snapshot projection blocked uses"
-    )
-  )
-];
-
-const measurementCellSnapshotProjectionBindingGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => {
-  const gaps: string[] = [];
-  const binding = asRecord(record.blueprint_path_binding);
-  const payload = asRecord(record.payload);
-  const payloadSelectedPath = asRecord(payload.selected_path);
-  const payloadSelectedMetric = asRecord(payload.selected_metric);
-  const payloadWindow = asRecord(payload.time_window);
-  const payloadBaselineWindow = asRecord(payloadWindow.baseline_window);
-  const payloadComparisonWindow = asRecord(payloadWindow.comparison_window);
-
-  const compare = (label: string, expected: unknown, actual: unknown) =>
-    compareField(gaps, label, expected, actual);
-  const compareNumber = (label: string, expected: unknown, actual: unknown) =>
-    compare(label, Number(expected), Number(actual));
-  const compareDate = (label: string, expected: unknown, actual: unknown) =>
-    compare(
-      label,
-      normalizeDateOnlyForComparison(expected),
-      normalizeDateOnlyForComparison(actual)
-    );
-
-  compare(
-    "projection expectation_path_id must match Blueprint path binding",
-    record.expectation_path_id,
-    binding.expectation_path_id
-  );
-  compare(
-    "projection expectation_path_id must match compact payload selected path",
-    record.expectation_path_id,
-    payloadSelectedPath.expectation_path_id
-  );
-  compareNumber(
-    "projection expectation_path_version must match Blueprint path binding",
-    record.expectation_path_version,
-    binding.expectation_path_version
-  );
-  compareNumber(
-    "projection expectation_path_version must match compact payload selected path",
-    record.expectation_path_version,
-    payloadSelectedPath.expectation_path_version
-  );
-  for (const [label, expected, actual] of [
-    [
-      "projection expectation_path_hash must match Blueprint path binding",
-      record.expectation_path_hash,
-      binding.expectation_path_hash
-    ],
-    [
-      "projection expectation_path_hash must match compact payload selected path",
-      record.expectation_path_hash,
-      payloadSelectedPath.expectation_path_hash
-    ],
-    [
-      "projection approved_blueprint_payload_hash must match Blueprint path binding",
-      record.approved_blueprint_payload_hash,
-      binding.approved_blueprint_payload_hash
-    ],
-    [
-      "projection approved_blueprint_payload_hash must match compact payload selected path",
-      record.approved_blueprint_payload_hash,
-      payloadSelectedPath.approved_blueprint_payload_hash
-    ],
-    [
-      "projection approved_blueprint_ref must match Blueprint path binding",
-      record.approved_blueprint_ref,
-      binding.approved_blueprint_ref
-    ],
-    [
-      "projection approved_blueprint_ref must match compact payload selected path",
-      record.approved_blueprint_ref,
-      payloadSelectedPath.approved_blueprint_ref
-    ],
-    [
-      "projection blueprint_expectation_ref must match Blueprint path binding",
-      record.blueprint_expectation_ref,
-      binding.blueprint_expectation_ref
-    ],
-    [
-      "projection blueprint_expectation_ref must match compact payload selected path",
-      record.blueprint_expectation_ref,
-      payloadSelectedPath.blueprint_expectation_ref
-    ],
-    [
-      "projection approval_state must match Blueprint path binding",
-      record.approval_state,
-      binding.approval_state
-    ],
-    [
-      "projection approval_state must match compact payload selected path",
-      record.approval_state,
-      payloadSelectedPath.approval_state
-    ],
-    [
-      "projection approved_by_role must match Blueprint path binding",
-      record.approved_by_role,
-      binding.approved_by_role
-    ],
-    [
-      "projection approved_by_role must match compact payload selected path",
-      record.approved_by_role,
-      payloadSelectedPath.approved_by_role
-    ],
-    [
-      "projection value_driver must match Blueprint path binding",
-      record.value_driver,
-      binding.value_driver
-    ],
-    [
-      "projection value_driver must match compact payload selected path",
-      record.value_driver,
-      payloadSelectedPath.value_driver
-    ],
-    [
-      "projection metric_id must match compact payload selected metric",
-      record.metric_id,
-      payloadSelectedMetric.metric_id
-    ],
-    [
-      "projection metric_definition_ref must match compact payload selected metric",
-      record.metric_definition_ref,
-      payloadSelectedMetric.metric_definition_ref
-    ],
-    [
-      "projection metric_definition_hash must match compact payload selected metric",
-      record.metric_definition_hash,
-      payloadSelectedMetric.metric_definition_hash
-    ],
-    [
-      "projection metric_owner_approval_state must match compact payload selected metric",
-      record.metric_owner_approval_state,
-      payloadSelectedMetric.metric_owner_approval_state
-    ],
-    [
-      "projection metric_direction must match compact payload selected metric",
-      record.metric_direction,
-      payloadSelectedMetric.metric_direction
-    ],
-    [
-      "projection metric_unit must match compact payload selected metric",
-      record.metric_unit,
-      payloadSelectedMetric.metric_unit
-    ],
-    [
-      "projection window_mode must match compact payload time window",
-      record.window_mode,
-      payloadWindow.window_mode
-    ]
-  ] as const) {
-    compare(label, expected, actual);
-  }
-  compare(
-    "projection metric_id must match Blueprint path expected metric",
-    record.metric_id,
-    binding.expected_metric_id
-  );
-  compare(
-    "projection metric_id must match compact payload expected metric",
-    record.metric_id,
-    payloadSelectedPath.expected_metric_id
-  );
-  compare(
-    "projection metric_direction must match Blueprint path expected direction",
-    record.metric_direction,
-    binding.expected_metric_direction
-  );
-  compare(
-    "projection metric_direction must match compact payload expected direction",
-    record.metric_direction,
-    payloadSelectedPath.expected_metric_direction
-  );
-  compareNumber(
-    "projection expected_metric_lag_days must match Blueprint path binding",
-    record.expected_metric_lag_days,
-    binding.expected_metric_lag_days
-  );
-  compareNumber(
-    "projection expected_metric_lag_days must match compact payload selected path",
-    record.expected_metric_lag_days,
-    payloadSelectedPath.expected_metric_lag_days
-  );
-  compareNumber(
-    "projection expected_metric_lag_days must match compact payload selected metric",
-    record.expected_metric_lag_days,
-    payloadSelectedMetric.expected_metric_lag_days
-  );
-  compareNumber(
-    "projection milestone_day must match compact payload time window",
-    record.milestone_day,
-    payloadWindow.milestone_day
-  );
-  compareDate(
-    "projection approved_at must match Blueprint path binding",
-    record.approved_at,
-    binding.approved_at
-  );
-  compareDate(
-    "projection approved_at must match compact payload selected path",
-    record.approved_at,
-    payloadSelectedPath.approved_at
-  );
-  compareDate(
-    "projection baseline_window_start must match compact payload time window",
-    record.baseline_window_start,
-    payloadBaselineWindow.window_start
-  );
-  compareDate(
-    "projection baseline_window_end must match compact payload time window",
-    record.baseline_window_end,
-    payloadBaselineWindow.window_end
-  );
-  compareDate(
-    "projection comparison_window_start must match compact payload time window",
-    record.comparison_window_start,
-    payloadComparisonWindow.window_start
-  );
-  compareDate(
-    "projection comparison_window_end must match compact payload time window",
-    record.comparison_window_end,
-    payloadComparisonWindow.window_end
-  );
-
-  return gaps;
-};
-
-const measurementCellSnapshotProjectionSourceRefGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => {
-  const gaps: string[] = [];
-  for (const key of Object.keys(record.source_refs)) {
-    if (!MEASUREMENT_CELL_PROJECTION_SOURCE_REF_KEYS.has(key)) {
-      gaps.push(`projection source_refs.${key} is not allowed`);
+  for (const key of Object.keys(sourceRefs)) {
+    if (!MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEY_SET.has(key)) {
+      gaps.push(`source_refs.${key} is not allowed for Measurement Cell Snapshot persistence`);
     }
   }
-  for (const key of MEASUREMENT_CELL_PROJECTION_SOURCE_REF_KEYS) {
-    const value = record.source_refs[key];
-    if (!isCompactProjectionSourceRef(value)) {
-      gaps.push(`projection source_refs.${key} must be a compact source ref`);
-    }
+  const compact: Record<string, string> = {};
+  for (const key of MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEYS) {
+    compact[key] = enforceCompactMeasurementCellSnapshotSourceRef(
+      key,
+      sourceRefs[key],
+      gaps
+    );
   }
-  return gaps;
-};
-
-const measurementCellSnapshotProjectionPostureGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => {
-  const missingBlockedUses = missingFrom(
-    MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES,
-    record.blocked_uses
-  );
-  return missingBlockedUses.map(
-    (use) => `projection blocked_uses missing ${use}`
-  );
-};
-
-const exposedPostureTextGaps = (
-  values: string[],
-  label: string
-): string[] =>
-  values.flatMap((value, index) =>
-    FORBIDDEN_EXPOSED_POSTURE_STRING_PATTERNS.some((pattern) =>
-      pattern.test(value)
-    )
-      ? [`projection ${label}[${index}] is not safe to return`]
-      : []
-  );
-
-const measurementCellSnapshotExposedTextGaps = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): string[] => [
-  ...exposedPostureTextGaps(record.required_caveats, "required_caveats"),
-  ...exposedPostureTextGaps(record.blocked_uses, "blocked_uses")
-];
-
-export const projectAiValueMeasurementCellSnapshotForOperator = (
-  record: AiValueMeasurementCellSnapshotStoredRecord
-): AiValueMeasurementCellSnapshotOperatorProjection | null => {
-  if (measurementCellSnapshotProjectedScalarGaps(record).length > 0) {
-    return null;
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot source refs must be compact lane refs only",
+      gaps
+    );
   }
-  if (measurementCellSnapshotExposedTextGaps(record).length > 0) {
-    return null;
-  }
-
-  const validationValid =
-    measurementCellSnapshotProjectionValidationGaps(record).length === 0;
-  const assemblyValidationValid =
-    measurementCellSnapshotProjectionAssemblyValidationGaps(record).length === 0;
-  const projectionSafetyValid =
-    measurementCellSnapshotProjectionSafetyGaps(record).length === 0;
-  const projectionSourceRefsValid =
-    measurementCellSnapshotProjectionSourceRefGaps(record).length === 0;
-  const projectionBindingValid =
-    measurementCellSnapshotProjectionBindingGaps(record).length === 0;
-  const projectionPostureValid =
-    measurementCellSnapshotProjectionPostureGaps(record).length === 0;
-  const gateClear =
-    validationValid &&
-    assemblyValidationValid &&
-    projectionSafetyValid &&
-    projectionSourceRefsValid &&
-    projectionBindingValid &&
-    projectionPostureValid &&
-    record.assembly_decision === "READY_FOR_VALUE_HYPOTHESIS_PACKET_RUNNER" &&
-    record.approval_state === "approved" &&
-    record.metric_owner_approval_state === "approved" &&
-    record.window_mode === "milestone";
-
-  return {
-    projection_schema_version: "FT_AI_VALUE_MEASUREMENT_CELL_OPERATOR_PROJECTION_2026_06",
-    measurement_cell_snapshot_id: record.id,
-    measurement_cell_id: record.measurement_cell_id,
-    measurement_cell_assembly_run_id: record.measurement_cell_assembly_run_id,
-    measurement_plan_id: record.measurement_plan_id,
-    value_hypothesis_id: record.value_hypothesis_id,
-    value_hypothesis_ref: record.value_hypothesis_ref,
-    value_hypothesis_binding_state: record.value_hypothesis_binding_state,
-    version: record.version,
-    internal_review_only: true,
-    customer_facing_output: false,
-    source_bound_projection: true,
-    source_bound_readout: false,
-    export_authorized: false,
-    contribution_model_not_authorized: true,
-    research_model_not_promoted: true,
-    financial_claim_blocked: true,
-    workflow: {
-      workflow_family: record.workflow_family,
-      workflow_id: record.workflow_id,
-      function_area: record.function_area,
-      cohort_key: record.cohort_key
-    },
-    internal_projection_gate: {
-      internal_projection_gate_state: gateClear
-        ? "INTERNAL_PROJECTION_GATE_CLEAR"
-        : "INTERNAL_PROJECTION_GATE_HELD",
-      internal_projection_gate_clear: gateClear,
-      measurement_cell_gate_valid: validationValid,
-      assembly_gate_valid: assemblyValidationValid,
-      approval_state: record.approval_state,
-      metric_owner_approval_state: record.metric_owner_approval_state,
-      customer_facing_output: false,
-      export_authorized: false
-    },
-    lineage: {
-      measurement_plan_id: record.measurement_plan_id,
-      measurement_cell_assembly_run_id: record.measurement_cell_assembly_run_id,
-      value_hypothesis_id: record.value_hypothesis_id,
-      value_hypothesis_ref: record.value_hypothesis_ref,
-      value_hypothesis_binding_state: record.value_hypothesis_binding_state,
-      approved_blueprint_ref: record.approved_blueprint_ref,
-      approved_blueprint_payload_hash: record.approved_blueprint_payload_hash,
-      blueprint_expectation_ref: record.blueprint_expectation_ref,
-      expectation_path_hash: record.expectation_path_hash,
-      metric_definition_ref: record.metric_definition_ref,
-      metric_definition_hash: record.metric_definition_hash,
-      version: record.version,
-      supersedes_id: record.supersedes_id,
-      generated_at: record.generated_at,
-      created_at: record.created_at
-    },
-    selected_path: {
-      expectation_path_id: record.expectation_path_id,
-      expectation_path_version: record.expectation_path_version,
-      expectation_path_hash: record.expectation_path_hash,
-      approved_blueprint_ref: record.approved_blueprint_ref,
-      approved_blueprint_payload_hash: record.approved_blueprint_payload_hash,
-      blueprint_expectation_ref: record.blueprint_expectation_ref,
-      approval_state: record.approval_state,
-      approved_at: record.approved_at,
-      approved_by_role: record.approved_by_role,
-      value_driver: record.value_driver
-    },
-    metric: {
-      metric_id: record.metric_id,
-      metric_definition_ref: record.metric_definition_ref,
-      metric_definition_hash: record.metric_definition_hash,
-      metric_owner_approval_state: record.metric_owner_approval_state,
-      metric_direction: record.metric_direction,
-      metric_unit: record.metric_unit,
-      expected_metric_lag_days: record.expected_metric_lag_days
-    },
-    window: {
-      window_mode: record.window_mode,
-      milestone_day: record.milestone_day,
-      baseline_window_start: record.baseline_window_start,
-      baseline_window_end: record.baseline_window_end,
-      comparison_window_start: record.comparison_window_start,
-      comparison_window_end: record.comparison_window_end
-    },
-    source_refs: gateClear ? projectSafeSourceRefs(record.source_refs) : {},
-    required_caveats: record.required_caveats,
-    blocked_uses: MEASUREMENT_CELL_PROJECTION_BLOCKED_USES,
-    generated_at: record.generated_at,
-    created_at: record.created_at
-  };
+  return compact;
 };
 
 const measurementPlanKey = (orgId: string, measurementPlanId: string, version: number) =>
@@ -1659,8 +977,91 @@ const MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES = [
   "manager_or_team_ranking",
   "department_ranking",
   "people_decisioning",
-  "customer_facing_financial_output"
+  "customer_facing_financial_output",
+  "customer_facing_prediction",
+  "customer_facing_output",
+  "customer_facing_economic_output",
+  "snapshot_read_projection",
+  "snapshot_read_route",
+  "snapshot_export",
+  "rendered_readout",
+  "frontend_ui",
+  "live_connector_execution",
+  "live_bigquery_execution",
+  "live_sigma_execution",
+  "live_glean_query",
+  "measurement_cell_series_persistence",
+  "contribution_model",
+  "research_model_feed",
+  "probability_output",
+  "score_output"
 ];
+
+const MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USE_SET = new Set(
+  MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES
+);
+
+const MEASUREMENT_CELL_SNAPSHOT_INPUT_REQUIRED_BLOCKED_USES = [
+  "realized_roi",
+  "ebita_claim",
+  "ebitda_claim",
+  "financial_attribution",
+  "causality_claim",
+  "productivity_claim",
+  "headcount_reduction_claim",
+  "individual_attribution",
+  "manager_or_team_ranking",
+  "department_ranking",
+  "people_decisioning",
+  "customer_facing_financial_output",
+  "customer_facing_prediction"
+];
+
+const canonicalMeasurementCellSnapshotCaveats = (
+  caveats: string[]
+): string[] => {
+  const gaps: string[] = [];
+  for (const caveat of MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEATS) {
+    if (!caveats.includes(caveat)) {
+      gaps.push(`required_caveats missing governed caveat: ${caveat}`);
+    }
+  }
+  for (const caveat of caveats) {
+    if (!MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEAT_SET.has(caveat)) {
+      gaps.push(`required_caveats contains unsupported caveat: ${caveat}`);
+    }
+  }
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot caveats must match the governed caveat set",
+      gaps
+    );
+  }
+  return [...MEASUREMENT_CELL_SNAPSHOT_REQUIRED_CAVEATS];
+};
+
+const canonicalMeasurementCellSnapshotBlockedUses = (
+  blockedUses: string[]
+): string[] => {
+  const gaps: string[] = [];
+  for (const use of MEASUREMENT_CELL_SNAPSHOT_INPUT_REQUIRED_BLOCKED_USES) {
+    if (!blockedUses.includes(use)) {
+      gaps.push(`blocked_uses missing ${use}`);
+    }
+  }
+  for (const use of blockedUses) {
+    if (!MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USE_SET.has(use)) {
+      gaps.push(`blocked_uses contains unsupported use ${use}`);
+    }
+  }
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot blocked uses must match the governed blocked-use set",
+      gaps
+    );
+  }
+  return [...MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES];
+};
 
 const validatePilotRunLedgerShape = (pilotRun: Record<string, unknown>): void => {
   const gaps: string[] = [];
@@ -2353,23 +1754,36 @@ const validateMeasurementCellAssemblyPayload = (
     payload,
     "Measurement Cell Snapshot assembly payload"
   );
+  if (payload.source_refs !== undefined && payload.source_refs !== null) {
+    const compactPayloadSourceRefs = compactMeasurementCellSnapshotSourceRefs(
+      asRecord(payload.source_refs)
+    );
+    compareField(
+      gaps,
+      "assembly_payload.source_refs must match compact Measurement Cell Snapshot source refs",
+      asRecord(expected.cell.source_refs),
+      compactPayloadSourceRefs
+    );
+  }
   if (gaps.length > 0) {
     throw new AiValuePersistenceValidationError(
       "Measurement Cell Snapshot assembly payload is not compact",
       gaps
     );
   }
-  if (payload.source_refs !== undefined && payload.source_refs !== null) {
-    enforceSourceRefs(
-      asRecord(payload.source_refs),
-      "Measurement Cell Snapshot assembly payload source refs"
-    );
-    enforceMeasurementCellSnapshotDenylist(
-      asRecord(payload.source_refs),
-      "Measurement Cell Snapshot assembly payload source refs"
-    );
-  }
   return payload;
+};
+
+const measurementCellSnapshotVersionLineageGaps = (
+  record: AiValueMeasurementCellSnapshotStoredRecord,
+  superseded: AiValueMeasurementCellSnapshotStoredRecord
+): string[] => {
+  if (superseded.version !== record.version - 1) {
+    return [
+      `supersedes_id must reference the immediately previous version ${record.version - 1}; referenced version ${superseded.version}`
+    ];
+  }
+  return [];
 };
 
 const ensureMeasurementCellSnapshotSupersedes = async (
@@ -2404,6 +1818,13 @@ const ensureMeasurementCellSnapshotSupersedes = async (
         ["supersedes_id must reference an existing snapshot for the same org and measurement_cell_id"]
       );
     }
+    const versionGaps = measurementCellSnapshotVersionLineageGaps(record, superseded);
+    if (versionGaps.length > 0) {
+      throw new AiValuePersistenceValidationError(
+        "Measurement Cell Snapshot correction must supersede the immediately previous version",
+        versionGaps
+      );
+    }
     const lineageGaps = measurementCellSnapshotLineageDriftGaps(record, superseded);
     if (lineageGaps.length > 0) {
       throw new AiValuePersistenceValidationError(
@@ -2426,9 +1847,20 @@ const ensureMeasurementCellSnapshotSupersedes = async (
       ["supersedes_id must reference an existing snapshot for the same org and measurement_cell_id"]
     );
   }
+  const supersededRecord = measurementCellSnapshotRowToRecord(superseded);
+  const versionGaps = measurementCellSnapshotVersionLineageGaps(
+    record,
+    supersededRecord
+  );
+  if (versionGaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Measurement Cell Snapshot correction must supersede the immediately previous version",
+      versionGaps
+    );
+  }
   const lineageGaps = measurementCellSnapshotLineageDriftGaps(
     record,
-    measurementCellSnapshotRowToRecord(superseded)
+    supersededRecord
   );
   if (lineageGaps.length > 0) {
     throw new AiValuePersistenceValidationError(
@@ -2538,7 +1970,9 @@ const buildMeasurementCellSnapshotRecord = (
   const valueHypothesis = asRecord(asRecord(run.measurement_plan).value_hypothesis);
   const handoff = asRecord(run.blueprint_operator_source_handoff);
   const handoffContext = asRecord(handoff.blueprint_alignment_context);
-  const sourceRefs = asRecord(cell.source_refs);
+  const sourceRefs = compactMeasurementCellSnapshotSourceRefs(
+    asRecord(cell.source_refs)
+  );
   const gaps: string[] = [];
 
   const expectationPathId = requireStringField(
@@ -2659,12 +2093,12 @@ const buildMeasurementCellSnapshotRecord = (
     gaps.push("milestone_day must be one of Day 0, 30, 60, 90, 180, or 365");
   }
   const generatedAt = requireStringField(run.generated_at, "generated_at", gaps);
-  const blockedUses = asStringArray(cell.blocked_uses);
-  for (const use of MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES) {
-    if (!blockedUses.includes(use)) {
-      gaps.push(`blocked_uses missing ${use}`);
-    }
-  }
+  const blockedUses = canonicalMeasurementCellSnapshotBlockedUses(
+    asStringArray(cell.blocked_uses)
+  );
+  const requiredCaveats = canonicalMeasurementCellSnapshotCaveats(
+    asStringArray(cell.required_caveats)
+  );
   if (timeWindow.window_mode === "rolling_30_day") {
     gaps.push("rolling_30_day Measurement Cells cannot be persisted as milestone evidence");
   }
@@ -2748,7 +2182,15 @@ const buildMeasurementCellSnapshotRecord = (
   };
   const assemblyPayload = validateMeasurementCellAssemblyPayload(
     input.assemblyPayload ?? null,
-    { run, cell }
+    {
+      run,
+      cell: {
+        ...cell,
+        source_refs: sourceRefs,
+        required_caveats: requiredCaveats,
+        blocked_uses: blockedUses
+      }
+    }
   );
 
   enforceMeasurementCellSnapshotDenylist(compactPayload, "Measurement Cell Snapshot payload");
@@ -2770,7 +2212,7 @@ const buildMeasurementCellSnapshotRecord = (
     "Measurement Cell Snapshot Blueprint path binding"
   );
   enforceMeasurementCellSnapshotDenylist(
-    { required_caveats: asStringArray(cell.required_caveats) },
+    { required_caveats: requiredCaveats },
     "Measurement Cell Snapshot caveats"
   );
   enforceMeasurementCellSnapshotDenylist(
@@ -2831,7 +2273,7 @@ const buildMeasurementCellSnapshotRecord = (
     ),
     source_refs: sourceRefs,
     blueprint_path_binding: blueprintPathBinding,
-    required_caveats: asStringArray(cell.required_caveats),
+    required_caveats: requiredCaveats,
     blocked_uses: blockedUses,
     version: input.version,
     supersedes_id: input.supersedesId ?? null,
@@ -2909,75 +2351,6 @@ export async function listAiValueSourcePackageRefs(
     }
   }
   return [...latest.values()];
-}
-
-export async function listAiValueMeasurementCellSnapshotProjections(
-  input: ListAiValueMeasurementCellSnapshotsInput
-): Promise<AiValueMeasurementCellSnapshotOperatorProjection[]> {
-  const latestOnly = input.latestOnly !== false;
-  const matches = (record: AiValueMeasurementCellSnapshotStoredRecord) =>
-    record.org_id === input.orgId &&
-    (input.measurementPlanId === undefined ||
-      record.measurement_plan_id === input.measurementPlanId) &&
-    (input.workflowFamily === undefined ||
-      record.workflow_family === input.workflowFamily) &&
-    (input.metricId === undefined || record.metric_id === input.metricId) &&
-    (input.expectationPathId === undefined ||
-      record.expectation_path_id === input.expectationPathId);
-
-  const latestRecords = (
-    records: AiValueMeasurementCellSnapshotStoredRecord[]
-  ): AiValueMeasurementCellSnapshotStoredRecord[] => {
-    const sorted = [...records].sort(
-      (left, right) =>
-        left.measurement_cell_id.localeCompare(right.measurement_cell_id) ||
-        right.version - left.version
-    );
-    if (!latestOnly) return sorted;
-    const latest = new Map<string, AiValueMeasurementCellSnapshotStoredRecord>();
-    for (const record of sorted) {
-      if (!latest.has(record.measurement_cell_id)) {
-        latest.set(record.measurement_cell_id, record);
-      }
-    }
-    return [...latest.values()];
-  };
-  const projectSafeRecords = (
-    records: AiValueMeasurementCellSnapshotStoredRecord[]
-  ): AiValueMeasurementCellSnapshotOperatorProjection[] =>
-    records.flatMap((record) => {
-      const projection = projectAiValueMeasurementCellSnapshotForOperator(record);
-      return projection ? [projection] : [];
-    });
-
-  if (!usePrisma()) {
-    return projectSafeRecords(latestRecords(
-      Array.from(store.aiValueMeasurementCellSnapshots.values()).filter(matches)
-    ));
-  }
-
-  const rows = await getPrisma().measurementCellSnapshot.findMany({
-    where: {
-      orgId: input.orgId,
-      ...(input.measurementPlanId === undefined
-        ? {}
-        : { measurementPlanId: input.measurementPlanId }),
-      ...(input.workflowFamily === undefined
-        ? {}
-        : { workflowFamily: input.workflowFamily }),
-      ...(input.metricId === undefined ? {} : { metricId: input.metricId }),
-      ...(input.expectationPathId === undefined
-        ? {}
-        : { expectationPathId: input.expectationPathId })
-    },
-    orderBy: [
-      { measurementCellId: "asc" },
-      { version: "desc" }
-    ]
-  });
-  return projectSafeRecords(
-    latestRecords(rows.map(measurementCellSnapshotRowToRecord))
-  );
 }
 
 export async function persistAiValueHypothesisFromMeasurementPlan(

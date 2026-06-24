@@ -160,11 +160,11 @@ function assertPassedPreflight(preflight, sourceSystem) {
   );
   assert.equal(
     preflight.snapshot_candidate_ref.snapshot_candidate_state,
-    "READY_FOR_INTERNAL_OPERATOR_PROJECTION"
+    "READY_FOR_MEASUREMENT_CELL_SNAPSHOT_PERSISTENCE_REVIEW"
   );
   assert.equal(
-    preflight.snapshot_candidate_ref.projection_schema_version,
-    "FT_AI_VALUE_MEASUREMENT_CELL_OPERATOR_PROJECTION_2026_06"
+    preflight.snapshot_candidate_ref.snapshot_candidate_schema_version,
+    "FT_AI_VALUE_MEASUREMENT_CELL_SNAPSHOT_CANDIDATE_2026_06"
   );
   assert.equal(
     preflight.snapshot_candidate_ref.measurement_cell_id,
