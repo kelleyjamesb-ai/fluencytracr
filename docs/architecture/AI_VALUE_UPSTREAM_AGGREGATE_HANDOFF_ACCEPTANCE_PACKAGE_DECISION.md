@@ -44,6 +44,10 @@ REJECTED_FOR_BOUNDARY_LEAKAGE
 upstream handoff refs can be accepted for internal validation. It does not
 authorize implementation, live execution, persistence, or customer output.
 
+Durable persistence of upstream handoffs, acceptance packages, manifest
+packages, pipeline runs, connector runs, or full package JSON is held by
+`AI_VALUE_UPSTREAM_AGGREGATE_ACCEPTANCE_PERSISTENCE_DECISION.md`.
+
 ## 3. Promoted Scope
 
 Promoted:
@@ -57,6 +61,11 @@ Promoted:
 - compact Data Spine alignment and Source Package Review Queue posture refs;
 - false-feed assertions for live execution, credentials, query handling,
   storage, projection, exports, research-model feed, and finance output.
+
+The upstream pipeline handoff validator must keep denylist parity with this
+acceptance package for encoded payload keys, dashboard handles, table handles,
+workbook IDs, live execution aliases, persistence aliases, customer-output
+aliases, and finance/model aliases before downstream validation consumes it.
 
 ## 4. Held Scope
 

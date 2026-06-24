@@ -62,6 +62,11 @@ does not authorize live execution, credentials, SQL execution, dashboard
 execution, raw-row receipt, durable run storage, manifest persistence, routes,
 UI, exports, research-model feed, finance output, or customer-facing output.
 
+Passed also does not authorize upstream handoff, acceptance package, manifest
+package, pipeline-run, connector-run, or package-JSON persistence. That
+physical boundary is held by
+`docs/architecture/AI_VALUE_UPSTREAM_AGGREGATE_ACCEPTANCE_PERSISTENCE_DECISION.md`.
+
 Held or rejected states:
 
 ```text
@@ -136,3 +141,8 @@ npm run run:ai-value-upstream-aggregate-handoff-acceptance-package
 ```
 
 Use `--source-system=sigma_export` to review the Sigma-shaped path.
+
+The upstream pipeline handoff validator must reject unsafe encoded payload
+keys, dashboard handles, table handles, workbook IDs, live-execution aliases,
+persistence aliases, customer-output aliases, and finance/model aliases before
+an acceptance package may pass.

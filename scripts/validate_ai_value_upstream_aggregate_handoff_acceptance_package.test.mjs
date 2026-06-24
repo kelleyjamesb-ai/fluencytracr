@@ -285,6 +285,45 @@ test("upstream aggregate handoff acceptance package rejects encoded and handle s
   assert.equal(packageRecord.acceptance_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
 });
 
+test("upstream aggregate handoff acceptance package rejects value-only handle and package persistence smuggling", () => {
+  for (const unsafeValue of [
+    "workbook_id wb123",
+    "api_handle api123",
+    "table_handle tbl123",
+    "full package JSON should be stored",
+    "project.dataset.table",
+    "full package should be stored",
+    "acceptance package should be stored",
+    "upstream handoff package should be stored",
+    "full manifest should be stored",
+    "manifest package should be stored",
+    "store accepted refs as JSON",
+    "persist accepted refs",
+    "durable acceptance record"
+  ]) {
+    const packageRecord = buildUpstreamAggregateHandoffAcceptancePackageFromObject(
+      readJson(FIXTURE_PATH),
+      {
+        proposalOverrides: {
+          notes: unsafeValue
+        }
+      }
+    );
+    const validation = validateUpstreamAggregateHandoffAcceptancePackage(packageRecord, {
+      sourceFixture: readJson(FIXTURE_PATH)
+    });
+    const serialized = JSON.stringify(packageRecord);
+
+    assert.equal(validation.valid, false, unsafeValue);
+    assert.equal(
+      packageRecord.acceptance_state,
+      "REJECTED_FOR_BOUNDARY_LEAKAGE",
+      unsafeValue
+    );
+    assert.equal(serialized.includes(unsafeValue), false, unsafeValue);
+  }
+});
+
 test("upstream aggregate handoff acceptance package rejects accepted-ref drift even after rehash", () => {
   const packageRecord = buildUpstreamAggregateHandoffAcceptancePackageFromObject(
     readJson(FIXTURE_PATH)

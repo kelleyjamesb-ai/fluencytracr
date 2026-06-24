@@ -2,6 +2,20 @@
 
 ## Last Completed
 
+- AI Value upstream acceptance persistence boundary hardening (user-requested,
+  2026-06-24): added an exact physical data-model hold decision for upstream
+  aggregate handoff / acceptance-package persistence. The data model remains
+  intentionally centered on the promoted backend-internal
+  `measurement_cell_snapshots` table; upstream handoffs, acceptance packages,
+  manifest packages, pipeline runs, connector runs, package JSON, and
+  `measurement_cell_series_snapshots` remain non-persistent until a later
+  exact-scope promotion decision and red/green tests authorize them. Hardened
+  the upstream pipeline handoff validator so encoded payload keys, dashboard
+  handles, table handles, workbook IDs, and related handle-shaped smuggling
+  reject before acceptance. This adds no Prisma schema, migration, repository
+  write, route, UI, live BigQuery/Sigma/Glean execution, persistence write,
+  export, research-model feed, confidence math, ROI/EBITDA, finance output,
+  causality, productivity, probability, or customer-facing output.
 - AI Value Upstream Aggregate Handoff Acceptance Package (user-requested,
   2026-06-24): added the next executable infrastructure layer after Upstream
   Aggregate Pipeline Handoff. The acceptance package requires a recomputed,

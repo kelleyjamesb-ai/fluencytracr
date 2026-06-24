@@ -352,6 +352,62 @@ test("upstream aggregate pipeline handoff rejects SQL-shaped override keys witho
   assert.equal(serialized.includes("SELECT aggregate_count"), false);
 });
 
+test("upstream aggregate pipeline handoff rejects encoded and handle smuggling", () => {
+  const handoff = buildUpstreamAggregatePipelineHandoffFromObject(readJson(FIXTURE_PATH), {
+    sourceSystem: "bigquery_export",
+    proposalOverrides: {
+      payload_b64: "opaque_encoded_payload_ref",
+      dashboard_handle: "dashboard_handle_ref",
+      table_handle: "table_handle_ref",
+      workbook_id: "workbook_ref"
+    }
+  });
+  const validation = validateUpstreamAggregatePipelineHandoff(handoff, {
+    sourceFixture: readJson(FIXTURE_PATH)
+  });
+  const serialized = JSON.stringify(handoff);
+
+  assert.equal(validation.valid, false);
+  assert.equal(handoff.handoff_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(serialized.includes("opaque_encoded_payload_ref"), false);
+  assert.equal(serialized.includes("dashboard_handle_ref"), false);
+  assert.equal(serialized.includes("table_handle_ref"), false);
+  assert.equal(serialized.includes("workbook_ref"), false);
+});
+
+test("upstream aggregate pipeline handoff rejects value-only handle and package persistence smuggling", () => {
+  for (const unsafeValue of [
+    "workbook_id wb123",
+    "api_handle api123",
+    "table_handle tbl123",
+    "full package JSON should be stored",
+    "project.dataset.table",
+    "full package should be stored",
+    "acceptance package should be stored",
+    "upstream handoff package should be stored",
+    "full manifest should be stored",
+    "manifest package should be stored",
+    "store accepted refs as JSON",
+    "persist accepted refs",
+    "durable acceptance record"
+  ]) {
+    const handoff = buildUpstreamAggregatePipelineHandoffFromObject(readJson(FIXTURE_PATH), {
+      sourceSystem: "bigquery_export",
+      proposalOverrides: {
+        notes: unsafeValue
+      }
+    });
+    const validation = validateUpstreamAggregatePipelineHandoff(handoff, {
+      sourceFixture: readJson(FIXTURE_PATH)
+    });
+    const serialized = JSON.stringify(handoff);
+
+    assert.equal(validation.valid, false, unsafeValue);
+    assert.equal(handoff.handoff_state, "REJECTED_FOR_BOUNDARY_LEAKAGE", unsafeValue);
+    assert.equal(serialized.includes(unsafeValue), false, unsafeValue);
+  }
+});
+
 test("upstream aggregate pipeline handoff holds when concept review is not valid", () => {
   const handoff = buildUpstreamAggregatePipelineHandoffFromObject(readJson(FIXTURE_PATH), {
     sourceSystem: "bigquery_export",
