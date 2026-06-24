@@ -82,6 +82,12 @@ documented value-realization layers:
   live connector execution, Source Package clearance, Measurement Cell or
   Series persistence, confidence math, finance output, or customer-facing
   output.
+- **AI Value research promotion readiness packet:** proves that repeated
+  governed Day 0 / 30 / 60 / 90 / 180 / 365 aggregate evidence can become a
+  compact internal research-design gate. It emits only refs, hashes, caveats,
+  blocked uses, and false boundary feeds; it does not authorize model math,
+  numeric weights, persistence, exports, finance output, or customer-facing
+  output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -213,10 +219,12 @@ is not the lead positioning for this repository.
 - AI Value Controlled Aggregate Fixture Review: [docs/contracts/ai-value-controlled-aggregate-fixture-review/README.md](docs/contracts/ai-value-controlled-aggregate-fixture-review/README.md)
 - AI Value Controlled Measurement Cell Assembly: [docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md](docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md)
 - AI Value Controlled Aggregate Pipeline Dry Run: [docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md](docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md)
+- AI Value Measurement Cell Preflight Runner: [docs/contracts/ai-value-measurement-cell-preflight-runner/README.md](docs/contracts/ai-value-measurement-cell-preflight-runner/README.md)
 - AI Value Controlled Aggregate Connector Adapter: [docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md](docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md)
 - AI Value Aggregate Connector Boundary Plan: [docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md](docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md)
 - AI Value BigQuery Aggregate Export Review: [docs/contracts/ai-value-bigquery-aggregate-export-review/README.md](docs/contracts/ai-value-bigquery-aggregate-export-review/README.md)
 - AI Value Controlled Aggregate Manifest Validation: [docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md](docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md)
+- AI Value Research Promotion Readiness Packet: [docs/contracts/ai-value-research-promotion-readiness-packet/README.md](docs/contracts/ai-value-research-promotion-readiness-packet/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)

@@ -196,7 +196,12 @@ test("aggregate connector boundary plan rejects live handles, query text, creden
           fluencytracr_receives_raw_rows: true
         },
         raw_rows: [{ employee_email: "person@example.com" }],
-        credential_ref: "secret://warehouse/key"
+        credential_ref: "secret://warehouse/key",
+        connector_adapter_ref: {
+          pipeline_dry_run_ref: {
+            measurement_cell_ref: "measurement_cell_candidate_smuggled"
+          }
+        }
       }
     }
   );
@@ -204,6 +209,7 @@ test("aggregate connector boundary plan rejects live handles, query text, creden
     sourceFixture: readJson(FIXTURE_PATH)
   });
 
+  const serializedPlan = JSON.stringify(plan);
   assert.equal(validation.valid, false);
   assert.equal(JSON.stringify(plan).includes("person@example.com"), false);
   assert.equal(JSON.stringify(plan).includes("SELECT user_id"), false);
@@ -215,6 +221,12 @@ test("aggregate connector boundary plan rejects live handles, query text, creden
   assert.equal(plan.boundary_policy.fluencytracr_runs_bigquery, false);
   assert.equal(hasNestedKey(plan, "raw_rows"), false);
   assert.equal(hasNestedKey(plan, "credential_ref"), false);
+  assert.equal(hasNestedKey(plan, "measurement_cell_ref"), false);
+  assert.equal(serializedPlan.includes("person@example.com"), false);
+  assert.equal(serializedPlan.includes("SELECT user_id"), false);
+  assert.equal(serializedPlan.includes("secret://warehouse/key"), false);
+  assert.equal(serializedPlan.includes("measurement_cell_candidate_smuggled"), false);
+  assert.ok(validation.gaps.length > 0);
   assert.ok(validation.gaps.some((gap) => gap.includes("aggregate_definition_ref")));
   assert.ok(validation.gaps.some((gap) => gap.includes("aggregate_output_ref")));
   assert.ok(validation.gaps.some((gap) => gap.includes("boundary_plan")));

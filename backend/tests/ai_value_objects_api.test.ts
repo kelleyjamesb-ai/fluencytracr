@@ -32,6 +32,7 @@ const metricsLibraryId = metricsLibrary.library_id as string;
 const roiScenarioId = roiScenario.roi_scenario_id as string;
 const executivePacketId = "executive_packet_customer_support_case_resolution_v1";
 
+
 beforeEach(() => {
   store.reset();
 });
@@ -145,6 +146,14 @@ describe("AI value object API", () => {
       .set(readAuth);
     expect(filtered.body.objects).toHaveLength(1);
     expect(filtered.body.objects[0].object_type).toBe("blueprint");
+  });
+
+  it("does not expose Measurement Cell snapshot read routes in the persistence promotion slice", async () => {
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(404);
   });
 
   it("stores a governed ROI scenario as a reusable value-modeling object", async () => {

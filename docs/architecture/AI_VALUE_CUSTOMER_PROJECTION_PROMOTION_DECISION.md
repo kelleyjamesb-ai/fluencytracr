@@ -28,7 +28,8 @@ HOLD_FOR_SOURCE_BOUND_PROJECTION_CONTRACTS
 
 Reason:
 
-- Measurement Cell persistence is not promoted;
+- backend-internal Measurement Cell snapshot persistence is promoted, but
+  customer-facing Measurement Cell projection is not promoted;
 - source-bound Executive Readout Snapshot projection is not promoted;
 - legacy readout isolation requires route and UI guard work before customer
   exposure expands;
@@ -118,7 +119,8 @@ Before implementation, tests must cover:
 Keep customer projection blocked until:
 
 1. controlled aggregate pilot evidence exists;
-2. Measurement Cell persistence decision is revisited;
+2. backend-internal Measurement Cell snapshot projection proves safe without
+   becoming a customer-facing readout;
 3. legacy readout route/UI guard posture is resolved;
 4. export governance decision is complete.
 

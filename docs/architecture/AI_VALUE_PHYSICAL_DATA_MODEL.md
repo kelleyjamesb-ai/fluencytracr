@@ -1,10 +1,10 @@
 # AI Value Physical Data Model Readiness Review
 
-Status: docs-only physical readiness review. This document does not authorize
-new Prisma schema changes, migrations, repository methods, backend routes,
-frontend UI, live Glean or BigQuery execution, persistence writes, confidence
-math, ROI, causality, productivity, probability, or customer-facing financial
-output.
+Status: physical readiness review and promotion ledger. This document does not
+authorize additional Prisma schema changes, migrations, repository methods,
+backend routes, frontend UI, live Glean or BigQuery execution, persistence
+writes, confidence math, ROI, causality, productivity, probability, or
+customer-facing financial output without a separate promotion decision.
 
 Phase: `phase-ai-value-physical-data-model`
 
@@ -96,7 +96,7 @@ Projection detail:
 | Claim Readiness Snapshot | `claim_readiness_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `handoff_id`, `measurement_plan_id`, `claim_readiness_state` | No customer-facing financial output; no positive contribution-model field |
 | Executive Readout Snapshot | `executive_readout_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `executive_readout_snapshot_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `measurement_plan_id`, `readout_state` | No rendered readout route/UI/export from this pass |
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
-| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver` | No full Measurement Cell object, route, UI, export, or customer read path |
+| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns, compact aggregate-boundary proof | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver`, aggregate source/review/source-export refs | No full Measurement Cell object, frontend UI, export, rendered readout, live connector output, or customer-facing read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
 ## 4. Canonical Alignment Envelope
@@ -249,6 +249,14 @@ Implemented column requirements:
 | `measurement_cell_id` | text | required |
 | `measurement_cell_assembly_run_id` | text | required |
 | `measurement_plan_id` | text | required |
+| `aggregate_source_system` | text | required; constrained to `bigquery_export` or `sigma_export` |
+| `aggregate_export_review_ref` | text | required compact review id; not job metadata |
+| `aggregate_export_review_state` | text | required passed review state for the source system |
+| `aggregate_source_export_ref` | text | required compact source-export ref; no URL, query id, job id, table ref, or raw export handle |
+| `aggregate_export_review_hash` | text | required review hash |
+| `pipeline_dry_run_ref` | text | required compact pipeline dry-run id |
+| `pipeline_boundary_hash` | text | required compact pipeline-boundary hash recomputed from aggregate-boundary and snapshot binding |
+| `aggregate_boundary_ref_json` | jsonb | compact allowlisted aggregate-boundary proof only |
 | `value_hypothesis_id` | text | required when `expectation_path_id` is present unless `value_hypothesis_binding_state` is `inapplicable` |
 | `value_hypothesis_ref` | text | required when `value_hypothesis_id` is unavailable and `expectation_path_id` is present unless `value_hypothesis_binding_state` is `inapplicable` |
 | `value_hypothesis_binding_state` | text | required when `expectation_path_id` is present |
@@ -298,6 +306,15 @@ Implemented constraint requirements:
 
 - unique `(org_id, measurement_cell_id, version)`;
 - `version >= 1`;
+- `aggregate_source_system` must be `bigquery_export` or `sigma_export`;
+- `aggregate_export_review_state` must be the passed review state for that
+  source system;
+- `aggregate_export_review_hash` and `pipeline_boundary_hash` must be sha256
+  hashes, with `pipeline_boundary_hash` recomputed from compact boundary,
+  selected path, metric, window, and source-ref binding rather than accepted as
+  an external live-run proof;
+- `aggregate_boundary_ref_json` must be an object and must remain compact
+  allowlisted proof, not a live connector handle or reviewed export payload;
 - `comparison_window_end > comparison_window_start`;
 - `baseline_window_end > baseline_window_start`;
 - `expectation_path_id` must be non-empty;
@@ -327,6 +344,11 @@ Implemented constraint requirements:
 - source package review state and source owner-role posture must be validated
   without storing named approvers, emails, user IDs, row IDs, span IDs, or
   joinable person identifiers;
+- aggregate-boundary proof must be validated from the Measurement Cell
+  preflight snapshot-candidate ref and must fail closed when source system,
+  review state, source-export ref, review hash, pipeline dry-run ref, pipeline
+  source-export ref, compact pipeline-boundary hash, or VBD/token lane binding
+  drifts;
 - `jsonb_typeof(required_caveats_json) = 'array'`;
 - `jsonb_typeof(blocked_uses_json) = 'array'`;
 - `blocked_uses_json` must preserve blocked ROI, causality, productivity,
@@ -512,6 +534,38 @@ context with observed AI-enabled work-pattern refs, but it cannot imply
 directional dependency, conversion, value proof, causality, productivity, ROI,
 EBITDA, or financial output.
 
+The physical model must preserve three separate layers:
+
+```text
+AI Fluency Construct Context
+  - confidence
+  - usage_quality / ease of use display label
+  - behavior_change / stated AI behavior display label
+  - leadership_reinforcement / leadership support display label
+  - capability_growth / competency
+
+AI Fluency Psychological Context
+  - ai_attitude
+  - behavioral_intent / AI intent display label
+
+Observed Behavior / VBD Context
+  - velocity
+  - breadth
+  - depth
+```
+
+`behavior_change` is the governed construct key for instrument-derived behavior.
+"Stated AI behavior" is display or review language over that same instrument
+evidence, not a second independent field. Psychological context may reference
+that instrument behavior view only through `construct_summary_json.behavior_change`.
+`usage_quality` and `behavioral_intent` remain the governed construct keys;
+ease-of-use and AI intent are display language only.
+Observed behavior / VBD is telemetry-derived aggregate work-pattern evidence.
+Future persistence must not collapse these into one generic behavior field.
+The difference between stated behavior and observed behavior may support
+internal diagnostic review, but it is not value proof, causality, productivity,
+ROI, EBITDA, probability, model score, or customer-facing output.
+
 Recommended physical posture:
 
 - Prefer existing aggregate AI Fluency import and source-handoff payloads until
@@ -543,8 +597,10 @@ Allowed compact fields if separately promoted:
 | `k_min_posture` | required |
 | `suppression_posture` | required |
 | `construct_summary_json` | aggregate five-dimension AI Fluency construct means or bands only |
+| `psychological_context_json` | optional standalone aggregate attitude and behavioral-intent posture only; never standalone evidence |
 | `readiness_context_json` | optional compact posture labels only |
-| `observed_behavior_ref` | optional compact VBD / Measurement Cell ref only |
+| `observed_behavior_ref` | optional for standalone context; required compact VBD / Measurement Cell ref when tied to Measurement Cell evidence or alignment framing |
+| `selected_metric_movement_ref` | required compact customer metric movement ref when tied to Measurement Cell evidence or alignment framing |
 | `required_caveats_json` | required array |
 | `blocked_uses_json` | required array |
 
@@ -556,6 +612,50 @@ remain a compact VBD / Measurement Cell ref. If a legacy instrument construct
 is literally named `confidence`, it must remain nested inside the aggregate
 instrument construct map and must not become a top-level physical column, model
 score, probability, or customer-facing claim.
+
+`psychological_context_json`, if separately promoted, may carry only aggregate
+AI attitude and AI intent / behavioral-intent posture as standalone contextual
+posture, never standalone evidence. Instrument-reported behavior must remain
+in the governed `behavior_change` construct summary, even when product
+language calls it "stated AI behavior." Standalone psychological context
+cannot create readiness, evidence, Measurement Cell, or alignment state. If
+this context is tied to Measurement Cell evidence or alignment framing,
+`observed_behavior_ref` and `selected_metric_movement_ref` are required and
+must be source-bound, unsuppressed, non-held, and aligned to the approved
+expectation path. Psychological context must not carry raw survey answers,
+item-level responses, free-text answers, respondent identifiers,
+adoption-conversion scores, model scores, probability, finance, causality,
+productivity, ROI, EBITDA, or customer-facing output.
+
+The internal Value Evidence Alignment frame is non-persistent framing only:
+
+```text
+Value_Evidence_Alignment is reviewable only when all of the following are present:
+  Gate_Clear
+  Source_Bound
+  AI_Fluency_Construct_Context
+  AI_Fluency_Psychological_Context_Availability
+  Observed_Behavior_VBD_Context
+  Selected_Metric_Movement
+  Blueprint_Expectation_Path_Alignment
+  Assumption_Governance_Context
+```
+
+Future persistence must store only the governed ingredients and lineage needed
+to review that alignment. The non-computational alignment frame is undefined
+and must remain held unless observed VBD context and selected customer metric
+movement are both present, source-bound, unsuppressed, non-held, and aligned to
+the approved expectation path. Psychological context availability may add
+caveats or hold the frame when unsafe or incomplete, but it cannot strengthen,
+clear, upgrade, or rescue readiness. Instrument context alone must not produce
+an alignment state. Future persistence must not store
+`value_evidence_alignment`, alignment scores, numeric weights, contribution
+confidence, probability, finance output, ROI, causality, productivity,
+customer-facing output, or any frame result. It is not executable pseudocode
+and produces no boolean, numeric, score, or stored result. Any future numeric
+weights or model outputs require a separate exact-scope research and promotion
+decision, repeated aligned evidence, and red/green implementation and
+governance tests that explicitly authorize that scope.
 
 Blocked design:
 
@@ -615,8 +715,9 @@ Before any additional Measurement Cell or Series persistence beyond
    lag drift, metric drift, unsafe source refs, raw rows, query text, prompts,
    transcripts, user identifiers, full expectation-path registries, ROI
    fields, EBITDA or finance-output fields, causality fields, productivity
-   fields, probability fields, confidence or score-like fields, UI, route,
-   schema, live execution, override, and threshold side doors.
+   fields, probability fields, confidence or score-like fields, frontend UI,
+   customer-facing route, schema, live execution, override, and threshold side
+   doors.
 3. Red/green tests proving JSONB-bearing fields cannot smuggle blocked content
    through `payload_json`, `validation_json`, `source_refs_json`, or
    `blueprint_path_binding_json`.
@@ -640,8 +741,14 @@ Before any additional Measurement Cell or Series persistence beyond
 This document alone cannot trigger additional migrations. A future
 implementation slice must cite a separate explicit promotion decision before
 adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
-migrations, repositories, schemas, routes, UI, persistence writes, live
-execution, research-model inputs, or customer-facing output.
+migrations, repositories, schemas, unpromoted routes, UI, persistence writes,
+live execution, research-model inputs, or customer-facing output.
+
+The [AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md)
+is the required gate before any internal research design may begin. A passed
+packet does not authorize `research_model_inputs`, numeric weights, model
+outputs, routes, UI, persistence, exports, ROI, causality, productivity,
+probability, finance output, or customer-facing output.
 
 ## 13. Recommended Next Decision Slice
 

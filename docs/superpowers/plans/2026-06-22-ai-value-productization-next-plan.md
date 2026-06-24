@@ -19,7 +19,7 @@ Built:
 - logical AI Value data model;
 - physical data-model readiness review;
 - stable approved expectation-path binding requirements;
-- promoted Measurement Cell snapshot projection;
+- promoted Measurement Cell snapshot persistence/write path;
 - future Measurement Cell Series projection sketch;
 - Productization Gate Decision.
 - data pipeline readiness decision documenting that Sigma/BigQuery execution is
@@ -32,6 +32,8 @@ Now implemented:
 - migration for `measurement_cell_snapshots`;
 - compact append-only repository write path;
 - health/readiness table check.
+- executable Live Pipeline Concept Gate for BigQuery/Sigma concept-review
+  readiness, with live execution still held.
 
 Waiting:
 
@@ -53,7 +55,11 @@ review.
 
 The Sigma/BigQuery data pipeline is still not built. Future pipeline work must
 start with source inventory, aggregate extraction, and pipeline run review
-manifests before any saved-fixture adapter or live execution is promoted.
+manifests before any saved-fixture adapter or live execution is promoted. The
+new Live Pipeline Concept Gate proves only whether a separate live-pipeline
+concept review may be drafted; it does not authorize live execution,
+credentials, query handling, raw rows, persistence, customer projection,
+exports, research-model feed, or finance output.
 
 ## Phase 1: Close Productization Gate
 
@@ -381,7 +387,7 @@ probability outputs
 customer-facing read paths
 ```
 
-- [ ] **Step 4: Verify implementation**
+- [x] **Step 4: Verify implementation**
 
 Run:
 
@@ -394,6 +400,11 @@ git diff --check
 ```
 
 Expected: all commands exit `0`.
+
+Execution result: focused persistence and preflight suites passed, backend
+build passed, shared build passed, backend CI passed 119 suites / 852 tests,
+docs contract sweep passed, V1 governance gates passed, and `git diff --check`
+passed.
 
 ## Phase 6: Measurement Cell Series Promotion Decision
 
@@ -582,8 +593,22 @@ Do these next, in order:
 6. Phase 6: defer Series persistence until a separate promotion decision.
 7. Phase 7: keep customer projection and exports blocked pending governance.
 8. Phase 8: hold confidence research until repeated aligned evidence exists.
-9. Next data-pipeline phase: design BigQuery/Sigma source inventory, aggregate
-   extraction, and pipeline run review manifests without live execution first.
+9. Next data-pipeline phase: executable Live Pipeline Concept Gate promoted for
+   concept-review readiness only; live BigQuery/Sigma execution remains held.
+10. Next data-pipeline phase: executable Live Pipeline Concept Review promoted
+    for upstream aggregate-pipeline design requirements only; live
+    BigQuery/Sigma execution remains held.
+11. Next data-pipeline phase: executable Upstream Aggregate Pipeline Handoff
+    promoted for compact manifest-ref acceptance review only; full manifest
+    payload ingestion, live execution, manifest persistence, Series
+    persistence, customer projection, exports, research-model feed, finance
+    output, and customer-facing output remain held.
+12. Future data-pipeline phase: consider a later exact-scope upstream package
+    acceptance-test decision only after the handoff validator stays green and
+    still without credentials, SQL/query handling, raw rows, identifiers, full
+    manifest payload ingestion, manifest persistence, Series persistence,
+    customer projection, exports, research-model feed, finance output, or
+    customer-facing output.
 
 Do not skip from Phase 1 to Phase 5. The pilot and legacy-readout isolation
 are the safety checks that keep persistence from becoming accidental product

@@ -2,6 +2,175 @@
 
 ## Last Completed
 
+- AI Value Upstream Aggregate Pipeline Handoff (user-requested, 2026-06-23):
+  added the next executable infrastructure layer after Live Pipeline Concept
+  Review. The handoff recomputes the concept review and controlled aggregate
+  manifest validation package, then emits only compact concept-review refs,
+  Source Inventory / Aggregate Extraction / Pipeline Run Review manifest refs,
+  Data Spine alignment refs, and Source Package Review Queue posture refs. It
+  can return only `READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW`,
+  `HOLD_FOR_VALID_LIVE_PIPELINE_CONCEPT_REVIEW`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It rejects live execution, credentials,
+  SQL/query text, full manifest payload ingestion, raw rows, prompts,
+  transcripts, identifiers, persistence, Series persistence, customer
+  projection/export, research-model feed, ROI/EBITDA, finance output,
+  causality, productivity, probability, score-like fields, and customer-facing
+  output. This does not add live connectors, routes, UI, schemas, migrations,
+  repository methods, persistence writes, exports, model math, or finance
+  output. Verification added:
+  `npm run test:ai-value-upstream-aggregate-pipeline-handoff`.
+- AI Value Live Pipeline Concept Review (user-requested, 2026-06-23): added the
+  separate executable concept review authorized by the Live Pipeline Concept
+  Gate. The review recomputes the gate, emits compact gate/preflight/snapshot
+  boundary refs, and promotes only upstream aggregate-pipeline design
+  requirements. It can return only
+  `READY_FOR_UPSTREAM_AGGREGATE_PIPELINE_DESIGN`,
+  `HOLD_FOR_VALID_LIVE_PIPELINE_CONCEPT_GATE`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It fails closed on unsafe override intent,
+  validation-summary smuggling, live execution, credentials, SQL/query text,
+  raw rows, prompts, transcripts, identifiers, persistence, routes, UI,
+  exports, Series persistence, customer projection, research-model feed,
+  ROI/EBITDA, finance output, causality, productivity, probability, score-like
+  fields, and customer-facing output. This does not add live connectors,
+  routes, UI, schemas, migrations, repository methods, persistence writes,
+  exports, model math, or finance output. Verification added:
+  `npm run test:ai-value-live-pipeline-concept-review`.
+- AI Value Live Pipeline Concept Gate (user-requested, 2026-06-23): added the
+  next executable infrastructure gate before any live BigQuery/Sigma work can
+  be proposed. The gate recomputes Measurement Cell preflight proof from the
+  controlled aggregate fixture, requires compact aggregate-boundary refs and
+  hashes bound to the snapshot candidate, and emits only
+  `READY_FOR_SEPARATE_LIVE_PIPELINE_CONCEPT_REVIEW`,
+  `HOLD_FOR_VALID_MEASUREMENT_CELL_PREFLIGHT`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It fails closed on live execution,
+  credentials, SQL/query text, job/table/dataset/dashboard handles, raw rows,
+  prompts, transcripts, identifiers, Source Package clearance aliases,
+  Measurement Cell readiness aliases, Series persistence aliases, customer
+  projection/export aliases, JSON payload aliases, ROI/EBITDA, finance output,
+  causality, productivity, probability, contribution-model/research-model, and
+  score-like fields. This does not add live connectors, persistence, routes,
+  UI, exports, customer-facing output, Series persistence, research-model feed,
+  or finance output. Verification added:
+  `npm run test:ai-value-live-pipeline-concept-gate`.
+- AI Value Measurement Cell snapshot implementation verification closure
+  (user-requested, 2026-06-23): closed the remaining Phase 5 verification gap
+  for the promoted backend-internal `measurement_cell_snapshots` slice. Fresh
+  verification passed for the focused minimal persistence suite, Measurement
+  Cell preflight runner suite, shared build, backend build, backend CI, docs
+  contract sweep, V1 governance gates, and whitespace diff check. No schema,
+  route, UI, live connector, Series persistence, customer projection/export,
+  contribution-model, ROI/EBITDA, finance output, causality, productivity, or
+  probability scope was added by the verification closure.
+- AI Value aggregate-boundary to Measurement Cell snapshot binding
+  (user-requested, 2026-06-23): extended the non-live BigQuery/Sigma
+  reviewed aggregate path so Measurement Cell preflight snapshot candidates now
+  carry compact aggregate-boundary proof: source system, passed review state,
+  source-export ref, aggregate definition/output refs, review hash, pipeline
+  dry-run ref, pipeline source-export ref, and recomputed compact
+  pipeline-boundary hash. The backend-internal `measurement_cell_snapshots` write path
+  now persists only compact queryable proof columns plus
+  `aggregate_boundary_ref_json`, and rejects missing proof, review-state drift,
+  source-export/pipeline drift, Day 0/30/60/90/180/365 milestone drift,
+  unsafe refs including URL/job-like handles, live/query/raw handle smuggling,
+  and correction-lineage drift before any row is written. This does not add
+  live BigQuery/Sigma/Glean execution, connector credentials, raw rows, query
+  text, routes, UI, customer-facing output, Series persistence, confidence
+  math, ROI/EBITDA, finance output, causality, productivity, or probability.
+  Verification added/updated:
+  `npm run test:ai-value-measurement-cell-preflight-runner` and
+  `npm run test --workspace backend -- --runTestsByPath
+  tests/ai_value_minimal_persistence.test.ts`.
+- AI Value Research Promotion Readiness Packet validator (user-requested,
+  2026-06-23): added an executable saved-fixture runner and fail-closed test
+  suite for the Research Promotion Readiness Packet. The runner derives a
+  compact packet from the controlled repeated pilot evidence package, requires
+  Day 0 / 30 / 60 / 90 / 180 / 365 milestone coverage, non-persisted
+  `controlled_recomputed_measurement_cell_snapshot_candidate` refs with
+  per-window approved-path / Blueprint / value-hypothesis / metric / lag /
+  value-driver binding, reviewed compact source lane refs, AI Fluency
+  construct context, optional psychological context as
+  context-only, observed VBD context, selected customer metric movement,
+  assumption/governance posture, Source Package review posture, and Data Spine
+  alignment. It holds on missing Day 0 or rolling-window-only evidence, rejects
+  unsafe refs and raw/model/finance/score/customer-facing smuggling, and never
+  emits UI, routes, schemas, migrations, persistence writes, live connectors,
+  model math, numeric weights, probability, ROI/EBITDA, finance output,
+  causality, productivity, or customer-facing output. Verification added:
+  `npm run test:ai-value-research-promotion-readiness-packet`.
+- AI Value Research Promotion Readiness Packet gate (user-requested,
+  2026-06-23): added a contract-only Research Promotion Readiness Packet as
+  the final governance gate between the productized internal evidence spine
+  and any later internal research design. The packet requires repeated Day 0 /
+  30 / 60 / 90 / 180 / 365 compact Measurement Cell snapshot refs, unless a
+  later named validator-backed alternative clears the same milestone, observed
+  VBD, selected metric movement, path, suppression, source-bound, and compact
+  ref gates. It also requires stable approved expectation-path binding,
+  reviewed source lane refs, distinct AI Fluency construct / psychological
+  context-availability / observed VBD behavior / selected metric movement refs,
+  assumption governance, source package review posture, Data Spine alignment,
+  caveats, blocked uses, and fail-closed decisions. It can return only
+  `READY_FOR_INTERNAL_RESEARCH_DESIGN`, held states, or boundary leakage
+  rejection; even the ready state authorizes only a separate internal research
+  design, not model implementation, numeric weights, durable research-model
+  inputs, probability output, ROI/EBITDA, finance output, causality,
+  productivity, customer-facing output, routes, UI, schemas, migrations,
+  persistence writes, or live connectors. Amended the existing research
+  readiness decision to remove stale prerequisite language and point to this
+  packet as the required next gate.
+- AI Value AI Fluency model-alignment amendment (user-requested, 2026-06-23):
+  clarified the logical and physical AI Value data models so the AI Fluency
+  layer preserves three distinct contexts: the five-factor AI Fluency construct
+  (`confidence`, `usage_quality` / ease of use, `behavior_change` / stated AI
+  behavior, `leadership_reinforcement` / leadership support, and
+  `capability_growth` / competency), instrument psychological context
+  (AI attitude and behavioral intent, with stated behavior treated only as a
+  view over governed `behavior_change`), and observed behavior / VBD context
+  (velocity, breadth, depth). Added a non-persistent, non-computational
+  internal Value Evidence Alignment frame and made it undefined unless observed
+  VBD context and selected customer metric movement are both present,
+  source-bound, unsuppressed, non-held, and aligned to the approved expectation
+  path. The amendment explicitly blocks alignment scores, numeric weights,
+  adoption-conversion scores, contribution confidence, probability, ROI/EBITDA,
+  finance output, causality, productivity, customer-facing output, raw survey
+  answers, respondent identifiers, and collapsing stated behavior with observed
+  behavior.
+- AI Value Measurement Cell Preflight Runner (user-requested, 2026-06-23):
+  added an executable internal proof that a reviewed BigQuery/Sigma-style
+  aggregate package can flow through aggregate export review, controlled
+  aggregate pipeline dry run, controlled Measurement Cell assembly, and into a
+  compact Measurement Cell snapshot-candidate ref. BigQuery uses the BigQuery
+  Aggregate Export Review validator; Sigma-shaped inputs must pass the existing
+  Aggregate Connector Boundary Plan validator before they can be represented as
+  aggregate connector-boundary proof. The runner emits only compact review,
+  pipeline, assembly, selected-path, metric, window, source-ref, and
+  integrity-hash metadata, with reviewed boundary and pipeline refs bound to
+  the same scrubbed `source_export_ref`. It blocks or holds on live execution,
+  raw rows, query
+  text, prompts, transcripts, identifiers, suppressed aggregate telemetry,
+  unsafe refs, stale hashes, source-ref drift, Measurement Plan override drift,
+  hand-edited passed states, child/open-container payload smuggling,
+  persistence, routes, UI, schemas, migrations, customer-facing output,
+  research-model feed, probability output, ROI, causality, productivity, or
+  finance-output claims. It does not persist Measurement Cell snapshots.
+  Verification: `npm run build --workspace shared && node --test
+  scripts/validate_ai_value_measurement_cell_preflight_runner.test.mjs` passed
+  9/9 before the broader governance sweep.
+- AI Value Measurement Cell Snapshot persistence correction (user-requested,
+  2026-06-23): removed the attempted internal/operator projection route and
+  deleted the projection contract from this persistence slice. Snapshot
+  persistence now stays table/write-path only: stable selected-path lineage,
+  immediate-prior correction lineage, governed caveats, governed blocked uses,
+  five-lane compact source refs, and JSONB-smuggling checks must pass before a
+  row is written. The slice exposes no read route, UI, export, live connector,
+  confidence research input, ROI, causality, productivity, probability, finance
+  output, or customer-facing readout. Optional compact assembly payloads must
+  bind to the same assembly run, Measurement Cell, validation posture, caveats,
+  blocked uses, and compact source refs before persistence. Any future
+  projection/read route requires a separate exact-scope promotion decision.
+  Verification: `npm run test --workspace backend -- --runTestsByPath
+  tests/ai_value_minimal_persistence.test.ts tests/ai_value_objects_api.test.ts`
+  passed 80/80; `npm run build --workspace backend`; docs contract sweep;
+  `git diff --check`; and V1 governance gates passed.
 - AI Value PR #372 legacy readout governance conflict-resolution rebase
   (user-requested, 2026-06-23): rebased
   `codex/OrgFluency-legacy-readout-governance` onto current `origin/main`,
@@ -840,3 +1009,5 @@
 - AI Value Platform Pipeline Promotion Decision slice (2026-06-23): added `docs/architecture/AI_VALUE_PIPELINE_PROMOTION_DECISION.md` to promote only the saved-fixture connector/manifest validation boundary for internal operator review while holding controlled aggregate manifest persistence, pipeline-run storage, connector-run storage, live BigQuery/Sigma/Glean execution, Measurement Cell Series persistence, routes, UI, exports, confidence research inputs, confidence math, ROI, EBITDA/finance output, causality, productivity, probability, customer-facing output, and customer-facing financial output. The Data Pipeline Readiness Decision now points to the next safe non-live validator-only layer: a BigQuery/Sigma Aggregate Connector Boundary Plan validator over source-owner attested aggregate export plans. The Series persistence decision was corrected to reflect that backend-internal Measurement Cell snapshots are promoted, while durable Series product state remains held behind a separate exact-scope decision.
 - AI Value Platform Aggregate Connector Boundary Plan slice (2026-06-23): added `docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md`, `scripts/run_ai_value_aggregate_connector_boundary_plan.mjs`, and `scripts/validate_ai_value_aggregate_connector_boundary_plan.test.mjs` as the non-live executable layer authorized by the Pipeline Promotion Decision. The runner validates source-owner-attested BigQuery/Sigma aggregate export plans from the saved aggregate fixture, producing only compact internal boundary-review metadata, source alignment, k-min/suppression/freshness/legal posture, false feeds, blocked uses, caveats, and validation summary. It rejects unsupported source systems, live handles, SQL/query text, job IDs, query IDs, API/dashboard/export URLs, credentials, raw rows, dashboard rows, prompts, transcripts, identifiers, project/dataset/table identifiers, stale hand edits, wrapper smuggling, Source Package/Measurement Cell/Series aliases, confidence/model/finance/ROI/EBITDA/causality/productivity/probability/customer-facing fields, and persistence/route/UI/export side doors. This adds no schema, migration, repository, route, UI, persistence write, live BigQuery/Sigma/Glean execution, manifest persistence, Measurement Cell Series persistence, confidence math, ROI, causality, productivity, probability, or customer-facing finance output.
 - AI Value Platform Legacy Readout Route Isolation slice (2026-06-23): enforced the existing legacy readout isolation decision at the backend/shared-engine level. The legacy `executive_packet` HTML route is now restricted to internal reviewer/admin roles, emits explicit non-source-bound/non-customer-facing/no-export/no-store boundary headers, injects the required internal/prototype audience label into rendered HTML, removes workflow-family fallback for outcome evidence, engagement context, and AI Fluency kickoff context, denies stale readiness binding, and renders outcome evidence only when the referenced export is accepted and attachment-eligible. Generic object-detail access now denies `EXEC_VIEWER` full legacy `executive_packet` payloads and fails closed for stale invalid internal packet reads. Shared executive packet validation rejects surprise top-level fields, unexpected nested section fields, unsafe source-ref keys/values, normalized unsafe field names, unsafe scalar values, caveat-laundered finance/confidence/probability language, and customer-facing, causal, or realized-financial authorization branches; the existing JSON contract schema was aligned to the closed legacy packet shape. Backend/shared tests now prove generic payload denial, unsafe/nested/source-ref/caveat smuggling denial, readout role denial, cross-org denial, invalid-packet fail-closed behavior, no-export/no-store posture, explicit source/context-ref-only attachment, accepted-only outcome evidence attachment, stale readiness denial, visible legacy/prototype labeling, and source-bound evidence caveats. This adds no frontend UI, Prisma schema, migration, repository, persistence write, live BigQuery/Sigma/Glean execution, source-bound customer projection, export, confidence math, ROI, causality, productivity, probability, or customer-facing finance output.
+- AI Value Platform PR 369 manifest review carry-forward slice (2026-06-23): fixed the Manifest Review comments on the current branch without merging broader productization scope. Controlled aggregate manifest validation now returns compact blocked packages with null adapter refs, approved binding, manifests, and manifest refs after any post-construction validation block; passed packages carry compact connector adapter refs without Measurement Cell candidate refs. Aggregate connector boundary plans now strip unsafe override payloads when blocking. Controlled aggregate manifest validators now separate metric identifiers from dimension/output fields, bind pipeline review `metric_id` to the approved expectation path `expected_metric_id`, and preserve the exact governed AI Fluency aggregate metric allowlist without reopening score-like fields. Measurement Cell snapshot correction lineage now normalizes date-only/ISO persisted window strings before comparison to avoid false path drift. Verification: `npm run build --workspace shared`; targeted manifest/boundary tests; backend minimal persistence test; `npm run build --workspace backend`; docs sweep; V1 governance gates; `git diff --check`.
+- AI Value Platform Measurement Cell Preflight Snapshot Candidate Binding slice (2026-06-23): hardened the executable infrastructure pipe from reviewed aggregate preflight output into backend-internal Measurement Cell Snapshot persistence. Snapshot writes now require a passed compact preflight `snapshot_candidate_ref`, recompute durable snapshot binding before write, and reject missing proof, metric/path/window/source-ref/hash/approval drift, key-name placeholder refs, unsafe compact source refs, and candidate JSON smuggling. Preflight validation now checks exact lane source refs for BigQuery/Sigma-shaped saved aggregate packages without adding live connectors, routes, UI, schema changes, customer output, confidence math, ROI, finance output, causality, productivity, or probability. Verification: `npm run test:ai-value-measurement-cell-preflight-runner`; `npm run test --workspace backend -- --runTestsByPath tests/ai_value_minimal_persistence.test.ts`; `npm run build --workspace backend`; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.

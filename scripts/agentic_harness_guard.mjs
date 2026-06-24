@@ -128,13 +128,17 @@ function collectDocuments(root) {
     if (!tracked.has(relativePath)) {
       return;
     }
+    const absolutePath = path.join(root, relativePath);
+    if (!fs.existsSync(absolutePath)) {
+      return;
+    }
     const ext = path.extname(relativePath);
     if (!DEFAULT_DOC_EXTENSIONS.has(ext)) {
       return;
     }
     documents.push({
       path: relativePath,
-      content: fs.readFileSync(path.join(root, relativePath), "utf8")
+      content: fs.readFileSync(absolutePath, "utf8")
     });
   };
 

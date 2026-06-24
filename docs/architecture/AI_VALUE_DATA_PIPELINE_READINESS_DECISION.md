@@ -50,6 +50,10 @@ Current repo support:
   boundary plan can become a compact upstream-attested aggregate export review
   package without SQL text, job metadata, project/dataset/table refs,
   persistence, live execution, or customer-facing output;
+- Live Pipeline Concept Gate proof that a BigQuery/Sigma live-pipeline concept
+  proposal cannot proceed unless Measurement Cell preflight proof is valid and
+  execution remains upstream, compact-ref-only, non-persistent, and
+  non-customer-facing;
 - aggregate AI Fluency dashboard import contracts;
 - VBD/token aggregate intake contracts;
 - customer metric aggregate/manual-entry contracts;
@@ -290,7 +294,8 @@ Proceed in this order only:
 4. Saved aggregate fixture adapter decision. `PROMOTED_SAVED_FIXTURE_ONLY`
 5. Controlled scrubbed aggregate pilot execution. `DONE_SAVED_FIXTURE_REVIEW_ONLY`
 6. Measurement Cell persistence promotion reconsideration. `PROMOTED_MEASUREMENT_CELL_SNAPSHOTS_ONLY`
-7. Separate live pipeline concept / boundary review decision. `NOT_STARTED`
+7. Live pipeline concept gate. `PROMOTED_EXECUTABLE_GATE__LIVE_PIPELINE_HELD`
+8. Separate live pipeline concept / boundary review decision. `NOT_STARTED`
 
 Do not skip from this readiness decision to live BigQuery/Sigma execution.
 
@@ -320,17 +325,43 @@ Completed safe move for pipeline work:
 
 Next safe move:
 
-Use the non-live BigQuery Aggregate Export Review package as internal
-operator-review evidence for the next decision, while keeping live BigQuery
-execution and manifest persistence held.
+Use the non-live BigQuery Aggregate Export Review and Sigma aggregate-boundary
+proof as internal operator-review evidence for Measurement Cell preflight. A
+passed preflight may bind compact aggregate-boundary proof into a
+backend-internal `measurement_cell_snapshots` row, but only after the snapshot
+candidate and durable row recompute the same selected path, metric, window,
+source refs, review state, source-export ref, review hash, pipeline dry-run ref,
+and compact pipeline-boundary hash. Live BigQuery/Sigma execution, external
+pipeline proof persistence, and manifest persistence remain held.
+
+Completed next decision gate:
+
+- executable Live Pipeline Concept Gate in
+  [AI Value Live Pipeline Concept Gate Decision](./AI_VALUE_LIVE_PIPELINE_CONCEPT_GATE_DECISION.md);
+- a passed gate means only `READY_FOR_SEPARATE_LIVE_PIPELINE_CONCEPT_REVIEW`;
+- it does not authorize live execution, credentials, SQL/query handling, raw
+  rows, manifest persistence, Series persistence, customer projection, export,
+  research-model feed, or finance output.
+- executable Live Pipeline Concept Review in
+  [AI Value Live Pipeline Concept Review Decision](./AI_VALUE_LIVE_PIPELINE_CONCEPT_REVIEW_DECISION.md);
+- a passed review means only `READY_FOR_UPSTREAM_AGGREGATE_PIPELINE_DESIGN`;
+- executable Upstream Aggregate Pipeline Handoff in
+  [AI Value Upstream Aggregate Pipeline Handoff Decision](./AI_VALUE_UPSTREAM_AGGREGATE_PIPELINE_HANDOFF_DECISION.md);
+- a passed handoff means only
+  `READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW`;
+- neither decision authorizes live execution, credentials, SQL/query handling,
+  raw rows, full manifest payload ingestion, manifest persistence, Series
+  persistence, customer projection, export, research-model feed, finance
+  output, or customer-facing output.
 
 Next decision gate:
 
 - hold live connector implementation;
-- or draft a separate live pipeline concept review that still forbids
-  FluencyTracr credentials, query execution, raw rows, query text, identifiers,
-  manifest persistence, Series persistence, customer-facing output, confidence
-  research, and finance output unless each exact scope is separately promoted.
+- or draft a later exact-scope upstream package acceptance-test decision that
+  still forbids FluencyTracr credentials, query execution, raw rows, query
+  text, identifiers, full manifest payload ingestion, manifest persistence,
+  Series persistence, customer-facing output, confidence research, and finance
+  output unless each exact scope is separately promoted.
 
 ## 11. Verification
 

@@ -618,10 +618,14 @@ export function buildBigQueryAggregateExportReviewFromObject(
   const sourceSystem = options.sourceSystem ?? "bigquery_export";
   const boundaryPlan = options.boundaryPlan ?? buildAggregateConnectorBoundaryPlanFromObject(
     fixture,
-    { sourceSystem }
+    {
+      sourceSystem,
+      measurementPlanOverride: options.measurementPlanOverride
+    }
   );
   const boundaryValidation = validateAggregateConnectorBoundaryPlan(boundaryPlan, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    measurementPlanOverride: options.measurementPlanOverride
   });
   if (
     sourceSystem !== "bigquery_export" ||
@@ -938,7 +942,9 @@ export function validateBigQueryAggregateExportReview(review, options = {}) {
     gaps.push("validation_summary.gaps must be empty for passed reviews");
   }
   if (options.sourceFixture) {
-    const expected = buildBigQueryAggregateExportReviewFromObject(options.sourceFixture);
+    const expected = buildBigQueryAggregateExportReviewFromObject(options.sourceFixture, {
+      measurementPlanOverride: options.measurementPlanOverride
+    });
     if (
       review?.review_state === "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW" &&
       sha256Json(stripValidation(review)) !== sha256Json(stripValidation(expected))
