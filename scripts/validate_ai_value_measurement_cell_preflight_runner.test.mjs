@@ -424,6 +424,11 @@ test("Measurement Cell preflight validator rejects unsafe snapshot candidate sou
 
   for (const unsafeRef of [
     "supportjob_id_123_day_30",
+    "supportuserid123_day_30",
+    "supportuser_id123_day_30",
+    "supportrow_id123_day_30",
+    "supportrawrows_day_30",
+    "supportquerytext_day_30",
     "support_metric_sql_text_day_30",
     "support_metric_prompt_text_day_30",
     "support_metric_response_text_day_30",

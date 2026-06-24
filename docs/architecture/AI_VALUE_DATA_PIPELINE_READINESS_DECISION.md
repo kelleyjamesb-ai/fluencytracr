@@ -50,6 +50,10 @@ Current repo support:
   boundary plan can become a compact upstream-attested aggregate export review
   package without SQL text, job metadata, project/dataset/table refs,
   persistence, live execution, or customer-facing output;
+- Live Pipeline Concept Gate proof that a BigQuery/Sigma live-pipeline concept
+  proposal cannot proceed unless Measurement Cell preflight proof is valid and
+  execution remains upstream, compact-ref-only, non-persistent, and
+  non-customer-facing;
 - aggregate AI Fluency dashboard import contracts;
 - VBD/token aggregate intake contracts;
 - customer metric aggregate/manual-entry contracts;
@@ -290,7 +294,8 @@ Proceed in this order only:
 4. Saved aggregate fixture adapter decision. `PROMOTED_SAVED_FIXTURE_ONLY`
 5. Controlled scrubbed aggregate pilot execution. `DONE_SAVED_FIXTURE_REVIEW_ONLY`
 6. Measurement Cell persistence promotion reconsideration. `PROMOTED_MEASUREMENT_CELL_SNAPSHOTS_ONLY`
-7. Separate live pipeline concept / boundary review decision. `NOT_STARTED`
+7. Live pipeline concept gate. `PROMOTED_EXECUTABLE_GATE__LIVE_PIPELINE_HELD`
+8. Separate live pipeline concept / boundary review decision. `NOT_STARTED`
 
 Do not skip from this readiness decision to live BigQuery/Sigma execution.
 
@@ -328,6 +333,15 @@ candidate and durable row recompute the same selected path, metric, window,
 source refs, review state, source-export ref, review hash, pipeline dry-run ref,
 and compact pipeline-boundary hash. Live BigQuery/Sigma execution, external
 pipeline proof persistence, and manifest persistence remain held.
+
+Completed next decision gate:
+
+- executable Live Pipeline Concept Gate in
+  [AI Value Live Pipeline Concept Gate Decision](./AI_VALUE_LIVE_PIPELINE_CONCEPT_GATE_DECISION.md);
+- a passed gate means only `READY_FOR_SEPARATE_LIVE_PIPELINE_CONCEPT_REVIEW`;
+- it does not authorize live execution, credentials, SQL/query handling, raw
+  rows, manifest persistence, Series persistence, customer projection, export,
+  research-model feed, or finance output.
 
 Next decision gate:
 

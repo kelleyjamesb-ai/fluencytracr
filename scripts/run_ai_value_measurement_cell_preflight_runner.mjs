@@ -309,7 +309,13 @@ const FORBIDDEN_STRING_PATTERNS = [
   /\bsql\s+text\b/i,
   /\bprompt\s+text\b/i,
   /\btranscript\b/i,
-  /(^|[^a-z0-9])(?:user|person|employee)[-_:](?:id[-_:])?[0-9][a-z0-9_-]*/i
+  /(^|[^a-z0-9])(?:user|person|employee)[-_:](?:id[-_:])?[0-9][a-z0-9_-]*/i,
+  /(?:user|person|employee)[_-]?(?:id|identifier)[a-z0-9_-]*/i,
+  /(?:row|span|trace)[_-]?id[a-z0-9_-]*/i,
+  /raw[_-]?rows?[a-z0-9_-]*/i,
+  /query[_-]?text[a-z0-9_-]*/i,
+  /sql[_-]?text[a-z0-9_-]*/i,
+  /(?:prompt|response|transcript)[_-]?(?:text|content)[a-z0-9_-]*/i
 ];
 
 const SAFE_COMPACT_SOURCE_REF_PATTERN = /^[a-z0-9][a-z0-9_-]{1,179}$/;
@@ -318,6 +324,12 @@ const FORBIDDEN_COMPACT_SOURCE_REF_VALUE_PATTERNS = [
   /https?:\/\//i,
   /\b(?:console\.cloud\.google|bigquery\.googleapis|sigma(?:computing)?\.com)\b/i,
   /(?:bquxjob|job|table|dataset|dashboard)[a-z0-9_-]*/i,
+  /(?:user|person|employee)[_-]?(?:id|identifier)[a-z0-9_-]*/i,
+  /(?:row|span|trace)[_-]?id[a-z0-9_-]*/i,
+  /raw[_-]?rows?[a-z0-9_-]*/i,
+  /query[_-]?text[a-z0-9_-]*/i,
+  /sql[_-]?text[a-z0-9_-]*/i,
+  /(?:prompt|response|transcript)[_-]?(?:text|content)[a-z0-9_-]*/i,
   /(?:^|[_-])select(?:[_-]|$)/i,
   /(?:^|[_-])raw[_-]?rows?(?:[_-]|$)/i,
   /(?:^|[_-])query[_-]?text(?:[_-]|$)/i,
@@ -926,6 +938,11 @@ function collectForbiddenKeys(value, path = "") {
 
 function collectUnsafeStrings(value, path = "") {
   if (typeof value === "string") {
+    const posturePath =
+      /(^|\.)(blocked_uses|required_caveats|feeds|boundary_policy)(\.|\[|$)/.test(
+        path
+      );
+    if (posturePath) return [];
     return FORBIDDEN_STRING_PATTERNS.some((pattern) => pattern.test(value))
       ? [`${path || "<root>"} contains unsafe text`]
       : [];

@@ -91,6 +91,12 @@ const FORBIDDEN_SOURCE_REF_STRING_PATTERNS = [
   /https?:\/\//i,
   /\b(?:console\.cloud\.google|bigquery\.googleapis|sigma(?:computing)?\.com)\b/i,
   /(?:bquxjob|job|table|dataset|dashboard)[a-z0-9_-]*/i,
+  /(?:user|person|employee)[_-]?(?:id|identifier)[a-z0-9_-]*/i,
+  /(?:row|span|trace)[_-]?id[a-z0-9_-]*/i,
+  /raw[_-]?rows?[a-z0-9_-]*/i,
+  /query[_-]?text[a-z0-9_-]*/i,
+  /sql[_-]?text[a-z0-9_-]*/i,
+  /(?:prompt|response|transcript)[_-]?(?:text|content)[a-z0-9_-]*/i,
   /(?:^|[_-])(?:bquxjob[a-z0-9]*|job[a-z0-9]*|jobs?|table[a-z0-9]*|table[_-]?ref|dataset[a-z0-9]*|dataset[_-]?ref|project[_-]?dataset[_-]?table|dashboard[a-z0-9]*)(?:[_-]|$)/i,
   /(?:^|[_-])(?:credential|secret|api[_-]?key|access[_-]?token|refresh[_-]?token)(?:[_-]|$)/i,
   /(?:^|[_-])(?:bigquery|sigma)[_-]?(?:job|url|dashboard|table|dataset|query)(?:[_-]|$)/i,
@@ -209,6 +215,12 @@ const FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS = [
   /https?:\/\//i,
   /\b(?:console\.cloud\.google|bigquery\.googleapis|sigma(?:computing)?\.com)\b/i,
   /(?:bquxjob|job|table|dataset|dashboard)[a-z0-9_-]*/i,
+  /(?:user|person|employee)[_-]?(?:id|identifier)[a-z0-9_-]*/i,
+  /(?:row|span|trace)[_-]?id[a-z0-9_-]*/i,
+  /raw[_-]?rows?[a-z0-9_-]*/i,
+  /query[_-]?text[a-z0-9_-]*/i,
+  /sql[_-]?text[a-z0-9_-]*/i,
+  /(?:prompt|response|transcript)[_-]?(?:text|content)[a-z0-9_-]*/i,
   /(?:^|[_-])(?:select|query|sql)(?:[_-]|$)/i,
   /(?:^|[_-])raw[_-]?rows?(?:[_-]|$)/i,
   /(?:^|[_-])query[_-]?text(?:[_-]|$)/i,
@@ -656,6 +668,11 @@ const parseDate = (value: unknown, label: string): Date => {
   }
   return parsed;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const utcDayMs = (date: Date): number =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 
 const ensureVersion = (version: number) => {
   if (!Number.isInteger(version) || version < 1) {
@@ -1157,6 +1174,8 @@ const validateMeasurementCellPreflightProofShape = (
     gaps.push("measurementCellPreflightRun.validation_summary.gaps must be an array");
   } else if (validationGaps.some((gap) => typeof gap !== "string")) {
     gaps.push("measurementCellPreflightRun.validation_summary.gaps must contain only strings");
+  } else if (validationGaps.length > 0) {
+    gaps.push("measurementCellPreflightRun.validation_summary.gaps must be empty for passed preflight proof");
   }
   if (!Array.isArray(preflight.blocked_uses)) {
     gaps.push("measurementCellPreflightRun.blocked_uses must be an array");
@@ -1356,6 +1375,53 @@ const validateAggregateBoundaryMilestoneBinding = (
   ] as Array<[string, unknown]>) {
     validateRequiredMilestoneToken(label, value, milestoneDay, gaps);
   }
+};
+
+const validateMilestoneWindowDateBinding = (
+  timeWindow: Record<string, unknown>,
+  baselineWindow: Record<string, unknown>,
+  comparisonWindow: Record<string, unknown>,
+  milestoneDay: number,
+  gaps: string[]
+): void => {
+  const baselineWindowEnd = parseDate(
+    asString(baselineWindow.window_end),
+    "baseline_window_end"
+  );
+  const comparisonWindowStart = parseDate(
+    asString(comparisonWindow.window_start),
+    "comparison_window_start"
+  );
+  const comparisonWindowEnd = parseDate(
+    asString(comparisonWindow.window_end),
+    "comparison_window_end"
+  );
+  const launchWindowStartMs = utcDayMs(baselineWindowEnd) + DAY_MS;
+  const comparisonStartMs = utcDayMs(comparisonWindowStart);
+  const comparisonEndMs = utcDayMs(comparisonWindowEnd);
+  const derivedMilestoneDay = (comparisonStartMs - launchWindowStartMs) / DAY_MS;
+  const comparisonWindowDays = (comparisonEndMs - comparisonStartMs) / DAY_MS + 1;
+
+  if (!Number.isInteger(derivedMilestoneDay)) {
+    gaps.push("milestone_day must derive cleanly from baseline and comparison windows");
+  } else if (derivedMilestoneDay !== milestoneDay) {
+    gaps.push("milestone_day must match the derived comparison-window offset");
+  }
+  if (comparisonWindowDays !== Number(timeWindow.window_day_count ?? 30)) {
+    gaps.push("comparison window day count must match time_window.window_day_count");
+  }
+  compareField(
+    gaps,
+    "time_window.window_start must match comparison_window.window_start",
+    timeWindow.window_start,
+    comparisonWindow.window_start
+  );
+  compareField(
+    gaps,
+    "time_window.window_end must match comparison_window.window_end",
+    timeWindow.window_end,
+    comparisonWindow.window_end
+  );
 };
 
 const compactSnapshotBindingForAggregateBoundaryHash = (
@@ -3130,6 +3196,15 @@ const buildMeasurementCellSnapshotRecord = (
     ![0, 30, 60, 90, 180, 365].includes(milestoneDay)
   ) {
     gaps.push("milestone_day must be one of Day 0, 30, 60, 90, 180, or 365");
+  }
+  if (timeWindow.window_mode === "milestone" && milestoneDay !== null) {
+    validateMilestoneWindowDateBinding(
+      timeWindow,
+      baselineWindow,
+      comparisonWindow,
+      milestoneDay,
+      gaps
+    );
   }
   const generatedAt = requireStringField(run.generated_at, "generated_at", gaps);
   const blockedUses = canonicalMeasurementCellSnapshotBlockedUses(

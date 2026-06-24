@@ -194,6 +194,15 @@ query text, BigQuery job metadata, project/dataset/table refs, credentials, raw
 rows, or customer-facing output, and it does not promote live connector
 implementation.
 
+The live-pipeline concept gate now lives at
+[AI Value Live Pipeline Concept Gate](../contracts/ai-value-live-pipeline-concept-gate/README.md).
+It evaluates whether a separate live-pipeline concept review may be drafted
+after Measurement Cell preflight proof is valid and compact aggregate-boundary
+proof is bound to the snapshot candidate. A passed gate does not authorize live
+BigQuery/Sigma/Glean execution, credentials, SQL/query handling, raw rows,
+manifest persistence, Series persistence, customer projection, export,
+research-model feed, finance output, or customer-facing output.
+
 ## 9. Verification
 
 When this decision is changed, run:

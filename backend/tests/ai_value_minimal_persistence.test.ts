@@ -1419,6 +1419,73 @@ describe("AI Value minimal persistence repository", () => {
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
 
+    const day60AssemblyRun = controlledMeasurementCellAssemblyRunsForMilestones([60])[0];
+    const selfConsistentDateDriftRun = replaceDaySuffixesForTest(
+      clone(day60AssemblyRun),
+      30
+    ) as any;
+    selfConsistentDateDriftRun.measurement_cell.time_window.days_since_launch = 30;
+    selfConsistentDateDriftRun.measurement_cell.time_window.time_window_id =
+      "day_30";
+    selfConsistentDateDriftRun.measurement_cell.time_window.window_label =
+      "Day 30";
+    selfConsistentDateDriftRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(
+        selfConsistentDateDriftRun.measurement_cell
+      );
+    const selfConsistentDateDriftPreflight = replaceDaySuffixesForTest(
+      controlledMeasurementCellPreflightRun(60),
+      30
+    ) as Record<string, unknown>;
+    const selfConsistentDateDriftCandidate = replaceDaySuffixesForTest(
+      controlledMeasurementCellPreflightCandidateRef(60),
+      30
+    ) as Record<string, unknown>;
+    selfConsistentDateDriftCandidate.milestone_day = 30;
+    const selfConsistentDateDriftBoundary =
+      selfConsistentDateDriftCandidate.aggregate_boundary_ref as Record<
+        string,
+        unknown
+      >;
+    selfConsistentDateDriftBoundary.review_hash = stableHashForTest({
+      review_id: selfConsistentDateDriftBoundary.review_id,
+      review_state: selfConsistentDateDriftBoundary.review_state,
+      source_export_ref: selfConsistentDateDriftBoundary.source_export_ref,
+      aggregate_definition_ref:
+        selfConsistentDateDriftBoundary.aggregate_definition_ref,
+      aggregate_output_ref: selfConsistentDateDriftBoundary.aggregate_output_ref
+    });
+    recomputeAggregateBoundaryHashForTest(selfConsistentDateDriftCandidate);
+    recomputeSnapshotCandidateHashForTest(selfConsistentDateDriftCandidate);
+    (
+      selfConsistentDateDriftPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).source_export_ref = selfConsistentDateDriftBoundary.source_export_ref;
+    (
+      selfConsistentDateDriftPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).review_hash = selfConsistentDateDriftBoundary.review_hash;
+    (
+      selfConsistentDateDriftPreflight.pipeline_ref as Record<string, unknown>
+    ).source_export_ref =
+      selfConsistentDateDriftBoundary.pipeline_source_export_ref;
+    selfConsistentDateDriftPreflight.snapshot_candidate_ref =
+      clone(selfConsistentDateDriftCandidate);
+    recomputePreflightIntegrityHashForTest(selfConsistentDateDriftPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: selfConsistentDateDriftRun,
+        measurementCellPreflightRun: selfConsistentDateDriftPreflight,
+        snapshotCandidateRef: selfConsistentDateDriftCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
     const unsafeLiveHandleRun = clone(assemblyRun) as any;
     const unsafeLiveHandlePreflight = clone(preflight);
     const unsafeLiveHandleCandidate = clone(snapshotCandidateRef);
@@ -1480,6 +1547,276 @@ describe("AI Value minimal persistence repository", () => {
         measurementCellAssemblyRun: unsafeLiveHandleRun,
         measurementCellPreflightRun: unsafeLiveHandlePreflight,
         snapshotCandidateRef: unsafeLiveHandleCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeEmbeddedIdentifierRun = clone(assemblyRun) as any;
+    const unsafeEmbeddedIdentifierPreflight = clone(preflight);
+    const unsafeEmbeddedIdentifierCandidate = clone(snapshotCandidateRef);
+    const unsafeEmbeddedIdentifierRef = "supportuser_id123_day_30";
+    unsafeEmbeddedIdentifierRun.measurement_cell.source_refs.vbd_source_ref =
+      unsafeEmbeddedIdentifierRef;
+    unsafeEmbeddedIdentifierRun.measurement_cell.source_refs.token_source_ref =
+      unsafeEmbeddedIdentifierRef;
+    unsafeEmbeddedIdentifierRun.measurement_cell.vbd_context.source_ref =
+      unsafeEmbeddedIdentifierRef;
+    unsafeEmbeddedIdentifierRun.measurement_cell.token_context.source_ref =
+      unsafeEmbeddedIdentifierRef;
+    unsafeEmbeddedIdentifierRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(
+        unsafeEmbeddedIdentifierRun.measurement_cell
+      );
+    (
+      unsafeEmbeddedIdentifierCandidate.source_refs as Record<string, unknown>
+    ).vbd_source_ref = unsafeEmbeddedIdentifierRef;
+    (
+      unsafeEmbeddedIdentifierCandidate.source_refs as Record<string, unknown>
+    ).token_source_ref = unsafeEmbeddedIdentifierRef;
+    const unsafeEmbeddedIdentifierBoundary =
+      unsafeEmbeddedIdentifierCandidate.aggregate_boundary_ref as Record<
+        string,
+        unknown
+      >;
+    unsafeEmbeddedIdentifierBoundary.source_export_ref =
+      `bigquery_export_${unsafeEmbeddedIdentifierRef}`;
+    unsafeEmbeddedIdentifierBoundary.pipeline_source_export_ref =
+      `bigquery_export_${unsafeEmbeddedIdentifierRef}`;
+    unsafeEmbeddedIdentifierBoundary.review_hash = stableHashForTest({
+      review_id: unsafeEmbeddedIdentifierBoundary.review_id,
+      review_state: unsafeEmbeddedIdentifierBoundary.review_state,
+      source_export_ref: unsafeEmbeddedIdentifierBoundary.source_export_ref,
+      aggregate_definition_ref:
+        unsafeEmbeddedIdentifierBoundary.aggregate_definition_ref,
+      aggregate_output_ref: unsafeEmbeddedIdentifierBoundary.aggregate_output_ref
+    });
+    (
+      unsafeEmbeddedIdentifierPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).source_export_ref = unsafeEmbeddedIdentifierBoundary.source_export_ref;
+    (
+      unsafeEmbeddedIdentifierPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).review_hash = unsafeEmbeddedIdentifierBoundary.review_hash;
+    (
+      unsafeEmbeddedIdentifierPreflight.pipeline_ref as Record<string, unknown>
+    ).source_export_ref =
+      unsafeEmbeddedIdentifierBoundary.pipeline_source_export_ref;
+    (
+      unsafeEmbeddedIdentifierPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).source_refs = unsafeEmbeddedIdentifierCandidate.source_refs;
+    (
+      unsafeEmbeddedIdentifierPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).aggregate_boundary_ref = unsafeEmbeddedIdentifierBoundary;
+    recomputeSnapshotCandidateHashForTest(unsafeEmbeddedIdentifierCandidate);
+    (
+      unsafeEmbeddedIdentifierPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).snapshot_candidate_hash =
+      unsafeEmbeddedIdentifierCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(unsafeEmbeddedIdentifierPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeEmbeddedIdentifierRun,
+        measurementCellPreflightRun: unsafeEmbeddedIdentifierPreflight,
+        snapshotCandidateRef: unsafeEmbeddedIdentifierCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeEmbeddedRowRefRun = clone(assemblyRun) as any;
+    const unsafeEmbeddedRowRefPreflight = clone(preflight);
+    const unsafeEmbeddedRowRefCandidate = clone(snapshotCandidateRef);
+    const unsafeEmbeddedRowRef = "supportrow_id123_day_30";
+    unsafeEmbeddedRowRefRun.measurement_cell.source_refs.vbd_source_ref =
+      unsafeEmbeddedRowRef;
+    unsafeEmbeddedRowRefRun.measurement_cell.source_refs.token_source_ref =
+      unsafeEmbeddedRowRef;
+    unsafeEmbeddedRowRefRun.measurement_cell.vbd_context.source_ref =
+      unsafeEmbeddedRowRef;
+    unsafeEmbeddedRowRefRun.measurement_cell.token_context.source_ref =
+      unsafeEmbeddedRowRef;
+    unsafeEmbeddedRowRefRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(
+        unsafeEmbeddedRowRefRun.measurement_cell
+      );
+    (
+      unsafeEmbeddedRowRefCandidate.source_refs as Record<string, unknown>
+    ).vbd_source_ref = unsafeEmbeddedRowRef;
+    (
+      unsafeEmbeddedRowRefCandidate.source_refs as Record<string, unknown>
+    ).token_source_ref = unsafeEmbeddedRowRef;
+    const unsafeEmbeddedRowBoundary =
+      unsafeEmbeddedRowRefCandidate.aggregate_boundary_ref as Record<
+        string,
+        unknown
+      >;
+    unsafeEmbeddedRowBoundary.source_export_ref =
+      `bigquery_export_${unsafeEmbeddedRowRef}`;
+    unsafeEmbeddedRowBoundary.pipeline_source_export_ref =
+      `bigquery_export_${unsafeEmbeddedRowRef}`;
+    unsafeEmbeddedRowBoundary.review_hash = stableHashForTest({
+      review_id: unsafeEmbeddedRowBoundary.review_id,
+      review_state: unsafeEmbeddedRowBoundary.review_state,
+      source_export_ref: unsafeEmbeddedRowBoundary.source_export_ref,
+      aggregate_definition_ref: unsafeEmbeddedRowBoundary.aggregate_definition_ref,
+      aggregate_output_ref: unsafeEmbeddedRowBoundary.aggregate_output_ref
+    });
+    (
+      unsafeEmbeddedRowRefPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).source_export_ref = unsafeEmbeddedRowBoundary.source_export_ref;
+    (
+      unsafeEmbeddedRowRefPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).review_hash = unsafeEmbeddedRowBoundary.review_hash;
+    (
+      unsafeEmbeddedRowRefPreflight.pipeline_ref as Record<string, unknown>
+    ).source_export_ref = unsafeEmbeddedRowBoundary.pipeline_source_export_ref;
+    (
+      unsafeEmbeddedRowRefPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).source_refs = unsafeEmbeddedRowRefCandidate.source_refs;
+    (
+      unsafeEmbeddedRowRefPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).aggregate_boundary_ref = unsafeEmbeddedRowBoundary;
+    recomputeSnapshotCandidateHashForTest(unsafeEmbeddedRowRefCandidate);
+    (
+      unsafeEmbeddedRowRefPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).snapshot_candidate_hash =
+      unsafeEmbeddedRowRefCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(unsafeEmbeddedRowRefPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeEmbeddedRowRefRun,
+        measurementCellPreflightRun: unsafeEmbeddedRowRefPreflight,
+        snapshotCandidateRef: unsafeEmbeddedRowRefCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeEmbeddedRawRowsRun = clone(assemblyRun) as any;
+    const unsafeEmbeddedRawRowsPreflight = clone(preflight);
+    const unsafeEmbeddedRawRowsCandidate = clone(snapshotCandidateRef);
+    const unsafeEmbeddedRawRowsRef = "supportrawrows_day_30";
+    unsafeEmbeddedRawRowsRun.measurement_cell.source_refs.vbd_source_ref =
+      unsafeEmbeddedRawRowsRef;
+    unsafeEmbeddedRawRowsRun.measurement_cell.source_refs.token_source_ref =
+      unsafeEmbeddedRawRowsRef;
+    unsafeEmbeddedRawRowsRun.measurement_cell.vbd_context.source_ref =
+      unsafeEmbeddedRawRowsRef;
+    unsafeEmbeddedRawRowsRun.measurement_cell.token_context.source_ref =
+      unsafeEmbeddedRawRowsRef;
+    unsafeEmbeddedRawRowsRun.measurement_cell_validation_result =
+      aiValueEngine.validateMeasurementCell(
+        unsafeEmbeddedRawRowsRun.measurement_cell
+      );
+    (
+      unsafeEmbeddedRawRowsCandidate.source_refs as Record<string, unknown>
+    ).vbd_source_ref = unsafeEmbeddedRawRowsRef;
+    (
+      unsafeEmbeddedRawRowsCandidate.source_refs as Record<string, unknown>
+    ).token_source_ref = unsafeEmbeddedRawRowsRef;
+    const unsafeEmbeddedRawRowsBoundary =
+      unsafeEmbeddedRawRowsCandidate.aggregate_boundary_ref as Record<
+        string,
+        unknown
+      >;
+    unsafeEmbeddedRawRowsBoundary.source_export_ref =
+      `bigquery_export_${unsafeEmbeddedRawRowsRef}`;
+    unsafeEmbeddedRawRowsBoundary.pipeline_source_export_ref =
+      `bigquery_export_${unsafeEmbeddedRawRowsRef}`;
+    unsafeEmbeddedRawRowsBoundary.review_hash = stableHashForTest({
+      review_id: unsafeEmbeddedRawRowsBoundary.review_id,
+      review_state: unsafeEmbeddedRawRowsBoundary.review_state,
+      source_export_ref: unsafeEmbeddedRawRowsBoundary.source_export_ref,
+      aggregate_definition_ref:
+        unsafeEmbeddedRawRowsBoundary.aggregate_definition_ref,
+      aggregate_output_ref: unsafeEmbeddedRawRowsBoundary.aggregate_output_ref
+    });
+    (
+      unsafeEmbeddedRawRowsPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).source_export_ref = unsafeEmbeddedRawRowsBoundary.source_export_ref;
+    (
+      unsafeEmbeddedRawRowsPreflight.aggregate_export_review_ref as Record<
+        string,
+        unknown
+      >
+    ).review_hash = unsafeEmbeddedRawRowsBoundary.review_hash;
+    (
+      unsafeEmbeddedRawRowsPreflight.pipeline_ref as Record<string, unknown>
+    ).source_export_ref = unsafeEmbeddedRawRowsBoundary.pipeline_source_export_ref;
+    (
+      unsafeEmbeddedRawRowsPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).source_refs = unsafeEmbeddedRawRowsCandidate.source_refs;
+    (
+      unsafeEmbeddedRawRowsPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).aggregate_boundary_ref = unsafeEmbeddedRawRowsBoundary;
+    recomputeSnapshotCandidateHashForTest(unsafeEmbeddedRawRowsCandidate);
+    (
+      unsafeEmbeddedRawRowsPreflight.snapshot_candidate_ref as Record<
+        string,
+        unknown
+      >
+    ).snapshot_candidate_hash =
+      unsafeEmbeddedRawRowsCandidate.snapshot_candidate_hash;
+    recomputePreflightIntegrityHashForTest(unsafeEmbeddedRawRowsPreflight);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: unsafeEmbeddedRawRowsRun,
+        measurementCellPreflightRun: unsafeEmbeddedRawRowsPreflight,
+        snapshotCandidateRef: unsafeEmbeddedRawRowsCandidate,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafePreflightValidationText = clone(preflight);
+    (unsafePreflightValidationText.validation_summary as Record<string, unknown>).gaps = [
+      "SELECT user_id FROM raw_rows"
+    ];
+    recomputePreflightIntegrityHashForTest(unsafePreflightValidationText);
+    await expect(
+      persistAiValueMeasurementCellSnapshot({
+        measurementCellAssemblyRun: assemblyRun,
+        measurementCellPreflightRun: unsafePreflightValidationText,
+        snapshotCandidateRef,
         version: 1,
         createdByRole: "value_realization_pm"
       })

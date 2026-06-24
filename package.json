@@ -76,6 +76,8 @@
     "test:ai-value-controlled-aggregate-pipeline-dry-run": "npm run build --workspace shared && node --test scripts/validate_ai_value_controlled_aggregate_pipeline_dry_run.test.mjs",
     "run:ai-value-measurement-cell-preflight-runner": "npm run build --workspace shared && node scripts/run_ai_value_measurement_cell_preflight_runner.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
     "test:ai-value-measurement-cell-preflight-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_cell_preflight_runner.test.mjs",
+    "run:ai-value-live-pipeline-concept-gate": "npm run build --workspace shared && node scripts/run_ai_value_live_pipeline_concept_gate.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
+    "test:ai-value-live-pipeline-concept-gate": "npm run build --workspace shared && node --test scripts/validate_ai_value_live_pipeline_concept_gate.test.mjs",
     "run:ai-value-controlled-aggregate-connector-adapter": "npm run build --workspace shared && node scripts/run_ai_value_controlled_aggregate_connector_adapter.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
     "test:ai-value-controlled-aggregate-connector-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_controlled_aggregate_connector_adapter.test.mjs",
     "run:ai-value-aggregate-connector-boundary-plan": "npm run build --workspace shared && node scripts/run_ai_value_aggregate_connector_boundary_plan.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",

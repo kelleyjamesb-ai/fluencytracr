@@ -2,6 +2,32 @@
 
 ## Last Completed
 
+- AI Value Live Pipeline Concept Gate (user-requested, 2026-06-23): added the
+  next executable infrastructure gate before any live BigQuery/Sigma work can
+  be proposed. The gate recomputes Measurement Cell preflight proof from the
+  controlled aggregate fixture, requires compact aggregate-boundary refs and
+  hashes bound to the snapshot candidate, and emits only
+  `READY_FOR_SEPARATE_LIVE_PIPELINE_CONCEPT_REVIEW`,
+  `HOLD_FOR_VALID_MEASUREMENT_CELL_PREFLIGHT`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It fails closed on live execution,
+  credentials, SQL/query text, job/table/dataset/dashboard handles, raw rows,
+  prompts, transcripts, identifiers, Source Package clearance aliases,
+  Measurement Cell readiness aliases, Series persistence aliases, customer
+  projection/export aliases, JSON payload aliases, ROI/EBITDA, finance output,
+  causality, productivity, probability, contribution-model/research-model, and
+  score-like fields. This does not add live connectors, persistence, routes,
+  UI, exports, customer-facing output, Series persistence, research-model feed,
+  or finance output. Verification added:
+  `npm run test:ai-value-live-pipeline-concept-gate`.
+- AI Value Measurement Cell snapshot implementation verification closure
+  (user-requested, 2026-06-23): closed the remaining Phase 5 verification gap
+  for the promoted backend-internal `measurement_cell_snapshots` slice. Fresh
+  verification passed for the focused minimal persistence suite, Measurement
+  Cell preflight runner suite, shared build, backend build, backend CI, docs
+  contract sweep, V1 governance gates, and whitespace diff check. No schema,
+  route, UI, live connector, Series persistence, customer projection/export,
+  contribution-model, ROI/EBITDA, finance output, causality, productivity, or
+  probability scope was added by the verification closure.
 - AI Value aggregate-boundary to Measurement Cell snapshot binding
   (user-requested, 2026-06-23): extended the non-live BigQuery/Sigma
   reviewed aggregate path so Measurement Cell preflight snapshot candidates now
