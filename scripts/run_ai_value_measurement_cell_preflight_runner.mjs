@@ -638,8 +638,12 @@ function compactAggregateBoundaryRef(aggregateReviewRef, dryRun, snapshotBinding
 }
 
 function collectSnapshotCandidateMilestoneWindowGaps(candidate) {
-  if (!candidate || candidate.window_mode !== "milestone") return [];
+  if (!candidate) return [];
   const gaps = [];
+  if (candidate.window_mode !== "milestone") {
+    gaps.push("window_mode must be milestone for snapshot candidate proof");
+    return gaps;
+  }
   const milestoneDay = Number(candidate.milestone_day);
   if (!Number.isInteger(milestoneDay)) {
     gaps.push("milestone_day is required for milestone snapshot candidate proof");
@@ -647,9 +651,13 @@ function collectSnapshotCandidateMilestoneWindowGaps(candidate) {
     gaps.push("milestone_day must be one of Day 0, 30, 60, 90, 180, or 365");
   }
 
+  const baselineWindowStart = parseIsoDay(candidate.baseline_window_start);
   const baselineWindowEnd = parseIsoDay(candidate.baseline_window_end);
   const comparisonWindowStart = parseIsoDay(candidate.comparison_window_start);
   const comparisonWindowEnd = parseIsoDay(candidate.comparison_window_end);
+  if (!baselineWindowStart) {
+    gaps.push("baseline_window_start must be a valid ISO date");
+  }
   if (!baselineWindowEnd) {
     gaps.push("baseline_window_end must be a valid ISO date");
   }
@@ -659,16 +667,26 @@ function collectSnapshotCandidateMilestoneWindowGaps(candidate) {
   if (!comparisonWindowEnd) {
     gaps.push("comparison_window_end must be a valid ISO date");
   }
-  if (!baselineWindowEnd || !comparisonWindowStart || !comparisonWindowEnd) {
+  if (
+    !baselineWindowStart ||
+    !baselineWindowEnd ||
+    !comparisonWindowStart ||
+    !comparisonWindowEnd
+  ) {
     return gaps;
   }
 
+  const baselineStartMs = utcDayMs(baselineWindowStart);
+  const baselineEndMs = utcDayMs(baselineWindowEnd);
   const launchWindowStartMs = utcDayMs(baselineWindowEnd) + DAY_MS;
   const comparisonStartMs = utcDayMs(comparisonWindowStart);
   const comparisonEndMs = utcDayMs(comparisonWindowEnd);
   const derivedMilestoneDay = (comparisonStartMs - launchWindowStartMs) / DAY_MS;
   const comparisonWindowDays = (comparisonEndMs - comparisonStartMs) / DAY_MS + 1;
 
+  if (baselineEndMs <= baselineStartMs) {
+    gaps.push("baseline_window_end must be after baseline_window_start");
+  }
   if (!Number.isInteger(derivedMilestoneDay)) {
     gaps.push("milestone_day must derive cleanly from baseline and comparison windows");
   } else if (Number.isInteger(milestoneDay) && derivedMilestoneDay !== milestoneDay) {

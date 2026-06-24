@@ -600,6 +600,24 @@ test("Measurement Cell preflight runner holds milestone date drift before snapsh
   assert.equal(preflight.feeds.measurement_cell_snapshot_candidate_proof, false);
 });
 
+test("Measurement Cell preflight runner rejects rolling 30-day snapshot candidates before proof", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  fixture.expected.window_mode = "rolling_30_day";
+
+  const preflight = runMeasurementCellPreflightFromObject(fixture);
+
+  assert.equal(preflight.preflight_state, "HELD_FOR_MEASUREMENT_CELL_ASSEMBLY");
+  assert.equal(preflight.snapshot_candidate_ref, null);
+  assert.equal(preflight.validation_summary.snapshot_candidate_valid, false);
+  assert.ok(
+    preflight.validation_summary.gaps.some((gap) =>
+      gap.includes("window_mode must be milestone for snapshot candidate proof")
+    ),
+    preflight.validation_summary.gaps.join("; ")
+  );
+  assert.equal(preflight.feeds.measurement_cell_snapshot_candidate_proof, false);
+});
+
 test("Measurement Cell preflight validator rejects passed-envelope milestone date drift", () => {
   const fixture = readJson(FIXTURE_PATH);
   const preflight = runMeasurementCellPreflightFromObject(fixture);
@@ -621,6 +639,47 @@ test("Measurement Cell preflight validator rejects passed-envelope milestone dat
 
   assert.equal(validation.valid, false);
   assertValidationGap(validation, "milestone_day must match the derived comparison-window offset");
+});
+
+test("Measurement Cell preflight validator rejects passed-envelope baseline range drift", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const preflight = runMeasurementCellPreflightFromObject(fixture);
+  const tampered = clone(preflight);
+  tampered.snapshot_candidate_ref.baseline_window_start = "2026-05-02";
+  tampered.snapshot_candidate_ref.baseline_window_end = "2026-05-01";
+  tampered.snapshot_candidate_ref.snapshot_candidate_hash = sha256Json(
+    stripSnapshotCandidateHash(tampered.snapshot_candidate_ref)
+  );
+  tampered.preflight_integrity_hash = sha256Json(
+    stripPreflightIntegrityHash(tampered)
+  );
+
+  const validation = validateMeasurementCellPreflight(tampered, {
+    skipFixtureRerun: true
+  });
+
+  assert.equal(validation.valid, false);
+  assertValidationGap(validation, "baseline_window_end must be after baseline_window_start");
+});
+
+test("Measurement Cell preflight validator rejects malformed baseline window starts", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const preflight = runMeasurementCellPreflightFromObject(fixture);
+  const tampered = clone(preflight);
+  tampered.snapshot_candidate_ref.baseline_window_start = "not-a-date";
+  tampered.snapshot_candidate_ref.snapshot_candidate_hash = sha256Json(
+    stripSnapshotCandidateHash(tampered.snapshot_candidate_ref)
+  );
+  tampered.preflight_integrity_hash = sha256Json(
+    stripPreflightIntegrityHash(tampered)
+  );
+
+  const validation = validateMeasurementCellPreflight(tampered, {
+    skipFixtureRerun: true
+  });
+
+  assert.equal(validation.valid, false);
+  assertValidationGap(validation, "baseline_window_start must be a valid ISO date");
 });
 
 test("Measurement Cell preflight validator rejects open-container payload smuggling and source-ref drift", () => {
