@@ -595,10 +595,20 @@ Do these next, in order:
 8. Phase 8: hold confidence research until repeated aligned evidence exists.
 9. Next data-pipeline phase: executable Live Pipeline Concept Gate promoted for
    concept-review readiness only; live BigQuery/Sigma execution remains held.
-10. Future data-pipeline phase: draft a separate live pipeline concept review
-    only if the gate passes, still without credentials, SQL/query handling,
-    raw rows, manifest persistence, Series persistence, customer projection,
-    exports, research-model feed, finance output, or customer-facing output.
+10. Next data-pipeline phase: executable Live Pipeline Concept Review promoted
+    for upstream aggregate-pipeline design requirements only; live
+    BigQuery/Sigma execution remains held.
+11. Next data-pipeline phase: executable Upstream Aggregate Pipeline Handoff
+    promoted for compact manifest-ref acceptance review only; full manifest
+    payload ingestion, live execution, manifest persistence, Series
+    persistence, customer projection, exports, research-model feed, finance
+    output, and customer-facing output remain held.
+12. Future data-pipeline phase: consider a later exact-scope upstream package
+    acceptance-test decision only after the handoff validator stays green and
+    still without credentials, SQL/query handling, raw rows, identifiers, full
+    manifest payload ingestion, manifest persistence, Series persistence,
+    customer projection, exports, research-model feed, finance output, or
+    customer-facing output.
 
 Do not skip from Phase 1 to Phase 5. The pilot and legacy-readout isolation
 are the safety checks that keep persistence from becoming accidental product

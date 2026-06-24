@@ -2,6 +2,39 @@
 
 ## Last Completed
 
+- AI Value Upstream Aggregate Pipeline Handoff (user-requested, 2026-06-23):
+  added the next executable infrastructure layer after Live Pipeline Concept
+  Review. The handoff recomputes the concept review and controlled aggregate
+  manifest validation package, then emits only compact concept-review refs,
+  Source Inventory / Aggregate Extraction / Pipeline Run Review manifest refs,
+  Data Spine alignment refs, and Source Package Review Queue posture refs. It
+  can return only `READY_FOR_UPSTREAM_AGGREGATE_HANDOFF_ACCEPTANCE_REVIEW`,
+  `HOLD_FOR_VALID_LIVE_PIPELINE_CONCEPT_REVIEW`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It rejects live execution, credentials,
+  SQL/query text, full manifest payload ingestion, raw rows, prompts,
+  transcripts, identifiers, persistence, Series persistence, customer
+  projection/export, research-model feed, ROI/EBITDA, finance output,
+  causality, productivity, probability, score-like fields, and customer-facing
+  output. This does not add live connectors, routes, UI, schemas, migrations,
+  repository methods, persistence writes, exports, model math, or finance
+  output. Verification added:
+  `npm run test:ai-value-upstream-aggregate-pipeline-handoff`.
+- AI Value Live Pipeline Concept Review (user-requested, 2026-06-23): added the
+  separate executable concept review authorized by the Live Pipeline Concept
+  Gate. The review recomputes the gate, emits compact gate/preflight/snapshot
+  boundary refs, and promotes only upstream aggregate-pipeline design
+  requirements. It can return only
+  `READY_FOR_UPSTREAM_AGGREGATE_PIPELINE_DESIGN`,
+  `HOLD_FOR_VALID_LIVE_PIPELINE_CONCEPT_GATE`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It fails closed on unsafe override intent,
+  validation-summary smuggling, live execution, credentials, SQL/query text,
+  raw rows, prompts, transcripts, identifiers, persistence, routes, UI,
+  exports, Series persistence, customer projection, research-model feed,
+  ROI/EBITDA, finance output, causality, productivity, probability, score-like
+  fields, and customer-facing output. This does not add live connectors,
+  routes, UI, schemas, migrations, repository methods, persistence writes,
+  exports, model math, or finance output. Verification added:
+  `npm run test:ai-value-live-pipeline-concept-review`.
 - AI Value Live Pipeline Concept Gate (user-requested, 2026-06-23): added the
   next executable infrastructure gate before any live BigQuery/Sigma work can
   be proposed. The gate recomputes Measurement Cell preflight proof from the
