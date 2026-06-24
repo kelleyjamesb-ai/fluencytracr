@@ -131,6 +131,7 @@ const REQUIRED_BLOCKED_USES = [
 ];
 
 const REQUIRED_CAVEATS = [
+  "Current controlled pilot packets recompute milestone refs from a saved scrubbed aggregate fixture; they are not live customer evidence or independently reviewed six-window pilot evidence.",
   "Ready only authorizes internal research design drafting; it does not authorize model implementation, numeric weights, finance output, or customer-facing output.",
   "The packet carries compact refs and hashes only; it does not carry raw rows, query text, prompts, transcripts, identifiers, source package payloads, or full Measurement Cell payloads.",
   "AI Fluency psychological context is optional context only and cannot upgrade or rescue readiness.",
@@ -532,9 +533,16 @@ function loadMeasurementPlan(fixture, cwd) {
 }
 
 function selectedExpectationPath(fixture) {
-  return Array.isArray(fixture?.blueprint_extraction_input?.approvedExpectationPaths)
-    ? fixture.blueprint_extraction_input.approvedExpectationPaths[0] ?? null
-    : null;
+  const paths = fixture?.blueprint_extraction_input?.approvedExpectationPaths;
+  if (!Array.isArray(paths) || paths.length === 0) return null;
+  const selectedPathId =
+    fixture?.blueprint_extraction_input?.selectedExpectationPathId ??
+    fixture?.blueprint_extraction_input?.selected_expectation_path_id ??
+    null;
+  if (selectedPathId) {
+    return paths.find((path) => path?.expectation_path_id === selectedPathId) ?? null;
+  }
+  return paths.length === 1 ? paths[0] : null;
 }
 
 function repeatedPilotPackageCacheKey(fixture, options = {}) {
@@ -661,16 +669,16 @@ function sourceLaneRef(source) {
     owner_role: safeRef(source.owner_role),
     review_state: safeRef(source.review_state),
     aggregate_only: source.aggregate_only === true,
-    freshness_state: safeRef(source.freshness_state ?? "current_for_approved_window"),
-    window_status: safeRef(source.window_status ?? "current"),
+    freshness_state: safeRef(source.freshness_state),
+    window_status: safeRef(source.window_status),
     source_hash: sha256Json({
       source_ref: source.source_ref ?? null,
       state: source.state ?? null,
       owner_role: source.owner_role ?? null,
       owner_approval_state: source.owner_approval_state ?? null,
       review_state: source.review_state ?? null,
-      freshness_state: source.freshness_state ?? "current_for_approved_window",
-      window_status: source.window_status ?? "current",
+      freshness_state: source.freshness_state ?? null,
+      window_status: source.window_status ?? null,
       aggregate_only: source.aggregate_only === true
     })
   };
@@ -706,15 +714,15 @@ function sourceLaneRefs(fixture) {
         sources.assumption?.aggregate_only === true &&
         sources.governance?.aggregate_only === true,
       freshness_state:
-        (sources.assumption?.freshness_state ?? "current_for_approved_window") ===
+        sources.assumption?.freshness_state ===
           "current_for_approved_window" &&
-        (sources.governance?.freshness_state ?? "current_for_approved_window") ===
+        sources.governance?.freshness_state ===
           "current_for_approved_window"
           ? "current_for_approved_window"
           : "stale",
       window_status:
-        (sources.assumption?.window_status ?? "current") === "current" &&
-        (sources.governance?.window_status ?? "current") === "current"
+        sources.assumption?.window_status === "current" &&
+        sources.governance?.window_status === "current"
           ? "current"
           : "stale",
       source_hash: sha256Json({
@@ -734,9 +742,16 @@ function sameWindow(a, b) {
   return a.window_start === b.window_start && a.window_end === b.window_end;
 }
 
-function customerMetricExport(fixture) {
+function customerMetricExport(fixture, source) {
+  const sourceRef = safeRef(source?.source_ref);
   return (fixture?.scrubbed_glean_exports ?? []).find(
-    (entry) => entry?.evidence_layer === "layer_3_business_system_outcomes"
+    (entry) =>
+      entry?.evidence_layer === "layer_3_business_system_outcomes" &&
+      (
+        safeRef(entry?.aggregate_probe_id) === sourceRef ||
+        safeRef(entry?.export_id) === sourceRef ||
+        safeRef(entry?.source_readiness_id) === sourceRef
+      )
   ) ?? null;
 }
 
@@ -750,7 +765,7 @@ function movementDirectionFor(baseline, comparison) {
 function selectedMetricMovementRef(fixture, binding) {
   const source = fixture?.data_spine_input?.sources?.customerMetric;
   if (!isPlainObject(source)) return null;
-  const exportRecord = customerMetricExport(fixture);
+  const exportRecord = customerMetricExport(fixture, source);
   const summary = exportRecord?.metric_or_signal_summary ?? {};
   const sourceMetricId = safeRef(source.metric_id);
   const baseline = finiteNumber(summary.baseline_value);
@@ -772,11 +787,22 @@ function selectedMetricMovementRef(fixture, binding) {
     sameWindow(source.baseline_window, baselineWindow) &&
     sameWindow(source.comparison_window, comparisonWindow);
   const exportWindowAligned = sameWindow(exportRecord?.covered_window, comparisonWindow);
+  const exportMetricName = safeRef(summary.aggregate_metric_name);
+  const exportMetricNameAligned =
+    exportMetricName === `aggregate_${binding.metric_id}`;
+  const sourceFreshnessState = safeRef(source.freshness_state);
+  const exportFreshnessState = safeRef(exportRecord?.freshness_state);
+  const sourceWindowStatus = safeRef(source.window_status);
+  const exportWindowStatus = safeRef(exportRecord?.window_status);
   const freshnessState =
-    source.freshness_state ??
-    exportRecord?.freshness_state ??
-    "current_for_approved_window";
-  const windowStatus = source.window_status ?? exportRecord?.window_status ?? "current";
+    sourceFreshnessState === "current_for_approved_window" &&
+    exportFreshnessState === "current_for_approved_window"
+      ? "current_for_approved_window"
+      : "stale";
+  const windowStatus =
+    sourceWindowStatus === "current" && exportWindowStatus === "current"
+      ? "current"
+      : "stale";
   const currentWindow =
     freshnessState === "current_for_approved_window" && windowStatus === "current";
   return {
@@ -789,6 +815,7 @@ function selectedMetricMovementRef(fixture, binding) {
     metric_lag_days: binding.metric_lag_days ?? null,
     movement_state:
       metricAligned &&
+      exportMetricNameAligned &&
       directionAligned &&
       sourceWindowAligned &&
       exportWindowAligned &&
@@ -799,22 +826,31 @@ function selectedMetricMovementRef(fixture, binding) {
     freshness_state: safeRef(freshnessState),
     window_status: safeRef(windowStatus),
     window_alignment_state:
-      metricAligned && sourceWindowAligned && exportWindowAligned ? "aligned" : "drifted",
+      metricAligned &&
+      exportMetricNameAligned &&
+      sourceWindowAligned &&
+      exportWindowAligned
+        ? "aligned"
+        : "drifted",
     baseline_window_hash: sha256Json(baselineWindow),
     comparison_window_hash: sha256Json(comparisonWindow),
     source_hash: sha256Json({
       source_ref: source.source_ref ?? null,
       export_ref: exportRecord?.aggregate_probe_id ?? exportRecord?.export_id ?? null,
       metric_id: sourceMetricId,
+      export_metric_name: exportMetricName,
       baseline_present: baseline !== null,
       comparison_present: comparison !== null,
       movement_direction: movementDirection,
       expected_direction: expectedDirection,
       metric_aligned: metricAligned,
+      export_metric_name_aligned: exportMetricNameAligned,
       source_window_aligned: sourceWindowAligned,
       export_window_aligned: exportWindowAligned,
-      freshness_state: freshnessState,
-      window_status: windowStatus
+      source_freshness_state: sourceFreshnessState,
+      export_freshness_state: exportFreshnessState,
+      source_window_status: sourceWindowStatus,
+      export_window_status: exportWindowStatus
     })
   };
 }
@@ -1635,6 +1671,12 @@ function collectReadinessConsistencyGaps(packet) {
     }
     if (ref?.aggregate_only !== true) {
       gaps.push(`source_lane_refs.${lane}.aggregate_only must be true`);
+    }
+    if (ref?.freshness_state !== "current_for_approved_window") {
+      gaps.push(`source_lane_refs.${lane}.freshness_state must be current`);
+    }
+    if (ref?.window_status !== "current") {
+      gaps.push(`source_lane_refs.${lane}.window_status must be current`);
     }
   }
   for (const [label, ref] of [

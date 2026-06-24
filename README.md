@@ -88,6 +88,24 @@ documented value-realization layers:
   blocked uses, and false boundary feeds; it does not authorize model math,
   numeric weights, persistence, exports, finance output, or customer-facing
   output.
+- **AI Value contribution alignment internal prototype runner:** proves that
+  the research-design packet can become a local compact internal review
+  envelope without becoming a model. It emits only refs, hashes, source-bound
+  posture, caveats, blocked uses, and false boundary feeds; it does not
+  authorize confidence math, numeric weights, persistence, exports, finance
+  output, or customer-facing output.
+- **AI Value contribution alignment runner review packet:** proves that the
+  compact internal prototype-runner envelope can become a source-bound internal
+  model-prototype design review packet without becoming a model. It keeps
+  AI Fluency construct context, psychological context, observed VBD context,
+  and selected customer metric movement separate; it does not authorize model
+  implementation, numeric weights, persistence, exports, finance output, or
+  customer-facing output.
+- **AI Value contribution alignment model prototype design review:** records
+  the internal candidate model frame and alignment-review components without
+  implementing a model. It remains method-design-only and blocks model math,
+  numeric weights, score/probability output, persistence, exports, finance
+  output, and customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

@@ -12,22 +12,39 @@ The file path and phase name retain the older `confidence` label for
 continuity. This decision now governs the broader research promotion gate; it
 does not create a separate confidence-research permission path.
 
-Decision: `HOLD_RESEARCH_MODELING_FOR_READINESS_PACKET`
+Decision: `HOLD_RESEARCH_MODEL_IMPLEMENTATION_FOR_INTERNAL_RESEARCH_DESIGN`
 
 ## 1. Purpose
 
-The productization plan intentionally places research modeling after the
+The productization plan intentionally places research model implementation after the
 governed evidence spine has repeated aligned evidence, clear persistence /
 projection boundaries, and a formal Research Promotion Readiness Packet. This
-document records whether internal research modeling may start.
+document records whether internal research model implementation may start.
 
 Primary gate:
 
 - [AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md)
 
+Internal research design:
+
+- [AI Value Contribution Alignment Internal Research Design](./AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_DESIGN.md)
+
+Internal prototype runner design decision:
+
+- [AI Value Contribution Alignment Internal Prototype Runner Design Decision](./AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_PROTOTYPE_RUNNER_DESIGN_DECISION.md)
+
+Internal prototype runner implementation decision:
+
+- [AI Value Contribution Alignment Internal Prototype Runner Implementation Decision](./AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_PROTOTYPE_RUNNER_IMPLEMENTATION_DECISION.md)
+
 ## 2. Decision
 
 Do not start research-model implementation yet.
+
+The current controlled pilot packet instance returns
+`READY_FOR_INTERNAL_RESEARCH_DESIGN`. That ready state allowed the
+non-executable internal research-design artifact linked above from compact
+packet refs and caveats.
 
 Do not create numeric weights, model scores, contribution output, probability
 output, finance output, ROI, causality, productivity measurement, or
@@ -36,7 +53,7 @@ customer-facing output.
 Decision value:
 
 ```text
-HOLD_RESEARCH_MODELING_FOR_READINESS_PACKET
+HOLD_RESEARCH_MODEL_IMPLEMENTATION_FOR_INTERNAL_RESEARCH_DESIGN
 ```
 
 Reason:
@@ -49,8 +66,17 @@ Reason:
   through the contract-only Measurement Cell Series layer;
 - controlled fixture evidence is still internal promotion-review evidence, not
   live pilot evidence or durable Series product state;
-- a Research Promotion Readiness Packet has not yet passed with
-  `READY_FOR_INTERNAL_RESEARCH_DESIGN`;
+- the current controlled pilot Research Promotion Readiness Packet has passed
+  with `READY_FOR_INTERNAL_RESEARCH_DESIGN`, but only as a source-fixture-bound
+  readiness record for internal research-design drafting;
+- the internal contribution-alignment research design is drafted, but it
+  explicitly keeps model implementation held;
+- the internal prototype runner design decision promotes only the design of a
+  future non-persistent internal runner and explicitly keeps runner
+  implementation held;
+- the internal prototype runner implementation decision promotes only a local,
+  non-persistent internal runner that emits a compact method-design review
+  envelope and no model result;
 - customer projection and export governance remain blocked;
 - live BigQuery/Sigma/Glean connector execution remains blocked;
 - research language could be overread as ROI, EBITDA, causality, productivity,
@@ -58,10 +84,10 @@ Reason:
 
 ## 3. Required Prerequisites
 
-Research modeling may be reconsidered only after:
+Research model implementation may be reconsidered only after:
 
-- Research Promotion Readiness Packet returns
-  `READY_FOR_INTERNAL_RESEARCH_DESIGN`;
+- a later exact-scope promotion decision cites the internal research design and
+  authorizes a specific non-customer-facing prototype scope;
 - repeated Measurement Cell milestone evidence exists across Day 0 / 30 / 60 /
   90 / 180 / 365;
 - held, suppressed, missing, blocked, or rolling-window-only evidence remains
@@ -155,15 +181,18 @@ Before research implementation, add a separate research design that specifies:
 - validation checks;
 - legal/trust review posture.
 
-The research design must cite the passed Research Promotion Readiness Packet.
-If the packet is held or rejected, research design remains blocked.
+The internal research design now cites the passed current controlled pilot
+Research Promotion Readiness Packet. If that packet is later held, rejected, or
+fails source-fixture-bound validation, research design and any future prototype
+remain blocked.
 
 ## 8. Recommended Next Move
 
-Do not start research modeling. Use the Research Promotion Readiness Packet as
-the next gate. Populate it only from compact, reviewed, repeated, source-bound
-aggregate refs. If it returns `READY_FOR_INTERNAL_RESEARCH_DESIGN`, draft a
-separate internal research design; do not implement model math yet.
+Do not start research model implementation. The internal contribution-alignment
+prototype runner may be used only as a local compact-ref review envelope. The
+next move is to use its output for internal review and decide whether to hold,
+reject, or draft a later research-model prototype design. Do not implement
+model math yet.
 
 ## 9. Verification
 
@@ -173,6 +202,9 @@ When this decision is changed, run:
 git diff --check
 bash scripts/ci_docs_contract_sweep.sh
 python3 scripts/ci_v1_governance_gates.py
+npm run test:ai-value-contribution-alignment-internal-research-design
+npm run test:ai-value-contribution-alignment-internal-prototype-runner-design
+npm run test:ai-value-contribution-alignment-internal-prototype-runner
 ```
 
 Expected: all commands exit `0`.
