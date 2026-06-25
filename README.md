@@ -147,6 +147,14 @@ documented value-realization layers:
   and blocks model output, confidence/probability/score output, finance output,
   live BigQuery/Sigma/Glean execution, ROI, causality, productivity, and
   customer-facing economic output.
+- **AI Value compact source wiring hardening:** turns the data model spine lock's
+  allowed next step into non-live compact source-descriptor posture for prepared
+  `bigquery_export` and `sigma_export` only. `glean_query` remains held. It does
+  not authorize live BigQuery/Sigma/Glean execution, credentials, SQL/query
+  storage, warehouse/dashboard handles, raw rows, routes, UI, exports, rendered
+  readouts, model/confidence/probability/score output, finance/ROI/causality/
+  productivity output, customer-facing output, or Measurement Cell Series
+  persistence.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,
@@ -387,6 +395,9 @@ is not the lead positioning for this repository.
 - AI Value Customer Data Model Promotion Gate: [docs/contracts/ai-value-customer-data-model-promotion-gate/README.md](docs/contracts/ai-value-customer-data-model-promotion-gate/README.md)
 - AI Value Customer Data Model Persistence Promotion Decision: [docs/contracts/ai-value-customer-data-model-persistence-promotion-decision/README.md](docs/contracts/ai-value-customer-data-model-persistence-promotion-decision/README.md)
 - AI Value Customer Data Model Persistence Implementation Decision: [docs/contracts/ai-value-customer-data-model-persistence-implementation-decision/README.md](docs/contracts/ai-value-customer-data-model-persistence-implementation-decision/README.md)
+- AI Value Customer Data Model Route Projection: [docs/contracts/ai-value-customer-data-model-route-projection/README.md](docs/contracts/ai-value-customer-data-model-route-projection/README.md)
+- AI Value Data Model Spine Readiness Lock: [docs/contracts/ai-value-data-model-spine-readiness-lock/README.md](docs/contracts/ai-value-data-model-spine-readiness-lock/README.md)
+- AI Value Compact Source Wiring Hardening: [docs/contracts/ai-value-compact-source-wiring-hardening/README.md](docs/contracts/ai-value-compact-source-wiring-hardening/README.md)
 - AI Value Controlled Aggregate Connector Adapter: [docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md](docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md)
 - AI Value Aggregate Connector Boundary Plan: [docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md](docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md)
 - AI Value BigQuery Aggregate Export Review: [docs/contracts/ai-value-bigquery-aggregate-export-review/README.md](docs/contracts/ai-value-bigquery-aggregate-export-review/README.md)

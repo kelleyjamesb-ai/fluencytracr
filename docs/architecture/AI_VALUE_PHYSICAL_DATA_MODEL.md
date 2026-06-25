@@ -95,6 +95,17 @@ model equation, confidence math, numeric weights, model output, finance output,
 customer-facing economic output, live BigQuery/Sigma/Glean execution, or
 `measurement_cell_series_snapshots`.
 
+The executable
+[AI Value Compact Source Wiring Hardening](../contracts/ai-value-compact-source-wiring-hardening/README.md)
+is the current hardening step after the lock. It prepares only non-live compact
+source descriptors for `bigquery_export` and `sigma_export`; `glean_query`
+remains held. This descriptor posture does not authorize live connector
+execution, credentials, SQL/query storage, warehouse/project/dataset/table/job/
+dashboard handles, raw rows, routes, UI, exports, rendered readouts,
+research-model feeds, model output, confidence/probability/score output,
+finance output, ROI, causality, productivity, customer-facing output, or
+additional physical tables.
+
 Historical planning documents, including `AI_VALUE_DATA_MODEL_AUDIT.md`, are
 planning context only. Current implementation authority remains the active
 persistence/design contracts and exact-scope promotion decisions recorded in

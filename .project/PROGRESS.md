@@ -2,6 +2,34 @@
 
 ## Last Completed
 
+- AI Value Compact Source Wiring Hardening (user-requested hardening,
+  2026-06-25): added the executable non-live compact source descriptor bridge
+  after the Data Model Spine Readiness Lock. The runner emits
+  `COMPACT_SOURCE_WIRING_HARDENED_NON_LIVE` only when the spine readiness lock
+  and BigQuery/Sigma aggregate connector boundary plans remain valid, prepares
+  only compact descriptors for `bigquery_export` and `sigma_export`, and keeps
+  `glean_query` held for a later exact-scope source adapter boundary plan. The
+  descriptors now include governed boundary-plan and connector-adapter handles,
+  validation posture, strict governed prefixes for aggregate definition/output
+  refs, and no live or customer-joinable handles. Unsafe supplied boundary
+  plans, readiness locks, warehouse/dashboard aliases, SQL/query text, job
+  handles, raw rows, employee aliases, Series persistence, and safe-looking ref
+  swaps reject or fail validation without echoing unsafe values. This slice
+  does not add or authorize live BigQuery/Sigma/Glean execution, credentials,
+  query execution, raw/dashboard rows, Source Package clearance, Measurement
+  Cell creation, snapshot writes, Series persistence, routes, UI, exports,
+  rendered readouts, research-model feeds, statistical model output,
+  confidence/probability/score output, finance output, ROI, causality,
+  productivity, customer-facing output, or additional physical tables. The only
+  allowed next step is
+  `draft_non_live_connector_promotion_decision_requirements_only`.
+  Verification passed:
+  `npm run test:ai-value-compact-source-wiring-hardening`;
+  `npm run test:ai-value-data-model-spine-readiness-lock`;
+  `npm run test:ai-value-aggregate-connector-boundary-plan`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Data Model Spine Readiness Lock (user-requested hardening,
   2026-06-25): added the executable lock that answers the user's model-equation
   question without overstating implementation. No statistical model equation is
