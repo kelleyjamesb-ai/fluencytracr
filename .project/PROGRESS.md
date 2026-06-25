@@ -2,6 +2,36 @@
 
 ## Last Completed
 
+- AI Value Data Model Spine Readiness Lock (user-requested hardening,
+  2026-06-25): added the executable lock that answers the user's model-equation
+  question without overstating implementation. No statistical model equation is
+  implemented; the implemented equation is the Boolean readiness contract:
+  `measurement_cell_snapshots_promoted AND
+  ai_value_customer_data_model_snapshots_promoted AND
+  customer_data_model_route_projection_ready AND
+  customer_evidence_history_read_path_proven AND
+  durable_series_read_path_holds_series_persistence AND
+  all_blocked_outputs_false`. The lock recomputes and binds the Customer
+  Evidence History Read-Path Proof plus Durable Series Read-Path Decision,
+  emits `COMPACT_CUSTOMER_DATA_MODEL_SPINE_READY` only when those source-bound
+  contracts validate, keeps `measurement_cell_series_snapshots` held as
+  `HELD_NOT_REQUIRED_FOR_CURRENT_READ_PATH`, and allows only
+  `harden_compact_customer_data_model_for_real_source_wiring` next. It
+  explicitly reports `statistical_model_equation_implemented: false`,
+  `confidence_math_implemented: false`, and `numeric_weights_implemented:
+  false`, and blocks model output, confidence/probability/score output,
+  finance output, live BigQuery/Sigma/Glean execution, ROI, causality,
+  productivity, customer-facing economic output, raw rows, prompts,
+  transcripts, query text, user identifiers, compact-ref exposure, and Series
+  persistence. Verification passed:
+  `npm run test:ai-value-data-model-spine-readiness-lock`;
+  `npm run test:ai-value-customer-evidence-history-read-path-proof`;
+  `npm run test:ai-value-durable-series-read-path-decision`;
+  `npm run test:ai-value-measurement-cell-series-persistence-promotion-gate`;
+  `npm run run:ai-value-data-model-spine-readiness-lock`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Customer Evidence History Read-Path Proof and Durable Series
   Read-Path Decision (goal-directed, 2026-06-25): added the internal
   executable proof that Day 0 / 30 / 60 / 90 / 180 / 365 customer evidence

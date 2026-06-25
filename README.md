@@ -134,6 +134,19 @@ documented value-realization layers:
   schema, migration, repository path, route, UI, export, rendered readout, live
   wiring, model output, finance output, ROI, causality, productivity, or
   customer-facing economic output.
+- **AI Value data model spine readiness lock:** records that the compact
+  customer data model spine is ready for hardening toward real source wiring
+  only as a Boolean readiness contract. The implemented equation is
+  `measurement_cell_snapshots_promoted AND
+  ai_value_customer_data_model_snapshots_promoted AND
+  customer_data_model_route_projection_ready AND
+  customer_evidence_history_read_path_proven AND
+  durable_series_read_path_holds_series_persistence AND
+  all_blocked_outputs_false`. It explicitly reports no statistical model
+  equation, confidence math, or numeric weights; keeps Series persistence held;
+  and blocks model output, confidence/probability/score output, finance output,
+  live BigQuery/Sigma/Glean execution, ROI, causality, productivity, and
+  customer-facing economic output.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,

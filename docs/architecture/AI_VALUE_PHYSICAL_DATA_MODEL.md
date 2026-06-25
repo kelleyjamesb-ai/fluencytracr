@@ -76,6 +76,30 @@ readouts, exports, research-model inputs, and live connector persistence remain
 unpromoted. The hardened selected-path lineage is a contract prerequisite, not
 automatic authorization for any additional database objects.
 
+The executable
+[AI Value Data Model Spine Readiness Lock](../contracts/ai-value-data-model-spine-readiness-lock/README.md)
+records the current hard boundary as a Boolean readiness contract only:
+
+```text
+measurement_cell_snapshots_promoted
+AND ai_value_customer_data_model_snapshots_promoted
+AND customer_data_model_route_projection_ready
+AND customer_evidence_history_read_path_proven
+AND durable_series_read_path_holds_series_persistence
+AND all_blocked_outputs_false
+```
+
+That lock means the compact customer data model spine is ready for hardening
+toward real source wiring. It does not implement or authorize a statistical
+model equation, confidence math, numeric weights, model output, finance output,
+customer-facing economic output, live BigQuery/Sigma/Glean execution, or
+`measurement_cell_series_snapshots`.
+
+Historical planning documents, including `AI_VALUE_DATA_MODEL_AUDIT.md`, are
+planning context only. Current implementation authority remains the active
+persistence/design contracts and exact-scope promotion decisions recorded in
+this ledger.
+
 Recommended current projection:
 
 | Logical object | Current physical projection | Notes |
@@ -907,3 +931,6 @@ Recommended next move:
 5. Wire live BigQuery, Sigma, and Glean connector execution last, after the
    customer-facing route/UI projection contract proves it can consume the
    stable persisted product-data model without expanding the evidence boundary.
+   The Data Model Spine Readiness Lock authorizes only hardening for that
+   future source-wiring preparation, not live execution or customer-facing
+   economic output.
