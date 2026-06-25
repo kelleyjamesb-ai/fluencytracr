@@ -863,6 +863,18 @@ productivity, or customer-facing output. It may feed only a later
 `internal_bayesian_readiness_review_only` gate, and that next gate is not
 implemented by this frame.
 
+The executable
+[AI Value Contribution Alignment Internal Bayesian Readiness Review](../contracts/ai-value-contribution-alignment-internal-bayesian-readiness-review/README.md)
+is the reviewer gate after the Weighted Internal Model Frame. It binds to the
+frame id/hash and Versioned Weight Object ref, verifies weighted feature
+composition remains source-bound and non-output-bearing, and authorizes only a
+later `bayesian_model_specification_only` contract. It names
+`bayesian_hierarchical_difference_in_differences_candidate` as the candidate
+family, but it does not define priors, likelihood, estimands, posterior output,
+Bayesian execution, confidence output, probability output, finance output, ROI,
+causality, productivity, persistence, routes, UI, schemas, exports, live
+connectors, or customer-facing output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;

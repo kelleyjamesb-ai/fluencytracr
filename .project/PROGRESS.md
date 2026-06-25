@@ -2,6 +2,26 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Internal Bayesian Readiness Review slice
+  (2026-06-25): implemented the next governed gate after the Weighted Internal
+  Model Frame. The review binds to the weighted frame id/hash and Versioned
+  Weight Object ref, verifies source-bound weighted composition, records the
+  candidate family
+  `bayesian_hierarchical_difference_in_differences_candidate`, and authorizes
+  only `bayesian_model_specification_only`. It does not define priors,
+  likelihood, estimands, posterior output, Bayesian execution, confidence
+  output, probability output, score-like output, finance output, ROI,
+  causality, productivity, persistence, routes, UI, schemas, exports, live
+  connectors, or customer-facing output. Local CODE / BUG / ADVERSARIAL review
+  confirmed the ready sample keeps only the model-specification feed true,
+  keeps execution/posterior/confidence/probability policy false, and rejects
+  unsafe Bayesian side doors without echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-readiness-review`;
+  `npm run test:ai-value-contribution-alignment-weighted-internal-model-frame`;
+  `npm run run:ai-value-contribution-alignment-internal-bayesian-readiness-review`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Weighted Internal Model Frame slice
   (2026-06-25): implemented Step 4 of the weighted internal data model plan.
   The frame consumes the Versioned Weight Object, binds to the weight object,

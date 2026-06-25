@@ -302,6 +302,14 @@ documented value-realization layers:
   causality, productivity, persistence, exports, live connectors, UI, routes,
   schemas, and customer-facing output blocked while allowing only a later
   internal Bayesian readiness review.
+- **AI Value contribution alignment internal Bayesian readiness review:**
+  consumes the weighted internal model frame and authorizes only a later
+  Bayesian model specification contract. It names
+  `bayesian_hierarchical_difference_in_differences_candidate` as the candidate
+  model family but does not define priors, likelihood, estimands, posterior
+  output, confidence/probability output, Bayesian execution, finance output,
+  ROI, causality, productivity, persistence, exports, live connectors, UI,
+  routes, schemas, or customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -451,6 +459,7 @@ is not the lead positioning for this repository.
 - AI Value Contribution Alignment Internal Numeric Weight Decision: [docs/contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md](docs/contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md)
 - AI Value Contribution Alignment Versioned Weight Object: [docs/contracts/ai-value-contribution-alignment-versioned-weight-object/README.md](docs/contracts/ai-value-contribution-alignment-versioned-weight-object/README.md)
 - AI Value Contribution Alignment Weighted Internal Model Frame: [docs/contracts/ai-value-contribution-alignment-weighted-internal-model-frame/README.md](docs/contracts/ai-value-contribution-alignment-weighted-internal-model-frame/README.md)
+- AI Value Contribution Alignment Internal Bayesian Readiness Review: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-readiness-review/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-readiness-review/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)
