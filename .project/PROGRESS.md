@@ -2,6 +2,28 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Bayesian Model Specification slice
+  (2026-06-25): implemented the next governed phase after Internal Bayesian
+  Readiness Review. The specification binds to the readiness review id/hash and
+  Weighted Internal Model Frame ref, records
+  `bayesian_hierarchical_did_spec_2026_06`, and defines internal-only
+  specification placeholders for aggregate Measurement Cell window unit of
+  analysis, candidate selected-metric difference-in-differences estimand,
+  weakly regularizing prior posture, and aggregate-window likelihood posture.
+  It authorizes only `internal_bayesian_execution_gate_only`; it does not run
+  Bayesian execution, emit posterior output, confidence output, probability
+  output, score-like output, finance output, ROI, causality, productivity,
+  persistence, routes, UI, schemas, exports, live connectors, or
+  customer-facing output. Local CODE / BUG / ADVERSARIAL review confirmed the
+  ready sample keeps only the execution-gate feed true, keeps
+  execution/posterior/confidence/probability policy false, and rejects unsafe
+  model-spec side doors without echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-bayesian-model-specification`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-readiness-review`;
+  `npm run run:ai-value-contribution-alignment-bayesian-model-specification`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Internal Bayesian Readiness Review slice
   (2026-06-25): implemented the next governed gate after the Weighted Internal
   Model Frame. The review binds to the weighted frame id/hash and Versioned

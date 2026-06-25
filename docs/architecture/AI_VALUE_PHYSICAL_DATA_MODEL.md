@@ -875,6 +875,19 @@ Bayesian execution, confidence output, probability output, finance output, ROI,
 causality, productivity, persistence, routes, UI, schemas, exports, live
 connectors, or customer-facing output.
 
+The executable
+[AI Value Contribution Alignment Bayesian Model Specification](../contracts/ai-value-contribution-alignment-bayesian-model-specification/README.md)
+is the internal-only model specification after Bayesian readiness review. It
+binds to the readiness review id/hash and weighted frame ref, records
+`bayesian_hierarchical_did_spec_2026_06`, and defines specification placeholders
+for aggregate Measurement Cell window unit of analysis, candidate
+difference-in-differences estimand, weakly regularizing prior posture, and
+aggregate-window likelihood posture. It may feed only a later
+`internal_bayesian_execution_gate_only` contract. It does not run Bayesian
+execution, emit posterior output, confidence output, probability output,
+score-like output, finance output, ROI, causality, productivity, persistence,
+routes, UI, schemas, exports, live connectors, or customer-facing output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;
