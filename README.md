@@ -155,6 +155,14 @@ documented value-realization layers:
   readouts, model/confidence/probability/score output, finance/ROI/causality/
   productivity output, customer-facing output, or Measurement Cell Series
   persistence.
+- **AI Value connector promotion readiness sequence:** records the next four
+  actions as a governed requirements path: non-live connector promotion decision
+  requirements, held Glean source adapter boundary planning, source descriptor
+  promotion checklist, and exact-scope BigQuery/Sigma live connector gate design.
+  It names the future target of a full data model with weights and Bayesian
+  readiness, but keeps numeric weights, Bayesian model execution, model output,
+  confidence/probability/score output, live connectors, finance output, and
+  customer-facing output blocked.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,
@@ -398,6 +406,7 @@ is not the lead positioning for this repository.
 - AI Value Customer Data Model Route Projection: [docs/contracts/ai-value-customer-data-model-route-projection/README.md](docs/contracts/ai-value-customer-data-model-route-projection/README.md)
 - AI Value Data Model Spine Readiness Lock: [docs/contracts/ai-value-data-model-spine-readiness-lock/README.md](docs/contracts/ai-value-data-model-spine-readiness-lock/README.md)
 - AI Value Compact Source Wiring Hardening: [docs/contracts/ai-value-compact-source-wiring-hardening/README.md](docs/contracts/ai-value-compact-source-wiring-hardening/README.md)
+- AI Value Connector Promotion Readiness Sequence: [docs/contracts/ai-value-connector-promotion-readiness-sequence/README.md](docs/contracts/ai-value-connector-promotion-readiness-sequence/README.md)
 - AI Value Controlled Aggregate Connector Adapter: [docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md](docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md)
 - AI Value Aggregate Connector Boundary Plan: [docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md](docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md)
 - AI Value BigQuery Aggregate Export Review: [docs/contracts/ai-value-bigquery-aggregate-export-review/README.md](docs/contracts/ai-value-bigquery-aggregate-export-review/README.md)

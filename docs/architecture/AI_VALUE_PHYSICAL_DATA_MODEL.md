@@ -106,6 +106,17 @@ research-model feeds, model output, confidence/probability/score output,
 finance output, ROI, causality, productivity, customer-facing output, or
 additional physical tables.
 
+The executable
+[AI Value Connector Promotion Readiness Sequence](../contracts/ai-value-connector-promotion-readiness-sequence/README.md)
+is the current requirements path after compact source wiring hardening. It
+records non-live connector promotion requirements, holds Glean for a future
+source adapter boundary, creates the source-descriptor human checklist posture,
+and designs only the exact-scope BigQuery/Sigma live connector gate. It names
+the future target of a full data model with weights and Bayesian readiness, but
+does not authorize numeric weights, Bayesian model execution, model output,
+confidence/probability/score output, live connectors, finance output,
+customer-facing output, or additional physical tables.
+
 Historical planning documents, including `AI_VALUE_DATA_MODEL_AUDIT.md`, are
 planning context only. Current implementation authority remains the active
 persistence/design contracts and exact-scope promotion decisions recorded in
@@ -122,7 +133,7 @@ Recommended current projection:
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
 | Upstream Aggregate Handoff Acceptance Package | Executable validation output only | Do not persist upstream handoffs, acceptance packages, manifest packages, pipeline runs, connector runs, or full package JSON |
 | Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
-| Customer Data Model Snapshot | Compact backend-internal `ai_value_customer_data_model_snapshots` projection | Stable product-data grain for the separately contracted customer evidence status projection; no stored-row route/UI/export/customer output |
+| Customer Data Model Snapshot | Compact backend-internal `ai_value_customer_data_model_snapshots` projection | Stable product-data grain for the separately contracted customer evidence status projection; no stored-row route/UI/export/customer-facing output |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
 | Evidence Continuity Snapshot | Derived from Measurement Cell Series | Future extension of evidence lineage only if promoted |
 | Review Posture Snapshot | `claim_readiness_snapshots` and `executive_readout_snapshots` | Existing backend-only authority |
