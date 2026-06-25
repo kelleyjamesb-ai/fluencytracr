@@ -837,6 +837,21 @@ weighted model output, confidence output, probability output, Bayesian
 execution, finance output, ROI, causality, productivity, persistence, routes,
 UI, schemas, exports, live connectors, and customer-facing output blocked.
 
+The executable
+[AI Value Contribution Alignment Versioned Weight Object](../contracts/ai-value-contribution-alignment-versioned-weight-object/README.md)
+is the first internal-only numeric weight artifact after the Internal Numeric
+Weight Decision passes. It binds to the source weight-decision id/hash and
+Feature Stability Review id/hash, emits version
+`internal_structural_equal_weights_2026_06`, and assigns neutral equal
+structural weights to the ten governed feature inputs. Its calibration state is
+`initial_internal_structural_weights_not_empirical_confidence`, so it is not an
+empirical confidence model, posterior probability, score, ROI, or customer
+value claim. It may feed only a later weighted internal model frame and still
+keeps weighted model output, research model feed, confidence output,
+probability output, Bayesian execution, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, and
+customer-facing output blocked.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;

@@ -2,6 +2,29 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Versioned Weight Object slice (2026-06-25):
+  implemented Step 3 of the weighted internal data model plan. The object
+  consumes the Internal Numeric Weight Decision and Feature Stability Review,
+  binds to their ids and hashes, and emits version
+  `internal_structural_equal_weights_2026_06` with ten neutral equal weights
+  over the governed source-bound feature registry. The calibration state is
+  `initial_internal_structural_weights_not_empirical_confidence`, so this is
+  not empirical confidence, posterior probability, Bayesian execution, model
+  output, ROI, finance output, causality, productivity, or customer-facing
+  output. The only true downstream feed is
+  `weighted_internal_model_frame`; weighted model output, research model feed,
+  confidence/probability/score output, Bayesian execution, finance output, ROI,
+  causality, productivity, persistence, routes, UI, schemas, exports, live
+  connectors, and customer-facing output remain blocked. Local CODE / BUG /
+  ADVERSARIAL review confirmed the ready sample has only the frame feed true,
+  keeps output/Bayesian policy false, and rejects unsafe side doors without
+  echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-versioned-weight-object`;
+  `npm run test:ai-value-contribution-alignment-internal-numeric-weight-decision`;
+  `npm run run:ai-value-contribution-alignment-versioned-weight-object`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Compact Source Wiring Hardening (user-requested hardening,
   2026-06-25): added the executable non-live compact source descriptor bridge
   after the Data Model Spine Readiness Lock. The runner emits

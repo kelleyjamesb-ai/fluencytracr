@@ -282,6 +282,17 @@ documented value-realization layers:
   and keeps confidence/probability output, Bayesian execution, score-like
   output, finance output, ROI, causality, productivity, persistence, exports,
   live connectors, UI, routes, schemas, and customer-facing output blocked.
+- **AI Value contribution alignment versioned weight object:** consumes the
+  internal numeric weight decision and creates the first internal-only
+  structural weight set:
+  `internal_structural_equal_weights_2026_06`. It assigns neutral equal
+  weights across the ten governed source-bound feature inputs, records
+  `initial_internal_structural_weights_not_empirical_confidence`, and feeds
+  only a later weighted internal model frame. It does not emit weighted model
+  output, research model feed, confidence/probability output, Bayesian
+  execution, score-like output, finance output, ROI, causality, productivity,
+  persistence, exports, live connectors, UI, routes, schemas, or
+  customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -429,6 +440,7 @@ is not the lead positioning for this repository.
 - AI Value Research Promotion Readiness Packet: [docs/contracts/ai-value-research-promotion-readiness-packet/README.md](docs/contracts/ai-value-research-promotion-readiness-packet/README.md)
 - AI Value Contribution Alignment Feature Stability Review: [docs/contracts/ai-value-contribution-alignment-feature-stability-review/README.md](docs/contracts/ai-value-contribution-alignment-feature-stability-review/README.md)
 - AI Value Contribution Alignment Internal Numeric Weight Decision: [docs/contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md](docs/contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md)
+- AI Value Contribution Alignment Versioned Weight Object: [docs/contracts/ai-value-contribution-alignment-versioned-weight-object/README.md](docs/contracts/ai-value-contribution-alignment-versioned-weight-object/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)
