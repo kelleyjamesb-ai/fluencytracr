@@ -117,6 +117,13 @@ documented value-realization layers:
   compact-ref-only, and blocks model feeds, model implementation, numeric
   weights, score/probability output, finance output, persistence, exports,
   live connectors, and customer-facing output.
+- **AI Value contribution alignment internal research-design gate review:**
+  closes the current internal design chain by reviewing whether the compact
+  prototype review packet is safe enough for a later exact-scope
+  method-prototype decision. It remains non-persistent, compact-ref-only, and
+  blocks model feeds, model implementation, numeric weights, score/probability
+  output, finance output, persistence, exports, live connectors, and
+  customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
