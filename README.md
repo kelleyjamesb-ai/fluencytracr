@@ -276,6 +276,12 @@ documented value-realization layers:
   confidence/probability output, Bayesian execution, finance output, ROI,
   causality, productivity, persistence, exports, live connectors, UI, routes,
   schemas, or customer-facing output.
+- **AI Value contribution alignment internal numeric weight decision:** consumes
+  the feature stability review and authorizes only a later versioned internal
+  weight object. It contains no weight values, emits no weighted model frame,
+  and keeps confidence/probability output, Bayesian execution, score-like
+  output, finance output, ROI, causality, productivity, persistence, exports,
+  live connectors, UI, routes, schemas, and customer-facing output blocked.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -422,6 +428,7 @@ is not the lead positioning for this repository.
 - AI Value Controlled Aggregate Manifest Validation: [docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md](docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md)
 - AI Value Research Promotion Readiness Packet: [docs/contracts/ai-value-research-promotion-readiness-packet/README.md](docs/contracts/ai-value-research-promotion-readiness-packet/README.md)
 - AI Value Contribution Alignment Feature Stability Review: [docs/contracts/ai-value-contribution-alignment-feature-stability-review/README.md](docs/contracts/ai-value-contribution-alignment-feature-stability-review/README.md)
+- AI Value Contribution Alignment Internal Numeric Weight Decision: [docs/contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md](docs/contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)

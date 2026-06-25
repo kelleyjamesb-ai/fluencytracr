@@ -828,6 +828,15 @@ probability output, Bayesian execution, finance output, ROI, causality,
 productivity, persistence, routes, UI, schemas, exports, live connectors, or
 customer-facing output.
 
+The executable
+[AI Value Contribution Alignment Internal Numeric Weight Decision](../contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md)
+is the next reviewer-approved gate after feature stability passes. It promotes
+only a later versioned internal weight object and contains no weight values
+itself. It must remain bound to the feature-stability review id/hash and keeps
+weighted model output, confidence output, probability output, Bayesian
+execution, finance output, ROI, causality, productivity, persistence, routes,
+UI, schemas, exports, live connectors, and customer-facing output blocked.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;
