@@ -609,7 +609,7 @@ export interface ListAiValueSourcePackageRefsInput {
 
 export interface ListAiValueCustomerDataModelSnapshotsInput {
   orgId: string;
-  measurementPlanId: string;
+  measurementPlanId?: string;
   latestOnly?: boolean;
 }
 
@@ -5023,7 +5023,8 @@ export async function listAiValueCustomerDataModelSnapshots(
       .filter(
         (record) =>
           record.org_id === input.orgId &&
-          record.measurement_plan_id === input.measurementPlanId
+          (!input.measurementPlanId ||
+            record.measurement_plan_id === input.measurementPlanId)
       )
       .sort((left, right) =>
         left.customer_data_model_snapshot_id.localeCompare(
@@ -5043,7 +5044,9 @@ export async function listAiValueCustomerDataModelSnapshots(
   const rows = await getPrisma().customerDataModelSnapshot.findMany({
     where: {
       orgId: input.orgId,
-      measurementPlanId: input.measurementPlanId
+      ...(input.measurementPlanId
+        ? { measurementPlanId: input.measurementPlanId }
+        : {})
     },
     orderBy: [
       { customerDataModelSnapshotId: "asc" },

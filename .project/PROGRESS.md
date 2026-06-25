@@ -2,6 +2,52 @@
 
 ## Last Completed
 
+- AI Value Measurement Cell Series validation and Evidence Continuity placement
+  decision (goal-directed, 2026-06-25): verified repeated Day 0 / 30 / 60 / 90
+  / 180 / 365 milestone continuity through the existing contract-only
+  Measurement Cell Series layer and controlled repeated pilot package. Updated
+  the Series persistence promotion decision to
+  `HOLD_AFTER_REPEATED_MILESTONE_VALIDATION_NO_SERIES_SNAPSHOT_PROMOTION`:
+  `measurement_cell_series_snapshots` remain unimplemented because no durable
+  Series read-path need has been proven. Evidence Continuity remains inside the
+  Measurement Cell Series contract output; do not extend `evidence_snapshots`
+  or add continuity snapshot types until a later exact-scope decision authorizes
+  that path. No Prisma schema, migration, repository write, backend route,
+  frontend UI, export, live BigQuery/Sigma/Glean execution, confidence math,
+  ROI, causality, productivity, probability, or customer-facing financial
+  output was added. Verification passed:
+  `npm run test:ai-value-measurement-cell-series`;
+  `node --test scripts/validate_ai_value_controlled_pilot_evidence_package.test.mjs`.
+- AI Value Customer Data Model Route Projection (user-requested, 2026-06-25):
+  added the exact-scope read-only customer evidence status projection on top of
+  compact `ai_value_customer_data_model_snapshots`. The backend route
+  `GET /api/v1/ai-value/customer-data-model/projections` is org-scoped,
+  latest-only, strict on query shape, no-store, and allows only optional
+  explicit URL `measurement_plan_id` filtering; rejected queries still receive
+  the route boundary headers. The response is allowlisted to customer-safe
+  mapped labels, windows, aggregate evidence status, caveats, blocked outputs,
+  and next evidence action, and only clear validated rows may project. It does
+  not expose stored rows, org/client IDs, snapshot IDs, Measurement Cell IDs,
+  workflow IDs, cohort keys, source refs, aggregate-boundary refs, hashes,
+  source-export refs, pipeline refs, raw rows, query text, prompts, transcripts,
+  identifiers, exports, rendered readouts, live connector output,
+  confidence/probability/score output, ROI/finance output, causality,
+  productivity, or customer-facing financial output. The AI Value Workspace now
+  renders returned safe projections as a compact list, ignores stale local
+  measurement-plan filters unless the URL explicitly asks for one, and holds on
+  empty/error responses instead of substituting examples. BigQuery and Sigma
+  live wiring remain last and out of this slice. Verification passed:
+  `npm test --workspace backend -- --runTestsByPath tests/ai_value_customer_data_model_projection_api.test.ts --runInBand`;
+  `npm test --workspace frontend -- AIValueWorkspace.test.tsx`;
+  `npm test --workspace backend -- --runTestsByPath tests/ai_value_minimal_persistence.test.ts tests/ai_value_objects_api.test.ts tests/health_postgres.test.ts tests/ai_value_customer_data_model_projection_api.test.ts --runInBand`;
+  `npm run build --workspace backend`;
+  `npm run build --workspace frontend`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`;
+  `npm run test:ai-value-measurement-cell-snapshot-projection`;
+  `npm run test:ai-value-customer-data-model-promotion-gate`;
+  `npm run test:ai-value-customer-data-model-persistence-promotion-decision`;
+  `npm run test:ai-value-customer-data-model-persistence-implementation-decision`.
 - AI Value Measurement Cell Snapshot Projection (goal-directed, 2026-06-25):
   added the executable internal projection layer over compact backend-internal
   `measurement_cell_snapshots` rows. The runner emits only an

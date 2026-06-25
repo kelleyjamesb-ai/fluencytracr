@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
@@ -16,6 +16,11 @@ import {
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
+import {
+  fetchCustomerDataModelProjections,
+  type CustomerDataModelProjection,
+  type CustomerDataModelProjectionResponse
+} from "../lib/aiValueApi";
 
 const workspacePages = [
   {
@@ -1009,6 +1014,31 @@ const displayPilotUses = (uses: unknown, labels: Record<string, string>) =>
     ? uses.map((use) => labelFromToken(use, labels)).filter(Boolean)
     : [];
 
+const customerProjectionRole = () =>
+  (localStorage.getItem("role") ?? "EXEC_VIEWER").trim() || "EXEC_VIEWER";
+
+const customerProjectionMeasurementPlanId = () => {
+  const query = new URLSearchParams(window.location.search);
+  return query.get("measurement_plan_id");
+};
+
+const hasCustomerProjectionRows = (
+  response: CustomerDataModelProjectionResponse | null
+) =>
+  response?.projection_state === "SOURCE_BOUND_CUSTOMER_EVIDENCE_STATUS_READY" &&
+  Array.isArray(response.projections) &&
+  response.projections.length > 0;
+
+const visibleBlockedCustomerProjectionOutputs = (
+  projection: CustomerDataModelProjection | null
+) => {
+  const blocked = projection?.blocked_outputs ?? [];
+  return blocked.filter((item) => item === "Live connector output").slice(0, 1);
+};
+
+const customerProjectionWindowLabel = (window: { start: string; end: string }) =>
+  `${window.start} to ${window.end}`;
+
 const prioritizedPilotUses = (
   uses: string[],
   priority: string[],
@@ -1302,6 +1332,8 @@ const WorkspaceHome = ({
 
     <SourcePackageReviewQueuePanel />
 
+    <CustomerDataModelProjectionPanel />
+
     <section className="ai-value-phase-grid" aria-label="Workspace phase cards">
       {workspacePages.filter((page) => page.slug !== "home").map((page, index) => (
         <article className="ai-value-panel ai-value-phase-card" key={page.slug}>
@@ -1432,6 +1464,119 @@ const SourcePackageReviewQueuePanel = () => {
           Data Spine or Measurement Cell readiness by themselves.
         </p>
       </div>
+    </section>
+  );
+};
+
+const CustomerDataModelProjectionPanel = () => {
+  const [projectionResponse, setProjectionResponse] =
+    useState<CustomerDataModelProjectionResponse | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "held">("loading");
+  const measurementPlanId = customerProjectionMeasurementPlanId();
+
+  useEffect(() => {
+    let active = true;
+    setLoadState("loading");
+    fetchCustomerDataModelProjections(customerProjectionRole(), measurementPlanId)
+      .then((response) => {
+        if (!active) return;
+        setProjectionResponse(response);
+        setLoadState(hasCustomerProjectionRows(response) ? "ready" : "held");
+      })
+      .catch(() => {
+        if (!active) return;
+        setProjectionResponse(null);
+        setLoadState("held");
+      });
+    return () => {
+      active = false;
+    };
+  }, [measurementPlanId]);
+
+  const projections = projectionResponse?.projections ?? [];
+  const primaryProjection = projections[0] ?? null;
+  const ready = loadState === "ready" && projections.length > 0;
+  const blockedOutputs =
+    visibleBlockedCustomerProjectionOutputs(primaryProjection);
+
+  return (
+    <section
+      className="ai-value-customer-projection-panel"
+      aria-label="Customer evidence projection"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <p className="eyebrow">Source-bound projection</p>
+          <h3>Customer evidence projection</h3>
+          <p>
+            Compact evidence status over governed customer data model
+            snapshots. Live connector work stays out of this surface.
+          </p>
+        </div>
+        <StatusPill
+          label={ready ? "Source-bound status" : "Held until snapshot exists"}
+          tone={ready ? "good" : "warn"}
+        />
+      </div>
+
+      {ready ? (
+        <>
+          <div className="ai-value-customer-projection-list">
+            {projections.map((projection, index) => (
+              <div
+                className="ai-value-customer-projection-grid"
+                key={`${projection.metric.label}-${projection.workflow_context.function_area}-${projection.milestone.day}-${index}`}
+              >
+                <article>
+                  <span className="ai-value-map-label">Metric</span>
+                  <strong>{projection.metric.label}</strong>
+                  <p>
+                    {projection.metric.direction} / {projection.metric.unit}
+                  </p>
+                </article>
+                <article>
+                  <span className="ai-value-map-label">Function</span>
+                  <strong>{projection.workflow_context.function_area}</strong>
+                  <p>{projection.workflow_context.workflow_label}</p>
+                </article>
+                <article>
+                  <span className="ai-value-map-label">Milestone</span>
+                  <strong>Day {projection.milestone.day}</strong>
+                  <p>{customerProjectionWindowLabel(projection.milestone.comparison_window)}</p>
+                </article>
+                <article>
+                  <span className="ai-value-map-label">Source review</span>
+                  <strong>{projection.evidence_status.aggregate_review_state}</strong>
+                  <p>{projection.evidence_status.validation_state}</p>
+                </article>
+              </div>
+            ))}
+          </div>
+
+          <div className="ai-value-customer-projection-boundary">
+            <article>
+              <h4>Required caveat</h4>
+              <p>{primaryProjection?.caveats[0] ?? "Aggregate evidence status only."}</p>
+            </article>
+            <article>
+              <h4>Blocked output</h4>
+              <div className="ai-value-token-pilot-chip-list ai-value-token-pilot-chip-list-blocked">
+                {(blockedOutputs.length > 0 ? blockedOutputs : ["Live connector output"]).map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+            </article>
+          </div>
+        </>
+      ) : (
+        <div className="ai-value-customer-projection-held">
+          <strong>No governed customer projection available</strong>
+          <p>
+            A compact customer data model snapshot must exist first. Until then,
+            this surface stays empty instead of substituting example values.
+          </p>
+        </div>
+      )}
     </section>
   );
 };

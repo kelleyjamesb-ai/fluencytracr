@@ -87,9 +87,25 @@ documented value-realization layers:
   and bounds the only promoted physical slice for customer-ready product data:
   one append-only compact `ai_value_customer_data_model_snapshots` table plus
   internal repository write/read paths derived from valid Measurement Cell
-  Snapshot Projection inputs. It still blocks routes, UI, exports, rendered
-  readouts, live connectors, confidence/probability/score output, finance
-  output, and customer-facing output.
+  Snapshot Projection inputs. It does not by itself expose stored rows,
+  exports, rendered readouts, live connectors, confidence/probability/score
+  output, finance output, or customer-facing economic output.
+- **AI Value customer data model route projection:** opens the exact read-only
+  customer evidence status projection over
+  `ai_value_customer_data_model_snapshots`: one source-bound backend route and
+  one compact workspace panel. It exposes approved customer-safe labels, windows,
+  evidence status, caveats, blocked outputs, and next evidence action only; it
+  only projects clear validated rows; it does not derive customer labels from
+  compact IDs, apply stale local filters, or expose stored rows, org/client IDs,
+  snapshot IDs, source refs, hashes, raw rows, exports, rendered readouts, live
+  BigQuery/Sigma/Glean execution, confidence/probability/score output, ROI,
+  finance output, causality, productivity, or customer-facing financial output.
+- **AI Value Measurement Cell Series persistence decision:** repeated Day 0 /
+  30 / 60 / 90 / 180 / 365 validation now passes through the contract-only
+  Measurement Cell Series layer, but durable `measurement_cell_series_snapshots`
+  remain held because no product read-path need has been proven. Evidence
+  Continuity stays inside the Series contract output for now; do not extend
+  `evidence_snapshots` until a later exact-scope decision authorizes it.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,

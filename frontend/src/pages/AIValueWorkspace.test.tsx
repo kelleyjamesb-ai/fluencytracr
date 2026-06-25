@@ -38,6 +38,109 @@ const jsonResponse = (body: unknown) =>
     headers: { "content-type": "application/json" }
   });
 
+const customerProjectionResponse = {
+  schema_version: "FT_AI_VALUE_CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_2026_06",
+  projection_state: "SOURCE_BOUND_CUSTOMER_EVIDENCE_STATUS_READY",
+  display_mode: "customer_evidence_status",
+  source_bound: true,
+  filter_applied: "latest_org_scoped",
+  live_connector_execution: false,
+  allowed_customer_outputs: [
+    "Aggregate evidence status",
+    "Measurement context",
+    "Source-bound caveats",
+    "Next evidence action"
+  ],
+  blocked_customer_outputs: [
+    "ROI proof",
+    "Financial output",
+    "Causal proof",
+    "Productivity output",
+    "Confidence, probability, or score output",
+    "Live connector output",
+    "Export package",
+    "Raw data or source payload"
+  ],
+  projections: [
+    {
+      value_driver: "Capacity",
+      metric: {
+        label: "Capacity metric",
+        direction: "decrease",
+        unit: "hours",
+        owner_review_state: "Metric owner approved"
+      },
+      workflow_context: {
+        function_area: "Customer Support",
+        workflow_label: "Customer Support workflow"
+      },
+      milestone: {
+        day: 60,
+        baseline_window: { start: "2026-02-01", end: "2026-03-31" },
+        comparison_window: { start: "2026-05-01", end: "2026-06-30" }
+      },
+      evidence_status: {
+        aggregate_review_state: "Aggregate export review passed",
+        validation_state: "clear"
+      },
+      caveats: [
+        "Aggregate evidence status only; customer-owned outcome review remains required."
+      ],
+      allowed_output: "Aggregate evidence status only",
+      blocked_outputs: [
+        "ROI proof",
+        "Financial output",
+        "Causal proof",
+        "Productivity output",
+        "Confidence, probability, or score output",
+        "Live connector output",
+        "Export package",
+        "Raw data or source payload"
+      ],
+      next_action:
+        "Customer-owned outcome review is required before any stronger claim is considered."
+    },
+    {
+      value_driver: "Risk",
+      metric: {
+        label: "Risk metric",
+        direction: "maintain",
+        unit: "rate",
+        owner_review_state: "Metric owner approved"
+      },
+      workflow_context: {
+        function_area: "Legal",
+        workflow_label: "Legal workflow"
+      },
+      milestone: {
+        day: 90,
+        baseline_window: { start: "2026-01-01", end: "2026-03-31" },
+        comparison_window: { start: "2026-07-01", end: "2026-09-30" }
+      },
+      evidence_status: {
+        aggregate_review_state: "Aggregate export review passed",
+        validation_state: "clear"
+      },
+      caveats: [
+        "Aggregate evidence status only; customer-owned outcome review remains required."
+      ],
+      allowed_output: "Aggregate evidence status only",
+      blocked_outputs: [
+        "ROI proof",
+        "Financial output",
+        "Causal proof",
+        "Productivity output",
+        "Confidence, probability, or score output",
+        "Live connector output",
+        "Export package",
+        "Raw data or source payload"
+      ],
+      next_action:
+        "Customer-owned outcome review is required before any stronger claim is considered."
+    }
+  ]
+};
+
 const renderWorkspace = (path = "/ai-value-workspace") =>
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -153,6 +256,111 @@ describe("AIValueWorkspace executive spine", () => {
       "ROI proof",
       "productivity proof",
       "customer-facing financial output"
+    ]);
+  });
+
+  it("renders source-bound customer data model projections from the route contract", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/ai-value/customer-data-model/projections")) {
+        return jsonResponse(customerProjectionResponse);
+      }
+      return jsonResponse({ objects: [] });
+    });
+
+    const { container } = renderWorkspace();
+
+    const panel = await screen.findByRole("region", {
+      name: /Customer evidence projection/i
+    });
+    expect(within(panel).getByText(/Customer evidence projection/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Source-bound status/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Capacity metric/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Risk metric/i)).toBeInTheDocument();
+    expect(within(panel).getByText("Customer Support", { selector: "strong" })).toBeInTheDocument();
+    expect(within(panel).getByText("Legal", { selector: "strong" })).toBeInTheDocument();
+    expect(within(panel).getByText(/Day 60/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Day 90/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/2026-05-01 to 2026-06-30/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/2026-07-01 to 2026-09-30/i)).toBeInTheDocument();
+    expect(within(panel).getAllByText(/Aggregate export review passed/i)).toHaveLength(2);
+    expect(within(panel).getByText(/Aggregate evidence status only/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Live connector output/i)).toBeInTheDocument();
+    expect(within(panel).queryByText(/db_row_do_not_expose/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/source_refs/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/projection_hash/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/support_median_resolution_hours/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/workflow_support_case_resolution/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/org-northstar-enterprise/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/customer-facing financial output/i)).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "confidence",
+      "probability",
+      "score output",
+      "financial output"
+    ]);
+  });
+
+  it("does not apply stale local measurement-plan filters to the default customer projection", async () => {
+    localStorage.setItem(
+      "aiValue.customerDataModelMeasurementPlanId",
+      "measurement_plan_stale_do_not_use"
+    );
+    const requestedUrls: string[] = [];
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.includes("/api/v1/ai-value/customer-data-model/projections")) {
+        return jsonResponse(customerProjectionResponse);
+      }
+      return jsonResponse({ objects: [] });
+    });
+
+    renderWorkspace();
+
+    await waitFor(() =>
+      expect(
+        requestedUrls.some((url) =>
+          url.includes("/api/v1/ai-value/customer-data-model/projections")
+        )
+      ).toBe(true)
+    );
+    const projectionUrl = requestedUrls.find((url) =>
+      url.includes("/api/v1/ai-value/customer-data-model/projections")
+    );
+    expect(projectionUrl).toBe("/api/v1/ai-value/customer-data-model/projections");
+  });
+
+  it("keeps the customer data model projection held when the route has no snapshots", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/ai-value/customer-data-model/projections")) {
+        return jsonResponse({
+          schema_version: "FT_AI_VALUE_CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_2026_06",
+          projection_state: "HOLD_FOR_CUSTOMER_DATA_MODEL_SNAPSHOTS",
+          display_mode: "customer_evidence_status",
+          source_bound: true,
+          filter_applied: "latest_org_scoped",
+          live_connector_execution: false,
+          allowed_customer_outputs: [],
+          blocked_customer_outputs: ["Live connector output"],
+          projections: []
+        });
+      }
+      return jsonResponse({ objects: [] });
+    });
+
+    const { container } = renderWorkspace();
+    const panel = await screen.findByRole("region", {
+      name: /Customer evidence projection/i
+    });
+
+    expect(within(panel).getByText(/No governed customer projection available/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/A compact customer data model snapshot must exist first/i)).toBeInTheDocument();
+    expect(within(panel).queryByText(/Customer Success account health review/i)).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "customer-facing financial output",
+      "Glean proved ROI"
     ]);
   });
 

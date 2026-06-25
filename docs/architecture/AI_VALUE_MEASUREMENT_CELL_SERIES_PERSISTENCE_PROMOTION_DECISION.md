@@ -8,7 +8,8 @@ customer-facing financial output.
 
 Phase: `phase-ai-value-measurement-cell-series-persistence-promotion-decision`
 
-Decision: `HOLD_FOR_EXACT_SERIES_PERSISTENCE_SCOPE_DECISION`
+Decision:
+`HOLD_AFTER_REPEATED_MILESTONE_VALIDATION_NO_SERIES_SNAPSHOT_PROMOTION`
 
 ## 1. Purpose
 
@@ -27,7 +28,7 @@ Do not implement `measurement_cell_series_snapshots` yet.
 Decision value:
 
 ```text
-HOLD_FOR_EXACT_SERIES_PERSISTENCE_SCOPE_DECISION
+HOLD_AFTER_REPEATED_MILESTONE_VALIDATION_NO_SERIES_SNAPSHOT_PROMOTION
 ```
 
 Reason:
@@ -36,19 +37,21 @@ Reason:
   separate exact-scope decision;
 - the controlled scrubbed aggregate pilot produces promotion-review evidence
   for the saved aggregate fixture;
-- the repeated controlled pilot package now validates generated Day 0 / 30 /
-  60 / 90 / 180 / 365 milestone variants through the existing Measurement Cell
+- repeated milestone validation has now passed for generated Day 0 / 30 / 60 /
+  90 / 180 / 365 milestone variants through the existing Measurement Cell
   Series continuity/alignment contract;
-- the repeated package is still internal review evidence only and does not
-  authorize durable Series product state;
+- the customer data model route/UI projection can consume clear compact
+  snapshots as plural status rows without needing durable Series state;
+- no current customer-facing route, UI, export, rendered readout, downstream
+  review gate, or live connector path requires a persisted Series read path;
 - rolling 30-day operating context remains quarantined;
 - Series persistence would imply product-state maturity that the current
-  decision has not separately authorized.
+  product path has not proven is necessary.
 
-## 3. Required Milestone Evidence
+## 3. Repeated Milestone Evidence
 
-Series persistence can be reconsidered only after a repeated Measurement Cell
-workflow has validated these milestone windows:
+Repeated Measurement Cell workflow validation has been exercised across these
+milestone windows:
 
 - Day 0
 - Day 30
@@ -72,6 +75,17 @@ Each milestone must preserve the same:
 - source-ref posture;
 - approval lineage;
 - caveats and blocked uses.
+
+Fresh verification on 2026-06-25:
+
+```bash
+npm run test:ai-value-measurement-cell-series
+node --test scripts/validate_ai_value_controlled_pilot_evidence_package.test.mjs
+```
+
+Result: both commands passed. The validation proves internal continuity and
+alignment evidence exists. It does not prove a durable Series snapshot table is
+needed.
 
 ## 4. Rolling Window Boundary
 
@@ -112,14 +126,41 @@ If a later decision promotes Series persistence, tests must reject:
 
 ## 6. Recommended Next Move
 
-Keep Series persistence blocked. Use the repeated controlled pilot package and
-backend-internal Measurement Cell snapshots as internal review evidence only.
+Keep Series persistence blocked. Use the repeated controlled pilot package,
+Measurement Cell Series contract output, and backend-internal Measurement Cell
+snapshots as internal review evidence only.
 
 Do not reconsider Series persistence until the repo records an explicit
 decision naming the exact `measurement_cell_series_snapshots` table,
 projection, and read-path purpose required for the next pilot.
 
-## 7. Verification
+## 7. Evidence Continuity Placement
+
+Current placement:
+
+```text
+KEEP_EVIDENCE_CONTINUITY_INSIDE_MEASUREMENT_CELL_SERIES_CONTRACT_OUTPUT
+```
+
+Do not extend `evidence_snapshots` for continuity yet.
+
+Reason:
+
+- the existing Measurement Cell Series contract already emits the compact
+  `evidence_continuity_manifest` needed for Day 0 / 30 / 60 / 90 / 180 / 365
+  review;
+- the customer data model projection does not consume Evidence Continuity
+  directly;
+- no downstream persisted evidence lineage requires a new continuity
+  `snapshot_type`;
+- extending `evidence_snapshots` now would create a second durable evidence
+  surface before a read-path need exists.
+
+If a later product read path requires continuity outside Series, prefer
+deliberately extending `evidence_snapshots` lineage under a separate migration
+and contract decision rather than creating a parallel evidence-continuity table.
+
+## 8. Verification
 
 When this decision is changed, run:
 

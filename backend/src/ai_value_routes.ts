@@ -9,6 +9,7 @@
  */
 import type { Express, Response } from "express";
 import { aiValueEngine } from "@learnaire/shared";
+import { z } from "zod";
 
 import { rbacMiddleware, type RequestWithRole } from "./rbac";
 import {
@@ -16,6 +17,10 @@ import {
   listAiValueObjects,
   upsertAiValueObject
 } from "./repositories/ai-value-object.repository";
+import {
+  listAiValueCustomerDataModelSnapshots
+} from "./repositories/ai-value-minimal-persistence.repository";
+import type { AiValueCustomerDataModelSnapshotStoredRecord } from "./store";
 import {
   AiValueMaterializerNotFoundError,
   AiValueMaterializerValidationError,
@@ -89,6 +94,205 @@ const OBJECT_TYPES: Record<string, ObjectTypeConfig> = {
 };
 
 export const AI_VALUE_OBJECT_TYPES = Object.keys(OBJECT_TYPES);
+
+const CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_SCHEMA_VERSION =
+  "FT_AI_VALUE_CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_2026_06";
+
+const CustomerDataModelProjectionQuerySchema = z
+  .object({
+    measurement_plan_id: z.string().min(1).optional()
+  })
+  .strict();
+
+const CUSTOMER_DATA_MODEL_ALLOWED_OUTPUTS = [
+  "Aggregate evidence status",
+  "Measurement context",
+  "Source-bound caveats",
+  "Next evidence action"
+];
+
+const CUSTOMER_DATA_MODEL_BLOCKED_OUTPUTS = [
+  "ROI proof",
+  "Financial output",
+  "Causal proof",
+  "Productivity output",
+  "Confidence, probability, or score output",
+  "Live connector output",
+  "Export package",
+  "Raw data or source payload"
+];
+
+const CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_LIMIT = 12;
+
+const CUSTOMER_DATA_MODEL_ROUTE_CAVEATS = [
+  "Aggregate evidence status only; customer-owned outcome review remains required."
+];
+
+const CUSTOMER_DATA_MODEL_LABEL_MAX_LENGTH = 80;
+
+const CUSTOMER_DATA_MODEL_APPROVED_LABEL_PATTERN =
+  /^[A-Za-z0-9][A-Za-z0-9 &()/+.,'-]*$/;
+
+const CUSTOMER_DATA_MODEL_UNSAFE_LABEL_PATTERNS = [
+  /_/,
+  /:/,
+  /\b[a-f0-9]{64}\b/i,
+  /\b(?:bigquery|client|connector|dashboard|dataset|export|glean|hash|internal|job|org|pipeline|project|prompt|query|raw|ref|row|sigma|snapshot|source|sql|table|transcript|user|uuid|warehouse|workbook)\b/i,
+  /\bdo\s*not\s*(?:expose|show)\b/i,
+  /\bmeasurement\s*cell\b/i,
+  /\b(?:causal|confidence|financial|probability|productivity|roi|score)\b/i
+];
+
+const approvedCustomerLabel = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  const label = value.replace(/\s+/g, " ").trim();
+  if (
+    label.length === 0 ||
+    label.length > CUSTOMER_DATA_MODEL_LABEL_MAX_LENGTH ||
+    !CUSTOMER_DATA_MODEL_APPROVED_LABEL_PATTERN.test(label) ||
+    CUSTOMER_DATA_MODEL_UNSAFE_LABEL_PATTERNS.some((pattern) =>
+      pattern.test(label)
+    )
+  ) {
+    return null;
+  }
+  return label;
+};
+
+const customerMetricLabel = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+) => `${customerValueDriver(record.value_driver)} metric`;
+
+const CUSTOMER_DATA_MODEL_VALUE_DRIVER_LABELS: Record<string, string> = {
+  Revenue: "Revenue",
+  Cost: "Cost",
+  Capacity: "Capacity",
+  Quality: "Quality",
+  Risk: "Risk"
+};
+
+const customerValueDriver = (value: string) =>
+  CUSTOMER_DATA_MODEL_VALUE_DRIVER_LABELS[value] ?? "Customer value";
+
+const customerFunctionAreaLabel = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+) => approvedCustomerLabel(record.function_area) ?? "Approved function";
+
+const customerWorkflowLabel = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+) => {
+  const functionArea = approvedCustomerLabel(record.function_area);
+  return functionArea ? `${functionArea} workflow` : "Approved workflow context";
+};
+
+const customerMetricOwnerReviewState = (value: string) =>
+  value.toLowerCase() === "approved"
+    ? "Metric owner approved"
+    : "Metric owner review held";
+
+const CUSTOMER_DATA_MODEL_METRIC_DIRECTIONS: Record<string, string> = {
+  increase: "increase",
+  decrease: "decrease",
+  maintain: "maintain",
+  monitor: "monitor",
+  no_change: "no change"
+};
+
+const customerMetricDirection = (value: string) =>
+  CUSTOMER_DATA_MODEL_METRIC_DIRECTIONS[value] ?? "metric direction held";
+
+const CUSTOMER_DATA_MODEL_METRIC_UNITS = new Set([
+  "hours",
+  "days",
+  "minutes",
+  "seconds",
+  "count",
+  "cases",
+  "tickets",
+  "percent",
+  "percentage",
+  "rate"
+]);
+
+const customerMetricUnit = (value: string) =>
+  CUSTOMER_DATA_MODEL_METRIC_UNITS.has(value) &&
+  approvedCustomerLabel(value) === value
+    ? value
+    : "metric unit held";
+
+const CUSTOMER_DATA_MODEL_PASSED_AGGREGATE_REVIEW_STATES = new Set([
+  "passed_review",
+  "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW",
+  "PASSED_SIGMA_AGGREGATE_CONNECTOR_BOUNDARY_REVIEW"
+]);
+
+const customerAggregateReviewState = (value: string) =>
+  CUSTOMER_DATA_MODEL_PASSED_AGGREGATE_REVIEW_STATES.has(value)
+    ? "Aggregate export review passed"
+    : "Aggregate review held";
+
+const customerValidationState = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+) =>
+  record.validation_valid &&
+  record.assembly_validation_valid &&
+  record.validation_gap_count === 0 &&
+  record.assembly_validation_gap_count === 0
+    ? "clear"
+    : "held";
+
+const customerWindow = (start: string, end: string) => ({ start, end });
+
+const setCustomerDataModelProjectionBoundaryHeaders = (res: Response) => {
+  res.set("cache-control", "no-store");
+  res.set(
+    "x-ai-value-customer-projection-boundary",
+    "source_bound_customer_data_model_projection"
+  );
+  res.set("x-ai-value-live-connectors", "false");
+  res.set("x-ai-value-export-authorized", "false");
+  res.set("x-ai-value-customer-facing-economic-output", "false");
+};
+
+const customerDataModelProjection = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+) => ({
+  value_driver: customerValueDriver(record.value_driver),
+  metric: {
+    label: customerMetricLabel(record),
+    unit: customerMetricUnit(record.metric_unit),
+    direction: customerMetricDirection(record.metric_direction),
+    owner_review_state: customerMetricOwnerReviewState(
+      record.metric_owner_approval_state
+    )
+  },
+  workflow_context: {
+    function_area: customerFunctionAreaLabel(record),
+    workflow_label: customerWorkflowLabel(record)
+  },
+  milestone: {
+    day: record.milestone_day,
+    baseline_window: customerWindow(
+      record.baseline_window_start,
+      record.baseline_window_end
+    ),
+    comparison_window: customerWindow(
+      record.comparison_window_start,
+      record.comparison_window_end
+    )
+  },
+  evidence_status: {
+    aggregate_review_state: customerAggregateReviewState(
+      record.aggregate_export_review_state
+    ),
+    validation_state: customerValidationState(record)
+  },
+  caveats: CUSTOMER_DATA_MODEL_ROUTE_CAVEATS,
+  allowed_output: "Aggregate evidence status only",
+  blocked_outputs: CUSTOMER_DATA_MODEL_BLOCKED_OUTPUTS,
+  next_action:
+    "Customer-owned outcome review is required before any stronger claim is considered."
+});
 
 const workflowFamilyOf = (payload: Record<string, unknown>): string | null => {
   if (typeof payload.workflow_family === "string") {
@@ -283,6 +487,62 @@ const invalidExecutivePacketGaps = (payload: Record<string, unknown>): string[] 
 };
 
 export function registerAiValueRoutes(app: Express): void {
+  app.get(
+    "/api/v1/ai-value/customer-data-model/projections",
+    rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+      setCustomerDataModelProjectionBoundaryHeaders(res);
+
+      const parsed = CustomerDataModelProjectionQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "only measurement_plan_id is allowed for this source-bound projection",
+          reason: "INVALID_CUSTOMER_DATA_MODEL_PROJECTION_QUERY"
+        });
+      }
+
+      const records = await listAiValueCustomerDataModelSnapshots({
+        orgId,
+        measurementPlanId: parsed.data.measurement_plan_id,
+        latestOnly: true
+      });
+      const projections = records
+        .filter((record) => customerValidationState(record) === "clear")
+        .slice(0, CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_LIMIT)
+        .map(customerDataModelProjection);
+      const projectionState =
+        projections.length > 0
+          ? "SOURCE_BOUND_CUSTOMER_EVIDENCE_STATUS_READY"
+          : "HOLD_FOR_CUSTOMER_DATA_MODEL_SNAPSHOTS";
+
+      return res.json({
+        schema_version: CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_SCHEMA_VERSION,
+        projection_state: projectionState,
+        display_mode: "customer_evidence_status",
+        source_bound: true,
+        filter_applied: parsed.data.measurement_plan_id
+          ? "measurement_plan"
+          : "latest_org_scoped",
+        live_connector_execution: false,
+        boundary: {
+          live_connectors: false,
+          live_bigquery_execution: false,
+          live_sigma_execution: false,
+          exports: false,
+          rendered_readout: false,
+          raw_or_identity_data: false,
+          model_or_economic_claims: false,
+          source_payload_exposure: false
+        },
+        allowed_customer_outputs: CUSTOMER_DATA_MODEL_ALLOWED_OUTPUTS,
+        blocked_customer_outputs: CUSTOMER_DATA_MODEL_BLOCKED_OUTPUTS,
+        projections
+      });
+    }
+  );
+
   app.post(
     "/api/v1/ai-value/materialize/real-evidence",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),

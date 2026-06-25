@@ -45,7 +45,7 @@ Implemented relevant tables:
 | `executive_readout_snapshots` | Backend-only internal readout posture | Implemented, not rendered or customer-facing output |
 | `ai_value_pilot_runs` | Snapshot-aware pilot lineage ledger | Implemented metadata lineage |
 | `measurement_cell_snapshots` | Compact backend-internal Measurement Cell snapshot | Implemented append-only internal product-data spine |
-| `ai_value_customer_data_model_snapshots` | Compact customer data model snapshot over a validated Measurement Cell snapshot projection | Implemented append-only internal product-data spine; no customer route/UI/export |
+| `ai_value_customer_data_model_snapshots` | Compact customer data model snapshot over a validated Measurement Cell snapshot projection | Implemented append-only internal product-data spine; only the separately contracted customer evidence status projection may read from it |
 
 All future tables must preserve the current public-table posture:
 
@@ -87,7 +87,7 @@ Recommended current projection:
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
 | Upstream Aggregate Handoff Acceptance Package | Executable validation output only | Do not persist upstream handoffs, acceptance packages, manifest packages, pipeline runs, connector runs, or full package JSON |
 | Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
-| Customer Data Model Snapshot | Compact backend-internal `ai_value_customer_data_model_snapshots` projection | Stable product-data grain for future UI/API projection decisions; no route/UI/export/customer output yet |
+| Customer Data Model Snapshot | Compact backend-internal `ai_value_customer_data_model_snapshots` projection | Stable product-data grain for the separately contracted customer evidence status projection; no stored-row route/UI/export/customer output |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
 | Evidence Continuity Snapshot | Derived from Measurement Cell Series | Future extension of evidence lineage only if promoted |
 | Review Posture Snapshot | `claim_readiness_snapshots` and `executive_readout_snapshots` | Existing backend-only authority |
@@ -409,7 +409,13 @@ Persistence Implementation Decision contracts.
 
 Purpose: append-only durable product-data snapshot derived from one valid
 Measurement Cell Snapshot Projection. The stored row is the stable customer data
-model grain that a later route/UI projection decision can use. It is not a
+model grain that the separate Customer Data Model Route Projection contract can
+map into status-only labels. Customer-visible route strings must come from exact
+enum mappings, approved business-context fields, or fixed status mappings, never
+by prettifying compact IDs such as `metric_id`, `workflow_family`, source refs,
+source-export refs, pipeline refs, connector handles, warehouse handles, hashes,
+org IDs, client IDs, or Measurement Cell IDs. The route must project only rows
+whose validation posture is clear. The stored row itself is not a
 customer-facing read path, rendered readout, export payload, model result,
 finance output, connector run, source package, full Measurement Cell, or full
 projection payload.
@@ -478,12 +484,15 @@ Blocked design:
   query text, SQL text, prompts, responses, transcripts, file contents,
   identifiers, row IDs, span IDs, hashed identifiers, or joinable person
   identifiers;
-- no customer-facing route, frontend UI, export, rendered readout, live
+- no unrestricted stored-row route, frontend UI, export, rendered readout, live
   BigQuery/Sigma/Glean execution, customer connector execution, unrestricted
   read surface, research-model feed, model output, numeric weights,
   probability output, score-like output, finance output, ROI, EBITDA,
   causality, productivity, customer-facing output, or customer-facing financial
-  output;
+  output. The only allowed read projection is the separately contracted
+  source-bound customer evidence status route, which must not expose stored row
+  IDs, source refs, hashes, raw data, exports, readouts, live connectors, model
+  output, or economic claims;
 - no rolling 30-day continuity evidence. Rolling windows remain operating
   context only and must fail closed before this persistence path.
 
@@ -498,7 +507,9 @@ Purpose: append-only durable continuity snapshot across repeated Measurement
 Cells at governed milestones.
 
 Do not implement until a later promotion explicitly authorizes durable
-Measurement Cell Series state.
+Measurement Cell Series state. Repeated Day 0 / 30 / 60 / 90 / 180 / 365
+validation has passed through the contract-only Series layer; persistence still
+remains held because no durable Series read-path need has been proven.
 
 Non-authorizing column requirements if separately promoted:
 
@@ -772,12 +783,14 @@ Blocked design:
 
 Status: candidate projection only; no table yet.
 
-Recommended physical posture:
+Current placement decision:
 
-- Keep continuity inside `measurement_cell_series_snapshots` until repeated
-  pilots prove a separate evidence-continuity table is necessary.
-- If later promoted, extend the existing `evidence_snapshots` lineage rather
-  than create a second evidence system.
+- Keep continuity inside the Measurement Cell Series contract output for now.
+- If Series persistence is later promoted, keep continuity inside the compact
+  Series row first.
+- If later product paths prove continuity must be consumed outside Series,
+  extend the existing `evidence_snapshots` lineage rather than create a second
+  evidence system.
 - Do not add new `evidence_snapshots.snapshot_type` values until a migration
   is explicitly authorized.
 
@@ -873,16 +886,16 @@ Recommended next move:
 1. Verify the promoted `ai_value_customer_data_model_snapshots` write/list path
    against the controlled pilot package, implementation decision, DB readiness,
    and governance checks.
-2. Define the next route/UI projection contract against
-   `ai_value_customer_data_model_snapshots` without exposing raw refs,
-   unrestricted exports, rendered financial output, confidence/probability
-   output, ROI, causality, productivity, or live connector state.
+2. Keep the customer data model route/UI projection contract status-only and
+   source-bound: no raw refs, unrestricted exports, rendered financial output,
+   confidence/probability output, ROI, causality, productivity, or live
+   connector state.
 3. Keep upstream aggregate handoff and acceptance package outputs
    non-persistent until a future exact-scope persistence decision passes the
    recomputation and smuggling tests named above.
-4. Defer `measurement_cell_series_snapshots` until at least one repeated
-   Measurement Cell workflow has been validated end to end across the required
-   milestone windows and a real product continuity need exists.
+4. Defer `measurement_cell_series_snapshots` until a real product continuity
+   read-path need exists; repeated milestone validation has passed, but it
+   proves internal continuity inspection rather than persistence need.
 5. Wire live BigQuery, Sigma, and Glean connector execution last, after the
    customer-facing route/UI projection contract proves it can consume the
    stable persisted product-data model without expanding the evidence boundary.
