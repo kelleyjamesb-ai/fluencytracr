@@ -267,6 +267,15 @@ documented value-realization layers:
   non-persistent and emits no model result, numeric weights, score/probability
   output, finance output, exports, live connectors, UI, routes, schemas, or
   customer-facing output.
+- **AI Value contribution alignment feature stability review:** reviews the
+  internal research math data model feature inputs against a world-class
+  pre-weight standard: source-bound id/hash, stable component registry,
+  distinct context partitions, repeated milestone requirement, and false
+  forbidden-output feeds. A pass authorizes only a separate internal numeric
+  weight decision; it does not authorize weights, weighted model output,
+  confidence/probability output, Bayesian execution, finance output, ROI,
+  causality, productivity, persistence, exports, live connectors, UI, routes,
+  schemas, or customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -412,6 +421,7 @@ is not the lead positioning for this repository.
 - AI Value BigQuery Aggregate Export Review: [docs/contracts/ai-value-bigquery-aggregate-export-review/README.md](docs/contracts/ai-value-bigquery-aggregate-export-review/README.md)
 - AI Value Controlled Aggregate Manifest Validation: [docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md](docs/contracts/ai-value-controlled-aggregate-manifest-validation/README.md)
 - AI Value Research Promotion Readiness Packet: [docs/contracts/ai-value-research-promotion-readiness-packet/README.md](docs/contracts/ai-value-research-promotion-readiness-packet/README.md)
+- AI Value Contribution Alignment Feature Stability Review: [docs/contracts/ai-value-contribution-alignment-feature-stability-review/README.md](docs/contracts/ai-value-contribution-alignment-feature-stability-review/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)

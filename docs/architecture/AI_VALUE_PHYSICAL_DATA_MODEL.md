@@ -816,6 +816,18 @@ weights or model outputs require a separate exact-scope research and promotion
 decision, repeated aligned evidence, and red/green implementation and
 governance tests that explicitly authorize that scope.
 
+The executable
+[AI Value Contribution Alignment Feature Stability Review](../contracts/ai-value-contribution-alignment-feature-stability-review/README.md)
+is the current pre-weight reviewer gate. It consumes the compact internal
+research math data model and verifies source-bound id/hash stability, stable
+component registry, distinct context partitions, repeated Day 0 / 30 / 60 / 90
+/ 180 / 365 milestone context, and false forbidden-output feeds. Passing this
+review authorizes only a separate internal numeric weight decision. It does not
+authorize numeric weights, weight values, weighted model output, confidence or
+probability output, Bayesian execution, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;
