@@ -2,6 +2,28 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Weighted Internal Model Frame slice
+  (2026-06-25): implemented Step 4 of the weighted internal data model plan.
+  The frame consumes the Versioned Weight Object, binds to the weight object,
+  Internal Numeric Weight Decision, and Feature Stability Review ids/hashes,
+  and attaches ten neutral 0.1 source-bound weights to the governed feature
+  registry as internal weighted feature composition only. This is now the full
+  internal weighted data model frame, not a model result: aggregate score
+  output, weighted internal model output, research model feed, confidence
+  output, probability output, Bayesian execution, score-like output, finance
+  output, ROI, causality, productivity, persistence, routes, UI, schemas,
+  exports, live connectors, and customer-facing output remain blocked. The
+  only true downstream feed is `internal_bayesian_readiness_review`; the
+  Bayesian readiness review itself is not implemented in this slice. Local
+  CODE / BUG / ADVERSARIAL review confirmed the ready sample keeps only that
+  review feed true, keeps score/output/Bayesian execution policy false, and
+  rejects unsafe frame side doors without echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-weighted-internal-model-frame`;
+  `npm run test:ai-value-contribution-alignment-versioned-weight-object`;
+  `npm run run:ai-value-contribution-alignment-weighted-internal-model-frame`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Versioned Weight Object slice (2026-06-25):
   implemented Step 3 of the weighted internal data model plan. The object
   consumes the Internal Numeric Weight Decision and Feature Stability Review,

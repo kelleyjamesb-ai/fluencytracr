@@ -852,6 +852,17 @@ probability output, Bayesian execution, finance output, ROI, causality,
 productivity, persistence, routes, UI, schemas, exports, live connectors, and
 customer-facing output blocked.
 
+The executable
+[AI Value Contribution Alignment Weighted Internal Model Frame](../contracts/ai-value-contribution-alignment-weighted-internal-model-frame/README.md)
+is the fourth-step internal weighted data model frame. It consumes the
+Versioned Weight Object and attaches those source-bound neutral weights to the
+ten governed feature inputs as internal weighted feature composition only. It
+is not a weighted model result, aggregate score, confidence output,
+probability output, Bayesian execution, finance output, ROI, causality,
+productivity, or customer-facing output. It may feed only a later
+`internal_bayesian_readiness_review_only` gate, and that next gate is not
+implemented by this frame.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;
