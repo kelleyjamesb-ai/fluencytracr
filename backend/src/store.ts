@@ -267,6 +267,76 @@ export type AiValueMeasurementCellSnapshotStoredRecord = {
   created_by_role: string;
 };
 
+export type AiValueCustomerDataModelSnapshotStoredRecord = {
+  id: string;
+  org_id: string;
+  client_id: string | null;
+  customer_data_model_snapshot_id: string;
+  source_snapshot_id: string;
+  source_projection_id: string;
+  source_projection_hash: string;
+  source_gate_id: string;
+  source_gate_hash: string;
+  source_promotion_decision_id: string;
+  source_promotion_decision_hash: string;
+  implementation_decision_id: string;
+  implementation_decision_hash: string;
+  measurement_cell_id: string;
+  measurement_cell_assembly_run_id: string;
+  measurement_plan_id: string;
+  value_hypothesis_id: string | null;
+  value_hypothesis_ref: string | null;
+  value_hypothesis_binding_state: string;
+  approved_blueprint_ref: string;
+  approved_blueprint_payload_hash: string;
+  blueprint_expectation_ref: string;
+  expectation_path_id: string;
+  expectation_path_version: number;
+  expectation_path_hash: string;
+  approval_state: string;
+  approved_at: string;
+  approved_by_role: string;
+  value_driver: string;
+  metric_id: string;
+  metric_definition_ref: string;
+  metric_definition_hash: string;
+  metric_owner_approval_state: string;
+  metric_direction: string;
+  metric_unit: string;
+  expected_metric_lag_days: number;
+  workflow_family: string;
+  workflow_id: string | null;
+  function_area: string;
+  cohort_key: string;
+  window_mode: string;
+  milestone_day: number;
+  baseline_window_start: string;
+  baseline_window_end: string;
+  comparison_window_start: string;
+  comparison_window_end: string;
+  aggregate_source_system: string;
+  aggregate_export_review_ref: string;
+  aggregate_export_review_state: string;
+  aggregate_source_export_ref: string;
+  aggregate_export_review_hash: string;
+  pipeline_dry_run_ref: string;
+  pipeline_boundary_hash: string;
+  source_refs: Record<string, unknown>;
+  aggregate_boundary_ref: Record<string, unknown>;
+  assembly_decision: string;
+  validation_valid: boolean;
+  assembly_validation_valid: boolean;
+  validation_gap_count: number;
+  assembly_validation_gap_count: number;
+  required_caveats: string[];
+  blocked_uses: string[];
+  version: number;
+  supersedes_id: string | null;
+  generated_at: string;
+  created_at: string;
+  created_by_role: string;
+};
+
 export type OrgRecord = {
   id: string;
   name: string;
@@ -736,6 +806,7 @@ class MemoryStore {
   aiValueExecutiveReadoutSnapshots = new Map<string, AiValueExecutiveReadoutSnapshotStoredRecord>();
   aiValuePilotRuns = new Map<string, AiValuePilotRunStoredRecord>();
   aiValueMeasurementCellSnapshots = new Map<string, AiValueMeasurementCellSnapshotStoredRecord>();
+  aiValueCustomerDataModelSnapshots = new Map<string, AiValueCustomerDataModelSnapshotStoredRecord>();
   workflowVisibilityPolicyConfigs = new Map<string, WorkflowVisibilityPolicyConfigRecord>();
   baselineResetEvents = new Map<string, BaselineResetEventRecord>();
 
@@ -787,6 +858,7 @@ class MemoryStore {
     this.aiValueExecutiveReadoutSnapshots.clear();
     this.aiValuePilotRuns.clear();
     this.aiValueMeasurementCellSnapshots.clear();
+    this.aiValueCustomerDataModelSnapshots.clear();
     this.workflowVisibilityPolicyConfigs.clear();
     this.baselineResetEvents.clear();
   }

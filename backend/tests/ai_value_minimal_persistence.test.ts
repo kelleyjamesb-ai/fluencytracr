@@ -10,6 +10,8 @@ import * as db from "../src/db";
 import {
   AiValuePersistenceAlreadyExistsError,
   AiValuePersistenceValidationError,
+  listAiValueCustomerDataModelSnapshots,
+  persistAiValueCustomerDataModelSnapshot,
   persistAiValueMeasurementCellSnapshot,
   persistAiValueClaimReadinessSnapshot,
   persistAiValueEvidenceSnapshot,
@@ -46,6 +48,10 @@ const MEASUREMENT_CELL_AGGREGATE_BOUNDARY_MIGRATION = path.resolve(
   __dirname,
   "../prisma/migrations/20260623193000_bind_measurement_cell_snapshot_aggregate_boundary/migration.sql"
 );
+const CUSTOMER_DATA_MODEL_SNAPSHOT_MIGRATION = path.resolve(
+  __dirname,
+  "../prisma/migrations/20260625183000_add_ai_value_customer_data_model_snapshots/migration.sql"
+);
 const MEASUREMENT_CELL_PROMOTION_DECISION = path.resolve(
   __dirname,
   "../../docs/architecture/AI_VALUE_MEASUREMENT_CELL_PERSISTENCE_PROMOTION_DECISION.md"
@@ -67,6 +73,7 @@ const EXPECTED_MEASUREMENT_CELL_SNAPSHOT_BLOCKED_USES = [
   "people_decisioning",
   "customer_facing_financial_output",
   "customer_facing_prediction",
+  "customer_facing_projection",
   "customer_facing_output",
   "customer_facing_economic_output",
   "snapshot_read_projection",
@@ -114,6 +121,19 @@ const stableStringifyForTest = (value: unknown): string => {
 
 const stableHashForTest = (value: unknown): string =>
   createHash("sha256").update(stableStringifyForTest(value)).digest("hex");
+
+const hasNestedKeyMatching = (
+  value: unknown,
+  pattern: RegExp
+): boolean => {
+  if (!value || typeof value !== "object") return false;
+  if (Array.isArray(value)) {
+    return value.some((entry) => hasNestedKeyMatching(entry, pattern));
+  }
+  return Object.entries(value as Record<string, unknown>).some(
+    ([key, nested]) => pattern.test(key) || hasNestedKeyMatching(nested, pattern)
+  );
+};
 
 const recomputeSnapshotCandidateHashForTest = (
   candidate: Record<string, unknown>
@@ -460,6 +480,99 @@ const controlledMeasurementCellPreflightRun = (
 ): Record<string, unknown> =>
   controlledMeasurementCellPreflightResult(milestoneDay).preflight;
 
+const customerDataModelSourceChain = (
+  measurementCellSnapshot: Record<string, unknown>
+): {
+  projection: Record<string, unknown>;
+  gate: Record<string, unknown>;
+  promotionDecision: Record<string, unknown>;
+  implementationDecision: Record<string, unknown>;
+} => {
+  ensureControlledRunnerDistReady();
+  const script = `
+    import { createHash } from "node:crypto";
+    import { buildMeasurementCellSnapshotProjectionFromObject, validateMeasurementCellSnapshotProjection } from "./scripts/run_ai_value_measurement_cell_snapshot_projection.mjs";
+    import { buildCustomerDataModelPromotionGateFromObject, validateCustomerDataModelPromotionGate } from "./scripts/run_ai_value_customer_data_model_promotion_gate.mjs";
+    import { buildCustomerDataModelPersistencePromotionDecisionFromObject, validateCustomerDataModelPersistencePromotionDecision } from "./scripts/run_ai_value_customer_data_model_persistence_promotion_decision.mjs";
+    import { buildCustomerDataModelPersistenceImplementationDecisionFromObject, validateCustomerDataModelPersistenceImplementationDecision } from "./scripts/run_ai_value_customer_data_model_persistence_implementation_decision.mjs";
+    const stableStringify = (value) => {
+      if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+      if (value && typeof value === "object") {
+        return "{" + Object.keys(value).sort().map((key) => JSON.stringify(key) + ":" + stableStringify(value[key])).join(",") + "}";
+      }
+      return JSON.stringify(value);
+    };
+    const sha256Json = (value) => createHash("sha256").update(stableStringify(value)).digest("hex");
+    const input = JSON.parse(await new Promise((resolve) => {
+      let data = "";
+      process.stdin.setEncoding("utf8");
+      process.stdin.on("data", (chunk) => { data += chunk; });
+      process.stdin.on("end", () => resolve(data));
+    }));
+    const projection = buildMeasurementCellSnapshotProjectionFromObject(input);
+    const projectionValidation = validateMeasurementCellSnapshotProjection(projection);
+    if (projectionValidation.valid !== true) {
+      throw new Error(JSON.stringify(projectionValidation));
+    }
+    const prerequisites = {
+      customer_projection_decision_state: "PROMOTE_SOURCE_BOUND_CUSTOMER_PROJECTION_CONTRACTS",
+      route_projection_contract_state: "SOURCE_BOUND_ROUTE_PROJECTION_CONTRACT_READY",
+      auth_tenant_enforcement_state: "ORG_SCOPED_AUTH_AND_TENANT_GUARDS_READY",
+      legacy_readout_guard_state: "ROUTE_AND_UI_GUARD_RESOLVED",
+      export_governance_state: "EXPORT_PROHIBITION_CONTRACT_READY",
+      legal_trust_review_state: "APPROVED_FOR_STATUS_POSTURE_ONLY",
+      privacy_k_min_review_state: "AGGREGATE_PRIVACY_POSTURE_READY",
+      customer_value_language_state: "POSTURE_ONLY_VALUE_LANGUAGE_APPROVED"
+    };
+    const prerequisiteProofRefs = Object.fromEntries(
+      Object.entries(prerequisites).map(([field, state]) => {
+        const proof = {
+          ref_id: field + "_proof",
+          state,
+          source_doc_ref: "docs.architecture." + field
+        };
+        return [field, { ...proof, proof_hash: sha256Json(proof) }];
+      })
+    );
+    const gate = buildCustomerDataModelPromotionGateFromObject(projection, {
+      prerequisites,
+      prerequisiteProofRefs
+    });
+    const gateValidation = validateCustomerDataModelPromotionGate(gate, { sourceProjection: projection });
+    if (gateValidation.valid !== true) {
+      throw new Error(JSON.stringify(gateValidation));
+    }
+    const promotionDecision = buildCustomerDataModelPersistencePromotionDecisionFromObject(gate, { sourceProjection: projection });
+    const promotionValidation = validateCustomerDataModelPersistencePromotionDecision(promotionDecision, {
+      sourceProjection: projection,
+      sourceGate: gate
+    });
+    if (promotionValidation.valid !== true) {
+      throw new Error(JSON.stringify(promotionValidation));
+    }
+    const implementationDecision = buildCustomerDataModelPersistenceImplementationDecisionFromObject(promotionDecision, {
+      sourceProjection: projection,
+      sourceGate: gate
+    });
+    const implementationValidation = validateCustomerDataModelPersistenceImplementationDecision(implementationDecision, {
+      sourceProjection: projection,
+      sourceGate: gate,
+      sourcePromotionDecision: promotionDecision
+    });
+    if (implementationValidation.valid !== true) {
+      throw new Error(JSON.stringify(implementationValidation));
+    }
+    process.stdout.write(JSON.stringify({ projection, gate, promotionDecision, implementationDecision }));
+  `;
+  return JSON.parse(
+    execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+      cwd: REPO_ROOT,
+      input: JSON.stringify(measurementCellSnapshot),
+      encoding: "utf8"
+    })
+  );
+};
+
 const controlledMeasurementCellAssemblyRunsForMilestones = (milestoneDays: number[]) => {
   ensureControlledRunnerDistReady();
   const script = `
@@ -660,6 +773,71 @@ describe("AI Value minimal persistence migration", () => {
     expect(migrationSql).not.toContain('CREATE TABLE "measurement_cell_series_snapshots"');
   });
 
+  it("promotes only compact customer data model snapshot persistence", () => {
+    const migrationSql = fs.readFileSync(CUSTOMER_DATA_MODEL_SNAPSHOT_MIGRATION, "utf8");
+    const table = tableBlock(migrationSql, "ai_value_customer_data_model_snapshots");
+
+    expect(migrationSql).toContain('CREATE TABLE "ai_value_customer_data_model_snapshots"');
+    expect(table).toContain('"id" UUID NOT NULL DEFAULT gen_random_uuid()');
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_immutable_key");
+    expect(migrationSql).toContain('"customer_data_model_snapshot_id" TEXT NOT NULL');
+    expect(migrationSql).toContain('"source_snapshot_id" TEXT NOT NULL');
+    expect(migrationSql).toContain('"source_projection_id" TEXT NOT NULL');
+    expect(migrationSql).toContain('"source_projection_hash" TEXT NOT NULL');
+    expect(migrationSql).toContain('"source_promotion_decision_hash" TEXT NOT NULL');
+    expect(migrationSql).toContain('"implementation_decision_hash" TEXT NOT NULL');
+    expect(migrationSql).toContain('"expectation_path_id" TEXT NOT NULL');
+    expect(migrationSql).toContain('"expectation_path_version" INTEGER NOT NULL');
+    expect(migrationSql).toContain('"expectation_path_hash" TEXT NOT NULL');
+    expect(migrationSql).toContain('"approved_blueprint_payload_hash" TEXT NOT NULL');
+    expect(migrationSql).toContain('"value_driver" TEXT NOT NULL');
+    expect(migrationSql).toContain('"milestone_day" INTEGER NOT NULL');
+    expect(migrationSql).toContain('"source_refs_json" JSONB NOT NULL');
+    expect(migrationSql).toContain('"aggregate_boundary_ref_json" JSONB NOT NULL');
+    expect(migrationSql).toContain('"required_caveats_json" JSONB NOT NULL');
+    expect(migrationSql).toContain('"blocked_uses_json" JSONB NOT NULL');
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_value_driver_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_window_mode_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_milestone_day_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_source_system_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_aggregate_review_state_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_baseline_window_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_comparison_window_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_validation_passed_check");
+    expect(migrationSql).toContain("ai_value_customer_data_model_snapshots_hash_check");
+    expect(migrationSql).toContain("ALTER TABLE public.ai_value_customer_data_model_snapshots ENABLE ROW LEVEL SECURITY");
+    expect(migrationSql).toContain("REVOKE ALL ON TABLE public.ai_value_customer_data_model_snapshots");
+
+    for (const forbidden of [
+      "payload_json",
+      "validation_json",
+      "blueprint_path_binding_json",
+      "raw_rows",
+      "row_id",
+      "span_id",
+      "trace_id",
+      "email_hash",
+      "user_hash",
+      "person_hash",
+      "employee_hash",
+      "query_text",
+      "sql_text",
+      "prompt",
+      "transcript",
+      "user_id",
+      "confidence",
+      "probability",
+      "roi",
+      "ebitda",
+      "financial_output",
+      "causality",
+      "productivity"
+    ]) {
+      expect(table).not.toContain(`"${forbidden}"`);
+    }
+    expect(migrationSql).not.toContain('CREATE TABLE "customer_data_models"');
+  });
+
   it("does not introduce forbidden person-level, raw-content, or decisioning columns", () => {
     const migrationSql = fs.readFileSync(MIGRATION, "utf8").toLowerCase();
     const pilotRunMigrationSql = fs.existsSync(PILOT_RUN_MIGRATION)
@@ -671,8 +849,11 @@ describe("AI Value minimal persistence migration", () => {
     const measurementCellSnapshotMigrationSql = fs.existsSync(MEASUREMENT_CELL_SNAPSHOT_MIGRATION)
       ? fs.readFileSync(MEASUREMENT_CELL_SNAPSHOT_MIGRATION, "utf8").toLowerCase()
       : "";
+    const customerDataModelSnapshotMigrationSql = fs.existsSync(CUSTOMER_DATA_MODEL_SNAPSHOT_MIGRATION)
+      ? fs.readFileSync(CUSTOMER_DATA_MODEL_SNAPSHOT_MIGRATION, "utf8").toLowerCase()
+      : "";
     const columnMatches = Array.from(
-      `${migrationSql}\n${pilotRunMigrationSql}\n${snapshotMigrationSql}\n${measurementCellSnapshotMigrationSql}`.matchAll(/"([a-z0-9_]+)"\s+[a-z]/g)
+      `${migrationSql}\n${pilotRunMigrationSql}\n${snapshotMigrationSql}\n${measurementCellSnapshotMigrationSql}\n${customerDataModelSnapshotMigrationSql}`.matchAll(/"([a-z0-9_]+)"\s+[a-z]/g)
     ).map((match) => match[1]);
 
     for (const forbidden of [
@@ -2227,6 +2408,269 @@ describe("AI Value minimal persistence repository", () => {
         createdByRole: "value_realization_pm"
       })
     ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+  });
+
+  it("persists customer data model snapshots from governed Measurement Cell projections", async () => {
+    const measurementCellSnapshot = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: controlledMeasurementCellAssemblyRun(),
+      measurementCellPreflightRun: controlledMeasurementCellPreflightRun(30),
+      snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(30),
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+    const chain = customerDataModelSourceChain(
+      measurementCellSnapshot as unknown as Record<string, unknown>
+    );
+
+    const stored = await persistAiValueCustomerDataModelSnapshot({
+      snapshotProjection: chain.projection,
+      implementationDecision: chain.implementationDecision,
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+
+    expect(stored.customer_data_model_snapshot_id).toBe(
+      `customer_data_model_snapshot:${measurementCellSnapshot.org_id}:${measurementCellSnapshot.measurement_cell_id}`
+    );
+    expect(stored.source_snapshot_id).toBe(measurementCellSnapshot.id);
+    expect(stored.source_projection_id).toBe(chain.projection.projection_id);
+    expect(stored.source_projection_hash).toBe(chain.projection.projection_hash);
+    expect(stored.source_promotion_decision_id).toBe(
+      chain.implementationDecision.source_decision_ref.promotion_decision_id
+    );
+    expect(stored.implementation_decision_hash).toBe(
+      chain.implementationDecision.decision_hash
+    );
+    expect(stored.expectation_path_id).toBe(measurementCellSnapshot.expectation_path_id);
+    expect(stored.metric_id).toBe("support_median_resolution_hours");
+    expect(stored.value_driver).toBe("Capacity");
+    expect(stored.window_mode).toBe("milestone");
+    expect(stored.milestone_day).toBe(30);
+    expect(stored.validation_valid).toBe(true);
+    expect(stored.assembly_validation_valid).toBe(true);
+    expect(stored.validation_gap_count).toBe(0);
+    expect(stored.assembly_validation_gap_count).toBe(0);
+    expect(stored.source_refs).toEqual(measurementCellSnapshot.source_refs);
+    expect(stored.aggregate_boundary_ref).toEqual(
+      measurementCellSnapshot.aggregate_boundary_ref
+    );
+    expect(JSON.stringify(stored).toLowerCase()).not.toContain("raw_rows");
+    expect(JSON.stringify(stored).toLowerCase()).not.toContain("query_text");
+    expect(JSON.stringify(stored).toLowerCase()).not.toContain("confidence");
+    expect(hasNestedKeyMatching(stored, /(^|_)roi($|_)/i)).toBe(false);
+    expect(stored.blocked_uses).toContain("realized_roi");
+    expect(store.aiValueCustomerDataModelSnapshots.size).toBe(1);
+
+    const listed = await listAiValueCustomerDataModelSnapshots({
+      orgId: stored.org_id,
+      measurementPlanId: stored.measurement_plan_id
+    });
+    expect(listed).toHaveLength(1);
+    expect(listed[0].id).toBe(stored.id);
+
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: chain.implementationDecision,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceAlreadyExistsError);
+
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: chain.implementationDecision,
+        version: 2,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const corrected = await persistAiValueCustomerDataModelSnapshot({
+      snapshotProjection: chain.projection,
+      implementationDecision: chain.implementationDecision,
+      version: 2,
+      supersedesId: stored.id,
+      createdByRole: "value_realization_pm"
+    });
+    expect(corrected.version).toBe(2);
+    expect(corrected.supersedes_id).toBe(stored.id);
+    expect(store.aiValueCustomerDataModelSnapshots.size).toBe(2);
+  });
+
+  it("rejects customer data model snapshots with drift, unsafe refs, or output authorization", async () => {
+    const measurementCellSnapshot = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: controlledMeasurementCellAssemblyRun(),
+      measurementCellPreflightRun: controlledMeasurementCellPreflightRun(30),
+      snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(30),
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+    const chain = customerDataModelSourceChain(
+      measurementCellSnapshot as unknown as Record<string, unknown>
+    );
+
+    const pathDrift = clone(chain.projection);
+    pathDrift.pathway_binding.expectation_path_id = "forged_path";
+    delete pathDrift.projection_hash;
+    pathDrift.projection_hash = stableHashForTest(pathDrift);
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: pathDrift,
+        implementationDecision: chain.implementationDecision,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeSourceRef = clone(chain.projection);
+    unsafeSourceRef.source_context.source_refs.vbd_source_ref =
+      "select_user_id_from_raw_rows";
+    delete unsafeSourceRef.projection_hash;
+    unsafeSourceRef.projection_hash = stableHashForTest(unsafeSourceRef);
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: unsafeSourceRef,
+        implementationDecision: chain.implementationDecision,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const rawRows = clone(chain.projection);
+    rawRows.raw_rows = [{ user_id: "person-123" }];
+    delete rawRows.projection_hash;
+    rawRows.projection_hash = stableHashForTest(rawRows);
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: rawRows,
+        implementationDecision: chain.implementationDecision,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const routeAuthorization = clone(chain.implementationDecision);
+    routeAuthorization.implementation_scope.route_authorized = true;
+    routeAuthorization.implementation_scope.customer_facing_output_authorized = true;
+    routeAuthorization.feeds.backend_route = true;
+    routeAuthorization.feeds.customer_facing_output = true;
+    delete routeAuthorization.decision_hash;
+    routeAuthorization.decision_hash = stableHashForTest(routeAuthorization);
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: routeAuthorization,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafePromotionDecisionRef = clone(chain.implementationDecision);
+    unsafePromotionDecisionRef.source_decision_ref.promotion_decision_id =
+      "select_user_id_from_raw_rows";
+    delete unsafePromotionDecisionRef.decision_hash;
+    unsafePromotionDecisionRef.decision_hash = stableHashForTest(
+      unsafePromotionDecisionRef
+    );
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: unsafePromotionDecisionRef,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    const unsafeNestedPromotionSidecar = clone(chain.implementationDecision);
+    unsafeNestedPromotionSidecar.sidecar = {
+      promotion_decision_id: {
+        raw_rows: [{ user_id: "person-123" }]
+      }
+    };
+    delete unsafeNestedPromotionSidecar.decision_hash;
+    unsafeNestedPromotionSidecar.decision_hash = stableHashForTest(
+      unsafeNestedPromotionSidecar
+    );
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: unsafeNestedPromotionSidecar,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+
+    store.aiValueMeasurementCellSnapshots.clear();
+    await expect(
+      persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: chain.implementationDecision,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      })
+    ).rejects.toBeInstanceOf(AiValuePersistenceValidationError);
+  });
+
+  it("writes customer data model snapshots through the Prisma branch with compact JSON only", async () => {
+    const measurementCellSnapshot = await persistAiValueMeasurementCellSnapshot({
+      measurementCellAssemblyRun: controlledMeasurementCellAssemblyRun(),
+      measurementCellPreflightRun: controlledMeasurementCellPreflightRun(30),
+      snapshotCandidateRef: controlledMeasurementCellPreflightCandidateRef(30),
+      version: 1,
+      createdByRole: "value_realization_pm"
+    });
+    const chain = customerDataModelSourceChain(
+      measurementCellSnapshot as unknown as Record<string, unknown>
+    );
+    const previousDatabaseUrl = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = "postgresql://unit-test";
+    const create = jest.fn(async ({ data }) => data);
+    const findUnique = jest.fn(async () => null);
+    const findMany = jest.fn(async () => []);
+    const getPrismaSpy = jest.spyOn(db, "getPrisma").mockReturnValue({
+      customerDataModelSnapshot: {
+        create,
+        findUnique,
+        findMany
+      }
+    } as any);
+
+    try {
+      const stored = await persistAiValueCustomerDataModelSnapshot({
+        snapshotProjection: chain.projection,
+        implementationDecision: chain.implementationDecision,
+        version: 1,
+        createdByRole: "value_realization_pm"
+      });
+
+      expect(create).toHaveBeenCalledTimes(1);
+      const data = create.mock.calls[0]?.[0]?.data;
+      expect(data).toMatchObject({
+        orgId: stored.org_id,
+        customerDataModelSnapshotId: stored.customer_data_model_snapshot_id,
+        sourceSnapshotId: measurementCellSnapshot.id,
+        sourceProjectionHash: chain.projection.projection_hash,
+        implementationDecisionHash: chain.implementationDecision.decision_hash,
+        measurementCellId: measurementCellSnapshot.measurement_cell_id,
+        version: 1,
+        approvalState: "approved",
+        windowMode: "milestone",
+        milestoneDay: 30,
+        aggregateSourceSystem: "bigquery_export"
+      });
+      expect(JSON.stringify(data.sourceRefsJson).toLowerCase()).not.toContain("raw_rows");
+      expect(JSON.stringify(data.aggregateBoundaryRefJson).toLowerCase()).not.toContain("query_text");
+      expect(data).not.toHaveProperty("payloadJson");
+      expect(data).not.toHaveProperty("validationJson");
+    } finally {
+      getPrismaSpy.mockRestore();
+      if (previousDatabaseUrl === undefined) {
+        delete process.env.DATABASE_URL;
+      } else {
+        process.env.DATABASE_URL = previousDatabaseUrl;
+      }
+    }
   });
 
   it("fails drifted Measurement Cell snapshot bindings before persistence", async () => {

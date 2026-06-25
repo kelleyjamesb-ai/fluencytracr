@@ -16,7 +16,8 @@ const REQUIRED_TABLE_ROWS = [
   { tablename: "ai_value_pilot_runs" },
   { tablename: "claim_readiness_snapshots" },
   { tablename: "executive_readout_snapshots" },
-  { tablename: "measurement_cell_snapshots" }
+  { tablename: "measurement_cell_snapshots" },
+  { tablename: "ai_value_customer_data_model_snapshots" }
 ];
 
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
@@ -36,9 +37,45 @@ const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMN_ROWS =
     column_name: columnName
   }));
 
+const REQUIRED_CUSTOMER_DATA_MODEL_SNAPSHOT_COLUMNS = [
+  "customer_data_model_snapshot_id",
+  "source_snapshot_id",
+  "source_projection_id",
+  "source_projection_hash",
+  "source_gate_id",
+  "source_gate_hash",
+  "source_promotion_decision_id",
+  "source_promotion_decision_hash",
+  "implementation_decision_id",
+  "implementation_decision_hash",
+  "expectation_path_id",
+  "expectation_path_version",
+  "expectation_path_hash",
+  "approved_blueprint_payload_hash",
+  "value_driver",
+  "milestone_day",
+  "aggregate_source_system",
+  "pipeline_boundary_hash",
+  "source_refs_json",
+  "aggregate_boundary_ref_json",
+  "required_caveats_json",
+  "blocked_uses_json"
+];
+
+const REQUIRED_CUSTOMER_DATA_MODEL_SNAPSHOT_COLUMN_ROWS =
+  REQUIRED_CUSTOMER_DATA_MODEL_SNAPSHOT_COLUMNS.map((columnName) => ({
+    table_name: "ai_value_customer_data_model_snapshots",
+    column_name: columnName
+  }));
+
+const REQUIRED_COLUMN_ROWS = [
+  ...REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMN_ROWS,
+  ...REQUIRED_CUSTOMER_DATA_MODEL_SNAPSHOT_COLUMN_ROWS
+];
+
 const mockDb = (
   tableRows: Array<{ tablename: string }>,
-  columnRows = REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMN_ROWS
+  columnRows = REQUIRED_COLUMN_ROWS
 ) => ({
   getPrisma: () => ({
     $queryRawUnsafe: async (query: string) =>
@@ -112,6 +149,8 @@ describe("health postgres disclosure", () => {
     expect(response.body.missing_tables).toContain("claim_readiness_snapshots");
     expect(response.body.missing_tables).toContain("executive_readout_snapshots");
     expect(response.body.missing_tables).toContain("measurement_cell_snapshots");
+    expect(response.body.missing_tables).toContain("ai_value_customer_data_model_snapshots");
+    expect(response.body.missing_tables).toContain("ai_value_customer_data_model_snapshots");
   });
 
   it("reports Phase 4 AI Value persistence tables in ops readiness schema gaps", async () => {
@@ -150,7 +189,8 @@ describe("health postgres disclosure", () => {
         "ai_value_pilot_runs",
         "claim_readiness_snapshots",
         "executive_readout_snapshots",
-        "measurement_cell_snapshots"
+        "measurement_cell_snapshots",
+        "ai_value_customer_data_model_snapshots"
       ])
     );
   });
@@ -240,7 +280,8 @@ describe("health postgres disclosure", () => {
         "ai_value_pilot_runs",
         "claim_readiness_snapshots",
         "executive_readout_snapshots",
-        "measurement_cell_snapshots"
+        "measurement_cell_snapshots",
+        "ai_value_customer_data_model_snapshots"
       ])
     );
   });

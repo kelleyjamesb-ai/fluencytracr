@@ -877,7 +877,8 @@ const REQUIRED_AI_VALUE_TABLES = [
   "ai_value_pilot_runs",
   "claim_readiness_snapshots",
   "executive_readout_snapshots",
-  "measurement_cell_snapshots"
+  "measurement_cell_snapshots",
+  "ai_value_customer_data_model_snapshots"
 ] as const;
 
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
@@ -892,7 +893,31 @@ const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
 ] as const;
 
 const REQUIRED_PERSISTENCE_TABLE_COLUMNS = {
-  measurement_cell_snapshots: REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS
+  measurement_cell_snapshots: REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS,
+  ai_value_customer_data_model_snapshots: [
+    "customer_data_model_snapshot_id",
+    "source_snapshot_id",
+    "source_projection_id",
+    "source_projection_hash",
+    "source_gate_id",
+    "source_gate_hash",
+    "source_promotion_decision_id",
+    "source_promotion_decision_hash",
+    "implementation_decision_id",
+    "implementation_decision_hash",
+    "expectation_path_id",
+    "expectation_path_version",
+    "expectation_path_hash",
+    "approved_blueprint_payload_hash",
+    "value_driver",
+    "milestone_day",
+    "aggregate_source_system",
+    "pipeline_boundary_hash",
+    "source_refs_json",
+    "aggregate_boundary_ref_json",
+    "required_caveats_json",
+    "blocked_uses_json"
+  ]
 } as const;
 
 const REQUIRED_PERSISTENCE_TABLES = [

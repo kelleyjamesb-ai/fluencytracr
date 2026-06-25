@@ -65,6 +65,31 @@ documented value-realization layers:
   candidate proof. It does not run BigQuery/Sigma, persist pipeline runs, create
   Measurement Cell snapshots, or emit customer-facing value/finance/confidence
   output.
+- **AI Value Measurement Cell snapshot projection:** proves that a promoted
+  backend-internal Measurement Cell snapshot row can be reduced to a compact
+  internal operator-review product shape. It does not create read routes,
+  frontend UI, exports, rendered readouts, live connectors, model output,
+  finance output, or customer-facing output.
+- **AI Value customer data model promotion gate:** proves that the compact
+  Measurement Cell snapshot projection is safe enough only to enter a separate
+  exact-scope customer data model persistence promotion decision. It holds by
+  default, validates ready gates against the source projection, and blocks
+  persistence writes, schemas, routes, UI, exports, rendered readouts, live
+  connectors, model output, confidence/probability/score output, finance
+  output, and customer-facing output.
+- **AI Value customer data model persistence promotion decision:** proves that
+  the customer data model gate can move only through the exact-scope
+  implementation-decision lane. It holds by default and keeps any broader
+  persistence writes, Prisma schemas, migrations, repository write paths,
+  routes, UI, exports, rendered readouts, live connectors, model output,
+  finance output, and customer-facing output blocked.
+- **AI Value customer data model persistence implementation decision:** names
+  and bounds the only promoted physical slice for customer-ready product data:
+  one append-only compact `ai_value_customer_data_model_snapshots` table plus
+  internal repository write/read paths derived from valid Measurement Cell
+  Snapshot Projection inputs. It still blocks routes, UI, exports, rendered
+  readouts, live connectors, confidence/probability/score output, finance
+  output, and customer-facing output.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,
@@ -144,6 +169,30 @@ documented value-realization layers:
   compact-ref-only, and blocks research math output, model feeds, model
   implementation, numeric weights, score/probability output, finance output,
   persistence, exports, live connectors, UI, routes, schemas, and
+  customer-facing output.
+- **AI Value contribution alignment research math finalization review:**
+  closes the promised exact-scope review step before any data-model promotion.
+  It consumes compact source-bound review record refs only and authorizes only
+  a later research math data model promotion decision. It remains
+  non-persistent and blocks research math output, model feeds, model
+  implementation, numeric weights, score/probability output, finance output,
+  persistence, exports, live connectors, UI, routes, schemas, and
+  customer-facing output.
+- **AI Value contribution alignment research math data model promotion
+  decision:** consumes the finalization review and promotes only a compact
+  internal research-math data model layer. It explicitly holds if only the older
+  review record is supplied, and it blocks physical tables, persistence,
+  research math output, model feeds, numeric weights, score/probability output,
+  finance output, exports, live connectors, UI, routes, schemas, and
+  customer-facing output.
+- **AI Value contribution alignment internal research math data model:** defines
+  the compact internal context grain for later research design: one approved
+  expectation path ref, one source-bound Measurement Cell context ref, repeated
+  Day 0 / 30 / 60 / 90 / 180 / 365 milestone refs, context-only component
+  registry, and separate AI Fluency construct, AI Fluency psychological,
+  observed VBD, and selected metric movement partitions. It remains
+  non-persistent and emits no model result, numeric weights, score/probability
+  output, finance output, exports, live connectors, UI, routes, schemas, or
   customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
@@ -277,6 +326,10 @@ is not the lead positioning for this repository.
 - AI Value Controlled Measurement Cell Assembly: [docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md](docs/contracts/ai-value-controlled-measurement-cell-assembly/README.md)
 - AI Value Controlled Aggregate Pipeline Dry Run: [docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md](docs/contracts/ai-value-controlled-aggregate-pipeline-dry-run/README.md)
 - AI Value Measurement Cell Preflight Runner: [docs/contracts/ai-value-measurement-cell-preflight-runner/README.md](docs/contracts/ai-value-measurement-cell-preflight-runner/README.md)
+- AI Value Measurement Cell Snapshot Projection: [docs/contracts/ai-value-measurement-cell-snapshot-projection/README.md](docs/contracts/ai-value-measurement-cell-snapshot-projection/README.md)
+- AI Value Customer Data Model Promotion Gate: [docs/contracts/ai-value-customer-data-model-promotion-gate/README.md](docs/contracts/ai-value-customer-data-model-promotion-gate/README.md)
+- AI Value Customer Data Model Persistence Promotion Decision: [docs/contracts/ai-value-customer-data-model-persistence-promotion-decision/README.md](docs/contracts/ai-value-customer-data-model-persistence-promotion-decision/README.md)
+- AI Value Customer Data Model Persistence Implementation Decision: [docs/contracts/ai-value-customer-data-model-persistence-implementation-decision/README.md](docs/contracts/ai-value-customer-data-model-persistence-implementation-decision/README.md)
 - AI Value Controlled Aggregate Connector Adapter: [docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md](docs/contracts/ai-value-controlled-aggregate-connector-adapter/README.md)
 - AI Value Aggregate Connector Boundary Plan: [docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md](docs/contracts/ai-value-aggregate-connector-boundary-plan/README.md)
 - AI Value BigQuery Aggregate Export Review: [docs/contracts/ai-value-bigquery-aggregate-export-review/README.md](docs/contracts/ai-value-bigquery-aggregate-export-review/README.md)

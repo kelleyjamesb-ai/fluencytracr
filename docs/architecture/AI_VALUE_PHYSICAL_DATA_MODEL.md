@@ -1,19 +1,22 @@
 # AI Value Physical Data Model Readiness Review
 
-Status: physical readiness review and promotion ledger. This document does not
-authorize additional Prisma schema changes, migrations, repository methods,
-backend routes, frontend UI, live Glean or BigQuery execution, persistence
-writes, confidence math, ROI, causality, productivity, probability, or
-customer-facing financial output without a separate promotion decision.
+Status: physical readiness review and promotion ledger. This document records
+the compact backend-internal physical projections that have been separately
+promoted and implemented. It does not authorize additional Prisma schema
+changes, migrations, repository methods, backend routes, frontend UI, live
+Glean or BigQuery execution, persistence writes, confidence math, ROI,
+causality, productivity, probability, or customer-facing financial output
+without a separate promotion decision.
 
 Phase: `phase-ai-value-physical-data-model`
 
 ## 1. Purpose
 
 This document maps the approved logical AI Value spine to the current
-Prisma/Postgres persistence spine and identifies the smallest future physical
-objects that may be promoted later. It is a readiness and projection review,
-not an implementation plan for new tables.
+Prisma/Postgres persistence spine, records the compact physical projections
+that have already been promoted, and identifies the smallest future physical
+objects that may be promoted later. It is a promotion ledger and readiness
+review, not an open-ended implementation plan for new tables.
 
 It answers:
 
@@ -41,6 +44,8 @@ Implemented relevant tables:
 | `claim_readiness_snapshots` | Backend-only internal claim posture | Implemented, not customer-facing financial output |
 | `executive_readout_snapshots` | Backend-only internal readout posture | Implemented, not rendered or customer-facing output |
 | `ai_value_pilot_runs` | Snapshot-aware pilot lineage ledger | Implemented metadata lineage |
+| `measurement_cell_snapshots` | Compact backend-internal Measurement Cell snapshot | Implemented append-only internal product-data spine |
+| `ai_value_customer_data_model_snapshots` | Compact customer data model snapshot over a validated Measurement Cell snapshot projection | Implemented append-only internal product-data spine; no customer route/UI/export |
 
 All future tables must preserve the current public-table posture:
 
@@ -61,14 +66,15 @@ validated contract output until a table is promoted.
 
 ## 3. Design Decision
 
-Do not add physical tables in this pass.
+Do not add additional physical tables in this pass.
 
 The current spine can carry the next pilot/readiness state through existing
 append-only tables plus the separately promoted backend-internal
-`measurement_cell_snapshots` table. Measurement Cell Series and Evidence
-Continuity persistence remain unpromoted. The hardened selected-path lineage
-is a contract prerequisite, not automatic authorization for any additional
-database objects.
+`measurement_cell_snapshots` and `ai_value_customer_data_model_snapshots`
+tables. Measurement Cell Series, Evidence Continuity, rendered customer
+readouts, exports, research-model inputs, and live connector persistence remain
+unpromoted. The hardened selected-path lineage is a contract prerequisite, not
+automatic authorization for any additional database objects.
 
 Recommended current projection:
 
@@ -76,11 +82,12 @@ Recommended current projection:
 | --- | --- | --- |
 | Approved Blueprint Hypothesis | `value_hypotheses.payload_json` plus `source_refs_json` | Use existing authority first; do not create `blueprint_hypotheses` yet |
 | Blueprint Expectation Path Registry | Embedded inside approved Blueprint/Hypothesis payload only | Do not normalize full registry into rows |
-| Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
+| Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` and `ai_value_customer_data_model_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
 | AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff payloads; future compact projection only if promoted | Leading-indicator context only; no value proof, model score, or standalone table |
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
 | Upstream Aggregate Handoff Acceptance Package | Executable validation output only | Do not persist upstream handoffs, acceptance packages, manifest packages, pipeline runs, connector runs, or full package JSON |
 | Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
+| Customer Data Model Snapshot | Compact backend-internal `ai_value_customer_data_model_snapshots` projection | Stable product-data grain for future UI/API projection decisions; no route/UI/export/customer output yet |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
 | Evidence Continuity Snapshot | Derived from Measurement Cell Series | Future extension of evidence lineage only if promoted |
 | Review Posture Snapshot | `claim_readiness_snapshots` and `executive_readout_snapshots` | Existing backend-only authority |
@@ -99,6 +106,7 @@ Projection detail:
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
 | Upstream Aggregate Handoff Acceptance Package | Contract output from upstream aggregate handoff acceptance runner only | None | No upstream handoff table, acceptance package table, manifest package table, pipeline-run table, connector-run table, or persisted package JSON |
 | Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns, compact aggregate-boundary proof | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver`, aggregate source/review/source-export refs | No full Measurement Cell object, frontend UI, export, rendered readout, live connector output, or customer-facing read path |
+| Customer Data Model Snapshot | `ai_value_customer_data_model_snapshots` compact columns plus compact source refs and aggregate-boundary refs | `org_id`, `customer_data_model_snapshot_id`, `measurement_plan_id`, `source_snapshot_id`, `source_projection_id`, `metric_id`, `expectation_path_id`, `value_driver`, `workflow_family`, `function_area`, `cohort_key`, milestone window, aggregate source/review state | No full projection payload, full Measurement Cell object, full source package, full registry, frontend UI, export, rendered readout, live connector output, model output, or customer-facing read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
 ## 4. Canonical Alignment Envelope
@@ -392,6 +400,92 @@ Blocked design:
 - no customer-facing financial output flags set to true;
 - no generic `confidence`, `probability`, `roi`, `impact`, or productivity
   columns.
+
+## 7.1 Promoted Projection: `ai_value_customer_data_model_snapshots`
+
+Status: promoted for backend-internal compact product-data persistence by the
+Customer Data Model Persistence Promotion Decision and Customer Data Model
+Persistence Implementation Decision contracts.
+
+Purpose: append-only durable product-data snapshot derived from one valid
+Measurement Cell Snapshot Projection. The stored row is the stable customer data
+model grain that a later route/UI projection decision can use. It is not a
+customer-facing read path, rendered readout, export payload, model result,
+finance output, connector run, source package, full Measurement Cell, or full
+projection payload.
+
+Implemented table grain:
+
+```text
+org + measurement_plan + measurement_cell + metric + expectation_path +
+milestone + version
+```
+
+Implemented column requirements:
+
+| Column group | Requirement |
+| --- | --- |
+| Snapshot identity | `customer_data_model_snapshot_id`, `source_snapshot_id`, `source_projection_id`, `source_projection_hash`, `source_gate_id`, `source_gate_hash`, `source_promotion_decision_id`, `source_promotion_decision_hash`, `implementation_decision_id`, `implementation_decision_hash` |
+| Measurement binding | `measurement_cell_id`, `measurement_cell_assembly_run_id`, `measurement_plan_id` |
+| Approved path binding | `value_hypothesis_id` or `value_hypothesis_ref`, `value_hypothesis_binding_state`, `approved_blueprint_ref`, `approved_blueprint_payload_hash`, `blueprint_expectation_ref`, `expectation_path_id`, `expectation_path_version`, `expectation_path_hash`, `approval_state`, `approved_at`, `approved_by_role` |
+| Governed pathway metadata | `value_driver` constrained to `Revenue`, `Cost`, `Capacity`, `Quality`, or `Risk` |
+| Metric context | `metric_id`, `metric_definition_ref`, `metric_definition_hash`, `metric_owner_approval_state`, `metric_direction`, `metric_unit`, `expected_metric_lag_days` |
+| Workflow and cohort context | `workflow_family`, optional `workflow_id`, `function_area`, `cohort_key` |
+| Window context | `window_mode = milestone`, `milestone_day` constrained to Day 0 / 30 / 60 / 90 / 180 / 365, baseline and comparison window bounds |
+| Aggregate boundary | `aggregate_source_system`, `aggregate_export_review_ref`, `aggregate_export_review_state`, `aggregate_source_export_ref`, `aggregate_export_review_hash`, `pipeline_dry_run_ref`, `pipeline_boundary_hash`, `aggregate_boundary_ref_json` |
+| Compact refs and posture | `source_refs_json`, `assembly_decision`, validation booleans, validation gap counts, `required_caveats_json`, `blocked_uses_json` |
+| Version and audit | append-only `version`, optional `supersedes_id`, `generated_at`, `created_at`, `created_by_role` |
+
+Implemented constraints and checks:
+
+- unique `(org_id, customer_data_model_snapshot_id, version)`;
+- `version >= 1`, with corrections requiring `supersedes_id`;
+- `value_driver` is restricted to `Revenue`, `Cost`, `Capacity`, `Quality`, or
+  `Risk`;
+- `window_mode` is `milestone` only and `milestone_day` is restricted to Day 0
+  / 30 / 60 / 90 / 180 / 365;
+- `aggregate_source_system` is restricted to `bigquery_export` or
+  `sigma_export`;
+- `aggregate_export_review_state` must match the governed passed state for the
+  selected source system;
+- baseline and comparison window end dates must be after their corresponding
+  start dates;
+- persisted projection and assembly validation booleans must be true, with
+  zero validation gaps;
+- source projection, gate, promotion decision, implementation decision,
+  approved Blueprint payload, expectation path, metric definition, aggregate
+  export review, and pipeline-boundary hashes must be sha256 hashes;
+- JSON fields are shape-checked by the migration as compact objects or arrays;
+  compact key/value semantics are enforced by the backend repository before
+  writes, with direct table access blocked by RLS and role revocation;
+- the repository recomputes source projection, customer data model gate,
+  persistence promotion decision, and implementation decision validation before
+  writing;
+- the repository loads the referenced `measurement_cell_snapshots` row before
+  writing and rejects orphaned, stale, or drifted source authority;
+- the repository rejects source snapshot, projection, gate, promotion decision,
+  implementation decision, path, approval, metric, lag, cohort, window,
+  source-system, aggregate-boundary, caveat, and blocked-use drift;
+- DB readiness checks include the new table and critical columns so a skipped
+  migration does not report healthy.
+
+Blocked design:
+
+- no `payload_json`, `validation_json`, `blueprint_path_binding_json`, full
+  projection payload, or full registry column;
+- no full Measurement Cell object, source package payload, operator bundle,
+  manifest package, pipeline run, connector run, raw rows, dashboard rows,
+  query text, SQL text, prompts, responses, transcripts, file contents,
+  identifiers, row IDs, span IDs, hashed identifiers, or joinable person
+  identifiers;
+- no customer-facing route, frontend UI, export, rendered readout, live
+  BigQuery/Sigma/Glean execution, customer connector execution, unrestricted
+  read surface, research-model feed, model output, numeric weights,
+  probability output, score-like output, finance output, ROI, EBITDA,
+  causality, productivity, customer-facing output, or customer-facing financial
+  output;
+- no rolling 30-day continuity evidence. Rolling windows remain operating
+  context only and must fail closed before this persistence path.
 
 ## 8. Future Projection Sketch: `measurement_cell_series_snapshots`
 
@@ -689,7 +783,7 @@ Recommended physical posture:
 
 ## 11. Tables Not To Add
 
-Do not add these tables in the next implementation slice:
+Do not add these tables without a later exact-scope promotion decision:
 
 | Table | Reason |
 | --- | --- |
@@ -707,6 +801,8 @@ Do not add these tables in the next implementation slice:
 | `ai_fluency_psychological_scores` | Would turn leading-indicator context into an over-strong product object and create score semantics too early |
 | `adoption_conversion_scores` | Research-only concept; do not persist score-like conversion outputs before a separate research promotion |
 | `measurement_cells` | Use only the promoted compact `measurement_cell_snapshots` projection; do not create a full-object table |
+| `customer_data_models` | Use only the promoted compact `ai_value_customer_data_model_snapshots` projection; do not create a mutable full-object table |
+| `customer_data_model_payloads` | Would recreate full projection/readout payload storage and weaken the compact-ref boundary |
 | `measurement_cell_series` | Use only the candidate `measurement_cell_series_snapshots` design after explicit promotion; current contracts do not authorize persistence |
 | `evidence_continuity_manifests` | Continuity remains contract output; if promoted, extend evidence lineage deliberately |
 | `research_model_inputs` | Confidence-model research is not authorized yet |
@@ -716,8 +812,9 @@ Do not add these tables in the next implementation slice:
 
 ## 12. Additional Promotion Gate
 
-Before any additional Measurement Cell or Series persistence beyond
-`measurement_cell_snapshots`, require:
+Before any additional Measurement Cell, Customer Data Model, or Series
+persistence beyond `measurement_cell_snapshots` and
+`ai_value_customer_data_model_snapshots`, require:
 
 1. A promoted contract decision that names the exact table scope.
 2. Red/green tests proving persistence rejects path drift, approval drift,
@@ -758,9 +855,10 @@ allowed.
 
 This document alone cannot trigger additional migrations. A future
 implementation slice must cite a separate explicit promotion decision before
-adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
-migrations, repositories, schemas, unpromoted routes, UI, persistence writes,
-live execution, research-model inputs, or customer-facing output.
+adding any physical tables beyond `measurement_cell_snapshots` and
+`ai_value_customer_data_model_snapshots`, Prisma models, migrations,
+repositories, schemas, unpromoted routes, UI, persistence writes, live
+execution, research-model inputs, or customer-facing output.
 
 The [AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md)
 is the required gate before any internal research design may begin. A passed
@@ -772,14 +870,19 @@ probability, finance output, or customer-facing output.
 
 Recommended next move:
 
-1. Verify the promoted `measurement_cell_snapshots` write path against the
-   controlled pilot package and governance checks.
-2. Keep upstream aggregate handoff and acceptance package outputs
+1. Verify the promoted `ai_value_customer_data_model_snapshots` write/list path
+   against the controlled pilot package, implementation decision, DB readiness,
+   and governance checks.
+2. Define the next route/UI projection contract against
+   `ai_value_customer_data_model_snapshots` without exposing raw refs,
+   unrestricted exports, rendered financial output, confidence/probability
+   output, ROI, causality, productivity, or live connector state.
+3. Keep upstream aggregate handoff and acceptance package outputs
    non-persistent until a future exact-scope persistence decision passes the
    recomputation and smuggling tests named above.
-3. Defer `measurement_cell_series_snapshots` until at least one repeated
+4. Defer `measurement_cell_series_snapshots` until at least one repeated
    Measurement Cell workflow has been validated end to end across the required
-   milestone windows.
-4. Keep live BigQuery, Sigma, Glean connectors, customer-facing projections,
-   exports, confidence research inputs, and finance outputs behind separate
-   promotion decisions.
+   milestone windows and a real product continuity need exists.
+5. Wire live BigQuery, Sigma, and Glean connector execution last, after the
+   customer-facing route/UI projection contract proves it can consume the
+   stable persisted product-data model without expanding the evidence boundary.

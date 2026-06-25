@@ -9,6 +9,7 @@ import {
   type AiValueClaimReadinessSnapshotStoredRecord,
   type AiValueEvidenceSnapshotStoredRecord,
   type AiValueExecutiveReadoutSnapshotStoredRecord,
+  type AiValueCustomerDataModelSnapshotStoredRecord,
   type AiValueHypothesisStoredRecord,
   type AiValueMeasurementCellSnapshotStoredRecord,
   type AiValueMeasurementPlanStoredRecord,
@@ -210,6 +211,9 @@ const MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_KEY_SET = new Set(
 
 const COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERN =
   /^[A-Za-z0-9][A-Za-z0-9_-]{0,191}$/;
+
+const CUSTOMER_DATA_MODEL_COMPACT_REF_PATTERN =
+  /^[A-Za-z0-9][A-Za-z0-9._:|-]{0,259}$/;
 
 const FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS = [
   /https?:\/\//i,
@@ -458,6 +462,66 @@ const MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_PASSED_REVIEW_STATES: Record<
   sigma_export: "PASSED_SIGMA_AGGREGATE_CONNECTOR_BOUNDARY_REVIEW"
 };
 
+const CUSTOMER_DATA_MODEL_PROJECTION_READY_STATE = "INTERNAL_OPERATOR_PROJECTION_READY";
+const CUSTOMER_DATA_MODEL_IMPLEMENTATION_PROMOTE_STATE =
+  "PROMOTE_COMPACT_CUSTOMER_DATA_MODEL_SNAPSHOT_PERSISTENCE";
+const CUSTOMER_DATA_MODEL_PROJECTION_SCHEMA_VERSION =
+  "FT_AI_VALUE_MEASUREMENT_CELL_SNAPSHOT_PROJECTION_2026_06";
+const CUSTOMER_DATA_MODEL_IMPLEMENTATION_SCHEMA_VERSION =
+  "FT_AI_VALUE_CUSTOMER_DATA_MODEL_PERSISTENCE_IMPLEMENTATION_DECISION_2026_06";
+
+const CUSTOMER_DATA_MODEL_FALSE_FEEDS = [
+  "backend_route",
+  "frontend_ui",
+  "export_creation",
+  "rendered_readout",
+  "customer_facing_output",
+  "customer_facing_financial_output",
+  "live_bigquery_execution",
+  "live_sigma_execution",
+  "live_glean_query",
+  "customer_connector_execution",
+  "research_model_feed",
+  "model_output",
+  "probability_output",
+  "score_like_output",
+  "finance_output"
+];
+
+const CUSTOMER_DATA_MODEL_READY_FEEDS = [
+  "customer_data_model_compact_persistence_table",
+  "customer_data_model_repository_write_path",
+  "customer_data_model_repository_read_path"
+];
+
+const CUSTOMER_DATA_MODEL_REQUIRED_BLOCKED_USES = [
+  "backend_route",
+  "frontend_ui",
+  "export_creation",
+  "rendered_readout",
+  "customer_facing_output",
+  "customer_facing_financial_output",
+  "live_connector_execution",
+  "research_model_feed",
+  "model_output",
+  "probability_output",
+  "score_output",
+  "realized_roi",
+  "ebitda_claim",
+  "financial_attribution",
+  "causality_claim",
+  "productivity_claim",
+  "individual_attribution",
+  "manager_or_team_ranking",
+  "people_decisioning"
+];
+
+const CUSTOMER_DATA_MODEL_REQUIRED_CAVEATS = [
+  "Customer Data Model persistence implementation is compact product data only.",
+  "The promoted scope is one append-only table and internal repository write/read path.",
+  "No backend route, frontend UI, export, rendered readout, live connector execution, model output, finance output, or customer-facing output is authorized."
+];
+
 export interface PersistAiValueHypothesisInput {
   measurementPlan: Record<string, unknown>;
   version: number;
@@ -523,6 +587,14 @@ export interface PersistAiValueMeasurementCellSnapshotInput {
   snapshotCandidateRef?: Record<string, unknown> | null;
 }
 
+export interface PersistAiValueCustomerDataModelSnapshotInput {
+  snapshotProjection: Record<string, unknown>;
+  implementationDecision: Record<string, unknown>;
+  version: number;
+  createdByRole: string;
+  supersedesId?: string | null;
+}
+
 export interface LoadAiValueMeasurementPlanInput {
   orgId: string;
   measurementPlanId: string;
@@ -530,6 +602,12 @@ export interface LoadAiValueMeasurementPlanInput {
 }
 
 export interface ListAiValueSourcePackageRefsInput {
+  orgId: string;
+  measurementPlanId: string;
+  latestOnly?: boolean;
+}
+
+export interface ListAiValueCustomerDataModelSnapshotsInput {
   orgId: string;
   measurementPlanId: string;
   latestOnly?: boolean;
@@ -1837,6 +1915,12 @@ const measurementCellSnapshotKey = (
   version: number
 ) => `${orgId}:${measurementCellId}:${version}`;
 
+const customerDataModelSnapshotKey = (
+  orgId: string,
+  snapshotId: string,
+  version: number
+) => `${orgId}:${snapshotId}:${version}`;
+
 const latestByVersion = <T extends { version: number }>(records: T[]): T | null =>
   records.sort((a, b) => b.version - a.version)[0] ?? null;
 
@@ -2085,6 +2169,7 @@ const MEASUREMENT_CELL_SNAPSHOT_BLOCKED_REQUIRED_USES = [
   "people_decisioning",
   "customer_facing_financial_output",
   "customer_facing_prediction",
+  "customer_facing_projection",
   "customer_facing_output",
   "customer_facing_economic_output",
   "snapshot_read_projection",
@@ -3431,6 +3516,843 @@ const buildMeasurementCellSnapshotRecord = (
   return record;
 };
 
+const stableEnvelopeHash = (value: Record<string, unknown>, hashField: string): string => {
+  const clone = JSON.parse(JSON.stringify(value));
+  delete clone[hashField];
+  return stableHash(clone);
+};
+
+const FALSE_CUSTOMER_FINANCE_POSTURE_KEYS = new Set([
+  "customer_facing_financial_output",
+  "emits_customer_facing_financial_output"
+]);
+
+const CUSTOMER_DATA_MODEL_GOVERNANCE_REF_KEYS = new Set([
+  "promotion_decision_id",
+  "promotion_decision_state",
+  "promotion_decision_hash"
+]);
+
+const isSafeCustomerDataModelCompactRefValue = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.trim() === value &&
+  CUSTOMER_DATA_MODEL_COMPACT_REF_PATTERN.test(value) &&
+  !/[{}[\]"'`]/.test(value) &&
+  !FORBIDDEN_COMPACT_MEASUREMENT_CELL_SNAPSHOT_SOURCE_REF_PATTERNS.some(
+    (pattern) => pattern.test(value)
+  ) &&
+  !FORBIDDEN_SOURCE_REF_STRING_PATTERNS.some((pattern) => pattern.test(value)) &&
+  !FORBIDDEN_PERSISTENCE_STRING_PATTERNS.some((pattern) => pattern.test(value)) &&
+  !FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
+    pattern.test(value)
+  );
+
+const isAllowedCustomerDataModelGovernanceRef = (
+  key: string,
+  value: unknown
+): boolean => {
+  if (!CUSTOMER_DATA_MODEL_GOVERNANCE_REF_KEYS.has(key)) return false;
+  if (key.endsWith("_hash")) {
+    return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  }
+  if (key.endsWith("_state")) {
+    return (
+      typeof value === "string" &&
+      /^[A-Z0-9_]{1,160}$/.test(value) &&
+      !FORBIDDEN_MEASUREMENT_CELL_SNAPSHOT_STRING_PATTERNS.some((pattern) =>
+        pattern.test(value)
+      )
+    );
+  }
+  return isSafeCustomerDataModelCompactRefValue(value);
+};
+
+const stripAllowedFalseCustomerFinancePosture = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(stripAllowedFalseCustomerFinancePosture);
+  }
+  if (!value || typeof value !== "object") return value;
+  const record = value as Record<string, unknown>;
+  const stripped: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(record)) {
+    if (
+      (FALSE_CUSTOMER_FINANCE_POSTURE_KEYS.has(key) && nested === false) ||
+      isAllowedCustomerDataModelGovernanceRef(key, nested)
+    ) {
+      continue;
+    }
+    stripped[key] = stripAllowedFalseCustomerFinancePosture(nested);
+  }
+  return stripped;
+};
+
+const requireSha256Field = (
+  value: unknown,
+  label: string,
+  gaps: string[]
+): string => {
+  const text = requireStringField(value, label, gaps);
+  if (text && !/^[a-f0-9]{64}$/.test(text)) {
+    gaps.push(`${label} must be a sha256 hash`);
+  }
+  return text;
+};
+
+const requireCompactCustomerDataModelRefField = (
+  value: unknown,
+  label: string,
+  gaps: string[]
+): string => {
+  const text = requireStringField(value, label, gaps);
+  if (text && !isSafeCustomerDataModelCompactRefValue(text)) {
+    gaps.push(`${label} must be a compact governed product ref`);
+  }
+  return text;
+};
+
+const requireCustomerDataModelProjection = (
+  projection: Record<string, unknown>
+): {
+  snapshot: Record<string, unknown>;
+  pathway: Record<string, unknown>;
+  metric: Record<string, unknown>;
+  workflow: Record<string, unknown>;
+  window: Record<string, unknown>;
+  source: Record<string, unknown>;
+  posture: Record<string, unknown>;
+  sourceRefs: Record<string, string>;
+  aggregateBoundaryRef: Record<string, string>;
+} => {
+  enforcePersistenceDenylist(
+    stripAllowedFalseCustomerFinancePosture(projection),
+    "Customer Data Model snapshot projection"
+  );
+  const gaps: string[] = [];
+  if (projection.schema_version !== CUSTOMER_DATA_MODEL_PROJECTION_SCHEMA_VERSION) {
+    gaps.push("snapshotProjection.schema_version is unsupported");
+  }
+  if (projection.projection_state !== CUSTOMER_DATA_MODEL_PROJECTION_READY_STATE) {
+    gaps.push("snapshotProjection.projection_state must be ready");
+  }
+  const projectionHash = requireSha256Field(
+    projection.projection_hash,
+    "snapshotProjection.projection_hash",
+    gaps
+  );
+  requireCompactCustomerDataModelRefField(
+    projection.projection_id,
+    "snapshotProjection.projection_id",
+    gaps
+  );
+  if (
+    projectionHash &&
+    projectionHash !== stableEnvelopeHash(projection, "projection_hash")
+  ) {
+    gaps.push("snapshotProjection.projection_hash must match recomputed projection");
+  }
+
+  const summary = asRecord(projection.validation_summary);
+  if (summary.valid !== true) {
+    gaps.push("snapshotProjection.validation_summary.valid must be true");
+  }
+  if (asStringArray(summary.gaps).length > 0) {
+    gaps.push("snapshotProjection.validation_summary.gaps must be empty");
+  }
+
+  const scope = asRecord(projection.projection_scope);
+  if (scope.source_bound !== true || scope.compact_refs_only !== true) {
+    gaps.push("snapshotProjection must be source-bound compact refs only");
+  }
+  for (const field of [
+    "customer_facing",
+    "customer_projection_promoted",
+    "route_authorized",
+    "ui_authorized",
+    "export_authorized"
+  ]) {
+    if (scope[field] !== false) {
+      gaps.push(`snapshotProjection.projection_scope.${field} must be false`);
+    }
+  }
+  const feeds = asRecord(projection.feeds);
+  for (const field of CUSTOMER_DATA_MODEL_FALSE_FEEDS) {
+    if (feeds[field] !== false) {
+      gaps.push(`snapshotProjection.feeds.${field} must be false`);
+    }
+  }
+
+  const snapshot = asRecord(projection.snapshot_identity);
+  const pathway = asRecord(projection.pathway_binding);
+  const metric = asRecord(projection.metric_context);
+  const workflow = asRecord(projection.workflow_context);
+  const window = asRecord(projection.window_context);
+  const source = asRecord(projection.source_context);
+  const posture = asRecord(projection.evidence_posture);
+
+  const sourceRefs = compactMeasurementCellSnapshotSourceRefs(
+    asRecord(source.source_refs)
+  );
+  const aggregateBoundaryRef = compactMeasurementCellSnapshotAggregateBoundaryRef(
+    asRecord(source.aggregate_boundary_ref),
+    sourceRefs
+  );
+  if (source.aggregate_source_system !== "bigquery_export" && source.aggregate_source_system !== "sigma_export") {
+    gaps.push("snapshotProjection.source_context.aggregate_source_system is unsupported");
+  }
+  if (
+    source.aggregate_source_system &&
+    source.aggregate_export_review_state !==
+      MEASUREMENT_CELL_SNAPSHOT_AGGREGATE_PASSED_REVIEW_STATES[
+        String(source.aggregate_source_system)
+      ]
+  ) {
+    gaps.push("snapshotProjection.source_context.aggregate_export_review_state is not passed");
+  }
+  requireSha256Field(
+    source.aggregate_export_review_hash,
+    "snapshotProjection.source_context.aggregate_export_review_hash",
+    gaps
+  );
+  requireSha256Field(
+    source.pipeline_boundary_hash,
+    "snapshotProjection.source_context.pipeline_boundary_hash",
+    gaps
+  );
+  if (!titleCaseValueDriver(pathway.value_driver)) {
+    gaps.push("snapshotProjection.pathway_binding.value_driver is unsupported");
+  }
+  if (pathway.approval_state !== "approved") {
+    gaps.push("snapshotProjection.pathway_binding.approval_state must be approved");
+  }
+  if (window.window_mode !== "milestone") {
+    gaps.push("snapshotProjection.window_context.window_mode must be milestone");
+  }
+  if (![0, 30, 60, 90, 180, 365].includes(Number(window.milestone_day))) {
+    gaps.push("snapshotProjection.window_context.milestone_day must be Day 0, 30, 60, 90, 180, or 365");
+  }
+  if (posture.validation_valid !== true || posture.assembly_validation_valid !== true) {
+    gaps.push("snapshotProjection.evidence_posture validation flags must be true");
+  }
+  if (Number(posture.validation_gap_count) !== 0 || Number(posture.assembly_validation_gap_count) !== 0) {
+    gaps.push("snapshotProjection.evidence_posture gap counts must be zero");
+  }
+
+  for (const [label, value] of [
+    ["snapshot_identity.snapshot_id", snapshot.snapshot_id],
+    ["snapshot_identity.org_id", snapshot.org_id],
+    ["snapshot_identity.measurement_cell_id", snapshot.measurement_cell_id],
+    ["snapshot_identity.measurement_plan_id", snapshot.measurement_plan_id],
+    ["pathway_binding.expectation_path_id", pathway.expectation_path_id],
+    ["metric_context.metric_id", metric.metric_id],
+    ["workflow_context.workflow_family", workflow.workflow_family],
+    ["workflow_context.function_area", workflow.function_area],
+    ["workflow_context.cohort_key", workflow.cohort_key]
+  ]) {
+    requireStringField(value, `snapshotProjection.${label}`, gaps);
+  }
+  requireCompactCustomerDataModelRefField(
+    snapshot.snapshot_id,
+    "snapshotProjection.snapshot_identity.snapshot_id",
+    gaps
+  );
+
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model snapshot projection failed validation before persistence",
+      gaps
+    );
+  }
+
+  return {
+    snapshot,
+    pathway,
+    metric,
+    workflow,
+    window,
+    source,
+    posture,
+    sourceRefs,
+    aggregateBoundaryRef
+  };
+};
+
+const requireCustomerDataModelImplementationDecision = (
+  decision: Record<string, unknown>,
+  projection: Record<string, unknown>
+): Record<string, unknown> => {
+  enforcePersistenceDenylist(
+    stripAllowedFalseCustomerFinancePosture(decision),
+    "Customer Data Model implementation decision"
+  );
+  const gaps: string[] = [];
+  if (decision.schema_version !== CUSTOMER_DATA_MODEL_IMPLEMENTATION_SCHEMA_VERSION) {
+    gaps.push("implementationDecision.schema_version is unsupported");
+  }
+  if (decision.decision_state !== CUSTOMER_DATA_MODEL_IMPLEMENTATION_PROMOTE_STATE) {
+    gaps.push("implementationDecision.decision_state must promote compact persistence");
+  }
+  requireCompactCustomerDataModelRefField(
+    decision.decision_id,
+    "implementationDecision.decision_id",
+    gaps
+  );
+  const decisionHash = requireSha256Field(
+    decision.decision_hash,
+    "implementationDecision.decision_hash",
+    gaps
+  );
+  if (
+    decisionHash &&
+    decisionHash !== stableEnvelopeHash(decision, "decision_hash")
+  ) {
+    gaps.push("implementationDecision.decision_hash must match recomputed decision");
+  }
+
+  const scope = asRecord(decision.implementation_scope);
+  for (const field of [
+    "exact_scope_only",
+    "source_bound",
+    "compact_refs_only",
+    "append_only",
+    "internal_product_data_model",
+    "persistence_table_authorized",
+    "prisma_model_authorized",
+    "migration_authorized",
+    "repository_write_authorized",
+    "repository_read_authorized"
+  ]) {
+    if (scope[field] !== true) {
+      gaps.push(`implementationDecision.implementation_scope.${field} must be true`);
+    }
+  }
+  for (const field of [
+    "route_authorized",
+    "ui_authorized",
+    "export_authorized",
+    "rendered_readout_authorized",
+    "customer_facing_output_authorized",
+    "live_connector_authorized",
+    "model_output_authorized",
+    "finance_output_authorized"
+  ]) {
+    if (scope[field] !== false) {
+      gaps.push(`implementationDecision.implementation_scope.${field} must be false`);
+    }
+  }
+
+  const feeds = asRecord(decision.feeds);
+  for (const field of CUSTOMER_DATA_MODEL_READY_FEEDS) {
+    if (feeds[field] !== true) {
+      gaps.push(`implementationDecision.feeds.${field} must be true`);
+    }
+  }
+  for (const field of CUSTOMER_DATA_MODEL_FALSE_FEEDS) {
+    if (feeds[field] !== false) {
+      gaps.push(`implementationDecision.feeds.${field} must be false`);
+    }
+  }
+  const physicalModel = asRecord(decision.physical_model);
+  if (physicalModel.table_name !== "ai_value_customer_data_model_snapshots") {
+    gaps.push("implementationDecision.physical_model.table_name is unsupported");
+  }
+  if (physicalModel.source_authority !== "measurement_cell_snapshots") {
+    gaps.push("implementationDecision.physical_model.source_authority is unsupported");
+  }
+  if (
+    stableStringify(decision.required_caveats) !==
+    stableStringify(CUSTOMER_DATA_MODEL_REQUIRED_CAVEATS)
+  ) {
+    gaps.push("implementationDecision.required_caveats must match governed caveats");
+  }
+  if (
+    stableStringify(decision.blocked_uses) !==
+    stableStringify(CUSTOMER_DATA_MODEL_REQUIRED_BLOCKED_USES)
+  ) {
+    gaps.push("implementationDecision.blocked_uses must match governed blocked uses");
+  }
+  const summary = asRecord(decision.validation_summary);
+  if (summary.valid !== true || asStringArray(summary.gaps).length > 0) {
+    gaps.push("implementationDecision.validation_summary must be valid with no gaps");
+  }
+
+  const sourceRef = asRecord(decision.source_decision_ref);
+  const snapshot = asRecord(projection.snapshot_identity);
+  const pathway = asRecord(projection.pathway_binding);
+  const metric = asRecord(projection.metric_context);
+  const workflow = asRecord(projection.workflow_context);
+  const window = asRecord(projection.window_context);
+  const source = asRecord(projection.source_context);
+  const expectedRef: Record<string, unknown> = {
+    source_projection_id: projection.projection_id,
+    source_projection_hash: projection.projection_hash,
+    snapshot_id: snapshot.snapshot_id,
+    org_id: snapshot.org_id,
+    client_id: snapshot.client_id ?? null,
+    measurement_cell_id: snapshot.measurement_cell_id,
+    measurement_plan_id: snapshot.measurement_plan_id,
+    expectation_path_id: pathway.expectation_path_id,
+    metric_id: metric.metric_id,
+    workflow_family: workflow.workflow_family,
+    function_area: workflow.function_area,
+    cohort_key: workflow.cohort_key,
+    window_mode: window.window_mode,
+    milestone_day: window.milestone_day,
+    aggregate_source_system: source.aggregate_source_system,
+    pipeline_boundary_hash: source.pipeline_boundary_hash
+  };
+  for (const [field, expected] of Object.entries(expectedRef)) {
+    if (stableStringify(sourceRef[field]) !== stableStringify(expected)) {
+      gaps.push(`implementationDecision.source_decision_ref.${field} must match snapshot projection`);
+    }
+  }
+  if (
+    sourceRef.promotion_decision_state !==
+    "READY_FOR_EXACT_SCOPE_CUSTOMER_DATA_MODEL_PERSISTENCE_IMPLEMENTATION_DECISION"
+  ) {
+    gaps.push("implementationDecision.source_decision_ref.promotion_decision_state must be ready");
+  }
+  for (const field of [
+    "promotion_decision_id",
+    "promotion_decision_hash",
+    "source_gate_id",
+    "source_gate_hash"
+  ]) {
+    requireStringField(sourceRef[field], `implementationDecision.source_decision_ref.${field}`, gaps);
+  }
+  for (const field of [
+    "promotion_decision_id",
+    "source_gate_id",
+    "source_projection_id",
+    "snapshot_id"
+  ]) {
+    requireCompactCustomerDataModelRefField(
+      sourceRef[field],
+      `implementationDecision.source_decision_ref.${field}`,
+      gaps
+    );
+  }
+  for (const field of [
+    "promotion_decision_hash",
+    "source_gate_hash",
+    "source_projection_hash",
+    "pipeline_boundary_hash"
+  ]) {
+    requireSha256Field(sourceRef[field], `implementationDecision.source_decision_ref.${field}`, gaps);
+  }
+
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model implementation decision failed validation before persistence",
+      gaps
+    );
+  }
+  return sourceRef;
+};
+
+const buildCustomerDataModelSnapshotRecord = (
+  input: PersistAiValueCustomerDataModelSnapshotInput
+): AiValueCustomerDataModelSnapshotStoredRecord => {
+  const projectionParts = requireCustomerDataModelProjection(input.snapshotProjection);
+  const sourceDecisionRef = requireCustomerDataModelImplementationDecision(
+    input.implementationDecision,
+    input.snapshotProjection
+  );
+  const {
+    snapshot,
+    pathway,
+    metric,
+    workflow,
+    window,
+    source,
+    posture,
+    sourceRefs,
+    aggregateBoundaryRef
+  } = projectionParts;
+  const customerDataModelSnapshotId =
+    `customer_data_model_snapshot:${asString(snapshot.org_id)}:${asString(snapshot.measurement_cell_id)}`;
+
+  const record: AiValueCustomerDataModelSnapshotStoredRecord = {
+    id: randomUUID(),
+    org_id: asString(snapshot.org_id),
+    client_id: asOptionalString(snapshot.client_id),
+    customer_data_model_snapshot_id: customerDataModelSnapshotId,
+    source_snapshot_id: asString(snapshot.snapshot_id),
+    source_projection_id: asString(input.snapshotProjection.projection_id),
+    source_projection_hash: asString(input.snapshotProjection.projection_hash),
+    source_gate_id: asString(sourceDecisionRef.source_gate_id),
+    source_gate_hash: asString(sourceDecisionRef.source_gate_hash),
+    source_promotion_decision_id: asString(sourceDecisionRef.promotion_decision_id),
+    source_promotion_decision_hash: asString(sourceDecisionRef.promotion_decision_hash),
+    implementation_decision_id: asString(input.implementationDecision.decision_id),
+    implementation_decision_hash: asString(input.implementationDecision.decision_hash),
+    measurement_cell_id: asString(snapshot.measurement_cell_id),
+    measurement_cell_assembly_run_id: asString(snapshot.measurement_cell_assembly_run_id),
+    measurement_plan_id: asString(snapshot.measurement_plan_id),
+    value_hypothesis_id: asOptionalString(pathway.value_hypothesis_id),
+    value_hypothesis_ref: asOptionalString(pathway.value_hypothesis_ref),
+    value_hypothesis_binding_state: asString(pathway.value_hypothesis_binding_state),
+    approved_blueprint_ref: asString(pathway.approved_blueprint_ref),
+    approved_blueprint_payload_hash: asString(pathway.approved_blueprint_payload_hash),
+    blueprint_expectation_ref: asString(pathway.blueprint_expectation_ref),
+    expectation_path_id: asString(pathway.expectation_path_id),
+    expectation_path_version: Number(pathway.expectation_path_version),
+    expectation_path_hash: asString(pathway.expectation_path_hash),
+    approval_state: asString(pathway.approval_state),
+    approved_at: asString(pathway.approved_at),
+    approved_by_role: asString(pathway.approved_by_role),
+    value_driver: titleCaseValueDriver(pathway.value_driver) ?? "",
+    metric_id: asString(metric.metric_id),
+    metric_definition_ref: asString(metric.metric_definition_ref),
+    metric_definition_hash: asString(metric.metric_definition_hash),
+    metric_owner_approval_state: asString(metric.metric_owner_approval_state),
+    metric_direction: asString(metric.metric_direction),
+    metric_unit: asString(metric.metric_unit),
+    expected_metric_lag_days: Number(metric.expected_metric_lag_days),
+    workflow_family: asString(workflow.workflow_family),
+    workflow_id: asOptionalString(workflow.workflow_id),
+    function_area: asString(workflow.function_area),
+    cohort_key: asString(workflow.cohort_key),
+    window_mode: asString(window.window_mode),
+    milestone_day: Number(window.milestone_day),
+    baseline_window_start: asString(window.baseline_window_start),
+    baseline_window_end: asString(window.baseline_window_end),
+    comparison_window_start: asString(window.comparison_window_start),
+    comparison_window_end: asString(window.comparison_window_end),
+    aggregate_source_system: asString(source.aggregate_source_system),
+    aggregate_export_review_ref: asString(source.aggregate_export_review_ref),
+    aggregate_export_review_state: asString(source.aggregate_export_review_state),
+    aggregate_source_export_ref: asString(source.aggregate_source_export_ref),
+    aggregate_export_review_hash: asString(source.aggregate_export_review_hash),
+    pipeline_dry_run_ref: asString(source.pipeline_dry_run_ref),
+    pipeline_boundary_hash: asString(source.pipeline_boundary_hash),
+    source_refs: sourceRefs,
+    aggregate_boundary_ref: aggregateBoundaryRef,
+    assembly_decision: asString(posture.assembly_decision),
+    validation_valid: posture.validation_valid === true,
+    assembly_validation_valid: posture.assembly_validation_valid === true,
+    validation_gap_count: Number(posture.validation_gap_count),
+    assembly_validation_gap_count: Number(posture.assembly_validation_gap_count),
+    required_caveats: CUSTOMER_DATA_MODEL_REQUIRED_CAVEATS,
+    blocked_uses: CUSTOMER_DATA_MODEL_REQUIRED_BLOCKED_USES,
+    version: input.version,
+    supersedes_id: input.supersedesId ?? null,
+    generated_at: asString(snapshot.generated_at),
+    created_at: new Date().toISOString(),
+    created_by_role: input.createdByRole
+  };
+
+  const gaps: string[] = [];
+  requireSha256Field(record.approved_blueprint_payload_hash, "approved_blueprint_payload_hash", gaps);
+  requireSha256Field(record.expectation_path_hash, "expectation_path_hash", gaps);
+  requireSha256Field(record.metric_definition_hash, "metric_definition_hash", gaps);
+  parseDate(record.approved_at, "approved_at");
+  parseDate(record.baseline_window_start, "baseline_window_start");
+  parseDate(record.baseline_window_end, "baseline_window_end");
+  parseDate(record.comparison_window_start, "comparison_window_start");
+  parseDate(record.comparison_window_end, "comparison_window_end");
+  parseDate(record.generated_at, "generated_at");
+  enforcePersistenceDenylist(record.source_refs, "Customer Data Model source refs");
+  enforcePersistenceDenylist(record.aggregate_boundary_ref, "Customer Data Model aggregate boundary ref");
+  if (record.value_hypothesis_binding_state !== "inapplicable" && !record.value_hypothesis_id && !record.value_hypothesis_ref) {
+    gaps.push("value hypothesis id or ref is required unless binding state is inapplicable");
+  }
+  if (record.approval_state !== "approved") {
+    gaps.push("approval_state must be approved");
+  }
+  if (record.window_mode !== "milestone") {
+    gaps.push("window_mode must be milestone");
+  }
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model snapshot binding failed validation before persistence",
+      gaps
+    );
+  }
+  return record;
+};
+
+const customerDataModelSnapshotVersionLineageGaps = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord,
+  superseded: AiValueCustomerDataModelSnapshotStoredRecord
+): string[] => {
+  if (superseded.version !== record.version - 1) {
+    return [
+      `supersedes_id must reference the immediately previous version ${record.version - 1}; referenced version ${superseded.version}`
+    ];
+  }
+  return [];
+};
+
+const customerDataModelSnapshotLineageDriftGaps = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord,
+  superseded: AiValueCustomerDataModelSnapshotStoredRecord
+): string[] => {
+  const gaps: string[] = [];
+  for (const field of [
+    "source_snapshot_id",
+    "source_projection_id",
+    "source_gate_id",
+    "source_promotion_decision_id",
+    "measurement_cell_id",
+    "measurement_cell_assembly_run_id",
+    "measurement_plan_id",
+    "value_hypothesis_id",
+    "value_hypothesis_ref",
+    "value_hypothesis_binding_state",
+    "approved_blueprint_ref",
+    "approved_blueprint_payload_hash",
+    "blueprint_expectation_ref",
+    "expectation_path_id",
+    "expectation_path_version",
+    "expectation_path_hash",
+    "approval_state",
+    "approved_at",
+    "approved_by_role",
+    "value_driver",
+    "metric_id",
+    "metric_definition_ref",
+    "metric_definition_hash",
+    "metric_owner_approval_state",
+    "metric_direction",
+    "metric_unit",
+    "expected_metric_lag_days",
+    "workflow_family",
+    "workflow_id",
+    "function_area",
+    "cohort_key",
+    "window_mode",
+    "milestone_day",
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end",
+    "aggregate_source_system",
+    "aggregate_export_review_ref",
+    "aggregate_export_review_state",
+    "aggregate_source_export_ref",
+    "aggregate_export_review_hash",
+    "pipeline_dry_run_ref",
+    "pipeline_boundary_hash"
+  ] as const) {
+    compareMeasurementCellSnapshotLineageField(
+      gaps,
+      field,
+      superseded[field],
+      record[field]
+    );
+  }
+  compareField(
+    gaps,
+    "superseded Customer Data Model source_refs must match correction",
+    superseded.source_refs,
+    record.source_refs
+  );
+  compareField(
+    gaps,
+    "superseded Customer Data Model aggregate_boundary_ref must match correction",
+    superseded.aggregate_boundary_ref,
+    record.aggregate_boundary_ref
+  );
+  return gaps;
+};
+
+const customerDataModelSnapshotSourceAuthorityGaps = (
+  record: AiValueCustomerDataModelSnapshotStoredRecord,
+  source: AiValueMeasurementCellSnapshotStoredRecord
+): string[] => {
+  const gaps: string[] = [];
+  compareMeasurementCellSnapshotLineageField(
+    gaps,
+    "source_snapshot_id",
+    source.id,
+    record.source_snapshot_id
+  );
+  for (const field of [
+    "org_id",
+    "client_id",
+    "measurement_cell_id",
+    "measurement_cell_assembly_run_id",
+    "measurement_plan_id",
+    "value_hypothesis_id",
+    "value_hypothesis_ref",
+    "value_hypothesis_binding_state",
+    "approved_blueprint_ref",
+    "approved_blueprint_payload_hash",
+    "blueprint_expectation_ref",
+    "expectation_path_id",
+    "expectation_path_version",
+    "expectation_path_hash",
+    "approval_state",
+    "approved_at",
+    "approved_by_role",
+    "value_driver",
+    "metric_id",
+    "metric_definition_ref",
+    "metric_definition_hash",
+    "metric_owner_approval_state",
+    "metric_direction",
+    "metric_unit",
+    "expected_metric_lag_days",
+    "workflow_family",
+    "workflow_id",
+    "function_area",
+    "cohort_key",
+    "window_mode",
+    "milestone_day",
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end",
+    "aggregate_source_system",
+    "aggregate_export_review_ref",
+    "aggregate_export_review_state",
+    "aggregate_source_export_ref",
+    "aggregate_export_review_hash",
+    "pipeline_dry_run_ref",
+    "pipeline_boundary_hash",
+    "assembly_decision",
+    "generated_at"
+  ] as const) {
+    compareMeasurementCellSnapshotLineageField(
+      gaps,
+      field,
+      source[field],
+      record[field]
+    );
+  }
+  compareField(
+    gaps,
+    "source Measurement Cell Snapshot source_refs must match Customer Data Model source refs",
+    source.source_refs,
+    record.source_refs
+  );
+  compareField(
+    gaps,
+    "source Measurement Cell Snapshot aggregate_boundary_ref must match Customer Data Model aggregate_boundary_ref",
+    source.aggregate_boundary_ref,
+    record.aggregate_boundary_ref
+  );
+  return gaps;
+};
+
+const findMeasurementCellSnapshotAuthority = async (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+): Promise<AiValueMeasurementCellSnapshotStoredRecord | null> => {
+  const cached =
+    Array.from(store.aiValueMeasurementCellSnapshots.values()).find(
+      (entry) => entry.id === record.source_snapshot_id
+    ) ?? null;
+  if (cached || !usePrisma()) return cached;
+
+  const source = await getPrisma().measurementCellSnapshot.findUnique({
+    where: { id: record.source_snapshot_id }
+  });
+  return source ? measurementCellSnapshotRowToRecord(source) : null;
+};
+
+const ensureCustomerDataModelSourceSnapshotAuthority = async (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+): Promise<void> => {
+  const source = await findMeasurementCellSnapshotAuthority(record);
+  if (!source) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model Snapshot source Measurement Cell Snapshot is required",
+      ["source_snapshot_id must reference an existing Measurement Cell Snapshot"]
+    );
+  }
+  const gaps = customerDataModelSnapshotSourceAuthorityGaps(record, source);
+  if (gaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model Snapshot must match source Measurement Cell Snapshot authority",
+      gaps
+    );
+  }
+};
+
+const ensureCustomerDataModelSnapshotSupersedes = async (
+  record: AiValueCustomerDataModelSnapshotStoredRecord
+): Promise<void> => {
+  if (record.version === 1) {
+    if (record.supersedes_id) {
+      throw new AiValuePersistenceValidationError(
+        "Initial Customer Data Model Snapshot versions cannot supersede another snapshot",
+        ["supersedes_id must be null when version is 1"]
+      );
+    }
+    return;
+  }
+  if (!record.supersedes_id) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model Snapshot corrections require explicit lineage",
+      ["supersedes_id is required when version is greater than 1"]
+    );
+  }
+  if (!usePrisma()) {
+    const superseded = Array.from(store.aiValueCustomerDataModelSnapshots.values()).find(
+      (entry) => entry.id === record.supersedes_id
+    );
+    if (
+      !superseded ||
+      superseded.org_id !== record.org_id ||
+      superseded.customer_data_model_snapshot_id !== record.customer_data_model_snapshot_id
+    ) {
+      throw new AiValuePersistenceValidationError(
+        "Customer Data Model Snapshot supersedes_id must reference the same snapshot",
+        ["supersedes_id must reference an existing snapshot for the same org and customer_data_model_snapshot_id"]
+      );
+    }
+    const versionGaps = customerDataModelSnapshotVersionLineageGaps(record, superseded);
+    if (versionGaps.length > 0) {
+      throw new AiValuePersistenceValidationError(
+        "Customer Data Model Snapshot correction must supersede the immediately previous version",
+        versionGaps
+      );
+    }
+    const lineageGaps = customerDataModelSnapshotLineageDriftGaps(record, superseded);
+    if (lineageGaps.length > 0) {
+      throw new AiValuePersistenceValidationError(
+        "Customer Data Model Snapshot correction cannot change selected path, metric, or milestone identity",
+        lineageGaps
+      );
+    }
+    return;
+  }
+  const superseded = await getPrisma().customerDataModelSnapshot.findUnique({
+    where: { id: record.supersedes_id }
+  });
+  if (
+    !superseded ||
+    superseded.orgId !== record.org_id ||
+    superseded.customerDataModelSnapshotId !== record.customer_data_model_snapshot_id
+  ) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model Snapshot supersedes_id must reference the same snapshot",
+      ["supersedes_id must reference an existing snapshot for the same org and customer_data_model_snapshot_id"]
+    );
+  }
+  const supersededRecord = customerDataModelSnapshotRowToRecord(superseded);
+  const versionGaps = customerDataModelSnapshotVersionLineageGaps(
+    record,
+    supersededRecord
+  );
+  if (versionGaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model Snapshot correction must supersede the immediately previous version",
+      versionGaps
+    );
+  }
+  const lineageGaps = customerDataModelSnapshotLineageDriftGaps(
+    record,
+    supersededRecord
+  );
+  if (lineageGaps.length > 0) {
+    throw new AiValuePersistenceValidationError(
+      "Customer Data Model Snapshot correction cannot change selected path, metric, or milestone identity",
+      lineageGaps
+    );
+  }
+};
+
 export async function loadAiValueMeasurementPlan(
   input: LoadAiValueMeasurementPlanInput
 ): Promise<AiValueMeasurementPlanStoredRecord | null> {
@@ -3984,6 +4906,159 @@ export async function persistAiValueMeasurementCellSnapshot(
   } catch (error: any) {
     return translatePrismaDuplicate(error);
   }
+}
+
+export async function persistAiValueCustomerDataModelSnapshot(
+  input: PersistAiValueCustomerDataModelSnapshotInput
+): Promise<AiValueCustomerDataModelSnapshotStoredRecord> {
+  ensureVersion(input.version);
+  enforceSafeMetadata(
+    {
+      createdByRole: input.createdByRole,
+      supersedesId: input.supersedesId ?? null
+    },
+    "Customer Data Model Snapshot metadata"
+  );
+  const record = buildCustomerDataModelSnapshotRecord(input);
+  const key = customerDataModelSnapshotKey(
+    record.org_id,
+    record.customer_data_model_snapshot_id,
+    record.version
+  );
+  rejectDuplicate(store.aiValueCustomerDataModelSnapshots.has(key));
+  await ensureCustomerDataModelSourceSnapshotAuthority(record);
+  await ensureCustomerDataModelSnapshotSupersedes(record);
+
+  if (!usePrisma()) {
+    store.aiValueCustomerDataModelSnapshots.set(key, record);
+    return record;
+  }
+
+  try {
+    const created = await getPrisma().customerDataModelSnapshot.create({
+      data: {
+        id: record.id,
+        orgId: record.org_id,
+        clientId: record.client_id,
+        customerDataModelSnapshotId: record.customer_data_model_snapshot_id,
+        sourceSnapshotId: record.source_snapshot_id,
+        sourceProjectionId: record.source_projection_id,
+        sourceProjectionHash: record.source_projection_hash,
+        sourceGateId: record.source_gate_id,
+        sourceGateHash: record.source_gate_hash,
+        sourcePromotionDecisionId: record.source_promotion_decision_id,
+        sourcePromotionDecisionHash: record.source_promotion_decision_hash,
+        implementationDecisionId: record.implementation_decision_id,
+        implementationDecisionHash: record.implementation_decision_hash,
+        measurementCellId: record.measurement_cell_id,
+        measurementCellAssemblyRunId: record.measurement_cell_assembly_run_id,
+        measurementPlanId: record.measurement_plan_id,
+        valueHypothesisId: record.value_hypothesis_id,
+        valueHypothesisRef: record.value_hypothesis_ref,
+        valueHypothesisBindingState: record.value_hypothesis_binding_state,
+        approvedBlueprintRef: record.approved_blueprint_ref,
+        approvedBlueprintPayloadHash: record.approved_blueprint_payload_hash,
+        blueprintExpectationRef: record.blueprint_expectation_ref,
+        expectationPathId: record.expectation_path_id,
+        expectationPathVersion: record.expectation_path_version,
+        expectationPathHash: record.expectation_path_hash,
+        approvalState: record.approval_state,
+        approvedAt: parseDate(record.approved_at, "approved_at"),
+        approvedByRole: record.approved_by_role,
+        valueDriver: record.value_driver,
+        metricId: record.metric_id,
+        metricDefinitionRef: record.metric_definition_ref,
+        metricDefinitionHash: record.metric_definition_hash,
+        metricOwnerApprovalState: record.metric_owner_approval_state,
+        metricDirection: record.metric_direction,
+        metricUnit: record.metric_unit,
+        expectedMetricLagDays: record.expected_metric_lag_days,
+        workflowFamily: record.workflow_family,
+        workflowId: record.workflow_id,
+        functionArea: record.function_area,
+        cohortKey: record.cohort_key,
+        windowMode: record.window_mode,
+        milestoneDay: record.milestone_day,
+        baselineWindowStart: parseDate(record.baseline_window_start, "baseline_window_start"),
+        baselineWindowEnd: parseDate(record.baseline_window_end, "baseline_window_end"),
+        comparisonWindowStart: parseDate(record.comparison_window_start, "comparison_window_start"),
+        comparisonWindowEnd: parseDate(record.comparison_window_end, "comparison_window_end"),
+        aggregateSourceSystem: record.aggregate_source_system,
+        aggregateExportReviewRef: record.aggregate_export_review_ref,
+        aggregateExportReviewState: record.aggregate_export_review_state,
+        aggregateSourceExportRef: record.aggregate_source_export_ref,
+        aggregateExportReviewHash: record.aggregate_export_review_hash,
+        pipelineDryRunRef: record.pipeline_dry_run_ref,
+        pipelineBoundaryHash: record.pipeline_boundary_hash,
+        sourceRefsJson: record.source_refs as Prisma.InputJsonValue,
+        aggregateBoundaryRefJson: record.aggregate_boundary_ref as Prisma.InputJsonValue,
+        assemblyDecision: record.assembly_decision,
+        validationValid: record.validation_valid,
+        assemblyValidationValid: record.assembly_validation_valid,
+        validationGapCount: record.validation_gap_count,
+        assemblyValidationGapCount: record.assembly_validation_gap_count,
+        requiredCaveatsJson: record.required_caveats as Prisma.InputJsonValue,
+        blockedUsesJson: record.blocked_uses as Prisma.InputJsonValue,
+        version: record.version,
+        supersedesId: record.supersedes_id,
+        generatedAt: parseDate(record.generated_at, "generated_at"),
+        createdAt: new Date(record.created_at),
+        createdByRole: record.created_by_role
+      }
+    });
+    const createdRecord = customerDataModelSnapshotRowToRecord(created);
+    store.aiValueCustomerDataModelSnapshots.set(key, createdRecord);
+    return createdRecord;
+  } catch (error: any) {
+    return translatePrismaDuplicate(error);
+  }
+}
+
+export async function listAiValueCustomerDataModelSnapshots(
+  input: ListAiValueCustomerDataModelSnapshotsInput
+): Promise<AiValueCustomerDataModelSnapshotStoredRecord[]> {
+  const latestOnly = input.latestOnly !== false;
+  if (!usePrisma()) {
+    const records = Array.from(store.aiValueCustomerDataModelSnapshots.values())
+      .filter(
+        (record) =>
+          record.org_id === input.orgId &&
+          record.measurement_plan_id === input.measurementPlanId
+      )
+      .sort((left, right) =>
+        left.customer_data_model_snapshot_id.localeCompare(
+          right.customer_data_model_snapshot_id
+        ) || right.version - left.version
+      );
+    if (!latestOnly) return records;
+    const latest = new Map<string, AiValueCustomerDataModelSnapshotStoredRecord>();
+    for (const record of records) {
+      if (!latest.has(record.customer_data_model_snapshot_id)) {
+        latest.set(record.customer_data_model_snapshot_id, record);
+      }
+    }
+    return [...latest.values()];
+  }
+
+  const rows = await getPrisma().customerDataModelSnapshot.findMany({
+    where: {
+      orgId: input.orgId,
+      measurementPlanId: input.measurementPlanId
+    },
+    orderBy: [
+      { customerDataModelSnapshotId: "asc" },
+      { version: "desc" }
+    ]
+  });
+  const records = rows.map(customerDataModelSnapshotRowToRecord);
+  if (!latestOnly) return records;
+  const latest = new Map<string, AiValueCustomerDataModelSnapshotStoredRecord>();
+  for (const record of records) {
+    if (!latest.has(record.customer_data_model_snapshot_id)) {
+      latest.set(record.customer_data_model_snapshot_id, record);
+    }
+  }
+  return [...latest.values()];
 }
 
 export async function persistAiValueClaimReadinessSnapshot(
@@ -4747,6 +5822,146 @@ function measurementCellSnapshotRowToRecord(row: {
     assembly_validation: row.assemblyValidationJson as Record<string, unknown>,
     source_refs: row.sourceRefsJson as Record<string, unknown>,
     blueprint_path_binding: row.blueprintPathBindingJson as Record<string, unknown>,
+    required_caveats: row.requiredCaveatsJson as string[],
+    blocked_uses: row.blockedUsesJson as string[],
+    version: row.version,
+    supersedes_id: row.supersedesId,
+    generated_at: row.generatedAt.toISOString(),
+    created_at: row.createdAt.toISOString(),
+    created_by_role: row.createdByRole
+  };
+}
+
+function customerDataModelSnapshotRowToRecord(row: {
+  id: string;
+  orgId: string;
+  clientId: string | null;
+  customerDataModelSnapshotId: string;
+  sourceSnapshotId: string;
+  sourceProjectionId: string;
+  sourceProjectionHash: string;
+  sourceGateId: string;
+  sourceGateHash: string;
+  sourcePromotionDecisionId: string;
+  sourcePromotionDecisionHash: string;
+  implementationDecisionId: string;
+  implementationDecisionHash: string;
+  measurementCellId: string;
+  measurementCellAssemblyRunId: string;
+  measurementPlanId: string;
+  valueHypothesisId: string | null;
+  valueHypothesisRef: string | null;
+  valueHypothesisBindingState: string;
+  approvedBlueprintRef: string;
+  approvedBlueprintPayloadHash: string;
+  blueprintExpectationRef: string;
+  expectationPathId: string;
+  expectationPathVersion: number;
+  expectationPathHash: string;
+  approvalState: string;
+  approvedAt: Date;
+  approvedByRole: string;
+  valueDriver: string;
+  metricId: string;
+  metricDefinitionRef: string;
+  metricDefinitionHash: string;
+  metricOwnerApprovalState: string;
+  metricDirection: string;
+  metricUnit: string;
+  expectedMetricLagDays: number;
+  workflowFamily: string;
+  workflowId: string | null;
+  functionArea: string;
+  cohortKey: string;
+  windowMode: string;
+  milestoneDay: number;
+  baselineWindowStart: Date;
+  baselineWindowEnd: Date;
+  comparisonWindowStart: Date;
+  comparisonWindowEnd: Date;
+  aggregateSourceSystem: string;
+  aggregateExportReviewRef: string;
+  aggregateExportReviewState: string;
+  aggregateSourceExportRef: string;
+  aggregateExportReviewHash: string;
+  pipelineDryRunRef: string;
+  pipelineBoundaryHash: string;
+  sourceRefsJson: Prisma.JsonValue;
+  aggregateBoundaryRefJson: Prisma.JsonValue;
+  assemblyDecision: string;
+  validationValid: boolean;
+  assemblyValidationValid: boolean;
+  validationGapCount: number;
+  assemblyValidationGapCount: number;
+  requiredCaveatsJson: Prisma.JsonValue;
+  blockedUsesJson: Prisma.JsonValue;
+  version: number;
+  supersedesId: string | null;
+  generatedAt: Date;
+  createdAt: Date;
+  createdByRole: string;
+}): AiValueCustomerDataModelSnapshotStoredRecord {
+  return {
+    id: row.id,
+    org_id: row.orgId,
+    client_id: row.clientId,
+    customer_data_model_snapshot_id: row.customerDataModelSnapshotId,
+    source_snapshot_id: row.sourceSnapshotId,
+    source_projection_id: row.sourceProjectionId,
+    source_projection_hash: row.sourceProjectionHash,
+    source_gate_id: row.sourceGateId,
+    source_gate_hash: row.sourceGateHash,
+    source_promotion_decision_id: row.sourcePromotionDecisionId,
+    source_promotion_decision_hash: row.sourcePromotionDecisionHash,
+    implementation_decision_id: row.implementationDecisionId,
+    implementation_decision_hash: row.implementationDecisionHash,
+    measurement_cell_id: row.measurementCellId,
+    measurement_cell_assembly_run_id: row.measurementCellAssemblyRunId,
+    measurement_plan_id: row.measurementPlanId,
+    value_hypothesis_id: row.valueHypothesisId,
+    value_hypothesis_ref: row.valueHypothesisRef,
+    value_hypothesis_binding_state: row.valueHypothesisBindingState,
+    approved_blueprint_ref: row.approvedBlueprintRef,
+    approved_blueprint_payload_hash: row.approvedBlueprintPayloadHash,
+    blueprint_expectation_ref: row.blueprintExpectationRef,
+    expectation_path_id: row.expectationPathId,
+    expectation_path_version: row.expectationPathVersion,
+    expectation_path_hash: row.expectationPathHash,
+    approval_state: row.approvalState,
+    approved_at: row.approvedAt.toISOString(),
+    approved_by_role: row.approvedByRole,
+    value_driver: row.valueDriver,
+    metric_id: row.metricId,
+    metric_definition_ref: row.metricDefinitionRef,
+    metric_definition_hash: row.metricDefinitionHash,
+    metric_owner_approval_state: row.metricOwnerApprovalState,
+    metric_direction: row.metricDirection,
+    metric_unit: row.metricUnit,
+    expected_metric_lag_days: row.expectedMetricLagDays,
+    workflow_family: row.workflowFamily,
+    workflow_id: row.workflowId,
+    function_area: row.functionArea,
+    cohort_key: row.cohortKey,
+    window_mode: row.windowMode,
+    milestone_day: row.milestoneDay,
+    baseline_window_start: row.baselineWindowStart.toISOString(),
+    baseline_window_end: row.baselineWindowEnd.toISOString(),
+    comparison_window_start: row.comparisonWindowStart.toISOString(),
+    comparison_window_end: row.comparisonWindowEnd.toISOString(),
+    aggregate_source_system: row.aggregateSourceSystem,
+    aggregate_export_review_ref: row.aggregateExportReviewRef,
+    aggregate_export_review_state: row.aggregateExportReviewState,
+    aggregate_source_export_ref: row.aggregateSourceExportRef,
+    aggregate_export_review_hash: row.aggregateExportReviewHash,
+    pipeline_dry_run_ref: row.pipelineDryRunRef,
+    pipeline_boundary_hash: row.pipelineBoundaryHash,
+    source_refs: row.sourceRefsJson as Record<string, unknown>,
+    aggregate_boundary_ref: row.aggregateBoundaryRefJson as Record<string, unknown>,
+    assembly_decision: row.assemblyDecision,
+    validation_valid: row.validationValid,
+    assembly_validation_valid: row.assemblyValidationValid,
+    validation_gap_count: row.validationGapCount,
+    assembly_validation_gap_count: row.assemblyValidationGapCount,
     required_caveats: row.requiredCaveatsJson as string[],
     blocked_uses: row.blockedUsesJson as string[],
     version: row.version,

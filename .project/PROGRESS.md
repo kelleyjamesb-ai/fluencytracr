@@ -2,6 +2,91 @@
 
 ## Last Completed
 
+- AI Value Measurement Cell Snapshot Projection (goal-directed, 2026-06-25):
+  added the executable internal projection layer over compact backend-internal
+  `measurement_cell_snapshots` rows. The runner emits only an
+  `INTERNAL_OPERATOR_PROJECTION_READY`, `HOLD_FOR_VALID_MEASUREMENT_CELL_SNAPSHOT`,
+  or `REJECTED_FOR_BOUNDARY_LEAKAGE` projection with compact snapshot identity,
+  selected approved expectation-path binding, metric/window/workflow context,
+  compact aggregate-boundary refs, compact source refs, validation posture
+  booleans, caveats, blocked uses, false feeds, and a recomputed projection
+  hash. It rejects missing path/metric/window/source identity, rolling-window
+  misuse, unsafe refs, live handles, raw rows, SQL/query text, prompts,
+  transcripts, identifiers, full source packages, full operator handoff
+  bundles, full expectation-path registries, customer-facing route/UI/export
+  flags, governance-array smuggling, ROI/EBITDA, finance output, causality,
+  productivity, probability, model, and score-like fields without echoing
+  unsafe values. This does not add routes, UI, schemas, migrations, repository
+  reads/writes, exports, rendered readouts, live BigQuery/Sigma/Glean
+  execution, model output, finance output, or customer-facing output.
+  Verification added:
+  `npm run test:ai-value-measurement-cell-snapshot-projection`.
+- AI Value Customer Data Model Promotion Gate (goal-directed, 2026-06-25):
+  added the executable hold-by-default gate between compact Measurement Cell
+  Snapshot Projection and any later customer data model persistence decision.
+  Ready gates authorize only a separate exact-scope persistence promotion
+  decision, must validate against the source projection, and require all route,
+  auth/tenant, legacy readout, export, legal/trust, privacy/k-min, and
+  customer-value-language prerequisites to be true. The gate rejects dual
+  projection/snapshot wrappers, compact-ref drift, unsafe client refs, raw
+  rows, query text, prompts, transcripts, identifiers, model/finance/ROI/
+  causality/productivity/probability fields, and customer-facing side doors.
+  This does not add routes, UI, schemas, migrations, repository reads/writes,
+  persistence writes, exports, rendered readouts, live BigQuery/Sigma/Glean
+  execution, model output, finance output, or customer-facing output.
+  Verification added:
+  `npm run test:ai-value-customer-data-model-promotion-gate`.
+- AI Value Customer Data Model Persistence Promotion Decision (goal-directed,
+  2026-06-25): added the executable decision after the Customer Data Model
+  Promotion Gate. The decision holds by default and can become ready only for
+  the exact-scope implementation-decision lane when the source projection and
+  source gate validate together. It rejects forged ready gates, wrapper
+  sidecars, source-gate drift, unsafe refs, raw rows, query text, prompts,
+  transcripts, identifiers, model/finance/ROI/causality/productivity/
+  probability fields, and customer-facing side doors without echoing unsafe
+  values. It still does not add or authorize persistence writes, Prisma
+  schemas, migrations, repository write paths, routes, UI, exports, rendered
+  readouts, live BigQuery/Sigma/Glean execution, model output, finance output,
+  or customer-facing output. Verification added:
+  `npm run test:ai-value-customer-data-model-persistence-promotion-decision`.
+- AI Value Customer Data Model Persistence Implementation Decision
+  (goal-directed, 2026-06-25): added the executable exact-scope decision that
+  can promote only one compact append-only
+  `ai_value_customer_data_model_snapshots` table plus internal repository
+  write/read paths derived from valid Measurement Cell Snapshot Projection
+  inputs. The decision recomputes the source projection, customer data model
+  gate, and persistence promotion decision, rejects drift after rehash,
+  rejects unsafe wrappers without echo, and keeps routes, UI, exports,
+  rendered readouts, live connectors, research/model feeds, confidence/
+  probability/score output, ROI/EBITDA, finance output, causality,
+  productivity, and customer-facing output blocked. Verification added:
+  `npm run test:ai-value-customer-data-model-persistence-implementation-decision`.
+- AI Value Customer Data Model Snapshot Persistence implementation
+  (goal-directed, 2026-06-25): implemented the promoted compact
+  `ai_value_customer_data_model_snapshots` physical model as an append-only
+  internal product-data table, Prisma model, migration, in-memory store record,
+  repository write/list path, and DB readiness table/column check. The write
+  path recomputes the Measurement Cell Snapshot Projection, Customer Data Model
+  Promotion Gate, Persistence Promotion Decision, and Persistence
+  Implementation Decision before persisting compact refs only. It stores stable
+  source/projection/gate/decision hashes, approved expectation-path identity,
+  value hypothesis binding, governed value driver, metric/workflow/cohort/
+  milestone context, aggregate-boundary refs, validation posture, caveats,
+  blocked uses, correction lineage, and audit metadata. It intentionally does
+  not persist full projections, full Measurement Cells, full source packages,
+  full expectation-path registries, raw rows, query text, prompts, transcripts,
+  identifiers, routes, UI, exports, rendered readouts, live connector output,
+  research-model feeds, model output, confidence/probability/score output,
+  ROI/EBITDA, finance output, causality, productivity, customer-facing output,
+  or customer-facing financial output. Verification passed:
+  `npm run generate --workspace backend`;
+  `npm run build --workspace backend`;
+  `npm test --workspace backend -- --runTestsByPath tests/ai_value_minimal_persistence.test.ts --runInBand`;
+  `npm test --workspace backend -- --runTestsByPath tests/health_postgres.test.ts --runInBand`;
+  `node --test scripts/validate_ai_value_measurement_cell_snapshot_projection.test.mjs`;
+  `node --test scripts/validate_ai_value_customer_data_model_promotion_gate.test.mjs`;
+  `node --test scripts/validate_ai_value_customer_data_model_persistence_promotion_decision.test.mjs`;
+  `node --test scripts/validate_ai_value_customer_data_model_persistence_implementation_decision.test.mjs`.
 - AI Value Contribution Alignment Internal Method Prototype Review Record
   (user-requested, 2026-06-25): added the internal promotion gate after the
   Small Internal Method Prototype. The review record recomputes the source
@@ -1103,3 +1188,6 @@
 - AI Value Platform Contribution Alignment Internal Model Prototype slice (2026-06-24): added the first executable non-persistent internal model prototype as a compact contract replay over the source-bound Model Prototype Design Review. The prototype emits only source design-review refs, method family, descriptive replay mode, selected expectation-path refs, milestone refs, context refs, governed component review traces, blocked uses, caveats, false feeds, and validation summary. It holds on design-review drift, rejects unsafe payload smuggling, does not echo unsafe validation values, and preserves context separation across AI Fluency construct context, psychological context, observed VBD behavior, and selected metric movement. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, statistical model implementation, model result, numeric weights, confidence output, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
 - AI Value Platform Contribution Alignment Internal Model Prototype Review Packet slice (2026-06-24): added the source-bound internal review packet over the compact Contribution Alignment Internal Model Prototype. The packet emits only compact prototype refs, source-bound posture, governed component trace review, context separation review, boundary posture, blocked uses, caveats, false feeds, and validation summary. It holds on prototype/source drift, rejects unsafe payload smuggling, avoids echoing unsafe validation values, and preserves the separation between AI Fluency construct context, psychological context, observed VBD behavior, and selected metric movement. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, statistical model implementation, model result, numeric weights, confidence output, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
 - AI Value Platform Contribution Alignment Internal Research-Design Gate Review slice (2026-06-24): added the executable close-out gate over the source-bound Internal Model Prototype Review Packet. The gate emits only compact review packet refs, internal research-design hash, gate summary, context separation review, boundary posture, blocked uses, caveats, false feeds, and validation summary. It authorizes only a later exact-scope method-prototype decision review, holds on source-review-packet or upstream proof drift, rejects unsafe payload smuggling, avoids echoing unsafe validation values, and preserves the separation between AI Fluency construct context, psychological context, observed VBD behavior, and selected metric movement. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, statistical model implementation, model result, numeric weights, confidence output, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
+
+- AI Value Platform Contribution Alignment Research Math Data Model boundary slice (2026-06-25): added the missing exact-scope Research Math Finalization Review gate, corrected the Research Math Data Model Promotion Decision so it consumes that finalization review rather than jumping directly from the older review record, and added the compact Internal Research Math Data Model boundary. The chain now holds when only the older review record is supplied, preserves separate AI Fluency construct, AI Fluency psychological, observed VBD, and selected customer metric movement partitions, rejects warehouse refs, feature-table shapes, raw/query/prompt/transcript/identifier smuggling, encoded compact-ref payload smuggling, math/finance/causality/productivity synonyms, ungoverned false-feed side doors, and unsafe validation echoing, and emits no model result, numeric weights, score/probability output, finance output, ROI, EBITDA, causality, productivity, persistence, schemas, routes, UI, exports, live connectors, or customer-facing output.
+- AI Value Platform Customer Data Model Promotion Gate slice (2026-06-25): added the executable gate between compact Measurement Cell Snapshot Projection and any later customer-facing data model persistence decision. The gate holds by default, can become ready only for a separate exact-scope persistence promotion decision when prerequisite posture states are explicit, requires source-projection-bound validation for ready gates, rejects dual projection/snapshot wrappers, and blocks persistence writes, schemas, routes, UI, exports, rendered readouts, live connectors, model output, confidence/probability/score output, finance output, ROI, EBITDA, causality, productivity, raw/query/prompt/transcript/identifier payloads, and customer-facing output.
