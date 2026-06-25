@@ -66,7 +66,7 @@ This is a design frame only. It has no weights, coefficients, likelihoods,
 probabilities, percentages, score bands, finance translation, ROI, EBITDA,
 causality, productivity, customer-facing interpretation, or model result.
 
-## Alignment Vector Components
+## Alignment Review Components
 
 The design record may define only these candidate components:
 

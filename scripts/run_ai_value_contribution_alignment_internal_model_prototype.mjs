@@ -9,21 +9,24 @@ import {
   buildContributionAlignmentInternalPrototypeRunnerFromObject
 } from "./run_ai_value_contribution_alignment_internal_prototype_runner.mjs";
 import {
-  buildContributionAlignmentRunnerReviewPacketFromObject,
-  validateContributionAlignmentRunnerReviewPacket
+  buildContributionAlignmentRunnerReviewPacketFromObject
 } from "./run_ai_value_contribution_alignment_runner_review_packet.mjs";
+import {
+  buildContributionAlignmentModelPrototypeDesignReviewFromObject,
+  validateContributionAlignmentModelPrototypeDesignReview
+} from "./run_ai_value_contribution_alignment_model_prototype_design_review.mjs";
 
-export const CONTRIBUTION_ALIGNMENT_MODEL_PROTOTYPE_DESIGN_REVIEW_SCHEMA_VERSION =
-  "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_MODEL_PROTOTYPE_DESIGN_REVIEW_2026_06";
+export const CONTRIBUTION_ALIGNMENT_INTERNAL_MODEL_PROTOTYPE_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_MODEL_PROTOTYPE_2026_06";
 
 const VALIDATION_SCHEMA_VERSION =
-  `${CONTRIBUTION_ALIGNMENT_MODEL_PROTOTYPE_DESIGN_REVIEW_SCHEMA_VERSION}_VALIDATION`;
+  `${CONTRIBUTION_ALIGNMENT_INTERNAL_MODEL_PROTOTYPE_SCHEMA_VERSION}_VALIDATION`;
 
 const DERIVATION_VERSION =
-  "ai_value_contribution_alignment_model_prototype_design_review_2026_06";
+  "ai_value_contribution_alignment_internal_model_prototype_2026_06";
 
-const READY_STATE = "READY_FOR_INTERNAL_MODEL_PROTOTYPE_DESIGN_RECORD";
-const HOLD_REVIEW_PACKET_STATE = "HOLD_FOR_VALID_RUNNER_REVIEW_PACKET";
+const READY_STATE = "READY_FOR_INTERNAL_MODEL_PROTOTYPE_RECORD";
+const HOLD_DESIGN_REVIEW_STATE = "HOLD_FOR_VALID_MODEL_PROTOTYPE_DESIGN_REVIEW";
 const REJECT_BOUNDARY_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
 
 const RUNNER_IMPLEMENTATION_DECISION_PATH =
@@ -51,34 +54,31 @@ const FALSE_FEEDS = [
 
 const TOP_LEVEL_FIELDS = new Set([
   "schema_version",
-  "design_review_id",
-  "review_state",
+  "prototype_id",
+  "prototype_state",
   "generated_at",
   "derivation_version",
-  "source_review_packet_ref",
+  "source_design_review_ref",
   "prototype_scope",
-  "design_strength_cap",
-  "model_frame",
-  "selected_path_model_ref",
-  "milestone_model_ref",
+  "method_frame",
+  "selected_path_ref",
+  "milestone_ref",
   "context_refs",
-  "ai_fluency_model_scope",
-  "observed_vbd_model_scope",
+  "component_reviews",
   "context_separation_rule",
-  "comparison_design_scope",
   "blocked_uses",
   "required_caveats",
   "feeds",
   "boundary_policy",
   "validation_summary",
-  "design_review_hash"
+  "prototype_hash"
 ]);
 
 const PROTOTYPE_SCOPE_FIELDS = [
   "internal_only",
-  "design_only",
   "non_persistent",
   "compact_refs_only",
+  "descriptive_contract_replay_only",
   "model_implementation",
   "numeric_weights",
   "confidence_output",
@@ -96,8 +96,8 @@ const PROTOTYPE_SCOPE_FIELDS = [
 ];
 
 const BOUNDARY_POLICY_FIELDS = [
-  "receives_compact_design_refs_only",
-  "receives_full_runner_review_packet",
+  "receives_compact_design_review_only",
+  "receives_full_design_review_payload",
   "receives_raw_rows",
   "receives_query_text",
   "receives_prompts",
@@ -105,7 +105,7 @@ const BOUNDARY_POLICY_FIELDS = [
   "receives_identifiers",
   "receives_source_package_payloads",
   "receives_full_measurement_cell_payloads",
-  "persists_design_review",
+  "persists_prototype",
   "creates_routes",
   "creates_ui",
   "creates_schemas",
@@ -151,11 +151,11 @@ const REQUIRED_BLOCKED_USES = [
 ];
 
 const REQUIRED_CAVEATS = [
-  "Model prototype design review is internal method-design only.",
-  "The design review records a candidate model frame and alignment-review components, not model math.",
-  "The design review consumes compact refs and hashes only.",
-  "The design review does not authorize model implementation, numeric weights, confidence output, probability, score-like output, finance output, ROI, causality, productivity, or customer-facing output.",
-  "AI Fluency construct context, psychological context, observed VBD context, and selected customer metric movement remain distinct."
+  "Internal model prototype is non-persistent contract replay only.",
+  "The prototype consumes compact design-review refs and hashes only.",
+  "The prototype does not emit model results, weights, confidence output, probability, score-like output, finance output, ROI, causality, productivity, or customer-facing output.",
+  "AI Fluency construct context, psychological context, observed VBD context, and selected customer metric movement remain distinct.",
+  "The prototype is not promoted research model input and cannot feed customer reporting."
 ];
 
 const COMPONENT_DEFINITIONS = [
@@ -211,9 +211,13 @@ const COMPONENT_DEFINITIONS = [
   }
 ];
 
-const REQUIRED_COMPONENT_IDS = COMPONENT_DEFINITIONS.map(
-  (component) => component.component_id
-);
+const COMPONENT_REVIEW_TRACE = COMPONENT_DEFINITIONS.map((component) => ({
+  component_id: component.component_id,
+  role: component.role,
+  input_ref: component.input_ref,
+  trace_state: "reviewable_contract_ref",
+  emission_state: "not_emitted"
+}));
 
 const FORBIDDEN_KEY_PATTERNS = [
   /raw_?rows?/i,
@@ -239,7 +243,7 @@ const FORBIDDEN_KEY_PATTERNS = [
   /joinable.*identifier/i,
   /source_?package_?payload/i,
   /handoff_?bundle_?payload/i,
-  /runner_?payload/i,
+  /design_?review_?payload/i,
   /measurement_?cell_?payload/i,
   /series_?payload/i,
   /payload_?json/i,
@@ -287,7 +291,7 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /span[_-\s]?id/i,
   /source_package_(?:payload|clearance|cleared|approved|passed)/i,
   /operator_source_handoff_bundle/i,
-  /runner_review_packet_payload/i,
+  /design_review_payload/i,
   /measurement_cell_payload/i,
   /measurement_cell_series_payload/i,
   /payload_json/i,
@@ -366,6 +370,17 @@ function sanitizeGaps(gaps) {
   return [...new Set(gaps.filter(Boolean))].sort();
 }
 
+function safeValidationScalar(value, allowedValues = []) {
+  if (allowedValues.includes(value)) return value;
+  if (typeof value !== "string") return null;
+  if (/^contribution_alignment_internal_model_prototype_[0-9a-f]{16}$/.test(value)) {
+    return value;
+  }
+  if (FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value))) return null;
+  if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(value))) return null;
+  return null;
+}
+
 function exactArrayGaps(value, expected, path) {
   const gaps = [];
   if (!Array.isArray(value)) return [`${path} must be an array`];
@@ -409,16 +424,16 @@ function compactScalarArray(value) {
 
 function safeValidationGap(gap) {
   const text = String(gap ?? "");
-  if (text.includes("review packet must match source-runner-bound expected envelope")) {
-    return "runner_review_packet: review packet must match source-runner-bound expected envelope";
+  if (text.includes("design review must match source-review-packet-bound expected envelope")) {
+    return "model_prototype_design_review: design review must match source-review-packet-bound expected envelope";
   }
   if (FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(text))) {
-    return "runner_review_packet rejected unsafe or invalid content";
+    return "model_prototype_design_review rejected unsafe or invalid content";
   }
   if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(text))) {
-    return "runner_review_packet rejected unsafe or invalid content";
+    return "model_prototype_design_review rejected unsafe or invalid content";
   }
-  return `runner_review_packet: ${text}`;
+  return `model_prototype_design_review: ${text}`;
 }
 
 function compactExpectedPathwayMetadata(metadata) {
@@ -432,7 +447,7 @@ function compactExpectedPathwayMetadata(metadata) {
   };
 }
 
-function compactSelectedPathModelRef(ref) {
+function compactSelectedPathRef(ref) {
   return {
     approved_blueprint_ref: compactScalar(ref?.approved_blueprint_ref),
     value_hypothesis_ref: compactScalar(ref?.value_hypothesis_ref),
@@ -449,7 +464,7 @@ function compactSelectedPathModelRef(ref) {
   };
 }
 
-function compactMilestoneModelRef(ref) {
+function compactMilestoneRef(ref) {
   return {
     window_id: compactScalar(ref?.window_id),
     milestone_day: compactNumber(ref?.milestone_day),
@@ -464,6 +479,20 @@ function compactMilestoneModelRef(ref) {
     expectation_path_hash: compactScalar(ref?.expectation_path_hash),
     value_hypothesis_ref: compactScalar(ref?.value_hypothesis_ref),
     value_driver: compactScalar(ref?.value_driver)
+  };
+}
+
+function compactMilestoneReview(ref) {
+  return {
+    required_milestones: compactScalarArray(ref?.required_milestones),
+    observed_milestones: compactScalarArray(ref?.observed_milestones),
+    missing_milestones: compactScalarArray(ref?.missing_milestones),
+    ready_windows: compactNumber(ref?.ready_windows) ?? 0,
+    held_windows: compactNumber(ref?.held_windows) ?? 0,
+    suppressed_windows: compactNumber(ref?.suppressed_windows) ?? 0,
+    missing_windows: compactNumber(ref?.missing_windows) ?? 0,
+    blocked_windows: compactNumber(ref?.blocked_windows) ?? 0,
+    compact_snapshot_refs: (ref?.compact_snapshot_refs ?? []).map(compactMilestoneRef)
   };
 }
 
@@ -494,17 +523,50 @@ function compactMetricMovementRef(ref) {
   };
 }
 
-function compactSourceReviewPacketRef(reviewPacket) {
+function compactContextRefs(refs) {
   return {
-    review_packet_id: compactScalar(reviewPacket?.review_packet_id),
-    review_state: compactScalar(reviewPacket?.review_state),
-    review_packet_hash: compactScalar(reviewPacket?.review_packet_hash),
-    runner_id: compactScalar(reviewPacket?.runner_ref?.runner_id),
-    runner_hash: compactScalar(reviewPacket?.runner_ref?.runner_hash),
-    packet_integrity_hash:
-      compactScalar(reviewPacket?.runner_ref?.packet_ref?.packet_integrity_hash),
-    design_strength_cap: compactScalar(reviewPacket?.design_strength_cap)
+    ai_fluency_construct_context_ref: compactContextRef(
+      refs?.ai_fluency_construct_context_ref
+    ),
+    ai_fluency_psychological_context_ref: compactContextRef(
+      refs?.ai_fluency_psychological_context_ref
+    ),
+    observed_vbd_context_ref: compactContextRef(refs?.observed_vbd_context_ref),
+    selected_metric_movement_ref: compactMetricMovementRef(
+      refs?.selected_metric_movement_ref
+    )
   };
+}
+
+function emptyContextRefs() {
+  return compactContextRefs(null);
+}
+
+function compactSourceDesignReviewRef(review) {
+  return {
+    design_review_id: compactScalar(review?.design_review_id),
+    review_state: compactScalar(review?.review_state),
+    design_review_hash: compactScalar(review?.design_review_hash),
+    source_review_packet_id:
+      compactScalar(review?.source_review_packet_ref?.review_packet_id),
+    source_review_packet_hash:
+      compactScalar(review?.source_review_packet_ref?.review_packet_hash),
+    design_strength_cap: compactScalar(review?.design_strength_cap),
+    method_family: compactScalar(review?.model_frame?.model_family)
+  };
+}
+
+function componentReviewsFor(review) {
+  const definitions = Array.isArray(review?.model_frame?.component_definitions)
+    ? review.model_frame.component_definitions
+    : [];
+  return definitions.map((component) => ({
+    component_id: compactScalar(component?.component_id),
+    role: compactScalar(component?.role),
+    input_ref: compactScalar(component?.input_ref),
+    trace_state: "reviewable_contract_ref",
+    emission_state: "not_emitted"
+  }));
 }
 
 function hasForbiddenContent(value, path = "review") {
@@ -515,7 +577,7 @@ function hasForbiddenContent(value, path = "review") {
       path.startsWith("review.feeds.") ||
       path.startsWith("review.boundary_policy.") ||
       path.startsWith("review.prototype_scope.") ||
-      path.startsWith("review.model_frame.")
+      path.startsWith("review.method_frame.")
     );
   if (safeFalseBoundaryFlag) return gaps;
   if (Array.isArray(value)) {
@@ -533,13 +595,13 @@ function hasForbiddenContent(value, path = "review") {
           path === "review.feeds" ||
           path === "review.boundary_policy" ||
           path === "review.prototype_scope" ||
-          path === "review.model_frame"
+          path === "review.method_frame"
         );
       if (
         !safeNegativeBoundaryKey &&
         FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))
       ) {
-        gaps.push(`${nestedPath} must not contain raw rows, query text, identifiers, model result, finance, customer-facing, or generic payload fields`);
+        gaps.push("review contains forbidden field name");
       }
       gaps.push(...hasForbiddenContent(nested, nestedPath));
     }
@@ -567,15 +629,16 @@ function hasForbiddenContent(value, path = "review") {
   return gaps;
 }
 
-function sourceReviewPacketValidationFor(reviewPacket, options = {}) {
-  if (!reviewPacket) {
+function sourceDesignReviewValidationFor(review, options = {}) {
+  if (!review) {
     return {
       valid: false,
-      gaps: ["source review packet is required"]
+      gaps: ["source design review is required"]
     };
   }
-  return validateContributionAlignmentRunnerReviewPacket(reviewPacket, {
+  return validateContributionAlignmentModelPrototypeDesignReview(review, {
     sourceRunner: options.sourceRunner,
+    sourceReviewPacket: options.sourceReviewPacket,
     sourcePacket: options.sourcePacket,
     sourceFixture: options.sourceFixture,
     researchDesignText: options.researchDesignText,
@@ -585,106 +648,48 @@ function sourceReviewPacketValidationFor(reviewPacket, options = {}) {
   });
 }
 
-function reviewStateFor(reviewPacket, reviewPacketValidation, contentGaps) {
+function prototypeStateFor(review, reviewValidation, contentGaps) {
   if (contentGaps.length > 0) return REJECT_BOUNDARY_STATE;
-  const reviewPacketReady =
-    reviewPacket?.review_state === "READY_FOR_INTERNAL_MODEL_PROTOTYPE_DESIGN_REVIEW" &&
-    reviewPacket?.feeds?.internal_model_prototype_design_review === true &&
-    reviewPacketValidation.valid === true;
-  return reviewPacketReady ? READY_STATE : HOLD_REVIEW_PACKET_STATE;
+  const reviewReady =
+    review?.review_state === "READY_FOR_INTERNAL_MODEL_PROTOTYPE_DESIGN_RECORD" &&
+    review?.feeds?.internal_model_prototype_design_record === true &&
+    reviewValidation.valid === true;
+  return reviewReady ? READY_STATE : HOLD_DESIGN_REVIEW_STATE;
 }
 
-export function contributionAlignmentModelPrototypeDesignReviewHash(review) {
-  const withoutHash = { ...review };
-  delete withoutHash.design_review_hash;
+export function contributionAlignmentInternalModelPrototypeHash(prototype) {
+  const withoutHash = { ...prototype };
+  delete withoutHash.prototype_hash;
   return sha256Json(withoutHash);
 }
 
-function buildBaseDesignReview(sourceReviewPacket, options = {}) {
-  const reviewPacket = clone(sourceReviewPacket);
-  const reviewPacketValidation = sourceReviewPacketValidationFor(reviewPacket, options);
+function buildBasePrototype(sourceDesignReview, options = {}) {
+  const review = clone(sourceDesignReview);
+  const reviewValidation = sourceDesignReviewValidationFor(review, options);
   const preliminaryContentGaps = [];
-  const reviewState = reviewStateFor(
-    reviewPacket,
-    reviewPacketValidation,
+  const prototypeState = prototypeStateFor(
+    review,
+    reviewValidation,
     preliminaryContentGaps
   );
-  const readyForDesignRecord = reviewState === READY_STATE;
-  const validationGaps = sanitizeGaps(reviewPacketValidation.gaps.map(safeValidationGap));
-  const selectedPathModelRef = readyForDesignRecord
-    ? compactSelectedPathModelRef(reviewPacket?.selected_expectation_path_ref)
-    : null;
-  const milestoneModelRef = readyForDesignRecord
-    ? {
-        required_milestones: compactScalarArray(
-          reviewPacket.milestone_review?.required_milestones
-        ),
-        observed_milestones: compactScalarArray(
-          reviewPacket.milestone_review?.observed_milestones
-        ),
-        missing_milestones: compactScalarArray(
-          reviewPacket.milestone_review?.missing_milestones
-        ),
-        ready_windows: compactNumber(reviewPacket.milestone_review?.ready_windows) ?? 0,
-        held_windows: compactNumber(reviewPacket.milestone_review?.held_windows) ?? 0,
-        suppressed_windows:
-          compactNumber(reviewPacket.milestone_review?.suppressed_windows) ?? 0,
-        missing_windows:
-          compactNumber(reviewPacket.milestone_review?.missing_windows) ?? 0,
-        blocked_windows:
-          compactNumber(reviewPacket.milestone_review?.blocked_windows) ?? 0,
-        compact_snapshot_refs: (
-          reviewPacket.milestone_review?.compact_snapshot_refs ?? []
-        ).map(compactMilestoneModelRef)
-      }
-    : {
-        required_milestones: [],
-        observed_milestones: [],
-        missing_milestones: [],
-        ready_windows: 0,
-        held_windows: 0,
-        suppressed_windows: 0,
-        missing_windows: 0,
-        blocked_windows: 0,
-        compact_snapshot_refs: []
-      };
-  const contextRefs = readyForDesignRecord
-    ? {
-        ai_fluency_construct_context_ref: compactContextRef(
-          reviewPacket.context_separation?.ai_fluency_construct_context_ref
-        ),
-        ai_fluency_psychological_context_ref: compactContextRef(
-          reviewPacket.context_separation?.ai_fluency_psychological_context_ref
-        ),
-        observed_vbd_context_ref: compactContextRef(
-          reviewPacket.context_separation?.observed_vbd_context_ref
-        ),
-        selected_metric_movement_ref: compactMetricMovementRef(
-          reviewPacket.context_separation?.selected_metric_movement_ref
-        )
-      }
-    : {
-        ai_fluency_construct_context_ref: compactContextRef(null),
-        ai_fluency_psychological_context_ref: compactContextRef(null),
-        observed_vbd_context_ref: compactContextRef(null),
-        selected_metric_movement_ref: compactMetricMovementRef(null)
-      };
+  const readyForPrototype = prototypeState === READY_STATE;
+  const validationGaps = sanitizeGaps(reviewValidation.gaps.map(safeValidationGap));
 
-  let review = {
-    schema_version: CONTRIBUTION_ALIGNMENT_MODEL_PROTOTYPE_DESIGN_REVIEW_SCHEMA_VERSION,
-    design_review_id: `contribution_alignment_model_prototype_design_${sha256Json({
-      review_packet_id: reviewPacket?.review_packet_id ?? null,
-      review_packet_hash: reviewPacket?.review_packet_hash ?? null
+  let prototype = {
+    schema_version: CONTRIBUTION_ALIGNMENT_INTERNAL_MODEL_PROTOTYPE_SCHEMA_VERSION,
+    prototype_id: `contribution_alignment_internal_model_prototype_${sha256Json({
+      design_review_id: review?.design_review_id ?? null,
+      design_review_hash: review?.design_review_hash ?? null
     }).slice(0, 16)}`,
-    review_state: reviewState,
+    prototype_state: prototypeState,
     generated_at: "2026-06-24T00:00:00.000Z",
     derivation_version: DERIVATION_VERSION,
-    source_review_packet_ref: compactSourceReviewPacketRef(reviewPacket),
+    source_design_review_ref: compactSourceDesignReviewRef(review),
     prototype_scope: {
       internal_only: true,
-      design_only: true,
       non_persistent: true,
       compact_refs_only: true,
+      descriptive_contract_replay_only: true,
       model_implementation: false,
       numeric_weights: false,
       confidence_output: false,
@@ -700,61 +705,46 @@ function buildBaseDesignReview(sourceReviewPacket, options = {}) {
       export_creation: false,
       live_connector_execution: false
     },
-    design_strength_cap: "METHOD_DESIGN_ONLY",
-    model_frame: {
+    method_frame: {
       model_family: "contribution_alignment_research",
-      question_id: "approved_theory_of_change_alignment",
+      replay_mode: "descriptive_component_contract_replay",
       result_emitted: false,
       parameterization_authorized: false,
       research_feed_authorized: false,
-      candidate_review_checklist_frame:
-        "Hard gates clear before descriptive component review; no downstream output is emitted.",
-      component_definitions: clone(COMPONENT_DEFINITIONS)
+      component_review_rule:
+        "Governed components are traced as reviewable refs only; no downstream result is emitted."
     },
-    selected_path_model_ref: selectedPathModelRef,
-    milestone_model_ref: milestoneModelRef,
-    context_refs: contextRefs,
-    ai_fluency_model_scope: {
-      construct_dimensions: [
-        "Confidence",
-        "Usage Quality",
-        "Behavior Change",
-        "Leadership Reinforcement",
-        "Capability Growth"
-      ],
-      psychological_context: [
-        "attitude",
-        "stated_ai_behavior_orientation",
-        "behavioral_intent",
-        "perceived_ai_impact"
-      ],
-      use_as_context_only: true,
-      can_upgrade_readiness: false,
-      can_replace_observed_vbd: false
-    },
-    observed_vbd_model_scope: {
-      observed_behavior_dimensions: ["velocity", "breadth", "depth"],
-      source: "aggregate_telemetry_context_ref_only",
-      can_be_replaced_by_psychological_context: false
-    },
+    selected_path_ref: readyForPrototype
+      ? compactSelectedPathRef(review?.selected_path_model_ref)
+      : null,
+    milestone_ref: readyForPrototype
+      ? compactMilestoneReview(review?.milestone_model_ref)
+      : {
+          required_milestones: [],
+          observed_milestones: [],
+          missing_milestones: [],
+          ready_windows: 0,
+          held_windows: 0,
+          suppressed_windows: 0,
+          missing_windows: 0,
+          blocked_windows: 0,
+          compact_snapshot_refs: []
+        },
+    context_refs: readyForPrototype
+      ? compactContextRefs(review?.context_refs)
+      : emptyContextRefs(),
+    component_reviews: readyForPrototype ? componentReviewsFor(review) : [],
     context_separation_rule:
       "construct_psychological_observed_metric_contexts_must_remain_distinct",
-    comparison_design_scope: {
-      current_design_strength: "method_design_only",
-      controlled_fixture_replay_only: true,
-      live_pilot_inference_authorized: false,
-      matched_comparison_authorized: false,
-      experimental_design_authorized: false
-    },
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     required_caveats: [...REQUIRED_CAVEATS],
     feeds: {
-      internal_model_prototype_design_record: readyForDesignRecord,
+      internal_model_prototype_record: readyForPrototype,
       ...falseMap(FALSE_FEEDS)
     },
     boundary_policy: {
-      receives_compact_design_refs_only: true,
-      receives_full_runner_review_packet: false,
+      receives_compact_design_review_only: true,
+      receives_full_design_review_payload: false,
       receives_raw_rows: false,
       receives_query_text: false,
       receives_prompts: false,
@@ -762,7 +752,7 @@ function buildBaseDesignReview(sourceReviewPacket, options = {}) {
       receives_identifiers: false,
       receives_source_package_payloads: false,
       receives_full_measurement_cell_payloads: false,
-      persists_design_review: false,
+      persists_prototype: false,
       creates_routes: false,
       creates_ui: false,
       creates_schemas: false,
@@ -781,72 +771,72 @@ function buildBaseDesignReview(sourceReviewPacket, options = {}) {
       measures_productivity: false
     },
     validation_summary: {
-      schema_version: `${CONTRIBUTION_ALIGNMENT_MODEL_PROTOTYPE_DESIGN_REVIEW_SCHEMA_VERSION}_SUMMARY`,
-      valid: readyForDesignRecord,
-      review_state: reviewState,
+      schema_version: `${CONTRIBUTION_ALIGNMENT_INTERNAL_MODEL_PROTOTYPE_SCHEMA_VERSION}_SUMMARY`,
+      valid: readyForPrototype,
+      prototype_state: prototypeState,
       gaps: validationGaps
     }
   };
 
-  const contentGaps = hasForbiddenContent(review);
+  const contentGaps = hasForbiddenContent(prototype);
   if (contentGaps.length > 0) {
-    review = {
-      ...review,
-      review_state: REJECT_BOUNDARY_STATE,
+    prototype = {
+      ...prototype,
+      prototype_state: REJECT_BOUNDARY_STATE,
       feeds: {
-        ...review.feeds,
-        internal_model_prototype_design_record: false
+        ...prototype.feeds,
+        internal_model_prototype_record: false
       },
       validation_summary: {
-        ...review.validation_summary,
+        ...prototype.validation_summary,
         valid: false,
-        review_state: REJECT_BOUNDARY_STATE,
+        prototype_state: REJECT_BOUNDARY_STATE,
         gaps: sanitizeGaps([...validationGaps, ...contentGaps])
       }
     };
   }
-  review.design_review_hash = contributionAlignmentModelPrototypeDesignReviewHash(review);
-  return review;
+  prototype.prototype_hash = contributionAlignmentInternalModelPrototypeHash(prototype);
+  return prototype;
 }
 
-export function buildContributionAlignmentModelPrototypeDesignReviewFromObject(
-  sourceReviewPacket,
+export function buildContributionAlignmentInternalModelPrototypeFromObject(
+  sourceDesignReview,
   options = {}
 ) {
-  return buildBaseDesignReview(sourceReviewPacket, {
+  return buildBasePrototype(sourceDesignReview, {
     ...options,
     cwd: options.cwd ?? process.cwd()
   });
 }
 
-function collectShapeGaps(review) {
+function collectShapeGaps(prototype) {
   const gaps = [];
-  if (!isPlainObject(review)) return ["design review must be an object"];
-  for (const key of Object.keys(review)) {
-    if (!TOP_LEVEL_FIELDS.has(key)) gaps.push(`unexpected top-level field: ${key}`);
-  }
+  if (!isPlainObject(prototype)) return ["internal model prototype must be an object"];
+  Object.keys(prototype).forEach((key, index) => {
+    if (!TOP_LEVEL_FIELDS.has(key)) gaps.push(`unexpected top-level field at index ${index}`);
+  });
   if (
-    review.schema_version !==
-    CONTRIBUTION_ALIGNMENT_MODEL_PROTOTYPE_DESIGN_REVIEW_SCHEMA_VERSION
+    prototype.schema_version !==
+    CONTRIBUTION_ALIGNMENT_INTERNAL_MODEL_PROTOTYPE_SCHEMA_VERSION
   ) {
     gaps.push("schema_version is invalid");
   }
-  if (![READY_STATE, HOLD_REVIEW_PACKET_STATE, REJECT_BOUNDARY_STATE].includes(review.review_state)) {
-    gaps.push("review_state is invalid");
+  if (![READY_STATE, HOLD_DESIGN_REVIEW_STATE, REJECT_BOUNDARY_STATE].includes(prototype.prototype_state)) {
+    gaps.push("prototype_state is invalid");
   }
-  if (!isPlainObject(review.prototype_scope)) {
+  if (!isPlainObject(prototype.prototype_scope)) {
     gaps.push("prototype_scope is required");
   } else {
-    for (const key of Object.keys(review.prototype_scope)) {
+    for (const key of Object.keys(prototype.prototype_scope)) {
       if (!PROTOTYPE_SCOPE_FIELDS.includes(key)) {
-        gaps.push(`prototype_scope.${key} is not allowed`);
+        gaps.push("prototype_scope contains ungoverned field");
       }
     }
     for (const [field, expected] of Object.entries({
       internal_only: true,
-      design_only: true,
       non_persistent: true,
       compact_refs_only: true,
+      descriptive_contract_replay_only: true,
       model_implementation: false,
       numeric_weights: false,
       confidence_output: false,
@@ -862,113 +852,127 @@ function collectShapeGaps(review) {
       export_creation: false,
       live_connector_execution: false
     })) {
-      if (review.prototype_scope[field] !== expected) {
+      if (prototype.prototype_scope[field] !== expected) {
         gaps.push(`prototype_scope.${field} must be ${expected}`);
       }
     }
   }
-  if (review.design_strength_cap !== "METHOD_DESIGN_ONLY") {
-    gaps.push("design_strength_cap must remain METHOD_DESIGN_ONLY");
+  if (prototype.method_frame?.model_family !== "contribution_alignment_research") {
+    gaps.push("method_frame.model_family is invalid");
   }
-  if (review.model_frame?.model_family !== "contribution_alignment_research") {
-    gaps.push("model_frame.model_family is invalid");
+  if (
+    prototype.method_frame?.replay_mode !== "descriptive_component_contract_replay"
+  ) {
+    gaps.push("method_frame.replay_mode is invalid");
   }
   for (const field of [
     "result_emitted",
     "parameterization_authorized",
     "research_feed_authorized"
   ]) {
-    if (review.model_frame?.[field] !== false) {
-      gaps.push(`model_frame.${field} must remain false`);
-    }
-  }
-  if (!Array.isArray(review.model_frame?.component_definitions)) {
-    gaps.push("model_frame.component_definitions must be an array");
-  } else {
-    const componentIds = review.model_frame.component_definitions.map(
-      (component) => component?.component_id
-    );
-    gaps.push(...exactArrayGaps(componentIds, REQUIRED_COMPONENT_IDS, "model_frame.component_definitions"));
-    if (
-      stableStringify(review.model_frame.component_definitions) !==
-      stableStringify(COMPONENT_DEFINITIONS)
-    ) {
-      gaps.push("model_frame.component_definitions must match governed component definitions");
+    if (prototype.method_frame?.[field] !== false) {
+      gaps.push(`method_frame.${field} must remain false`);
     }
   }
   if (
-    review.context_separation_rule !==
+    prototype.context_separation_rule !==
     "construct_psychological_observed_metric_contexts_must_remain_distinct"
   ) {
     gaps.push("context_separation_rule is invalid");
   }
-  const feeds = review.feeds ?? {};
   if (
-    feeds.internal_model_prototype_design_record !==
-    (review.review_state === READY_STATE)
+    stableStringify(prototype.component_reviews) !==
+    stableStringify(
+      prototype.prototype_state === READY_STATE ? COMPONENT_REVIEW_TRACE : []
+    )
   ) {
-    gaps.push("feeds.internal_model_prototype_design_record must be true only for ready design reviews");
+    gaps.push("component_reviews must match governed component review trace");
+  }
+  const feeds = prototype.feeds ?? {};
+  if (
+    feeds.internal_model_prototype_record !==
+    (prototype.prototype_state === READY_STATE)
+  ) {
+    gaps.push("feeds.internal_model_prototype_record must be true only for ready internal prototypes");
   }
   for (const feed of FALSE_FEEDS) {
     if (feeds[feed] !== false) gaps.push(`feeds.${feed} must remain false`);
   }
   for (const key of Object.keys(feeds)) {
-    if (key !== "internal_model_prototype_design_record" && !FALSE_FEEDS.includes(key)) {
-      gaps.push(`feeds.${key} is not allowed`);
+    if (key !== "internal_model_prototype_record" && !FALSE_FEEDS.includes(key)) {
+      gaps.push("feeds contains ungoverned field");
     }
   }
   for (const field of BOUNDARY_POLICY_FIELDS) {
-    if (field === "receives_compact_design_refs_only") {
-      if (review.boundary_policy?.[field] !== true) {
-        gaps.push("boundary_policy.receives_compact_design_refs_only must be true");
+    if (field === "receives_compact_design_review_only") {
+      if (prototype.boundary_policy?.[field] !== true) {
+        gaps.push("boundary_policy.receives_compact_design_review_only must be true");
       }
-    } else if (review.boundary_policy?.[field] !== false) {
+    } else if (prototype.boundary_policy?.[field] !== false) {
       gaps.push(`boundary_policy.${field} must remain false`);
     }
   }
-  for (const key of Object.keys(review.boundary_policy ?? {})) {
+  for (const key of Object.keys(prototype.boundary_policy ?? {})) {
     if (!BOUNDARY_POLICY_FIELDS.includes(key)) {
-      gaps.push(`boundary_policy.${key} is not allowed`);
+      gaps.push("boundary_policy contains ungoverned field");
     }
   }
-  gaps.push(...exactArrayGaps(review.blocked_uses, REQUIRED_BLOCKED_USES, "blocked_uses"));
-  gaps.push(...exactArrayGaps(review.required_caveats, REQUIRED_CAVEATS, "required_caveats"));
+  gaps.push(...exactArrayGaps(prototype.blocked_uses, REQUIRED_BLOCKED_USES, "blocked_uses"));
+  gaps.push(...exactArrayGaps(prototype.required_caveats, REQUIRED_CAVEATS, "required_caveats"));
 
-  const validationSummary = review.validation_summary ?? {};
-  if (validationSummary.review_state !== review.review_state) {
-    gaps.push("validation_summary.review_state must match review_state");
+  const validationSummary = prototype.validation_summary ?? {};
+  if (validationSummary.prototype_state !== prototype.prototype_state) {
+    gaps.push("validation_summary.prototype_state must match prototype_state");
   }
-  if (validationSummary.valid !== (review.review_state === READY_STATE)) {
-    gaps.push("validation_summary.valid must match review_state readiness");
+  if (validationSummary.valid !== (prototype.prototype_state === READY_STATE)) {
+    gaps.push("validation_summary.valid must match prototype_state readiness");
   }
   if (!Array.isArray(validationSummary.gaps)) {
     gaps.push("validation_summary.gaps must be an array");
-  } else if (review.review_state === READY_STATE && validationSummary.gaps.length > 0) {
-    gaps.push("validation_summary.gaps must be empty for ready design reviews");
+  } else if (prototype.prototype_state === READY_STATE && validationSummary.gaps.length > 0) {
+    gaps.push("validation_summary.gaps must be empty for ready internal prototypes");
   }
-
-  if (review.design_review_hash !== contributionAlignmentModelPrototypeDesignReviewHash(review)) {
-    gaps.push("design_review_hash must match compact design review");
+  if (prototype.prototype_hash !== contributionAlignmentInternalModelPrototypeHash(prototype)) {
+    gaps.push("prototype_hash must match compact internal model prototype");
   }
   return gaps;
 }
 
-function collectSourceBindingGaps(review, options = {}) {
+function collectSourceBindingGaps(prototype, options = {}) {
   const gaps = [];
-  if (!isPlainObject(review)) {
-    gaps.push("design review must be an object");
+  if (!isPlainObject(prototype)) {
+    gaps.push("internal model prototype must be an object");
     return gaps;
   }
-  if (!options.sourceReviewPacket) {
-    gaps.push("sourceReviewPacket is required for design review validation");
+  if (!options.sourceDesignReview) {
+    gaps.push("sourceDesignReview is required for internal model prototype validation");
     return gaps;
   }
-  const reviewPacketValidation = sourceReviewPacketValidationFor(
-    options.sourceReviewPacket,
+  const reviewValidation = sourceDesignReviewValidationFor(
+    options.sourceDesignReview,
     options
   );
-  const expectedReview = buildBaseDesignReview(options.sourceReviewPacket, {
+  if (!options.sourceReviewPacket) {
+    gaps.push("sourceReviewPacket is required for internal model prototype validation");
+  }
+  if (!options.sourceRunner) {
+    gaps.push("sourceRunner is required for internal model prototype validation");
+  }
+  if (!options.sourcePacket) {
+    gaps.push("sourcePacket is required for internal model prototype validation");
+  }
+  if (!options.sourceFixture) {
+    gaps.push("sourceFixture is required for internal model prototype validation");
+  }
+  if (!options.researchDesignText) {
+    gaps.push("researchDesignText is required for internal model prototype validation");
+  }
+  if (!options.implementationDecisionText) {
+    gaps.push("implementationDecisionText is required for internal model prototype validation");
+  }
+  const expectedPrototype = buildBasePrototype(options.sourceDesignReview, {
     sourceRunner: options.sourceRunner,
+    sourceReviewPacket: options.sourceReviewPacket,
     sourcePacket: options.sourcePacket,
     sourceFixture: options.sourceFixture,
     researchDesignText: options.researchDesignText,
@@ -976,58 +980,62 @@ function collectSourceBindingGaps(review, options = {}) {
     implementationDecisionText: options.implementationDecisionText,
     cwd: options.cwd ?? process.cwd()
   });
-  const expectedWithoutHash = clone(expectedReview);
-  const actualWithoutHash = clone(review);
-  delete expectedWithoutHash.design_review_hash;
-  delete actualWithoutHash.design_review_hash;
+  const expectedWithoutHash = clone(expectedPrototype);
+  const actualWithoutHash = clone(prototype);
+  delete expectedWithoutHash.prototype_hash;
+  delete actualWithoutHash.prototype_hash;
   if (JSON.stringify(actualWithoutHash) !== JSON.stringify(expectedWithoutHash)) {
-    gaps.push("design review must match source-review-packet-bound expected envelope");
+    gaps.push("internal model prototype must match source-design-review-bound expected envelope");
   }
   if (
-    review.source_review_packet_ref?.review_packet_id !==
-    options.sourceReviewPacket.review_packet_id
+    prototype.source_design_review_ref?.design_review_id !==
+    options.sourceDesignReview.design_review_id
   ) {
-    gaps.push("source_review_packet_ref.review_packet_id drifted");
+    gaps.push("source_design_review_ref.design_review_id drifted");
   }
   if (
-    review.source_review_packet_ref?.review_packet_hash !==
-    options.sourceReviewPacket.review_packet_hash
+    prototype.source_design_review_ref?.design_review_hash !==
+    options.sourceDesignReview.design_review_hash
   ) {
-    gaps.push("source_review_packet_ref.review_packet_hash drifted");
+    gaps.push("source_design_review_ref.design_review_hash drifted");
   }
-  const expectedState = reviewStateFor(
-    options.sourceReviewPacket,
-    reviewPacketValidation,
+  const expectedState = prototypeStateFor(
+    options.sourceDesignReview,
+    reviewValidation,
     []
   );
-  if (review.review_state !== expectedState) {
-    gaps.push(`review_state must be ${expectedState}`);
+  if (prototype.prototype_state !== expectedState) {
+    gaps.push(`prototype_state must be ${expectedState}`);
   }
   return gaps;
 }
 
-export function validateContributionAlignmentModelPrototypeDesignReview(
-  review,
+export function validateContributionAlignmentInternalModelPrototype(
+  prototype,
   options = {}
 ) {
   const gaps = sanitizeGaps([
-    ...collectShapeGaps(review),
-    ...collectSourceBindingGaps(review, options),
-    ...hasForbiddenContent(review)
+    ...collectShapeGaps(prototype),
+    ...collectSourceBindingGaps(prototype, options),
+    ...hasForbiddenContent(prototype)
   ]);
   return {
     schema_version: VALIDATION_SCHEMA_VERSION,
-    design_review_id: review?.design_review_id ?? null,
-    review_state: review?.review_state ?? null,
+    prototype_id: safeValidationScalar(prototype?.prototype_id),
+    prototype_state: safeValidationScalar(prototype?.prototype_state, [
+      READY_STATE,
+      HOLD_DESIGN_REVIEW_STATE,
+      REJECT_BOUNDARY_STATE
+    ]),
     envelope_valid: gaps.length === 0,
-    valid: gaps.length === 0 && review?.review_state === READY_STATE,
+    valid: gaps.length === 0 && prototype?.prototype_state === READY_STATE,
     gaps
   };
 }
 
 function printUsageAndExit() {
   console.error(
-    "Usage: node scripts/run_ai_value_contribution_alignment_model_prototype_design_review.mjs <packet.json> --source-fixture=<fixture.json> --research-design=<design.md>"
+    "Usage: node scripts/run_ai_value_contribution_alignment_internal_model_prototype.mjs <packet.json> --source-fixture=<fixture.json> --research-design=<design.md>"
   );
   process.exit(1);
 }
@@ -1082,7 +1090,7 @@ if (invokedPath === currentPath) {
       cwd
     }
   );
-  const review = buildContributionAlignmentModelPrototypeDesignReviewFromObject(
+  const sourceDesignReview = buildContributionAlignmentModelPrototypeDesignReviewFromObject(
     sourceReviewPacket,
     {
       sourceRunner,
@@ -1095,9 +1103,24 @@ if (invokedPath === currentPath) {
       cwd
     }
   );
-  const validation = validateContributionAlignmentModelPrototypeDesignReview(review, {
+  const prototype = buildContributionAlignmentInternalModelPrototypeFromObject(
+    sourceDesignReview,
+    {
+      sourceRunner,
+      sourceReviewPacket,
+      sourceDesignReview,
+      sourcePacket,
+      sourceFixture,
+      researchDesignText,
+      researchDesignPath,
+      implementationDecisionText,
+      cwd
+    }
+  );
+  const validation = validateContributionAlignmentInternalModelPrototype(prototype, {
     sourceRunner,
     sourceReviewPacket,
+    sourceDesignReview,
     sourcePacket,
     sourceFixture,
     researchDesignText,
@@ -1109,5 +1132,5 @@ if (invokedPath === currentPath) {
     console.error(JSON.stringify(validation, null, 2));
     process.exit(1);
   }
-  console.log(JSON.stringify(review, null, 2));
+  console.log(JSON.stringify(prototype, null, 2));
 }

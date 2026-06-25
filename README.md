@@ -106,6 +106,11 @@ documented value-realization layers:
   implementing a model. It remains method-design-only and blocks model math,
   numeric weights, score/probability output, persistence, exports, finance
   output, and customer-facing output.
+- **AI Value contribution alignment internal model prototype:** replays the
+  governed design-review components as compact internal component traces
+  without emitting a model result. It remains non-persistent and blocks model
+  math, numeric weights, confidence output, probability/score output,
+  persistence, exports, finance output, and customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
