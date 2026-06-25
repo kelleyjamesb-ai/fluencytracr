@@ -2,6 +2,24 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Internal Method Prototype Review Record
+  (user-requested, 2026-06-25): added the internal promotion gate after the
+  Small Internal Method Prototype. The review record recomputes the source
+  method prototype and upstream chain, emits only compact source-prototype refs,
+  finalization-review scope, qualitative component posture review,
+  context-separation review, promotion basis, caveats, blocked uses, false
+  feeds, and validation summary, and can return only
+  `PROMOTE_EXACT_SCOPE_RESEARCH_MATH_FINALIZATION_REVIEW`,
+  `HOLD_FOR_VALID_INTERNAL_METHOD_PROTOTYPE_REVIEW_RECORD`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It explicitly holds when qualitative
+  component posture drifts into numeric roles and authorizes only a separate
+  exact-scope research math finalization review. It does not add UI, routes,
+  schemas, migrations, persistence writes, exports, live BigQuery/Sigma/Glean
+  execution, research-model feed, research math output, model implementation,
+  model output, numeric weights, score/probability output, ROI/EBITDA, finance
+  output, causality, productivity, or customer-facing output. Verification
+  added:
+  `npm run test:ai-value-contribution-alignment-internal-method-prototype-review-record`.
 - AI Value Contribution Alignment Small Internal Method Prototype
   (user-requested, 2026-06-24): added the governed small internal method
   prototype after the Method Prototype Decision gate. The prototype recomputes

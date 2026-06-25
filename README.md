@@ -138,6 +138,13 @@ documented value-realization layers:
   and it blocks model results, numeric weights, score/probability output,
   finance output, persistence, exports, live connectors, UI, routes, schemas,
   and customer-facing output.
+- **AI Value contribution alignment internal method prototype review record:**
+  reviews the compact qualitative method prototype and promotes only a separate
+  exact-scope research math finalization review. It remains non-persistent,
+  compact-ref-only, and blocks research math output, model feeds, model
+  implementation, numeric weights, score/probability output, finance output,
+  persistence, exports, live connectors, UI, routes, schemas, and
+  customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
