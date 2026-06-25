@@ -124,6 +124,20 @@ documented value-realization layers:
   blocks model feeds, model implementation, numeric weights, score/probability
   output, finance output, persistence, exports, live connectors, and
   customer-facing output.
+- **AI Value contribution alignment method prototype decision:** records the
+  exact-scope decision to promote only a small internal qualitative method
+  prototype after the internal research-design gate review passes. It remains
+  non-persistent, compact-ref-only, and blocks model feeds, model
+  implementation, numeric weights, score/probability output, finance output,
+  persistence, exports, live connectors, UI, routes, schemas, and
+  customer-facing output.
+- **AI Value contribution alignment small internal method prototype:** turns
+  the promoted method scope into compact qualitative component posture for
+  internal review only. It keeps AI Fluency construct context, psychological
+  context, observed VBD context, and selected customer metric movement distinct,
+  and it blocks model results, numeric weights, score/probability output,
+  finance output, persistence, exports, live connectors, UI, routes, schemas,
+  and customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

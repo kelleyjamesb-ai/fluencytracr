@@ -2,6 +2,38 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Small Internal Method Prototype
+  (user-requested, 2026-06-24): added the governed small internal method
+  prototype after the Method Prototype Decision gate. The prototype recomputes
+  the source decision and upstream chain, emits only compact source-decision
+  refs, method frame, qualitative component postures, context-separation review,
+  caveats, blocked uses, false feeds, and validation summary, and can return
+  only `READY_FOR_INTERNAL_METHOD_PROTOTYPE_REVIEW_RECORD`,
+  `HOLD_FOR_VALID_METHOD_PROTOTYPE_DECISION`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It keeps AI Fluency construct context,
+  psychological context, observed VBD context, and selected customer metric
+  movement separate, with psychological context unable to substitute for
+  observed VBD and observed VBD unable to substitute for customer metric
+  movement. It does not add UI, routes, schemas, migrations, persistence writes,
+  exports, live BigQuery/Sigma/Glean execution, research-model feed, model
+  output, numeric weights, score/probability output, ROI/EBITDA, finance output,
+  causality, productivity, or customer-facing output. Verification added:
+  `npm run test:ai-value-contribution-alignment-small-internal-method-prototype`.
+- AI Value Contribution Alignment Method Prototype Decision (user-requested,
+  2026-06-24): added the exact-scope decision gate after the Internal
+  Research-Design Gate Review. The decision recomputes the source gate review
+  and upstream chain, emits only compact source gate-review refs, method
+  prototype scope, promotion basis, caveats, blocked uses, false feeds, and
+  validation summary, and can return only
+  `PROMOTE_SMALL_INTERNAL_METHOD_PROTOTYPE`,
+  `HOLD_FOR_VALID_INTERNAL_RESEARCH_DESIGN_GATE_REVIEW`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. The only promoted scope is
+  `qualitative_component_posture_only`; it does not add UI, routes, schemas,
+  migrations, persistence writes, exports, live BigQuery/Sigma/Glean execution,
+  research-model feed, model implementation, model math, numeric weights,
+  score/probability output, ROI/EBITDA, finance output, causality,
+  productivity, or customer-facing output. Verification added:
+  `npm run test:ai-value-contribution-alignment-method-prototype-decision`.
 - AI Value upstream acceptance persistence boundary hardening (user-requested,
   2026-06-24): added an exact physical data-model hold decision for upstream
   aggregate handoff / acceptance-package persistence. The data model remains
