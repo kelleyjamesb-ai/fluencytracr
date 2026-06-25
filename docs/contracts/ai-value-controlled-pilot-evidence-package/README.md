@@ -141,6 +141,10 @@ review. It still cannot promote durable `measurement_cell_series_snapshots`,
 Evidence Continuity persistence, finance-context investigation, Bayesian
 research planning, confidence research, exports, or customer-facing output.
 
+The adjacent Series persistence promotion gate may consume this repeated
+package as source evidence, but it still holds by default until a durable
+product read path is proven.
+
 Rolling 30-day windows remain operating context only and cannot satisfy
 evidence continuity.
 
@@ -170,6 +174,7 @@ Run:
 
 ```bash
 npm run test:ai-value-controlled-pilot-evidence-package
+npm run test:ai-value-measurement-cell-series-persistence-promotion-gate
 ```
 
 Executable sample:

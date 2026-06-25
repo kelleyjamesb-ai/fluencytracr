@@ -11,6 +11,9 @@ Phase: `phase-ai-value-measurement-cell-series-persistence-promotion-decision`
 Decision:
 `HOLD_AFTER_REPEATED_MILESTONE_VALIDATION_NO_SERIES_SNAPSHOT_PROMOTION`
 
+Executable gate:
+[`docs/contracts/ai-value-measurement-cell-series-persistence-promotion-gate/README.md`](../contracts/ai-value-measurement-cell-series-persistence-promotion-gate/README.md)
+
 ## 1. Purpose
 
 Measurement Cell Series is currently a contract-only continuity/alignment
@@ -44,6 +47,9 @@ Reason:
   snapshots as plural status rows without needing durable Series state;
 - no current customer-facing route, UI, export, rendered readout, downstream
   review gate, or live connector path requires a persisted Series read path;
+- the executable Series persistence promotion gate now requires explicit
+  durable read-path proof and a separate durable read-path decision before any
+  later implementation decision can start;
 - rolling 30-day operating context remains quarantined;
 - Series persistence would imply product-state maturity that the current
   product path has not proven is necessary.
@@ -127,12 +133,14 @@ If a later decision promotes Series persistence, tests must reject:
 ## 6. Recommended Next Move
 
 Keep Series persistence blocked. Use the repeated controlled pilot package,
-Measurement Cell Series contract output, and backend-internal Measurement Cell
-snapshots as internal review evidence only.
+Measurement Cell Series contract output, backend-internal Measurement Cell
+snapshots, and the executable Series persistence promotion gate as internal
+review evidence only.
 
 Do not reconsider Series persistence until the repo records an explicit
-decision naming the exact `measurement_cell_series_snapshots` table,
-projection, and read-path purpose required for the next pilot.
+durable read-path proof and then a separate exact-scope implementation decision
+naming the exact `measurement_cell_series_snapshots` table, projection, and
+read-path purpose required for the next pilot.
 
 ## 7. Evidence Continuity Placement
 
@@ -165,6 +173,7 @@ and contract decision rather than creating a parallel evidence-continuity table.
 When this decision is changed, run:
 
 ```bash
+npm run test:ai-value-measurement-cell-series-persistence-promotion-gate
 git diff --check
 bash scripts/ci_docs_contract_sweep.sh
 python3 scripts/ci_v1_governance_gates.py

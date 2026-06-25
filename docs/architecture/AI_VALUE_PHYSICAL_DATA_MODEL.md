@@ -509,7 +509,13 @@ Cells at governed milestones.
 Do not implement until a later promotion explicitly authorizes durable
 Measurement Cell Series state. Repeated Day 0 / 30 / 60 / 90 / 180 / 365
 validation has passed through the contract-only Series layer; persistence still
-remains held because no durable Series read-path need has been proven.
+remains held because no durable Series read-path need has been proven. The
+executable Series persistence promotion gate can only promote a later
+exact-scope implementation decision after a separate durable read-path decision
+exists; caller-supplied proof strings alone still hold. The gate does not
+create this table, extend `evidence_snapshots`, or authorize routes, UI,
+exports, rendered readouts, live connectors, model output, finance output, or
+customer-facing output.
 
 Non-authorizing column requirements if separately promoted:
 
@@ -893,9 +899,11 @@ Recommended next move:
 3. Keep upstream aggregate handoff and acceptance package outputs
    non-persistent until a future exact-scope persistence decision passes the
    recomputation and smuggling tests named above.
-4. Defer `measurement_cell_series_snapshots` until a real product continuity
-   read-path need exists; repeated milestone validation has passed, but it
-   proves internal continuity inspection rather than persistence need.
+4. Run the Series persistence promotion gate before any
+   `measurement_cell_series_snapshots` implementation discussion. Repeated
+   milestone validation has passed, but it proves internal continuity
+   inspection rather than persistence need; a separate durable read-path
+   decision is still required.
 5. Wire live BigQuery, Sigma, and Glean connector execution last, after the
    customer-facing route/UI projection contract proves it can consume the
    stable persisted product-data model without expanding the evidence boundary.

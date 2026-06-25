@@ -140,6 +140,8 @@
     "test:ai-value-operator-evidence-package-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_operator_evidence_package_runner.test.mjs",
     "test:ai-value-measurement-cell-assembly-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_cell_assembly_runner.test.mjs",
     "test:ai-value-measurement-cell-series": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_cell_series.test.mjs",
+    "run:ai-value-measurement-cell-series-persistence-promotion-gate": "npm run build --workspace shared && node scripts/run_ai_value_measurement_cell_series_persistence_promotion_gate.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
+    "test:ai-value-measurement-cell-series-persistence-promotion-gate": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_cell_series_persistence_promotion_gate.test.mjs",
     "test:ai-value-adversarial-client-fixture-pack": "npm run build --workspace shared && node --test scripts/validate_ai_value_adversarial_client_fixture_pack.test.mjs",
     "test:ai-value-ui-output-contract": "npm run build --workspace shared && node --test scripts/validate_ai_value_ui_output_contract.test.mjs",
     "test:ai-value-support-pilot-readiness-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_support_pilot_glean_readiness_adapter.test.mjs",

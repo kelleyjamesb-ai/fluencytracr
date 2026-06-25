@@ -2,6 +2,30 @@
 
 ## Last Completed
 
+- AI Value Measurement Cell Series Persistence Promotion Gate (user-requested,
+  2026-06-25): added the executable hold-by-default gate after repeated Day 0 /
+  30 / 60 / 90 / 180 / 365 milestone validation. The gate consumes the
+  controlled repeated pilot evidence package as source-bound compact Series
+  proof, rejects unsafe wrappers/sidecars without echoing raw values, and can
+  become ready only for a separate exact-scope
+  `measurement_cell_series_snapshots` implementation decision after a separate
+  durable read-path decision shows compact snapshot projections cannot satisfy
+  continuity needs. Caller-supplied proof strings alone still hold. The
+  validator rejects forged ready gates with source drift, stale validation
+  summaries, non-empty hold reasons, unsafe proof refs, and extra
+  caveat/blocked-use smuggling after rehash. It keeps `measurement_cell_series_snapshots`,
+  `evidence_snapshots` extension, Prisma schemas, migrations, repository write
+  paths, backend routes, frontend UI, exports, rendered readouts, live
+  BigQuery/Sigma/Glean execution, model output, confidence/probability/score
+  output, finance output, ROI, causality, productivity, and customer-facing
+  output blocked. Verification passed:
+  `npm run test:ai-value-measurement-cell-series-persistence-promotion-gate`;
+  direct runner hold-state check;
+  `npm run test:ai-value-measurement-cell-series`;
+  `npm run test:ai-value-controlled-pilot-evidence-package`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Measurement Cell Series validation and Evidence Continuity placement
   decision (goal-directed, 2026-06-25): verified repeated Day 0 / 30 / 60 / 90
   / 180 / 365 milestone continuity through the existing contract-only

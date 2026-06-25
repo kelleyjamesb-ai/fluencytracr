@@ -106,6 +106,16 @@ documented value-realization layers:
   remain held because no product read-path need has been proven. Evidence
   Continuity stays inside the Series contract output for now; do not extend
   `evidence_snapshots` until a later exact-scope decision authorizes it.
+- **AI Value Measurement Cell Series persistence promotion gate:** adds the
+  executable hold-by-default gate after repeated milestone validation. It can
+  become ready only for a later exact-scope Series snapshot implementation
+  decision after a separate durable read-path decision proves compact customer
+  data model projections cannot satisfy continuity needs. Caller-supplied proof
+  strings alone still hold. It does not create `measurement_cell_series_snapshots`,
+  extend `evidence_snapshots`, add routes, UI, exports, rendered readouts, live
+  BigQuery/Sigma/Glean wiring, model output, confidence/probability/score
+  output, finance output, ROI, causality, productivity, or customer-facing
+  output.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,
