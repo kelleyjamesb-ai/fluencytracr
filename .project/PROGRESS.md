@@ -2,6 +2,32 @@
 
 ## Last Completed
 
+- AI Value Customer Evidence History Read-Path Proof and Durable Series
+  Read-Path Decision (goal-directed, 2026-06-25): added the internal
+  executable proof that Day 0 / 30 / 60 / 90 / 180 / 365 customer evidence
+  history can be served from compact
+  `ai_value_customer_data_model_snapshots` plus Measurement Cell Series
+  contract output. The proof binds only compact milestone counts and hashes,
+  ignores stale superseded rows, holds on missing or held latest rows, rejects
+  unsafe sidecars without echo, and keeps Series persistence, `evidence_snapshots`
+  extension, routes, UI, exports, rendered readouts, live connector execution,
+  model output, confidence/probability/score output, finance output, ROI,
+  causality, productivity, and customer-facing economic output blocked. Added
+  the Durable Series Read-Path Decision that consumes the proof and records
+  `HOLD_SERIES_PERSISTENCE_COMPACT_CUSTOMER_HISTORY_READ_PATH_SATISFIED`;
+  the allowed next step is to continue customer history reads from compact
+  customer data model snapshots. This slice intentionally does not emit a
+  ready Series implementation state. Verification passed:
+  `npm run test:ai-value-customer-evidence-history-read-path-proof`;
+  `npm run test:ai-value-durable-series-read-path-decision`;
+  direct proof runner state check;
+  direct durable decision runner state check;
+  `npm run test:ai-value-measurement-cell-series-persistence-promotion-gate`;
+  `npm run test:ai-value-measurement-cell-series`;
+  `npm run test:ai-value-controlled-pilot-evidence-package`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Measurement Cell Series Persistence Promotion Gate (user-requested,
   2026-06-25): added the executable hold-by-default gate after repeated Day 0 /
   30 / 60 / 90 / 180 / 365 milestone validation. The gate consumes the

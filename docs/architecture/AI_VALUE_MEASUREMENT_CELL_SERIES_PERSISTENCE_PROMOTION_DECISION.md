@@ -14,6 +14,12 @@ Decision:
 Executable gate:
 [`docs/contracts/ai-value-measurement-cell-series-persistence-promotion-gate/README.md`](../contracts/ai-value-measurement-cell-series-persistence-promotion-gate/README.md)
 
+Customer history read-path proof:
+[`docs/contracts/ai-value-customer-evidence-history-read-path-proof/README.md`](../contracts/ai-value-customer-evidence-history-read-path-proof/README.md)
+
+Durable read-path decision:
+[`docs/contracts/ai-value-durable-series-read-path-decision/README.md`](../contracts/ai-value-durable-series-read-path-decision/README.md)
+
 ## 1. Purpose
 
 Measurement Cell Series is currently a contract-only continuity/alignment
@@ -45,6 +51,14 @@ Reason:
   Series continuity/alignment contract;
 - the customer data model route/UI projection can consume clear compact
   snapshots as plural status rows without needing durable Series state;
+- the Customer Evidence History Read-Path Proof now shows Day 0 / 30 / 60 /
+  90 / 180 / 365 customer history can be served from compact
+  `ai_value_customer_data_model_snapshots` plus Measurement Cell Series
+  contract output;
+- the Durable Series Read-Path Decision records
+  `HOLD_SERIES_PERSISTENCE_COMPACT_CUSTOMER_HISTORY_READ_PATH_SATISFIED`, so
+  the allowed next step is to continue customer history reads from compact
+  customer data model snapshots;
 - no current customer-facing route, UI, export, rendered readout, downstream
   review gate, or live connector path requires a persisted Series read path;
 - the executable Series persistence promotion gate now requires explicit
@@ -137,10 +151,11 @@ Measurement Cell Series contract output, backend-internal Measurement Cell
 snapshots, and the executable Series persistence promotion gate as internal
 review evidence only.
 
-Do not reconsider Series persistence until the repo records an explicit
-durable read-path proof and then a separate exact-scope implementation decision
-naming the exact `measurement_cell_series_snapshots` table, projection, and
-read-path purpose required for the next pilot.
+Do not reconsider Series persistence unless a later repo slice records new
+source-bound proof that compact customer data model snapshots cannot satisfy a
+bounded continuity read path, followed by a separate exact-scope implementation
+decision naming the exact `measurement_cell_series_snapshots` table,
+projection, and read-path purpose required for the next pilot.
 
 ## 7. Evidence Continuity Placement
 
@@ -173,6 +188,8 @@ and contract decision rather than creating a parallel evidence-continuity table.
 When this decision is changed, run:
 
 ```bash
+npm run test:ai-value-customer-evidence-history-read-path-proof
+npm run test:ai-value-durable-series-read-path-decision
 npm run test:ai-value-measurement-cell-series-persistence-promotion-gate
 git diff --check
 bash scripts/ci_docs_contract_sweep.sh

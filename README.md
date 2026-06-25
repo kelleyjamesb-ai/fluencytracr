@@ -116,6 +116,24 @@ documented value-realization layers:
   BigQuery/Sigma/Glean wiring, model output, confidence/probability/score
   output, finance output, ROI, causality, productivity, or customer-facing
   output.
+- **AI Value customer evidence history read-path proof:** proves that current
+  Day 0 / 30 / 60 / 90 / 180 / 365 customer evidence history can be served
+  from compact `ai_value_customer_data_model_snapshots` plus Measurement Cell
+  Series contract output. It binds only compact milestone counts and hashes,
+  ignores stale superseded rows, holds on missing or held latest rows, and does
+  not create Series persistence, extend `evidence_snapshots`, add routes, UI,
+  exports, rendered readouts, live connector execution, model output,
+  confidence/probability/score output, finance output, ROI, causality,
+  productivity, or customer-facing economic output.
+- **AI Value durable Series read-path decision:** consumes the customer
+  evidence history read-path proof and records the current decision:
+  compact customer history satisfies the read path, so
+  `measurement_cell_series_snapshots` remain blocked. The allowed next step is
+  to continue history reads from `ai_value_customer_data_model_snapshots`; the
+  decision does not emit a ready Series implementation state, persistence write,
+  schema, migration, repository path, route, UI, export, rendered readout, live
+  wiring, model output, finance output, ROI, causality, productivity, or
+  customer-facing economic output.
 - **AI Value controlled aggregate connector adapter:** proves that the reviewed
   aggregate dry-run proof can become a compact internal BigQuery/Sigma connector
   review packet without credentials, live execution, persistence, snapshots,
