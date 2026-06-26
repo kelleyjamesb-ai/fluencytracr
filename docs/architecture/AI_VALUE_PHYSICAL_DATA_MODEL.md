@@ -976,6 +976,20 @@ confidence output, probability output, score-like output, finance output, ROI,
 causality, productivity, persistence, routes, UI, schemas, exports, live
 connectors, or customer-facing output.
 
+The executable
+[AI Value Contribution Alignment Internal Bayesian Execution Artifact v1](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1/README.md)
+is an internal-only aggregate execution artifact record created only from a
+passed Promotion Gate Passed Artifact Handoff and passed Bayesian Promotion
+Decision Gate. It is hash-bound to the promotion handoff, promotion gate,
+runtime, diagnostics/model adequacy review, Diagnostics Evidence Packet, and
+Governed Diagnostics Sufficiency Evidence Source. It does not rerun Bayesian
+execution, reinterpret posterior-like prototype values, create promotion
+authority, or authorize Bayesian interpretation, posterior output, confidence
+output, probability output, score-like output, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output. Its only allowed next step is
+`posterior_interpretation_specification_gate_only`.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;

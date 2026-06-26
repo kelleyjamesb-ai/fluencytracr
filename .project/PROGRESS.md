@@ -2,6 +2,32 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Internal Bayesian Execution Artifact v1 slice
+  (2026-06-26): added the internal-only, aggregate-only execution artifact
+  record authorized only by the passed Promotion Gate Passed Artifact Handoff
+  and the passed Bayesian Promotion Decision Gate chain. The artifact binds to
+  the promotion handoff, promotion gate, contained runtime, diagnostics/model
+  adequacy review, Diagnostics Evidence Packet, and Governed Diagnostics
+  Sufficiency Evidence Source hashes; it does not rerun Bayesian execution,
+  reinterpret posterior-like prototype values, create promotion authority, or
+  authorize posterior interpretation. Confidence output, probability output,
+  score-like output, customer-facing output, economic output, finance output,
+  ROI, causality, productivity, persistence, routes, UI, schemas, exports, live
+  connectors, raw rows, identifiers, query text, prompts, transcripts, and
+  person-level data remain blocked. The only allowed next step is
+  `posterior_interpretation_specification_gate_only`. Local CODE / BUG /
+  ADVERSARIAL review checked boundary leaks, unsafe feeds, promotion side
+  doors, stale source hashes, and interpretation/customer-facing economic
+  language. CODE review found and this slice fixed a held-artifact containment
+  gap: invalid nested source wrapper strings are now redacted until the full
+  source chain validates, and validation gaps no longer echo attacker-controlled
+  field names. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1`
+  (15/15 tests, including nested source-ref redaction and default executable
+  sample remains held);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Bayesian Promotion Decision Gate Evidence
   Binding slice (2026-06-25): updated the Bayesian Promotion Decision Gate so
   the Diagnostics Evidence Packet is a consumed, hash-bound source alongside the

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -403,7 +402,7 @@ test("promotion gate passed artifact handoff rejects non-gate promotion side doo
   );
 });
 
-test("promotion gate passed artifact handoff does not implement execution artifact v1", () => {
+test("promotion gate passed artifact handoff does not create or feed execution artifact v1", () => {
   const runtime = sourceRuntime();
   const { governedSource, review, packet, gate } =
     explicitPromotionPath(runtime, reviewedEvidenceInput(runtime));
@@ -418,12 +417,7 @@ test("promotion gate passed artifact handoff does not implement execution artifa
 
   assert.equal(handoff.created_artifacts.internal_bayesian_execution_artifact_v1, false);
   assert.equal(handoff.created_artifacts.posterior_interpretation_specification, false);
-  assert.equal(
-    existsSync("scripts/run_ai_value_contribution_alignment_internal_bayesian_execution_artifact_v1.mjs"),
-    false
-  );
-  assert.equal(
-    existsSync("docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1/README.md"),
-    false
-  );
+  assert.equal(handoff.feeds.internal_bayesian_execution_artifact_v1, false);
+  assert.equal(handoff.handoff_policy.promotion_authorized, false);
+  assert.equal(handoff.allowed_next_step, "internal_bayesian_execution_artifact_v1_only");
 });
