@@ -278,9 +278,10 @@ input.
 
 ## Dimension Templates
 
-Use these templates to collect evidence. Leave hash fields blank until the later
-reviewed evidence package supplies them. Leave satisfaction unset in this
-packet.
+Use these templates to collect reviewer-owned aggregate source-package inputs.
+The templates do not create or satisfy evidence. Leave hash fields blank until
+the later reviewed evidence package supplies them. Leave satisfaction unset in
+this packet.
 
 ### comparison_design_adequacy
 
