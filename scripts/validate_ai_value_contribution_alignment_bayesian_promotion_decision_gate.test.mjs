@@ -354,7 +354,7 @@ function promotableDiagnosticsReview(runtime = sourceRuntime()) {
   return buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence:
-      governedDiagnosticsSufficiencyEvidence(runtime)
+      governedDiagnosticsSufficiencyEvidenceSource(runtime)
   });
 }
 
@@ -494,7 +494,7 @@ test("Bayesian promotion decision gate rejects diagnostics evidence packet promo
 test("Bayesian promotion decision gate may pass only with governed sufficiency evidence bound through review and packet", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
-    governedDiagnosticsSufficiencyEvidence(runtime);
+    governedDiagnosticsSufficiencyEvidenceSource(runtime);
   const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
@@ -527,9 +527,45 @@ test("Bayesian promotion decision gate may pass only with governed sufficiency e
   assert.equal(gate.allowed_next_step, "internal_bayesian_execution_artifact_v1_only");
   assert.equal(evidencePacket.packet_policy.promotion_authorized, false);
   assert.equal(evidencePacket.promotion_boundary.promotion_authorized, false);
+  assert.equal(
+    review.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    sourceDiagnosticsSufficiencyEvidence.evidence_hash
+  );
+  assert.equal(
+    evidencePacket.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    sourceDiagnosticsSufficiencyEvidence.evidence_hash
+  );
   for (const feed of FALSE_FEEDS) {
     assert.equal(gate.feeds[feed], false, `${feed} must remain false`);
   }
+});
+
+test("Bayesian promotion decision gate holds when diagnostics review uses direct sidecar evidence", () => {
+  const runtime = sourceRuntime();
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+    source_runtime: runtime,
+    source_diagnostics_sufficiency_evidence:
+      governedDiagnosticsSufficiencyEvidence(runtime)
+  });
+  const evidencePacket = promotableDiagnosticsEvidencePacket(runtime);
+  const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject(
+    gateInput(review, runtime, evidencePacket)
+  );
+  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate, {
+    sourceDiagnosticsReview: review,
+    sourceRuntime: runtime,
+    sourceDiagnosticsEvidencePacket: evidencePacket
+  });
+
+  assert.equal(review.review_state, "HOLD_FOR_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_SOURCE");
+  assert.equal(gate.gate_state, "HOLD_FOR_DIAGNOSTICS_AND_MODEL_ADEQUACY_SUFFICIENCY");
+  assert.equal(gate.promotion_decision.promotion_authorized, false);
+  assert.equal(gate.feeds.internal_bayesian_execution_artifact_v1, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /sourceDiagnosticsReview|diagnostics review/.test(gap)),
+    validation.gaps.join("; ")
+  );
 });
 
 test("Bayesian promotion decision gate rejects rehashed satisfied diagnostics without packet sufficiency", () => {

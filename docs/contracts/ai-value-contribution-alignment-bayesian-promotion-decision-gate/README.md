@@ -91,14 +91,15 @@ source_diagnostics_evidence_packet
 ```
 
 When those sources mark diagnostics/model adequacy satisfied, they must be
-backed by a governed diagnostics sufficiency evidence sidecar hash. Hand-edited
-review or packet fields without that evidence reference are not promotion
-sufficient.
+backed by a Governed Diagnostics Sufficiency Evidence Source hash and its
+projected diagnostics sufficiency evidence hash. Hand-edited review or packet
+fields without that governed source reference are not promotion sufficient.
 
-The current emitted evidence packet is ready for promotion-decision review but
-not promotion-sufficient. It keeps:
+The default emitted evidence packet is held unless a governed diagnostics
+sufficiency evidence source is supplied:
 
 ```text
+packet_state=HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE
 comparison_design_adequacy_satisfied=false
 model_diagnostics_satisfied=false
 all_required_evidence_satisfied=false
@@ -110,8 +111,9 @@ Therefore the current executable gate remains:
 HOLD_FOR_DIAGNOSTICS_AND_MODEL_ADEQUACY_SUFFICIENCY
 ```
 
-If a future run supplies hash-valid governed diagnostics sufficiency evidence to
-both the diagnostics review and evidence packet, the gate may pass only to:
+If a future run supplies one hash-valid Governed Diagnostics Sufficiency
+Evidence Source to both the diagnostics review and evidence packet, the gate may
+pass only to:
 
 ```text
 BAYESIAN_PROMOTION_DECISION_PASSED_FOR_INTERNAL_EXECUTION_ARTIFACT_ONLY

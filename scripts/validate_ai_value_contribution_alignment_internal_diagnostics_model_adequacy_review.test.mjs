@@ -33,6 +33,10 @@ import {
   contributionAlignmentInternalDiagnosticsModelAdequacyReviewHash,
   validateContributionAlignmentInternalDiagnosticsModelAdequacyReview
 } from "./run_ai_value_contribution_alignment_internal_diagnostics_model_adequacy_review.mjs";
+import {
+  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject,
+  contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash
+} from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
 
 const FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
@@ -200,6 +204,51 @@ function governedDiagnosticsSufficiencyEvidence(runtime, overrides = {}) {
   return evidence;
 }
 
+function governedReviewedEvidenceInput(runtime, overrides = {}) {
+  const dimensions = {};
+  for (const dimension of [
+    "comparison_design_adequacy",
+    "convergence_diagnostics",
+    "posterior_predictive_checks",
+    "prior_sensitivity",
+    "residual_fit_checks",
+    "calibration_backtest",
+    "feature_weight_provenance"
+  ]) {
+    const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    dimensions[dimension] = {
+      reviewed_source_evidence_ref: sourceEvidenceRef,
+      source_evidence_hash: diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef),
+      aggregate_only_scope: true,
+      suppressed_missing_held_windows_clear: true,
+      eligible_for_satisfied_representation: true,
+      placeholder_evidence: false,
+      generated_fixture_evidence: false,
+      evidence_satisfied: true
+    };
+  }
+  return {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
+    evidence_review_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: dimensions,
+    ...overrides
+  };
+}
+
+function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
+  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+    source_runtime: runtime,
+    reviewed_diagnostics_source_evidence: governedReviewedEvidenceInput(runtime, overrides)
+  });
+}
+
 function sourceDataModel() {
   const output = execFileSync(
     "node",
@@ -313,7 +362,7 @@ test("internal diagnostics and model adequacy review completes with promotion st
 test("internal diagnostics and model adequacy review records governed sufficiency evidence without promoting", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
-    governedDiagnosticsSufficiencyEvidence(runtime);
+    governedDiagnosticsSufficiencyEvidenceSource(runtime);
   const review =
     buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
       source_runtime: runtime,
@@ -321,7 +370,10 @@ test("internal diagnostics and model adequacy review records governed sufficienc
     });
   const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(
     review,
-    { sourceRuntime: runtime, sourceDiagnosticsSufficiencyEvidence }
+    {
+      sourceRuntime: runtime,
+      sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
+    }
   );
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -329,7 +381,14 @@ test("internal diagnostics and model adequacy review records governed sufficienc
     review.review_state,
     "INTERNAL_DIAGNOSTICS_AND_MODEL_ADEQUACY_REVIEW_COMPLETED_PROMOTION_BLOCKED"
   );
-  assert.equal(review.source_diagnostics_sufficiency_evidence_ref.evidence_hash, sourceDiagnosticsSufficiencyEvidence.evidence_hash);
+  assert.equal(
+    review.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    sourceDiagnosticsSufficiencyEvidence.evidence_hash
+  );
+  assert.equal(
+    review.source_diagnostics_sufficiency_evidence_ref.evidence_hash,
+    review.source_governed_diagnostics_sufficiency_evidence_source_ref.projected_evidence_hash
+  );
   assert.equal(review.comparison_design_adequacy.comparison_design_review_present, true);
   assert.equal(review.comparison_design_adequacy.comparison_design_adequacy_satisfied, true);
   assert.equal(review.model_diagnostics.convergence_diagnostics_satisfied, true);
@@ -348,10 +407,19 @@ test("internal diagnostics and model adequacy review records governed sufficienc
 test("internal diagnostics and model adequacy review holds partial governed sufficiency evidence", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
-    governedDiagnosticsSufficiencyEvidence(runtime);
-  sourceDiagnosticsSufficiencyEvidence.evidence_dimensions.calibration_backtest.evidence_satisfied = false;
+    governedDiagnosticsSufficiencyEvidenceSource(runtime, {
+      evidence_dimensions: {
+        ...governedReviewedEvidenceInput(runtime).evidence_dimensions,
+        calibration_backtest: {
+          ...governedReviewedEvidenceInput(runtime).evidence_dimensions.calibration_backtest,
+          evidence_satisfied: false
+        }
+      }
+    });
   sourceDiagnosticsSufficiencyEvidence.evidence_hash =
-    sufficiencyEvidenceHash(sourceDiagnosticsSufficiencyEvidence);
+    contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(
+      sourceDiagnosticsSufficiencyEvidence
+    );
 
   const review =
     buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
@@ -360,7 +428,10 @@ test("internal diagnostics and model adequacy review holds partial governed suff
     });
   const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(
     review,
-    { sourceRuntime: runtime, sourceDiagnosticsSufficiencyEvidence }
+    {
+      sourceRuntime: runtime,
+      sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
+    }
   );
 
   assert.equal(review.review_state, "HOLD_FOR_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_SOURCE");
@@ -369,6 +440,30 @@ test("internal diagnostics and model adequacy review holds partial governed suff
   assert.equal(validation.valid, false);
   assert.ok(
     validation.gaps.some((gap) => /calibration_backtest|sufficiency evidence/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal diagnostics and model adequacy review rejects direct sidecar evidence without governed source binding", () => {
+  const runtime = sourceRuntime();
+  const sourceDiagnosticsSufficiencyEvidence =
+    governedDiagnosticsSufficiencyEvidence(runtime);
+  const review =
+    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+      source_runtime: runtime,
+      source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
+    });
+  const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(
+    review,
+    { sourceRuntime: runtime }
+  );
+
+  assert.equal(review.review_state, "HOLD_FOR_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_SOURCE");
+  assert.equal(review.model_diagnostics.model_diagnostics_satisfied, false);
+  assert.equal(review.promotion_review.promotion_authorized, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /governed diagnostics sufficiency evidence source|binding mismatch/.test(gap)),
     validation.gaps.join("; ")
   );
 });

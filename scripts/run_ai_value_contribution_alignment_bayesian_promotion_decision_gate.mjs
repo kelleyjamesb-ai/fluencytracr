@@ -97,6 +97,15 @@ const SOURCE_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_REF_FIELDS = [
   "evidence_hash"
 ];
 
+const SOURCE_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_REF_FIELDS = [
+  "schema_version",
+  "source_id",
+  "source_state",
+  "allowed_next_step",
+  "evidence_hash",
+  "projected_evidence_hash"
+];
+
 const SOURCE_DIAGNOSTICS_REVIEW_REF_FIELDS = [
   "schema_version",
   "review_id",
@@ -128,6 +137,7 @@ const SOURCE_REVIEW_TOP_LEVEL_FIELDS = new Set([
   "derivation_version",
   "source_bound",
   "source_runtime_ref",
+  "source_governed_diagnostics_sufficiency_evidence_source_ref",
   "source_diagnostics_sufficiency_evidence_ref",
   "review_version",
   "review_policy",
@@ -151,6 +161,10 @@ const SOURCE_REVIEW_ALLOWED_NESTED_FIELDS = new Map([
   [
     "sourceDiagnosticsReview.source_diagnostics_sufficiency_evidence_ref",
     SOURCE_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_REF_FIELDS
+  ],
+  [
+    "sourceDiagnosticsReview.source_governed_diagnostics_sufficiency_evidence_source_ref",
+    SOURCE_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_REF_FIELDS
   ],
   [
     "sourceDiagnosticsReview.review_policy",

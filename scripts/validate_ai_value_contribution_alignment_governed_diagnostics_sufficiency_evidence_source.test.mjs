@@ -229,7 +229,7 @@ test("governed diagnostics sufficiency evidence source feeds packet through hash
   });
   const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
     source_runtime: runtime,
-    source_diagnostics_sufficiency_evidence: packetSideEvidence
+    source_diagnostics_sufficiency_evidence: source
   });
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
@@ -244,6 +244,10 @@ test("governed diagnostics sufficiency evidence source feeds packet through hash
     source.evidence_hash
   );
   assert.equal(packet.promotion_boundary.promotion_authorized, false);
+  assert.equal(
+    review.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    source.evidence_hash
+  );
   assert.equal(review.promotion_review.promotion_authorized, false);
   assert.equal(gate.promotion_decision.promotion_authorized, true);
   assert.equal(gate.allowed_next_step, "internal_bayesian_execution_artifact_v1_only");

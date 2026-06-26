@@ -10,6 +10,11 @@ import {
   contributionAlignmentInternalBayesianExecutionRuntimeHash,
   validateContributionAlignmentInternalBayesianExecutionRuntime
 } from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
+import {
+  CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_SCHEMA_VERSION,
+  buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource,
+  contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash
+} from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
 
 export const CONTRIBUTION_ALIGNMENT_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_REVIEW_SCHEMA_VERSION =
   "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_REVIEW_2026_06";
@@ -41,6 +46,10 @@ const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_CLASS =
   "diagnostics_sufficiency_evidence_only";
 const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_VERSION =
   "diagnostics_sufficiency_evidence_2026_06";
+const GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_STATE =
+  "GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_FOR_PACKET_REVIEW";
+const GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_NEXT_STEP =
+  "diagnostics_evidence_packet_update_only";
 
 const TOP_LEVEL_FIELDS = new Set([
   "schema_version",
@@ -51,6 +60,7 @@ const TOP_LEVEL_FIELDS = new Set([
   "derivation_version",
   "source_bound",
   "source_runtime_ref",
+  "source_governed_diagnostics_sufficiency_evidence_source_ref",
   "source_diagnostics_sufficiency_evidence_ref",
   "review_version",
   "review_policy",
@@ -83,6 +93,15 @@ const SOURCE_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_REF_FIELDS = [
   "evidence_state",
   "evidence_class",
   "evidence_hash"
+];
+
+const SOURCE_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_REF_FIELDS = [
+  "schema_version",
+  "source_id",
+  "source_state",
+  "allowed_next_step",
+  "evidence_hash",
+  "projected_evidence_hash"
 ];
 
 const REVIEW_POLICY_FIELDS = [
@@ -356,6 +375,12 @@ function sourceRuntimeFromInput(input) {
 }
 
 function sourceDiagnosticsSufficiencyEvidenceFromInput(input) {
+  return buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(
+    sourceGovernedDiagnosticsSufficiencyEvidenceSourceFromInput(input)
+  );
+}
+
+function sourceGovernedDiagnosticsSufficiencyEvidenceSourceFromInput(input) {
   return asRecord(input).source_diagnostics_sufficiency_evidence ?? null;
 }
 
@@ -423,6 +448,31 @@ function sourceDiagnosticsSufficiencyEvidenceRef(evidence) {
         ? source.evidence_class
         : null,
     evidence_hash: safeHash(source.evidence_hash)
+  };
+}
+
+function sourceGovernedDiagnosticsSufficiencyEvidenceSourceRef(source, projectedEvidence) {
+  const record = asRecord(source);
+  return {
+    schema_version:
+      record.schema_version ===
+      CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_SCHEMA_VERSION
+        ? record.schema_version
+        : null,
+    source_id: safeId(
+      record.source_id,
+      "contribution_alignment_governed_diagnostics_sufficiency_evidence_source"
+    ),
+    source_state:
+      record.source_state === GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_STATE
+        ? record.source_state
+        : null,
+    allowed_next_step:
+      record.allowed_next_step === GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_NEXT_STEP
+        ? record.allowed_next_step
+        : null,
+    evidence_hash: safeHash(record.evidence_hash),
+    projected_evidence_hash: safeHash(projectedEvidence?.evidence_hash)
   };
 }
 
@@ -534,6 +584,103 @@ function sourceDiagnosticsSufficiencyEvidenceGaps(sourceRuntime, evidence) {
   return sanitizeGaps(gaps);
 }
 
+function sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(sourceRuntime, source, projectedEvidence) {
+  if (!source) return [];
+  const record = asRecord(source);
+  const gaps = [];
+  const hasGovernedSourceSchema =
+    record.schema_version ===
+    CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_SCHEMA_VERSION;
+  if (!hasGovernedSourceSchema) {
+    gaps.push("governed diagnostics sufficiency evidence source schema_version is invalid");
+  }
+  if (record.source_state !== GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_STATE) {
+    gaps.push("governed diagnostics sufficiency evidence source is not ready for review");
+  }
+  if (record.allowed_next_step !== GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_NEXT_STEP) {
+    gaps.push("governed diagnostics sufficiency evidence source allowed_next_step is invalid");
+  }
+  if (record.evidence_hash !== contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(record)) {
+    gaps.push("governed diagnostics sufficiency evidence source hash drifted");
+  }
+  if (record.source_runtime_ref?.runtime_hash !== sourceRuntime?.runtime_hash) {
+    gaps.push("governed diagnostics sufficiency evidence source runtime hash must match source runtime");
+  }
+  if (
+    record.source_runtime_ref?.fixture_artifact_hash !==
+    sourceRuntime?.internal_fit_artifact?.artifact_hash
+  ) {
+    gaps.push("governed diagnostics sufficiency evidence source fixture artifact hash must match source runtime");
+  }
+  if (!hasGovernedSourceSchema) {
+    if (!projectedEvidence) {
+      gaps.push("governed diagnostics sufficiency evidence source projection is invalid");
+    }
+    return sanitizeGaps(gaps);
+  }
+  const governedDimensions = asRecord(record.evidence_dimensions);
+  for (const dimension of [
+    ...REQUIRED_SUFFICIENCY_DIMENSIONS,
+    "feature_weight_provenance"
+  ]) {
+    const detail = asRecord(governedDimensions[dimension]);
+    if (detail.evidence_satisfied !== true) {
+      gaps.push(`governed diagnostics sufficiency evidence source ${dimension} must be satisfied`);
+    }
+    if (safeHash(detail.source_evidence_hash) === null) {
+      gaps.push(`governed diagnostics sufficiency evidence source ${dimension} source_evidence_hash is required`);
+    }
+  }
+  const sourcePolicy = asRecord(record.source_policy);
+  for (const field of [
+    "promotion_authorized",
+    "posterior_interpretation_authorized",
+    "posterior_output_authorized",
+    "confidence_output_authorized",
+    "probability_output_authorized",
+    "customer_output_authorized",
+    "economic_output_authorized",
+    "roi_output_authorized",
+    "productivity_output_authorized",
+    "causality_output_authorized",
+    "finance_output_authorized"
+  ]) {
+    if (sourcePolicy[field] !== false) {
+      gaps.push(`governed diagnostics sufficiency evidence source ${field} must be false`);
+    }
+  }
+  if (sourcePolicy.internal_only !== true) {
+    gaps.push("governed diagnostics sufficiency evidence source must be internal-only");
+  }
+  if (sourcePolicy.aggregate_only !== true) {
+    gaps.push("governed diagnostics sufficiency evidence source must be aggregate-only");
+  }
+  const promotion = asRecord(record.promotion_boundary);
+  for (const field of [
+    "promotion_authorized",
+    "posterior_interpretation_authorized",
+    "confidence_probability_authorized",
+    "customer_economic_output_authorized",
+    "internal_bayesian_execution_artifact_v1_authorized"
+  ]) {
+    if (promotion[field] !== false) {
+      gaps.push(`governed diagnostics sufficiency evidence source promotion_boundary.${field} must be false`);
+    }
+  }
+  if (record.feeds?.diagnostics_evidence_packet !== true) {
+    gaps.push("governed diagnostics sufficiency evidence source must feed diagnostics evidence packet");
+  }
+  for (const [field, value] of Object.entries(asRecord(record.feeds))) {
+    if (field !== "diagnostics_evidence_packet" && value !== false) {
+      gaps.push(`governed diagnostics sufficiency evidence source feeds.${field} must be false`);
+    }
+  }
+  if (!projectedEvidence) {
+    gaps.push("governed diagnostics sufficiency evidence source projection is invalid");
+  }
+  return sanitizeGaps(gaps);
+}
+
 function validSufficiencyEvidence(sourceRuntime, evidence) {
   return Boolean(evidence) && sourceDiagnosticsSufficiencyEvidenceGaps(sourceRuntime, evidence).length === 0;
 }
@@ -561,6 +708,10 @@ function hasForbiddenContent(value, path = "review") {
         (
           path === "review.review_policy" &&
           REVIEW_POLICY_FIELDS.includes(key)
+        ) ||
+        (
+          path === "review.source_governed_diagnostics_sufficiency_evidence_source_ref" &&
+          SOURCE_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_REF_FIELDS.includes(key)
         ) ||
         (
           path === "review.data_adequacy" &&
@@ -851,7 +1002,13 @@ function buildPromotionReview(ready, evidenceReady = false) {
   };
 }
 
-function buildReview(sourceRuntime, sourceDiagnosticsSufficiencyEvidence, state, gaps) {
+function buildReview(
+  sourceRuntime,
+  sourceGovernedDiagnosticsSufficiencyEvidenceSource,
+  sourceDiagnosticsSufficiencyEvidence,
+  state,
+  gaps
+) {
   const ready = state === COMPLETED_STATE;
   const evidenceReady = validSufficiencyEvidence(
     sourceRuntime,
@@ -871,6 +1028,11 @@ function buildReview(sourceRuntime, sourceDiagnosticsSufficiencyEvidence, state,
     derivation_version: DERIVATION_VERSION,
     source_bound: ready,
     source_runtime_ref: sourceRuntimeRef(sourceRuntime),
+    source_governed_diagnostics_sufficiency_evidence_source_ref:
+      sourceGovernedDiagnosticsSufficiencyEvidenceSourceRef(
+        sourceGovernedDiagnosticsSufficiencyEvidenceSource,
+        sourceDiagnosticsSufficiencyEvidence
+      ),
     source_diagnostics_sufficiency_evidence_ref:
       sourceDiagnosticsSufficiencyEvidenceRef(sourceDiagnosticsSufficiencyEvidence),
     review_version: ready ? REVIEW_VERSION : null,
@@ -966,10 +1128,17 @@ export function buildContributionAlignmentInternalDiagnosticsModelAdequacyReview
   const wrapperGaps = inputBoundaryGaps(input);
   if (wrapperGaps.length > 0) return rejectedReview();
   const sourceRuntime = sourceRuntimeFromInput(input);
+  const sourceGovernedDiagnosticsSufficiencyEvidenceSource =
+    sourceGovernedDiagnosticsSufficiencyEvidenceSourceFromInput(input);
   const sourceDiagnosticsSufficiencyEvidence =
     sourceDiagnosticsSufficiencyEvidenceFromInput(input);
   const gaps = sanitizeGaps([
     ...sourceRuntimeGaps(sourceRuntime),
+    ...sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(
+      sourceRuntime,
+      sourceGovernedDiagnosticsSufficiencyEvidenceSource,
+      sourceDiagnosticsSufficiencyEvidence
+    ),
     ...sourceDiagnosticsSufficiencyEvidenceGaps(
       sourceRuntime,
       sourceDiagnosticsSufficiencyEvidence
@@ -977,6 +1146,7 @@ export function buildContributionAlignmentInternalDiagnosticsModelAdequacyReview
   ]);
   return buildReview(
     sourceRuntime,
+    sourceGovernedDiagnosticsSufficiencyEvidenceSource,
     sourceDiagnosticsSufficiencyEvidence,
     gaps.length === 0 ? COMPLETED_STATE : HOLD_STATE,
     gaps
@@ -1037,6 +1207,11 @@ function collectShapeGaps(review) {
   }
 
   gaps.push(...collectRefGaps(record.source_runtime_ref, SOURCE_RUNTIME_REF_FIELDS, "source_runtime_ref"));
+  gaps.push(...collectRefGaps(
+    record.source_governed_diagnostics_sufficiency_evidence_source_ref,
+    SOURCE_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_REF_FIELDS,
+    "source_governed_diagnostics_sufficiency_evidence_source_ref"
+  ));
   gaps.push(...collectRefGaps(
     record.source_diagnostics_sufficiency_evidence_ref,
     SOURCE_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_REF_FIELDS,
@@ -1243,15 +1418,21 @@ function collectShapeGaps(review) {
 
 function collectSourceBindingGaps(review, options = {}) {
   const gaps = [];
+  const sourceGovernedDiagnosticsSufficiencyEvidenceSource =
+    options.sourceGovernedDiagnosticsSufficiencyEvidenceSource ?? null;
+  const projectedDiagnosticsSufficiencyEvidence =
+    buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(
+      sourceGovernedDiagnosticsSufficiencyEvidenceSource
+    );
   if (review?.review_state === COMPLETED_STATE && !options.sourceRuntime) {
     gaps.push("sourceRuntime is required for completed diagnostics model adequacy review validation");
   }
   if (
     review?.model_diagnostics?.model_diagnostics_satisfied === true &&
     review?.comparison_design_adequacy?.comparison_design_adequacy_satisfied === true &&
-    !options.sourceDiagnosticsSufficiencyEvidence
+    !sourceGovernedDiagnosticsSufficiencyEvidenceSource
   ) {
-    gaps.push("sourceDiagnosticsSufficiencyEvidence is required for satisfied diagnostics model adequacy review validation");
+    gaps.push("sourceGovernedDiagnosticsSufficiencyEvidenceSource is required for satisfied diagnostics model adequacy review validation");
   }
   if (options.sourceRuntime) {
     const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime);
@@ -1259,10 +1440,10 @@ function collectSourceBindingGaps(review, options = {}) {
     const expectedFromSource =
       buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
         source_runtime: options.sourceRuntime,
-        ...(options.sourceDiagnosticsSufficiencyEvidence
+        ...(sourceGovernedDiagnosticsSufficiencyEvidenceSource
           ? {
               source_diagnostics_sufficiency_evidence:
-                options.sourceDiagnosticsSufficiencyEvidence
+                sourceGovernedDiagnosticsSufficiencyEvidenceSource
             }
           : {})
       });
@@ -1283,10 +1464,15 @@ function collectSourceBindingGaps(review, options = {}) {
       gaps.push("diagnostics model adequacy review mismatch against expectedReview");
     }
   }
-  if (options.sourceDiagnosticsSufficiencyEvidence) {
+  if (sourceGovernedDiagnosticsSufficiencyEvidenceSource) {
+    gaps.push(...sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(
+      options.sourceRuntime,
+      sourceGovernedDiagnosticsSufficiencyEvidenceSource,
+      projectedDiagnosticsSufficiencyEvidence
+    ));
     gaps.push(...sourceDiagnosticsSufficiencyEvidenceGaps(
       options.sourceRuntime,
-      options.sourceDiagnosticsSufficiencyEvidence
+      projectedDiagnosticsSufficiencyEvidence
     ));
   }
   return sanitizeGaps(gaps);
@@ -1316,7 +1502,7 @@ function main() {
   const [, , inputPath, sourceDiagnosticsSufficiencyEvidencePath] = process.argv;
   if (!inputPath) {
     console.error(
-      "Usage: node scripts/run_ai_value_contribution_alignment_internal_diagnostics_model_adequacy_review.mjs <internal-bayesian-execution-runtime-json|- for stdin> [diagnostics-sufficiency-evidence-json]"
+      "Usage: node scripts/run_ai_value_contribution_alignment_internal_diagnostics_model_adequacy_review.mjs <internal-bayesian-execution-runtime-json|- for stdin> [governed-diagnostics-sufficiency-evidence-source-json]"
     );
     process.exit(1);
   }

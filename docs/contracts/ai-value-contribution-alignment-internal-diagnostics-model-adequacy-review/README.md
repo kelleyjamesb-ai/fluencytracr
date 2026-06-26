@@ -62,12 +62,32 @@ The review must bind to:
 
 If the source runtime drifts, the review must hold.
 
-The review may also bind to an optional governed diagnostics sufficiency
-evidence sidecar. The sidecar must be internal-only, aggregate-only, and
-hash-bound to both the runtime hash and fixture artifact hash. It may satisfy
-diagnostics/model adequacy only by providing source evidence references and
-hashes for the required dimensions. The review does not calculate diagnostics
-or embed raw diagnostic records.
+The review may also bind to an optional Governed Diagnostics Sufficiency
+Evidence Source:
+
+```text
+schema_version=FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_2026_06
+source_state=GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_FOR_PACKET_REVIEW
+allowed_next_step=diagnostics_evidence_packet_update_only
+promotion_authorized=false
+posterior_interpretation_authorized=false
+confidence_output_authorized=false
+probability_output_authorized=false
+customer_output_authorized=false
+```
+
+The review stores both the governed source hash and the projected packet-side
+evidence hash:
+
+```text
+source_governed_diagnostics_sufficiency_evidence_source_ref
+source_diagnostics_sufficiency_evidence_ref
+```
+
+Direct packet-side sufficiency sidecars are not sufficient for satisfied
+diagnostics/model adequacy evidence. They must be supplied through the governed
+source contract so the review can bind the source artifact hash. The review does
+not calculate diagnostics or embed raw diagnostic records.
 
 ## Required Review Dimensions
 
@@ -117,7 +137,7 @@ calibration_backtest_satisfied=false
 model_diagnostics_satisfied=false
 ```
 
-With governed sufficiency evidence, the review may record:
+With a governed sufficiency evidence source, the review may record:
 
 ```text
 comparison_design_review_present=true
