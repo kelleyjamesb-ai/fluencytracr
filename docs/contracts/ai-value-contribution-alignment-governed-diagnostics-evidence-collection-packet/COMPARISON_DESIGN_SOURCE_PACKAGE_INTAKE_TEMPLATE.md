@@ -25,12 +25,16 @@ persistence, or export path. Any document derived from this template remains a
 reviewer-preparation draft until a separate Comparison Design Adequacy Evidence
 Review evaluates an independently reviewed source package. Any template-derived
 document that contains non-blank evidence hashes, positive satisfaction or
-promotion fields, approval state, downstream feed, executable next-step field,
-live connector handle, raw row, identifier, query text, prompt, transcript, or
-person-level field must be rejected as boundary leakage.
+promotion fields, evidence-review approval state, downstream feed, executable
+next-step field, live connector handle, raw row, identifier, query text, prompt,
+transcript, or person-level field must be rejected as boundary leakage.
 
 Authoritative follow-on contracts:
 
+- `docs/contracts/ai-value-blueprint-hypothesis-measurement-mapping/README.md`
+  owns the upstream Blueprint hypothesis, selected metric, expected direction,
+  milestone window, and Measurement Cell planning prerequisites that must be
+  approved before this intake template can be completed.
 - `docs/contracts/ai-value-contribution-alignment-comparison-design-adequacy-evidence-review/README.md`
   owns the later review behavior.
 - `docs/contracts/ai-value-contribution-alignment-governed-diagnostics-sufficiency-evidence-source/README.md`
