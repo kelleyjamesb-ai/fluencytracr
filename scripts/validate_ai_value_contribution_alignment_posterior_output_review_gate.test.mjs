@@ -24,7 +24,8 @@ import {
   buildContributionAlignmentInternalBayesianExecutionGateFromObject
 } from "./run_ai_value_contribution_alignment_internal_bayesian_execution_gate.mjs";
 import {
-  buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject
+  buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject,
+  contributionAlignmentInternalBayesianExecutionRuntimeHash
 } from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
 import {
   buildContributionAlignmentPosteriorOutputReviewGateFromObject,
@@ -75,6 +76,7 @@ const AGGREGATE_WINDOWS = [
 ];
 
 const FALSE_FEEDS = [
+  "internal_posterior_interpretation_specification",
   "posterior_output",
   "confidence_output",
   "probability_output",
@@ -148,7 +150,7 @@ function sourceRuntime() {
   return JSON.parse(JSON.stringify(cachedRuntime));
 }
 
-test("posterior output review gate authorizes only internal interpretation specification", () => {
+test("posterior output review gate contains fixture artifact without authorizing interpretation", () => {
   const runtime = sourceRuntime();
   const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
   const validation = validateContributionAlignmentPosteriorOutputReviewGate(review, {
@@ -159,13 +161,14 @@ test("posterior output review gate authorizes only internal interpretation speci
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(
     review.review_state,
-    "POSTERIOR_OUTPUT_REVIEW_GATE_PASSED_FOR_INTERNAL_INTERPRETATION_SPECIFICATION"
+    "POSTERIOR_ARTIFACT_CONTAINMENT_REVIEW_PASSED"
   );
+  assert.equal(review.review_class, "artifact_containment_only");
   assert.equal(review.source_bound, true);
   assert.equal(review.review_version, "posterior_output_review_gate_2026_06");
   assert.equal(review.review_policy.internal_only, true);
   assert.equal(review.review_policy.review_gate_only, true);
-  assert.equal(review.review_policy.internal_interpretation_specification_authorized, true);
+  assert.equal(review.review_policy.internal_interpretation_specification_authorized, false);
   assert.equal(review.review_policy.posterior_output_authorized, false);
   assert.equal(review.review_policy.confidence_output_authorized, false);
   assert.equal(review.review_policy.probability_output_authorized, false);
@@ -177,12 +180,16 @@ test("posterior output review gate authorizes only internal interpretation speci
   assert.equal(review.review_checks.no_probability_value_present, true);
   assert.equal(review.review_checks.no_confidence_language_present, true);
   assert.equal(review.review_checks.no_customer_output_present, true);
+  assert.equal(review.review_checks.diagnostics_missing_require_adequacy_review, true);
+  assert.equal(review.review_checks.interpretation_specification_blocked, true);
   assert.equal(review.reviewed_fit_artifact_ref.artifact_state, "INTERNAL_POSTERIOR_CANDIDATE_HELD_FOR_OUTPUT_REVIEW");
   assert.equal(review.reviewed_fit_artifact_ref.artifact_hash, runtime.internal_fit_artifact.artifact_hash);
   assert.equal(Object.hasOwn(review.reviewed_fit_artifact_ref, "posterior_mean_internal"), false);
   assert.equal(Object.hasOwn(review.reviewed_fit_artifact_ref, "posterior_sd_internal"), false);
-  assert.equal(review.allowed_next_step, "internal_posterior_interpretation_specification_only");
-  assert.equal(review.feeds.internal_posterior_interpretation_specification, true);
+  assert.equal(review.reviewed_fit_artifact_ref.numeric_posterior_values_withheld, true);
+  assert.equal(review.reviewed_fit_artifact_ref.output_value_present, false);
+  assert.equal(review.allowed_next_step, "internal_diagnostics_and_model_adequacy_review_only");
+  assert.equal(review.feeds.internal_diagnostics_and_model_adequacy_review, true);
   for (const feed of FALSE_FEEDS) {
     assert.equal(review.feeds[feed], false, `${feed} must remain false`);
   }
@@ -234,6 +241,26 @@ test("posterior output review gate holds on runtime drift", () => {
   assert.equal(validation.valid, false);
 });
 
+test("posterior output review gate rejects forged source runtime side doors after rehash", () => {
+  const runtime = sourceRuntime();
+  runtime.raw_rows = [{ email: "person@example.com" }];
+  runtime.query_text = "SELECT user_id FROM raw_rows";
+  runtime.runtime_hash = contributionAlignmentInternalBayesianExecutionRuntimeHash(runtime);
+
+  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
+  const validation = validateContributionAlignmentPosteriorOutputReviewGate(review, {
+    sourceRuntime: runtime
+  });
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, "HOLD_FOR_INTERNAL_BAYESIAN_EXECUTION_RUNTIME");
+  assert.equal(review.source_bound, false);
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("posterior output review gate validation rejects forged confidence after rehash", () => {
   const runtime = sourceRuntime();
   const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
@@ -249,6 +276,38 @@ test("posterior output review gate validation rejects forged confidence after re
   assert.equal(validation.valid, false);
   assert.ok(
     validation.gaps.some((gap) => /confidence|output|sourceRuntime|review/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("posterior output review gate validation requires source runtime for passed records", () => {
+  const runtime = sourceRuntime();
+  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
+  const validation = validateContributionAlignmentPosteriorOutputReviewGate(review);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /sourceRuntime|required/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("posterior output review gate validation rejects forged interpretation feed after rehash", () => {
+  const runtime = sourceRuntime();
+  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
+  review.review_policy.internal_interpretation_specification_authorized = true;
+  review.feeds.internal_posterior_interpretation_specification = true;
+  review.allowed_next_step = "internal_posterior_interpretation_specification_only";
+  review.review_hash = contributionAlignmentPosteriorOutputReviewGateHash(review);
+
+  const validation = validateContributionAlignmentPosteriorOutputReviewGate(review, {
+    sourceRuntime: runtime,
+    expectedReview: buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime)
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /interpretation|allowed_next_step|feed|review/.test(gap)),
     validation.gaps.join("; ")
   );
 });

@@ -19,12 +19,13 @@ const VALIDATION_SCHEMA_VERSION =
 const DERIVATION_VERSION =
   "ai_value_contribution_alignment_internal_bayesian_execution_runtime_2026_06";
 
-const READY_STATE = "INTERNAL_BAYESIAN_EXECUTION_RUNTIME_READY_FOR_OUTPUT_REVIEW";
+const READY_STATE = "INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW";
 const HOLD_STATE = "HOLD_FOR_INTERNAL_BAYESIAN_EXECUTION_GATE";
 const REJECT_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
 
 const RUNTIME_VERSION = "internal_bayesian_execution_runtime_2026_06";
-const READY_NEXT_STEP = "posterior_output_review_gate_only";
+const RUNTIME_EXECUTION_CLASS = "internal_fixture_prototype_only";
+const READY_NEXT_STEP = "internal_diagnostics_and_model_adequacy_review_only";
 const HELD_NEXT_STEP = "complete_internal_bayesian_execution_gate";
 const PRIOR_MEAN = 0;
 const PRIOR_SD = 1;
@@ -33,6 +34,7 @@ const TOP_LEVEL_FIELDS = new Set([
   "schema_version",
   "runtime_id",
   "runtime_state",
+  "runtime_execution_class",
   "generated_at",
   "derivation_version",
   "source_bound",
@@ -92,6 +94,9 @@ const AGGREGATE_DESIGN_MATRIX_FIELDS = [
   "raw_row_count",
   "identifier_count",
   "query_text_present",
+  "missing_window_count",
+  "suppressed_window_count",
+  "held_window_count",
   "minimum_cohort_size",
   "design_matrix_hash"
 ];
@@ -105,6 +110,13 @@ const INTERNAL_FIT_ARTIFACT_FIELDS = [
   "prior_sd",
   "posterior_mean_internal",
   "posterior_sd_internal",
+  "convergence_diagnostics_present",
+  "posterior_predictive_checks_present",
+  "prior_sensitivity_present",
+  "residual_fit_checks_present",
+  "comparison_design_adequacy_review_present",
+  "calibration_evidence_present",
+  "interpretation_ready",
   "probability_value_present",
   "confidence_language_present",
   "customer_output_present",
@@ -113,6 +125,7 @@ const INTERNAL_FIT_ARTIFACT_FIELDS = [
 ];
 
 const FEED_FIELDS = [
+  "internal_diagnostics_and_model_adequacy_review",
   "posterior_output_review_gate",
   "confidence_output",
   "probability_output",
@@ -194,9 +207,10 @@ const REQUIRED_BLOCKED_USES = [
 ];
 
 const REQUIRED_CAVEATS = [
-  "Internal Bayesian Execution Runtime is internal-only and aggregate-only.",
-  "This runtime may create an internal posterior candidate for review, but it does not emit posterior, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
-  "The internal posterior candidate must pass a later posterior/output review gate before any confidence or probability language can appear.",
+  "Internal Bayesian Execution Runtime is contained as an internal fixture/prototype artifact only.",
+  "The DiD and posterior fields are prototype fixture calculations only; they do not establish production Bayesian runtime readiness or interpretation readiness.",
+  "Diagnostics, posterior predictive checks, prior sensitivity, comparison-design adequacy review, and calibration evidence are absent and required before any later interpretation review.",
+  "This runtime does not emit posterior, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
   "The runtime must remain bound to the Internal Bayesian Execution Gate and aggregate measurement-cell-window inputs with no raw rows, query text, identifiers, live connectors, schemas, UI, exports, or persistence writes."
 ];
 
@@ -543,6 +557,13 @@ function buildFitArtifact(windows) {
     prior_sd: PRIOR_SD,
     posterior_mean_internal: round6(posteriorMean),
     posterior_sd_internal: round6(Math.sqrt(posteriorVariance)),
+    convergence_diagnostics_present: false,
+    posterior_predictive_checks_present: false,
+    prior_sensitivity_present: false,
+    residual_fit_checks_present: false,
+    comparison_design_adequacy_review_present: false,
+    calibration_evidence_present: false,
+    interpretation_ready: false,
     probability_value_present: false,
     confidence_language_present: false,
     customer_output_present: false,
@@ -561,6 +582,9 @@ function buildDesignMatrix(windows) {
     raw_row_count: 0,
     identifier_count: 0,
     query_text_present: false,
+    missing_window_count: 0,
+    suppressed_window_count: 0,
+    held_window_count: 0,
     minimum_cohort_size: Math.min(...cohorts),
     design_matrix_hash: sha256Json(
       asArray(windows).map((window) => ({
@@ -603,6 +627,7 @@ function buildRuntime(sourceGate, windows, state, gaps) {
       runtime_version: RUNTIME_VERSION
     }).slice(0, 16)}`,
     runtime_state: state,
+    runtime_execution_class: ready ? RUNTIME_EXECUTION_CLASS : null,
     generated_at: "2026-06-25T00:00:00.000Z",
     derivation_version: DERIVATION_VERSION,
     source_bound: ready,
@@ -613,7 +638,7 @@ function buildRuntime(sourceGate, windows, state, gaps) {
       runtime_only: true,
       aggregate_only_runtime: ready,
       internal_execution_performed: ready,
-      posterior_output_review_gate_authorized: ready,
+      posterior_output_review_gate_authorized: false,
       posterior_output_authorized: false,
       confidence_output_authorized: false,
       probability_output_authorized: false,
@@ -627,8 +652,10 @@ function buildRuntime(sourceGate, windows, state, gaps) {
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     required_caveats: [...REQUIRED_CAVEATS],
     feeds: {
-      posterior_output_review_gate: ready,
-      ...falseMap(FEED_FIELDS.filter((field) => field !== "posterior_output_review_gate"))
+      internal_diagnostics_and_model_adequacy_review: ready,
+      ...falseMap(
+        FEED_FIELDS.filter((field) => field !== "internal_diagnostics_and_model_adequacy_review")
+      )
     },
     boundary_policy: {
       receives_internal_bayesian_execution_gate_only: state !== REJECT_STATE,
@@ -731,6 +758,9 @@ function collectShapeGaps(runtime) {
   }
   const ready = record.runtime_state === READY_STATE;
   if (record.source_bound !== ready) gaps.push(`source_bound must be ${ready}`);
+  if (record.runtime_execution_class !== (ready ? RUNTIME_EXECUTION_CLASS : null)) {
+    gaps.push(`runtime_execution_class must be ${ready ? RUNTIME_EXECUTION_CLASS : "null"}`);
+  }
   if (record.runtime_version !== (ready ? RUNTIME_VERSION : null)) {
     gaps.push(`runtime_version must be ${ready ? RUNTIME_VERSION : "null"}`);
   }
@@ -750,7 +780,7 @@ function collectShapeGaps(runtime) {
     runtime_only: true,
     aggregate_only_runtime: ready,
     internal_execution_performed: ready,
-    posterior_output_review_gate_authorized: ready,
+    posterior_output_review_gate_authorized: false,
     posterior_output_authorized: false,
     confidence_output_authorized: false,
     probability_output_authorized: false,
@@ -774,7 +804,10 @@ function collectShapeGaps(runtime) {
       required_comparison_roles_present: true,
       raw_row_count: 0,
       identifier_count: 0,
-      query_text_present: false
+      query_text_present: false,
+      missing_window_count: 0,
+      suppressed_window_count: 0,
+      held_window_count: 0
     })) {
       if (design[field] !== expected) gaps.push(`aggregate_design_matrix.${field} must be ${expected}`);
     }
@@ -790,6 +823,13 @@ function collectShapeGaps(runtime) {
       estimand_parameter: "delta_ai_post",
       prior_mean: PRIOR_MEAN,
       prior_sd: PRIOR_SD,
+      convergence_diagnostics_present: false,
+      posterior_predictive_checks_present: false,
+      prior_sensitivity_present: false,
+      residual_fit_checks_present: false,
+      comparison_design_adequacy_review_present: false,
+      calibration_evidence_present: false,
+      interpretation_ready: false,
       probability_value_present: false,
       confidence_language_present: false,
       customer_output_present: false,
@@ -813,10 +853,10 @@ function collectShapeGaps(runtime) {
   }
 
   const feeds = asRecord(record.feeds);
-  if (feeds.posterior_output_review_gate !== ready) {
-    gaps.push(`feeds.posterior_output_review_gate must be ${ready}`);
+  if (feeds.internal_diagnostics_and_model_adequacy_review !== ready) {
+    gaps.push(`feeds.internal_diagnostics_and_model_adequacy_review must be ${ready}`);
   }
-  for (const field of FEED_FIELDS.filter((feed) => feed !== "posterior_output_review_gate")) {
+  for (const field of FEED_FIELDS.filter((feed) => feed !== "internal_diagnostics_and_model_adequacy_review")) {
     if (feeds[field] !== false) gaps.push(`feeds.${field} must be false`);
   }
   for (const key of Object.keys(feeds)) {
@@ -854,6 +894,13 @@ function collectShapeGaps(runtime) {
 
 function collectSourceBindingGaps(runtime, options = {}) {
   const gaps = [];
+  if (
+    runtime?.runtime_state === READY_STATE &&
+    !options.sourceGate &&
+    options.allowSelfContainedSourceValidation !== true
+  ) {
+    gaps.push("sourceGate is required for ready internal Bayesian execution runtime validation");
+  }
   if (options.sourceGate) {
     const gateGaps = sourceGateGaps(options.sourceGate);
     if (gateGaps.length > 0) gaps.push(...gateGaps);

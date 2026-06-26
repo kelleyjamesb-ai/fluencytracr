@@ -8,15 +8,16 @@ Schema version:
 
 ## Purpose
 
-Posterior Output Review Gate is the internal-only review contract after Internal
-Bayesian Execution Runtime. It reviews the internal fit artifact by source
-runtime ref and artifact hash, then decides whether a later internal
-interpretation specification may be created.
+Posterior Output Review Gate is the internal-only artifact-containment review
+contract after Internal Bayesian Execution Runtime. It reviews the internal
+fixture/prototype fit artifact by source runtime ref and artifact hash, then
+confirms that numeric posterior values remain withheld and interpretation remains
+blocked.
 
 It answers:
 
 ```text
-Is the internal posterior candidate clean enough to specify later interpretation rules?
+Is the internal posterior fixture/prototype artifact contained, withheld, and blocked from interpretation?
 ```
 
 It does not answer:
@@ -29,22 +30,22 @@ Can the result become customer-facing confidence, ROI, finance, causality, or pr
 ## States
 
 ```text
-POSTERIOR_OUTPUT_REVIEW_GATE_PASSED_FOR_INTERNAL_INTERPRETATION_SPECIFICATION
+POSTERIOR_ARTIFACT_CONTAINMENT_REVIEW_PASSED
 HOLD_FOR_INTERNAL_BAYESIAN_EXECUTION_RUNTIME
 REJECTED_FOR_BOUNDARY_LEAKAGE
 ```
 
-Ready means only this:
+The passed containment state means only this:
 
 ```text
-Create a later internal posterior interpretation specification.
+Send the work to internal diagnostics and model adequacy review.
 ```
 
-Ready does not authorize posterior output, confidence output, probability
-output, score-like output, weighted internal model output, aggregate score
-output, research model feed, finance output, ROI, causality, productivity,
-persistence, routes, UI, schemas, exports, live connectors, or customer-facing
-output.
+It does not authorize internal posterior interpretation specification, posterior
+output, confidence output, probability output, score-like output, weighted
+internal model output, aggregate score output, research model feed, finance
+output, ROI, causality, productivity, persistence, routes, UI, schemas, exports,
+live connectors, or customer-facing output.
 
 ## Source Gate
 
@@ -52,11 +53,13 @@ The review gate must bind to:
 
 - the Internal Bayesian Execution Runtime schema version;
 - the Internal Bayesian Execution Runtime id;
-- the Internal Bayesian Execution Runtime ready-for-output-review state;
+- the Internal Bayesian Execution Runtime fixture/prototype containment state;
+- `runtime_execution_class=internal_fixture_prototype_only`;
 - the Internal Bayesian Execution Runtime hash;
 - the internal fit artifact state;
 - the internal fit artifact hash;
-- `posterior_output_review_gate_authorized=true`;
+- diagnostic insufficiency fields all false, including `interpretation_ready=false`;
+- `posterior_output_review_gate_authorized=false`;
 - `posterior_output_authorized=false`;
 - `confidence_output_authorized=false`;
 - `probability_output_authorized=false`;
@@ -76,6 +79,8 @@ posterior_candidate_held_for_review=true
 no_probability_value_present=true
 no_confidence_language_present=true
 no_customer_output_present=true
+diagnostics_missing_require_adequacy_review=true
+interpretation_specification_blocked=true
 ```
 
 The reviewed artifact ref intentionally withholds posterior numeric values. It
@@ -86,18 +91,20 @@ keeps only the artifact state, estimand parameter, and artifact hash.
 The only authorized next step is:
 
 ```text
-internal_posterior_interpretation_specification_only
+internal_diagnostics_and_model_adequacy_review_only
 ```
 
 The review gate may set:
 
 ```text
-feeds.internal_posterior_interpretation_specification=true
+review_class=artifact_containment_only
+feeds.internal_diagnostics_and_model_adequacy_review=true
 ```
 
 The review gate must keep:
 
 ```text
+internal_posterior_interpretation_specification=false
 posterior_output=false
 confidence_output=false
 probability_output=false

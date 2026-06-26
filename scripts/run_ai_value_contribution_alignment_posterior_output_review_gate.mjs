@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 
 import {
   CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION,
-  contributionAlignmentInternalBayesianExecutionRuntimeHash
+  contributionAlignmentInternalBayesianExecutionRuntimeHash,
+  validateContributionAlignmentInternalBayesianExecutionRuntime
 } from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
 
 export const CONTRIBUTION_ALIGNMENT_POSTERIOR_OUTPUT_REVIEW_GATE_SCHEMA_VERSION =
@@ -20,18 +21,20 @@ const DERIVATION_VERSION =
   "ai_value_contribution_alignment_posterior_output_review_gate_2026_06";
 
 const READY_STATE =
-  "POSTERIOR_OUTPUT_REVIEW_GATE_PASSED_FOR_INTERNAL_INTERPRETATION_SPECIFICATION";
+  "POSTERIOR_ARTIFACT_CONTAINMENT_REVIEW_PASSED";
 const HOLD_STATE = "HOLD_FOR_INTERNAL_BAYESIAN_EXECUTION_RUNTIME";
 const REJECT_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
 
 const REVIEW_VERSION = "posterior_output_review_gate_2026_06";
-const READY_NEXT_STEP = "internal_posterior_interpretation_specification_only";
+const REVIEW_CLASS = "artifact_containment_only";
+const READY_NEXT_STEP = "internal_diagnostics_and_model_adequacy_review_only";
 const HELD_NEXT_STEP = "complete_internal_bayesian_execution_runtime";
 
 const TOP_LEVEL_FIELDS = new Set([
   "schema_version",
   "review_id",
   "review_state",
+  "review_class",
   "generated_at",
   "derivation_version",
   "source_bound",
@@ -75,7 +78,9 @@ const REVIEW_CHECK_FIELDS = [
   "posterior_candidate_held_for_review",
   "no_probability_value_present",
   "no_confidence_language_present",
-  "no_customer_output_present"
+  "no_customer_output_present",
+  "diagnostics_missing_require_adequacy_review",
+  "interpretation_specification_blocked"
 ];
 
 const REVIEWED_FIT_ARTIFACT_REF_FIELDS = [
@@ -87,6 +92,7 @@ const REVIEWED_FIT_ARTIFACT_REF_FIELDS = [
 ];
 
 const FEED_FIELDS = [
+  "internal_diagnostics_and_model_adequacy_review",
   "internal_posterior_interpretation_specification",
   "posterior_output",
   "confidence_output",
@@ -160,9 +166,10 @@ const REQUIRED_BLOCKED_USES = [
 ];
 
 const REQUIRED_CAVEATS = [
-  "Posterior Output Review Gate authorizes only a later internal posterior interpretation specification.",
-  "This gate does not emit posterior, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
-  "The gate reviews the internal fit artifact by ref and hash; it does not echo posterior numeric values.",
+  "Posterior Output Review Gate is an artifact-containment review only.",
+  "This gate does not authorize internal posterior interpretation specification, posterior output, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
+  "The gate reviews the internal fixture/prototype artifact by ref and hash; it does not echo posterior numeric values.",
+  "Diagnostics, posterior predictive checks, prior sensitivity, comparison-design adequacy review, and calibration evidence remain required before any later interpretation review.",
   "Customer-facing confidence or probability language remains blocked until a later explicitly promoted contract authorizes that exact scope."
 ];
 
@@ -289,7 +296,7 @@ function sourceRuntimeRef(sourceRuntime) {
     ),
     runtime_state:
       sourceRuntime?.runtime_state ===
-      "INTERNAL_BAYESIAN_EXECUTION_RUNTIME_READY_FOR_OUTPUT_REVIEW"
+      "INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW"
         ? sourceRuntime.runtime_state
         : null,
     runtime_version:
@@ -369,11 +376,18 @@ function sourceRuntimeGaps(sourceRuntime) {
   const source = asRecord(sourceRuntime);
   const artifact = asRecord(source.internal_fit_artifact);
   const gaps = [];
+  const runtimeValidation = validateContributionAlignmentInternalBayesianExecutionRuntime(source, {
+    allowSelfContainedSourceValidation: true
+  });
+  if (runtimeValidation.valid !== true) {
+    gaps.push("source_runtime failed internal Bayesian execution runtime validation");
+    gaps.push(...runtimeValidation.gaps.map((gap) => `source_runtime.${gap}`));
+  }
   if (source.schema_version !== CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION) {
     gaps.push("source_runtime.schema_version is invalid");
   }
-  if (source.runtime_state !== "INTERNAL_BAYESIAN_EXECUTION_RUNTIME_READY_FOR_OUTPUT_REVIEW") {
-    gaps.push("source_runtime.runtime_state is not ready for output review");
+  if (source.runtime_state !== "INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW") {
+    gaps.push("source_runtime.runtime_state is not contained fixture prototype");
   }
   if (source.runtime_hash !== contributionAlignmentInternalBayesianExecutionRuntimeHash(source)) {
     gaps.push("sourceRuntime hash drifted");
@@ -387,10 +401,11 @@ function sourceRuntimeGaps(sourceRuntime) {
   if (source.runtime_policy?.aggregate_only_runtime !== true) {
     gaps.push("source_runtime is not aggregate-only");
   }
-  if (source.runtime_policy?.posterior_output_review_gate_authorized !== true) {
-    gaps.push("source_runtime does not authorize posterior output review gate");
+  if (source.runtime_execution_class !== "internal_fixture_prototype_only") {
+    gaps.push("source_runtime.runtime_execution_class is not fixture prototype only");
   }
   for (const field of [
+    "posterior_output_review_gate_authorized",
     "posterior_output_authorized",
     "confidence_output_authorized",
     "probability_output_authorized",
@@ -401,10 +416,11 @@ function sourceRuntimeGaps(sourceRuntime) {
       gaps.push(`source_runtime.${field} must be false`);
     }
   }
-  if (source.feeds?.posterior_output_review_gate !== true) {
-    gaps.push("source_runtime does not feed posterior output review gate");
+  if (source.allowed_next_step !== "internal_diagnostics_and_model_adequacy_review_only") {
+    gaps.push("source_runtime.allowed_next_step must require diagnostics and model adequacy review");
   }
   for (const feed of [
+    "posterior_output_review_gate",
     "confidence_output",
     "probability_output",
     "score_like_output",
@@ -436,6 +452,18 @@ function sourceRuntimeGaps(sourceRuntime) {
   if (artifact.posterior_output_review_required !== true) {
     gaps.push("source_runtime internal fit artifact does not require output review");
   }
+  for (const field of [
+    "convergence_diagnostics_present",
+    "posterior_predictive_checks_present",
+    "prior_sensitivity_present",
+    "comparison_design_adequacy_review_present",
+    "calibration_evidence_present",
+    "interpretation_ready"
+  ]) {
+    if (artifact[field] !== false) {
+      gaps.push(`source_runtime internal fit artifact ${field} must be false`);
+    }
+  }
   return sanitizeGaps(gaps);
 }
 
@@ -460,7 +488,15 @@ function buildReviewChecks(sourceRuntime, ready) {
       ready && artifact.artifact_state === "INTERNAL_POSTERIOR_CANDIDATE_HELD_FOR_OUTPUT_REVIEW",
     no_probability_value_present: ready && artifact.probability_value_present === false,
     no_confidence_language_present: ready && artifact.confidence_language_present === false,
-    no_customer_output_present: ready && artifact.customer_output_present === false
+    no_customer_output_present: ready && artifact.customer_output_present === false,
+    diagnostics_missing_require_adequacy_review:
+      ready &&
+      artifact.convergence_diagnostics_present === false &&
+      artifact.posterior_predictive_checks_present === false &&
+      artifact.prior_sensitivity_present === false &&
+      artifact.comparison_design_adequacy_review_present === false &&
+      artifact.calibration_evidence_present === false,
+    interpretation_specification_blocked: ready && artifact.interpretation_ready === false
   };
 }
 
@@ -475,6 +511,7 @@ function buildReview(sourceRuntime, state, gaps) {
       review_version: REVIEW_VERSION
     }).slice(0, 16)}`,
     review_state: state,
+    review_class: ready ? REVIEW_CLASS : null,
     generated_at: "2026-06-25T00:00:00.000Z",
     derivation_version: DERIVATION_VERSION,
     source_bound: ready,
@@ -483,7 +520,7 @@ function buildReview(sourceRuntime, state, gaps) {
     review_policy: {
       internal_only: true,
       review_gate_only: true,
-      internal_interpretation_specification_authorized: ready,
+      internal_interpretation_specification_authorized: false,
       posterior_output_authorized: false,
       confidence_output_authorized: false,
       probability_output_authorized: false,
@@ -496,9 +533,9 @@ function buildReview(sourceRuntime, state, gaps) {
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     required_caveats: [...REQUIRED_CAVEATS],
     feeds: {
-      internal_posterior_interpretation_specification: ready,
+      internal_diagnostics_and_model_adequacy_review: ready,
       ...falseMap(
-        FEED_FIELDS.filter((field) => field !== "internal_posterior_interpretation_specification")
+        FEED_FIELDS.filter((field) => field !== "internal_diagnostics_and_model_adequacy_review")
       )
     },
     boundary_policy: {
@@ -604,6 +641,9 @@ function collectShapeGaps(review) {
   }
   const ready = record.review_state === READY_STATE;
   if (record.source_bound !== ready) gaps.push(`source_bound must be ${ready}`);
+  if (record.review_class !== (ready ? REVIEW_CLASS : null)) {
+    gaps.push(`review_class must be ${ready ? REVIEW_CLASS : "null"}`);
+  }
   if (record.review_version !== (ready ? REVIEW_VERSION : null)) {
     gaps.push(`review_version must be ${ready ? REVIEW_VERSION : "null"}`);
   }
@@ -621,7 +661,7 @@ function collectShapeGaps(review) {
   for (const [field, expected] of Object.entries({
     internal_only: true,
     review_gate_only: true,
-    internal_interpretation_specification_authorized: ready,
+    internal_interpretation_specification_authorized: false,
     posterior_output_authorized: false,
     confidence_output_authorized: false,
     probability_output_authorized: false,
@@ -672,10 +712,10 @@ function collectShapeGaps(review) {
   }
 
   const feeds = asRecord(record.feeds);
-  if (feeds.internal_posterior_interpretation_specification !== ready) {
-    gaps.push(`feeds.internal_posterior_interpretation_specification must be ${ready}`);
+  if (feeds.internal_diagnostics_and_model_adequacy_review !== ready) {
+    gaps.push(`feeds.internal_diagnostics_and_model_adequacy_review must be ${ready}`);
   }
-  for (const field of FEED_FIELDS.filter((feed) => feed !== "internal_posterior_interpretation_specification")) {
+  for (const field of FEED_FIELDS.filter((feed) => feed !== "internal_diagnostics_and_model_adequacy_review")) {
     if (feeds[field] !== false) gaps.push(`feeds.${field} must be false`);
   }
   for (const key of Object.keys(feeds)) {
@@ -713,6 +753,9 @@ function collectShapeGaps(review) {
 
 function collectSourceBindingGaps(review, options = {}) {
   const gaps = [];
+  if (review?.review_state === READY_STATE && !options.sourceRuntime) {
+    gaps.push("sourceRuntime is required for ready posterior output review validation");
+  }
   if (options.sourceRuntime) {
     const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime);
     if (runtimeGaps.length > 0) gaps.push(...runtimeGaps);

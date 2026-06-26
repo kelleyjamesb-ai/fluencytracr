@@ -903,24 +903,64 @@ customer-facing output.
 
 The executable
 [AI Value Contribution Alignment Internal Bayesian Execution Runtime](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md)
-is the internal-only aggregate runtime after Internal Bayesian Execution Gate.
-It consumes aggregate Measurement Cell windows, implements the closed-form
-normal-normal update for the Bayesian difference-in-differences candidate, and
-creates an internal posterior candidate artifact held for output review. It may
-feed only a later `posterior_output_review_gate_only` contract. It does not
-emit posterior output, confidence output, probability output, score-like output,
+is the internal-only aggregate fixture/prototype after Internal Bayesian
+Execution Gate. It consumes aggregate Measurement Cell windows, keeps the
+closed-form normal-normal update for the Bayesian difference-in-differences
+candidate inside a contained fixture artifact, and records missing diagnostics.
+It may feed only `internal_diagnostics_and_model_adequacy_review_only`. It does
+not emit posterior output, confidence output, probability output, score-like
+output, finance output, ROI, causality, productivity, persistence, routes, UI,
+schemas, exports, live connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Posterior Output Review Gate](../contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md)
+is the internal-only artifact-containment review gate after Internal Bayesian
+Execution Runtime. It reviews the internal fixture artifact by source runtime
+ref and artifact hash, withholds posterior numeric values, blocks internal
+posterior interpretation specification, and may feed only
+`internal_diagnostics_and_model_adequacy_review_only`. It does not emit
+posterior output, confidence output, probability output, score-like output,
 finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
 exports, live connectors, or customer-facing output.
 
 The executable
-[AI Value Contribution Alignment Posterior Output Review Gate](../contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md)
-is the internal-only review gate after Internal Bayesian Execution Runtime. It
-reviews the internal fit artifact by source runtime ref and artifact hash,
-withholds posterior numeric values, and may feed only a later
-`internal_posterior_interpretation_specification_only` contract. It does not
-emit posterior output, confidence output, probability output, score-like output,
+[AI Value Contribution Alignment Diagnostics Evidence Packet](../contracts/ai-value-contribution-alignment-diagnostics-evidence-packet/README.md)
+is the internal-only aggregate evidence packet for diagnostics and
+comparison-design evidence. It represents data adequacy, suppressed/missing/held
+window review, comparison-design adequacy, convergence diagnostics, posterior
+predictive checks, prior sensitivity, residual/fit checks, calibration/backtest
+evidence, and feature-weight provenance. It may feed promotion-decision review,
+but it cannot authorize promotion, create an execution artifact, interpret
+posterior values, emit confidence/probability/customer/economic output, or add
+routes, UI, schemas, persistence, exports, or live connectors.
+
+The executable
+[AI Value Contribution Alignment Internal Diagnostics and Model Adequacy Review](../contracts/ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review/README.md)
+is the internal-only aggregate review after the contained Bayesian fixture
+runtime. It records data adequacy, comparison-design adequacy, and diagnostic
+placeholder status, withholds posterior numeric values, completes only as
+promotion-blocked, and may feed only
+`bayesian_promotion_decision_gate_only`. Feature weights remain
+structural/internal and not confidence scores. This slice does not implement the
+Bayesian Promotion Decision Gate and does not authorize Bayesian interpretation,
+posterior output, confidence output, probability output, score-like output,
 finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
 exports, live connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Bayesian Promotion Decision Gate](../contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md)
+is the internal-only aggregate promotion gate after Diagnostics and Model
+Adequacy Review. It now consumes both the Diagnostics and Model Adequacy Review
+and the Diagnostics Evidence Packet as hash-bound sources. It may authorize only
+a later `internal_bayesian_execution_artifact_v1_only` slice when diagnostics,
+comparison design, evidence-packet sufficiency, source binding, governance
+containment, and structural feature-weight policy are all satisfied. The current
+bound evidence remains unsatisfied for comparison-design adequacy and model
+diagnostics, so the executable gate continues to hold. It does not create the
+execution artifact and does not authorize Bayesian interpretation, posterior
+output, confidence output, probability output, score-like output, finance
+output, ROI, causality, productivity, persistence, routes, UI, schemas, exports,
+live connectors, or customer-facing output.
 
 Blocked design:
 

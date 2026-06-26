@@ -72,6 +72,7 @@ const AGGREGATE_WINDOWS = [
 ];
 
 const FALSE_FEEDS = [
+  "posterior_output_review_gate",
   "confidence_output",
   "probability_output",
   "score_like_output",
@@ -89,6 +90,16 @@ const FALSE_FEEDS = [
   "persistence_write",
   "export_creation",
   "live_connector_execution"
+];
+
+const REQUIRED_DIAGNOSTIC_INSUFFICIENCY_FIELDS = [
+  "convergence_diagnostics_present",
+  "posterior_predictive_checks_present",
+  "prior_sensitivity_present",
+  "residual_fit_checks_present",
+  "comparison_design_adequacy_review_present",
+  "calibration_evidence_present",
+  "interpretation_ready"
 ];
 
 let cachedGateChain = null;
@@ -144,7 +155,7 @@ function runtimeGateChain() {
   return JSON.parse(JSON.stringify(cachedGateChain));
 }
 
-test("internal Bayesian execution runtime fits aggregate-only DiD candidate for review", () => {
+test("internal Bayesian execution runtime contains aggregate-only DiD candidate as fixture prototype", () => {
   const chain = runtimeGateChain();
   const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: chain.sourceGate,
@@ -156,13 +167,17 @@ test("internal Bayesian execution runtime fits aggregate-only DiD candidate for 
   });
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
-  assert.equal(runtime.runtime_state, "INTERNAL_BAYESIAN_EXECUTION_RUNTIME_READY_FOR_OUTPUT_REVIEW");
+  assert.equal(
+    runtime.runtime_state,
+    "INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW"
+  );
+  assert.equal(runtime.runtime_execution_class, "internal_fixture_prototype_only");
   assert.equal(runtime.source_bound, true);
   assert.equal(runtime.runtime_version, "internal_bayesian_execution_runtime_2026_06");
   assert.equal(runtime.runtime_policy.internal_only, true);
   assert.equal(runtime.runtime_policy.aggregate_only_runtime, true);
   assert.equal(runtime.runtime_policy.internal_execution_performed, true);
-  assert.equal(runtime.runtime_policy.posterior_output_review_gate_authorized, true);
+  assert.equal(runtime.runtime_policy.posterior_output_review_gate_authorized, false);
   assert.equal(runtime.runtime_policy.confidence_output_authorized, false);
   assert.equal(runtime.runtime_policy.probability_output_authorized, false);
   assert.equal(runtime.runtime_policy.customer_output_authorized, false);
@@ -173,17 +188,25 @@ test("internal Bayesian execution runtime fits aggregate-only DiD candidate for 
     "mu_cell_window = alpha + alpha_cell + beta_post + beta_ai_exposed + delta_ai_post + weighted_covariate_terms"
   );
   assert.equal(runtime.aggregate_design_matrix.window_count, 4);
+  assert.equal(runtime.aggregate_design_matrix.missing_window_count, 0);
+  assert.equal(runtime.aggregate_design_matrix.suppressed_window_count, 0);
+  assert.equal(runtime.aggregate_design_matrix.held_window_count, 0);
   assert.equal(runtime.aggregate_design_matrix.raw_row_count, 0);
   assert.equal(runtime.aggregate_design_matrix.identifier_count, 0);
   assert.equal(runtime.internal_fit_artifact.did_observed_estimate, 2);
   assert.equal(runtime.internal_fit_artifact.did_standard_error, 0.905539);
   assert.equal(runtime.internal_fit_artifact.posterior_mean_internal, 1.098901);
   assert.equal(runtime.internal_fit_artifact.posterior_sd_internal, 0.67123);
+  for (const field of REQUIRED_DIAGNOSTIC_INSUFFICIENCY_FIELDS) {
+    assert.equal(runtime.internal_fit_artifact[field], false, `${field} must remain false`);
+  }
   assert.equal(runtime.internal_fit_artifact.probability_value_present, false);
   assert.equal(runtime.internal_fit_artifact.confidence_language_present, false);
   assert.equal(runtime.internal_fit_artifact.customer_output_present, false);
-  assert.equal(runtime.allowed_next_step, "posterior_output_review_gate_only");
-  assert.equal(runtime.feeds.posterior_output_review_gate, true);
+  assert.equal(runtime.allowed_next_step, "internal_diagnostics_and_model_adequacy_review_only");
+  assert.equal(runtime.feeds.internal_diagnostics_and_model_adequacy_review, true);
+  assert.equal(Object.hasOwn(runtime, "posterior_mean_internal"), false);
+  assert.equal(Object.hasOwn(runtime, "posterior_sd_internal"), false);
   for (const feed of FALSE_FEEDS) {
     assert.equal(runtime.feeds[feed], false, `${feed} must remain false`);
   }
@@ -258,6 +281,51 @@ test("internal Bayesian execution runtime validation rejects forged probability 
   assert.equal(validation.valid, false);
   assert.ok(
     validation.gaps.some((gap) => /probability|output|sourceGate|runtime/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal Bayesian execution runtime validation requires source gate for ready records", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime);
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /sourceGate|required/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal Bayesian execution runtime validation rejects forged interpretation readiness", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  runtime.internal_fit_artifact.convergence_diagnostics_present = true;
+  runtime.internal_fit_artifact.posterior_predictive_checks_present = true;
+  runtime.internal_fit_artifact.prior_sensitivity_present = true;
+  runtime.internal_fit_artifact.comparison_design_adequacy_review_present = true;
+  runtime.internal_fit_artifact.calibration_evidence_present = true;
+  runtime.internal_fit_artifact.interpretation_ready = true;
+  runtime.allowed_next_step = "internal_posterior_interpretation_specification_only";
+  runtime.runtime_hash = contributionAlignmentInternalBayesianExecutionRuntimeHash(runtime);
+
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    sourceGate: chain.sourceGate,
+    expectedRuntime: buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+      source_gate: chain.sourceGate,
+      aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+    })
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /diagnostic|interpretation|allowed_next_step|runtime/.test(gap)),
     validation.gaps.join("; ")
   );
 });

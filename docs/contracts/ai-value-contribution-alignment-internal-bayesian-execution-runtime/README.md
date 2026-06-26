@@ -8,15 +8,16 @@ Schema version:
 
 ## Purpose
 
-Internal Bayesian Execution Runtime is the internal-only aggregate runtime after
-Internal Bayesian Execution Gate. It fits the governed difference-in-differences
-candidate against aggregate Measurement Cell windows and creates an internal
-posterior candidate artifact that is held for review.
+Internal Bayesian Execution Runtime is the internal-only aggregate fixture/prototype
+after Internal Bayesian Execution Gate. It may compute a contained
+difference-in-differences fixture candidate against aggregate Measurement Cell
+windows, but that calculation is not production Bayesian runtime readiness,
+posterior interpretation readiness, confidence readiness, or customer-facing output.
 
 It answers:
 
 ```text
-Can the source-bound Bayesian model contract run on aggregate-only windows and produce an internal fit artifact for review?
+Can the source-bound Bayesian model contract create a contained internal fixture/prototype artifact from aggregate-only windows?
 ```
 
 It does not answer:
@@ -29,22 +30,22 @@ Can the result become customer-facing confidence, ROI, finance, causality, or pr
 ## States
 
 ```text
-INTERNAL_BAYESIAN_EXECUTION_RUNTIME_READY_FOR_OUTPUT_REVIEW
+INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW
 HOLD_FOR_INTERNAL_BAYESIAN_EXECUTION_GATE
 REJECTED_FOR_BOUNDARY_LEAKAGE
 ```
 
-Ready means only this:
+The contained prototype state means only this:
 
 ```text
-Send the internal fit artifact to a later posterior/output review gate.
+Treat the internal fit artifact as a fixture/prototype that requires diagnostics and model adequacy review.
 ```
 
-Ready does not authorize posterior output, confidence output, probability
-output, score-like output, weighted internal model output, aggregate score
-output, research model feed, finance output, ROI, causality, productivity,
-persistence, routes, UI, schemas, exports, live connectors, or customer-facing
-output.
+It does not authorize production Bayesian runtime readiness, posterior
+interpretation readiness, posterior output, confidence output, probability output,
+score-like output, weighted internal model output, aggregate score output,
+research model feed, finance output, ROI, causality, productivity, persistence,
+routes, UI, schemas, exports, live connectors, or customer-facing output.
 
 ## Source Gate
 
@@ -56,6 +57,7 @@ The runtime must bind to:
 - the Internal Bayesian Execution Gate hash;
 - `runtime_implementation_authorized=true`;
 - aggregate-only runtime prerequisites;
+- `posterior_output_review_gate_authorized=false`;
 - `posterior_output_authorized=false`;
 - `confidence_output_authorized=false`;
 - `probability_output_authorized=false`;
@@ -113,26 +115,39 @@ posterior_variance = 1 / (1 / prior_variance + 1 / did_variance)
 posterior_mean = posterior_variance * (prior_mean / prior_variance + did_observed_estimate / did_variance)
 ```
 
-The internal posterior candidate remains held for output review. It is not
-customer-facing output and is not confidence or probability language.
+The internal posterior candidate remains a fixture/prototype artifact. It is not
+customer-facing output and is not confidence or probability language. It is not
+interpretation-ready because the artifact explicitly records:
+
+```text
+convergence_diagnostics_present=false
+posterior_predictive_checks_present=false
+prior_sensitivity_present=false
+residual_fit_checks_present=false
+comparison_design_adequacy_review_present=false
+calibration_evidence_present=false
+interpretation_ready=false
+```
 
 ## Authorized Next Step
 
 The only authorized next step is:
 
 ```text
-posterior_output_review_gate_only
+internal_diagnostics_and_model_adequacy_review_only
 ```
 
 The runtime may set:
 
 ```text
-feeds.posterior_output_review_gate=true
+runtime_execution_class=internal_fixture_prototype_only
+feeds.internal_diagnostics_and_model_adequacy_review=true
 ```
 
 The runtime must keep:
 
 ```text
+posterior_output_review_gate=false
 confidence_output=false
 probability_output=false
 score_like_output=false

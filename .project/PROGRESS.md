@@ -2,17 +2,90 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Bayesian Promotion Decision Gate Evidence
+  Binding slice (2026-06-25): updated the Bayesian Promotion Decision Gate so
+  the Diagnostics Evidence Packet is a consumed, hash-bound source alongside the
+  Internal Diagnostics and Model Adequacy Review and the contained runtime. The
+  gate now requires the packet for validation, rejects forged packet hashes,
+  holds on unsatisfied packet evidence, and allows `promotion_authorized=true`
+  only in the gate's passed path when review, packet, runtime evidence,
+  comparison-design adequacy, diagnostics, governance containment, and
+  structural feature-weight policy are all satisfied. The current executable
+  path remains `HOLD_FOR_DIAGNOSTICS_AND_MODEL_ADEQUACY_SUFFICIENCY` because
+  comparison-design adequacy and model diagnostics remain unsatisfied. It does
+  not implement Internal Bayesian Execution Artifact v1, posterior
+  interpretation, confidence output, probability output, customer-facing output,
+  economic output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, or live connectors. Verification passed:
+  `npm run test:ai-value-contribution-alignment-bayesian-promotion-decision-gate`.
+- AI Value Contribution Alignment Diagnostics Evidence Packet slice
+  (2026-06-25): added the internal-only aggregate evidence packet for the
+  diagnostics/model-adequacy evidence required before Bayesian promotion can be
+  evaluated. The packet represents data adequacy, suppressed/missing/held window
+  review, comparison-design adequacy, convergence diagnostics, posterior
+  predictive checks, prior sensitivity, residual/fit checks,
+  calibration/backtest evidence, and feature-weight provenance. Current emitted
+  evidence is promotion-review-ready but not promotion-sufficient: data/window/
+  feature-weight evidence is satisfied while comparison-design adequacy and
+  model diagnostics remain unsatisfied. The packet may feed
+  `bayesian_promotion_decision_gate_only` but keeps `promotion_authorized=false`
+  and does not authorize Internal Bayesian Execution Artifact v1, posterior
+  interpretation, confidence output, probability output, customer-facing output,
+  economic output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, or live connectors. Verification passed:
+  `npm run test:ai-value-contribution-alignment-diagnostics-evidence-packet`.
+- AI Value Contribution Alignment Bayesian Promotion Decision Gate slice
+  (2026-06-25): added the internal-only aggregate promotion gate after
+  Diagnostics and Model Adequacy Review. The gate binds the contained runtime,
+  reviewed fixture artifact, and diagnostics/model adequacy review hashes;
+  requires satisfied diagnostics, comparison-design adequacy, no suppressed/
+  missing/held windows, governance containment, and structural/internal feature
+  weight policy; and may authorize only
+  `internal_bayesian_execution_artifact_v1_only`. It does not create the
+  execution artifact and does not authorize Bayesian interpretation, posterior
+  output, confidence output, probability output, score-like output, finance
+  output, ROI, causality, productivity, persistence, routes, UI, schemas,
+  exports, live connectors, or customer-facing output. Verification passed:
+  `npm run test:ai-value-contribution-alignment-bayesian-promotion-decision-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review`;
+  `npm run test:ai-value-contribution-alignment-bayesian-model-specification`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run test:ai-value-contribution-alignment-posterior-output-review-gate`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Internal Diagnostics and Model Adequacy Review
+  slice (2026-06-25): added the internal-only aggregate review after the
+  contained Bayesian fixture/prototype runtime. The review records data adequacy,
+  comparison-design adequacy, and model-diagnostic placeholder status; withholds
+  posterior numeric values; completes only as
+  `INTERNAL_DIAGNOSTICS_AND_MODEL_ADEQUACY_REVIEW_COMPLETED_PROMOTION_BLOCKED`;
+  and may feed only `bayesian_promotion_decision_gate_only`. Feature weights
+  remain structural/internal and not confidence scores. This slice does not
+  implement the Bayesian Promotion Decision Gate and does not authorize Bayesian
+  interpretation, posterior output, confidence output,
+  probability output, score-like output, finance output, ROI, causality,
+  productivity, persistence, routes, UI, schemas, exports, live connectors, or
+  customer-facing output. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run test:ai-value-contribution-alignment-posterior-output-review-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review`;
+  `npm run run:ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Posterior Output Review Gate slice
-  (2026-06-25): implemented the next governed phase after Internal Bayesian
-  Execution Runtime. The gate consumes the source-bound runtime, reviews the
-  internal fit artifact by ref/hash, withholds posterior numeric values, and
-  authorizes only `internal_posterior_interpretation_specification_only`. It
-  does not emit posterior output, confidence output, probability output,
-  score-like output, finance output, ROI, causality, productivity, persistence,
-  routes, UI, schemas, exports, live connectors, or customer-facing output.
-  Local CODE / BUG / ADVERSARIAL review confirmed the review gate withholds
-  posterior numeric values, rejects unsafe confidence/probability side doors,
-  and rejects forged confidence after rehash. Verification passed:
+  (2026-06-25): corrected the next governed phase after Internal Bayesian
+  Execution Runtime into artifact-containment only. The gate consumes the
+  source-bound fixture/prototype runtime, reviews the internal fit artifact by
+  ref/hash, withholds posterior numeric values, blocks internal posterior
+  interpretation specification, and authorizes only
+  `internal_diagnostics_and_model_adequacy_review_only`. It does not emit
+  posterior output, confidence output, probability output, score-like output,
+  finance output, ROI, causality, productivity, persistence, routes, UI,
+  schemas, exports, live connectors, or customer-facing output. Verification
+  passed:
   `npm run test:ai-value-contribution-alignment-posterior-output-review-gate`;
   `npm run run:ai-value-contribution-alignment-posterior-output-review-gate`;
   `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
@@ -20,18 +93,17 @@
   `python3 scripts/ci_v1_governance_gates.py`;
   `git diff --check`.
 - AI Value Contribution Alignment Internal Bayesian Execution Runtime slice
-  (2026-06-25): implemented the next governed phase after Internal Bayesian
-  Execution Gate. The runtime consumes the source-bound execution gate plus
-  aggregate Measurement Cell windows only, implements the closed-form
-  normal-normal Bayesian update for the difference-in-differences estimand
-  `delta_ai_post`, and creates an internal posterior candidate artifact held
-  for output review. It authorizes only `posterior_output_review_gate_only`; it
-  does not emit posterior output, confidence output, probability output,
-  score-like output, finance output, ROI, causality, productivity, persistence,
-  routes, UI, schemas, exports, live connectors, or customer-facing output.
-  Local CODE / BUG / ADVERSARIAL review confirmed the runtime rejects raw rows,
-  query text, confidence/probability side doors, and forged probability after
-  rehash. Verification passed:
+  (2026-06-25): corrected the next governed phase after Internal Bayesian
+  Execution Gate into an internal fixture/prototype containment path. The
+  runtime consumes the source-bound execution gate plus aggregate Measurement
+  Cell windows only, keeps the closed-form normal-normal Bayesian update for
+  `delta_ai_post` inside an internal fixture artifact, records missing
+  diagnostics, and authorizes only
+  `internal_diagnostics_and_model_adequacy_review_only`; it does not emit
+  posterior output, confidence output, probability output, score-like output,
+  finance output, ROI, causality, productivity, persistence, routes, UI,
+  schemas, exports, live connectors, or customer-facing output. Verification
+  passed:
   `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
   `npm run run:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
   `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;

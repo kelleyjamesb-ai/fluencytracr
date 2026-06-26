@@ -330,21 +330,54 @@ documented value-realization layers:
   persistence, exports, live connectors, UI, routes, schemas, or
   customer-facing output.
 - **AI Value contribution alignment internal Bayesian execution runtime:**
-  consumes the execution gate and aggregate Measurement Cell windows to run the
-  internal Bayesian difference-in-differences candidate. It implements the
-  closed-form normal-normal update for `delta_ai_post`, creates an internal
-  posterior candidate artifact held for output review, and authorizes only
-  `posterior_output_review_gate_only`. It does not emit posterior/confidence/
-  probability language, create score-like output, finance output, ROI,
-  causality, productivity, persistence, exports, live connectors, UI, routes,
-  schemas, or customer-facing output.
+  consumes the execution gate and aggregate Measurement Cell windows to create a
+  contained fixture/prototype Bayesian difference-in-differences artifact. It
+  keeps the closed-form normal-normal update for `delta_ai_post` inside the
+  internal fixture artifact, records missing diagnostics, and authorizes only
+  `internal_diagnostics_and_model_adequacy_review_only`. It does not emit
+  posterior/confidence/probability language, create score-like output, finance
+  output, ROI, causality, productivity, persistence, exports, live connectors,
+  UI, routes, schemas, or customer-facing output.
 - **AI Value contribution alignment posterior output review gate:** consumes
-  the internal Bayesian execution runtime and reviews the internal fit artifact
-  by ref/hash without echoing posterior numeric values. It authorizes only a
-  later internal posterior interpretation specification and keeps posterior
-  output, confidence output, probability output, finance output, ROI, causality,
-  productivity, persistence, exports, live connectors, UI, routes, schemas, and
-  customer-facing output blocked.
+  the internal Bayesian execution runtime and reviews the internal fixture
+  artifact by ref/hash without echoing posterior numeric values. It is an
+  artifact-containment review only, authorizes only
+  `internal_diagnostics_and_model_adequacy_review_only`, and keeps internal
+  posterior interpretation specification, posterior output, confidence output,
+  probability output, finance output, ROI, causality, productivity, persistence,
+  exports, live connectors, UI, routes, schemas, and customer-facing output
+  blocked.
+- **AI Value contribution alignment diagnostics evidence packet:** consumes the
+  contained internal Bayesian fixture runtime and represents the evidence needed
+  for diagnostics/model-adequacy review: data adequacy, suppressed/missing/held
+  windows, comparison-design adequacy, convergence diagnostics, posterior
+  predictive checks, prior sensitivity, residual/fit checks,
+  calibration/backtest evidence, and feature-weight provenance. The current
+  packet is ready for promotion-decision review but not promotion-sufficient:
+  data/window/weight evidence is satisfied while comparison-design and model
+  diagnostics remain unsatisfied. It cannot authorize promotion, posterior
+  interpretation, confidence/probability language, customer-facing output, ROI,
+  finance, causality, productivity, persistence, exports, live connectors, UI,
+  routes, or schemas.
+- **AI Value contribution alignment internal diagnostics and model adequacy
+  review:** consumes the contained internal Bayesian fixture runtime and reviews
+  data adequacy, comparison-design adequacy, and diagnostic placeholder status.
+  It completes only as
+  `INTERNAL_DIAGNOSTICS_AND_MODEL_ADEQUACY_REVIEW_COMPLETED_PROMOTION_BLOCKED`,
+  may feed only `bayesian_promotion_decision_gate_only`, keeps feature weights
+  structural/internal rather than confidence scores, and keeps Bayesian
+  interpretation, confidence/probability language, customer-facing output, ROI,
+  finance, causality, productivity, persistence, exports, live connectors, UI,
+  routes, and schemas blocked. This slice does not implement the Bayesian
+  Promotion Decision Gate.
+- **AI Value contribution alignment Bayesian promotion decision gate:** consumes
+  the diagnostics/model adequacy review and decides whether a contained fixture
+  may move only to a later Internal Bayesian Execution Artifact v1 slice. It may
+  authorize only `internal_bayesian_execution_artifact_v1_only` and keeps
+  posterior interpretation, confidence/probability language, customer-facing
+  output, ROI, finance, causality, productivity, persistence, exports, live
+  connectors, UI, routes, and schemas blocked. This slice does not create the
+  execution artifact.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -499,6 +532,9 @@ is not the lead positioning for this repository.
 - AI Value Contribution Alignment Internal Bayesian Execution Gate: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-gate/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-gate/README.md)
 - AI Value Contribution Alignment Internal Bayesian Execution Runtime: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md)
 - AI Value Contribution Alignment Posterior Output Review Gate: [docs/contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md](docs/contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md)
+- AI Value Contribution Alignment Diagnostics Evidence Packet: [docs/contracts/ai-value-contribution-alignment-diagnostics-evidence-packet/README.md](docs/contracts/ai-value-contribution-alignment-diagnostics-evidence-packet/README.md)
+- AI Value Contribution Alignment Internal Diagnostics and Model Adequacy Review: [docs/contracts/ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review/README.md](docs/contracts/ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review/README.md)
+- AI Value Contribution Alignment Bayesian Promotion Decision Gate: [docs/contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md](docs/contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)
