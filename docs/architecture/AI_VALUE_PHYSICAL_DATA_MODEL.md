@@ -912,6 +912,16 @@ emit posterior output, confidence output, probability output, score-like output,
 finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
 exports, live connectors, or customer-facing output.
 
+The executable
+[AI Value Contribution Alignment Posterior Output Review Gate](../contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md)
+is the internal-only review gate after Internal Bayesian Execution Runtime. It
+reviews the internal fit artifact by source runtime ref and artifact hash,
+withholds posterior numeric values, and may feed only a later
+`internal_posterior_interpretation_specification_only` contract. It does not
+emit posterior output, confidence output, probability output, score-like output,
+finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
+exports, live connectors, or customer-facing output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;
