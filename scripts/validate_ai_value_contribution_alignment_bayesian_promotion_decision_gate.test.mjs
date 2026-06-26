@@ -339,6 +339,44 @@ function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
   });
 }
 
+function alternateGovernedReviewedEvidenceInput(runtime) {
+  const input = governedReviewedEvidenceInput(runtime);
+  for (const dimension of [
+    "comparison_design_adequacy",
+    "convergence_diagnostics",
+    "posterior_predictive_checks",
+    "prior_sensitivity",
+    "residual_fit_checks",
+    "calibration_backtest",
+    "feature_weight_provenance"
+  ]) {
+    const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    const reviewedHash = sha256Json({
+      schema_version:
+        "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_HASH_2026_06",
+      evidence_dimension: dimension,
+      reviewed_source_evidence_ref: sourceEvidenceRef,
+      aggregate_only_scope: true,
+      reviewed_internal_source_attestation: "alternate_governed_diagnostics_sufficiency_evidence_source"
+    });
+    input.evidence_dimensions[dimension].reviewed_source_evidence_hash = reviewedHash;
+    input.evidence_dimensions[dimension].source_evidence_hash = diagnosticsDimensionHash(
+      runtime,
+      dimension,
+      sourceEvidenceRef,
+      reviewedHash
+    );
+  }
+  return input;
+}
+
+function alternateGovernedDiagnosticsSufficiencyEvidenceSource(runtime) {
+  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+    source_runtime: runtime,
+    reviewed_diagnostics_source_evidence: alternateGovernedReviewedEvidenceInput(runtime)
+  });
+}
+
 function promotableDiagnosticsEvidencePacket(runtime = sourceRuntime()) {
   return buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
@@ -564,6 +602,40 @@ test("Bayesian promotion decision gate may pass only with governed sufficiency e
   for (const feed of FALSE_FEEDS) {
     assert.equal(gate.feeds[feed], false, `${feed} must remain false`);
   }
+});
+
+test("Bayesian promotion decision gate holds when review and packet use different governed sufficiency sources", () => {
+  const runtime = sourceRuntime();
+  const reviewSource = governedDiagnosticsSufficiencyEvidenceSource(runtime);
+  const packetSource = alternateGovernedDiagnosticsSufficiencyEvidenceSource(runtime);
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+    source_runtime: runtime,
+    source_diagnostics_sufficiency_evidence: reviewSource
+  });
+  const evidencePacket = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+    source_runtime: runtime,
+    source_diagnostics_sufficiency_evidence: packetSource
+  });
+  const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject(
+    gateInput(review, runtime, evidencePacket)
+  );
+  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate, {
+    sourceDiagnosticsReview: review,
+    sourceRuntime: runtime,
+    sourceDiagnosticsEvidencePacket: evidencePacket
+  });
+
+  assert.notEqual(
+    review.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    evidencePacket.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash
+  );
+  assert.equal(gate.gate_state, "HOLD_FOR_DIAGNOSTICS_AND_MODEL_ADEQUACY_SUFFICIENCY");
+  assert.equal(gate.promotion_decision.promotion_authorized, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /governed diagnostics sufficiency evidence source hash/.test(gap)),
+    validation.gaps.join("; ")
+  );
 });
 
 test("Bayesian promotion decision gate holds when diagnostics review uses direct sidecar evidence", () => {

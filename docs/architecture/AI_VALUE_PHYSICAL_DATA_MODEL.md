@@ -954,13 +954,27 @@ Adequacy Review. It now consumes both the Diagnostics and Model Adequacy Review
 and the Diagnostics Evidence Packet as hash-bound sources. It may authorize only
 a later `internal_bayesian_execution_artifact_v1_only` slice when diagnostics,
 comparison design, evidence-packet sufficiency, source binding, governance
-containment, and structural feature-weight policy are all satisfied. The current
-bound evidence remains unsatisfied for comparison-design adequacy and model
-diagnostics, so the executable gate continues to hold. It does not create the
-execution artifact and does not authorize Bayesian interpretation, posterior
-output, confidence output, probability output, score-like output, finance
-output, ROI, causality, productivity, persistence, routes, UI, schemas, exports,
-live connectors, or customer-facing output.
+containment, and structural feature-weight policy are all satisfied. The review
+and packet must bind the same governed diagnostics sufficiency evidence source.
+The current default executable evidence remains unsatisfied for
+comparison-design adequacy and model diagnostics, so the executable gate
+continues to hold. It does not create the execution artifact and does not
+authorize Bayesian interpretation, posterior output, confidence output,
+probability output, score-like output, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Promotion Gate Passed Artifact Handoff](../contracts/ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff/README.md)
+is a passive hash-bound handoff for a Promotion Decision Gate that has already
+passed through the explicit governed-evidence path. It records the runtime,
+diagnostics/model adequacy review, Diagnostics Evidence Packet, Governed
+Diagnostics Sufficiency Evidence Source, and Promotion Gate hashes. It does not
+create Internal Bayesian Execution Artifact v1, does not authorize promotion by
+itself, and does not authorize Bayesian interpretation, posterior output,
+confidence output, probability output, score-like output, finance output, ROI,
+causality, productivity, persistence, routes, UI, schemas, exports, live
+connectors, or customer-facing output.
 
 Blocked design:
 

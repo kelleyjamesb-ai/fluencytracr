@@ -725,6 +725,25 @@ function sourceDiagnosticsEvidencePacketGaps(packet, review, sourceRuntime) {
   if (sourceRuntime && packetRuntimeRef.runtime_hash !== sourceRuntime.runtime_hash) {
     gaps.push("sourceDiagnosticsEvidencePacket source_runtime_ref does not match sourceRuntime");
   }
+  const packetGovernedSourceRef =
+    asRecord(packet.source_governed_diagnostics_sufficiency_evidence_source_ref);
+  const reviewGovernedSourceRef =
+    asRecord(review?.source_governed_diagnostics_sufficiency_evidence_source_ref);
+  if (
+    safeHash(packetGovernedSourceRef.evidence_hash) === null ||
+    safeHash(reviewGovernedSourceRef.evidence_hash) === null ||
+    packetGovernedSourceRef.evidence_hash !== reviewGovernedSourceRef.evidence_hash
+  ) {
+    gaps.push("sourceDiagnosticsEvidencePacket governed diagnostics sufficiency evidence source hash must match diagnostics review");
+  }
+  if (
+    safeHash(packetGovernedSourceRef.projected_evidence_hash) === null ||
+    safeHash(reviewGovernedSourceRef.projected_evidence_hash) === null ||
+    packetGovernedSourceRef.projected_evidence_hash !==
+      reviewGovernedSourceRef.projected_evidence_hash
+  ) {
+    gaps.push("sourceDiagnosticsEvidencePacket projected diagnostics sufficiency evidence hash must match diagnostics review");
+  }
   const feeds = asRecord(packet.feeds);
   if (feeds.bayesian_promotion_decision_gate !== true) {
     gaps.push("sourceDiagnosticsEvidencePacket must feed Bayesian Promotion Decision Gate");

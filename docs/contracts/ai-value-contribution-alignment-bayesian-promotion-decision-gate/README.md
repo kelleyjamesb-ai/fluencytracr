@@ -66,6 +66,9 @@ The gate must bind to:
 
 If the runtime, fixture artifact ref, diagnostics review hash, or Diagnostics
 Evidence Packet hash drifts, the gate must hold or fail validation.
+The diagnostics/model adequacy review and Diagnostics Evidence Packet must bind
+to the same Governed Diagnostics Sufficiency Evidence Source hash and projected
+diagnostics sufficiency evidence hash.
 
 ## Required Gate Checks
 
@@ -216,4 +219,24 @@ Executable sample:
 
 ```bash
 npm run run:ai-value-contribution-alignment-bayesian-promotion-decision-gate
+```
+
+## Passed Handoff Reproduction
+
+A separate handoff-only contract can record an already-passed gate and its
+source hashes:
+
+```text
+docs/contracts/ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff/README.md
+```
+
+The handoff must remain passive. It validates one supplied passed Promotion
+Decision Gate against the same runtime, diagnostics/model adequacy review, and
+Diagnostics Evidence Packet chain. It does not create Internal Bayesian
+Execution Artifact v1 and does not authorize promotion outside this gate.
+
+The default executable handoff path remains held:
+
+```bash
+npm run run:ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff
 ```
