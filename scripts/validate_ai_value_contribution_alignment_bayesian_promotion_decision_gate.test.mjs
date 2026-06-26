@@ -41,6 +41,9 @@ import {
   contributionAlignmentBayesianPromotionDecisionGateHash,
   validateContributionAlignmentBayesianPromotionDecisionGate
 } from "./run_ai_value_contribution_alignment_bayesian_promotion_decision_gate.mjs";
+import {
+  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject
+} from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
 
 const FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
@@ -265,11 +268,56 @@ function governedDiagnosticsSufficiencyEvidence(runtime, overrides = {}) {
   return evidence;
 }
 
+function governedReviewedEvidenceInput(runtime, overrides = {}) {
+  const dimensions = {};
+  for (const dimension of [
+    "comparison_design_adequacy",
+    "convergence_diagnostics",
+    "posterior_predictive_checks",
+    "prior_sensitivity",
+    "residual_fit_checks",
+    "calibration_backtest",
+    "feature_weight_provenance"
+  ]) {
+    const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    dimensions[dimension] = {
+      reviewed_source_evidence_ref: sourceEvidenceRef,
+      source_evidence_hash: diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef),
+      aggregate_only_scope: true,
+      suppressed_missing_held_windows_clear: true,
+      eligible_for_satisfied_representation: true,
+      placeholder_evidence: false,
+      generated_fixture_evidence: false,
+      evidence_satisfied: true
+    };
+  }
+  return {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
+    evidence_review_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: dimensions,
+    ...overrides
+  };
+}
+
+function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
+  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+    source_runtime: runtime,
+    reviewed_diagnostics_source_evidence: governedReviewedEvidenceInput(runtime, overrides)
+  });
+}
+
 function promotableDiagnosticsEvidencePacket(runtime = sourceRuntime()) {
   return buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence:
-      governedDiagnosticsSufficiencyEvidence(runtime)
+      governedDiagnosticsSufficiencyEvidenceSource(runtime)
   });
 }
 
@@ -337,7 +385,13 @@ test("Bayesian promotion decision gate holds on current unsatisfied diagnostics 
 
   assert.equal(validation.valid, false);
   assert.equal(gate.gate_state, "HOLD_FOR_DIAGNOSTICS_AND_MODEL_ADEQUACY_SUFFICIENCY");
-  assert.deepEqual(gate.source_diagnostics_evidence_packet_ref, diagnosticEvidencePacketRef(evidencePacket));
+  assert.deepEqual(gate.source_diagnostics_evidence_packet_ref, {
+    schema_version: evidencePacket.schema_version,
+    packet_id: evidencePacket.packet_id,
+    packet_state: null,
+    packet_hash: evidencePacket.packet_hash,
+    allowed_next_step: null
+  });
   assert.equal(gate.gate_policy.promotion_authorized, false);
   assert.equal(gate.promotion_decision.promotion_authorized, false);
   assert.equal(gate.promotion_decision.promotion_blocked, true);
@@ -447,7 +501,8 @@ test("Bayesian promotion decision gate may pass only with governed sufficiency e
   });
   const evidencePacket = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
-    source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
+    source_diagnostics_sufficiency_evidence:
+      governedDiagnosticsSufficiencyEvidenceSource(runtime)
   });
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject(
     gateInput(review, runtime, evidencePacket)

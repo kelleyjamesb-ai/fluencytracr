@@ -62,17 +62,41 @@ If the source runtime drifts, is not aggregate-only, contains raw rows,
 identifiers, query text, suppressed windows, missing windows, held windows, or
 missing diagnostic evidence fields, the packet must hold.
 
-The packet may also bind to an optional governed diagnostics sufficiency
-evidence sidecar:
+The packet may also bind to an optional Governed Diagnostics Sufficiency
+Evidence Source:
 
 ```text
 source_diagnostics_sufficiency_evidence
 ```
 
-That sidecar is internal-only and aggregate-only. It must hash-bind each
-satisfied evidence dimension to the source runtime hash and fixture artifact
-hash. The packet copies only sanitized source evidence references and hashes; it
-does not embed raw diagnostic records or create model diagnostics.
+That input must use:
+
+```text
+schema_version=FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_2026_06
+source_state=GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_FOR_PACKET_REVIEW
+allowed_next_step=diagnostics_evidence_packet_update_only
+promotion_authorized=false
+posterior_interpretation_authorized=false
+confidence_output_authorized=false
+probability_output_authorized=false
+customer_output_authorized=false
+```
+
+The packet stores a hash-bound governed source ref:
+
+```text
+source_governed_diagnostics_sufficiency_evidence_source_ref
+```
+
+The packet then derives a packet-side evidence projection from the governed
+source. The projection must hash-bind each satisfied evidence dimension to the
+source runtime hash and fixture artifact hash. The packet copies only sanitized
+source evidence references and hashes; it does not embed raw diagnostic records
+or create model diagnostics.
+
+Direct packet-side sufficiency sidecars are not sufficient for satisfied
+diagnostics evidence. They must be supplied through the governed source
+contract so the packet can bind the source artifact hash.
 
 ## Evidence Dimensions
 
@@ -90,25 +114,29 @@ model_diagnostics_evidence.calibration_backtest
 feature_weight_provenance
 ```
 
-Without a governed diagnostics sufficiency evidence sidecar, packet behavior
-preserves the existing evidence truth:
+Without a governed diagnostics sufficiency evidence source, packet behavior
+holds:
 
 ```text
-data_adequacy_satisfied=true
-suppressed_missing_held_windows_clear=true
-feature_weight_provenance_satisfied=true
+packet_state=HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE
+allowed_next_step=complete_diagnostics_evidence_source
+feeds.bayesian_promotion_decision_gate=false
+feeds.internal_diagnostics_model_adequacy_review=false
+data_adequacy_satisfied=false
+suppressed_missing_held_windows_clear=false
+feature_weight_provenance_satisfied=false
 comparison_design_adequacy_satisfied=false
 model_diagnostics_satisfied=false
 all_required_evidence_satisfied=false
 ```
 
-The unsatisfied diagnostics must remain unsatisfied until real governed evidence
-exists for convergence diagnostics, posterior predictive checks, prior
-sensitivity, residual/fit checks, calibration/backtest evidence, and
-comparison-design adequacy.
+The missing-source hold preserves fail-closed packet behavior until real
+governed evidence exists for convergence diagnostics, posterior predictive
+checks, prior sensitivity, residual/fit checks, calibration/backtest evidence,
+and comparison-design adequacy.
 
-When governed sufficiency evidence is supplied and hash-valid, the packet may
-mark these fields satisfied:
+When a governed sufficiency evidence source is supplied, ready for packet
+review, and hash-valid, the packet may mark these fields satisfied:
 
 ```text
 comparison_design_adequacy_satisfied=true

@@ -213,7 +213,7 @@ test("governed diagnostics sufficiency evidence source accepts only explicit gov
   }
 });
 
-test("governed diagnostics sufficiency evidence source supplies only a packet-side projection", () => {
+test("governed diagnostics sufficiency evidence source feeds packet through hash-bound source", () => {
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
@@ -225,7 +225,7 @@ test("governed diagnostics sufficiency evidence source supplies only a packet-si
     buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source);
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
-    source_diagnostics_sufficiency_evidence: packetSideEvidence
+    source_diagnostics_sufficiency_evidence: source
   });
   const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
     source_runtime: runtime,
@@ -239,6 +239,10 @@ test("governed diagnostics sufficiency evidence source supplies only a packet-si
 
   assert.equal(source.source_policy.promotion_authorized, false);
   assert.equal(packetSideEvidence.promotion_authorized, false);
+  assert.equal(
+    packet.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    source.evidence_hash
+  );
   assert.equal(packet.promotion_boundary.promotion_authorized, false);
   assert.equal(review.promotion_review.promotion_authorized, false);
   assert.equal(gate.promotion_decision.promotion_authorized, true);

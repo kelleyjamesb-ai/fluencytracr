@@ -33,6 +33,10 @@ import {
   contributionAlignmentDiagnosticsEvidencePacketHash,
   validateContributionAlignmentDiagnosticsEvidencePacket
 } from "./run_ai_value_contribution_alignment_diagnostics_evidence_packet.mjs";
+import {
+  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject,
+  contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash
+} from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
 
 const FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
@@ -105,6 +109,10 @@ const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_CLASS =
   "diagnostics_sufficiency_evidence_only";
 const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_VERSION =
   "diagnostics_sufficiency_evidence_2026_06";
+const GOVERNED_SOURCE_READY_STATE =
+  "GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_FOR_PACKET_REVIEW";
+const GOVERNED_SOURCE_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_2026_06";
 
 let cachedRuntime = null;
 
@@ -192,6 +200,51 @@ function governedDiagnosticsSufficiencyEvidence(runtime, overrides = {}) {
   return evidence;
 }
 
+function governedReviewedEvidenceInput(runtime, overrides = {}) {
+  const dimensions = {};
+  for (const dimension of [
+    "comparison_design_adequacy",
+    "convergence_diagnostics",
+    "posterior_predictive_checks",
+    "prior_sensitivity",
+    "residual_fit_checks",
+    "calibration_backtest",
+    "feature_weight_provenance"
+  ]) {
+    const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    dimensions[dimension] = {
+      reviewed_source_evidence_ref: sourceEvidenceRef,
+      source_evidence_hash: diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef),
+      aggregate_only_scope: true,
+      suppressed_missing_held_windows_clear: true,
+      eligible_for_satisfied_representation: true,
+      placeholder_evidence: false,
+      generated_fixture_evidence: false,
+      evidence_satisfied: true
+    };
+  }
+  return {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
+    evidence_review_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: dimensions,
+    ...overrides
+  };
+}
+
+function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
+  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+    source_runtime: runtime,
+    reviewed_diagnostics_source_evidence: governedReviewedEvidenceInput(runtime, overrides)
+  });
+}
+
 function sourceDataModel() {
   const output = execFileSync(
     "node",
@@ -243,20 +296,20 @@ function sourceRuntime() {
   return clone(cachedRuntime);
 }
 
-test("diagnostics evidence packet represents required dimensions without authorizing promotion", () => {
+test("diagnostics evidence packet holds without governed evidence source", () => {
   const runtime = sourceRuntime();
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(runtime);
   const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet, {
     sourceRuntime: runtime
   });
 
-  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(validation.valid, false);
   assert.equal(
     packet.packet_state,
-    "DIAGNOSTICS_EVIDENCE_PACKET_READY_FOR_PROMOTION_DECISION_REVIEW"
+    "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE"
   );
   assert.equal(packet.packet_policy.internal_only, true);
-  assert.equal(packet.packet_policy.aggregate_only, true);
+  assert.equal(packet.packet_policy.aggregate_only, false);
   assert.equal(packet.packet_policy.promotion_authorized, false);
   assert.equal(packet.packet_policy.posterior_interpretation_authorized, false);
   assert.equal(packet.packet_policy.confidence_output_authorized, false);
@@ -267,10 +320,10 @@ test("diagnostics evidence packet represents required dimensions without authori
   assert.equal(packet.packet_policy.productivity_output_authorized, false);
   assert.equal(packet.packet_policy.causality_output_authorized, false);
   assert.equal(packet.packet_policy.finance_output_authorized, false);
-  assert.equal(packet.data_adequacy_evidence.data_adequacy_satisfied, true);
+  assert.equal(packet.data_adequacy_evidence.data_adequacy_satisfied, false);
   assert.equal(
     packet.suppressed_missing_held_window_review.suppressed_missing_held_windows_clear,
-    true
+    false
   );
   assert.equal(packet.comparison_design_evidence.comparison_design_adequacy_satisfied, false);
   assert.equal(packet.model_diagnostics_evidence.convergence_diagnostics.evidence_satisfied, false);
@@ -279,18 +332,22 @@ test("diagnostics evidence packet represents required dimensions without authori
   assert.equal(packet.model_diagnostics_evidence.residual_fit_checks.evidence_satisfied, false);
   assert.equal(packet.model_diagnostics_evidence.calibration_backtest.evidence_satisfied, false);
   assert.equal(packet.model_diagnostics_evidence.all_required_model_diagnostics_satisfied, false);
-  assert.equal(packet.feature_weight_provenance.weights_structural_internal_only, true);
+  assert.equal(packet.feature_weight_provenance.weights_structural_internal_only, false);
   assert.equal(packet.feature_weight_provenance.weights_not_confidence_scores, true);
   assert.equal(packet.feature_weight_provenance.customer_facing_weight_output, false);
   assert.equal(packet.evidence_sufficiency.all_required_evidence_satisfied, false);
   assert.equal(packet.promotion_boundary.promotion_authorized, false);
   assert.equal(packet.promotion_boundary.internal_bayesian_execution_artifact_v1_authorized, false);
-  assert.equal(packet.allowed_next_step, "bayesian_promotion_decision_gate_only");
-  assert.equal(packet.feeds.bayesian_promotion_decision_gate, true);
-  assert.equal(packet.feeds.internal_diagnostics_model_adequacy_review, true);
+  assert.equal(packet.allowed_next_step, "complete_diagnostics_evidence_source");
+  assert.equal(packet.feeds.bayesian_promotion_decision_gate, false);
+  assert.equal(packet.feeds.internal_diagnostics_model_adequacy_review, false);
   for (const feed of FALSE_FEEDS) {
     assert.equal(packet.feeds[feed], false, `${feed} must remain false`);
   }
+  assert.ok(
+    validation.gaps.some((gap) => /governed diagnostics sufficiency evidence source is required/.test(gap)),
+    validation.gaps.join("; ")
+  );
 });
 
 test("diagnostics evidence packet holds when required evidence fields are missing", () => {
@@ -338,10 +395,12 @@ test("diagnostics evidence packet rejects forged satisfied evidence against boun
 
 test("diagnostics evidence packet requires source runtime for ready validation", () => {
   const runtime = sourceRuntime();
-  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(runtime);
-  packet.model_diagnostics_evidence.convergence_diagnostics.evidence_present = true;
-  packet.model_diagnostics_evidence.convergence_diagnostics.evidence_satisfied = true;
-  packet.packet_hash = contributionAlignmentDiagnosticsEvidencePacketHash(packet);
+  const sourceDiagnosticsSufficiencyEvidence =
+    governedDiagnosticsSufficiencyEvidenceSource(runtime);
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+    source_runtime: runtime,
+    source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
+  });
 
   const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet);
 
@@ -437,14 +496,14 @@ test("diagnostics evidence packet rejects unsafe wrapper side doors without echo
 test("diagnostics evidence packet can mark diagnostics satisfied only from governed sufficiency evidence hashes", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
-    governedDiagnosticsSufficiencyEvidence(runtime);
+    governedDiagnosticsSufficiencyEvidenceSource(runtime);
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
   });
   const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet, {
     sourceRuntime: runtime,
-    sourceDiagnosticsSufficiencyEvidence
+    sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
   });
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -452,7 +511,22 @@ test("diagnostics evidence packet can mark diagnostics satisfied only from gover
     packet.packet_state,
     "DIAGNOSTICS_EVIDENCE_PACKET_READY_FOR_PROMOTION_DECISION_REVIEW"
   );
-  assert.equal(packet.source_diagnostics_sufficiency_evidence_ref.evidence_hash, sourceDiagnosticsSufficiencyEvidence.evidence_hash);
+  assert.equal(
+    packet.source_governed_diagnostics_sufficiency_evidence_source_ref.schema_version,
+    GOVERNED_SOURCE_SCHEMA_VERSION
+  );
+  assert.equal(
+    packet.source_governed_diagnostics_sufficiency_evidence_source_ref.source_state,
+    GOVERNED_SOURCE_READY_STATE
+  );
+  assert.equal(
+    packet.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,
+    sourceDiagnosticsSufficiencyEvidence.evidence_hash
+  );
+  assert.equal(
+    packet.source_diagnostics_sufficiency_evidence_ref.evidence_hash,
+    packet.source_governed_diagnostics_sufficiency_evidence_source_ref.projected_evidence_hash
+  );
   assert.equal(packet.comparison_design_evidence.comparison_design_adequacy_satisfied, true);
   assert.equal(
     packet.comparison_design_evidence.source_evidence_ref,
@@ -484,14 +558,10 @@ test("diagnostics evidence packet can mark diagnostics satisfied only from gover
   assert.equal(packet.promotion_boundary.internal_bayesian_execution_artifact_v1_authorized, false);
 });
 
-test("diagnostics evidence packet holds partial governed sufficiency evidence", () => {
+test("diagnostics evidence packet rejects direct sidecar evidence without governed source binding", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
     governedDiagnosticsSufficiencyEvidence(runtime);
-  sourceDiagnosticsSufficiencyEvidence.evidence_dimensions.prior_sensitivity.evidence_satisfied = false;
-  sourceDiagnosticsSufficiencyEvidence.evidence_hash =
-    sufficiencyEvidenceHash(sourceDiagnosticsSufficiencyEvidence);
-
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
@@ -499,6 +569,43 @@ test("diagnostics evidence packet holds partial governed sufficiency evidence", 
   const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet, {
     sourceRuntime: runtime,
     sourceDiagnosticsSufficiencyEvidence
+  });
+
+  assert.equal(packet.packet_state, "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE");
+  assert.equal(packet.evidence_sufficiency.all_required_evidence_satisfied, false);
+  assert.equal(packet.promotion_boundary.promotion_authorized, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /governed diagnostics sufficiency evidence source/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("diagnostics evidence packet holds partial governed sufficiency evidence", () => {
+  const runtime = sourceRuntime();
+  const sourceDiagnosticsSufficiencyEvidence =
+    governedDiagnosticsSufficiencyEvidenceSource(
+      runtime,
+      {
+        evidence_dimensions: {
+          ...governedReviewedEvidenceInput(runtime).evidence_dimensions,
+          prior_sensitivity: {
+            ...governedReviewedEvidenceInput(runtime).evidence_dimensions.prior_sensitivity,
+            evidence_satisfied: false
+          }
+        }
+      }
+    );
+  sourceDiagnosticsSufficiencyEvidence.evidence_hash =
+    contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(sourceDiagnosticsSufficiencyEvidence);
+
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+    source_runtime: runtime,
+    source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
+  });
+  const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet, {
+    sourceRuntime: runtime,
+    sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
   });
 
   assert.equal(packet.packet_state, "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE");
@@ -514,10 +621,20 @@ test("diagnostics evidence packet holds partial governed sufficiency evidence", 
 test("diagnostics evidence packet rejects satisfied diagnostics without governed evidence hash", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
-    governedDiagnosticsSufficiencyEvidence(runtime);
-  delete sourceDiagnosticsSufficiencyEvidence.evidence_dimensions.convergence_diagnostics.source_evidence_hash;
+    governedDiagnosticsSufficiencyEvidenceSource(
+      runtime,
+      {
+        evidence_dimensions: {
+          ...governedReviewedEvidenceInput(runtime).evidence_dimensions,
+          convergence_diagnostics: {
+            ...governedReviewedEvidenceInput(runtime).evidence_dimensions.convergence_diagnostics
+          }
+        }
+      }
+    );
+  sourceDiagnosticsSufficiencyEvidence.evidence_dimensions.convergence_diagnostics.source_evidence_hash = null;
   sourceDiagnosticsSufficiencyEvidence.evidence_hash =
-    sufficiencyEvidenceHash(sourceDiagnosticsSufficiencyEvidence);
+    contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(sourceDiagnosticsSufficiencyEvidence);
 
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: runtime,
@@ -525,7 +642,7 @@ test("diagnostics evidence packet rejects satisfied diagnostics without governed
   });
   const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet, {
     sourceRuntime: runtime,
-    sourceDiagnosticsSufficiencyEvidence
+    sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
   });
 
   assert.equal(packet.packet_state, "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE");
@@ -534,6 +651,31 @@ test("diagnostics evidence packet rejects satisfied diagnostics without governed
   assert.equal(validation.valid, false);
   assert.ok(
     validation.gaps.some((gap) => /convergence_diagnostics|source_evidence_hash/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("diagnostics evidence packet rejects forged governed evidence source hash", () => {
+  const runtime = sourceRuntime();
+  const sourceDiagnosticsSufficiencyEvidence =
+    governedDiagnosticsSufficiencyEvidenceSource(runtime);
+  sourceDiagnosticsSufficiencyEvidence.evidence_hash = "f".repeat(64);
+
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+    source_runtime: runtime,
+    source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
+  });
+  const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet, {
+    sourceRuntime: runtime,
+    sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
+  });
+
+  assert.equal(packet.packet_state, "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE");
+  assert.equal(packet.evidence_sufficiency.all_required_evidence_satisfied, false);
+  assert.equal(packet.promotion_boundary.promotion_authorized, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /governed diagnostics sufficiency evidence source|hash/.test(gap)),
     validation.gaps.join("; ")
   );
 });
