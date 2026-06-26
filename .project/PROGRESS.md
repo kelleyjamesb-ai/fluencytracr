@@ -2,6 +2,25 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Internal Bayesian Execution Runtime slice
+  (2026-06-25): implemented the next governed phase after Internal Bayesian
+  Execution Gate. The runtime consumes the source-bound execution gate plus
+  aggregate Measurement Cell windows only, implements the closed-form
+  normal-normal Bayesian update for the difference-in-differences estimand
+  `delta_ai_post`, and creates an internal posterior candidate artifact held
+  for output review. It authorizes only `posterior_output_review_gate_only`; it
+  does not emit posterior output, confidence output, probability output,
+  score-like output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, live connectors, or customer-facing output.
+  Local CODE / BUG / ADVERSARIAL review confirmed the runtime rejects raw rows,
+  query text, confidence/probability side doors, and forged probability after
+  rehash. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run run:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Internal Bayesian Execution Gate slice
   (2026-06-25): implemented the next governed phase after Bayesian Model
   Specification. The gate binds to the specification id/hash, Internal Bayesian

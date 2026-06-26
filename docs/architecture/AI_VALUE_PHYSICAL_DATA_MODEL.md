@@ -901,6 +901,17 @@ probability output, score-like output, finance output, ROI, causality,
 productivity, persistence, routes, UI, schemas, exports, live connectors, or
 customer-facing output.
 
+The executable
+[AI Value Contribution Alignment Internal Bayesian Execution Runtime](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md)
+is the internal-only aggregate runtime after Internal Bayesian Execution Gate.
+It consumes aggregate Measurement Cell windows, implements the closed-form
+normal-normal update for the Bayesian difference-in-differences candidate, and
+creates an internal posterior candidate artifact held for output review. It may
+feed only a later `posterior_output_review_gate_only` contract. It does not
+emit posterior output, confidence output, probability output, score-like output,
+finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
+exports, live connectors, or customer-facing output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;

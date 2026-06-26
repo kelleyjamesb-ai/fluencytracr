@@ -329,6 +329,15 @@ documented value-realization layers:
   create score-like output, finance output, ROI, causality, productivity,
   persistence, exports, live connectors, UI, routes, schemas, or
   customer-facing output.
+- **AI Value contribution alignment internal Bayesian execution runtime:**
+  consumes the execution gate and aggregate Measurement Cell windows to run the
+  internal Bayesian difference-in-differences candidate. It implements the
+  closed-form normal-normal update for `delta_ai_post`, creates an internal
+  posterior candidate artifact held for output review, and authorizes only
+  `posterior_output_review_gate_only`. It does not emit posterior/confidence/
+  probability language, create score-like output, finance output, ROI,
+  causality, productivity, persistence, exports, live connectors, UI, routes,
+  schemas, or customer-facing output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -481,6 +490,7 @@ is not the lead positioning for this repository.
 - AI Value Contribution Alignment Internal Bayesian Readiness Review: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-readiness-review/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-readiness-review/README.md)
 - AI Value Contribution Alignment Bayesian Model Specification: [docs/contracts/ai-value-contribution-alignment-bayesian-model-specification/README.md](docs/contracts/ai-value-contribution-alignment-bayesian-model-specification/README.md)
 - AI Value Contribution Alignment Internal Bayesian Execution Gate: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-gate/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-gate/README.md)
+- AI Value Contribution Alignment Internal Bayesian Execution Runtime: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)
