@@ -162,6 +162,8 @@
     "test:ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff": "npm run build --workspace shared && node --test scripts/validate_ai_value_contribution_alignment_promotion_gate_passed_artifact_handoff.test.mjs",
     "run:ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1": "npm run --silent run:ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff > /tmp/fluencytracr-promotion-gate-passed-artifact-handoff.json && node scripts/run_ai_value_contribution_alignment_internal_bayesian_execution_artifact_v1.mjs /tmp/fluencytracr-promotion-gate-passed-artifact-handoff.json",
     "test:ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1": "npm run build --workspace shared && node --test scripts/validate_ai_value_contribution_alignment_internal_bayesian_execution_artifact_v1.test.mjs",
+    "run:ai-value-contribution-alignment-bayesian-hardening-orchestrator": "npm run --silent run:ai-value-contribution-alignment-internal-bayesian-execution-runtime | node scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs -",
+    "test:ai-value-contribution-alignment-bayesian-hardening-orchestrator": "npm run build --workspace shared && node --test scripts/validate_ai_value_contribution_alignment_bayesian_hardening_orchestrator.test.mjs",
     "run:ai-value-saved-fixture-pilot": "npm run run:ai-value-controlled-pilot-evidence-package",
     "test:ai-value-saved-fixture-pilot": "npm run test:ai-value-controlled-pilot-evidence-package",
     "test:ai-value-operator-intake-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_operator_intake_adapter.test.mjs",

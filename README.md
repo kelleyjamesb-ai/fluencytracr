@@ -410,6 +410,18 @@ documented value-realization layers:
   language, customer-facing output, ROI, finance, causality, productivity,
   persistence, exports, live connectors, UI, routes, or schemas. Its only
   allowed next step is `posterior_interpretation_specification_gate_only`.
+- **AI Value contribution alignment Bayesian Hardening Orchestrator:** emits a
+  read-only, internal-only handoff report over the existing Bayesian hardening
+  chain. Default execution stops at the first held governed diagnostics evidence
+  gate; an explicit governed-evidence path may be reported only when the
+  existing source-bound gates validate. The orchestrator does not create new
+  model artifacts and does not create governed evidence. Orchestrator promotion
+  authority remains false; existing Bayesian Promotion Decision Gate authority
+  may be reported only as source evidence. It keeps posterior interpretation,
+  confidence/probability language, customer-facing output, ROI, finance,
+  causality, productivity, persistence, exports, live connectors, UI, routes,
+  and schemas blocked. Its allowed next step is derived from the validated
+  existing gate chain only.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
@@ -570,6 +582,7 @@ is not the lead positioning for this repository.
 - AI Value Contribution Alignment Bayesian Promotion Decision Gate: [docs/contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md](docs/contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md)
 - AI Value Contribution Alignment Promotion Gate Passed Artifact Handoff: [docs/contracts/ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff/README.md](docs/contracts/ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff/README.md)
 - AI Value Contribution Alignment Internal Bayesian Execution Artifact v1: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1/README.md)
+- AI Value Contribution Alignment Bayesian Hardening Orchestrator: [docs/contracts/ai-value-contribution-alignment-bayesian-hardening-orchestrator/README.md](docs/contracts/ai-value-contribution-alignment-bayesian-hardening-orchestrator/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)
 - AI Value Aggregate Extraction Manifest: [docs/contracts/ai-value-aggregate-extraction-manifest/README.md](docs/contracts/ai-value-aggregate-extraction-manifest/README.md)
 - AI Value Pipeline Run Review Manifest: [docs/contracts/ai-value-pipeline-run-review-manifest/README.md](docs/contracts/ai-value-pipeline-run-review-manifest/README.md)

@@ -42,7 +42,8 @@ import {
   validateContributionAlignmentBayesianPromotionDecisionGate
 } from "./run_ai_value_contribution_alignment_bayesian_promotion_decision_gate.mjs";
 import {
-  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject
+  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject,
+  contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash
 } from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
 
 const FIXTURE_PATH =
@@ -235,6 +236,12 @@ function diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef, reviewe
   });
 }
 
+function reviewedEvidenceManifestHash(manifest) {
+  const withoutHash = clone(manifest);
+  delete withoutHash.manifest_hash;
+  return sha256Json(withoutHash);
+}
+
 function governedDiagnosticsSufficiencyEvidence(runtime, overrides = {}) {
   const dimensions = {};
   for (const dimension of [
@@ -317,6 +324,28 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
       evidence_satisfied: true
     };
   }
+  const manifest = {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_2026_06",
+    manifest_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: Object.fromEntries(
+      Object.keys(dimensions).map((dimension) => [
+        dimension,
+        {
+          reviewed_source_evidence_ref: diagnosticsEvidenceRef(dimension),
+          reviewed_source_evidence_hash: dimensions[dimension].reviewed_source_evidence_hash,
+          aggregate_only_scope: true
+        }
+      ])
+    )
+  };
+  manifest.manifest_hash = reviewedEvidenceManifestHash(manifest);
   return {
     schema_version:
       "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
@@ -327,6 +356,8 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
       runtime_hash: runtime.runtime_hash,
       fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
     },
+    reviewed_evidence_manifest_hash: manifest.manifest_hash,
+    reviewed_evidence_manifest: manifest,
     evidence_dimensions: dimensions,
     ...overrides
   };
@@ -339,42 +370,12 @@ function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
   });
 }
 
-function alternateGovernedReviewedEvidenceInput(runtime) {
-  const input = governedReviewedEvidenceInput(runtime);
-  for (const dimension of [
-    "comparison_design_adequacy",
-    "convergence_diagnostics",
-    "posterior_predictive_checks",
-    "prior_sensitivity",
-    "residual_fit_checks",
-    "calibration_backtest",
-    "feature_weight_provenance"
-  ]) {
-    const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
-    const reviewedHash = sha256Json({
-      schema_version:
-        "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_HASH_2026_06",
-      evidence_dimension: dimension,
-      reviewed_source_evidence_ref: sourceEvidenceRef,
-      aggregate_only_scope: true,
-      reviewed_internal_source_attestation: "alternate_governed_diagnostics_sufficiency_evidence_source"
-    });
-    input.evidence_dimensions[dimension].reviewed_source_evidence_hash = reviewedHash;
-    input.evidence_dimensions[dimension].source_evidence_hash = diagnosticsDimensionHash(
-      runtime,
-      dimension,
-      sourceEvidenceRef,
-      reviewedHash
-    );
-  }
-  return input;
-}
-
 function alternateGovernedDiagnosticsSufficiencyEvidenceSource(runtime) {
-  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-    source_runtime: runtime,
-    reviewed_diagnostics_source_evidence: alternateGovernedReviewedEvidenceInput(runtime)
-  });
+  const source = governedDiagnosticsSufficiencyEvidenceSource(runtime);
+  source.generated_at = "2026-06-25T00:00:01.000Z";
+  source.evidence_hash =
+    contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(source);
+  return source;
 }
 
 function promotableDiagnosticsEvidencePacket(runtime = sourceRuntime()) {

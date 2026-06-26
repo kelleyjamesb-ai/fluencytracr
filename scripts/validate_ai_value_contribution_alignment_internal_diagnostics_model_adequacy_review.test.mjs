@@ -171,6 +171,12 @@ function diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef, reviewe
   });
 }
 
+function reviewedEvidenceManifestHash(manifest) {
+  const withoutHash = clone(manifest);
+  delete withoutHash.manifest_hash;
+  return sha256Json(withoutHash);
+}
+
 function governedDiagnosticsSufficiencyEvidence(runtime, overrides = {}) {
   const dimensions = {};
   for (const dimension of [
@@ -253,6 +259,28 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
       evidence_satisfied: true
     };
   }
+  const manifest = {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_2026_06",
+    manifest_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: Object.fromEntries(
+      Object.keys(dimensions).map((dimension) => [
+        dimension,
+        {
+          reviewed_source_evidence_ref: diagnosticsEvidenceRef(dimension),
+          reviewed_source_evidence_hash: reviewedSourceEvidenceHash(dimension),
+          aggregate_only_scope: true
+        }
+      ])
+    )
+  };
+  manifest.manifest_hash = reviewedEvidenceManifestHash(manifest);
   return {
     schema_version:
       "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
@@ -263,6 +291,8 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
       runtime_hash: runtime.runtime_hash,
       fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
     },
+    reviewed_evidence_manifest_hash: manifest.manifest_hash,
+    reviewed_evidence_manifest: manifest,
     evidence_dimensions: dimensions,
     ...overrides
   };

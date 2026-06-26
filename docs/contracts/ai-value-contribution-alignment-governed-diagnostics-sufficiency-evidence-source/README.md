@@ -86,6 +86,32 @@ generated_fixture_evidence=false
 evidence_satisfied=true
 ```
 
+The reviewed source evidence envelope must also include a hash-bound manifest:
+
+```text
+reviewed_evidence_manifest_hash
+reviewed_evidence_manifest.schema_version=FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_2026_06
+reviewed_evidence_manifest.manifest_state=REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_INTERNAL_ONLY
+reviewed_evidence_manifest.internal_only=true
+reviewed_evidence_manifest.aggregate_only=true
+reviewed_evidence_manifest.source_runtime_ref.runtime_hash=<source runtime hash>
+reviewed_evidence_manifest.source_runtime_ref.fixture_artifact_hash=<fixture artifact hash>
+reviewed_evidence_manifest.evidence_dimensions.<dimension>.reviewed_source_evidence_ref
+reviewed_evidence_manifest.evidence_dimensions.<dimension>.reviewed_source_evidence_hash
+reviewed_evidence_manifest.evidence_dimensions.<dimension>.aggregate_only_scope=true
+reviewed_evidence_manifest.manifest_hash=<hash of manifest body>
+```
+
+The envelope `reviewed_evidence_manifest_hash` must match the manifest
+`manifest_hash`, and each dimension's reviewed ref/hash must match the manifest
+entry for that dimension. A free-standing 64-character reviewed hash is not
+sufficient. Runtime-only hashes, self-manufactured hashes, placeholder hashes,
+or generated fixture hashes must fail closed unless they are bound to the
+explicit internal reviewed evidence manifest. A self-consistent caller-built
+manifest is also insufficient: each dimension's `reviewed_source_evidence_hash`
+must match the recognized governed reviewed-evidence hash family for that
+dimension and source ref.
+
 The reviewed source evidence hash must be a durable hash for explicit
 internal-only reviewed evidence outside the contained runtime fixture. It must
 not be derived only from the runtime hash, fixture artifact hash, dimension
@@ -125,6 +151,22 @@ allowed_next_step=complete_governed_diagnostics_sufficiency_evidence_source
 All evidence dimensions remain unsatisfied, all reviewed source evidence hashes
 remain null, and all source evidence hashes remain null.
 
+The source also emits a report-only reconciliation object:
+
+```text
+evidence_readiness_reconciliation.reconciliation_state=HOLD_MISSING_GOVERNED_REVIEWED_EVIDENCE
+evidence_readiness_reconciliation.governed_reviewed_evidence_supplied=false
+evidence_readiness_reconciliation.source_runtime_ready=<true only when the runtime is valid and aggregate-only>
+evidence_readiness_reconciliation.satisfied_dimensions=[]
+evidence_readiness_reconciliation.unsatisfied_dimensions=[all required dimensions]
+evidence_readiness_reconciliation.missing_evidence_by_dimension.<dimension>=[missing requirements]
+evidence_readiness_reconciliation.holding_reasons=[source/runtime/evidence gaps]
+```
+
+For each unsatisfied dimension, `missing_evidence_by_dimension` names the
+specific missing requirements. This metadata is diagnostic only. It does not
+create evidence, does not mark dimensions satisfied, and does not feed promotion.
+
 ## Ready Output
 
 If all governed refs and hashes validate, the source may emit:
@@ -139,6 +181,35 @@ That feed only allows the Diagnostics Evidence Packet to accept or reject the
 source in a later update path. It does not feed the Bayesian Promotion Decision
 Gate directly and it does not make the reviewed source hash sufficient by
 itself.
+
+When all dimensions are complete, the reconciliation object reports:
+
+```text
+evidence_readiness_reconciliation.reconciliation_state=GOVERNED_REVIEWED_EVIDENCE_COMPLETE
+evidence_readiness_reconciliation.governed_reviewed_evidence_supplied=true
+evidence_readiness_reconciliation.source_runtime_ready=true
+evidence_readiness_reconciliation.satisfied_dimensions=[all required dimensions]
+evidence_readiness_reconciliation.unsatisfied_dimensions=[]
+evidence_readiness_reconciliation.missing_evidence_by_dimension.<dimension>=[]
+evidence_readiness_reconciliation.holding_reasons=[]
+```
+
+If only partial reviewed evidence is supplied, the source remains held with:
+
+```text
+evidence_readiness_reconciliation.reconciliation_state=HOLD_INCOMPLETE_GOVERNED_REVIEWED_EVIDENCE
+evidence_readiness_reconciliation.governed_reviewed_evidence_supplied=true
+evidence_readiness_reconciliation.satisfied_dimensions=[only dimensions with complete manifest-bound evidence]
+evidence_readiness_reconciliation.unsatisfied_dimensions=[dimensions with missing or invalid evidence]
+evidence_readiness_reconciliation.missing_evidence_by_dimension.<dimension>=[exact missing requirements]
+evidence_readiness_reconciliation.holding_reasons=[source/runtime/evidence gaps]
+```
+
+The ready feed remains false until every required dimension has explicit
+reviewed source evidence refs, reviewed source evidence hashes, source evidence
+hashes bound to the runtime and fixture artifact, aggregate-only scope, clean
+suppressed/missing/held window status, eligible representation, and no
+placeholder or generated-fixture evidence.
 
 The runner also exports a source-to-packet projection helper:
 

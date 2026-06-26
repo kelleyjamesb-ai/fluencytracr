@@ -990,6 +990,20 @@ productivity, persistence, routes, UI, schemas, exports, live connectors, or
 customer-facing output. Its only allowed next step is
 `posterior_interpretation_specification_gate_only`.
 
+The executable
+[AI Value Contribution Alignment Bayesian Hardening Orchestrator](../contracts/ai-value-contribution-alignment-bayesian-hardening-orchestrator/README.md)
+is a read-only internal report runner over the existing Bayesian hardening
+chain. Default execution stops at the first held governed diagnostics evidence
+gate and reports downstream gates as not evaluated. An explicit governed-evidence
+path may be reported only through source/hash-bound existing artifacts. The
+orchestrator never creates model artifacts and never creates governed diagnostics
+evidence. Orchestrator promotion authority remains false; existing Bayesian
+Promotion Decision Gate authority may be reported only as source evidence. It
+does not authorize Bayesian interpretation, posterior output, confidence output, probability
+output, score-like output, finance output, ROI, causality, productivity,
+persistence, routes, UI, schemas, exports, live connectors, or customer-facing
+output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;

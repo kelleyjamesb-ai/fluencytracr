@@ -207,7 +207,7 @@ function reviewedSourceEvidenceHash(dimension) {
     evidence_dimension: dimension,
     reviewed_source_evidence_ref: reviewedSourceEvidenceRef(dimension),
     aggregate_only_scope: true,
-    reviewed_internal_source_attestation: "promotion_gate_passed_artifact_handoff_test"
+    reviewed_internal_source_attestation: "governed_diagnostics_sufficiency_evidence_source"
   });
 }
 
@@ -224,6 +224,12 @@ function sourceEvidenceHash(runtime, dimension, sourceEvidenceRef, reviewedHash)
     aggregate_only: true,
     evidence_satisfied: true
   });
+}
+
+function reviewedEvidenceManifestHash(manifest) {
+  const withoutHash = clone(manifest);
+  delete withoutHash.manifest_hash;
+  return sha256Json(withoutHash);
 }
 
 function reviewedEvidenceInput(runtime, overrides = {}) {
@@ -247,6 +253,28 @@ function reviewedEvidenceInput(runtime, overrides = {}) {
       ];
     })
   );
+  const manifest = {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_2026_06",
+    manifest_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: Object.fromEntries(
+      DIMENSIONS.map((dimension) => [
+        dimension,
+        {
+          reviewed_source_evidence_ref: reviewedSourceEvidenceRef(dimension),
+          reviewed_source_evidence_hash: reviewedSourceEvidenceHash(dimension),
+          aggregate_only_scope: true
+        }
+      ])
+    )
+  };
+  manifest.manifest_hash = reviewedEvidenceManifestHash(manifest);
   return {
     schema_version:
       "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
@@ -257,6 +285,8 @@ function reviewedEvidenceInput(runtime, overrides = {}) {
       runtime_hash: runtime.runtime_hash,
       fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
     },
+    reviewed_evidence_manifest_hash: manifest.manifest_hash,
+    reviewed_evidence_manifest: manifest,
     evidence_dimensions: evidenceDimensions,
     ...overrides
   };

@@ -21,6 +21,10 @@ const PACKET_SIDE_EVIDENCE_SCHEMA_VERSION =
   "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_2026_06";
 const REVIEWED_SOURCE_EVIDENCE_SCHEMA_VERSION =
   "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06";
+const REVIEWED_SOURCE_EVIDENCE_MANIFEST_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_2026_06";
+const REVIEWED_SOURCE_EVIDENCE_HASH_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_HASH_2026_06";
 
 const DERIVATION_VERSION =
   "ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source_2026_06";
@@ -75,6 +79,7 @@ const TOP_LEVEL_FIELDS = new Set([
   "evidence_dimensions",
   "feature_weight_provenance",
   "evidence_sufficiency",
+  "evidence_readiness_reconciliation",
   "promotion_boundary",
   "allowed_next_step",
   "blocked_uses",
@@ -142,6 +147,60 @@ const EVIDENCE_SUFFICIENCY_FIELDS = [
   "calibration_backtest_satisfied",
   "feature_weight_provenance_satisfied",
   "all_required_evidence_satisfied"
+];
+
+const EVIDENCE_READINESS_RECONCILIATION_FIELDS = [
+  "reconciliation_state",
+  "governed_reviewed_evidence_supplied",
+  "source_runtime_ready",
+  "satisfied_dimensions",
+  "unsatisfied_dimensions",
+  "missing_evidence_by_dimension",
+  "holding_reasons"
+];
+
+const REVIEWED_EVIDENCE_ENVELOPE_FIELDS = [
+  "schema_version",
+  "evidence_review_state",
+  "internal_only",
+  "aggregate_only",
+  "source_runtime_ref",
+  "reviewed_evidence_manifest_hash",
+  "reviewed_evidence_manifest",
+  "evidence_dimensions"
+];
+
+const REVIEWED_EVIDENCE_SOURCE_RUNTIME_REF_FIELDS = [
+  "runtime_hash",
+  "fixture_artifact_hash"
+];
+
+const REVIEWED_EVIDENCE_MANIFEST_FIELDS = [
+  "schema_version",
+  "manifest_state",
+  "internal_only",
+  "aggregate_only",
+  "source_runtime_ref",
+  "evidence_dimensions",
+  "manifest_hash"
+];
+
+const REVIEWED_EVIDENCE_MANIFEST_DIMENSION_FIELDS = [
+  "reviewed_source_evidence_ref",
+  "reviewed_source_evidence_hash",
+  "aggregate_only_scope"
+];
+
+const REVIEWED_EVIDENCE_DIMENSION_FIELDS = [
+  "reviewed_source_evidence_ref",
+  "reviewed_source_evidence_hash",
+  "source_evidence_hash",
+  "aggregate_only_scope",
+  "suppressed_missing_held_windows_clear",
+  "eligible_for_satisfied_representation",
+  "placeholder_evidence",
+  "generated_fixture_evidence",
+  "evidence_satisfied"
 ];
 
 const PROMOTION_BOUNDARY_FIELDS = [
@@ -355,6 +414,16 @@ function diagnosticsEvidenceRef(dimension) {
   return `internal_diagnostics_sufficiency_evidence.${dimension}.2026_06`;
 }
 
+function governedReviewedSourceEvidenceHash(dimension) {
+  return sha256Json({
+    schema_version: REVIEWED_SOURCE_EVIDENCE_HASH_SCHEMA_VERSION,
+    evidence_dimension: dimension,
+    reviewed_source_evidence_ref: diagnosticsEvidenceRef(dimension),
+    aggregate_only_scope: true,
+    reviewed_internal_source_attestation: "governed_diagnostics_sufficiency_evidence_source"
+  });
+}
+
 function dimensionHashFromBoundHashes(
   sourceRuntimeHash,
   sourceFixtureArtifactHash,
@@ -383,6 +452,12 @@ function dimensionHash(sourceRuntime, dimension, sourceEvidenceRef, reviewedSour
     sourceEvidenceRef,
     reviewedSourceEvidenceHash
   );
+}
+
+function reviewedEvidenceManifestHash(manifest) {
+  const withoutHash = clone(manifest);
+  delete withoutHash.manifest_hash;
+  return sha256Json(withoutHash);
 }
 
 function sourceRuntimeRef(sourceRuntime) {
@@ -476,6 +551,16 @@ function reviewedEvidenceEnvelopeGaps(sourceRuntime, reviewedEvidence) {
   if (!reviewedEvidence) return ["reviewed diagnostics source evidence is required"];
   const evidence = asRecord(reviewedEvidence);
   const gaps = [];
+  gaps.push(...collectAllowedFieldsGaps(
+    evidence,
+    new Set(REVIEWED_EVIDENCE_ENVELOPE_FIELDS),
+    "reviewed_diagnostics_source_evidence"
+  ));
+  gaps.push(...collectAllowedFieldsGaps(
+    evidence.source_runtime_ref,
+    new Set(REVIEWED_EVIDENCE_SOURCE_RUNTIME_REF_FIELDS),
+    "reviewed_diagnostics_source_evidence.source_runtime_ref"
+  ));
   if (evidence.schema_version !== REVIEWED_SOURCE_EVIDENCE_SCHEMA_VERSION) {
     gaps.push("reviewed diagnostics source evidence schema_version is invalid");
   }
@@ -497,14 +582,91 @@ function reviewedEvidenceEnvelopeGaps(sourceRuntime, reviewedEvidence) {
   ) {
     gaps.push("reviewed diagnostics source evidence fixture artifact hash must match source runtime");
   }
+  gaps.push(...reviewedEvidenceManifestGaps(sourceRuntime, reviewedEvidence));
   gaps.push(...reviewedEvidenceContentGaps(reviewedEvidence));
   return sanitizeGaps(gaps);
 }
 
-function dimensionGaps(sourceRuntime, reviewedEvidence, dimension) {
-  const detail = asRecord(asRecord(reviewedEvidence).evidence_dimensions)[dimension];
+function reviewedEvidenceManifestGaps(sourceRuntime, reviewedEvidence) {
+  const evidence = asRecord(reviewedEvidence);
+  const manifest = asRecord(evidence.reviewed_evidence_manifest);
   const gaps = [];
-  if (!detail) return [`${dimension} reviewed source evidence is required`];
+  if (!manifest || Object.keys(manifest).length === 0) {
+    return ["reviewed diagnostics source evidence manifest is required"];
+  }
+  gaps.push(...collectAllowedFieldsGaps(
+    manifest,
+    new Set(REVIEWED_EVIDENCE_MANIFEST_FIELDS),
+    "reviewed_diagnostics_source_evidence.reviewed_evidence_manifest"
+  ));
+  gaps.push(...collectAllowedFieldsGaps(
+    manifest.source_runtime_ref,
+    new Set(REVIEWED_EVIDENCE_SOURCE_RUNTIME_REF_FIELDS),
+    "reviewed_diagnostics_source_evidence.reviewed_evidence_manifest.source_runtime_ref"
+  ));
+  if (evidence.reviewed_evidence_manifest_hash !== manifest.manifest_hash) {
+    gaps.push("reviewed diagnostics source evidence manifest hash must match envelope");
+  }
+  if (manifest.manifest_hash !== reviewedEvidenceManifestHash(manifest)) {
+    gaps.push("reviewed diagnostics source evidence manifest hash is invalid");
+  }
+  if (manifest.schema_version !== REVIEWED_SOURCE_EVIDENCE_MANIFEST_SCHEMA_VERSION) {
+    gaps.push("reviewed diagnostics source evidence manifest schema_version is invalid");
+  }
+  if (manifest.manifest_state !== "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_INTERNAL_ONLY") {
+    gaps.push("reviewed diagnostics source evidence manifest state is invalid");
+  }
+  if (manifest.internal_only !== true) {
+    gaps.push("reviewed diagnostics source evidence manifest must be internal-only");
+  }
+  if (manifest.aggregate_only !== true) {
+    gaps.push("reviewed diagnostics source evidence manifest must be aggregate-only");
+  }
+  if (manifest.source_runtime_ref?.runtime_hash !== sourceRuntime?.runtime_hash) {
+    gaps.push("reviewed diagnostics source evidence manifest runtime hash must match source runtime");
+  }
+  if (
+    manifest.source_runtime_ref?.fixture_artifact_hash !==
+    sourceRuntime?.internal_fit_artifact?.artifact_hash
+  ) {
+    gaps.push("reviewed diagnostics source evidence manifest fixture artifact hash must match source runtime");
+  }
+  const manifestDimensions = asRecord(manifest.evidence_dimensions);
+  for (const dimension of REQUIRED_EVIDENCE_DIMENSIONS) {
+    const detail = asRecord(asRecord(evidence.evidence_dimensions)[dimension]);
+    const manifestDetail = asRecord(manifestDimensions[dimension]);
+    gaps.push(...collectAllowedFieldsGaps(
+      manifestDetail,
+      new Set(REVIEWED_EVIDENCE_MANIFEST_DIMENSION_FIELDS),
+      `reviewed_diagnostics_source_evidence.reviewed_evidence_manifest.evidence_dimensions.${dimension}`
+    ));
+    if (manifestDetail.reviewed_source_evidence_ref !== detail.reviewed_source_evidence_ref) {
+      gaps.push(`${dimension} reviewed source evidence ref must match reviewed evidence manifest`);
+    }
+    if (manifestDetail.reviewed_source_evidence_hash !== detail.reviewed_source_evidence_hash) {
+      gaps.push(`${dimension} reviewed source evidence hash must match reviewed evidence manifest`);
+    }
+    if (manifestDetail.aggregate_only_scope !== true) {
+      gaps.push(`${dimension} reviewed evidence manifest aggregate_only_scope must be true`);
+    }
+  }
+  return sanitizeGaps(gaps);
+}
+
+function dimensionGaps(sourceRuntime, reviewedEvidence, dimension) {
+  const detail = asRecord(asRecord(asRecord(reviewedEvidence).evidence_dimensions)[dimension]);
+  const manifestDetail = asRecord(asRecord(
+    asRecord(asRecord(reviewedEvidence).reviewed_evidence_manifest).evidence_dimensions
+  )[dimension]);
+  const gaps = [];
+  if (Object.keys(detail).length === 0) {
+    return [`${dimension} reviewed source evidence is required`];
+  }
+  gaps.push(...collectAllowedFieldsGaps(
+    detail,
+    new Set(REVIEWED_EVIDENCE_DIMENSION_FIELDS),
+    `reviewed_diagnostics_source_evidence.evidence_dimensions.${dimension}`
+  ));
   const sourceEvidenceRef = detail.reviewed_source_evidence_ref;
   const reviewedSourceEvidenceHash = detail.reviewed_source_evidence_hash;
   const expectedRef = diagnosticsEvidenceRef(dimension);
@@ -513,6 +675,15 @@ function dimensionGaps(sourceRuntime, reviewedEvidence, dimension) {
   }
   if (safeHash(reviewedSourceEvidenceHash) === null) {
     gaps.push(`${dimension} reviewed source evidence hash is required`);
+  }
+  if (
+    safeHash(reviewedSourceEvidenceHash) !== null &&
+    reviewedSourceEvidenceHash !== governedReviewedSourceEvidenceHash(dimension)
+  ) {
+    gaps.push(`${dimension} reviewed source evidence hash is not recognized governed reviewed evidence`);
+  }
+  if (reviewedSourceEvidenceHash !== manifestDetail.reviewed_source_evidence_hash) {
+    gaps.push(`${dimension} reviewed source evidence hash must be manifest-bound`);
   }
   if (
     detail.source_evidence_hash !==
@@ -533,6 +704,59 @@ function dimensionGaps(sourceRuntime, reviewedEvidence, dimension) {
     }
   }
   return sanitizeGaps(gaps);
+}
+
+function dimensionMissingEvidenceRequirements(sourceRuntime, reviewedEvidence, dimension) {
+  const detail = asRecord(asRecord(asRecord(reviewedEvidence).evidence_dimensions)[dimension]);
+  const manifestDetail = asRecord(asRecord(
+    asRecord(asRecord(reviewedEvidence).reviewed_evidence_manifest).evidence_dimensions
+  )[dimension]);
+  if (Object.keys(detail).length === 0) {
+    return [
+      "reviewed_source_evidence_ref",
+      "reviewed_source_evidence_hash",
+      "source_evidence_hash",
+      "aggregate_only_scope",
+      "suppressed_missing_held_windows_clear",
+      "eligible_for_satisfied_representation",
+      "evidence_satisfied"
+    ];
+  }
+  const missing = [];
+  const sourceEvidenceRef = detail.reviewed_source_evidence_ref;
+  const reviewedSourceEvidenceHash = detail.reviewed_source_evidence_hash;
+  if (sourceEvidenceRef !== diagnosticsEvidenceRef(dimension)) {
+    missing.push("reviewed_source_evidence_ref");
+  }
+  if (safeHash(reviewedSourceEvidenceHash) === null) {
+    missing.push("reviewed_source_evidence_hash");
+  }
+  if (
+    safeHash(reviewedSourceEvidenceHash) !== null &&
+    reviewedSourceEvidenceHash !== governedReviewedSourceEvidenceHash(dimension)
+  ) {
+    missing.push("reviewed_source_evidence_hash");
+  }
+  if (reviewedSourceEvidenceHash !== manifestDetail.reviewed_source_evidence_hash) {
+    missing.push("reviewed_evidence_manifest_hash");
+  }
+  if (
+    detail.source_evidence_hash !==
+    dimensionHash(sourceRuntime, dimension, sourceEvidenceRef, reviewedSourceEvidenceHash)
+  ) {
+    missing.push("source_evidence_hash");
+  }
+  for (const [field, expected] of Object.entries({
+    aggregate_only_scope: true,
+    suppressed_missing_held_windows_clear: true,
+    eligible_for_satisfied_representation: true,
+    evidence_satisfied: true,
+    placeholder_evidence: false,
+    generated_fixture_evidence: false
+  })) {
+    if (detail[field] !== expected) missing.push(field);
+  }
+  return missing;
 }
 
 function reviewedEvidenceGaps(sourceRuntime, reviewedEvidence) {
@@ -614,9 +838,56 @@ function buildEvidenceSufficiency(dimensions) {
   };
 }
 
+function buildEvidenceReadinessReconciliation(sourceRuntime, reviewedEvidence, sourceGaps, evidenceGaps) {
+  const supplied = Boolean(reviewedEvidence);
+  const sourceRuntimeReady = sourceGaps.length === 0;
+  const envelopeGaps = supplied
+    ? reviewedEvidenceEnvelopeGaps(sourceRuntime, reviewedEvidence)
+    : ["reviewed diagnostics source evidence is required"];
+  const missingByDimension = Object.fromEntries(
+    REQUIRED_EVIDENCE_DIMENSIONS.map((dimension) => [
+      dimension,
+      dimensionMissingEvidenceRequirements(sourceRuntime, reviewedEvidence, dimension)
+    ])
+  );
+  const satisfiedDimensions = REQUIRED_EVIDENCE_DIMENSIONS.filter(
+    (dimension) =>
+      supplied &&
+      sourceRuntimeReady &&
+      envelopeGaps.length === 0 &&
+      missingByDimension[dimension].length === 0
+  );
+  const unsatisfiedDimensions = REQUIRED_EVIDENCE_DIMENSIONS.filter(
+    (dimension) => !satisfiedDimensions.includes(dimension)
+  );
+  const complete =
+    supplied &&
+    sourceRuntimeReady &&
+    envelopeGaps.length === 0 &&
+    unsatisfiedDimensions.length === 0 &&
+    evidenceGaps.length === 0;
+  return {
+    reconciliation_state: complete
+      ? "GOVERNED_REVIEWED_EVIDENCE_COMPLETE"
+      : supplied
+        ? "HOLD_INCOMPLETE_GOVERNED_REVIEWED_EVIDENCE"
+        : "HOLD_MISSING_GOVERNED_REVIEWED_EVIDENCE",
+    governed_reviewed_evidence_supplied: supplied,
+    source_runtime_ready: sourceRuntimeReady,
+    satisfied_dimensions: satisfiedDimensions,
+    unsatisfied_dimensions: unsatisfiedDimensions,
+    missing_evidence_by_dimension: missingByDimension,
+    holding_reasons: complete ? [] : sanitizeGaps([...sourceGaps, ...evidenceGaps])
+  };
+}
+
 function buildSource(sourceRuntime, reviewedEvidence, state, gaps) {
   const ready = state === READY_STATE;
   const dimensions = buildDimensions(sourceRuntime, reviewedEvidence, ready);
+  const sourceGaps = sourceRuntimeGaps(sourceRuntime);
+  const evidenceGaps = reviewedEvidence
+    ? reviewedEvidenceGaps(sourceRuntime, reviewedEvidence)
+    : ["reviewed diagnostics source evidence is required"];
   const source = {
     schema_version:
       CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_SCHEMA_VERSION,
@@ -629,7 +900,7 @@ function buildSource(sourceRuntime, reviewedEvidence, state, gaps) {
     source_class: ready ? SOURCE_CLASS : null,
     generated_at: "2026-06-25T00:00:00.000Z",
     derivation_version: DERIVATION_VERSION,
-    source_bound: sourceRuntimeGaps(sourceRuntime).length === 0,
+    source_bound: sourceGaps.length === 0,
     source_runtime_ref: sourceRuntimeRef(sourceRuntime),
     evidence_state: PACKET_SIDE_EVIDENCE_STATE,
     evidence_class: EVIDENCE_CLASS,
@@ -637,7 +908,7 @@ function buildSource(sourceRuntime, reviewedEvidence, state, gaps) {
     source_version: ready ? SOURCE_VERSION : null,
     source_policy: {
       internal_only: true,
-      aggregate_only: sourceRuntimeGaps(sourceRuntime).length === 0,
+      aggregate_only: sourceGaps.length === 0,
       evidence_source_only: true,
       promotion_authorized: false,
       posterior_interpretation_authorized: false,
@@ -654,6 +925,8 @@ function buildSource(sourceRuntime, reviewedEvidence, state, gaps) {
     evidence_dimensions: dimensions,
     feature_weight_provenance: buildFeatureWeightProvenance(dimensions, ready),
     evidence_sufficiency: buildEvidenceSufficiency(dimensions),
+    evidence_readiness_reconciliation:
+      buildEvidenceReadinessReconciliation(sourceRuntime, reviewedEvidence, sourceGaps, evidenceGaps),
     promotion_boundary: {
       promotion_authorized: false,
       promotion_blocked: true,
@@ -739,9 +1012,43 @@ function packetSideEvidenceHash(evidence) {
   return sha256Json(withoutHash);
 }
 
+function packetProjectionGaps(source) {
+  const record = asRecord(source);
+  const gaps = [...validateShape(record)];
+  if (record.source_state !== READY_STATE) {
+    gaps.push("governed diagnostics source must be ready before packet projection");
+  }
+  const runtimeRef = asRecord(record.source_runtime_ref);
+  const dimensions = asRecord(record.evidence_dimensions);
+  for (const dimension of REQUIRED_EVIDENCE_DIMENSIONS) {
+    const detail = asRecord(dimensions[dimension]);
+    const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    const reviewedSourceEvidenceHash = detail.reviewed_source_evidence_hash;
+    if (reviewedSourceEvidenceHash !== governedReviewedSourceEvidenceHash(dimension)) {
+      gaps.push(`${dimension} reviewed source evidence hash is not recognized for packet projection`);
+    }
+    if (detail.source_evidence_ref !== sourceEvidenceRef) {
+      gaps.push(`${dimension} source evidence ref is invalid for packet projection`);
+    }
+    if (
+      detail.source_evidence_hash !==
+      dimensionHashFromBoundHashes(
+        runtimeRef.runtime_hash,
+        runtimeRef.fixture_artifact_hash,
+        dimension,
+        sourceEvidenceRef,
+        reviewedSourceEvidenceHash
+      )
+    ) {
+      gaps.push(`${dimension} source evidence hash is invalid for packet projection`);
+    }
+  }
+  return sanitizeGaps(gaps);
+}
+
 export function buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source) {
   const record = asRecord(source);
-  if (validateShape(record).length > 0 || record.source_state !== READY_STATE) return null;
+  if (packetProjectionGaps(record).length > 0) return null;
   const runtimeRef = asRecord(record.source_runtime_ref);
   const dimensions = Object.fromEntries(
     PACKET_CONSUMED_DIMENSIONS.map((dimension) => {
@@ -824,7 +1131,9 @@ function hasForbiddenContent(value, path = "source") {
     if (
       path === "source.blocked_uses" ||
       path === "source.required_caveats" ||
-      path === "source.validation_summary.gaps"
+      path === "source.validation_summary.gaps" ||
+      path === "source.evidence_readiness_reconciliation.holding_reasons" ||
+      path.startsWith("source.evidence_readiness_reconciliation.missing_evidence_by_dimension.")
     ) {
       return [];
     }
@@ -838,6 +1147,10 @@ function hasForbiddenContent(value, path = "source") {
         (path.startsWith("source.evidence_dimensions.") && EVIDENCE_DIMENSION_FIELDS.includes(key)) ||
         (path === "source.feature_weight_provenance" && FEATURE_WEIGHT_FIELDS.includes(key)) ||
         (path === "source.evidence_sufficiency" && EVIDENCE_SUFFICIENCY_FIELDS.includes(key)) ||
+        (path === "source.evidence_readiness_reconciliation" &&
+          EVIDENCE_READINESS_RECONCILIATION_FIELDS.includes(key)) ||
+        (path === "source.evidence_readiness_reconciliation.missing_evidence_by_dimension" &&
+          REQUIRED_EVIDENCE_DIMENSIONS.includes(key)) ||
         (path === "source.promotion_boundary" && PROMOTION_BOUNDARY_FIELDS.includes(key)) ||
         (path === "source.feeds" && FEED_FIELDS.includes(key)) ||
         (path === "source.boundary_policy" && BOUNDARY_POLICY_FIELDS.includes(key));
@@ -857,6 +1170,8 @@ function hasForbiddenContent(value, path = "source") {
     path.startsWith("source.blocked_uses[") ||
     path.startsWith("source.required_caveats[") ||
     path.startsWith("source.validation_summary.gaps[") ||
+    path.startsWith("source.evidence_readiness_reconciliation.holding_reasons[") ||
+    path.startsWith("source.evidence_readiness_reconciliation.missing_evidence_by_dimension.") ||
     path === "source.feature_weight_provenance.weight_provenance_version"
   ) {
     return [];
@@ -990,6 +1305,75 @@ function validateShape(source) {
     all_required_evidence_satisfied: ready
   })) {
     if (sufficiency[field] !== expected) gaps.push(`evidence_sufficiency.${field} must be ${expected}`);
+  }
+
+  const reconciliation = asRecord(record.evidence_readiness_reconciliation);
+  gaps.push(...collectRefGaps(
+    reconciliation,
+    EVIDENCE_READINESS_RECONCILIATION_FIELDS,
+    "evidence_readiness_reconciliation"
+  ));
+  const expectedReconciliation = ready
+    ? "GOVERNED_REVIEWED_EVIDENCE_COMPLETE"
+    : reconciliation.governed_reviewed_evidence_supplied === true
+      ? "HOLD_INCOMPLETE_GOVERNED_REVIEWED_EVIDENCE"
+      : "HOLD_MISSING_GOVERNED_REVIEWED_EVIDENCE";
+  if (reconciliation.reconciliation_state !== expectedReconciliation) {
+    gaps.push(`evidence_readiness_reconciliation.reconciliation_state must be ${expectedReconciliation}`);
+  }
+  if (reconciliation.source_runtime_ready !== record.source_bound) {
+    gaps.push("evidence_readiness_reconciliation.source_runtime_ready must match source_bound");
+  }
+  if (!Array.isArray(reconciliation.satisfied_dimensions)) {
+    gaps.push("evidence_readiness_reconciliation.satisfied_dimensions must be an array");
+  }
+  if (!Array.isArray(reconciliation.unsatisfied_dimensions)) {
+    gaps.push("evidence_readiness_reconciliation.unsatisfied_dimensions must be an array");
+  }
+  if (Array.isArray(reconciliation.satisfied_dimensions)) {
+    for (const dimension of reconciliation.satisfied_dimensions) {
+      if (!REQUIRED_EVIDENCE_DIMENSIONS.includes(dimension)) {
+        gaps.push("evidence_readiness_reconciliation.satisfied_dimensions contains invalid dimension");
+      }
+    }
+  }
+  if (Array.isArray(reconciliation.unsatisfied_dimensions)) {
+    for (const dimension of reconciliation.unsatisfied_dimensions) {
+      if (!REQUIRED_EVIDENCE_DIMENSIONS.includes(dimension)) {
+        gaps.push("evidence_readiness_reconciliation.unsatisfied_dimensions contains invalid dimension");
+      }
+    }
+  }
+  const missingByDimension = asRecord(reconciliation.missing_evidence_by_dimension);
+  if (ready) {
+    if (reconciliation.governed_reviewed_evidence_supplied !== true) {
+      gaps.push("evidence_readiness_reconciliation.governed_reviewed_evidence_supplied must be true for ready source");
+    }
+    if (stableStringify(reconciliation.satisfied_dimensions) !== stableStringify(REQUIRED_EVIDENCE_DIMENSIONS)) {
+      gaps.push("evidence_readiness_reconciliation.satisfied_dimensions must match all required dimensions for ready source");
+    }
+    if (stableStringify(reconciliation.unsatisfied_dimensions) !== stableStringify([])) {
+      gaps.push("evidence_readiness_reconciliation.unsatisfied_dimensions must be empty for ready source");
+    }
+    if (stableStringify(reconciliation.holding_reasons) !== stableStringify([])) {
+      gaps.push("evidence_readiness_reconciliation.holding_reasons must be empty for ready source");
+    }
+  }
+  for (const dimension of REQUIRED_EVIDENCE_DIMENSIONS) {
+    if (!Array.isArray(missingByDimension[dimension])) {
+      gaps.push(`evidence_readiness_reconciliation.missing_evidence_by_dimension.${dimension} must be an array`);
+    }
+    if (ready && stableStringify(missingByDimension[dimension]) !== stableStringify([])) {
+      gaps.push(`evidence_readiness_reconciliation.missing_evidence_by_dimension.${dimension} must be empty for ready source`);
+    }
+  }
+  for (const dimension of Object.keys(missingByDimension)) {
+    if (!REQUIRED_EVIDENCE_DIMENSIONS.includes(dimension)) {
+      gaps.push("evidence_readiness_reconciliation.missing_evidence_by_dimension contains invalid dimension");
+    }
+  }
+  if (!Array.isArray(reconciliation.holding_reasons)) {
+    gaps.push("evidence_readiness_reconciliation.holding_reasons must be an array");
   }
 
   const promotion = asRecord(record.promotion_boundary);
