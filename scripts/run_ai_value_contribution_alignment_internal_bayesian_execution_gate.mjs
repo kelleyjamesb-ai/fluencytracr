@@ -11,7 +11,8 @@ import {
 } from "./run_ai_value_contribution_alignment_internal_bayesian_readiness_review.mjs";
 import {
   CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_SCHEMA_VERSION,
-  contributionAlignmentBayesianModelSpecificationHash
+  contributionAlignmentBayesianModelSpecificationHash,
+  validateContributionAlignmentBayesianModelSpecification
 } from "./run_ai_value_contribution_alignment_bayesian_model_specification.mjs";
 import {
   CONTRIBUTION_ALIGNMENT_WEIGHTED_INTERNAL_MODEL_FRAME_SCHEMA_VERSION,
@@ -479,6 +480,10 @@ function hasForbiddenContent(value, path = "gate") {
 function sourceSpecificationGaps(sourceSpecification) {
   const source = asRecord(sourceSpecification);
   const gaps = [];
+  const sourceValidation = validateContributionAlignmentBayesianModelSpecification(source);
+  if (sourceValidation.valid !== true) {
+    gaps.push("source_specification does not pass hardened Bayesian model specification validation");
+  }
   if (source.schema_version !== CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_SCHEMA_VERSION) {
     gaps.push("source_specification.schema_version is invalid");
   }

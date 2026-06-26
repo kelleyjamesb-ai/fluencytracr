@@ -56,6 +56,7 @@ The gate must bind to:
 - the Bayesian Model Specification ready state;
 - the Bayesian Model Specification version;
 - the Bayesian Model Specification hash;
+- passing hardened Bayesian Model Specification validation;
 - the Internal Bayesian Readiness Review ref;
 - the Weighted Internal Model Frame ref;
 - source-bound specified feature weights;

@@ -8,9 +8,11 @@ Schema version:
 
 ## Purpose
 
-Bayesian Model Specification is the internal-only model contract after Internal
-Bayesian Readiness Review. It defines the candidate model family and bounded
-specification placeholders a later execution gate may inspect.
+Bayesian Model Specification is the internal-only statistical design contract
+after Internal Bayesian Readiness Review. It defines the candidate model family,
+hierarchy, estimand, metric alignment rules, likelihood/prior placeholders, data
+adequacy requirements, and posterior-output review prerequisites a later
+execution gate may inspect.
 
 It answers:
 
@@ -80,7 +82,7 @@ The candidate model family is:
 bayesian_hierarchical_difference_in_differences_candidate
 ```
 
-The bounded model contract is:
+The compatibility model contract is:
 
 ```text
 unit_of_analysis=aggregate_measurement_cell_window
@@ -90,9 +92,69 @@ likelihood_specification_state=aggregate_window_likelihood_placeholder_not_execu
 execution_state=not_executed
 ```
 
-These fields are specification placeholders only. They do not run the model,
-calibrate priors, emit posterior output, emit confidence or probability output,
-or create a customer-facing value claim.
+The reviewer-grade statistical design contract adds:
+
+```text
+model_equation_family=hierarchical_difference_in_differences_design_contract
+hierarchy_structure=partial_pooling_candidate_by_expectation_path_workflow_function_and_cohort_context
+unit_of_analysis=aggregate_measurement_cell_window
+treatment_definition=approved_expectation_path_aligned_ai_work_evidence_condition_candidate
+comparison_definition=governed_comparison_condition_or_staggered_rollout_required
+pre_post_window_definition=exact_baseline_and_comparison_milestone_window_alignment_required
+estimand_definition=aggregate selected metric movement aligned to an approved expectation path, compared across pre/post windows and a governed comparison condition, without causality claims
+metric_direction=metric_owner_approved_direction_required_before_execution
+metric_lag_handling=metric_owner_approved_lag_window_required_before_execution
+likelihood_family_placeholder_by_metric_type=normal, binomial/beta-binomial, or Poisson/negative-binomial placeholder by metric type
+weakly_regularizing_prior_placeholder=weakly_regularizing_priors_placeholder_not_calibrated
+missing_suppressed_window_behavior=hold_no_imputation_no_rescue_for_suppressed_held_missing_or_stale_windows
+posterior_diagnostics_required_later=true
+execution_state=not_executed
+```
+
+These fields are statistical design requirements only. They do not run the
+model, calibrate priors, emit posterior output, emit confidence or probability
+output, or create a customer-facing value claim.
+
+## Runtime-Readiness Conditions
+
+The specification requires a later execution gate to verify:
+
+```text
+non_suppressed_aggregate_measurement_cell_windows_only=true
+exact_baseline_comparison_window_alignment_required=true
+same_metric_direction_lag_expectation_path_cohort_workflow_function_identity_required=true
+governed_comparison_group_or_staggered_rollout_design_required_before_did_execution=true
+pre_period_trend_plausibility_check_required_before_posterior_review=true
+rolling_30_day_context_allowed_as_milestone_evidence=false
+imputation_rescue_for_suppressed_held_missing_or_stale_windows_allowed=false
+raw_rows_allowed=false
+identifiers_allowed=false
+query_text_allowed=false
+live_connector_reads_allowed=false
+```
+
+Rolling 30-day context may remain operating context only; it cannot rescue
+missing milestone evidence. Suppressed, held, missing, or stale windows cannot
+be imputed into runtime readiness.
+
+## Posterior-Output Review Conditions
+
+Before any later interpretation or output language, a future review gate must
+require:
+
+```text
+convergence_diagnostics_required=true
+posterior_predictive_checks_required=true
+prior_sensitivity_required=true
+comparison_design_adequacy_review_required=true
+confidence_probability_language_requires_later_explicit_promotion_gate=true
+posterior_output_authorized=false
+confidence_output_authorized=false
+probability_output_authorized=false
+```
+
+No confidence or probability language may appear until a later explicit
+promotion gate authorizes that exact scope.
 
 ## Authorized Next Step
 

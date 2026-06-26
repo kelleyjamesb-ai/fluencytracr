@@ -81,6 +81,9 @@ const TOP_LEVEL_FIELDS = new Set([
   "candidate_model_family",
   "specification_policy",
   "model_contract",
+  "statistical_design_contract",
+  "data_adequacy_requirements",
+  "posterior_output_review_requirements",
   "specified_feature_weights",
   "allowed_next_step",
   "blocked_uses",
@@ -126,6 +129,54 @@ const MODEL_CONTRACT_FIELDS = [
   "prior_specification_state",
   "likelihood_specification_state",
   "execution_state"
+];
+
+const STATISTICAL_DESIGN_CONTRACT_FIELDS = [
+  "model_equation_family",
+  "hierarchy_structure",
+  "unit_of_analysis",
+  "treatment_definition",
+  "comparison_definition",
+  "pre_post_window_definition",
+  "estimand_definition",
+  "metric_direction",
+  "metric_lag_handling",
+  "likelihood_family_placeholder_by_metric_type",
+  "weakly_regularizing_prior_placeholder",
+  "missing_suppressed_window_behavior",
+  "posterior_diagnostics_required_later",
+  "execution_state"
+];
+
+const LIKELIHOOD_FAMILY_PLACEHOLDER_FIELDS = [
+  "continuous_metric",
+  "proportion_metric",
+  "count_metric"
+];
+
+const DATA_ADEQUACY_REQUIREMENT_FIELDS = [
+  "non_suppressed_aggregate_measurement_cell_windows_only",
+  "exact_baseline_comparison_window_alignment_required",
+  "same_metric_direction_lag_expectation_path_cohort_workflow_function_identity_required",
+  "governed_comparison_group_or_staggered_rollout_design_required_before_did_execution",
+  "pre_period_trend_plausibility_check_required_before_posterior_review",
+  "rolling_30_day_context_allowed_as_milestone_evidence",
+  "imputation_rescue_for_suppressed_held_missing_or_stale_windows_allowed",
+  "raw_rows_allowed",
+  "identifiers_allowed",
+  "query_text_allowed",
+  "live_connector_reads_allowed"
+];
+
+const POSTERIOR_OUTPUT_REVIEW_REQUIREMENT_FIELDS = [
+  "convergence_diagnostics_required",
+  "posterior_predictive_checks_required",
+  "prior_sensitivity_required",
+  "comparison_design_adequacy_review_required",
+  "confidence_probability_language_requires_later_explicit_promotion_gate",
+  "posterior_output_authorized",
+  "confidence_output_authorized",
+  "probability_output_authorized"
 ];
 
 const SPECIFIED_FEATURE_WEIGHT_FIELDS = [
@@ -195,9 +246,59 @@ const REQUIRED_BLOCKED_USES = [
 const REQUIRED_CAVEATS = [
   "Bayesian Model Specification authorizes only a later internal execution gate.",
   "This specification does not run Bayesian execution or emit posterior, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
-  "Priors, likelihood, and estimand fields are specification placeholders until a later execution gate promotes exact runtime scope.",
+  "The model equation, hierarchy, estimand, likelihood, prior, data adequacy, and posterior review requirements are non-executing statistical design requirements only.",
   "The specification must remain bound to the Internal Bayesian Readiness Review and Weighted Internal Model Frame refs."
 ];
+
+const STATISTICAL_DESIGN_CONTRACT = {
+  model_equation_family: "hierarchical_difference_in_differences_design_contract",
+  hierarchy_structure:
+    "partial_pooling_candidate_by_expectation_path_workflow_function_and_cohort_context",
+  unit_of_analysis: "aggregate_measurement_cell_window",
+  treatment_definition: "approved_expectation_path_aligned_ai_work_evidence_condition_candidate",
+  comparison_definition: "governed_comparison_condition_or_staggered_rollout_required",
+  pre_post_window_definition: "exact_baseline_and_comparison_milestone_window_alignment_required",
+  estimand_definition:
+    "aggregate_selected_metric_movement_aligned_to_approved_expectation_path_compared_across_pre_post_windows_and_governed_comparison_condition_candidate_no_causality_claim",
+  metric_direction: "metric_owner_approved_direction_required_before_execution",
+  metric_lag_handling: "metric_owner_approved_lag_window_required_before_execution",
+  likelihood_family_placeholder_by_metric_type: {
+    continuous_metric: "normal_likelihood_placeholder_not_executed",
+    proportion_metric: "binomial_or_beta_binomial_likelihood_placeholder_not_executed",
+    count_metric: "poisson_or_negative_binomial_likelihood_placeholder_not_executed"
+  },
+  weakly_regularizing_prior_placeholder:
+    "weakly_regularizing_priors_placeholder_not_calibrated",
+  missing_suppressed_window_behavior:
+    "hold_no_imputation_no_rescue_for_suppressed_held_missing_or_stale_windows",
+  posterior_diagnostics_required_later: true,
+  execution_state: "not_executed"
+};
+
+const DATA_ADEQUACY_REQUIREMENTS = {
+  non_suppressed_aggregate_measurement_cell_windows_only: true,
+  exact_baseline_comparison_window_alignment_required: true,
+  same_metric_direction_lag_expectation_path_cohort_workflow_function_identity_required: true,
+  governed_comparison_group_or_staggered_rollout_design_required_before_did_execution: true,
+  pre_period_trend_plausibility_check_required_before_posterior_review: true,
+  rolling_30_day_context_allowed_as_milestone_evidence: false,
+  imputation_rescue_for_suppressed_held_missing_or_stale_windows_allowed: false,
+  raw_rows_allowed: false,
+  identifiers_allowed: false,
+  query_text_allowed: false,
+  live_connector_reads_allowed: false
+};
+
+const POSTERIOR_OUTPUT_REVIEW_REQUIREMENTS = {
+  convergence_diagnostics_required: true,
+  posterior_predictive_checks_required: true,
+  prior_sensitivity_required: true,
+  comparison_design_adequacy_review_required: true,
+  confidence_probability_language_requires_later_explicit_promotion_gate: true,
+  posterior_output_authorized: false,
+  confidence_output_authorized: false,
+  probability_output_authorized: false
+};
 
 const FORBIDDEN_KEY_PATTERNS = [
   /raw_?rows?/i,
@@ -371,6 +472,16 @@ function sourceFrameRef(sourceFrame, sourceReview) {
 }
 
 function hasForbiddenContent(value, path = "specification") {
+  if (
+    path === "specification.statistical_design_contract" ||
+    path.startsWith("specification.statistical_design_contract.") ||
+    path === "specification.data_adequacy_requirements" ||
+    path.startsWith("specification.data_adequacy_requirements.") ||
+    path === "specification.posterior_output_review_requirements" ||
+    path.startsWith("specification.posterior_output_review_requirements.")
+  ) {
+    return [];
+  }
   if (Array.isArray(value)) {
     return value.flatMap((item, index) => hasForbiddenContent(item, `${path}[${index}]`));
   }
@@ -385,7 +496,14 @@ function hasForbiddenContent(value, path = "specification") {
           path === "specification.specification_policy" ||
           path.startsWith("specification.specified_feature_weights[")
         );
-      if (!safeFalseFlag && FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+      const safeGovernedRequirementField =
+        path === "specification" &&
+        key === "posterior_output_review_requirements";
+      if (
+        !safeFalseFlag &&
+        !safeGovernedRequirementField &&
+        FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))
+      ) {
         gaps.push("specification contains forbidden field name");
         continue;
       }
@@ -532,6 +650,11 @@ function buildSpecification(sourceReview, sourceFrame, state, gaps) {
       likelihood_specification_state: ready ? "aggregate_window_likelihood_placeholder_not_executed" : null,
       execution_state: "not_executed"
     },
+    statistical_design_contract: ready ? clone(STATISTICAL_DESIGN_CONTRACT) : null,
+    data_adequacy_requirements: ready ? clone(DATA_ADEQUACY_REQUIREMENTS) : null,
+    posterior_output_review_requirements: ready
+      ? clone(POSTERIOR_OUTPUT_REVIEW_REQUIREMENTS)
+      : null,
     specified_feature_weights: ready ? buildSpecifiedFeatureWeights(sourceReview) : [],
     allowed_next_step: ready ? READY_NEXT_STEP : HELD_NEXT_STEP,
     blocked_uses: [...REQUIRED_BLOCKED_USES],
@@ -571,6 +694,9 @@ function rejectedSpecification() {
     generated_at: "2026-06-25T00:00:00.000Z",
     derivation_version: DERIVATION_VERSION,
     source_bound: false,
+    statistical_design_contract: null,
+    data_adequacy_requirements: null,
+    posterior_output_review_requirements: null,
     specified_feature_weights: [],
     validation_summary: {
       schema_version: `${CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_SCHEMA_VERSION}_SUMMARY`,
@@ -684,6 +810,45 @@ function collectShapeGaps(specification) {
     execution_state: "not_executed"
   })) {
     if (contract[field] !== expected) gaps.push(`model_contract.${field} is invalid`);
+  }
+
+  if (ready) {
+    const design = asRecord(record.statistical_design_contract);
+    gaps.push(...collectRefGaps(design, STATISTICAL_DESIGN_CONTRACT_FIELDS, "statistical_design_contract"));
+    gaps.push(...collectRefGaps(
+      design.likelihood_family_placeholder_by_metric_type,
+      LIKELIHOOD_FAMILY_PLACEHOLDER_FIELDS,
+      "statistical_design_contract.likelihood_family_placeholder_by_metric_type"
+    ));
+    if (stableStringify(design) !== stableStringify(STATISTICAL_DESIGN_CONTRACT)) {
+      gaps.push("statistical_design_contract must match governed non-executing design contract");
+    }
+
+    const adequacy = asRecord(record.data_adequacy_requirements);
+    gaps.push(...collectRefGaps(adequacy, DATA_ADEQUACY_REQUIREMENT_FIELDS, "data_adequacy_requirements"));
+    if (stableStringify(adequacy) !== stableStringify(DATA_ADEQUACY_REQUIREMENTS)) {
+      gaps.push("data_adequacy_requirements must match governed runtime-readiness conditions");
+    }
+
+    const reviewRequirements = asRecord(record.posterior_output_review_requirements);
+    gaps.push(...collectRefGaps(
+      reviewRequirements,
+      POSTERIOR_OUTPUT_REVIEW_REQUIREMENT_FIELDS,
+      "posterior_output_review_requirements"
+    ));
+    if (stableStringify(reviewRequirements) !== stableStringify(POSTERIOR_OUTPUT_REVIEW_REQUIREMENTS)) {
+      gaps.push("posterior_output_review_requirements must match governed review conditions");
+    }
+  } else {
+    if (record.statistical_design_contract !== null) {
+      gaps.push("statistical_design_contract must be null while held");
+    }
+    if (record.data_adequacy_requirements !== null) {
+      gaps.push("data_adequacy_requirements must be null while held");
+    }
+    if (record.posterior_output_review_requirements !== null) {
+      gaps.push("posterior_output_review_requirements must be null while held");
+    }
   }
 
   const weights = asArray(record.specified_feature_weights);
