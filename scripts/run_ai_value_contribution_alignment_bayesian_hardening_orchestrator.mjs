@@ -158,7 +158,8 @@ const STEP_SUMMARY_FIELDS = new Set([
   "allowed_next_step",
   "promotion_authorized",
   "validation_valid",
-  "validation_gaps"
+  "validation_gaps",
+  "source_hold_report"
 ]);
 
 const ARTIFACT_HASH_FIELDS = new Set([
@@ -218,6 +219,21 @@ const BLOCKED_OUTPUT_FIELDS = [
 const FEED_FIELDS = new Set([
   "posterior_interpretation_specification_gate",
   ...BLOCKED_OUTPUT_FIELDS
+]);
+
+const SOURCE_HOLD_REPORT_FIELDS = new Set([
+  "validation_summary",
+  "evidence_readiness_reconciliation"
+]);
+
+const SOURCE_HOLD_VALIDATION_SUMMARY_FIELDS = new Set([
+  "gaps"
+]);
+
+const SOURCE_HOLD_RECONCILIATION_FIELDS = new Set([
+  "holding_reasons",
+  "unsatisfied_dimensions",
+  "missing_evidence_by_dimension"
 ]);
 
 const REQUIRED_BLOCKED_USES = [
@@ -425,7 +441,29 @@ function promotionAuthorizedOf(step, artifact) {
   return false;
 }
 
-function stepSummary(step, artifact, validation) {
+function sourceHoldReport(step, artifact) {
+  if (step !== "governed_diagnostics_sufficiency_evidence_source" || !artifact) {
+    return null;
+  }
+  const validationSummary = asRecord(artifact.validation_summary);
+  const reconciliation = asRecord(artifact.evidence_readiness_reconciliation);
+  return {
+    validation_summary: {
+      gaps: Array.isArray(validationSummary.gaps) ? [...validationSummary.gaps] : []
+    },
+    evidence_readiness_reconciliation: {
+      holding_reasons: Array.isArray(reconciliation.holding_reasons)
+        ? [...reconciliation.holding_reasons]
+        : [],
+      unsatisfied_dimensions: Array.isArray(reconciliation.unsatisfied_dimensions)
+        ? [...reconciliation.unsatisfied_dimensions]
+        : [],
+      missing_evidence_by_dimension: clone(reconciliation.missing_evidence_by_dimension) ?? {}
+    }
+  };
+}
+
+function stepSummary(step, artifact, validation, options = {}) {
   return {
     step,
     supplied: artifact !== null && artifact !== undefined,
@@ -435,7 +473,10 @@ function stepSummary(step, artifact, validation) {
     allowed_next_step: artifact?.allowed_next_step ?? null,
     promotion_authorized: promotionAuthorizedOf(step, artifact),
     validation_valid: validation?.valid === true,
-    validation_gaps: Array.isArray(validation?.gaps) ? validation.gaps : []
+    validation_gaps: Array.isArray(validation?.gaps) ? validation.gaps : [],
+    source_hold_report: options.includeSourceHoldReport === true
+      ? sourceHoldReport(step, artifact)
+      : null
   };
 }
 
@@ -473,7 +514,8 @@ function defaultExecutionSummary(sourceRuntime) {
     stepSummary(
       "governed_diagnostics_sufficiency_evidence_source",
       chain.governedSource,
-      governedValidation
+      governedValidation,
+      { includeSourceHoldReport: true }
     ),
     stepSummary("diagnostics_evidence_packet", null, null),
     stepSummary("internal_diagnostics_model_adequacy_review", null, null),
@@ -804,9 +846,28 @@ function collectAllowedFieldsGaps(record, fields, label) {
 
 function collectStepSummaryGaps(steps, label) {
   if (!Array.isArray(steps)) return [`${label}.steps must be an array`];
-  return steps.flatMap((step, index) =>
-    collectAllowedFieldsGaps(step, STEP_SUMMARY_FIELDS, `${label}.steps[${index}]`)
-  );
+  return steps.flatMap((step, index) => {
+    const stepLabel = `${label}.steps[${index}]`;
+    const gaps = collectAllowedFieldsGaps(step, STEP_SUMMARY_FIELDS, stepLabel);
+    if (step?.source_hold_report !== null) {
+      gaps.push(...collectAllowedFieldsGaps(
+        step?.source_hold_report,
+        SOURCE_HOLD_REPORT_FIELDS,
+        `${stepLabel}.source_hold_report`
+      ));
+      gaps.push(...collectAllowedFieldsGaps(
+        step?.source_hold_report?.validation_summary,
+        SOURCE_HOLD_VALIDATION_SUMMARY_FIELDS,
+        `${stepLabel}.source_hold_report.validation_summary`
+      ));
+      gaps.push(...collectAllowedFieldsGaps(
+        step?.source_hold_report?.evidence_readiness_reconciliation,
+        SOURCE_HOLD_RECONCILIATION_FIELDS,
+        `${stepLabel}.source_hold_report.evidence_readiness_reconciliation`
+      ));
+    }
+    return gaps;
+  });
 }
 
 function validateAgainstSources(report, options) {

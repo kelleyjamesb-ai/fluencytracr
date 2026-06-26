@@ -77,6 +77,20 @@ allowed_next_step=complete_governed_diagnostics_sufficiency_evidence_source
 The default path must not continue to packet, diagnostics review, promotion
 gate, handoff, or Artifact v1 after the first held gate.
 
+The first default step must also surface the governed diagnostics source's own
+fail-closed hold details without changing the held state:
+
+```text
+default_execution.steps[0].source_hold_report.validation_summary.gaps
+default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation.holding_reasons
+default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation.unsatisfied_dimensions
+default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation.missing_evidence_by_dimension
+```
+
+These fields are explanatory only. They do not create governed diagnostics
+evidence, satisfy a dimension, authorize promotion, or advance the default
+lane.
+
 ## Explicit Governed Path
 
 The explicit governed path may include only these already-created artifacts:

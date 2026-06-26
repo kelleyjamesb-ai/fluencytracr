@@ -68,6 +68,16 @@ const DIMENSIONS = [
   "feature_weight_provenance"
 ];
 
+const MISSING_DIMENSION_REQUIREMENTS = [
+  "reviewed_source_evidence_ref",
+  "reviewed_source_evidence_hash",
+  "source_evidence_hash",
+  "aggregate_only_scope",
+  "suppressed_missing_held_windows_clear",
+  "eligible_for_satisfied_representation",
+  "evidence_satisfied"
+];
+
 const BLOCKED_OUTPUT_FIELDS = [
   "posterior_interpretation",
   "posterior_output",
@@ -362,21 +372,62 @@ test("Bayesian hardening orchestrator confirms default path remains held", () =>
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
       source_runtime: runtime
     });
+  const governedStep = report.default_execution.steps[0];
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
       sourceRuntime: runtime
     });
 
   assert.equal(report.report_state, REPORT_READY_STATE);
+  assert.equal(report.current_state, "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE");
+  assert.equal(report.current_gate, "governed_diagnostics_sufficiency_evidence_source");
+  assert.equal(report.allowed_next_step, DEFAULT_NEXT_STEP);
   assert.equal(report.default_execution.confirmed_held, true);
   assert.equal(report.default_execution.first_blocked_gate, "governed_diagnostics_sufficiency_evidence_source");
   assert.equal(report.default_execution.allowed_next_step, DEFAULT_NEXT_STEP);
-  assert.equal(report.default_execution.steps[1].supplied, false);
-  assert.equal(report.default_execution.steps[1].hash, null);
+  assert.equal(governedStep.step, "governed_diagnostics_sufficiency_evidence_source");
+  assert.equal(governedStep.state, "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE");
+  assert.equal(governedStep.ready, false);
+  assert.equal(governedStep.allowed_next_step, DEFAULT_NEXT_STEP);
+  assert.equal(governedStep.promotion_authorized, false);
+  assert.deepEqual(governedStep.source_hold_report.validation_summary.gaps, [
+    "reviewed diagnostics source evidence is required"
+  ]);
+  assert.deepEqual(
+    governedStep.source_hold_report.evidence_readiness_reconciliation.holding_reasons,
+    ["reviewed diagnostics source evidence is required"]
+  );
+  assert.deepEqual(
+    governedStep.source_hold_report.evidence_readiness_reconciliation.unsatisfied_dimensions,
+    DIMENSIONS
+  );
+  for (const dimension of DIMENSIONS) {
+    assert.deepEqual(
+      governedStep.source_hold_report.evidence_readiness_reconciliation
+        .missing_evidence_by_dimension[dimension],
+      MISSING_DIMENSION_REQUIREMENTS,
+      dimension
+    );
+  }
+  for (const step of report.default_execution.steps.slice(1)) {
+    assert.equal(step.supplied, false, step.step);
+    assert.equal(step.state, null, step.step);
+    assert.equal(step.hash, null, step.step);
+    assert.equal(step.allowed_next_step, null, step.step);
+    assert.equal(step.promotion_authorized, false, step.step);
+    assert.equal(step.source_hold_report, null, step.step);
+  }
   assert.equal(report.verification_status.stopped_at_first_blocked_gate, true);
-  assert.equal(report.allowed_next_step, DEFAULT_NEXT_STEP);
   assert.equal(report.report_policy.promotion_authorized, false);
+  assert.equal(report.promotion_authority.orchestrator_promotion_authorized, false);
+  assert.equal(report.promotion_authority.bayesian_promotion_gate_promotion_authorized, false);
+  assert.equal(report.promotion_authority.non_gate_promotion_authorized, false);
+  assert.equal(report.promotion_authority.only_existing_gate_artifacts_may_authorize_promotion, true);
   assert.equal(report.explicit_governed_path.supplied, false);
+  for (const field of BLOCKED_OUTPUT_FIELDS) {
+    assert.equal(report.blocked_outputs[field], false, `blocked_outputs.${field}`);
+    assert.equal(report.feeds[field], false, `feeds.${field}`);
+  }
   assert.equal(validation.valid, true, validation.gaps.join("; "));
 });
 
@@ -528,6 +579,36 @@ test("Bayesian hardening orchestrator validation fails on invalid supplied expli
   );
 });
 
+test("Bayesian hardening orchestrator does not echo explicit governed source hold text", () => {
+  const path = explicitPromotionPath();
+  const forgedSource = clone(path.governedSource);
+  forgedSource.validation_summary.gaps = [
+    "confidence probability customer roi finance causality productivity person@example.com"
+  ];
+  forgedSource.evidence_readiness_reconciliation.holding_reasons = [
+    "raw rows query text prompt transcript"
+  ];
+  forgedSource.evidence_hash = "0".repeat(64);
+  const input = {
+    source_runtime: path.runtime,
+    explicit_governed_path: {
+      source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
+      source_governed_diagnostics_sufficiency_evidence_source: forgedSource
+    }
+  };
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(input);
+  const explicitGovernedStep = report.explicit_governed_path.steps.find(
+    (step) => step.step === "governed_diagnostics_sufficiency_evidence_source"
+  );
+  const serialized = JSON.stringify(report);
+
+  assert.equal(explicitGovernedStep.source_hold_report, null);
+  assert.equal(serialized.includes("person@example.com"), false);
+  assert.equal(serialized.includes("raw rows query text prompt transcript"), false);
+  assert.equal(report.default_execution.steps[0].source_hold_report !== null, true);
+});
+
 test("Bayesian hardening orchestrator explicit READY validation requires explicitGovernedPath", () => {
   const path = explicitPromotionPath();
   const report =
@@ -626,6 +707,33 @@ test("Bayesian hardening orchestrator rejects forged default execution details a
     "GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_FOR_PACKET_REVIEW";
   forged.default_execution.steps[0].ready = true;
   forged.default_execution.steps[0].validation_valid = true;
+  forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
+      sourceRuntime: runtime
+    });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /default execution.*sourceRuntime|mismatch/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator rejects forged default hold reporting after rehash", () => {
+  const runtime = sourceRuntime();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: runtime
+    });
+  const forged = clone(report);
+  forged.default_execution.steps[0].source_hold_report.validation_summary.gaps = [];
+  forged.default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation
+    .holding_reasons = [];
+  forged.default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation
+    .unsatisfied_dimensions = [];
+  forged.default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation
+    .missing_evidence_by_dimension = {};
   forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
