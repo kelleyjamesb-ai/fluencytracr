@@ -76,6 +76,7 @@ Each satisfied dimension requires:
 
 ```text
 reviewed_source_evidence_ref=internal_diagnostics_sufficiency_evidence.<dimension>.2026_06
+reviewed_source_evidence_hash
 source_evidence_hash
 aggregate_only_scope=true
 suppressed_missing_held_windows_clear=true
@@ -85,12 +86,19 @@ generated_fixture_evidence=false
 evidence_satisfied=true
 ```
 
-The source evidence hash is bound to:
+The reviewed source evidence hash must be a durable hash for explicit
+internal-only reviewed evidence outside the contained runtime fixture. It must
+not be derived only from the runtime hash, fixture artifact hash, dimension
+name, placeholder text, generated fixture defaults, or posterior-like prototype
+values.
+
+The source evidence hash is then bound to:
 
 ```text
 schema_version=FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_2026_06
 evidence_dimension
 source_evidence_ref
+reviewed_source_evidence_hash
 source_runtime_hash
 source_fixture_artifact_hash
 internal_only=true
@@ -114,8 +122,8 @@ evidence_sufficiency.all_required_evidence_satisfied=false
 allowed_next_step=complete_governed_diagnostics_sufficiency_evidence_source
 ```
 
-All evidence dimensions remain unsatisfied and all source evidence hashes remain
-null.
+All evidence dimensions remain unsatisfied, all reviewed source evidence hashes
+remain null, and all source evidence hashes remain null.
 
 ## Ready Output
 
@@ -129,7 +137,8 @@ feeds.diagnostics_evidence_packet=true
 
 That feed only allows the Diagnostics Evidence Packet to accept or reject the
 source in a later update path. It does not feed the Bayesian Promotion Decision
-Gate directly.
+Gate directly and it does not make the reviewed source hash sufficient by
+itself.
 
 The runner also exports a source-to-packet projection helper:
 
@@ -146,6 +155,11 @@ evidence_state=DIAGNOSTICS_SUFFICIENCY_EVIDENCE_GOVERNED_INTERNAL_ONLY
 evidence_class=diagnostics_sufficiency_evidence_only
 promotion_authorized=false
 ```
+
+For each packet-side dimension, the projection carries both
+`reviewed_source_evidence_hash` and `source_evidence_hash`. The packet/review
+path must preserve both hashes so a later Promotion Decision Gate can reject
+missing or forged diagnostics evidence.
 
 If the governed source is held or rejected, the helper returns no packet-side
 evidence. This keeps the default executable path held while giving the next

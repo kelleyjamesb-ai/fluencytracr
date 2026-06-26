@@ -96,7 +96,18 @@ function reviewedSourceEvidenceRef(dimension) {
   return `internal_diagnostics_sufficiency_evidence.${dimension}.2026_06`;
 }
 
-function expectedDimensionHash(runtime, dimension, sourceEvidenceRef) {
+function reviewedSourceEvidenceHash(dimension) {
+  return sha256Json({
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_HASH_2026_06",
+    evidence_dimension: dimension,
+    reviewed_source_evidence_ref: reviewedSourceEvidenceRef(dimension),
+    aggregate_only_scope: true,
+    reviewed_internal_source_attestation: "governed_diagnostics_sufficiency_evidence_source"
+  });
+}
+
+function legacyRuntimeOnlyDimensionHash(runtime, dimension, sourceEvidenceRef) {
   return sha256Json({
     schema_version: "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_2026_06",
     evidence_dimension: dimension,
@@ -109,15 +120,36 @@ function expectedDimensionHash(runtime, dimension, sourceEvidenceRef) {
   });
 }
 
+function expectedDimensionHash(runtime, dimension, sourceEvidenceRef, reviewedHash) {
+  return sha256Json({
+    schema_version: "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_2026_06",
+    evidence_dimension: dimension,
+    source_evidence_ref: sourceEvidenceRef,
+    reviewed_source_evidence_hash: reviewedHash,
+    source_runtime_hash: runtime.runtime_hash,
+    source_fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash,
+    internal_only: true,
+    aggregate_only: true,
+    evidence_satisfied: true
+  });
+}
+
 function governedEvidenceInput(runtime, overrides = {}) {
   const dimensions = Object.fromEntries(
     DIMENSIONS.map((dimension) => {
       const sourceEvidenceRef = reviewedSourceEvidenceRef(dimension);
+      const reviewedHash = reviewedSourceEvidenceHash(dimension);
       return [
         dimension,
         {
           reviewed_source_evidence_ref: sourceEvidenceRef,
-          source_evidence_hash: expectedDimensionHash(runtime, dimension, sourceEvidenceRef),
+          reviewed_source_evidence_hash: reviewedHash,
+          source_evidence_hash: expectedDimensionHash(
+            runtime,
+            dimension,
+            sourceEvidenceRef,
+            reviewedHash
+          ),
           aggregate_only_scope: true,
           suppressed_missing_held_windows_clear: true,
           eligible_for_satisfied_representation: true,
@@ -172,6 +204,7 @@ test("governed diagnostics sufficiency evidence source defaults to unsatisfied h
   assert.equal(source.evidence_sufficiency.all_required_evidence_satisfied, false);
   for (const dimension of DIMENSIONS) {
     assert.equal(source.evidence_dimensions[dimension].evidence_satisfied, false);
+    assert.equal(source.evidence_dimensions[dimension].reviewed_source_evidence_hash, null);
     assert.equal(source.evidence_dimensions[dimension].source_evidence_hash, null);
   }
   for (const feed of FALSE_FEEDS) {
@@ -203,14 +236,47 @@ test("governed diagnostics sufficiency evidence source accepts only explicit gov
   for (const dimension of DIMENSIONS) {
     assert.equal(source.evidence_dimensions[dimension].evidence_satisfied, true);
     assert.equal(
+      source.evidence_dimensions[dimension].reviewed_source_evidence_hash,
+      reviewedSourceEvidenceHash(dimension)
+    );
+    assert.equal(
       source.evidence_dimensions[dimension].source_evidence_hash,
       expectedDimensionHash(
         runtime,
         dimension,
-        reviewedSourceEvidenceRef(dimension)
+        reviewedSourceEvidenceRef(dimension),
+        reviewedSourceEvidenceHash(dimension)
       )
     );
   }
+});
+
+test("governed diagnostics sufficiency evidence source rejects runtime-only self-manufactured hashes", () => {
+  const runtime = sourceRuntime();
+  const sourceEvidenceRefs = governedEvidenceInput(runtime);
+  const dimension = "convergence_diagnostics";
+  const sourceEvidenceRef = reviewedSourceEvidenceRef(dimension);
+  sourceEvidenceRefs.evidence_dimensions[dimension].source_evidence_hash =
+    legacyRuntimeOnlyDimensionHash(runtime, dimension, sourceEvidenceRef);
+
+  const source =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: runtime,
+      reviewed_diagnostics_source_evidence: sourceEvidenceRefs
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
+    source,
+    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+  );
+
+  assert.equal(source.source_state, HOLD_STATE);
+  assert.equal(source.evidence_sufficiency.all_required_evidence_satisfied, false);
+  assert.equal(source.promotion_boundary.promotion_authorized, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /convergence_diagnostics source evidence hash is invalid/.test(gap)),
+    validation.gaps.join("; ")
+  );
 });
 
 test("governed diagnostics sufficiency evidence source feeds packet through hash-bound source", () => {
@@ -291,7 +357,12 @@ test("governed diagnostics sufficiency evidence source rejects placeholder refs 
   const badRef = "placeholder_generated_fixture.convergence_diagnostics.2026_06";
   sourceEvidenceRefs.evidence_dimensions.convergence_diagnostics.reviewed_source_evidence_ref = badRef;
   sourceEvidenceRefs.evidence_dimensions.convergence_diagnostics.source_evidence_hash =
-    expectedDimensionHash(runtime, "convergence_diagnostics", badRef);
+    expectedDimensionHash(
+      runtime,
+      "convergence_diagnostics",
+      badRef,
+      reviewedSourceEvidenceHash("convergence_diagnostics")
+    );
 
   const source =
     buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({

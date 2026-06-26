@@ -92,8 +92,11 @@ source_diagnostics_evidence_packet
 
 When those sources mark diagnostics/model adequacy satisfied, they must be
 backed by a Governed Diagnostics Sufficiency Evidence Source hash and its
-projected diagnostics sufficiency evidence hash. Hand-edited review or packet
-fields without that governed source reference are not promotion sufficient.
+projected diagnostics sufficiency evidence hash. The packet-side evidence must
+also retain the independent `reviewed_source_evidence_hash` behind each
+satisfied comparison-design and model-diagnostics dimension. Hand-edited review
+or packet fields without that governed source reference and reviewed hash are
+not promotion sufficient.
 
 The default emitted evidence packet is held unless a governed diagnostics
 sufficiency evidence source is supplied:

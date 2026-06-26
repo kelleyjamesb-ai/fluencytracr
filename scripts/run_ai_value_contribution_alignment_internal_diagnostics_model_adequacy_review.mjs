@@ -492,11 +492,12 @@ function diagnosticsEvidenceRef(dimension) {
   return `internal_diagnostics_sufficiency_evidence.${dimension}.2026_06`;
 }
 
-function diagnosticsDimensionHash(sourceRuntime, dimension, sourceEvidenceRef) {
+function diagnosticsDimensionHash(sourceRuntime, dimension, sourceEvidenceRef, reviewedSourceEvidenceHash) {
   return sha256Json({
     schema_version: DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SCHEMA_VERSION,
     evidence_dimension: dimension,
     source_evidence_ref: sourceEvidenceRef,
+    reviewed_source_evidence_hash: reviewedSourceEvidenceHash,
     source_runtime_hash: sourceRuntime?.runtime_hash ?? null,
     source_fixture_artifact_hash: sourceRuntime?.internal_fit_artifact?.artifact_hash ?? null,
     internal_only: true,
@@ -571,9 +572,17 @@ function sourceDiagnosticsSufficiencyEvidenceGaps(sourceRuntime, evidence) {
     if (detail.source_evidence_ref !== expectedRef) {
       gaps.push(`source diagnostics sufficiency evidence ${dimension} source_evidence_ref is invalid`);
     }
+    if (safeHash(detail.reviewed_source_evidence_hash) === null) {
+      gaps.push(`source diagnostics sufficiency evidence ${dimension} reviewed_source_evidence_hash is required`);
+    }
     if (
       detail.source_evidence_hash !==
-      diagnosticsDimensionHash(sourceRuntime, dimension, expectedRef)
+      diagnosticsDimensionHash(
+        sourceRuntime,
+        dimension,
+        expectedRef,
+        detail.reviewed_source_evidence_hash
+      )
     ) {
       gaps.push(`source diagnostics sufficiency evidence ${dimension} source_evidence_hash is invalid`);
     }
@@ -629,6 +638,9 @@ function sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(sourceRuntime, s
     }
     if (safeHash(detail.source_evidence_hash) === null) {
       gaps.push(`governed diagnostics sufficiency evidence source ${dimension} source_evidence_hash is required`);
+    }
+    if (safeHash(detail.reviewed_source_evidence_hash) === null) {
+      gaps.push(`governed diagnostics sufficiency evidence source ${dimension} reviewed_source_evidence_hash is required`);
     }
   }
   const sourcePolicy = asRecord(record.source_policy);

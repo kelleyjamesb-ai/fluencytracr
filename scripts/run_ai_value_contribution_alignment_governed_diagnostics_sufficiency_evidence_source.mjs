@@ -115,6 +115,7 @@ const EVIDENCE_DIMENSION_FIELDS = [
   "required",
   "evidence_satisfied",
   "source_evidence_ref",
+  "reviewed_source_evidence_hash",
   "source_evidence_hash",
   "aggregate_only_scope",
   "suppressed_missing_held_windows_clear",
@@ -354,17 +355,34 @@ function diagnosticsEvidenceRef(dimension) {
   return `internal_diagnostics_sufficiency_evidence.${dimension}.2026_06`;
 }
 
-function dimensionHash(sourceRuntime, dimension, sourceEvidenceRef) {
+function dimensionHashFromBoundHashes(
+  sourceRuntimeHash,
+  sourceFixtureArtifactHash,
+  dimension,
+  sourceEvidenceRef,
+  reviewedSourceEvidenceHash
+) {
   return sha256Json({
     schema_version: PACKET_SIDE_EVIDENCE_SCHEMA_VERSION,
     evidence_dimension: dimension,
     source_evidence_ref: sourceEvidenceRef,
-    source_runtime_hash: sourceRuntime?.runtime_hash ?? null,
-    source_fixture_artifact_hash: sourceRuntime?.internal_fit_artifact?.artifact_hash ?? null,
+    reviewed_source_evidence_hash: reviewedSourceEvidenceHash,
+    source_runtime_hash: sourceRuntimeHash ?? null,
+    source_fixture_artifact_hash: sourceFixtureArtifactHash ?? null,
     internal_only: true,
     aggregate_only: true,
     evidence_satisfied: true
   });
+}
+
+function dimensionHash(sourceRuntime, dimension, sourceEvidenceRef, reviewedSourceEvidenceHash) {
+  return dimensionHashFromBoundHashes(
+    sourceRuntime?.runtime_hash ?? null,
+    sourceRuntime?.internal_fit_artifact?.artifact_hash ?? null,
+    dimension,
+    sourceEvidenceRef,
+    reviewedSourceEvidenceHash
+  );
 }
 
 function sourceRuntimeRef(sourceRuntime) {
@@ -488,13 +506,17 @@ function dimensionGaps(sourceRuntime, reviewedEvidence, dimension) {
   const gaps = [];
   if (!detail) return [`${dimension} reviewed source evidence is required`];
   const sourceEvidenceRef = detail.reviewed_source_evidence_ref;
+  const reviewedSourceEvidenceHash = detail.reviewed_source_evidence_hash;
   const expectedRef = diagnosticsEvidenceRef(dimension);
   if (sourceEvidenceRef !== expectedRef) {
     gaps.push(`${dimension} reviewed source evidence ref must be ${expectedRef}`);
   }
+  if (safeHash(reviewedSourceEvidenceHash) === null) {
+    gaps.push(`${dimension} reviewed source evidence hash is required`);
+  }
   if (
     detail.source_evidence_hash !==
-    dimensionHash(sourceRuntime, dimension, sourceEvidenceRef)
+    dimensionHash(sourceRuntime, dimension, sourceEvidenceRef, reviewedSourceEvidenceHash)
   ) {
     gaps.push(`${dimension} source evidence hash is invalid`);
   }
@@ -532,11 +554,15 @@ function buildDimension(sourceRuntime, reviewedEvidence, dimension, ready) {
   const sourceEvidenceRef = typeof detail?.reviewed_source_evidence_ref === "string"
     ? detail.reviewed_source_evidence_ref
     : null;
+  const reviewedSourceEvidenceHash = safeHash(detail?.reviewed_source_evidence_hash);
   return {
     required: true,
     evidence_satisfied: ready,
     source_evidence_ref: ready ? sourceEvidenceRef : null,
-    source_evidence_hash: ready ? dimensionHash(sourceRuntime, dimension, sourceEvidenceRef) : null,
+    reviewed_source_evidence_hash: ready ? reviewedSourceEvidenceHash : null,
+    source_evidence_hash: ready
+      ? dimensionHash(sourceRuntime, dimension, sourceEvidenceRef, reviewedSourceEvidenceHash)
+      : null,
     aggregate_only_scope: ready,
     suppressed_missing_held_windows_clear: ready,
     eligible_for_satisfied_representation: ready,
@@ -726,6 +752,7 @@ export function buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGove
         {
           evidence_satisfied: detail.evidence_satisfied === true,
           source_evidence_ref: sourceEvidenceRef,
+          reviewed_source_evidence_hash: detail.reviewed_source_evidence_hash,
           source_evidence_hash: detail.source_evidence_hash
         }
       ];
@@ -892,6 +919,7 @@ function validateShape(source) {
   }
 
   const dimensions = asRecord(record.evidence_dimensions);
+  const sourceRuntimeRefRecord = asRecord(record.source_runtime_ref);
   for (const dimension of REQUIRED_EVIDENCE_DIMENSIONS) {
     const detail = asRecord(dimensions[dimension]);
     gaps.push(...collectRefGaps(detail, EVIDENCE_DIMENSION_FIELDS, `evidence_dimensions.${dimension}`));
@@ -902,8 +930,27 @@ function validateShape(source) {
     if (ready && safeHash(detail.source_evidence_hash) === null) {
       gaps.push(`evidence_dimensions.${dimension}.source_evidence_hash is required`);
     }
+    if (ready && safeHash(detail.reviewed_source_evidence_hash) === null) {
+      gaps.push(`evidence_dimensions.${dimension}.reviewed_source_evidence_hash is required`);
+    }
     if (!ready && detail.source_evidence_hash !== null) {
       gaps.push(`evidence_dimensions.${dimension}.source_evidence_hash must be null`);
+    }
+    if (!ready && detail.reviewed_source_evidence_hash !== null) {
+      gaps.push(`evidence_dimensions.${dimension}.reviewed_source_evidence_hash must be null`);
+    }
+    if (
+      ready &&
+      detail.source_evidence_hash !==
+        dimensionHashFromBoundHashes(
+          sourceRuntimeRefRecord.runtime_hash,
+          sourceRuntimeRefRecord.fixture_artifact_hash,
+          dimension,
+          detail.source_evidence_ref,
+          detail.reviewed_source_evidence_hash
+        )
+    ) {
+      gaps.push(`evidence_dimensions.${dimension}.source_evidence_hash must bind reviewed evidence hash`);
     }
     for (const [field, expected] of Object.entries({
       aggregate_only_scope: ready,

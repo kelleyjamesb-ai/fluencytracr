@@ -359,6 +359,16 @@ documented value-realization layers:
   interpretation, confidence/probability language, customer-facing output, ROI,
   finance, causality, productivity, persistence, exports, live connectors, UI,
   routes, or schemas.
+- **AI Value contribution alignment governed diagnostics sufficiency evidence
+  source:** provides the internal-only, aggregate-only source contract that may
+  supply diagnostics and comparison-design sufficiency evidence to the
+  Diagnostics Evidence Packet. It holds by default unless each satisfied
+  dimension has an explicit reviewed source evidence ref, an independent
+  reviewed source evidence hash, and a derived source evidence hash bound to the
+  runtime and fixture artifact. It cannot authorize promotion, posterior
+  interpretation, confidence/probability language, customer-facing output, ROI,
+  finance, causality, productivity, persistence, exports, live connectors, UI,
+  routes, or schemas.
 - **AI Value contribution alignment internal diagnostics and model adequacy
   review:** consumes the contained internal Bayesian fixture runtime and reviews
   data adequacy, comparison-design adequacy, and diagnostic placeholder status.
@@ -533,6 +543,7 @@ is not the lead positioning for this repository.
 - AI Value Contribution Alignment Internal Bayesian Execution Runtime: [docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md](docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md)
 - AI Value Contribution Alignment Posterior Output Review Gate: [docs/contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md](docs/contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md)
 - AI Value Contribution Alignment Diagnostics Evidence Packet: [docs/contracts/ai-value-contribution-alignment-diagnostics-evidence-packet/README.md](docs/contracts/ai-value-contribution-alignment-diagnostics-evidence-packet/README.md)
+- AI Value Contribution Alignment Governed Diagnostics Sufficiency Evidence Source: [docs/contracts/ai-value-contribution-alignment-governed-diagnostics-sufficiency-evidence-source/README.md](docs/contracts/ai-value-contribution-alignment-governed-diagnostics-sufficiency-evidence-source/README.md)
 - AI Value Contribution Alignment Internal Diagnostics and Model Adequacy Review: [docs/contracts/ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review/README.md](docs/contracts/ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review/README.md)
 - AI Value Contribution Alignment Bayesian Promotion Decision Gate: [docs/contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md](docs/contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md)
 - AI Value Source Inventory Manifest: [docs/contracts/ai-value-source-inventory-manifest/README.md](docs/contracts/ai-value-source-inventory-manifest/README.md)

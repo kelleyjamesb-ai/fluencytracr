@@ -812,6 +812,9 @@ function sourceDiagnosticsEvidencePacketGaps(packet, review, sourceRuntime) {
     if (detail.evidence_satisfied === true && safeHash(detail.source_evidence_hash) === null) {
       gaps.push(`sourceDiagnosticsEvidencePacket.model_diagnostics_evidence.${packetField} source_evidence_hash is required`);
     }
+    if (detail.evidence_satisfied === true && safeHash(detail.reviewed_source_evidence_hash) === null) {
+      gaps.push(`sourceDiagnosticsEvidencePacket.model_diagnostics_evidence.${packetField} reviewed_source_evidence_hash is required`);
+    }
   }
   if (
     packetComparison.comparison_design_adequacy_satisfied !==
@@ -824,6 +827,12 @@ function sourceDiagnosticsEvidencePacketGaps(packet, review, sourceRuntime) {
     safeHash(packetComparison.source_evidence_hash) === null
   ) {
     gaps.push("sourceDiagnosticsEvidencePacket.comparison_design_evidence source_evidence_hash is required");
+  }
+  if (
+    packetComparison.comparison_design_adequacy_satisfied === true &&
+    safeHash(packetComparison.reviewed_source_evidence_hash) === null
+  ) {
+    gaps.push("sourceDiagnosticsEvidencePacket.comparison_design_evidence reviewed_source_evidence_hash is required");
   }
   if (
     packetFeatureWeights.weights_structural_internal_only !== true ||

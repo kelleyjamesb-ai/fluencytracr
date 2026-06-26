@@ -142,11 +142,23 @@ function diagnosticsEvidenceRef(dimension) {
   return `internal_diagnostics_sufficiency_evidence.${dimension}.2026_06`;
 }
 
-function diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef) {
+function reviewedSourceEvidenceHash(dimension) {
+  return sha256Json({
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_HASH_2026_06",
+    evidence_dimension: dimension,
+    reviewed_source_evidence_ref: diagnosticsEvidenceRef(dimension),
+    aggregate_only_scope: true,
+    reviewed_internal_source_attestation: "governed_diagnostics_sufficiency_evidence_source"
+  });
+}
+
+function diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef, reviewedHash) {
   return sha256Json({
     schema_version: DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SCHEMA_VERSION,
     evidence_dimension: dimension,
     source_evidence_ref: sourceEvidenceRef,
+    reviewed_source_evidence_hash: reviewedHash,
     source_runtime_hash: runtime.runtime_hash,
     source_fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash,
     internal_only: true,
@@ -166,10 +178,17 @@ function governedDiagnosticsSufficiencyEvidence(runtime, overrides = {}) {
     "calibration_backtest"
   ]) {
     const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    const reviewedHash = reviewedSourceEvidenceHash(dimension);
     dimensions[dimension] = {
       evidence_satisfied: true,
       source_evidence_ref: sourceEvidenceRef,
-      source_evidence_hash: diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef)
+      reviewed_source_evidence_hash: reviewedHash,
+      source_evidence_hash: diagnosticsDimensionHash(
+        runtime,
+        dimension,
+        sourceEvidenceRef,
+        reviewedHash
+      )
     };
   }
   const evidence = {
@@ -212,9 +231,16 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
     "feature_weight_provenance"
   ]) {
     const sourceEvidenceRef = diagnosticsEvidenceRef(dimension);
+    const reviewedHash = reviewedSourceEvidenceHash(dimension);
     dimensions[dimension] = {
       reviewed_source_evidence_ref: sourceEvidenceRef,
-      source_evidence_hash: diagnosticsDimensionHash(runtime, dimension, sourceEvidenceRef),
+      reviewed_source_evidence_hash: reviewedHash,
+      source_evidence_hash: diagnosticsDimensionHash(
+        runtime,
+        dimension,
+        sourceEvidenceRef,
+        reviewedHash
+      ),
       aggregate_only_scope: true,
       suppressed_missing_held_windows_clear: true,
       eligible_for_satisfied_representation: true,
@@ -547,7 +573,16 @@ test("diagnostics evidence packet can mark diagnostics satisfied only from gover
     );
     assert.equal(
       packet.model_diagnostics_evidence[field].source_evidence_hash,
-      diagnosticsDimensionHash(runtime, dimension, diagnosticsEvidenceRef(dimension))
+      diagnosticsDimensionHash(
+        runtime,
+        dimension,
+        diagnosticsEvidenceRef(dimension),
+        reviewedSourceEvidenceHash(dimension)
+      )
+    );
+    assert.equal(
+      packet.model_diagnostics_evidence[field].reviewed_source_evidence_hash,
+      reviewedSourceEvidenceHash(dimension)
     );
   }
   assert.equal(packet.evidence_sufficiency.model_diagnostics_satisfied, true);

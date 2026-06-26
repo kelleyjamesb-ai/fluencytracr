@@ -87,7 +87,9 @@ source_diagnostics_sufficiency_evidence_ref
 Direct packet-side sufficiency sidecars are not sufficient for satisfied
 diagnostics/model adequacy evidence. They must be supplied through the governed
 source contract so the review can bind the source artifact hash. The review does
-not calculate diagnostics or embed raw diagnostic records.
+not calculate diagnostics or embed raw diagnostic records. Satisfied dimensions
+must preserve both the independent `reviewed_source_evidence_hash` and the
+derived `source_evidence_hash`; a runtime-only derived hash is not sufficient.
 
 ## Required Review Dimensions
 

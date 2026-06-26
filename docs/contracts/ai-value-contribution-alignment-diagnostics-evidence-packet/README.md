@@ -89,10 +89,12 @@ source_governed_diagnostics_sufficiency_evidence_source_ref
 ```
 
 The packet then derives a packet-side evidence projection from the governed
-source. The projection must hash-bind each satisfied evidence dimension to the
-source runtime hash and fixture artifact hash. The packet copies only sanitized
-source evidence references and hashes; it does not embed raw diagnostic records
-or create model diagnostics.
+source. The projection must carry both the independent
+`reviewed_source_evidence_hash` and the derived `source_evidence_hash`; the
+derived hash binds each satisfied evidence dimension to the reviewed source
+hash, source runtime hash, and fixture artifact hash. The packet copies only
+sanitized source evidence references and hashes; it does not embed raw
+diagnostic records or create model diagnostics.
 
 Direct packet-side sufficiency sidecars are not sufficient for satisfied
 diagnostics evidence. They must be supplied through the governed source
