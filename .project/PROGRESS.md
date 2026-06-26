@@ -2,6 +2,26 @@
 
 ## Last Completed
 
+- AI Value Contribution Alignment Internal Bayesian Execution Gate slice
+  (2026-06-25): implemented the next governed phase after Bayesian Model
+  Specification. The gate binds to the specification id/hash, Internal Bayesian
+  Readiness Review ref, Weighted Internal Model Frame ref, and governed feature
+  weights; records aggregate-only runtime prerequisites; and authorizes only
+  `internal_bayesian_execution_runtime_only`. It does not run Bayesian
+  execution, emit posterior output, confidence output, probability output,
+  score-like output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, live connectors, or customer-facing output. It
+  requires a later posterior/output review gate before any confidence or
+  probability language can appear. Local CODE / BUG / ADVERSARIAL review
+  confirmed the ready sample keeps only the runtime feed true, keeps
+  execution/posterior/confidence/probability/customer output false, and rejects
+  forged execution after rehash. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `npm run run:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `npm run test:ai-value-contribution-alignment-bayesian-model-specification`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Bayesian Model Specification slice
   (2026-06-25): implemented the next governed phase after Internal Bayesian
   Readiness Review. The specification binds to the readiness review id/hash and

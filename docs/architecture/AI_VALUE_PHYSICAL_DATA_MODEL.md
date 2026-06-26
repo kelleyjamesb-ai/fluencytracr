@@ -888,6 +888,19 @@ execution, emit posterior output, confidence output, probability output,
 score-like output, finance output, ROI, causality, productivity, persistence,
 routes, UI, schemas, exports, live connectors, or customer-facing output.
 
+The executable
+[AI Value Contribution Alignment Internal Bayesian Execution Gate](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-gate/README.md)
+is the internal-only gate after Bayesian Model Specification. It binds to the
+specification id/hash, readiness-review ref, weighted-frame ref, and governed
+feature weights, then records aggregate-only runtime prerequisites for a later
+internal deterministic runtime implementation. It may feed only a later
+`internal_bayesian_execution_runtime_only` contract and requires a later
+posterior/output review gate before any confidence or probability language. It
+does not run Bayesian execution, emit posterior output, confidence output,
+probability output, score-like output, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output.
+
 Blocked design:
 
 - no standalone `ai_fluency_psychological_scores` table;
