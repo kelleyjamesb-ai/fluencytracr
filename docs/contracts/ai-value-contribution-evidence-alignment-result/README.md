@@ -129,10 +129,10 @@ selected_metric_ref=<reviewer-approved selected aggregate metric ref>
 selected_metric_id=<approved aggregate metric id>
 expected_movement_direction=<increase | decrease | maintain | directional_review_required>
 approved_expectation_path_ref=<reviewer-approved expectation path ref>
-milestone_windows=<T0/T30/T60/T90/T120 aggregate window refs>
+planning_milestone_windows=<T0/T30/T60/T90/T120/T180/T270/T365 aggregate planning window refs>
 said_evidence_refs=<AI Fluency aggregate and Blueprint hypothesis refs>
 unsaid_behavioral_evidence_refs=<aggregate behavioral/workflow evidence refs>
-aggregate_outcome_measurement_cell_refs=<aggregate Measurement Cell refs>
+aggregate_outcome_measurement_cell_refs=<aggregate Measurement Cell refs for supported milestone days or HOLD_FOR_MILESTONE_RECONCILIATION>
 suppression_missing_held_status=<CLEAR | HELD | SUPPRESSED | MISSING | MISALIGNED>
 comparison_condition_status=<READY_FOR_REVIEW | HOLD_FOR_REVIEW | MISSING | MISALIGNED>
 source_package_refs=<reviewer-owned source package refs or HOLD>
@@ -180,7 +180,14 @@ performance inference.
 
 Outcome movement must be represented through aggregate Measurement Cell refs
 bound to the approved selected metric, expected movement direction, expectation
-path, cohort, workflow/function identity, and milestone windows.
+path, cohort, workflow/function identity, and milestone windows supported by
+the current Measurement Cell contract.
+
+The expanded T0/T30/T60/T90/T120/T180/T270/T365 schedule is recognized here as
+planning context only. Milestone days that are not supported by the current
+Measurement Cell or Measurement Cell Series contracts must remain
+`HOLD_FOR_MILESTONE_RECONCILIATION`; they must not be fabricated, coerced into
+existing milestone days, or treated as diagnostics evidence.
 
 Required posture fields:
 
@@ -280,10 +287,13 @@ refs are missing, held, suppressed, stale, or not aligned to the approved grain.
 `HELD_FOR_MISSING_OUTCOME_EVIDENCE` means selected-metric Measurement Cell refs
 or aggregate outcome movement posture are missing or not reviewer-owned.
 
-`HELD_FOR_SUPPRESSED_OR_MISALIGNED_WINDOWS` means any required T0, T30, T60,
-T90, or T120 milestone window is missing, suppressed, held, stale, out of order,
-or not aligned to the same selected metric, expectation path, cohort,
-workflow/function identity, and Measurement Cell grain.
+`HELD_FOR_SUPPRESSED_OR_MISALIGNED_WINDOWS` means any required planning
+milestone window in T0, T30, T60, T90, T120, T180, T270, or T365 is missing,
+suppressed, held, stale, out of order, or not aligned to the same selected
+metric, expectation path, cohort, and workflow/function identity. For milestone
+days supported by the current Measurement Cell contract, the aligned
+Measurement Cell grain must also match. Unsupported milestone days remain held
+for milestone reconciliation.
 
 `DIRECTIONALLY_ALIGNED_INTERNAL_ONLY` means said evidence, unsaid evidence, and
 aggregate outcome movement refs share the same pre-approved direction label for
@@ -446,8 +456,9 @@ Model review remains separate and requires governed diagnostics evidence.
 It may say:
 
 ```text
-The result is held because the selected-metric Measurement Cell refs are
-missing or misaligned for one or more milestone windows.
+The result is held because selected-metric Measurement Cell refs are missing or
+misaligned for supported milestone windows, or because one or more planning
+milestones still require milestone reconciliation.
 ```
 
 It must not say:
@@ -544,11 +555,14 @@ The result must be held unless all of the following are true:
 - Blueprint hypothesis ref is present and reviewer-owned;
 - selected metric is reviewer-approved;
 - expected movement direction is derived from the approved expectation path;
-- T0, T30, T60, T90, and T120 milestone window refs are present;
+- T0, T30, T60, T90, T120, T180, T270, and T365 planning milestone window
+  refs are present;
 - said evidence refs are aggregate-only and reviewer-owned;
 - unsaid behavioral evidence refs are aggregate-only and reviewer-owned;
 - aggregate outcome Measurement Cell refs exist for the selected metric and
-  milestone windows;
+  milestone windows supported by the current Measurement Cell contract;
+- unsupported planning milestone days are explicitly held for milestone
+  reconciliation and are not fabricated;
 - suppression, missing, held, stale, and misalignment checks are clear;
 - comparison condition status is not missing or misaligned;
 - source package refs are present when the next step requires source-package
@@ -575,7 +589,7 @@ unsaid_evidence_state=PRESENT_AGGREGATE_REVIEWED_REFS
 outcome_movement_state=MISSING
 comparison_design_posture=SOURCE_PACKAGE_IN_PREPARATION
 model_eligibility_status=HELD_FOR_EVIDENCE_GAPS
-customer_safe_interpretation=The aggregate stated and behavioral refs are present, but selected-metric Measurement Cell refs are missing for one or more milestone windows. Model-review input remains held.
+customer_safe_interpretation=The aggregate stated and behavioral refs are present, but selected-metric Measurement Cell refs are missing for supported milestone windows or planning milestones still require reconciliation. Model-review input remains held.
 allowed_next_step=complete_missing_evidence_alignment_inputs
 customer_publishable=false
 promotion_authorized=false
@@ -619,11 +633,13 @@ not valid input to the Governed Diagnostics Sufficiency Evidence Source.
 ## Relationship To Existing Contracts
 
 - Blueprint Hypothesis Measurement Mapping owns the upstream planning logic for
-  selected metric, expected direction, lag context, and milestone windows.
+  selected metric, expected direction, lag context, and planning milestone
+  windows.
 - The Comparison Design Source Package Intake Template collects reviewer-owned
   comparison-design inputs. It remains a template and does not create evidence.
 - Measurement Cell owns aggregate grain and source alignment for selected
-  metric movement.
+  metric movement only for milestone days supported by the current Measurement
+  Cell contracts.
 - Comparison Design Adequacy Evidence Review owns whether a real reviewed
   comparison-design source package can satisfy that single dimension.
 - Governed Diagnostics Sufficiency Evidence Source owns seven-dimension

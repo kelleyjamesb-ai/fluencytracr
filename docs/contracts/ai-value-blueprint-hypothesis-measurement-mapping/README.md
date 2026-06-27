@@ -219,12 +219,18 @@ T30
 T60
 T90
 T120
+T180_6_month
+T270_9_month
+T365_12_month
 ```
 
-This T0/T30/T60/T90/T120 planning schedule is scoped to this docs-only
-comparison-design preparation contract. It does not alter any existing
-Measurement Cell, Measurement Cell Series, persistence, or research-promotion
-milestone contract that uses a different governed sequence.
+This T0/T30/T60/T90/T120/T180/T270/T365 planning schedule is scoped to this
+docs-only comparison-design preparation contract. It does not alter any
+existing Measurement Cell, Measurement Cell Series, persistence, or
+research-promotion milestone contract that uses a different governed sequence.
+In particular, T120 and T270 are planning milestones only unless a later
+governed contract explicitly reconciles them to a Measurement Cell or Series
+milestone-day contract.
 It cannot feed Measurement Cell Series, evidence continuity, Bayesian research
 planning, diagnostics evidence, promotion gates, or Artifact v1 unless a later
 governed slice reconciles the schedule to the applicable contract.
@@ -237,7 +243,7 @@ source_blueprint_hypothesis_ref=<Blueprint hypothesis ref>
 selected_metric_id=<approved aggregate metric id>
 approved_expectation_path_ref=<approved expectation path ref>
 baseline_window=<aggregate baseline window ref>
-milestone_windows=<T0/T30/T60/T90/T120 aggregate window refs>
+milestone_windows=<T0/T30/T60/T90/T120/T180/T270/T365 aggregate window refs>
 window_alignment_state=<ALIGNED_FOR_INTAKE | HOLD_FOR_WINDOW_REVIEW>
 suppression_missing_held_review_state=<CLEAR | HOLD_FOR_SUPPRESSED_MISSING_HELD_WINDOW_REVIEW>
 staleness_review_state=<CURRENT | HOLD_FOR_STALE_WINDOW_REVIEW>
