@@ -207,9 +207,13 @@ Data-collection readiness state:
 READY_FOR_AGGREGATE_DATA_COLLECTION_PLANNING_ONLY
 ```
 
-The next slice must still define how future aggregate data collection is
-planned, reviewed, and held without creating data, evidence, connector
-execution, persistence, export behavior, or a customer-facing readout.
+The next contract defines how future aggregate data collection is planned,
+reviewed, and held without creating data, evidence, connector execution,
+persistence, export behavior, or a customer-facing readout:
+
+```text
+docs/contracts/ai-value-aggregate-data-collection-planning-contract/README.md
+```
 
 ## Source Binding
 
@@ -278,15 +282,15 @@ The Bayesian gate-derived next step remains:
 complete_governed_diagnostics_sufficiency_evidence_source
 ```
 
-## Exact Next Bounded Implementation Slice
+## Downstream Planning Contract
 
-The exact next bounded implementation slice is:
+The downstream planning contract is:
 
 ```text
 Aggregate Data Collection Planning Contract
 ```
 
-That slice should define the internal-only, aggregate-only planning contract for
+That contract defines the internal-only, aggregate-only planning contract for
 future aggregate data collection against a reviewer-approved measurement plan.
 It must not connect live systems, create evidence, assess evidence, satisfy
 diagnostics, authorize Bayesian promotion, create routes, schemas, persistence,

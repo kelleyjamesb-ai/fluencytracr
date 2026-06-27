@@ -2,6 +2,42 @@
 
 ## Last Completed
 
+- Aggregate Data Collection Planning Contract slice (2026-06-27): added the
+  bounded internal-only, aggregate-only planning contract and runner after the
+  Reviewer-Approved Measurement Plan Contract. The contract validates a
+  reviewer-approved measurement plan against its source recommendation plan,
+  requires a reviewed aggregate collection plan with collection owner, aggregate
+  source posture, source-system posture, aggregate export manifest plan,
+  Measurement Cell binding plan, T0/T30/T60/T90/T120/T180/T270/T365 planned
+  collection windows, suppression/missing/held precheck, privacy/raw-data/live
+  connector exclusion attestations, reviewer decision, and
+  `APPROVED_FOR_AGGREGATE_COLLECTION_PLANNING`. Ready state is
+  `AGGREGATE_DATA_COLLECTION_PLANNING_READY_FOR_COMPARISON_DESIGN_SOURCE_PACKAGE_PREPARATION`;
+  allowed next step is `prepare_comparison_design_source_package_only`. The
+  contract creates no aggregate data, observed data, evidence, evidence
+  assessment, comparison-design source package, diagnostics satisfaction,
+  comparison_design_adequacy satisfaction, Bayesian readiness, promotion,
+  posterior interpretation, confidence/probability output, ROI, finance,
+  causality, productivity, customer-facing economic output, live connector,
+  route, UI, schema, persistence, export, raw-row, identifier, query-text,
+  prompt, transcript, person-level, individual-scoring, or team-scoring path.
+  CODE / BUG / ADVERSARIAL review found and this slice fixed ready validation
+  gaps for missing collection-plan bindings, incomplete source measurement-plan
+  projection binding, unsafe projection text, non-reviewed provenance
+  laundering after recomputed hashes, extra top-level side-door fields, and
+  unknown held-state / mismatched next-step acceptance. The Bayesian chain
+  remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; gate-derived
+  next step remains `complete_governed_diagnostics_sufficiency_evidence_source`.
+  Verification passed:
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
 - Reviewer-Approved Measurement Plan Contract slice (2026-06-27): added the
   bounded Blueprint-to-Approved Measurement Plan spine contract and runner that
   parks the product path after a reviewer/customer-approved selected metric and
