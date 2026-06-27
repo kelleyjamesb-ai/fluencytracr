@@ -2,6 +2,47 @@
 
 ## Last Completed
 
+- Comparison Design Source Package Preparation Binding slice (2026-06-27):
+  added the bounded internal-only, aggregate-only, source-ref-only preparation
+  artifact and runner after the Aggregate Data Collection Planning Contract.
+  The preparation binding validates the Reviewer-Approved Measurement Plan
+  Contract and Aggregate Data Collection Planning Contract against their source
+  inputs, hash-binds both upstream artifacts, projects the approved Blueprint
+  hypothesis ref, selected metric, metric family, measurement unit, expected
+  direction, lag, milestone windows T0/T30/T60/T90/T120/T180/T270/T365,
+  baseline source posture, comparison condition, cohort identity,
+  workflow/function identity, aggregate Measurement Cell grain, suppression
+  precheck posture, aggregate collection-plan posture, forbidden input
+  boundaries, blocked claims, reviewer collection checklist, reviewer role
+  placeholder, and review decision placeholder. Ready state is
+  `COMPARISON_DESIGN_SOURCE_PACKAGE_PREPARATION_READY_FOR_REVIEWER_COLLECTION`;
+  allowed next step is
+  `collect_reviewer_owned_comparison_design_source_package_only`. The artifact
+  creates no source package, reviewed evidence, evidence satisfaction,
+  comparison_design_adequacy satisfaction, diagnostics sufficiency, Bayesian
+  readiness, promotion, posterior interpretation, confidence/probability
+  output, ROI, finance, causality, productivity, customer-facing economic
+  output, live connector, route, UI, schema, persistence, export, raw-row,
+  identifier, query-text, prompt, transcript, person-level, individual-scoring,
+  or team-scoring path. CODE / BUG / ADVERSARIAL review found and this slice
+  fixed arbitrary top-level laundering fields, extra nested false-gate and feed
+  keys, checklist laundering, aggregate collection posture drift, planned
+  collection window drift, held nested reviewer-collection readiness, docs
+  attestation wording, shared-object aliasing, and approved milestone-window
+  drift. The Bayesian chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; gate-derived
+  next step remains `complete_governed_diagnostics_sufficiency_evidence_source`.
+  Verification passed:
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
 - Aggregate Data Collection Planning Contract slice (2026-06-27): added the
   bounded internal-only, aggregate-only planning contract and runner after the
   Reviewer-Approved Measurement Plan Contract. The contract validates a

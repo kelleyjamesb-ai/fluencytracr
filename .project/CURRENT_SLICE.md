@@ -1,23 +1,21 @@
 # Current Slice Contract
 
-- Work item id: `ai-value-aggregate-data-collection-planning-contract`
-- Title: `Aggregate Data Collection Planning Contract`
+- Work item id: `ai-value-comparison-design-source-package-preparation-binding`
+- Title: `Comparison Design Source Package Preparation Binding`
 - Status: `completed`
 
 ## Summary
 
-Add the bounded planning-only contract after the Reviewer-Approved Measurement
-Plan Contract so FluencyTracr can prepare for future aggregate data collection
-against an approved measurement plan without pretending aggregate data, evidence,
-comparison-design adequacy, diagnostics sufficiency, or Bayesian readiness
-already exists.
+Add the bounded preparation-only artifact after the Aggregate Data Collection
+Planning Contract so FluencyTracr can carry a reviewer-approved measurement
+plan and aggregate collection planning posture into the checklist needed before
+future reviewer-owned comparison-design source package collection.
 
 ## Scope Paths
 
-- `docs/contracts/ai-value-aggregate-data-collection-planning-contract/README.md`
-- `docs/contracts/ai-value-reviewer-approved-measurement-plan-contract/README.md`
-- `scripts/run_ai_value_aggregate_data_collection_planning_contract.mjs`
-- `scripts/validate_ai_value_aggregate_data_collection_planning_contract.test.mjs`
+- `docs/contracts/ai-value-comparison-design-source-package-preparation-binding/README.md`
+- `scripts/run_ai_value_comparison_design_source_package_preparation_binding.mjs`
+- `scripts/validate_ai_value_comparison_design_source_package_preparation_binding.test.mjs`
 - `package.json`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
@@ -25,11 +23,10 @@ already exists.
 ## Key Boundaries
 
 - Internal-only, aggregate-only, source-ref-only, fail-closed.
-- Metric recommendations and reviewer-approved measurement plans remain
-  planning inputs, not evidence.
-- Aggregate data collection planning does not create or observe aggregate data.
-- The slice does not create evidence, assess evidence, satisfy
-  `comparison_design_adequacy`, satisfy diagnostics evidence, feed Bayesian
+- The preparation artifact is not reviewer attestation, not reviewed evidence,
+  not a collected source package, and not comparison-design adequacy.
+- It does not create evidence, assess evidence, satisfy diagnostics evidence,
+  complete the Governed Diagnostics Sufficiency Evidence Source, feed Bayesian
   promotion, or authorize promotion.
 - Posterior interpretation, confidence/probability output, ROI, finance,
   causality, productivity, customer-facing economic output, live connectors,
@@ -39,6 +36,7 @@ already exists.
 
 ## Completed Checks
 
+- `npm run test:ai-value-comparison-design-source-package-preparation-binding`
 - `npm run test:ai-value-aggregate-data-collection-planning-contract`
 - `npm run test:ai-value-reviewer-approved-measurement-plan-contract`
 - `npm run test:ai-value-hypothesis-to-metric-recommendation`
@@ -50,11 +48,10 @@ already exists.
 
 ## Next Handoff Note
 
-The exact next bounded slice is `Comparison Design Source Package Preparation
-Binding`. It should bind the existing comparison-design intake/source-package
-preparation path to the validated Reviewer-Approved Measurement Plan Contract
-and Aggregate Data Collection Planning Contract without creating evidence,
-satisfying `comparison_design_adequacy`, running diagnostics, authorizing
-Bayesian promotion, creating live connectors/routes/UI/schemas/persistence/
-exports, or emitting confidence/probability, ROI, finance, causality,
-productivity, economic, or customer-facing economic output.
+The exact next bounded slice is `Reviewer-Owned Comparison Design Source
+Package Collection`. It should collect or bind a reviewer-owned
+comparison-design source package against the preparation binding without
+creating synthetic evidence, satisfying `comparison_design_adequacy`, running
+diagnostics, authorizing Bayesian promotion, creating live connectors/routes/
+UI/schemas/persistence/exports, or emitting confidence/probability, ROI,
+finance, causality, productivity, economic, or customer-facing economic output.
