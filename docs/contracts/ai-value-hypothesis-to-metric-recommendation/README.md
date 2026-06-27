@@ -42,6 +42,8 @@ persistence, exports, or live connectors be created?
 Submitted Blueprint hypothesis
 -> Hypothesis-to-Metric Recommendation and Milestone Planning
 -> reviewer/customer selected metric approval
+-> Reviewer-Approved Measurement Plan Contract
+-> Aggregate Data Collection Planning Contract
 -> Comparison Design Source Package Intake Template
 -> Comparison Design Adequacy Evidence Review
 -> Governed Diagnostics Sufficiency Evidence Source
@@ -179,6 +181,11 @@ local_planning_next_action=prepare_reviewer_metric_selection_draft_only
 
 This local action is not metric approval, not evidence creation, and not
 comparison-design adequacy.
+
+The later reviewer-approved measurement plan contract may represent approval of
+one selected metric only when it binds back to a validated recommendation plan
+and the selected metric matches the source candidate recommendation. The
+recommendation itself remains planning input and remains `recommendation_is_evidence=false`.
 
 ## Direction And Lag
 

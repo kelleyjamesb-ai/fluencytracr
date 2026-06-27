@@ -2,6 +2,45 @@
 
 ## Last Completed
 
+- Reviewer-Approved Measurement Plan Contract slice (2026-06-27): added the
+  bounded Blueprint-to-Approved Measurement Plan spine contract and runner that
+  parks the product path after a reviewer/customer-approved selected metric and
+  measurement plan, while keeping it separate from observed aggregate data,
+  EvidenceAssessment, comparison-design adequacy, diagnostics evidence,
+  Bayesian readiness, and any customer-facing economic claim. The roadmap
+  principle is now explicit: FluencyTracr should lock what was agreed to be
+  measured before asking what aggregate data may show later. The contract binds
+  to a validated
+  Hypothesis-to-Metric Recommendation plan, requires the selected metric to
+  match the source candidate recommendation, requires reviewer-owned approval
+  refs, rejects draft/local/pending/generated/fixture/template/runtime-only/
+  source-hash-only provenance, and requires milestone windows T0/T30/T60/T90/
+  T120/T180/T270/T365. The ready state is
+  `REVIEWER_APPROVED_MEASUREMENT_PLAN_READY_FOR_AGGREGATE_DATA_COLLECTION_PLANNING`;
+  the allowed next step is `aggregate_data_collection_planning_only`; the data
+  readiness state is `READY_FOR_AGGREGATE_DATA_COLLECTION_PLANNING_ONLY`.
+  Candidate recommendations remain planning inputs only, draft selection remains
+  separate from approval, approved measurement plans remain not observed data,
+  and MeasurementSpec / MetricSpec remain not Bayesian readiness. The Bayesian
+  chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; diagnostics
+  evidence satisfaction, comparison_design_adequacy satisfaction, Bayesian
+  promotion, posterior interpretation, confidence/probability output, ROI,
+  finance, causality, productivity, economic/customer-facing economic output,
+  live connectors, routes, UI, schemas, persistence, exports, raw rows,
+  identifiers, query text, prompts, transcripts, person-level data, individual
+  scoring, and team scoring all remain blocked. CODE / BUG / ADVERSARIAL review
+  found and this slice fixed approval-field routing, blocked-output language
+  smuggling in refs, stale/suppressed/held/misaligned milestone refs, nested
+  recomputed-hash side doors, held suppression precheck forgery, missing direct
+  source-hash tamper coverage, and adjacent docs that skipped the aggregate data
+  collection planning stop before comparison-design intake. Verification passed:
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`.
 - Comparison Design Source Package Review slice (2026-06-27): added a bounded
   review-only posture to the existing AI Contribution Reporting Spine frontend
   view model and shared Journey / Workspace / Readout panel. The review path

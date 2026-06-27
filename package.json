@@ -170,6 +170,8 @@
     "test:ai-value-hypothesis-to-metric-recommendation": "npm run build --workspace shared && node --test scripts/validate_ai_value_hypothesis_to_metric_recommendation.test.mjs",
     "run:ai-value-contribution-reporting-spine": "npm run build --workspace shared && node scripts/run_ai_value_contribution_reporting_spine.mjs",
     "test:ai-value-contribution-reporting-spine": "npm run build --workspace shared && node --test scripts/validate_ai_value_contribution_reporting_spine.test.mjs",
+    "run:ai-value-reviewer-approved-measurement-plan-contract": "npm run build --workspace shared && node scripts/run_ai_value_reviewer_approved_measurement_plan_contract.mjs",
+    "test:ai-value-reviewer-approved-measurement-plan-contract": "npm run build --workspace shared && node --test scripts/validate_ai_value_reviewer_approved_measurement_plan_contract.test.mjs",
     "run:ai-value-saved-fixture-pilot": "npm run run:ai-value-controlled-pilot-evidence-package",
     "test:ai-value-saved-fixture-pilot": "npm run test:ai-value-controlled-pilot-evidence-package",
     "test:ai-value-operator-intake-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_operator_intake_adapter.test.mjs",

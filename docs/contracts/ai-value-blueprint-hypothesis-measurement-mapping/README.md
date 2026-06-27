@@ -46,6 +46,8 @@ Bayesian Promotion Decision Gate.
 Submitted Blueprint hypothesis
 -> Blueprint Hypothesis Measurement Mapping
 -> reviewer-approved selected metric / expectation path / milestone plan
+-> Reviewer-Approved Measurement Plan Contract
+-> Aggregate Data Collection Planning Contract
 -> Comparison Design Source Package Intake Template
 -> Comparison Design Adequacy Evidence Review
 -> Governed Diagnostics Sufficiency Evidence Source
@@ -66,6 +68,16 @@ complete_governed_diagnostics_sufficiency_evidence_source
 This mapping contract does not complete that step. It only defines the planning
 inputs that must exist before later governed comparison-design evidence can be
 reviewed.
+
+The direct next implementation layer for data-readiness parking is:
+
+```text
+docs/contracts/ai-value-reviewer-approved-measurement-plan-contract/README.md
+```
+
+That contract is where reviewer/customer approval is represented. It can make a
+future aggregate data-collection plan possible, but it is still not observed
+data, evidence assessment, comparison-design adequacy, or Bayesian readiness.
 
 ## Non-Authorization
 
@@ -169,7 +181,7 @@ selected_measurement_unit=<aggregate unit label>
 metric_owner_role_ref=<role ref only, no person name>
 baseline_value_source_ref=<reviewed aggregate source ref or HOLD>
 comparison_condition_ref=<reviewer-approved comparison condition ref or HOLD>
-approval_state=<APPROVED_FOR_COMPARISON_DESIGN_INTAKE | HOLD_FOR_REVIEW>
+approval_state=<APPROVED_FOR_AGGREGATE_DATA_COLLECTION_PLANNING | HOLD_FOR_REVIEW>
 approval_role_ref=<reviewer role ref only, no person name>
 ```
 
@@ -193,7 +205,7 @@ expected_movement_direction=<increase | decrease | maintain | directional_review
 expected_lag_definition=<reviewer-approved aggregate lag context or none>
 direction_derivation_notes=<why the direction follows from the approved hypothesis>
 lag_derivation_notes=<why the lag context is appropriate for this workflow>
-approval_state=<APPROVED_FOR_COMPARISON_DESIGN_INTAKE | HOLD_FOR_REVIEW>
+approval_state=<APPROVED_FOR_AGGREGATE_DATA_COLLECTION_PLANNING | HOLD_FOR_REVIEW>
 ```
 
 The direction and lag fields are descriptive review context. They must not be
@@ -266,7 +278,7 @@ baseline_source_type=<customer-owned aggregate export | reviewed aggregate fixtu
 baseline_window_ref=<T0 baseline window ref>
 baseline_metric_id=<selected metric id>
 baseline_aggregate_scope=<aggregate-only scope>
-baseline_review_state=<APPROVED_FOR_COMPARISON_DESIGN_INTAKE | HOLD_FOR_BASELINE_REVIEW>
+baseline_review_state=<APPROVED_FOR_AGGREGATE_DATA_COLLECTION_PLANNING | HOLD_FOR_BASELINE_REVIEW>
 ```
 
 Forbidden baseline inputs:
@@ -324,10 +336,16 @@ If any prerequisite is missing, stale, suppressed, held, misaligned, or
 unapproved, the Comparison Design Source Package Intake Template must remain a
 draft and the Comparison Design Adequacy Evidence Review must hold.
 
-## Handoff Into Comparison Design Source Package Intake Template
+## Handoff Into Aggregate Data Collection Planning
 
-After reviewers approve the mapping, the following fields may be copied into a
-separate reviewer-owned comparison-design source package draft:
+After reviewers approve the mapping, the Reviewer-Approved Measurement Plan
+Contract may unlock the bounded Aggregate Data Collection Planning Contract.
+That planning contract must still hold on missing, stale, suppressed, held, or
+misaligned aggregate data collection posture before any comparison-design source
+package is prepared.
+
+Only after that planning step is complete may the following fields be copied
+into a separate reviewer-owned comparison-design source package draft:
 
 ```text
 metric_direction_and_lag.metric_id

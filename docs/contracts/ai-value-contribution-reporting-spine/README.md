@@ -18,6 +18,7 @@ that lets FluencyTracr guide a customer-facing workflow from:
 Blueprint hypothesis
 -> candidate metric recommendations
 -> reviewer-approved measurement plan posture
+-> reviewer-approved measurement plan contract
 -> evidence alignment status
 -> evidence gaps / next evidence action
 -> existing AI Value Journey / Workspace / Readout integration
@@ -33,6 +34,7 @@ route, schema, persistence path, export, or live connector.
 ```text
 Blueprint Hypothesis Measurement Mapping
 -> Hypothesis-to-Metric Recommendation and Milestone Planning
+-> Reviewer-Approved Measurement Plan Contract
 -> AI Contribution Reporting Spine
 -> Existing AI Value Journey / Workspace Reporting Integration
 ```
@@ -110,12 +112,23 @@ approval_role_ref
 The required approval state is:
 
 ```text
-APPROVED_FOR_COMPARISON_DESIGN_INTAKE
+APPROVED_FOR_AGGREGATE_DATA_COLLECTION_PLANNING
 ```
 
 Expected direction and lag must come from the approved Blueprint hypothesis /
 expectation path. Placeholder direction or lag keeps the spine held for
 expectation-path approval.
+
+The product-level approval posture should now map to the bounded
+Reviewer-Approved Measurement Plan Contract:
+
+```text
+docs/contracts/ai-value-reviewer-approved-measurement-plan-contract/README.md
+```
+
+That contract can unlock `aggregate_data_collection_planning_only`. It does not
+mean observed aggregate data exists, evidence assessment has passed,
+comparison-design adequacy is satisfied, or Bayesian/model review is ready.
 
 ## Milestone Measurement Planning
 
