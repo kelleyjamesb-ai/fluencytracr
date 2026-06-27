@@ -1021,7 +1021,7 @@ describe("AIValueJourney", () => {
       included: /accepted aggregate Median resolution time evidence/i,
       held: /Realized ROI, causality, productivity, and individual scoring stay out/i,
       owner: /Support Operations and the sponsor/i,
-      action: /Review the caveated readout with accepted evidence/i,
+      action: /Review the caveated report with accepted evidence/i,
       caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i
     },
     {
@@ -1049,9 +1049,9 @@ describe("AIValueJourney", () => {
       held: /Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review/i,
       owner: /Support Operations/i,
       action: /Ask Support Operations for an aggregate Median resolution time export/i,
-      caveat: /Missing evidence keeps the readout in planning status/i
+      caveat: /Missing evidence keeps the report in planning status/i
     }
-  ])("previews the executive readout share workflow for $state evidence", async ({
+  ])("previews the executive report share workflow for $state evidence", async ({
     state,
     status,
     included,
@@ -1073,8 +1073,8 @@ describe("AIValueJourney", () => {
       expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
     });
 
-    const preview = screen.getByRole("region", { name: /Executive readout preview/i });
-    expect(within(preview).getByRole("heading", { name: /Executive Readout Preview/i })).toBeInTheDocument();
+    const preview = screen.getByRole("region", { name: /Executive report preview/i });
+    expect(within(preview).getByRole("heading", { name: /Executive Report Preview/i })).toBeInTheDocument();
     expect(within(preview).getByText(status)).toBeInTheDocument();
     expect(within(preview).getByText(included)).toBeInTheDocument();
     expect(within(preview).getByText(held)).toBeInTheDocument();
@@ -1082,7 +1082,7 @@ describe("AIValueJourney", () => {
     expect(within(preview).getByText(action)).toBeInTheDocument();
     expect(within(preview).getByText(caveat)).toBeInTheDocument();
 
-    fireEvent.click(within(preview).getByRole("button", { name: /Open executive readout/i }));
+    fireEvent.click(within(preview).getByRole("button", { name: /Open executive report/i }));
     await waitFor(() => {
       expect(open).toHaveBeenCalledWith("blob:readout-preview", "_blank", "noopener");
     });
@@ -1275,8 +1275,8 @@ describe("AIValueJourney", () => {
 
     preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
     expect(within(preview).getAllByText(/Hold value language/i).length).toBeGreaterThan(0);
-    expect(within(preview).getByText(/Value-readout owner/i)).toBeInTheDocument();
-    expect(within(preview).getByText(/ROI Scenario Readiness and Executive Operating Packet/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/Value report owner/i)).toBeInTheDocument();
+    expect(within(preview).getByText(/Evidence Checkpoint and Executive Report/i)).toBeInTheDocument();
     expect(within(preview).getByText(/Blocked language, reviewed caveats, and unresolved evidence gaps/i)).toBeInTheDocument();
     expect(within(preview).getByText(/Prepare a hold-language handoff before sponsor sharing/i)).toBeInTheDocument();
     expect(within(preview).getByText(/Holding value language prevents unsupported ROI, causality, or productivity claims/i)).toBeInTheDocument();
@@ -1309,7 +1309,7 @@ describe("AIValueJourney", () => {
     const bundle = within(decision).getByRole("region", { name: /Copy-ready decision handoff/i });
     expect(within(bundle).getByText(/Copy-ready handoff/i)).toBeInTheDocument();
     expect(within(bundle).getByText(/Selected move: Hold value language/i)).toBeInTheDocument();
-    expect(within(bundle).getByText(/Owner: Value-readout owner/i)).toBeInTheDocument();
+    expect(within(bundle).getByText(/Owner: Value report owner/i)).toBeInTheDocument();
     expect(within(bundle).getByText(/Safe next action: Prepare a hold-language handoff before sponsor sharing/i)).toBeInTheDocument();
     expect(within(bundle).getByText(/No task is created; this is a local handoff draft/i)).toBeInTheDocument();
 
@@ -1320,7 +1320,7 @@ describe("AIValueJourney", () => {
         expect.stringContaining("Selected move: Hold value language")
       );
     });
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Owner: Value-readout owner"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Owner: Value report owner"));
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("Safe next action: Prepare a hold-language handoff before sponsor sharing")
     );
