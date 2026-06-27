@@ -10,6 +10,12 @@ import {
   contributionAlignmentInternalBayesianExecutionRuntimeHash,
   validateContributionAlignmentInternalBayesianExecutionRuntime
 } from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
+import {
+  REQUIRED_APPROVED_MEASUREMENT_PLAN_MILESTONES
+} from "./run_ai_value_reviewer_approved_measurement_plan_contract.mjs";
+import {
+  REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTION_SCHEMA_VERSION
+} from "./run_ai_value_reviewer_owned_comparison_design_source_package_collection.mjs";
 
 export const CONTRIBUTION_ALIGNMENT_COMPARISON_DESIGN_ADEQUACY_EVIDENCE_REVIEW_SCHEMA_VERSION =
   "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_COMPARISON_DESIGN_ADEQUACY_EVIDENCE_REVIEW_2026_06";
@@ -35,6 +41,10 @@ const REJECT_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
 
 const SOURCE_PACKAGE_READY_STATE =
   "COMPARISON_DESIGN_ADEQUACY_SOURCE_PACKAGE_REVIEWED_INTERNAL_ONLY";
+const REVIEWER_OWNED_COLLECTION_READY_STATE =
+  "REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY";
+const REVIEWER_OWNED_COLLECTION_READY_NEXT_STEP =
+  "run_comparison_design_adequacy_evidence_review_only";
 const REVIEW_CLASS = "comparison_design_adequacy_evidence_review_only";
 const REVIEW_VERSION = "comparison_design_adequacy_evidence_review_2026_06";
 const HELD_NEXT_STEP = "complete_governed_diagnostics_sufficiency_evidence_source";
@@ -74,6 +84,140 @@ const SOURCE_PACKAGE_FIELDS = new Set([
   "generated_fixture_evidence",
   "source_package_hash"
 ]);
+
+const REVIEWER_OWNED_COLLECTION_SCALAR_FIELDS = [
+  "reviewer_owned_source_package_ref",
+  "reviewer_owned_source_package_hash",
+  "source_comparison_design_source_package_preparation_hash",
+  "source_blueprint_hypothesis_ref",
+  "business_function",
+  "prioritized_use_case",
+  "workflow",
+  "workflow_step",
+  "cohort",
+  "metric",
+  "evidence_source",
+  "observation_window",
+  "governance_state",
+  "treatment_group_definition",
+  "comparison_group_definition",
+  "rollout_or_comparison_design_type",
+  "baseline_source_posture",
+  "comparison_condition",
+  "baseline_window",
+  "comparison_window",
+  "expected_movement_direction",
+  "expected_lag_definition",
+  "metric_direction_lag_confirmation_ref",
+  "approved_expectation_path_blueprint_hypothesis_binding_ref",
+  "cohort_identity_confirmation_ref",
+  "workflow_function_identity_confirmation_ref",
+  "aggregate_measurement_cell_grain_confirmation_ref",
+  "aggregate_measurement_cell_grain",
+  "suppression_missing_held_window_review",
+  "reviewer_role_ref",
+  "review_decision",
+  "collection_hash"
+];
+
+const REQUIRED_REVIEWER_OWNED_BOUNDARY_CHECKS = [
+  "raw_rows_absent",
+  "identifiers_absent",
+  "query_text_absent",
+  "prompts_transcripts_absent",
+  "person_level_data_absent",
+  "causality_claim_absent",
+  "roi_finance_productivity_claims_absent",
+  "confidence_probability_output_absent",
+  "live_connector_persistence_export_authorization_absent",
+  "cross_slice_aggregation_prohibition_clear"
+];
+
+const REVIEWER_OWNED_COLLECTION_FALSE_FIELDS = [
+  "reviewed_evidence_created",
+  "creates_evidence",
+  "evidence_satisfied",
+  "comparison_design_adequacy_satisfied",
+  "diagnostics_evidence_satisfied",
+  "governed_diagnostics_sufficiency_evidence_source_complete",
+  "posterior_interpretation_authorized",
+  "promotion_authorized"
+];
+
+const REVIEWER_OWNED_COLLECTION_FALSE_OUTPUT_FIELDS = [
+  "posterior_interpretation",
+  "posterior_output",
+  "confidence_output",
+  "probability_output",
+  "score_like_output",
+  "customer_facing_output",
+  "customer_facing_economic_output",
+  "economic_output",
+  "roi_output",
+  "finance_output",
+  "causality_output",
+  "productivity_output",
+  "live_connector_execution",
+  "route_creation",
+  "ui_creation",
+  "schema_creation",
+  "persistence_write",
+  "export_creation",
+  "raw_rows",
+  "identifiers",
+  "query_text",
+  "prompts",
+  "transcripts",
+  "person_level_data",
+  "individual_scoring",
+  "team_scoring"
+];
+
+const REVIEWER_OWNED_COLLECTION_FALSE_FEED_FIELDS = [
+  "comparison_design_adequacy_evidence_review",
+  "governed_diagnostics_sufficiency_evidence_source",
+  "diagnostics_evidence_packet",
+  "bayesian_promotion_decision_gate",
+  "posterior_interpretation_specification_gate",
+  "live_connector_execution",
+  "route_or_ui_creation",
+  "schema_persistence_or_export_creation"
+];
+
+const REVIEWER_OWNED_COLLECTION_REQUIRED_BLOCKED_CLAIMS = [
+  "source_package_collection_is_not_evidence_assessment",
+  "reviewer_owned_package_is_not_reviewed_evidence",
+  "reviewer_owned_package_is_not_comparison_design_adequacy",
+  "preferred_defaults_are_not_reviewer_owned_facts",
+  "blueprint_hypothesis_is_source_of_truth",
+  "sed_is_stated_evidence_posture_only",
+  "vbd_is_observed_behavioral_evidence_posture_only",
+  "business_metrics_are_downstream_outcome_evidence_posture_only",
+  "diagnostics_sufficiency_satisfaction",
+  "bayesian_promotion",
+  "posterior_interpretation",
+  "confidence_output",
+  "probability_output",
+  "roi_output",
+  "finance_output",
+  "economic_output",
+  "causality_claim",
+  "productivity_output",
+  "customer_facing_economic_output",
+  "raw_rows",
+  "identifiers",
+  "query_text",
+  "prompts",
+  "transcripts",
+  "person_level_data",
+  "individual_or_team_scoring",
+  "live_connector_execution",
+  "route_creation",
+  "ui_creation",
+  "schema_creation",
+  "persistence_write",
+  "export_creation"
+];
 
 const SOURCE_RUNTIME_REF_FIELDS = [
   "runtime_hash",
@@ -265,8 +409,10 @@ const REQUIRED_CAVEATS = [
 
 const FORBIDDEN_KEY_PATTERNS = [
   /raw_?rows?/i,
+  /raw_?row/i,
   /^rows$/i,
   /^records$/i,
+  /identifier/i,
   /query_?text/i,
   /\bsql\b/i,
   /prompt/i,
@@ -297,6 +443,8 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /https?:\/\//i,
   /secret:\/\//i,
   /raw[_-\s]?rows?/i,
+  /\b(?:user_id|employee_id|person_level|person-level|identifier)\b/i,
+  /\b(?:prompt|transcript)\b/i,
   /query[_-\s]?text/i,
   /payload_json/i,
   /feature[_-\s]?table/i,
@@ -311,6 +459,11 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /\bcaused\b/i,
   /\bproductivity\b/i
 ];
+
+const NON_REVIEWED_PROVENANCE_PATTERN =
+  /(?:^|[\s_.-])(?:draft|local|pending|generated|fixture|template|runtime(?:_only|-only)?|source(?:_hash_only|-hash-only)|hash(?:_only|-only)|example|default)(?:$|[\s_.-])/i;
+const NON_READY_WINDOW_REF_PATTERN =
+  /(?:^|[\s_.-])(?:stale|suppressed|held|hold|misaligned|missing)(?:$|[\s_.-])/i;
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
@@ -343,6 +496,15 @@ function sanitizeGaps(gaps) {
 
 function safeHash(value) {
   return typeof value === "string" && /^[0-9a-f]{64}$/.test(value) ? value : null;
+}
+
+function safeCollectionScalar(value) {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  if (FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(raw))) return null;
+  if (NON_REVIEWED_PROVENANCE_PATTERN.test(raw)) return null;
+  return raw;
 }
 
 function sourceRuntimeFromInput(input) {
@@ -391,25 +553,51 @@ export function contributionAlignmentComparisonDesignAdequacySourcePackageHash(s
   return sha256Json(sourcePackageHashBody(sourcePackage));
 }
 
+function collectionHashBody(collection) {
+  const withoutHash = clone(collection);
+  delete withoutHash.collection_hash;
+  return withoutHash;
+}
+
+function reviewerOwnedCollectionHash(collection) {
+  return sha256Json(collectionHashBody(collection));
+}
+
+function isReviewerOwnedCollection(sourcePackage) {
+  const record = asRecord(sourcePackage);
+  return (
+    record.schema_version ===
+      REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTION_SCHEMA_VERSION ||
+    record.artifact_class === "reviewer_owned_comparison_design_source_package_collection"
+  );
+}
+
 function reviewedSourceEvidenceHash(sourcePackage) {
   return sha256Json({
     schema_version: REVIEWED_SOURCE_EVIDENCE_HASH_SCHEMA_VERSION,
     evidence_dimension: "comparison_design_adequacy",
     reviewed_source_evidence_ref: EXPECTED_REVIEWED_SOURCE_EVIDENCE_REF,
-    source_package_hash: contributionAlignmentComparisonDesignAdequacySourcePackageHash(sourcePackage),
+    reviewer_owned_source_package_ref: sourcePackage?.reviewer_owned_source_package_ref ?? null,
+    reviewer_owned_source_package_hash: sourcePackage?.reviewer_owned_source_package_hash ?? null,
+    reviewer_owned_collection_hash: sourcePackage?.collection_hash ?? null,
+    source_comparison_design_source_package_preparation_hash:
+      sourcePackage?.source_comparison_design_source_package_preparation_hash ?? null,
     aggregate_only_scope: true,
     review_decision: "APPROVED_FOR_GOVERNED_DIAGNOSTICS_SOURCE_BINDING"
   });
 }
 
-function sourceEvidenceHash(sourceRuntime, sourcePackage) {
+function sourceEvidenceHash(sourcePackage) {
   return sha256Json({
     schema_version: DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SCHEMA_VERSION,
     evidence_dimension: "comparison_design_adequacy",
     source_evidence_ref: EXPECTED_REVIEWED_SOURCE_EVIDENCE_REF,
     reviewed_source_evidence_hash: reviewedSourceEvidenceHash(sourcePackage),
-    source_runtime_hash: sourceRuntime?.runtime_hash ?? null,
-    source_fixture_artifact_hash: sourceRuntime?.internal_fit_artifact?.artifact_hash ?? null,
+    reviewer_owned_source_package_ref: sourcePackage?.reviewer_owned_source_package_ref ?? null,
+    reviewer_owned_source_package_hash: sourcePackage?.reviewer_owned_source_package_hash ?? null,
+    reviewer_owned_collection_hash: sourcePackage?.collection_hash ?? null,
+    source_comparison_design_source_package_preparation_hash:
+      sourcePackage?.source_comparison_design_source_package_preparation_hash ?? null,
     internal_only: true,
     aggregate_only: true,
     evidence_satisfied: true
@@ -562,11 +750,182 @@ function suppressionReviewGaps(review) {
   return gaps;
 }
 
+function objectKeysExactGaps(record, requiredFields, label) {
+  const value = asRecord(record);
+  const gaps = [];
+  for (const field of requiredFields) {
+    if (!Object.prototype.hasOwnProperty.call(value, field)) {
+      gaps.push(`${label}.${field} is required`);
+    }
+  }
+  for (const field of Object.keys(value)) {
+    if (!requiredFields.includes(field)) {
+      gaps.push(`${label}.${field} is not allowed`);
+    }
+  }
+  return gaps;
+}
+
+function falseObjectGaps(record, requiredFields, label) {
+  const gaps = objectKeysExactGaps(record, requiredFields, label);
+  const value = asRecord(record);
+  for (const field of requiredFields) {
+    if (value[field] !== false) gaps.push(`${label}.${field} must be false`);
+  }
+  return gaps;
+}
+
+function blockedClaimsGaps(claims) {
+  if (!Array.isArray(claims)) return ["blocked_claims must be an array"];
+  const gaps = [];
+  const allowed = new Set(REVIEWER_OWNED_COLLECTION_REQUIRED_BLOCKED_CLAIMS);
+  const seen = new Set();
+  for (const claim of claims) {
+    if (typeof claim !== "string") {
+      gaps.push("blocked_claims entries must be scalar strings");
+      continue;
+    }
+    if (!allowed.has(claim)) {
+      gaps.push(`blocked_claims contains unexpected claim:${claim}`);
+    }
+    if (seen.has(claim)) gaps.push(`blocked_claims contains duplicate claim:${claim}`);
+    seen.add(claim);
+  }
+  for (const claim of REVIEWER_OWNED_COLLECTION_REQUIRED_BLOCKED_CLAIMS) {
+    if (!seen.has(claim)) gaps.push(`blocked_claims missing required claim:${claim}`);
+  }
+  return gaps;
+}
+
+function reviewerOwnedCollectionGaps(sourcePackage) {
+  if (!sourcePackage) return ["reviewer-owned comparison-design source package collection is required"];
+  if (!isReviewerOwnedCollection(sourcePackage)) {
+    return ["comparison design source evidence must be reviewer-owned package collection"];
+  }
+  const record = asRecord(sourcePackage);
+  const gaps = [];
+  if (
+    record.schema_version !==
+    REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTION_SCHEMA_VERSION
+  ) {
+    gaps.push("reviewer-owned collection schema_version is invalid");
+  }
+  if (record.artifact_class !== "reviewer_owned_comparison_design_source_package_collection") {
+    gaps.push("reviewer-owned collection artifact_class is invalid");
+  }
+  if (record.collection_state !== REVIEWER_OWNED_COLLECTION_READY_STATE) {
+    gaps.push("reviewer-owned collection is not ready for adequacy review");
+  }
+  if (record.allowed_next_step !== REVIEWER_OWNED_COLLECTION_READY_NEXT_STEP) {
+    gaps.push("reviewer-owned collection allowed_next_step is not adequacy review");
+  }
+  for (const [field, expected] of Object.entries({
+    internal_only: true,
+    aggregate_only: true,
+    source_ref_only: true,
+    fail_closed: true,
+    reviewer_owned_package_collection_only: true,
+    source_package_collected: true
+  })) {
+    if (record[field] !== expected) gaps.push(`${field} must be ${expected}`);
+  }
+  for (const field of REVIEWER_OWNED_COLLECTION_FALSE_FIELDS) {
+    if (record[field] !== false) gaps.push(`${field} must be false`);
+  }
+  for (const field of REVIEWER_OWNED_COLLECTION_SCALAR_FIELDS) {
+    if (safeCollectionScalar(record[field]) === null) {
+      gaps.push(`${field} must be a scalar string`);
+    }
+  }
+  for (const field of [
+    "reviewer_owned_source_package_hash",
+    "source_comparison_design_source_package_preparation_hash",
+    "collection_hash"
+  ]) {
+    if (safeHash(record[field]) === null) gaps.push(`${field} must be a valid hash`);
+  }
+  if (record.collection_hash !== reviewerOwnedCollectionHash(record)) {
+    gaps.push("reviewer-owned collection hash is invalid");
+  }
+  if (record.suppression_missing_held_window_review !== "CLEAR") {
+    gaps.push("suppression_missing_held_window_review must be CLEAR");
+  }
+  if (record.review_decision !== "COLLECTED_FOR_REVIEW_ONLY") {
+    gaps.push("review_decision must be COLLECTED_FOR_REVIEW_ONLY");
+  }
+  const boundaryChecks = asRecord(record.boundary_checks);
+  gaps.push(...objectKeysExactGaps(
+    boundaryChecks,
+    REQUIRED_REVIEWER_OWNED_BOUNDARY_CHECKS,
+    "boundary_checks"
+  ));
+  for (const field of REQUIRED_REVIEWER_OWNED_BOUNDARY_CHECKS) {
+    if (boundaryChecks[field] !== "CLEAR") gaps.push(`boundary_checks.${field} must be CLEAR`);
+  }
+  const milestoneSchedule = asRecord(record.milestone_schedule);
+  const milestoneRefs = asRecord(milestoneSchedule.reviewer_owned_milestone_refs);
+  if (
+    stableStringify(milestoneSchedule.required_milestones ?? []) !==
+    stableStringify(REQUIRED_APPROVED_MEASUREMENT_PLAN_MILESTONES)
+  ) {
+    gaps.push("milestone_schedule.required_milestones must include T0/T30/T60/T90/T120/T180/T270/T365");
+  }
+  if (milestoneSchedule.collection_ready_for_review_only !== true) {
+    gaps.push("milestone_schedule.collection_ready_for_review_only must be true");
+  }
+  gaps.push(...objectKeysExactGaps(
+    milestoneRefs,
+    REQUIRED_APPROVED_MEASUREMENT_PLAN_MILESTONES,
+    "milestone_schedule.reviewer_owned_milestone_refs"
+  ));
+  for (const milestone of REQUIRED_APPROVED_MEASUREMENT_PLAN_MILESTONES) {
+    const value = milestoneRefs[milestone];
+    if (safeCollectionScalar(value) === null) {
+      gaps.push(`milestone_schedule.reviewer_owned_milestone_refs.${milestone} must be a scalar string`);
+    }
+    if (typeof value === "string" && NON_READY_WINDOW_REF_PATTERN.test(value)) {
+      gaps.push(`milestone_schedule.reviewer_owned_milestone_refs.${milestone} must be current and review-ready`);
+    }
+  }
+  gaps.push(...blockedClaimsGaps(record.blocked_claims));
+  gaps.push(...falseObjectGaps(
+    record.blocked_outputs,
+    REVIEWER_OWNED_COLLECTION_FALSE_OUTPUT_FIELDS,
+    "blocked_outputs"
+  ));
+  gaps.push(...falseObjectGaps(
+    record.feeds,
+    REVIEWER_OWNED_COLLECTION_FALSE_FEED_FIELDS,
+    "feeds"
+  ));
+  const bayesianChainState = asRecord(record.bayesian_chain_state);
+  if (
+    bayesianChainState.current_state !==
+    "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE"
+  ) {
+    gaps.push("bayesian_chain_state.current_state must remain held");
+  }
+  if (
+    bayesianChainState.allowed_next_step !==
+    "complete_governed_diagnostics_sufficiency_evidence_source"
+  ) {
+    gaps.push("bayesian_chain_state.allowed_next_step must remain governed diagnostics source completion");
+  }
+  if (bayesianChainState.changed_by_this_artifact !== false) {
+    gaps.push("bayesian_chain_state.changed_by_this_artifact must be false");
+  }
+  return sanitizeGaps(gaps);
+}
+
 function sourcePackageGaps(sourceRuntime, sourcePackage) {
+  if (isReviewerOwnedCollection(sourcePackage)) {
+    return reviewerOwnedCollectionGaps(sourcePackage);
+  }
   if (!sourcePackage) return ["comparison design source evidence is required"];
   const record = asRecord(sourcePackage);
   const runtimeRef = asRecord(record.source_runtime_ref);
   const gaps = [
+    "comparison design source evidence must be reviewer-owned package collection",
     ...collectAllowedFieldsGaps(record, SOURCE_PACKAGE_FIELDS, "comparison_design_source_evidence"),
     ...collectRequiredFieldsGaps(
       runtimeRef,
@@ -638,6 +997,28 @@ function sourcePackageGaps(sourceRuntime, sourcePackage) {
 
 function sourcePackageRef(sourcePackage, ready) {
   const record = asRecord(sourcePackage);
+  if (isReviewerOwnedCollection(sourcePackage)) {
+    return {
+      schema_version:
+        record.schema_version ===
+        REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTION_SCHEMA_VERSION
+          ? record.schema_version
+          : null,
+      source_package_id:
+        typeof record.reviewer_owned_source_package_ref === "string"
+          ? record.reviewer_owned_source_package_ref
+          : null,
+      package_state:
+        record.collection_state === REVIEWER_OWNED_COLLECTION_READY_STATE
+          ? record.collection_state
+          : null,
+      source_package_hash: ready ? safeHash(record.reviewer_owned_source_package_hash) : null,
+      collection_hash: ready ? safeHash(record.collection_hash) : null,
+      source_comparison_design_source_package_preparation_hash: ready
+        ? safeHash(record.source_comparison_design_source_package_preparation_hash)
+        : null
+    };
+  }
   return {
     schema_version:
       record.schema_version === CONTRIBUTION_ALIGNMENT_COMPARISON_DESIGN_ADEQUACY_SOURCE_PACKAGE_SCHEMA_VERSION
@@ -669,20 +1050,31 @@ function missingEvidence(sourceRuntime, sourcePackage) {
 
 function buildComparisonReview(sourcePackage, ready) {
   const record = asRecord(sourcePackage);
-  const suppression = asRecord(record.suppression_missing_held_window_review);
+  const collection = isReviewerOwnedCollection(sourcePackage);
+  const suppression = collection
+    ? { suppressed_missing_held_windows_clear: record.suppression_missing_held_window_review === "CLEAR" }
+    : asRecord(record.suppression_missing_held_window_review);
   return {
-    treatment_definition_present: ready,
-    comparison_definition_present: ready,
-    pre_post_window_definition_present: ready,
-    rollout_or_comparison_design_type_present: ready,
-    aggregate_measurement_cell_grain: ready,
-    same_metric_direction_lag_expectation_path_cohort_workflow_function_identity: ready,
-    suppression_missing_held_window_review_present: ready,
+    treatment_definition_present: ready && Boolean(record.treatment_group_definition),
+    comparison_definition_present: ready && Boolean(record.comparison_group_definition),
+    pre_post_window_definition_present:
+      ready && Boolean(record.baseline_window) && Boolean(record.comparison_window),
+    rollout_or_comparison_design_type_present:
+      ready && Boolean(record.rollout_or_comparison_design_type),
+    aggregate_measurement_cell_grain: ready && Boolean(record.aggregate_measurement_cell_grain),
+    same_metric_direction_lag_expectation_path_cohort_workflow_function_identity:
+      ready &&
+      Boolean(record.metric_direction_lag_confirmation_ref) &&
+      Boolean(record.approved_expectation_path_blueprint_hypothesis_binding_ref) &&
+      Boolean(record.cohort_identity_confirmation_ref) &&
+      Boolean(record.workflow_function_identity_confirmation_ref),
+    suppression_missing_held_window_review_present:
+      ready && Boolean(record.suppression_missing_held_window_review),
     suppressed_missing_held_windows_clear: ready && suppression.suppressed_missing_held_windows_clear === true,
     no_unsupported_cross_slice_aggregation: ready,
     no_person_level_or_identifiable_fields: ready,
     causality_claim_authorized: false,
-    reviewer_role: ready ? record.reviewer_role : null,
+    reviewer_role: ready ? record.reviewer_role_ref : null,
     review_decision: ready
       ? "APPROVED_FOR_GOVERNED_DIAGNOSTICS_SOURCE_BINDING"
       : "HOLD_FOR_GOVERNED_COMPARISON_DESIGN_EVIDENCE"
@@ -695,7 +1087,7 @@ function buildEvidenceSatisfaction(sourceRuntime, sourcePackage, ready, missing)
     evidence_dimension: "comparison_design_adequacy",
     reviewed_source_evidence_ref: ready ? EXPECTED_REVIEWED_SOURCE_EVIDENCE_REF : null,
     reviewed_source_evidence_hash: reviewedHash,
-    source_evidence_hash: ready ? sourceEvidenceHash(sourceRuntime, sourcePackage) : null,
+    source_evidence_hash: ready ? sourceEvidenceHash(sourcePackage) : null,
     aggregate_only_scope: ready,
     suppressed_missing_held_windows_clear: ready,
     eligible_for_satisfied_representation: ready,
@@ -714,14 +1106,16 @@ function buildReview(sourceRuntime, sourcePackage, state, gaps) {
     review_id: `contribution_alignment_comparison_design_adequacy_evidence_review_${sha256Json({
       runtime_hash: sourceRuntime?.runtime_hash ?? null,
       fixture_artifact_hash: sourceRuntime?.internal_fit_artifact?.artifact_hash ?? null,
-      source_package_hash: sourcePackage?.source_package_hash ?? null,
+      reviewer_owned_source_package_hash:
+        sourcePackage?.reviewer_owned_source_package_hash ?? null,
+      reviewer_owned_collection_hash: sourcePackage?.collection_hash ?? null,
       review_version: REVIEW_VERSION
     }).slice(0, 16)}`,
     review_state: state,
     review_class: REVIEW_CLASS,
     generated_at: "2026-06-26T00:00:00.000Z",
     derivation_version: DERIVATION_VERSION,
-    source_bound: sourceRuntimeGaps(sourceRuntime).length === 0,
+    source_bound: ready,
     source_runtime_ref: sourceRuntimeRef(sourceRuntime),
     source_package_ref: sourcePackageRef(sourcePackage, ready),
     evidence_dimension: "comparison_design_adequacy",
@@ -777,7 +1171,7 @@ function buildReview(sourceRuntime, sourcePackage, state, gaps) {
       gaps: ready ? [] : sanitizeGaps(gaps)
     }
   };
-  review.review_hash = reviewHash(review);
+  review.review_hash = ready ? reviewHash(review) : null;
   return review;
 }
 
@@ -806,7 +1200,7 @@ function rejectedReview() {
       gaps: ["boundary leakage rejected"]
     }
   };
-  review.review_hash = reviewHash(review);
+  review.review_hash = null;
   return review;
 }
 
@@ -814,7 +1208,9 @@ export function buildContributionAlignmentComparisonDesignAdequacyEvidenceReview
   if (inputBoundaryGaps(input).length > 0) return rejectedReview();
   const sourceRuntime = sourceRuntimeFromInput(input);
   const sourcePackage = comparisonSourceEvidenceFromInput(input);
-  if (sourcePackageContentGaps(sourcePackage).length > 0) return rejectedReview();
+  if (!isReviewerOwnedCollection(sourcePackage) && sourcePackageContentGaps(sourcePackage).length > 0) {
+    return rejectedReview();
+  }
   const runtimeGaps = sourceRuntimeGaps(sourceRuntime);
   const packageGaps = sourcePackageGaps(sourceRuntime, sourcePackage);
   const gaps = sanitizeGaps([...runtimeGaps, ...packageGaps]);
@@ -999,8 +1395,11 @@ function validateShape(review) {
   if (ready && Array.isArray(summary.gaps) && summary.gaps.length !== 0) {
     gaps.push("validation_summary.gaps must be empty when ready");
   }
-  if (record.review_hash !== reviewHash(record)) {
+  if (ready && record.review_hash !== reviewHash(record)) {
     gaps.push("review_hash must match review body");
+  }
+  if (!ready && record.review_hash !== null) {
+    gaps.push("review_hash must be null when held");
   }
   gaps.push(...hasForbiddenContent(record));
   return sanitizeGaps(gaps);

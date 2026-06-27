@@ -18,8 +18,9 @@ comparison_design_adequacy
 It answers:
 
 ```text
-Has explicit reviewed comparison-design source evidence been supplied for later
-Governed Diagnostics Sufficiency Evidence Source binding?
+Has an existing reviewer-owned comparison-design source package collection been
+validated strongly enough to emit a one-dimension adequacy review result for
+later Governed Diagnostics Sufficiency Evidence Source binding?
 ```
 
 It does not answer:
@@ -44,40 +45,47 @@ Held is the default. Without an explicit reviewed comparison-design source
 package, the review must hold and must not emit reviewed evidence hashes or mark
 the dimension satisfied.
 
-## Source Package Required
+## Reviewer-Owned Collection Required
 
-A reviewed source package must be supplied separately from the contained runtime
-fixture. Runtime design matrix fields, aggregate windows, test fixtures, model
-spec prose, template prose, posterior-like prototype values, source hashes
-alone, and generated examples are not eligible evidence.
+The only eligible upstream source for a ready adequacy review is the existing
+Reviewer-Owned Comparison Design Source Package Collection artifact. The review
+must not create or duplicate source package collection.
 
-Required source package fields:
+A direct legacy adequacy source package, runtime design matrix fields,
+aggregate windows, test fixtures, model spec prose, template prose,
+posterior-like prototype values, source hashes alone, and generated examples
+are not eligible evidence.
+
+Required reviewer-owned collection fields:
 
 ```text
-schema_version=FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_COMPARISON_DESIGN_ADEQUACY_SOURCE_PACKAGE_2026_06
-package_state=COMPARISON_DESIGN_ADEQUACY_SOURCE_PACKAGE_REVIEWED_INTERNAL_ONLY
+schema_version=FT_AI_VALUE_REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTION_2026_06
+collection_state=REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY
+allowed_next_step=run_comparison_design_adequacy_evidence_review_only
 internal_only=true
 aggregate_only=true
-reviewed_source_evidence_ref=internal_diagnostics_sufficiency_evidence.comparison_design_adequacy.2026_06
-source_runtime_ref.runtime_hash=<current runtime hash>
-source_runtime_ref.fixture_artifact_hash=<current fixture artifact hash>
-treatment_definition.defined=true
-treatment_definition.aggregate_measurement_cell_grain=true
-comparison_definition.defined=true
-comparison_definition.aggregate_measurement_cell_grain=true
-pre_post_window_definition.pre_window_defined=true
-pre_post_window_definition.post_window_defined=true
-rollout_or_comparison_design_type=<governed comparison or staggered rollout design>
-metric_direction_lag_expectation_path_cohort_workflow_function_identity_matched=true
-suppression_missing_held_window_review.suppressed_missing_held_windows_clear=true
-unsupported_cross_slice_aggregation_present=false
-person_level_or_identifiable_fields_present=false
-causality_claim_authorized=false
-reviewer_role=data_science_reviewer+governance_reviewer
-review_decision=APPROVED_FOR_GOVERNED_DIAGNOSTICS_SOURCE_BINDING
-placeholder_evidence=false
-generated_fixture_evidence=false
-source_package_hash=<hash of reviewed source package body>
+source_ref_only=true
+fail_closed=true
+reviewer_owned_source_package_ref=<explicit scalar package ref>
+reviewer_owned_source_package_hash=<source-bound package hash>
+collection_hash=<collection artifact hash>
+source_comparison_design_source_package_preparation_hash=<source preparation hash>
+treatment_group_definition=<scalar reviewed field>
+comparison_group_definition=<scalar reviewed field>
+baseline_window=<scalar reviewed field>
+comparison_window=<scalar reviewed field>
+rollout_or_comparison_design_type=<scalar reviewed field>
+aggregate_measurement_cell_grain=<canonical aggregate Measurement Cell grain>
+metric_direction_lag_confirmation_ref=<scalar reviewed ref>
+approved_expectation_path_blueprint_hypothesis_binding_ref=<scalar reviewed ref>
+cohort_identity_confirmation_ref=<scalar reviewed ref>
+workflow_function_identity_confirmation_ref=<scalar reviewed ref>
+aggregate_measurement_cell_grain_confirmation_ref=<scalar reviewed ref>
+milestone_schedule.reviewer_owned_milestone_refs=<T0/T30/T60/T90/T120/T180/T270/T365 scalar refs>
+suppression_missing_held_window_review=CLEAR
+boundary_checks.*=CLEAR
+review_decision=COLLECTED_FOR_REVIEW_ONLY
+all Important Non-Authorization fields=false
 ```
 
 ## Reviewed Output
@@ -86,8 +94,8 @@ When the source package validates, the review may emit:
 
 ```text
 reviewed_source_evidence_ref=internal_diagnostics_sufficiency_evidence.comparison_design_adequacy.2026_06
-reviewed_source_evidence_hash=<hash bound to the reviewed comparison-design package>
-source_evidence_hash=<hash bound to reviewed hash, runtime hash, and fixture artifact hash>
+reviewed_source_evidence_hash=<hash bound to the reviewer-owned package ref/hash, collection hash, and preparation hash>
+source_evidence_hash=<hash bound to the reviewed source evidence hash and reviewer-owned collection source refs>
 aggregate_only_scope=true
 suppressed_missing_held_windows_clear=true
 eligible_for_satisfied_representation=true
@@ -111,14 +119,16 @@ review_state=HOLD_FOR_COMPARISON_DESIGN_ADEQUACY_EVIDENCE
 evidence_satisfied=false
 reviewed_source_evidence_hash=null
 source_evidence_hash=null
+review_hash=null
 allowed_next_step=complete_governed_diagnostics_sufficiency_evidence_source
 ```
 
 Missing evidence must name the absent comparison-design requirements, including
-treatment definition, comparison definition, pre/post window definition, rollout
-or comparison design type, aggregate Measurement Cell grain, matched metric
-context, suppressed/missing/held window review, reviewer role, and review
-decision.
+the reviewer-owned package ref/hash, collection hash, treatment definition,
+comparison definition, window definition, rollout or comparison design type,
+aggregate Measurement Cell grain, milestone refs, matched metric context,
+suppressed/missing/held window review, boundary checks, reviewer role, and
+review decision.
 
 ## Non-Authorization
 

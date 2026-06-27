@@ -2,6 +2,109 @@
 
 ## Last Completed
 
+- Comparison Design Adequacy Evidence Review binding to reviewer-owned package
+  slice (2026-06-27): updated the existing Comparison Design Adequacy Evidence
+  Review so READY can be reached only from the Reviewer-Owned Comparison Design
+  Source Package Collection artifact. Direct legacy adequacy source packages,
+  runtime design matrix fields, model-spec prose, templates, fixtures,
+  generated examples, and source hashes alone now hold or reject instead of
+  satisfying `comparison_design_adequacy`. The ready path requires a
+  source-bound collection artifact with
+  `REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY`,
+  `allowed_next_step=run_comparison_design_adequacy_evidence_review_only`, a
+  valid `collection_hash`, reviewer-owned package ref/hash, source-preparation
+  hash, scalar treatment/comparison/window/cohort/workflow/grain fields,
+  T0/T30/T60/T90/T120/T180/T270/T365 scalar milestone refs, all required
+  boundary checks `CLEAR`, exact blocked claims, all Important
+  Non-Authorization flags false, and the Bayesian chain still held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`. Held inputs emit
+  no `review_hash`, no `reviewed_source_evidence_hash`, and no
+  `source_evidence_hash`. The satisfied ready path sets only the
+  `comparison_design_adequacy` evidence dimension true; diagnostics sufficiency,
+  Bayesian readiness, promotion, posterior interpretation, confidence/
+  probability output, ROI, finance, causality, productivity, customer-facing
+  economic output, live connectors, routes, UI, schemas, persistence, exports,
+  raw rows, identifiers, query text, prompts, transcripts, person-level data,
+  individual scoring, and team scoring remain blocked. CODE / BUG /
+  ADVERSARIAL review found the old legacy source-package path, runtime/hash
+  dependence, missing reviewer-owned validation, held review hash emission, and
+  boundary-leakage mismatch; the runner now binds adequacy hashes to the
+  reviewer-owned package ref/hash, collection hash, and source-preparation hash
+  rather than runtime fixture hashes. Verification passed:
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (20/20);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Reviewer-Owned Comparison Design Source Package Collection slice
+  (2026-06-27): added the bounded internal-only, aggregate-only,
+  source-ref-only collection artifact and runner after the Comparison Design
+  Source Package Preparation Binding. The collection validates the source
+  preparation binding against the original reviewer-approved measurement plan,
+  aggregate data collection planning contract, and recommendation plan; hashes
+  alone are not enough. It collects only explicitly supplied reviewer-owned
+  comparison-design package fields for later review, including source Blueprint
+  hypothesis ref, business function, prioritized use case, workflow, workflow
+  step, cohort, selected metric, evidence source, observation window,
+  governance state, treatment/comparison definitions, staggered rollout or
+  comparison design type, baseline source posture, comparison condition,
+  baseline/comparison windows, expected direction, expected lag, confirmation
+  refs, aggregate Measurement Cell grain, T0/T30/T60/T90/T120/T180/T270/T365
+  milestone refs, suppression/missing/held review, explicit boundary checks,
+  reviewer role, and review decision. Ready state is
+  `REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY`;
+  allowed next step is
+  `run_comparison_design_adequacy_evidence_review_only`. Missing source
+  bindings hold at `HOLD_FOR_BINDING`; missing or unsafe reviewer-owned package
+  values hold at `HOLD_FOR_MORE_INFORMATION`. Preferred defaults remain draft
+  defaults and are not backfilled as reviewer-owned facts. The package must
+  align back to the source preparation binding for Blueprint hypothesis,
+  selected metric, expected direction, lag, baseline source posture, comparison
+  condition, cohort, workflow/function identity, and aggregate Measurement Cell
+  grain. Unknown package fields, evidence hashes, runtime hashes, SED/VBD/
+  outcome assessment fields, extra boundary assertions, stale/held/extra
+  milestone refs, unsafe values, and reviewer-decision laundering fail closed.
+  The artifact may set only `source_package_collected=true`; it creates no
+  reviewed evidence, evidence satisfaction, comparison_design_adequacy
+  satisfaction, diagnostics sufficiency, Bayesian readiness, promotion,
+  posterior interpretation, confidence/probability output, ROI, finance,
+  causality, productivity, customer-facing economic output, live connector,
+  route, UI, schema, persistence, export, raw-row, identifier, query-text,
+  prompt, transcript, person-level, individual-scoring, or team-scoring path.
+  CODE / BUG / ADVERSARIAL review found and this slice fixed package-to-
+  preparation fact mismatch, ignored unapproved package fields, output-only
+  projection-drift coverage, extra CLEAR boundary assertions, stale/extra
+  milestone refs, reviewer-decision laundering, collection-record-as-evidence
+  risk, forged source preparation input, and nested authorization smuggling
+  inside allowed containers such as milestone schedule and Bayesian chain
+  state. Final review also fixed scalar smuggling through allowed package
+  fields and milestone refs, object values under allowed boundary-check keys,
+  forbidden nested milestone-ref keys on held records, extra blocked-claim
+  entries, and raw reviewer-owned package hashes on held/unsafe package input.
+  The Bayesian chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; gate-derived
+  next step remains `complete_governed_diagnostics_sufficiency_evidence_source`.
+  Verification passed:
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (10/10);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
 - Comparison Design Source Package Preparation Binding slice (2026-06-27):
   added the bounded internal-only, aggregate-only, source-ref-only preparation
   artifact and runner after the Aggregate Data Collection Planning Contract.
