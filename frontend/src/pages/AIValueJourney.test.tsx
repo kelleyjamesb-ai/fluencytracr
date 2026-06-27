@@ -405,6 +405,20 @@ describe("AIValueJourney", () => {
     expect(screen.getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Escalation rate/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
+    const reportingSpine = screen.getByRole("region", {
+      name: /AI contribution reporting spine/i
+    });
+    expect(within(reportingSpine).getByRole("heading", { name: /Measurement story/i })).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Candidate metric recommendations are planning inputs/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Selected metric approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Model review posture/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Held for evidence gaps/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Complete reviewer metric selection approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Missing comparison-design source package/i)).toBeInTheDocument();
+    for (const milestone of ["T0", "T30", "T60", "T90", "T120", "T180", "T270", "T365"]) {
+      expect(within(reportingSpine).getByText(milestone)).toBeInTheDocument();
+    }
     expect(
       screen.getAllByRole("button", { name: /Open executive readout/i }).length
     ).toBeGreaterThan(0);

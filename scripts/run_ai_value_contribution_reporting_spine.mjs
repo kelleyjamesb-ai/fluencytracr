@@ -46,7 +46,16 @@ const KNOWN_LIBRARY_REFS = new Set([
   "docs/contracts/ai-value-intelligence/examples/sales-pipeline-metrics-library.json"
 ]);
 
-const SUPPORTED_OUTCOME_MILESTONE_SUFFIXES = new Set(["t0", "t30", "t60", "t90", "t180", "t365"]);
+const SUPPORTED_OUTCOME_MILESTONE_SUFFIXES = new Set([
+  "t0",
+  "t30",
+  "t60",
+  "t90",
+  "t120",
+  "t180",
+  "t270",
+  "t365"
+]);
 const DIRECTION_VALUES = new Set(["increase", "decrease", "maintain", "directional_review_required"]);
 
 const EVIDENCE_ALIGNMENT_STATES = new Set([

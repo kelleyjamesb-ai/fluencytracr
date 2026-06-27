@@ -181,6 +181,35 @@ test("milestone schedule includes T0/T30/T60/T90/T120/T180/T270/T365", () => {
   assert.equal(spine.milestone_measurement_plan.milestones_are_planning_only, true);
 });
 
+test("outcome Measurement Cell refs preserve T120 and T270 milestone refs", () => {
+  const spine = buildAiContributionReportingSpine(
+    approvedMeasurementInput({
+      aggregate_outcome_measurement_cell_refs: [
+        "measurement_cell.customer_support.case_resolution.t0",
+        "measurement_cell.customer_support.case_resolution.t30",
+        "measurement_cell.customer_support.case_resolution.t60",
+        "measurement_cell.customer_support.case_resolution.t90",
+        "measurement_cell.customer_support.case_resolution.t120",
+        "measurement_cell.customer_support.case_resolution.t180",
+        "measurement_cell.customer_support.case_resolution.t270",
+        "measurement_cell.customer_support.case_resolution.t365"
+      ]
+    })
+  );
+
+  assert.deepEqual(spine.aggregate_outcome_measurement_cell_refs, [
+    "measurement_cell.customer_support.case_resolution.t0",
+    "measurement_cell.customer_support.case_resolution.t30",
+    "measurement_cell.customer_support.case_resolution.t60",
+    "measurement_cell.customer_support.case_resolution.t90",
+    "measurement_cell.customer_support.case_resolution.t120",
+    "measurement_cell.customer_support.case_resolution.t180",
+    "measurement_cell.customer_support.case_resolution.t270",
+    "measurement_cell.customer_support.case_resolution.t365"
+  ]);
+  assert.equal(spine.outcome_movement_state, "PRESENT_AGGREGATE_MEASUREMENT_CELL_REFS");
+});
+
 test("evidence alignment reports gaps without satisfying evidence", () => {
   const spine = buildAiContributionReportingSpine(approvedMeasurementInput({
     said_evidence_refs: [],

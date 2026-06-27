@@ -13,6 +13,7 @@ import {
   ClientQuestionMetricBridgePanel,
   type FunctionMetricPlan
 } from "../components/ClientQuestionMetricBridgePanel";
+import { AiContributionReportingSpinePanel } from "../components/AiContributionReportingSpinePanel";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
@@ -690,6 +691,12 @@ const vbdBubbleStyle = (
   }) as CSSProperties;
 };
 
+const postureBandForCoordinate = (value: number) => {
+  if (value >= 75) return "high";
+  if (value >= VBD_THRESHOLD) return "moderate";
+  return "held";
+};
+
 const AI_ORG_FLUENCY_EXAMPLE_URL = "/ai-fluency/organizational-results.html";
 const vbdTokenPilotRun = {
   workflow_name: "Customer Success account health review",
@@ -889,21 +896,30 @@ const sourcePackageSourceStates = [
 ] satisfies SourcePackageReviewStatus[];
 
 const sourcePackageAlignmentKeys = [
-  "org_id",
-  "client_id",
-  "workflow_family",
-  "function_area",
-  "cohort_key",
-  "baseline_window",
-  "comparison_window"
+  "Approved organization boundary",
+  "Approved client boundary",
+  "Workflow family",
+  "Function area",
+  "Aggregate cohort",
+  "Baseline window",
+  "Comparison window"
 ] as const;
 
 const sourcePackageReadinessChecks = [
-  "metric_id",
-  "source_ref",
-  "owner_role",
-  "review_state"
+  "Metric owner review",
+  "Source package review",
+  "Reviewer role",
+  "Review decision"
 ] as const;
+
+const sourcePackageSourceModeLabels: Record<string, string> = {
+  blueprint_document_upload: "Blueprint document review",
+  ai_fluency_dashboard_export: "Aggregate instrument review",
+  scrubbed_glean_bigquery_export: "Scrubbed aggregate telemetry review",
+  customer_metric_aggregate_export: "Customer metric aggregate review",
+  assumption_approval: "Assumption review",
+  governance_attestation: "Governance attestation"
+};
 
 const sourcePackageReviewLanes = [
   {
@@ -1136,7 +1152,7 @@ export const AIValueWorkspace = () => {
         </div>
         <div className="ai-value-status-strip" aria-label="Workspace status">
           <StatusPill
-            label={mode === "live" ? "Live evidence connected" : "Example mode"}
+            label={mode === "live" ? "Approved aggregate status refreshed" : "Example mode"}
             tone={mode === "live" ? "good" : "neutral"}
           />
           <StatusPill
@@ -1150,10 +1166,10 @@ export const AIValueWorkspace = () => {
             disabled={mode === "loading"}
           >
             {mode === "loading"
-              ? "Connecting..."
+              ? "Refreshing..."
               : mode === "live"
-                ? "Refresh live evidence"
-                : "Connect live evidence"}
+                ? "Refresh aggregate evidence status"
+                : "Review aggregate evidence status"}
           </button>
         </div>
       </header>
@@ -1421,7 +1437,9 @@ const SourcePackageReviewQueuePanel = () => {
           >
             <div className="ai-value-source-package-lane-head">
               <div>
-                <span className="ai-value-map-label">{lane.sourceMode}</span>
+                <span className="ai-value-map-label">
+                  {sourcePackageSourceModeLabels[lane.sourceMode] ?? "Source package review"}
+                </span>
                 <h4>{lane.label}</h4>
               </div>
               <StatusPill label={lane.status} tone={sourcePackageStatusTone[lane.status]} />
@@ -1653,9 +1671,6 @@ const VbdMapPanel = () => {
   const tokenWindowOption = selectedTokenWindowOption(tokenWindow);
   const vbdFunctionRows = useMemo(() => buildVbdFunctionRows(tokenWindow), [tokenWindow]);
   const quadrantRows = useMemo(() => buildQuadrantRows(vbdFunctionRows), [vbdFunctionRows]);
-  const overallPopulationVbdScore = vbdFunctionRows.length
-    ? Math.round(vbdFunctionRows.reduce((sum, plot) => sum + plot.overallVbdScore, 0) / vbdFunctionRows.length)
-    : 0;
   const primaryReviewQuadrant =
     quadrantRows.find((quadrant) => quadrant.id === "fast-shallow") ?? quadrantRows[0];
   const tokenResult = isVbdWithToken ? (
@@ -1706,20 +1721,20 @@ const VbdMapPanel = () => {
       </div>
 
       {!isVbdWithToken && (
-        <section className="ai-value-vbd-score-summary" aria-label="Overall VBD scoring model">
+        <section className="ai-value-vbd-score-summary" aria-label="Aggregate VBD posture model">
           <article>
-            <span>Overall VBD Score</span>
-            <strong>{overallPopulationVbdScore}</strong>
-            <p>Velocity 0.30 + Breadth 0.30 + Depth 0.40</p>
+            <span>Overall VBD posture</span>
+            <strong>Aggregate review lens</strong>
+            <p>Velocity, Breadth, and Depth are combined for posture review only.</p>
           </article>
           <article>
-            <span>Integration Score</span>
-            <strong>Breadth + Depth</strong>
-            <p>Breadth 0.40 + Depth 0.60</p>
+            <span>Integration posture</span>
+            <strong>Breadth and Depth</strong>
+            <p>Integration remains aggregate context, not a people or team measure.</p>
           </article>
           <article>
             <span>Fixed quadrant line 60</span>
-            <strong>0-100 scale</strong>
+            <strong>Compiled posture boundary</strong>
             <p>Quadrants use Velocity and Integration; this is not a configurable control.</p>
           </article>
         </section>
@@ -1818,20 +1833,20 @@ const VbdMapPanel = () => {
                 const quadrant = vbdQuadrants.find((entry) => entry.id === plot.quadrantId);
                 return (
                 <span
-                  aria-label={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}, Integration Score ${plot.integrationScore}, ${quadrant?.label ?? "VBD quadrant"}${
+                  aria-label={`${plot.functionArea}: Velocity ${postureBandForCoordinate(plot.velocity)}, Breadth ${postureBandForCoordinate(plot.breadth)}, Depth ${postureBandForCoordinate(plot.depth)}, Integration ${postureBandForCoordinate(plot.integrationScore)}, ${quadrant?.label ?? "VBD quadrant"}${
                     isVbdWithToken
                       ? `, aggregate token intensity ${plot.tokenBand}`
-                      : `, Overall VBD Score ${plot.overallVbdScore}`
+                      : ", aggregate posture review"
                   }`}
                   className={`ai-value-vbd-function-bubble ai-value-vbd-function-bubble-${plot.quadrantId}${
                     isVbdWithToken ? " ai-value-vbd-function-bubble-token-overlay" : ""
                   }`}
                   key={plot.functionArea}
                   style={vbdBubbleStyle(plot)}
-                  title={`${plot.functionArea}: Velocity ${plot.velocity}, Breadth ${plot.breadth}, Depth ${plot.depth}, Integration ${plot.integrationScore}${
+                  title={`${plot.functionArea}: Velocity ${postureBandForCoordinate(plot.velocity)}, Breadth ${postureBandForCoordinate(plot.breadth)}, Depth ${postureBandForCoordinate(plot.depth)}, Integration ${postureBandForCoordinate(plot.integrationScore)}${
                     isVbdWithToken
                       ? `, aggregate token intensity ${plot.tokenBand}`
-                      : `, Overall VBD Score ${plot.overallVbdScore}`
+                      : ", aggregate posture review"
                   }`}
                 >
                   <span>{plot.shortLabel}</span>
@@ -1863,7 +1878,7 @@ const VbdMapPanel = () => {
         <p>
           {isVbdWithToken
             ? "X-axis is Velocity. Y-axis is Integration. Bubble size remains anchored to the VBD model."
-            : "X-axis is Velocity. Y-axis is Integration. Bubble size shows Overall VBD Score."}
+            : "X-axis is Velocity. Y-axis is Integration. Bubble size shows aggregate posture context."}
         </p>
       </div>
 
@@ -1885,7 +1900,7 @@ const VbdMapPanel = () => {
                 <span>{quadrant.mapCue}</span>
                 {!isVbdWithToken && quadrantRow && (
                   <span className="ai-value-vbd-definition-score">
-                    Quadrant Strength {quadrantRow.quadrantStrength} · Quadrant Share{" "}
+                    Quadrant posture {postureBandForCoordinate(quadrantRow.quadrantStrength)} · Function share{" "}
                     {quadrantRow.quadrantShare}%
                   </span>
                 )}
@@ -2110,6 +2125,8 @@ const MetricsPage = ({ journey }: { journey: Journey }) => {
         onSelectedFunctionChange={setSelectedFunction}
         selectedFunction={selectedFunction}
       />
+
+      <AiContributionReportingSpinePanel spine={journey.contributionReportingSpine} />
 
       <CandidateOutcomeMetricsPanel
         functionPlans={functionMetricPlans}

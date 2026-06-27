@@ -219,6 +219,11 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getByText("Customer metric")).toBeInTheDocument();
     expect(within(queue).getByText("ROI assumption context")).toBeInTheDocument();
     expect(within(queue).getByText("Governance")).toBeInTheDocument();
+    expect(within(queue).getByText("Aggregate instrument review")).toBeInTheDocument();
+    expect(within(queue).getByText("Scrubbed aggregate telemetry review")).toBeInTheDocument();
+    expect(within(queue).queryByText(uiTerm("ai", "_", "fluency", "_", "dashboard", "_", "export"))).not.toBeInTheDocument();
+    expect(within(queue).queryByText(uiTerm("scrubbed", "_", "glean", "_", "bigquery", "_", "export"))).not.toBeInTheDocument();
+    expect(within(queue).queryByText(uiTerm("customer", "_", "metric", "_", "aggregate", "_", "export"))).not.toBeInTheDocument();
 
     for (const status of ["parsed", "approved", "aligned", "held", "uploaded", "suppressed", "missing"]) {
       expect(within(queue).getAllByText(status).length).toBeGreaterThan(0);
@@ -233,18 +238,22 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getByText(/Regenerate at aggregate threshold/i)).toBeInTheDocument();
 
     expect(within(queue).getByText("Data Spine alignment keys")).toBeInTheDocument();
-    expect(within(queue).getByText("org_id")).toBeInTheDocument();
-    expect(within(queue).getByText("client_id")).toBeInTheDocument();
-    expect(within(queue).getByText("workflow_family")).toBeInTheDocument();
-    expect(within(queue).getByText("function_area")).toBeInTheDocument();
-    expect(within(queue).getByText("cohort_key")).toBeInTheDocument();
-    expect(within(queue).getByText("baseline_window")).toBeInTheDocument();
-    expect(within(queue).getByText("comparison_window")).toBeInTheDocument();
+    expect(within(queue).getByText("Approved organization boundary")).toBeInTheDocument();
+    expect(within(queue).getByText("Approved client boundary")).toBeInTheDocument();
+    expect(within(queue).getByText("Workflow family")).toBeInTheDocument();
+    expect(within(queue).getByText("Function area")).toBeInTheDocument();
+    expect(within(queue).getByText("Aggregate cohort")).toBeInTheDocument();
+    expect(within(queue).getByText("Baseline window")).toBeInTheDocument();
+    expect(within(queue).getByText("Comparison window")).toBeInTheDocument();
     expect(within(queue).getByText("Review queue labels")).toBeInTheDocument();
-    expect(within(queue).getByText("metric_id")).toBeInTheDocument();
-    expect(within(queue).getByText("source_ref")).toBeInTheDocument();
-    expect(within(queue).getByText("owner_role")).toBeInTheDocument();
-    expect(within(queue).getByText("review_state")).toBeInTheDocument();
+    expect(within(queue).getByText("Metric owner review")).toBeInTheDocument();
+    expect(within(queue).getByText("Source package review")).toBeInTheDocument();
+    expect(within(queue).getByText("Reviewer role")).toBeInTheDocument();
+    expect(within(queue).getByText("Review decision")).toBeInTheDocument();
+    expect(within(queue).queryByText("org_id")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("client_id")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("metric_id")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("source_ref")).not.toBeInTheDocument();
     expect(within(queue).getAllByText("Clear for review")).toHaveLength(3);
     expect(within(queue).getAllByText("Hold before review")).toHaveLength(3);
     expect(within(queue).getByText(/aggregate evidence status only/i)).toBeInTheDocument();
@@ -253,6 +262,10 @@ describe("AIValueWorkspace executive spine", () => {
     expect(queue.textContent).not.toMatch(/confidence\s*%|probability|financial attribution|causal proof/i);
     expect(queue.textContent).not.toMatch(/individual|person-level|manager ranking|team ranking/i);
     expectNoUnsafeUiLanguage(container.textContent, [
+      "org_id",
+      "client_id",
+      "metric_id",
+      "source_ref",
       "ROI proof",
       "productivity proof",
       "customer-facing financial output"
@@ -424,14 +437,14 @@ describe("AIValueWorkspace executive spine", () => {
 
     const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(within(map).getByText(/Function cluster map/i)).toBeInTheDocument();
-    const scoringModel = within(map).getByRole("region", { name: /Overall VBD scoring model/i });
-    expect(within(scoringModel).getByText(/Overall VBD Score/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText("53")).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Velocity 0\.30 \+ Breadth 0\.30 \+ Depth 0\.40/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Integration Score/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Breadth 0\.40 \+ Depth 0\.60/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Fixed quadrant line 60/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/not a configurable control/i)).toBeInTheDocument();
+    const postureModel = within(map).getByRole("region", { name: /Aggregate VBD posture model/i });
+    expect(within(postureModel).getByText(/Overall VBD posture/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/Aggregate review lens/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/posture review only/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/Integration posture/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/not a people or team measure/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/Fixed quadrant line 60/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/not a configurable control/i)).toBeInTheDocument();
     expect(within(map).getAllByText(/Engineering \/ Software Development/i).length).toBeGreaterThan(0);
     expect(within(map).getAllByText(/Customer or Account Success/i).length).toBeGreaterThan(0);
     expect(within(map).getAllByText(/Finance or Accounting/i).length).toBeGreaterThan(0);
@@ -439,7 +452,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(map).getByText(/Measured AI surfaces:/i)).toBeInTheDocument();
     expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
     expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Bubble size shows Overall VBD Score/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Bubble size shows aggregate posture context/i)).toBeInTheDocument();
+    expect(map.textContent).not.toMatch(/Overall VBD Score|Integration Score|Quadrant Strength/i);
     const highIntegrationGuide = within(map).getByLabelText(/High integration quadrant guide/i);
     expect(within(highIntegrationGuide).getByText(/Deep but slow/i)).toBeInTheDocument();
     expect(within(highIntegrationGuide).getByText(/High-fluency flow/i)).toBeInTheDocument();
@@ -467,8 +481,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(quadrantMap.querySelectorAll("[aria-label]")).toHaveLength(0);
     expect(quadrantMap.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
     const definitions = within(map).getByLabelText(/Quadrant definitions/i);
-    expect(within(definitions).getByText(/Quadrant Strength 79 · Quadrant Share 29%/)).toBeInTheDocument();
-    expect(within(definitions).getByText(/Quadrant Strength 59 · Quadrant Share 18%/)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Quadrant posture high · Function share 29%/)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Quadrant posture held · Function share 18%/)).toBeInTheDocument();
     expect(within(definitions).getByText(/Watch for: Immediate accept, Low verification/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Watch for: Repeat use, Verification/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Workflow-connected use/i)).toBeInTheDocument();
@@ -492,11 +506,15 @@ describe("AIValueWorkspace executive spine", () => {
     expect(engineeringBubble).toBeInstanceOf(HTMLElement);
     expect(engineeringBubble).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("Overall VBD Score 87")
+      expect.stringContaining("aggregate posture review")
     );
     expect(engineeringBubble).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("Integration Score 87")
+      expect.stringContaining("Integration high")
+    );
+    expect(engineeringBubble).not.toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Overall VBD Score|Integration Score|\b87\b/i)
     );
     const marketingBubble = container.querySelector(
       '[aria-label^="Marketing & Communications"]'
@@ -1095,6 +1113,19 @@ describe("AIValueWorkspace journey continuity", () => {
     // The old step-guide and duplicate opportunity map stay removed.
     expect(screen.queryByText(/Step 4 of 8/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Outcome and ROI opportunity map/i })).not.toBeInTheDocument();
+
+    const reportingSpine = screen.getByRole("region", {
+      name: /AI contribution reporting spine/i
+    });
+    expect(within(reportingSpine).getByText(/Candidate metric recommendations are planning inputs/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Selected metric approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Milestone plan/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Missing comparison-design source package/i)).toBeInTheDocument();
+    for (const milestone of ["T0", "T30", "T60", "T90", "T120", "T180", "T270", "T365"]) {
+      expect(within(reportingSpine).getByText(milestone)).toBeInTheDocument();
+    }
+    expect(within(reportingSpine).getByText(/Complete reviewer metric selection approval/i)).toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library")

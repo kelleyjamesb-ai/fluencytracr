@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { useAiValueJourney, type JourneyStageState } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import { AiContributionReportingSpinePanel } from "../components/AiContributionReportingSpinePanel";
 import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
@@ -159,6 +160,8 @@ export const AIValueJourney = () => {
       </section>
 
       <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+
+      <AiContributionReportingSpinePanel spine={journey.contributionReportingSpine} />
 
       <ValueSpineTracePanel trace={journey.valueSpineTrace} />
 

@@ -2,6 +2,33 @@
 
 ## Last Completed
 
+- Existing AI Value Journey / Workspace Reporting Integration slice
+  (2026-06-26): connected the committed AI Contribution Reporting Spine into
+  the existing Journey, Workspace, and Readout surfaces through a
+  frontend-safe view-model adapter and shared panel. Candidate metric
+  recommendations render as planning inputs only, reviewer-selected metric
+  approval remains separate, the milestone plan includes T0/T30/T60/T90/T120/
+  T180/T270/T365, evidence gaps and allowed next evidence action are visible,
+  and model-review posture remains held for missing evidence. Default behavior
+  still fails closed when no Blueprint hypothesis is supplied, and the Bayesian
+  chain remains held at the governed diagnostics sufficiency evidence source
+  unless real governed evidence is supplied elsewhere. CODE / BUG /
+  ADVERSARIAL review closed the surfaced UI boundary gaps in the touched
+  surfaces: recommendation text is scrubbed before display, candidate
+  recommendations hold until a metric-library ref is present, all evidence gaps
+  render including comparison-design source package, source-package review
+  shows plain aggregate review concepts and source-mode labels rather than raw
+  key/export-shaped labels, the VBD map uses aggregate posture language rather
+  than public score-like labels, readout stronger-claim outputs remain blocked,
+  and live-connector-implying copy is now approved-aggregate-status language.
+  Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (70/70);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - AI Value Contribution Alignment Internal Bayesian Execution Artifact v1 slice
   (2026-06-26): added the internal-only, aggregate-only execution artifact
   record authorized only by the passed Promotion Gate Passed Artifact Handoff
