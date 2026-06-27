@@ -182,6 +182,7 @@
     "test:ai-value-triangulated-evidence-alignment-review": "npm run build --workspace shared && node --test scripts/validate_ai_value_triangulated_evidence_alignment_review.test.mjs",
     "run:ai-value-measurement-journey-state-model": "npm run build --workspace shared && node scripts/run_ai_value_measurement_journey_state_model.mjs",
     "test:ai-value-measurement-journey-state-model": "npm run build --workspace shared && node --test scripts/validate_ai_value_measurement_journey_state_model.test.mjs",
+    "test:ai-value-ui-view-model-adapter": "npm run test --workspace frontend -- src/lib/aiValueUiViewModelAdapter.test.ts",
     "run:ai-value-saved-fixture-pilot": "npm run run:ai-value-controlled-pilot-evidence-package",
     "test:ai-value-saved-fixture-pilot": "npm run test:ai-value-controlled-pilot-evidence-package",
     "test:ai-value-operator-intake-adapter": "npm run build --workspace shared && node --test scripts/validate_ai_value_operator_intake_adapter.test.mjs",

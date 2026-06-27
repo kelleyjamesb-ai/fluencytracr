@@ -2,6 +2,48 @@
 
 ## Last Completed
 
+- UI View Model Adapter slice (2026-06-27): added
+  `frontend/src/lib/aiValueUiViewModelAdapter.ts` and focused Vitest coverage
+  for the product-facing adapter over the Measurement Journey State Model. The
+  adapter emits exactly one frontend-safe object with journey state id, blocked
+  model-review posture, product labels, progress index, next action, user next
+  step, blocked-claim copy, not-yet-evidence copy, high-level evidence stream
+  labels, missing/held/suppressed requirements, governance banner, safe message
+  copy, source-state label summary, visibility flags, and hardcoded false
+  safety booleans. It does not import Node runners, recompute active state,
+  advance beyond the source Measurement Journey State Model, expose
+  reviewer-owned payloads, render source refs, render hashes, expose nested
+  internals, or create routes, schemas, persistence, exports, live connectors,
+  diagnostics evidence, Bayesian readiness, promotion, posterior
+  interpretation, confidence/probability output, ROI, finance, causality,
+  productivity, customer-facing economic output, raw rows, identifiers, query
+  text, prompts, transcripts, reviewer names, person-level data, individual
+  scoring, or team scoring. Unknown, unsafe, malformed, missing, or weakened
+  source-model states fail closed to `NO_BLUEPRINT`; required non-authorization
+  fields must be present and false, and all supplied `blocked_outputs` / `feeds`
+  must be false. `model_review_posture` remains
+  `BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE`; aligned source refs remain
+  review-only and divergent source refs require reviewer interpretation rather
+  than success/failure framing. CODE / BUG / ADVERSARIAL review was run via
+  subagents and drove added coverage for no state advancement, no payload/hash
+  leakage, required false gates, safe high-level stream labels, and no
+  confidence/probability/ROI/productivity/causality/model-readiness language.
+  Verification passed:
+  `npm run test:ai-value-ui-view-model-adapter` (8/8);
+  `npm run test:ai-value-measurement-journey-state-model` (18/18);
+  `npm run test:ai-value-triangulated-evidence-alignment-review` (17/17);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (21/21);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `npm run build --workspace frontend`;
+  `git diff --check`.
 - Measurement Journey State Model slice (2026-06-27): added the bounded
   product-facing, UI-safe state model over the governed AI Value contract
   chain. The runner emits exactly one active `measurement_journey_state`, a
