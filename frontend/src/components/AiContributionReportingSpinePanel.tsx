@@ -6,6 +6,8 @@ import {
   comparisonDesignSourcePackageDraftAllowedActionLabel,
   comparisonDesignSourcePackageDraftAssemblyStateLabel,
   comparisonDesignSourcePackageDraftStateLabel,
+  comparisonDesignSourcePackageReviewAllowedActionLabel,
+  comparisonDesignSourcePackageReviewStateLabel,
   evidenceGapLabel,
   modelReviewPostureLabel,
   reviewerOwnedSourcePackageCollectionAllowedActionLabel,
@@ -31,6 +33,7 @@ export const AiContributionReportingSpinePanel = ({
   const comparisonReadiness = spine.comparisonDesignIntakeReadiness;
   const sourcePackageDraft = spine.comparisonDesignSourcePackageDraft;
   const reviewerOwnedCollection = spine.reviewerOwnedSourcePackageCollection;
+  const sourcePackageReview = spine.comparisonDesignSourcePackageReview;
   const draftPrepared =
     draft.draftIntakeState === "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED";
 
@@ -166,6 +169,109 @@ export const AiContributionReportingSpinePanel = ({
           Draft intake does not approve the metric, create governed approval,
           create diagnostics evidence, satisfy comparison-design adequacy, or
           feed Bayesian promotion.
+        </p>
+      </div>
+    </div>
+
+    <div className="ai-value-map-grid">
+      <div className="ai-value-map-cell ai-value-map-cell-wide">
+        <div className="ai-value-section-head">
+          <div>
+            <span className="ai-value-map-label">Comparison-design source package review</span>
+            <h3>
+              {comparisonDesignSourcePackageReviewStateLabel(
+                sourcePackageReview.reviewState
+              )}
+            </h3>
+            <p>
+              Source package review checks reviewer-owned completeness and
+              admissibility only. It is not evidence satisfaction or Bayesian
+              readiness.
+            </p>
+          </div>
+          <StatusPill
+            label={
+              sourcePackageReview.sourcePackageReviewReady
+                ? "Review-ready only"
+                : "Held"
+            }
+            tone="warn"
+          />
+        </div>
+        <div className="ai-value-map-grid">
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Reviewer-owned package</span>
+            <p>
+              {sourcePackageReview.reviewerOwnedSourcePackageSupplied
+                ? "Reviewer-owned package supplied"
+                : "Reviewer-owned package not supplied"}
+            </p>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Completeness</span>
+            <p>
+              {sourcePackageReview.sourcePackageReviewReady
+                ? "Complete for later adequacy review only"
+                : "Held for package review"}
+            </p>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Admissibility</span>
+            <p>
+              {sourcePackageReview.sourcePackageReviewReady
+                ? "Admissible for later review only"
+                : "Not admissible yet"}
+            </p>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Allowed next action</span>
+            <p>
+              {comparisonDesignSourcePackageReviewAllowedActionLabel(
+                sourcePackageReview.allowedNextAction
+              )}
+            </p>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Evidence status</span>
+            <p>No diagnostics evidence created.</p>
+          </div>
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Comparison-design adequacy</span>
+            <p>Not satisfied by source package review.</p>
+          </div>
+          <div className="ai-value-map-cell ai-value-map-cell-wide">
+            <span className="ai-value-map-label">Review package milestones</span>
+            <div className="ai-value-chip-row">
+              {sourcePackageReview.milestoneSchedule.requiredMilestones.map(
+                (milestone) => (
+                  <StatusPill key={milestone.key} label={milestone.label} />
+                )
+              )}
+            </div>
+          </div>
+          <div className="ai-value-map-cell ai-value-map-cell-wide">
+            <span className="ai-value-map-label">Missing fields / review gaps</span>
+            {sourcePackageReview.missingFields.length > 0 ||
+            sourcePackageReview.reviewGaps.length > 0 ? (
+              <ul>
+                {[
+                  ...sourcePackageReview.missingFields,
+                  ...sourcePackageReview.reviewGaps
+                ]
+                  .slice(0, 6)
+                  .map((gap) => (
+                    <li key={gap}>{comparisonDesignIntakeGapLabel(gap)}</li>
+                  ))}
+              </ul>
+            ) : (
+              <p>No review gaps for later adequacy review.</p>
+            )}
+          </div>
+        </div>
+        <p className="ai-value-inline-alert">
+          Source package review checks reviewer-owned completeness and
+          admissibility only; it does not satisfy comparison-design adequacy,
+          create diagnostics evidence, or feed Bayesian promotion.
         </p>
       </div>
     </div>
@@ -367,7 +473,7 @@ export const AiContributionReportingSpinePanel = ({
             <span className="ai-value-map-label">Collection status</span>
             <p>
               {reviewerOwnedCollection.reviewerOwnedSourcePackageSupplied
-                ? "Unexpected source package supplied"
+                ? "Reviewer-owned package received for review only"
                 : "Reviewer-owned package not supplied"}
             </p>
           </div>
@@ -375,7 +481,7 @@ export const AiContributionReportingSpinePanel = ({
             <span className="ai-value-map-label">Review readiness</span>
             <p>
               {reviewerOwnedCollection.sourcePackageReviewReady
-                ? "Unexpected review-ready state"
+                ? "Ready for later adequacy review only"
                 : "Not ready for adequacy review"}
             </p>
           </div>

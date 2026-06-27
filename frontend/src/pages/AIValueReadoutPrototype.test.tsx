@@ -58,17 +58,26 @@ describe("AIValueReadoutPrototype", () => {
     expect(
       within(measurementStory).getAllByText(/Reviewer-owned source package collection/i).length
     ).toBeGreaterThan(0);
+    expect(
+      within(measurementStory).getAllByText(/Comparison-design source package review/i).length
+    ).toBeGreaterThan(0);
     expect(within(measurementStory).getByText(/Draft intake held/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Readiness held/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Draft package not started/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Draft assembly held/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Collection held/i)).toBeInTheDocument();
+    expect(within(measurementStory).getByText(/Source package review held/i)).toBeInTheDocument();
     expect(
       within(measurementStory).getByText(/Choose a candidate metric before draft intake preparation/i)
     ).toBeInTheDocument();
     expect(
       within(measurementStory).getByText(/Comparison-design readiness does not create a source package/i)
     ).toBeInTheDocument();
+    expect(
+      within(measurementStory).getAllByText(
+        /Source package review checks reviewer-owned completeness and admissibility only/i
+      ).length
+    ).toBeGreaterThan(0);
     expect(within(measurementStory).getByText(/Model review posture/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Held for evidence gaps/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Missing comparison-design source package/i)).toBeInTheDocument();

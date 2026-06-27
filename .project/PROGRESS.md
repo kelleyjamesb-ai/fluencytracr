@@ -2,6 +2,37 @@
 
 ## Last Completed
 
+- Comparison Design Source Package Review slice (2026-06-27): added a bounded
+  review-only posture to the existing AI Contribution Reporting Spine frontend
+  view model and shared Journey / Workspace / Readout panel. The review path
+  accepts only an explicit reviewer-owned comparison-design source package,
+  validates source Blueprint hypothesis ref, reviewer-owned package ref,
+  candidate recommendation ref, selected metric candidate, reviewer role,
+  reviewer decision posture, expected direction, lag, all T0/T30/T60/T90/T120/
+  T180/T270/T365 milestone window refs, baseline source posture, comparison
+  condition, cohort identity, workflow/function identity, aggregate Measurement
+  Cell grain, suppression/missing/held posture, forbidden-use attestation,
+  privacy/identifier exclusion, and no-causality attestation. Missing,
+  incomplete, non-reviewer-owned, mismatched, unsafe, local/template/example/
+  fixture/runtime/generated, or nested unsafe milestone refs fail closed with
+  missing fields or review gaps. A valid package can become only
+  `READY_FOR_COMPARISON_DESIGN_ADEQUACY_REVIEW_ONLY`; it does not satisfy
+  `comparison_design_adequacy`, create diagnostics evidence, authorize hashes,
+  feed the Governed Diagnostics Sufficiency Evidence Source, feed Bayesian
+  promotion, or authorize promotion. Reviewer-owned collection now reflects
+  package-received/review-ready-only posture without implying evidence
+  satisfaction. CODE / BUG / ADVERSARIAL review first found approved-posture
+  leakage, collection/review contradiction, provenance laundering, unvalidated
+  extended milestones, unsafe nested milestone refs, and stale collection UI
+  copy; all were fixed and final CODE / BUG / ADVERSARIAL re-review reported no
+  findings. Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (82/82);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - Comparison Design Source Package Draft Assembly and Reviewer-Owned Source
   Package Collection Posture slices (2026-06-27): extended the existing AI
   Contribution Reporting Spine frontend view model and panel with a draft-only

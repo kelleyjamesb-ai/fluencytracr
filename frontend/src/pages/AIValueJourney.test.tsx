@@ -419,6 +419,9 @@ describe("AIValueJourney", () => {
     expect(
       within(reportingSpine).getAllByText(/Reviewer-owned source package collection/i).length
     ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Comparison-design source package review/i).length
+    ).toBeGreaterThan(0);
     expect(within(reportingSpine).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Readiness held/i)).toBeInTheDocument();
@@ -466,6 +469,7 @@ describe("AIValueJourney", () => {
       within(reportingSpine).getAllByText(/Draft review required/i).length
     ).toBeGreaterThan(0);
     expect(within(reportingSpine).getByText(/Collection held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Source package review held/i)).toBeInTheDocument();
     expect(
       within(reportingSpine).queryByText(
         /Collect reviewer-owned comparison-design source package outside product flow/i
@@ -486,6 +490,11 @@ describe("AIValueJourney", () => {
     expect(
       within(reportingSpine).getByText(/Reviewer-owned collection remains outside this product flow/i)
     ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(
+        /Source package review checks reviewer-owned completeness and admissibility only/i
+      ).length
+    ).toBeGreaterThan(0);
     expect(
       within(reportingSpine).getByText(/Comparison-design readiness does not create a source package/i)
     ).toBeInTheDocument();
