@@ -66,6 +66,133 @@ export interface AiReviewerMetricSelectionDraftIntake {
   feedsBayesianPromotion: false;
 }
 
+export type AiComparisonDesignIntakeReadinessState =
+  | "COMPARISON_DESIGN_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+  | "COMPARISON_DESIGN_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+  | "COMPARISON_DESIGN_INTAKE_HELD_FOR_DRAFT_SELECTION"
+  | "COMPARISON_DESIGN_INTAKE_HELD_FOR_REQUIRED_INTAKE_FIELDS"
+  | "COMPARISON_DESIGN_INTAKE_READY_FOR_SOURCE_PACKAGE_DRAFT_REVIEW";
+
+export type AiComparisonDesignSourcePackageDraftState =
+  | "SOURCE_PACKAGE_DRAFT_NOT_STARTED"
+  | "SOURCE_PACKAGE_DRAFT_HELD_FOR_CANDIDATE_RECOMMENDATION"
+  | "SOURCE_PACKAGE_DRAFT_HELD_FOR_REQUIRED_INTAKE_FIELDS"
+  | "SOURCE_PACKAGE_DRAFT_READY_FOR_REVIEW_PREPARATION";
+
+export interface AiComparisonDesignIntakeReadinessReview {
+  readinessState: AiComparisonDesignIntakeReadinessState;
+  sourceBlueprintHypothesisRef: string | null;
+  candidateMetricRecommendationRef: string | null;
+  draftSelectedMetricCandidate: string | null;
+  reviewerRole: string | null;
+  reviewerDecisionPosture: "HOLD_FOR_REVIEWER_DECISION";
+  expectedMovementDirection: "directional_review_required";
+  lagContext: "HOLD_FOR_REVIEWER_EXPECTATION_PATH";
+  milestoneSchedule: {
+    scheduleState: "DRAFT_PLANNING_ONLY_REVIEW_REQUIRED";
+    requiredMilestones: AiContributionReportingMilestone[];
+    createsMeasurementCellEvidence: false;
+  };
+  baselineSourcePosture: "HOLD_FOR_BASELINE_SOURCE_REVIEW";
+  comparisonCondition: "HOLD_FOR_COMPARISON_CONDITION_REVIEW";
+  cohortIdentity: string;
+  workflowFunctionIdentity: string;
+  aggregateMeasurementCellGrain: "DRAFT_GRAIN_PENDING_REVIEW";
+  suppressionMissingHeldPrecheckPosture: "HOLD_FOR_SUPPRESSION_MISSING_HELD_PRECHECK";
+  comparisonDesignSourcePackageDraftState: AiComparisonDesignSourcePackageDraftState;
+  missingFields: string[];
+  readinessGaps: string[];
+  allowedNextAction:
+    | "clarify_blueprint_hypothesis"
+    | "supply_candidate_metric_recommendation"
+    | "prepare_reviewer_metric_selection_draft_intake"
+    | "complete_required_comparison_design_intake_fields"
+    | "complete_comparison_design_source_package_draft_review";
+  draftReadinessOnly: true;
+  sourceRefAndPostureOnly: true;
+  selectedMetricApproved: false;
+  createsGovernedApproval: false;
+  createsDiagnosticsEvidence: false;
+  comparisonDesignAdequacySatisfied: false;
+  diagnosticsEvidenceSatisfied: false;
+  feedsBayesianPromotion: false;
+  promotionAuthorized: false;
+}
+
+export type AiComparisonDesignSourcePackageDraftAssemblyState =
+  | "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+  | "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_CANDIDATE_RECOMMENDATION"
+  | "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_DRAFT_SELECTION"
+  | "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_REQUIRED_INTAKE_FIELDS"
+  | "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED";
+
+export interface AiComparisonDesignSourcePackageDraftAssembly {
+  draftAssemblyState: AiComparisonDesignSourcePackageDraftAssemblyState;
+  draftStatus: "DRAFT_ASSEMBLY_ONLY_NOT_EVIDENCE";
+  templateRef: string;
+  sourceBlueprintHypothesisRef: string | null;
+  candidateMetricRecommendationRef: string | null;
+  draftSelectedMetricCandidate: string | null;
+  metricOwnerReviewerRole: string | null;
+  reviewerDecisionPlaceholder: "HOLD_FOR_REVIEWER_DECISION";
+  expectedMovementDirection: "directional_review_required";
+  expectedLagContext: "HOLD_FOR_REVIEWER_EXPECTATION_PATH";
+  baselineSourcePosture: "HOLD_FOR_BASELINE_SOURCE_REVIEW";
+  comparisonCondition: "HOLD_FOR_COMPARISON_CONDITION_REVIEW";
+  cohortIdentity: string;
+  workflowFunctionIdentity: string;
+  aggregateMeasurementCellGrain: "DRAFT_GRAIN_PENDING_REVIEW";
+  suppressionMissingHeldPrecheckPosture: "HOLD_FOR_SUPPRESSION_MISSING_HELD_PRECHECK";
+  requiredMilestoneLabels: string[];
+  forbiddenSourceInputs: string[];
+  missingFields: string[];
+  sourcePackageDraftCreated: boolean;
+  sourcePackageCreated: false;
+  reviewerOwnedEvidenceCollected: false;
+  createsGovernedApproval: false;
+  createsDiagnosticsEvidence: false;
+  comparisonDesignAdequacySatisfied: false;
+  diagnosticsEvidenceSatisfied: false;
+  feedsGovernedDiagnosticsSufficiencySource: false;
+  feedsBayesianPromotion: false;
+  promotionAuthorized: false;
+  allowedNextAction:
+    | "clarify_blueprint_hypothesis"
+    | "supply_candidate_metric_recommendation"
+    | "prepare_reviewer_metric_selection_draft_intake"
+    | "complete_required_comparison_design_intake_fields"
+    | "complete_comparison_design_source_package_draft_review";
+}
+
+export type AiReviewerOwnedSourcePackageCollectionState =
+  | "REVIEWER_OWNED_SOURCE_PACKAGE_COLLECTION_HELD_FOR_SOURCE_PACKAGE_DRAFT"
+  | "REVIEWER_OWNED_SOURCE_PACKAGE_COLLECTION_HELD_FOR_SOURCE_PACKAGE_DRAFT_REVIEW";
+
+export interface AiReviewerOwnedSourcePackageCollectionPosture {
+  collectionState: AiReviewerOwnedSourcePackageCollectionState;
+  draftAssemblyState: AiComparisonDesignSourcePackageDraftAssemblyState;
+  requiredReviewerAttestations: string[];
+  forbiddenSourceInputs: string[];
+  reviewerOwnedSourcePackageSupplied: false;
+  sourcePackageReviewReady: false;
+  sourcePackageHashAuthorized: false;
+  reviewedSourceEvidenceHashAuthorized: false;
+  sourceEvidenceHashAuthorized: false;
+  reviewedEvidenceManifestHashAuthorized: false;
+  evidenceSatisfied: false;
+  comparisonDesignAdequacySatisfied: false;
+  diagnosticsEvidenceSatisfied: false;
+  feedsGovernedDiagnosticsSufficiencySource: false;
+  feedsBayesianPromotion: false;
+  promotionAuthorized: false;
+  allowedNextAction:
+    | "clarify_blueprint_hypothesis"
+    | "supply_candidate_metric_recommendation"
+    | "prepare_reviewer_metric_selection_draft_intake"
+    | "complete_required_comparison_design_intake_fields"
+    | "complete_comparison_design_source_package_draft_review";
+}
+
 export interface AiContributionReportingSpineViewModel {
   reportingSpineState:
     | "HOLD_FOR_BLUEPRINT_HYPOTHESIS"
@@ -88,6 +215,9 @@ export interface AiContributionReportingSpineViewModel {
     | "LOCAL_SELECTION_NOT_REVIEWER_APPROVED";
   selectedMetricPosture: AiContributionReportingSelectedMetricPosture;
   reviewerMetricSelectionDraftIntake: AiReviewerMetricSelectionDraftIntake;
+  comparisonDesignIntakeReadiness: AiComparisonDesignIntakeReadinessReview;
+  comparisonDesignSourcePackageDraft: AiComparisonDesignSourcePackageDraftAssembly;
+  reviewerOwnedSourcePackageCollection: AiReviewerOwnedSourcePackageCollectionPosture;
   milestonePlan: {
     scheduleState: "HOLD_FOR_MILESTONE_WINDOW_REVIEW";
     requiredMilestones: AiContributionReportingMilestone[];
@@ -178,6 +308,40 @@ export const CONTRIBUTION_REPORTING_BLOCKED_OUTPUTS = Object.freeze({
   person_level_data: false
 });
 
+const COMPARISON_DESIGN_SOURCE_PACKAGE_INTAKE_TEMPLATE_REF =
+  "docs/contracts/ai-value-contribution-alignment-governed-diagnostics-evidence-collection-packet/COMPARISON_DESIGN_SOURCE_PACKAGE_INTAKE_TEMPLATE.md";
+
+const COMPARISON_DESIGN_DRAFT_FORBIDDEN_SOURCE_INPUTS = [
+  "template_prose",
+  "generated_examples",
+  "fixture_defaults",
+  "runtime_hashes_alone",
+  "posterior_like_values",
+  "raw_rows",
+  "identifiers",
+  "query_text",
+  "prompts",
+  "transcripts",
+  "person_level_data",
+  "live_connector_output"
+];
+
+const REVIEWER_OWNED_SOURCE_PACKAGE_REQUIRED_ATTESTATIONS = [
+  "reviewer_approved_metric_selection",
+  "approved_expectation_path_direction_lag",
+  "milestone_window_alignment",
+  "baseline_source_review",
+  "comparison_condition_review",
+  "cohort_identity_review",
+  "workflow_function_identity_review",
+  "aggregate_measurement_cell_grain_review",
+  "suppression_missing_held_window_review",
+  "cross_slice_aggregation_prohibition_review",
+  "person_level_identifier_exclusion_review",
+  "causality_claim_exclusion_review",
+  "data_science_and_governance_reviewer_decision"
+];
+
 const compactText = (value: unknown, fallback = ""): string => {
   const text = String(value ?? "").trim().replace(/\s+/g, " ");
   return text || fallback;
@@ -222,6 +386,14 @@ export const safeContributionReportingDisplayText = (
   const text = compactText(value, fallback);
   return unsafeDisplayTextPattern.test(text) ? fallback : text;
 };
+
+const safeContributionReportingReadinessText = (value: unknown): string | null => {
+  const text = compactText(value);
+  return text && !unsafeDisplayTextPattern.test(text) ? text : null;
+};
+
+const reviewerRolePosture = (value: unknown): string | null =>
+  compactText(value) ? "Metric owner / reviewer role supplied" : null;
 
 const labelFromToken = (value: string): string =>
   value
@@ -323,6 +495,159 @@ export const reviewerMetricSelectionDraftIntakeStateLabel = (
   return labels[state];
 };
 
+export const comparisonDesignIntakeReadinessStateLabel = (
+  state: AiComparisonDesignIntakeReadinessState
+): string => {
+  const labels: Record<AiComparisonDesignIntakeReadinessState, string> = {
+    COMPARISON_DESIGN_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS:
+      "Readiness held",
+    COMPARISON_DESIGN_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION:
+      "Readiness held",
+    COMPARISON_DESIGN_INTAKE_HELD_FOR_DRAFT_SELECTION: "Readiness held",
+    COMPARISON_DESIGN_INTAKE_HELD_FOR_REQUIRED_INTAKE_FIELDS:
+      "Readiness held",
+    COMPARISON_DESIGN_INTAKE_READY_FOR_SOURCE_PACKAGE_DRAFT_REVIEW:
+      "Ready for draft package review"
+  };
+  return labels[state];
+};
+
+export const comparisonDesignSourcePackageDraftStateLabel = (
+  state: AiComparisonDesignSourcePackageDraftState
+): string => {
+  const labels: Record<AiComparisonDesignSourcePackageDraftState, string> = {
+    SOURCE_PACKAGE_DRAFT_NOT_STARTED: "Draft package not started",
+    SOURCE_PACKAGE_DRAFT_HELD_FOR_CANDIDATE_RECOMMENDATION:
+      "Draft package held for candidate recommendation",
+    SOURCE_PACKAGE_DRAFT_HELD_FOR_REQUIRED_INTAKE_FIELDS:
+      "Draft package held for intake fields",
+    SOURCE_PACKAGE_DRAFT_READY_FOR_REVIEW_PREPARATION:
+      "Draft package ready for review preparation"
+  };
+  return labels[state];
+};
+
+export const comparisonDesignIntakeGapLabel = (gap: string): string => {
+  const labels: Record<string, string> = {
+    missing_source_blueprint_hypothesis_ref: "Missing source Blueprint hypothesis",
+    missing_candidate_metric_recommendation_ref:
+      "Missing candidate metric recommendation",
+    missing_draft_selected_metric_candidate: "Missing draft selected metric",
+    missing_metric_owner_reviewer_role: "Missing metric owner / reviewer role",
+    reviewer_decision_pending: "Reviewer decision still pending",
+    expected_direction_review_required: "Direction review required",
+    lag_context_review_required: "Timing lag review required",
+    baseline_source_review_required: "Baseline source review required",
+    comparison_condition_review_required: "Comparison condition review required",
+    measurement_cell_grain_review_required:
+      "Aggregate Measurement Cell grain review required",
+    suppression_missing_held_precheck_required:
+      "Suppression / missing / held precheck required",
+    source_package_draft_review_required:
+      "Comparison-design source package draft review required",
+    reviewer_approved_metric_selection:
+      "Pending attestation: metric-selection review",
+    approved_expectation_path_direction_lag:
+      "Pending attestation: expectation path direction and lag review",
+    milestone_window_alignment: "Pending attestation: milestone window alignment",
+    baseline_source_review: "Pending attestation: baseline source review",
+    comparison_condition_review:
+      "Pending attestation: comparison condition review",
+    cohort_identity_review: "Pending attestation: cohort identity review",
+    workflow_function_identity_review:
+      "Pending attestation: workflow / function identity review",
+    aggregate_measurement_cell_grain_review:
+      "Pending attestation: aggregate Measurement Cell grain review",
+    suppression_missing_held_window_review:
+      "Pending attestation: suppression / missing / held window review",
+    cross_slice_aggregation_prohibition_review:
+      "Pending attestation: cross-slice aggregation prohibition review",
+    person_level_identifier_exclusion_review:
+      "Pending attestation: person-level / identifier exclusion review",
+    causality_claim_exclusion_review:
+      "Pending attestation: no-causality-claim review",
+    data_science_and_governance_reviewer_decision:
+      "Pending attestation: data science and governance reviewer decision"
+  };
+  return labels[gap] ?? labelFromToken(gap);
+};
+
+export const comparisonDesignIntakeAllowedActionLabel = (action: string): string => {
+  const labels: Record<string, string> = {
+    clarify_blueprint_hypothesis: "Clarify Blueprint hypothesis",
+    supply_candidate_metric_recommendation: "Supply candidate metric recommendation",
+    prepare_reviewer_metric_selection_draft_intake:
+      "Prepare selected metric draft intake",
+    complete_required_comparison_design_intake_fields:
+      "Complete required intake fields",
+    complete_comparison_design_source_package_draft_review:
+      "Complete comparison-design source package draft review"
+  };
+  return labels[action] ?? labelFromToken(action);
+};
+
+export const comparisonDesignSourcePackageDraftAssemblyStateLabel = (
+  state: AiComparisonDesignSourcePackageDraftAssemblyState
+): string => {
+  const labels: Record<AiComparisonDesignSourcePackageDraftAssemblyState, string> = {
+    COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_BLUEPRINT_HYPOTHESIS:
+      "Draft assembly held",
+    COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_CANDIDATE_RECOMMENDATION:
+      "Draft assembly held",
+    COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_DRAFT_SELECTION:
+      "Draft assembly held",
+    COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_REQUIRED_INTAKE_FIELDS:
+      "Draft assembly held",
+    COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED:
+      "Draft review required"
+  };
+  return labels[state];
+};
+
+export const reviewerOwnedSourcePackageCollectionStateLabel = (
+  state: AiReviewerOwnedSourcePackageCollectionState
+): string => {
+  const labels: Record<AiReviewerOwnedSourcePackageCollectionState, string> = {
+    REVIEWER_OWNED_SOURCE_PACKAGE_COLLECTION_HELD_FOR_SOURCE_PACKAGE_DRAFT:
+      "Collection held",
+    REVIEWER_OWNED_SOURCE_PACKAGE_COLLECTION_HELD_FOR_SOURCE_PACKAGE_DRAFT_REVIEW:
+      "Collection held"
+  };
+  return labels[state];
+};
+
+export const comparisonDesignSourcePackageDraftAllowedActionLabel = (
+  action: string
+): string => {
+  const labels: Record<string, string> = {
+    clarify_blueprint_hypothesis: "Clarify Blueprint hypothesis",
+    supply_candidate_metric_recommendation: "Supply candidate metric recommendation",
+    prepare_reviewer_metric_selection_draft_intake:
+      "Prepare selected metric draft intake",
+    complete_required_comparison_design_intake_fields:
+      "Complete required intake fields",
+    complete_comparison_design_source_package_draft_review:
+      "Complete comparison-design source package draft review"
+  };
+  return labels[action] ?? labelFromToken(action);
+};
+
+export const reviewerOwnedSourcePackageCollectionAllowedActionLabel = (
+  action: string
+): string => {
+  const labels: Record<string, string> = {
+    clarify_blueprint_hypothesis: "Clarify Blueprint hypothesis",
+    supply_candidate_metric_recommendation: "Supply candidate metric recommendation",
+    prepare_reviewer_metric_selection_draft_intake:
+      "Prepare selected metric draft intake",
+    complete_required_comparison_design_intake_fields:
+      "Complete required intake fields",
+    complete_comparison_design_source_package_draft_review:
+      "Complete comparison-design source package draft review"
+  };
+  return labels[action] ?? labelFromToken(action);
+};
+
 const buildReviewerMetricSelectionDraftIntake = ({
   blueprintHypothesisRef,
   candidateMetricRecommendations,
@@ -359,16 +684,10 @@ const buildReviewerMetricSelectionDraftIntake = ({
       ? `candidate_metric_recommendation.${matchedRecommendation.candidateMetricId}`
       : null,
     draftSelectedMetricCandidate: draftPrepared
-      ? safeContributionReportingDisplayText(
-          selectedMetric?.name,
-          "Draft selected metric held for safe display review"
-        )
+      ? safeContributionReportingReadinessText(selectedMetric?.name)
       : null,
     metricOwnerReviewerRole: draftPrepared
-      ? safeContributionReportingDisplayText(
-          (selectedMetric as { owner?: string }).owner,
-          "Metric owner / reviewer role pending"
-        )
+      ? reviewerRolePosture((selectedMetric as { owner?: string }).owner)
       : null,
     expectedMovementDirection: "directional_review_required",
     lagContext: "HOLD_FOR_REVIEWER_EXPECTATION_PATH",
@@ -401,6 +720,189 @@ const buildReviewerMetricSelectionDraftIntake = ({
   };
 };
 
+const buildComparisonDesignIntakeReadiness = (
+  draft: AiReviewerMetricSelectionDraftIntake
+): AiComparisonDesignIntakeReadinessReview => {
+  const missingFields = [
+    !draft.sourceBlueprintHypothesisRef && "missing_source_blueprint_hypothesis_ref",
+    !draft.candidateMetricRecommendationRef && "missing_candidate_metric_recommendation_ref",
+    !draft.draftSelectedMetricCandidate && "missing_draft_selected_metric_candidate",
+    !draft.metricOwnerReviewerRole && "missing_metric_owner_reviewer_role"
+  ].filter(Boolean) as string[];
+  const readinessState: AiComparisonDesignIntakeReadinessState =
+    draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+      ? "COMPARISON_DESIGN_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+      : draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        ? "COMPARISON_DESIGN_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        : draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_DRAFT_SELECTION"
+          ? "COMPARISON_DESIGN_INTAKE_HELD_FOR_DRAFT_SELECTION"
+          : missingFields.length > 0
+            ? "COMPARISON_DESIGN_INTAKE_HELD_FOR_REQUIRED_INTAKE_FIELDS"
+            : "COMPARISON_DESIGN_INTAKE_READY_FOR_SOURCE_PACKAGE_DRAFT_REVIEW";
+  const comparisonDesignSourcePackageDraftState: AiComparisonDesignSourcePackageDraftState =
+    draft.draftIntakeState === "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED" &&
+    missingFields.length === 0
+      ? "SOURCE_PACKAGE_DRAFT_READY_FOR_REVIEW_PREPARATION"
+      : draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        ? "SOURCE_PACKAGE_DRAFT_HELD_FOR_CANDIDATE_RECOMMENDATION"
+      : draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS" ||
+          draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_DRAFT_SELECTION"
+        ? "SOURCE_PACKAGE_DRAFT_NOT_STARTED"
+        : "SOURCE_PACKAGE_DRAFT_HELD_FOR_REQUIRED_INTAKE_FIELDS";
+  const readinessGaps =
+    comparisonDesignSourcePackageDraftState === "SOURCE_PACKAGE_DRAFT_READY_FOR_REVIEW_PREPARATION"
+      ? [
+          "reviewer_decision_pending",
+          "expected_direction_review_required",
+          "lag_context_review_required",
+          "baseline_source_review_required",
+          "comparison_condition_review_required",
+          "measurement_cell_grain_review_required",
+          "suppression_missing_held_precheck_required",
+          "source_package_draft_review_required"
+        ]
+      : missingFields;
+  const allowedNextAction: AiComparisonDesignIntakeReadinessReview["allowedNextAction"] =
+    !draft.sourceBlueprintHypothesisRef
+      ? "clarify_blueprint_hypothesis"
+      : draft.draftIntakeState === "DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        ? "supply_candidate_metric_recommendation"
+      : draft.draftIntakeState !== "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED"
+          ? "prepare_reviewer_metric_selection_draft_intake"
+          : missingFields.length > 0
+            ? "complete_required_comparison_design_intake_fields"
+          : "complete_comparison_design_source_package_draft_review";
+
+  return {
+    readinessState,
+    sourceBlueprintHypothesisRef: draft.sourceBlueprintHypothesisRef,
+    candidateMetricRecommendationRef: draft.candidateMetricRecommendationRef,
+    draftSelectedMetricCandidate: draft.draftSelectedMetricCandidate,
+    reviewerRole: draft.metricOwnerReviewerRole,
+    reviewerDecisionPosture: "HOLD_FOR_REVIEWER_DECISION",
+    expectedMovementDirection: draft.expectedMovementDirection,
+    lagContext: draft.lagContext,
+    milestoneSchedule: {
+      scheduleState: draft.milestoneSchedule.scheduleState,
+      requiredMilestones: [...draft.milestoneSchedule.requiredMilestones],
+      createsMeasurementCellEvidence: false
+    },
+    baselineSourcePosture: draft.baselineSourcePosture,
+    comparisonCondition: draft.comparisonCondition,
+    cohortIdentity: draft.cohortIdentity,
+    workflowFunctionIdentity: draft.workflowFunctionIdentity,
+    aggregateMeasurementCellGrain: draft.aggregateMeasurementCellGrain,
+    suppressionMissingHeldPrecheckPosture: draft.suppressionMissingHeldPrecheckPosture,
+    comparisonDesignSourcePackageDraftState,
+    missingFields,
+    readinessGaps,
+    allowedNextAction,
+    draftReadinessOnly: true,
+    sourceRefAndPostureOnly: true,
+    selectedMetricApproved: false,
+    createsGovernedApproval: false,
+    createsDiagnosticsEvidence: false,
+    comparisonDesignAdequacySatisfied: false,
+    diagnosticsEvidenceSatisfied: false,
+    feedsBayesianPromotion: false,
+    promotionAuthorized: false
+  };
+};
+
+const buildComparisonDesignSourcePackageDraft = (
+  readiness: AiComparisonDesignIntakeReadinessReview
+): AiComparisonDesignSourcePackageDraftAssembly => {
+  const draftAssemblyState: AiComparisonDesignSourcePackageDraftAssemblyState =
+    readiness.readinessState ===
+    "COMPARISON_DESIGN_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+      ? "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+      : readiness.readinessState ===
+          "COMPARISON_DESIGN_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        ? "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        : readiness.readinessState ===
+            "COMPARISON_DESIGN_INTAKE_HELD_FOR_DRAFT_SELECTION"
+          ? "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_DRAFT_SELECTION"
+          : readiness.readinessState ===
+            "COMPARISON_DESIGN_INTAKE_HELD_FOR_REQUIRED_INTAKE_FIELDS"
+            ? "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_HELD_FOR_REQUIRED_INTAKE_FIELDS"
+            : "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED";
+  const sourcePackageDraftCreated =
+    draftAssemblyState ===
+    "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED";
+  const allowedNextAction: AiComparisonDesignSourcePackageDraftAssembly["allowedNextAction"] =
+    sourcePackageDraftCreated
+      ? "complete_comparison_design_source_package_draft_review"
+      : readiness.allowedNextAction;
+
+  return {
+    draftAssemblyState,
+    draftStatus: "DRAFT_ASSEMBLY_ONLY_NOT_EVIDENCE",
+    templateRef: COMPARISON_DESIGN_SOURCE_PACKAGE_INTAKE_TEMPLATE_REF,
+    sourceBlueprintHypothesisRef: readiness.sourceBlueprintHypothesisRef,
+    candidateMetricRecommendationRef: readiness.candidateMetricRecommendationRef,
+    draftSelectedMetricCandidate: readiness.draftSelectedMetricCandidate,
+    metricOwnerReviewerRole: readiness.reviewerRole,
+    reviewerDecisionPlaceholder: readiness.reviewerDecisionPosture,
+    expectedMovementDirection: readiness.expectedMovementDirection,
+    expectedLagContext: readiness.lagContext,
+    baselineSourcePosture: readiness.baselineSourcePosture,
+    comparisonCondition: readiness.comparisonCondition,
+    cohortIdentity: readiness.cohortIdentity,
+    workflowFunctionIdentity: readiness.workflowFunctionIdentity,
+    aggregateMeasurementCellGrain: readiness.aggregateMeasurementCellGrain,
+    suppressionMissingHeldPrecheckPosture:
+      readiness.suppressionMissingHeldPrecheckPosture,
+    requiredMilestoneLabels: readiness.milestoneSchedule.requiredMilestones.map(
+      (milestone) => milestone.label
+    ),
+    forbiddenSourceInputs: [...COMPARISON_DESIGN_DRAFT_FORBIDDEN_SOURCE_INPUTS],
+    missingFields: [...readiness.missingFields],
+    sourcePackageDraftCreated,
+    sourcePackageCreated: false,
+    reviewerOwnedEvidenceCollected: false,
+    createsGovernedApproval: false,
+    createsDiagnosticsEvidence: false,
+    comparisonDesignAdequacySatisfied: false,
+    diagnosticsEvidenceSatisfied: false,
+    feedsGovernedDiagnosticsSufficiencySource: false,
+    feedsBayesianPromotion: false,
+    promotionAuthorized: false,
+    allowedNextAction
+  };
+};
+
+const buildReviewerOwnedSourcePackageCollection = (
+  draft: AiComparisonDesignSourcePackageDraftAssembly
+): AiReviewerOwnedSourcePackageCollectionPosture => {
+  const draftReviewRequired =
+    draft.draftAssemblyState ===
+    "COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED";
+
+  return {
+    collectionState: draftReviewRequired
+      ? "REVIEWER_OWNED_SOURCE_PACKAGE_COLLECTION_HELD_FOR_SOURCE_PACKAGE_DRAFT_REVIEW"
+      : "REVIEWER_OWNED_SOURCE_PACKAGE_COLLECTION_HELD_FOR_SOURCE_PACKAGE_DRAFT",
+    draftAssemblyState: draft.draftAssemblyState,
+    requiredReviewerAttestations: [
+      ...REVIEWER_OWNED_SOURCE_PACKAGE_REQUIRED_ATTESTATIONS
+    ],
+    forbiddenSourceInputs: [...COMPARISON_DESIGN_DRAFT_FORBIDDEN_SOURCE_INPUTS],
+    reviewerOwnedSourcePackageSupplied: false,
+    sourcePackageReviewReady: false,
+    sourcePackageHashAuthorized: false,
+    reviewedSourceEvidenceHashAuthorized: false,
+    sourceEvidenceHashAuthorized: false,
+    reviewedEvidenceManifestHashAuthorized: false,
+    evidenceSatisfied: false,
+    comparisonDesignAdequacySatisfied: false,
+    diagnosticsEvidenceSatisfied: false,
+    feedsGovernedDiagnosticsSufficiencySource: false,
+    feedsBayesianPromotion: false,
+    promotionAuthorized: false,
+    allowedNextAction: draft.allowedNextAction
+  };
+};
+
 export const applyReviewerMetricSelectionDraftIntake = (
   spine: AiContributionReportingSpineViewModel,
   selectedOutcomeMetricSelection: AiContributionReportingSelectedMetricSelectionLike | null
@@ -412,6 +914,12 @@ export const applyReviewerMetricSelectionDraftIntake = (
     selectedOutcomeMetricSelection,
     workflowFunctionScope: spine.workflowFunctionScope
   });
+  const comparisonDesignIntakeReadiness =
+    buildComparisonDesignIntakeReadiness(reviewerMetricSelectionDraftIntake);
+  const comparisonDesignSourcePackageDraft =
+    buildComparisonDesignSourcePackageDraft(comparisonDesignIntakeReadiness);
+  const reviewerOwnedSourcePackageCollection =
+    buildReviewerOwnedSourcePackageCollection(comparisonDesignSourcePackageDraft);
 
   if (
     !selectedMetric ||
@@ -420,7 +928,10 @@ export const applyReviewerMetricSelectionDraftIntake = (
   ) {
     return {
       ...spine,
-      reviewerMetricSelectionDraftIntake
+      reviewerMetricSelectionDraftIntake,
+      comparisonDesignIntakeReadiness,
+      comparisonDesignSourcePackageDraft,
+      reviewerOwnedSourcePackageCollection
     };
   }
 
@@ -436,7 +947,10 @@ export const applyReviewerMetricSelectionDraftIntake = (
         "Selected metric held for safe display review"
       )
     },
-    reviewerMetricSelectionDraftIntake
+    reviewerMetricSelectionDraftIntake,
+    comparisonDesignIntakeReadiness,
+    comparisonDesignSourcePackageDraft,
+    reviewerOwnedSourcePackageCollection
   };
 };
 
@@ -458,6 +972,12 @@ export function buildAiContributionReportingSpineViewModel(
     selectedOutcomeMetricSelection: input.selectedOutcomeMetricSelection,
     workflowFunctionScope
   });
+  const comparisonDesignIntakeReadiness =
+    buildComparisonDesignIntakeReadiness(reviewerMetricSelectionDraftIntake);
+  const comparisonDesignSourcePackageDraft =
+    buildComparisonDesignSourcePackageDraft(comparisonDesignIntakeReadiness);
+  const reviewerOwnedSourcePackageCollection =
+    buildReviewerOwnedSourcePackageCollection(comparisonDesignSourcePackageDraft);
   const hasPreparedDraftSelection =
     selectedMetrics.length > 0 &&
     reviewerMetricSelectionDraftIntake.draftIntakeState ===
@@ -525,6 +1045,9 @@ export function buildAiContributionReportingSpineViewModel(
       : "HOLD_FOR_REVIEWER_APPROVAL",
     selectedMetricPosture,
     reviewerMetricSelectionDraftIntake,
+    comparisonDesignIntakeReadiness,
+    comparisonDesignSourcePackageDraft,
+    reviewerOwnedSourcePackageCollection,
     milestonePlan: {
       scheduleState: "HOLD_FOR_MILESTONE_WINDOW_REVIEW",
       requiredMilestones: [...REQUIRED_CONTRIBUTION_REPORTING_MILESTONES],

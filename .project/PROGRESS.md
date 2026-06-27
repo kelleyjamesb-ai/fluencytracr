@@ -2,6 +2,62 @@
 
 ## Last Completed
 
+- Comparison Design Source Package Draft Assembly and Reviewer-Owned Source
+  Package Collection Posture slices (2026-06-27): extended the existing AI
+  Contribution Reporting Spine frontend view model and panel with a draft-only
+  comparison-design source package assembly object plus a reviewer-owned source
+  package collection posture. The draft assembly binds safe planning posture to
+  the committed comparison-design intake template, carries required milestone
+  labels T0/T30/T60/T90/T120/T180/T270/T365, records forbidden source inputs,
+  and stops at
+  `COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED`.
+  Reviewer-owned collection remains held until draft review is complete and
+  cannot enter a collection-required state in this slice. Both objects keep
+  selected metric approval, governed approval, source package creation,
+  reviewer-owned evidence, diagnostics evidence, comparison_design_adequacy satisfaction, governed
+  diagnostics source feeds, Bayesian promotion feeds, and promotion authorization
+  false. CODE review found a stale future collection-required side door in the
+  exported contract; it was removed. BUG review found default-lane next-action,
+  prepared-draft advancement, and candidate-mismatch state bugs; they were
+  fixed. ADVERSARIAL review found and this slice fixed raw owner-text leakage
+  into reviewer-role posture and approval-like required-attestation labels; the
+  final adversarial re-review passed. Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (73/73);
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `npm run build --workspace frontend`;
+  `git diff --check`.
+- Comparison Design Intake Readiness Review slice (2026-06-26): extended the
+  existing AI Contribution Reporting Spine frontend view model with a
+  comparison-design intake readiness object derived from reviewer
+  metric-selection draft intake. The readiness review carries source Blueprint
+  hypothesis ref posture, candidate recommendation ref posture, draft selected
+  metric candidate, reviewer role, reviewer-decision hold, direction and lag
+  review posture, T0/T30/T60/T90/T120/T180/T270/T365 milestone schedule,
+  baseline source posture, comparison condition, cohort identity,
+  workflow/function identity, aggregate Measurement Cell grain posture,
+  suppression/missing/held precheck posture, source-package draft state,
+  missing fields, readiness gaps, and the allowed next action for preparing a
+  comparison-design source package draft. The Journey, Workspace, and Readout
+  surfaces now render this readiness state as draft/readiness-only. The slice
+  does not create a source package, create governed approval, create
+  diagnostics evidence, satisfy comparison_design_adequacy, feed Bayesian
+  promotion, or authorize promotion; all corresponding flags remain false.
+  CODE / BUG / ADVERSARIAL review initially found no remaining findings after
+  the missing reviewer-role regression was fixed; follow-on draft assembly and
+  collection posture review later identified and fixed downstream next-action
+  and candidate-mismatch issues in the source package slices above.
+  Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (71/71);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`.
 - Reviewer Metric Selection Draft Intake slice (2026-06-26): extended the
   existing AI Value Journey / Workspace reporting flow with a frontend-local
   reviewer metric-selection draft intake. The reporting-spine view model now

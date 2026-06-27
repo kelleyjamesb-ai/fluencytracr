@@ -412,8 +412,16 @@ describe("AIValueJourney", () => {
     expect(within(reportingSpine).getByText(/Candidate metric recommendations are planning inputs/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Selected metric approval/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Reviewer metric-selection draft intake/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Comparison-design intake readiness/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Source package draft assembly/i).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Reviewer-owned source package collection/i).length
+    ).toBeGreaterThan(0);
     expect(within(reportingSpine).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Readiness held/i)).toBeInTheDocument();
     expect(
       within(reportingSpine).getByText(/Choose a candidate metric before draft intake preparation/i)
     ).toBeInTheDocument();
@@ -432,12 +440,15 @@ describe("AIValueJourney", () => {
 
     expect(within(reportingSpine).getByText(/Local selection only/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Draft selected metric prepared/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Ready for draft package review/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Reviewer approval still required/i)).toBeInTheDocument();
     const draftSelectedMetric = within(reportingSpine)
       .getByText(/Draft selected metric candidate/i)
       .closest(".ai-value-map-cell") as HTMLElement;
     expect(within(draftSelectedMetric).getByText(/^Median resolution time$/)).toBeInTheDocument();
-    expect(within(reportingSpine).getByText(/Metric owner \/ reviewer role/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Metric owner \/ reviewer role/i).length
+    ).toBeGreaterThan(0);
     expect(within(reportingSpine).getByText(/Expected direction/i)).toBeInTheDocument();
     expect(
       within(reportingSpine).getByText(/Direction requires reviewer expectation path/i)
@@ -445,6 +456,38 @@ describe("AIValueJourney", () => {
     expect(within(reportingSpine).getByText(/Baseline source posture/i)).toBeInTheDocument();
     expect(
       within(reportingSpine).getByText(/Suppression, missing, or held window precheck required/i)
+    ).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Draft package ready for review preparation/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Complete comparison-design source package draft review/i)
+        .length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Draft review required/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Collection held/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).queryByText(
+        /Collect reviewer-owned comparison-design source package outside product flow/i
+      )
+    ).not.toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Collection stays held until the draft source package review is complete/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Pending attestation: metric-selection review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Pending attestation: expectation path direction and lag review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Source package draft assembly does not create governed evidence/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Reviewer-owned collection remains outside this product flow/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Comparison-design readiness does not create a source package/i)
     ).toBeInTheDocument();
     expect(
       within(reportingSpine).getByText(/Draft intake does not approve the metric/i)
