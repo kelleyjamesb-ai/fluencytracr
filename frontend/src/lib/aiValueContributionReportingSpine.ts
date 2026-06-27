@@ -31,6 +31,41 @@ export interface AiContributionReportingSelectedMetricPosture {
   metricLabel: string;
 }
 
+export type AiReviewerMetricSelectionDraftIntakeState =
+  | "DRAFT_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+  | "DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+  | "DRAFT_INTAKE_HELD_FOR_DRAFT_SELECTION"
+  | "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED";
+
+export interface AiReviewerMetricSelectionDraftIntake {
+  draftIntakeState: AiReviewerMetricSelectionDraftIntakeState;
+  sourceBlueprintHypothesisRef: string | null;
+  candidateMetricRecommendationRef: string | null;
+  draftSelectedMetricCandidate: string | null;
+  metricOwnerReviewerRole: string | null;
+  expectedMovementDirection: "directional_review_required";
+  lagContext: "HOLD_FOR_REVIEWER_EXPECTATION_PATH";
+  milestoneSchedule: {
+    scheduleState: "DRAFT_PLANNING_ONLY_REVIEW_REQUIRED";
+    requiredMilestones: AiContributionReportingMilestone[];
+    createsMeasurementCellEvidence: false;
+  };
+  baselineSourcePosture: "HOLD_FOR_BASELINE_SOURCE_REVIEW";
+  comparisonCondition: "HOLD_FOR_COMPARISON_CONDITION_REVIEW";
+  cohortIdentity: string;
+  workflowFunctionIdentity: string;
+  aggregateMeasurementCellGrain: "DRAFT_GRAIN_PENDING_REVIEW";
+  suppressionMissingHeldPrecheckPosture: "HOLD_FOR_SUPPRESSION_MISSING_HELD_PRECHECK";
+  reviewerDecisionPlaceholder: "HOLD_FOR_REVIEWER_DECISION";
+  draftOnly: true;
+  localFrontendStateOnly: true;
+  selectedMetricApproved: false;
+  createsGovernedApproval: false;
+  createsDiagnosticsEvidence: false;
+  comparisonDesignAdequacySatisfied: false;
+  feedsBayesianPromotion: false;
+}
+
 export interface AiContributionReportingSpineViewModel {
   reportingSpineState:
     | "HOLD_FOR_BLUEPRINT_HYPOTHESIS"
@@ -52,6 +87,7 @@ export interface AiContributionReportingSpineViewModel {
     | "HOLD_FOR_REVIEWER_APPROVAL"
     | "LOCAL_SELECTION_NOT_REVIEWER_APPROVED";
   selectedMetricPosture: AiContributionReportingSelectedMetricPosture;
+  reviewerMetricSelectionDraftIntake: AiReviewerMetricSelectionDraftIntake;
   milestonePlan: {
     scheduleState: "HOLD_FOR_MILESTONE_WINDOW_REVIEW";
     requiredMilestones: AiContributionReportingMilestone[];
@@ -96,6 +132,10 @@ export interface AiContributionReportingBridgeLike {
 export interface AiContributionReportingSelectedMetricLike {
   id: string;
   name: string;
+  valueRoute?: string;
+  sourceSystem?: string;
+  measurementUnit?: string;
+  owner?: string;
 }
 
 export interface AiContributionReportingSelectedMetricSelectionLike {
@@ -189,6 +229,12 @@ const labelFromToken = (value: string): string =>
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+const normalizeDraftMetricId = (value: unknown): string =>
+  compactText(value)
+    .replace(/^bridge-/, "")
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
 const candidateFamily = (item: AiContributionReportingBridgeItemLike): string => {
   const route = compactText(item.valueRouteLabel, "metric planning").toLowerCase();
   if (/quality/.test(route)) return "quality_exception_context";
@@ -265,6 +311,135 @@ export const modelReviewPostureLabel = (
   return labelFromToken(posture);
 };
 
+export const reviewerMetricSelectionDraftIntakeStateLabel = (
+  state: AiReviewerMetricSelectionDraftIntakeState
+): string => {
+  const labels: Record<AiReviewerMetricSelectionDraftIntakeState, string> = {
+    DRAFT_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS: "Draft intake held",
+    DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION: "Draft intake held",
+    DRAFT_INTAKE_HELD_FOR_DRAFT_SELECTION: "Draft intake held",
+    DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED: "Draft selected metric prepared"
+  };
+  return labels[state];
+};
+
+const buildReviewerMetricSelectionDraftIntake = ({
+  blueprintHypothesisRef,
+  candidateMetricRecommendations,
+  selectedOutcomeMetricSelection,
+  workflowFunctionScope
+}: {
+  blueprintHypothesisRef: string | null;
+  candidateMetricRecommendations: AiContributionReportingCandidateRecommendation[];
+  selectedOutcomeMetricSelection?: AiContributionReportingSelectedMetricSelectionLike | null;
+  workflowFunctionScope: string;
+}): AiReviewerMetricSelectionDraftIntake => {
+  const selectedMetric = selectedOutcomeMetricSelection?.metrics?.[0] ?? null;
+  const matchedRecommendation = selectedMetric
+    ? candidateMetricRecommendations.find(
+        (recommendation) =>
+          normalizeDraftMetricId(recommendation.candidateMetricId) ===
+          normalizeDraftMetricId(selectedMetric.id)
+      )
+    : null;
+  const draftIntakeState: AiReviewerMetricSelectionDraftIntakeState =
+    !blueprintHypothesisRef
+      ? "DRAFT_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS"
+      : candidateMetricRecommendations.length === 0 || (selectedMetric && !matchedRecommendation)
+        ? "DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+        : !selectedMetric
+          ? "DRAFT_INTAKE_HELD_FOR_DRAFT_SELECTION"
+          : "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED";
+  const draftPrepared = draftIntakeState === "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED";
+
+  return {
+    draftIntakeState,
+    sourceBlueprintHypothesisRef: blueprintHypothesisRef,
+    candidateMetricRecommendationRef: matchedRecommendation
+      ? `candidate_metric_recommendation.${matchedRecommendation.candidateMetricId}`
+      : null,
+    draftSelectedMetricCandidate: draftPrepared
+      ? safeContributionReportingDisplayText(
+          selectedMetric?.name,
+          "Draft selected metric held for safe display review"
+        )
+      : null,
+    metricOwnerReviewerRole: draftPrepared
+      ? safeContributionReportingDisplayText(
+          (selectedMetric as { owner?: string }).owner,
+          "Metric owner / reviewer role pending"
+        )
+      : null,
+    expectedMovementDirection: "directional_review_required",
+    lagContext: "HOLD_FOR_REVIEWER_EXPECTATION_PATH",
+    milestoneSchedule: {
+      scheduleState: "DRAFT_PLANNING_ONLY_REVIEW_REQUIRED",
+      requiredMilestones: [...REQUIRED_CONTRIBUTION_REPORTING_MILESTONES],
+      createsMeasurementCellEvidence: false
+    },
+    baselineSourcePosture: "HOLD_FOR_BASELINE_SOURCE_REVIEW",
+    comparisonCondition: "HOLD_FOR_COMPARISON_CONDITION_REVIEW",
+    cohortIdentity: safeContributionReportingDisplayText(
+      (selectedOutcomeMetricSelection as { functionArea?: string } | null | undefined)
+        ?.functionArea,
+      "Aggregate cohort pending reviewer intake"
+    ),
+    workflowFunctionIdentity: safeContributionReportingDisplayText(
+      workflowFunctionScope,
+      "Workflow/function pending"
+    ),
+    aggregateMeasurementCellGrain: "DRAFT_GRAIN_PENDING_REVIEW",
+    suppressionMissingHeldPrecheckPosture: "HOLD_FOR_SUPPRESSION_MISSING_HELD_PRECHECK",
+    reviewerDecisionPlaceholder: "HOLD_FOR_REVIEWER_DECISION",
+    draftOnly: true,
+    localFrontendStateOnly: true,
+    selectedMetricApproved: false,
+    createsGovernedApproval: false,
+    createsDiagnosticsEvidence: false,
+    comparisonDesignAdequacySatisfied: false,
+    feedsBayesianPromotion: false
+  };
+};
+
+export const applyReviewerMetricSelectionDraftIntake = (
+  spine: AiContributionReportingSpineViewModel,
+  selectedOutcomeMetricSelection: AiContributionReportingSelectedMetricSelectionLike | null
+): AiContributionReportingSpineViewModel => {
+  const selectedMetric = selectedOutcomeMetricSelection?.metrics?.[0] ?? null;
+  const reviewerMetricSelectionDraftIntake = buildReviewerMetricSelectionDraftIntake({
+    blueprintHypothesisRef: spine.blueprintHypothesisRef,
+    candidateMetricRecommendations: spine.candidateMetricRecommendations,
+    selectedOutcomeMetricSelection,
+    workflowFunctionScope: spine.workflowFunctionScope
+  });
+
+  if (
+    !selectedMetric ||
+    reviewerMetricSelectionDraftIntake.draftIntakeState !==
+      "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED"
+  ) {
+    return {
+      ...spine,
+      reviewerMetricSelectionDraftIntake
+    };
+  }
+
+  return {
+    ...spine,
+    selectedMetricApprovalState: "LOCAL_SELECTION_NOT_REVIEWER_APPROVED",
+    selectedMetricPosture: {
+      label: "Local selection only",
+      detail:
+        "Draft metric intake still needs reviewer approval before comparison-design intake.",
+      metricLabel: safeContributionReportingDisplayText(
+        selectedMetric.name,
+        "Selected metric held for safe display review"
+      )
+    },
+    reviewerMetricSelectionDraftIntake
+  };
+};
+
 export function buildAiContributionReportingSpineViewModel(
   input: BuildAiContributionReportingSpineViewModelInput = {}
 ): AiContributionReportingSpineViewModel {
@@ -273,8 +448,21 @@ export function buildAiContributionReportingSpineViewModel(
     ? buildRecommendations(input.questionMetricBridge, input.metricLibraryRef)
     : [];
   const selectedMetrics = input.selectedOutcomeMetricSelection?.metrics ?? [];
-  const hasLocalSelection = selectedMetrics.length > 0;
-  const selectedMetricPosture: AiContributionReportingSelectedMetricPosture = hasLocalSelection
+  const workflowFunctionScope = compactText(
+    input.workflowFunctionScope,
+    "Workflow scope pending"
+  );
+  const reviewerMetricSelectionDraftIntake = buildReviewerMetricSelectionDraftIntake({
+    blueprintHypothesisRef,
+    candidateMetricRecommendations,
+    selectedOutcomeMetricSelection: input.selectedOutcomeMetricSelection,
+    workflowFunctionScope
+  });
+  const hasPreparedDraftSelection =
+    selectedMetrics.length > 0 &&
+    reviewerMetricSelectionDraftIntake.draftIntakeState ===
+      "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED";
+  const selectedMetricPosture: AiContributionReportingSelectedMetricPosture = hasPreparedDraftSelection
     ? {
         label: "Local selection only",
         detail:
@@ -322,7 +510,7 @@ export function buildAiContributionReportingSpineViewModel(
         : "Evidence gaps remain",
     statusTone: "warn",
     blueprintHypothesisRef,
-    workflowFunctionScope: compactText(input.workflowFunctionScope, "Workflow scope pending"),
+    workflowFunctionScope,
     valueRouteLabel: compactText(input.valueRouteLabel, "Value route pending"),
     candidateMetricRecommendationState:
       candidateMetricRecommendations.length > 0
@@ -332,10 +520,11 @@ export function buildAiContributionReportingSpineViewModel(
     recommendationsCreateEvidence: false,
     recommendationsAreSelectedMetrics: false,
     selectedMetricApproved: false,
-    selectedMetricApprovalState: hasLocalSelection
+    selectedMetricApprovalState: hasPreparedDraftSelection
       ? "LOCAL_SELECTION_NOT_REVIEWER_APPROVED"
       : "HOLD_FOR_REVIEWER_APPROVAL",
     selectedMetricPosture,
+    reviewerMetricSelectionDraftIntake,
     milestonePlan: {
       scheduleState: "HOLD_FOR_MILESTONE_WINDOW_REVIEW",
       requiredMilestones: [...REQUIRED_CONTRIBUTION_REPORTING_MILESTONES],

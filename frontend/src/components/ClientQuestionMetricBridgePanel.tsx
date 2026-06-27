@@ -1265,11 +1265,13 @@ export const ClientQuestionMetricBridgePanel = ({
   bridge,
   functionPlans: providedFunctionPlans,
   selectedFunction: controlledSelectedFunction,
+  onActiveSelectionChange,
   onSelectedFunctionChange
 }: {
   bridge: ClientQuestionMetricBridge;
   functionPlans?: FunctionMetricPlan[];
   selectedFunction?: string;
+  onActiveSelectionChange?: (selection: SelectedOutcomeMetricSelection) => void;
   onSelectedFunctionChange?: (functionArea: string) => void;
 }) => {
   const defaultFunctionPlans = useMemo(() => buildFunctionMetricPlans(bridge), [bridge]);
@@ -1423,13 +1425,18 @@ export const ClientQuestionMetricBridgePanel = ({
       selectionsByFunction
     });
     writeSelectedOutcomeMetricSelection(activeSelection);
-  }, [activeSelection, selectedPlan.functionArea, selectionsByFunction]);
+  }, [
+    activeSelection,
+    selectedPlan.functionArea,
+    selectionsByFunction
+  ]);
 
   const toggleMetric = (metricId: string) => {
+    const wasSelected = selectedMetricIds.includes(metricId);
+    const nextIds = wasSelected
+      ? selectedMetricIds.filter((id) => id !== metricId)
+      : [...selectedMetricIds, metricId];
     setSelectedMetricIdsByFunction((current) => {
-      const nextIds = selectedMetricIds.includes(metricId)
-        ? selectedMetricIds.filter((id) => id !== metricId)
-        : [...selectedMetricIds, metricId];
       return {
         ...current,
         [selectedPlan.functionArea]: nextIds
@@ -1529,6 +1536,17 @@ export const ClientQuestionMetricBridgePanel = ({
                     <span>
                       {metric.sourceSystem} · {metric.measurementUnit} · {metric.owner}
                     </span>
+                    <button
+                      className="ai-value-step"
+                      onClick={() =>
+                        onActiveSelectionChange?.(
+                          buildSelectedOutcomeMetricSelection(selectedPlan, [metric.id])
+                        )
+                      }
+                      type="button"
+                    >
+                      Prepare draft intake
+                    </button>
                   </li>
                 ))}
               </ul>

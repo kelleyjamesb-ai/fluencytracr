@@ -38,6 +38,15 @@ describe("AI contribution reporting spine view model", () => {
     expect(spine.statusLabel).toBe("Needs Blueprint hypothesis");
     expect(spine.allowedNextEvidenceAction).toBe("clarify_blueprint_hypothesis");
     expect(spine.candidateMetricRecommendations).toEqual([]);
+    expect(spine.reviewerMetricSelectionDraftIntake).toMatchObject({
+      draftIntakeState: "DRAFT_INTAKE_HELD_FOR_BLUEPRINT_HYPOTHESIS",
+      draftOnly: true,
+      selectedMetricApproved: false,
+      createsGovernedApproval: false,
+      createsDiagnosticsEvidence: false,
+      comparisonDesignAdequacySatisfied: false,
+      feedsBayesianPromotion: false
+    });
     expect(spine.milestonePlan.requiredMilestones.map((milestone) => milestone.label)).toEqual([
       "T0",
       "T30",
@@ -122,6 +131,39 @@ describe("AI contribution reporting spine view model", () => {
     expect(spine.selectedMetricApprovalState).toBe("LOCAL_SELECTION_NOT_REVIEWER_APPROVED");
     expect(spine.selectedMetricPosture.label).toBe("Local selection only");
     expect(spine.selectedMetricPosture.metricLabel).toBe("Median resolution time");
+    expect(spine.reviewerMetricSelectionDraftIntake).toMatchObject({
+      draftIntakeState: "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED",
+      sourceBlueprintHypothesisRef: "blueprint_hypothesis.customer_support.case_resolution.2026_06",
+      candidateMetricRecommendationRef:
+        "candidate_metric_recommendation.support_resolution_hours",
+      draftSelectedMetricCandidate: "Median resolution time",
+      metricOwnerReviewerRole: "Customer data owner",
+      expectedMovementDirection: "directional_review_required",
+      lagContext: "HOLD_FOR_REVIEWER_EXPECTATION_PATH",
+      baselineSourcePosture: "HOLD_FOR_BASELINE_SOURCE_REVIEW",
+      comparisonCondition: "HOLD_FOR_COMPARISON_CONDITION_REVIEW",
+      cohortIdentity: "Customer or Account Success",
+      workflowFunctionIdentity: "Customer Support case resolution",
+      aggregateMeasurementCellGrain: "DRAFT_GRAIN_PENDING_REVIEW",
+      suppressionMissingHeldPrecheckPosture:
+        "HOLD_FOR_SUPPRESSION_MISSING_HELD_PRECHECK",
+      reviewerDecisionPlaceholder: "HOLD_FOR_REVIEWER_DECISION",
+      draftOnly: true,
+      localFrontendStateOnly: true,
+      selectedMetricApproved: false,
+      createsGovernedApproval: false,
+      createsDiagnosticsEvidence: false,
+      comparisonDesignAdequacySatisfied: false,
+      feedsBayesianPromotion: false
+    });
+    expect(
+      spine.reviewerMetricSelectionDraftIntake.milestoneSchedule.requiredMilestones.map(
+        (milestone) => milestone.label
+      )
+    ).toEqual(["T0", "T30", "T60", "T90", "T120", "T180", "T270", "T365"]);
+    expect(
+      spine.reviewerMetricSelectionDraftIntake.milestoneSchedule.createsMeasurementCellEvidence
+    ).toBe(false);
     expect(spine.selectedMetricApproved).toBe(false);
     expect(spine.evidenceGapList).toContain("missing_reviewer_metric_approval");
   });
@@ -129,11 +171,12 @@ describe("AI contribution reporting spine view model", () => {
   it("scrubs unsafe browser-local selected metric labels", () => {
     const spine = buildAiContributionReportingSpineViewModel({
       blueprintHypothesisRef: "blueprint_hypothesis.customer_support.case_resolution.2026_06",
-      workflowFunctionScope: "Customer Support case resolution",
+      workflowFunctionScope: unsafeTestTerm("workflow", "_", "state raw prompt"),
       valueRouteLabel: "Capacity creation",
       metricLibraryRef: "metrics_library.customer_support.aggregate_outcomes",
       questionMetricBridge: bridge,
       selectedOutcomeMetricSelection: {
+        functionArea: unsafeTestTerm("employee", "_", "id cohort"),
         metrics: [
           {
             id: "local_metric",
@@ -147,8 +190,20 @@ describe("AI contribution reporting spine view model", () => {
       }
     });
 
+    expect(spine.selectedMetricApprovalState).toBe("HOLD_FOR_REVIEWER_APPROVAL");
     expect(spine.selectedMetricPosture.metricLabel).toBe(
-      "Selected metric held for safe display review"
+      "No reviewer-approved selected metric"
+    );
+    expect(spine.reviewerMetricSelectionDraftIntake.draftIntakeState).toBe(
+      "DRAFT_INTAKE_HELD_FOR_CANDIDATE_RECOMMENDATION"
+    );
+    expect(spine.reviewerMetricSelectionDraftIntake.draftSelectedMetricCandidate).toBeNull();
+    expect(spine.reviewerMetricSelectionDraftIntake.metricOwnerReviewerRole).toBeNull();
+    expect(spine.reviewerMetricSelectionDraftIntake.cohortIdentity).toBe(
+      "Aggregate cohort pending reviewer intake"
+    );
+    expect(spine.reviewerMetricSelectionDraftIntake.workflowFunctionIdentity).toBe(
+      "Workflow/function pending"
     );
   });
 

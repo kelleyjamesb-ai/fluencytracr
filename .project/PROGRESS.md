@@ -2,6 +2,34 @@
 
 ## Last Completed
 
+- Reviewer Metric Selection Draft Intake slice (2026-06-26): extended the
+  existing AI Value Journey / Workspace reporting flow with a frontend-local
+  reviewer metric-selection draft intake. The reporting-spine view model now
+  carries a draft-only intake object with source Blueprint hypothesis posture,
+  candidate metric recommendation ref, draft selected metric candidate, metric
+  owner/reviewer role, expected direction and lag review posture, T0/T30/T60/
+  T90/T120/T180/T270/T365 milestone schedule, baseline source posture,
+  comparison condition, cohort identity, workflow/function identity, aggregate
+  Measurement Cell grain posture, suppression/missing/held precheck posture,
+  and reviewer decision placeholder. The Journey and Workspace surfaces wire
+  explicit local outcome-metric selection actions into that draft view without
+  creating a route, schema, persistence path, export, governed approval object,
+  diagnostics evidence, comparison-design satisfaction, Bayesian feed, or
+  promotion authority. Candidate recommendations remain planning inputs only,
+  selected metric approval remains false, comparison_design_adequacy remains
+  unsatisfied, and the Bayesian chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`. CODE / BUG /
+  ADVERSARIAL review kept the implementation in the reporting-spine view model,
+  required strict candidate-recommendation matching for draft preparation,
+  scrubbed unsafe draft display fields, and preserved all blocked outputs.
+  Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (70/70);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
 - Existing AI Value Journey / Workspace Reporting Integration slice
   (2026-06-26): connected the committed AI Contribution Reporting Spine into
   the existing Journey, Workspace, and Readout surfaces through a

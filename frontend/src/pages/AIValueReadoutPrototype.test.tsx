@@ -50,11 +50,23 @@ describe("AIValueReadoutPrototype", () => {
     expect(within(measurementStory).getByText(/Candidate metric recommendations are planning inputs/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Selected metric approval/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
+    expect(within(measurementStory).getByText(/Reviewer metric-selection draft intake/i)).toBeInTheDocument();
+    expect(within(measurementStory).getByText(/Draft intake held/i)).toBeInTheDocument();
+    expect(
+      within(measurementStory).getByText(/Choose a candidate metric before draft intake preparation/i)
+    ).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Model review posture/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Held for evidence gaps/i)).toBeInTheDocument();
     expect(within(measurementStory).getByText(/Missing comparison-design source package/i)).toBeInTheDocument();
+    const draftMilestoneSchedule = within(measurementStory)
+      .getByText(/Draft milestone schedule/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    const milestonePlan = within(measurementStory)
+      .getByText(/^Milestone plan$/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
     for (const milestone of ["T0", "T30", "T60", "T90", "T120", "T180", "T270", "T365"]) {
-      expect(within(measurementStory).getByText(milestone)).toBeInTheDocument();
+      expect(within(draftMilestoneSchedule).getByText(milestone)).toBeInTheDocument();
+      expect(within(milestonePlan).getByText(milestone)).toBeInTheDocument();
     }
 
     const gate = screen.getByRole("region", { name: /Claim boundary review/i });

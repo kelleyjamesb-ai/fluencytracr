@@ -17,11 +17,13 @@ import { AiContributionReportingSpinePanel } from "../components/AiContributionR
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
+import { applyReviewerMetricSelectionDraftIntake } from "../lib/aiValueContributionReportingSpine";
 import {
   fetchCustomerDataModelProjections,
   type CustomerDataModelProjection,
   type CustomerDataModelProjectionResponse
 } from "../lib/aiValueApi";
+import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelection";
 
 const workspacePages = [
   {
@@ -2097,9 +2099,15 @@ const AiOrgFluencyExamplePanel = () => (
 
 const MetricsPage = ({ journey }: { journey: Journey }) => {
   const [selectedFunction, setSelectedFunction] = useState("Customer or Account Success");
+  const [draftMetricSelection, setDraftMetricSelection] =
+    useState<SelectedOutcomeMetricSelection | null>(null);
   const functionMetricPlans = useMemo(
     () => buildFunctionMetricPlans(journey.questionMetricBridge),
     [journey.questionMetricBridge]
+  );
+  const contributionReportingSpine = applyReviewerMetricSelectionDraftIntake(
+    journey.contributionReportingSpine,
+    draftMetricSelection
   );
 
   return (
@@ -2122,11 +2130,12 @@ const MetricsPage = ({ journey }: { journey: Journey }) => {
       <ClientQuestionMetricBridgePanel
         bridge={journey.questionMetricBridge}
         functionPlans={functionMetricPlans}
+        onActiveSelectionChange={setDraftMetricSelection}
         onSelectedFunctionChange={setSelectedFunction}
         selectedFunction={selectedFunction}
       />
 
-      <AiContributionReportingSpinePanel spine={journey.contributionReportingSpine} />
+      <AiContributionReportingSpinePanel spine={contributionReportingSpine} />
 
       <CandidateOutcomeMetricsPanel
         functionPlans={functionMetricPlans}
