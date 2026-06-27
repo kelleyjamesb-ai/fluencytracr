@@ -662,7 +662,7 @@ export function registerAiValueRoutes(app: Express): void {
           aiValueEngine.validateFluencyBaseline(matchedBaseline.payload).valid &&
           fluencyBaselineMatchesPacket(
             matchedBaseline.payload,
-            packetWorkflowFamily,
+            packetWorkflowFamily ?? undefined,
             orgId
           )
         ) {
