@@ -428,6 +428,23 @@ describe("AIValueJourney", () => {
     expect(
       within(reportingSpine).getByText(/Choose a candidate metric before draft intake preparation/i)
     ).toBeInTheDocument();
+    const adapterView = within(reportingSpine).getByRole("region", {
+      name: /AI value UI view model/i
+    });
+    expect(
+      within(adapterView).getByRole("heading", { name: /Metrics Recommended/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 3 of 13/i)).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Model review blocked/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/Evidence streams for review/i)
+    ).not.toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/AI Fluency Instrument \(SED\)/i)
+    ).not.toBeInTheDocument();
+    expect(adapterView.textContent).not.toMatch(
+      /confidence|probability|posterior|source_ref|source_hash|reviewer_owned_payload|employee_id|prompt|transcript|[a-f0-9]{64}/i
+    );
 
     const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
     fireEvent.click(within(bridge).getByRole("checkbox", { name: /Time to First Value/i }));
@@ -443,6 +460,10 @@ describe("AIValueJourney", () => {
 
     expect(within(reportingSpine).getByText(/Local selection only/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Draft selected metric prepared/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).getByRole("heading", { name: /Measurement Plan Drafted/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 4 of 13/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Ready for draft package review/i)).toBeInTheDocument();
     expect(within(reportingSpine).getByText(/Reviewer approval still required/i)).toBeInTheDocument();
     const draftSelectedMetric = within(reportingSpine)
@@ -501,10 +522,18 @@ describe("AIValueJourney", () => {
     expect(
       within(reportingSpine).getByText(/Draft intake does not approve the metric/i)
     ).toBeInTheDocument();
-    expect(within(reportingSpine).getByText(/Model review posture/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Model review posture/i).length
+    ).toBeGreaterThan(0);
     expect(within(reportingSpine).getByText(/Held for evidence gaps/i)).toBeInTheDocument();
-    expect(within(reportingSpine).getByText(/Complete reviewer metric selection approval/i)).toBeInTheDocument();
-    expect(within(reportingSpine).getByText(/Missing comparison-design source package/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Complete reviewer metric selection approval/i)
+        .length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Missing comparison-design source package/i)
+        .length
+    ).toBeGreaterThan(0);
     const draftMilestoneSchedule = within(reportingSpine)
       .getByText(/Draft milestone schedule/i)
       .closest(".ai-value-map-cell") as HTMLElement;

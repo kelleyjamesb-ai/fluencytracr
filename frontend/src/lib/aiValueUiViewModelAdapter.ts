@@ -80,21 +80,21 @@ const HIGH_LEVEL_EVIDENCE_STREAMS = [
 ];
 
 const BLOCKED_CLAIM_LABELS = [
-  "No model output is shown.",
-  "No stronger value claims are shown.",
-  "No cause-and-effect language is shown.",
-  "No individual or team scoring is shown.",
-  "No raw or reviewer-owned payload is shown.",
-  "No export or customer persistence is enabled."
+  "Model outputs stay hidden.",
+  "Stronger value statements stay held.",
+  "Outcome interpretation stays review-only.",
+  "Scoring views stay hidden.",
+  "Internal payload details stay hidden.",
+  "Download and saved-output actions stay disabled."
 ];
 
 const NOT_YET_EVIDENCE_LABELS = [
   "Journey state",
   "Metric recommendations",
   "Measurement plan posture",
-  "Source package posture",
+  "Collection package posture",
   "Comparison design review posture",
-  "Source-ref alignment posture",
+  "Aggregate alignment posture",
   "Model review posture"
 ];
 
@@ -106,11 +106,11 @@ const DEFAULT_MISSING_REQUIREMENTS = {
   MEASUREMENT_PLAN_APPROVED: ["Aggregate data collection planning"],
   DATA_COLLECTION_PLANNING_READY: ["Reviewer-owned source package"],
   SOURCE_PACKAGE_COLLECTION_READY: ["Comparison design adequacy review"],
-  COMPARISON_DESIGN_REVIEWED: ["Governed source-ref alignment inputs"],
-  EVIDENCE_ALIGNMENT_HELD: ["Complete governed aggregate source refs"],
-  EVIDENCE_ALIGNMENT_PARTIAL: ["Reviewer follow-up on incomplete source refs"],
+  COMPARISON_DESIGN_REVIEWED: ["Governed aggregate alignment inputs"],
+  EVIDENCE_ALIGNMENT_HELD: ["Complete governed aggregate inputs"],
+  EVIDENCE_ALIGNMENT_PARTIAL: ["Reviewer follow-up on incomplete aggregate inputs"],
   EVIDENCE_ALIGNMENT_ALIGNED: ["Governed diagnostics evidence for model review"],
-  EVIDENCE_ALIGNMENT_DIVERGENT: ["Reviewer interpretation of divergent source refs"],
+  EVIDENCE_ALIGNMENT_DIVERGENT: ["Reviewer interpretation of divergent aggregate inputs"],
   MODEL_REVIEW_BLOCKED: ["Governed diagnostics sufficiency evidence"]
 } satisfies Record<AiValueUiViewModelStateId, string[]>;
 
@@ -133,7 +133,7 @@ const UI_STATE_DEFINITIONS = {
     status_label: "Metrics Recommended",
     status_description: "Candidate aggregate metrics are available as planning inputs only.",
     next_action_label: "Prepare metric-selection draft",
-    next_action_description: "Choose one candidate for reviewer-owned measurement-plan draft intake.",
+    next_action_description: "Choose one candidate for reviewed measurement-plan draft intake.",
     user_should_do_next: "Prepare the reviewer metric-selection draft."
   },
   MEASUREMENT_PLAN_DRAFTED: {
@@ -152,14 +152,14 @@ const UI_STATE_DEFINITIONS = {
   },
   DATA_COLLECTION_PLANNING_READY: {
     status_label: "Data Collection Planning Ready",
-    status_description: "Collection planning is ready for reviewer-owned source package preparation.",
+    status_description: "Collection planning is ready for reviewed source package preparation.",
     next_action_label: "Collect source package",
-    next_action_description: "Collect only reviewer-owned, aggregate-only comparison-design source package posture.",
-    user_should_do_next: "Collect the reviewer-owned comparison-design source package."
+    next_action_description: "Collect only reviewed, aggregate-only comparison-design source package posture.",
+    user_should_do_next: "Collect the reviewed comparison-design source package."
   },
   SOURCE_PACKAGE_COLLECTION_READY: {
     status_label: "Source Package Ready",
-    status_description: "A reviewer-owned source package is ready for comparison-design review.",
+    status_description: "A reviewed source package is ready for comparison-design review.",
     next_action_label: "Review comparison design",
     next_action_description: "Run the comparison-design adequacy review against the collected source package.",
     user_should_do_next: "Run comparison-design adequacy review."
@@ -167,37 +167,37 @@ const UI_STATE_DEFINITIONS = {
   COMPARISON_DESIGN_REVIEWED: {
     status_label: "Comparison Design Reviewed",
     status_description: "Comparison design has been reviewed for source binding only.",
-    next_action_label: "Review source-ref alignment",
-    next_action_description: "Review stated, behavioral, and outcome aggregate source refs for internal posture.",
-    user_should_do_next: "Complete source-ref alignment review."
+    next_action_label: "Review aggregate alignment",
+    next_action_description: "Review stated, behavioral, and outcome aggregate inputs for internal posture.",
+    user_should_do_next: "Complete aggregate alignment review."
   },
   EVIDENCE_ALIGNMENT_HELD: {
     status_label: "Evidence Alignment Held",
-    status_description: "Source-ref alignment is held until governed aggregate refs are complete.",
-    next_action_label: "Complete governed source refs",
-    next_action_description: "Supply reviewer-owned stated, behavioral, and outcome aggregate source refs.",
-    user_should_do_next: "Complete the missing governed aggregate source refs."
+    status_description: "Aggregate alignment is held until governed aggregate inputs are complete.",
+    next_action_label: "Complete governed aggregate inputs",
+    next_action_description: "Supply reviewed stated, behavioral, and outcome aggregate inputs.",
+    user_should_do_next: "Complete the missing governed aggregate inputs."
   },
   EVIDENCE_ALIGNMENT_PARTIAL: {
     status_label: "Evidence Partially Aligned",
-    status_description: "Some source refs share context and some still need reviewer attention.",
+    status_description: "Some aggregate inputs share context and some still need reviewer attention.",
     next_action_label: "Review partial posture",
-    next_action_description: "Review which source-ref streams remain incomplete or mismatched.",
-    user_should_do_next: "Resolve the partial source-ref alignment posture."
+    next_action_description: "Review which aggregate input streams remain incomplete or mismatched.",
+    user_should_do_next: "Resolve the partial aggregate alignment posture."
   },
   EVIDENCE_ALIGNMENT_ALIGNED: {
     status_label: "Evidence Aligned for Review",
-    status_description: "Reviewer-owned aggregate source refs share the expected context for review only.",
+    status_description: "Reviewed aggregate inputs share the expected context for review only.",
     next_action_label: "Hold for model-review inputs",
     next_action_description: "Keep model review blocked until governed diagnostics evidence is supplied elsewhere.",
     user_should_do_next: "Do not start model review until governed diagnostics evidence exists."
   },
   EVIDENCE_ALIGNMENT_DIVERGENT: {
     status_label: "Evidence Divergent for Review",
-    status_description: "Reviewer-owned aggregate source refs need interpretation before model-review input.",
+    status_description: "Reviewed aggregate inputs need interpretation before model-review input.",
     next_action_label: "Review divergent posture",
-    next_action_description: "Review the source-ref posture before any model-review input is considered.",
-    user_should_do_next: "Resolve the divergent source-ref posture."
+    next_action_description: "Review the aggregate input posture before any model-review input is considered.",
+    user_should_do_next: "Resolve the divergent aggregate alignment posture."
   },
   MODEL_REVIEW_BLOCKED: {
     status_label: "Model Review Blocked",
@@ -396,7 +396,7 @@ export function buildAiValueUiViewModelAdapter({
     governance_banner:
       "Planning and review posture only. Model review remains blocked.",
     allowed_user_message:
-      "Show planning status, reviewer action, source-ref posture, and held requirements.",
+      "Show planning status, reviewer action, aggregate alignment posture, and held requirements.",
     blocked_language_message:
       "Only planning and review posture language is visible.",
     source_state_summary: sourceSummary(flags),

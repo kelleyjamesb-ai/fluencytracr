@@ -70,6 +70,23 @@ describe("AIValueReadoutPrototype", () => {
     expect(
       within(measurementStory).getByText(/Choose a candidate metric before draft intake preparation/i)
     ).toBeInTheDocument();
+    const adapterView = within(measurementStory).getByRole("region", {
+      name: /AI value UI view model/i
+    });
+    expect(
+      within(adapterView).getByRole("heading", { name: /Metrics Recommended/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 3 of 13/i)).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Model review blocked/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/Evidence streams for review/i)
+    ).not.toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/AI Fluency Instrument \(SED\)/i)
+    ).not.toBeInTheDocument();
+    expect(adapterView.textContent).not.toMatch(
+      /confidence|probability|posterior|source_ref|source_hash|reviewer_owned_payload|employee_id|prompt|transcript|[a-f0-9]{64}/i
+    );
     expect(
       within(measurementStory).getByText(/Comparison-design readiness does not create a source package/i)
     ).toBeInTheDocument();
@@ -78,9 +95,14 @@ describe("AIValueReadoutPrototype", () => {
         /Source package review checks reviewer-owned completeness and admissibility only/i
       ).length
     ).toBeGreaterThan(0);
-    expect(within(measurementStory).getByText(/Model review posture/i)).toBeInTheDocument();
+    expect(
+      within(measurementStory).getAllByText(/Model review posture/i).length
+    ).toBeGreaterThan(0);
     expect(within(measurementStory).getByText(/Held for evidence gaps/i)).toBeInTheDocument();
-    expect(within(measurementStory).getByText(/Missing comparison-design source package/i)).toBeInTheDocument();
+    expect(
+      within(measurementStory).getAllByText(/Missing comparison-design source package/i)
+        .length
+    ).toBeGreaterThan(0);
     const draftMilestoneSchedule = within(measurementStory)
       .getByText(/Draft milestone schedule/i)
       .closest(".ai-value-map-cell") as HTMLElement;

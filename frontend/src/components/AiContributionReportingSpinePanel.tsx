@@ -15,6 +15,7 @@ import {
   reviewerMetricSelectionDraftIntakeStateLabel,
   type AiContributionReportingSpineViewModel
 } from "../lib/aiValueContributionReportingSpine";
+import { type AiValueUiViewModel } from "../lib/aiValueUiViewModelAdapter";
 
 const StatusPill = ({
   label,
@@ -23,6 +24,138 @@ const StatusPill = ({
   label: string;
   tone?: "neutral" | "warn" | "good";
 }) => <span className={`ai-value-pill ai-value-pill-${tone}`}>{label}</span>;
+
+const RequirementList = ({
+  title,
+  items
+}: {
+  title: string;
+  items: string[];
+}) => {
+  if (items.length === 0) return null;
+
+  return (
+    <div className="ai-value-map-cell">
+      <span className="ai-value-map-label">{title}</span>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export const AiValueUiViewModelPanel = ({
+  viewModel
+}: {
+  viewModel: AiValueUiViewModel;
+}) => {
+  const journeySections = [
+    viewModel.can_show_blueprint && "Blueprint",
+    viewModel.can_show_metrics && "Metric options",
+    viewModel.can_show_measurement_plan && "Measurement plan",
+    viewModel.can_show_data_collection_plan && "Collection planning",
+    viewModel.can_show_source_package_status && "Source package",
+    viewModel.can_show_comparison_design_status && "Comparison design",
+    viewModel.can_show_evidence_alignment_status && "Evidence alignment"
+  ].filter(Boolean) as string[];
+  const canShowEvidenceStreams =
+    viewModel.can_show_evidence_alignment_status &&
+    viewModel.visible_evidence_streams.length > 0;
+
+  return (
+    <section
+      className="ai-value-map-cell ai-value-map-cell-wide"
+      aria-label="AI value UI view model"
+    >
+      <div className="ai-value-section-head">
+        <div>
+          <span className="ai-value-map-label">Measurement journey status</span>
+          <h3>{viewModel.status_label}</h3>
+          <p>{viewModel.status_description}</p>
+        </div>
+        <StatusPill
+          label={`Step ${viewModel.progress_step_index} of ${viewModel.progress_step_total}`}
+          tone="warn"
+        />
+      </div>
+
+      <div className="ai-value-map-grid">
+        <div className="ai-value-map-cell">
+          <span className="ai-value-map-label">Next action</span>
+          <strong>{viewModel.next_action_label}</strong>
+          <p>{viewModel.next_action_description}</p>
+        </div>
+        <div className="ai-value-map-cell">
+          <span className="ai-value-map-label">User should do next</span>
+          <p>{viewModel.user_should_do_next}</p>
+        </div>
+        {viewModel.can_show_model_review_status && (
+          <div className="ai-value-map-cell">
+            <span className="ai-value-map-label">Model review posture</span>
+            <strong>Model review blocked</strong>
+            <p>Held until governed diagnostics evidence exists.</p>
+          </div>
+        )}
+        <div className="ai-value-map-cell">
+          <span className="ai-value-map-label">Governance banner</span>
+          <p>{viewModel.governance_banner}</p>
+        </div>
+        <div className="ai-value-map-cell">
+          <span className="ai-value-map-label">What can be shown</span>
+          <p>{viewModel.allowed_user_message}</p>
+        </div>
+        <div className="ai-value-map-cell">
+          <span className="ai-value-map-label">Boundary</span>
+          <p>{viewModel.blocked_language_message}</p>
+        </div>
+      </div>
+
+      {(journeySections.length > 0 || canShowEvidenceStreams) && (
+        <div className="ai-value-map-grid">
+          {journeySections.length > 0 && (
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Journey sections</span>
+              <ul>
+                {journeySections.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {canShowEvidenceStreams && (
+            <div className="ai-value-map-cell">
+              <span className="ai-value-map-label">Evidence streams for review</span>
+              <ul>
+                {viewModel.visible_evidence_streams.map((stream) => (
+                  <li key={stream}>{stream}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="ai-value-map-grid">
+        <RequirementList
+          title="Missing requirements"
+          items={viewModel.missing_requirements}
+        />
+        <RequirementList
+          title="Held requirements"
+          items={viewModel.held_requirements}
+        />
+        <RequirementList
+          title="Suppressed requirements"
+          items={viewModel.suppressed_requirements}
+        />
+        <RequirementList title="Not yet evidence" items={viewModel.not_yet_evidence} />
+        <RequirementList title="Held boundaries" items={viewModel.blocked_claims} />
+      </div>
+    </section>
+  );
+};
 
 export const AiContributionReportingSpinePanel = ({
   spine
@@ -50,6 +183,10 @@ export const AiContributionReportingSpinePanel = ({
         </p>
       </div>
       <StatusPill label={spine.statusLabel} tone={spine.statusTone} />
+    </div>
+
+    <div className="ai-value-map-grid">
+      <AiValueUiViewModelPanel viewModel={spine.uiViewModel} />
     </div>
 
     <div className="ai-value-map-grid">

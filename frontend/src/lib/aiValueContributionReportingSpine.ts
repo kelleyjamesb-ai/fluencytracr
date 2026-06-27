@@ -1,3 +1,10 @@
+import {
+  buildAiValueUiViewModelAdapter,
+  type AiValueUiViewModel,
+  type AiValueUiViewModelInputRecord,
+  type AiValueUiViewModelStateId
+} from "./aiValueUiViewModelAdapter";
+
 export const REQUIRED_CONTRIBUTION_REPORTING_MILESTONES = [
   { key: "T0_baseline", label: "T0" },
   { key: "T30", label: "T30" },
@@ -344,6 +351,7 @@ export interface AiContributionReportingSpineViewModel {
   promotionAuthorized: false;
   customerPublishable: false;
   blockedOutputs: Record<string, false>;
+  uiViewModel: AiValueUiViewModel;
 }
 
 export interface AiContributionReportingBridgeItemLike {
@@ -678,6 +686,95 @@ export const allowedNextEvidenceActionLabel = (action: string): string => {
   };
   return labels[action] ?? labelFromToken(action);
 };
+
+const CONTRIBUTION_REPORTING_ADAPTER_BLOCKED_OUTPUTS = Object.freeze({
+  confidence_output: false,
+  probability_output: false,
+  roi_output: false,
+  productivity_output: false,
+  causality_output: false,
+  export_creation: false,
+  persistence_write: false
+});
+
+const CONTRIBUTION_REPORTING_ADAPTER_FEEDS = Object.freeze({
+  governed_diagnostics_sufficiency_evidence_source: false,
+  bayesian_promotion_decision_gate: false,
+  route_or_ui_creation: false,
+  schema_persistence_or_export_creation: false
+});
+
+type AiContributionReportingUiViewModelSource = Pick<
+  AiContributionReportingSpineViewModel,
+  | "blueprintHypothesisRef"
+  | "candidateMetricRecommendationState"
+  | "reviewerMetricSelectionDraftIntake"
+  | "comparisonDesignSourcePackageReview"
+  | "evidenceGapList"
+  | "allowedNextEvidenceAction"
+>;
+
+const measurementJourneyStateIdFromReportingSpine = (
+  spine: AiContributionReportingUiViewModelSource
+): AiValueUiViewModelStateId => {
+  if (!spine.blueprintHypothesisRef) return "NO_BLUEPRINT";
+  if (
+    spine.candidateMetricRecommendationState !==
+    "CANDIDATE_RECOMMENDATIONS_ONLY_NOT_EVIDENCE"
+  ) {
+    return "BLUEPRINT_RECEIVED";
+  }
+  if (spine.comparisonDesignSourcePackageReview.sourcePackageReviewReady) {
+    return "SOURCE_PACKAGE_COLLECTION_READY";
+  }
+  if (
+    spine.reviewerMetricSelectionDraftIntake.draftIntakeState ===
+    "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED"
+  ) {
+    return "MEASUREMENT_PLAN_DRAFTED";
+  }
+  return "METRICS_RECOMMENDED";
+};
+
+const buildContributionReportingUiSourceModel = (
+  spine: AiContributionReportingUiViewModelSource
+): AiValueUiViewModelInputRecord => ({
+  measurement_journey_state: {
+    state_id: measurementJourneyStateIdFromReportingSpine(spine),
+    status_label: "Reporting spine status",
+    plain_language_description: "Reporting spine measurement journey posture.",
+    next_action: "Continue review",
+    user_should_do_next: "Follow the adapter-safe next action."
+  },
+  model_review_posture: "BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE",
+  creates_evidence: false,
+  diagnostics_evidence_satisfied: false,
+  bayesian_readiness_authorized: false,
+  promotion_authorized: false,
+  posterior_interpretation_authorized: false,
+  confidence_probability_authorized: false,
+  customer_economic_output_authorized: false,
+  blocked_outputs: CONTRIBUTION_REPORTING_ADAPTER_BLOCKED_OUTPUTS,
+  feeds: CONTRIBUTION_REPORTING_ADAPTER_FEEDS
+});
+
+const buildContributionReportingUiUpstreamPosture = (
+  spine: AiContributionReportingUiViewModelSource
+): AiValueUiViewModelInputRecord => ({
+  missing_requirements: spine.evidenceGapList.map(evidenceGapLabel),
+  held_requirements: [
+    allowedNextEvidenceActionLabel(spine.allowedNextEvidenceAction)
+  ],
+  suppressed_requirements: []
+});
+
+const buildContributionReportingUiViewModel = (
+  spine: AiContributionReportingUiViewModelSource
+): AiValueUiViewModel =>
+  buildAiValueUiViewModelAdapter({
+    measurementJourneyStateModel: buildContributionReportingUiSourceModel(spine),
+    upstreamPosture: buildContributionReportingUiUpstreamPosture(spine)
+  });
 
 export const modelReviewPostureLabel = (
   posture: AiContributionReportingSpineViewModel["modelReviewInputPosture"]
@@ -1578,7 +1675,7 @@ export const applyReviewerMetricSelectionDraftIntake = (
     reviewerMetricSelectionDraftIntake.draftIntakeState !==
       "DRAFT_INTAKE_PREPARED_REVIEW_REQUIRED"
   ) {
-    return {
+    const updatedSpine = {
       ...spine,
       reviewerMetricSelectionDraftIntake,
       comparisonDesignIntakeReadiness,
@@ -1586,9 +1683,13 @@ export const applyReviewerMetricSelectionDraftIntake = (
       reviewerOwnedSourcePackageCollection,
       comparisonDesignSourcePackageReview
     };
+    return {
+      ...updatedSpine,
+      uiViewModel: buildContributionReportingUiViewModel(updatedSpine)
+    };
   }
 
-  return {
+  const updatedSpine = {
     ...spine,
     selectedMetricApprovalState: "LOCAL_SELECTION_NOT_REVIEWER_APPROVED",
     selectedMetricPosture: {
@@ -1605,6 +1706,10 @@ export const applyReviewerMetricSelectionDraftIntake = (
     comparisonDesignSourcePackageDraft,
     reviewerOwnedSourcePackageCollection,
     comparisonDesignSourcePackageReview
+  };
+  return {
+    ...updatedSpine,
+    uiViewModel: buildContributionReportingUiViewModel(updatedSpine)
   };
 };
 
@@ -1679,7 +1784,7 @@ export function buildAiContributionReportingSpineViewModel(
       ? "supply_metric_library_refs"
       : "complete_reviewer_metric_selection_approval";
 
-  return {
+  const spine = {
     reportingSpineState: !blueprintHypothesisRef
       ? "HOLD_FOR_BLUEPRINT_HYPOTHESIS"
       : candidateMetricRecommendations.length === 0
@@ -1736,5 +1841,9 @@ export function buildAiContributionReportingSpineViewModel(
     promotionAuthorized: false,
     customerPublishable: false,
     blockedOutputs: { ...CONTRIBUTION_REPORTING_BLOCKED_OUTPUTS }
+  };
+  return {
+    ...spine,
+    uiViewModel: buildContributionReportingUiViewModel(spine)
   };
 }
