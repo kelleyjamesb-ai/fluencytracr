@@ -491,6 +491,41 @@ test("nested reviewer-owned package facts return hold", () => {
   assert.ok(review.validation_summary.gaps.includes("treatment_group_definition must be a scalar string"));
 });
 
+test("recomputed reviewer-owned collection with top-level raw or promotion sidecar returns hold", () => {
+  const runtime = sourceRuntime();
+  for (const mutate of [
+    (collection) => {
+      collection.raw_rows = [];
+    },
+    (collection) => {
+      collection.promotion_payload = {
+        promotion_authorized: true
+      };
+    }
+  ]) {
+    const { collection } = reviewerOwnedCollection();
+    mutate(collection);
+    rehashCollection(collection);
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: runtime,
+        comparison_design_source_evidence: collection
+      });
+
+    assert.equal(review.review_state, HOLD_STATE);
+    assert.equal(review.review_hash, null);
+    assert.equal(review.evidence_satisfaction.evidence_satisfied, false);
+    assert.equal(review.evidence_satisfaction.reviewed_source_evidence_hash, null);
+    assert.equal(review.evidence_satisfaction.source_evidence_hash, null);
+    assert.ok(
+      review.validation_summary.gaps.some((gap) =>
+        /unexpected|forbidden|raw|promotion/.test(gap)
+      ),
+      review.validation_summary.gaps.join("; ")
+    );
+  }
+});
+
 test("missing milestone refs return hold", () => {
   const runtime = sourceRuntime();
   const { collection } = reviewerOwnedCollection();

@@ -1,45 +1,64 @@
 # Current Slice Contract
 
-- Work item id: `ai-value-comparison-design-adequacy-review-reviewer-owned-binding`
-- Title: `Comparison Design Adequacy Evidence Review Binding to Reviewer-Owned Package`
+- Work item id: `ai-value-measurement-journey-state-model`
+- Title: `Measurement Journey State Model and Source-Ref Alignment Posture`
 - Status: `completed`
 
 ## Summary
 
-Bind the existing Comparison Design Adequacy Evidence Review to the
-Reviewer-Owned Comparison Design Source Package Collection artifact. The review
-may satisfy only the `comparison_design_adequacy` dimension, and only when the
-collection artifact is complete, source-bound, scalar, aggregate-only,
-boundary-clear, and ready for adequacy review.
+Add the bounded product-facing, UI-safe Measurement Journey State Model over
+the governed AI Value contract chain, including the prerequisite Triangulated
+Evidence Alignment Review source-ref posture and a narrow comparison-design
+sidecar hardening guard. The model selects exactly one active journey state,
+exposes a separate model-review posture, reports the current blocker and next
+allowed product action, and keeps all evidence, diagnostics, Bayesian
+readiness, promotion, posterior interpretation, confidence/probability,
+economic, route, schema, persistence, export, live connector, raw row,
+identifier, query text, prompt, transcript, person-level, individual scoring,
+and team scoring paths blocked.
 
 ## Scope Paths
 
-- `docs/contracts/ai-value-contribution-alignment-comparison-design-adequacy-evidence-review/README.md`
+- `docs/contracts/ai-value-measurement-journey-state-model/README.md`
+- `docs/contracts/ai-value-triangulated-evidence-alignment-review/README.md`
+- `scripts/run_ai_value_measurement_journey_state_model.mjs`
+- `scripts/validate_ai_value_measurement_journey_state_model.test.mjs`
+- `scripts/run_ai_value_triangulated_evidence_alignment_review.mjs`
+- `scripts/validate_ai_value_triangulated_evidence_alignment_review.test.mjs`
 - `scripts/run_ai_value_contribution_alignment_comparison_design_adequacy_evidence_review.mjs`
 - `scripts/validate_ai_value_contribution_alignment_comparison_design_adequacy_evidence_review.test.mjs`
+- `package.json`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Boundaries
 
-- The adequacy review uses the existing reviewer-owned collection artifact as
-  its only source package input.
-- Direct legacy adequacy source packages, runtime design matrix fields, model
-  spec prose, templates, fixtures, generated examples, and source hashes alone
-  cannot satisfy `comparison_design_adequacy`.
-- Held inputs emit no `review_hash`, no `reviewed_source_evidence_hash`, and no
-  `source_evidence_hash`.
-- The review does not create source evidence, duplicate package collection,
-  satisfy diagnostics sufficiency, feed Bayesian promotion, or authorize
-  promotion.
-- Posterior interpretation, confidence/probability output, ROI, finance,
-  causality, productivity, customer-facing economic output, live connectors,
-  routes, UI, schemas, persistence, exports, raw rows, identifiers, query text,
-  prompts, transcripts, person-level data, individual scoring, and team scoring
-  remain blocked.
+- The state model is a view model over governed contract posture, not evidence.
+- The triangulated review is source-ref posture only; it does not validate
+  evidence content, satisfy diagnostics evidence, or create model readiness.
+- Active state selection uses most-advanced-valid-state logic while failing
+  closed to the earliest unmet, unsafe, stale, held, missing, or invalid
+  prerequisite.
+- Ready downstream states require source-bound validation; hashes alone do not
+  advance the journey.
+- Held triangulated alignment requires source-bound held recomputation before
+  it can map to `EVIDENCE_ALIGNMENT_HELD`.
+- Held triangulated review output validates as fail-closed output without
+  requiring missing source refs to exist.
+- Reviewer-owned comparison-design collections with unexpected raw or promotion
+  sidecars hold before they can feed adequacy review.
+- `MODEL_REVIEW_BLOCKED` can only hide the alignment state after a source-bound
+  `EVIDENCE_ALIGNMENT_ALIGNED` review plus an explicit model-review gate
+  posture. Held, partial, and divergent alignment remain visible.
+- `model_review_posture` remains separate and defaults to
+  `BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE`.
+- The state model emits no `reviewed_source_evidence_hash`,
+  `source_evidence_hash`, or `evidence_satisfied` field.
 
 ## Completed Checks
 
+- `npm run test:ai-value-measurement-journey-state-model`
+- `npm run test:ai-value-triangulated-evidence-alignment-review`
 - `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
 - `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
 - `npm run test:ai-value-comparison-design-source-package-preparation-binding`
@@ -51,7 +70,11 @@ boundary-clear, and ready for adequacy review.
 
 ## Next Handoff Note
 
-The exact next bounded slice remains governed diagnostics evidence collection
-for the remaining unsatisfied dimensions. Do not start diagnostics sufficiency,
-Bayesian readiness, promotion, or posterior interpretation until every required
-dimension has explicit governed reviewed evidence.
+The product is ready for a bounded UI/UX slice that renders the Measurement
+Journey State Model in the existing AI Value Journey / Workspace / Readout
+surfaces. That slice must reuse existing UI, render state labels rather than
+raw tokens, preserve model-review blocking, and avoid creating routes, schemas,
+persistence, exports, live connectors, diagnostics evidence, Bayesian
+readiness, promotion, posterior interpretation, confidence/probability output,
+ROI, finance, causality, productivity, customer-facing economic output, raw
+rows, identifiers, query text, prompts, transcripts, or person-level data.

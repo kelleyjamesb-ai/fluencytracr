@@ -184,6 +184,80 @@ const REVIEWER_OWNED_COLLECTION_FALSE_FEED_FIELDS = [
   "schema_persistence_or_export_creation"
 ];
 
+const REVIEWER_OWNED_COLLECTION_ALLOWED_FIELDS = new Set([
+  "schema_version",
+  "collection_state",
+  "artifact_class",
+  "internal_only",
+  "aggregate_only",
+  "source_ref_only",
+  "fail_closed",
+  "reviewer_owned_package_collection_only",
+  "source_comparison_design_source_package_preparation_hash",
+  "source_comparison_design_source_package_preparation_state",
+  "source_comparison_design_source_package_preparation_allowed_next_step",
+  "source_reviewer_approved_measurement_plan_ref",
+  "source_reviewer_approved_measurement_plan_hash",
+  "source_aggregate_data_collection_planning_ref",
+  "source_aggregate_data_collection_planning_hash",
+  "source_blueprint_hypothesis_ref",
+  "selected_metric_id",
+  "selected_metric_family",
+  "selected_measurement_unit",
+  "expected_movement_direction",
+  "expected_lag_definition",
+  "blueprint_hypothesis_role",
+  "stated_evidence_posture",
+  "observed_behavioral_evidence_posture",
+  "downstream_outcome_evidence_posture",
+  "reviewer_owned_source_package_ref",
+  "reviewer_owned_source_package_hash",
+  "business_function",
+  "prioritized_use_case",
+  "workflow",
+  "workflow_step",
+  "cohort",
+  "metric",
+  "evidence_source",
+  "observation_window",
+  "governance_state",
+  "treatment_group_definition",
+  "comparison_group_definition",
+  "rollout_or_comparison_design_type",
+  "baseline_source_posture",
+  "comparison_condition",
+  "baseline_window",
+  "comparison_window",
+  "metric_direction_lag_confirmation_ref",
+  "approved_expectation_path_blueprint_hypothesis_binding_ref",
+  "cohort_identity_confirmation_ref",
+  "workflow_function_identity_confirmation_ref",
+  "aggregate_measurement_cell_grain_confirmation_ref",
+  "aggregate_measurement_cell_grain",
+  "atomic_evidence_grain_support",
+  "milestone_schedule",
+  "suppression_missing_held_window_review",
+  "boundary_checks",
+  "reviewer_role_ref",
+  "review_decision",
+  "source_package_collected",
+  "reviewed_evidence_created",
+  "creates_evidence",
+  "evidence_satisfied",
+  "comparison_design_adequacy_satisfied",
+  "diagnostics_evidence_satisfied",
+  "governed_diagnostics_sufficiency_evidence_source_complete",
+  "posterior_interpretation_authorized",
+  "promotion_authorized",
+  "blocked_claims",
+  "blocked_outputs",
+  "feeds",
+  "bayesian_chain_state",
+  "gap_list",
+  "allowed_next_step",
+  "collection_hash"
+]);
+
 const REVIEWER_OWNED_COLLECTION_REQUIRED_BLOCKED_CLAIMS = [
   "source_package_collection_is_not_evidence_assessment",
   "reviewer_owned_package_is_not_reviewed_evidence",
@@ -804,6 +878,14 @@ function reviewerOwnedCollectionGaps(sourcePackage) {
   }
   const record = asRecord(sourcePackage);
   const gaps = [];
+  for (const field of Object.keys(record)) {
+    if (!REVIEWER_OWNED_COLLECTION_ALLOWED_FIELDS.has(field)) {
+      gaps.push(`reviewer-owned collection unexpected field:${field}`);
+      if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(field))) {
+        gaps.push("reviewer-owned collection contains forbidden field name");
+      }
+    }
+  }
   if (
     record.schema_version !==
     REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTION_SCHEMA_VERSION

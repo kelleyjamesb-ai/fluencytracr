@@ -2,6 +2,98 @@
 
 ## Last Completed
 
+- Measurement Journey State Model slice (2026-06-27): added the bounded
+  product-facing, UI-safe state model over the governed AI Value contract
+  chain. The runner emits exactly one active `measurement_journey_state`, a
+  separate `model_review_posture=BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE`,
+  `current_blocker`, `next_allowed_action`, `customer_safe_summary`,
+  `blocked_claims`, `not_yet_evidence`, source contract refs/hashes,
+  `ui_language_policy`, and `state_model_hash`. Required states are exactly
+  `NO_BLUEPRINT`, `BLUEPRINT_RECEIVED`, `METRICS_RECOMMENDED`,
+  `MEASUREMENT_PLAN_DRAFTED`, `MEASUREMENT_PLAN_APPROVED`,
+  `DATA_COLLECTION_PLANNING_READY`, `SOURCE_PACKAGE_COLLECTION_READY`,
+  `COMPARISON_DESIGN_REVIEWED`, `EVIDENCE_ALIGNMENT_HELD`,
+  `EVIDENCE_ALIGNMENT_PARTIAL`, `EVIDENCE_ALIGNMENT_ALIGNED`,
+  `EVIDENCE_ALIGNMENT_DIVERGENT`, and `MODEL_REVIEW_BLOCKED`. Active state
+  selection uses most-advanced-valid-state logic while failing closed to the
+  earliest unmet, unsafe, stale, held, missing, or invalid prerequisite. Source
+  validation remains mandatory for downstream states: comparison-design review
+  requires source runtime plus reviewer-owned collection, ready triangulated
+  alignment requires source-bound validation, and held triangulated alignment
+  requires source-bound held recomputation before it can map to
+  `EVIDENCE_ALIGNMENT_HELD`. `MODEL_REVIEW_BLOCKED` can only replace the active
+  state after source-bound `EVIDENCE_ALIGNMENT_ALIGNED` plus an explicit
+  model-review gate posture; held, partial, and divergent alignment remain
+  visible. CODE / BUG / ADVERSARIAL review found and this slice fixed held
+  alignment validation bypass, shape-only non-default validation, default
+  forged unsafe UI/source text validation, and model-review blocking hiding
+  partial/divergent/held alignment. The model creates no evidence, diagnostics
+  sufficiency, Bayesian readiness, promotion, posterior interpretation,
+  confidence/probability output, ROI, finance, causality, productivity,
+  customer-facing economic output, live connectors, routes, schemas,
+  persistence, exports, raw rows, identifiers, query text, prompts,
+  transcripts, person-level data, individual scoring, or team scoring. It emits
+  no `reviewed_source_evidence_hash`, no `source_evidence_hash`, and no
+  `evidence_satisfied` field. Post-review hardening clarified the
+  triangulated states as source-ref posture only and preserved held-output
+  validation for fail-closed records without source evidence. Verification
+  passed:
+  `npm run test:ai-value-measurement-journey-state-model` (18/18);
+  `npm run test:ai-value-triangulated-evidence-alignment-review` (17/17);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (21/21);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Triangulated Evidence Alignment Review slice (2026-06-27): added the bounded
+  internal-only, aggregate-only, source-ref-only review object for directional
+  alignment across reviewer-owned SED / AI Fluency Instrument stated aggregate
+  evidence refs, VBD observed aggregate behavioral evidence refs, and downstream
+  operational or business outcome metric aggregate evidence refs. The review
+  may report only `ALIGNED_FOR_REVIEW`, `DIVERGENT_FOR_REVIEW`,
+  `PARTIAL_ALIGNMENT_FOR_REVIEW`, or `HOLD_FOR_GOVERNED_EVIDENCE`; those states
+  are internal review postures only and do not satisfy Bayesian convergence
+  diagnostics, diagnostics sufficiency, global evidence satisfaction, Bayesian
+  readiness, promotion, posterior interpretation, confidence/probability output,
+  ROI, finance, causality, productivity, customer-facing economic output, live
+  connectors, routes, UI, schemas, persistence, exports, raw rows, identifiers,
+  query text, prompts, transcripts, person-level data, individual scoring, or
+  team scoring. Ready validation requires the original reviewer-owned
+  triangulated alignment source object plus the source Comparison Design
+  Adequacy Evidence Review object; a self-consistent report hash is not enough.
+  SED, VBD, and outcome refs/hashes must be scalar, reviewer-owned, current,
+  aggregate-only, in the correct evidence lane, distinct by stream hash, and
+  aligned to the same Blueprint hypothesis, cohort, workflow/function,
+  prioritized use case, selected metric, and observation window. Held records
+  emit no `alignment_review_hash`, no `reviewed_source_evidence_hash`, and no
+  `source_evidence_hash`; ready records may emit only `alignment_review_hash`
+  and still keep `reviewed_source_evidence_hash=null` and
+  `source_evidence_hash=null`. Post-review hardening clarified that ready
+  alignment states are source-ref posture only and added validation coverage so
+  default held output validates as fail-closed output without source evidence.
+  CODE / BUG / ADVERSARIAL review also found a narrow upstream
+  comparison-design adequacy sidecar gap; this slice added a
+  regression and fixed the adequacy review so recomputed reviewer-owned
+  collections with top-level raw or promotion sidecars hold before they can feed
+  the triangulated review. Verification passed:
+  `npm run test:ai-value-triangulated-evidence-alignment-review` (17/17);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (21/21);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
 - Comparison Design Adequacy Evidence Review binding to reviewer-owned package
   slice (2026-06-27): updated the existing Comparison Design Adequacy Evidence
   Review so READY can be reached only from the Reviewer-Owned Comparison Design
