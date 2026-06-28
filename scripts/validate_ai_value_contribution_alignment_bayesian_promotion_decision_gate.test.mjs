@@ -120,7 +120,7 @@ const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_CLASS =
 const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_VERSION =
   "diagnostics_sufficiency_evidence_2026_06";
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -153,7 +153,7 @@ function sourceDataModel() {
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
+  if (cachedRuntimeSource) return clone(cachedRuntimeSource.source_runtime);
   const sourceFeatureStabilityReview =
     buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
   const sourceWeightDecision =
@@ -182,11 +182,38 @@ function sourceRuntime() {
     sourceSpecification,
     { sourceReadinessReview, sourceFrame }
   );
-  cachedRuntime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  return clone(cachedRuntime);
+  cachedRuntimeSource = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return clone(cachedRuntimeSource.source_runtime);
+}
+
+function sourceRuntimeSource() {
+  if (!cachedRuntimeSource) sourceRuntime();
+  return clone(cachedRuntimeSource);
+}
+
+function sourceRuntimeEnvelope(overrides = {}) {
+  return {
+    ...sourceRuntimeSource(),
+    ...overrides
+  };
+}
+
+function sourceRuntimeValidationOptions(overrides = {}) {
+  const source = sourceRuntimeSource();
+  return {
+    sourceRuntime: source.source_runtime,
+    sourceGate: source.source_gate,
+    aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+    ...overrides
+  };
 }
 
 function currentDiagnosticsReview(runtime = sourceRuntime()) {
@@ -364,10 +391,10 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
 }
 
 function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
-  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
     source_runtime: runtime,
     reviewed_diagnostics_source_evidence: governedReviewedEvidenceInput(runtime, overrides)
-  });
+  }));
 }
 
 function alternateGovernedDiagnosticsSufficiencyEvidenceSource(runtime) {
@@ -379,11 +406,11 @@ function alternateGovernedDiagnosticsSufficiencyEvidenceSource(runtime) {
 }
 
 function promotableDiagnosticsEvidencePacket(runtime = sourceRuntime()) {
-  return buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+  return buildContributionAlignmentDiagnosticsEvidencePacketFromObject(sourceRuntimeEnvelope({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence:
       governedDiagnosticsSufficiencyEvidenceSource(runtime)
-  });
+  }));
 }
 
 function diagnosticEvidencePacketRef(packet) {
@@ -416,11 +443,11 @@ function satisfiedRuntimeFixture() {
 }
 
 function promotableDiagnosticsReview(runtime = sourceRuntime()) {
-  return buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+  return buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence:
       governedDiagnosticsSufficiencyEvidenceSource(runtime)
-  });
+  }));
 }
 
 function gateInput(
@@ -430,7 +457,7 @@ function gateInput(
 ) {
   return {
     source_diagnostics_review: sourceDiagnosticsReview,
-    source_runtime: runtime,
+    ...sourceRuntimeEnvelope({ source_runtime: runtime }),
     source_diagnostics_evidence_packet: sourceDiagnosticsEvidencePacket
   };
 }
@@ -560,23 +587,23 @@ test("Bayesian promotion decision gate may pass only with governed sufficiency e
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =
     governedDiagnosticsSufficiencyEvidenceSource(runtime);
-  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
-  });
-  const evidencePacket = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+  }));
+  const evidencePacket = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(sourceRuntimeEnvelope({
     source_runtime: runtime,
     source_diagnostics_sufficiency_evidence:
       governedDiagnosticsSufficiencyEvidenceSource(runtime)
-  });
+  }));
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject(
     gateInput(review, runtime, evidencePacket)
   );
-  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate, {
+  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate, sourceRuntimeValidationOptions({
     sourceDiagnosticsReview: review,
     sourceRuntime: runtime,
     sourceDiagnosticsEvidencePacket: evidencePacket
-  });
+  }));
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(
@@ -620,11 +647,11 @@ test("Bayesian promotion decision gate holds when review and packet use differen
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject(
     gateInput(review, runtime, evidencePacket)
   );
-  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate, {
+  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate, sourceRuntimeValidationOptions({
     sourceDiagnosticsReview: review,
     sourceRuntime: runtime,
     sourceDiagnosticsEvidencePacket: evidencePacket
-  });
+  }));
 
   assert.notEqual(
     review.source_governed_diagnostics_sufficiency_evidence_source_ref.evidence_hash,

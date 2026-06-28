@@ -182,7 +182,7 @@ function sourceDataModel() {
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
+  if (cachedRuntime) return clone(cachedRuntime.source_runtime);
   const sourceFeatureStabilityReview =
     buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
   const sourceWeightDecision =
@@ -211,11 +211,23 @@ function sourceRuntime() {
     sourceSpecification,
     { sourceReadinessReview, sourceFrame }
   );
-  cachedRuntime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  return clone(cachedRuntime);
+  cachedRuntime = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return clone(cachedRuntime.source_runtime);
+}
+
+function sourceRuntimeEnvelope(runtime = null) {
+  if (!cachedRuntime) sourceRuntime();
+  const envelope = clone(cachedRuntime);
+  if (runtime) envelope.source_runtime = runtime;
+  return envelope;
 }
 
 function reviewedSourceEvidenceRef(dimension) {
@@ -314,27 +326,28 @@ function reviewedEvidenceInput(runtime) {
 }
 
 function explicitPromotionPath(runtime = sourceRuntime()) {
+  const runtimeInput = sourceRuntimeEnvelope(runtime);
   const reviewedEvidence = reviewedEvidenceInput(runtime);
   const governedSource =
     buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+      source_runtime: runtimeInput,
       reviewed_diagnostics_source_evidence: reviewedEvidence
     });
   const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_sufficiency_evidence: governedSource
   });
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_sufficiency_evidence: governedSource
   });
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_evidence_packet: packet
   });
   const handoff = buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_governed_diagnostics_sufficiency_evidence_source: governedSource,
     source_diagnostics_review: review,
     source_diagnostics_evidence_packet: packet,
@@ -343,7 +356,7 @@ function explicitPromotionPath(runtime = sourceRuntime()) {
   const artifact = buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject({
     source_promotion_handoff: handoff,
     source_promotion_gate: gate,
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_review: review,
     source_diagnostics_evidence_packet: packet,
     source_governed_diagnostics_sufficiency_evidence_source: governedSource
@@ -353,7 +366,7 @@ function explicitPromotionPath(runtime = sourceRuntime()) {
 
 function orchestratorInput(path = explicitPromotionPath()) {
   return {
-    source_runtime: path.runtime,
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
     explicit_governed_path: {
       source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
       source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
@@ -370,12 +383,12 @@ test("Bayesian hardening orchestrator confirms default path remains held", () =>
   const runtime = sourceRuntime();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: runtime
+      source_runtime: sourceRuntimeEnvelope(runtime)
     });
   const governedStep = report.default_execution.steps[0];
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-      sourceRuntime: runtime
+      sourceRuntime: sourceRuntimeEnvelope(runtime)
     });
 
   assert.equal(report.report_state, REPORT_READY_STATE);
@@ -435,7 +448,7 @@ test("Bayesian hardening orchestrator READY validation requires sourceRuntime", 
   const runtime = sourceRuntime();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: runtime
+      source_runtime: sourceRuntimeEnvelope(runtime)
     });
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
@@ -456,7 +469,7 @@ test("Bayesian hardening orchestrator reports explicit governed path and derived
     );
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       explicitGovernedPath: orchestratorInput(path).explicit_governed_path
     });
 
@@ -483,7 +496,7 @@ test("Bayesian hardening orchestrator reports explicit governed path and derived
 test("Bayesian hardening orchestrator explicit governed path requires reviewed diagnostics source evidence", () => {
   const path = explicitPromotionPath();
   const input = {
-    source_runtime: path.runtime,
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
     explicit_governed_path: {
       source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
       source_diagnostics_evidence_packet: path.packet,
@@ -500,7 +513,7 @@ test("Bayesian hardening orchestrator explicit governed path requires reviewed d
   );
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       explicitGovernedPath: input.explicit_governed_path
     });
 
@@ -529,7 +542,7 @@ test("Bayesian hardening orchestrator stops at missing explicit gates", () => {
   const path = explicitPromotionPath();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-    source_runtime: path.runtime,
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
     explicit_governed_path: {
       source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
       source_governed_diagnostics_sufficiency_evidence_source: path.governedSource
@@ -548,7 +561,7 @@ test("Bayesian hardening orchestrator validation fails on invalid supplied expli
   const forgedSource = clone(path.governedSource);
   forgedSource.evidence_hash = "0".repeat(64);
   const input = {
-    source_runtime: path.runtime,
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
     explicit_governed_path: {
       source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
       source_governed_diagnostics_sufficiency_evidence_source: forgedSource,
@@ -563,7 +576,7 @@ test("Bayesian hardening orchestrator validation fails on invalid supplied expli
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(input);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       explicitGovernedPath: input.explicit_governed_path
     });
 
@@ -590,7 +603,7 @@ test("Bayesian hardening orchestrator does not echo explicit governed source hol
   ];
   forgedSource.evidence_hash = "0".repeat(64);
   const input = {
-    source_runtime: path.runtime,
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
     explicit_governed_path: {
       source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
       source_governed_diagnostics_sufficiency_evidence_source: forgedSource
@@ -617,7 +630,7 @@ test("Bayesian hardening orchestrator explicit READY validation requires explici
     );
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-      sourceRuntime: path.runtime
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime)
     });
 
   assert.equal(report.report_state, REPORT_READY_STATE);
@@ -660,7 +673,7 @@ test("Bayesian hardening orchestrator rejects promotion side doors after rehash"
   forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       explicitGovernedPath: orchestratorInput(path).explicit_governed_path
     });
 
@@ -685,7 +698,7 @@ test("Bayesian hardening orchestrator rejects unknown nested sidecars after reha
   forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       explicitGovernedPath: orchestratorInput(path).explicit_governed_path
     });
 
@@ -700,7 +713,7 @@ test("Bayesian hardening orchestrator rejects forged default execution details a
   const runtime = sourceRuntime();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: runtime
+      source_runtime: sourceRuntimeEnvelope(runtime)
     });
   const forged = clone(report);
   forged.default_execution.steps[0].state =
@@ -710,7 +723,7 @@ test("Bayesian hardening orchestrator rejects forged default execution details a
   forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
-      sourceRuntime: runtime
+      sourceRuntime: sourceRuntimeEnvelope(runtime)
     });
 
   assert.equal(validation.valid, false);
@@ -724,7 +737,7 @@ test("Bayesian hardening orchestrator rejects forged default hold reporting afte
   const runtime = sourceRuntime();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: runtime
+      source_runtime: sourceRuntimeEnvelope(runtime)
     });
   const forged = clone(report);
   forged.default_execution.steps[0].source_hold_report.validation_summary.gaps = [];
@@ -737,7 +750,7 @@ test("Bayesian hardening orchestrator rejects forged default hold reporting afte
   forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
-      sourceRuntime: runtime
+      sourceRuntime: sourceRuntimeEnvelope(runtime)
     });
 
   assert.equal(validation.valid, false);
@@ -750,7 +763,7 @@ test("Bayesian hardening orchestrator rejects forged default hold reporting afte
 test("Bayesian hardening orchestrator rejects fabricated governed evidence input without echo", () => {
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: sourceRuntime(),
+      source_runtime: sourceRuntimeEnvelope(sourceRuntime()),
       reviewed_diagnostics_source_evidence: {
         reviewed_source_evidence_ref: "fabricated_customer_probability_evidence",
         raw_rows: [{ user_id: "person@example.com" }]
@@ -769,7 +782,7 @@ test("Bayesian hardening orchestrator rejects nested fabricated evidence sidecar
   const path = explicitPromotionPath();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: path.runtime,
+      source_runtime: sourceRuntimeEnvelope(path.runtime),
       explicit_governed_path: {
         source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
         reviewed_diagnostics_source_evidence: {
@@ -791,13 +804,13 @@ test("Bayesian hardening orchestrator rejects reviewed evidence without governed
   const path = explicitPromotionPath();
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: path.runtime,
+      source_runtime: sourceRuntimeEnvelope(path.runtime),
       explicit_governed_path: {
         source_reviewed_diagnostics_source_evidence: path.reviewedEvidence
       }
     });
   const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-    sourceRuntime: path.runtime,
+    sourceRuntime: sourceRuntimeEnvelope(path.runtime),
     explicitGovernedPath: {
       source_reviewed_diagnostics_source_evidence: path.reviewedEvidence
     }
@@ -819,7 +832,7 @@ test("Bayesian hardening orchestrator rejects unsafe nested reviewed evidence wi
   ];
   const report =
     buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: path.runtime,
+      source_runtime: sourceRuntimeEnvelope(path.runtime),
       explicit_governed_path: {
         source_reviewed_diagnostics_source_evidence: unsafeReviewedEvidence,
         source_governed_diagnostics_sufficiency_evidence_source: path.governedSource
@@ -878,7 +891,7 @@ test("Bayesian hardening orchestrator CLI accepts reviewed diagnostics evidence 
   };
   for (const [key, filePath] of Object.entries(files)) {
     const payload = {
-      runtime: path.runtime,
+      runtime: sourceRuntimeEnvelope(path.runtime),
       reviewedEvidence: path.reviewedEvidence,
       governedSource: path.governedSource,
       packet: path.packet,
@@ -909,7 +922,7 @@ test("Bayesian hardening orchestrator CLI accepts reviewed diagnostics evidence 
   const report = JSON.parse(output);
   const validation =
     validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       explicitGovernedPath: orchestratorInput(path).explicit_governed_path
     });
 

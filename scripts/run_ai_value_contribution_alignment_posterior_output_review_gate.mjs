@@ -140,6 +140,8 @@ const BOUNDARY_POLICY_FIELDS = [
 
 const ALLOWED_INPUT_FIELDS = new Set([
   "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows",
   "generated_at"
 ]);
 
@@ -259,7 +261,21 @@ function sanitizeGaps(gaps) {
 
 function sourceRuntimeFromInput(input) {
   const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
   return record.source_runtime ?? input;
+}
+
+function sourceRuntimeValidationOptions(input) {
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  return {
+    sourceGate: source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows:
+      source.aggregate_measurement_cell_windows ??
+      source.aggregateMeasurementCellWindows
+  };
 }
 
 function inputBoundaryGaps(input) {
@@ -372,12 +388,12 @@ function hasForbiddenContent(value, path = "review") {
     : [];
 }
 
-function sourceRuntimeGaps(sourceRuntime) {
+function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const source = asRecord(sourceRuntime);
   const artifact = asRecord(source.internal_fit_artifact);
   const gaps = [];
   const runtimeValidation = validateContributionAlignmentInternalBayesianExecutionRuntime(source, {
-    allowSelfContainedSourceValidation: true
+    ...validationOptions
   });
   if (runtimeValidation.valid !== true) {
     gaps.push("source_runtime failed internal Bayesian execution runtime validation");
@@ -597,7 +613,8 @@ export function buildContributionAlignmentPosteriorOutputReviewGateFromObject(in
   const wrapperGaps = inputBoundaryGaps(input);
   if (wrapperGaps.length > 0) return rejectedReview();
   const sourceRuntime = sourceRuntimeFromInput(input);
-  const gaps = sourceRuntimeGaps(sourceRuntime);
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(input);
+  const gaps = sourceRuntimeGaps(sourceRuntime, runtimeValidationOptions);
   return buildReview(sourceRuntime, gaps.length === 0 ? READY_STATE : HOLD_STATE, gaps);
 }
 
@@ -757,7 +774,8 @@ function collectSourceBindingGaps(review, options = {}) {
     gaps.push("sourceRuntime is required for ready posterior output review validation");
   }
   if (options.sourceRuntime) {
-    const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime);
+    const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
+    const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime, runtimeValidationOptions);
     if (runtimeGaps.length > 0) gaps.push(...runtimeGaps);
   }
   if (options.expectedReview) {
