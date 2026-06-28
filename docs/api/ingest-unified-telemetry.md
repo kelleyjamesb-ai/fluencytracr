@@ -29,7 +29,7 @@ If unset or not `true`, the route returns **403** with `reason_code: feature_dis
 }
 ```
 
-Each element MUST validate against the shared **Zod** mirror (`UnifiedTelemetryEventSchema` in `@learnaire/shared`), aligned with the JSON Schema union.
+Each element MUST validate against the shared **Zod** mirror (`UnifiedTelemetryEventSchema` in `@fluencytracr/shared`), aligned with the JSON Schema union.
 
 ## Response
 

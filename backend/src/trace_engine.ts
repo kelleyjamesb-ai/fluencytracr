@@ -1,4 +1,4 @@
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
 import type { FluencyEventRecord } from "./store";
 
 /** Aligns with PRD §13 default inactivity window for retry adjacency (not abandonment). */

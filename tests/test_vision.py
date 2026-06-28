@@ -2,7 +2,7 @@
 
 Tests cover:
 1. SpotTracker - Image processing and spot detection
-2. LearnAIR_Bridge - Environmental penalty calculation
+2. VisionQualityBridge - Environmental penalty calculation
 3. Thread safety and daemon behavior
 4. API integration
 """
@@ -25,7 +25,7 @@ except ModuleNotFoundError as exc:
 if ctypes.util.find_library("GL") is None:
     raise unittest.SkipTest("libGL is required for OpenCV tests")
 
-from vision.fluency_bridge import ConfidencePenalty, LearnAIR_Bridge
+from vision.fluency_bridge import ConfidencePenalty, VisionQualityBridge
 from vision.visual_engine import BrightSpot, SpotDetectionResult, SpotTracker
 
 
@@ -248,8 +248,8 @@ class TestDistractionScoreCalculation:
         assert score <= 1.0
 
 
-class TestLearnAIRBridge:
-    """Tests for LearnAIR_Bridge environmental penalty calculation."""
+class TestVisionQualityBridge:
+    """Tests for VisionQualityBridge environmental penalty calculation."""
 
     def test_ideal_environment_no_penalty(self):
         """Test Case 1: Ideal environment with no bright spots.
@@ -257,7 +257,7 @@ class TestLearnAIRBridge:
         If no bright spots are detected, the modifier should be 1.0 (no change to fluency).
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
         # Mock empty detection result
         result = SpotDetectionResult(spots=[], total_spots=0, total_area=0.0)
@@ -276,7 +276,7 @@ class TestLearnAIRBridge:
         drop below 0.7 (maximum 30% penalty).
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
         # Create extreme distraction scenario
         spots = [
@@ -323,7 +323,7 @@ class TestLearnAIRBridge:
         0.7 and 1.0 (between 0% and 30% penalty).
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
         # Moderate distraction
         spots = [
@@ -340,21 +340,21 @@ class TestLearnAIRBridge:
         assert penalty.total_area == 2000.0
 
     def test_apply_penalty_to_fluency(self):
-        """Test Case 5: Integration with fluency score.
+        """Test Case 5: Integration with legacy quality score.
 
-        Verify that the penalty is correctly applied to a base fluency score.
+        Verify that the penalty is correctly applied to a base legacy quality score.
         Formula: Adjusted_Fluency = Base_Score × Environmental_Penalty
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
-        base_fluency = 0.85
+        base_quality = 0.85
 
         # No distraction scenario
         result_clean = SpotDetectionResult(spots=[], total_spots=0, total_area=0.0)
-        adjusted_clean, penalty_clean = bridge.apply_penalty_to_fluency(base_fluency, result_clean)
+        adjusted_clean, penalty_clean = bridge.apply_penalty_to_fluency(base_quality, result_clean)
 
-        assert adjusted_clean == base_fluency, "Clean environment should not change fluency"
+        assert adjusted_clean == base_quality, "Clean environment should not change fluency"
         assert penalty_clean.penalty_factor == 1.0
 
         # High distraction scenario
@@ -364,12 +364,12 @@ class TestLearnAIRBridge:
         ]
         result_distracted = SpotDetectionResult(spots=spots, total_spots=20, total_area=20000.0)
         adjusted_distracted, penalty_distracted = bridge.apply_penalty_to_fluency(
-            base_fluency, result_distracted
+            base_quality, result_distracted
         )
 
-        assert adjusted_distracted < base_fluency, "Distraction should reduce fluency"
-        assert adjusted_distracted >= base_fluency * 0.7, "Should not reduce below 70% of base"
-        assert adjusted_distracted == base_fluency * penalty_distracted.penalty_factor
+        assert adjusted_distracted < base_quality, "Distraction should reduce fluency"
+        assert adjusted_distracted >= base_quality * 0.7, "Should not reduce below 70% of base"
+        assert adjusted_distracted == base_quality * penalty_distracted.penalty_factor
 
     def test_penalty_reason_generation(self):
         """Test Case 6: Human-readable reason generation.
@@ -377,7 +377,7 @@ class TestLearnAIRBridge:
         Verify that penalty reasons are descriptive and match distraction levels.
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
         # Minimal distraction
         result_minimal = SpotDetectionResult(
@@ -407,7 +407,7 @@ class TestLearnAIRBridge:
         When no detection result is available, should return neutral penalty.
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
         penalty = bridge.calculate_environmental_penalty(None)
 
@@ -421,7 +421,7 @@ class TestLearnAIRBridge:
         Verify that get_status() returns comprehensive monitoring information.
         """
         tracker = SpotTracker()
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
 
         status = bridge.get_status()
 

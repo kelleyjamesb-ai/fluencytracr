@@ -1,4 +1,4 @@
-import { containsForbiddenFields } from "@learnaire/shared";
+import { containsForbiddenFields } from "@fluencytracr/shared";
 import { enforceAggregation } from "../src/rbac";
 import { enforceScopeWhitelist, hasDisallowedScopes } from "../src/query_scope";
 import { Response } from "express";

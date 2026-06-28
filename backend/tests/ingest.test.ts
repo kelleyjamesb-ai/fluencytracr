@@ -1,4 +1,4 @@
-import { containsForbiddenFields } from "@learnaire/shared";
+import { containsForbiddenFields } from "@fluencytracr/shared";
 import { rejectForbiddenFields } from "../src/ingest";
 
 const makeResponse = () => {

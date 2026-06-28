@@ -10,7 +10,7 @@
 
 ## 2. Validation
 
-- [x] 2.1 Run `npm test --workspace @learnaire/fluencytracr-mcp`.
-- [x] 2.2 Run `npm run build --workspace @learnaire/fluencytracr-mcp`.
+- [x] 2.1 Run `npm test --workspace @fluencytracr/fluencytracr-mcp`.
+- [x] 2.2 Run `npm run build --workspace @fluencytracr/fluencytracr-mcp`.
 - [x] 2.3 Run `npx openspec validate add-glean-value-evidence-mcp-tools --strict`.
 - [x] 2.4 Run `git diff --check`.

@@ -1,4 +1,4 @@
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
 import { app } from "../src/app";
 import { store, buildFluencyEventRecord } from "../src/store";import type { Server } from "http";
 import {
@@ -8,7 +8,7 @@ import {
   WorkflowRegistryAuditResponseSchema,
   WorkflowRegistryVersionsResponseSchema,
   WorkflowRegistryWorkflowsResponseSchema
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const FORBIDDEN_FIELD_TOKENS = [
   "score",

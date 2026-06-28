@@ -1,5 +1,5 @@
 import request from "supertest";
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
 
 import { app } from "../src/app";
 import { buildFluencyEventRecord, insertFluencyEvent, store } from "../src/store";

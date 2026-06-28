@@ -1,4 +1,4 @@
-import type { FluencyPatternName } from "@learnaire/shared";
+import type { FluencyPatternName } from "@fluencytracr/shared";
 import type { ExecutionSignals, Phase2Thresholds } from "./execution_signals";
 import type { TraceGateSummary } from "./fluency_execution_gates";
 import {

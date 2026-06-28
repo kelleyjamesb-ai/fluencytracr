@@ -1,4 +1,4 @@
-import type { FluencyPatternName, FluencyWindow, ObservabilityReliabilityComponents } from "@learnaire/shared";
+import type { FluencyPatternName, FluencyWindow, ObservabilityReliabilityComponents } from "@fluencytracr/shared";
 import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS, type Phase2Thresholds } from "./execution_signals";
 import { evaluateExecutionDisclosure } from "./execution_disclosure";
 import { evaluateFluencyExecutionGates, toTraceGateSummary } from "./fluency_execution_gates";

@@ -6,7 +6,7 @@ import {
   StrongestSafeClaimSchema,
   buildMethodologySnapshotRegistry,
   generateStrongestSafeClaim
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const fixture = (contractPath: string, name: string) => {
   const fullPath = path.join(__dirname, "../../docs/contracts", contractPath, "examples", name);

@@ -26,8 +26,8 @@ Build one bounded addition:
 
 - Red/green targeted tests for the readiness schema and strict MCP summary tool.
 - `npm run build --workspace shared`
-- `npm test --workspace @learnaire/fluencytracr-mcp`
-- `npm run build --workspace @learnaire/fluencytracr-mcp`
+- `npm test --workspace @fluencytracr/fluencytracr-mcp`
+- `npm run build --workspace @fluencytracr/fluencytracr-mcp`
 
 ## Risks
 

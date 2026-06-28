@@ -2,8 +2,8 @@
 <rect width="100%" height="100%" fill="white"/>
 <style>text{font-family:Arial,Helvetica,sans-serif;fill:#111827}.m{fill:#4B5563}</style>
 <text x="28" y="43" font-size="21" font-weight="700" fill="#111827">FluencyTracr Measurement Model</text>
-<text x="28" y="61" font-size="10.2" font-weight="400" fill="#4B5563">What Glean collects on its own vs. what Fluency Tracker derives for aggregate AI fluency measurement</text>
-<text x="28" y="78" font-size="8.6" font-weight="700" fill="#111827">Clean boundary: Glean logs events. Fluency Tracker interprets aggregate behavior. Data Science validates whether the interpretation is credible.</text>
+<text x="28" y="61" font-size="10.2" font-weight="400" fill="#4B5563">What Glean collects on its own vs. what FluencyTracr derives for aggregate AI fluency measurement</text>
+<text x="28" y="78" font-size="8.6" font-weight="700" fill="#111827">Clean boundary: Glean logs events. FluencyTracr interprets aggregate behavior. Data Science validates whether the interpretation is credible.</text>
 <rect x="28.0" y="92" width="252.62992125984258" height="285" rx="8" fill="#EEF2FF" stroke="#343CED" stroke-width="1.2"/>
 <text x="48.0" y="117" font-size="7.8" font-weight="700" fill="#343CED">Already in Glean</text>
 <text x="40.0" y="148" font-size="12.2" font-weight="700" fill="#111827">1. Glean collects on its own</text>
@@ -24,8 +24,8 @@
 <text x="48.0" y="347" font-size="7.2" font-weight="400" fill="#4B5563">daily inventory of workflows, actions, action packs, subscriptions</text>
 <text x="40.0" y="366" font-size="8.4" font-weight="700" fill="#343CED">Raw event exhaust and metadata. Not a fluency model by itself.</text>
 <rect x="294.6299212598426" y="92" width="252.62992125984258" height="285" rx="8" fill="#EAF8F0" stroke="#168A53" stroke-width="1.2"/>
-<text x="314.6299212598426" y="117" font-size="7.8" font-weight="700" fill="#168A53">Fluency Tracker layer</text>
-<text x="306.6299212598426" y="148" font-size="12.2" font-weight="700" fill="#111827">2. Fluency Tracker adds</text>
+<text x="314.6299212598426" y="117" font-size="7.8" font-weight="700" fill="#168A53">FluencyTracr layer</text>
+<text x="306.6299212598426" y="148" font-size="12.2" font-weight="700" fill="#111827">2. FluencyTracr adds</text>
 <rect x="306.6299212598426" y="166" width="228.62992125984258" height="32" rx="5" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="0.6"/>
 <text x="314.6299212598426" y="182" font-size="8.4" font-weight="700" fill="#111827">Signal readiness map</text>
 <text x="314.6299212598426" y="195" font-size="7.2" font-weight="400" fill="#4B5563">availability, scrub status, join keys, completeness</text>
@@ -65,5 +65,5 @@
 <text x="40" y="425" font-size="11" font-weight="700" fill="#111827">How the passive behaviors map</text>
 <rect x="28" y="532" width="785.8897637795277" height="42" rx="8" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1"/>
 <text x="40" y="558" font-size="9" font-weight="700" fill="#111827">Clean claim:</text>
-<text x="110" y="555" font-size="8.4" font-weight="400" fill="#111827">Glean collects behavioral telemetry. Fluency Tracker converts it into aggregate, validated fluency evidence.</text>
+<text x="110" y="555" font-size="8.4" font-weight="400" fill="#111827">Glean collects behavioral telemetry. FluencyTracr converts it into aggregate, validated fluency evidence.</text>
 </svg>

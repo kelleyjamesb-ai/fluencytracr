@@ -9,7 +9,7 @@
     "integrations/openai-agents"
   ],
   "scripts": {
-    "agent:dev": "npm run build --workspace @learnaire/openai-agents-harness && npm run start --workspace @learnaire/openai-agents-harness --",
+    "agent:dev": "npm run build --workspace @fluencytracr/openai-agents-harness && npm run start --workspace @fluencytracr/openai-agents-harness --",
     "test:agentic-harness": "node --test scripts/agentic_harness_guard.test.mjs scripts/agentic_harness_ledger.test.mjs scripts/agentic_harness_replay.test.mjs",
     "glean:readiness": "npm run build --workspace shared && node scripts/generate_glean_readiness_map.mjs",
     "reportability:roi": "npm run build --workspace shared && node scripts/generate_reportability_decision.mjs",
@@ -224,7 +224,7 @@
     "generate:ai-value-executive-packet": "npm run build --workspace shared && node scripts/generate_ai_value_executive_packet.mjs",
     "test:ai-value-executive-packet": "npm run build --workspace shared && node --test scripts/generate_ai_value_executive_packet.test.mjs",
     "test:ai-value-v1-spine": "npm run build --workspace shared && node --test scripts/ai_value_v1_spine.test.mjs",
-    "validate:agents": "npm run build --workspace @learnaire/openai-agents-harness",
+    "validate:agents": "npm run build --workspace @fluencytracr/openai-agents-harness",
     "seed:lmsys": "node scripts/seed_lmsys.mjs",
     "seed:lmsys:sample": "node scripts/seed_lmsys_sample.mjs",
     "seed:lmsys:assurance": "node scripts/seed_lmsys_assurance.mjs",

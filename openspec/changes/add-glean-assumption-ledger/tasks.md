@@ -1,7 +1,7 @@
 ## 1. Contract and schema
 
 - [x] 1.1 Add shared Zod schema for `GAL_2026_05`.
-- [x] 1.2 Export the schema from `@learnaire/shared`.
+- [x] 1.2 Export the schema from `@fluencytracr/shared`.
 - [x] 1.3 Add contract documentation and Time-Saves-seeded example.
 - [x] 1.4 Add targeted tests for assumption validation and customer-claim constraints.
 - [x] 1.5 Wire assumption ledger validation into the Glean value governance gate.

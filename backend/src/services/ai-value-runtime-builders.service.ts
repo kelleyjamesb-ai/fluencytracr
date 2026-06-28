@@ -1,4 +1,4 @@
-import { aiValueEngine } from "@learnaire/shared";
+import { aiValueEngine } from "@fluencytracr/shared";
 
 import {
   AiValuePersistenceValidationError,

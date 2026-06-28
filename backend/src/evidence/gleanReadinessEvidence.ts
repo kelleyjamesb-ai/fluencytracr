@@ -1,7 +1,7 @@
 import {
   GleanSignalReadinessMapSchema,
   type GleanSignalReadinessEntry
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 type EvidenceStatus = "present" | "not_present" | "suppressed" | "not_computed";
 

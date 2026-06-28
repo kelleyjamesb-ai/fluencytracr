@@ -1,7 +1,7 @@
 import {
   generateGleanSignalReadinessMap,
   GleanSignalInventorySchema
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const inventory = {
   schema_version: "GSR_INVENTORY_2026_05",

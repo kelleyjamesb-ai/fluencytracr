@@ -5,7 +5,7 @@ import type {
   FluencyPattern,
   FluencyScope,
   FluencyWindow
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import { Sidebar } from "../components/Sidebar";
 import { withAuth } from "../auth";
 

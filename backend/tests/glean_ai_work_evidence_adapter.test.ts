@@ -6,7 +6,7 @@ import {
   buildGleanClaimEvaluationSetForRegistry,
   mapGleanAiWorkEvidenceToClaimEvaluations,
   mapGleanAiWorkEvidenceToReadinessInventory
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const repoRoot = resolve(__dirname, "../..");
 const exportPath = resolve(

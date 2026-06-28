@@ -35,8 +35,8 @@ import {
   BoardSnapshotVisibilityLabel,
   ObservabilityResponseSchema,
   RoleSchema as AuthRoleSchema
-} from "@learnaire/shared";
-import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@learnaire/shared";import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
+} from "@fluencytracr/shared";
+import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@fluencytracr/shared";import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
 import { registerAiValueRoutes } from "./ai_value_routes";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";

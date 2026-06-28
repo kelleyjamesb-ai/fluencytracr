@@ -6,7 +6,7 @@ import type {
   WorkflowVisibilityPolicyConfigRecord
 } from "../src/store";
 import { buildFluencyEventRecord } from "../src/store";
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
 const now = new Date("2026-02-18T00:00:00.000Z");
 let eventCounter = 0;
 

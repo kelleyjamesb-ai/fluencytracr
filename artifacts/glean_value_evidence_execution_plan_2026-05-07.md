@@ -269,7 +269,7 @@ Large product-contract changes should not be implemented directly. Use this sequ
 
 **Validation:**
 
-- `npm test --workspace @learnaire/fluencytracr-mcp`
+- `npm test --workspace @fluencytracr/fluencytracr-mcp`
 - strict response template tests
 
 ## 4. Harness and agent execution model
@@ -326,8 +326,8 @@ If a true external model consensus is needed, spawn Cursor background agents onl
 | Docs-only strategy/contract | `git diff --check`; docs contract sweep if links/examples change |
 | Shared schemas | targeted backend schema tests; `npm run build --workspace shared` |
 | Backend mapping/derivation | targeted Jest tests; `npm run test:ci --workspace backend` for final slice |
-| MCP tools | `npm test --workspace @learnaire/fluencytracr-mcp`; MCP build if changed |
-| Glean publisher/indexing | `npm run test --workspace @learnaire/glean-publisher` |
+| MCP tools | `npm test --workspace @fluencytracr/fluencytracr-mcp`; MCP build if changed |
+| Glean publisher/indexing | `npm run test --workspace @fluencytracr/glean-publisher` |
 | EvidenceBundle examples | `bash scripts/validate_evidence_bundle_schema.sh` |
 | Readiness examples | `node scripts/validate_glean_readiness_examples.mjs` |
 | Governance-sensitive output | `python scripts/ci_v1_governance_gates.py` |

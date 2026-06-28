@@ -10,7 +10,7 @@ import {
   DecisionLedgerEvaluationInput,
   UnifiedTelemetryEvent,
   OutcomeEvidenceRecord,
-  resolveFluencyExecutionId} from "@learnaire/shared";
+  resolveFluencyExecutionId} from "@fluencytracr/shared";
 import type { InferenceAuditRecord, PatternInferenceRecord } from "./inference/types";
 
 export type AiValueObjectStoredRecord = {

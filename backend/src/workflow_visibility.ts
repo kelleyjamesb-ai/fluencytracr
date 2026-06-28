@@ -1,4 +1,4 @@
-import type { FluencyWindow, V0SignalName } from "@learnaire/shared";
+import type { FluencyWindow, V0SignalName } from "@fluencytracr/shared";
 import type {
   BehavioralSignalRecord,
   FluencyEventRecord,

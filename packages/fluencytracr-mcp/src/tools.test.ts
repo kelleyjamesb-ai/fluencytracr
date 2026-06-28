@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerFluencyTools } from "./tools.js";
-import { GleanSignalReadinessMapSchema } from "@learnaire/shared";
+import { GleanSignalReadinessMapSchema } from "@fluencytracr/shared";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdtempSync, readFileSync } from "node:fs";

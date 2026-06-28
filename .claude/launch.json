@@ -4,7 +4,7 @@
     {
       "name": "frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace", "@learnaire/frontend", "--", "--port", "5273", "--strictPort"],
+      "runtimeArgs": ["run", "dev", "--workspace", "@fluencytracr/frontend", "--", "--port", "5273", "--strictPort"],
       "port": 5273,
       "autoPort": false
     }

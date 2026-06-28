@@ -2,8 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@learnaire/shared": ["../shared/dist"],
-      "@learnaire/shared/*": ["../shared/dist/*"]
+      "@fluencytracr/shared": ["../shared/dist"],
+      "@fluencytracr/shared/*": ["../shared/dist/*"]
     }
   },
   "include": ["src"],

@@ -78,7 +78,7 @@ Every ledger must include:
 
 See `examples/default-assumption-ledger.json` for a complete valid payload seeded from the Time-Saves MVP review packet themes.
 
-Runtime validation lives in `shared/src/gleanAssumptionLedgerSchemas.ts` and is exported through `@learnaire/shared`.
+Runtime validation lives in `shared/src/gleanAssumptionLedgerSchemas.ts` and is exported through `@fluencytracr/shared`.
 
 ## Relationship to other contracts
 

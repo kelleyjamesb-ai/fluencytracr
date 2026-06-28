@@ -226,7 +226,7 @@ Machine-readable definitions: `schemas/unified_telemetry/` (`ut_event_union.sche
 
 ## Implementation status
 
-- **Zod mirror:** `shared/src/unifiedTelemetrySchemas.ts` (exported from `@learnaire/shared`).
+- **Zod mirror:** `shared/src/unifiedTelemetrySchemas.ts` (exported from `@fluencytracr/shared`).
 - **Ingest route:** `POST /api/ingest/unified-telemetry` (see [`docs/api/ingest-unified-telemetry.md`](../../api/ingest-unified-telemetry.md)), enabled with `FLUENCY_UNIFIED_TELEMETRY_INGEST=true`.
 - **OpenSpec change:** `openspec/changes/add-unified-telemetry-ingest/` (proposal, tasks, ingestion spec delta).
 

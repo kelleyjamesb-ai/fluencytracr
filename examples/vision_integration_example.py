@@ -1,7 +1,7 @@
-"""Example: Integrating Vision Module with LearnAIR Fluency Metrics.
+"""Example: Integrating Vision Module with vision quality metrics.
 
 This script demonstrates how to use the Vision Intelligence Module to apply
-environmental penalties to fluency scores based on detected visual distractions.
+environmental penalties to legacy quality scores based on detected visual distractions.
 
 Usage:
     python examples/vision_integration_example.py
@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 from src.events import EnablementEvent
 from src.fluency_service import calculate_fluency_with_suppression
 from src.passive_signals import SignalEvent
-from vision.fluency_bridge import LearnAIR_Bridge
+from vision.fluency_bridge import VisionQualityBridge
 from vision.visual_engine import SpotTracker
 
 
@@ -29,7 +29,7 @@ def example_with_static_image():
 
     # Initialize vision tracker
     tracker = SpotTracker(threshold_value=200, min_area=10)
-    bridge = LearnAIR_Bridge(tracker)
+    bridge = VisionQualityBridge(tracker)
 
     # Note: Replace with actual image path if you want to test with real images
     # For this example, we'll simulate detection results
@@ -185,14 +185,14 @@ Production Integration Steps:
 1. Initialize Vision Tracker (one-time setup):
 
    from vision.visual_engine import SpotTracker
-   from vision.fluency_bridge import LearnAIR_Bridge
+   from vision.fluency_bridge import VisionQualityBridge
 
    tracker = SpotTracker(
        threshold_value=200,    # Brightness threshold
        min_area=10,            # Minimum spot size
        blur_kernel=(11, 11),   # Smoothing kernel
    )
-   bridge = LearnAIR_Bridge(tracker)
+   bridge = VisionQualityBridge(tracker)
 
 2. Start Monitoring (daemon thread):
 

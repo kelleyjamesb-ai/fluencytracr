@@ -1,4 +1,4 @@
-import type { FluencyWindow } from "@learnaire/shared";
+import type { FluencyWindow } from "@fluencytracr/shared";
 import { WINDOW_DAYS, windowStart } from "./fluencytracr";
 import type { FluencyEventRecord } from "./store";
 

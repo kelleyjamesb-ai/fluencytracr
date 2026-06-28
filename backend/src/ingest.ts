@@ -4,7 +4,7 @@ import {
   containsPersonIdentifiers,
   FORBIDDEN_FIELDS,
   PERSON_IDENTIFIER_FIELDS
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import { containsSQLInjectionPatterns } from "./sanitization";
 
 /**

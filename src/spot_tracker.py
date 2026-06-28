@@ -166,7 +166,7 @@ class SpotTracker:
             self._events.append(event)
 
 
-class LearnAIR_Bridge:
+class VisionQualityBridge:
     """Translates vision context into measurement quality without penalizing users."""
 
     def __init__(
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     tracker.start()
     try:
         time.sleep(1.0)
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
         base_score = 0.82
         env_quality = bridge.calculate_env_quality()
         print(f"Base Fluency: {base_score:.2f}")

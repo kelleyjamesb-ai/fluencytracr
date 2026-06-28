@@ -4,8 +4,8 @@
  * readers merge DB rows with the in-memory store (memory wins on duplicate event_id).
  */
 
-import type { FluencyEvent } from "@learnaire/shared";
-import { FluencyEventSchema } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
+import { FluencyEventSchema } from "@fluencytracr/shared";
 import type { Prisma } from "@prisma/client";
 import { getPrisma } from "../db";
 import { insertFluencyEvent, store, type FluencyEventRecord } from "../store";

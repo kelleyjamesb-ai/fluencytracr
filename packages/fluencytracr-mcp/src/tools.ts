@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { FluencyEventSchema, GleanSignalReadinessMapSchema, GleanValueEvidencePackSchema } from "@learnaire/shared";
+import { FluencyEventSchema, GleanSignalReadinessMapSchema, GleanValueEvidencePackSchema } from "@fluencytracr/shared";
 import { EvidenceWindowSchema, getActorIdentity, getSchemaVersionHeader } from "./config.js";
 import { findForbiddenField } from "./forbiddenScan.js";
 import { writeAudit, type AuditRecord } from "./audit.js";

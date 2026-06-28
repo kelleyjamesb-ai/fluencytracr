@@ -1,4 +1,4 @@
-import type { FluencyPatternName, FluencyWindow } from "@learnaire/shared";
+import type { FluencyPatternName, FluencyWindow } from "@fluencytracr/shared";
 import { evaluateFluencyExecutionGates, toTraceGateSummary, type TraceGateSummary } from "./fluency_execution_gates";
 import { runFluencyPatternSuppression } from "./fluency-pattern-suppression";
 import type { FluencyEventRecord } from "./store";

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import type { SuppressionReason } from "@learnaire/shared";
-import { FluencyJoinKeySchema } from "@learnaire/shared";
+import type { SuppressionReason } from "@fluencytracr/shared";
+import { FluencyJoinKeySchema } from "@fluencytracr/shared";
 import type { CalibrationBaseline } from "./calibration_registry";
 import {
   ForwardedDistributionMachineTokenSchema,

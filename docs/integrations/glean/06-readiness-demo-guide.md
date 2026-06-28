@@ -78,7 +78,7 @@ bash scripts/validate_evidence_bundle_schema.sh
 5. Validate the MCP readiness tools:
 
 ```bash
-npm test --workspace @learnaire/fluencytracr-mcp -- --run src/tools.test.ts
+npm test --workspace @fluencytracr/fluencytracr-mcp -- --run src/tools.test.ts
 ```
 
 6. Validate the executive clickable prototype:

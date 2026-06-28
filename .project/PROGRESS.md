@@ -1988,7 +1988,7 @@
 - The seeded readiness generator addition was completed as a bounded user-requested slice; queue status was not changed.
 - Roadmap execution is on branch `codex/OrgFluency-glean-readiness-execution`; Phases 1 through 8 are complete and harness-verified.
 - The executive HTML prototype is complete as a bounded user-requested slice; queue status was not changed.
-- Out-of-band Vercel Services implementation is deployed to production at `https://learn-air-engable-tool-frontend.vercel.app`; authenticated `/health` returns `db: "ok"`.
+- Out-of-band Vercel Services implementation is deployed to production at `https://fluencytracr-frontend.vercel.app`; authenticated `/health` returns `db: "ok"`.
 - Out-of-band Glean trust-layer strategy artifact is complete; the referenced enclosed paper was not found on disk and should be added by path before a paper-specific appendix is written.
 - Out-of-band Glean Value Evidence execution plan is complete; it reframes the insertable product around Glean client value evidence across Search/Chat, Skills, Auto Mode Agents, triggered Agents, MCP/actions, embedded hosts, artifacts, and Protect/runtime controls.
 - Glean Value Evidence Pack contract slice is complete: OpenSpec `add-glean-value-evidence-pack`, shared `GVE_2026_05` Zod schema, contract docs, synthetic example, and backend schema tests.

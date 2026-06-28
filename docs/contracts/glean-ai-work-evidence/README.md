@@ -71,4 +71,4 @@ ROI remains suppressed until assumption governance explicitly permits customer-s
 
 See `examples/org-northstar-ai-work-export.json`.
 
-Runtime validation lives in `shared/src/gleanAiWorkEvidenceAdapter.ts` and is exported through `@learnaire/shared`.
+Runtime validation lives in `shared/src/gleanAiWorkEvidenceAdapter.ts` and is exported through `@fluencytracr/shared`.

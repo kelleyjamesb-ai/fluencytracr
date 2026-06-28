@@ -6,7 +6,7 @@ import {
   FluencyScope,
   FluencyWindow,
   RiskClass
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 /**
  * Safe division utility to prevent division by zero.

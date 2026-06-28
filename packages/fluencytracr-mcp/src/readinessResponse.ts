@@ -1,7 +1,7 @@
 import {
   GleanSignalReadinessMapSchema,
   type GleanSignalReadinessMap
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import { z } from "zod";
 
 const GleanReadinessStatusSchema = z.enum(["present", "missing", "suppressed", "not_computed"]);

@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import {
   NielsenSourceEvidenceTrialPackageSchema,
   buildNielsenSourceEvidenceTrialReview
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const repoRoot = resolve(__dirname, "../..");
 

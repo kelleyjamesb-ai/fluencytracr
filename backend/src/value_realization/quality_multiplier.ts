@@ -1,4 +1,4 @@
-import type { SuppressionReason } from "@learnaire/shared";
+import type { SuppressionReason } from "@fluencytracr/shared";
 import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "../execution_signals";
 import type { FluencyEventRecord } from "../store";
 import { groupEventsByExecution, reconstructTrace } from "../trace_engine";

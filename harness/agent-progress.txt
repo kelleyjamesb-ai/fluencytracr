@@ -178,7 +178,7 @@
 
 ## 2026-05-07 (UTC) — Cursor (Glean Value Evidence Pack contract)
 
-- Completed: Implemented first build slice from the plan: OpenSpec `add-glean-value-evidence-pack`, `docs/contracts/glean-value-evidence/README.md`, synthetic `org-northstar-value-pack.json`, shared `GleanValueEvidencePackSchema`, export from `@learnaire/shared`, and `backend/tests/glean_value_evidence_pack_schema.test.ts`.
+- Completed: Implemented first build slice from the plan: OpenSpec `add-glean-value-evidence-pack`, `docs/contracts/glean-value-evidence/README.md`, synthetic `org-northstar-value-pack.json`, shared `GleanValueEvidencePackSchema`, export from `@fluencytracr/shared`, and `backend/tests/glean_value_evidence_pack_schema.test.ts`.
 - Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_value_evidence_pack_schema.test.ts` (3 tests); `npx openspec validate add-glean-value-evidence-pack --strict`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
 - Review: code-reviewer found claim-safety and doc/spec consistency issues; fixed with claim `.superRefine`, broader forbidden-field tests, README required field list, and `not_present` vocabulary alignment.
 - Next focus: Slice 2 from the plan — OpenSpec + contracts for `add-glean-claim-registry` so customer-safe ROI/value language is governed separately from the pack shape.
@@ -192,7 +192,7 @@
 
 ## 2026-05-07 (UTC) — Cursor (Glean Assumption Ledger contract)
 
-- Completed: Implemented Slice 3 from the plan: OpenSpec `add-glean-assumption-ledger`, `docs/contracts/glean-assumption-ledger/README.md`, Time-Saves-seeded `default-assumption-ledger.json`, shared `GleanAssumptionLedgerSchema`, export from `@learnaire/shared`, targeted backend tests, and assumption validation in `scripts/ci_glean_value_governance_gates.mjs`.
+- Completed: Implemented Slice 3 from the plan: OpenSpec `add-glean-assumption-ledger`, `docs/contracts/glean-assumption-ledger/README.md`, Time-Saves-seeded `default-assumption-ledger.json`, shared `GleanAssumptionLedgerSchema`, export from `@fluencytracr/shared`, targeted backend tests, and assumption validation in `scripts/ci_glean_value_governance_gates.mjs`.
 - Verified: `npm run build --workspace shared`; `npm test --workspace backend -- --runTestsByPath tests/glean_assumption_ledger_schema.test.ts` (6 tests); `npx openspec validate add-glean-assumption-ledger --strict`; `node scripts/ci_glean_value_governance_gates.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; `git diff --check`.
 - Review: code-reviewer found a customer-safe loophole for low-confidence/high-sensitivity assumptions and README field omission; fixed by blocking `approval_state: customer_safe`, customer-facing language constraints, and customer visibility for risky assumptions, requiring `last_reviewed_at`, and adding tests. Final blocker review found no remaining blocker/important findings.
 - Next focus: Slice 4 from the plan — promote Skills and Auto Mode Agents in readiness/value signal families with lifecycle fixtures and mappings.
@@ -214,7 +214,7 @@
 ## 2026-05-07 (UTC) — Cursor (Glean Value Evidence MCP tools)
 
 - Completed: Implemented Slice 6 from the plan: strict value evidence summary helper plus MCP tools `fluency.get_value_evidence_pack`, `fluency.get_value_claim_readiness_summary`, `fluency.evaluate_claim_safety`, and `fluency.get_non_computable_value_claims`; updated MCP and Glean Agent docs.
-- Verified: `npm test --workspace @learnaire/fluencytracr-mcp` (17 tests); `npm run build --workspace @learnaire/fluencytracr-mcp`; `npx openspec validate add-glean-value-evidence-mcp-tools --strict`; `git diff --check`.
+- Verified: `npm test --workspace @fluencytracr/fluencytracr-mcp` (17 tests); `npm run build --workspace @fluencytracr/fluencytracr-mcp`; `npx openspec validate add-glean-value-evidence-mcp-tools --strict`; `git diff --check`.
 - Review: code-reviewer found audit/error-safety gaps; fixed suppression-aware audit for full pack access, redacted source errors, omitted customer-safe language from suppressed claims, deterministic unknown-claim rejection, and audit assertions.
 - Next focus: Slice 7 from the plan — executive/client Value Evidence Pack prototype with QBR-safe language and instrumentation-gap callouts.
 
@@ -228,7 +228,7 @@
 ## 2026-05-07 (UTC) — Cursor (Glean Value Evidence broad verification)
 
 - Completed: Ran broad verification across the Glean Value Evidence program slices on `cursor/glean-trust-layer-deep-dive-c7e6`.
-- Verified: `npm run build --workspace shared`; backend targeted tests for value pack, claim registry, assumption ledger, source readiness, source CLI, and AI Work adapter (31 tests); `npm test --workspace @learnaire/fluencytracr-mcp` (17 tests); `npm run build --workspace @learnaire/fluencytracr-mcp`; `node scripts/validate_glean_readiness_examples.mjs`; `node scripts/ci_glean_value_governance_gates.mjs`; `node scripts/validate_glean_value_evidence_prototype.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for all six new Glean value changes; `git diff --check main...HEAD`.
+- Verified: `npm run build --workspace shared`; backend targeted tests for value pack, claim registry, assumption ledger, source readiness, source CLI, and AI Work adapter (31 tests); `npm test --workspace @fluencytracr/fluencytracr-mcp` (17 tests); `npm run build --workspace @fluencytracr/fluencytracr-mcp`; `node scripts/validate_glean_readiness_examples.mjs`; `node scripts/ci_glean_value_governance_gates.mjs`; `node scripts/validate_glean_value_evidence_prototype.mjs`; `bash scripts/ci_docs_contract_sweep.sh`; strict OpenSpec validation for all six new Glean value changes; `git diff --check main...HEAD`.
 - Next focus: Human review of PR #207, then decide whether to archive approved OpenSpec changes or add the `glean-value-*` items to `.project/WORK_QUEUE.json` / `harness/feature_list.json` as the formal queue track.
 
 ## 2026-05-08 (UTC) — Codex (QBR Narrative View)

@@ -1,4 +1,4 @@
-import { NON_COLLECTABLE_FIELDS, PERSON_IDENTIFIER_FIELDS } from "@learnaire/shared";
+import { NON_COLLECTABLE_FIELDS, PERSON_IDENTIFIER_FIELDS } from "@fluencytracr/shared";
 
 export const FORBIDDEN_KEYS: string[] = Array.from(
   new Set([...NON_COLLECTABLE_FIELDS, ...PERSON_IDENTIFIER_FIELDS])

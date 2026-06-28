@@ -43,7 +43,7 @@ See [docs/integrations/glean/dogfood-bq-adapter.md](integrations/glean/dogfood-b
 ### 1. Repository Structure (2 levels deep)
 
 ```
-LearnAIR_Engable_Tool/
+FluencyTracr/
 ├── backend/                    # TypeScript Express API server
 │   ├── prisma/                # PostgreSQL schema (future DB)
 │   ├── src/                   # Backend source code

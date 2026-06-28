@@ -1,8 +1,8 @@
-"""Bridge between visual distraction detection and fluency index calculation.
+"""Bridge between visual distraction detection and legacy quality-index calculation.
 
 Translates environmental visual distractions (bright spots) into confidence
-penalties that adjust the fluency score. High distraction environments reduce
-the reliability of fluency metrics.
+penalties that adjust the legacy quality score. High distraction environments reduce
+the reliability of legacy quality metrics.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from vision.visual_engine import SpotDetectionResult, SpotTracker
 
 @dataclass(frozen=True)
 class ConfidencePenalty:
-    """Represents the impact of environmental distractions on fluency metrics."""
+    """Represents the impact of environmental distractions on legacy quality metrics."""
 
     penalty_factor: float  # Multiplier between 0.0 (maximum penalty) and 1.0 (no penalty)
     reason: str
@@ -27,14 +27,14 @@ class ConfidencePenalty:
         return (1.0 - self.penalty_factor) * 100.0
 
 
-class LearnAIR_Bridge:
-    """Translates visual spot detection into fluency index confidence modifiers.
+class VisionQualityBridge:
+    """Translates visual spot detection into legacy quality-index modifiers.
 
     Rationale:
         Environmental distractions (screen glare, laser pointers, bright reflections)
-        can impact the accuracy of AI engagement metrics. High-intensity bright spots
+        can impact the accuracy of legacy engagement metrics. High-intensity bright spots
         suggest visual distractions that may reduce user focus, warranting a confidence
-        penalty on the fluency score.
+        penalty on the legacy quality score.
 
     Formula:
         penalty_factor = max(0.7, 1.0 - (distraction_score * 0.3))
@@ -45,9 +45,9 @@ class LearnAIR_Bridge:
         - Maximum penalty caps at 30% to avoid over-correcting
 
     Example:
-        bridge = LearnAIR_Bridge(tracker)
+        bridge = VisionQualityBridge(tracker)
         penalty = bridge.calculate_environmental_penalty()
-        adjusted_fluency = base_fluency * penalty.penalty_factor
+        adjusted_quality = base_quality * penalty.penalty_factor
     """
 
     # Penalty thresholds
@@ -136,22 +136,22 @@ class LearnAIR_Bridge:
 
     def apply_penalty_to_fluency(
         self,
-        base_fluency: float,
+        base_quality: float,
         result: SpotDetectionResult | None = None,
     ) -> tuple[float, ConfidencePenalty]:
-        """Apply environmental penalty to a fluency score.
+        """Apply environmental penalty to a legacy quality score.
 
         Args:
-            base_fluency: Original fluency index score (0.0-1.0)
+            base_quality: Original fluency index score (0.0-1.0)
             result: SpotDetectionResult to analyze (uses latest if None)
 
         Returns:
-            Tuple of (adjusted_fluency, penalty_details)
+            Tuple of (adjusted_quality, penalty_details)
         """
         penalty = self.calculate_environmental_penalty(result)
-        adjusted_fluency = base_fluency * penalty.penalty_factor
+        adjusted_quality = base_quality * penalty.penalty_factor
 
-        return adjusted_fluency, penalty
+        return adjusted_quality, penalty
 
     def get_status(self) -> dict[str, any]:
         """Get current monitoring status and latest penalty.

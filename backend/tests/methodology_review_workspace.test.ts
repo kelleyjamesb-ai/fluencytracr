@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { buildMethodologyDecisionMemo, generateStrongestSafeClaim } from "@learnaire/shared";
+import { buildMethodologyDecisionMemo, generateStrongestSafeClaim } from "@fluencytracr/shared";
 import { summarizeMethodologySnapshotsForReview } from "../src/evidence/methodologyReviewWorkspace";
 
 const fixture = (contractPath: string, name: string) => {

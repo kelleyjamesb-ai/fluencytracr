@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { aiValueEngine } from "@learnaire/shared";
+import { aiValueEngine } from "@fluencytracr/shared";
 import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "../db";

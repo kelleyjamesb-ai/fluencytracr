@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: "20"
       - run: npm install
-      - run: npm run build --workspace @learnaire/glean-publisher
+      - run: npm run build --workspace @fluencytracr/glean-publisher
       - name: Publish bundles
         env:
           FLUENCYTRACR_BASE_URL: ${{ secrets.FLUENCYTRACR_BASE_URL }}

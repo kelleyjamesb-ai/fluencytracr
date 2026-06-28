@@ -106,7 +106,7 @@ Before implementing Path A or Path B, create a new approved OpenSpec change that
 npm run glean:readiness:sources
 node scripts/validate_glean_readiness_examples.mjs
 bash scripts/validate_evidence_bundle_schema.sh
-npm test --workspace @learnaire/fluencytracr-mcp -- --run src/tools.test.ts
+npm test --workspace @fluencytracr/fluencytracr-mcp -- --run src/tools.test.ts
 ./harness/scripts/verify.sh
 ```
 

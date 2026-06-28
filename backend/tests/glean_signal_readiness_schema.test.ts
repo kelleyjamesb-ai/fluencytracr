@@ -1,7 +1,7 @@
 import {
   GleanSignalReadinessMapSchema,
   buildGleanSignalReadinessMap
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const validMap = {
   schema_version: "GSR_2026_05",

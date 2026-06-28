@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import {
   GleanAssumptionLedgerSchema,
   buildGleanAssumptionLedger
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const repoRoot = resolve(__dirname, "../..");
 const ledgerPath = resolve(
