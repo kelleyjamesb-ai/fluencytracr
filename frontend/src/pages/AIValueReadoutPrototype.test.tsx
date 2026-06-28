@@ -12,36 +12,55 @@ const renderReadout = () =>
   );
 
 describe("AIValueReadoutPrototype", () => {
-  it("renders an executive-readable governed AI value case", () => {
+  it("renders a report-first decision memo with governed evidence annex", () => {
     const { container } = renderReadout();
 
+    expect(screen.getByRole("heading", { name: /Decision Memo/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Caveated client report/i).length).toBeGreaterThan(0);
+
+    const context = screen.getByRole("region", { name: /Report context/i });
+    expect(within(context).getByText("Northbridge Financial Services")).toBeInTheDocument();
+    expect(within(context).getByText("AI Assistant Value Assessment")).toBeInTheDocument();
+    expect(screen.getByText(/Caveated review only/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Review caveats/i })).toBeInTheDocument();
+    expect((container.textContent ?? "").indexOf("Caveated review only")).toBeLessThan(
+      (container.textContent ?? "").indexOf("Review caveats")
+    );
+
+    const report = screen.getByRole("article", { name: /Client value evidence report/i });
+    expect(within(report).getByText(/Evidence supports planning, not ROI proof/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Customer-owned metric required for stronger claims/i)).toBeInTheDocument();
+    expect(within(report).getAllByText(/Causality blocked/i).length).toBeGreaterThan(0);
+    expect(within(report).getByText(/Executive narrative/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Evidence posture/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Claim boundary/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Recommended next move/i)).toBeInTheDocument();
+
+    expect(within(report).getByText(/Workflow process signals/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Quality \/ accuracy gains/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Financial impact/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Attribution to AI Assistant/i)).toBeInTheDocument();
+
+    const annex = screen.getByRole("complementary", { name: /Evidence annex/i });
+    expect(within(annex).getByText(/Internal evidence inventory feeding this report/i)).toBeInTheDocument();
+    expect(within(annex).getByText(/Workflow telemetry/i)).toBeInTheDocument();
+    expect(within(annex).getByText(/Business outcome metrics/i)).toBeInTheDocument();
+    expect(within(annex).getByText(/Vendor benchmark pack/i)).toBeInTheDocument();
+    expect(within(annex).getAllByText("Included")).toHaveLength(2);
+    expect(within(annex).getAllByText("Caveated")).toHaveLength(2);
+    expect(within(annex).getAllByText("Blocked")).toHaveLength(2);
+    expect(within(annex).getByText("Internal only")).toBeInTheDocument();
+
+    const exportReadiness = screen.getByRole("contentinfo", { name: /Export readiness/i });
+    expect(within(exportReadiness).getByText(/Ready for caveated review/i)).toBeInTheDocument();
+    expect(within(exportReadiness).getByText(/Blocked and internal-only items are excluded/i)).toBeInTheDocument();
+    expect(within(exportReadiness).getByText(/Evidence supports planning, not ROI proof/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: /AI Value Executive Readout/i })
+      within(exportReadiness).getByRole("button", { name: /Run export check/i })
     ).toBeInTheDocument();
-    const workflowContext = screen.getByRole("region", { name: /Workflow being evaluated/i });
-    expect(within(workflowContext).getByText("Customer Support Resolution")).toBeInTheDocument();
-    expect(within(workflowContext).getByText(/2026-Q1 to 2026-Q2/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Stronger Claims Blocked/i).length).toBeGreaterThan(0);
-
-    const summary = screen.getByRole("region", { name: /Executive value summary/i });
-    expect(within(summary).getByText(/Fast but shallow/i)).toBeInTheDocument();
-    expect(within(summary).getByText("Emerging Evidence")).toBeInTheDocument();
-    expect(within(summary).getByText(/Internal Claim Boundary Review/i)).toBeInTheDocument();
-    expect(within(summary).getByText(/Held/i)).toBeInTheDocument();
-    expect(within(summary).queryByText(/Financial confidence/i)).not.toBeInTheDocument();
-    expect(within(summary).queryByText(/Confidence/i)).not.toBeInTheDocument();
-
-    const vbd = screen.getByRole("region", { name: /VBD operating posture/i });
-    expect(within(vbd).getByText("Velocity")).toBeInTheDocument();
-    expect(within(vbd).getByText("High")).toBeInTheDocument();
-    expect(within(vbd).getByText("Breadth")).toBeInTheDocument();
-    expect(within(vbd).getByText("Depth")).toBeInTheDocument();
-    expect(within(vbd).getAllByText("Medium")).toHaveLength(2);
-    expect(within(vbd).getByText(/not yet strong enough for stronger value claims/i)).toBeInTheDocument();
-
-    const outcome = screen.getByRole("region", { name: /Measurement evidence/i });
-    expect(within(outcome).getByText(/Resolution cycle time/i)).toBeInTheDocument();
-    expect(within(outcome).getByText(/Reopen rate did not degrade/i)).toBeInTheDocument();
+    expect(
+      within(exportReadiness).getByRole("button", { name: /Export caveated report/i })
+    ).toBeInTheDocument();
 
     const measurementStory = screen.getByRole("region", {
       name: /AI contribution reporting spine/i
@@ -114,36 +133,9 @@ describe("AIValueReadoutPrototype", () => {
       expect(within(milestonePlan).getByText(milestone)).toBeInTheDocument();
     }
 
-    const gate = screen.getByRole("region", { name: /Claim boundary review/i });
-    expect(within(gate).getByText(/Internal Claim Boundary Review/i)).toBeInTheDocument();
-    expect(within(gate).getByText(/No stronger outputs allowed/i)).toBeInTheDocument();
-    expect(within(gate).getByText(/Value Accounting/i)).toBeInTheDocument();
-    expect(within(gate).getByText(/Customer-Facing Economic Output/i)).toBeInTheDocument();
-    expect(within(gate).getByText(/Aggregate Workflow Capacity/i)).toBeInTheDocument();
-
-    const ebita = screen.getByRole("region", { name: /Stronger claims blocked/i });
-    expect(within(ebita).getByText(/No realized economic claim is allowed/i)).toBeInTheDocument();
-    expect(within(ebita).getByText(/Aggregate Capacity Context/i)).toBeInTheDocument();
-    expect(within(ebita).getByText(/Operating Process Context/i)).toBeInTheDocument();
-
-    const safeClaims = screen.getByRole("region", { name: /Safe claims and caveats/i });
-    expect(within(safeClaims).getByText(/requires further review/i)).toBeInTheDocument();
-    expect(within(safeClaims).getByText(/Usage telemetry alone does not establish realized value/i)).toBeInTheDocument();
-    expect(within(safeClaims).queryByText(/individual productivity/i)).not.toBeInTheDocument();
-    expect(within(safeClaims).queryByText(/manager/i)).not.toBeInTheDocument();
-
-    const blocked = screen.getByRole("region", { name: /Blocked claims/i });
-    expect(within(blocked).getByText(/Usage does not prove financial impact/i)).toBeInTheDocument();
-    expect(within(blocked).getByText(/No headcount reduction claim/i)).toBeInTheDocument();
-    expect(within(blocked).getByText(/No individual productivity claim/i)).toBeInTheDocument();
-    expect(within(blocked).getByText(/No manager or team ranking/i)).toBeInTheDocument();
-
-    const nextActions = screen.getByRole("region", { name: /Next evidence actions/i });
-    expect(within(nextActions).getByText(/Attach customer-owned outcome assumptions/i)).toBeInTheDocument();
-    expect(within(nextActions).getByText(/Confirm source owner and review state/i)).toBeInTheDocument();
 
     expect(container.textContent).not.toMatch(
-      /AI saved \$|proved ROI|employee score|HRIS analytics|Financial confidence|Executive Caveated/i
+      /AI saved \$|proved ROI|employee score|HRIS analytics|financial confidence|caused revenue|team ranking/i
     );
   });
 });
