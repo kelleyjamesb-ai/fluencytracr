@@ -7,7 +7,7 @@ import {
   WorkflowRegistryCreateVersionResponseSchema,
   WorkflowRegistryVersionsResponseSchema,
   WorkflowRegistryWorkflowsResponseSchema
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const openServers = new Set<Server>();
 

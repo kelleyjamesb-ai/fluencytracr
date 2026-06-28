@@ -3,7 +3,7 @@ import {
   CONFIDENCE_SCHEMA_VERSION,
   deriveIterationDepthLabel
 } from "../../src/inference/confidence_layer";
-import type { TaskEpisode } from "@learnaire/shared";
+import type { TaskEpisode } from "@fluencytracr/shared";
 
 const buildEpisode = (overrides: Partial<TaskEpisode> = {}): TaskEpisode => {
   return {

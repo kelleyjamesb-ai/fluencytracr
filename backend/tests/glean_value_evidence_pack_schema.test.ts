@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import {
   GleanValueEvidencePackSchema,
   buildGleanValueEvidencePack
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const repoRoot = resolve(__dirname, "../..");
 const examplePath = resolve(

@@ -284,8 +284,8 @@ npx @fission-ai/openspec@latest validate <change-id> --strict --no-interactive
 Run before merging the full roadmap:
 
 ```bash
-npm test --workspace @learnaire/fluencytracr-mcp
-npm run build --workspace @learnaire/fluencytracr-mcp
+npm test --workspace @fluencytracr/fluencytracr-mcp
+npm run build --workspace @fluencytracr/fluencytracr-mcp
 npm run glean:readiness
 npm run glean:readiness:sources
 ```

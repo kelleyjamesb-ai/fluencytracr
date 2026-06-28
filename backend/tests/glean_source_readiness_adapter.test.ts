@@ -2,7 +2,7 @@ import {
   GleanSourceExportSchema,
   generateGleanSignalReadinessMap,
   mapGleanSourcesToReadinessInventory
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const sourceExport = {
   schema_version: "GLEAN_SOURCE_EXPORT_2026_05",

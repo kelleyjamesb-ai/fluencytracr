@@ -2,8 +2,8 @@
 
 The current deployment model uses two Vercel projects:
 
-- `learn-air-engable-tool-frontend`
-- `learn-air-engable-tool-backend`
+- `fluencytracr-frontend`
+- `fluencytracr-backend`
 
 The root Vercel config deploys the Vite frontend and rewrites backend traffic to the separate backend deployment URL. This keeps the public app surface unified, but it creates duplicated deploys, duplicated project settings, and split operational state.
 
@@ -30,7 +30,7 @@ The desired end state is one canonical Vercel project using Services, with the f
 
 ## Decisions
 
-### Decision: Keep `learn-air-engable-tool-frontend` as the canonical project
+### Decision: Keep `fluencytracr-frontend` as the canonical project
 
 Rationale:
 
@@ -66,7 +66,7 @@ Rationale:
 2. Define a frontend service pointing at `frontend/`.
 3. Define a backend service pointing at a Services-compatible backend entrypoint.
 4. Map the backend service to the existing public route prefixes.
-5. Remove the external rewrite dependency on `learn-air-engable-tool-backend.vercel.app`.
+5. Remove the external rewrite dependency on `fluencytracr-backend.vercel.app`.
 6. Retain the old backend project only until preview and production verification pass.
 
 ## Risks

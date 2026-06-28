@@ -1,7 +1,7 @@
 ## 1. Contract and schema
 
 - [x] 1.1 Add shared Zod schema for `GCR_2026_05`.
-- [x] 1.2 Export the schema from `@learnaire/shared`.
+- [x] 1.2 Export the schema from `@fluencytracr/shared`.
 - [x] 1.3 Add contract documentation and synthetic examples.
 - [x] 1.4 Add targeted tests for registry and evaluation validation.
 

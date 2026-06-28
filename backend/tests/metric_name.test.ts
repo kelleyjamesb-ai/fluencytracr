@@ -1,4 +1,4 @@
-import { MetricObservationSchema } from "@learnaire/shared";
+import { MetricObservationSchema } from "@fluencytracr/shared";
 
 it("accepts any metric name (no allowlist enforced)", () => {
   const result = MetricObservationSchema.safeParse({

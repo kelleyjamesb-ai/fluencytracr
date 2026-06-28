@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 
-import { aiValueEngine } from "@learnaire/shared";
+import { aiValueEngine } from "@fluencytracr/shared";
 import { Prisma } from "@prisma/client";
 
 import * as db from "../src/db";

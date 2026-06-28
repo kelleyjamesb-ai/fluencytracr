@@ -1,5 +1,5 @@
 import request from "supertest";
-import { ObservabilityResponseSchema } from "@learnaire/shared";
+import { ObservabilityResponseSchema } from "@fluencytracr/shared";
 
 import { app } from "../src/app";
 import { store, buildFluencyEventRecord } from "../src/store";

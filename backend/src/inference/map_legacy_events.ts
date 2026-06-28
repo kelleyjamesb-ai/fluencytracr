@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
 import type { JudgmentEvent } from "./types";
 
 const latencyBucketFromMs = (value?: number) => {

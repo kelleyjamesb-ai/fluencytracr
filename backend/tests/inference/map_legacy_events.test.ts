@@ -1,5 +1,5 @@
 import { mapLegacyEvents } from "../../src/inference/map_legacy_events";
-import type { FluencyEvent } from "@learnaire/shared";
+import type { FluencyEvent } from "@fluencytracr/shared";
 
 describe("mapLegacyEvents", () => {
   it("treats 0ms latency as IMMEDIATE", () => {

@@ -1,12 +1,12 @@
 [project]
-name = "learnair-engable-tool"
+name = "fluencytracr"
 version = "0.1.0"
 description = "Privacy-first organizational AI fluency analytics"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "LearnAIR Team"}
+    {name = "FluencyTracr Team"}
 ]
 keywords = ["analytics", "privacy", "ai-fluency", "organizational-metrics"]
 

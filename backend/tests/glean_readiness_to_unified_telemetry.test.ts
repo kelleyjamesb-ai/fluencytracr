@@ -2,7 +2,7 @@ import {
   UnifiedTelemetryEventSchema,
   generateGleanSignalReadinessMap,
   mapReadinessToUnifiedTelemetryCoverage
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const readinessMap = generateGleanSignalReadinessMap({
   schema_version: "GSR_INVENTORY_2026_05",

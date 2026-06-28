@@ -81,7 +81,7 @@ Every pack must include:
 
 See `examples/org-northstar-value-pack.json` for a complete valid payload.
 
-Runtime validation lives in `shared/src/gleanValueEvidenceSchemas.ts` and is exported through `@learnaire/shared`.
+Runtime validation lives in `shared/src/gleanValueEvidenceSchemas.ts` and is exported through `@fluencytracr/shared`.
 
 ## Privacy boundary
 

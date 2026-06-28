@@ -1,4 +1,4 @@
-import { FORBIDDEN_FIELDS } from "@learnaire/shared";
+import { FORBIDDEN_FIELDS } from "@fluencytracr/shared";
 import { store } from "./store";
 import { ALLOWED_SCOPES } from "./query_scope";
 

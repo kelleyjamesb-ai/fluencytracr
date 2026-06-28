@@ -82,7 +82,7 @@ Evaluation set:
 
 See `examples/default-claim-registry.json` and `examples/org-northstar-claim-evaluations.json` for complete valid payloads.
 
-Runtime validation lives in `shared/src/gleanClaimRegistrySchemas.ts` and is exported through `@learnaire/shared`.
+Runtime validation lives in `shared/src/gleanClaimRegistrySchemas.ts` and is exported through `@fluencytracr/shared`.
 
 ## Privacy boundary
 

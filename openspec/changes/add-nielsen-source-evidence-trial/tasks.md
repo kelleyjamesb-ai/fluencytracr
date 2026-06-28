@@ -2,7 +2,7 @@
 
 - [x] 1.1 Add `NSETR_2026_05` Nielsen Source Evidence Trial package schema.
 - [x] 1.2 Add review helper that delegates generated aggregate evidence to `AEI_2026_05`.
-- [x] 1.3 Export schema/helper from `@learnaire/shared`.
+- [x] 1.3 Export schema/helper from `@fluencytracr/shared`.
 
 ## 2. Fixture and Docs
 

@@ -3,7 +3,7 @@ import {
   SIGNAL_NAMES,
   SignalName,
   PatternConfidence,
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import { BehavioralSignal } from "./behavioral_signals";
 
 const LEGACY_SIGNAL_SET = new Set<string>(SIGNAL_NAMES);

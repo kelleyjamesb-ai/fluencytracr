@@ -3,7 +3,7 @@
 ## Repository Structure
 
 ```
-LearnAIR_Engable_Tool/
+FluencyTracr/
 ├── backend/              # TypeScript Express API server
 │   ├── src/
 │   │   ├── app.ts                    # Main Express app with all routes

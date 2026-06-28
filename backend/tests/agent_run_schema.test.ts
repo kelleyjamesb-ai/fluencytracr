@@ -1,4 +1,4 @@
-import { AgentRunEventSchema, AgentRunLedgerEntrySchema } from "@learnaire/shared";
+import { AgentRunEventSchema, AgentRunLedgerEntrySchema } from "@fluencytracr/shared";
 
 const baseEvent = {
   schema_version: "AR_2026_05",

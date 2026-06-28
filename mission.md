@@ -1,6 +1,6 @@
 # FluencyTracr — agent mission
 
-**Objective:** Evolve **FluencyTracr** (LearnAIR Engable Tool): a **privacy-first** system that captures **organizational AI fluency signals** from **passive, approved, aggregated** data—without surveillance, individual scoring, or scope creep.
+**Objective:** Evolve **FluencyTracr**: a **privacy-first** system that captures **organizational AI fluency signals** from **passive, approved, aggregated** data—without surveillance, individual scoring, or scope creep.
 
 ## Description
 

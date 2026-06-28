@@ -1,4 +1,4 @@
-import { GleanValueEvidencePackSchema, type GleanValueEvidencePack } from "@learnaire/shared";
+import { GleanValueEvidencePackSchema, type GleanValueEvidencePack } from "@fluencytracr/shared";
 import { z } from "zod";
 
 const ClaimReadinessCountSchema = z

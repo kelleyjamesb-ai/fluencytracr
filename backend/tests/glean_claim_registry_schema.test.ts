@@ -10,7 +10,7 @@ import {
   buildGleanClaimEvaluationSetForRegistry,
   buildGleanClaimRegistry,
   mapClaimEvaluationToValueEvidenceClaimReadiness
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const repoRoot = resolve(__dirname, "../..");
 const registryPath = resolve(

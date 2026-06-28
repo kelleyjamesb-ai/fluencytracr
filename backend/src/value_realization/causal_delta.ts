@@ -1,4 +1,4 @@
-import type { FluencyPatternName, SuppressionReason } from "@learnaire/shared";
+import type { FluencyPatternName, SuppressionReason } from "@fluencytracr/shared";
 import { computeExecutionLifecycle } from "../execution_lifecycle";
 import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "../execution_signals";
 import { evaluateExecutionDisclosure } from "../execution_disclosure";

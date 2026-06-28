@@ -1,4 +1,4 @@
-import { resolveFluencyExecutionId } from "@learnaire/shared";
+import { resolveFluencyExecutionId } from "@fluencytracr/shared";
 import { buildFluencyEventRecord } from "../src/store";
 import {
   detectRetrySequences,

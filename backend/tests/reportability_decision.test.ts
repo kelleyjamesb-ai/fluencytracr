@@ -8,7 +8,7 @@ import {
   REPORTABILITY_CLAIM_TAXONOMY,
   ReportabilityDecisionSchema,
   ReportabilityGateResponseSchema
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import fs from "fs";
 import path from "path";
 

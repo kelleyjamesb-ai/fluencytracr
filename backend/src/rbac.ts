@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
-import { Role, RoleSchema } from "@learnaire/shared";
+import { Role, RoleSchema } from "@fluencytracr/shared";
 import { isAuthLockdownRequired, resolveJwtSecret } from "./auth_secret";
 
 declare global {

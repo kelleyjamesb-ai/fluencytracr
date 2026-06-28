@@ -2,7 +2,7 @@
 
 - [x] 1.1 Add `AEI_2026_05` Aggregate Evidence Import package schema.
 - [x] 1.2 Add import review helper that accepts only ready-source aggregate records and withholds all others.
-- [x] 1.3 Export schema/helper from `@learnaire/shared`.
+- [x] 1.3 Export schema/helper from `@fluencytracr/shared`.
 
 ## 2. Fixtures and Docs
 

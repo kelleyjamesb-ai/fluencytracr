@@ -2,7 +2,7 @@ import {
   evaluateV1SignalDecisions,
   buildCohortWindowKey
 } from "../../src/inference/fluencytracr_v1_signal_evaluation";
-import type { FluencyTracrV1Event, FluencyTracrV1EventName } from "@learnaire/shared";
+import type { FluencyTracrV1Event, FluencyTracrV1EventName } from "@fluencytracr/shared";
 
 const addDays = (date: Date, days: number): Date => {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);

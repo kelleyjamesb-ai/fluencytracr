@@ -2,18 +2,18 @@
 
 Audience: Juhi Singh, Data Science Lead
 
-Use this version with a data science audience. The core point: Glean already collects much of the structured behavioral telemetry; Fluency Tracker turns that telemetry into defensible, aggregate fluency evidence through readiness checks, feature engineering, suppression gates, and validation.
+Use this version with a data science audience. The core point: Glean already collects much of the structured behavioral telemetry; FluencyTracr turns that telemetry into defensible, aggregate fluency evidence through readiness checks, feature engineering, suppression gates, and validation.
 
 ## Ownership Boundary
 
 | Layer | What it does | Owned by |
 | --- | --- | --- |
 | Event collection | Captures structured product usage and workflow events: WorkflowRun, Assistant/Chat, Search/Retrieval, Agent runs/steps, Actions, MCP usage, AI security, and product snapshots. | Glean |
-| Signal readiness | Confirms which log families are available, scrubbed, joinable, complete, and safe to use for a specific org-window. | Fluency Tracker + Glean data owner |
-| Behavioral derivation | Reconstructs workflow traces, derives passive behavior proxies, applies missingness/privacy gates, and maps evidence to fluency dimensions. | Fluency Tracker |
+| Signal readiness | Confirms which log families are available, scrubbed, joinable, complete, and safe to use for a specific org-window. | FluencyTracr + Glean data owner |
+| Behavioral derivation | Reconstructs workflow traces, derives passive behavior proxies, applies missingness/privacy gates, and maps evidence to fluency dimensions. | FluencyTracr |
 | Construct validation | Tests whether derived proxies are credible, stable, explainable, and useful enough for measurement. | Data Science |
 
-**Simple framing:** Glean collects events. Fluency Tracker derives behavioral evidence. Data Science validates whether the evidence is credible enough to use.
+**Simple framing:** Glean collects events. FluencyTracr derives behavioral evidence. Data Science validates whether the evidence is credible enough to use.
 
 ## Measurement Model, With Ownership Boundary
 
@@ -33,7 +33,7 @@ flowchart LR
     G4["Agent / MCP / Security<br/><span style='font-size:12px'>tool use, errors, policy events, where available</span>"]:::glean
   end
 
-  subgraph F["Fluency Tracker adds"]
+  subgraph F["FluencyTracr adds"]
     direction TB
     F1["Signal readiness map<br/><span style='font-size:12px'>availability, scrub status, join keys, completeness</span>"]:::tracker
     F2["Trace reconstruction<br/><span style='font-size:12px'>ordered starts, steps, retries, checks, failures, completions</span>"]:::tracker

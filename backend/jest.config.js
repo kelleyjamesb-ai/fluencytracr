@@ -12,7 +12,7 @@ module.exports = {
   detectOpenHandles: true,
   forceExit: false,
   moduleNameMapper: {
-    "^@learnaire/shared$": "<rootDir>/../shared/src",
-    "^@learnaire/shared/(.*)$": "<rootDir>/../shared/src/$1"
+    "^@fluencytracr/shared$": "<rootDir>/../shared/src",
+    "^@fluencytracr/shared/(.*)$": "<rootDir>/../shared/src/$1"
   }
 };

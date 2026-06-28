@@ -24,7 +24,7 @@ References:
 - "For this window, is verification presence signal present, absent, suppressed, or not computed?"
 - "What is ready now versus blocked in the Glean Signal Readiness Map?" (readiness status only; no raw source records)
 
-Machine-checked template builder (strict JSON, no extra keys): `@learnaire/fluencytracr-mcp` exports `buildAgentEvidenceResponse` / `validateAgentEvidenceResponse`.
+Machine-checked template builder (strict JSON, no extra keys): `@fluencytracr/fluencytracr-mcp` exports `buildAgentEvidenceResponse` / `validateAgentEvidenceResponse`.
 Preferred MCP read tool for Glean Agents: `fluency.get_agent_evidence_summary`.
 Preferred MCP readiness tool for Glean Agents: `fluency.get_signal_readiness_summary`.
 Preferred MCP value-readiness tool for Glean Agents: `fluency.get_value_claim_readiness_summary`.

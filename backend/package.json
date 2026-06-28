@@ -1,5 +1,5 @@
 {
-  "name": "@learnaire/backend",
+  "name": "@fluencytracr/backend",
   "version": "0.1.0",
   "main": "dist/vercel.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
     "generate": "prisma generate"
   },
   "dependencies": {
-    "@learnaire/shared": "file:../shared",
+    "@fluencytracr/shared": "file:../shared",
     "@prisma/client": "^5.18.0",
     "@types/cors": "^2.8.19",
     "cors": "^2.8.6",

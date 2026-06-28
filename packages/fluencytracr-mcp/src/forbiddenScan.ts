@@ -1,4 +1,4 @@
-import { NON_COLLECTABLE_FIELDS, PERSON_IDENTIFIER_FIELDS } from "@learnaire/shared";
+import { NON_COLLECTABLE_FIELDS, PERSON_IDENTIFIER_FIELDS } from "@fluencytracr/shared";
 
 const FORBIDDEN_KEY_SET = new Set(
   [...NON_COLLECTABLE_FIELDS, ...PERSON_IDENTIFIER_FIELDS].map((k) => k.toLowerCase())

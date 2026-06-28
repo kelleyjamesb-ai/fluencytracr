@@ -4,7 +4,7 @@ import {
   type AivmEvidenceGrade,
   type AivmValueType,
   type ReliabilityComponents
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import {
   computeReliabilityFactor,
   reliabilityComponentsFromCanonicalEvents

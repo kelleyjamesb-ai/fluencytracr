@@ -8,7 +8,7 @@ import {
   IterationDepth,
   ReliabilityComponents,
   deriveAivmVerdictFields
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import {
   computeReliabilityFactor,
   reliabilityComponentsFromCounts

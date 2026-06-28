@@ -1,4 +1,4 @@
-import type { FluencyPatternName } from "@learnaire/shared";
+import type { FluencyPatternName } from "@fluencytracr/shared";
 import { FLUENCY_GATES_ALL_PASS, type TraceGateSummary } from "./fluency_execution_gates";
 import type { ExecutionSignals, TraceWithPhase2 } from "./execution_signals";
 import type { SuppressionDecision } from "./services/suppression-engine";

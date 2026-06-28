@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 
-import type { SuppressionReason } from "@learnaire/shared";
-import { PERSON_IDENTIFIER_FIELDS } from "@learnaire/shared";
+import type { SuppressionReason } from "@fluencytracr/shared";
+import { PERSON_IDENTIFIER_FIELDS } from "@fluencytracr/shared";
 import type { VelocityDistributionRecord, VelocityEventName } from "../store";
 
 export type VelocityIndexVerdict = "SURFACE" | "SUPPRESS";

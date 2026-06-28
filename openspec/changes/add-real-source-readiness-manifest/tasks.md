@@ -2,7 +2,7 @@
 
 - [x] 1.1 Add Real Source Readiness Manifest schema.
 - [x] 1.2 Add review helper that summarizes source readiness without changing claim readiness.
-- [x] 1.3 Export the schema/helper from `@learnaire/shared`.
+- [x] 1.3 Export the schema/helper from `@fluencytracr/shared`.
 
 ## 2. Fixtures and Docs
 

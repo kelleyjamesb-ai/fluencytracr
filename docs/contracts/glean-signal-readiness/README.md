@@ -85,7 +85,7 @@ Entries should describe availability and computability, not raw underlying recor
 }
 ```
 
-Runtime validation lives in `shared/src/gleanSignalReadinessSchemas.ts` and is exported through `@learnaire/shared`.
+Runtime validation lives in `shared/src/gleanSignalReadinessSchemas.ts` and is exported through `@fluencytracr/shared`.
 
 ## Seeded Generator
 

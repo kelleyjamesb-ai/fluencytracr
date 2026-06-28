@@ -8,7 +8,7 @@
  * only persist stage objects that validated cleanly.
  */
 import type { Express, Response } from "express";
-import { aiValueEngine } from "@learnaire/shared";
+import { aiValueEngine } from "@fluencytracr/shared";
 import { z } from "zod";
 
 import { rbacMiddleware, type RequestWithRole } from "./rbac";

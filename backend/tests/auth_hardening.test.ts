@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { app } from "../src/app";
 import { store } from "../src/store";
-import type { Role } from "@learnaire/shared";
+import type { Role } from "@fluencytracr/shared";
 
 const base64Url = (value: Buffer | string) =>
   Buffer.from(value)

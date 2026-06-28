@@ -1,7 +1,7 @@
 import { ConnectorRegistry } from "./base/ConnectorRegistry";
 import { ExternalEvent, InternalSignal } from "./base/ConnectorBase";
 import { DeclarativeConnector } from "./base/DeclarativeConnector";
-import { ConnectorSignalAggregate, AnySignalNameSchema, ToolClassSchema } from "@learnaire/shared";
+import { ConnectorSignalAggregate, AnySignalNameSchema, ToolClassSchema } from "@fluencytracr/shared";
 
 export interface ConnectorEventImport {
   vendor: string;

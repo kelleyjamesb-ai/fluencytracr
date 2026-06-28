@@ -1,7 +1,7 @@
 import {
   evaluateReportabilityGate,
   ReportabilityGateRequestSchema
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 
 const presentEntry = (signal_family: string, stable_join_keys: string[] = ["event_timestamp"]) => ({
   signal_family,

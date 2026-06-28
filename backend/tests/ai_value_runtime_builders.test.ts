@@ -5,7 +5,7 @@ import {
   aiValueEngine,
   evaluateReportabilityGate,
   ReportabilityGateResponseSchema
-} from "@learnaire/shared";
+} from "@fluencytracr/shared";
 import {
   buildAiValueClaimReadinessHandoffInternal,
   AiValueRuntimeBuilderError

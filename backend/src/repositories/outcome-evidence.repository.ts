@@ -1,4 +1,4 @@
-import type { OutcomeEvidenceCreate, OutcomeEvidenceQuery } from "@learnaire/shared";
+import type { OutcomeEvidenceCreate, OutcomeEvidenceQuery } from "@fluencytracr/shared";
 import type { Prisma } from "@prisma/client";
 
 import { getPrisma } from "../db";

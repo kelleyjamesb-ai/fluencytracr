@@ -1,4 +1,4 @@
-import { ConnectorSignalAggregate, GroupType, SUPPRESSION_THRESHOLDS } from "@learnaire/shared";
+import { ConnectorSignalAggregate, GroupType, SUPPRESSION_THRESHOLDS } from "@fluencytracr/shared";
 import { store } from "./store";
 
 export type BehavioralSignal = ConnectorSignalAggregate & {
