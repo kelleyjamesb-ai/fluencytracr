@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useAiValueJourney, type JourneyStageState } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import { AiContributionReportingSpinePanel } from "../components/AiContributionReportingSpinePanel";
 import { ClientQuestionMetricBridgePanel } from "../components/ClientQuestionMetricBridgePanel";
 import { CustomerEvidenceRequestPanel } from "../components/CustomerEvidenceRequestPanel";
 import { CustomerEvidenceReviewWorkbench } from "../components/CustomerEvidenceReviewWorkbench";
 import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 import { ValueSpineTracePanel } from "../components/ValueSpineTracePanel";
+import { applyReviewerMetricSelectionDraftIntake } from "../lib/aiValueContributionReportingSpine";
+import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelection";
 
 const StatusPill = ({
   label,
@@ -39,6 +43,12 @@ const scenarioInputTone = (status: string): "good" | "warn" | "neutral" => {
 
 export const AIValueJourney = () => {
   const journey = useAiValueJourney();
+  const [draftMetricSelection, setDraftMetricSelection] =
+    useState<SelectedOutcomeMetricSelection | null>(null);
+  const contributionReportingSpine = applyReviewerMetricSelectionDraftIntake(
+    journey.contributionReportingSpine,
+    draftMetricSelection
+  );
   const completeCount = journey.stages.filter((stage) => stage.state === "done").length;
   const progress = Math.round((completeCount / journey.stages.length) * 100);
 
@@ -158,7 +168,12 @@ export const AIValueJourney = () => {
         </div>
       </section>
 
-      <ClientQuestionMetricBridgePanel bridge={journey.questionMetricBridge} />
+      <ClientQuestionMetricBridgePanel
+        bridge={journey.questionMetricBridge}
+        onActiveSelectionChange={setDraftMetricSelection}
+      />
+
+      <AiContributionReportingSpinePanel spine={contributionReportingSpine} />
 
       <ValueSpineTracePanel trace={journey.valueSpineTrace} />
 

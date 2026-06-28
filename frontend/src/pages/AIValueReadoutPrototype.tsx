@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { getAiValueDisplayLabel } from "../../../shared/src/aiValueEngine/language";
+import { AiContributionReportingSpinePanel } from "../components/AiContributionReportingSpinePanel";
+import { buildAiContributionReportingSpineViewModel } from "../lib/aiValueContributionReportingSpine";
 
 type ClaimGateOutputKey =
   | "dollarized_output"
@@ -23,7 +25,7 @@ const executiveReadout = {
     depth: "MEDIUM",
     mode: "FAST_BUT_SHALLOW",
     interpretation:
-      "AI-enabled activity is increasing, but workflow depth and evidence quality are not yet strong enough for realized financial claims."
+      "AI-enabled activity is increasing, but workflow depth and evidence quality are not yet strong enough for stronger value claims."
   },
   outcome_evidence: {
     status: "CAVEATED",
@@ -31,40 +33,40 @@ const executiveReadout = {
     movement: "Improved",
     quality_guardrail: "Reopen rate did not degrade",
     evidence_note:
-      "Outcome movement is promising but requires finance-owned assumptions before dollarized claims."
+      "Outcome movement is promising but remains internal and caveated until reviewer-owned evidence is complete."
   },
   financial_claim_gate: {
-    mode: "EXECUTIVE_CAVEATED",
+    mode: "INTERNAL_CLAIM_BOUNDARY_REVIEW",
     allowed_outputs: {
       dollarized_output: false,
       realized_roi_calculation: false,
-      ebita_impact_bridge: true,
+      ebita_impact_bridge: false,
       customer_facing_economic_output: false,
       causality_language: false,
-      aggregate_workflow_productivity: true
+      aggregate_workflow_productivity: false
     } satisfies Record<ClaimGateOutputKey, boolean>
   },
   ebita_impact_summary: {
-    status: "DIRECTIONAL_EBITA_BRIDGE",
+    status: "CLAIM_BOUNDARY_REVIEW_HELD",
     realized_ebita_claim_allowed: false,
     customer_facing_allowed: false,
     causality_claim_allowed: false,
-    primary_ebita_levers: ["CAPACITY_CREATION", "OPERATING_COST_REDUCTION"],
+    primary_ebita_levers: ["AGGREGATE_CAPACITY_CONTEXT", "OPERATING_PROCESS_CONTEXT"],
     evidence_quality: {
       adoption_evidence: "SUPPORTED",
       workflow_evidence: "CAVEATED",
       outcome_evidence: "CAVEATED",
-      financial_evidence: "MISSING",
-      overall_ebita_confidence: "DIRECTIONAL"
+      economic_claim_evidence: "BLOCKED",
+      overall_evidence_posture: "HELD"
     },
     allowed_phrases: [
-      "This workflow may affect financial outcomes through identified levers.",
-      "No realized financial claim is made."
+      "This workflow has aggregate evidence that requires further review.",
+      "No realized economic claim is made."
     ],
     required_caveats: [
-      "Financial impact is directional, not proven.",
-      "Financial translation requires customer-owned finance assumptions.",
-      "Usage telemetry alone does not establish realized financial value."
+      "Outcome movement is not a proof claim.",
+      "Economic translation remains blocked.",
+      "Usage telemetry alone does not establish realized value."
     ],
     blocked_claims: [
       "usage_proves_ebita",
@@ -74,8 +76,8 @@ const executiveReadout = {
       "manager_or_team_ranking"
     ],
     next_evidence_actions: [
-      "Attach customer-owned financial assumptions.",
-      "Confirm finance owner and approval state.",
+      "Attach customer-owned outcome assumptions.",
+      "Confirm source owner and review state.",
       "Confirm baseline and comparison windows.",
       "Do not use causal language unless experimental or quasi-experimental evidence is available."
     ]
@@ -90,6 +92,27 @@ const outputLabels: Record<ClaimGateOutputKey, string> = {
   causality_language: getAiValueDisplayLabel("causality_language"),
   aggregate_workflow_productivity: getAiValueDisplayLabel("aggregate_workflow_productivity")
 };
+
+const reportingSpine = buildAiContributionReportingSpineViewModel({
+  blueprintHypothesisRef: "blueprint_hypothesis.customer_support_resolution.readout_demo",
+  workflowFunctionScope: executiveReadout.workflow.workflow_name,
+  valueRouteLabel: "Capacity creation",
+  metricLibraryRef: "metrics_library.readout_demo",
+  questionMetricBridge: {
+    available: true,
+    items: [
+      {
+        id: "resolution_cycle_time",
+        metricName: executiveReadout.outcome_evidence.primary_metric,
+        valueRouteLabel: "Capacity creation",
+        sourceSystem: "Customer-owned aggregate outcome source",
+        measurementUnit: "time",
+        owner: "Customer data owner",
+        successMeasure: "Track aggregate resolution movement across approved milestone windows."
+      }
+    ]
+  }
+});
 
 const blockedClaimCopy: Record<string, string> = {
   usage_proves_ebita: "Usage does not prove financial impact.",
@@ -124,8 +147,8 @@ const ListCard = ({
     <div className="ai-value-readout-list-block">
       <h3>{title}</h3>
       <ListTag>
-        {items.map((item) => (
-          <li key={item}>{item}</li>
+        {items.map((item, index) => (
+          <li key={`${item}-${index}`}>{item}</li>
         ))}
       </ListTag>
     </div>
@@ -194,12 +217,12 @@ export const AIValueReadoutPrototype = () => {
           <strong>{formatToken(outcome.status)}</strong>
         </article>
         <article>
-          <span className="ai-value-map-label">Financial claim review</span>
+          <span className="ai-value-map-label">Claim boundary review</span>
           <strong>{formatToken(gate.mode)}</strong>
         </article>
         <article>
-          <span className="ai-value-map-label">Financial confidence</span>
-          <strong>{formatToken(ebita.evidence_quality.overall_ebita_confidence)}</strong>
+          <span className="ai-value-map-label">Evidence posture</span>
+          <strong>{formatToken(ebita.evidence_quality.overall_evidence_posture)}</strong>
         </article>
       </section>
 
@@ -252,22 +275,28 @@ export const AIValueReadoutPrototype = () => {
           <p>{outcome.evidence_note}</p>
         </section>
 
-        <section className="ai-value-panel" aria-label="Financial claim review">
+        <AiContributionReportingSpinePanel spine={reportingSpine} />
+
+        <section className="ai-value-panel" aria-label="Claim boundary review">
           <div className="ai-value-section-head">
             <div>
               <p className="eyebrow">Claim Governance</p>
-              <h2>Financial Claim Review</h2>
+              <h2>Claim Boundary Review</h2>
             </div>
             <StatusPill label={formatToken(gate.mode)} tone="warn" />
           </div>
           <p>
-            Financial language is limited to executive-caveated workflow evidence.
-            Stronger economic claims require finance-owned assumptions and approval.
+            Stronger value language is held until reviewer-owned evidence and
+            comparison-design inputs are complete.
           </p>
           <div className="ai-value-output-columns">
             <ListCard
               title="Allowed"
-              items={allowedOutputs.map(([key]) => outputLabels[key as ClaimGateOutputKey])}
+              items={
+                allowedOutputs.length > 0
+                  ? allowedOutputs.map(([key]) => outputLabels[key as ClaimGateOutputKey])
+                  : ["No stronger outputs allowed"]
+              }
             />
             <ListCard
               title="Blocked"
@@ -276,19 +305,19 @@ export const AIValueReadoutPrototype = () => {
           </div>
         </section>
 
-        <section className="ai-value-panel" aria-label="Financial translation">
+        <section className="ai-value-panel" aria-label="Stronger claims blocked">
           <div className="ai-value-section-head">
             <div>
-              <p className="eyebrow">Financial Translation</p>
-              <h2>Financial Translation</h2>
+              <p className="eyebrow">Boundary</p>
+              <h2>Stronger Claims Blocked</h2>
             </div>
             <StatusPill label={formatToken(ebita.status)} tone="warn" />
           </div>
-          <p className="ai-value-readout-warning">No realized financial claim is allowed.</p>
+          <p className="ai-value-readout-warning">No realized economic claim is allowed.</p>
           <div className="ai-value-output-columns">
-            <ListCard title="Primary financial levers" items={ebita.primary_ebita_levers.map(formatToken)} />
+            <ListCard title="Review contexts" items={ebita.primary_ebita_levers.map(formatToken)} />
             <div className="ai-value-readout-list-block">
-              <h3>Evidence quality</h3>
+              <h3>Evidence posture</h3>
               <dl className="ai-value-readout-facts ai-value-readout-evidence">
                 {Object.entries(ebita.evidence_quality).map(([field, value]) => (
                   <div key={field}>
@@ -299,9 +328,9 @@ export const AIValueReadoutPrototype = () => {
               </dl>
             </div>
           </div>
-          <div className="ai-value-readout-permissions" aria-label="Financial translation permissions">
-            <span>Realized financial claim allowed: No</span>
-            <span>Customer-facing allowed: No</span>
+          <div className="ai-value-readout-permissions" aria-label="Claim boundary permissions">
+            <span>Realized economic claim allowed: No</span>
+            <span>Customer-facing economic output allowed: No</span>
             <span>Causality claim allowed: No</span>
           </div>
         </section>
@@ -343,8 +372,8 @@ export const AIValueReadoutPrototype = () => {
             <p className="eyebrow">Next Move</p>
             <h2>Next Evidence Actions</h2>
             <p>
-              These actions move the case from directional executive language toward
-              finance-reviewed value modeling.
+              These actions move the case from internal measurement posture toward
+              reviewer-owned evidence collection.
             </p>
           </div>
           <ol>

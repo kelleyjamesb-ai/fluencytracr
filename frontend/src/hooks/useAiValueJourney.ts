@@ -12,6 +12,10 @@ import {
   type RealEvidenceMaterializerResult
 } from "../lib/aiValueApi";
 import { selectAiValueJourneyObjects } from "../lib/aiValueFlowSelection";
+import {
+  buildAiContributionReportingSpineViewModel,
+  type AiContributionReportingSpineViewModel
+} from "../lib/aiValueContributionReportingSpine";
 
 export type JourneyStageKey =
   | "readiness"
@@ -309,6 +313,7 @@ export interface AiValueJourney {
   workflowHandoff: WorkflowHandoff;
   valueQuestions: ClientValueQuestion[];
   questionMetricBridge: ClientQuestionMetricBridge;
+  contributionReportingSpine: AiContributionReportingSpineViewModel;
   valueSpineTrace: ValueSpineTrace;
   evidenceItems: EvidenceReviewItem[];
   opportunities: ValueOpportunity[];
@@ -2358,6 +2363,10 @@ export const useAiValueJourney = (): AiValueJourney => {
         })
       })
     );
+  const [contributionReportingSpine, setContributionReportingSpine] =
+    useState<AiContributionReportingSpineViewModel>(() =>
+      buildAiContributionReportingSpineViewModel({})
+    );
   const [valueSpineTrace, setValueSpineTrace] = useState<ValueSpineTrace>({
     available: false,
     statusLabel: "Needs workflow and metric",
@@ -2613,6 +2622,17 @@ export const useAiValueJourney = (): AiValueJourney => {
         customerEvidenceRequest: evidenceRequest,
         customerEvidenceReview: evidenceReview
       });
+      const reportingSpine = buildAiContributionReportingSpineViewModel({
+        blueprintHypothesisRef: blueprintSummary
+          ? `blueprint_hypothesis.${blueprintSummary.object_id}`
+          : null,
+        workflowFunctionScope: handoff.workflowName,
+        valueRouteLabel: handoff.valueRouteLabel,
+        metricLibraryRef: metricsLibrarySummary
+          ? `metrics_library.${metricsLibrarySummary.object_id}`
+          : null,
+        questionMetricBridge: metricBridge
+      });
       const valueTrace = buildValueSpineTrace({
         workflowHandoff: handoff,
         questionMetricBridge: metricBridge,
@@ -2626,6 +2646,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       setWorkflowHandoff(handoff);
       setValueQuestions(questions);
       setQuestionMetricBridge(metricBridge);
+      setContributionReportingSpine(reportingSpine);
       setValueSpineTrace(valueTrace);
       setEvidenceItems(items);
       setOpportunities(mappedOpportunities);
@@ -2743,6 +2764,7 @@ export const useAiValueJourney = (): AiValueJourney => {
     workflowHandoff,
     valueQuestions,
     questionMetricBridge,
+    contributionReportingSpine,
     valueSpineTrace,
     evidenceItems,
     opportunities,

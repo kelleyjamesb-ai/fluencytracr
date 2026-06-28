@@ -1,0 +1,34 @@
+[
+  {
+    "aggregate_window_id": "agg_window_ai_exposed_baseline",
+    "comparison_role": "ai_exposed",
+    "window_role": "baseline",
+    "selected_metric_mean": 10,
+    "selected_metric_standard_error": 0.4,
+    "cohort_size": 12
+  },
+  {
+    "aggregate_window_id": "agg_window_ai_exposed_comparison",
+    "comparison_role": "ai_exposed",
+    "window_role": "comparison",
+    "selected_metric_mean": 13,
+    "selected_metric_standard_error": 0.5,
+    "cohort_size": 12
+  },
+  {
+    "aggregate_window_id": "agg_window_comparison_baseline",
+    "comparison_role": "comparison",
+    "window_role": "baseline",
+    "selected_metric_mean": 9,
+    "selected_metric_standard_error": 0.4,
+    "cohort_size": 12
+  },
+  {
+    "aggregate_window_id": "agg_window_comparison_comparison",
+    "comparison_role": "comparison",
+    "window_role": "comparison",
+    "selected_metric_mean": 10,
+    "selected_metric_standard_error": 0.5,
+    "cohort_size": 12
+  }
+]

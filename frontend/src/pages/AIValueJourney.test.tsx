@@ -405,6 +405,145 @@ describe("AIValueJourney", () => {
     expect(screen.getAllByText(/Median resolution time/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Escalation rate/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Support case management system/i).length).toBeGreaterThan(0);
+    const reportingSpine = screen.getByRole("region", {
+      name: /AI contribution reporting spine/i
+    });
+    expect(within(reportingSpine).getByRole("heading", { name: /Measurement story/i })).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Candidate metric recommendations are planning inputs/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Selected metric approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Reviewer metric-selection draft intake/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Comparison-design intake readiness/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Source package draft assembly/i).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Reviewer-owned source package collection/i).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Comparison-design source package review/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Readiness held/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Choose a candidate metric before draft intake preparation/i)
+    ).toBeInTheDocument();
+    const adapterView = within(reportingSpine).getByRole("region", {
+      name: /AI value UI view model/i
+    });
+    expect(
+      within(adapterView).getByRole("heading", { name: /Metrics Recommended/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 3 of 13/i)).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Model review blocked/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/Evidence streams for review/i)
+    ).not.toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/AI Fluency Instrument \(SED\)/i)
+    ).not.toBeInTheDocument();
+    expect(adapterView.textContent).not.toMatch(
+      /confidence|probability|posterior|source_ref|source_hash|reviewer_owned_payload|employee_id|prompt|transcript|[a-f0-9]{64}/i
+    );
+
+    const bridge = screen.getByRole("region", { name: /Outcome metric setup/i });
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Time to First Value/i }));
+    expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
+
+    const watchPlan = within(bridge).getByRole("region", { name: /VBD metric watch plan/i });
+    const medianResolutionItem = within(watchPlan)
+      .getByText(/^Median resolution time$/)
+      .closest("li") as HTMLElement;
+    fireEvent.click(
+      within(medianResolutionItem).getByRole("button", { name: /Prepare draft intake/i })
+    );
+
+    expect(within(reportingSpine).getByText(/Local selection only/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Draft selected metric prepared/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).getByRole("heading", { name: /Measurement Plan Drafted/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 4 of 13/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Ready for draft package review/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Reviewer approval still required/i)).toBeInTheDocument();
+    const draftSelectedMetric = within(reportingSpine)
+      .getByText(/Draft selected metric candidate/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    expect(within(draftSelectedMetric).getByText(/^Median resolution time$/)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Metric owner \/ reviewer role/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Expected direction/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Direction requires reviewer expectation path/i)
+    ).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Baseline source posture/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Suppression, missing, or held window precheck required/i)
+    ).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Draft package ready for review preparation/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Complete comparison-design source package draft review/i)
+        .length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Draft review required/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Collection held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Source package review held/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).queryByText(
+        /Collect reviewer-owned comparison-design source package outside product flow/i
+      )
+    ).not.toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Collection stays held until the draft source package review is complete/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Pending attestation: metric-selection review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Pending attestation: expectation path direction and lag review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Source package draft assembly does not create governed evidence/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Reviewer-owned collection remains outside this product flow/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(
+        /Source package review checks reviewer-owned completeness and admissibility only/i
+      ).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getByText(/Comparison-design readiness does not create a source package/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Draft intake does not approve the metric/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Model review posture/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Held for evidence gaps/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Complete reviewer metric selection approval/i)
+        .length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Missing comparison-design source package/i)
+        .length
+    ).toBeGreaterThan(0);
+    const draftMilestoneSchedule = within(reportingSpine)
+      .getByText(/Draft milestone schedule/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    const milestonePlan = within(reportingSpine)
+      .getByText(/^Milestone plan$/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    for (const milestone of ["T0", "T30", "T60", "T90", "T120", "T180", "T270", "T365"]) {
+      expect(within(draftMilestoneSchedule).getByText(milestone)).toBeInTheDocument();
+      expect(within(milestonePlan).getByText(milestone)).toBeInTheDocument();
+    }
     expect(
       screen.getAllByRole("button", { name: /Open executive readout/i }).length
     ).toBeGreaterThan(0);

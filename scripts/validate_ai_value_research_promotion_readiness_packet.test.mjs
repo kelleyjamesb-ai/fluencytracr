@@ -12,6 +12,8 @@ import {
 
 const FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
+const CURRENT_CONTROLLED_PILOT_PACKET_PATH =
+  "docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json";
 
 const REQUIRED_MILESTONES = [0, 30, 60, 90, 180, 365];
 
@@ -180,6 +182,29 @@ test("research promotion packet marks repeated governed evidence ready for inter
   assert.equal(serialized.includes("customer-facing confidence"), false);
 });
 
+test("current controlled pilot research promotion packet stays source-fixture-bound", () => {
+  const fixture = readJson(FIXTURE_PATH);
+  const packet = readJson(CURRENT_CONTROLLED_PILOT_PACKET_PATH);
+  const expected = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validate(packet);
+
+  assert.deepEqual(packet, expected);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(packet.decision, "READY_FOR_INTERNAL_RESEARCH_DESIGN");
+  assert.equal(packet.validation_summary.valid, true);
+  assert.equal(packet.feeds.internal_research_design_review, true);
+  assert.equal(packet.feeds.research_model_feed, false);
+  assert.equal(packet.feeds.model_output, false);
+  assert.equal(packet.feeds.numeric_weight_output, false);
+  assert.equal(packet.feeds.probability_output, false);
+  assert.equal(packet.feeds.score_like_output, false);
+  assert.equal(packet.feeds.finance_output, false);
+  assert.equal(packet.feeds.customer_facing_output, false);
+  assert.equal(packet.feeds.persistence_write, false);
+  assert.deepEqual(packet.milestone_coverage.observed_milestones, REQUIRED_MILESTONES);
+  assert.equal(packet.measurement_cell_snapshot_refs.length, REQUIRED_MILESTONES.length);
+});
+
 test("research promotion packet holds when Day 0 baseline milestone is missing", () => {
   const packet = buildResearchPromotionReadinessPacketFromObject(readJson(FIXTURE_PATH), {
     milestoneDays: [30, 60, 90, 180, 365]
@@ -193,6 +218,21 @@ test("research promotion packet holds when Day 0 baseline milestone is missing",
   assert.deepEqual(packet.milestone_coverage.missing_milestones, [0]);
   assert.equal(packet.milestone_coverage.ready_windows, 5);
   assert.equal(packet.feeds.internal_research_design_review, false);
+});
+
+test("research promotion packet holds when any required later milestone is missing", () => {
+  for (const missingDay of [30, 60, 90, 180, 365]) {
+    const milestoneDays = REQUIRED_MILESTONES.filter((day) => day !== missingDay);
+    const packet = buildResearchPromotionReadinessPacketFromObject(readJson(FIXTURE_PATH), {
+      milestoneDays
+    });
+    const validation = validate(packet, { milestoneDays });
+
+    assert.equal(validation.valid, true, validation.gaps.join("; "));
+    assert.equal(packet.decision, "HOLD_FOR_REPEATED_ALIGNED_EVIDENCE");
+    assert.deepEqual(packet.milestone_coverage.missing_milestones, [missingDay]);
+    assert.equal(packet.feeds.internal_research_design_review, false);
+  }
 });
 
 test("research promotion packet quarantines rolling 30-day context from milestone evidence", () => {
@@ -213,6 +253,39 @@ test("research promotion packet quarantines rolling 30-day context from mileston
     packet.validation_summary.gaps.join("; ")
   );
   assert.equal(packet.feeds.internal_research_design_review, false);
+});
+
+test("research promotion packet holds when source freshness or window posture is omitted", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  for (const source of Object.values(fixture.data_spine_input.sources)) {
+    delete source.freshness_state;
+    delete source.window_status;
+  }
+  for (const record of fixture.scrubbed_glean_exports) {
+    delete record.freshness_state;
+    delete record.window_status;
+  }
+
+  const packet = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validateResearchPromotionReadinessPacket(packet, {
+    sourceFixture: fixture
+  });
+
+  assert.notEqual(packet.decision, "READY_FOR_INTERNAL_RESEARCH_DESIGN");
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.equal(packet.source_lane_refs.blueprint.freshness_state, null);
+  assert.equal(packet.source_lane_refs.blueprint.window_status, null);
+  assert.equal(packet.selected_metric_movement_ref.freshness_state, "stale");
+  assert.equal(packet.selected_metric_movement_ref.window_status, "stale");
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("freshness_state")),
+    validation.gaps.join("; ")
+  );
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("window_status")),
+    validation.gaps.join("; ")
+  );
 });
 
 test("research promotion packet validator rejects selected path drift with recomputed hash", () => {
@@ -355,6 +428,58 @@ test("research promotion packet makes customer metric id drift visible", () => {
   assert.ok(
     validation.gaps.some((gap) => gap.includes("selected_metric_movement_ref.metric_id")),
     validation.gaps.join("; ")
+  );
+});
+
+test("research promotion packet holds when matching customer metric export carries the wrong metric", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  const outcomeExport = fixture.scrubbed_glean_exports.find(
+    (entry) => entry.evidence_layer === "layer_3_business_system_outcomes"
+  );
+  outcomeExport.metric_or_signal_summary.aggregate_metric_name =
+    "aggregate_support_average_wait_hours";
+  outcomeExport.metric_or_signal_summary.baseline_value = 20;
+  outcomeExport.metric_or_signal_summary.comparison_value = 15;
+
+  const packet = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validateResearchPromotionReadinessPacket(packet, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(packet.decision, "HOLD_FOR_SOURCE_OR_PATH_DRIFT");
+  assert.equal(validation.valid, false);
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.equal(packet.selected_metric_movement_ref.movement_state, "held");
+  assert.equal(packet.selected_metric_movement_ref.window_alignment_state, "drifted");
+  assert.ok(
+    validation.gaps.some((gap) => gap.includes("selected_metric_movement_ref.window")),
+    validation.gaps.join("; ")
+  );
+});
+
+test("research promotion packet holds when multiple approved paths lack governed selected binding", () => {
+  const fixture = clone(readJson(FIXTURE_PATH));
+  const existingPath = fixture.blueprint_extraction_input.approvedExpectationPaths[0];
+  fixture.blueprint_extraction_input.approvedExpectationPaths.push({
+    ...existingPath,
+    expectation_path_id: "expectation_path_support_escalation_rate_quality",
+    expected_metric_id: "support_escalation_rate",
+    expected_metric_name: "Escalation rate",
+    expected_metric_direction: "decrease",
+    value_driver: "quality"
+  });
+
+  const packet = buildResearchPromotionReadinessPacketFromObject(fixture);
+  const validation = validateResearchPromotionReadinessPacket(packet, {
+    sourceFixture: fixture
+  });
+
+  assert.equal(packet.decision, "HOLD_FOR_SOURCE_OR_PATH_DRIFT");
+  assert.equal(validation.valid, false);
+  assert.equal(packet.feeds.internal_research_design_review, false);
+  assert.ok(
+    packet.validation_summary.gaps.some((gap) => gap.includes("approved expectation path")),
+    packet.validation_summary.gaps.join("; ")
   );
 });
 

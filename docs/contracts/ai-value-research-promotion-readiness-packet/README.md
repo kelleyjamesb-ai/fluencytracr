@@ -76,6 +76,42 @@ text, SQL text, prompts, responses, transcripts, files, item-level survey
 answers, respondent records, row ids, span ids, user identifiers, hashed
 identifiers, or joinable person identifiers.
 
+## Current Controlled Pilot Packet Instance
+
+The current controlled pilot packet instance is:
+
+- [current-controlled-pilot-research-promotion-readiness-packet.json](./examples/current-controlled-pilot-research-promotion-readiness-packet.json)
+
+It is generated from:
+
+```text
+docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json
+```
+
+Regenerate it with:
+
+```bash
+npm run build --workspace shared
+node scripts/run_ai_value_research_promotion_readiness_packet.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json > docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json
+```
+
+The saved packet is a compact, source-fixture-bound readiness record. It may
+return `READY_FOR_INTERNAL_RESEARCH_DESIGN`, which authorizes only a later
+internal research-design draft. Its Day 0 / 30 / 60 / 90 / 180 / 365 refs are
+controlled recomputations from the saved aggregate fixture, not independently
+reviewed live pilot windows. It does not authorize model implementation,
+numeric weights, durable research inputs, model outputs, customer-facing
+output, finance-context investigation, ROI, EBITDA, causality, productivity,
+probability, contribution output, routes, UI, schemas, persistence writes, or
+live connector execution.
+
+The follow-on internal prototype runner is documented at:
+
+- [AI Value Contribution Alignment Internal Prototype Runner](../ai-value-contribution-alignment-internal-prototype-runner/README.md)
+
+That runner is local, non-persistent, compact-ref-only, and emits no model
+result. It does not change the promotion meaning of this packet.
+
 ## Readiness Gates
 
 `READY_FOR_INTERNAL_RESEARCH_DESIGN` requires all gates below to clear.

@@ -2,6 +2,1031 @@
 
 ## Last Completed
 
+- UI View Model Adapter slice (2026-06-27): added
+  `frontend/src/lib/aiValueUiViewModelAdapter.ts` and focused Vitest coverage
+  for the product-facing adapter over the Measurement Journey State Model. The
+  adapter emits exactly one frontend-safe object with journey state id, blocked
+  model-review posture, product labels, progress index, next action, user next
+  step, blocked-claim copy, not-yet-evidence copy, high-level evidence stream
+  labels, missing/held/suppressed requirements, governance banner, safe message
+  copy, source-state label summary, visibility flags, and hardcoded false
+  safety booleans. It does not import Node runners, recompute active state,
+  advance beyond the source Measurement Journey State Model, expose
+  reviewer-owned payloads, render source refs, render hashes, expose nested
+  internals, or create routes, schemas, persistence, exports, live connectors,
+  diagnostics evidence, Bayesian readiness, promotion, posterior
+  interpretation, confidence/probability output, ROI, finance, causality,
+  productivity, customer-facing economic output, raw rows, identifiers, query
+  text, prompts, transcripts, reviewer names, person-level data, individual
+  scoring, or team scoring. Unknown, unsafe, malformed, missing, or weakened
+  source-model states fail closed to `NO_BLUEPRINT`; required non-authorization
+  fields must be present and false, and all supplied `blocked_outputs` / `feeds`
+  must be false. `model_review_posture` remains
+  `BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE`; aligned source refs remain
+  review-only and divergent source refs require reviewer interpretation rather
+  than success/failure framing. CODE / BUG / ADVERSARIAL review was run via
+  subagents and drove added coverage for no state advancement, no payload/hash
+  leakage, required false gates, safe high-level stream labels, and no
+  confidence/probability/ROI/productivity/causality/model-readiness language.
+  Verification passed:
+  `npm run test:ai-value-ui-view-model-adapter` (8/8);
+  `npm run test:ai-value-measurement-journey-state-model` (18/18);
+  `npm run test:ai-value-triangulated-evidence-alignment-review` (17/17);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (21/21);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `npm run build --workspace frontend`;
+  `git diff --check`.
+- Measurement Journey State Model slice (2026-06-27): added the bounded
+  product-facing, UI-safe state model over the governed AI Value contract
+  chain. The runner emits exactly one active `measurement_journey_state`, a
+  separate `model_review_posture=BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE`,
+  `current_blocker`, `next_allowed_action`, `customer_safe_summary`,
+  `blocked_claims`, `not_yet_evidence`, source contract refs/hashes,
+  `ui_language_policy`, and `state_model_hash`. Required states are exactly
+  `NO_BLUEPRINT`, `BLUEPRINT_RECEIVED`, `METRICS_RECOMMENDED`,
+  `MEASUREMENT_PLAN_DRAFTED`, `MEASUREMENT_PLAN_APPROVED`,
+  `DATA_COLLECTION_PLANNING_READY`, `SOURCE_PACKAGE_COLLECTION_READY`,
+  `COMPARISON_DESIGN_REVIEWED`, `EVIDENCE_ALIGNMENT_HELD`,
+  `EVIDENCE_ALIGNMENT_PARTIAL`, `EVIDENCE_ALIGNMENT_ALIGNED`,
+  `EVIDENCE_ALIGNMENT_DIVERGENT`, and `MODEL_REVIEW_BLOCKED`. Active state
+  selection uses most-advanced-valid-state logic while failing closed to the
+  earliest unmet, unsafe, stale, held, missing, or invalid prerequisite. Source
+  validation remains mandatory for downstream states: comparison-design review
+  requires source runtime plus reviewer-owned collection, ready triangulated
+  alignment requires source-bound validation, and held triangulated alignment
+  requires source-bound held recomputation before it can map to
+  `EVIDENCE_ALIGNMENT_HELD`. `MODEL_REVIEW_BLOCKED` can only replace the active
+  state after source-bound `EVIDENCE_ALIGNMENT_ALIGNED` plus an explicit
+  model-review gate posture; held, partial, and divergent alignment remain
+  visible. CODE / BUG / ADVERSARIAL review found and this slice fixed held
+  alignment validation bypass, shape-only non-default validation, default
+  forged unsafe UI/source text validation, and model-review blocking hiding
+  partial/divergent/held alignment. The model creates no evidence, diagnostics
+  sufficiency, Bayesian readiness, promotion, posterior interpretation,
+  confidence/probability output, ROI, finance, causality, productivity,
+  customer-facing economic output, live connectors, routes, schemas,
+  persistence, exports, raw rows, identifiers, query text, prompts,
+  transcripts, person-level data, individual scoring, or team scoring. It emits
+  no `reviewed_source_evidence_hash`, no `source_evidence_hash`, and no
+  `evidence_satisfied` field. Post-review hardening clarified the
+  triangulated states as source-ref posture only and preserved held-output
+  validation for fail-closed records without source evidence. Verification
+  passed:
+  `npm run test:ai-value-measurement-journey-state-model` (18/18);
+  `npm run test:ai-value-triangulated-evidence-alignment-review` (17/17);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (21/21);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Triangulated Evidence Alignment Review slice (2026-06-27): added the bounded
+  internal-only, aggregate-only, source-ref-only review object for directional
+  alignment across reviewer-owned SED / AI Fluency Instrument stated aggregate
+  evidence refs, VBD observed aggregate behavioral evidence refs, and downstream
+  operational or business outcome metric aggregate evidence refs. The review
+  may report only `ALIGNED_FOR_REVIEW`, `DIVERGENT_FOR_REVIEW`,
+  `PARTIAL_ALIGNMENT_FOR_REVIEW`, or `HOLD_FOR_GOVERNED_EVIDENCE`; those states
+  are internal review postures only and do not satisfy Bayesian convergence
+  diagnostics, diagnostics sufficiency, global evidence satisfaction, Bayesian
+  readiness, promotion, posterior interpretation, confidence/probability output,
+  ROI, finance, causality, productivity, customer-facing economic output, live
+  connectors, routes, UI, schemas, persistence, exports, raw rows, identifiers,
+  query text, prompts, transcripts, person-level data, individual scoring, or
+  team scoring. Ready validation requires the original reviewer-owned
+  triangulated alignment source object plus the source Comparison Design
+  Adequacy Evidence Review object; a self-consistent report hash is not enough.
+  SED, VBD, and outcome refs/hashes must be scalar, reviewer-owned, current,
+  aggregate-only, in the correct evidence lane, distinct by stream hash, and
+  aligned to the same Blueprint hypothesis, cohort, workflow/function,
+  prioritized use case, selected metric, and observation window. Held records
+  emit no `alignment_review_hash`, no `reviewed_source_evidence_hash`, and no
+  `source_evidence_hash`; ready records may emit only `alignment_review_hash`
+  and still keep `reviewed_source_evidence_hash=null` and
+  `source_evidence_hash=null`. Post-review hardening clarified that ready
+  alignment states are source-ref posture only and added validation coverage so
+  default held output validates as fail-closed output without source evidence.
+  CODE / BUG / ADVERSARIAL review also found a narrow upstream
+  comparison-design adequacy sidecar gap; this slice added a
+  regression and fixed the adequacy review so recomputed reviewer-owned
+  collections with top-level raw or promotion sidecars hold before they can feed
+  the triangulated review. Verification passed:
+  `npm run test:ai-value-triangulated-evidence-alignment-review` (17/17);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (21/21);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Comparison Design Adequacy Evidence Review binding to reviewer-owned package
+  slice (2026-06-27): updated the existing Comparison Design Adequacy Evidence
+  Review so READY can be reached only from the Reviewer-Owned Comparison Design
+  Source Package Collection artifact. Direct legacy adequacy source packages,
+  runtime design matrix fields, model-spec prose, templates, fixtures,
+  generated examples, and source hashes alone now hold or reject instead of
+  satisfying `comparison_design_adequacy`. The ready path requires a
+  source-bound collection artifact with
+  `REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY`,
+  `allowed_next_step=run_comparison_design_adequacy_evidence_review_only`, a
+  valid `collection_hash`, reviewer-owned package ref/hash, source-preparation
+  hash, scalar treatment/comparison/window/cohort/workflow/grain fields,
+  T0/T30/T60/T90/T120/T180/T270/T365 scalar milestone refs, all required
+  boundary checks `CLEAR`, exact blocked claims, all Important
+  Non-Authorization flags false, and the Bayesian chain still held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`. Held inputs emit
+  no `review_hash`, no `reviewed_source_evidence_hash`, and no
+  `source_evidence_hash`. The satisfied ready path sets only the
+  `comparison_design_adequacy` evidence dimension true; diagnostics sufficiency,
+  Bayesian readiness, promotion, posterior interpretation, confidence/
+  probability output, ROI, finance, causality, productivity, customer-facing
+  economic output, live connectors, routes, UI, schemas, persistence, exports,
+  raw rows, identifiers, query text, prompts, transcripts, person-level data,
+  individual scoring, and team scoring remain blocked. CODE / BUG /
+  ADVERSARIAL review found the old legacy source-package path, runtime/hash
+  dependence, missing reviewer-owned validation, held review hash emission, and
+  boundary-leakage mismatch; the runner now binds adequacy hashes to the
+  reviewer-owned package ref/hash, collection hash, and source-preparation hash
+  rather than runtime fixture hashes. Verification passed:
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (20/20);
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Reviewer-Owned Comparison Design Source Package Collection slice
+  (2026-06-27): added the bounded internal-only, aggregate-only,
+  source-ref-only collection artifact and runner after the Comparison Design
+  Source Package Preparation Binding. The collection validates the source
+  preparation binding against the original reviewer-approved measurement plan,
+  aggregate data collection planning contract, and recommendation plan; hashes
+  alone are not enough. It collects only explicitly supplied reviewer-owned
+  comparison-design package fields for later review, including source Blueprint
+  hypothesis ref, business function, prioritized use case, workflow, workflow
+  step, cohort, selected metric, evidence source, observation window,
+  governance state, treatment/comparison definitions, staggered rollout or
+  comparison design type, baseline source posture, comparison condition,
+  baseline/comparison windows, expected direction, expected lag, confirmation
+  refs, aggregate Measurement Cell grain, T0/T30/T60/T90/T120/T180/T270/T365
+  milestone refs, suppression/missing/held review, explicit boundary checks,
+  reviewer role, and review decision. Ready state is
+  `REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY`;
+  allowed next step is
+  `run_comparison_design_adequacy_evidence_review_only`. Missing source
+  bindings hold at `HOLD_FOR_BINDING`; missing or unsafe reviewer-owned package
+  values hold at `HOLD_FOR_MORE_INFORMATION`. Preferred defaults remain draft
+  defaults and are not backfilled as reviewer-owned facts. The package must
+  align back to the source preparation binding for Blueprint hypothesis,
+  selected metric, expected direction, lag, baseline source posture, comparison
+  condition, cohort, workflow/function identity, and aggregate Measurement Cell
+  grain. Unknown package fields, evidence hashes, runtime hashes, SED/VBD/
+  outcome assessment fields, extra boundary assertions, stale/held/extra
+  milestone refs, unsafe values, and reviewer-decision laundering fail closed.
+  The artifact may set only `source_package_collected=true`; it creates no
+  reviewed evidence, evidence satisfaction, comparison_design_adequacy
+  satisfaction, diagnostics sufficiency, Bayesian readiness, promotion,
+  posterior interpretation, confidence/probability output, ROI, finance,
+  causality, productivity, customer-facing economic output, live connector,
+  route, UI, schema, persistence, export, raw-row, identifier, query-text,
+  prompt, transcript, person-level, individual-scoring, or team-scoring path.
+  CODE / BUG / ADVERSARIAL review found and this slice fixed package-to-
+  preparation fact mismatch, ignored unapproved package fields, output-only
+  projection-drift coverage, extra CLEAR boundary assertions, stale/extra
+  milestone refs, reviewer-decision laundering, collection-record-as-evidence
+  risk, forged source preparation input, and nested authorization smuggling
+  inside allowed containers such as milestone schedule and Bayesian chain
+  state. Final review also fixed scalar smuggling through allowed package
+  fields and milestone refs, object values under allowed boundary-check keys,
+  forbidden nested milestone-ref keys on held records, extra blocked-claim
+  entries, and raw reviewer-owned package hashes on held/unsafe package input.
+  The Bayesian chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; gate-derived
+  next step remains `complete_governed_diagnostics_sufficiency_evidence_source`.
+  Verification passed:
+  `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
+  (25/25);
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
+  (10/10);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Comparison Design Source Package Preparation Binding slice (2026-06-27):
+  added the bounded internal-only, aggregate-only, source-ref-only preparation
+  artifact and runner after the Aggregate Data Collection Planning Contract.
+  The preparation binding validates the Reviewer-Approved Measurement Plan
+  Contract and Aggregate Data Collection Planning Contract against their source
+  inputs, hash-binds both upstream artifacts, projects the approved Blueprint
+  hypothesis ref, selected metric, metric family, measurement unit, expected
+  direction, lag, milestone windows T0/T30/T60/T90/T120/T180/T270/T365,
+  baseline source posture, comparison condition, cohort identity,
+  workflow/function identity, aggregate Measurement Cell grain, suppression
+  precheck posture, aggregate collection-plan posture, forbidden input
+  boundaries, blocked claims, reviewer collection checklist, reviewer role
+  placeholder, and review decision placeholder. Ready state is
+  `COMPARISON_DESIGN_SOURCE_PACKAGE_PREPARATION_READY_FOR_REVIEWER_COLLECTION`;
+  allowed next step is
+  `collect_reviewer_owned_comparison_design_source_package_only`. The artifact
+  creates no source package, reviewed evidence, evidence satisfaction,
+  comparison_design_adequacy satisfaction, diagnostics sufficiency, Bayesian
+  readiness, promotion, posterior interpretation, confidence/probability
+  output, ROI, finance, causality, productivity, customer-facing economic
+  output, live connector, route, UI, schema, persistence, export, raw-row,
+  identifier, query-text, prompt, transcript, person-level, individual-scoring,
+  or team-scoring path. CODE / BUG / ADVERSARIAL review found and this slice
+  fixed arbitrary top-level laundering fields, extra nested false-gate and feed
+  keys, checklist laundering, aggregate collection posture drift, planned
+  collection window drift, held nested reviewer-collection readiness, docs
+  attestation wording, shared-object aliasing, and approved milestone-window
+  drift. The Bayesian chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; gate-derived
+  next step remains `complete_governed_diagnostics_sufficiency_evidence_source`.
+  Verification passed:
+  `npm run test:ai-value-comparison-design-source-package-preparation-binding`
+  (17/17);
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Aggregate Data Collection Planning Contract slice (2026-06-27): added the
+  bounded internal-only, aggregate-only planning contract and runner after the
+  Reviewer-Approved Measurement Plan Contract. The contract validates a
+  reviewer-approved measurement plan against its source recommendation plan,
+  requires a reviewed aggregate collection plan with collection owner, aggregate
+  source posture, source-system posture, aggregate export manifest plan,
+  Measurement Cell binding plan, T0/T30/T60/T90/T120/T180/T270/T365 planned
+  collection windows, suppression/missing/held precheck, privacy/raw-data/live
+  connector exclusion attestations, reviewer decision, and
+  `APPROVED_FOR_AGGREGATE_COLLECTION_PLANNING`. Ready state is
+  `AGGREGATE_DATA_COLLECTION_PLANNING_READY_FOR_COMPARISON_DESIGN_SOURCE_PACKAGE_PREPARATION`;
+  allowed next step is `prepare_comparison_design_source_package_only`. The
+  contract creates no aggregate data, observed data, evidence, evidence
+  assessment, comparison-design source package, diagnostics satisfaction,
+  comparison_design_adequacy satisfaction, Bayesian readiness, promotion,
+  posterior interpretation, confidence/probability output, ROI, finance,
+  causality, productivity, customer-facing economic output, live connector,
+  route, UI, schema, persistence, export, raw-row, identifier, query-text,
+  prompt, transcript, person-level, individual-scoring, or team-scoring path.
+  CODE / BUG / ADVERSARIAL review found and this slice fixed ready validation
+  gaps for missing collection-plan bindings, incomplete source measurement-plan
+  projection binding, unsafe projection text, non-reviewed provenance
+  laundering after recomputed hashes, extra top-level side-door fields, and
+  unknown held-state / mismatched next-step acceptance. The Bayesian chain
+  remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; gate-derived
+  next step remains `complete_governed_diagnostics_sufficiency_evidence_source`.
+  Verification passed:
+  `npm run test:ai-value-aggregate-data-collection-planning-contract` (15/15);
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `git diff --check`.
+- Reviewer-Approved Measurement Plan Contract slice (2026-06-27): added the
+  bounded Blueprint-to-Approved Measurement Plan spine contract and runner that
+  parks the product path after a reviewer/customer-approved selected metric and
+  measurement plan, while keeping it separate from observed aggregate data,
+  EvidenceAssessment, comparison-design adequacy, diagnostics evidence,
+  Bayesian readiness, and any customer-facing economic claim. The roadmap
+  principle is now explicit: FluencyTracr should lock what was agreed to be
+  measured before asking what aggregate data may show later. The contract binds
+  to a validated
+  Hypothesis-to-Metric Recommendation plan, requires the selected metric to
+  match the source candidate recommendation, requires reviewer-owned approval
+  refs, rejects draft/local/pending/generated/fixture/template/runtime-only/
+  source-hash-only provenance, and requires milestone windows T0/T30/T60/T90/
+  T120/T180/T270/T365. The ready state is
+  `REVIEWER_APPROVED_MEASUREMENT_PLAN_READY_FOR_AGGREGATE_DATA_COLLECTION_PLANNING`;
+  the allowed next step is `aggregate_data_collection_planning_only`; the data
+  readiness state is `READY_FOR_AGGREGATE_DATA_COLLECTION_PLANNING_ONLY`.
+  Candidate recommendations remain planning inputs only, draft selection remains
+  separate from approval, approved measurement plans remain not observed data,
+  and MeasurementSpec / MetricSpec remain not Bayesian readiness. The Bayesian
+  chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`; diagnostics
+  evidence satisfaction, comparison_design_adequacy satisfaction, Bayesian
+  promotion, posterior interpretation, confidence/probability output, ROI,
+  finance, causality, productivity, economic/customer-facing economic output,
+  live connectors, routes, UI, schemas, persistence, exports, raw rows,
+  identifiers, query text, prompts, transcripts, person-level data, individual
+  scoring, and team scoring all remain blocked. CODE / BUG / ADVERSARIAL review
+  found and this slice fixed approval-field routing, blocked-output language
+  smuggling in refs, stale/suppressed/held/misaligned milestone refs, nested
+  recomputed-hash side doors, held suppression precheck forgery, missing direct
+  source-hash tamper coverage, and adjacent docs that skipped the aggregate data
+  collection planning stop before comparison-design intake. Verification passed:
+  `npm run test:ai-value-reviewer-approved-measurement-plan-contract` (23/23);
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `node scripts/ci_semantic_drift_guard.mjs`.
+- Comparison Design Source Package Review slice (2026-06-27): added a bounded
+  review-only posture to the existing AI Contribution Reporting Spine frontend
+  view model and shared Journey / Workspace / Readout panel. The review path
+  accepts only an explicit reviewer-owned comparison-design source package,
+  validates source Blueprint hypothesis ref, reviewer-owned package ref,
+  candidate recommendation ref, selected metric candidate, reviewer role,
+  reviewer decision posture, expected direction, lag, all T0/T30/T60/T90/T120/
+  T180/T270/T365 milestone window refs, baseline source posture, comparison
+  condition, cohort identity, workflow/function identity, aggregate Measurement
+  Cell grain, suppression/missing/held posture, forbidden-use attestation,
+  privacy/identifier exclusion, and no-causality attestation. Missing,
+  incomplete, non-reviewer-owned, mismatched, unsafe, local/template/example/
+  fixture/runtime/generated, or nested unsafe milestone refs fail closed with
+  missing fields or review gaps. A valid package can become only
+  `READY_FOR_COMPARISON_DESIGN_ADEQUACY_REVIEW_ONLY`; it does not satisfy
+  `comparison_design_adequacy`, create diagnostics evidence, authorize hashes,
+  feed the Governed Diagnostics Sufficiency Evidence Source, feed Bayesian
+  promotion, or authorize promotion. Reviewer-owned collection now reflects
+  package-received/review-ready-only posture without implying evidence
+  satisfaction. CODE / BUG / ADVERSARIAL review first found approved-posture
+  leakage, collection/review contradiction, provenance laundering, unvalidated
+  extended milestones, unsafe nested milestone refs, and stale collection UI
+  copy; all were fixed and final CODE / BUG / ADVERSARIAL re-review reported no
+  findings. Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (82/82);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- Comparison Design Source Package Draft Assembly and Reviewer-Owned Source
+  Package Collection Posture slices (2026-06-27): extended the existing AI
+  Contribution Reporting Spine frontend view model and panel with a draft-only
+  comparison-design source package assembly object plus a reviewer-owned source
+  package collection posture. The draft assembly binds safe planning posture to
+  the committed comparison-design intake template, carries required milestone
+  labels T0/T30/T60/T90/T120/T180/T270/T365, records forbidden source inputs,
+  and stops at
+  `COMPARISON_DESIGN_SOURCE_PACKAGE_DRAFT_ASSEMBLED_REVIEW_REQUIRED`.
+  Reviewer-owned collection remains held until draft review is complete and
+  cannot enter a collection-required state in this slice. Both objects keep
+  selected metric approval, governed approval, source package creation,
+  reviewer-owned evidence, diagnostics evidence, comparison_design_adequacy satisfaction, governed
+  diagnostics source feeds, Bayesian promotion feeds, and promotion authorization
+  false. CODE review found a stale future collection-required side door in the
+  exported contract; it was removed. BUG review found default-lane next-action,
+  prepared-draft advancement, and candidate-mismatch state bugs; they were
+  fixed. ADVERSARIAL review found and this slice fixed raw owner-text leakage
+  into reviewer-role posture and approval-like required-attestation labels; the
+  final adversarial re-review passed. Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (73/73);
+  `node scripts/ci_semantic_drift_guard.mjs`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `npm run build --workspace frontend`;
+  `git diff --check`.
+- Comparison Design Intake Readiness Review slice (2026-06-26): extended the
+  existing AI Contribution Reporting Spine frontend view model with a
+  comparison-design intake readiness object derived from reviewer
+  metric-selection draft intake. The readiness review carries source Blueprint
+  hypothesis ref posture, candidate recommendation ref posture, draft selected
+  metric candidate, reviewer role, reviewer-decision hold, direction and lag
+  review posture, T0/T30/T60/T90/T120/T180/T270/T365 milestone schedule,
+  baseline source posture, comparison condition, cohort identity,
+  workflow/function identity, aggregate Measurement Cell grain posture,
+  suppression/missing/held precheck posture, source-package draft state,
+  missing fields, readiness gaps, and the allowed next action for preparing a
+  comparison-design source package draft. The Journey, Workspace, and Readout
+  surfaces now render this readiness state as draft/readiness-only. The slice
+  does not create a source package, create governed approval, create
+  diagnostics evidence, satisfy comparison_design_adequacy, feed Bayesian
+  promotion, or authorize promotion; all corresponding flags remain false.
+  CODE / BUG / ADVERSARIAL review initially found no remaining findings after
+  the missing reviewer-role regression was fixed; follow-on draft assembly and
+  collection posture review later identified and fixed downstream next-action
+  and candidate-mismatch issues in the source package slices above.
+  Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (71/71);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`.
+- Reviewer Metric Selection Draft Intake slice (2026-06-26): extended the
+  existing AI Value Journey / Workspace reporting flow with a frontend-local
+  reviewer metric-selection draft intake. The reporting-spine view model now
+  carries a draft-only intake object with source Blueprint hypothesis posture,
+  candidate metric recommendation ref, draft selected metric candidate, metric
+  owner/reviewer role, expected direction and lag review posture, T0/T30/T60/
+  T90/T120/T180/T270/T365 milestone schedule, baseline source posture,
+  comparison condition, cohort identity, workflow/function identity, aggregate
+  Measurement Cell grain posture, suppression/missing/held precheck posture,
+  and reviewer decision placeholder. The Journey and Workspace surfaces wire
+  explicit local outcome-metric selection actions into that draft view without
+  creating a route, schema, persistence path, export, governed approval object,
+  diagnostics evidence, comparison-design satisfaction, Bayesian feed, or
+  promotion authority. Candidate recommendations remain planning inputs only,
+  selected metric approval remains false, comparison_design_adequacy remains
+  unsatisfied, and the Bayesian chain remains held at
+  `HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE`. CODE / BUG /
+  ADVERSARIAL review kept the implementation in the reporting-spine view model,
+  required strict candidate-recommendation matching for draft preparation,
+  scrubbed unsafe draft display fields, and preserved all blocked outputs.
+  Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (70/70);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- Existing AI Value Journey / Workspace Reporting Integration slice
+  (2026-06-26): connected the committed AI Contribution Reporting Spine into
+  the existing Journey, Workspace, and Readout surfaces through a
+  frontend-safe view-model adapter and shared panel. Candidate metric
+  recommendations render as planning inputs only, reviewer-selected metric
+  approval remains separate, the milestone plan includes T0/T30/T60/T90/T120/
+  T180/T270/T365, evidence gaps and allowed next evidence action are visible,
+  and model-review posture remains held for missing evidence. Default behavior
+  still fails closed when no Blueprint hypothesis is supplied, and the Bayesian
+  chain remains held at the governed diagnostics sufficiency evidence source
+  unless real governed evidence is supplied elsewhere. CODE / BUG /
+  ADVERSARIAL review closed the surfaced UI boundary gaps in the touched
+  surfaces: recommendation text is scrubbed before display, candidate
+  recommendations hold until a metric-library ref is present, all evidence gaps
+  render including comparison-design source package, source-package review
+  shows plain aggregate review concepts and source-mode labels rather than raw
+  key/export-shaped labels, the VBD map uses aggregate posture language rather
+  than public score-like labels, readout stronger-claim outputs remain blocked,
+  and live-connector-implying copy is now approved-aggregate-status language.
+  Verification passed:
+  `npm run test:ai-value-hypothesis-to-metric-recommendation` (17/17);
+  `npm run test:ai-value-contribution-reporting-spine` (22/22);
+  `npm run test --workspace frontend -- src/lib/aiValueContributionReportingSpine.test.ts src/pages/AIValueJourney.test.tsx src/pages/AIValueWorkspace.test.tsx src/pages/AIValueReadoutPrototype.test.tsx`
+  (70/70);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Internal Bayesian Execution Artifact v1 slice
+  (2026-06-26): added the internal-only, aggregate-only execution artifact
+  record authorized only by the passed Promotion Gate Passed Artifact Handoff
+  and the passed Bayesian Promotion Decision Gate chain. The artifact binds to
+  the promotion handoff, promotion gate, contained runtime, diagnostics/model
+  adequacy review, Diagnostics Evidence Packet, and Governed Diagnostics
+  Sufficiency Evidence Source hashes; it does not rerun Bayesian execution,
+  reinterpret posterior-like prototype values, create promotion authority, or
+  authorize posterior interpretation. Confidence output, probability output,
+  score-like output, customer-facing output, economic output, finance output,
+  ROI, causality, productivity, persistence, routes, UI, schemas, exports, live
+  connectors, raw rows, identifiers, query text, prompts, transcripts, and
+  person-level data remain blocked. The only allowed next step is
+  `posterior_interpretation_specification_gate_only`. Local CODE / BUG /
+  ADVERSARIAL review checked boundary leaks, unsafe feeds, promotion side
+  doors, stale source hashes, and interpretation/customer-facing economic
+  language. CODE review found and this slice fixed a held-artifact containment
+  gap: invalid nested source wrapper strings are now redacted until the full
+  source chain validates, and validation gaps no longer echo attacker-controlled
+  field names. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1`
+  (15/15 tests, including nested source-ref redaction and default executable
+  sample remains held);
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Bayesian Promotion Decision Gate Evidence
+  Binding slice (2026-06-25): updated the Bayesian Promotion Decision Gate so
+  the Diagnostics Evidence Packet is a consumed, hash-bound source alongside the
+  Internal Diagnostics and Model Adequacy Review and the contained runtime. The
+  gate now requires the packet for validation, rejects forged packet hashes,
+  holds on unsatisfied packet evidence, and allows `promotion_authorized=true`
+  only in the gate's passed path when review, packet, runtime evidence,
+  comparison-design adequacy, diagnostics, governance containment, and
+  structural feature-weight policy are all satisfied. The current executable
+  path remains `HOLD_FOR_DIAGNOSTICS_AND_MODEL_ADEQUACY_SUFFICIENCY` because
+  comparison-design adequacy and model diagnostics remain unsatisfied. It does
+  not implement Internal Bayesian Execution Artifact v1, posterior
+  interpretation, confidence output, probability output, customer-facing output,
+  economic output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, or live connectors. Verification passed:
+  `npm run test:ai-value-contribution-alignment-bayesian-promotion-decision-gate`.
+- AI Value Contribution Alignment Diagnostics Evidence Packet slice
+  (2026-06-25): added the internal-only aggregate evidence packet for the
+  diagnostics/model-adequacy evidence required before Bayesian promotion can be
+  evaluated. The packet represents data adequacy, suppressed/missing/held window
+  review, comparison-design adequacy, convergence diagnostics, posterior
+  predictive checks, prior sensitivity, residual/fit checks,
+  calibration/backtest evidence, and feature-weight provenance. Current emitted
+  evidence is promotion-review-ready but not promotion-sufficient: data/window/
+  feature-weight evidence is satisfied while comparison-design adequacy and
+  model diagnostics remain unsatisfied. The packet may feed
+  `bayesian_promotion_decision_gate_only` but keeps `promotion_authorized=false`
+  and does not authorize Internal Bayesian Execution Artifact v1, posterior
+  interpretation, confidence output, probability output, customer-facing output,
+  economic output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, or live connectors. Verification passed:
+  `npm run test:ai-value-contribution-alignment-diagnostics-evidence-packet`.
+- AI Value Contribution Alignment Bayesian Promotion Decision Gate slice
+  (2026-06-25): added the internal-only aggregate promotion gate after
+  Diagnostics and Model Adequacy Review. The gate binds the contained runtime,
+  reviewed fixture artifact, and diagnostics/model adequacy review hashes;
+  requires satisfied diagnostics, comparison-design adequacy, no suppressed/
+  missing/held windows, governance containment, and structural/internal feature
+  weight policy; and may authorize only
+  `internal_bayesian_execution_artifact_v1_only`. It does not create the
+  execution artifact and does not authorize Bayesian interpretation, posterior
+  output, confidence output, probability output, score-like output, finance
+  output, ROI, causality, productivity, persistence, routes, UI, schemas,
+  exports, live connectors, or customer-facing output. Verification passed:
+  `npm run test:ai-value-contribution-alignment-bayesian-promotion-decision-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review`;
+  `npm run test:ai-value-contribution-alignment-bayesian-model-specification`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run test:ai-value-contribution-alignment-posterior-output-review-gate`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Internal Diagnostics and Model Adequacy Review
+  slice (2026-06-25): added the internal-only aggregate review after the
+  contained Bayesian fixture/prototype runtime. The review records data adequacy,
+  comparison-design adequacy, and model-diagnostic placeholder status; withholds
+  posterior numeric values; completes only as
+  `INTERNAL_DIAGNOSTICS_AND_MODEL_ADEQUACY_REVIEW_COMPLETED_PROMOTION_BLOCKED`;
+  and may feed only `bayesian_promotion_decision_gate_only`. Feature weights
+  remain structural/internal and not confidence scores. This slice does not
+  implement the Bayesian Promotion Decision Gate and does not authorize Bayesian
+  interpretation, posterior output, confidence output,
+  probability output, score-like output, finance output, ROI, causality,
+  productivity, persistence, routes, UI, schemas, exports, live connectors, or
+  customer-facing output. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run test:ai-value-contribution-alignment-posterior-output-review-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review`;
+  `npm run run:ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Posterior Output Review Gate slice
+  (2026-06-25): corrected the next governed phase after Internal Bayesian
+  Execution Runtime into artifact-containment only. The gate consumes the
+  source-bound fixture/prototype runtime, reviews the internal fit artifact by
+  ref/hash, withholds posterior numeric values, blocks internal posterior
+  interpretation specification, and authorizes only
+  `internal_diagnostics_and_model_adequacy_review_only`. It does not emit
+  posterior output, confidence output, probability output, score-like output,
+  finance output, ROI, causality, productivity, persistence, routes, UI,
+  schemas, exports, live connectors, or customer-facing output. Verification
+  passed:
+  `npm run test:ai-value-contribution-alignment-posterior-output-review-gate`;
+  `npm run run:ai-value-contribution-alignment-posterior-output-review-gate`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Internal Bayesian Execution Runtime slice
+  (2026-06-25): corrected the next governed phase after Internal Bayesian
+  Execution Gate into an internal fixture/prototype containment path. The
+  runtime consumes the source-bound execution gate plus aggregate Measurement
+  Cell windows only, keeps the closed-form normal-normal Bayesian update for
+  `delta_ai_post` inside an internal fixture artifact, records missing
+  diagnostics, and authorizes only
+  `internal_diagnostics_and_model_adequacy_review_only`; it does not emit
+  posterior output, confidence output, probability output, score-like output,
+  finance output, ROI, causality, productivity, persistence, routes, UI,
+  schemas, exports, live connectors, or customer-facing output. Verification
+  passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run run:ai-value-contribution-alignment-internal-bayesian-execution-runtime`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Internal Bayesian Execution Gate slice
+  (2026-06-25): implemented the next governed phase after Bayesian Model
+  Specification. The gate binds to the specification id/hash, Internal Bayesian
+  Readiness Review ref, Weighted Internal Model Frame ref, and governed feature
+  weights; records aggregate-only runtime prerequisites; and authorizes only
+  `internal_bayesian_execution_runtime_only`. It does not run Bayesian
+  execution, emit posterior output, confidence output, probability output,
+  score-like output, finance output, ROI, causality, productivity, persistence,
+  routes, UI, schemas, exports, live connectors, or customer-facing output. It
+  requires a later posterior/output review gate before any confidence or
+  probability language can appear. Local CODE / BUG / ADVERSARIAL review
+  confirmed the ready sample keeps only the runtime feed true, keeps
+  execution/posterior/confidence/probability/customer output false, and rejects
+  forged execution after rehash. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `npm run run:ai-value-contribution-alignment-internal-bayesian-execution-gate`;
+  `npm run test:ai-value-contribution-alignment-bayesian-model-specification`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Bayesian Model Specification slice
+  (2026-06-25): implemented the next governed phase after Internal Bayesian
+  Readiness Review. The specification binds to the readiness review id/hash and
+  Weighted Internal Model Frame ref, records
+  `bayesian_hierarchical_did_spec_2026_06`, and defines internal-only
+  specification placeholders for aggregate Measurement Cell window unit of
+  analysis, candidate selected-metric difference-in-differences estimand,
+  weakly regularizing prior posture, and aggregate-window likelihood posture.
+  It authorizes only `internal_bayesian_execution_gate_only`; it does not run
+  Bayesian execution, emit posterior output, confidence output, probability
+  output, score-like output, finance output, ROI, causality, productivity,
+  persistence, routes, UI, schemas, exports, live connectors, or
+  customer-facing output. Local CODE / BUG / ADVERSARIAL review confirmed the
+  ready sample keeps only the execution-gate feed true, keeps
+  execution/posterior/confidence/probability policy false, and rejects unsafe
+  model-spec side doors without echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-bayesian-model-specification`;
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-readiness-review`;
+  `npm run run:ai-value-contribution-alignment-bayesian-model-specification`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Internal Bayesian Readiness Review slice
+  (2026-06-25): implemented the next governed gate after the Weighted Internal
+  Model Frame. The review binds to the weighted frame id/hash and Versioned
+  Weight Object ref, verifies source-bound weighted composition, records the
+  candidate family
+  `bayesian_hierarchical_difference_in_differences_candidate`, and authorizes
+  only `bayesian_model_specification_only`. It does not define priors,
+  likelihood, estimands, posterior output, Bayesian execution, confidence
+  output, probability output, score-like output, finance output, ROI,
+  causality, productivity, persistence, routes, UI, schemas, exports, live
+  connectors, or customer-facing output. Local CODE / BUG / ADVERSARIAL review
+  confirmed the ready sample keeps only the model-specification feed true,
+  keeps execution/posterior/confidence/probability policy false, and rejects
+  unsafe Bayesian side doors without echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-internal-bayesian-readiness-review`;
+  `npm run test:ai-value-contribution-alignment-weighted-internal-model-frame`;
+  `npm run run:ai-value-contribution-alignment-internal-bayesian-readiness-review`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Weighted Internal Model Frame slice
+  (2026-06-25): implemented Step 4 of the weighted internal data model plan.
+  The frame consumes the Versioned Weight Object, binds to the weight object,
+  Internal Numeric Weight Decision, and Feature Stability Review ids/hashes,
+  and attaches ten neutral 0.1 source-bound weights to the governed feature
+  registry as internal weighted feature composition only. This is now the full
+  internal weighted data model frame, not a model result: aggregate score
+  output, weighted internal model output, research model feed, confidence
+  output, probability output, Bayesian execution, score-like output, finance
+  output, ROI, causality, productivity, persistence, routes, UI, schemas,
+  exports, live connectors, and customer-facing output remain blocked. The
+  only true downstream feed is `internal_bayesian_readiness_review`; the
+  Bayesian readiness review itself is not implemented in this slice. Local
+  CODE / BUG / ADVERSARIAL review confirmed the ready sample keeps only that
+  review feed true, keeps score/output/Bayesian execution policy false, and
+  rejects unsafe frame side doors without echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-weighted-internal-model-frame`;
+  `npm run test:ai-value-contribution-alignment-versioned-weight-object`;
+  `npm run run:ai-value-contribution-alignment-weighted-internal-model-frame`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Contribution Alignment Versioned Weight Object slice (2026-06-25):
+  implemented Step 3 of the weighted internal data model plan. The object
+  consumes the Internal Numeric Weight Decision and Feature Stability Review,
+  binds to their ids and hashes, and emits version
+  `internal_structural_equal_weights_2026_06` with ten neutral equal weights
+  over the governed source-bound feature registry. The calibration state is
+  `initial_internal_structural_weights_not_empirical_confidence`, so this is
+  not empirical confidence, posterior probability, Bayesian execution, model
+  output, ROI, finance output, causality, productivity, or customer-facing
+  output. The only true downstream feed is
+  `weighted_internal_model_frame`; weighted model output, research model feed,
+  confidence/probability/score output, Bayesian execution, finance output, ROI,
+  causality, productivity, persistence, routes, UI, schemas, exports, live
+  connectors, and customer-facing output remain blocked. Local CODE / BUG /
+  ADVERSARIAL review confirmed the ready sample has only the frame feed true,
+  keeps output/Bayesian policy false, and rejects unsafe side doors without
+  echo. Verification passed:
+  `npm run test:ai-value-contribution-alignment-versioned-weight-object`;
+  `npm run test:ai-value-contribution-alignment-internal-numeric-weight-decision`;
+  `npm run run:ai-value-contribution-alignment-versioned-weight-object`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Compact Source Wiring Hardening (user-requested hardening,
+  2026-06-25): added the executable non-live compact source descriptor bridge
+  after the Data Model Spine Readiness Lock. The runner emits
+  `COMPACT_SOURCE_WIRING_HARDENED_NON_LIVE` only when the spine readiness lock
+  and BigQuery/Sigma aggregate connector boundary plans remain valid, prepares
+  only compact descriptors for `bigquery_export` and `sigma_export`, and keeps
+  `glean_query` held for a later exact-scope source adapter boundary plan. The
+  descriptors now include governed boundary-plan and connector-adapter handles,
+  validation posture, strict governed prefixes for aggregate definition/output
+  refs, and no live or customer-joinable handles. Unsafe supplied boundary
+  plans, readiness locks, warehouse/dashboard aliases, SQL/query text, job
+  handles, raw rows, employee aliases, Series persistence, and safe-looking ref
+  swaps reject or fail validation without echoing unsafe values. This slice
+  does not add or authorize live BigQuery/Sigma/Glean execution, credentials,
+  query execution, raw/dashboard rows, Source Package clearance, Measurement
+  Cell creation, snapshot writes, Series persistence, routes, UI, exports,
+  rendered readouts, research-model feeds, statistical model output,
+  confidence/probability/score output, finance output, ROI, causality,
+  productivity, customer-facing output, or additional physical tables. The only
+  allowed next step is
+  `draft_non_live_connector_promotion_decision_requirements_only`.
+  Verification passed:
+  `npm run test:ai-value-compact-source-wiring-hardening`;
+  `npm run test:ai-value-data-model-spine-readiness-lock`;
+  `npm run test:ai-value-aggregate-connector-boundary-plan`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Data Model Spine Readiness Lock (user-requested hardening,
+  2026-06-25): added the executable lock that answers the user's model-equation
+  question without overstating implementation. No statistical model equation is
+  implemented; the implemented equation is the Boolean readiness contract:
+  `measurement_cell_snapshots_promoted AND
+  ai_value_customer_data_model_snapshots_promoted AND
+  customer_data_model_route_projection_ready AND
+  customer_evidence_history_read_path_proven AND
+  durable_series_read_path_holds_series_persistence AND
+  all_blocked_outputs_false`. The lock recomputes and binds the Customer
+  Evidence History Read-Path Proof plus Durable Series Read-Path Decision,
+  emits `COMPACT_CUSTOMER_DATA_MODEL_SPINE_READY` only when those source-bound
+  contracts validate, keeps `measurement_cell_series_snapshots` held as
+  `HELD_NOT_REQUIRED_FOR_CURRENT_READ_PATH`, and allows only
+  `harden_compact_customer_data_model_for_real_source_wiring` next. It
+  explicitly reports `statistical_model_equation_implemented: false`,
+  `confidence_math_implemented: false`, and `numeric_weights_implemented:
+  false`, and blocks model output, confidence/probability/score output,
+  finance output, live BigQuery/Sigma/Glean execution, ROI, causality,
+  productivity, customer-facing economic output, raw rows, prompts,
+  transcripts, query text, user identifiers, compact-ref exposure, and Series
+  persistence. Verification passed:
+  `npm run test:ai-value-data-model-spine-readiness-lock`;
+  `npm run test:ai-value-customer-evidence-history-read-path-proof`;
+  `npm run test:ai-value-durable-series-read-path-decision`;
+  `npm run test:ai-value-measurement-cell-series-persistence-promotion-gate`;
+  `npm run run:ai-value-data-model-spine-readiness-lock`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Customer Evidence History Read-Path Proof and Durable Series
+  Read-Path Decision (goal-directed, 2026-06-25): added the internal
+  executable proof that Day 0 / 30 / 60 / 90 / 180 / 365 customer evidence
+  history can be served from compact
+  `ai_value_customer_data_model_snapshots` plus Measurement Cell Series
+  contract output. The proof binds only compact milestone counts and hashes,
+  ignores stale superseded rows, holds on missing or held latest rows, rejects
+  unsafe sidecars without echo, and keeps Series persistence, `evidence_snapshots`
+  extension, routes, UI, exports, rendered readouts, live connector execution,
+  model output, confidence/probability/score output, finance output, ROI,
+  causality, productivity, and customer-facing economic output blocked. Added
+  the Durable Series Read-Path Decision that consumes the proof and records
+  `HOLD_SERIES_PERSISTENCE_COMPACT_CUSTOMER_HISTORY_READ_PATH_SATISFIED`;
+  the allowed next step is to continue customer history reads from compact
+  customer data model snapshots. This slice intentionally does not emit a
+  ready Series implementation state. Verification passed:
+  `npm run test:ai-value-customer-evidence-history-read-path-proof`;
+  `npm run test:ai-value-durable-series-read-path-decision`;
+  direct proof runner state check;
+  direct durable decision runner state check;
+  `npm run test:ai-value-measurement-cell-series-persistence-promotion-gate`;
+  `npm run test:ai-value-measurement-cell-series`;
+  `npm run test:ai-value-controlled-pilot-evidence-package`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Measurement Cell Series Persistence Promotion Gate (user-requested,
+  2026-06-25): added the executable hold-by-default gate after repeated Day 0 /
+  30 / 60 / 90 / 180 / 365 milestone validation. The gate consumes the
+  controlled repeated pilot evidence package as source-bound compact Series
+  proof, rejects unsafe wrappers/sidecars without echoing raw values, and can
+  become ready only for a separate exact-scope
+  `measurement_cell_series_snapshots` implementation decision after a separate
+  durable read-path decision shows compact snapshot projections cannot satisfy
+  continuity needs. Caller-supplied proof strings alone still hold. The
+  validator rejects forged ready gates with source drift, stale validation
+  summaries, non-empty hold reasons, unsafe proof refs, and extra
+  caveat/blocked-use smuggling after rehash. It keeps `measurement_cell_series_snapshots`,
+  `evidence_snapshots` extension, Prisma schemas, migrations, repository write
+  paths, backend routes, frontend UI, exports, rendered readouts, live
+  BigQuery/Sigma/Glean execution, model output, confidence/probability/score
+  output, finance output, ROI, causality, productivity, and customer-facing
+  output blocked. Verification passed:
+  `npm run test:ai-value-measurement-cell-series-persistence-promotion-gate`;
+  direct runner hold-state check;
+  `npm run test:ai-value-measurement-cell-series`;
+  `npm run test:ai-value-controlled-pilot-evidence-package`;
+  `bash scripts/ci_docs_contract_sweep.sh`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`.
+- AI Value Measurement Cell Series validation and Evidence Continuity placement
+  decision (goal-directed, 2026-06-25): verified repeated Day 0 / 30 / 60 / 90
+  / 180 / 365 milestone continuity through the existing contract-only
+  Measurement Cell Series layer and controlled repeated pilot package. Updated
+  the Series persistence promotion decision to
+  `HOLD_AFTER_REPEATED_MILESTONE_VALIDATION_NO_SERIES_SNAPSHOT_PROMOTION`:
+  `measurement_cell_series_snapshots` remain unimplemented because no durable
+  Series read-path need has been proven. Evidence Continuity remains inside the
+  Measurement Cell Series contract output; do not extend `evidence_snapshots`
+  or add continuity snapshot types until a later exact-scope decision authorizes
+  that path. No Prisma schema, migration, repository write, backend route,
+  frontend UI, export, live BigQuery/Sigma/Glean execution, confidence math,
+  ROI, causality, productivity, probability, or customer-facing financial
+  output was added. Verification passed:
+  `npm run test:ai-value-measurement-cell-series`;
+  `node --test scripts/validate_ai_value_controlled_pilot_evidence_package.test.mjs`.
+- AI Value Customer Data Model Route Projection (user-requested, 2026-06-25):
+  added the exact-scope read-only customer evidence status projection on top of
+  compact `ai_value_customer_data_model_snapshots`. The backend route
+  `GET /api/v1/ai-value/customer-data-model/projections` is org-scoped,
+  latest-only, strict on query shape, no-store, and allows only optional
+  explicit URL `measurement_plan_id` filtering; rejected queries still receive
+  the route boundary headers. The response is allowlisted to customer-safe
+  mapped labels, windows, aggregate evidence status, caveats, blocked outputs,
+  and next evidence action, and only clear validated rows may project. It does
+  not expose stored rows, org/client IDs, snapshot IDs, Measurement Cell IDs,
+  workflow IDs, cohort keys, source refs, aggregate-boundary refs, hashes,
+  source-export refs, pipeline refs, raw rows, query text, prompts, transcripts,
+  identifiers, exports, rendered readouts, live connector output,
+  confidence/probability/score output, ROI/finance output, causality,
+  productivity, or customer-facing financial output. The AI Value Workspace now
+  renders returned safe projections as a compact list, ignores stale local
+  measurement-plan filters unless the URL explicitly asks for one, and holds on
+  empty/error responses instead of substituting examples. BigQuery and Sigma
+  live wiring remain last and out of this slice. Verification passed:
+  `npm test --workspace backend -- --runTestsByPath tests/ai_value_customer_data_model_projection_api.test.ts --runInBand`;
+  `npm test --workspace frontend -- AIValueWorkspace.test.tsx`;
+  `npm test --workspace backend -- --runTestsByPath tests/ai_value_minimal_persistence.test.ts tests/ai_value_objects_api.test.ts tests/health_postgres.test.ts tests/ai_value_customer_data_model_projection_api.test.ts --runInBand`;
+  `npm run build --workspace backend`;
+  `npm run build --workspace frontend`;
+  `python3 scripts/ci_v1_governance_gates.py`;
+  `git diff --check`;
+  `npm run test:ai-value-measurement-cell-snapshot-projection`;
+  `npm run test:ai-value-customer-data-model-promotion-gate`;
+  `npm run test:ai-value-customer-data-model-persistence-promotion-decision`;
+  `npm run test:ai-value-customer-data-model-persistence-implementation-decision`.
+- AI Value Measurement Cell Snapshot Projection (goal-directed, 2026-06-25):
+  added the executable internal projection layer over compact backend-internal
+  `measurement_cell_snapshots` rows. The runner emits only an
+  `INTERNAL_OPERATOR_PROJECTION_READY`, `HOLD_FOR_VALID_MEASUREMENT_CELL_SNAPSHOT`,
+  or `REJECTED_FOR_BOUNDARY_LEAKAGE` projection with compact snapshot identity,
+  selected approved expectation-path binding, metric/window/workflow context,
+  compact aggregate-boundary refs, compact source refs, validation posture
+  booleans, caveats, blocked uses, false feeds, and a recomputed projection
+  hash. It rejects missing path/metric/window/source identity, rolling-window
+  misuse, unsafe refs, live handles, raw rows, SQL/query text, prompts,
+  transcripts, identifiers, full source packages, full operator handoff
+  bundles, full expectation-path registries, customer-facing route/UI/export
+  flags, governance-array smuggling, ROI/EBITDA, finance output, causality,
+  productivity, probability, model, and score-like fields without echoing
+  unsafe values. This does not add routes, UI, schemas, migrations, repository
+  reads/writes, exports, rendered readouts, live BigQuery/Sigma/Glean
+  execution, model output, finance output, or customer-facing output.
+  Verification added:
+  `npm run test:ai-value-measurement-cell-snapshot-projection`.
+- AI Value Customer Data Model Promotion Gate (goal-directed, 2026-06-25):
+  added the executable hold-by-default gate between compact Measurement Cell
+  Snapshot Projection and any later customer data model persistence decision.
+  Ready gates authorize only a separate exact-scope persistence promotion
+  decision, must validate against the source projection, and require all route,
+  auth/tenant, legacy readout, export, legal/trust, privacy/k-min, and
+  customer-value-language prerequisites to be true. The gate rejects dual
+  projection/snapshot wrappers, compact-ref drift, unsafe client refs, raw
+  rows, query text, prompts, transcripts, identifiers, model/finance/ROI/
+  causality/productivity/probability fields, and customer-facing side doors.
+  This does not add routes, UI, schemas, migrations, repository reads/writes,
+  persistence writes, exports, rendered readouts, live BigQuery/Sigma/Glean
+  execution, model output, finance output, or customer-facing output.
+  Verification added:
+  `npm run test:ai-value-customer-data-model-promotion-gate`.
+- AI Value Customer Data Model Persistence Promotion Decision (goal-directed,
+  2026-06-25): added the executable decision after the Customer Data Model
+  Promotion Gate. The decision holds by default and can become ready only for
+  the exact-scope implementation-decision lane when the source projection and
+  source gate validate together. It rejects forged ready gates, wrapper
+  sidecars, source-gate drift, unsafe refs, raw rows, query text, prompts,
+  transcripts, identifiers, model/finance/ROI/causality/productivity/
+  probability fields, and customer-facing side doors without echoing unsafe
+  values. It still does not add or authorize persistence writes, Prisma
+  schemas, migrations, repository write paths, routes, UI, exports, rendered
+  readouts, live BigQuery/Sigma/Glean execution, model output, finance output,
+  or customer-facing output. Verification added:
+  `npm run test:ai-value-customer-data-model-persistence-promotion-decision`.
+- AI Value Customer Data Model Persistence Implementation Decision
+  (goal-directed, 2026-06-25): added the executable exact-scope decision that
+  can promote only one compact append-only
+  `ai_value_customer_data_model_snapshots` table plus internal repository
+  write/read paths derived from valid Measurement Cell Snapshot Projection
+  inputs. The decision recomputes the source projection, customer data model
+  gate, and persistence promotion decision, rejects drift after rehash,
+  rejects unsafe wrappers without echo, and keeps routes, UI, exports,
+  rendered readouts, live connectors, research/model feeds, confidence/
+  probability/score output, ROI/EBITDA, finance output, causality,
+  productivity, and customer-facing output blocked. Verification added:
+  `npm run test:ai-value-customer-data-model-persistence-implementation-decision`.
+- AI Value Customer Data Model Snapshot Persistence implementation
+  (goal-directed, 2026-06-25): implemented the promoted compact
+  `ai_value_customer_data_model_snapshots` physical model as an append-only
+  internal product-data table, Prisma model, migration, in-memory store record,
+  repository write/list path, and DB readiness table/column check. The write
+  path recomputes the Measurement Cell Snapshot Projection, Customer Data Model
+  Promotion Gate, Persistence Promotion Decision, and Persistence
+  Implementation Decision before persisting compact refs only. It stores stable
+  source/projection/gate/decision hashes, approved expectation-path identity,
+  value hypothesis binding, governed value driver, metric/workflow/cohort/
+  milestone context, aggregate-boundary refs, validation posture, caveats,
+  blocked uses, correction lineage, and audit metadata. It intentionally does
+  not persist full projections, full Measurement Cells, full source packages,
+  full expectation-path registries, raw rows, query text, prompts, transcripts,
+  identifiers, routes, UI, exports, rendered readouts, live connector output,
+  research-model feeds, model output, confidence/probability/score output,
+  ROI/EBITDA, finance output, causality, productivity, customer-facing output,
+  or customer-facing financial output. Verification passed:
+  `npm run generate --workspace backend`;
+  `npm run build --workspace backend`;
+  `npm test --workspace backend -- --runTestsByPath tests/ai_value_minimal_persistence.test.ts --runInBand`;
+  `npm test --workspace backend -- --runTestsByPath tests/health_postgres.test.ts --runInBand`;
+  `node --test scripts/validate_ai_value_measurement_cell_snapshot_projection.test.mjs`;
+  `node --test scripts/validate_ai_value_customer_data_model_promotion_gate.test.mjs`;
+  `node --test scripts/validate_ai_value_customer_data_model_persistence_promotion_decision.test.mjs`;
+  `node --test scripts/validate_ai_value_customer_data_model_persistence_implementation_decision.test.mjs`.
+- AI Value Contribution Alignment Internal Method Prototype Review Record
+  (user-requested, 2026-06-25): added the internal promotion gate after the
+  Small Internal Method Prototype. The review record recomputes the source
+  method prototype and upstream chain, emits only compact source-prototype refs,
+  finalization-review scope, qualitative component posture review,
+  context-separation review, promotion basis, caveats, blocked uses, false
+  feeds, and validation summary, and can return only
+  `PROMOTE_EXACT_SCOPE_RESEARCH_MATH_FINALIZATION_REVIEW`,
+  `HOLD_FOR_VALID_INTERNAL_METHOD_PROTOTYPE_REVIEW_RECORD`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It explicitly holds when qualitative
+  component posture drifts into numeric roles and authorizes only a separate
+  exact-scope research math finalization review. It does not add UI, routes,
+  schemas, migrations, persistence writes, exports, live BigQuery/Sigma/Glean
+  execution, research-model feed, research math output, model implementation,
+  model output, numeric weights, score/probability output, ROI/EBITDA, finance
+  output, causality, productivity, or customer-facing output. Verification
+  added:
+  `npm run test:ai-value-contribution-alignment-internal-method-prototype-review-record`.
+- AI Value Contribution Alignment Small Internal Method Prototype
+  (user-requested, 2026-06-24): added the governed small internal method
+  prototype after the Method Prototype Decision gate. The prototype recomputes
+  the source decision and upstream chain, emits only compact source-decision
+  refs, method frame, qualitative component postures, context-separation review,
+  caveats, blocked uses, false feeds, and validation summary, and can return
+  only `READY_FOR_INTERNAL_METHOD_PROTOTYPE_REVIEW_RECORD`,
+  `HOLD_FOR_VALID_METHOD_PROTOTYPE_DECISION`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. It keeps AI Fluency construct context,
+  psychological context, observed VBD context, and selected customer metric
+  movement separate, with psychological context unable to substitute for
+  observed VBD and observed VBD unable to substitute for customer metric
+  movement. It does not add UI, routes, schemas, migrations, persistence writes,
+  exports, live BigQuery/Sigma/Glean execution, research-model feed, model
+  output, numeric weights, score/probability output, ROI/EBITDA, finance output,
+  causality, productivity, or customer-facing output. Verification added:
+  `npm run test:ai-value-contribution-alignment-small-internal-method-prototype`.
+- AI Value Contribution Alignment Method Prototype Decision (user-requested,
+  2026-06-24): added the exact-scope decision gate after the Internal
+  Research-Design Gate Review. The decision recomputes the source gate review
+  and upstream chain, emits only compact source gate-review refs, method
+  prototype scope, promotion basis, caveats, blocked uses, false feeds, and
+  validation summary, and can return only
+  `PROMOTE_SMALL_INTERNAL_METHOD_PROTOTYPE`,
+  `HOLD_FOR_VALID_INTERNAL_RESEARCH_DESIGN_GATE_REVIEW`, or
+  `REJECTED_FOR_BOUNDARY_LEAKAGE`. The only promoted scope is
+  `qualitative_component_posture_only`; it does not add UI, routes, schemas,
+  migrations, persistence writes, exports, live BigQuery/Sigma/Glean execution,
+  research-model feed, model implementation, model math, numeric weights,
+  score/probability output, ROI/EBITDA, finance output, causality,
+  productivity, or customer-facing output. Verification added:
+  `npm run test:ai-value-contribution-alignment-method-prototype-decision`.
 - AI Value upstream acceptance persistence boundary hardening (user-requested,
   2026-06-24): added an exact physical data-model hold decision for upstream
   aggregate handoff / acceptance-package persistence. The data model remains
@@ -1046,3 +2071,18 @@
 - AI Value Platform Legacy Readout Route Isolation slice (2026-06-23): enforced the existing legacy readout isolation decision at the backend/shared-engine level. The legacy `executive_packet` HTML route is now restricted to internal reviewer/admin roles, emits explicit non-source-bound/non-customer-facing/no-export/no-store boundary headers, injects the required internal/prototype audience label into rendered HTML, removes workflow-family fallback for outcome evidence, engagement context, and AI Fluency kickoff context, denies stale readiness binding, and renders outcome evidence only when the referenced export is accepted and attachment-eligible. Generic object-detail access now denies `EXEC_VIEWER` full legacy `executive_packet` payloads and fails closed for stale invalid internal packet reads. Shared executive packet validation rejects surprise top-level fields, unexpected nested section fields, unsafe source-ref keys/values, normalized unsafe field names, unsafe scalar values, caveat-laundered finance/confidence/probability language, and customer-facing, causal, or realized-financial authorization branches; the existing JSON contract schema was aligned to the closed legacy packet shape. Backend/shared tests now prove generic payload denial, unsafe/nested/source-ref/caveat smuggling denial, readout role denial, cross-org denial, invalid-packet fail-closed behavior, no-export/no-store posture, explicit source/context-ref-only attachment, accepted-only outcome evidence attachment, stale readiness denial, visible legacy/prototype labeling, and source-bound evidence caveats. This adds no frontend UI, Prisma schema, migration, repository, persistence write, live BigQuery/Sigma/Glean execution, source-bound customer projection, export, confidence math, ROI, causality, productivity, probability, or customer-facing finance output.
 - AI Value Platform PR 369 manifest review carry-forward slice (2026-06-23): fixed the Manifest Review comments on the current branch without merging broader productization scope. Controlled aggregate manifest validation now returns compact blocked packages with null adapter refs, approved binding, manifests, and manifest refs after any post-construction validation block; passed packages carry compact connector adapter refs without Measurement Cell candidate refs. Aggregate connector boundary plans now strip unsafe override payloads when blocking. Controlled aggregate manifest validators now separate metric identifiers from dimension/output fields, bind pipeline review `metric_id` to the approved expectation path `expected_metric_id`, and preserve the exact governed AI Fluency aggregate metric allowlist without reopening score-like fields. Measurement Cell snapshot correction lineage now normalizes date-only/ISO persisted window strings before comparison to avoid false path drift. Verification: `npm run build --workspace shared`; targeted manifest/boundary tests; backend minimal persistence test; `npm run build --workspace backend`; docs sweep; V1 governance gates; `git diff --check`.
 - AI Value Platform Measurement Cell Preflight Snapshot Candidate Binding slice (2026-06-23): hardened the executable infrastructure pipe from reviewed aggregate preflight output into backend-internal Measurement Cell Snapshot persistence. Snapshot writes now require a passed compact preflight `snapshot_candidate_ref`, recompute durable snapshot binding before write, and reject missing proof, metric/path/window/source-ref/hash/approval drift, key-name placeholder refs, unsafe compact source refs, and candidate JSON smuggling. Preflight validation now checks exact lane source refs for BigQuery/Sigma-shaped saved aggregate packages without adding live connectors, routes, UI, schema changes, customer output, confidence math, ROI, finance output, causality, productivity, or probability. Verification: `npm run test:ai-value-measurement-cell-preflight-runner`; `npm run test --workspace backend -- --runTestsByPath tests/ai_value_minimal_persistence.test.ts`; `npm run build --workspace backend`; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; `git diff --check`.
+- AI Value Platform Contribution Alignment Research Gate slice (2026-06-24): generated the current controlled pilot Research Promotion Readiness Packet instance, recorded the internal contribution-alignment research design, and added the internal prototype runner design decision. The runner decision promotes only a future non-persistent internal runner design and keeps runner implementation held. The gate is hash-bound to the controlled packet and research design, separates AI Fluency construct context, psychological context, observed VBD behavior, and selected customer metric movement, and blocks model math, numeric weights, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, customer-facing output, exports, routes, UI, schemas, persistence writes, live connector execution, raw rows, query text, prompts, transcripts, identifiers, full source packages, full Measurement Cell payloads, and JSON smuggling.
+- AI Value Platform Contribution Alignment Internal Prototype Runner slice (2026-06-24): added the exact-scope implementation decision and local non-persistent runner that converts the current controlled Research Promotion Readiness Packet into a compact internal method-design review envelope. The runner recomputes source-fixture-bound packet validation, hash-binds the internal research design, emits selected expectation-path refs, milestone refs, AI Fluency construct context, psychological context, observed VBD context, selected metric movement, assumption governance, Data Spine alignment, Source Package posture, blocked uses, caveats, and false feeds. It writes no persistence, adds no routes/UI/schemas, runs no live connectors, emits no model result, numeric weights, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, customer-facing output, raw rows, query text, prompts, transcripts, identifiers, source package payloads, full Measurement Cell payloads, or generic payload containers.
+- AI Value Platform Contribution Alignment Runner Review Packet slice (2026-06-24): added the executable internal review-packet gate that consumes the compact Contribution Alignment Internal Prototype Runner envelope and emits a source-bound packet for separate internal model-prototype design review. The gate validates the source runner against the current Research Promotion Readiness Packet, controlled fixture, internal research-design hash, and runner implementation-decision hash; it holds on runner/path binding drift, rejects unsafe payload smuggling, keeps AI Fluency construct context, psychological context, observed VBD context, and selected metric movement separate, and preserves false feeds for model implementation, research-model feed, numeric weights, probability, score-like output, finance output, customer-facing output, routes, UI, schemas, persistence, exports, and live connectors. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, model math, model output, ROI, EBITDA, causality, productivity, finance output, export, or customer-facing output.
+- AI Value Platform Contribution Alignment Model Prototype Design Review slice (2026-06-24): added the executable internal design-review contract that consumes the source-bound Runner Review Packet and records the candidate contribution-alignment model frame and alignment-review component definitions without implementing a model. The design record keeps AI Fluency construct context, psychological context, observed VBD behavior, selected customer metric movement, milestone continuity, comparison-design scope, and boundary clearance distinct; it holds on runner review packet drift, compacts dirty nested refs before emission, and rejects unsafe strings or payload smuggling. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, model implementation, model result, numeric weights, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
+- AI Value Platform Contribution Alignment Internal Model Prototype slice (2026-06-24): added the first executable non-persistent internal model prototype as a compact contract replay over the source-bound Model Prototype Design Review. The prototype emits only source design-review refs, method family, descriptive replay mode, selected expectation-path refs, milestone refs, context refs, governed component review traces, blocked uses, caveats, false feeds, and validation summary. It holds on design-review drift, rejects unsafe payload smuggling, does not echo unsafe validation values, and preserves context separation across AI Fluency construct context, psychological context, observed VBD behavior, and selected metric movement. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, statistical model implementation, model result, numeric weights, confidence output, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
+- AI Value Platform Contribution Alignment Internal Model Prototype Review Packet slice (2026-06-24): added the source-bound internal review packet over the compact Contribution Alignment Internal Model Prototype. The packet emits only compact prototype refs, source-bound posture, governed component trace review, context separation review, boundary posture, blocked uses, caveats, false feeds, and validation summary. It holds on prototype/source drift, rejects unsafe payload smuggling, avoids echoing unsafe validation values, and preserves the separation between AI Fluency construct context, psychological context, observed VBD behavior, and selected metric movement. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, statistical model implementation, model result, numeric weights, confidence output, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
+- AI Value Platform Contribution Alignment Internal Research-Design Gate Review slice (2026-06-24): added the executable close-out gate over the source-bound Internal Model Prototype Review Packet. The gate emits only compact review packet refs, internal research-design hash, gate summary, context separation review, boundary posture, blocked uses, caveats, false feeds, and validation summary. It authorizes only a later exact-scope method-prototype decision review, holds on source-review-packet or upstream proof drift, rejects unsafe payload smuggling, avoids echoing unsafe validation values, and preserves the separation between AI Fluency construct context, psychological context, observed VBD behavior, and selected metric movement. It adds no routes, UI, schemas, migrations, persistence writes, live connector execution, research-model feed, statistical model implementation, model result, numeric weights, confidence output, probability, score-like output, finance output, ROI, EBITDA, causality, productivity, export, or customer-facing output.
+
+- AI Value Platform Contribution Alignment Research Math Data Model boundary slice (2026-06-25): added the missing exact-scope Research Math Finalization Review gate, corrected the Research Math Data Model Promotion Decision so it consumes that finalization review rather than jumping directly from the older review record, and added the compact Internal Research Math Data Model boundary. The chain now holds when only the older review record is supplied, preserves separate AI Fluency construct, AI Fluency psychological, observed VBD, and selected customer metric movement partitions, rejects warehouse refs, feature-table shapes, raw/query/prompt/transcript/identifier smuggling, encoded compact-ref payload smuggling, math/finance/causality/productivity synonyms, ungoverned false-feed side doors, and unsafe validation echoing, and emits no model result, numeric weights, score/probability output, finance output, ROI, EBITDA, causality, productivity, persistence, schemas, routes, UI, exports, live connectors, or customer-facing output.
+- AI Value Platform Customer Data Model Promotion Gate slice (2026-06-25): added the executable gate between compact Measurement Cell Snapshot Projection and any later customer-facing data model persistence decision. The gate holds by default, can become ready only for a separate exact-scope persistence promotion decision when prerequisite posture states are explicit, requires source-projection-bound validation for ready gates, rejects dual projection/snapshot wrappers, and blocks persistence writes, schemas, routes, UI, exports, rendered readouts, live connectors, model output, confidence/probability/score output, finance output, ROI, EBITDA, causality, productivity, raw/query/prompt/transcript/identifier payloads, and customer-facing output.
+- AI Value Platform Connector Promotion Readiness Sequence slice (2026-06-25): added the governed requirements path after Compact Source Wiring Hardening. The sequence records the next four actions as non-live connector promotion requirements, held Glean adapter boundary planning, source descriptor human-review checklist posture, and exact-scope BigQuery/Sigma live connector gate design. It names full data model with weights and Bayesian readiness as the future target while explicitly keeping numeric weights, Bayesian execution, model/confidence/probability/score output, live connectors, routes/UI/exports, persistence expansion, finance output, ROI, causality, productivity, and customer-facing output blocked. Local CODE / BUG / ADVERSARIAL review passes found and fixed unsafe nested source-system echo from supplied compact hardening records. Verification: `npm run test:ai-value-connector-promotion-readiness-sequence` passed 9/9; `npm run test:ai-value-compact-source-wiring-hardening` passed 11/11; `npm run test:ai-value-contribution-alignment-internal-research-math-data-model` passed 9/9; `bash scripts/ci_docs_contract_sweep.sh` passed; `python3 scripts/ci_v1_governance_gates.py` passed; `git diff --check` passed.
+- AI Value Platform Weighted Internal Data Model Plan + Feature Stability Review slice (2026-06-25): created `docs/superpowers/plans/2026-06-25-ai-value-weighted-internal-data-model-plan.md` as the durable four-step finish-line plan: Feature Stability Review, Internal Numeric Weight Decision, Versioned Weight Object, and Weighted Internal Model Frame. Implemented Step 1 as the executable Contribution Alignment Feature Stability Review over the existing Internal Research Math Data Model. The review verifies source-bound id/hash stability, stable component registry, distinct AI Fluency construct / psychological / observed VBD / selected metric movement partitions, repeated Day 0 / 30 / 60 / 90 / 180 / 365 milestone requirement, and false forbidden-output feeds. Passing state opens only `internal_numeric_weight_decision_only`; it does not authorize numeric weights, weight values, weighted model output, confidence output, probability output, Bayesian execution, finance output, ROI, causality, productivity, persistence, routes, UI, schemas, exports, live connectors, or customer-facing output. Local CODE / BUG / ADVERSARIAL review confirmed no accidental true authorizations and sample output still keeps weights/Bayesian/customer output false. Verification: `npm run test:ai-value-contribution-alignment-feature-stability-review` passed 4/4; `npm run test:ai-value-contribution-alignment-internal-research-math-data-model` passed 9/9; `bash scripts/ci_docs_contract_sweep.sh` passed; `python3 scripts/ci_v1_governance_gates.py` passed; `git diff --check` passed.
+- AI Value Platform Internal Numeric Weight Decision slice (2026-06-25): implemented Step 2 of the weighted internal data model plan. The decision consumes the Feature Stability Review and promotes only `versioned_internal_weight_object_only`. It authorizes the next object type but contains no weight values and keeps weighted model frame, research model feed, model output, confidence output, probability output, Bayesian execution, score-like output, finance output, ROI, causality, productivity, persistence, routes, UI, schemas, exports, live connectors, and customer-facing output blocked. Local CODE / BUG / ADVERSARIAL review confirmed no accidental true authorizations; sample output shows `versioned_weight_object_authorized=true`, `weight_values_present=false`, `weighted_model_frame_authorized=false`, and `bayesian_execution_authorized=false`. Verification: `npm run test:ai-value-contribution-alignment-internal-numeric-weight-decision` passed 4/4; `npm run test:ai-value-contribution-alignment-feature-stability-review` passed 4/4; `bash scripts/ci_docs_contract_sweep.sh` passed; `python3 scripts/ci_v1_governance_gates.py` passed; `git diff --check` passed.
+- AI Contribution Reporting Spine slice (2026-06-26): added the aggregate-only/source-ref-only Hypothesis-to-Metric Recommendation runner and Reporting Spine contract/runner. The spine connects Blueprint hypothesis refs, allowlisted candidate metric-library recommendations, reviewer-approved measurement-plan posture, T0/T30/T60/T90/T120/T180/T270/T365 planning milestones, said/unsaid/outcome evidence refs, comparison-design posture, evidence gaps, safe interpretation guidance, model-review input posture, and downstream existing AI Value Journey / Workspace / Readout readiness. CODE / BUG / ADVERSARIAL review found and fixed stale state names, forged evidence-ref readiness, candidate metric tampering, missing false-gate keys, unsafe direction/lag echo, unsafe interpretation language, and held-plan input echo. This creates no evidence, satisfies no diagnostics dimension, changes no Bayesian gate, and keeps posterior interpretation, confidence/probability, ROI, finance, causality, productivity, customer-facing economic output, raw rows, identifiers, prompts/transcripts, person-level data, live connectors, routes, UI, schemas, persistence, and exports blocked. Focused verification: `npm run test:ai-value-hypothesis-to-metric-recommendation` passed 17/17 and `npm run test:ai-value-contribution-reporting-spine` passed 21/21. Remaining verification before handoff: docs contract sweep, V1 governance gates, semantic drift guard, git diff check, and Bayesian Hardening Orchestrator read-only hold check. Exact next product step after this slice: Existing AI Value Journey / Workspace Reporting Integration.
+- AI Value UI View Model Integration slice (2026-06-27): integrated the adapter-safe AI Value UI view model into the existing AI Value Journey, Workspace, and Readout reporting-spine surfaces without adding a new route, prototype, schema, persistence path, export, or live connector. The reporting spine now carries the adapter view model, and the panel renders adapter-safe status, next action, held requirements, not-yet-evidence posture, visibility-gated journey sections, and neutral model-review blocked language without recomputing or overriding adapter state. CODE / BUG / ADVERSARIAL review found and fixed local UI state reconstruction, premature evidence-stream visibility, and unsafe blocked-copy/source-ref language. Evidence streams remain hidden until the adapter allows evidence-alignment posture; refs, hashes, reviewer payloads, raw rows, query text, prompts/transcripts, identifiers, and person-level detail remain hidden. This creates no evidence, satisfies no diagnostics dimension, changes no Bayesian gate, and keeps posterior interpretation, confidence/probability, ROI, finance, causality, productivity, customer-facing economic output, routes, schemas, persistence, exports, and live connectors blocked. Verification passed: `npm run test:ai-value-ui-view-model-adapter` 8/8; focused frontend UI tests 68/68; combined frontend adapter/reporting-spine/UI tests 95/95; `npm run test:ai-value-contribution-reporting-spine` 22/22; `npm run test:ai-value-measurement-journey-state-model` 18/18; `bash scripts/ci_docs_contract_sweep.sh`; `python3 scripts/ci_v1_governance_gates.py`; `node scripts/ci_semantic_drift_guard.mjs`; and `npm run build --workspace frontend` passed with the existing large-chunk warning.

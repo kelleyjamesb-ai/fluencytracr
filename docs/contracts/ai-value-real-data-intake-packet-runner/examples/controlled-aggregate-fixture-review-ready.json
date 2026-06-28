@@ -149,7 +149,9 @@
         "owner_role": "workflow_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "aiFluency": {
         "state": "present",
@@ -171,7 +173,9 @@
         "owner_role": "customer_research_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "vbdToken": {
         "state": "present",
@@ -194,7 +198,9 @@
         "owner_role": "customer_data_platform_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "customerMetric": {
         "state": "present",
@@ -217,7 +223,9 @@
         "owner_role": "customer_metric_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "assumption": {
         "state": "present",
@@ -239,7 +247,9 @@
         "owner_role": "finance_or_business_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "governance": {
         "state": "present",
@@ -261,7 +271,9 @@
         "owner_role": "customer_governance_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       }
     }
   },
@@ -288,6 +300,8 @@
         "window_start": "2026-06-01",
         "window_end": "2026-06-30"
       },
+      "freshness_state": "current_for_approved_window",
+      "window_status": "current",
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
       "k_min_posture": {
@@ -398,6 +412,8 @@
         "window_start": "2026-06-01",
         "window_end": "2026-06-30"
       },
+      "freshness_state": "current_for_approved_window",
+      "window_status": "current",
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
       "k_min_posture": {
@@ -486,6 +502,8 @@
         "window_start": "2026-06-01",
         "window_end": "2026-06-30"
       },
+      "freshness_state": "current_for_approved_window",
+      "window_status": "current",
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
       "k_min_posture": {
