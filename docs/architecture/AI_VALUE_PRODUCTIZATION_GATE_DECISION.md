@@ -290,6 +290,13 @@ Do not build controlled aggregate manifest persistence, Series persistence,
 customer-facing projections, exports, live connectors, confidence research
 inputs, or finance outputs without a separate exact-scope promotion decision.
 
+Internal research modeling remains blocked until the
+[AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md)
+returns `READY_FOR_INTERNAL_RESEARCH_DESIGN`. That packet may unlock only a
+separate internal research design. It does not authorize model implementation,
+numeric weights, probability output, finance output, ROI, causality,
+productivity, customer-facing output, or durable research-model inputs.
+
 The next decision should choose one:
 
 - hold live connector implementation and keep using saved aggregate fixtures;

@@ -28,13 +28,46 @@ HOLD_FOR_SOURCE_BOUND_PROJECTION_CONTRACTS
 
 Reason:
 
-- Measurement Cell persistence is not promoted;
+- backend-internal Measurement Cell snapshot persistence and compact Customer
+  Data Model snapshot persistence are promoted, but customer-facing projection
+  routes, UI, exports, and rendered readouts are not promoted;
 - source-bound Executive Readout Snapshot projection is not promoted;
 - legacy readout isolation requires route and UI guard work before customer
   exposure expands;
 - export governance is not promoted;
 - legal/trust review for customer-facing value language is not complete;
 - generic object payloads are not safe customer projections.
+
+Current internal progress:
+
+- `docs/contracts/ai-value-measurement-cell-snapshot-projection/README.md`
+  defines an executable backend-internal projection contract over compact
+  `measurement_cell_snapshots` rows;
+- the projection can emit only internal operator-review posture from compact
+  refs, selected-path binding, metric/window context, source refs, caveats, and
+  blocked uses;
+- `docs/contracts/ai-value-customer-data-model-promotion-gate/README.md`
+  defines the next executable gate from compact snapshot projection into a
+  separate exact-scope customer data model persistence promotion decision;
+- the gate holds by default, rejects wrapper sidecars and unsafe source refs,
+  validates ready gates against the source projection, and keeps persistence
+  writes, schemas, routes, UI, exports, rendered readouts, live connectors,
+  model output, finance output, and customer-facing output blocked;
+- `docs/contracts/ai-value-customer-data-model-persistence-promotion-decision/README.md`
+  defines the executable decision after that gate and promoted only the
+  exact-scope implementation-decision lane;
+- `docs/contracts/ai-value-customer-data-model-persistence-implementation-decision/README.md`
+  names the implemented exact-scope persistence slice:
+  `ai_value_customer_data_model_snapshots` plus internal repository write/list
+  paths derived from valid Measurement Cell Snapshot Projection inputs;
+- the implemented compact table stores stable path, metric, cohort, milestone,
+  source-boundary, caveat, blocked-use, version, and audit metadata only. It
+  does not store full projections, full Measurement Cells, full source
+  packages, raw rows, query text, prompts, transcripts, identifiers, model
+  output, finance output, or customer-facing output;
+- this progress does not change the customer-facing decision value. Customer
+  projection routes, UI, exports, rendered readouts, model output, finance
+  output, and live connector execution remain blocked.
 
 ## 3. Projection Contract Requirements
 
@@ -117,10 +150,18 @@ Before implementation, tests must cover:
 
 Keep customer projection blocked until:
 
-1. controlled aggregate pilot evidence exists;
-2. Measurement Cell persistence decision is revisited;
-3. legacy readout route/UI guard posture is resolved;
-4. export governance decision is complete.
+1. compact Customer Data Model snapshot persistence is verified against the
+   implementation decision, DB readiness checks, and governance tests;
+2. a separate customer-facing route/UI projection contract defines allowed
+   response shape, role/org scope, caveat carry-forward, blocked-use
+   carry-forward, and missing/held/suppressed/not-computed display posture;
+3. legacy readout route/UI guard posture remains isolated and cannot be used as
+   a shortcut customer readout;
+4. export governance decision is complete;
+5. legal/trust approval state is explicit for any customer-visible value
+   language;
+6. live BigQuery, Sigma, and Glean connector execution remains last and cannot
+   expand customer projection scope.
 
 ## 7. Verification
 

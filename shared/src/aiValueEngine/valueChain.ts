@@ -64,6 +64,12 @@ const notRun = () => ({
   hold_reason: null
 });
 
+function optionalWorkflowFamily(value: any): string | null {
+  return typeof value?.workflow_family === "string" && value.workflow_family.trim() !== ""
+    ? value.workflow_family
+    : null;
+}
+
 export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
   const result: ValueChainRunResult = {
     schema_version: VALUE_CHAIN_RESULT_SCHEMA_VERSION,
@@ -75,6 +81,8 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     outcome_evidence: { ...notRun(), attached: false },
     spine: null
   };
+  let evidenceRefs: Record<string, string> | undefined;
+  const packetContextRefs: Record<string, string> = {};
 
   // Stage 0a: Engagement context (optional, but validated when provided).
   if (input.engagement !== undefined) {
@@ -86,7 +94,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     result.engagement = {
       status: validation.valid ? (covers ? "VALID" : "HELD") : "INVALID",
       validation,
-      object: input.engagement,
+      object: validation.valid ? input.engagement : null,
       generated: false,
       hold_reason: validation.valid
         ? covers
@@ -105,39 +113,54 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
       result.halted_at = "engagement";
       return result;
     }
+    if (typeof input.engagement?.engagement_id === "string") {
+      packetContextRefs.engagement_id = input.engagement.engagement_id;
+    }
   }
 
   // Stage 0b: Fluency kickoff baseline (optional context, validated when provided).
   if (input.fluencyBaseline !== undefined) {
     const validation = validateFluencyBaseline(input.fluencyBaseline);
+    const workflowFamily = optionalWorkflowFamily(input.blueprint);
+    const baselineWorkflowFamily = optionalWorkflowFamily(input.fluencyBaseline);
+    const coversWorkflowFamily =
+      validation.valid &&
+      (!workflowFamily || !baselineWorkflowFamily || baselineWorkflowFamily === workflowFamily);
     result.fluency_baseline = {
-      status: validation.valid ? "VALID" : "INVALID",
+      status: validation.valid ? (coversWorkflowFamily ? "VALID" : "HELD") : "INVALID",
       validation,
-      object: input.fluencyBaseline,
+      object: validation.valid ? input.fluencyBaseline : null,
       generated: false,
-      hold_reason: validation.valid ? null : "fluency baseline validation gaps",
-      summary: validation.valid ? summarizeFluencyBaseline(input.fluencyBaseline) : null
+      hold_reason: validation.valid
+        ? coversWorkflowFamily
+          ? null
+          : `fluency baseline does not cover workflow family ${workflowFamily}`
+        : "fluency baseline validation gaps",
+      summary: validation.valid && coversWorkflowFamily
+        ? summarizeFluencyBaseline(input.fluencyBaseline)
+        : null
     };
     if (!validation.valid) {
       result.decision = "HOLD_FOR_FLUENCY_BASELINE";
       result.halted_at = "fluency_baseline";
       return result;
     }
+    if (!coversWorkflowFamily) {
+      result.decision = "HOLD_FOR_FLUENCY_BASELINE_TRACEABILITY";
+      result.halted_at = "fluency_baseline";
+      return result;
+    }
+    if (typeof input.fluencyBaseline?.baseline_id === "string") {
+      evidenceRefs = {
+        ...(evidenceRefs ?? {}),
+        fluency_baseline_id: input.fluencyBaseline.baseline_id
+      };
+      packetContextRefs.fluency_baseline_id = input.fluencyBaseline.baseline_id;
+    }
   }
 
   // Stage 0c: customer outcome evidence (optional; only ACCEPTED attaches).
   let sourceCoverageOverrides: Record<string, string> | undefined;
-  let evidenceRefs: Record<string, string> | undefined;
-  const packetContextRefs: Record<string, string> = {};
-  if (result.engagement.status === "VALID" && typeof input.engagement?.engagement_id === "string") {
-    packetContextRefs.engagement_id = input.engagement.engagement_id;
-  }
-  if (
-    result.fluency_baseline.status === "VALID" &&
-    typeof input.fluencyBaseline?.baseline_id === "string"
-  ) {
-    packetContextRefs.fluency_baseline_id = input.fluencyBaseline.baseline_id;
-  }
   if (input.outcomeEvidenceExport !== undefined) {
     const validation = validateOutcomeEvidenceExport(input.outcomeEvidenceExport, {
       metricsLibrary: input.metricsLibrary,
@@ -148,7 +171,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     result.outcome_evidence = {
       status: validation.valid ? (attached ? "VALID" : "HELD") : "INVALID",
       validation,
-      object: input.outcomeEvidenceExport,
+      object: validation.valid ? input.outcomeEvidenceExport : null,
       generated: false,
       hold_reason: attached
         ? null
@@ -176,6 +199,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
     if (attached) {
       sourceCoverageOverrides = { outcome: "PRESENT" };
       evidenceRefs = {
+        ...(evidenceRefs ?? {}),
         outcome_evidence_export_id: String(input.outcomeEvidenceExport.export_id)
       };
     }

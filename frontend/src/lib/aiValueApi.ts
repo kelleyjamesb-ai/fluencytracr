@@ -81,6 +81,53 @@ export interface RealEvidenceMaterializerResult {
   };
 }
 
+export interface CustomerDataModelProjection {
+  value_driver: string;
+  metric: {
+    label: string;
+    unit: string;
+    direction: string;
+    owner_review_state: string;
+  };
+  workflow_context: {
+    function_area: string;
+    workflow_label: string;
+  };
+  milestone: {
+    day: number;
+    baseline_window: {
+      start: string;
+      end: string;
+    };
+    comparison_window: {
+      start: string;
+      end: string;
+    };
+  };
+  evidence_status: {
+    aggregate_review_state: string;
+    validation_state: string;
+  };
+  caveats: string[];
+  allowed_output: string;
+  blocked_outputs: string[];
+  next_action: string;
+}
+
+export interface CustomerDataModelProjectionResponse {
+  schema_version: string;
+  projection_state:
+    | "SOURCE_BOUND_CUSTOMER_EVIDENCE_STATUS_READY"
+    | "HOLD_FOR_CUSTOMER_DATA_MODEL_SNAPSHOTS";
+  display_mode: "customer_evidence_status";
+  source_bound: boolean;
+  filter_applied: "measurement_plan" | "latest_org_scoped";
+  live_connector_execution: false;
+  allowed_customer_outputs: string[];
+  blocked_customer_outputs: string[];
+  projections: CustomerDataModelProjection[];
+}
+
 const requestJson = async <T>(
   role: string,
   path: string,
@@ -248,3 +295,16 @@ export const materializeRealEvidence = (
       })
     }
   );
+
+export const fetchCustomerDataModelProjections = (
+  role: string,
+  measurementPlanId?: string | null
+) => {
+  const query = measurementPlanId
+    ? `?measurement_plan_id=${encodeURIComponent(measurementPlanId)}`
+    : "";
+  return requestJson<CustomerDataModelProjectionResponse>(
+    role,
+    `/api/v1/ai-value/customer-data-model/projections${query}`
+  );
+};

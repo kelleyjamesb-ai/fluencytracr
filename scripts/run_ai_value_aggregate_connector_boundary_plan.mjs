@@ -383,11 +383,19 @@ function safeWindow(window) {
   if (!isPlainObject(window)) return false;
   const start = window.window_start;
   const end = window.window_end;
-  return typeof start === "string" &&
-    typeof end === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(start) &&
-    /^\d{4}-\d{2}-\d{2}$/.test(end) &&
+  return isValidIsoDate(start) &&
+    isValidIsoDate(end) &&
     start <= end;
+}
+
+function isValidIsoDate(value) {
+  const dateString = String(value ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
 }
 
 function safePolicyPath(path) {
@@ -552,7 +560,13 @@ function aggregateOutputRef(sourceSystem, adapter, metricId) {
   ].map(safeIdPart).join("_");
 }
 
-function blockedPlan({ sourceSystem, adapter, adapterValidation, generatedAt }) {
+function blockedPlan({
+  sourceSystem,
+  adapter,
+  adapterValidation,
+  generatedAt,
+  validationGaps
+}) {
   const plan = {
     schema_version: AGGREGATE_CONNECTOR_BOUNDARY_PLAN_SCHEMA_VERSION,
     boundary_plan_state: "BLOCKED",
@@ -571,7 +585,7 @@ function blockedPlan({ sourceSystem, adapter, adapterValidation, generatedAt }) 
     aggregate_grain: null,
     source_alignment: null,
     source_quality_posture: null,
-    connector_adapter_ref: compactConnectorAdapterRef(adapter),
+    connector_adapter_ref: null,
     allowed_uses: [],
     blocked_uses: [...REQUIRED_BLOCKED_USES],
     feeds: packageFeeds(false),
@@ -582,7 +596,11 @@ function blockedPlan({ sourceSystem, adapter, adapterValidation, generatedAt }) 
       valid: false,
       connector_adapter_valid: adapterValidation?.valid === true,
       boundary_plan_valid: false,
-      gaps: sanitizeGaps(adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
+      gaps: sanitizeGaps(
+        validationGaps ??
+        adapterValidation?.gaps ??
+        ["connector adapter validation did not pass"]
+      )
     },
     generated_at: generatedAt ?? new Date(0).toISOString()
   };
@@ -597,10 +615,14 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
   const sourceSystem = options.sourceSystem ?? "bigquery_export";
   const adapter = options.adapter ?? runControlledAggregateConnectorAdapterFromObject(
     fixture,
-    { sourceSystem }
+    {
+      sourceSystem,
+      measurementPlanOverride: options.measurementPlanOverride
+    }
   );
   const adapterValidation = validateControlledAggregateConnectorAdapter(adapter, {
-    sourceFixture: fixture
+    sourceFixture: fixture,
+    measurementPlanOverride: options.measurementPlanOverride
   });
   if (
     adapterValidation.valid !== true ||
@@ -678,6 +700,24 @@ export function buildAggregateConnectorBoundaryPlanFromObject(
   const validation = validateAggregateConnectorBoundaryPlanShape(merged, {
     adapterValidation
   });
+  if (!validation.valid) {
+    return blockedPlan({
+      sourceSystem,
+      adapter,
+      adapterValidation,
+      generatedAt: adapter.generated_at,
+      validationGaps: validation.gaps
+    });
+  }
+  if (sha256Json(stripValidation(merged)) !== sha256Json(stripValidation(plan))) {
+    return blockedPlan({
+      sourceSystem: adapter.source_system,
+      adapter,
+      adapterValidation,
+      generatedAt: adapter.generated_at,
+      validationGaps: ["boundary plan must match recomputed saved-fixture boundary plan"]
+    });
+  }
   merged.boundary_plan_state = validation.valid
     ? "PASSED_AGGREGATE_CONNECTOR_BOUNDARY_PLAN_REVIEW"
     : "BLOCKED";
@@ -913,7 +953,10 @@ export function validateAggregateConnectorBoundaryPlan(plan, options = {}) {
   if (hasSourceFixture && expectedValid) {
     const expected = buildAggregateConnectorBoundaryPlanFromObject(
       options.sourceFixture,
-      { sourceSystem: plan?.source_system }
+      {
+        sourceSystem: plan?.source_system,
+        measurementPlanOverride: options.measurementPlanOverride
+      }
     );
     if (JSON.stringify(stripValidation(plan)) !== JSON.stringify(stripValidation(expected))) {
       gaps.push("boundary plan must match recomputed saved-fixture boundary plan");

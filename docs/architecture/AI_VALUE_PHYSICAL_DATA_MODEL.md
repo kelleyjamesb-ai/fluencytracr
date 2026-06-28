@@ -1,19 +1,22 @@
 # AI Value Physical Data Model Readiness Review
 
-Status: docs-only physical readiness review. This document does not authorize
-new Prisma schema changes, migrations, repository methods, backend routes,
-frontend UI, live Glean or BigQuery execution, persistence writes, confidence
-math, ROI, causality, productivity, probability, or customer-facing financial
-output.
+Status: physical readiness review and promotion ledger. This document records
+the compact backend-internal physical projections that have been separately
+promoted and implemented. It does not authorize additional Prisma schema
+changes, migrations, repository methods, backend routes, frontend UI, live
+Glean or BigQuery execution, persistence writes, confidence math, ROI,
+causality, productivity, probability, or customer-facing financial output
+without a separate promotion decision.
 
 Phase: `phase-ai-value-physical-data-model`
 
 ## 1. Purpose
 
 This document maps the approved logical AI Value spine to the current
-Prisma/Postgres persistence spine and identifies the smallest future physical
-objects that may be promoted later. It is a readiness and projection review,
-not an implementation plan for new tables.
+Prisma/Postgres persistence spine, records the compact physical projections
+that have already been promoted, and identifies the smallest future physical
+objects that may be promoted later. It is a promotion ledger and readiness
+review, not an open-ended implementation plan for new tables.
 
 It answers:
 
@@ -41,6 +44,8 @@ Implemented relevant tables:
 | `claim_readiness_snapshots` | Backend-only internal claim posture | Implemented, not customer-facing financial output |
 | `executive_readout_snapshots` | Backend-only internal readout posture | Implemented, not rendered or customer-facing output |
 | `ai_value_pilot_runs` | Snapshot-aware pilot lineage ledger | Implemented metadata lineage |
+| `measurement_cell_snapshots` | Compact backend-internal Measurement Cell snapshot | Implemented append-only internal product-data spine |
+| `ai_value_customer_data_model_snapshots` | Compact customer data model snapshot over a validated Measurement Cell snapshot projection | Implemented append-only internal product-data spine; only the separately contracted customer evidence status projection may read from it |
 
 All future tables must preserve the current public-table posture:
 
@@ -61,14 +66,61 @@ validated contract output until a table is promoted.
 
 ## 3. Design Decision
 
-Do not add physical tables in this pass.
+Do not add additional physical tables in this pass.
 
 The current spine can carry the next pilot/readiness state through existing
 append-only tables plus the separately promoted backend-internal
-`measurement_cell_snapshots` table. Measurement Cell Series and Evidence
-Continuity persistence remain unpromoted. The hardened selected-path lineage
-is a contract prerequisite, not automatic authorization for any additional
-database objects.
+`measurement_cell_snapshots` and `ai_value_customer_data_model_snapshots`
+tables. Measurement Cell Series, Evidence Continuity, rendered customer
+readouts, exports, research-model inputs, and live connector persistence remain
+unpromoted. The hardened selected-path lineage is a contract prerequisite, not
+automatic authorization for any additional database objects.
+
+The executable
+[AI Value Data Model Spine Readiness Lock](../contracts/ai-value-data-model-spine-readiness-lock/README.md)
+records the current hard boundary as a Boolean readiness contract only:
+
+```text
+measurement_cell_snapshots_promoted
+AND ai_value_customer_data_model_snapshots_promoted
+AND customer_data_model_route_projection_ready
+AND customer_evidence_history_read_path_proven
+AND durable_series_read_path_holds_series_persistence
+AND all_blocked_outputs_false
+```
+
+That lock means the compact customer data model spine is ready for hardening
+toward real source wiring. It does not implement or authorize a statistical
+model equation, confidence math, numeric weights, model output, finance output,
+customer-facing economic output, live BigQuery/Sigma/Glean execution, or
+`measurement_cell_series_snapshots`.
+
+The executable
+[AI Value Compact Source Wiring Hardening](../contracts/ai-value-compact-source-wiring-hardening/README.md)
+is the current hardening step after the lock. It prepares only non-live compact
+source descriptors for `bigquery_export` and `sigma_export`; `glean_query`
+remains held. This descriptor posture does not authorize live connector
+execution, credentials, SQL/query storage, warehouse/project/dataset/table/job/
+dashboard handles, raw rows, routes, UI, exports, rendered readouts,
+research-model feeds, model output, confidence/probability/score output,
+finance output, ROI, causality, productivity, customer-facing output, or
+additional physical tables.
+
+The executable
+[AI Value Connector Promotion Readiness Sequence](../contracts/ai-value-connector-promotion-readiness-sequence/README.md)
+is the current requirements path after compact source wiring hardening. It
+records non-live connector promotion requirements, holds Glean for a future
+source adapter boundary, creates the source-descriptor human checklist posture,
+and designs only the exact-scope BigQuery/Sigma live connector gate. It names
+the future target of a full data model with weights and Bayesian readiness, but
+does not authorize numeric weights, Bayesian model execution, model output,
+confidence/probability/score output, live connectors, finance output,
+customer-facing output, or additional physical tables.
+
+Historical planning documents, including `AI_VALUE_DATA_MODEL_AUDIT.md`, are
+planning context only. Current implementation authority remains the active
+persistence/design contracts and exact-scope promotion decisions recorded in
+this ledger.
 
 Recommended current projection:
 
@@ -76,10 +128,12 @@ Recommended current projection:
 | --- | --- | --- |
 | Approved Blueprint Hypothesis | `value_hypotheses.payload_json` plus `source_refs_json` | Use existing authority first; do not create `blueprint_hypotheses` yet |
 | Blueprint Expectation Path Registry | Embedded inside approved Blueprint/Hypothesis payload only | Do not normalize full registry into rows |
-| Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
+| Selected Blueprint Expectation Binding | Compact lineage inside `measurement_cell_snapshots` and `ai_value_customer_data_model_snapshots` after recomputed validation | Full registry still stays out of downstream rows |
 | AI Fluency Psychological Adoption Context | Existing aggregate AI Fluency import / source-handoff payloads; future compact projection only if promoted | Leading-indicator context only; no value proof, model score, or standalone table |
 | Operator Source Bundle Lineage | Not durable proof | Persist only reviewed source refs already represented by `source_package_refs` |
+| Upstream Aggregate Handoff Acceptance Package | Executable validation output only | Do not persist upstream handoffs, acceptance packages, manifest packages, pipeline runs, connector runs, or full package JSON |
 | Measurement Cell Binding | Compact backend-internal `measurement_cell_snapshots` projection | Full Measurement Cell object is not persisted |
+| Customer Data Model Snapshot | Compact backend-internal `ai_value_customer_data_model_snapshots` projection | Stable product-data grain for the separately contracted customer evidence status projection; no stored-row route/UI/export/customer-facing output |
 | Measurement Cell Series | Derived contract output | Candidate future projection sketch only after repeated-window contract use |
 | Evidence Continuity Snapshot | Derived from Measurement Cell Series | Future extension of evidence lineage only if promoted |
 | Review Posture Snapshot | `claim_readiness_snapshots` and `executive_readout_snapshots` | Existing backend-only authority |
@@ -96,7 +150,9 @@ Projection detail:
 | Claim Readiness Snapshot | `claim_readiness_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `handoff_id`, `measurement_plan_id`, `claim_readiness_state` | No customer-facing financial output; no positive contribution-model field |
 | Executive Readout Snapshot | `executive_readout_snapshots.payload_json`, `blocked_claims_json`, `blocked_uses_json` | `org_id`, `executive_readout_snapshot_id`, `claim_readiness_snapshot_id`, `evidence_snapshot_id`, `measurement_plan_id`, `readout_state` | No rendered readout route/UI/export from this pass |
 | Pilot Run Lineage | `ai_value_pilot_runs.*_id`, `source_package_ids_json`, validation/caveat fields | `org_id`, `pilot_run_id`, `measurement_plan_id`, `evidence_snapshot_id`, `claim_readiness_handoff_id`, snapshot ids | No confidence-model or finance feed |
-| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver` | No full Measurement Cell object, route, UI, export, or customer read path |
+| Upstream Aggregate Handoff Acceptance Package | Contract output from upstream aggregate handoff acceptance runner only | None | No upstream handoff table, acceptance package table, manifest package table, pipeline-run table, connector-run table, or persisted package JSON |
+| Measurement Cell Binding | `measurement_cell_snapshots.payload_json`, source/path/metric/window columns, compact aggregate-boundary proof | `org_id`, `measurement_cell_id`, `measurement_plan_id`, `metric_id`, `expectation_path_id`, `workflow_family`, `function_area`, window, `value_driver`, aggregate source/review/source-export refs | No full Measurement Cell object, frontend UI, export, rendered readout, live connector output, or customer-facing read path |
+| Customer Data Model Snapshot | `ai_value_customer_data_model_snapshots` compact columns plus compact source refs and aggregate-boundary refs | `org_id`, `customer_data_model_snapshot_id`, `measurement_plan_id`, `source_snapshot_id`, `source_projection_id`, `metric_id`, `expectation_path_id`, `value_driver`, `workflow_family`, `function_area`, `cohort_key`, milestone window, aggregate source/review state | No full projection payload, full Measurement Cell object, full source package, full registry, frontend UI, export, rendered readout, live connector output, model output, or customer-facing read path |
 | Measurement Cell Series | Contract output only | None | Candidate `measurement_cell_series_snapshots` projection sketch only after promotion |
 
 ## 4. Canonical Alignment Envelope
@@ -249,6 +305,14 @@ Implemented column requirements:
 | `measurement_cell_id` | text | required |
 | `measurement_cell_assembly_run_id` | text | required |
 | `measurement_plan_id` | text | required |
+| `aggregate_source_system` | text | required; constrained to `bigquery_export` or `sigma_export` |
+| `aggregate_export_review_ref` | text | required compact review id; not job metadata |
+| `aggregate_export_review_state` | text | required passed review state for the source system |
+| `aggregate_source_export_ref` | text | required compact source-export ref; no URL, query id, job id, table ref, or raw export handle |
+| `aggregate_export_review_hash` | text | required review hash |
+| `pipeline_dry_run_ref` | text | required compact pipeline dry-run id |
+| `pipeline_boundary_hash` | text | required compact pipeline-boundary hash recomputed from aggregate-boundary and snapshot binding |
+| `aggregate_boundary_ref_json` | jsonb | compact allowlisted aggregate-boundary proof only |
 | `value_hypothesis_id` | text | required when `expectation_path_id` is present unless `value_hypothesis_binding_state` is `inapplicable` |
 | `value_hypothesis_ref` | text | required when `value_hypothesis_id` is unavailable and `expectation_path_id` is present unless `value_hypothesis_binding_state` is `inapplicable` |
 | `value_hypothesis_binding_state` | text | required when `expectation_path_id` is present |
@@ -298,6 +362,15 @@ Implemented constraint requirements:
 
 - unique `(org_id, measurement_cell_id, version)`;
 - `version >= 1`;
+- `aggregate_source_system` must be `bigquery_export` or `sigma_export`;
+- `aggregate_export_review_state` must be the passed review state for that
+  source system;
+- `aggregate_export_review_hash` and `pipeline_boundary_hash` must be sha256
+  hashes, with `pipeline_boundary_hash` recomputed from compact boundary,
+  selected path, metric, window, and source-ref binding rather than accepted as
+  an external live-run proof;
+- `aggregate_boundary_ref_json` must be an object and must remain compact
+  allowlisted proof, not a live connector handle or reviewed export payload;
 - `comparison_window_end > comparison_window_start`;
 - `baseline_window_end > baseline_window_start`;
 - `expectation_path_id` must be non-empty;
@@ -327,6 +400,11 @@ Implemented constraint requirements:
 - source package review state and source owner-role posture must be validated
   without storing named approvers, emails, user IDs, row IDs, span IDs, or
   joinable person identifiers;
+- aggregate-boundary proof must be validated from the Measurement Cell
+  preflight snapshot-candidate ref and must fail closed when source system,
+  review state, source-export ref, review hash, pipeline dry-run ref, pipeline
+  source-export ref, compact pipeline-boundary hash, or VBD/token lane binding
+  drifts;
 - `jsonb_typeof(required_caveats_json) = 'array'`;
 - `jsonb_typeof(blocked_uses_json) = 'array'`;
 - `blocked_uses_json` must preserve blocked ROI, causality, productivity,
@@ -369,6 +447,101 @@ Blocked design:
 - no generic `confidence`, `probability`, `roi`, `impact`, or productivity
   columns.
 
+## 7.1 Promoted Projection: `ai_value_customer_data_model_snapshots`
+
+Status: promoted for backend-internal compact product-data persistence by the
+Customer Data Model Persistence Promotion Decision and Customer Data Model
+Persistence Implementation Decision contracts.
+
+Purpose: append-only durable product-data snapshot derived from one valid
+Measurement Cell Snapshot Projection. The stored row is the stable customer data
+model grain that the separate Customer Data Model Route Projection contract can
+map into status-only labels. Customer-visible route strings must come from exact
+enum mappings, approved business-context fields, or fixed status mappings, never
+by prettifying compact IDs such as `metric_id`, `workflow_family`, source refs,
+source-export refs, pipeline refs, connector handles, warehouse handles, hashes,
+org IDs, client IDs, or Measurement Cell IDs. The route must project only rows
+whose validation posture is clear. The stored row itself is not a
+customer-facing read path, rendered readout, export payload, model result,
+finance output, connector run, source package, full Measurement Cell, or full
+projection payload.
+
+Implemented table grain:
+
+```text
+org + measurement_plan + measurement_cell + metric + expectation_path +
+milestone + version
+```
+
+Implemented column requirements:
+
+| Column group | Requirement |
+| --- | --- |
+| Snapshot identity | `customer_data_model_snapshot_id`, `source_snapshot_id`, `source_projection_id`, `source_projection_hash`, `source_gate_id`, `source_gate_hash`, `source_promotion_decision_id`, `source_promotion_decision_hash`, `implementation_decision_id`, `implementation_decision_hash` |
+| Measurement binding | `measurement_cell_id`, `measurement_cell_assembly_run_id`, `measurement_plan_id` |
+| Approved path binding | `value_hypothesis_id` or `value_hypothesis_ref`, `value_hypothesis_binding_state`, `approved_blueprint_ref`, `approved_blueprint_payload_hash`, `blueprint_expectation_ref`, `expectation_path_id`, `expectation_path_version`, `expectation_path_hash`, `approval_state`, `approved_at`, `approved_by_role` |
+| Governed pathway metadata | `value_driver` constrained to `Revenue`, `Cost`, `Capacity`, `Quality`, or `Risk` |
+| Metric context | `metric_id`, `metric_definition_ref`, `metric_definition_hash`, `metric_owner_approval_state`, `metric_direction`, `metric_unit`, `expected_metric_lag_days` |
+| Workflow and cohort context | `workflow_family`, optional `workflow_id`, `function_area`, `cohort_key` |
+| Window context | `window_mode = milestone`, `milestone_day` constrained to Day 0 / 30 / 60 / 90 / 180 / 365, baseline and comparison window bounds |
+| Aggregate boundary | `aggregate_source_system`, `aggregate_export_review_ref`, `aggregate_export_review_state`, `aggregate_source_export_ref`, `aggregate_export_review_hash`, `pipeline_dry_run_ref`, `pipeline_boundary_hash`, `aggregate_boundary_ref_json` |
+| Compact refs and posture | `source_refs_json`, `assembly_decision`, validation booleans, validation gap counts, `required_caveats_json`, `blocked_uses_json` |
+| Version and audit | append-only `version`, optional `supersedes_id`, `generated_at`, `created_at`, `created_by_role` |
+
+Implemented constraints and checks:
+
+- unique `(org_id, customer_data_model_snapshot_id, version)`;
+- `version >= 1`, with corrections requiring `supersedes_id`;
+- `value_driver` is restricted to `Revenue`, `Cost`, `Capacity`, `Quality`, or
+  `Risk`;
+- `window_mode` is `milestone` only and `milestone_day` is restricted to Day 0
+  / 30 / 60 / 90 / 180 / 365;
+- `aggregate_source_system` is restricted to `bigquery_export` or
+  `sigma_export`;
+- `aggregate_export_review_state` must match the governed passed state for the
+  selected source system;
+- baseline and comparison window end dates must be after their corresponding
+  start dates;
+- persisted projection and assembly validation booleans must be true, with
+  zero validation gaps;
+- source projection, gate, promotion decision, implementation decision,
+  approved Blueprint payload, expectation path, metric definition, aggregate
+  export review, and pipeline-boundary hashes must be sha256 hashes;
+- JSON fields are shape-checked by the migration as compact objects or arrays;
+  compact key/value semantics are enforced by the backend repository before
+  writes, with direct table access blocked by RLS and role revocation;
+- the repository recomputes source projection, customer data model gate,
+  persistence promotion decision, and implementation decision validation before
+  writing;
+- the repository loads the referenced `measurement_cell_snapshots` row before
+  writing and rejects orphaned, stale, or drifted source authority;
+- the repository rejects source snapshot, projection, gate, promotion decision,
+  implementation decision, path, approval, metric, lag, cohort, window,
+  source-system, aggregate-boundary, caveat, and blocked-use drift;
+- DB readiness checks include the new table and critical columns so a skipped
+  migration does not report healthy.
+
+Blocked design:
+
+- no `payload_json`, `validation_json`, `blueprint_path_binding_json`, full
+  projection payload, or full registry column;
+- no full Measurement Cell object, source package payload, operator bundle,
+  manifest package, pipeline run, connector run, raw rows, dashboard rows,
+  query text, SQL text, prompts, responses, transcripts, file contents,
+  identifiers, row IDs, span IDs, hashed identifiers, or joinable person
+  identifiers;
+- no unrestricted stored-row route, frontend UI, export, rendered readout, live
+  BigQuery/Sigma/Glean execution, customer connector execution, unrestricted
+  read surface, research-model feed, model output, numeric weights,
+  probability output, score-like output, finance output, ROI, EBITDA,
+  causality, productivity, customer-facing output, or customer-facing financial
+  output. The only allowed read projection is the separately contracted
+  source-bound customer evidence status route, which must not expose stored row
+  IDs, source refs, hashes, raw data, exports, readouts, live connectors, model
+  output, or economic claims;
+- no rolling 30-day continuity evidence. Rolling windows remain operating
+  context only and must fail closed before this persistence path.
+
 ## 8. Future Projection Sketch: `measurement_cell_series_snapshots`
 
 Status: candidate future projection sketch only. This section is
@@ -380,7 +553,15 @@ Purpose: append-only durable continuity snapshot across repeated Measurement
 Cells at governed milestones.
 
 Do not implement until a later promotion explicitly authorizes durable
-Measurement Cell Series state.
+Measurement Cell Series state. Repeated Day 0 / 30 / 60 / 90 / 180 / 365
+validation has passed through the contract-only Series layer; persistence still
+remains held because no durable Series read-path need has been proven. The
+executable Series persistence promotion gate can only promote a later
+exact-scope implementation decision after a separate durable read-path decision
+exists; caller-supplied proof strings alone still hold. The gate does not
+create this table, extend `evidence_snapshots`, or authorize routes, UI,
+exports, rendered readouts, live connectors, model output, finance output, or
+customer-facing output.
 
 Non-authorizing column requirements if separately promoted:
 
@@ -512,6 +693,38 @@ context with observed AI-enabled work-pattern refs, but it cannot imply
 directional dependency, conversion, value proof, causality, productivity, ROI,
 EBITDA, or financial output.
 
+The physical model must preserve three separate layers:
+
+```text
+AI Fluency Construct Context
+  - confidence
+  - usage_quality / ease of use display label
+  - behavior_change / stated AI behavior display label
+  - leadership_reinforcement / leadership support display label
+  - capability_growth / competency
+
+AI Fluency Psychological Context
+  - ai_attitude
+  - behavioral_intent / AI intent display label
+
+Observed Behavior / VBD Context
+  - velocity
+  - breadth
+  - depth
+```
+
+`behavior_change` is the governed construct key for instrument-derived behavior.
+"Stated AI behavior" is display or review language over that same instrument
+evidence, not a second independent field. Psychological context may reference
+that instrument behavior view only through `construct_summary_json.behavior_change`.
+`usage_quality` and `behavioral_intent` remain the governed construct keys;
+ease-of-use and AI intent are display language only.
+Observed behavior / VBD is telemetry-derived aggregate work-pattern evidence.
+Future persistence must not collapse these into one generic behavior field.
+The difference between stated behavior and observed behavior may support
+internal diagnostic review, but it is not value proof, causality, productivity,
+ROI, EBITDA, probability, model score, or customer-facing output.
+
 Recommended physical posture:
 
 - Prefer existing aggregate AI Fluency import and source-handoff payloads until
@@ -543,8 +756,10 @@ Allowed compact fields if separately promoted:
 | `k_min_posture` | required |
 | `suppression_posture` | required |
 | `construct_summary_json` | aggregate five-dimension AI Fluency construct means or bands only |
+| `psychological_context_json` | optional standalone aggregate attitude and behavioral-intent posture only; never standalone evidence |
 | `readiness_context_json` | optional compact posture labels only |
-| `observed_behavior_ref` | optional compact VBD / Measurement Cell ref only |
+| `observed_behavior_ref` | optional for standalone context; required compact VBD / Measurement Cell ref when tied to Measurement Cell evidence or alignment framing |
+| `selected_metric_movement_ref` | required compact customer metric movement ref when tied to Measurement Cell evidence or alignment framing |
 | `required_caveats_json` | required array |
 | `blocked_uses_json` | required array |
 
@@ -556,6 +771,238 @@ remain a compact VBD / Measurement Cell ref. If a legacy instrument construct
 is literally named `confidence`, it must remain nested inside the aggregate
 instrument construct map and must not become a top-level physical column, model
 score, probability, or customer-facing claim.
+
+`psychological_context_json`, if separately promoted, may carry only aggregate
+AI attitude and AI intent / behavioral-intent posture as standalone contextual
+posture, never standalone evidence. Instrument-reported behavior must remain
+in the governed `behavior_change` construct summary, even when product
+language calls it "stated AI behavior." Standalone psychological context
+cannot create readiness, evidence, Measurement Cell, or alignment state. If
+this context is tied to Measurement Cell evidence or alignment framing,
+`observed_behavior_ref` and `selected_metric_movement_ref` are required and
+must be source-bound, unsuppressed, non-held, and aligned to the approved
+expectation path. Psychological context must not carry raw survey answers,
+item-level responses, free-text answers, respondent identifiers,
+adoption-conversion scores, model scores, probability, finance, causality,
+productivity, ROI, EBITDA, or customer-facing output.
+
+The internal Value Evidence Alignment frame is non-persistent framing only:
+
+```text
+Value_Evidence_Alignment is reviewable only when all of the following are present:
+  Gate_Clear
+  Source_Bound
+  AI_Fluency_Construct_Context
+  AI_Fluency_Psychological_Context_Availability
+  Observed_Behavior_VBD_Context
+  Selected_Metric_Movement
+  Blueprint_Expectation_Path_Alignment
+  Assumption_Governance_Context
+```
+
+Future persistence must store only the governed ingredients and lineage needed
+to review that alignment. The non-computational alignment frame is undefined
+and must remain held unless observed VBD context and selected customer metric
+movement are both present, source-bound, unsuppressed, non-held, and aligned to
+the approved expectation path. Psychological context availability may add
+caveats or hold the frame when unsafe or incomplete, but it cannot strengthen,
+clear, upgrade, or rescue readiness. Instrument context alone must not produce
+an alignment state. Future persistence must not store
+`value_evidence_alignment`, alignment scores, numeric weights, contribution
+confidence, probability, finance output, ROI, causality, productivity,
+customer-facing output, or any frame result. It is not executable pseudocode
+and produces no boolean, numeric, score, or stored result. Any future numeric
+weights or model outputs require a separate exact-scope research and promotion
+decision, repeated aligned evidence, and red/green implementation and
+governance tests that explicitly authorize that scope.
+
+The executable
+[AI Value Contribution Alignment Feature Stability Review](../contracts/ai-value-contribution-alignment-feature-stability-review/README.md)
+is the current pre-weight reviewer gate. It consumes the compact internal
+research math data model and verifies source-bound id/hash stability, stable
+component registry, distinct context partitions, repeated Day 0 / 30 / 60 / 90
+/ 180 / 365 milestone context, and false forbidden-output feeds. Passing this
+review authorizes only a separate internal numeric weight decision. It does not
+authorize numeric weights, weight values, weighted model output, confidence or
+probability output, Bayesian execution, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Internal Numeric Weight Decision](../contracts/ai-value-contribution-alignment-internal-numeric-weight-decision/README.md)
+is the next reviewer-approved gate after feature stability passes. It promotes
+only a later versioned internal weight object and contains no weight values
+itself. It must remain bound to the feature-stability review id/hash and keeps
+weighted model output, confidence output, probability output, Bayesian
+execution, finance output, ROI, causality, productivity, persistence, routes,
+UI, schemas, exports, live connectors, and customer-facing output blocked.
+
+The executable
+[AI Value Contribution Alignment Versioned Weight Object](../contracts/ai-value-contribution-alignment-versioned-weight-object/README.md)
+is the first internal-only numeric weight artifact after the Internal Numeric
+Weight Decision passes. It binds to the source weight-decision id/hash and
+Feature Stability Review id/hash, emits version
+`internal_structural_equal_weights_2026_06`, and assigns neutral equal
+structural weights to the ten governed feature inputs. Its calibration state is
+`initial_internal_structural_weights_not_empirical_confidence`, so it is not an
+empirical confidence model, posterior probability, score, ROI, or customer
+value claim. It may feed only a later weighted internal model frame and still
+keeps weighted model output, research model feed, confidence output,
+probability output, Bayesian execution, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, and
+customer-facing output blocked.
+
+The executable
+[AI Value Contribution Alignment Weighted Internal Model Frame](../contracts/ai-value-contribution-alignment-weighted-internal-model-frame/README.md)
+is the fourth-step internal weighted data model frame. It consumes the
+Versioned Weight Object and attaches those source-bound neutral weights to the
+ten governed feature inputs as internal weighted feature composition only. It
+is not a weighted model result, aggregate score, confidence output,
+probability output, Bayesian execution, finance output, ROI, causality,
+productivity, or customer-facing output. It may feed only a later
+`internal_bayesian_readiness_review_only` gate, and that next gate is not
+implemented by this frame.
+
+The executable
+[AI Value Contribution Alignment Internal Bayesian Readiness Review](../contracts/ai-value-contribution-alignment-internal-bayesian-readiness-review/README.md)
+is the reviewer gate after the Weighted Internal Model Frame. It binds to the
+frame id/hash and Versioned Weight Object ref, verifies weighted feature
+composition remains source-bound and non-output-bearing, and authorizes only a
+later `bayesian_model_specification_only` contract. It names
+`bayesian_hierarchical_difference_in_differences_candidate` as the candidate
+family, but it does not define priors, likelihood, estimands, posterior output,
+Bayesian execution, confidence output, probability output, finance output, ROI,
+causality, productivity, persistence, routes, UI, schemas, exports, live
+connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Bayesian Model Specification](../contracts/ai-value-contribution-alignment-bayesian-model-specification/README.md)
+is the internal-only model specification after Bayesian readiness review. It
+binds to the readiness review id/hash and weighted frame ref, records
+`bayesian_hierarchical_did_spec_2026_06`, and defines specification placeholders
+for aggregate Measurement Cell window unit of analysis, candidate
+difference-in-differences estimand, weakly regularizing prior posture, and
+aggregate-window likelihood posture. It may feed only a later
+`internal_bayesian_execution_gate_only` contract. It does not run Bayesian
+execution, emit posterior output, confidence output, probability output,
+score-like output, finance output, ROI, causality, productivity, persistence,
+routes, UI, schemas, exports, live connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Internal Bayesian Execution Gate](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-gate/README.md)
+is the internal-only gate after Bayesian Model Specification. It binds to the
+specification id/hash, readiness-review ref, weighted-frame ref, and governed
+feature weights, then records aggregate-only runtime prerequisites for a later
+internal deterministic runtime implementation. It may feed only a later
+`internal_bayesian_execution_runtime_only` contract and requires a later
+posterior/output review gate before any confidence or probability language. It
+does not run Bayesian execution, emit posterior output, confidence output,
+probability output, score-like output, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Internal Bayesian Execution Runtime](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/README.md)
+is the internal-only aggregate fixture/prototype after Internal Bayesian
+Execution Gate. It consumes aggregate Measurement Cell windows, keeps the
+closed-form normal-normal update for the Bayesian difference-in-differences
+candidate inside a contained fixture artifact, and records missing diagnostics.
+It may feed only `internal_diagnostics_and_model_adequacy_review_only`. It does
+not emit posterior output, confidence output, probability output, score-like
+output, finance output, ROI, causality, productivity, persistence, routes, UI,
+schemas, exports, live connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Posterior Output Review Gate](../contracts/ai-value-contribution-alignment-posterior-output-review-gate/README.md)
+is the internal-only artifact-containment review gate after Internal Bayesian
+Execution Runtime. It reviews the internal fixture artifact by source runtime
+ref and artifact hash, withholds posterior numeric values, blocks internal
+posterior interpretation specification, and may feed only
+`internal_diagnostics_and_model_adequacy_review_only`. It does not emit
+posterior output, confidence output, probability output, score-like output,
+finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
+exports, live connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Diagnostics Evidence Packet](../contracts/ai-value-contribution-alignment-diagnostics-evidence-packet/README.md)
+is the internal-only aggregate evidence packet for diagnostics and
+comparison-design evidence. It represents data adequacy, suppressed/missing/held
+window review, comparison-design adequacy, convergence diagnostics, posterior
+predictive checks, prior sensitivity, residual/fit checks, calibration/backtest
+evidence, and feature-weight provenance. It may feed promotion-decision review,
+but it cannot authorize promotion, create an execution artifact, interpret
+posterior values, emit confidence/probability/customer/economic output, or add
+routes, UI, schemas, persistence, exports, or live connectors.
+
+The executable
+[AI Value Contribution Alignment Internal Diagnostics and Model Adequacy Review](../contracts/ai-value-contribution-alignment-internal-diagnostics-model-adequacy-review/README.md)
+is the internal-only aggregate review after the contained Bayesian fixture
+runtime. It records data adequacy, comparison-design adequacy, and diagnostic
+placeholder status, withholds posterior numeric values, completes only as
+promotion-blocked, and may feed only
+`bayesian_promotion_decision_gate_only`. Feature weights remain
+structural/internal and not confidence scores. This slice does not implement the
+Bayesian Promotion Decision Gate and does not authorize Bayesian interpretation,
+posterior output, confidence output, probability output, score-like output,
+finance output, ROI, causality, productivity, persistence, routes, UI, schemas,
+exports, live connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Bayesian Promotion Decision Gate](../contracts/ai-value-contribution-alignment-bayesian-promotion-decision-gate/README.md)
+is the internal-only aggregate promotion gate after Diagnostics and Model
+Adequacy Review. It now consumes both the Diagnostics and Model Adequacy Review
+and the Diagnostics Evidence Packet as hash-bound sources. It may authorize only
+a later `internal_bayesian_execution_artifact_v1_only` slice when diagnostics,
+comparison design, evidence-packet sufficiency, source binding, governance
+containment, and structural feature-weight policy are all satisfied. The review
+and packet must bind the same governed diagnostics sufficiency evidence source.
+The current default executable evidence remains unsatisfied for
+comparison-design adequacy and model diagnostics, so the executable gate
+continues to hold. It does not create the execution artifact and does not
+authorize Bayesian interpretation, posterior output, confidence output,
+probability output, score-like output, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Promotion Gate Passed Artifact Handoff](../contracts/ai-value-contribution-alignment-promotion-gate-passed-artifact-handoff/README.md)
+is a passive hash-bound handoff for a Promotion Decision Gate that has already
+passed through the explicit governed-evidence path. It records the runtime,
+diagnostics/model adequacy review, Diagnostics Evidence Packet, Governed
+Diagnostics Sufficiency Evidence Source, and Promotion Gate hashes. It does not
+create Internal Bayesian Execution Artifact v1, does not authorize promotion by
+itself, and does not authorize Bayesian interpretation, posterior output,
+confidence output, probability output, score-like output, finance output, ROI,
+causality, productivity, persistence, routes, UI, schemas, exports, live
+connectors, or customer-facing output.
+
+The executable
+[AI Value Contribution Alignment Internal Bayesian Execution Artifact v1](../contracts/ai-value-contribution-alignment-internal-bayesian-execution-artifact-v1/README.md)
+is an internal-only aggregate execution artifact record created only from a
+passed Promotion Gate Passed Artifact Handoff and passed Bayesian Promotion
+Decision Gate. It is hash-bound to the promotion handoff, promotion gate,
+runtime, diagnostics/model adequacy review, Diagnostics Evidence Packet, and
+Governed Diagnostics Sufficiency Evidence Source. It does not rerun Bayesian
+execution, reinterpret posterior-like prototype values, create promotion
+authority, or authorize Bayesian interpretation, posterior output, confidence
+output, probability output, score-like output, finance output, ROI, causality,
+productivity, persistence, routes, UI, schemas, exports, live connectors, or
+customer-facing output. Its only allowed next step is
+`posterior_interpretation_specification_gate_only`.
+
+The executable
+[AI Value Contribution Alignment Bayesian Hardening Orchestrator](../contracts/ai-value-contribution-alignment-bayesian-hardening-orchestrator/README.md)
+is a read-only internal report runner over the existing Bayesian hardening
+chain. Default execution stops at the first held governed diagnostics evidence
+gate and reports downstream gates as not evaluated. An explicit governed-evidence
+path may be reported only through source/hash-bound existing artifacts. The
+orchestrator never creates model artifacts and never creates governed diagnostics
+evidence. Orchestrator promotion authority remains false; existing Bayesian
+Promotion Decision Gate authority may be reported only as source evidence. It
+does not authorize Bayesian interpretation, posterior output, confidence output, probability
+output, score-like output, finance output, ROI, causality, productivity,
+persistence, routes, UI, schemas, exports, live connectors, or customer-facing
+output.
 
 Blocked design:
 
@@ -576,18 +1023,20 @@ Blocked design:
 
 Status: candidate projection only; no table yet.
 
-Recommended physical posture:
+Current placement decision:
 
-- Keep continuity inside `measurement_cell_series_snapshots` until repeated
-  pilots prove a separate evidence-continuity table is necessary.
-- If later promoted, extend the existing `evidence_snapshots` lineage rather
-  than create a second evidence system.
+- Keep continuity inside the Measurement Cell Series contract output for now.
+- If Series persistence is later promoted, keep continuity inside the compact
+  Series row first.
+- If later product paths prove continuity must be consumed outside Series,
+  extend the existing `evidence_snapshots` lineage rather than create a second
+  evidence system.
 - Do not add new `evidence_snapshots.snapshot_type` values until a migration
   is explicitly authorized.
 
 ## 11. Tables Not To Add
 
-Do not add these tables in the next implementation slice:
+Do not add these tables without a later exact-scope promotion decision:
 
 | Table | Reason |
 | --- | --- |
@@ -595,9 +1044,18 @@ Do not add these tables in the next implementation slice:
 | `blueprint_expectation_bindings` | Selected binding should stay compact lineage inside a promoted Measurement Cell, not a standalone source of authority |
 | `operator_source_handoff_bundles` | Bundles are preparation manifests, not durable proof |
 | `source_packages` | `source_package_refs` remains the safer metadata-only spine unless refs prove insufficient |
+| `upstream_aggregate_pipeline_handoffs` | Pipeline handoffs are executable validation output, not durable pipeline state |
+| `upstream_aggregate_handoff_acceptance_packages` | Acceptance packages are transient validation output and would become manifest/run persistence if stored wholesale |
+| `upstream_aggregate_handoff_acceptance_snapshots` | Held by `AI_VALUE_UPSTREAM_AGGREGATE_ACCEPTANCE_PERSISTENCE_DECISION.md`; future promotion would require exact table scope and recomputation tests |
+| `controlled_aggregate_manifest_snapshots` | Manifest persistence remains held; compact manifest refs may flow only through validated downstream objects |
+| `pipeline_run_review_manifest_snapshots` | Would imply durable run-review state before manifest persistence is promoted |
+| `pipeline_runs` | Live or durable pipeline execution state is not authorized |
+| `connector_runs` | Connector execution state is not authorized |
 | `ai_fluency_psychological_scores` | Would turn leading-indicator context into an over-strong product object and create score semantics too early |
 | `adoption_conversion_scores` | Research-only concept; do not persist score-like conversion outputs before a separate research promotion |
 | `measurement_cells` | Use only the promoted compact `measurement_cell_snapshots` projection; do not create a full-object table |
+| `customer_data_models` | Use only the promoted compact `ai_value_customer_data_model_snapshots` projection; do not create a mutable full-object table |
+| `customer_data_model_payloads` | Would recreate full projection/readout payload storage and weaken the compact-ref boundary |
 | `measurement_cell_series` | Use only the candidate `measurement_cell_series_snapshots` design after explicit promotion; current contracts do not authorize persistence |
 | `evidence_continuity_manifests` | Continuity remains contract output; if promoted, extend evidence lineage deliberately |
 | `research_model_inputs` | Confidence-model research is not authorized yet |
@@ -607,16 +1065,18 @@ Do not add these tables in the next implementation slice:
 
 ## 12. Additional Promotion Gate
 
-Before any additional Measurement Cell or Series persistence beyond
-`measurement_cell_snapshots`, require:
+Before any additional Measurement Cell, Customer Data Model, or Series
+persistence beyond `measurement_cell_snapshots` and
+`ai_value_customer_data_model_snapshots`, require:
 
 1. A promoted contract decision that names the exact table scope.
 2. Red/green tests proving persistence rejects path drift, approval drift,
    lag drift, metric drift, unsafe source refs, raw rows, query text, prompts,
    transcripts, user identifiers, full expectation-path registries, ROI
    fields, EBITDA or finance-output fields, causality fields, productivity
-   fields, probability fields, confidence or score-like fields, UI, route,
-   schema, live execution, override, and threshold side doors.
+   fields, probability fields, confidence or score-like fields, frontend UI,
+   customer-facing route, schema, live execution, override, and threshold side
+   doors.
 3. Red/green tests proving JSONB-bearing fields cannot smuggle blocked content
    through `payload_json`, `validation_json`, `source_refs_json`, or
    `blueprint_path_binding_json`.
@@ -637,21 +1097,50 @@ Before any additional Measurement Cell or Series persistence beyond
 10. Operator Workflow and Value Hypothesis Readiness remain downstream review
    gates, not bypassed by persisted Measurement Cell / Series rows.
 
+Before any upstream aggregate handoff, acceptance package, manifest package,
+pipeline-run, or connector-run persistence, require the separate gate in
+`AI_VALUE_UPSTREAM_AGGREGATE_ACCEPTANCE_PERSISTENCE_DECISION.md`. In
+particular, pipeline-handoff-only persistence bypasses, stale validation
+summaries, accepted-ref drift after rehash, full package JSON, encoded payload
+keys, dashboard handles, table handles, workbook IDs, live execution aliases,
+and wrapper JSONB smuggling must fail red/green tests before any migration is
+allowed.
+
 This document alone cannot trigger additional migrations. A future
 implementation slice must cite a separate explicit promotion decision before
-adding any physical tables beyond `measurement_cell_snapshots`, Prisma models,
-migrations, repositories, schemas, routes, UI, persistence writes, live
+adding any physical tables beyond `measurement_cell_snapshots` and
+`ai_value_customer_data_model_snapshots`, Prisma models, migrations,
+repositories, schemas, unpromoted routes, UI, persistence writes, live
 execution, research-model inputs, or customer-facing output.
+
+The [AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md)
+is the required gate before any internal research design may begin. A passed
+packet does not authorize `research_model_inputs`, numeric weights, model
+outputs, routes, UI, persistence, exports, ROI, causality, productivity,
+probability, finance output, or customer-facing output.
 
 ## 13. Recommended Next Decision Slice
 
 Recommended next move:
 
-1. Verify the promoted `measurement_cell_snapshots` write path against the
-   controlled pilot package and governance checks.
-2. Defer `measurement_cell_series_snapshots` until at least one repeated
-   Measurement Cell workflow has been validated end to end across the required
-   milestone windows.
-3. Keep live BigQuery, Sigma, Glean connectors, customer-facing projections,
-   exports, confidence research inputs, and finance outputs behind separate
-   promotion decisions.
+1. Verify the promoted `ai_value_customer_data_model_snapshots` write/list path
+   against the controlled pilot package, implementation decision, DB readiness,
+   and governance checks.
+2. Keep the customer data model route/UI projection contract status-only and
+   source-bound: no raw refs, unrestricted exports, rendered financial output,
+   confidence/probability output, ROI, causality, productivity, or live
+   connector state.
+3. Keep upstream aggregate handoff and acceptance package outputs
+   non-persistent until a future exact-scope persistence decision passes the
+   recomputation and smuggling tests named above.
+4. Run the Series persistence promotion gate before any
+   `measurement_cell_series_snapshots` implementation discussion. Repeated
+   milestone validation has passed, but it proves internal continuity
+   inspection rather than persistence need; a separate durable read-path
+   decision is still required.
+5. Wire live BigQuery, Sigma, and Glean connector execution last, after the
+   customer-facing route/UI projection contract proves it can consume the
+   stable persisted product-data model without expanding the evidence boundary.
+   The Data Model Spine Readiness Lock authorizes only hardening for that
+   future source-wiring preparation, not live execution or customer-facing
+   economic output.

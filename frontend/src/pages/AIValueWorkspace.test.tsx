@@ -38,6 +38,109 @@ const jsonResponse = (body: unknown) =>
     headers: { "content-type": "application/json" }
   });
 
+const customerProjectionResponse = {
+  schema_version: "FT_AI_VALUE_CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_2026_06",
+  projection_state: "SOURCE_BOUND_CUSTOMER_EVIDENCE_STATUS_READY",
+  display_mode: "customer_evidence_status",
+  source_bound: true,
+  filter_applied: "latest_org_scoped",
+  live_connector_execution: false,
+  allowed_customer_outputs: [
+    "Aggregate evidence status",
+    "Measurement context",
+    "Source-bound caveats",
+    "Next evidence action"
+  ],
+  blocked_customer_outputs: [
+    "ROI proof",
+    "Financial output",
+    "Causal proof",
+    "Productivity output",
+    "Confidence, probability, or score output",
+    "Live connector output",
+    "Export package",
+    "Raw data or source payload"
+  ],
+  projections: [
+    {
+      value_driver: "Capacity",
+      metric: {
+        label: "Capacity metric",
+        direction: "decrease",
+        unit: "hours",
+        owner_review_state: "Metric owner approved"
+      },
+      workflow_context: {
+        function_area: "Customer Support",
+        workflow_label: "Customer Support workflow"
+      },
+      milestone: {
+        day: 60,
+        baseline_window: { start: "2026-02-01", end: "2026-03-31" },
+        comparison_window: { start: "2026-05-01", end: "2026-06-30" }
+      },
+      evidence_status: {
+        aggregate_review_state: "Aggregate export review passed",
+        validation_state: "clear"
+      },
+      caveats: [
+        "Aggregate evidence status only; customer-owned outcome review remains required."
+      ],
+      allowed_output: "Aggregate evidence status only",
+      blocked_outputs: [
+        "ROI proof",
+        "Financial output",
+        "Causal proof",
+        "Productivity output",
+        "Confidence, probability, or score output",
+        "Live connector output",
+        "Export package",
+        "Raw data or source payload"
+      ],
+      next_action:
+        "Customer-owned outcome review is required before any stronger claim is considered."
+    },
+    {
+      value_driver: "Risk",
+      metric: {
+        label: "Risk metric",
+        direction: "maintain",
+        unit: "rate",
+        owner_review_state: "Metric owner approved"
+      },
+      workflow_context: {
+        function_area: "Legal",
+        workflow_label: "Legal workflow"
+      },
+      milestone: {
+        day: 90,
+        baseline_window: { start: "2026-01-01", end: "2026-03-31" },
+        comparison_window: { start: "2026-07-01", end: "2026-09-30" }
+      },
+      evidence_status: {
+        aggregate_review_state: "Aggregate export review passed",
+        validation_state: "clear"
+      },
+      caveats: [
+        "Aggregate evidence status only; customer-owned outcome review remains required."
+      ],
+      allowed_output: "Aggregate evidence status only",
+      blocked_outputs: [
+        "ROI proof",
+        "Financial output",
+        "Causal proof",
+        "Productivity output",
+        "Confidence, probability, or score output",
+        "Live connector output",
+        "Export package",
+        "Raw data or source payload"
+      ],
+      next_action:
+        "Customer-owned outcome review is required before any stronger claim is considered."
+    }
+  ]
+};
+
 const renderWorkspace = (path = "/ai-value-workspace") =>
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -143,6 +246,11 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getByText("Customer metric")).toBeInTheDocument();
     expect(within(queue).getByText("ROI assumption context")).toBeInTheDocument();
     expect(within(queue).getByText("Governance")).toBeInTheDocument();
+    expect(within(queue).getByText("Aggregate instrument review")).toBeInTheDocument();
+    expect(within(queue).getByText("Scrubbed aggregate telemetry review")).toBeInTheDocument();
+    expect(within(queue).queryByText(uiTerm("ai", "_", "fluency", "_", "dashboard", "_", "export"))).not.toBeInTheDocument();
+    expect(within(queue).queryByText(uiTerm("scrubbed", "_", "glean", "_", "bigquery", "_", "export"))).not.toBeInTheDocument();
+    expect(within(queue).queryByText(uiTerm("customer", "_", "metric", "_", "aggregate", "_", "export"))).not.toBeInTheDocument();
 
     for (const status of ["parsed", "approved", "aligned", "held", "uploaded", "suppressed", "missing"]) {
       expect(within(queue).getAllByText(status).length).toBeGreaterThan(0);
@@ -157,18 +265,22 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getByText(/Regenerate at aggregate threshold/i)).toBeInTheDocument();
 
     expect(within(queue).getByText("Data Spine alignment keys")).toBeInTheDocument();
-    expect(within(queue).getByText("org_id")).toBeInTheDocument();
-    expect(within(queue).getByText("client_id")).toBeInTheDocument();
-    expect(within(queue).getByText("workflow_family")).toBeInTheDocument();
-    expect(within(queue).getByText("function_area")).toBeInTheDocument();
-    expect(within(queue).getByText("cohort_key")).toBeInTheDocument();
-    expect(within(queue).getByText("baseline_window")).toBeInTheDocument();
-    expect(within(queue).getByText("comparison_window")).toBeInTheDocument();
+    expect(within(queue).getByText("Approved organization boundary")).toBeInTheDocument();
+    expect(within(queue).getByText("Approved client boundary")).toBeInTheDocument();
+    expect(within(queue).getByText("Workflow family")).toBeInTheDocument();
+    expect(within(queue).getByText("Function area")).toBeInTheDocument();
+    expect(within(queue).getByText("Aggregate cohort")).toBeInTheDocument();
+    expect(within(queue).getByText("Baseline window")).toBeInTheDocument();
+    expect(within(queue).getByText("Comparison window")).toBeInTheDocument();
     expect(within(queue).getByText("Review queue labels")).toBeInTheDocument();
-    expect(within(queue).getByText("metric_id")).toBeInTheDocument();
-    expect(within(queue).getByText("source_ref")).toBeInTheDocument();
-    expect(within(queue).getByText("owner_role")).toBeInTheDocument();
-    expect(within(queue).getByText("review_state")).toBeInTheDocument();
+    expect(within(queue).getByText("Metric owner review")).toBeInTheDocument();
+    expect(within(queue).getByText("Source package review")).toBeInTheDocument();
+    expect(within(queue).getByText("Reviewer role")).toBeInTheDocument();
+    expect(within(queue).getByText("Review decision")).toBeInTheDocument();
+    expect(within(queue).queryByText("org_id")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("client_id")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("metric_id")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("source_ref")).not.toBeInTheDocument();
     expect(within(queue).getAllByText("Clear for review")).toHaveLength(3);
     expect(within(queue).getAllByText("Hold before review")).toHaveLength(3);
     expect(within(queue).getByText(/aggregate evidence status only/i)).toBeInTheDocument();
@@ -178,9 +290,118 @@ describe("AIValueWorkspace executive spine", () => {
     expect(queue.textContent).not.toMatch(/confidence\s*%|probability|financial attribution|causal proof/i);
     expect(queue.textContent).not.toMatch(/individual|person-level|manager ranking|team ranking/i);
     expectNoUnsafeUiLanguage(container.textContent, [
+      "org_id",
+      "client_id",
+      "metric_id",
+      "source_ref",
       "ROI proof",
       "productivity proof",
       "customer-facing financial output"
+    ]);
+  });
+
+  it("renders source-bound customer data model projections from the route contract", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/ai-value/customer-data-model/projections")) {
+        return jsonResponse(customerProjectionResponse);
+      }
+      return jsonResponse({ objects: [] });
+    });
+
+    const { container } = renderWorkspace();
+
+    const panel = await screen.findByRole("region", {
+      name: /Customer evidence projection/i
+    });
+    expect(within(panel).getByText(/Customer evidence projection/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Source-bound status/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Capacity metric/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Risk metric/i)).toBeInTheDocument();
+    expect(within(panel).getByText("Customer Support", { selector: "strong" })).toBeInTheDocument();
+    expect(within(panel).getByText("Legal", { selector: "strong" })).toBeInTheDocument();
+    expect(within(panel).getByText(/Day 60/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Day 90/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/2026-05-01 to 2026-06-30/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/2026-07-01 to 2026-09-30/i)).toBeInTheDocument();
+    expect(within(panel).getAllByText(/Aggregate export review passed/i)).toHaveLength(2);
+    expect(within(panel).getByText(/Aggregate evidence status only/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Live connector output/i)).toBeInTheDocument();
+    expect(within(panel).queryByText(/db_row_do_not_expose/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/source_refs/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/projection_hash/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/support_median_resolution_hours/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/workflow_support_case_resolution/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/org-northstar-enterprise/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/customer-facing financial output/i)).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "confidence",
+      "probability",
+      "score output",
+      "financial output"
+    ]);
+  });
+
+  it("does not apply stale local measurement-plan filters to the default customer projection", async () => {
+    localStorage.setItem(
+      "aiValue.customerDataModelMeasurementPlanId",
+      "measurement_plan_stale_do_not_use"
+    );
+    const requestedUrls: string[] = [];
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.includes("/api/v1/ai-value/customer-data-model/projections")) {
+        return jsonResponse(customerProjectionResponse);
+      }
+      return jsonResponse({ objects: [] });
+    });
+
+    renderWorkspace();
+
+    await waitFor(() =>
+      expect(
+        requestedUrls.some((url) =>
+          url.includes("/api/v1/ai-value/customer-data-model/projections")
+        )
+      ).toBe(true)
+    );
+    const projectionUrl = requestedUrls.find((url) =>
+      url.includes("/api/v1/ai-value/customer-data-model/projections")
+    );
+    expect(projectionUrl).toBe("/api/v1/ai-value/customer-data-model/projections");
+  });
+
+  it("keeps the customer data model projection held when the route has no snapshots", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/ai-value/customer-data-model/projections")) {
+        return jsonResponse({
+          schema_version: "FT_AI_VALUE_CUSTOMER_DATA_MODEL_ROUTE_PROJECTION_2026_06",
+          projection_state: "HOLD_FOR_CUSTOMER_DATA_MODEL_SNAPSHOTS",
+          display_mode: "customer_evidence_status",
+          source_bound: true,
+          filter_applied: "latest_org_scoped",
+          live_connector_execution: false,
+          allowed_customer_outputs: [],
+          blocked_customer_outputs: ["Live connector output"],
+          projections: []
+        });
+      }
+      return jsonResponse({ objects: [] });
+    });
+
+    const { container } = renderWorkspace();
+    const panel = await screen.findByRole("region", {
+      name: /Customer evidence projection/i
+    });
+
+    expect(within(panel).getByText(/No governed customer projection available/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/A compact customer data model snapshot must exist first/i)).toBeInTheDocument();
+    expect(within(panel).queryByText(/Customer Success account health review/i)).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "customer-facing financial output",
+      "Glean proved ROI"
     ]);
   });
 
@@ -244,14 +465,14 @@ describe("AIValueWorkspace executive spine", () => {
 
     const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(within(map).getByText(/Function behavior map/i)).toBeInTheDocument();
-    const scoringModel = within(map).getByRole("region", { name: /Overall VBD scoring model/i });
-    expect(within(scoringModel).getByText(/Overall VBD Score/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText("53")).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Velocity 0\.30 \+ Breadth 0\.30 \+ Depth 0\.40/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Integration Score/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Breadth 0\.40 \+ Depth 0\.60/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/Fixed quadrant line 60/i)).toBeInTheDocument();
-    expect(within(scoringModel).getByText(/not a configurable control/i)).toBeInTheDocument();
+    const postureModel = within(map).getByRole("region", { name: /Aggregate VBD posture model/i });
+    expect(within(postureModel).getByText(/Overall VBD posture/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/Aggregate review lens/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/posture review only/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/Integration posture/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/not a people or team measure/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/Fixed quadrant line 60/i)).toBeInTheDocument();
+    expect(within(postureModel).getByText(/not a configurable control/i)).toBeInTheDocument();
     expect(within(map).getAllByText(/Engineering \/ Software Development/i).length).toBeGreaterThan(0);
     expect(within(map).getAllByText(/Customer or Account Success/i).length).toBeGreaterThan(0);
     expect(within(map).getAllByText(/Finance or Accounting/i).length).toBeGreaterThan(0);
@@ -259,7 +480,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(map).getByText(/Measured AI surfaces:/i)).toBeInTheDocument();
     expect(within(map).getByText(/Search, Assistant, Skills, Agents, Artifacts, workflow automations/i)).toBeInTheDocument();
     expect(within(map).getByText(/Quadrant definitions/i)).toBeInTheDocument();
-    expect(within(map).getByText(/Bubble size shows Overall VBD Score/i)).toBeInTheDocument();
+    expect(within(map).getByText(/Bubble size shows aggregate posture context/i)).toBeInTheDocument();
+    expect(map.textContent).not.toMatch(/Overall VBD Score|Integration Score|Quadrant Strength/i);
     const highIntegrationGuide = within(map).getByLabelText(/High integration quadrant guide/i);
     expect(within(highIntegrationGuide).getByText(/Deep but slow/i)).toBeInTheDocument();
     expect(within(highIntegrationGuide).getByText(/High-fluency flow/i)).toBeInTheDocument();
@@ -287,8 +509,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(quadrantMap.querySelectorAll("[aria-label]")).toHaveLength(0);
     expect(quadrantMap.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
     const definitions = within(map).getByLabelText(/Quadrant definitions/i);
-    expect(within(definitions).getByText(/Quadrant Strength 79 · Quadrant Share 29%/)).toBeInTheDocument();
-    expect(within(definitions).getByText(/Quadrant Strength 59 · Quadrant Share 18%/)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Quadrant posture high · Function share 29%/)).toBeInTheDocument();
+    expect(within(definitions).getByText(/Quadrant posture held · Function share 18%/)).toBeInTheDocument();
     expect(within(definitions).getByText(/Watch for: Immediate accept, Low verification/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Watch for: Repeat use, Verification/i)).toBeInTheDocument();
     expect(within(definitions).getByText(/Workflow-connected use/i)).toBeInTheDocument();
@@ -312,11 +534,15 @@ describe("AIValueWorkspace executive spine", () => {
     expect(engineeringBubble).toBeInstanceOf(HTMLElement);
     expect(engineeringBubble).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("Overall VBD Score 87")
+      expect.stringContaining("aggregate posture review")
     );
     expect(engineeringBubble).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("Integration Score 87")
+      expect.stringContaining("Integration high")
+    );
+    expect(engineeringBubble).not.toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Overall VBD Score|Integration Score|\b87\b/i)
     );
     const marketingBubble = container.querySelector(
       '[aria-label^="Marketing & Communications"]'
@@ -917,9 +1143,149 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(candidateMetrics).getByText(/Close cycle time/i)).toBeInTheDocument();
     expect(within(candidateMetrics).queryByText(/Is production deployment frequency increasing/i)).not.toBeInTheDocument();
 
+    fireEvent.change(functionSelect, { target: { value: "Customer or Account Success" } });
+    expect(within(bridge).getByRole("checkbox", { name: /Median resolution time/i })).toBeChecked();
+
     // The old step-guide and duplicate opportunity map stay removed.
     expect(screen.queryByText(/Step 4 of 8/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Outcome and ROI opportunity map/i })).not.toBeInTheDocument();
+
+    const reportingSpine = screen.getByRole("region", {
+      name: /AI contribution reporting spine/i
+    });
+    expect(within(reportingSpine).getByText(/Candidate metric recommendations are planning inputs/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Selected metric approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Held for reviewer approval/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Reviewer metric-selection draft intake/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Comparison-design intake readiness/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Source package draft assembly/i).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Reviewer-owned source package collection/i).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Comparison-design source package review/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Readiness held/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Choose a candidate metric before draft intake preparation/i)
+    ).toBeInTheDocument();
+    const adapterView = within(reportingSpine).getByRole("region", {
+      name: /AI value UI view model/i
+    });
+    expect(
+      within(adapterView).getByRole("heading", { name: /Metrics Recommended/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 3 of 13/i)).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Model review blocked/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/Evidence streams for review/i)
+    ).not.toBeInTheDocument();
+    expect(
+      within(adapterView).queryByText(/AI Fluency Instrument \(SED\)/i)
+    ).not.toBeInTheDocument();
+    expect(adapterView.textContent).not.toMatch(
+      /confidence|probability|posterior|source_ref|source_hash|reviewer_owned_payload|employee_id|prompt|transcript|[a-f0-9]{64}/i
+    );
+
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Time to First Value/i }));
+    expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
+
+    const customerSuccessWatchPlan = within(bridge).getByRole("region", {
+      name: /VBD metric watch plan/i
+    });
+    const medianResolutionItem = within(customerSuccessWatchPlan)
+      .getByText(/^Median resolution time$/)
+      .closest("li") as HTMLElement;
+    fireEvent.click(
+      within(medianResolutionItem).getByRole("button", { name: /Prepare draft intake/i })
+    );
+
+    expect(within(reportingSpine).getByText(/Local selection only/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Draft selected metric prepared/i)).toBeInTheDocument();
+    expect(
+      within(adapterView).getByRole("heading", { name: /Measurement Plan Drafted/i })
+    ).toBeInTheDocument();
+    expect(within(adapterView).getByText(/Step 4 of 13/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Ready for draft package review/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Reviewer approval still required/i)).toBeInTheDocument();
+    const draftSelectedMetric = within(reportingSpine)
+      .getByText(/Draft selected metric candidate/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    expect(within(draftSelectedMetric).getByText(/^Median resolution time$/)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Metric owner \/ reviewer role/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Expected direction/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Direction requires reviewer expectation path/i)
+    ).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Baseline source posture/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Suppression, missing, or held window precheck required/i)
+    ).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Draft package ready for review preparation/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Complete comparison-design source package draft review/i)
+        .length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getAllByText(/Draft review required/i).length
+    ).toBeGreaterThan(0);
+    expect(within(reportingSpine).getByText(/Collection held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Source package review held/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).queryByText(
+        /Collect reviewer-owned comparison-design source package outside product flow/i
+      )
+    ).not.toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Collection stays held until the draft source package review is complete/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Pending attestation: metric-selection review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Pending attestation: expectation path direction and lag review/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Source package draft assembly does not create governed evidence/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Reviewer-owned collection remains outside this product flow/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(
+        /Source package review checks reviewer-owned completeness and admissibility only/i
+      ).length
+    ).toBeGreaterThan(0);
+    expect(
+      within(reportingSpine).getByText(/Comparison-design readiness does not create a source package/i)
+    ).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getByText(/Draft intake does not approve the metric/i)
+    ).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Milestone plan/i)).toBeInTheDocument();
+    expect(
+      within(reportingSpine).getAllByText(/Missing comparison-design source package/i)
+        .length
+    ).toBeGreaterThan(0);
+    const draftMilestoneSchedule = within(reportingSpine)
+      .getByText(/Draft milestone schedule/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    const milestonePlan = within(reportingSpine)
+      .getByText(/^Milestone plan$/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    for (const milestone of ["T0", "T30", "T60", "T90", "T120", "T180", "T270", "T365"]) {
+      expect(within(draftMilestoneSchedule).getByText(milestone)).toBeInTheDocument();
+      expect(within(milestonePlan).getByText(milestone)).toBeInTheDocument();
+    }
+    expect(
+      within(reportingSpine).getAllByText(/Complete reviewer metric selection approval/i)
+        .length
+    ).toBeGreaterThan(0);
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("metrics", "_", "library")
@@ -1117,6 +1483,21 @@ describe("AIValueWorkspace journey continuity", () => {
     const watchPlan = screen.getByRole("region", { name: /VBD metric watch plan/i });
     expect(within(watchPlan).getByText(/Choose at least one client-owned metric/i)).toBeInTheDocument();
     expect(within(watchPlan).queryByText(/Median resolution time/i)).not.toBeInTheDocument();
+
+    const reportingSpine = screen.getByRole("region", {
+      name: /AI contribution reporting spine/i
+    });
+    fireEvent.click(within(bridge).getByRole("checkbox", { name: /Median resolution time/i }));
+    expect(within(reportingSpine).getByText(/Draft intake held/i)).toBeInTheDocument();
+    expect(within(reportingSpine).queryByText(/Local selection only/i)).not.toBeInTheDocument();
+    const medianResolutionItem = within(watchPlan)
+      .getByText(/^Median resolution time$/)
+      .closest("li") as HTMLElement;
+    fireEvent.click(
+      within(medianResolutionItem).getByRole("button", { name: /Prepare draft intake/i })
+    );
+    expect(within(reportingSpine).getByText(/Draft selected metric prepared/i)).toBeInTheDocument();
+    expect(within(reportingSpine).getByText(/Local selection only/i)).toBeInTheDocument();
   });
 
   it("lets users clear a default outcome metric selection", async () => {

@@ -186,6 +186,44 @@ It validates a reviewed aggregate export plan without executing it. It produces
 an internal operator-review boundary decision, not a source package, not a
 Measurement Cell, not a persisted manifest, and not a customer-facing output.
 
+The BigQuery-specific non-live follow-on now lives at
+[AI Value BigQuery Aggregate Export Review](../contracts/ai-value-bigquery-aggregate-export-review/README.md).
+It accepts only a passed `bigquery_export` boundary plan and produces compact
+upstream-attested aggregate export review metadata. It does not retain SQL,
+query text, BigQuery job metadata, project/dataset/table refs, credentials, raw
+rows, or customer-facing output, and it does not promote live connector
+implementation.
+
+The live-pipeline concept gate now lives at
+[AI Value Live Pipeline Concept Gate](../contracts/ai-value-live-pipeline-concept-gate/README.md).
+It evaluates whether a separate live-pipeline concept review may be drafted
+after Measurement Cell preflight proof is valid and compact aggregate-boundary
+proof is bound to the snapshot candidate. A passed gate does not authorize live
+BigQuery/Sigma/Glean execution, credentials, SQL/query handling, raw rows,
+manifest persistence, Series persistence, customer projection, export,
+research-model feed, finance output, or customer-facing output.
+
+The separate live-pipeline concept review now lives at
+[AI Value Live Pipeline Concept Review](../contracts/ai-value-live-pipeline-concept-review/README.md).
+It promotes only upstream aggregate-pipeline design requirements after the gate
+passes. It does not authorize live connector implementation, credentials,
+SQL/query handling, raw rows, persistence, routes, UI, exports, research-model
+feed, finance output, or customer-facing output.
+
+The upstream aggregate pipeline handoff now lives at
+[AI Value Upstream Aggregate Pipeline Handoff](../contracts/ai-value-upstream-aggregate-pipeline-handoff/README.md).
+It promotes only compact manifest-ref acceptance-review shape for future
+upstream package tests. It does not authorize full manifest payload ingestion,
+manifest persistence, live execution, routes, UI, exports, research-model feed,
+finance output, or customer-facing output.
+
+The upstream aggregate handoff acceptance package now lives at
+[AI Value Upstream Aggregate Handoff Acceptance Package](../contracts/ai-value-upstream-aggregate-handoff-acceptance-package/README.md).
+It accepts only recomputed, fixture-backed compact upstream handoff refs for
+internal validation. It does not authorize full manifest payload ingestion,
+manifest persistence, live execution, routes, UI, exports, research-model feed,
+finance output, or customer-facing output.
+
 ## 9. Verification
 
 When this decision is changed, run:

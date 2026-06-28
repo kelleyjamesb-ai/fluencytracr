@@ -30,6 +30,14 @@ const DEFAULT_FIXTURE_PATH =
   "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
 
 const ALLOWED_SOURCE_SYSTEMS = new Set(["bigquery_export", "sigma_export"]);
+const ALLOWED_SOURCE_LANES = new Set([
+  "blueprint",
+  "ai_fluency",
+  "vbd_token",
+  "customer_metric",
+  "assumption",
+  "governance"
+]);
 
 const REQUIRED_BLOCKED_USES = [
   "live_bigquery_execution",
@@ -39,6 +47,7 @@ const REQUIRED_BLOCKED_USES = [
   "credential_access",
   "query_execution",
   "raw_row_ingestion",
+  "dashboard_row_ingestion",
   "source_package_clearance",
   "measurement_cell_creation",
   "measurement_cell_snapshot_persistence",
@@ -177,6 +186,7 @@ const PACKAGE_FALSE_FEEDS = [
   "credential_access",
   "query_execution",
   "raw_row_ingestion",
+  "dashboard_row_ingestion",
   "durable_manifest_storage",
   "source_package_clearance",
   "measurement_cell_creation",
@@ -375,10 +385,46 @@ function collectExactObjectShapeGaps(actual, expected, label) {
   return gaps;
 }
 
+function connectorAdapterRefPassed(ref) {
+  return isPlainObject(ref) &&
+    ref.adapter_state === "PASSED_INTERNAL_CONNECTOR_ADAPTER_REVIEW" &&
+    isPlainObject(ref.connector_manifest_ref) &&
+    isPlainObject(ref.pipeline_dry_run_ref);
+}
+
 function sourceOwnerRole(sourceSystem) {
   return sourceSystem === "sigma_export"
     ? "customer_analytics_owner"
     : "customer_data_platform_owner";
+}
+
+function selectedSourceLane(fixture, options = {}) {
+  const candidate =
+    options.sourceLane ??
+    fixture?.controlled_aggregate_source_lane ??
+    fixture?.source_lane ??
+    fixture?.expected?.controlled_aggregate_source_lane;
+  if (candidate === undefined || candidate === null || candidate === "") {
+    return sourceLaneForMetric(selectedMetricId(fixture));
+  }
+  return ALLOWED_SOURCE_LANES.has(String(candidate))
+    ? String(candidate)
+    : null;
+}
+
+function reviewedSourceRefForLane(fixture, sourceLane) {
+  const refs = fixture?.expected?.reviewed_source_refs ?? {};
+  return refs?.[sourceLane] ?? null;
+}
+
+function aggregateSourceRefForLane(sourceSystem, fixture, sourceLane, fallbackRef) {
+  const laneRef = reviewedSourceRefForLane(fixture, sourceLane);
+  if (!laneRef) return null;
+  const base = safeIdPart(laneRef ?? fallbackRef ?? fixture?.fixture_id ?? "controlled_fixture");
+  const suffix = base.startsWith(`${sourceSystem}_`)
+    ? base.slice(`${sourceSystem}_`.length)
+    : base;
+  return `${sourceSystem}_${suffix}`;
 }
 
 function selectedExpectationPath(fixture) {
@@ -393,6 +439,23 @@ function selectedMetricId(fixture) {
     ? fixture.blueprint_extraction_input.metricCandidates[0] ?? null
     : null;
   return path?.expected_metric_id ?? candidate?.metric_id ?? "support_median_resolution_hours";
+}
+
+function sourceLaneForMetric(metricId) {
+  if (String(metricId ?? "").startsWith("ai_fluency_")) return "ai_fluency";
+  if (
+    [
+      "token_count",
+      "token_cost_index",
+      "token_efficiency_index",
+      "vbd_quality_index",
+      "vbd_reuse_index",
+      "support_median_resolution_hours"
+    ].includes(String(metricId ?? ""))
+  ) {
+    return "vbd_token";
+  }
+  return "customer_metric";
 }
 
 function approvedExpectationPathBindingFromFixture(fixture, adapter) {
@@ -419,7 +482,8 @@ function approvedExpectationPathBindingFromFixture(fixture, adapter) {
         ? "customer_approved"
         : path?.customer_approval_state ?? "customer_approved",
     approved_at: path?.approved_at ?? "2026-06-21T00:00:00.000Z",
-    approved_by_role: path?.approver_role ?? "workflow_owner"
+    approved_by_role: path?.approver_role ?? "workflow_owner",
+    value_driver: path?.value_driver ?? "capacity"
   };
 }
 
@@ -493,16 +557,16 @@ function expectedQueueRef(source, extraction, review, binding) {
   ].map(safeIdPart).join("_");
 }
 
-function buildSourceInventoryManifest({ adapter, fixture, overrides }) {
+function buildSourceInventoryManifest({ adapter, fixture, sourceLane, overrides }) {
   const ref = adapter.connector_manifest_ref ?? {};
   const metricId = selectedMetricId(fixture);
   const sourceSystem = adapter.source_system;
   const ownerRole = sourceOwnerRole(sourceSystem);
   const manifest = {
     source_inventory_manifest_id:
-      `source_inventory_${sourceSystem}_${safeIdPart(ref.workflow_family)}_${safeIdPart(metricId)}`,
+      `source_inventory_${sourceSystem}_${safeIdPart(sourceLane)}_${safeIdPart(ref.workflow_family)}_${safeIdPart(metricId)}`,
     schema_version: AI_VALUE_SOURCE_INVENTORY_MANIFEST_SCHEMA_VERSION,
-    source_lane: "vbd_token",
+    source_lane: sourceLane,
     source_system: sourceSystem,
     source_category: "scrubbed_aggregate_export",
     source_owner_role: ownerRole,
@@ -512,7 +576,12 @@ function buildSourceInventoryManifest({ adapter, fixture, overrides }) {
     workflow_family: ref.workflow_family,
     function_area: ref.function_area,
     cohort_key: ref.cohort_key,
-    approved_source_ref: ref.aggregate_export_ref,
+    approved_source_ref: aggregateSourceRefForLane(
+      sourceSystem,
+      fixture,
+      sourceLane,
+      ref.aggregate_export_ref
+    ),
     approved_extraction_window: ref.comparison_window,
     approved_aggregate_grain: "workflow_function_cohort_window",
     approved_output_fields: [
@@ -696,27 +765,68 @@ function combinedGaps(validations) {
   );
 }
 
-function blockedPackage({ sourceSystem, adapter, adapterValidation, generatedAt }) {
+function compactPipelineDryRunRef(ref) {
+  if (!isPlainObject(ref)) return null;
+  return {
+    dry_run_id: ref.dry_run_id ?? null,
+    dry_run_state: ref.dry_run_state ?? null,
+    source_system: ref.source_system ?? null,
+    source_export_ref: ref.source_export_ref ?? null,
+    manifest_hash: ref.manifest_hash ?? null,
+    aggregate_fixture_hash: ref.aggregate_fixture_hash ?? null,
+    reviewed_source_refs_hash: ref.reviewed_source_refs_hash ?? null,
+    reviewed_aggregate_context_hash: ref.reviewed_aggregate_context_hash ?? null,
+    reviewed_blueprint_expectation_hash: ref.reviewed_blueprint_expectation_hash ?? null,
+    candidate_integrity_hash: ref.candidate_integrity_hash ?? null,
+    expectation_path_id: ref.expectation_path_id ?? null
+  };
+}
+
+function compactConnectorAdapterRef(adapter) {
+  if (!isPlainObject(adapter)) return null;
+  return {
+    adapter_run_id: adapter.adapter_run_id ?? null,
+    adapter_state: adapter.adapter_state ?? null,
+    connector_manifest_ref: adapter.connector_manifest_ref ?? null,
+    pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
+  };
+}
+
+function blockedPackage({
+  sourceSystem,
+  adapter,
+  adapterValidation,
+  generatedAt,
+  validationGaps,
+  sourceValidation,
+  extractionValidation,
+  reviewValidation,
+  chainValidation
+}) {
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
     manifest_validation_state: "BLOCKED",
     source_system: ALLOWED_SOURCE_SYSTEMS.has(String(sourceSystem ?? ""))
       ? sourceSystem
       : null,
-    adapter_run_id: adapter?.adapter_run_id ?? null,
-    connector_adapter_ref: adapter?.connector_manifest_ref ?? null,
+    adapter_run_id: null,
+    connector_adapter_ref: null,
     approved_expectation_path_binding: null,
     manifests: null,
     manifest_refs: null,
     validation_summary: {
       schema_version: RESULT_SCHEMA_VERSION,
       valid: false,
-      connector_adapter_valid: adapterValidation?.valid === true,
-      source_inventory_manifest_valid: false,
-      aggregate_extraction_manifest_valid: false,
-      pipeline_run_review_manifest_valid: false,
-      manifest_chain_valid: false,
-      gaps: sanitizeGaps(adapterValidation?.gaps ?? ["connector adapter validation did not pass"])
+      connector_adapter_valid: false,
+      source_inventory_manifest_valid: sourceValidation?.valid === true,
+      aggregate_extraction_manifest_valid: extractionValidation?.valid === true,
+      pipeline_run_review_manifest_valid: reviewValidation?.valid === true,
+      manifest_chain_valid: chainValidation?.valid === true,
+      gaps: sanitizeGaps(
+        validationGaps ??
+        adapterValidation?.gaps ??
+        ["connector adapter validation did not pass"]
+      )
     },
     feeds: packageFeeds(false),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
@@ -748,6 +858,7 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
     });
   }
 
+  const sourceLane = selectedSourceLane(fixture, options);
   const binding = deepMerge(
     approvedExpectationPathBindingFromFixture(fixture, adapter),
     options.approvedExpectationPathBindingOverrides
@@ -755,6 +866,7 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
   const sourceInventoryManifest = buildSourceInventoryManifest({
     adapter,
     fixture,
+    sourceLane,
     overrides: options.sourceInventoryManifestOverrides
   });
   const aggregateExtractionManifest = buildAggregateExtractionManifest({
@@ -797,26 +909,47 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
     reviewValidation.valid &&
     chainValidation.valid;
 
+  const validationGaps = combinedGaps([
+    ["source_inventory_manifest", sourceValidation],
+    ["aggregate_extraction_manifest", extractionValidation],
+    ["pipeline_run_review_manifest", reviewValidation],
+    ["manifest_chain", chainValidation]
+  ]);
+
+  if (!valid) {
+    return blockedPackage({
+      sourceSystem,
+      adapter,
+      adapterValidation,
+      generatedAt: adapter.generated_at,
+      validationGaps,
+      sourceValidation,
+      extractionValidation,
+      reviewValidation,
+      chainValidation
+    });
+  }
+
   return {
     schema_version: CONTROLLED_AGGREGATE_MANIFEST_VALIDATION_SCHEMA_VERSION,
     manifest_validation_state: valid
       ? "PASSED_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION"
       : "BLOCKED",
     source_system: adapter.source_system,
-    adapter_run_id: adapter.adapter_run_id,
-    connector_adapter_ref: {
+    adapter_run_id: valid ? adapter.adapter_run_id : null,
+    connector_adapter_ref: valid ? {
       adapter_run_id: adapter.adapter_run_id,
       adapter_state: adapter.adapter_state,
       connector_manifest_ref: adapter.connector_manifest_ref,
-      pipeline_dry_run_ref: adapter.pipeline_dry_run_ref
-    },
+      pipeline_dry_run_ref: compactPipelineDryRunRef(adapter.pipeline_dry_run_ref)
+    } : null,
     approved_expectation_path_binding: binding,
-    manifests: {
+    manifests: valid ? {
       source_inventory_manifest: sourceInventoryManifest,
       aggregate_extraction_manifest: aggregateExtractionManifest,
       pipeline_run_review_manifest: pipelineRunReviewManifest
-    },
-    manifest_refs: {
+    } : null,
+    manifest_refs: valid ? {
       source_inventory_manifest_ref: manifestRefFromInventory(sourceInventoryManifest),
       aggregate_extraction_manifest_ref: manifestRefFromExtraction(aggregateExtractionManifest),
       pipeline_run_review_manifest_ref: {
@@ -832,26 +965,21 @@ export function buildControlledAggregateManifestValidationPackageFromObject(
         metric_id: pipelineRunReviewManifest.metric_id,
         expectation_path_id: pipelineRunReviewManifest.expectation_path_id
       }
-    },
+    } : null,
     validation_summary: {
       schema_version: RESULT_SCHEMA_VERSION,
       valid,
-      connector_adapter_valid: adapterValidation.valid === true,
+      connector_adapter_valid: valid && adapterValidation.valid === true,
       source_inventory_manifest_valid: sourceValidation.valid === true,
       aggregate_extraction_manifest_valid: extractionValidation.valid === true,
       pipeline_run_review_manifest_valid: reviewValidation.valid === true,
       manifest_chain_valid: chainValidation.valid === true,
-      gaps: combinedGaps([
-        ["source_inventory_manifest", sourceValidation],
-        ["aggregate_extraction_manifest", extractionValidation],
-        ["pipeline_run_review_manifest", reviewValidation],
-        ["manifest_chain", chainValidation]
-      ])
+      gaps: validationGaps
     },
     feeds: packageFeeds(valid),
     boundary_policy: falseBoundary(PACKAGE_FALSE_BOUNDARY_FIELDS),
     blocked_uses: [...REQUIRED_BLOCKED_USES],
-    required_caveats: [...PACKAGE_PASSED_CAVEATS],
+    required_caveats: valid ? [...PACKAGE_PASSED_CAVEATS] : [...PACKAGE_BLOCKED_CAVEATS],
     generated_at: adapter.generated_at
   };
 }
@@ -897,14 +1025,15 @@ export function validateControlledAggregateManifestValidationPackage(
     pipelineRunReviewManifest: manifests.pipeline_run_review_manifest,
     approvedExpectationPathBinding: binding
   });
+  const recomputedValidationGaps = combinedGaps([
+    ["source_inventory_manifest", sourceValidation],
+    ["aggregate_extraction_manifest", extractionValidation],
+    ["pipeline_run_review_manifest", reviewValidation],
+    ["manifest_chain", chainValidation]
+  ]);
 
   gaps.push(
-    ...combinedGaps([
-      ["source_inventory_manifest", sourceValidation],
-      ["aggregate_extraction_manifest", extractionValidation],
-      ["pipeline_run_review_manifest", reviewValidation],
-      ["manifest_chain", chainValidation]
-    ])
+    ...recomputedValidationGaps
   );
 
   const manifestChainValid =
@@ -930,6 +1059,18 @@ export function validateControlledAggregateManifestValidationPackage(
     gaps.push(...collectUnsupportedKeys(manifestPackage.manifests, PACKAGE_MANIFESTS_FIELDS, "manifests"));
     gaps.push(...collectUnsupportedKeys(manifestPackage.manifest_refs, PACKAGE_MANIFEST_REFS_FIELDS, "manifest_refs"));
   } else {
+    if (
+      manifestPackage.adapter_run_id !== null &&
+      manifestPackage.adapter_run_id !== undefined
+    ) {
+      gaps.push("blocked manifest validation packages must not carry adapter refs");
+    }
+    if (
+      manifestPackage.connector_adapter_ref !== null &&
+      manifestPackage.connector_adapter_ref !== undefined
+    ) {
+      gaps.push("blocked manifest validation packages must not carry adapter refs");
+    }
     if (manifestPackage.manifests !== null && manifestPackage.manifests !== undefined) {
       gaps.push("blocked manifest validation packages must not carry manifest payloads");
     }
@@ -973,6 +1114,7 @@ export function validateControlledAggregateManifestValidationPackage(
   }
   for (const [field, expectedValue] of [
     ["valid", manifestChainValid],
+    ["connector_adapter_valid", connectorAdapterRefPassed(manifestPackage.connector_adapter_ref)],
     ["source_inventory_manifest_valid", sourceValidation.valid === true],
     ["aggregate_extraction_manifest_valid", extractionValidation.valid === true],
     ["pipeline_run_review_manifest_valid", reviewValidation.valid === true],
@@ -984,6 +1126,15 @@ export function validateControlledAggregateManifestValidationPackage(
   }
   if (!Array.isArray(manifestPackage.validation_summary?.gaps)) {
     gaps.push("validation_summary.gaps must be an array");
+  } else if (
+    JSON.stringify(manifestPackage.validation_summary.gaps) !==
+      JSON.stringify(recomputedValidationGaps)
+  ) {
+    gaps.push("validation_summary.gaps must match recomputed validation");
+  } else if (
+    manifestPackage.validation_summary.gaps.some((gap) => sanitizeGaps([gap])[0] !== gap)
+  ) {
+    gaps.push("validation_summary.gaps must not contain unsafe values");
   }
 
   if (
@@ -997,7 +1148,14 @@ export function validateControlledAggregateManifestValidationPackage(
   if (options.sourceFixture && manifestPackage.manifest_validation_state === "PASSED_CONTROLLED_AGGREGATE_MANIFEST_VALIDATION") {
     const expected = buildControlledAggregateManifestValidationPackageFromObject(
       options.sourceFixture,
-      { sourceSystem: manifestPackage.source_system }
+      {
+        sourceSystem: manifestPackage.source_system,
+        sourceLane: selectedSourceLane(options.sourceFixture, {
+          sourceLane:
+            manifestPackage.manifests?.source_inventory_manifest?.source_lane ??
+            manifestPackage.manifest_refs?.source_inventory_manifest_ref?.source_lane
+        })
+      }
     );
     for (const field of [
       "source_system",
@@ -1065,25 +1223,28 @@ function compactCliOutput(manifestPackage, validation) {
 function parseCliArgs(argv) {
   let fixturePath = DEFAULT_FIXTURE_PATH;
   let sourceSystem = "bigquery_export";
+  let sourceLane;
   for (const arg of argv) {
     if (arg.startsWith("--source-system=")) {
       sourceSystem = arg.split("=", 2)[1];
+    } else if (arg.startsWith("--source-lane=")) {
+      sourceLane = arg.split("=", 2)[1];
     } else if (!arg.startsWith("--")) {
       fixturePath = arg;
     }
   }
-  return { fixturePath, sourceSystem };
+  return { fixturePath, sourceSystem, sourceLane };
 }
 
 const isDirectRun = process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isDirectRun) {
-  const { fixturePath, sourceSystem } = parseCliArgs(process.argv.slice(2));
+  const { fixturePath, sourceSystem, sourceLane } = parseCliArgs(process.argv.slice(2));
   const fixture = readJson(fixturePath);
   const manifestPackage = buildControlledAggregateManifestValidationPackageFromObject(
     fixture,
-    { sourceSystem }
+    { sourceSystem, sourceLane }
   );
   const validation = validateControlledAggregateManifestValidationPackage(
     manifestPackage,

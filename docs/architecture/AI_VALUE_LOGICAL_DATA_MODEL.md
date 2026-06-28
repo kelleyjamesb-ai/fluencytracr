@@ -294,14 +294,58 @@ AI Fluency Instrument
     capability_growth
 ```
 
+Product-facing factor labels may vary, but they must map back to the same five
+governed construct keys:
+
+| Governed key | Product / instrument language | Review role |
+| --- | --- | --- |
+| `confidence` | Confidence | Readiness/capability belief context |
+| `usage_quality` | Ease of use / quality of use | How effectively people report using AI |
+| `behavior_change` | Behavior change / stated AI behavior | Instrument-reported behavior, not telemetry behavior |
+| `leadership_reinforcement` | Leadership support / reinforcement | Organizational support context |
+| `capability_growth` | Competency / capability growth | Growth in ability to use AI well |
+
+Instrument psychological/adoption context:
+
+```text
+AI Fluency Instrument
+  also carries aggregate human adoption context:
+    ai_attitude
+    behavioral_intent / AI intent
+```
+
+`behavior_change` remains the governed construct key for behavior reported
+through the AI Fluency instrument. "Stated AI behavior" is product or review
+language for that instrument-derived view, not a second allowed data-model key,
+feature, or persisted field. Psychological context may reference the
+instrument behavior view only through the governed `behavior_change` construct
+summary.
+`behavioral_intent` is the governed construct key; "AI intent" is product or
+instrument language only.
+
+Observed behavior / VBD:
+
+```text
+Observed Human Behavior / VBD
+  is telemetry-derived aggregate behavior:
+    velocity
+    breadth
+    depth
+```
+
+The model must preserve the distinction between what people say or report in
+the instrument and what aggregate work-pattern telemetry shows. Stated behavior
+and observed behavior do not always match in practice; that mismatch is
+internal diagnostic context only.
+
 Blueprint-governed comparison buckets:
 
 ```text
 Blueprint expectation frame
   - AI Fluency five-dimension construct context
   - AI attitude context
-  - instrument-reported behavior / use-practice context
-  - behavioral intent context
+  - stated AI behavior / instrument-reported use-practice context
+  - AI intent / behavioral intent context
   - observed AI behavior / VBD refs
   - selected metric movement refs
   - Blueprint expectation alignment refs
@@ -330,10 +374,11 @@ Interpretation posture:
 - The five AI Fluency dimensions are instrument construct context, not separate
   value evidence.
 - AI attitude means aggregate orientation toward AI.
-- Instrument-reported behavior / use-practice means aggregate self-reported
-  behavior-change or usage-quality context from the AI Fluency instrument.
-- Behavioral intent means aggregate willingness or stated intent to use AI in
-  real work.
+- Stated AI behavior / instrument-reported use-practice means aggregate
+  self-reported behavior-change or usage-quality context from the AI Fluency
+  instrument.
+- AI intent / behavioral intent means aggregate willingness or stated intent to
+  use AI in real work.
 - Observed AI behavior means aggregate workflow telemetry or VBD evidence, not
   survey sentiment or instrument-reported behavior.
 - Positive attitude, reported behavior/practice, and strong intent mean
@@ -383,6 +428,69 @@ Persistence posture:
   source-bound lineage, not raw instrument responses.
 - Do not add an independent physical table, migration, route, UI, or model
   input in this pass.
+
+### 4.3.2 Internal Value Evidence Alignment Frame
+
+Purpose: provide one shareable internal alignment frame without creating
+product math, score semantics, contribution confidence, probability, ROI,
+causality, productivity, or financial output.
+
+Non-persistent dependency frame:
+
+```text
+Value_Evidence_Alignment is reviewable only when all of the following are present:
+  Gate_Clear
+  Source_Bound
+  AI_Fluency_Construct_Context
+  AI_Fluency_Psychological_Context_Availability
+  Observed_Behavior_VBD_Context
+  Selected_Metric_Movement
+  Blueprint_Expectation_Path_Alignment
+  Assumption_Governance_Context
+```
+
+Where:
+
+- `Gate_Clear` means required source, privacy, approval, suppression, and
+  governance gates are clear.
+- `Source_Bound` means org, client, workflow, function, cohort, window,
+  metric, selected expectation path, and source refs align.
+- `AI_Fluency_Construct_Context` is the five-factor instrument construct:
+  confidence, usage quality / ease of use, behavior change / stated behavior,
+  leadership reinforcement / support, and capability growth / competency.
+- `AI_Fluency_Psychological_Context_Availability` is instrument-derived
+  attitude and behavioral intent context availability only; any "stated
+  behavior" review language must be a view over the governed `behavior_change`
+  construct, not a separate feature.
+- `Observed_Behavior_VBD_Context` is telemetry-derived VBD behavior context.
+- `Selected_Metric_Movement` is customer-owned metric movement context.
+- `Blueprint_Expectation_Path_Alignment` is whether the selected metric,
+  direction, lag, window, and governed value driver match the approved
+  expectation path.
+- `Assumption_Governance_Context` is reviewed assumption and governance
+  posture only.
+
+This is a non-computational internal alignment frame, not a persisted output. It
+is undefined and must remain held unless observed VBD context and selected
+customer metric movement are both present, source-bound, unsuppressed,
+non-held, and aligned to the approved expectation path. Psychological context
+availability may add caveats or hold the frame when unsafe or incomplete, but
+it cannot strengthen, clear, upgrade, or rescue readiness. Instrument context
+alone must not produce an alignment state. The frame must
+not be stored as a row, percentage, score, probability, contribution
+confidence, ROI estimate, finance output, causality claim, productivity claim,
+or customer-facing output or readout of any kind. It is not executable
+pseudocode and produces no boolean, numeric, score, or stored result. Numeric
+weights, if ever used, require a separate exact-scope research promotion
+decision backed by repeated aligned evidence and red/green implementation and
+governance tests.
+
+The gate for any later internal research design is the
+[AI Value Research Promotion Readiness Packet](../contracts/ai-value-research-promotion-readiness-packet/README.md).
+A passed packet may authorize only a separate internal research design, not
+model implementation, numeric weights, model outputs, customer-facing output,
+ROI, causality, productivity, probability, finance output, or durable
+research-model inputs.
 
 ### 4.4 Operator Source Bundle Lineage
 

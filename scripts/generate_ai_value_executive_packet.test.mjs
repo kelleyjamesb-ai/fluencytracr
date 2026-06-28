@@ -311,6 +311,18 @@ test("requires explicit non-customer-facing economic output flag", () => {
   assert.equal(result.feeds.local_workspace_ui, false);
 });
 
+test("rejects non-string top-level executive packet identity fields", () => {
+  const packet = readJson(
+    "docs/contracts/ai-value-intelligence/examples/customer-support-executive-packet.json"
+  );
+  packet.workflow_family = { value: "customer_support_case_resolution" };
+
+  const result = validateExecutiveValidationPacket(packet);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.gaps.includes("workflow_family must be a string"), true);
+});
+
 test("executive packet remains valid when no EBITA bridge exists", () => {
   const packet = buildExecutiveValidationPacket({
     blueprint: readJson(

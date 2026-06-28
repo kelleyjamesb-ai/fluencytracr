@@ -21,8 +21,8 @@
     "valueHypothesis": "If the support workflow uses AI for case triage and answer drafting, then eligible cases should move faster while quality and escalation posture remain governed.",
     "valueRoute": "CAPACITY_CREATION",
     "baselineWindow": {
-      "window_start": "2026-05-01",
-      "window_end": "2026-05-31"
+      "window_start": "2026-04-02",
+      "window_end": "2026-05-01"
     },
     "comparisonWindow": {
       "window_start": "2026-06-01",
@@ -121,8 +121,8 @@
     "function_area": "customer_support",
     "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
     "baseline_window": {
-      "window_start": "2026-05-01",
-      "window_end": "2026-05-31"
+      "window_start": "2026-04-02",
+      "window_end": "2026-05-01"
     },
     "comparison_window": {
       "window_start": "2026-06-01",
@@ -139,8 +139,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -149,7 +149,9 @@
         "owner_role": "workflow_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "aiFluency": {
         "state": "present",
@@ -161,8 +163,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -171,7 +173,9 @@
         "owner_role": "customer_research_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "vbdToken": {
         "state": "present",
@@ -184,8 +188,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -194,7 +198,9 @@
         "owner_role": "customer_data_platform_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "customerMetric": {
         "state": "present",
@@ -207,8 +213,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -217,7 +223,9 @@
         "owner_role": "customer_metric_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "assumption": {
         "state": "present",
@@ -229,8 +237,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -239,7 +247,9 @@
         "owner_role": "finance_or_business_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       },
       "governance": {
         "state": "present",
@@ -251,8 +261,8 @@
         "function_area": "customer_support",
         "cohort_key": "workflow_family:customer_support_case_resolution|eligible_cases:2300",
         "baseline_window": {
-          "window_start": "2026-05-01",
-          "window_end": "2026-05-31"
+          "window_start": "2026-04-02",
+          "window_end": "2026-05-01"
         },
         "comparison_window": {
           "window_start": "2026-06-01",
@@ -261,7 +271,9 @@
         "owner_role": "customer_governance_owner",
         "owner_approval_state": "approved",
         "review_state": "clear",
-        "aggregate_only": true
+        "aggregate_only": true,
+        "freshness_state": "current_for_approved_window",
+        "window_status": "current"
       }
     }
   },
@@ -288,6 +300,8 @@
         "window_start": "2026-06-01",
         "window_end": "2026-06-30"
       },
+      "freshness_state": "current_for_approved_window",
+      "window_status": "current",
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
       "k_min_posture": {
@@ -398,6 +412,8 @@
         "window_start": "2026-06-01",
         "window_end": "2026-06-30"
       },
+      "freshness_state": "current_for_approved_window",
+      "window_status": "current",
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
       "k_min_posture": {
@@ -486,6 +502,8 @@
         "window_start": "2026-06-01",
         "window_end": "2026-06-30"
       },
+      "freshness_state": "current_for_approved_window",
+      "window_status": "current",
       "aggregate_grain": "workflow_family",
       "minimum_cohort_threshold": 5,
       "k_min_posture": {
@@ -719,7 +737,7 @@
     "source_package_count": 5,
     "next_gate": "measurement_cell_assembly_candidate_only",
     "reviewed_aggregate_context_hash": "6c8d03765abed1b6ef643733571d8b70d58960fe8390ff95236a21520c72a8c2",
-    "reviewed_blueprint_expectation_hash": "8c2cb0a86d5b12272bcdc01374662b2dd08856e4f6ac250656f644d25d80ce2a",
+    "reviewed_blueprint_expectation_hash": "dc113b8ee31fabd9ad1d98beae992a9da2e8e254b9b88e28909f05edafaec272",
     "reviewed_source_refs": {
       "blueprint": "blueprint_parse_support_approved_day_30",
       "ai_fluency": "ai_fluency_support_day_30",

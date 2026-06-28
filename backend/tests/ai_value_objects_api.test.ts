@@ -32,6 +32,7 @@ const metricsLibraryId = metricsLibrary.library_id as string;
 const roiScenarioId = roiScenario.roi_scenario_id as string;
 const executivePacketId = "executive_packet_customer_support_case_resolution_v1";
 
+
 beforeEach(() => {
   store.reset();
 });
@@ -145,6 +146,14 @@ describe("AI value object API", () => {
       .set(readAuth);
     expect(filtered.body.objects).toHaveLength(1);
     expect(filtered.body.objects[0].object_type).toBe("blueprint");
+  });
+
+  it("does not expose Measurement Cell snapshot read routes in the persistence promotion slice", async () => {
+    const response = await request(app)
+      .get("/api/v1/ai-value/measurement-cell-snapshots")
+      .set(readoutAuth);
+
+    expect(response.status).toBe(404);
   });
 
   it("stores a governed ROI scenario as a reusable value-modeling object", async () => {
@@ -508,8 +517,41 @@ describe("AI value spine run API", () => {
     expect(response.body.run.engagement.covers_workflow_family).toBe(true);
     expect(response.body.run.fluency_baseline.status).toBe("VALID");
     expect(response.body.run.fluency_baseline.summary.suppressed_cohorts).toBe(1);
+    expect(
+      response.body.run.spine.stages.readiness.object.source_refs
+        .fluency_baseline_id
+    ).toBe(fluencyBaseline.baseline_id);
     expect(response.body.run.spine.halted_at).toBeNull();
     expect(response.body.persisted.length).toBe(4);
+  });
+
+  it("holds value-chain runs instead of persisting stale foreign fluency baseline refs", async () => {
+    await storeUpstreamObjects();
+    const foreignBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      baseline_id: "fluency_baseline_foreign_sales",
+      workflow_family: "sales_pipeline_hygiene"
+    };
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${foreignBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(foreignBaseline)
+      .expect(201);
+
+    const response = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        fluency_baseline_id: foreignBaseline.baseline_id,
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.run.halted_at).toBe("fluency_baseline");
+    expect(response.body.run.decision).toBe("HOLD_FOR_FLUENCY_BASELINE_TRACEABILITY");
+    expect(response.body.run.spine).toBeNull();
+    expect(response.body.persisted).toHaveLength(0);
   });
 
   it("rejects fluency baselines with respondent identifiers", async () => {
@@ -649,7 +691,10 @@ describe("AI value spine run API", () => {
   it("renders the executive readout HTML from stored objects", async () => {
     await storeUpstreamObjects();
     const engagement = readExample("customer-support-engagement.json");
-    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+    const fluencyBaseline = {
+      ...readExample("customer-support-fluency-baseline.json"),
+      workflow_family: "customer_support_case_resolution"
+    };
     await request(app)
       .put(`/api/v1/ai-value/objects/engagement/${engagement.engagement_id}`)
       .set(writeAuth)
@@ -1100,6 +1145,48 @@ describe("AI value spine run API", () => {
 
     expect(readout.text).not.toContain("Where the team started");
     expect(readout.text).not.toContain("1999-01-01_to_1999-01-31");
+  });
+
+  it("fails closed when a stored legacy executive packet has a non-string workflow family", async () => {
+    await storeUpstreamObjects();
+    const fluencyBaseline = readExample("customer-support-fluency-baseline.json");
+    delete fluencyBaseline.workflow_family;
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/fluency_baseline/${fluencyBaseline.baseline_id}`)
+      .set(writeAuth)
+      .send(fluencyBaseline)
+      .expect(201);
+    await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId })
+      .expect(200);
+
+    const storeKey = `${ORG_ID}:executive_packet:${executivePacketId}`;
+    const stored = store.aiValueObjects.get(storeKey);
+    expect(stored).toBeDefined();
+    if (!stored) return;
+    stored.payload = {
+      ...stored.payload,
+      workflow_family: { value: "customer_support_case_resolution" },
+      source_refs: {
+        ...((stored.payload.source_refs as Record<string, unknown>) ?? {}),
+        fluency_baseline_id: fluencyBaseline.baseline_id
+      }
+    };
+
+    const readout = await request(app)
+      .get(`/api/v1/ai-value/readout/${executivePacketId}/html`)
+      .set(readoutAuth);
+
+    expect(readout.status).toBe(422);
+    expect(readout.body.reason).toBe("ENGINE_VALIDATION_FAILED");
+    expect(
+      readout.body.gaps.some((gap: string) =>
+        gap.includes("workflow_family must be a string")
+      )
+    ).toBe(true);
   });
 
   it("does not attach outcome evidence through a stale readiness binding", async () => {

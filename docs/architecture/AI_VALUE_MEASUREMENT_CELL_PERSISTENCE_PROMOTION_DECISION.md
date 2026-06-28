@@ -13,7 +13,7 @@ Decision: `PROMOTE_MEASUREMENT_CELL_SNAPSHOTS`
 ## 1. Purpose
 
 The physical data-model readiness review originally defined a non-authorizing
-projection sketch for future `measurement_cell_snapshots`. The controlled
+physical persistence sketch for future `measurement_cell_snapshots`. The controlled
 scrubbed aggregate pilot and this promotion decision now demonstrate the exact
 compact backend-internal scope that can safely persist.
 
@@ -180,7 +180,13 @@ implementation scope is limited to:
 - backend service write path only;
 - already validated Measurement Cell Assembly Run input only;
 - recomputed validation before write;
-- compact Measurement Cell snapshot projection only;
+- required compact Measurement Cell preflight snapshot-candidate ref binding
+  that must match the recomputed durable snapshot row before write;
+- required compact aggregate-boundary proof from the same preflight
+  snapshot-candidate ref, including source system, passed review state,
+  source-export ref, review hash, pipeline dry-run ref, and recomputed compact
+  pipeline-boundary hash;
+- compact Measurement Cell snapshot persistence/write path only;
 - compact source refs;
 - compact selected path binding;
 - required caveats;
@@ -196,6 +202,11 @@ Still blocked even if Measurement Cell snapshots are promoted:
 - confidence research inputs;
 - finance outputs;
 - live connectors.
+
+The compact aggregate-boundary proof does not authorize live BigQuery, Sigma,
+Glean, or customer connector execution. It only binds an already reviewed
+non-live aggregate export boundary to the internal snapshot row so future
+connector work has a safe reviewed landing point.
 
 ## 7. Series Persistence Boundary
 
@@ -239,5 +250,19 @@ git diff --check
 bash scripts/ci_docs_contract_sweep.sh
 python3 scripts/ci_v1_governance_gates.py
 ```
+
+## 10. Follow-Up Internal Projection Slice
+
+A later bounded productization slice may propose an internal/operator-only
+projection contract over compact `measurement_cell_snapshots` rows, but no
+read route or projection contract is authorized by this persistence promotion
+slice.
+
+That future follow-up must not change this decision's original persistence
+scope. It still must not authorize frontend pages, customer-facing read paths,
+exports, rendered readouts, live connector execution, Series persistence,
+confidence research inputs, ROI, causality, productivity, probability, finance
+output, or customer-facing financial output without a separate exact-scope
+promotion decision.
 
 Expected: all commands exit `0`.
