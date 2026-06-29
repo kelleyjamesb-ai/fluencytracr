@@ -30,11 +30,11 @@ export const ExecutiveReadoutPreviewPanel = ({
   >
     <div className="ai-value-section-head">
       <div>
-        <p className="eyebrow">Preview &amp; Share</p>
+        <p className="eyebrow">Internal Preview</p>
         <h2>Executive Report Preview</h2>
         <p>
-          See what will open for the sponsor before sharing it, and keep the
-          evidence caveats attached to the report.
+          See what will open for internal sponsor review and keep the evidence
+          caveats attached to the report.
         </p>
       </div>
       <StatusPill label={reportDisplayCopy(preview.statusLabel)} tone={preview.statusTone} />
@@ -42,7 +42,9 @@ export const ExecutiveReadoutPreviewPanel = ({
 
     <div className="ai-value-map-grid">
       <div className="ai-value-map-cell ai-value-map-cell-wide">
-        <span className="ai-value-map-label">What will open</span>
+        <span className="ai-value-map-label">
+          {preview.canOpen ? "What will open" : "Why preview is held"}
+        </span>
         <p>{reportDisplayCopy(preview.whatWillOpen)}</p>
       </div>
       <div className="ai-value-map-cell">
@@ -72,11 +74,14 @@ export const ExecutiveReadoutPreviewPanel = ({
             key={packetId}
             onClick={() => onOpenReadout(packetId)}
           >
-            Open executive report
+            Open caveated internal preview
           </button>
         ))
       ) : (
-        <StatusPill label="Generate report first" tone="warn" />
+        <StatusPill
+          label={packetIds.length > 0 ? "Preview held for evidence review" : "Generate report first"}
+          tone="warn"
+        />
       )}
     </div>
   </section>

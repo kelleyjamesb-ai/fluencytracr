@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,17 @@ const uiTerm = (...parts: string[]) => parts.join("");
 const SELECTED_OUTCOME_METRICS_KEY = "aiValue.selectedOutcomeMetrics";
 const SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY = "aiValue.selectedOutcomeMetricWatchPlan";
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const workspaceCss = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+const workspaceSource = readFileSync(`${process.cwd()}/src/pages/AIValueWorkspace.tsx`, "utf8");
+const cssHasDeclaration = (selector: string, declaration: string) => {
+  const rules = workspaceCss.matchAll(/([^{}]+)\{([^{}]+)\}/g);
+  return Array.from(rules).some(([, selectors, body]) =>
+    selectors
+      .split(",")
+      .map((item) => item.trim())
+      .includes(selector) && body.includes(declaration)
+  );
+};
 const expectNoUnsafeUiLanguage = (
   text: string | null | undefined,
   extraTerms: string[] = []
@@ -162,7 +174,7 @@ describe("AIValueWorkspace executive spine", () => {
     localStorage.clear();
   });
 
-  it("renders a meaty executive value evidence report with a download control", () => {
+  it("renders a meaty executive value evidence report with fail-closed export controls", () => {
     const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
     const report = screen.getByRole("region", { name: /Value Evidence Report/i });
@@ -171,7 +183,11 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(report).getByText(/Hypothesis status/i)).toBeInTheDocument();
     expect(within(report).getByText(/Evidence posture/i)).toBeInTheDocument();
     expect(within(report).getByText(/Spend posture/i)).toBeInTheDocument();
-    expect(within(report).getByRole("button", { name: /Download report/i })).toBeInTheDocument();
+    const reportActions = within(report).getByRole("group", { name: /Report actions/i });
+    expect(within(reportActions).getByRole("button", { name: /Export not authorized/i })).toBeDisabled();
+    expect(within(reportActions).getByRole("button", { name: /Share not authorized/i })).toBeDisabled();
+    expect(within(report).getByText(/Preview only. Export not authorized/i)).toBeInTheDocument();
+    expect(within(report).queryByRole("button", { name: /Download report/i })).not.toBeInTheDocument();
 
     for (const section of [
       "Approved Hypothesis",
@@ -211,7 +227,15 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(nav).queryByText(/Readout/i)).not.toBeInTheDocument();
     expect(within(nav).queryByText(/Value \/ ROI/i)).not.toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { name: /Value Evidence Console/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: /AI value workspace report frame/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Value Case: AI Assistant Value Assessment/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /Value Evidence Console/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Current guided action/i })).toHaveTextContent("Blueprint Hypothesis");
     expect(screen.getByRole("region", { name: /Blueprint hypothesis summary/i })).toBeInTheDocument();
     const journeyPreview = screen.getByRole("region", { name: /Value journey preview/i });
@@ -222,6 +246,70 @@ describe("AIValueWorkspace executive spine", () => {
     expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("renders the Evidence Sources step inside the executive report-frame toolbar", () => {
+    const { container } = renderWorkspace("/ai-value-workspace/sources");
+
+    const frame = screen.getByRole("region", {
+      name: /AI value workspace report frame/i
+    });
+    expect(
+      within(frame).queryByRole("toolbar", { name: /AI value report controls/i })
+    ).not.toBeInTheDocument();
+    const reportHeader = screen
+      .getByRole("heading", { name: /Value Case: AI Assistant Value Assessment/i })
+      .closest("header") as HTMLElement;
+    expect(reportHeader).toHaveAttribute("aria-label", "AI value report header");
+    expect(within(reportHeader).getByText(/AI Value Platform/i)).toBeInTheDocument();
+    expect(within(reportHeader).getByText(/^Evidence Sources$/i)).toBeInTheDocument();
+    expect(
+      within(reportHeader).getByText(/Caveated review only: aggregate source readiness supports planning/i)
+    ).toBeInTheDocument();
+    expect(within(reportHeader).getByText(/not proof of ROI/i)).toBeInTheDocument();
+    expect(within(reportHeader).getByText(/Causality, productivity, financial calculations/i)).toBeInTheDocument();
+
+    const modeNav = within(reportHeader).getByRole("navigation", {
+      name: /Value case modes/i
+    });
+    expect(within(modeNav).getByRole("link", { name: /Cockpit/i })).toHaveClass(
+      "active"
+    );
+    expect(within(modeNav).getByRole("link", { name: /Report/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/decisions"
+    );
+
+    const reportFrameActions = within(reportHeader).getByRole("group", {
+      name: /Report frame actions/i
+    });
+    expect(
+      within(reportFrameActions).getByRole("button", {
+        name: /Review aggregate evidence status/i
+      })
+    ).toBeEnabled();
+    expect(
+      within(reportFrameActions).getByRole("button", { name: /Export not authorized/i })
+    ).toBeDisabled();
+    expect(
+      within(reportFrameActions).getByRole("button", { name: /Share not authorized/i })
+    ).toBeDisabled();
+    expect(
+      within(reportFrameActions).queryByRole("button", { name: /Sync read-only/i })
+    ).not.toBeInTheDocument();
+    expect(within(reportFrameActions).getByText(/Read-only status/i)).toBeInTheDocument();
+    expect(
+      within(reportFrameActions).queryByRole("button", { name: /Settings|Review caveats|More/i })
+    ).not.toBeInTheDocument();
+
+    expect(screen.queryByRole("heading", { name: /Value Evidence Console/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: /Workspace navigation/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Alex Morgan/i)).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent, [
+      "Download report",
+      "Share package",
+      "customer-facing financial output"
+    ]);
   });
 
   it("shows the governed source package review queue on the Evidence Sources step", () => {
@@ -244,7 +332,7 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getByText("AI Fluency")).toBeInTheDocument();
     expect(within(queue).getByText("VBD / Token")).toBeInTheDocument();
     expect(within(queue).getByText("Customer metric")).toBeInTheDocument();
-    expect(within(queue).getByText("ROI assumption context")).toBeInTheDocument();
+    expect(within(queue).getByText("Value assumption context")).toBeInTheDocument();
     expect(within(queue).getByText("Governance")).toBeInTheDocument();
     expect(within(queue).getByText("Aggregate instrument review")).toBeInTheDocument();
     expect(within(queue).getByText("Scrubbed aggregate telemetry review")).toBeInTheDocument();
@@ -257,7 +345,7 @@ describe("AIValueWorkspace executive spine", () => {
     }
     expect(within(queue).getByText("3 of 6 lanes clear for Data Spine review")).toBeInTheDocument();
     expect(
-      within(queue).getByText(/Held or suppressed lanes stay out of finance-context investigation readiness/i)
+      within(queue).getByText(/Held or suppressed lanes stay out of executive review readiness/i)
     ).toBeInTheDocument();
     expect(within(queue).getAllByText(/Action needed/i).length).toBeGreaterThan(0);
     expect(within(queue).getByText(/Map parsed value routes to workflow_family/i)).toBeInTheDocument();
@@ -277,6 +365,9 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getByText("Source package review")).toBeInTheDocument();
     expect(within(queue).getByText("Reviewer role")).toBeInTheDocument();
     expect(within(queue).getByText("Review decision")).toBeInTheDocument();
+    expect(within(queue).getAllByText("Review packet")).toHaveLength(6);
+    expect(within(queue).getByText("Blueprint extraction packet")).toBeInTheDocument();
+    expect(within(queue).queryByText("Source reference")).not.toBeInTheDocument();
     expect(within(queue).queryByText("org_id")).not.toBeInTheDocument();
     expect(within(queue).queryByText("client_id")).not.toBeInTheDocument();
     expect(within(queue).queryByText("metric_id")).not.toBeInTheDocument();
@@ -284,7 +375,9 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(queue).getAllByText("Clear for review")).toHaveLength(3);
     expect(within(queue).getAllByText("Hold before review")).toHaveLength(3);
     expect(within(queue).getByText(/aggregate evidence status only/i)).toBeInTheDocument();
-    expect(within(queue).getByText(/Evidence Checkpoint readiness/i)).toBeInTheDocument();
+    expect(
+      within(queue).getByText(/Evidence Checkpoint, model-review, or report-output readiness/i)
+    ).toBeInTheDocument();
     expect(within(queue).queryByText(/prepare_finance_context_investigation_packet/i)).not.toBeInTheDocument();
 
     expect(queue.textContent).not.toMatch(/confidence\s*%|probability|financial attribution|causal proof/i);
@@ -422,6 +515,101 @@ describe("AIValueWorkspace executive spine", () => {
     expect(screen.queryByText(/Client kickoff/i)).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("uses the report-frame toolbar on every workspace page", async () => {
+    for (const path of [
+      "/ai-value-workspace",
+      "/ai-value-workspace/readiness",
+      "/ai-value-workspace/sources",
+      "/ai-value-workspace/vbd",
+      "/ai-value-workspace/metrics",
+      "/ai-value-workspace/case",
+      "/ai-value-workspace/roi",
+      "/ai-value-workspace/decisions"
+    ]) {
+      const view = renderWorkspace(path);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("region", { name: /AI value workspace report frame/i })
+        ).toBeInTheDocument();
+      });
+
+      const frame = screen.getByRole("region", {
+        name: /AI value workspace report frame/i
+      });
+      expect(
+        within(frame).getByRole("heading", {
+          name: /Value Case: AI Assistant Value Assessment/i
+        })
+      ).toBeInTheDocument();
+      expect(
+        within(frame).getByRole("navigation", { name: /Value journey steps/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: /Value Evidence Console/i })
+      ).not.toBeInTheDocument();
+
+      view.unmount();
+    }
+  });
+
+  it("keeps report-frame text readable on light report surfaces", () => {
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-map-label", "color: #334155")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-workspace-card-status", "color: #334155")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-blueprint-primary p", "color: #374151")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-blueprint-side h3", "color: #051c55")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-blueprint-side .eyebrow", "color: #334155")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-page-handoff", "background: #fffffb")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-page-handoff p", "color: #1f2937")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-pill", "color: #09276e")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-pill-good", "color: #14532d")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-pill-warn", "color: #7a4b0a")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-vbd-bridge .ai-value-map-label", "color: #8ea0bd")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-report-posture-grid .ai-value-map-label", "color: #8ea0bd")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-vbd-y-axis", "color: #334155")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-checkpoint-panel .ai-value-section-head p:not(.eyebrow)", "color: #4b5563")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-roi-access-panel h3", "color: #051c55")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-decision-preview h3", "color: #051c55")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-workspace-report-frame .ai-value-metrics-flow p", "color: #4b5563")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-console-layout.ai-value-workspace-report-layout", "grid-template-columns: 1fr")
+    ).toBe(true);
   });
 
   it("replaces the client-assessment controls with the AI Org fluency example", () => {
@@ -1052,6 +1240,13 @@ describe("AIValueWorkspace journey continuity", () => {
   });
 
 
+  it("keeps ROI Bot scenario packaging blocked by the promoted report-output contract", async () => {
+    expect(workspaceSource).toMatch(/promoted report-output contract/i);
+    expect(workspaceSource).not.toMatch(
+      /HTML or PPTX output may carry caveats after FluencyTracr report review is applied/i
+    );
+  });
+
   it("turns the metrics page into the function outcome metric step", async () => {
     stubJourneyFetch(journeyObjects);
     const { container } = renderWorkspace("/ai-value-workspace/metrics");
@@ -1540,34 +1735,38 @@ describe("AIValueWorkspace journey continuity", () => {
       held: /Realized ROI, causality, productivity, and individual scoring stay out/i,
       owner: /Support Operations and the sponsor/i,
       action: /Review the caveated report with accepted evidence/i,
-      caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i
+      caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i,
+      canOpen: true
     },
     {
       state: "SUBMITTED" as const,
       status: /Review pending/i,
-      included: /pending evidence section/i,
+      included: /preview stays held until the submitted evidence is accepted or rejected/i,
       held: /Stronger value language stays held until Support Operations accepts or rejects the export/i,
       owner: /Support Operations/i,
       action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i,
-      caveat: /Submitted evidence does not validate value yet/i
+      caveat: /Submitted evidence does not validate value yet/i,
+      canOpen: false
     },
     {
       state: "REJECTED" as const,
       status: /Corrected export needed/i,
-      included: /corrected-export request/i,
+      included: /preview stays held until a corrected aggregate export is accepted/i,
       held: /Validated value language stays held until a corrected aggregate export is accepted/i,
       owner: /Support Operations/i,
       action: /Keep stronger value language blocked until a corrected export is accepted/i,
-      caveat: /Rejected evidence cannot support value claims/i
+      caveat: /Rejected evidence cannot support value claims/i,
+      canOpen: false
     },
     {
       state: "MISSING" as const,
       status: /Data owner request needed/i,
-      included: /customer evidence request/i,
+      included: /preview stays held until the aggregate export arrives and passes review/i,
       held: /Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review/i,
       owner: /Support Operations/i,
       action: /Ask Support Operations for an aggregate Median resolution time export/i,
-      caveat: /Missing evidence keeps the report in planning status/i
+      caveat: /Missing evidence keeps the report in planning status/i,
+      canOpen: false
     }
   ])("carries $state evidence into the Executive Report preview", async ({
     state,
@@ -1576,7 +1775,8 @@ describe("AIValueWorkspace journey continuity", () => {
     held,
     owner,
     action,
-    caveat
+    caveat,
+    canOpen
   }) => {
     const fixture = withOutcomeReviewState(state);
     stubJourneyFetch(fixture.objects, fixture.details);
@@ -1599,10 +1799,18 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(within(preview).getByText(action)).toBeInTheDocument();
     expect(within(preview).getByText(caveat)).toBeInTheDocument();
 
-    fireEvent.click(within(preview).getByRole("button", { name: /Open executive report/i }));
-    await waitFor(() => {
-      expect(open).toHaveBeenCalledWith("blob:workspace-readout-preview", "_blank", "noopener");
-    });
+    if (canOpen) {
+      fireEvent.click(within(preview).getByRole("button", { name: /Open caveated internal preview/i }));
+      await waitFor(() => {
+        expect(open).toHaveBeenCalledWith("blob:workspace-readout-preview", "_blank", "noopener");
+      });
+    } else {
+      expect(
+        within(preview).queryByRole("button", { name: /Open caveated internal preview/i })
+      ).not.toBeInTheDocument();
+      expect(within(preview).getByText(/Preview held for evidence review/i)).toBeInTheDocument();
+      expect(open).not.toHaveBeenCalled();
+    }
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("workflow", "_", "family"),

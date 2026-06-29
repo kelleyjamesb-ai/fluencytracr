@@ -1,8 +1,20 @@
+import { readFileSync } from "node:fs";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { AIValueReadoutPrototype } from "./AIValueReadoutPrototype";
+
+const readoutCss = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+const cssHasDeclaration = (selector: string, declaration: string) => {
+  const rules = readoutCss.matchAll(/([^{}]+)\{([^{}]+)\}/g);
+  return Array.from(rules).some(([, selectors, body]) =>
+    selectors
+      .split(",")
+      .map((item) => item.trim())
+      .includes(selector) && body.includes(declaration)
+  );
+};
 
 const renderReadout = () =>
   render(
@@ -18,6 +30,15 @@ describe("AIValueReadoutPrototype", () => {
     expect(
       screen.getByRole("heading", { name: /AI Value Executive Readout/i })
     ).toBeInTheDocument();
+    const reportFrame = screen.getByRole("region", { name: /Governed report frame/i });
+    expect(within(reportFrame).getByRole("heading", { name: /Decision Memo/i })).toBeInTheDocument();
+    expect(within(reportFrame).getByText(/Evidence Annex/i)).toBeInTheDocument();
+    const reportControls = within(reportFrame).getByRole("group", { name: /Report output controls/i });
+    expect(within(reportControls).getByRole("button", { name: /Export not authorized/i })).toBeDisabled();
+    expect(within(reportControls).getByRole("button", { name: /Share not authorized/i })).toBeDisabled();
+    expect(within(reportFrame).getByText(/Preview only. Export not authorized/i)).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: /Workspace navigation/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Alex Morgan/i)).not.toBeInTheDocument();
     const workflowContext = screen.getByRole("region", { name: /Workflow being evaluated/i });
     expect(within(workflowContext).getByText("Customer Support Resolution")).toBeInTheDocument();
     expect(within(workflowContext).getByText(/2026-Q1 to 2026-Q2/i)).toBeInTheDocument();
@@ -145,5 +166,23 @@ describe("AIValueReadoutPrototype", () => {
     expect(container.textContent).not.toMatch(
       /AI saved \$|proved ROI|employee score|HRIS analytics|Financial confidence|Executive Caveated/i
     );
+  });
+
+  it("keeps readout governance boundaries readable on light report surfaces", () => {
+    expect(
+      cssHasDeclaration(".ai-value-readout-report-frame .ai-value-readout-warning", "color: #7a2e0e")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-readout-report-frame .ai-value-readout-permissions span", "color: #1f2937")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-readout-report-frame .ai-value-readout-export-bar .ai-value-map-label", "color: #334155")
+    ).toBe(true);
+    expect(
+      cssHasDeclaration(".ai-value-readout-report-frame .ai-value-readout-export-actions .ai-value-step:disabled", "opacity: 1")
+    ).toBe(true);
+    expect(cssHasDeclaration(".ai-value-readout-report-frame", "min-width: 0")).toBe(true);
+    expect(cssHasDeclaration(".ai-value-readout-report-main", "min-width: 0")).toBe(true);
+    expect(cssHasDeclaration(".ai-value-readout-report-hero", "min-width: 0")).toBe(true);
   });
 });

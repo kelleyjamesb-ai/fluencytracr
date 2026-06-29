@@ -123,6 +123,50 @@ const blockedClaimCopy: Record<string, string> = {
   manager_or_team_ranking: "No manager or team ranking."
 };
 
+const evidenceAnnexItems = [
+  {
+    title: "Workflow telemetry",
+    detail: "Reviewed aggregate workflow behavior only.",
+    status: "Included",
+    tone: "good"
+  },
+  {
+    title: "Outcome metric context",
+    detail: "Customer-owned metric movement remains caveated.",
+    status: "Caveated",
+    tone: "warn"
+  },
+  {
+    title: "Quality guardrail",
+    detail: "Reopen-rate guardrail did not degrade in the reviewed window.",
+    status: "Caveated",
+    tone: "warn"
+  },
+  {
+    title: "Contribution reporting spine",
+    detail: "Planning and reviewer-action posture only.",
+    status: "Review only",
+    tone: "neutral"
+  },
+  {
+    title: "Economic translation",
+    detail: "No dollar, ROI, or realized economic output authorized.",
+    status: "Blocked",
+    tone: "warn"
+  },
+  {
+    title: "Attribution language",
+    detail: "Causality language remains blocked.",
+    status: "Blocked",
+    tone: "warn"
+  }
+] satisfies Array<{
+  title: string;
+  detail: string;
+  status: string;
+  tone: "good" | "warn" | "neutral";
+}>;
+
 const formatToken = (value: string) => getAiValueDisplayLabel(value);
 
 const StatusPill = ({
@@ -207,181 +251,242 @@ export const AIValueReadoutPrototype = () => {
         </div>
       </section>
 
-      <section className="ai-value-readout-summary" aria-label="Executive value summary">
-        <article>
-          <span className="ai-value-map-label">VBD mode</span>
-          <strong>{formatToken(posture.mode)}</strong>
-        </article>
-        <article>
-          <span className="ai-value-map-label">Outcome evidence</span>
-          <strong>{formatToken(outcome.status)}</strong>
-        </article>
-        <article>
-          <span className="ai-value-map-label">Claim boundary review</span>
-          <strong>{formatToken(gate.mode)}</strong>
-        </article>
-        <article>
-          <span className="ai-value-map-label">Evidence posture</span>
-          <strong>{formatToken(ebita.evidence_quality.overall_evidence_posture)}</strong>
-        </article>
-      </section>
-
-      <section className="ai-value-readout-grid">
-        <section className="ai-value-panel" aria-label="VBD operating posture">
-          <div className="ai-value-section-head">
-            <div>
-              <p className="eyebrow">Operating Posture</p>
-              <h2>Operating Adoption Map</h2>
-            </div>
-            <StatusPill label={formatToken(posture.mode)} tone="warn" />
-          </div>
-          <div className="ai-value-readout-score-grid">
-            {[
-              ["Velocity", posture.velocity],
-              ["Breadth", posture.breadth],
-              ["Depth", posture.depth]
-            ].map(([label, value]) => (
-              <div key={label}>
-                <span className="ai-value-map-label">{label}</span>
-                <strong>{formatToken(value)}</strong>
+      <section className="ai-value-readout-report-frame" aria-label="Governed report frame">
+        <div className="ai-value-readout-report-main">
+          <article className="ai-value-readout-document" aria-label="Governed decision memo">
+            <section className="ai-value-readout-report-hero">
+              <div>
+                <p className="eyebrow">Internal Governed Preview</p>
+                <h2>Decision Memo</h2>
+                <p>
+                  Evidence supports planning and reviewer action only. Stronger economic,
+                  causality, productivity, and customer-facing claims remain blocked.
+                </p>
               </div>
-            ))}
-          </div>
-          <p>{posture.interpretation}</p>
-        </section>
+              <aside>
+                <StatusPill label={formatToken(ebita.status)} tone="warn" />
+                <strong>Preview only</strong>
+                <span>Export and sharing stay blocked until a promoted report-output contract exists.</span>
+              </aside>
+            </section>
 
-        <section className="ai-value-panel" aria-label="Measurement evidence">
-          <div className="ai-value-section-head">
-            <div>
-              <p className="eyebrow">Evidence Collection</p>
-              <h2>Measurement Evidence</h2>
-            </div>
-            <StatusPill label={formatToken(outcome.status)} tone="warn" />
-          </div>
-          <dl className="ai-value-readout-facts">
-            <div>
-              <dt>Primary metric</dt>
-              <dd>{outcome.primary_metric}</dd>
-            </div>
-            <div>
-              <dt>Movement</dt>
-              <dd>{outcome.movement}</dd>
-            </div>
-            <div>
-              <dt>Quality guardrail</dt>
-              <dd>{outcome.quality_guardrail}</dd>
-            </div>
-          </dl>
-          <p>{outcome.evidence_note}</p>
-        </section>
+            <section className="ai-value-readout-summary" aria-label="Executive value summary">
+              <article>
+                <span className="ai-value-map-label">VBD mode</span>
+                <strong>{formatToken(posture.mode)}</strong>
+              </article>
+              <article>
+                <span className="ai-value-map-label">Outcome evidence</span>
+                <strong>{formatToken(outcome.status)}</strong>
+              </article>
+              <article>
+                <span className="ai-value-map-label">Claim boundary review</span>
+                <strong>{formatToken(gate.mode)}</strong>
+              </article>
+              <article>
+                <span className="ai-value-map-label">Evidence posture</span>
+                <strong>{formatToken(ebita.evidence_quality.overall_evidence_posture)}</strong>
+              </article>
+            </section>
 
-        <AiContributionReportingSpinePanel spine={reportingSpine} />
-
-        <section className="ai-value-panel" aria-label="Claim boundary review">
-          <div className="ai-value-section-head">
-            <div>
-              <p className="eyebrow">Claim Governance</p>
-              <h2>Claim Boundary Review</h2>
-            </div>
-            <StatusPill label={formatToken(gate.mode)} tone="warn" />
-          </div>
-          <p>
-            Stronger value language is held until reviewer-owned evidence and
-            comparison-design inputs are complete.
-          </p>
-          <div className="ai-value-output-columns">
-            <ListCard
-              title="Allowed"
-              items={
-                allowedOutputs.length > 0
-                  ? allowedOutputs.map(([key]) => outputLabels[key as ClaimGateOutputKey])
-                  : ["No stronger outputs allowed"]
-              }
-            />
-            <ListCard
-              title="Blocked"
-              items={blockedOutputs.map(([key]) => outputLabels[key as ClaimGateOutputKey])}
-            />
-          </div>
-        </section>
-
-        <section className="ai-value-panel" aria-label="Stronger claims blocked">
-          <div className="ai-value-section-head">
-            <div>
-              <p className="eyebrow">Boundary</p>
-              <h2>Stronger Claims Blocked</h2>
-            </div>
-            <StatusPill label={formatToken(ebita.status)} tone="warn" />
-          </div>
-          <p className="ai-value-readout-warning">No realized economic claim is allowed.</p>
-          <div className="ai-value-output-columns">
-            <ListCard title="Review contexts" items={ebita.primary_ebita_levers.map(formatToken)} />
-            <div className="ai-value-readout-list-block">
-              <h3>Evidence posture</h3>
-              <dl className="ai-value-readout-facts ai-value-readout-evidence">
-                {Object.entries(ebita.evidence_quality).map(([field, value]) => (
-                  <div key={field}>
-                    <dt>{formatToken(field)}</dt>
-                    <dd>{formatToken(value)}</dd>
+            <section className="ai-value-readout-grid">
+              <section className="ai-value-panel" aria-label="VBD operating posture">
+                <div className="ai-value-section-head">
+                  <div>
+                    <p className="eyebrow">Operating Posture</p>
+                    <h2>Operating Adoption Map</h2>
                   </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-          <div className="ai-value-readout-permissions" aria-label="Claim boundary permissions">
-            <span>Realized economic claim allowed: No</span>
-            <span>Customer-facing economic output allowed: No</span>
-            <span>Causality claim allowed: No</span>
-          </div>
-        </section>
+                  <StatusPill label={formatToken(posture.mode)} tone="warn" />
+                </div>
+                <div className="ai-value-readout-score-grid">
+                  {[
+                    ["Velocity", posture.velocity],
+                    ["Breadth", posture.breadth],
+                    ["Depth", posture.depth]
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <span className="ai-value-map-label">{label}</span>
+                      <strong>{formatToken(value)}</strong>
+                    </div>
+                  ))}
+                </div>
+                <p>{posture.interpretation}</p>
+              </section>
 
-        <section className="ai-value-panel" aria-label="Safe claims and caveats">
-          <div className="ai-value-section-head">
+              <section className="ai-value-panel" aria-label="Measurement evidence">
+                <div className="ai-value-section-head">
+                  <div>
+                    <p className="eyebrow">Evidence Collection</p>
+                    <h2>Measurement Evidence</h2>
+                  </div>
+                  <StatusPill label={formatToken(outcome.status)} tone="warn" />
+                </div>
+                <dl className="ai-value-readout-facts">
+                  <div>
+                    <dt>Primary metric</dt>
+                    <dd>{outcome.primary_metric}</dd>
+                  </div>
+                  <div>
+                    <dt>Movement</dt>
+                    <dd>{outcome.movement}</dd>
+                  </div>
+                  <div>
+                    <dt>Quality guardrail</dt>
+                    <dd>{outcome.quality_guardrail}</dd>
+                  </div>
+                </dl>
+                <p>{outcome.evidence_note}</p>
+              </section>
+
+              <div className="ai-value-readout-spine">
+                <AiContributionReportingSpinePanel spine={reportingSpine} />
+              </div>
+
+              <section className="ai-value-panel" aria-label="Claim boundary review">
+                <div className="ai-value-section-head">
+                  <div>
+                    <p className="eyebrow">Claim Governance</p>
+                    <h2>Claim Boundary Review</h2>
+                  </div>
+                  <StatusPill label={formatToken(gate.mode)} tone="warn" />
+                </div>
+                <p>
+                  Stronger value language is held until reviewer-owned evidence and
+                  comparison-design inputs are complete.
+                </p>
+                <div className="ai-value-output-columns">
+                  <ListCard
+                    title="Allowed"
+                    items={
+                      allowedOutputs.length > 0
+                        ? allowedOutputs.map(([key]) => outputLabels[key as ClaimGateOutputKey])
+                        : ["No stronger outputs allowed"]
+                    }
+                  />
+                  <ListCard
+                    title="Blocked"
+                    items={blockedOutputs.map(([key]) => outputLabels[key as ClaimGateOutputKey])}
+                  />
+                </div>
+              </section>
+
+              <section className="ai-value-panel" aria-label="Stronger claims blocked">
+                <div className="ai-value-section-head">
+                  <div>
+                    <p className="eyebrow">Boundary</p>
+                    <h2>Stronger Claims Blocked</h2>
+                  </div>
+                  <StatusPill label={formatToken(ebita.status)} tone="warn" />
+                </div>
+                <p className="ai-value-readout-warning">No realized economic claim is allowed.</p>
+                <div className="ai-value-output-columns">
+                  <ListCard title="Review contexts" items={ebita.primary_ebita_levers.map(formatToken)} />
+                  <div className="ai-value-readout-list-block">
+                    <h3>Evidence posture</h3>
+                    <dl className="ai-value-readout-facts ai-value-readout-evidence">
+                      {Object.entries(ebita.evidence_quality).map(([field, value]) => (
+                        <div key={field}>
+                          <dt>{formatToken(field)}</dt>
+                          <dd>{formatToken(value)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+                <div className="ai-value-readout-permissions" aria-label="Claim boundary permissions">
+                  <span>Realized economic claim allowed: No</span>
+                  <span>Customer-facing economic output allowed: No</span>
+                  <span>Causality claim allowed: No</span>
+                </div>
+              </section>
+
+              <section className="ai-value-panel" aria-label="Safe claims and caveats">
+                <div className="ai-value-section-head">
+                  <div>
+                    <p className="eyebrow">Safe Language</p>
+                    <h2>Safe Claims &amp; Caveats</h2>
+                  </div>
+                  <StatusPill label="Internal and caveated" tone="warn" />
+                </div>
+                <div className="ai-value-output-columns">
+                  <ListCard title="Allowed phrases" items={ebita.allowed_phrases} />
+                  <ListCard title="Required caveats" items={ebita.required_caveats} />
+                </div>
+              </section>
+
+              <section className="ai-value-panel" aria-label="Blocked claims">
+                <div className="ai-value-section-head">
+                  <div>
+                    <p className="eyebrow">Boundary</p>
+                    <h2>Blocked Claims</h2>
+                  </div>
+                  <StatusPill label="Not allowed" tone="neutral" />
+                </div>
+                <ul className="ai-value-blocked-claim-list">
+                  {ebita.blocked_claims.map((claim) => (
+                    <li key={claim}>
+                      <strong>{blockedClaimCopy[claim] ?? formatToken(claim)}</strong>
+                      <span>{formatToken(claim)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="ai-value-panel ai-value-readout-actions" aria-label="Next evidence actions">
+                <div>
+                  <p className="eyebrow">Next Move</p>
+                  <h2>Next Evidence Actions</h2>
+                  <p>
+                    These actions move the case from internal measurement posture toward
+                    reviewer-owned evidence collection.
+                  </p>
+                </div>
+                <ol>
+                  {ebita.next_evidence_actions.map((action) => (
+                    <li key={action}>{action}</li>
+                  ))}
+                </ol>
+              </section>
+            </section>
+          </article>
+
+          <aside className="ai-value-readout-annex" aria-label="Evidence annex">
             <div>
-              <p className="eyebrow">Safe Language</p>
-              <h2>Safe Claims &amp; Caveats</h2>
+              <p className="eyebrow">Evidence Inventory</p>
+              <h2>Evidence Annex</h2>
+              <p>
+                Internal-only inventory for the governed preview. Blocked and review-only
+                items are not exportable.
+              </p>
             </div>
-            <StatusPill label="Internal and caveated" tone="warn" />
-          </div>
-          <div className="ai-value-output-columns">
-            <ListCard title="Allowed phrases" items={ebita.allowed_phrases} />
-            <ListCard title="Required caveats" items={ebita.required_caveats} />
-          </div>
-        </section>
+            <ul>
+              {evidenceAnnexItems.map((item) => (
+                <li key={item.title}>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <span>{item.detail}</span>
+                  </div>
+                  <StatusPill label={item.status} tone={item.tone} />
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </div>
 
-        <section className="ai-value-panel" aria-label="Blocked claims">
-          <div className="ai-value-section-head">
-            <div>
-              <p className="eyebrow">Boundary</p>
-              <h2>Blocked Claims</h2>
-            </div>
-            <StatusPill label="Not allowed" tone="neutral" />
-          </div>
-          <ul className="ai-value-blocked-claim-list">
-            {ebita.blocked_claims.map((claim) => (
-              <li key={claim}>
-                <strong>{blockedClaimCopy[claim] ?? formatToken(claim)}</strong>
-                <span>{formatToken(claim)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="ai-value-panel ai-value-readout-actions" aria-label="Next evidence actions">
+        <div className="ai-value-readout-export-bar" role="group" aria-label="Report output controls">
           <div>
-            <p className="eyebrow">Next Move</p>
-            <h2>Next Evidence Actions</h2>
-            <p>
-              These actions move the case from internal measurement posture toward
-              reviewer-owned evidence collection.
-            </p>
+            <span className="ai-value-map-label">Report output boundary</span>
+            <strong>Preview only. Export not authorized until a promoted report-output contract exists.</strong>
           </div>
-          <ol>
-            {ebita.next_evidence_actions.map((action) => (
-              <li key={action}>{action}</li>
-            ))}
-          </ol>
-        </section>
+          <div className="ai-value-readout-export-actions">
+            <button type="button" className="ai-value-step" disabled>
+              Export not authorized
+            </button>
+            <button type="button" className="ai-value-step" disabled>
+              Share not authorized
+            </button>
+          </div>
+        </div>
       </section>
     </main>
   );

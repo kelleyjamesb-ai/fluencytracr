@@ -919,6 +919,49 @@ describe("AIValueJourney", () => {
     ]);
   });
 
+  it("replaces unsafe safe-value payload phrases before rendering scenario language", async () => {
+    const nextDetails = cloneDetails();
+    const roiScenario = nextDetails["roi_scenario/roi_support"] as Record<string, any>;
+    roiScenario.safe_value_language.allowed_phrases = [
+      "ROI, return on investment, EBITDA, savings, cost reduction, revenue, headcount, productivity, efficiency, lift, confidence, probability, and causality language are ready."
+    ];
+    roiScenario.safe_value_language.required_caveats = [
+      "Financial impact, economic attribution, and causal proof are blocked.",
+      "Not blocked: ROI proof and causal attribution are ready.",
+      "This does not block ROI proof.",
+      "No restriction applies to customer-facing economic claims.",
+      "Cannot be interpreted as blocking causality proof."
+    ];
+    stubJourneyFetch(objects, nextDetails);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
+    });
+
+    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
+    const safeLanguage = within(readiness)
+      .getByText(/^Safe value language$/i)
+      .closest(".ai-value-map-cell") as HTMLElement;
+    expect(safeLanguage.textContent ?? "").not.toMatch(
+      /return on investment|EBITDA|savings|cost reduction|revenue|headcount|productivity|efficiency|lift|confidence|probability|language are ready/i
+    );
+    expect(
+      within(safeLanguage).getByText(
+        /Stronger value language remains blocked until a promoted contract authorizes it/i
+      )
+    ).toBeInTheDocument();
+    expect(
+      within(safeLanguage).getByText(
+        /Financial impact, economic attribution, and causal proof are blocked/i
+      )
+    ).toBeInTheDocument();
+    expect(safeLanguage.textContent ?? "").not.toMatch(
+      /not blocked|does not block ROI proof|no restriction applies|cannot be interpreted as blocking|ROI proof|causal attribution|are ready/i
+    );
+  });
+
   it("turns ROI readiness into a customer evidence request packet", async () => {
     const { container } = renderPage();
 
@@ -1161,34 +1204,38 @@ describe("AIValueJourney", () => {
       held: /Realized ROI, causality, productivity, and individual scoring stay out/i,
       owner: /Support Operations and the sponsor/i,
       action: /Review the caveated report with accepted evidence/i,
-      caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i
+      caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i,
+      canOpen: true
     },
     {
       state: "SUBMITTED" as const,
       status: /Review pending/i,
-      included: /pending evidence section/i,
+      included: /preview stays held until the submitted evidence is accepted or rejected/i,
       held: /Stronger value language stays held until Support Operations accepts or rejects the export/i,
       owner: /Support Operations/i,
       action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i,
-      caveat: /Submitted evidence does not validate value yet/i
+      caveat: /Submitted evidence does not validate value yet/i,
+      canOpen: false
     },
     {
       state: "REJECTED" as const,
       status: /Corrected export needed/i,
-      included: /corrected-export request/i,
+      included: /preview stays held until a corrected aggregate export is accepted/i,
       held: /Validated value language stays held until a corrected aggregate export is accepted/i,
       owner: /Support Operations/i,
       action: /Keep stronger value language blocked until a corrected export is accepted/i,
-      caveat: /Rejected evidence cannot support value claims/i
+      caveat: /Rejected evidence cannot support value claims/i,
+      canOpen: false
     },
     {
       state: "MISSING" as const,
       status: /Data owner request needed/i,
-      included: /customer evidence request/i,
+      included: /preview stays held until the aggregate export arrives and passes review/i,
       held: /Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review/i,
       owner: /Support Operations/i,
       action: /Ask Support Operations for an aggregate Median resolution time export/i,
-      caveat: /Missing evidence keeps the report in planning status/i
+      caveat: /Missing evidence keeps the report in planning status/i,
+      canOpen: false
     }
   ])("previews the executive report share workflow for $state evidence", async ({
     state,
@@ -1197,7 +1244,8 @@ describe("AIValueJourney", () => {
     held,
     owner,
     action,
-    caveat
+    caveat,
+    canOpen
   }) => {
     const fixture = withOutcomeReviewState(state);
     stubJourneyFetch(fixture.objects, fixture.details);
@@ -1221,10 +1269,18 @@ describe("AIValueJourney", () => {
     expect(within(preview).getByText(action)).toBeInTheDocument();
     expect(within(preview).getByText(caveat)).toBeInTheDocument();
 
-    fireEvent.click(within(preview).getByRole("button", { name: /Open executive report/i }));
-    await waitFor(() => {
-      expect(open).toHaveBeenCalledWith("blob:readout-preview", "_blank", "noopener");
-    });
+    if (canOpen) {
+      fireEvent.click(within(preview).getByRole("button", { name: /Open caveated internal preview/i }));
+      await waitFor(() => {
+        expect(open).toHaveBeenCalledWith("blob:readout-preview", "_blank", "noopener");
+      });
+    } else {
+      expect(
+        within(preview).queryByRole("button", { name: /Open caveated internal preview/i })
+      ).not.toBeInTheDocument();
+      expect(within(preview).getByText(/Preview held for evidence review/i)).toBeInTheDocument();
+      expect(open).not.toHaveBeenCalled();
+    }
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("outcome", "_", "evidence", "_", "export"),
