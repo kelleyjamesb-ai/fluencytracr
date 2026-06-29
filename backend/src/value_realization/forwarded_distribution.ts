@@ -28,6 +28,8 @@ export const ForwardedDistributionSchema = z.object({
   schema_version: z.literal(FORWARDED_DISTRIBUTION_SCHEMA_VERSION),
   source_schema_version: z.literal("FT_V3_2026_05"),
   cohort_id: ForwardedDistributionMachineTokenSchema,
+  // V3 compatibility key. The name stays `workflow_id`, but values may be
+  // governed workflow or standalone surface taxonomy keys.
   workflow_id: ForwardedDistributionMachineTokenSchema,
   jbtd_id: z.string().max(64).regex(/^[a-z0-9_-]+$/).nullable(),
   persona_id: z.string().max(64).regex(/^[a-z0-9_-]+$/).nullable(),
@@ -37,6 +39,8 @@ export const ForwardedDistributionSchema = z.object({
   cohort_size: z.number().int().positive(),
   ambiguity_rate: z.number().min(0).max(1),
   calibration_id: ForwardedDistributionMachineTokenSchema,
+  // Carries the surface taxonomy interpretation of the V3 compatibility key
+  // without introducing a new public aggregate ingest field.
   surface_taxonomy_ids: z.array(ForwardedDistributionMachineTokenSchema).min(1).max(20),
   velocity: z.object({
     frequency: DistributionValueSchema,
