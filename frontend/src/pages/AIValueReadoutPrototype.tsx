@@ -6,7 +6,7 @@ import { buildAiContributionReportingSpineViewModel } from "../lib/aiValueContri
 type EvidenceStatus = "Included" | "Caveated" | "Needs evidence" | "Internal only" | "Blocked";
 
 const reportContext = {
-  client: "Northbridge Financial Services",
+  client: "Example client organization",
   workflow: "AI Assistant Value Assessment",
   prepared: "May 14, 2025",
   primaryMetric: "Resolution cycle time"
@@ -14,7 +14,7 @@ const reportContext = {
 
 const reportingSpine = buildAiContributionReportingSpineViewModel({
   blueprintHypothesisRef: "blueprint_hypothesis.customer_support_resolution.readout_demo",
-  workflowFunctionScope: "Customer Support Resolution",
+  workflowFunctionScope: reportContext.workflow,
   valueRouteLabel: "Capacity creation",
   metricLibraryRef: "metrics_library.readout_demo",
   questionMetricBridge: {
@@ -47,9 +47,9 @@ const evidenceBlocks: {
   },
   {
     title: "Cycle time analysis",
-    detail: "Customer-owned operating metric",
+    detail: "Customer-owned operating metric not yet cleared",
     version: "v1.1",
-    status: "Included"
+    status: "Needs evidence"
   },
   {
     title: "Quality / error review",
@@ -106,9 +106,9 @@ const supportedEvidence = [
     status: "Caveated" as EvidenceStatus
   },
   {
-    label: "Implementation feasibility",
-    detail: "Supported by implementation evidence",
-    status: "Included" as EvidenceStatus
+    label: "Implementation feasibility context",
+    detail: "Internal implementation context; not customer outcome evidence",
+    status: "Caveated" as EvidenceStatus
   }
 ];
 
@@ -124,9 +124,9 @@ const excludedEvidence = [
     status: "Blocked" as EvidenceStatus
   },
   {
-    label: "Vendor internal benchmarks",
-    detail: "Internal only",
-    status: "Internal only" as EvidenceStatus
+    label: "Benchmark material",
+    detail: "Excluded from report evidence",
+    status: "Blocked" as EvidenceStatus
   },
   {
     label: "Attribution to AI Assistant",
@@ -156,6 +156,10 @@ const StatusPill = ({ label }: { label: EvidenceStatus | string }) => {
   return <span className={`ai-value-report-pill ai-value-report-pill-${tone}`}>{label}</span>;
 };
 
+const reportAnnexEvidence = evidenceBlocks.filter(
+  (block) => block.status === "Included" || block.status === "Caveated"
+);
+
 const EvidenceRow = ({
   label,
   detail,
@@ -175,9 +179,9 @@ const EvidenceRow = ({
 );
 
 export const AIValueReadoutPrototype = () => {
-  const includedCount = evidenceBlocks.filter((block) => block.status === "Included").length;
-  const caveatedCount = evidenceBlocks.filter((block) => block.status === "Caveated").length;
-  const excludedCount = evidenceBlocks.length - includedCount - caveatedCount;
+  const includedCount = reportAnnexEvidence.filter((block) => block.status === "Included").length;
+  const caveatedCount = reportAnnexEvidence.filter((block) => block.status === "Caveated").length;
+  const excludedCount = evidenceBlocks.length - reportAnnexEvidence.length;
 
   return (
     <AIValueReportLayout
@@ -186,7 +190,7 @@ export const AIValueReadoutPrototype = () => {
       title="Value Case: AI Assistant Value Assessment"
     >
       <div className="ai-value-report-main">
-        <article className="ai-value-report-document" aria-label="Client value evidence report">
+        <article className="ai-value-report-document" aria-label="Internal value evidence review draft">
           <section className="ai-value-report-meta" aria-label="Report context">
             <div>
               <span>Client</span>
@@ -205,7 +209,7 @@ export const AIValueReadoutPrototype = () => {
           <section className="ai-value-report-hero">
             <div>
               <h1>Decision Memo</h1>
-              <p>Caveated client report</p>
+              <p>Caveated internal review draft</p>
             </div>
             <aside>
               <strong>Evidence supports planning, not ROI proof</strong>
@@ -282,10 +286,13 @@ export const AIValueReadoutPrototype = () => {
         <aside className="ai-value-report-annex" aria-label="Evidence annex">
           <div>
             <h2>Evidence Annex</h2>
-            <p>Internal evidence inventory feeding this report. Blocked items are not exported.</p>
+            <p>
+              Evidence blocks included in this caveated report. Blocked, internal-only, and
+              needs-evidence items stay in the workspace evidence library.
+            </p>
           </div>
           <ul>
-            {evidenceBlocks.map((block) => (
+            {reportAnnexEvidence.map((block) => (
               <li key={block.title}>
                 <div>
                   <strong>{block.title}</strong>
@@ -304,12 +311,12 @@ export const AIValueReadoutPrototype = () => {
       <footer className="ai-value-report-export-bar" aria-label="Export readiness">
         <div>
           <span>Export readiness</span>
-          <strong>Ready for caveated review</strong>
+          <strong>Draft only - export blocked</strong>
           <small>Blocked and internal-only items are excluded</small>
         </div>
         <div>
           <span>Report status</span>
-          <strong>Caveated client report</strong>
+          <strong>Caveated internal review draft</strong>
           <small>Evidence supports planning, not ROI proof</small>
         </div>
         <div>
@@ -328,9 +335,9 @@ export const AIValueReadoutPrototype = () => {
           <small>evidence blocks</small>
         </div>
         <div className="ai-value-report-export-actions">
-          <button type="button">Run export check</button>
-          <button type="button" className="primary">
-            Export caveated report
+          <button type="button">Review export blockers</button>
+          <button type="button" className="primary" disabled>
+            Export blocked pending governance contract
           </button>
         </div>
       </footer>

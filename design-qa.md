@@ -5,7 +5,7 @@ final result: passed
 ## Source Visual
 
 - Selected direction: Decision Memo + Evidence Annex
-- Reference image: `/Users/jkelley/.codex/generated_images/019f0b5f-e5f0-7902-b9cc-cf140eecb8c6/ig_092c29d7f8f485b2016a406a173334819ab92a80f107749159.png`
+- Reference image: generated-image reference captured during design QA; machine-local source path omitted.
 
 ## Prototype Checked
 

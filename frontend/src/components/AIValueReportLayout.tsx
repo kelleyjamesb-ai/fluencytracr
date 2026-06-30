@@ -73,10 +73,10 @@ export const AIValueReportLayout = ({
       </nav>
 
       <div className="ai-value-report-user">
-        <span>AM</span>
+        <span>VR</span>
         <div>
-          <strong>Alex Morgan</strong>
-          <small>Value Lead</small>
+          <strong>Value realization role</strong>
+          <small>Shared report context</small>
         </div>
       </div>
     </aside>
