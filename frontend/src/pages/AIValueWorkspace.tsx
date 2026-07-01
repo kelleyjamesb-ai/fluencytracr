@@ -3160,6 +3160,12 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
         <StatusPill label={reportDisplayCopy(preview.statusLabel)} tone={preview.statusTone} />
       </div>
 
+      <p className="ai-value-report-action-caveat">
+        Caveated report actions only: this package does not claim ROI, causality,
+        productivity lift, financial impact, or individual performance. Blocked
+        and internal-only evidence stays out of shared report materials.
+      </p>
+
       <div className="ai-value-report-actions" role="group" aria-label="Report actions">
         <button
           type="button"

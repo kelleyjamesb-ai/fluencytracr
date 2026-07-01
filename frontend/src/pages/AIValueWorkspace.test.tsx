@@ -183,11 +183,14 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(report).getByText(/Hypothesis status/i)).toBeInTheDocument();
     expect(within(report).getByText(/Evidence posture/i)).toBeInTheDocument();
     expect(within(report).getByText(/Spend posture/i)).toBeInTheDocument();
+    expect(within(report).getByText(/Caveated report actions only/i)).toBeInTheDocument();
     const reportActions = within(report).getByRole("group", { name: /Report actions/i });
+    expect(within(reportActions).getByRole("button", { name: /Open internal preview/i })).toBeInTheDocument();
     expect(within(reportActions).getByRole("button", { name: /Export not authorized/i })).toBeDisabled();
     expect(within(reportActions).getByRole("button", { name: /Share not authorized/i })).toBeDisabled();
     expect(within(report).getByText(/Preview only. Export not authorized/i)).toBeInTheDocument();
-    expect(within(report).queryByRole("button", { name: /Download report/i })).not.toBeInTheDocument();
+    expect(within(report).queryByRole("button", { name: /Download/i })).not.toBeInTheDocument();
+    expect(within(report).queryByRole("button", { name: /Share caveated package/i })).not.toBeInTheDocument();
 
     for (const section of [
       "Approved Hypothesis",
@@ -204,7 +207,9 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(report).getByText(/Run a targeted enablement sprint/i)).toBeInTheDocument();
     expect(within(report).getByText(/Review high-token, low-depth workflows/i)).toBeInTheDocument();
     expect(within(report).getByText(/The strongest current conclusion/i)).toBeInTheDocument();
-    expect(within(report).getByText(/does not claim ROI, causality, productivity lift, financial impact/i)).toBeInTheDocument();
+    expect(
+      within(report).getAllByText(/does not claim ROI, causality, productivity lift, financial impact/i).length
+    ).toBeGreaterThan(0);
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
