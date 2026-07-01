@@ -445,6 +445,33 @@ test("promotion gate passed artifact handoff rejects non-gate promotion side doo
   );
 });
 
+test("promotion gate passed artifact handoff rejects unsafe nested runtime envelope sidecars", () => {
+  const runtime = sourceRuntime();
+  const { governedSource, review, packet, gate } =
+    explicitPromotionPath(runtime, reviewedEvidenceInput(runtime));
+  const handoff =
+    buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
+      source_runtime: {
+        ...sourceRuntimeEnvelope(runtime),
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows",
+        user_id: "person-123"
+      },
+      source_governed_diagnostics_sufficiency_evidence_source: governedSource,
+      source_diagnostics_review: review,
+      source_diagnostics_evidence_packet: packet,
+      source_promotion_gate: gate
+    });
+  const validation = validateContributionAlignmentPromotionGatePassedArtifactHandoff(handoff);
+  const serialized = `${JSON.stringify(handoff)} ${JSON.stringify(validation)}`;
+
+  assert.equal(handoff.handoff_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("promotion gate passed artifact handoff does not create or feed execution artifact v1", () => {
   const runtime = sourceRuntime();
   const { governedSource, review, packet, gate } =

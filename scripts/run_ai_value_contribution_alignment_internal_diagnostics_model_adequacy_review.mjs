@@ -247,6 +247,14 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "generated_at"
 ]);
 
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows"
+]);
+
 const DIAGNOSTIC_SOURCE_FIELDS = [
   "convergence_diagnostics_present",
   "posterior_predictive_checks_present",
@@ -406,7 +414,16 @@ function inputBoundaryGaps(input) {
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
-  return Object.keys(sidecar).length > 0
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const nestedSidecar =
+    sourceRuntimeEnvelope.source_runtime
+      ? Object.fromEntries(
+          Object.entries(sourceRuntimeEnvelope).filter(
+            ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
+          )
+        )
+      : {};
+  return Object.keys(sidecar).length > 0 || Object.keys(nestedSidecar).length > 0
     ? ["input wrapper rejected unsafe or unsupported content"]
     : [];
 }

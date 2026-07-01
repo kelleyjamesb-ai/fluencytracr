@@ -584,6 +584,25 @@ test("internal diagnostics and model adequacy review rejects unsafe wrapper side
   }
 });
 
+test("internal diagnostics and model adequacy review rejects unsafe nested runtime envelope sidecars", () => {
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+    source_runtime: {
+      ...sourceRuntimeSource(),
+      raw_rows: [{ email: "person@example.com" }],
+      query_text: "SELECT user_id FROM raw_rows",
+      user_id: "person-123"
+    }
+  });
+  const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(review);
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("internal diagnostics and model adequacy review holds when required diagnostics fields are missing", () => {
   const runtime = sourceRuntime();
   delete runtime.internal_fit_artifact.convergence_diagnostics_present;

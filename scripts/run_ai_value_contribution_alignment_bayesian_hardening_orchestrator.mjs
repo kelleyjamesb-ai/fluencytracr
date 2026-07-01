@@ -307,6 +307,14 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "explicit_governed_path"
 ]);
 
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows"
+]);
+
 const EXPLICIT_GOVERNED_PATH_FIELDS = new Set([
   "source_reviewed_diagnostics_source_evidence",
   "source_governed_diagnostics_sufficiency_evidence_source",
@@ -368,6 +376,14 @@ function inputBoundaryGaps(input) {
   }
   if (FORBIDDEN_INPUT_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(record, field))) {
     gaps.push("Bayesian hardening orchestrator input contains blocked output, raw source, or governed evidence fabrication side door");
+  }
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) {
+    for (const key of Object.keys(sourceRuntimeEnvelope)) {
+      if (!ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)) {
+        gaps.push("Bayesian hardening orchestrator input contains blocked output, raw source, or governed evidence fabrication side door");
+      }
+    }
   }
   const explicit = asRecord(record.explicit_governed_path);
   for (const key of Object.keys(explicit)) {

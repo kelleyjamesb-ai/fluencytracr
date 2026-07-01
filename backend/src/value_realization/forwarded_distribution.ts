@@ -24,10 +24,24 @@ const QualitySignalsSchema = z.object({
   p95_latency_ms: z.number().int().nonnegative()
 }).strict();
 
-export const ForwardedDistributionSchema = z.object({
+const normalizeLegacyForwardedDistribution = (value: unknown): unknown => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  if (record.surface_taxonomy_ids !== undefined || typeof record.workflow_id !== "string") {
+    return value;
+  }
+  return {
+    ...record,
+    surface_taxonomy_ids: [record.workflow_id]
+  };
+};
+
+const ForwardedDistributionPayloadSchema = z.object({
   schema_version: z.literal(FORWARDED_DISTRIBUTION_SCHEMA_VERSION),
   source_schema_version: z.literal("FT_V3_2026_05"),
   cohort_id: ForwardedDistributionMachineTokenSchema,
+  // V3 compatibility key. The name stays `workflow_id`, but values may be
+  // governed workflow or standalone surface taxonomy keys.
   workflow_id: ForwardedDistributionMachineTokenSchema,
   jbtd_id: z.string().max(64).regex(/^[a-z0-9_-]+$/).nullable(),
   persona_id: z.string().max(64).regex(/^[a-z0-9_-]+$/).nullable(),
@@ -37,6 +51,8 @@ export const ForwardedDistributionSchema = z.object({
   cohort_size: z.number().int().positive(),
   ambiguity_rate: z.number().min(0).max(1),
   calibration_id: ForwardedDistributionMachineTokenSchema,
+  // Carries the surface taxonomy interpretation of the V3 compatibility key
+  // without introducing a new public aggregate ingest field.
   surface_taxonomy_ids: z.array(ForwardedDistributionMachineTokenSchema).min(1).max(20),
   velocity: z.object({
     frequency: DistributionValueSchema,
@@ -59,6 +75,11 @@ export const ForwardedDistributionSchema = z.object({
 }).strict().refine(
   (value) => Date.parse(value.window_end) > Date.parse(value.window_start),
   { message: "window_end must be after window_start", path: ["window_end"] }
+);
+
+export const ForwardedDistributionSchema = z.preprocess(
+  normalizeLegacyForwardedDistribution,
+  ForwardedDistributionPayloadSchema
 );
 
 export type ForwardedDistribution = z.infer<typeof ForwardedDistributionSchema>;
