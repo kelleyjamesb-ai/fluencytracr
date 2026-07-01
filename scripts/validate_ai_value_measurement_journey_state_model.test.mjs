@@ -41,22 +41,22 @@ const WORKFLOW_REF = "workflow_function.customer_support_case_resolution";
 const USE_CASE_REF = "prioritized_use_case.case_resolution_ai_assist";
 const METRIC_REF = "metric.support_median_resolution_hours";
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
-  cachedRuntime = JSON.parse(
+function sourceRuntimeSource() {
+  if (cachedRuntimeSource) return clone(cachedRuntimeSource);
+  cachedRuntimeSource = JSON.parse(
     execFileSync("npm", [
       "run",
       "--silent",
-      "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime"
+      "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime-source-envelope"
     ], { encoding: "utf8" })
   );
-  return clone(cachedRuntime);
+  return clone(cachedRuntimeSource);
 }
 
 function recommendationPlan(overrides = {}) {
@@ -275,14 +275,22 @@ function draftInput(sourceRecommendationPlan = recommendationPlan()) {
 
 function comparisonReviewContext() {
   const chain = baseChain();
-  const runtime = sourceRuntime();
+  const runtimeSource = sourceRuntimeSource();
+  const runtime = runtimeSource.source_runtime;
   const sourceComparisonDesignAdequacyReview =
     buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
-      source_runtime: runtime,
+      ...runtimeSource,
       comparison_design_source_evidence:
         chain.sourceReviewerOwnedComparisonDesignSourcePackageCollection
     });
-  return { ...chain, sourceRuntime: runtime, sourceComparisonDesignAdequacyReview };
+  return {
+    ...chain,
+    sourceRuntime: runtime,
+    sourceGate: runtimeSource.source_gate,
+    aggregateMeasurementCellWindows:
+      runtimeSource.aggregate_measurement_cell_windows,
+    sourceComparisonDesignAdequacyReview
+  };
 }
 
 function triangulatedSourceFields(sourceComparisonDesignAdequacyReview, overrides = {}) {

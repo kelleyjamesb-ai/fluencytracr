@@ -407,6 +407,30 @@ test("comparison-design evidence review binds to reviewer-owned package collecti
   assert.equal(review.feeds.bayesian_promotion_decision_gate, false);
 });
 
+test("plain source_runtime wrapper stays held without source binding envelope", () => {
+  const runtime = sourceRuntime();
+  const { collection } = reviewerOwnedCollection();
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: runtime,
+      comparison_design_source_evidence: collection
+    });
+
+  assert.equal(review.review_state, HOLD_STATE);
+  assert.equal(review.review_hash, null);
+  assert.equal(review.evidence_satisfaction.evidence_satisfied, false);
+  assert.ok(
+    review.validation_summary.gaps.includes(
+      "source_runtime.sourceGate is required for ready internal Bayesian execution runtime validation"
+    )
+  );
+  assert.ok(
+    review.validation_summary.gaps.includes(
+      "source_runtime.aggregateMeasurementCellWindows is required for ready internal Bayesian execution runtime validation"
+    )
+  );
+});
+
 test("direct legacy adequacy source package no longer satisfies without reviewer-owned collection", () => {
   const runtime = sourceRuntime();
   const sourcePackage = validComparisonDesignSourcePackage(runtime);
