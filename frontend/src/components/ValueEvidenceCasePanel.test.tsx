@@ -129,6 +129,33 @@ const salesCase = {
   }
 };
 
+const unsafeLanguageCase = {
+  ...supportCase,
+  value_evidence_case_id: "value_evidence_case_unsafe_language_v1",
+  safe_value_language: {
+    allowed_claim_level: "SUPPORTED_VALUE_MOVEMENT",
+    allowed_phrases: [
+      "ROI, return on investment, EBITDA, savings, cost reduction, revenue, headcount, productivity, efficiency, lift, confidence, probability, and causality language are ready."
+    ],
+    required_caveats: [
+      "Financial impact, economic attribution, and causal proof are blocked.",
+      "Not blocked: ROI proof and causal attribution are ready.",
+      "This does not block ROI proof.",
+      "No restriction applies to customer-facing economic claims.",
+      "Cannot be interpreted as blocking causality proof."
+    ]
+  },
+  claim_gates: [
+    { claim: "individual_scoring", state: "UNLOCKED" },
+    {
+      claim: "unexpected_future_claim",
+      state: "UNLOCKED",
+      unlock_requirements:
+        "Future ROI proof can use source_ref abc123, prompt transcript, confidence probability, and causal attribution."
+    }
+  ]
+};
+
 const supportOutcomeExport = {
   export_id: "outcome_export_support_v1",
   source_system: {
@@ -216,21 +243,23 @@ describe("ValueEvidenceCasePanel", () => {
     expect(
       within(strategicChoice).getByRole("heading", { name: /What should the client do next/i })
     ).toBeInTheDocument();
-    expect(within(strategicChoice).getByText(/Recommended: Use caveated executive readout/i)).toBeInTheDocument();
+    expect(within(strategicChoice).getByText(/Recommended: Prepare caveated internal readout/i)).toBeInTheDocument();
     expect(
-      within(strategicChoice).getByText(/Share directional value movement with caveats/i)
+      within(strategicChoice).getByText(/Review directional value movement with caveats/i)
     ).toBeInTheDocument();
     expect(
-      within(strategicChoice).getByText(/Do not present realized ROI yet/i)
+      within(strategicChoice).getByText(/Keep stronger value language held/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText("We can present a caveated value investigation for this workflow.")
+      screen.getByText(
+        "Internal review can use a caveated value investigation for this workflow; customer-facing value language remains held."
+      )
     ).toBeInTheDocument();
     expect(screen.getByText("This does not prove ROI or causality.")).toBeInTheDocument();
     // Privacy boundaries render as permanent; value claims render as gates.
     expect(screen.getByText("Individual scoring")).toBeInTheDocument();
     expect(screen.getByText("ROI proof")).toBeInTheDocument();
-    expect(screen.getAllByText("Locked").length).toBe(4);
+    expect(screen.getAllByText("Blocked / review only").length).toBe(4);
     // No internal tokens leak to the client.
     expect(screen.queryByText("CAVEATED_VALUE_INVESTIGATION")).not.toBeInTheDocument();
     expect(screen.queryByText("customer_support_case_resolution")).not.toBeInTheDocument();
@@ -243,20 +272,101 @@ describe("ValueEvidenceCasePanel", () => {
     expect(screen.getByText("Sales proposal and RFP response")).toBeInTheDocument();
     expect(screen.getByText("Proposal turnaround time")).toBeInTheDocument();
 
-    // The validated case unlocks ROI-family gates while causality stays locked.
+    // Even validated source context stays review-only in the current product surface.
     expect(
-      screen.getAllByText(/customer-validated realized value/i).length
+      screen.getAllByText(/Stronger value language remains blocked until a promoted contract authorizes it/i).length
     ).toBeGreaterThan(0);
     const updatedStrategicChoice = screen.getByRole("region", { name: /Strategic value choice/i });
     expect(
-      within(updatedStrategicChoice).getByText(/Recommended: Use validated value story/i)
+      within(updatedStrategicChoice).getByText(/Recommended: Model internally/i)
     ).toBeInTheDocument();
     expect(
-      within(updatedStrategicChoice).getByText(/Keep causality blocked unless the evidence design supports it/i)
+      within(updatedStrategicChoice).getByText(/not as a client-facing value claim/i)
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Unlocked").length).toBe(3);
-    expect(screen.getAllByText("Locked").length).toBe(1);
-    expect(screen.getByText(/approved by Sales finance partner/i)).toBeInTheDocument();
+    const claimGates = screen.getByRole("region", { name: /Evidence-gated claims/i });
+    expect(within(claimGates).getAllByText("Blocked / review only")).toHaveLength(4);
+    expect(within(claimGates).queryByText("Unlocked")).not.toBeInTheDocument();
+    expect(within(claimGates).queryByText(/supports this claim/i)).not.toBeInTheDocument();
+    expect(
+      within(claimGates).getAllByText(
+        /Later promotion required before this can become customer-facing value language/i
+      )
+    ).toHaveLength(4);
+    expect(screen.getByText(/reviewed by Sales finance partner/i)).toBeInTheDocument();
+  });
+
+  it("replaces unsafe payload phrases before rendering safe language lists", async () => {
+    vi.spyOn(aiValueApi, "listAiValueObjects").mockResolvedValue({
+      objects: [summaryOf(unsafeLanguageCase)]
+    } as never);
+    vi.spyOn(aiValueApi, "fetchAiValueObject").mockImplementation(
+      async (_role, _type, objectId) =>
+        _type === "outcome_evidence_export"
+          ? ({
+              object_type: "outcome_evidence_export",
+              object_id: objectId,
+              schema_version: "FT_AI_VALUE_OUTCOME_EVIDENCE_EXPORT_2026_06",
+              workflow_family: null,
+              valid: true,
+              validation: {},
+              updated_at: "2026-06-11T00:00:00Z",
+              payload: supportOutcomeExport
+            } as never)
+          : ({
+              ...summaryOf(unsafeLanguageCase),
+              payload: unsafeLanguageCase
+            }) as never
+    );
+
+    render(<ValueEvidenceCasePanel />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/What can we safely say about this workflow/i)
+      ).toBeInTheDocument()
+    );
+
+    const allowedLanguage = screen
+      .getByRole("heading", { name: /What we can say now/i })
+      .closest(".ai-value-case-language-col") as HTMLElement;
+    const requiredCaveats = screen
+      .getByRole("heading", { name: /Always said with/i })
+      .closest(".ai-value-case-language-col") as HTMLElement;
+
+    expect(allowedLanguage.textContent ?? "").not.toMatch(
+      /\bROI\b|return on investment|EBITDA|savings|cost reduction|revenue|headcount|productivity|efficiency|lift|confidence|probability|causality|causal|financial impact|economic attribution|proof/i
+    );
+    expect(
+      within(allowedLanguage).getByText(
+        /Stronger value language remains blocked until a promoted contract authorizes it/i
+      )
+    ).toBeInTheDocument();
+    expect(
+      within(requiredCaveats).getByText(
+        /Financial impact, economic attribution, and causal proof are blocked/i
+      )
+    ).toBeInTheDocument();
+    expect(requiredCaveats.textContent ?? "").not.toMatch(
+      /not blocked|does not block ROI proof|no restriction applies|cannot be interpreted as blocking|ROI proof|causal attribution|are ready/i
+    );
+    expect(
+      within(requiredCaveats).getAllByText(
+        /Stronger value language remains blocked until a promoted contract authorizes it/i
+      )
+    ).toHaveLength(4);
+
+    const claimGates = screen.getByRole("region", { name: /Evidence-gated claims/i });
+    expect(within(claimGates).getAllByText("Blocked / review only")).toHaveLength(2);
+    expect(within(claimGates).queryByText("Available for review")).not.toBeInTheDocument();
+    expect(claimGates.textContent).not.toMatch(/unexpected_future_claim/i);
+    expect(claimGates.textContent).not.toMatch(
+      /source_ref|prompt transcript|\bROI\b|confidence|probability|causal attribution|proof/i
+    );
+    expect(
+      within(claimGates).getAllByText(
+        /Later promotion required before this can become customer-facing value language/i
+      )
+    ).toHaveLength(2);
   });
 
   it("shows the held empty state when no case exists", async () => {

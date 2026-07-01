@@ -287,7 +287,8 @@ function comparisonReviewContext() {
     ...chain,
     sourceRuntime: runtime,
     sourceGate: runtimeSource.source_gate,
-    aggregateMeasurementCellWindows: runtimeSource.aggregate_measurement_cell_windows,
+    aggregateMeasurementCellWindows:
+      runtimeSource.aggregate_measurement_cell_windows,
     sourceComparisonDesignAdequacyReview
   };
 }

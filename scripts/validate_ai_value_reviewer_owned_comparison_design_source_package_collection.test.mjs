@@ -39,8 +39,12 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
 function sourceRuntimeSource() {
-  if (cachedRuntimeSource) return JSON.parse(JSON.stringify(cachedRuntimeSource));
+  if (cachedRuntimeSource) return clone(cachedRuntimeSource);
   cachedRuntimeSource = JSON.parse(
     execFileSync("npm", [
       "run",
@@ -48,7 +52,7 @@ function sourceRuntimeSource() {
       "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime-source-envelope"
     ], { encoding: "utf8" })
   );
-  return JSON.parse(JSON.stringify(cachedRuntimeSource));
+  return clone(cachedRuntimeSource);
 }
 
 function rehashCollection(record) {

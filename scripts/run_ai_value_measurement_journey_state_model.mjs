@@ -422,7 +422,10 @@ function sourceAliases(input) {
       input.source_reviewer_owned_comparison_design_source_package_collection ??
       null,
     sourceRuntime: input.sourceRuntime ?? input.source_runtime ?? null,
-    sourceGate: input.sourceGate ?? input.source_gate ?? null,
+    sourceGate:
+      input.sourceGate ??
+      input.source_gate ??
+      null,
     aggregateMeasurementCellWindows:
       input.aggregateMeasurementCellWindows ??
       input.aggregate_measurement_cell_windows ??
