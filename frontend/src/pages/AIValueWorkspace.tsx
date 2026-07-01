@@ -24,6 +24,7 @@ import {
   type CustomerDataModelProjectionResponse
 } from "../lib/aiValueApi";
 import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelection";
+import { AIValueReportLayout } from "../components/AIValueReportLayout";
 
 const workspacePages = [
   {
@@ -1231,9 +1232,26 @@ export const AIValueWorkspace = () => {
   const claimModeLabel = live?.claimModeLabel ?? aiValueWorkspace.claimModeLabel;
   const activePage = workspacePageBySlug.get(activePageSlug) ?? workspacePages[0];
   const activeStepNumber = workspacePageIndex(activePageSlug) + 1;
+  const activeReportNav =
+    activePageSlug === "sources"
+      ? "Evidence"
+      : activePageSlug === "metrics"
+        ? "Metrics"
+        : activePageSlug === "readiness"
+          ? "Risks"
+          : activePageSlug === "decisions"
+            ? "Decisions"
+            : activePageSlug === "case"
+              ? "Claim library"
+              : "Home";
 
   return (
-    <main className="ai-value-shell">
+    <AIValueReportLayout
+      activeNav={activeReportNav}
+      mode="cockpit"
+      title="Value Case: AI Assistant Value Assessment"
+    >
+    <main className="ai-value-shell ai-value-report-surface">
       <header className="ai-value-topbar">
         <div>
           <p className="eyebrow">Client value console</p>
@@ -1366,6 +1384,7 @@ export const AIValueWorkspace = () => {
         />
       </section>
     </main>
+    </AIValueReportLayout>
   );
 };
 
@@ -2846,15 +2865,21 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
         <StatusPill label={reportDisplayCopy(preview.statusLabel)} tone={preview.statusTone} />
       </div>
 
+      <p className="ai-value-report-action-caveat">
+        Caveated report actions only: this package does not claim ROI, causality,
+        productivity lift, financial impact, or individual performance. Blocked
+        and internal-only evidence stays out of shared report materials.
+      </p>
+
       <div className="ai-value-report-actions" aria-label="Report actions">
         <button type="button" className="ai-value-step active" disabled={!canShare}>
-          Preview report
+          Preview caveated report
         </button>
         <button type="button" className="ai-value-step">
-          Download report
+          Download caveated report
         </button>
         <button type="button" className="ai-value-step" disabled={!canShare}>
-          Share package
+          Share caveated package
         </button>
       </div>
 

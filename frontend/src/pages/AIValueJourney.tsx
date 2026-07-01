@@ -12,6 +12,7 @@ import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel
 import { ValueSpineTracePanel } from "../components/ValueSpineTracePanel";
 import { applyReviewerMetricSelectionDraftIntake } from "../lib/aiValueContributionReportingSpine";
 import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelection";
+import { AIValueReportLayout } from "../components/AIValueReportLayout";
 
 const StatusPill = ({
   label,
@@ -53,7 +54,12 @@ export const AIValueJourney = () => {
   const progress = Math.round((completeCount / journey.stages.length) * 100);
 
   return (
-    <main className="ai-value-shell ai-value-journey">
+    <AIValueReportLayout
+      activeNav="Workflows"
+      mode="cockpit"
+      title="Value Case: AI Assistant Value Assessment"
+    >
+    <main className="ai-value-shell ai-value-journey ai-value-report-surface">
       <header className="ai-value-topbar">
         <div>
           <p className="eyebrow">AI Value Platform</p>
@@ -577,5 +583,6 @@ export const AIValueJourney = () => {
         </article>
       </section>
     </main>
+    </AIValueReportLayout>
   );
 };

@@ -162,7 +162,7 @@ describe("AIValueWorkspace executive spine", () => {
     localStorage.clear();
   });
 
-  it("renders a meaty executive value evidence report with a download control", () => {
+  it("renders a meaty executive value evidence report with caveated report controls", () => {
     const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
     const report = screen.getByRole("region", { name: /Value Evidence Report/i });
@@ -171,7 +171,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(report).getByText(/Hypothesis status/i)).toBeInTheDocument();
     expect(within(report).getByText(/Evidence posture/i)).toBeInTheDocument();
     expect(within(report).getByText(/Spend posture/i)).toBeInTheDocument();
-    expect(within(report).getByRole("button", { name: /Download report/i })).toBeInTheDocument();
+    expect(within(report).getByText(/Caveated report actions only/i)).toBeInTheDocument();
+    expect(within(report).getByRole("button", { name: /Download caveated report/i })).toBeInTheDocument();
 
     for (const section of [
       "Approved Hypothesis",
@@ -188,7 +189,12 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(report).getByText(/Run a targeted enablement sprint/i)).toBeInTheDocument();
     expect(within(report).getByText(/Review high-token, low-depth workflows/i)).toBeInTheDocument();
     expect(within(report).getByText(/The strongest current conclusion/i)).toBeInTheDocument();
-    expect(within(report).getByText(/does not claim ROI, causality, productivity lift, financial impact/i)).toBeInTheDocument();
+    expect(
+      within(report).getAllByText(/does not claim ROI, causality, productivity lift, financial impact/i).length
+    ).toBeGreaterThan(0);
+    expect((container.textContent ?? "").indexOf("Caveated report actions only")).toBeLessThan(
+      (container.textContent ?? "").indexOf("Download caveated report")
+    );
     expectNoUnsafeUiLanguage(container.textContent);
   });
 

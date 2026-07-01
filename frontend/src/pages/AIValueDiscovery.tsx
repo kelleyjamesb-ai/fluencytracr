@@ -10,6 +10,7 @@ import {
 } from "../lib/aiValueApi";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
+import { AIValueReportLayout } from "../components/AIValueReportLayout";
 
 const steps = [
   "Client & Objective",
@@ -505,7 +506,12 @@ export const AIValueDiscovery = () => {
       : "/ai-value-workspace";
 
   return (
-    <main className="ai-value-shell ai-value-discovery">
+    <AIValueReportLayout
+      activeNav="Workflows"
+      mode="cockpit"
+      title="Value Case: AI Assistant Value Assessment"
+    >
+    <main className="ai-value-shell ai-value-discovery ai-value-report-surface">
       <header className="ai-value-topbar">
         <div>
           <p className="eyebrow">Client Value Workshop</p>
@@ -968,5 +974,6 @@ export const AIValueDiscovery = () => {
         )}
       </section>
     </main>
+    </AIValueReportLayout>
   );
 };
