@@ -697,6 +697,28 @@ test("governed diagnostics sufficiency evidence source rejects reviewed evidence
   assert.equal(serialized.includes("\"probability_output_authorized\":true"), false);
 });
 
+test("governed diagnostics sufficiency evidence source rejects unsafe nested runtime envelope sidecars", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const runtime = runtimeSource.source_runtime;
+  const source =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: {
+        ...runtimeSource,
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows"
+      },
+      reviewed_diagnostics_source_evidence: governedEvidenceInput(runtime)
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
+  const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
+
+  assert.equal(source.source_state, REJECT_STATE);
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "raw_rows", "query_text"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("governed diagnostics sufficiency evidence source holds when source runtime has suppressed windows", () => {
   const runtime = sourceRuntime();
   runtime.aggregate_design_matrix.suppressed_window_count = 1;

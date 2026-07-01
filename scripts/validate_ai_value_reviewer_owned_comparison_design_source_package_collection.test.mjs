@@ -26,7 +26,7 @@ import {
 const metricLibraryRef =
   "docs/contracts/ai-value-intelligence/examples/customer-support-metrics-library.json";
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableJson(item)).join(",")}]`;
@@ -39,16 +39,16 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
-function sourceRuntime() {
-  if (cachedRuntime) return JSON.parse(JSON.stringify(cachedRuntime));
-  cachedRuntime = JSON.parse(
+function sourceRuntimeSource() {
+  if (cachedRuntimeSource) return JSON.parse(JSON.stringify(cachedRuntimeSource));
+  cachedRuntimeSource = JSON.parse(
     execFileSync("npm", [
       "run",
       "--silent",
-      "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime"
+      "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime-source-envelope"
     ], { encoding: "utf8" })
   );
-  return JSON.parse(JSON.stringify(cachedRuntime));
+  return JSON.parse(JSON.stringify(cachedRuntimeSource));
 }
 
 function rehashCollection(record) {
@@ -774,11 +774,11 @@ test("forged source preparation binding input holds for binding", () => {
 });
 
 test("collected package record can feed only comparison-design adequacy review", () => {
-  const runtime = sourceRuntime();
+  const runtimeSource = sourceRuntimeSource();
   const { record } = validCollection();
   const review =
     buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
-      source_runtime: runtime,
+      ...runtimeSource,
       comparison_design_source_evidence: record
     });
 
