@@ -894,20 +894,32 @@ function collectShapeGaps(runtime) {
 
 function collectSourceBindingGaps(runtime, options = {}) {
   const gaps = [];
-  if (
-    runtime?.runtime_state === READY_STATE &&
-    !options.sourceGate &&
-    options.allowSelfContainedSourceValidation !== true
-  ) {
+  const ready = runtime?.runtime_state === READY_STATE;
+  const aggregateMeasurementCellWindows =
+    options.aggregateMeasurementCellWindows ??
+    options.aggregate_measurement_cell_windows;
+  if (ready && !options.sourceGate) {
     gaps.push("sourceGate is required for ready internal Bayesian execution runtime validation");
+  }
+  if (ready && !Array.isArray(aggregateMeasurementCellWindows)) {
+    gaps.push(
+      "aggregateMeasurementCellWindows is required for ready internal Bayesian execution runtime validation"
+    );
   }
   if (options.sourceGate) {
     const gateGaps = sourceGateGaps(options.sourceGate);
     if (gateGaps.length > 0) gaps.push(...gateGaps);
   }
-  if (options.expectedRuntime) {
+  const expectedRuntime =
+    options.sourceGate && Array.isArray(aggregateMeasurementCellWindows)
+      ? buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+          source_gate: options.sourceGate,
+          aggregate_measurement_cell_windows: aggregateMeasurementCellWindows
+        })
+      : null;
+  if (expectedRuntime) {
     const actualWithoutHash = clone(runtime);
-    const expectedWithoutHash = clone(options.expectedRuntime);
+    const expectedWithoutHash = clone(expectedRuntime);
     delete actualWithoutHash.runtime_hash;
     delete expectedWithoutHash.runtime_hash;
     if (stableStringify(actualWithoutHash) !== stableStringify(expectedWithoutHash)) {
@@ -938,10 +950,10 @@ function inputFromCliPath(path) {
 }
 
 function main() {
-  const [, , inputPath, windowsPath] = process.argv;
+  const [, , inputPath, windowsPath, ...flags] = process.argv;
   if (!inputPath || !windowsPath) {
     console.error(
-      "Usage: node scripts/run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs <internal-bayesian-execution-gate-json|- for stdin> <aggregate-windows-json>"
+      "Usage: node scripts/run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs <internal-bayesian-execution-gate-json|- for stdin> <aggregate-windows-json> [--source-envelope]"
     );
     process.exit(1);
   }
@@ -951,6 +963,14 @@ function main() {
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: aggregateWindows
   });
+  if (flags.includes("--source-envelope")) {
+    process.stdout.write(`${JSON.stringify({
+      source_runtime: runtime,
+      source_gate: sourceGate,
+      aggregate_measurement_cell_windows: aggregateWindows
+    }, null, 2)}\n`);
+    return;
+  }
   process.stdout.write(`${JSON.stringify(runtime, null, 2)}\n`);
 }
 

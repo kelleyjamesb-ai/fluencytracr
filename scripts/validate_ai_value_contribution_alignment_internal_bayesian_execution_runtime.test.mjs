@@ -163,7 +163,7 @@ test("internal Bayesian execution runtime contains aggregate-only DiD candidate 
   });
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
     sourceGate: chain.sourceGate,
-    expectedRuntime: runtime
+    aggregateMeasurementCellWindows: AGGREGATE_WINDOWS
   });
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -272,10 +272,7 @@ test("internal Bayesian execution runtime validation rejects forged probability 
 
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
     sourceGate: chain.sourceGate,
-    expectedRuntime: buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
-      source_gate: chain.sourceGate,
-      aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
-    })
+    aggregateMeasurementCellWindows: AGGREGATE_WINDOWS
   });
 
   assert.equal(validation.valid, false);
@@ -291,11 +288,83 @@ test("internal Bayesian execution runtime validation requires source gate for re
     source_gate: chain.sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime);
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    allowSelfContainedSourceValidation: true
+  });
 
   assert.equal(validation.valid, false);
   assert.ok(
     validation.gaps.some((gap) => /sourceGate|required/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal Bayesian execution runtime validation requires deterministic rebuild source for ready records", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    sourceGate: chain.sourceGate
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /aggregateMeasurementCellWindows/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal Bayesian execution runtime validation rejects legacy aggregateWindows alias", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    sourceGate: chain.sourceGate,
+    aggregateWindows: AGGREGATE_WINDOWS
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /aggregateMeasurementCellWindows/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal Bayesian execution runtime validation accepts source gate plus aggregate windows rebuild", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    sourceGate: chain.sourceGate,
+    aggregateMeasurementCellWindows: AGGREGATE_WINDOWS
+  });
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});
+
+test("internal Bayesian execution runtime validation rejects forged DiD fields after rehash against windows", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  runtime.internal_fit_artifact.did_observed_estimate = 99;
+  runtime.internal_fit_artifact.artifact_hash = "f".repeat(64);
+  runtime.runtime_hash = contributionAlignmentInternalBayesianExecutionRuntimeHash(runtime);
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    sourceGate: chain.sourceGate,
+    aggregateMeasurementCellWindows: AGGREGATE_WINDOWS
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /artifact_hash|runtime binding mismatch/.test(gap)),
     validation.gaps.join("; ")
   );
 });
@@ -317,10 +386,7 @@ test("internal Bayesian execution runtime validation rejects forged interpretati
 
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
     sourceGate: chain.sourceGate,
-    expectedRuntime: buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
-      source_gate: chain.sourceGate,
-      aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
-    })
+    aggregateMeasurementCellWindows: AGGREGATE_WINDOWS
   });
 
   assert.equal(validation.valid, false);

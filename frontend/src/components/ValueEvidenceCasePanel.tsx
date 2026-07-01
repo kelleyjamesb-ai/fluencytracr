@@ -1,6 +1,7 @@
 import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 
 import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
+import { displaySafeValuePhrase } from "../lib/aiValueLanguageGuard";
 import {
   readSelectedOutcomeMetricSelection,
   readSelectedOutcomeMetricWatchPlan,
@@ -43,7 +44,7 @@ const evidenceLevelCopy: Record<string, { label: string; meaning: string; tone: 
   STRONG: {
     label: "Validated",
     meaning:
-      "Accepted evidence, resolved assumptions, and customer-approved economic inputs back realized-value language for this slice.",
+      "Accepted evidence and resolved assumptions are available for internal review; customer-facing value language remains held.",
     tone: "good"
   },
   BLOCKED: {
@@ -56,10 +57,12 @@ const evidenceLevelCopy: Record<string, { label: string; meaning: string; tone: 
 const claimLevelCopy: Record<string, string> = {
   OBSERVED_AI_ACTIVITY_ONLY: "We can describe observed AI activity only.",
   INTERNAL_HYPOTHESIS_ONLY: "We can discuss an internal hypothesis, not a client-facing value claim.",
-  CAVEATED_VALUE_INVESTIGATION: "We can present a caveated value investigation for this workflow.",
-  SUPPORTED_VALUE_MOVEMENT: "We can present bounded value movement for this workflow slice.",
+  CAVEATED_VALUE_INVESTIGATION:
+    "Internal review can use a caveated value investigation for this workflow; customer-facing value language remains held.",
+  SUPPORTED_VALUE_MOVEMENT:
+    "Internal review can use bounded value movement for this workflow slice; customer-facing value language remains held.",
   VALIDATED_VALUE_REALIZATION:
-    "We can present customer-validated realized value for this workflow slice.",
+    "We can use customer-reviewed outcome context for internal planning; customer-facing value language remains held.",
   BLOCKED: "Value language is blocked until governance gates pass."
 };
 
@@ -104,6 +107,9 @@ const blockedClaimCopy: Record<string, string> = {
   customer_facing_economic_output: "Customer-facing dollar figures"
 };
 
+const claimGateFallbackCopy =
+  "Later promotion required before this can become customer-facing value language.";
+
 // Privacy boundaries protect people and never relax, regardless of evidence.
 const PRIVACY_BOUNDARY_CLAIMS = [
   "individual_scoring",
@@ -112,14 +118,24 @@ const PRIVACY_BOUNDARY_CLAIMS = [
   "productivity_measurement"
 ];
 
-const claimGateUnlockCopy: Record<string, string> = {
-  roi_proof: "Unlocks with accepted evidence, resolved assumptions, and customer-approved economic inputs.",
+const PRODUCT_BLOCKED_CLAIM_GATES = [
+  "roi_proof",
+  "realized_roi_calculation",
+  "customer_facing_economic_output",
+  "causality_claim"
+];
+
+const REVIEW_AVAILABLE_CLAIM_GATES: string[] = [];
+
+const claimGateReviewCopy: Record<string, string> = {
+  roi_proof:
+    "Later promotion required before this can become customer-facing value language.",
   realized_roi_calculation:
-    "Unlocks when the customer computes realized ROI from its own approved inputs.",
+    "Later promotion required before this can become customer-facing value language.",
   customer_facing_economic_output:
-    "Unlocks for customer-computed, customer-approved figures referenced by this case.",
+    "Later promotion required before this can become customer-facing value language.",
   causality_claim:
-    "Unlocks with an approved baseline/comparison evidence design reviewed by the customer."
+    "Later promotion required before this can become customer-facing value language."
 };
 
 interface ClaimGate {
@@ -587,6 +603,20 @@ const claimGateState = (
   return null;
 };
 
+const canRenderUnlockedClaimGate = (claim: string | undefined): boolean => {
+  if (!claim) return false;
+  if (PRIVACY_BOUNDARY_CLAIMS.includes(claim) || PRODUCT_BLOCKED_CLAIM_GATES.includes(claim)) {
+    return false;
+  }
+  return REVIEW_AVAILABLE_CLAIM_GATES.includes(claim);
+};
+
+const claimGateDisplayLabel = (claim: string | undefined): string =>
+  blockedClaimCopy[claim ?? ""] ?? "Future claim boundary";
+
+const claimGateRequirementCopy = (claim: string | undefined): string =>
+  claimGateReviewCopy[claim ?? ""] ?? claimGateFallbackCopy;
+
 const strategicChoicesForCase = (evidenceCase: EvidenceCasePayload): StrategicChoice[] => {
   const reviewState = evidenceCase.outcome_evidence_status?.review_state ?? "MISSING";
   const acceptedEvidence = reviewState === "ACCEPTED" || reviewState === "CAVEATED";
@@ -595,13 +625,18 @@ const strategicChoicesForCase = (evidenceCase: EvidenceCasePayload): StrategicCh
   );
   const allowedClaimLevel = evidenceCase.safe_value_language?.allowed_claim_level;
   const customerFacingUnlocked =
+    canRenderUnlockedClaimGate("customer_facing_economic_output") &&
     claimGateState(evidenceCase, "customer_facing_economic_output") === "UNLOCKED";
   const realizedValueUnlocked =
     customerFacingUnlocked ||
-    claimGateState(evidenceCase, "realized_roi_calculation") === "UNLOCKED" ||
-    claimGateState(evidenceCase, "roi_proof") === "UNLOCKED" ||
-    allowedClaimLevel === "VALIDATED_VALUE_REALIZATION";
-  const causalityUnlocked = claimGateState(evidenceCase, "causality_claim") === "UNLOCKED";
+    (canRenderUnlockedClaimGate("realized_roi_calculation") &&
+      claimGateState(evidenceCase, "realized_roi_calculation") === "UNLOCKED") ||
+    (canRenderUnlockedClaimGate("roi_proof") &&
+      claimGateState(evidenceCase, "roi_proof") === "UNLOCKED") ||
+    false;
+  const causalityUnlocked =
+    canRenderUnlockedClaimGate("causality_claim") &&
+    claimGateState(evidenceCase, "causality_claim") === "UNLOCKED";
   const customerValidated = Boolean(evidenceCase.customer_validation?.approved_by_role);
 
   const holdChoice: StrategicChoice = {
@@ -620,22 +655,22 @@ const strategicChoicesForCase = (evidenceCase: EvidenceCasePayload): StrategicCh
   };
   const caveatedReadoutChoice: StrategicChoice = {
     id: "caveated-readout",
-    label: "Use caveated executive readout",
-    summary: "Share directional value movement with caveats.",
-    nextStep: "Do not present realized ROI yet. Resolve open assumptions and confirm the value model with the customer owner.",
+    label: "Prepare caveated internal readout",
+    summary: "Review directional value movement with caveats.",
+    nextStep: "Keep stronger value language held. Resolve open assumptions and confirm the value model with the customer owner.",
     tone: "warn"
   };
   const financeValidationChoice: StrategicChoice = {
     id: "finance-validation",
     label: "Validate with Finance",
     summary: "Ask the customer Finance or data owner to approve assumptions, costs, and the baseline/comparison logic.",
-    nextStep: "Use Finance validation before customer-facing economic language appears in the readout.",
+    nextStep: "Use Finance validation as review context; customer-facing economic language remains held.",
     tone: "warn"
   };
   const validatedStoryChoice: StrategicChoice = {
     id: "validated-story",
-    label: "Use validated value story",
-    summary: "Use customer-approved realized-value language for this workflow slice.",
+    label: "Review validated context",
+    summary: "Use customer-reviewed outcome context for internal planning only.",
     nextStep: causalityUnlocked
       ? "Keep the approved evidence design attached when using causality language."
       : "Keep causality blocked unless the evidence design supports it.",
@@ -842,8 +877,8 @@ export const ValueEvidenceCasePanel = () => {
           <p className="eyebrow">Value Evidence Case</p>
           <h2>What can we safely say about this workflow?</h2>
           <p>
-            One governed view per workflow: the proof we have, the language it allows, what stays
-            blocked, and what to do next.
+            One governed view per workflow: the accepted evidence for review, the language it
+            allows, what stays blocked, and what to do next.
           </p>
         </div>
         <StatusPill label={levelCopy.label} tone={levelCopy.tone} />
@@ -1050,7 +1085,7 @@ export const ValueEvidenceCasePanel = () => {
           <p className="ai-value-case-claim">{claim}</p>
           <ul>
             {(selected.safe_value_language?.allowed_phrases ?? []).map((phrase) => (
-              <li key={phrase}>{phrase}</li>
+              <li key={phrase}>{displaySafeValuePhrase(phrase)}</li>
             ))}
           </ul>
         </div>
@@ -1058,7 +1093,9 @@ export const ValueEvidenceCasePanel = () => {
           <h3>Always said with</h3>
           <ul>
             {(selected.safe_value_language?.required_caveats ?? []).map((caveat) => (
-              <li key={caveat}>{caveat}</li>
+              <li key={caveat}>
+                {displaySafeValuePhrase(caveat, { preserveBlockingCaveat: true })}
+              </li>
             ))}
           </ul>
         </div>
@@ -1087,22 +1124,27 @@ export const ValueEvidenceCasePanel = () => {
       </div>
 
       {hasClaimGates && (
-        <div className="ai-value-case-gates" aria-label="Evidence-gated claims">
-          <h3>Claims that unlock with evidence</h3>
+        <div
+          className="ai-value-case-gates"
+          role="region"
+          aria-label="Evidence-gated claims"
+        >
+          <h3>Claims held for review</h3>
           <p className="ai-value-case-gates-intro">
-            These are gated, not banned: each opens once the data supports it. Figures stay
-            customer-computed and customer-approved.
+            These are review boundaries, not live outputs. Figures stay held until a later
+            promoted contract authorizes customer-facing value language.
             {selected.customer_validation?.approved_by_role && (
               <>
                 {" "}
-                Economic inputs approved by{" "}
+                Economic inputs reviewed by{" "}
                 {humanizeRole(selected.customer_validation.approved_by_role)}.
               </>
             )}
           </p>
           <div className="ai-value-case-gate-grid">
             {(selected.claim_gates ?? []).map((gate) => {
-              const unlocked = gate.state === "UNLOCKED";
+              const unlocked =
+                gate.state === "UNLOCKED" && canRenderUnlockedClaimGate(gate.claim);
               return (
                 <div
                   className={
@@ -1113,16 +1155,16 @@ export const ValueEvidenceCasePanel = () => {
                   key={gate.claim}
                 >
                   <div className="ai-value-case-gate-head">
-                    <strong>{blockedClaimCopy[gate.claim ?? ""] ?? gate.claim}</strong>
+                    <strong>{claimGateDisplayLabel(gate.claim)}</strong>
                     <StatusPill
-                      label={unlocked ? "Unlocked" : "Locked"}
+                      label={unlocked ? "Available for review" : "Blocked / review only"}
                       tone={unlocked ? "good" : "neutral"}
                     />
                   </div>
                   <p>
                     {unlocked
-                      ? "The evidence behind this case supports this claim, within its caveats."
-                      : claimGateUnlockCopy[gate.claim ?? ""] ?? gate.unlock_requirements}
+                      ? "The evidence behind this case is available for internal review, within its caveats."
+                      : claimGateRequirementCopy(gate.claim)}
                   </p>
                 </div>
               );

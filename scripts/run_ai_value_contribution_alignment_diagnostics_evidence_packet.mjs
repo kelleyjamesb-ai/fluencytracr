@@ -250,6 +250,8 @@ const BOUNDARY_POLICY_FIELDS = [
 
 const ALLOWED_INPUT_FIELDS = new Set([
   "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows",
   "source_diagnostics_sufficiency_evidence",
   "generated_at"
 ]);
@@ -368,7 +370,21 @@ function safeHash(value) {
 
 function sourceRuntimeFromInput(input) {
   const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
   return record.source_runtime ?? input;
+}
+
+function sourceRuntimeValidationOptions(input) {
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  return {
+    sourceGate: source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows:
+      source.aggregate_measurement_cell_windows ??
+      source.aggregateMeasurementCellWindows
+  };
 }
 
 function sourceDiagnosticsSufficiencyEvidenceFromInput(input) {
@@ -469,13 +485,13 @@ function sourceGovernedDiagnosticsSufficiencyEvidenceSourceRef(source, projected
   };
 }
 
-function sourceRuntimeGaps(sourceRuntime) {
+function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const source = asRecord(sourceRuntime);
   const artifact = asRecord(source.internal_fit_artifact);
   const design = asRecord(source.aggregate_design_matrix);
   const gaps = [];
   const runtimeValidation = validateContributionAlignmentInternalBayesianExecutionRuntime(source, {
-    allowSelfContainedSourceValidation: true
+    ...validationOptions
   });
   if (runtimeValidation.valid !== true) {
     gaps.push("source_runtime failed internal Bayesian execution runtime validation");
@@ -1093,12 +1109,13 @@ export function buildContributionAlignmentDiagnosticsEvidencePacketFromObject(in
   const wrapperGaps = inputBoundaryGaps(input);
   if (wrapperGaps.length > 0) return rejectedPacket();
   const sourceRuntime = sourceRuntimeFromInput(input);
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(input);
   const sourceGovernedDiagnosticsSufficiencyEvidenceSource =
     sourceGovernedDiagnosticsSufficiencyEvidenceSourceFromInput(input);
   const sourceDiagnosticsSufficiencyEvidence =
     sourceDiagnosticsSufficiencyEvidenceFromInput(input);
   const sourceGaps = sanitizeGaps([
-    ...sourceRuntimeGaps(sourceRuntime),
+    ...sourceRuntimeGaps(sourceRuntime, runtimeValidationOptions),
     ...sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(
       sourceRuntime,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource,
@@ -1181,12 +1198,15 @@ function hasForbiddenContent(value, path = "packet") {
 function validateEvidenceAgainstRuntime(
   packet,
   sourceRuntime,
-  sourceGovernedDiagnosticsSufficiencyEvidenceSource
+  sourceGovernedDiagnosticsSufficiencyEvidenceSource,
+  validationOptions = {}
 ) {
   const gaps = [];
   if (!sourceRuntime) return gaps;
   const expectedPacket = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
     source_runtime: sourceRuntime,
+    source_gate: validationOptions.sourceGate,
+    aggregate_measurement_cell_windows: validationOptions.aggregateMeasurementCellWindows,
     ...(sourceGovernedDiagnosticsSufficiencyEvidenceSource
       ? {
           source_diagnostics_sufficiency_evidence:
@@ -1390,6 +1410,7 @@ export function validateContributionAlignmentDiagnosticsEvidencePacket(packet, o
       : [];
   const sourceGovernedDiagnosticsSufficiencyEvidenceSource =
     options.sourceGovernedDiagnosticsSufficiencyEvidenceSource ?? null;
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
   const projectedDiagnosticsSufficiencyEvidence =
     buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(
       sourceGovernedDiagnosticsSufficiencyEvidenceSource
@@ -1401,7 +1422,8 @@ export function validateContributionAlignmentDiagnosticsEvidencePacket(packet, o
     ...validateEvidenceAgainstRuntime(
       packet,
       options.sourceRuntime,
-      sourceGovernedDiagnosticsSufficiencyEvidenceSource
+      sourceGovernedDiagnosticsSufficiencyEvidenceSource,
+      runtimeValidationOptions
     ),
     ...sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(
       options.sourceRuntime,

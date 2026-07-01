@@ -36,22 +36,44 @@ const EXPECTED_REF =
 const metricLibraryRef =
   "docs/contracts/ai-value-intelligence/examples/customer-support-metrics-library.json";
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
-  cachedRuntime = JSON.parse(
+  if (cachedRuntimeSource) return clone(cachedRuntimeSource.source_runtime);
+  cachedRuntimeSource = JSON.parse(
     execFileSync("npm", [
       "run",
       "--silent",
-      "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime"
+      "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime-source-envelope"
     ], { encoding: "utf8" })
   );
-  return clone(cachedRuntime);
+  return clone(cachedRuntimeSource.source_runtime);
+}
+
+function sourceRuntimeSource() {
+  if (!cachedRuntimeSource) sourceRuntime();
+  return clone(cachedRuntimeSource);
+}
+
+function sourceRuntimeEnvelope(overrides = {}) {
+  return {
+    ...sourceRuntimeSource(),
+    ...overrides
+  };
+}
+
+function sourceRuntimeValidationOptions(overrides = {}) {
+  const source = sourceRuntimeSource();
+  return {
+    sourceRuntime: source.source_runtime,
+    sourceGate: source.source_gate,
+    aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+    ...overrides
+  };
 }
 
 function validComparisonDesignSourcePackage(runtime, overrides = {}) {
@@ -327,10 +349,12 @@ function reviewerOwnedCollection(packageOverrides = {}, collectionOverrides = {}
 test("comparison-design evidence review defaults to held when governed evidence is missing", () => {
   const runtime = sourceRuntime();
   const review =
-    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(runtime);
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(
+      sourceRuntimeEnvelope()
+    );
   const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(
     review,
-    { sourceRuntime: runtime }
+    sourceRuntimeValidationOptions()
   );
 
   assert.equal(review.review_state, HOLD_STATE);
@@ -352,16 +376,14 @@ test("comparison-design evidence review binds to reviewer-owned package collecti
   const runtime = sourceRuntime();
   const { collection } = reviewerOwnedCollection();
   const review =
-    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(sourceRuntimeEnvelope({
       comparison_design_source_evidence: collection
-    });
+    }));
   const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(
     review,
-    {
-      sourceRuntime: runtime,
+    sourceRuntimeValidationOptions({
       comparisonDesignSourceEvidence: collection
-    }
+    })
   );
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -420,10 +442,9 @@ test("held upstream reviewer-owned package returns hold with no adequacy hashes"
   const sources = upstreamSources();
   const collection = buildReviewerOwnedComparisonDesignSourcePackageCollection(sources);
   const review =
-    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(sourceRuntimeEnvelope({
       comparison_design_source_evidence: collection
-    });
+    }));
 
   assert.equal(collection.collection_state, "HOLD_FOR_MORE_INFORMATION");
   assert.equal(review.review_state, HOLD_STATE);
@@ -632,13 +653,11 @@ test("stale fixture template runtime generated and unsafe source content return 
 });
 
 test("comparison-design adequacy review keeps non-authorization outputs blocked", () => {
-  const runtime = sourceRuntime();
   const { collection } = reviewerOwnedCollection();
   const review =
-    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(sourceRuntimeEnvelope({
       comparison_design_source_evidence: collection
-    });
+    }));
 
   assert.equal(review.review_state, READY_STATE);
   for (const value of Object.values(review.feeds)) assert.equal(value, false);
@@ -797,12 +816,11 @@ test("comparison-design review alone cannot complete governed diagnostics suffic
   const runtime = sourceRuntime();
   const { collection } = reviewerOwnedCollection();
   const review =
-    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(sourceRuntimeEnvelope({
       comparison_design_source_evidence: collection
-    });
+    }));
   const source = buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(
-    runtime
+    sourceRuntimeEnvelope()
   );
 
   assert.equal(review.review_state, READY_STATE);

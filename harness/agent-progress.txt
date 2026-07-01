@@ -478,6 +478,12 @@
 - Verified: shared build; engine tests 37/37; evidence-case contract tests 6/6; backend evidence-case API tests 5/5 plus adjacent suites and backend tsc; frontend 104/104 and production build; live browser verification of /ai-value-workspace/case against the seeded enterprise (tabs, ladder, language columns, no console errors); MCP stdio smoke (tools list, case reads, tainted ingest rejected 422); docs contract sweep; semantic drift guard; Glean value governance gates; git diff --check.
 - Next focus: persistence posture for ai_value_objects in local dev (in-memory store loses seeds on backend restart; decide whether to baseline the dev DB), retest-result object so interventions can be scored, and function-level case history across measurement cycles.
 
+## 2026-06-27 (UTC) - Cursor (UI exploration + Figma design brief)
+
+- Completed: Re-oriented on recent AI Value UI/UX push (workspace polish, UI view model adapter, reporting spine panel, LearnAIR→FluencyTracr rename). Created Figma file with FluencyTracr token collection and two 1440×900 screen frames; wrote `artifacts/ui-figma-design-brief.md` with architecture summary, governance constraints, screen wireframes, and implementation recommendations.
+- Verified: git log frontend/, read `main.tsx`, `styles.css`, key pages/components; Figma file created at https://www.figma.com/design/pwNcnlZTzdAp2dpebUyvHd (layout build paused at Figma MCP View-seat rate limit).
+- Next focus: Finish Figma screens 01–02 (manual or upgraded Figma seat), human review, then implement `ValueJourneyHero` component slice from Figma; keep ROI/finance/causality UI blocked.
+
 ## 2026-06-12 (UTC) - Codex (Glean dogfood BigQuery adapter)
 
 - Completed: Added the read-only internal `glean_dogfood_bq` adapter for the three real sharded scrubbed BigQuery table families, with broad source allowlists pinned in code and narrow `FT_V3_2026_05` aggregate-only output. Added k-min, partition, cost, and forbidden-field guards; synthetic fixtures; CLI dry-run path; docs/mapping spec; OpenSpec `add-glean-dogfood-bq-adapter`; and LMSYS assurance metadata for surface, suppress, and refused-query cases.

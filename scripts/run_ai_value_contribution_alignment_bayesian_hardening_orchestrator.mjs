@@ -497,18 +497,58 @@ function allowedNextStepForBlocked(steps, firstBlocked) {
   return null;
 }
 
+function sourceRuntimeSourceFromInput(input) {
+  const record = asRecord(input);
+  const supplied = Object.prototype.hasOwnProperty.call(record, "source_runtime")
+    ? record.source_runtime
+    : input;
+  const envelope = asRecord(supplied);
+  if (envelope.source_runtime) {
+    return {
+      sourceRuntime: envelope.source_runtime,
+      sourceRuntimeInput: envelope,
+      sourceGate: envelope.source_gate ?? envelope.sourceGate,
+      aggregateMeasurementCellWindows:
+        envelope.aggregate_measurement_cell_windows ??
+        envelope.aggregateMeasurementCellWindows
+    };
+  }
+  const sourceGate = record.source_gate ?? record.sourceGate;
+  const aggregateMeasurementCellWindows =
+    record.aggregate_measurement_cell_windows ??
+    record.aggregateMeasurementCellWindows;
+  const sourceRuntimeInput =
+    supplied && sourceGate && Array.isArray(aggregateMeasurementCellWindows)
+      ? {
+          source_runtime: supplied,
+          source_gate: sourceGate,
+          aggregate_measurement_cell_windows: aggregateMeasurementCellWindows
+        }
+      : supplied;
+  return {
+    sourceRuntime: supplied,
+    sourceRuntimeInput,
+    sourceGate,
+    aggregateMeasurementCellWindows
+  };
+}
+
 function buildDefaultChain(sourceRuntime) {
   const governedSource =
     buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntime);
   return { governedSource };
 }
 
-function defaultExecutionSummary(sourceRuntime) {
-  const chain = buildDefaultChain(sourceRuntime);
+function defaultExecutionSummary(sourceRuntimeSource) {
+  const chain = buildDefaultChain(sourceRuntimeSource.sourceRuntimeInput);
   const governedValidation =
     validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
       chain.governedSource,
-      { sourceRuntime }
+      {
+        sourceRuntime: sourceRuntimeSource.sourceRuntime,
+        sourceGate: sourceRuntimeSource.sourceGate,
+        aggregateMeasurementCellWindows: sourceRuntimeSource.aggregateMeasurementCellWindows
+      }
     );
   const steps = [
     stepSummary(
@@ -549,13 +589,19 @@ function explicitArtifacts(input) {
   };
 }
 
-function explicitValidation(step, artifacts, sourceRuntime) {
+function explicitValidation(step, artifacts, sourceRuntimeSource) {
+  const sourceRuntime = sourceRuntimeSource.sourceRuntime;
+  const runtimeOptions = {
+    sourceRuntime,
+    sourceGate: sourceRuntimeSource.sourceGate,
+    aggregateMeasurementCellWindows: sourceRuntimeSource.aggregateMeasurementCellWindows
+  };
   if (step === "governed_diagnostics_sufficiency_evidence_source") {
     if (!artifacts.governedSource) return null;
     return validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
       artifacts.governedSource,
       {
-        sourceRuntime,
+        ...runtimeOptions,
         ...(artifacts.reviewedDiagnosticsSourceEvidence
           ? {
               reviewedDiagnosticsSourceEvidence:
@@ -568,7 +614,7 @@ function explicitValidation(step, artifacts, sourceRuntime) {
   if (step === "diagnostics_evidence_packet") {
     return artifacts.packet
       ? validateContributionAlignmentDiagnosticsEvidencePacket(artifacts.packet, {
-          sourceRuntime,
+          ...runtimeOptions,
           sourceGovernedDiagnosticsSufficiencyEvidenceSource: artifacts.governedSource
         })
       : null;
@@ -578,7 +624,7 @@ function explicitValidation(step, artifacts, sourceRuntime) {
       ? validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(
           artifacts.review,
           {
-            sourceRuntime,
+            ...runtimeOptions,
             sourceGovernedDiagnosticsSufficiencyEvidenceSource: artifacts.governedSource
           }
         )
@@ -588,7 +634,7 @@ function explicitValidation(step, artifacts, sourceRuntime) {
     return artifacts.gate
       ? validateContributionAlignmentBayesianPromotionDecisionGate(artifacts.gate, {
           sourceDiagnosticsReview: artifacts.review,
-          sourceRuntime,
+          ...runtimeOptions,
           sourceDiagnosticsEvidencePacket: artifacts.packet
         })
       : null;
@@ -596,7 +642,7 @@ function explicitValidation(step, artifacts, sourceRuntime) {
   if (step === "promotion_gate_passed_artifact_handoff") {
     return artifacts.handoff
       ? validateContributionAlignmentPromotionGatePassedArtifactHandoff(artifacts.handoff, {
-          sourceRuntime,
+          ...runtimeOptions,
           governedSource: artifacts.governedSource,
           diagnosticsReview: artifacts.review,
           diagnosticsEvidencePacket: artifacts.packet,
@@ -611,7 +657,7 @@ function explicitValidation(step, artifacts, sourceRuntime) {
           {
             sourcePromotionHandoff: artifacts.handoff,
             sourcePromotionGate: artifacts.gate,
-            sourceRuntime,
+            ...runtimeOptions,
             sourceDiagnosticsReview: artifacts.review,
             sourceDiagnosticsEvidencePacket: artifacts.packet,
             sourceGovernedDiagnosticsSufficiencyEvidenceSource: artifacts.governedSource
@@ -622,7 +668,7 @@ function explicitValidation(step, artifacts, sourceRuntime) {
   return null;
 }
 
-function explicitPathSummary(input, sourceRuntime) {
+function explicitPathSummary(input, sourceRuntimeSource) {
   const supplied = Object.prototype.hasOwnProperty.call(
     asRecord(input),
     "explicit_governed_path"
@@ -647,7 +693,7 @@ function explicitPathSummary(input, sourceRuntime) {
     internal_bayesian_execution_artifact_v1: artifacts.artifact
   };
   const steps = STEP_ORDER.map((step) =>
-    stepSummary(step, byStep[step], explicitValidation(step, artifacts, sourceRuntime))
+    stepSummary(step, byStep[step], explicitValidation(step, artifacts, sourceRuntimeSource))
   );
   const firstBlocked = firstBlockedStep(steps);
   return {
@@ -717,9 +763,10 @@ function verificationStatus(defaultExecution, explicitPath) {
 }
 
 function buildReport(input) {
-  const sourceRuntime = asRecord(input).source_runtime;
-  const defaultExecution = defaultExecutionSummary(sourceRuntime);
-  const explicitPath = explicitPathSummary(input, sourceRuntime);
+  const sourceRuntimeSource = sourceRuntimeSourceFromInput(input);
+  const sourceRuntime = sourceRuntimeSource.sourceRuntime;
+  const defaultExecution = defaultExecutionSummary(sourceRuntimeSource);
+  const explicitPath = explicitPathSummary(input, sourceRuntimeSource);
   const allowedNextStep =
     explicitPath.supplied === true
       ? explicitPath.allowed_next_step
@@ -872,7 +919,13 @@ function collectStepSummaryGaps(steps, label) {
 
 function validateAgainstSources(report, options) {
   const gaps = [];
-  if (report?.report_state === READY_STATE && !options.sourceRuntime) {
+  const sourceRuntimeSource = sourceRuntimeSourceFromInput({
+    source_runtime: options.sourceRuntime,
+    source_gate: options.sourceGate,
+    aggregate_measurement_cell_windows: options.aggregateMeasurementCellWindows
+  });
+  const sourceRuntime = sourceRuntimeSource.sourceRuntime;
+  if (report?.report_state === READY_STATE && !sourceRuntime) {
     gaps.push("sourceRuntime is required for ready Bayesian hardening orchestrator validation");
   }
   if (
@@ -882,12 +935,12 @@ function validateAgainstSources(report, options) {
   ) {
     gaps.push("explicitGovernedPath is required for ready explicit governed path validation");
   }
-  if (options.sourceRuntime && report.artifact_hashes?.runtime_hash !== options.sourceRuntime.runtime_hash) {
+  if (sourceRuntime && report.artifact_hashes?.runtime_hash !== sourceRuntime.runtime_hash) {
     gaps.push("report runtime hash does not match sourceRuntime");
   }
-  if (options.sourceRuntime) {
+  if (sourceRuntime) {
     const expected = buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
-      source_runtime: options.sourceRuntime,
+      source_runtime: sourceRuntimeSource.sourceRuntimeInput,
       ...(options.explicitGovernedPath
         ? { explicit_governed_path: options.explicitGovernedPath }
         : {})

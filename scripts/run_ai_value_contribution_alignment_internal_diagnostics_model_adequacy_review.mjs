@@ -241,6 +241,8 @@ const BOUNDARY_POLICY_FIELDS = [
 
 const ALLOWED_INPUT_FIELDS = new Set([
   "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows",
   "source_diagnostics_sufficiency_evidence",
   "generated_at"
 ]);
@@ -371,7 +373,21 @@ function sanitizeGaps(gaps) {
 
 function sourceRuntimeFromInput(input) {
   const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
   return record.source_runtime ?? input;
+}
+
+function sourceRuntimeValidationOptions(input) {
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  return {
+    sourceGate: source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows:
+      source.aggregate_measurement_cell_windows ??
+      source.aggregateMeasurementCellWindows
+  };
 }
 
 function sourceDiagnosticsSufficiencyEvidenceFromInput(input) {
@@ -781,13 +797,13 @@ function hasForbiddenContent(value, path = "review") {
     : [];
 }
 
-function sourceRuntimeGaps(sourceRuntime) {
+function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const source = asRecord(sourceRuntime);
   const artifact = asRecord(source.internal_fit_artifact);
   const design = asRecord(source.aggregate_design_matrix);
   const gaps = [];
   const runtimeValidation = validateContributionAlignmentInternalBayesianExecutionRuntime(source, {
-    allowSelfContainedSourceValidation: true
+    ...validationOptions
   });
   if (runtimeValidation.valid !== true) {
     gaps.push("source_runtime failed internal Bayesian execution runtime validation");
@@ -1140,12 +1156,13 @@ export function buildContributionAlignmentInternalDiagnosticsModelAdequacyReview
   const wrapperGaps = inputBoundaryGaps(input);
   if (wrapperGaps.length > 0) return rejectedReview();
   const sourceRuntime = sourceRuntimeFromInput(input);
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(input);
   const sourceGovernedDiagnosticsSufficiencyEvidenceSource =
     sourceGovernedDiagnosticsSufficiencyEvidenceSourceFromInput(input);
   const sourceDiagnosticsSufficiencyEvidence =
     sourceDiagnosticsSufficiencyEvidenceFromInput(input);
   const gaps = sanitizeGaps([
-    ...sourceRuntimeGaps(sourceRuntime),
+    ...sourceRuntimeGaps(sourceRuntime, runtimeValidationOptions),
     ...sourceGovernedDiagnosticsSufficiencyEvidenceSourceGaps(
       sourceRuntime,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource,
@@ -1447,11 +1464,14 @@ function collectSourceBindingGaps(review, options = {}) {
     gaps.push("sourceGovernedDiagnosticsSufficiencyEvidenceSource is required for satisfied diagnostics model adequacy review validation");
   }
   if (options.sourceRuntime) {
-    const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime);
+    const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
+    const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime, runtimeValidationOptions);
     if (runtimeGaps.length > 0) gaps.push(...runtimeGaps);
     const expectedFromSource =
       buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
         source_runtime: options.sourceRuntime,
+        source_gate: options.sourceGate,
+        aggregate_measurement_cell_windows: options.aggregateMeasurementCellWindows,
         ...(sourceGovernedDiagnosticsSufficiencyEvidenceSource
           ? {
               source_diagnostics_sufficiency_evidence:

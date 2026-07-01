@@ -276,12 +276,50 @@ function sourceHandoffFromInput(input) {
   return record.source_promotion_handoff ?? input;
 }
 
+function sourceRuntimeSourceFromInput(input) {
+  const record = asRecord(input);
+  const supplied = record.source_runtime ?? null;
+  const envelope = asRecord(supplied);
+  if (envelope.source_runtime) {
+    return {
+      sourceRuntime: envelope.source_runtime,
+      sourceRuntimeInput: envelope,
+      sourceGate: envelope.source_gate ?? envelope.sourceGate,
+      aggregateMeasurementCellWindows:
+        envelope.aggregate_measurement_cell_windows ??
+        envelope.aggregateMeasurementCellWindows
+    };
+  }
+  const sourceGate = record.source_gate ?? record.sourceGate;
+  const aggregateMeasurementCellWindows =
+    record.aggregate_measurement_cell_windows ??
+    record.aggregateMeasurementCellWindows;
+  const sourceRuntimeInput =
+    supplied && sourceGate && Array.isArray(aggregateMeasurementCellWindows)
+      ? {
+          source_runtime: supplied,
+          source_gate: sourceGate,
+          aggregate_measurement_cell_windows: aggregateMeasurementCellWindows
+        }
+      : supplied;
+  return {
+    sourceRuntime: supplied,
+    sourceRuntimeInput,
+    sourceGate,
+    aggregateMeasurementCellWindows
+  };
+}
+
 function buildSources(input) {
   const record = asRecord(input);
+  const sourceRuntimeSource = sourceRuntimeSourceFromInput(input);
   return {
     sourcePromotionHandoff: sourceHandoffFromInput(input),
     sourcePromotionGate: record.source_promotion_gate ?? null,
-    sourceRuntime: record.source_runtime ?? null,
+    sourceRuntime: sourceRuntimeSource.sourceRuntime,
+    sourceRuntimeInput: sourceRuntimeSource.sourceRuntimeInput,
+    sourceGate: sourceRuntimeSource.sourceGate,
+    aggregateMeasurementCellWindows: sourceRuntimeSource.aggregateMeasurementCellWindows,
     sourceDiagnosticsReview: record.source_diagnostics_review ?? null,
     sourceDiagnosticsEvidencePacket: record.source_diagnostics_evidence_packet ?? null,
     sourceGovernedDiagnosticsSufficiencyEvidenceSource:
@@ -484,6 +522,8 @@ function sourceGaps(sources) {
     handoff,
     {
       sourceRuntime: sources.sourceRuntime,
+      sourceGate: sources.sourceGate,
+      aggregateMeasurementCellWindows: sources.aggregateMeasurementCellWindows,
       governedSource: sources.sourceGovernedDiagnosticsSufficiencyEvidenceSource,
       diagnosticsReview: sources.sourceDiagnosticsReview,
       diagnosticsEvidencePacket: sources.sourceDiagnosticsEvidencePacket,
@@ -554,6 +594,8 @@ function sourceGaps(sources) {
       {
         sourceDiagnosticsReview: sources.sourceDiagnosticsReview,
         sourceRuntime: sources.sourceRuntime,
+        sourceGate: sources.sourceGate,
+        aggregateMeasurementCellWindows: sources.aggregateMeasurementCellWindows,
         sourceDiagnosticsEvidencePacket: sources.sourceDiagnosticsEvidencePacket
       }
     );
@@ -757,13 +799,20 @@ function collectAllowedFieldsGaps(record, fields, label) {
 
 function validateSourceRefs(artifact, options) {
   const gaps = [];
+  const sourceRuntimeSource = sourceRuntimeSourceFromInput({
+    source_runtime: options.sourceRuntime,
+    source_gate: options.sourceGate,
+    aggregate_measurement_cell_windows: options.aggregateMeasurementCellWindows
+  });
+  const sourceRuntime = sourceRuntimeSource.sourceRuntime;
+  const sourceRuntimeInput = sourceRuntimeSource.sourceRuntimeInput;
   if (!options.sourcePromotionHandoff) {
     gaps.push("sourcePromotionHandoff is required for Artifact v1 validation");
   }
   if (!options.sourcePromotionGate) {
     gaps.push("sourcePromotionGate is required for Artifact v1 validation");
   }
-  if (!options.sourceRuntime) {
+  if (!sourceRuntime) {
     gaps.push("sourceRuntime is required for Artifact v1 validation");
   }
   if (!options.sourceDiagnosticsReview) {
@@ -789,8 +838,8 @@ function validateSourceRefs(artifact, options) {
     gaps.push("artifact source promotion gate hash does not match sourcePromotionGate");
   }
   if (
-    options.sourceRuntime &&
-    artifact.source_runtime_ref?.runtime_hash !== options.sourceRuntime.runtime_hash
+    sourceRuntime &&
+    artifact.source_runtime_ref?.runtime_hash !== sourceRuntime.runtime_hash
   ) {
     gaps.push("artifact source runtime hash does not match sourceRuntime");
   }
@@ -818,7 +867,7 @@ function validateSourceRefs(artifact, options) {
   if (
     options.sourcePromotionHandoff?.handoff_state === READY_HANDOFF_STATE &&
     options.sourcePromotionGate &&
-    options.sourceRuntime &&
+    sourceRuntime &&
     options.sourceDiagnosticsReview &&
     options.sourceDiagnosticsEvidencePacket &&
     options.sourceGovernedDiagnosticsSufficiencyEvidenceSource
@@ -826,7 +875,7 @@ function validateSourceRefs(artifact, options) {
     const expected = buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject({
       source_promotion_handoff: options.sourcePromotionHandoff,
       source_promotion_gate: options.sourcePromotionGate,
-      source_runtime: options.sourceRuntime,
+      source_runtime: sourceRuntimeInput,
       source_diagnostics_review: options.sourceDiagnosticsReview,
       source_diagnostics_evidence_packet: options.sourceDiagnosticsEvidencePacket,
       source_governed_diagnostics_sufficiency_evidence_source:
