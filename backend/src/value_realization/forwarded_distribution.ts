@@ -95,9 +95,4 @@ export const ForwardedDistributionSchema = ForwardedDistributionBaseSchema.refin
   surface_taxonomy_ids: value.surface_taxonomy_ids ?? [value.workflow_id]
 }));
 
-export const ForwardedDistributionSchema = z.preprocess(
-  normalizeLegacyForwardedDistribution,
-  ForwardedDistributionPayloadSchema
-);
-
 export type ForwardedDistribution = z.infer<typeof ForwardedDistributionSchema>;
