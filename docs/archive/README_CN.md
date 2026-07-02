@@ -1,3 +1,5 @@
+> Archived snapshot: this unmaintained Antigravity README is retained for historical reference only; use the root README and current FluencyTracr docs for active guidance.
+
 # 🪐 Google Antigravity Workspace Template
 
 **用于在 Google Antigravity 上构建自主 AI 代理的生产级入门套件。**

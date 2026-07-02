@@ -1,3 +1,5 @@
+> Archived snapshot: this unmaintained Antigravity README is retained for historical reference only; use the root README and current FluencyTracr docs for active guidance.
+
 # 🪐 Plantilla de Workspace de Google Antigravity
 
 **Kit inicial de nivel producción para agentes de IA autónomos en Google Antigravity.**
