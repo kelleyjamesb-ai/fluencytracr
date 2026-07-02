@@ -90,3 +90,33 @@ export const ForwardedDistributionLegacyCompatibleSchema = z.preprocess((value) 
 }, ForwardedDistributionSchema);
 
 export type ForwardedDistribution = z.infer<typeof ForwardedDistributionSchema>;
+
+export type ForwardedDistributionSliceBinding = {
+  cohortId: string;
+  workflowId: string;
+  jbtdId?: string | null;
+  personaId?: string | null;
+  windowStart?: string;
+  windowEnd?: string;
+  calibrationId?: string;
+};
+
+export const forwardedDistributionMatchesSlice = (
+  distribution: ForwardedDistribution,
+  binding: ForwardedDistributionSliceBinding
+): boolean => {
+  if (distribution.cohort_id !== binding.cohortId) return false;
+  if (distribution.workflow_id !== binding.workflowId) return false;
+  if (distribution.jbtd_id !== (binding.jbtdId ?? null)) return false;
+  if (distribution.persona_id !== (binding.personaId ?? null)) return false;
+  if (binding.windowStart !== undefined && distribution.window_start !== binding.windowStart) {
+    return false;
+  }
+  if (binding.windowEnd !== undefined && distribution.window_end !== binding.windowEnd) {
+    return false;
+  }
+  if (binding.calibrationId !== undefined && distribution.calibration_id !== binding.calibrationId) {
+    return false;
+  }
+  return true;
+};

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import {
@@ -70,6 +71,18 @@ const AGGREGATE_WINDOWS = [
     cohort_size: 12
   }
 ];
+
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256Json(value) {
+  return createHash("sha256").update(stableStringify(value)).digest("hex");
+}
 
 const FALSE_FEEDS = [
   "posterior_output_review_gate",
@@ -282,7 +295,7 @@ test("internal Bayesian execution runtime validation rejects forged probability 
   );
 });
 
-test("internal Bayesian execution runtime validation requires source gate for ready records unless self-contained fallback is explicit", () => {
+test("internal Bayesian execution runtime validation requires source gate for ready records even when self-contained fallback is requested", () => {
   const chain = runtimeGateChain();
   const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: chain.sourceGate,
@@ -298,7 +311,11 @@ test("internal Bayesian execution runtime validation requires source gate for re
     strictValidation.gaps.some((gap) => /sourceGate|required/.test(gap)),
     strictValidation.gaps.join("; ")
   );
-  assert.equal(selfContainedValidation.valid, true, selfContainedValidation.gaps.join("; "));
+  assert.equal(selfContainedValidation.valid, false);
+  assert.ok(
+    selfContainedValidation.gaps.some((gap) => /sourceGate|required/.test(gap)),
+    selfContainedValidation.gaps.join("; ")
+  );
 });
 
 test("internal Bayesian execution runtime validation requires deterministic rebuild source for ready records", () => {
@@ -367,6 +384,29 @@ test("internal Bayesian execution runtime validation rejects forged DiD fields a
   assert.equal(validation.valid, false);
   assert.ok(
     validation.gaps.some((gap) => /artifact_hash|runtime binding mismatch/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("internal Bayesian execution runtime self-contained fallback rejects rehashed forged DiD fields", () => {
+  const chain = runtimeGateChain();
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: chain.sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  runtime.internal_fit_artifact.did_observed_estimate = 99;
+  const artifactWithoutHash = JSON.parse(JSON.stringify(runtime.internal_fit_artifact));
+  delete artifactWithoutHash.artifact_hash;
+  runtime.internal_fit_artifact.artifact_hash = sha256Json(artifactWithoutHash);
+  runtime.runtime_hash = contributionAlignmentInternalBayesianExecutionRuntimeHash(runtime);
+
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+    allowSelfContainedSourceValidation: true
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /sourceGate|required|runtime binding mismatch/.test(gap)),
     validation.gaps.join("; ")
   );
 });

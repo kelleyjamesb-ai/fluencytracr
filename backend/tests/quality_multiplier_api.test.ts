@@ -277,6 +277,98 @@ describe("GET /api/v1/quality-multiplier", () => {
     expect(res.body.multiplier).toBeLessThanOrEqual(1.5);
   });
 
+  it("does not consume a forwarded distribution when nested slice fields drift from the verdict row", async () => {
+    const ingest = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set({ "x-role": "ADMIN", "x-org-id": "org-1", "Content-Type": "application/json" })
+      .send({
+        schema_version: "FT_V3_2026_05",
+        cohort_id: "cohort-forwarded-qm",
+        workflow_id: "workflow:FORWARDED-QM",
+        window_start: new Date(BASE_NOW - 90 * MS_PER_DAY).toISOString(),
+        window_end: new Date(BASE_NOW).toISOString(),
+        cohort_size: 50,
+        calibration_id: "scio-prod-60d-2026-05",
+        velocity: {
+          frequency: { p10: 10, p50: 71, p90: 400, p99: 701 },
+          engagement: { p10: 30, p50: 61, p90: 61, p99: 61 },
+          breadth: { p10: 3, p50: 7, p90: 10, p99: 12 }
+        },
+        quality_signals: {
+          completion_rate: 0.92,
+          error_rate: 0.03,
+          abandonment_rate: 0.01,
+          recovery_rate: 0.8,
+          verification_rate: 0.4,
+          p50_latency_ms: 1000,
+          p95_latency_ms: 3000
+        },
+        privacy: { person_level_fields_included: false }
+      });
+    expect(ingest.status).toBe(202);
+    const storedVerdict = Array.from(store.fluencyTracrVerdicts.values())[0];
+    (storedVerdict.payload_json.forwarded_distribution as Record<string, unknown>).workflow_id =
+      "workflow:OTHER";
+
+    const res = await getForwardedMultiplier("workflow:FORWARDED-QM", "cohort-forwarded-qm");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      workflow_id: "workflow:FORWARDED-QM",
+      verdict: "SUPPRESS",
+      multiplier: null
+    });
+    expect(res.body.suppression_reason).not.toBeNull();
+    expect(res.body.value_type).toBeUndefined();
+  });
+
+  it("does not consume a forwarded distribution when nested window or calibration fields drift", async () => {
+    const ingest = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set({ "x-role": "ADMIN", "x-org-id": "org-1", "Content-Type": "application/json" })
+      .send({
+        schema_version: "FT_V3_2026_05",
+        cohort_id: "cohort-forwarded-qm",
+        workflow_id: "workflow:FORWARDED-QM",
+        window_start: new Date(BASE_NOW - 90 * MS_PER_DAY).toISOString(),
+        window_end: new Date(BASE_NOW).toISOString(),
+        cohort_size: 50,
+        calibration_id: "scio-prod-60d-2026-05",
+        velocity: {
+          frequency: { p10: 10, p50: 71, p90: 400, p99: 701 },
+          engagement: { p10: 30, p50: 61, p90: 61, p99: 61 },
+          breadth: { p10: 3, p50: 7, p90: 10, p99: 12 }
+        },
+        quality_signals: {
+          completion_rate: 0.92,
+          error_rate: 0.03,
+          abandonment_rate: 0.01,
+          recovery_rate: 0.8,
+          verification_rate: 0.4,
+          p50_latency_ms: 1000,
+          p95_latency_ms: 3000
+        },
+        privacy: { person_level_fields_included: false }
+      });
+    expect(ingest.status).toBe(202);
+    const storedVerdict = Array.from(store.fluencyTracrVerdicts.values())[0];
+    Object.assign(storedVerdict.payload_json.forwarded_distribution as Record<string, unknown>, {
+      window_end: new Date(BASE_NOW - 1 * MS_PER_DAY).toISOString(),
+      calibration_id: "scio-prod-60d-2026-06"
+    });
+
+    const res = await getForwardedMultiplier("workflow:FORWARDED-QM", "cohort-forwarded-qm");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      workflow_id: "workflow:FORWARDED-QM",
+      verdict: "SUPPRESS",
+      multiplier: null
+    });
+    expect(res.body.suppression_reason).not.toBeNull();
+    expect(res.body.value_type).toBeUndefined();
+  });
+
   it("suppresses when the requested window is too short", async () => {
     seedQualityWorkflow("wf-insufficient-time", 5, 5, 45);
 

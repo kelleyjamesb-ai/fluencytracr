@@ -898,14 +898,10 @@ function collectSourceBindingGaps(runtime, options = {}) {
   const aggregateMeasurementCellWindows =
     options.aggregateMeasurementCellWindows ??
     options.aggregate_measurement_cell_windows;
-  const hasSourceBindingOptions =
-    Boolean(options.sourceGate) || Array.isArray(aggregateMeasurementCellWindows);
-  const allowSelfContainedSourceValidation =
-    options.allowSelfContainedSourceValidation === true && !hasSourceBindingOptions;
-  if (ready && !options.sourceGate && !allowSelfContainedSourceValidation) {
+  if (ready && !options.sourceGate) {
     gaps.push("sourceGate is required for ready internal Bayesian execution runtime validation");
   }
-  if (ready && !Array.isArray(aggregateMeasurementCellWindows) && !allowSelfContainedSourceValidation) {
+  if (ready && !Array.isArray(aggregateMeasurementCellWindows)) {
     gaps.push(
       "aggregateMeasurementCellWindows is required for ready internal Bayesian execution runtime validation"
     );

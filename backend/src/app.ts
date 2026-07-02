@@ -98,7 +98,10 @@ import {
   computeQualityMultiplierFromForwardedDistribution,
   failClosedQualityMultiplierResponse
 } from "./value_realization/quality_multiplier";
-import { ForwardedDistributionLegacyCompatibleSchema } from "./value_realization/forwarded_distribution";
+import {
+  ForwardedDistributionLegacyCompatibleSchema,
+  forwardedDistributionMatchesSlice
+} from "./value_realization/forwarded_distribution";
 import {
   computeVelocityIndex,
   findVelocityPersonField,
@@ -4288,7 +4291,20 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     const parsedForwarded = ForwardedDistributionLegacyCompatibleSchema.safeParse(
       forwardedVerdict?.payload_json.forwarded_distribution
     );
-    if (parsedForwarded.success && parsedForwarded.data.window_days >= parsed.data.window_days) {
+    if (
+      forwardedVerdict &&
+      parsedForwarded.success &&
+      forwardedDistributionMatchesSlice(parsedForwarded.data, {
+        cohortId: parsed.data.cohort_id,
+        workflowId: parsed.data.workflow_id,
+        jbtdId: parsed.data.jbtd_id ?? null,
+        personaId: parsed.data.persona_id ?? null,
+        windowStart: forwardedVerdict.window_start,
+        windowEnd: forwardedVerdict.window_end,
+        calibrationId: forwardedVerdict.calibration_id
+      }) &&
+      parsedForwarded.data.window_days >= parsed.data.window_days
+    ) {
       return res.json(
         computeQualityMultiplierFromForwardedDistribution({
           forwardedDistribution: parsedForwarded.data
