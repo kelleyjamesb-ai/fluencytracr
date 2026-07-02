@@ -1,17 +1,17 @@
 ## 1. Inventory and freeze (post-approval)
 
-- [ ] 1.1 Freeze the spine module list and import graph in
+- [x] 1.1 Freeze the spine module list and import graph in
       `packages/confidence-engine/PORTING.md`; record every schema version
       string and hash-chain edge that must survive byte-identically.
-- [ ] 1.2 Capture golden fixtures: run every spine `.mjs` runner against the
+- [x] 1.2 Capture golden fixtures: run every spine `.mjs` runner against the
       controlled aggregate fixture and store canonical outputs under
       `packages/confidence-engine/test/golden/`.
 
 ## 2. Workspace scaffold
 
-- [ ] 2.1 Create `packages/confidence-engine` workspace (tsconfig, build,
+- [x] 2.1 Create `packages/confidence-engine` workspace (tsconfig, build,
       test runner) mirroring `shared/` conventions; add to root workspaces.
-- [ ] 2.2 Port the shared helpers first (stable stringify, sha256Json, safe
+- [x] 2.2 Port the shared helpers first (stable stringify, sha256Json, safe
       ref/value patterns, boundary walker) as one internal module with unit
       tests proving identical hashing behavior.
 
@@ -41,7 +41,7 @@
 
 ## 5. Governance and docs
 
-- [ ] 5.1 Record human approval (decision owner: James Kelley) on this
+- [x] 5.1 Record human approval (decision owner: James Kelley) on this
       proposal before starting section 1.
 - [ ] 5.2 Add `docs/contracts/confidence-engine-workspace/README.md`; update
       the README capability ledger and `.project/PROGRESS.md` per slice.

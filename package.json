@@ -4,6 +4,7 @@
     "backend",
     "frontend",
     "shared",
+    "packages/confidence-engine",
     "packages/fluencytracr-mcp",
     "packages/glean-publisher",
     "integrations/openai-agents"
@@ -243,7 +244,8 @@
     "test:ai-value-aggregate-api-push": "node --test scripts/prepare_ai_value_aggregate_api_push.test.mjs",
     "seed:ai-value": "node scripts/seed_ai_value_demo.mjs",
     "seed:ai-value-enterprise": "npm run build --workspace shared && node scripts/seed_ai_value_enterprise.mjs",
-    "db:baseline": "node scripts/baseline_migrations.mjs"
+    "db:baseline": "node scripts/baseline_migrations.mjs",
+    "test:confidence-engine-workspace": "npm run test --workspace packages/confidence-engine"
   },
   "devDependencies": {
     "@fission-ai/openspec": "^1.2.0",
